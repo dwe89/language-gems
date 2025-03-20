@@ -1,7 +1,7 @@
 # LanguageGems 💎
 
-A multi-language learning platform for schools and individual learners. LanguageGems makes language acquisition fun through gamification with a gems and treasure theme.
-
+A multi-language learning platform for schools and individual learners. LanguageGems makes language acquisition fun through gamification with a gems and treasure theme. :)
+dfdf
 ## Features
 
 - **Multi-Language Support**: Learn multiple languages with pre-built vocabulary lists
