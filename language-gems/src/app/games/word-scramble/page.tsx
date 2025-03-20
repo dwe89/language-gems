@@ -65,7 +65,7 @@ export default function WordScramblePage() {
         <h1 className="text-4xl font-bold text-green-600">Word Scramble</h1>
         <Link 
           href="/games" 
-          className="bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded-full transition-colors"
+          className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-full transition-colors"
         >
           Back to Games
         </Link>
@@ -80,7 +80,7 @@ export default function WordScramblePage() {
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.3 }}
           >
-            <div className="bg-white shadow-lg rounded-lg p-6 mb-8">
+            <div className="bg-gradient-to-br from-blue-50 to-green-50 shadow-lg rounded-lg p-6 mb-8">
               <h2 className="text-2xl font-semibold mb-4 text-gray-800">Game Statistics</h2>
               <div className="grid grid-cols-3 md:grid-cols-5 gap-4 text-center">
                 <div>

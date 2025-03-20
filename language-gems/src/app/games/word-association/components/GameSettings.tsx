@@ -1,24 +1,39 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 
 type GameSettingsProps = {
-  onStartGame: (settings: { difficulty: string; category: string; language: string }) => void;
+  onStartGame: (settings: { difficulty: string; category: string; language: string; customWords?: string }) => void;
 };
 
 const DIFFICULTIES = ['easy', 'medium', 'hard'];
-const CATEGORIES = ['general', 'academic', 'business', 'technology', 'nature'];
+const CATEGORIES = ['general', 'academic', 'business', 'technology', 'nature', 'custom'];
 const LANGUAGES = ['english', 'spanish', 'french', 'german', 'italian'];
 
 export default function GameSettings({ onStartGame }: GameSettingsProps) {
   const [difficulty, setDifficulty] = useState(DIFFICULTIES[0]);
   const [category, setCategory] = useState(CATEGORIES[0]);
   const [language, setLanguage] = useState(LANGUAGES[0]);
+  const [customWords, setCustomWords] = useState('');
+  const [showCustomInput, setShowCustomInput] = useState(false);
+
+  useEffect(() => {
+    if (category === 'custom') {
+      setShowCustomInput(true);
+    } else {
+      setShowCustomInput(false);
+    }
+  }, [category]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onStartGame({ difficulty, category, language });
+    onStartGame({ 
+      difficulty, 
+      category, 
+      language,
+      customWords: category === 'custom' ? customWords : undefined 
+    });
   };
 
   const difficultyDescriptions = {
@@ -33,17 +48,18 @@ export default function GameSettings({ onStartGame }: GameSettingsProps) {
     business: 'Professional and workplace terms',
     technology: 'Digital and tech vocabulary',
     nature: 'Environmental and natural world',
+    custom: 'Your own custom words'
   };
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="w-full max-w-md mx-auto bg-white p-8 rounded-xl shadow-lg"
+      className="w-full max-w-md mx-auto bg-white p-8 rounded-xl shadow-lg text-gray-700"
     >
       <h2 className="text-2xl font-bold text-center mb-6 text-purple-700">Game Settings</h2>
       
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} className="text-gray-700">
         <div className="mb-6">
           <label className="block text-sm font-medium text-gray-700 mb-1">Difficulty</label>
           <div className="grid grid-cols-3 gap-3">
@@ -110,6 +126,22 @@ export default function GameSettings({ onStartGame }: GameSettingsProps) {
             You'll be shown {language === 'english' ? 'English' : 'English and ' + language.charAt(0).toUpperCase() + language.slice(1)} words.
           </p>
         </div>
+        
+        {showCustomInput && (
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Custom Words</label>
+            <textarea
+              value={customWords}
+              onChange={(e) => setCustomWords(e.target.value)}
+              placeholder="Enter words separated by commas (e.g., apple, orange, banana)"
+              className="w-full p-2 border border-gray-300 rounded-md text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              rows={3}
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Enter at least 10 words separated by commas for best experience
+            </p>
+          </div>
+        )}
         
         <button 
           type="submit"

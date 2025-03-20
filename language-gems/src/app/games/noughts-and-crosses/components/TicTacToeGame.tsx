@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import FullscreenToggle from '../../../components/FullscreenToggle';
 
 // Language data for the game
 const VOCABULARY = {
@@ -246,6 +247,8 @@ type GameSettings = {
   difficulty: string;
   category: string;
   language: string;
+  playerMark: string;
+  computerMark: string;
 };
 
 type TicTacToeGameProps = {
@@ -255,8 +258,10 @@ type TicTacToeGameProps = {
 };
 
 export default function TicTacToeGame({ settings, onBackToMenu, onGameEnd }: TicTacToeGameProps) {
-  // Game board and state
   const [board, setBoard] = useState<CellContent[]>(Array(9).fill({ mark: '', learned: false }));
+  const [currentPlayer, setCurrentPlayer] = useState<'X' | 'O'>('X');
+  const [playerMark] = useState<string>(settings.playerMark || 'X');
+  const [computerMark] = useState<string>(settings.computerMark || 'O');
   const [isPlayerTurn, setIsPlayerTurn] = useState(true);
   const [gameStatus, setGameStatus] = useState<'playing' | 'playerWin' | 'aiWin' | 'tie'>('playing');
   const [wordsLearned, setWordsLearned] = useState(0);
@@ -277,6 +282,9 @@ export default function TicTacToeGame({ settings, onBackToMenu, onGameEnd }: Tic
   
   // Available vocabulary for the game based on settings
   const [availableVocabulary, setAvailableVocabulary] = useState<VocabItem[]>([]);
+  
+  // Ref for fullscreen functionality
+  const gameContainerRef = useRef<HTMLDivElement>(null);
   
   // Initialize game
   useEffect(() => {
@@ -560,136 +568,116 @@ export default function TicTacToeGame({ settings, onBackToMenu, onGameEnd }: Tic
   };
   
   return (
-    <div className="bg-white shadow-lg rounded-lg p-6">
-      {/* Game header with language and status */}
+    <div ref={gameContainerRef} className="w-full bg-white rounded-xl shadow-lg p-6 text-gray-700">
       <div className="flex justify-between items-center mb-6">
-        <div>
-          <h2 className="text-xl font-semibold text-gray-800">
-            {settings.language.charAt(0).toUpperCase() + settings.language.slice(1)} - {settings.category.charAt(0).toUpperCase() + settings.category.slice(1)}
-          </h2>
-          <p className="text-gray-600">Learn vocabulary while playing</p>
-        </div>
-        <div className="text-center">
-          <p className="text-sm text-gray-600">Game Status</p>
-          {gameStatus === 'playing' ? (
-            <p className={`font-medium ${isPlayerTurn ? 'text-blue-600' : 'text-red-600'}`}>
-              {isPlayerTurn ? 'Your Turn' : 'AI Thinking...'}
-            </p>
-          ) : (
-            <p className={`font-medium ${
-              gameStatus === 'playerWin' ? 'text-green-600' : 
-              gameStatus === 'aiWin' ? 'text-red-600' : 'text-yellow-600'
-            }`}>
-              {gameStatus === 'playerWin' ? 'You Won!' : 
-               gameStatus === 'aiWin' ? 'You Lost' : 'Tie Game'}
-            </p>
-          )}
-        </div>
-      </div>
-      
-      {/* Word learning progress */}
-      <div className="mb-6">
-        <div className="flex justify-between mb-2">
-          <p className="text-sm text-gray-600">Words Learned</p>
-          <p className="text-sm font-medium text-blue-600">{wordsLearned}</p>
-        </div>
-        <div className="w-full bg-gray-200 rounded-full h-2.5">
-          <div 
-            className="bg-blue-600 h-2.5 rounded-full transition-all" 
-            style={{ width: `${Math.min((wordsLearned / 5) * 100, 100)}%` }}
-          ></div>
-        </div>
-      </div>
-      
-      {/* Game board */}
-      <div className="grid grid-cols-3 gap-2 mb-6">
-        {board.map((cell, index) => (
-          <button
-            key={index}
-            onClick={() => handleCellClick(index)}
-            disabled={cell.mark !== '' || gameStatus !== 'playing' || !isPlayerTurn || showQuiz}
-            className={`aspect-square flex flex-col items-center justify-center rounded-lg transition-all p-2
-              ${cell.mark === '' ? 
-                'bg-gray-100 hover:bg-gray-200 cursor-pointer' : 
-                cell.mark === 'X' ? 
-                  (cell.learned ? 'bg-green-100' : 'bg-blue-100') : 
-                  'bg-red-100'
-              }`}
-          >
-            {cell.mark === 'X' && (
-              <>
-                <span className="text-3xl text-blue-600 mb-1">X</span>
-                {cell.vocabItem && (
-                  <>
-                    <span className="text-sm font-medium">{cell.vocabItem.word}</span>
-                    {cell.learned && (
-                      <span className="text-xs text-gray-600">{cell.vocabItem.translation}</span>
-                    )}
-                  </>
-                )}
-              </>
-            )}
-            {cell.mark === 'O' && (
-              <>
-                <span className="text-3xl text-red-600 mb-1">O</span>
-                {cell.vocabItem && (
-                  <span className="text-sm font-medium">{cell.vocabItem.word}</span>
-                )}
-              </>
-            )}
-          </button>
-        ))}
-      </div>
-      
-      {/* Quiz modal */}
-      <AnimatePresence>
-        {showQuiz && currentQuiz && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
-          >
-            <div className="bg-white rounded-lg p-6 max-w-md w-full">
-              <h3 className="text-xl font-semibold mb-4">What does "{currentQuiz.vocabItem.word}" mean?</h3>
-              
-              <div className="grid grid-cols-1 gap-3 mb-4">
-                {currentQuiz.options.map((option, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => handleQuizAnswer(option)}
-                    className="py-3 px-4 rounded-lg border-2 border-gray-200 hover:border-pink-500 transition-colors"
-                  >
-                    {option}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-      
-      {/* Game controls */}
-      <div className="flex justify-between">
-        <button
-          onClick={resetGame}
-          disabled={gameStatus === 'playing' || showQuiz}
-          className={`px-6 py-2 rounded-lg transition-colors ${
-            gameStatus === 'playing' || showQuiz ? 
-              'bg-gray-200 text-gray-500 cursor-not-allowed' : 
-              'bg-pink-600 hover:bg-pink-700 text-white'
-          }`}
-        >
-          New Game
-        </button>
-        
         <button
           onClick={onBackToMenu}
-          className="px-6 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg transition-colors"
+          className="text-indigo-600 hover:text-indigo-800 transition-colors"
         >
-          Back to Menu
+          ← Back to Settings
         </button>
+        <div className="text-lg font-semibold">
+          {gameStatus === 'playing' ? (
+            isPlayerTurn ? 'Your Turn' : 'Computer\'s Turn'
+          ) : (
+            gameStatus === 'playerWin' ? 'You Won!' : 
+            gameStatus === 'aiWin' ? 'Computer Won!' : 'It\'s a Tie!'
+          )}
+        </div>
+        <FullscreenToggle 
+          containerRef={gameContainerRef} 
+          className="text-indigo-600 hover:text-indigo-800"
+        />
       </div>
+
+      <div className="mb-6">
+        <div className="grid grid-cols-3 gap-3 mb-4">
+          {board.map((cell, index) => (
+            <div
+              key={index}
+              onClick={() => handleCellClick(index)}
+              className={`
+                h-24 md:h-32 flex items-center justify-center rounded-lg cursor-pointer border-2 
+                ${cell.mark 
+                  ? cell.mark === 'X' 
+                    ? 'bg-indigo-50 border-indigo-400' 
+                    : 'bg-pink-50 border-pink-400' 
+                  : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'}
+                ${!cell.mark && isPlayerTurn && gameStatus === 'playing' ? 'hover:bg-gray-100' : ''}
+                ${!isPlayerTurn || gameStatus !== 'playing' ? 'cursor-not-allowed' : ''}
+                transition
+              `}
+            >
+              {cell.mark && (
+                <span className={`text-4xl md:text-5xl font-bold ${
+                  cell.mark === 'X' ? 'text-indigo-600' : 'text-pink-600'
+                }`}>
+                  {cell.mark === 'X' ? playerMark : computerMark}
+                </span>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {showQuiz && currentQuiz && (
+        <div className="bg-indigo-50 p-4 rounded-lg mb-6">
+          <h3 className="text-lg font-semibold mb-2 text-indigo-700">Quick Quiz!</h3>
+          <p className="mb-3 text-gray-700">
+            What does <span className="font-semibold">{currentQuiz.vocabItem.word}</span> mean?
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            {currentQuiz.options.map((option, index) => (
+              <button
+                key={index}
+                onClick={() => handleQuizAnswer(option)}
+                className="bg-white text-indigo-700 border border-indigo-300 rounded-lg p-3 hover:bg-indigo-100 transition"
+              >
+                {option}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="grid grid-cols-2 gap-4 mb-6">
+        <div className="bg-indigo-50 p-3 rounded-lg">
+          <div className="font-semibold text-indigo-700">You</div>
+          <div className="text-xl">{playerMark} ({wordsLearned} words learned)</div>
+        </div>
+        <div className="bg-pink-50 p-3 rounded-lg">
+          <div className="font-semibold text-pink-700">Computer</div>
+          <div className="text-xl">{computerMark}</div>
+        </div>
+      </div>
+
+      {gameStatus !== 'playing' && (
+        <div className="mt-6 text-center">
+          <div className={`text-2xl font-bold mb-4 ${
+            gameStatus === 'playerWin' ? 'text-indigo-600' : gameStatus === 'aiWin' ? 'text-pink-600' : 'text-gray-700'
+          }`}>
+            {gameStatus === 'playerWin' ? 'You Won! 🎉' : 
+             gameStatus === 'aiWin' ? 'Computer Won!' : 'It\'s a Tie!'}
+          </div>
+          <div className="space-x-4">
+            <button
+              onClick={resetGame}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-6 rounded-lg transition-colors"
+            >
+              Play Again
+            </button>
+            <button
+              onClick={() => onGameEnd({ 
+                outcome: gameStatus === 'playerWin' ? 'win' : gameStatus === 'aiWin' ? 'loss' : 'tie',
+                wordsLearned
+              })}
+              className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium py-2 px-6 rounded-lg transition-colors"
+            >
+              End Game
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 } 

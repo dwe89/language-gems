@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import FullscreenToggle from '../../../components/FullscreenToggle';
 
 // Word lists for each category
 const WORD_LISTS = {
@@ -127,9 +128,10 @@ export default function WordScrambleGame({ settings, onBackToMenu, onGameEnd }: 
   const wrongSoundRef = useRef<HTMLAudioElement | null>(null);
   const gameOverSoundRef = useRef<HTMLAudioElement | null>(null);
   
-  // Refs for timer
+  // Refs for timer and fullscreen
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const gameContainerRef = useRef<HTMLDivElement>(null);
   
   // Initialize game
   useEffect(() => {
@@ -273,7 +275,10 @@ export default function WordScrambleGame({ settings, onBackToMenu, onGameEnd }: 
   };
   
   return (
-    <div className="bg-white shadow-lg rounded-lg p-6">
+    <div className="bg-gradient-to-br from-green-50 to-blue-50 shadow-lg rounded-lg p-6 relative" ref={gameContainerRef}>
+      <div className="absolute top-4 right-4 z-10">
+        <FullscreenToggle containerRef={gameContainerRef} />
+      </div>
       <div className="flex justify-between mb-6">
         <div className="flex space-x-4">
           <div className="text-center">
@@ -316,7 +321,7 @@ export default function WordScrambleGame({ settings, onBackToMenu, onGameEnd }: 
       {!gameOver ? (
         <>
           <div className="text-center mb-8">
-            <h2 className="text-lg text-gray-600 mb-2">Unscramble the word:</h2>
+            <h2 className="text-lg text-gray-700 mb-2">Unscramble the word:</h2>
             <motion.div
               key={scrambledWord}
               initial={{ opacity: 0, y: -10 }}
@@ -324,7 +329,7 @@ export default function WordScrambleGame({ settings, onBackToMenu, onGameEnd }: 
               className="text-4xl font-bold tracking-wider mb-4 min-h-16"
             >
               {scrambledWord.split('').map((letter, index) => (
-                <span key={index} className="inline-block mx-1 text-green-700">
+                <span key={index} className="inline-block mx-1 text-green-700 bg-green-50 px-2 py-1 rounded shadow-sm">
                   {letter.toUpperCase()}
                 </span>
               ))}
@@ -372,7 +377,7 @@ export default function WordScrambleGame({ settings, onBackToMenu, onGameEnd }: 
               </button>
               <button
                 onClick={handleSkip}
-                className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg font-medium"
+                className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-medium"
               >
                 Skip (-5 pts)
               </button>

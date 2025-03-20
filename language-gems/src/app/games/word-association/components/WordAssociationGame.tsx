@@ -1,13 +1,15 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
+import Link from 'next/link';
 
 interface WordAssociationGameProps {
   difficulty: string;
   category: string;
   language: string;
+  customWords?: string;
   onBackToMenu: () => void;
   onGameComplete: (score: number) => void;
 }
@@ -220,133 +222,169 @@ export default function WordAssociationGame({
   difficulty, 
   category, 
   language, 
+  customWords,
   onBackToMenu, 
   onGameComplete 
 }: WordAssociationGameProps) {
-  const [currentRound, setCurrentRound] = useState(1);
-  const [totalRounds] = useState(10);
-  const [currentPrompt, setCurrentPrompt] = useState('');
-  const [options, setOptions] = useState<string[]>([]);
-  const [correctOptions, setCorrectOptions] = useState<string[]>([]);
-  const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
+  const [currentRound, setCurrentRound] = useState(0);
   const [score, setScore] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(30);
-  const [gameActive, setGameActive] = useState(true);
-  const [roundActive, setRoundActive] = useState(true);
-  const [roundResult, setRoundResult] = useState<'correct' | 'partial' | 'incorrect' | null>(null);
-  const [usedPrompts, setUsedPrompts] = useState<string[]>([]);
-  const [showFeedback, setShowFeedback] = useState(false);
+  const [promptWord, setPromptWord] = useState('');
+  const [options, setOptions] = useState<string[]>([]);
+  const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
+  const [gamePhase, setGamePhase] = useState<'playing' | 'feedback' | 'complete'>('playing');
+  const [timeLeft, setTimeLeft] = useState(0);
+  const [timer, setTimer] = useState<NodeJS.Timeout | null>(null);
+  const [correctRelatedWords, setCorrectRelatedWords] = useState<string[]>([]);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const gameContainerRef = useRef<HTMLDivElement>(null);
 
-  // Determine number of related words based on difficulty
-  const relatedWordsCount = difficulty === 'easy' ? 2 : difficulty === 'medium' ? 3 : 4;
+  const MAX_ROUNDS = 10;
+  const ROUND_TIME = 30; // seconds per round
+
+  // Number of related words to find based on difficulty
+  const RELATED_WORDS_COUNT = {
+    easy: 2,
+    medium: 3,
+    hard: 4
+  };
   
-  // Initialize the game
   useEffect(() => {
-    startNewRound();
+    // Initialize game
+    resetRound();
+    
+    return () => {
+      if (timer) clearInterval(timer);
+    };
   }, []);
 
-  // Timer
+  // Function to toggle fullscreen
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      if (gameContainerRef.current && gameContainerRef.current.requestFullscreen) {
+        gameContainerRef.current.requestFullscreen()
+          .then(() => setIsFullscreen(true))
+          .catch(err => console.error(err));
+      }
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen()
+          .then(() => setIsFullscreen(false))
+          .catch(err => console.error(err));
+      }
+    }
+  };
+
+  // Function to handle the fullscreen change event
   useEffect(() => {
-    if (!roundActive || !gameActive) return;
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    };
+  }, []);
+
+  const getPromptAndOptions = useCallback(() => {
+    let wordData;
     
-    if (timeLeft <= 0) {
-      endRound();
-      return;
+    if (category === 'custom' && customWords) {
+      // Handle custom words
+      const customWordsList = customWords.split(',').map(word => word.trim());
+      if (customWordsList.length < 5) {
+        // Not enough custom words, fallback to general category
+        wordData = WORD_ASSOCIATIONS.general[language as keyof typeof WORD_ASSOCIATIONS.general] || 
+                   WORD_ASSOCIATIONS.general.english;
+      } else {
+        // Create a random prompt from custom words
+        const randomIndex = Math.floor(Math.random() * customWordsList.length);
+        const prompt = customWordsList[randomIndex];
+        
+        // Create related and unrelated words from the remaining words
+        const remainingWords = customWordsList.filter((_, index) => index !== randomIndex);
+        
+        return {
+          prompt,
+          related: remainingWords.slice(0, 6), // Use first 6 remaining words as related
+          unrelated: remainingWords.slice(6)    // Use the rest as unrelated
+        };
+      }
+    } else {
+      // Use predefined word associations
+      const categoryData = WORD_ASSOCIATIONS[category as keyof typeof WORD_ASSOCIATIONS] || 
+                           WORD_ASSOCIATIONS.general;
+      
+      wordData = categoryData[language as keyof typeof categoryData] || 
+                 categoryData.english;
     }
     
-    const timer = setTimeout(() => {
-      setTimeLeft(prev => prev - 1);
-    }, 1000);
-    
-    return () => clearTimeout(timer);
-  }, [timeLeft, roundActive, gameActive]);
-
-  // Check for game completion
-  useEffect(() => {
-    if (currentRound > totalRounds && gameActive) {
-      endGame();
-    }
-  }, [currentRound, totalRounds, gameActive]);
-
-  const getAvailablePrompts = useCallback(() => {
-    const categoryData = WORD_ASSOCIATIONS[category as keyof typeof WORD_ASSOCIATIONS] || WORD_ASSOCIATIONS.general;
-    const languageData = categoryData[language as keyof typeof categoryData] || categoryData.english;
-    
-    return languageData.filter(item => !usedPrompts.includes(item.prompt));
-  }, [category, language, usedPrompts]);
-
-  const startNewRound = useCallback(() => {
-    const availablePrompts = getAvailablePrompts();
-    
-    if (availablePrompts.length === 0) {
-      // If we've used all prompts, end the game
-      endGame();
-      return;
+    if (!wordData || wordData.length === 0) {
+      // Fallback to general English if no data for selected category/language
+      wordData = WORD_ASSOCIATIONS.general.english;
     }
     
-    // Select a random prompt
-    const randomPromptIndex = Math.floor(Math.random() * availablePrompts.length);
-    const promptData = availablePrompts[randomPromptIndex];
+    // Pick a random prompt
+    const randomIndex = Math.floor(Math.random() * wordData.length);
+    return wordData[randomIndex];
+  }, [category, language, customWords]);
+
+  const resetRound = useCallback(() => {
+    const { prompt, related, unrelated } = getPromptAndOptions();
     
-    // Add prompt to used prompts
-    setUsedPrompts(prev => [...prev, promptData.prompt]);
-    
-    // Set current prompt
-    setCurrentPrompt(promptData.prompt);
+    setPromptWord(prompt);
+    setCorrectRelatedWords(related);
+    setSelectedOptions([]);
+    setGamePhase('playing');
+    setTimeLeft(ROUND_TIME);
     
     // Select related words based on difficulty
-    const relatedWords = [...promptData.related]
+    const relatedWords = [...related]
       .sort(() => Math.random() - 0.5)
-      .slice(0, relatedWordsCount);
+      .slice(0, RELATED_WORDS_COUNT[difficulty as keyof typeof RELATED_WORDS_COUNT]);
     
     // Select unrelated words to fill the options
-    const unrealatedWords = [...promptData.unrelated]
+    const unrelatedWords = [...unrelated]
       .sort(() => Math.random() - 0.5)
-      .slice(0, 8 - relatedWordsCount);
+      .slice(0, 8 - RELATED_WORDS_COUNT[difficulty as keyof typeof RELATED_WORDS_COUNT]);
     
     // Combine and shuffle
-    const allOptions = [...relatedWords, ...unrealatedWords].sort(() => Math.random() - 0.5);
+    const allOptions = [...relatedWords, ...unrelatedWords].sort(() => Math.random() - 0.5);
     
     setOptions(allOptions);
-    setCorrectOptions(relatedWords);
-    setSelectedOptions([]);
-    setRoundResult(null);
-    setShowFeedback(false);
-    setRoundActive(true);
-    setTimeLeft(30);
-  }, [getAvailablePrompts, relatedWordsCount]);
+  }, [difficulty, getPromptAndOptions]);
 
   const selectOption = (option: string) => {
-    if (!roundActive) return;
-    
-    if (selectedOptions.includes(option)) {
-      // Deselect
-      setSelectedOptions(prev => prev.filter(item => item !== option));
-    } else {
-      // Select, but limit to the required number of selections
-      if (selectedOptions.length < relatedWordsCount) {
-        setSelectedOptions(prev => [...prev, option]);
+    if (gamePhase === 'playing') {
+      if (selectedOptions.includes(option)) {
+        // Deselect
+        setSelectedOptions(prev => prev.filter(item => item !== option));
+      } else {
+        // Select, but limit to the required number of selections
+        if (selectedOptions.length < RELATED_WORDS_COUNT[difficulty as keyof typeof RELATED_WORDS_COUNT]) {
+          setSelectedOptions(prev => [...prev, option]);
+        }
       }
     }
   };
 
   const submitAnswers = () => {
-    if (!roundActive || selectedOptions.length < relatedWordsCount) return;
+    if (gamePhase === 'playing' && selectedOptions.length < RELATED_WORDS_COUNT[difficulty as keyof typeof RELATED_WORDS_COUNT]) return;
     
     endRound();
   };
 
   const endRound = () => {
-    setRoundActive(false);
+    setGamePhase('feedback');
     
     // Calculate correct answers
-    const correctAnswers = selectedOptions.filter(option => correctOptions.includes(option));
-    const correctCount = correctAnswers.length;
+    const correctlySelected = selectedOptions.filter(option => correctRelatedWords.includes(option));
+    const correctCount = correctlySelected.length;
     
     // Determine result
     let result: 'correct' | 'partial' | 'incorrect';
     
-    if (correctCount === relatedWordsCount) {
+    if (correctCount === RELATED_WORDS_COUNT[difficulty as keyof typeof RELATED_WORDS_COUNT]) {
       result = 'correct';
       setScore(prev => prev + 10);
       
@@ -413,20 +451,22 @@ export default function WordAssociationGame({
       audio.play();
     }
     
-    setRoundResult(result);
-    setShowFeedback(true);
+    // Update game state
+    setCorrectRelatedWords(correctRelatedWords);
     
     // After 3 seconds, move to the next round
     setTimeout(() => {
       setCurrentRound(prev => prev + 1);
-      if (currentRound < totalRounds) {
-        startNewRound();
+      if (currentRound < MAX_ROUNDS - 1) {
+        resetRound();
+      } else {
+        endGame();
       }
     }, 3000);
   };
 
   const endGame = () => {
-    setGameActive(false);
+    setGamePhase('complete');
     onGameComplete(score);
     
     // Play victory sound
@@ -436,169 +476,161 @@ export default function WordAssociationGame({
   };
 
   const playAgain = () => {
-    setCurrentRound(1);
+    setCurrentRound(0);
     setScore(0);
-    setUsedPrompts([]);
-    setGameActive(true);
-    startNewRound();
+    resetRound();
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto bg-white shadow-lg rounded-2xl overflow-hidden">
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="w-full p-6"
-      >
-        {gameActive ? (
-          <>
-            <div className="flex flex-wrap justify-between items-center mb-6 gap-3">
-              <div className="flex flex-wrap gap-3">
-                <div className="px-4 py-2 rounded-lg bg-purple-100 border-purple-300 border">
-                  <span className="font-medium">Round:</span> {currentRound}/{totalRounds}
-                </div>
-                <div className="px-4 py-2 rounded-lg bg-purple-100 border-purple-300 border">
-                  <span className="font-medium">Score:</span> {score}
-                </div>
-                <div className={`px-4 py-2 rounded-lg ${
-                  timeLeft <= 10 
-                    ? 'bg-red-100 border-red-300' 
-                    : 'bg-green-100 border-green-300'
-                } border`}>
-                  <span className="font-medium">Time:</span> {timeLeft}s
-                </div>
+    <div ref={gameContainerRef} className="w-full bg-white rounded-xl shadow-lg p-4 md:p-6 pb-8 text-gray-700 relative">
+      <div className="flex justify-between items-center mb-4">
+        <Link href="#" onClick={onBackToMenu} className="text-purple-600 hover:text-purple-800 transition-colors">
+          ← Back to Settings
+        </Link>
+        
+        <button
+          onClick={toggleFullscreen}
+          className="p-2 text-purple-600 hover:text-purple-800 transition-colors"
+          aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+        >
+          {isFullscreen ? (
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M5 4a1 1 0 0 0-1 1v4a1 1 0 0 1-2 0V5a3 3 0 0 1 3-3h4a1 1 0 0 1 0 2H5zm10 10a1 1 0 0 0 1-1v-4a1 1 0 1 1 2 0v1.586l2.293-2.293a1 1 0 1 1 1.414 1.414L15.414 15H14a1 1 0 1 1 0-2h4a1 1 0 0 1 1 1v4zM5 14a1 1 0 0 0 1 1h4a1 1 0 1 1 0 2H6a3 3 0 0 1-3-3v-4a1 1 0 1 1 2 0v4zm10-10a1 1 0 0 0-1-1H10a1 1 0 1 1 0-2h4a3 3 0 0 1 3 3v4a1 1 0 1 1-2 0V4z" clipRule="evenodd" />
+            </svg>
+          ) : (
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M3 4a1 1 0 0 1 1-1h4a1 1 0 0 1 0 2H6.414l2.293 2.293a1 1 0 1 1-1.414 1.414L5 6.414V8a1 1 0 0 1-2 0V4zm13 0a1 1 0 0 1 1 1v4a1 1 0 1 1-2 0V6.414l-2.293 2.293a1 1 0 1 1-1.414-1.414L13.586 5H12a1 1 0 1 1 0-2h4zm-13 13a1 1 0 0 1-1-1v-4a1 1 0 1 1 2 0v1.586l2.293-2.293a1 1 0 1 1 1.414 1.414L5.414 15H8a1 1 0 1 1 0 2H4zm13-1a1 1 0 0 1-1 1h-4a1 1 0 1 1 0-2h1.586l-2.293-2.293a1 1 0 1 1 1.414-1.414L15.586 13H14a1 1 0 1 1 0-2h4a1 1 0 0 1 1 1v4z" clipRule="evenodd" />
+            </svg>
+          )}
+        </button>
+      </div>
+      
+      <div className="grid grid-cols-3 gap-4 bg-gray-100 p-2 rounded-lg mb-8 text-sm md:text-base">
+        <div className="bg-white p-2 rounded shadow">
+          <span className="text-gray-500">Round:</span> {currentRound}/{MAX_ROUNDS}
+        </div>
+        <div className="bg-white p-2 rounded shadow">
+          <span className="text-gray-500">Score:</span> {score}
+        </div>
+        <div className="bg-white p-2 rounded shadow">
+          <span className="text-gray-500">Time:</span> {timeLeft}s
+        </div>
+      </div>
+      
+      {gamePhase === 'playing' && (
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold text-center mb-4">
+            Find {RELATED_WORDS_COUNT[difficulty as keyof typeof RELATED_WORDS_COUNT]} words related to:
+          </h2>
+          <div className="text-4xl font-bold text-center text-purple-600 mb-6">
+            {promptWord}
+          </div>
+          <p className="text-center text-gray-500 mb-4">
+            Select {RELATED_WORDS_COUNT[difficulty as keyof typeof RELATED_WORDS_COUNT]} words that are most closely associated with the prompt word.
+          </p>
+          
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {options.map((option) => (
+              <div 
+                key={option}
+                onClick={() => selectOption(option)}
+                className={`
+                  p-4 border-2 rounded-lg cursor-pointer transition-all duration-200
+                  ${selectedOptions.includes(option) 
+                    ? 'bg-purple-100 border-purple-500 text-purple-700 transform scale-105' 
+                    : 'bg-white border-gray-200 hover:bg-gray-50'}
+                  flex items-center justify-center text-center
+                `}
+              >
+                {option}
               </div>
-              
-              <button
-                onClick={onBackToMenu}
-                className="bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded-lg transition-colors"
-              >
-                Menu
-              </button>
+            ))}
+          </div>
+          
+          <div className="flex justify-center mt-8">
+            <button 
+              onClick={submitAnswers}
+              disabled={selectedOptions.length < RELATED_WORDS_COUNT[difficulty as keyof typeof RELATED_WORDS_COUNT]}
+              className={`
+                py-2 px-6 rounded-full font-medium transition-colors
+                ${selectedOptions.length >= RELATED_WORDS_COUNT[difficulty as keyof typeof RELATED_WORDS_COUNT]
+                  ? 'bg-purple-600 hover:bg-purple-700 text-white' 
+                  : 'bg-gray-300 cursor-not-allowed text-gray-500'}
+              `}
+            >
+              Submit Answers
+            </button>
+          </div>
+        </div>
+      )}
+      
+      {gamePhase === 'feedback' && (
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          className={`mt-6 p-4 rounded-lg text-center ${
+            correctlySelected.length > 0
+              ? correctlySelected.length === RELATED_WORDS_COUNT[difficulty as keyof typeof RELATED_WORDS_COUNT]
+                ? 'bg-green-100 text-green-800'
+                : 'bg-yellow-100 text-yellow-800'
+              : 'bg-red-100 text-red-800'
+          }`}
+        >
+          <h3 className="font-bold text-xl mb-2">
+            {correctlySelected.length > 0
+              ? correctlySelected.length === RELATED_WORDS_COUNT[difficulty as keyof typeof RELATED_WORDS_COUNT]
+                ? 'Excellent!'
+                : 'Good effort!'
+              : 'Try again!'}
+          </h3>
+          <p>
+            {correctlySelected.length > 0
+              ? correctlySelected.length === RELATED_WORDS_COUNT[difficulty as keyof typeof RELATED_WORDS_COUNT]
+                ? 'You found all the correct associations!'
+                : `You found ${selectedOptions.filter(option => correctRelatedWords.includes(option)).length} correct associations out of ${RELATED_WORDS_COUNT[difficulty as keyof typeof RELATED_WORDS_COUNT]}.`
+              : 'None of your selections were correct associations.'}
+          </p>
+          <div className="mt-2">
+            <p className="font-medium">The correct associations were:</p>
+            <p className="italic">{correctRelatedWords.join(', ')}</p>
+          </div>
+        </motion.div>
+      )}
+      
+      {gamePhase === 'complete' && (
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="text-center p-8 bg-purple-50 rounded-lg"
+        >
+          <h2 className="text-3xl font-bold text-purple-700 mb-3">Game Complete!</h2>
+          <p className="text-xl mb-6">Your final score: <span className="font-bold text-purple-700">{score}</span> points</p>
+          
+          <div className="mb-8">
+            <h3 className="font-medium text-lg mb-2">Performance Summary</h3>
+            <div className="inline-block bg-white rounded-lg shadow p-4">
+              <div className="text-3xl font-bold text-purple-600">{Math.round((score / (MAX_ROUNDS * 10)) * 100)}%</div>
+              <div className="text-gray-500">Accuracy</div>
             </div>
-            
-            <div className="mb-8 text-center">
-              <h2 className="text-xl mb-2 text-gray-600">Find {relatedWordsCount} words related to:</h2>
-              <div className="text-4xl font-bold text-purple-700 mb-4">{currentPrompt}</div>
-              <p className="text-gray-500">
-                Select {relatedWordsCount} words that are most closely associated with the prompt word.
-              </p>
-            </div>
-            
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
-              {options.map((option, index) => (
-                <motion.button
-                  key={index}
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => selectOption(option)}
-                  disabled={!roundActive || (selectedOptions.length >= relatedWordsCount && !selectedOptions.includes(option))}
-                  className={`p-4 rounded-lg border-2 transition text-center ${
-                    !roundActive && correctOptions.includes(option)
-                      ? 'bg-green-100 border-green-500 text-green-700'
-                      : selectedOptions.includes(option)
-                        ? 'bg-purple-100 border-purple-500 text-purple-700'
-                        : 'bg-white border-gray-200 hover:bg-gray-50 text-gray-700'
-                  } ${
-                    !roundActive && !correctOptions.includes(option) && selectedOptions.includes(option)
-                      ? 'bg-red-100 border-red-500 text-red-700'
-                      : ''
-                  } ${
-                    (!roundActive || (selectedOptions.length >= relatedWordsCount && !selectedOptions.includes(option)))
-                      ? 'opacity-70'
-                      : ''
-                  }`}
-                >
-                  {option}
-                </motion.button>
-              ))}
-            </div>
-            
-            <div className="flex justify-center">
-              <button
-                onClick={submitAnswers}
-                disabled={!roundActive || selectedOptions.length < relatedWordsCount}
-                className={`py-3 px-8 rounded-lg transition ${
-                  !roundActive || selectedOptions.length < relatedWordsCount
-                    ? 'bg-gray-400 cursor-not-allowed text-white'
-                    : 'bg-purple-600 hover:bg-purple-700 text-white'
-                }`}
-              >
-                Submit Answers
-              </button>
-            </div>
-            
-            <AnimatePresence>
-              {showFeedback && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  className={`mt-6 p-4 rounded-lg text-center ${
-                    roundResult === 'correct'
-                      ? 'bg-green-100 text-green-800'
-                      : roundResult === 'partial'
-                        ? 'bg-yellow-100 text-yellow-800'
-                        : 'bg-red-100 text-red-800'
-                  }`}
-                >
-                  <h3 className="font-bold text-xl mb-2">
-                    {roundResult === 'correct'
-                      ? 'Excellent!'
-                      : roundResult === 'partial'
-                        ? 'Good effort!'
-                        : 'Try again!'}
-                  </h3>
-                  <p>
-                    {roundResult === 'correct'
-                      ? 'You found all the correct associations!'
-                      : roundResult === 'partial'
-                        ? `You found ${selectedOptions.filter(option => correctOptions.includes(option)).length} correct associations out of ${relatedWordsCount}.`
-                        : 'None of your selections were correct associations.'}
-                  </p>
-                  <div className="mt-2">
-                    <p className="font-medium">The correct associations were:</p>
-                    <p className="italic">{correctOptions.join(', ')}</p>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </>
-        ) : (
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="text-center p-8 bg-purple-50 rounded-lg"
-          >
-            <h2 className="text-3xl font-bold text-purple-700 mb-3">Game Complete!</h2>
-            <p className="text-xl mb-6">Your final score: <span className="font-bold text-purple-700">{score}</span> points</p>
-            
-            <div className="mb-8">
-              <h3 className="font-medium text-lg mb-2">Performance Summary</h3>
-              <div className="inline-block bg-white rounded-lg shadow p-4">
-                <div className="text-3xl font-bold text-purple-600">{Math.round((score / (totalRounds * 10)) * 100)}%</div>
-                <div className="text-gray-500">Accuracy</div>
-              </div>
-            </div>
-            
-            <div className="flex justify-center gap-4">
-              <button
-                onClick={playAgain}
-                className="bg-purple-600 hover:bg-purple-700 text-white font-medium py-3 px-6 rounded-lg transition-colors"
-              >
-                Play Again
-              </button>
-              <button
-                onClick={onBackToMenu}
-                className="bg-gray-300 hover:bg-gray-400 px-6 py-3 rounded-lg transition-colors"
-              >
-                Back to Menu
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </motion.div>
+          </div>
+          
+          <div className="flex justify-center gap-4">
+            <button
+              onClick={playAgain}
+              className="bg-purple-600 hover:bg-purple-700 text-white font-medium py-3 px-6 rounded-lg transition-colors"
+            >
+              Play Again
+            </button>
+            <button
+              onClick={onBackToMenu}
+              className="bg-gray-300 hover:bg-gray-400 px-6 py-3 rounded-lg transition-colors"
+            >
+              Back to Menu
+            </button>
+          </div>
+        </motion.div>
+      )}
     </div>
   );
 } 

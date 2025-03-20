@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
 
 type GameSettingsProps = {
   onStartGame: (settings: {
@@ -47,7 +48,12 @@ export default function GameSettings({ onStartGame }: GameSettingsProps) {
   };
   
   return (
-    <div className="bg-white shadow-lg rounded-lg p-6">
+    <motion.div 
+      className="bg-gradient-to-br from-green-50 to-blue-50 shadow-lg rounded-lg p-6"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+    >
       <h2 className="text-2xl font-semibold mb-6 text-gray-800">Game Settings</h2>
       
       <div className="mb-6">
@@ -59,8 +65,8 @@ export default function GameSettings({ onStartGame }: GameSettingsProps) {
               onClick={() => handleDifficultyChange(difficulty.id)}
               className={`p-4 rounded-lg border-2 transition-all ${
                 settings.difficulty === difficulty.id
-                  ? 'border-green-500 bg-green-50'
-                  : 'border-gray-200 hover:border-green-300'
+                  ? 'border-green-500 bg-green-50 text-gray-800'
+                  : 'border-gray-200 hover:border-green-300 text-gray-700'
               }`}
             >
               <div className="font-medium mb-1">{difficulty.label}</div>
@@ -79,8 +85,8 @@ export default function GameSettings({ onStartGame }: GameSettingsProps) {
               onClick={() => handleCategoryChange(category.id)}
               className={`p-4 rounded-lg border-2 transition-all ${
                 settings.category === category.id
-                  ? 'border-green-500 bg-green-50'
-                  : 'border-gray-200 hover:border-green-300'
+                  ? 'border-green-500 bg-green-50 text-gray-800'
+                  : 'border-gray-200 hover:border-green-300 text-gray-700'
               }`}
             >
               <div className="text-2xl mb-2">{category.emoji}</div>
@@ -99,8 +105,8 @@ export default function GameSettings({ onStartGame }: GameSettingsProps) {
               onClick={() => handleLanguageChange(language.id)}
               className={`p-4 rounded-lg border-2 transition-all ${
                 settings.language === language.id
-                  ? 'border-green-500 bg-green-50'
-                  : 'border-gray-200 hover:border-green-300'
+                  ? 'border-green-500 bg-green-50 text-gray-800'
+                  : 'border-gray-200 hover:border-green-300 text-gray-700'
               }`}
             >
               <div className="text-2xl mb-2">{language.flag}</div>
@@ -110,12 +116,14 @@ export default function GameSettings({ onStartGame }: GameSettingsProps) {
         </div>
       </div>
       
-      <button
+      <motion.button
         onClick={() => onStartGame(settings)}
         className="w-full py-3 px-6 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors"
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
       >
         Start Game
-      </button>
-    </div>
+      </motion.button>
+    </motion.div>
   );
 } 
