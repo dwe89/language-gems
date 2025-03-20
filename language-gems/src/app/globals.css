@@ -81,6 +81,109 @@ body {
   animation: fall 3s ease-in forwards;
 }
 
+/* Additional animations for homepage */
+@keyframes ping-slow {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  75%, 100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+@keyframes ping-delayed {
+  10%, 100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+@keyframes ping-slow-delayed {
+  20%, 100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -500px 0;
+  }
+  100% {
+    background-position: 500px 0;
+  }
+}
+
+@keyframes hover {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-ping-slow {
+  animation: ping-slow 3s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+.animate-ping-delayed {
+  animation: ping-delayed 3s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+.animate-ping-slow-delayed {
+  animation: ping-slow-delayed 3s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-shimmer {
+  background-size: 1000px 100%;
+  animation: shimmer 8s infinite linear;
+}
+
+.animate-hover {
+  animation: hover 4s ease-in-out infinite;
+}
+
+/* Variations with different timings */
+.animate-float-slow {
+  animation: float 7s ease-in-out infinite;
+}
+
+.animate-float-delayed {
+  animation: float 8s ease-in-out infinite;
+}
+
+.animate-float-slow-delayed {
+  animation: float 9s ease-in-out infinite;
+}
+
+.animate-hover-delayed {
+  animation: hover 5s ease-in-out infinite;
+}
+
+.animate-hover-slow {
+  animation: hover 6s ease-in-out infinite;
+}
+
+.animate-hover-slow-delayed {
+  animation: hover 7s ease-in-out infinite;
+}
+
 @layer components {
   .gem-button {
     @apply relative inline-flex items-center justify-center px-8 py-3 overflow-hidden font-bold rounded-full 
