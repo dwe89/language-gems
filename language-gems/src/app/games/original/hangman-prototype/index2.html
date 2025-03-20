@@ -1,0 +1,458 @@
+import React, { useState, useEffect } from 'react';
+import { X, Info, Award, Settings, Play, BookOpen, Users, Zap, Volume2, User, ChevronDown } from 'lucide-react';
+
+// Default word lists by theme/language
+const WORD_LISTS = {
+  english: ['ADVENTURE', 'DISCOVERY', 'JOURNEY', 'TREASURE', 'MYSTERY'],
+  japanese: ['SAMURAI', 'KIMONO', 'SUSHI', 'SAKURA', 'TOKYO'],
+  spanish: ['FIESTA', 'AMIGO', 'SIESTA', 'GUITARRA', 'TANGO'],
+  latin: ['AMARE', 'VIDERE', 'AUDIRE', 'FACERE', 'DICERE'],
+};
+
+// Different game themes
+const THEMES = {
+  pirate: {
+    name: 'Pirate Adventure',
+    background: 'bg-gradient-to-b from-blue-700 to-blue-900',
+    accent: 'bg-amber-600',
+    textAccent: 'text-amber-400',
+  },
+  space: {
+    name: 'Space Explorer',
+    background: 'bg-gradient-to-b from-indigo-900 to-purple-900',
+    accent: 'bg-purple-600',
+    textAccent: 'text-purple-400',
+  },
+  lavaTemple: {
+    name: 'Lava Temple',
+    background: 'bg-gradient-to-b from-red-800 to-red-950',
+    accent: 'bg-orange-600',
+    textAccent: 'text-orange-400',
+  },
+  tokyo: {
+    name: 'Tokyo Nights',
+    background: 'bg-gradient-to-b from-slate-900 to-slate-800',
+    accent: 'bg-pink-600',
+    textAccent: 'text-pink-400',
+  },
+};
+
+// Main game component
+const LanguageGemsHangman = () => {
+  // Game states
+  const [currentScreen, setCurrentScreen] = useState('mainMenu'); // mainMenu, gameScreen, winScreen, loseScreen
+  const [theme, setTheme] = useState(THEMES.pirate);
+  const [selectedLanguage, setSelectedLanguage] = useState('english');
+  const [word, setWord] = useState('');
+  const [guessedLetters, setGuessedLetters] = useState([]);
+  const [wrongGuesses, setWrongGuesses] = useState(0);
+  const [maxWrongGuesses] = useState(6);
+  const [gems, setGems] = useState(10);
+  const [score, setScore] = useState(0);
+  const [streak, setStreak] = useState(0);
+  const [customWordLists, setCustomWordLists] = useState({});
+  const [showSettings, setShowSettings] = useState(false);
+  
+  // Select a random word based on selected language
+  const selectRandomWord = () => {
+    const wordList = WORD_LISTS[selectedLanguage];
+    const randomIndex = Math.floor(Math.random() * wordList.length);
+    return wordList[randomIndex];
+  };
+
+  // Start a new game
+  const startGame = () => {
+    const newWord = selectRandomWord();
+    setWord(newWord);
+    setGuessedLetters([]);
+    setWrongGuesses(0);
+    setCurrentScreen('gameScreen');
+    
+    // Set theme based on language
+    if (selectedLanguage === 'japanese') {
+      setTheme(THEMES.tokyo);
+    } else if (selectedLanguage === 'spanish') {
+      setTheme(THEMES.lavaTemple);
+    } else if (selectedLanguage === 'latin') {
+      setTheme(THEMES.space);
+    } else {
+      setTheme(THEMES.pirate);
+    }
+  };
+
+  // Handle letter guesses
+  const handleLetterGuess = (letter) => {
+    if (guessedLetters.includes(letter)) return;
+    
+    const newGuessedLetters = [...guessedLetters, letter];
+    setGuessedLetters(newGuessedLetters);
+    
+    if (!word.includes(letter)) {
+      const newWrongGuesses = wrongGuesses + 1;
+      setWrongGuesses(newWrongGuesses);
+      
+      if (newWrongGuesses >= maxWrongGuesses) {
+        // Player lost
+        setCurrentScreen('loseScreen');
+        setStreak(0);
+      }
+    } else {
+      // Check if player won
+      const isWordGuessed = [...word].every(char => newGuessedLetters.includes(char));
+      if (isWordGuessed) {
+        const newScore = score + word.length;
+        const newStreak = streak + 1;
+        const newGems = gems + Math.ceil(word.length / 2);
+        
+        setScore(newScore);
+        setStreak(newStreak);
+        setGems(newGems);
+        setCurrentScreen('winScreen');
+      }
+    }
+  };
+
+  // Use hint (reveal a letter)
+  const useHint = () => {
+    if (gems < 3) return;
+    
+    // Find unguessed letters in the word
+    const unguessedLetters = [...word].filter(char => !guessedLetters.includes(char));
+    
+    if (unguessedLetters.length > 0) {
+      // Reveal a random unguessed letter
+      const randomIndex = Math.floor(Math.random() * unguessedLetters.length);
+      handleLetterGuess(unguessedLetters[randomIndex]);
+      setGems(gems - 3);
+    }
+  };
+
+  // Render the word with guessed letters visible and unguessed as underscores
+  const renderWord = () => {
+    return [...word].map((letter, index) => (
+      <span key={index} className="mx-1 text-center w-8 pb-1 border-b-4 border-white inline-block">
+        {guessedLetters.includes(letter) ? letter : ' '}
+      </span>
+    ));
+  };
+
+  // Render the keyboard
+  const renderKeyboard = () => {
+    const keyboard = [
+      ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
+      ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
+      ['Z', 'X', 'C', 'V', 'B', 'N', 'M']
+    ];
+    
+    return (
+      <div className="flex flex-col items-center mt-6">
+        {keyboard.map((row, rowIndex) => (
+          <div key={rowIndex} className="flex my-1">
+            {row.map((letter) => {
+              const isGuessed = guessedLetters.includes(letter);
+              const isCorrect = word.includes(letter) && isGuessed;
+              const isWrong = !word.includes(letter) && isGuessed;
+              
+              let buttonClass = "mx-1 w-8 h-10 flex items-center justify-center rounded-md font-bold ";
+              
+              if (isCorrect) {
+                buttonClass += "bg-green-600 text-white";
+              } else if (isWrong) {
+                buttonClass += "bg-red-600 text-white";
+              } else {
+                buttonClass += `${theme.accent} text-white`;
+              }
+              
+              return (
+                <button
+                  key={letter}
+                  className={buttonClass}
+                  onClick={() => handleLetterGuess(letter)}
+                  disabled={isGuessed}
+                >
+                  {letter}
+                </button>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  // Render the danger indicator based on number of wrong guesses
+  const renderDangerIndicator = () => {
+    const dangerPercentage = (wrongGuesses / maxWrongGuesses) * 100;
+    
+    return (
+      <div className="w-full mt-4 mb-8">
+        <div className="text-center text-white mb-2">
+          {theme.name === 'Pirate Adventure' && "Ship Sinking:"}
+          {theme.name === 'Space Explorer' && "Oxygen Remaining:"}
+          {theme.name === 'Lava Temple' && "Floor Crumbling:"}
+          {theme.name === 'Tokyo Nights' && "Danger Level:"}
+        </div>
+        <div className="w-full bg-gray-700 rounded-full h-4">
+          <div 
+            className={`h-4 rounded-full ${dangerPercentage > 75 ? 'bg-red-600' : dangerPercentage > 50 ? 'bg-orange-500' : dangerPercentage > 25 ? 'bg-yellow-500' : 'bg-green-500'}`}
+            style={{ width: `${100 - dangerPercentage}%` }}
+          ></div>
+        </div>
+      </div>
+    );
+  };
+
+  // Render different screens based on game state
+  const renderScreen = () => {
+    switch (currentScreen) {
+      case 'mainMenu':
+        return (
+          <div className="flex flex-col items-center justify-center h-full">
+            <h1 className={`text-4xl font-bold mb-6 ${theme.textAccent}`}>LanguageGems Hangman</h1>
+            <div className="flex flex-col space-y-4 w-64">
+              <button 
+                className={`${theme.accent} text-white py-3 px-6 rounded-lg flex items-center justify-center font-bold text-lg`}
+                onClick={() => startGame()}
+              >
+                <Play className="mr-2" size={20} /> Start Game
+              </button>
+              
+              <div className="bg-gray-800 bg-opacity-80 rounded-lg p-4">
+                <div className="text-white font-bold mb-2">Select Language:</div>
+                <select 
+                  className="w-full bg-gray-700 text-white p-2 rounded"
+                  value={selectedLanguage}
+                  onChange={(e) => setSelectedLanguage(e.target.value)}
+                >
+                  <option value="english">English</option>
+                  <option value="japanese">Japanese</option>
+                  <option value="spanish">Spanish</option>
+                  <option value="latin">Latin</option>
+                </select>
+              </div>
+              
+              <button 
+                className="bg-gray-700 text-white py-3 px-6 rounded-lg flex items-center justify-center"
+                onClick={() => setShowSettings(!showSettings)}
+              >
+                <Settings className="mr-2" size={20} /> Settings
+              </button>
+              
+              <button className="bg-gray-700 text-white py-3 px-6 rounded-lg flex items-center justify-center">
+                <BookOpen className="mr-2" size={20} /> Custom Words
+              </button>
+              
+              <button className="bg-gray-700 text-white py-3 px-6 rounded-lg flex items-center justify-center">
+                <Award className="mr-2" size={20} /> Leaderboards
+              </button>
+            </div>
+          </div>
+        );
+        
+      case 'gameScreen':
+        return (
+          <div className="flex flex-col items-center justify-between h-full py-4">
+            <div className="flex justify-between w-full px-4">
+              <div className="bg-gray-800 bg-opacity-70 rounded-lg p-2 flex items-center">
+                <User className="mr-2" size={16} /> 
+                <span className="text-white font-bold">Score: {score}</span>
+              </div>
+              
+              <div className="bg-gray-800 bg-opacity-70 rounded-lg p-2 flex items-center">
+                <Award className="mr-2" size={16} /> 
+                <span className="text-white font-bold">Streak: {streak}</span>
+              </div>
+              
+              <div className={`${theme.accent} rounded-lg p-2 flex items-center`}>
+                <Zap className="mr-2" size={16} /> 
+                <span className="text-white font-bold">Gems: {gems}</span>
+              </div>
+            </div>
+            
+            <div className="text-center w-full">
+              <h2 className={`text-2xl font-bold mb-4 ${theme.textAccent}`}>{theme.name}</h2>
+              {renderDangerIndicator()}
+              
+              <div className="text-white text-2xl font-bold mb-6">
+                {renderWord()}
+              </div>
+            </div>
+            
+            <div className="w-full">
+              <div className="flex justify-center mb-4 space-x-2">
+                <button 
+                  className={`${gems >= 3 ? theme.accent : 'bg-gray-700'} text-white p-2 rounded-lg flex items-center`}
+                  onClick={useHint}
+                  disabled={gems < 3}
+                >
+                  <Zap className="mr-1" size={16} /> Hint (3 Gems)
+                </button>
+                
+                <button className="bg-gray-700 text-white p-2 rounded-lg flex items-center">
+                  <Volume2 className="mr-1" size={16} /> Pronounce (2 Gems)
+                </button>
+              </div>
+              
+              {renderKeyboard()}
+            </div>
+          </div>
+        );
+        
+      case 'winScreen':
+        return (
+          <div className="flex flex-col items-center justify-center h-full text-center">
+            <div className={`${theme.accent} rounded-2xl p-8 max-w-md`}>
+              <h2 className="text-3xl font-bold text-white mb-4">You Won! 🎉</h2>
+              <p className="text-white text-xl mb-6">The word was: <span className="font-bold">{word}</span></p>
+              
+              <div className="bg-gray-800 bg-opacity-50 rounded-lg p-3 mb-6">
+                <div className="flex justify-between mb-2">
+                  <span className="text-white">Score:</span>
+                  <span className="text-white font-bold">+{word.length} points</span>
+                </div>
+                <div className="flex justify-between mb-2">
+                  <span className="text-white">Streak:</span>
+                  <span className="text-white font-bold">{streak}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-white">Gems:</span>
+                  <span className="text-white font-bold">+{Math.ceil(word.length/2)}</span>
+                </div>
+              </div>
+              
+              <div className="flex space-x-4">
+                <button 
+                  className="bg-gray-700 text-white py-2 px-4 rounded-lg flex-1 flex items-center justify-center"
+                  onClick={() => setCurrentScreen('mainMenu')}
+                >
+                  Main Menu
+                </button>
+                <button 
+                  className="bg-white text-gray-900 py-2 px-4 rounded-lg flex-1 font-bold flex items-center justify-center"
+                  onClick={() => startGame()}
+                >
+                  <Play className="mr-2" size={16} /> Play Again
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+        
+      case 'loseScreen':
+        return (
+          <div className="flex flex-col items-center justify-center h-full text-center">
+            <div className="bg-gray-800 bg-opacity-90 rounded-2xl p-8 max-w-md">
+              <h2 className="text-3xl font-bold text-red-500 mb-4">Game Over!</h2>
+              <p className="text-white text-xl mb-6">The word was: <span className="font-bold">{word}</span></p>
+              
+              <div className="bg-gray-900 rounded-lg p-4 mb-6">
+                <h3 className="text-white font-bold mb-2">Word Definition:</h3>
+                <p className="text-gray-300 text-sm italic">
+                  {word === 'ADVENTURE' && "An exciting or unusual experience; a bold undertaking."}
+                  {word === 'DISCOVERY' && "The act of finding or learning something for the first time."}
+                  {word === 'JOURNEY' && "An act of traveling from one place to another, especially over a long distance."}
+                  {word === 'TREASURE' && "A quantity of precious metals, gems, or other valuable objects."}
+                  {word === 'MYSTERY' && "Something that is difficult or impossible to understand or explain."}
+                </p>
+              </div>
+              
+              <div className="flex space-x-4">
+                <button 
+                  className="bg-gray-700 text-white py-2 px-4 rounded-lg flex-1 flex items-center justify-center"
+                  onClick={() => setCurrentScreen('mainMenu')}
+                >
+                  Main Menu
+                </button>
+                <button 
+                  className="bg-white text-gray-900 py-2 px-4 rounded-lg flex-1 font-bold flex items-center justify-center"
+                  onClick={() => startGame()}
+                >
+                  <Play className="mr-2" size={16} /> Try Again
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+        
+      default:
+        return null;
+    }
+  };
+
+  // Render settings panel
+  const renderSettings = () => {
+    if (!showSettings) return null;
+    
+    return (
+      <div className="absolute inset-0 bg-black bg-opacity-80 flex items-center justify-center z-10">
+        <div className="bg-gray-800 rounded-xl p-6 max-w-md w-full">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-bold text-white">Settings</h2>
+            <button 
+              className="text-gray-400 hover:text-white"
+              onClick={() => setShowSettings(false)}
+            >
+              <X size={24} />
+            </button>
+          </div>
+          
+          <div className="mb-6">
+            <h3 className="text-white font-bold mb-2">Theme</h3>
+            <select 
+              className="w-full bg-gray-700 text-white p-2 rounded"
+              value={theme.name}
+              onChange={(e) => {
+                const selectedTheme = Object.values(THEMES).find(t => t.name === e.target.value);
+                if (selectedTheme) setTheme(selectedTheme);
+              }}
+            >
+              {Object.values(THEMES).map(t => (
+                <option key={t.name} value={t.name}>{t.name}</option>
+              ))}
+            </select>
+          </div>
+          
+          <div className="mb-6">
+            <h3 className="text-white font-bold mb-2">Difficulty</h3>
+            <select className="w-full bg-gray-700 text-white p-2 rounded">
+              <option>Easy</option>
+              <option>Medium</option>
+              <option>Hard</option>
+            </select>
+          </div>
+          
+          <div className="mb-6">
+            <h3 className="text-white font-bold mb-2">Sound Effects</h3>
+            <div className="flex items-center">
+              <input 
+                type="checkbox" 
+                id="soundEffects" 
+                className="w-4 h-4 mr-2"
+                defaultChecked
+              />
+              <label htmlFor="soundEffects" className="text-white">Enable Sound Effects</label>
+            </div>
+          </div>
+          
+          <button 
+            className={`${theme.accent} text-white py-2 px-4 rounded-lg w-full font-bold`}
+            onClick={() => setShowSettings(false)}
+          >
+            Save Settings
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className={`${theme.background} min-h-screen flex flex-col items-center justify-center relative font-sans`}>
+      {renderSettings()}
+      <div className="container mx-auto max-w-lg h-screen p-4">
+        {renderScreen()}
+      </div>
+    </div>
+  );
+};
+
+export default LanguageGemsHangman;
