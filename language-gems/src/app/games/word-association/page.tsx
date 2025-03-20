@@ -27,9 +27,11 @@ export default function WordAssociationPage() {
 
   // Load stats from local storage on initial render
   useEffect(() => {
-    const savedStats = localStorage.getItem('wordAssociationStats');
-    if (savedStats) {
-      setStats(JSON.parse(savedStats));
+    if (typeof window !== 'undefined') {
+      const savedStats = localStorage.getItem('wordAssociationStats');
+      if (savedStats) {
+        setStats(JSON.parse(savedStats));
+      }
     }
   }, []);
 
@@ -41,7 +43,9 @@ export default function WordAssociationPage() {
     };
     
     setStats(newStats);
-    localStorage.setItem('wordAssociationStats', JSON.stringify(newStats));
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('wordAssociationStats', JSON.stringify(newStats));
+    }
   };
 
   const startGame = (settings: { difficulty: string; category: string; language: string }) => {

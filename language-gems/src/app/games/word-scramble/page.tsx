@@ -23,9 +23,11 @@ export default function WordScramblePage() {
   
   useEffect(() => {
     // Load game stats from local storage
-    const savedStats = localStorage.getItem('wordScrambleGameStats');
-    if (savedStats) {
-      setGameStats(JSON.parse(savedStats));
+    if (typeof window !== 'undefined') {
+      const savedStats = localStorage.getItem('wordScrambleGameStats');
+      if (savedStats) {
+        setGameStats(JSON.parse(savedStats));
+      }
     }
   }, []);
 
@@ -47,7 +49,9 @@ export default function WordScramblePage() {
     }
 
     setGameStats(newStats);
-    localStorage.setItem('wordScrambleGameStats', JSON.stringify(newStats));
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('wordScrambleGameStats', JSON.stringify(newStats));
+    }
   };
 
   const handleStartGame = (settings: typeof gameSettings) => {

@@ -30,9 +30,11 @@ export default function SentenceBuilderPage() {
 
   // Load stats from localStorage on component mount
   useEffect(() => {
-    const savedStats = localStorage.getItem('sentenceBuilderStats');
-    if (savedStats) {
-      setStats(JSON.parse(savedStats));
+    if (typeof window !== 'undefined') {
+      const savedStats = localStorage.getItem('sentenceBuilderStats');
+      if (savedStats) {
+        setStats(JSON.parse(savedStats));
+      }
     }
   }, []);
 
@@ -48,7 +50,9 @@ export default function SentenceBuilderPage() {
     };
     
     setStats(newStats);
-    localStorage.setItem('sentenceBuilderStats', JSON.stringify(newStats));
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('sentenceBuilderStats', JSON.stringify(newStats));
+    }
   };
 
   // Start game with settings

@@ -30,12 +30,14 @@ export default function VerbConjugationPage() {
 
   // Load stats from localStorage
   useEffect(() => {
-    const savedStats = localStorage.getItem('conjugationLadderStats');
-    if (savedStats) {
-      try {
-        setGameStats(JSON.parse(savedStats));
-      } catch (error) {
-        console.error('Failed to parse saved stats', error);
+    if (typeof window !== 'undefined') {
+      const savedStats = localStorage.getItem('conjugationLadderStats');
+      if (savedStats) {
+        try {
+          setGameStats(JSON.parse(savedStats));
+        } catch (error) {
+          console.error('Failed to parse saved stats', error);
+        }
       }
     }
   }, []);
@@ -121,7 +123,9 @@ export default function VerbConjugationPage() {
     setGameStats(newStats);
     
     // Save to local storage
-    localStorage.setItem('conjugationLadderStats', JSON.stringify(newStats));
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('conjugationLadderStats', JSON.stringify(newStats));
+    }
   };
 
   return (

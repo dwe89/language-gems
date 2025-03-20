@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import GameSettings from './components/GameSettings';
@@ -27,13 +27,16 @@ export default function NoughtsAndCrossesPage() {
     wordsLearned: 0
   });
 
-  // Load stats on initial render
-  useState(() => {
-    const savedStats = localStorage.getItem('ticTacToeStats');
-    if (savedStats) {
-      setStats(JSON.parse(savedStats));
+  // Load stats on initial render - with browser check
+  useEffect(() => {
+    // Only access localStorage in the browser
+    if (typeof window !== 'undefined') {
+      const savedStats = localStorage.getItem('ticTacToeStats');
+      if (savedStats) {
+        setStats(JSON.parse(savedStats));
+      }
     }
-  });
+  }, []);
 
   const startGame = (settings: { 
     difficulty: string; 
@@ -54,7 +57,10 @@ export default function NoughtsAndCrossesPage() {
     };
     
     setStats(newStats);
-    localStorage.setItem('ticTacToeStats', JSON.stringify(newStats));
+    // Only access localStorage in the browser
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('ticTacToeStats', JSON.stringify(newStats));
+    }
     setGameStarted(false);
   };
 

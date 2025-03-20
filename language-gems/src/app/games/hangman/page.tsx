@@ -30,12 +30,14 @@ export default function HangmanPage() {
 
   // Load stats from localStorage
   useEffect(() => {
-    const savedStats = localStorage.getItem('hangmanStats');
-    if (savedStats) {
-      try {
-        setGameStats(JSON.parse(savedStats));
-      } catch (error) {
-        console.error('Failed to parse saved stats', error);
+    if (typeof window !== 'undefined') {
+      const savedStats = localStorage.getItem('hangmanStats');
+      if (savedStats) {
+        try {
+          setGameStats(JSON.parse(savedStats));
+        } catch (error) {
+          console.error('Failed to parse saved stats', error);
+        }
       }
     }
   }, []);
@@ -128,7 +130,9 @@ export default function HangmanPage() {
     setGameStats(newStats);
     
     // Save to local storage
-    localStorage.setItem('hangmanStats', JSON.stringify(newStats));
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('hangmanStats', JSON.stringify(newStats));
+    }
   };
 
   return (
