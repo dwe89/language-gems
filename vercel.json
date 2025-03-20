@@ -3,7 +3,7 @@
   "builds": [
     { "src": "language-gems/package.json", "use": "@vercel/next" }
   ],
-  "routes": [
-    { "src": "/(.*)", "dest": "/language-gems" }
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/language-gems/$1" }
   ]
 } 
