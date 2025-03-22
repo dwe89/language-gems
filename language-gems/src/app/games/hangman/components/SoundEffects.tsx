@@ -29,11 +29,11 @@ const themeSounds = {
     hint: 'https://assets.mixkit.co/sfx/preview/mixkit-sci-fi-interface-zoom-890.mp3',
   },
   pirate: {
-    correct: 'https://assets.mixkit.co/sfx/preview/mixkit-water-bubble-1317.mp3',
-    incorrect: 'https://assets.mixkit.co/sfx/preview/mixkit-metal-hit-woosh-1485.mp3',
-    win: 'https://assets.mixkit.co/sfx/preview/mixkit-achievement-bell-600.mp3',
-    lose: 'https://assets.mixkit.co/sfx/preview/mixkit-cinematic-tsunami-disaster-alarm-1010.mp3', 
-    hint: 'https://assets.mixkit.co/sfx/preview/mixkit-retro-coin-collect-1994.mp3',
+    correct: 'https://assets.mixkit.co/sfx/preview/mixkit-positive-interface-beep-221.mp3',
+    incorrect: 'https://assets.mixkit.co/sfx/preview/mixkit-cannon-fire-shot-1678.mp3',
+    win: 'https://assets.mixkit.co/sfx/preview/mixkit-medieval-show-fanfare-announcement-226.mp3',
+    lose: 'https://assets.mixkit.co/sfx/preview/mixkit-wood-hard-hit-2182.mp3', 
+    hint: 'https://assets.mixkit.co/sfx/preview/mixkit-coins-handling-1939.mp3',
   },
   space: {
     correct: 'https://assets.mixkit.co/sfx/preview/mixkit-space-coin-win-notification-271.mp3',
@@ -47,7 +47,7 @@ const themeSounds = {
     incorrect: 'https://assets.mixkit.co/sfx/preview/mixkit-falling-rock-small-boulder-1272.mp3',
     win: 'https://assets.mixkit.co/sfx/preview/mixkit-medieval-show-fanfare-announcement-226.mp3',
     lose: 'https://assets.mixkit.co/sfx/preview/mixkit-lava-bubble-1328.mp3',
-    hint: 'https://assets.mixkit.co/sfx/preview/mixkit-fairy-magic-sparkle-871.mp3',
+    hint: 'https://assets.mixkit.co/sfx/preview/mixkit-mysterious-wind-undead-ambient-2451.mp3',
   }
 };
 

@@ -1,341 +1,449 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
-type SpaceExplorerAnimationProps = {
+interface SpaceExplorerAnimationProps {
   mistakes: number;
   maxMistakes: number;
-};
+}
 
-export default function SpaceExplorerAnimation({ mistakes, maxMistakes }: SpaceExplorerAnimationProps) {
-  const [animated, setAnimated] = useState(false);
-  const [stars, setStars] = useState<Array<{id: number, top: number, left: number, size: number, opacity: number}>>([]);
-  const [planets, setPlanets] = useState<Array<{id: number, top: number, left: number, size: number, color: string, hasMoon: boolean, moonSize: number, moonOrbit: number, moonSpeed: number, rings?: boolean}>>([]);
-  const dangerPercentage = (mistakes / maxMistakes) * 100;
-  const distancePercentage = 100 - dangerPercentage;
+export default function SpaceExplorerAnimation({
+  mistakes,
+  maxMistakes,
+}: SpaceExplorerAnimationProps) {
+  const [stars, setStars] = useState<Array<{id: number, x: number, y: number, size: number, opacity: number}>>([]);
+  const [asteroids, setAsteroids] = useState<Array<{id: number, x: number, y: number, size: number, rotation: number}>>([]);
+  const [shipShield, setShipShield] = useState(100);
+  const [enginePower, setEnginePower] = useState(100);
+  const [alienAttack, setAlienAttack] = useState(false);
+  const [meteorShower, setMeteorShower] = useState(false);
+  const [warpEffect, setWarpEffect] = useState(false);
+  const [planetGlow, setPlanetGlow] = useState(false);
   
-  // Animation effect when mistakes change
-  useEffect(() => {
-    setAnimated(true);
-    const timer = setTimeout(() => setAnimated(false), 500);
-    return () => clearTimeout(timer);
-  }, [mistakes]);
+  // Calculate values based on mistakes
+  const mistakeRatio = mistakes / maxMistakes;
+  const oxygenLevel = Math.max(0, 100 - (mistakeRatio * 100)).toFixed(0);
+  const distanceToDestination = Math.max(0, 100 - (mistakeRatio * 100)).toFixed(0);
+  const shipDamage = Math.min(100, mistakeRatio * 120).toFixed(0);
   
-  // Generate random stars and planets
+  // Initialize stars
   useEffect(() => {
-    // Generate stars
-    const starCount = 50;
-    const newStars = Array.from({ length: starCount }, (_, i) => ({
+    const newStars = Array.from({ length: 100 }, (_, i) => ({
       id: i,
-      top: Math.random() * 100,
-      left: Math.random() * 100,
-      size: Math.random() * 2 + 1,
-      opacity: Math.random() * 0.7 + 0.3
+      x: Math.random() * 100,
+      y: Math.random() * 100,
+      size: 0.5 + Math.random() * 1.5,
+      opacity: 0.4 + Math.random() * 0.6
     }));
-    setStars(newStars);
     
-    // Generate planets
-    const planetCount = 4;
-    const newPlanets = Array.from({ length: planetCount }, (_, i) => {
-      const planetColors = ['bg-red-400', 'bg-blue-300', 'bg-amber-400', 'bg-teal-400', 'bg-purple-300'];
-      return {
-        id: i,
-        top: 10 + Math.random() * 60,
-        left: 5 + Math.random() * 85,
-        size: 8 + Math.random() * 15,
-        color: planetColors[Math.floor(Math.random() * planetColors.length)],
-        hasMoon: Math.random() > 0.5,
-        moonSize: 2 + Math.random() * 4,
-        moonOrbit: 10 + Math.random() * 8,
-        moonSpeed: 5 + Math.random() * 10,
-        rings: Math.random() > 0.7
-      };
-    });
-    setPlanets(newPlanets);
+    setStars(newStars);
+  }, []);
+  
+  // Initialize asteroids
+  useEffect(() => {
+    const newAsteroids = Array.from({ length: 8 }, (_, i) => ({
+      id: i,
+      x: Math.random() * 100,
+      y: Math.random() * 100,
+      size: 5 + Math.random() * 15,
+      rotation: Math.random() * 360
+    }));
+    
+    setAsteroids(newAsteroids);
+  }, []);
+  
+  // Update ship shield and engine power based on mistakes
+  useEffect(() => {
+    setShipShield(Math.max(0, 100 - (mistakeRatio * 120)));
+    setEnginePower(Math.max(0, 100 - (mistakeRatio * 80)));
+    
+    // Trigger alien attack when mistakes are made
+    if (mistakes > 0) {
+      setAlienAttack(true);
+      setTimeout(() => setAlienAttack(false), 1000);
+    }
+    
+    // Trigger meteor shower with high mistake count
+    if (mistakeRatio > 0.5 && Math.random() > 0.7) {
+      setMeteorShower(true);
+      setTimeout(() => setMeteorShower(false), 2000);
+    }
+  }, [mistakes, mistakeRatio]);
+  
+  // Periodic warp effect
+  useEffect(() => {
+    const warpInterval = setInterval(() => {
+      if (Math.random() > 0.7) {
+        setWarpEffect(true);
+        setTimeout(() => setWarpEffect(false), 700);
+      }
+    }, 5000);
+    
+    return () => clearInterval(warpInterval);
+  }, []);
+  
+  // Planet glow effect
+  useEffect(() => {
+    const glowInterval = setInterval(() => {
+      setPlanetGlow(prev => !prev);
+    }, 3000);
+    
+    return () => clearInterval(glowInterval);
   }, []);
   
   return (
-    <div className={`relative w-full h-64 overflow-hidden rounded-xl shadow-2xl mb-6 ${animated ? 'animate-pulse' : ''}`}>
-      {/* Space background */}
-      <div className="absolute inset-0 bg-gradient-to-b from-indigo-950 via-purple-900 to-black">
+    <div className="relative w-full h-80 md:h-96 lg:h-[30rem] mb-4 overflow-hidden rounded-xl">
+      {/* Space background with stars */}
+      <div className="absolute inset-0 bg-gradient-to-b from-indigo-950 via-black to-purple-950">
         {/* Stars */}
-        {stars.map((star) => (
+        {stars.map(star => (
           <div 
             key={star.id}
-            className="absolute rounded-full bg-white"
+            className="absolute rounded-full bg-white animate-twinkle"
             style={{ 
-              top: `${star.top}%`, 
-              left: `${star.left}%`, 
+              left: `${star.x}%`,
+              top: `${star.y}%`,
               width: `${star.size}px`, 
               height: `${star.size}px`, 
               opacity: star.opacity,
-              animation: `twinkle ${Math.random() * 3 + 2}s ease-in-out infinite`
+              animationDelay: `${(star.id % 10) * 0.3}s`
             }}
           />
         ))}
         
-        {/* Planets */}
-        {planets.map((planet) => (
-          <div key={planet.id}>
-            {/* Planet */}
+        {/* Warp effect */}
+        {warpEffect && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="absolute w-2 h-2 rounded-full bg-blue-400 animate-warp-center"></div>
+            <div className="absolute w-screen h-screen border-4 border-blue-300 rounded-full animate-warp-ring"></div>
+            <div className="absolute w-screen h-screen border-2 border-blue-500 rounded-full animate-warp-ring" style={{ animationDelay: '0.1s' }}></div>
+            <div className="absolute w-screen h-screen border border-cyan-400 rounded-full animate-warp-ring" style={{ animationDelay: '0.2s' }}></div>
+          </div>
+        )}
+        
+        {/* Distant planets */}
+        <div className="absolute top-10 right-10 w-16 h-16 rounded-full bg-gradient-to-br from-red-800 to-red-500 opacity-70">
+          {/* Planet rings */}
+          <div className="absolute top-1/2 left-0 w-full h-1 bg-red-300 opacity-40 transform -rotate-12"></div>
+          <div className="absolute top-1/2 left-0 w-full h-0.5 bg-red-200 opacity-30 transform -rotate-15"></div>
+        </div>
+        
+        <div 
+          className={`absolute bottom-10 left-10 w-24 h-24 rounded-full bg-gradient-to-br from-green-700 to-emerald-400 ${planetGlow ? 'opacity-80' : 'opacity-60'} transition-opacity duration-1000`}
+        >
+          {/* Planet details */}
+          <div className="absolute top-2 left-4 w-8 h-8 rounded-full bg-emerald-300 opacity-30"></div>
+          <div className="absolute top-10 right-5 w-10 h-5 rounded-full bg-emerald-300 opacity-20"></div>
+      </div>
+      
+        {/* Destination planet - gets closer as you make fewer mistakes */}
+        <div 
+          className={`absolute ${mistakeRatio < 0.3 ? 'top-20 left-1/2 transform -translate-x-1/2 w-48 h-48' : 'top-5 left-1/2 transform -translate-x-1/2 w-20 h-20'} rounded-full bg-gradient-to-br from-blue-700 to-cyan-400 transition-all duration-1000`}
+        >
+          {/* Planet details */}
+          <div className="absolute top-1/4 left-1/4 w-1/2 h-1/3 rounded-full bg-cyan-300 opacity-30"></div>
+          <div className="absolute bottom-1/4 right-1/3 w-1/3 h-1/4 rounded-full bg-cyan-300 opacity-20"></div>
+          
+          {/* Atmosphere glow */}
+          <div className={`absolute -inset-2 rounded-full bg-cyan-500 opacity-20 ${mistakeRatio < 0.3 ? 'animate-pulse' : ''}`}></div>
+        </div>
+      </div>
+      
+      {/* Asteroids that move faster and become more dangerous with mistakes */}
+      {asteroids.map(asteroid => (
+        <div 
+          key={asteroid.id}
+          className="absolute bg-gray-700 rounded-full"
+          style={{
+            left: `${asteroid.x}%`,
+            top: `${asteroid.y}%`,
+            width: `${asteroid.size}px`,
+            height: `${asteroid.size}px`,
+            animation: `float-asteroid ${8 - mistakeRatio * 4}s linear infinite`,
+            animationDelay: `${asteroid.id * 0.5}s`,
+            transform: `rotate(${asteroid.rotation}deg)`
+          }}
+        >
+          {/* Asteroid details */}
+          <div className="absolute top-1/4 left-1/4 w-1/2 h-1/2 bg-gray-800 rounded-full"></div>
+          <div className="absolute top-1/3 right-1/5 w-1/5 h-1/5 bg-gray-600 rounded-full"></div>
+        </div>
+      ))}
+      
+      {/* Meteor shower during high mistake counts */}
+      {meteorShower && (
+        <>
+          {[...Array(10)].map((_, i) => (
             <div 
-              className={`absolute rounded-full ${planet.color}`}
+              key={`meteor-${i}`}
+              className="absolute w-1 h-6 bg-orange-500 rounded-full animate-meteor"
               style={{ 
-                top: `${planet.top}%`, 
-                left: `${planet.left}%`, 
-                width: `${planet.size}px`, 
-                height: `${planet.size}px`, 
-                boxShadow: '0 0 8px rgba(255, 255, 255, 0.3)'
+                top: `${Math.random() * -10}%`, 
+                left: `${Math.random() * 100}%`,
+                animationDuration: `${0.5 + Math.random() * 0.5}s`,
+                animationDelay: `${i * 0.1}s`,
+                opacity: 0.7
               }}
             >
-              {/* Planet surface details */}
-              <div className="absolute inset-0 rounded-full overflow-hidden opacity-30">
-                <div className="absolute h-1/3 w-2/3 bg-white top-1/4 left-1/4 rounded-full"></div>
-                <div className="absolute h-1/4 w-1/4 bg-white top-2/3 left-1/3 rounded-full"></div>
-              </div>
+              <div className="absolute top-0 w-2 h-2 bg-yellow-300 rounded-full"></div>
             </div>
-            
-            {/* Rings for some planets */}
-            {planet.rings && (
-              <div 
-                className="absolute bg-gray-300 opacity-40"
-                style={{ 
-                  top: `${planet.top + planet.size/2 - 1}%`, 
-                  left: `${planet.left - planet.size/4}%`, 
-                  width: `${planet.size * 1.5}px`, 
-                  height: `2px`,
-                  transform: 'rotate(-15deg)'
-                }}
-              ></div>
-            )}
-            
-            {/* Moon */}
-            {planet.hasMoon && (
-              <div 
-                className="absolute rounded-full bg-gray-300"
-                style={{ 
-                  top: `${planet.top}%`, 
-                  left: `${planet.left}%`, 
-                  width: `${planet.moonSize}px`, 
-                  height: `${planet.moonSize}px`,
-                  animation: `orbit ${planet.moonSpeed}s linear infinite`,
-                  transformOrigin: `${planet.size/2}px ${planet.size/2}px`
-                }}
-              ></div>
-            )}
-          </div>
-        ))}
-        
-        {/* Distant nebula */}
-        <div className="absolute top-10 left-20 w-40 h-20 rounded-full bg-purple-500 opacity-20 blur-xl"></div>
-        <div className="absolute bottom-30 right-10 w-30 h-20 rounded-full bg-blue-500 opacity-10 blur-xl"></div>
-        
-        {/* Shooting star occasionally */}
-        <div 
-          className="absolute h-0.5 w-20 bg-white"
-          style={{
-            top: '20%',
-            left: '70%',
-            transform: 'rotate(-45deg)',
-            opacity: Math.random() > 0.5 ? 0.7 : 0,
-            boxShadow: '0 0 4px white',
-            animation: 'fall 3s linear infinite'
-          }}
-        ></div>
-      </div>
+          ))}
+        </>
+      )}
       
-      {/* Main Spaceship (fixed position) */}
-      <div className="absolute top-1/3 left-15 transform -translate-y-1/2">
-        {/* Ship body - bigger size */}
-        <div className="relative">
-          <div className="w-40 h-18 bg-gray-200 rounded-lg border-2 border-gray-300">
-            {/* Ship details */}
-            <div className="absolute top-0 left-0 w-full h-2 bg-blue-500"></div>
-            <div className="absolute bottom-0 left-0 w-full h-2 bg-blue-500"></div>
-            
-            {/* Ship windows */}
-            <div className="absolute top-4 left-6 w-3 h-3 bg-cyan-300 rounded-full opacity-70 animate-pulse"></div>
-            <div className="absolute top-4 left-12 w-3 h-3 bg-cyan-300 rounded-full opacity-70" style={{animationDelay: '0.5s'}}></div>
-            <div className="absolute top-4 left-18 w-3 h-3 bg-cyan-300 rounded-full opacity-70 animate-pulse" style={{animationDelay: '1s'}}></div>
-            <div className="absolute top-4 left-24 w-3 h-3 bg-cyan-300 rounded-full opacity-70" style={{animationDelay: '1.5s'}}></div>
-            <div className="absolute top-4 left-30 w-3 h-3 bg-cyan-300 rounded-full opacity-70 animate-pulse" style={{animationDelay: '0.7s'}}></div>
-            
-            {/* Control panel lights */}
-            <div className="absolute top-10 left-8 w-1 h-1 bg-red-500 rounded-full animate-pulse"></div>
-            <div className="absolute top-10 left-12 w-1 h-1 bg-green-500 rounded-full animate-pulse" style={{animationDelay: '0.5s'}}></div>
-            <div className="absolute top-10 left-16 w-1 h-1 bg-yellow-500 rounded-full animate-pulse" style={{animationDelay: '1s'}}></div>
-            <div className="absolute top-10 left-20 w-1 h-1 bg-blue-500 rounded-full animate-pulse" style={{animationDelay: '1.5s'}}></div>
-          </div>
-          
-          {/* Ship cockpit */}
-          <div className="absolute top-2 left-28 w-10 h-12 bg-cyan-300 rounded-t-full opacity-80 border border-gray-400"></div>
-          
-          {/* Ship wings */}
-          <div className="absolute top-3 left-2 w-8 h-20 bg-gray-300 rounded-l-lg transform -translate-y-2"></div>
-          <div className="absolute top-3 right-2 w-8 h-20 bg-gray-300 rounded-r-lg transform -translate-y-2"></div>
-          
-          {/* Ship engines with animated thrusters */}
-          <div className="absolute bottom-0 left-12 w-5 h-6 bg-gray-400 rounded-b-lg">
-            <div className="absolute -bottom-3 left-0 w-5 h-5 bg-orange-500 rounded-full animate-pulse opacity-80"></div>
-          </div>
-          <div className="absolute bottom-0 left-22 w-5 h-6 bg-gray-400 rounded-b-lg">
-            <div className="absolute -bottom-3 left-0 w-5 h-5 bg-orange-500 rounded-full animate-pulse opacity-80" style={{animationDelay: '0.3s'}}></div>
-          </div>
-          <div className="absolute bottom-0 right-12 w-5 h-6 bg-gray-400 rounded-b-lg">
-            <div className="absolute -bottom-3 left-0 w-5 h-5 bg-orange-500 rounded-full animate-pulse opacity-80" style={{animationDelay: '0.6s'}}></div>
-          </div>
-          
-          {/* Ship details: radar and antenna */}
-          <div className="absolute -top-4 left-8 w-1 h-4 bg-gray-400">
-            <div className="absolute -top-1 -left-1 w-3 h-1 bg-red-500 rounded-full animate-pulse"></div>
-          </div>
-          <div className="absolute -top-6 right-10 w-6 h-6 bg-transparent border-2 border-gray-400 rounded-full">
-            <div className="absolute top-1/2 left-1/2 w-4 h-0.5 bg-blue-500 animate-spin" style={{transformOrigin: 'left', transform: 'translateY(-50%)'}}></div>
-          </div>
-        </div>
-      </div>
-      
-      {/* Astronaut (drifts away as mistakes increase) */}
+      {/* Spaceship */}
       <div 
-        className="absolute transition-all duration-1000"
+        className={`absolute left-1/2 bottom-20 transform -translate-x-1/2 transition-all duration-500 ${
+          mistakes > 0 ? 'animate-ship-wobble' : ''
+        }`}
         style={{ 
-          top: '50%',
-          left: `${45 + (dangerPercentage * 0.4)}%`,
-          transform: `scale(${1 - (dangerPercentage * 0.005)}) translateY(-50%)`
+          transform: `translateX(-50%) rotate(${mistakeRatio > 0.5 ? (Math.random() * 6 - 3) : 0}deg)`
         }}
       >
-        <div className="relative w-16 h-20">
-          {/* Spacesuit */}
-          <div className="absolute inset-0 bg-gray-300 rounded-lg"></div>
+        {/* Ship body */}
+        <div className="relative">
+          <div className="w-32 h-16 bg-slate-800 rounded-t-3xl"></div>
+          <div className="w-32 h-8 bg-slate-700 rounded-b-lg"></div>
           
-          {/* Helmet */}
-          <div className="absolute top-0 left-3 w-10 h-10 bg-gray-200 rounded-full overflow-hidden border-2 border-gray-400">
-            {/* Visor */}
-            <div className="absolute top-3 left-1 w-8 h-4 bg-cyan-400 rounded-full opacity-70"></div>
+          {/* Cockpit */}
+          <div className="absolute top-2 left-1/2 transform -translate-x-1/2 w-12 h-8 bg-cyan-300 rounded-t-full opacity-70"></div>
+          
+          {/* Wings */}
+          <div className="absolute top-6 left-0 w-12 h-4 bg-slate-600 -skew-y-12 transform -translate-x-8"></div>
+          <div className="absolute top-6 right-0 w-12 h-4 bg-slate-600 skew-y-12 transform translate-x-8"></div>
             
-            {/* Face details */}
-            {dangerPercentage > 50 && (
-              <div className="absolute top-4 left-3 w-4 h-1 bg-gray-800 rounded-full opacity-70"></div>
-            )}
-            
-            {/* Oxygen depleting */}
+          {/* Engine exhausts */}
+          <div className="absolute bottom-0 left-8 w-4 h-6 flex justify-center overflow-hidden">
             <div 
-              className="absolute top-0 left-0 w-full bg-cyan-300 opacity-30 transition-all duration-1000"
-              style={{ height: `${distancePercentage}%` }}
+              className={`w-2 animate-flame ${enginePower > 70 ? 'h-10' : enginePower > 40 ? 'h-6' : 'h-3'}`}
+              style={{ 
+                background: 'linear-gradient(to bottom, #3b82f6, #60a5fa, #93c5fd)',
+                opacity: enginePower / 100
+              }}
             ></div>
           </div>
-          
-          {/* Oxygen tank */}
-          <div className="absolute top-8 left-2 w-4 h-8 bg-gray-500 rounded"></div>
-          <div className="absolute top-8 right-2 w-4 h-8 bg-gray-500 rounded"></div>
-          
-          {/* Equipment details */}
-          <div className="absolute top-14 left-6 w-4 h-2 bg-blue-500 rounded"></div>
-          <div className="absolute top-5 right-1 w-1 h-1 bg-red-500 rounded-full animate-pulse"></div>
-          
-          {/* Arms - make them flail more as mistakes increase */}
-          <div 
-            className="absolute top-8 left-0 w-2 h-6 bg-gray-400 rounded-full"
+          <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-4 h-6 flex justify-center overflow-hidden">
+            <div 
+              className={`w-2 animate-flame ${enginePower > 70 ? 'h-12' : enginePower > 40 ? 'h-8' : 'h-4'}`}
             style={{ 
-              transform: `rotate(${-20 - (mistakes * 8)}deg)`, 
-              transformOrigin: 'top'
+                background: 'linear-gradient(to bottom, #3b82f6, #60a5fa, #93c5fd)',
+                opacity: enginePower / 100
             }}
           ></div>
+          </div>
+          <div className="absolute bottom-0 right-8 w-4 h-6 flex justify-center overflow-hidden">
           <div 
-            className="absolute top-8 right-0 w-2 h-6 bg-gray-400 rounded-full"
+              className={`w-2 animate-flame ${enginePower > 70 ? 'h-10' : enginePower > 40 ? 'h-6' : 'h-3'}`}
             style={{ 
-              transform: `rotate(${20 + (mistakes * 8)}deg)`,
-              transformOrigin: 'top'
-            }}
-          ></div>
-          
-          {/* Legs */}
-          <div 
-            className="absolute bottom-0 left-3 w-3 h-6 bg-gray-400 rounded-full"
-            style={{ 
-              transform: `rotate(${-5 - (mistakes * 3)}deg)`
-            }}
-          ></div>
-          <div 
-            className="absolute bottom-0 right-3 w-3 h-6 bg-gray-400 rounded-full"
-            style={{ 
-              transform: `rotate(${5 + (mistakes * 3)}deg)`
+                background: 'linear-gradient(to bottom, #3b82f6, #60a5fa, #93c5fd)',
+                opacity: enginePower / 100
             }}
           ></div>
         </div>
         
-        {/* Connecting tether that breaks as mistakes increase */}
-        {dangerPercentage < 70 && (
+          {/* Shield effect */}
+          {shipShield > 30 && (
           <div 
-            className="absolute right-full top-1/2 h-1 bg-white"
+              className="absolute -inset-2 rounded-full animate-pulse-slow"
             style={{ 
-              width: `${Math.max(100 - dangerPercentage * 2, 10)}px`,
-              opacity: 1 - (dangerPercentage / 100)
+                background: `radial-gradient(circle, rgba(96, 165, 250, ${shipShield / 500}) 0%, rgba(96, 165, 250, 0) 70%)`,
+                opacity: shipShield / 100
             }}
           ></div>
         )}
+          
+          {/* Damage effects */}
+          {mistakeRatio > 0.3 && (
+            <div className="absolute top-10 left-5 w-4 h-4 bg-orange-500 rounded-full animate-flicker opacity-70"></div>
+          )}
+          
+          {mistakeRatio > 0.5 && (
+            <div className="absolute top-4 right-8 w-6 h-3 bg-orange-600 rounded-full animate-flicker opacity-80"></div>
+          )}
+          
+          {mistakeRatio > 0.7 && (
+            <>
+              <div className="absolute bottom-2 left-3 w-5 h-5 bg-orange-700 rounded-full animate-flicker opacity-90"></div>
+              <div className="absolute top-6 left-1/2 transform -translate-x-1/2 w-4 h-4 bg-red-600 rounded-full animate-flicker opacity-80"></div>
+            </>
+          )}
+        </div>
       </div>
       
-      {/* Space debris floating (appears with more mistakes) */}
-      {mistakes > 1 && (
-        <div 
-          className="absolute w-3 h-2 bg-gray-500 rounded"
-          style={{ 
-            top: '30%', 
-            left: '60%',
-            animation: 'float-up 15s linear infinite',
-            transform: 'rotate(45deg)'
-          }}
-        ></div>
+      {/* Alien attack effects */}
+      {alienAttack && (
+        <>
+          <div className="absolute left-10 top-1/3 w-2 h-20 bg-green-500 animate-laser"></div>
+          <div className="absolute right-10 top-1/3 w-2 h-20 bg-green-500 animate-laser" style={{ animationDelay: '0.2s' }}></div>
+          
+          {/* Alien ship */}
+          <div className="absolute left-10 top-1/4 w-20 h-8 bg-slate-900 rounded-full">
+            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-10 h-4 bg-green-700 rounded-full"></div>
+            <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-6 h-6 rounded-full bg-green-500 animate-pulse-fast"></div>
+          </div>
+          
+          <div className="absolute right-10 top-1/4 w-20 h-8 bg-slate-900 rounded-full">
+            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-10 h-4 bg-green-700 rounded-full"></div>
+            <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-6 h-6 rounded-full bg-green-500 animate-pulse-fast"></div>
+          </div>
+        </>
       )}
       
-      {mistakes > 2 && (
-        <div 
-          className="absolute w-4 h-4 bg-gray-600 rounded"
-          style={{ 
-            top: '60%', 
-            left: '70%',
-            animation: 'float-up 20s linear infinite',
-            animationDelay: '2s',
-            transform: 'rotate(-30deg)'
-          }}
-        ></div>
-      )}
-      
-      {/* Oxygen warning */}
-      {dangerPercentage > 50 && (
-        <div className="absolute top-1/3 right-1/4 text-red-500 font-mono text-xs animate-pulse">
-          OXYGEN LOW
+      {/* Space station that appears when close to victory */}
+      {mistakeRatio < 0.3 && (
+        <div className="absolute right-20 top-1/2 transform -translate-y-1/2">
+          <div className="relative w-40 h-16">
+            <div className="absolute left-1/2 transform -translate-x-1/2 w-20 h-6 bg-gray-300 rounded-full"></div>
+            <div className="absolute left-1/2 top-5 transform -translate-x-1/2 w-6 h-20 bg-gray-400"></div>
+            <div className="absolute left-1/2 top-8 transform -translate-x-1/2 w-24 h-4 bg-gray-300 rounded-full"></div>
+            
+            {/* Solar panels */}
+            <div className="absolute top-8 left-2 w-12 h-4 bg-blue-900"></div>
+            <div className="absolute top-8 right-2 w-12 h-4 bg-blue-900"></div>
+            
+            {/* Docking port with light */}
+            <div className="absolute left-1/2 top-12 transform -translate-x-1/2 w-8 h-4 bg-gray-600 rounded-b-lg">
+              <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+            </div>
+          </div>
         </div>
       )}
       
-      {dangerPercentage > 75 && (
-        <div className="absolute top-1/4 right-1/3 text-red-500 font-mono text-xs animate-bounce">
-          CRITICAL
+      {/* Status overlay with ship information */}
+      <div className="absolute top-6 left-6 w-64 h-40 bg-slate-900 bg-opacity-70 rounded-lg p-3 border border-blue-500">
+        <div className="text-cyan-100 text-sm font-bold mb-2">SHIP SYSTEMS</div>
+        
+        <div className="flex flex-col gap-2">
+          <div>
+            <div className="text-cyan-200 text-xs mb-1">LIFE SUPPORT (O₂)</div>
+            <div className="h-2 bg-slate-950 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-gradient-to-r from-cyan-500 to-blue-600 transition-all duration-300" 
+                style={{ width: `${oxygenLevel}%` }}
+              ></div>
+            </div>
+            <div className="flex justify-between text-xs text-cyan-300 mt-1">
+              <span>{oxygenLevel}%</span>
+              <span className={mistakeRatio > 0.7 ? 'text-red-400 animate-pulse' : ''}>
+                {mistakeRatio > 0.7 ? 'CRITICAL' : mistakeRatio > 0.4 ? 'WARNING' : 'NORMAL'}
+              </span>
+            </div>
+          </div>
+          
+          <div>
+            <div className="text-cyan-200 text-xs mb-1">SHIELD INTEGRITY</div>
+            <div className="h-2 bg-slate-950 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-gradient-to-r from-indigo-600 to-purple-500 transition-all duration-300" 
+                style={{ width: `${shipShield}%` }}
+              ></div>
+            </div>
         </div>
-      )}
-
-      {/* Distance indicator */}
-      <div className="absolute bottom-4 left-4 right-4">
-        <div className="text-cyan-300 text-xs mb-1 font-mono">Astronaut Distance: {Math.round(dangerPercentage)}%</div>
-        <div className="w-full h-2 bg-gray-800 rounded-full overflow-hidden">
+          
+          <div>
+            <div className="text-cyan-200 text-xs mb-1">DESTINATION PROXIMITY</div>
+            <div className="h-2 bg-slate-950 rounded-full overflow-hidden">
           <div 
-            className="h-full rounded-full transition-all duration-500"
-            style={{ 
-              width: `${dangerPercentage}%`,
-              backgroundColor: dangerPercentage < 33 ? 'rgb(74, 222, 128)' : dangerPercentage < 66 ? 'rgb(234, 88, 12)' : 'rgb(220, 38, 38)',
-              boxShadow: `0 0 5px ${dangerPercentage < 33 ? 'rgb(74, 222, 128)' : dangerPercentage < 66 ? 'rgb(234, 88, 12)' : 'rgb(220, 38, 38)'}`
-            }}
+                className="h-full bg-gradient-to-r from-green-600 to-emerald-400 transition-all duration-300" 
+                style={{ width: `${distanceToDestination}%` }}
           ></div>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Mission control communication (appears when critical) */}
-      {dangerPercentage > 80 && (
-        <div className="absolute top-5 left-5 text-white text-xs font-mono opacity-70 animate-pulse">
-          MISSION CONTROL: RETURN IMMEDIATELY
+      {/* Mission status */}
+      <div className="absolute top-6 right-6 w-48 h-36 bg-slate-900 bg-opacity-70 rounded-lg p-2 border border-blue-500">
+        <div className="text-cyan-100 text-xs">
+          <div className="mb-1">MISSION CONTROL:</div>
+          <div className="text-[10px] italic opacity-90">
+            "Captain, navigate carefully through this asteroid field. Each mistake damages our systems. Stay focused on reaching the destination planet."
+          </div>
+        </div>
+        
+        {mistakeRatio > 0.6 && (
+          <div className="mt-2 text-[10px] text-red-400 font-bold animate-pulse">
+            "WARNING: HULL BREACH DETECTED!"
+          </div>
+        )}
+        
+        {mistakeRatio < 0.2 && (
+          <div className="mt-2 text-[10px] text-green-400 font-bold">
+            "Excellent navigation! Destination in range."
+          </div>
+        )}
+      </div>
+      
+      {/* Alert messages */}
+      {mistakeRatio > 0.8 && (
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-red-500 font-bold text-lg animate-pulse">
+          CRITICAL SYSTEMS FAILURE
         </div>
       )}
+      
+      {/* CSS for animations */}
+      <style jsx>{`
+        @keyframes twinkle {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
+        }
+        
+        @keyframes warp-ring {
+          0% { transform: scale(0); opacity: 0.7; }
+          100% { transform: scale(3); opacity: 0; }
+        }
+        
+        @keyframes warp-center {
+          0% { transform: scale(1); opacity: 1; }
+          50% { transform: scale(5); opacity: 0.8; }
+          100% { transform: scale(10); opacity: 0; }
+        }
+        
+        @keyframes float-asteroid {
+          0% { transform: translate(0, 0) rotate(0deg); }
+          100% { transform: translate(-100px, 100px) rotate(360deg); }
+        }
+        
+        @keyframes meteor {
+          0% { transform: translateY(0) rotate(15deg); opacity: 1; }
+          100% { transform: translateY(100vh) rotate(15deg); opacity: 0; }
+        }
+        
+        @keyframes flame {
+          0% { transform: scaleX(0.8) translateY(0); }
+          50% { transform: scaleX(1.2) translateY(1px); }
+          100% { transform: scaleX(0.8) translateY(0); }
+        }
+        
+        @keyframes ship-wobble {
+          0%, 100% { transform: translateX(-50%) rotate(0deg); }
+          25% { transform: translateX(-52%) rotate(-2deg); }
+          75% { transform: translateX(-48%) rotate(2deg); }
+        }
+        
+        @keyframes pulse-slow {
+          0%, 100% { opacity: 0.7; }
+          50% { opacity: 0.3; }
+        }
+        
+        @keyframes pulse-fast {
+          0%, 100% { opacity: 0.9; }
+          50% { opacity: 0.4; }
+        }
+        
+        @keyframes flicker {
+          0%, 100% { opacity: 0.8; transform: scale(1); }
+          25% { opacity: 0.6; transform: scale(0.9); }
+          50% { opacity: 1; transform: scale(1.1); }
+          75% { opacity: 0.7; transform: scale(0.95); }
+        }
+        
+        @keyframes laser {
+          0% { height: 0; opacity: 0.9; }
+          50% { height: 50vh; opacity: 0.7; }
+          100% { height: 0; opacity: 0; }
+        }
+      `}</style>
     </div>
   );
 } 

@@ -45,6 +45,146 @@ const difficulties = [
   },
 ];
 
+const languages = [
+  { id: 'spanish', label: 'Spanish', color: 'bg-red-100 border-red-300 text-red-700' },
+  { id: 'french', label: 'French', color: 'bg-blue-100 border-blue-300 text-blue-700' },
+  { id: 'german', label: 'German', color: 'bg-yellow-100 border-yellow-300 text-yellow-800' },
+  { id: 'italian', label: 'Italian', color: 'bg-green-100 border-green-300 text-green-700' },
+  { id: 'english', label: 'English', color: 'bg-indigo-100 border-indigo-300 text-indigo-700' },
+  { id: 'japanese', label: 'Japanese', color: 'bg-pink-100 border-pink-300 text-pink-700' },
+  { id: 'mandarin', label: 'Mandarin', color: 'bg-red-100 border-red-300 text-red-700' },
+  { id: 'portuguese', label: 'Portuguese', color: 'bg-green-100 border-green-300 text-green-700' },
+  { id: 'arabic', label: 'Arabic', color: 'bg-amber-100 border-amber-300 text-amber-700' },
+  { id: 'russian', label: 'Russian', color: 'bg-blue-100 border-blue-300 text-blue-700' },
+];
+
+// Category structure with hierarchical organization
+const categoryGroups = [
+  {
+    id: 'basics',
+    label: 'Basics',
+    categories: [
+      { id: 'numbers', label: 'Numbers', emoji: '🔢', bgColor: 'bg-blue-50' },
+      { id: 'colors', label: 'Colors', emoji: '🎨', bgColor: 'bg-green-50' },
+      { id: 'days', label: 'Days of the Week', emoji: '📅', bgColor: 'bg-yellow-50' },
+      { id: 'months', label: 'Months & Seasons', emoji: '🍂', bgColor: 'bg-orange-50' },
+      { id: 'greetings', label: 'Greetings & Introductions', emoji: '👋', bgColor: 'bg-purple-50' },
+      { id: 'phrases', label: 'Common Phrases', emoji: '💬', bgColor: 'bg-indigo-50' },
+    ]
+  },
+  {
+    id: 'people',
+    label: 'People & Relationships',
+    categories: [
+      { id: 'family', label: 'Family Members', emoji: '👪', bgColor: 'bg-pink-50' },
+      { id: 'physicaltraits', label: 'Physical Traits', emoji: '👤', bgColor: 'bg-amber-50' },
+      { id: 'personality', label: 'Personality Traits', emoji: '😊', bgColor: 'bg-teal-50' },
+      { id: 'professions', label: 'Professions & Jobs', emoji: '👨‍⚕️', bgColor: 'bg-emerald-50' },
+    ]
+  },
+  {
+    id: 'daily',
+    label: 'Home & Daily Life',
+    categories: [
+      { id: 'household', label: 'Household Items', emoji: '🏠', bgColor: 'bg-red-50' },
+      { id: 'rooms', label: 'Rooms in a House', emoji: '🛋️', bgColor: 'bg-blue-50' },
+      { id: 'routines', label: 'Daily Routines & Chores', emoji: '🧹', bgColor: 'bg-green-50' },
+    ]
+  },
+  {
+    id: 'food',
+    label: 'Food & Drinks',
+    categories: [
+      { id: 'foods', label: 'Common Foods', emoji: '🍔', bgColor: 'bg-yellow-50' },
+      { id: 'drinks', label: 'Drinks & Beverages', emoji: '🥤', bgColor: 'bg-purple-50' },
+      { id: 'fruitsveg', label: 'Fruits & Vegetables', emoji: '🍎', bgColor: 'bg-indigo-50' },
+      { id: 'restaurant', label: 'Restaurant & Ordering Food', emoji: '🍽️', bgColor: 'bg-pink-50' },
+    ]
+  },
+  {
+    id: 'travel',
+    label: 'Travel & Transportation',
+    categories: [
+      { id: 'countries', label: 'Countries & Nationalities', emoji: '🌎', bgColor: 'bg-amber-50' },
+      { id: 'directions', label: 'Directions & Places', emoji: '🧭', bgColor: 'bg-teal-50' },
+      { id: 'transport', label: 'Methods of Transport', emoji: '🚆', bgColor: 'bg-emerald-50' },
+    ]
+  },
+  {
+    id: 'places',
+    label: 'Places & Locations',
+    categories: [
+      { id: 'town', label: 'In the Town', emoji: '🏙️', bgColor: 'bg-red-50' },
+      { id: 'shops', label: 'Shops', emoji: '🛒', bgColor: 'bg-blue-50' },
+    ]
+  },
+  {
+    id: 'education',
+    label: 'School & Education',
+    categories: [
+      { id: 'classitems', label: 'Classroom Objects', emoji: '📝', bgColor: 'bg-green-50' },
+      { id: 'subjects', label: 'School Subjects', emoji: '📚', bgColor: 'bg-yellow-50' },
+      { id: 'studyverbs', label: 'Studying Verbs', emoji: '📖', bgColor: 'bg-purple-50' },
+    ]
+  },
+  {
+    id: 'shopping',
+    label: 'Shopping & Money',
+    categories: [
+      { id: 'clothes', label: 'Clothes & Accessories', emoji: '👕', bgColor: 'bg-indigo-50' },
+      { id: 'shoppingphrases', label: 'Shopping Phrases', emoji: '🛍️', bgColor: 'bg-pink-50' },
+      { id: 'money', label: 'Money & Prices', emoji: '💰', bgColor: 'bg-amber-50' },
+    ]
+  },
+  {
+    id: 'health',
+    label: 'Health & Body',
+    categories: [
+      { id: 'bodyparts', label: 'Parts of the Body', emoji: '🦵', bgColor: 'bg-teal-50' },
+      { id: 'illnesses', label: 'Illnesses & Symptoms', emoji: '🤒', bgColor: 'bg-emerald-50' },
+      { id: 'doctor', label: 'At the Doctor\'s', emoji: '👨‍⚕️', bgColor: 'bg-red-50' },
+    ]
+  },
+  {
+    id: 'nature',
+    label: 'Nature & Environment',
+    categories: [
+      { id: 'weather', label: 'Weather', emoji: '☀️', bgColor: 'bg-blue-50' },
+      { id: 'animals', label: 'Animals', emoji: '🐾', bgColor: 'bg-green-50' },
+      { id: 'plants', label: 'Plants & Trees', emoji: '🌳', bgColor: 'bg-yellow-50' },
+    ]
+  },
+  {
+    id: 'entertainment',
+    label: 'Entertainment & Free Time',
+    categories: [
+      { id: 'hobbies', label: 'Hobbies & Interests', emoji: '🎨', bgColor: 'bg-purple-50' },
+      { id: 'sports', label: 'Sports', emoji: '⚽', bgColor: 'bg-indigo-50' },
+      { id: 'music', label: 'Music & Instruments', emoji: '🎵', bgColor: 'bg-pink-50' },
+      { id: 'movies', label: 'Films & TV', emoji: '🎬', bgColor: 'bg-amber-50' },
+    ]
+  },
+  {
+    id: 'technology',
+    label: 'Technology & Communication',
+    categories: [
+      { id: 'devices', label: 'Devices & Gadgets', emoji: '📱', bgColor: 'bg-teal-50' },
+      { id: 'internet', label: 'Internet & Social Media', emoji: '💻', bgColor: 'bg-emerald-50' },
+      { id: 'techverbs', label: 'Technology Verbs', emoji: '⌨️', bgColor: 'bg-red-50' },
+    ]
+  },
+  {
+    id: 'grammar',
+    label: 'Grammar-Based',
+    categories: [
+      { id: 'verbs', label: 'Common Verbs', emoji: '🏃', bgColor: 'bg-blue-50' },
+      { id: 'adjectives', label: 'Common Adjectives', emoji: '✨', bgColor: 'bg-green-50' },
+      { id: 'adverbs', label: 'Adverbs & Connectors', emoji: '🔄', bgColor: 'bg-yellow-50' },
+    ]
+  },
+];
+
+// Original categories for backwards compatibility
 const categories = [
   { id: 'animals', label: 'Animals', emoji: '🐾', bgColor: 'bg-blue-50' },
   { id: 'food', label: 'Food', emoji: '🍔', bgColor: 'bg-green-50' },
@@ -56,19 +196,6 @@ const categories = [
   { id: 'movies', label: 'Movies', emoji: '🎬', bgColor: 'bg-amber-50' },
   { id: 'clothing', label: 'Clothing', emoji: '👕', bgColor: 'bg-teal-50' },
   { id: 'nature', label: 'Nature', emoji: '🏞️', bgColor: 'bg-emerald-50' },
-];
-
-const languages = [
-  { id: 'spanish', label: 'Spanish', flag: '🇪🇸', bgColor: 'bg-red-50' },
-  { id: 'french', label: 'French', flag: '🇫🇷', bgColor: 'bg-blue-50' },
-  { id: 'german', label: 'German', flag: '🇩🇪', bgColor: 'bg-yellow-50' },
-  { id: 'italian', label: 'Italian', flag: '🇮🇹', bgColor: 'bg-green-50' },
-  { id: 'english', label: 'English', flag: '🇬🇧', bgColor: 'bg-blue-50' },
-  { id: 'japanese', label: 'Japanese', flag: '🇯🇵', bgColor: 'bg-white' },
-  { id: 'mandarin', label: 'Mandarin', flag: '🇨🇳', bgColor: 'bg-red-50' },
-  { id: 'portuguese', label: 'Portuguese', flag: '🇵🇹', bgColor: 'bg-green-50' },
-  { id: 'arabic', label: 'Arabic', flag: '🇸🇦', bgColor: 'bg-green-50' },
-  { id: 'russian', label: 'Russian', flag: '🇷🇺', bgColor: 'bg-blue-50' },
 ];
 
 export default function GameSettings({ 
@@ -90,6 +217,10 @@ export default function GameSettings({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [customWordsInput, setCustomWordsInput] = useState('');
   const [customWordsError, setCustomWordsError] = useState('');
+  const [selectedCategoryGroup, setSelectedCategoryGroup] = useState<string | null>(null);
+  const [tempCategory, setTempCategory] = useState('');
+  const [tempCategoryWords, setTempCategoryWords] = useState('');
+  const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -172,10 +303,9 @@ export default function GameSettings({
             <button
               key={language.id}
               onClick={() => handleLanguageClick(language.id)}
-              className={`p-5 rounded-lg flex flex-col items-center justify-center ${language.bgColor} hover:bg-opacity-80 transition-all text-gray-800`}
+              className={`p-4 rounded-lg flex flex-col items-center justify-center ${language.color} border-2 hover:opacity-90 transition-all`}
             >
-              <span className="text-4xl mb-2">{language.flag}</span>
-              <span className="font-medium">{language.label}</span>
+              <span className="font-medium text-lg">{language.label}</span>
             </button>
           ))}
         </div>
@@ -183,24 +313,139 @@ export default function GameSettings({
     );
   }
   
-  // Render category selection screen
+  // Render category selection screen with hierarchical structure
   if (setupStage === 'category') {
     return (
       <div className="bg-white shadow-lg rounded-lg p-6">
         <h2 className="text-2xl font-semibold mb-6 text-gray-800">Choose Category</h2>
         
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          {categories.map((category) => (
-            <button
-              key={category.id}
-              onClick={() => handleCategoryClick(category.id)}
-              className={`p-5 rounded-lg flex flex-col items-center justify-center ${category.bgColor} hover:bg-opacity-80 transition-all ${settings.category === category.id ? 'ring-2 ring-purple-500' : ''} text-gray-800`}
-            >
-              <span className="text-4xl mb-2">{category.emoji}</span>
-              <span className="font-medium">{category.label}</span>
-            </button>
-          ))}
-        </div>
+        {/* If no category group is selected, show category groups */}
+        {!selectedCategoryGroup && (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+              {categoryGroups.map((group) => (
+                <button
+                  key={group.id}
+                  onClick={() => setSelectedCategoryGroup(group.id)}
+                  className="p-4 rounded-lg border-2 border-gray-200 hover:border-purple-400 bg-gray-50 hover:bg-purple-50 transition-all text-gray-800 flex justify-between items-center"
+                >
+                  <span className="font-medium">{group.label}</span>
+                  <span className="text-purple-600">→</span>
+                </button>
+              ))}
+            </div>
+            
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6">
+              <button
+                onClick={() => handleCategoryClick('custom')}
+                className="w-full sm:w-auto px-6 py-3 rounded-lg border-2 border-purple-300 bg-purple-50 hover:bg-purple-100 transition-all text-purple-800 font-medium"
+              >
+                Add Custom Words
+              </button>
+              
+              <button
+                onClick={() => setShowAddCategoryModal(true)}
+                className="w-full sm:w-auto px-6 py-3 rounded-lg border-2 border-green-300 bg-green-50 hover:bg-green-100 transition-all text-green-800 font-medium"
+              >
+                Add Temporary Category
+              </button>
+            </div>
+            
+            {/* Add Category Modal */}
+            {showAddCategoryModal && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                <div className="bg-white rounded-lg p-6 max-w-md w-full">
+                  <h3 className="text-xl font-semibold mb-4">Add Temporary Category</h3>
+                  <div className="mb-4">
+                    <label className="block text-gray-700 text-sm font-bold mb-2">
+                      Category Name
+                    </label>
+                    <input
+                      type="text"
+                      value={tempCategory}
+                      onChange={(e) => setTempCategory(e.target.value)}
+                      className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                      placeholder="e.g., Medical Terms"
+                    />
+                  </div>
+                  <div className="mb-4">
+                    <label className="block text-gray-700 text-sm font-bold mb-2">
+                      Words (comma separated)
+                    </label>
+                    <textarea
+                      value={tempCategoryWords}
+                      onChange={(e) => setTempCategoryWords(e.target.value)}
+                      className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                      rows={4}
+                      placeholder="doctor, nurse, hospital, medicine..."
+                    />
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <button
+                      onClick={() => setShowAddCategoryModal(false)}
+                      className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                    >
+                      Cancel
+                    </button>
+                    <button 
+                      onClick={() => {
+                        if (tempCategory && tempCategoryWords) {
+                          const words = tempCategoryWords
+                            .split(',')
+                            .map(word => word.trim())
+                            .filter(word => word.length > 0);
+                            
+                          if (words.length >= 3) {
+                            if (onCategorySelect) {
+                              onCategorySelect('custom', words);
+                            }
+                            setShowAddCategoryModal(false);
+                          }
+                        }
+                      }}
+                      className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                    >
+                      Add Category
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+        
+        {/* If a category group is selected, show categories in that group */}
+        {selectedCategoryGroup && (
+          <>
+            <div className="mb-4">
+              <button
+                onClick={() => setSelectedCategoryGroup(null)}
+                className="text-purple-600 hover:text-purple-800 flex items-center gap-1"
+              >
+                <span>← Back to groups</span>
+              </button>
+            </div>
+            
+            <h3 className="text-lg font-semibold mb-4 text-gray-700">
+              {categoryGroups.find(g => g.id === selectedCategoryGroup)?.label}
+            </h3>
+            
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
+              {categoryGroups
+                .find(g => g.id === selectedCategoryGroup)
+                ?.categories.map((category) => (
+                  <button
+                    key={category.id}
+                    onClick={() => handleCategoryClick(category.id)}
+                    className={`p-5 rounded-lg flex flex-col items-center justify-center ${category.bgColor} hover:bg-opacity-80 transition-all ${settings.category === category.id ? 'ring-2 ring-purple-500' : ''} text-gray-800`}
+                  >
+                    <span className="text-4xl mb-2">{category.emoji}</span>
+                    <span className="font-medium text-sm text-center">{category.label}</span>
+                  </button>
+                ))}
+            </div>
+          </>
+        )}
         
         {settings.category === 'custom' && (
           <div className="mt-6">
@@ -276,25 +521,26 @@ export default function GameSettings({
           <h3 className="text-lg font-medium mb-4 text-gray-700">Language</h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
             {languages.map((language) => (
-              <label
-                key={language.id}
-                className={`group cursor-pointer ${language.bgColor} p-4 rounded-lg flex flex-col items-center justify-center transition-all ${
-                  settings.language === language.id
-                    ? 'ring-2 ring-purple-500'
-                    : 'hover:ring-2 hover:ring-purple-300'
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="language"
-                  value={language.id}
-                  checked={settings.language === language.id}
-                  onChange={handleChange}
-                  className="sr-only"
-                />
-                <span className="text-4xl mb-2">{language.flag}</span>
-                <span className="font-medium text-gray-800">{language.label}</span>
-              </label>
+              <div className="inline-flex space-x-1 items-center px-2 py-1 rounded-lg">
+                <label
+                  key={language.id}
+                  className={`group cursor-pointer ${language.color} p-4 rounded-lg flex flex-col items-center justify-center transition-all ${
+                    settings.language === language.id
+                      ? 'ring-2 ring-purple-500'
+                      : ''
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="language"
+                    value={language.id}
+                    checked={settings.language === language.id}
+                    onChange={handleChange}
+                    className="sr-only"
+                  />
+                  <span className="font-medium">{language.label}</span>
+                </label>
+              </div>
             ))}
           </div>
         </div>

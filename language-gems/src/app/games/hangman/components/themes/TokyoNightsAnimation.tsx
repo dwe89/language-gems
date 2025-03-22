@@ -1,244 +1,391 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
-type TokyoNightsAnimationProps = {
+interface TokyoNightsAnimationProps {
   mistakes: number;
   maxMistakes: number;
-};
+}
 
-export default function TokyoNightsAnimation({ mistakes, maxMistakes }: TokyoNightsAnimationProps) {
-  const [animated, setAnimated] = useState(false);
-  const dangerPercentage = (mistakes / maxMistakes) * 100;
-  const [flickeringWindows, setFlickeringWindows] = useState<number[]>([]);
+export default function TokyoNightsAnimation({
+  mistakes,
+  maxMistakes,
+}: TokyoNightsAnimationProps) {
+  const [neonFlicker, setNeonFlicker] = useState<Array<boolean>>([false, false, false, false]);
+  const [rainIntensity, setRainIntensity] = useState(1);
+  const [showLightning, setShowLightning] = useState(false);
+  const [hackProgress, setHackProgress] = useState(0);
+  const [terminalMessages, setTerminalMessages] = useState<string[]>([]);
+  const [windowsFlickering, setWindowsFlickering] = useState<Array<boolean>>([false, false]);
   
-  // Animation effect when mistakes change
-  useEffect(() => {
-    setAnimated(true);
-    const timer = setTimeout(() => setAnimated(false), 500);
-    return () => clearTimeout(timer);
-  }, [mistakes]);
+  // Calculate progress values
+  const mistakeRatio = mistakes / maxMistakes;
+  const securityDefense = Math.max(0, 100 - (mistakeRatio * 100)).toFixed(0);
+  const systemStability = Math.max(0, 100 - (mistakeRatio * 120)).toFixed(0);
   
-  // Set up flickering windows effect
+  // Random neon sign flickering
   useEffect(() => {
-    // Randomly select window indices to flicker
-    const getRandomWindows = () => {
-      const windowCount = 15 + 32 + 18 + 45 + 8;
-      const flickerCount = Math.floor(windowCount * 0.2); // 20% of windows flicker
-      const indices = [];
-      
-      for (let i = 0; i < flickerCount; i++) {
-        indices.push(Math.floor(Math.random() * windowCount));
-      }
-      
-      return indices;
+    const intervalIds = neonFlicker.map((_, index) => {
+      return setInterval(() => {
+        setNeonFlicker(prev => {
+          const newState = [...prev];
+          newState[index] = !newState[index];
+          return newState;
+        });
+      }, 500 + Math.random() * 2000);
+    });
+    
+    return () => {
+      intervalIds.forEach(id => clearInterval(id));
     };
-    
-    // Update flickering windows every 2 seconds
-    const interval = setInterval(() => {
-      setFlickeringWindows(getRandomWindows());
-    }, 2000);
-    
-    return () => clearInterval(interval);
   }, []);
   
-  // Window flickering function
-  const shouldFlicker = (index: number) => {
-    return flickeringWindows.includes(index);
-  };
+  // Increase rain intensity with mistakes
+  useEffect(() => {
+    setRainIntensity(1 + mistakeRatio * 2);
+  }, [mistakeRatio]);
+  
+  // Lightning effect on mistake
+  useEffect(() => {
+    if (mistakes > 0) {
+      setShowLightning(true);
+      setTimeout(() => setShowLightning(false), 200);
+    }
+  }, [mistakes]);
+  
+  // Update hack progress based on mistakes
+  useEffect(() => {
+    setHackProgress(Math.min(100, mistakeRatio * 100));
+    
+    // Add terminal messages
+    if (mistakes > 0) {
+      setTerminalMessages(prev => {
+        const messages = [
+          "SECURITY BREACH DETECTED",
+          "FIREWALL COMPROMISED",
+          "SCANNING FOR INTRUDERS",
+          "ENCRYPTION FAILURE",
+          "SYSTEM ERROR #7734",
+          "ACCESS DENIED... RETRYING",
+          "BACKUP SYSTEMS FAILING",
+          "INITIATING COUNTERMEASURES",
+          "DATA CORRUPTION DETECTED",
+          "EMERGENCY LOCKDOWN ENGAGED"
+        ];
+        
+        const newMessage = messages[Math.min(messages.length - 1, mistakes - 1)];
+        return [...prev.slice(-6), newMessage];
+      });
+    }
+  }, [mistakes, mistakeRatio]);
+  
+  // Random window flickering in buildings
+  useEffect(() => {
+    const windowIntervals = windowsFlickering.map((_, index) => {
+      return setInterval(() => {
+        setWindowsFlickering(prev => {
+          const newState = [...prev];
+          newState[index] = !newState[index];
+          return newState;
+        });
+      }, 300 + Math.random() * 1000);
+    });
+    
+    return () => {
+      windowIntervals.forEach(id => clearInterval(id));
+    };
+  }, []);
   
   return (
-    <div className={`relative w-full h-64 overflow-hidden rounded-xl shadow-2xl mb-6 ${animated ? 'animate-pulse' : ''}`}>
-      {/* Cityscape background */}
-      <div className="absolute inset-0 bg-gradient-to-b from-slate-900 via-blue-900 to-slate-950">
-        {/* Stars with twinkling effect */}
-        <div className="absolute h-1.5 w-1.5 bg-white rounded-full top-5 left-10 animate-[twinkle_4s_ease-in-out_infinite]"></div>
-        <div className="absolute h-1 w-1 bg-white rounded-full top-15 left-50 animate-[twinkle_3s_ease-in-out_infinite]" style={{animationDelay: '0.5s'}}></div>
-        <div className="absolute h-2 w-2 bg-white rounded-full top-8 left-70 animate-[twinkle_5s_ease-in-out_infinite]" style={{animationDelay: '1s'}}></div>
-        <div className="absolute h-1 w-1 bg-white rounded-full top-20 left-30 animate-[twinkle_3.5s_ease-in-out_infinite]" style={{animationDelay: '1.5s'}}></div>
-        <div className="absolute h-1.5 w-1.5 bg-white rounded-full top-12 left-80 animate-[twinkle_4.5s_ease-in-out_infinite]" style={{animationDelay: '0.7s'}}></div>
-        <div className="absolute h-1 w-1 bg-white rounded-full top-25 left-20 animate-[twinkle_3.2s_ease-in-out_infinite]" style={{animationDelay: '1.2s'}}></div>
+    <div className="relative w-full h-80 md:h-96 lg:h-[30rem] mb-4 overflow-hidden rounded-xl">
+      {/* Night sky background */}
+      <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-indigo-950 to-purple-950">
+        {/* Stars */}
+        <div className="stars absolute inset-0 opacity-80"></div>
         
-        {/* Moon */}
-        <div className="absolute h-10 w-10 rounded-full bg-blue-100 top-6 right-20 opacity-60 shadow-lg shadow-blue-100/30"></div>
+        {/* Distant moon */}
+        <div className="absolute top-8 right-16 w-16 h-16 rounded-full bg-slate-200 opacity-70 blur-[1px]">
+          <div className="absolute top-2 left-3 w-10 h-5 rounded-full bg-slate-400 opacity-30"></div>
+        </div>
         
-        {/* Buildings */}
-        <div className="absolute bottom-0 left-0 w-full flex justify-between">
-          <div className="w-14 h-28 bg-slate-900 relative">
-            <div className="absolute inset-0 grid grid-rows-5 grid-cols-3 gap-1 p-1">
-              {[...Array(15)].map((_, i) => (
-                <div key={i} className={`
-                  ${shouldFlicker(i) ? 'bg-yellow-300 animate-pulse' : 'bg-yellow-400 opacity-70'}
-                  ${i % 7 === 0 ? 'bg-pink-400' : ''}
-                `}></div>
-              ))}
+        {/* Lightning effect */}
+        {showLightning && (
+          <div className="absolute inset-0 bg-cyan-50 opacity-20 z-10"></div>
+        )}
             </div>
-            <div className="absolute top-2 right-2 h-2 w-2 bg-red-500 rounded-full animate-pulse"></div>
-          </div>
-          <div className="w-20 h-40 bg-slate-800 relative">
-            <div className="absolute inset-0 grid grid-rows-8 grid-cols-4 gap-1 p-1">
-              {[...Array(32)].map((_, i) => (
-                <div key={i + 15} className={`
-                  ${shouldFlicker(i + 15) ? 'bg-blue-300 animate-pulse' : 'bg-blue-400 opacity-60'}
-                  ${i % 9 === 0 ? 'bg-purple-400' : ''}
-                `}></div>
-              ))}
-            </div>
-            <div className="absolute top-0 left-1/2 h-3 w-3 bg-red-500 rounded-full animate-pulse transform -translate-x-1/2"></div>
-          </div>
-          <div className="w-16 h-36 bg-slate-900 relative">
-            <div className="absolute inset-0 grid grid-rows-6 grid-cols-3 gap-1 p-1">
-              {[...Array(18)].map((_, i) => (
-                <div key={i + 47} className={`
-                  ${shouldFlicker(i + 47) ? 'bg-pink-300 animate-pulse' : 'bg-pink-400 opacity-50'}
-                  ${i % 6 === 0 ? 'bg-cyan-400' : ''}
-                `}></div>
-              ))}
-            </div>
-            <div className="absolute top-2 left-2 h-2 w-2 bg-red-500 rounded-full animate-pulse"></div>
-          </div>
-          <div className="w-24 h-48 bg-slate-800 relative">
-            <div className="absolute inset-0 grid grid-rows-9 grid-cols-5 gap-1 p-1">
-              {[...Array(45)].map((_, i) => (
-                <div key={i + 65} className={`
-                  ${shouldFlicker(i + 65) ? 'bg-purple-300 animate-pulse' : 'bg-purple-400 opacity-40'}
-                  ${i % 11 === 0 ? 'bg-yellow-400' : ''}
-                `}></div>
-              ))}
-            </div>
-            <div className="absolute top-0 left-1/2 h-3 w-3 bg-red-500 rounded-full animate-pulse transform -translate-x-1/2"></div>
-          </div>
-          <div className="w-12 h-24 bg-slate-900 relative">
-            <div className="absolute inset-0 grid grid-rows-4 grid-cols-2 gap-1 p-1">
-              {[...Array(8)].map((_, i) => (
-                <div key={i + 110} className={`
-                  ${shouldFlicker(i + 110) ? 'bg-green-300 animate-pulse' : 'bg-green-400 opacity-60'}
-                  ${i % 4 === 0 ? 'bg-blue-400' : ''}
-                `}></div>
-              ))}
-            </div>
+      
+      {/* City skyline with buildings */}
+      <div className="absolute inset-x-0 bottom-0 h-3/4">
+        {/* Distant mountains */}
+        <div className="absolute left-0 right-0 bottom-1/2 h-1/4">
+          <div className="absolute left-0 w-full h-full bg-slate-900 opacity-80" 
+               style={{ clipPath: 'polygon(0% 100%, 15% 70%, 30% 85%, 45% 60%, 60% 80%, 75% 65%, 90% 75%, 100% 70%, 100% 100%)' }}>
           </div>
         </div>
         
-        {/* Neon signs */}
-        <div className="absolute left-20 bottom-40 text-xs text-pink-500 font-bold animate-glow">CYBER</div>
-        <div className="absolute right-30 bottom-50 text-xs text-cyan-500 font-bold animate-glow">TOKYO</div>
-        
-        {/* Floating drones/holograms */}
-        <div className="absolute left-1/4 top-1/3 w-3 h-1 bg-purple-500 rounded-full animate-pulse"></div>
-        <div className="absolute right-1/3 top-2/5 w-2 h-2 bg-cyan-500 rounded-full animate-pulse"></div>
-      </div>
-      
-      {/* Futuristic platform */}
-      <div className="absolute bottom-16 left-1/2 transform -translate-x-1/2 w-48 h-4 bg-gray-800 rounded-lg border border-pink-500 shadow-lg shadow-pink-500/20">
-        {/* Platform lights */}
-        <div className="absolute left-3 top-1/2 w-1 h-1 bg-cyan-400 rounded-full animate-pulse transform -translate-y-1/2"></div>
-        <div className="absolute left-12 top-1/2 w-1 h-1 bg-cyan-400 rounded-full animate-pulse transform -translate-y-1/2"></div>
-        <div className="absolute left-24 top-1/2 w-1 h-1 bg-cyan-400 rounded-full animate-pulse transform -translate-y-1/2"></div>
-        <div className="absolute left-36 top-1/2 w-1 h-1 bg-cyan-400 rounded-full animate-pulse transform -translate-y-1/2"></div>
-        <div className="absolute left-45 top-1/2 w-1 h-1 bg-cyan-400 rounded-full animate-pulse transform -translate-y-1/2"></div>
-      </div>
-      
-      {/* Cyber character */}
-      <div className="absolute left-1/2 transform -translate-x-1/2 bottom-20">
-        <div className="relative w-16 h-24">
-          {/* Body */}
-          <div className="absolute bottom-0 left-4 w-8 h-12 bg-black rounded-lg border border-cyan-500 shadow-md shadow-cyan-500/20"></div>
-          
-          {/* Head */}
-          <div className="absolute bottom-12 left-3 w-10 h-10 bg-black rounded-lg border border-pink-500 overflow-hidden shadow-md shadow-pink-500/20">
-            {/* Visor */}
-            <div className="absolute top-3 left-0 w-full h-3 bg-cyan-500 animate-pulse"></div>
-            
-            {/* Energy shield depleting */}
-            <div 
-              className="absolute top-0 left-0 w-full bg-pink-500 opacity-30"
-              style={{ 
-                height: `${100 - dangerPercentage}%`, 
-                transition: 'height 0.7s ease-in-out'
-              }}
-            ></div>
+        {/* Skyscrapers */}
+        <div className="absolute left-5 bottom-0 w-20 h-56 bg-slate-900">
+          {/* Windows */}
+          <div className="grid grid-cols-4 gap-1 p-2 h-full">
+            {Array.from({ length: 32 }).map((_, i) => (
+              <div 
+                key={i} 
+                className={`bg-yellow-300 opacity-${windowsFlickering[0] && i % 7 === 0 ? '10' : Math.random() > 0.3 ? '60' : '10'}`}
+                style={{ height: '6px' }}
+              ></div>
+            ))}
           </div>
-          
-          {/* Arms */}
-          <div className="absolute bottom-8 left-1 w-3 h-6 bg-black rounded-full border border-cyan-500"></div>
-          <div className="absolute bottom-8 right-1 w-3 h-6 bg-black rounded-full border border-cyan-500"></div>
-          
-          {/* Energy core */}
-          <div 
-            className={`absolute bottom-6 left-6 w-4 h-4 rounded-full transition-colors duration-700 ${
-              dangerPercentage > 66 ? 'animate-pulse' : dangerPercentage > 33 ? 'animate-[pulse_1.5s_ease-in-out_infinite]' : ''
-            }`}
-            style={{ 
-              backgroundColor: dangerPercentage > 66 ? 'red' : dangerPercentage > 33 ? 'orange' : 'cyan',
-              boxShadow: `0 0 10px ${dangerPercentage > 66 ? 'red' : dangerPercentage > 33 ? 'orange' : 'cyan'}`
-            }}
-          ></div>
+        </div>
+        
+        <div className="absolute left-28 bottom-0 w-16 h-72 bg-slate-800">
+          {/* Windows */}
+          <div className="grid grid-cols-3 gap-1 p-1 h-full">
+            {Array.from({ length: 45 }).map((_, i) => (
+              <div 
+                key={i} 
+                className={`bg-cyan-300 opacity-${windowsFlickering[1] && i % 5 === 0 ? '10' : Math.random() > 0.4 ? '50' : '10'}`}
+                style={{ height: '5px' }}
+              ></div>
+            ))}
+          </div>
+        </div>
+        
+        <div className="absolute left-48 bottom-0 w-24 h-64 bg-slate-950">
+          {/* Windows */}
+          <div className="grid grid-cols-5 gap-1 p-1 h-full">
+            {Array.from({ length: 50 }).map((_, i) => (
+              <div 
+                key={i} 
+                className={`bg-yellow-100 opacity-${Math.random() > 0.3 ? '40' : '10'}`}
+                style={{ height: '4px' }}
+              ></div>
+            ))}
+          </div>
+          {/* Antenna */}
+          <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 w-1 h-8 bg-slate-600">
+            <div className="absolute top-0 w-4 h-1 bg-red-500 left-1/2 transform -translate-x-1/2 animate-pulse"></div>
+          </div>
+        </div>
+        
+        <div className="absolute right-10 bottom-0 w-28 h-80 bg-slate-900">
+          {/* Windows */}
+          <div className="grid grid-cols-6 gap-1 p-1 h-full">
+            {Array.from({ length: 70 }).map((_, i) => (
+              <div 
+                key={i} 
+                className={`bg-yellow-200 opacity-${Math.random() > 0.3 ? '50' : '10'}`}
+                style={{ height: '4px' }}
+              ></div>
+            ))}
+          </div>
+        </div>
+        
+        <div className="absolute right-40 bottom-0 w-20 h-60 bg-slate-800">
+          {/* Windows */}
+          <div className="grid grid-cols-4 gap-1 p-1 h-full">
+            {Array.from({ length: 40 }).map((_, i) => (
+              <div 
+                key={i} 
+                className={`bg-blue-100 opacity-${Math.random() > 0.4 ? '40' : '10'}`}
+                style={{ height: '5px' }}
+              ></div>
+            ))}
+      </div>
+        </div>
+        
+        <div className="absolute right-64 bottom-0 w-14 h-48 bg-slate-700">
+          {/* Windows */}
+          <div className="grid grid-cols-3 gap-1 p-1 h-full">
+            {Array.from({ length: 30 }).map((_, i) => (
+              <div 
+                key={i} 
+                className={`bg-yellow-100 opacity-${Math.random() > 0.5 ? '30' : '10'}`}
+                style={{ height: '5px' }}
+              ></div>
+            ))}
+          </div>
         </div>
       </div>
       
-      {/* Digital barrier */}
+      {/* Flying car with lights */}
       <div 
-        className="absolute top-0 inset-x-0 bg-gradient-to-b from-pink-500 to-transparent"
-        style={{ height: `${dangerPercentage / 3}%` }}
+        className="absolute"
+        style={{ 
+          top: '40%',
+          left: `${50 + (mistakeRatio > 0.5 ? (Math.random() * 4 - 2) : 0)}%`,
+          transform: `translateX(-50%) rotate(${mistakeRatio > 0.7 ? (Math.random() * 10 - 5) : 0}deg)`
+        }}
       >
-        {/* Grid lines in the barrier */}
-        <div className="absolute inset-0 grid grid-cols-12 grid-rows-3 gap-3 opacity-40">
-          {[...Array(36)].map((_, i) => (
-            <div key={i} className="border border-white"></div>
-          ))}
+        <div className="relative w-24 h-8">
+          <div className="absolute inset-0 bg-slate-800 rounded-full"></div>
+          <div className="absolute bottom-2 left-0 w-4 h-2 bg-red-500 rounded-l-full opacity-80 animate-pulse"></div>
+          <div className="absolute bottom-2 right-0 w-4 h-2 bg-blue-400 rounded-r-full opacity-80 animate-pulse"></div>
+          <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-10 h-3 bg-slate-700 rounded-t-lg"></div>
+          
+          {/* Hover effect lights */}
+          <div className="absolute -bottom-2 left-4 w-16 h-1 bg-cyan-400 opacity-60 blur-[2px]"></div>
         </div>
       </div>
       
-      {/* Holographic warnings */}
-      {dangerPercentage > 50 && (
-        <div className="absolute top-1/3 left-1/4 text-red-500 font-mono text-xs animate-ping opacity-50">
-          WARNING
-        </div>
-      )}
+      {/* Neon signs */}
+      <div className={`absolute top-20 left-1/4 text-2xl font-bold text-pink-500 ${neonFlicker[0] ? 'opacity-50' : 'opacity-90'}`}
+           style={{ textShadow: '0 0 5px #ec4899, 0 0 10px #ec4899' }}>
+        CYBER
+      </div>
       
-      {dangerPercentage > 66 && (
-        <div className="absolute top-1/4 right-1/4 text-red-500 font-mono text-xs animate-pulse">
-          CRITICAL
-        </div>
-      )}
+      <div className={`absolute top-30 right-1/4 text-xl font-bold text-cyan-400 ${neonFlicker[1] ? 'opacity-50' : 'opacity-90'}`}
+           style={{ textShadow: '0 0 5px #22d3ee, 0 0 10px #22d3ee' }}>
+        NEXUS
+      </div>
       
-      {/* Digital rain effect - enhanced */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-20">
-        <div className="absolute top-0 left-1/5 text-cyan-500 font-mono text-xs animate-[fall_5s_linear_infinite]">
-          10010111
+      <div className={`absolute top-40 left-1/3 text-2xl font-bold text-purple-500 ${neonFlicker[2] ? 'opacity-40' : 'opacity-80'}`}
+           style={{ textShadow: '0 0 5px #a855f7, 0 0 10px #a855f7' }}>
+        ニオン
+      </div>
+      
+      <div className={`absolute top-32 right-1/3 text-3xl font-bold text-blue-500 ${neonFlicker[3] ? 'opacity-50' : 'opacity-90'}`}
+           style={{ textShadow: '0 0 5px #3b82f6, 0 0 10px #3b82f6' }}>
+        東京
+      </div>
+      
+      {/* Additional neon with game status */}
+      <div className={`absolute bottom-20 right-10 text-xl font-bold text-red-500 ${mistakes > maxMistakes * 0.7 ? 'animate-pulse' : ''}`}
+           style={{ textShadow: '0 0 5px #ef4444, 0 0 10px #ef4444' }}>
+        {parseInt(systemStability) < 30 ? 'DANGER' : 'セキュリティ'}
+      </div>
+      
+      {/* Larger modern street with hover cars */}
+      <div className="absolute bottom-0 inset-x-0 h-16 bg-slate-900 flex items-center justify-center">
+        <div className="w-4/5 h-1 bg-yellow-400 opacity-50"></div>
+        {/* Street light */}
+        <div className="absolute bottom-0 left-12 w-1 h-24 bg-slate-700">
+          <div className="absolute -top-1 w-8 h-1 bg-slate-700"></div>
+          <div className="absolute -top-3 right-0 w-2 h-2 rounded-full bg-amber-300" style={{ boxShadow: '0 0 10px rgba(251, 191, 36, 0.8)' }}></div>
         </div>
-        <div className="absolute top-0 left-2/5 text-cyan-500 font-mono text-xs animate-[fall_7s_linear_infinite]" style={{ animationDelay: '0.5s' }}>
-          01101001
-        </div>
-        <div className="absolute top-0 left-3/5 text-cyan-500 font-mono text-xs animate-[fall_4s_linear_infinite]" style={{ animationDelay: '1s' }}>
-          11001010
-        </div>
-        <div className="absolute top-0 left-4/5 text-cyan-500 font-mono text-xs animate-[fall_6s_linear_infinite]" style={{ animationDelay: '1.5s' }}>
-          00101101
-        </div>
-        <div className="absolute top-0 left-1/6 text-pink-500 font-mono text-xs animate-[fall_5.5s_linear_infinite]" style={{ animationDelay: '0.7s' }}>
-          11110000
-        </div>
-        <div className="absolute top-0 left-5/6 text-pink-500 font-mono text-xs animate-[fall_6.5s_linear_infinite]" style={{ animationDelay: '1.2s' }}>
-          00001111
+        <div className="absolute bottom-0 right-12 w-1 h-24 bg-slate-700">
+          <div className="absolute -top-1 w-8 h-1 bg-slate-700"></div>
+          <div className="absolute -top-3 left-0 w-2 h-2 rounded-full bg-amber-300" style={{ boxShadow: '0 0 10px rgba(251, 191, 36, 0.8)' }}></div>
         </div>
       </div>
-
-      {/* Danger indicator */}
-      <div className="absolute bottom-4 left-4 right-4">
-        <div className="text-pink-400 text-xs mb-1 font-mono">Energy Shield: {Math.round(100 - dangerPercentage)}%</div>
-        <div className="w-full h-2 bg-gray-800 rounded-full overflow-hidden border border-pink-500">
-          <div 
-            className="h-full rounded-full transition-all duration-500"
-            style={{ 
-              width: `${100 - dangerPercentage}%`,
-              backgroundColor: dangerPercentage > 66 ? 'red' : dangerPercentage > 33 ? 'orange' : 'cyan',
-              boxShadow: `0 0 5px ${dangerPercentage > 66 ? 'red' : dangerPercentage > 33 ? 'orange' : 'cyan'}`
-            }}
+      
+      {/* Cyberpunk rain effect */}
+      <div className="rain absolute inset-0 z-10" style={{ opacity: 0.4 * rainIntensity }}></div>
+      
+      {/* Terminal information overlay */}
+      <div className="absolute top-6 left-6 w-72 h-56 bg-black bg-opacity-70 rounded-lg p-3 border border-cyan-500 font-mono text-xs">
+        <div className="text-cyan-400 mb-2">{"> SYSTEM STATUS"}</div>
+        
+        <div className="flex flex-col gap-2 mb-3">
+          <div>
+            <div className="text-green-400 mb-1">SECURITY DEFENSE</div>
+            <div className="h-2 bg-slate-950 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-gradient-to-r from-green-500 to-cyan-400 transition-all duration-300" 
+                style={{ width: `${securityDefense}%` }}
+            ></div>
+            </div>
+            <div className="flex justify-between text-slate-300 mt-1">
+              <span>{securityDefense}%</span>
+              <span className={mistakeRatio > 0.7 ? 'text-red-400 animate-pulse' : ''}>
+                {mistakeRatio > 0.7 ? 'CRITICAL' : mistakeRatio > 0.4 ? 'ALERT' : 'STABLE'}
+              </span>
+            </div>
+          </div>
+          
+          <div>
+            <div className="text-blue-400 mb-1">SYSTEM STABILITY</div>
+            <div className="h-2 bg-slate-950 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-gradient-to-r from-blue-600 to-indigo-500 transition-all duration-300" 
+                style={{ width: `${systemStability}%` }}
+              ></div>
+          </div>
+          </div>
+          
+          <div>
+            <div className="text-red-400 mb-1">HACK PROGRESS</div>
+            <div className="h-2 bg-slate-950 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-gradient-to-r from-red-600 to-orange-400 transition-all duration-300" 
+                style={{ width: `${hackProgress}%` }}
           ></div>
+            </div>
+          </div>
+        </div>
+        
+        <div className="text-yellow-400 mb-1">{"> TERMINAL"}</div>
+        <div className="text-slate-300 h-20 overflow-hidden">
+          {terminalMessages.map((msg, i) => (
+            <div key={i} className="text-[9px] opacity-90 mb-1">
+              [{new Date().toLocaleTimeString()}] {msg}
+            </div>
+          ))}
+          {!terminalMessages.length && (
+            <div className="text-[9px] opacity-90 mb-1">
+              SYSTEM RUNNING...
+            </div>
+          )}
+          <div className="text-green-400 inline-block">$</div>
+          <div className="inline-block ml-1 animate-pulse">_</div>
         </div>
       </div>
+      
+      {/* Warning message */}
+      <div className="absolute top-6 right-6 w-56 h-28 bg-black bg-opacity-70 rounded-lg p-2 border border-pink-500 font-mono text-xs">
+        <div className="text-pink-400 mb-1">{"> WARNING"}</div>
+        <div className="text-slate-300 text-[10px] opacity-90">
+          Unauthorized access detected. Facial recognition scan failed. Neural firewall compromised. Continue password attempts at your own risk.
+        </div>
+        
+        {mistakeRatio > 0.5 && (
+          <div className="mt-2 text-red-400 text-[10px] font-bold animate-pulse">
+            SECURITY COUNTERMEASURES ACTIVE
+          </div>
+        )}
+      </div>
+      
+      {/* Alert messages */}
+      {mistakeRatio > 0.8 && (
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-red-500 font-bold text-lg animate-pulse font-mono">
+          SYSTEM OVERRIDE IMMINENT
+        </div>
+      )}
+      
+      {/* CSS for cyberpunk effects */}
+      <style jsx>{`
+        .stars {
+          background-image: radial-gradient(2px 2px at 20px 30px, #eee, rgba(0,0,0,0)),
+                           radial-gradient(2px 2px at 40px 70px, #fff, rgba(0,0,0,0)),
+                           radial-gradient(1px 1px at 90px 40px, #fff, rgba(0,0,0,0)),
+                           radial-gradient(2px 2px at 160px 120px, #ddd, rgba(0,0,0,0));
+          background-repeat: repeat;
+          background-size: 200px 200px;
+        }
+        
+        .rain {
+          position: absolute;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          z-index: 2;
+          background: linear-gradient(to bottom, transparent 0%, rgba(22, 41, 79, 0.6) 100%);
+          background-size: ${0.5 * rainIntensity}px 1000px;
+          animation: rain ${2 / rainIntensity}s linear infinite;
+          background-image: 
+            linear-gradient(to bottom, rgba(0, 230, 255, 0.2) 0%, rgba(0, 230, 255, 0) 100%),
+            linear-gradient(to bottom, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 100%);
+          background-size: 10px 100%, 20px 200px;
+        }
+        
+        @keyframes rain {
+          0% {
+            background-position: 0px 0px;
+          }
+          100% {
+            background-position: ${50 * rainIntensity}px 1000px;
+          }
+        }
+      `}</style>
     </div>
   );
 } 

@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ThemeProvider, useTheme } from './ThemeProvider';
 import confetti from 'canvas-confetti';
 import { motion } from 'framer-motion';
-import { Zap } from 'lucide-react';
+import { Zap, Volume2, VolumeX } from 'lucide-react';
 import TokyoNightsAnimation from './themes/TokyoNightsAnimation';
 import LavaTempleAnimation from './themes/LavaTempleAnimation';
 import SpaceExplorerAnimation from './themes/SpaceExplorerAnimation';
@@ -26,6 +26,61 @@ interface HangmanGameProps {
 
 // Mock word lists based on categories and difficulties
 const WORD_LISTS = {
+  // Basics categories
+  numbers: {
+    beginner: ['uno', 'dos', 'tres', 'cuatro', 'cinco'],
+    intermediate: ['seis', 'siete', 'ocho', 'nueve', 'diez'],
+    advanced: ['once', 'doce', 'trece', 'catorce', 'quince']
+  },
+  colors: {
+    beginner: ['rojo', 'azul', 'verde', 'negro', 'blanco'],
+    intermediate: ['amarillo', 'morado', 'naranja', 'gris', 'rosa'],
+    advanced: ['violeta', 'turquesa', 'marrón', 'dorado', 'plateado']
+  },
+  days: {
+    beginner: ['lunes', 'martes', 'viernes', 'sábado', 'domingo'],
+    intermediate: ['miércoles', 'jueves', 'semana', 'hoy', 'mañana'],
+    advanced: ['pasado mañana', 'anteayer', 'fin de semana', 'laboral', 'festivo']
+  },
+  months: {
+    beginner: ['enero', 'mayo', 'julio', 'junio', 'marzo'],
+    intermediate: ['febrero', 'abril', 'agosto', 'octubre', 'diciembre'],
+    advanced: ['noviembre', 'septiembre', 'primavera', 'verano', 'invierno']
+  },
+  greetings: {
+    beginner: ['hola', 'adios', 'gracias', 'buenos días', 'buenas noches'],
+    intermediate: ['buenas tardes', 'hasta luego', 'encantado', 'bienvenido', 'por favor'],
+    advanced: ['hasta pronto', 'mucho gusto', 'igualmente', 'disculpe', 'felicidades']
+  },
+  phrases: {
+    beginner: ['bien', 'mal', 'sí', 'no', 'quizás'],
+    intermediate: ['tal vez', 'posiblemente', 'seguramente', 'probablemente', 'ciertamente'],
+    advanced: ['sin embargo', 'por supuesto', 'de hecho', 'en realidad', 'a propósito']
+  },
+  
+  // People & Relationships categories
+  family: {
+    beginner: ['padre', 'madre', 'hijo', 'hija', 'hermano'],
+    intermediate: ['hermana', 'abuelo', 'abuela', 'tío', 'tía'],
+    advanced: ['sobrino', 'sobrina', 'cuñado', 'cuñada', 'yerno']
+  },
+  physicaltraits: {
+    beginner: ['alto', 'bajo', 'fuerte', 'débil', 'guapo'],
+    intermediate: ['delgado', 'gordo', 'rubio', 'moreno', 'calvo'],
+    advanced: ['musculoso', 'atlético', 'corpulento', 'esbelto', 'robusto']
+  },
+  personality: {
+    beginner: ['feliz', 'triste', 'enojado', 'tranquilo', 'nervioso'],
+    intermediate: ['amable', 'generoso', 'paciente', 'impaciente', 'tímido'],
+    advanced: ['comprensivo', 'confiable', 'temperamental', 'impulsivo', 'perseverante']
+  },
+  professions: {
+    beginner: ['doctor', 'maestro', 'cocinero', 'policía', 'bombero'],
+    intermediate: ['abogado', 'ingeniero', 'enfermero', 'arquitecto', 'piloto'],
+    advanced: ['carpintero', 'electricista', 'fontanero', 'contable', 'psicólogo']
+  },
+  
+  // Original categories for backward compatibility
   animals: {
     beginner: ['gato', 'perro', 'pez', 'vaca', 'pato'],
     intermediate: ['elefante', 'cocodrilo', 'mariposa', 'murciélago', 'jirafa'],
@@ -36,6 +91,50 @@ const WORD_LISTS = {
     intermediate: ['tortilla', 'ensalada', 'pescado', 'chocolate', 'naranja'],
     advanced: ['espaguetis', 'guacamole', 'champiñones', 'berenjena', 'calabacín']
   },
+  countries: {
+    beginner: ['españa', 'francia', 'china', 'japón', 'italia'],
+    intermediate: ['alemania', 'portugal', 'rusia', 'canadá', 'méxico'],
+    advanced: ['australia', 'sudáfrica', 'argentina', 'colombia', 'marruecos']
+  },
+  sports: {
+    beginner: ['fútbol', 'tenis', 'baloncesto', 'natación', 'golf'],
+    intermediate: ['voleibol', 'rugby', 'ciclismo', 'atletismo', 'boxeo'],
+    advanced: ['esgrima', 'equitación', 'waterpolo', 'gimnasia', 'halterofilia']
+  },
+  
+  // Additional categories from hierarchical structure
+  household: {
+    beginner: ['mesa', 'silla', 'cama', 'sofá', 'puerta'],
+    intermediate: ['ventana', 'cocina', 'nevera', 'lámpara', 'espejo'],
+    advanced: ['lavadora', 'microondas', 'aspiradora', 'calefacción', 'cortina']
+  },
+  rooms: {
+    beginner: ['salón', 'cocina', 'baño', 'dormitorio', 'comedor'],
+    intermediate: ['despacho', 'garaje', 'terraza', 'jardín', 'sótano'],
+    advanced: ['vestíbulo', 'lavandería', 'biblioteca', 'gimnasio', 'trastero']
+  },
+  foods: {
+    beginner: ['pan', 'queso', 'huevo', 'pollo', 'pasta'],
+    intermediate: ['carne', 'pescado', 'verdura', 'fruta', 'postre'],
+    advanced: ['marisco', 'legumbre', 'salsa', 'condimento', 'especias']
+  },
+  bodyparts: {
+    beginner: ['cabeza', 'brazo', 'pierna', 'mano', 'pie'],
+    intermediate: ['hombro', 'codo', 'rodilla', 'dedo', 'cuello'],
+    advanced: ['tobillo', 'muñeca', 'pecho', 'espalda', 'abdomen']
+  },
+  verbs: {
+    beginner: ['ser', 'estar', 'ir', 'tener', 'hacer'],
+    intermediate: ['poder', 'querer', 'decir', 'ver', 'saber'],
+    advanced: ['poner', 'salir', 'venir', 'seguir', 'conocer']
+  },
+  adjectives: {
+    beginner: ['grande', 'pequeño', 'bueno', 'malo', 'bonito'],
+    intermediate: ['precioso', 'horrible', 'interesante', 'aburrido', 'difícil'],
+    advanced: ['extraordinario', 'espectacular', 'insignificante', 'indescriptible', 'incomparable']
+  },
+  
+  // Fallback for testing only - should not be used in production
   places: {
     beginner: ['casa', 'calle', 'playa', 'parque', 'hotel'],
     intermediate: ['biblioteca', 'restaurante', 'hospital', 'mercado', 'estación'],
@@ -44,9 +143,26 @@ const WORD_LISTS = {
 };
 
 // Different language word lists
-const LANGUAGE_WORD_LISTS: Record<string, typeof WORD_LISTS> = {
+const LANGUAGE_WORD_LISTS: Record<string, Partial<typeof WORD_LISTS>> = {
   spanish: WORD_LISTS,
   english: {
+    // Basic categories
+    numbers: {
+      beginner: ['one', 'two', 'three', 'four', 'five'],
+      intermediate: ['six', 'seven', 'eight', 'nine', 'ten'],
+      advanced: ['eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen']
+    },
+    colors: {
+      beginner: ['red', 'blue', 'green', 'black', 'white'],
+      intermediate: ['yellow', 'purple', 'orange', 'gray', 'pink'],
+      advanced: ['violet', 'turquoise', 'brown', 'golden', 'silver']
+    },
+    days: {
+      beginner: ['monday', 'tuesday', 'friday', 'saturday', 'sunday'],
+      intermediate: ['wednesday', 'thursday', 'week', 'today', 'tomorrow'],
+      advanced: ['day after tomorrow', 'yesterday', 'weekend', 'weekday', 'holiday']
+    },
+    // Original categories
     animals: {
       beginner: ['cat', 'dog', 'fish', 'cow', 'duck'],
       intermediate: ['elephant', 'crocodile', 'butterfly', 'bat', 'giraffe'],
@@ -57,154 +173,88 @@ const LANGUAGE_WORD_LISTS: Record<string, typeof WORD_LISTS> = {
       intermediate: ['omelet', 'salad', 'fish', 'chocolate', 'orange'],
       advanced: ['spaghetti', 'guacamole', 'mushrooms', 'eggplant', 'zucchini']
     },
-    places: {
-      beginner: ['house', 'street', 'beach', 'park', 'hotel'],
-      intermediate: ['library', 'restaurant', 'hospital', 'market', 'station'],
-      advanced: ['university', 'airport', 'cliff', 'cemetery', 'cathedral']
+    // People categories
+    family: {
+      beginner: ['father', 'mother', 'son', 'daughter', 'brother'],
+      intermediate: ['sister', 'grandfather', 'grandmother', 'uncle', 'aunt'],
+      advanced: ['nephew', 'niece', 'brother-in-law', 'sister-in-law', 'son-in-law']
+    },
+    professions: {
+      beginner: ['doctor', 'teacher', 'cook', 'police', 'firefighter'],
+      intermediate: ['lawyer', 'engineer', 'nurse', 'architect', 'pilot'],
+      advanced: ['carpenter', 'electrician', 'plumber', 'accountant', 'psychologist']
     }
   },
   french: {
+    numbers: {
+      beginner: ['un', 'deux', 'trois', 'quatre', 'cinq'],
+      intermediate: ['six', 'sept', 'huit', 'neuf', 'dix'],
+      advanced: ['onze', 'douze', 'treize', 'quatorze', 'quinze']
+    },
+    colors: {
+      beginner: ['rouge', 'bleu', 'vert', 'noir', 'blanc'],
+      intermediate: ['jaune', 'violet', 'orange', 'gris', 'rose'],
+      advanced: ['pourpre', 'turquoise', 'marron', 'doré', 'argenté']
+    },
     animals: {
       beginner: ['chat', 'chien', 'poisson', 'vache', 'canard'],
       intermediate: ['éléphant', 'crocodile', 'papillon', 'chauve-souris', 'girafe'],
       advanced: ['ornithorynque', 'rhinocéros', 'hippopotame', 'chimpanzé', 'tatou']
     },
-    food: {
-      beginner: ['pain', 'café', 'lait', 'miel', 'riz'],
-      intermediate: ['omelette', 'salade', 'poisson', 'chocolat', 'orange'],
-      advanced: ['spaghetti', 'guacamole', 'champignons', 'aubergine', 'courgette']
-    },
-    places: {
-      beginner: ['maison', 'rue', 'plage', 'parc', 'hôtel'],
-      intermediate: ['bibliothèque', 'restaurant', 'hôpital', 'marché', 'gare'],
-      advanced: ['université', 'aéroport', 'falaise', 'cimetière', 'cathédrale']
+    family: {
+      beginner: ['père', 'mère', 'fils', 'fille', 'frère'],
+      intermediate: ['soeur', 'grand-père', 'grand-mère', 'oncle', 'tante'],
+      advanced: ['neveu', 'nièce', 'beau-frère', 'belle-soeur', 'gendre']
     }
   },
   german: {
+    numbers: {
+      beginner: ['eins', 'zwei', 'drei', 'vier', 'fünf'],
+      intermediate: ['sechs', 'sieben', 'acht', 'neun', 'zehn'],
+      advanced: ['elf', 'zwölf', 'dreizehn', 'vierzehn', 'fünfzehn']
+    },
+    colors: {
+      beginner: ['rot', 'blau', 'grün', 'schwarz', 'weiß'],
+      intermediate: ['gelb', 'lila', 'orange', 'grau', 'rosa'],
+      advanced: ['violett', 'türkis', 'braun', 'golden', 'silbern']
+    },
     animals: {
       beginner: ['katze', 'hund', 'fisch', 'kuh', 'ente'],
       intermediate: ['elefant', 'krokodil', 'schmetterling', 'fledermaus', 'giraffe'],
       advanced: ['schnabeltier', 'nashorn', 'nilpferd', 'schimpanse', 'gürteltier']
-    },
-    food: {
-      beginner: ['brot', 'kaffee', 'milch', 'honig', 'reis'],
-      intermediate: ['omelett', 'salat', 'fisch', 'schokolade', 'orange'],
-      advanced: ['spaghetti', 'guacamole', 'pilze', 'aubergine', 'zucchini']
-    },
-    places: {
-      beginner: ['haus', 'straße', 'strand', 'park', 'hotel'],
-      intermediate: ['bibliothek', 'restaurant', 'krankenhaus', 'markt', 'bahnhof'],
-      advanced: ['universität', 'flughafen', 'klippe', 'friedhof', 'kathedrale']
-    }
-  },
-  italian: {
-    animals: {
-      beginner: ['gatto', 'cane', 'pesce', 'mucca', 'anatra'],
-      intermediate: ['elefante', 'coccodrillo', 'farfalla', 'pipistrello', 'giraffa'],
-      advanced: ['ornitorinco', 'rinoceronte', 'ippopotamo', 'scimpanzé', 'armadillo']
-    },
-    food: {
-      beginner: ['pane', 'caffè', 'latte', 'miele', 'riso'],
-      intermediate: ['frittata', 'insalata', 'pesce', 'cioccolato', 'arancia'],
-      advanced: ['spaghetti', 'guacamole', 'funghi', 'melanzana', 'zucchina']
-    },
-    places: {
-      beginner: ['casa', 'strada', 'spiaggia', 'parco', 'albergo'],
-      intermediate: ['biblioteca', 'ristorante', 'ospedale', 'mercato', 'stazione'],
-      advanced: ['università', 'aeroporto', 'scogliera', 'cimitero', 'cattedrale']
-    }
-  },
-  japanese: {
-    animals: {
-      beginner: ['inu', 'neko', 'sakana', 'uma', 'tori'],
-      intermediate: ['kitsune', 'tanuki', 'saru', 'kuma', 'kaeru'],
-      advanced: ['fukurou', 'kabutomushi', 'rikugame', 'raion', 'hakucho']
-    },
-    food: {
-      beginner: ['gohan', 'miso', 'nori', 'sushi', 'ramen'],
-      intermediate: ['tempura', 'onigiri', 'mochi', 'yakitori', 'udon'],
-      advanced: ['okonomiyaki', 'takoyaki', 'sukiyaki', 'shabu shabu', 'yakiniku']
-    },
-    places: {
-      beginner: ['ie', 'mise', 'eki', 'koen', 'gakko'],
-      intermediate: ['toshokan', 'byoin', 'shima', 'mura', 'shiro'],
-      advanced: ['daigaku', 'jinja', 'onsen', 'suizokukan', 'bijutsukan']
-    }
-  },
-  mandarin: {
-    animals: {
-      beginner: ['gou', 'mao', 'yu', 'niu', 'ya'],
-      intermediate: ['xiong', 'she', 'xiongmao', 'hou', 'yang'],
-      advanced: ['haixing', 'daxiang', 'feiniu', 'haigui', 'tuoniao']
-    },
-    food: {
-      beginner: ['fan', 'cha', 'mian', 'jiao', 'yu'],
-      intermediate: ['jiaozi', 'chaofan', 'huntun', 'doufu', 'baozi'],
-      advanced: ['pekingyazi', 'huoguou', 'chashao', 'dongporou', 'tangyuan']
-    },
-    places: {
-      beginner: ['jia', 'lu', 'dian', 'yuan', 'xue'],
-      intermediate: ['tushuguan', 'yiyuan', 'gongyuan', 'shangdian', 'jiuba'],
-      advanced: ['bowuguan', 'gongyuan', 'youleyuan', 'ditiezhan', 'daxue']
-    }
-  },
-  portuguese: {
-    animals: {
-      beginner: ['gato', 'cao', 'peixe', 'vaca', 'pato'],
-      intermediate: ['elefante', 'jacare', 'borboleta', 'morcego', 'girafa'],
-      advanced: ['ornitorrinco', 'rinoceronte', 'hipopotamo', 'chimpanze', 'tatu']
-    },
-    food: {
-      beginner: ['pao', 'cafe', 'leite', 'mel', 'arroz'],
-      intermediate: ['omelete', 'salada', 'peixe', 'chocolate', 'laranja'],
-      advanced: ['espaguete', 'guacamole', 'cogumelos', 'berinjela', 'abobrinha']
-    },
-    places: {
-      beginner: ['casa', 'rua', 'praia', 'parque', 'hotel'],
-      intermediate: ['biblioteca', 'restaurante', 'hospital', 'mercado', 'estacao'],
-      advanced: ['universidade', 'aeroporto', 'penhasco', 'cemiterio', 'catedral']
-    }
-  },
-  arabic: {
-    animals: {
-      beginner: ['qitt', 'kalb', 'samak', 'baqara', 'batta'],
-      intermediate: ['feel', 'timsah', 'farasha', 'watwat', 'zarafa'],
-      advanced: ['karkadann', 'faras', 'qird', 'thuraya', 'nasir']
-    },
-    food: {
-      beginner: ['khobz', 'qahwa', 'halib', 'asal', 'ruz'],
-      intermediate: ['hummus', 'falafel', 'shawarma', 'tabbouleh', 'fattoush'],
-      advanced: ['baklava', 'kunafa', 'mansaf', 'maqluba', 'muhammara']
-    },
-    places: {
-      beginner: ['bayt', 'sharia', 'shati', 'hadeeqa', 'funduq'],
-      intermediate: ['maktaba', 'matam', 'mustashfa', 'suq', 'mahatta'],
-      advanced: ['jamia', 'matar', 'qala', 'maqbara', 'masjid']
-    }
-  },
-  russian: {
-    animals: {
-      beginner: ['kot', 'sobaka', 'ryba', 'korova', 'utka'],
-      intermediate: ['slon', 'krokodil', 'babochka', 'letuchaya mysh', 'zhiraf'],
-      advanced: ['utkonos', 'nosorog', 'begemot', 'shimpanze', 'bronenosts']
-    },
-    food: {
-      beginner: ['khleb', 'kofe', 'moloko', 'myod', 'ris'],
-      intermediate: ['omlet', 'salat', 'ryba', 'shokolad', 'apelsin'],
-      advanced: ['borshch', 'pelmeni', 'bliny', 'pirogi', 'olivier']
-    },
-    places: {
-      beginner: ['dom', 'ulitsa', 'plyazh', 'park', 'gostinitsa'],
-      intermediate: ['biblioteka', 'restoran', 'bolnitsa', 'rynok', 'stantsiya'],
-      advanced: ['universitet', 'aeroport', 'utyes', 'kladbishche', 'sobor']
     }
   }
 };
 
+// Ensure each language has a fallback for all categories
+Object.keys(LANGUAGE_WORD_LISTS).forEach(language => {
+  if (language !== 'english' && language !== 'spanish') {
+    // English is our base fallback language
+    LANGUAGE_WORD_LISTS[language] = {
+      ...LANGUAGE_WORD_LISTS[language]
+    };
+  }
+});
+
 const MAX_ATTEMPTS = 6;
 
+// Update the ExtendedThemeContextType interface
+type ExtendedThemeContextType = {
+  themeId: string;
+  themeClasses: {
+    background: string;
+    accent: string;
+    text: string;
+    button: string;
+    dangerText: string;
+    winMessage: string;
+    loseMessage: string;
+  };
+};
+
 function GameContent({ settings, onBackToMenu, onGameEnd, isFullscreen }: HangmanGameProps) {
-  const { themeId, themeClasses } = useTheme();
+  const { themeId, themeClasses } = useTheme() as ExtendedThemeContextType;
+  const [themeClassesState, setThemeClassesState] = useState(themeClasses);
   const [word, setWord] = useState('');
   const [wordLetters, setWordLetters] = useState<string[]>([]);
   const [guessedLetters, setGuessedLetters] = useState<string[]>([]);
@@ -212,12 +262,15 @@ function GameContent({ settings, onBackToMenu, onGameEnd, isFullscreen }: Hangma
   const [gameStatus, setGameStatus] = useState<'playing' | 'won' | 'lost'>('playing');
   const [timer, setTimer] = useState(0);
   const [timerInterval, setTimerInterval] = useState<NodeJS.Timeout | null>(null);
-  const [hints, setHints] = useState(3);
   const [score, setScore] = useState(0);
+  const [totalScore, setTotalScore] = useState(() => {
+    return parseInt(localStorage.getItem('hangmanTotalScore') || '0', 10);
+  });
+  const [hints, setHints] = useState(3);
   const [showPowerupEffect, setShowPowerupEffect] = useState(false);
   const [animation, setAnimation] = useState<'correct' | 'wrong' | null>(null);
   
-  const [soundEffects, setSoundEffects] = useState({
+  const [soundEffectTriggers, setSoundEffectTriggers] = useState({
     correctLetter: false,
     incorrectLetter: false,
     gameWon: false,
@@ -226,6 +279,11 @@ function GameContent({ settings, onBackToMenu, onGameEnd, isFullscreen }: Hangma
   });
   
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [musicEnabled, setMusicEnabled] = useState(false);
+  const backgroundMusicRef = useRef<HTMLAudioElement | null>(null);
+
+  // Add a state to track correct guesses for the Tokyo Nights theme
+  const [correctLetterCounter, setCorrectLetterCounter] = useState(0);
 
   // Initialize game
   useEffect(() => {
@@ -236,15 +294,59 @@ function GameContent({ settings, onBackToMenu, onGameEnd, isFullscreen }: Hangma
         return settings.customWords[randomIndex];
       }
       
-      // Get language-specific word lists
-      const languageWordLists = LANGUAGE_WORD_LISTS[settings.language] || LANGUAGE_WORD_LISTS.english;
-      
-      // Get category and difficulty word lists
-      const categoryWords = languageWordLists[settings.category as keyof typeof WORD_LISTS] || languageWordLists.animals;
-      const difficultyWords = categoryWords[settings.difficulty as keyof typeof categoryWords] || categoryWords.beginner;
-      
-      const randomIndex = Math.floor(Math.random() * difficultyWords.length);
-      return difficultyWords[randomIndex];
+      try {
+        // Get language-specific word lists
+        const languageWordLists = LANGUAGE_WORD_LISTS[settings.language] || LANGUAGE_WORD_LISTS.english || {};
+        
+        // First try to get the category from the selected language
+        const categoryWords = languageWordLists[settings.category as keyof typeof WORD_LISTS];
+        
+        // If category doesn't exist in selected language, try English
+        if (!categoryWords && settings.language !== 'english') {
+          const englishCategoryWords = LANGUAGE_WORD_LISTS.english?.[settings.category as keyof typeof WORD_LISTS];
+          
+          if (englishCategoryWords) {
+            const difficultyWords = englishCategoryWords[settings.difficulty as keyof (typeof englishCategoryWords)] || 
+                                   englishCategoryWords.beginner;
+            
+            if (difficultyWords && difficultyWords.length > 0) {
+              const randomIndex = Math.floor(Math.random() * difficultyWords.length);
+              return difficultyWords[randomIndex];
+            }
+          }
+        }
+        
+        // If we have a valid category, get words for the difficulty
+        if (categoryWords) {
+          const difficultyWords = categoryWords[settings.difficulty as keyof (typeof categoryWords)] || 
+                                 categoryWords.beginner;
+          
+          if (difficultyWords && difficultyWords.length > 0) {
+            const randomIndex = Math.floor(Math.random() * difficultyWords.length);
+            return difficultyWords[randomIndex];
+          }
+        }
+        
+        // If still no match, use animals as fallback
+        console.warn(`Category '${settings.category}' not found, falling back to 'animals'`);
+        const animalWords = languageWordLists.animals || LANGUAGE_WORD_LISTS.english?.animals;
+        
+        if (animalWords) {
+          const difficultyWords = animalWords[settings.difficulty as keyof (typeof animalWords)] || 
+                                 animalWords.beginner;
+          
+          if (difficultyWords && difficultyWords.length > 0) {
+            const randomIndex = Math.floor(Math.random() * difficultyWords.length);
+            return difficultyWords[randomIndex];
+          }
+        }
+        
+        // Last resort fallback
+        return 'fallback';
+      } catch (error) {
+        console.error('Error selecting word:', error);
+        return 'fallback'; // Emergency fallback word
+      }
     };
     
     const newWord = getRandomWord().toLowerCase();
@@ -278,7 +380,7 @@ function GameContent({ settings, onBackToMenu, onGameEnd, isFullscreen }: Hangma
     
     if (hasWon) {
       setGameStatus('won');
-      setSoundEffects(prev => ({...prev, gameWon: true}));
+      setSoundEffectTriggers(prev => ({...prev, gameWon: true}));
       
       // Stop timer
       if (timerInterval) clearInterval(timerInterval);
@@ -295,7 +397,7 @@ function GameContent({ settings, onBackToMenu, onGameEnd, isFullscreen }: Hangma
       if (onGameEnd) onGameEnd('win');
     } else if (wrongGuesses >= MAX_ATTEMPTS) {
       setGameStatus('lost');
-      setSoundEffects(prev => ({...prev, gameLost: true}));
+      setSoundEffectTriggers(prev => ({...prev, gameLost: true}));
       
       // Stop timer
       if (timerInterval) clearInterval(timerInterval);
@@ -305,7 +407,7 @@ function GameContent({ settings, onBackToMenu, onGameEnd, isFullscreen }: Hangma
   }, [guessedLetters, wordLetters, wrongGuesses, gameStatus, timerInterval, onGameEnd]);
   
   const handleLetterGuess = (letter: string) => {
-    if (guessedLetters.includes(letter.toLowerCase()) || gameStatus !== 'playing') {
+    if (gameStatus !== 'playing' || guessedLetters.includes(letter.toLowerCase())) {
       return;
     }
     
@@ -313,54 +415,86 @@ function GameContent({ settings, onBackToMenu, onGameEnd, isFullscreen }: Hangma
     const newGuessedLetters = [...guessedLetters, lowerLetter];
     setGuessedLetters(newGuessedLetters);
     
-    const isCorrectGuess = word.includes(lowerLetter);
-    
-    // Reset previous sound effects
-    setSoundEffects({
-      correctLetter: false,
-      incorrectLetter: false,
-      gameWon: false,
-      gameLost: false,
-      hintUsed: false
-    });
-    
-    if (isCorrectGuess) {
-      setAnimation('correct');
-      setTimeout(() => setAnimation(null), 300);
-      setSoundEffects(prev => ({...prev, correctLetter: true}));
+    if (word.includes(lowerLetter)) {
+      // Correct guess
+      setSoundEffectTriggers(prev => ({...prev, correctLetter: true}));
+      setTimeout(() => setSoundEffectTriggers(prev => ({...prev, correctLetter: false})), 10);
+      
+      // Increment correct letter counter for the Tokyo Nights theme
+      if (themeId === 'tokyo') {
+        setCorrectLetterCounter(prev => prev + 1);
+      }
+      
+      // Check if the player has won
+      const isWin = wordLetters.every(letter => newGuessedLetters.includes(letter));
+      if (isWin) {
+        setSoundEffectTriggers(prev => ({...prev, gameWon: true}));
+        setTimeout(() => setSoundEffectTriggers(prev => ({...prev, gameWon: false})), 10);
+        
+        setGameStatus('won');
+        const newScore = calculateScore();
+        setScore(newScore);
+        
+        // Add the newScore to totalScore
+        const currentTotal = parseInt(localStorage.getItem('hangmanTotalScore') || '0', 10);
+        const updatedTotal = currentTotal + newScore;
+        localStorage.setItem('hangmanTotalScore', updatedTotal.toString());
+        
+        // Save the score to localStorage
+        const savedScores = JSON.parse(localStorage.getItem('hangmanScores') || '[]');
+        const newSavedScores = [
+          ...savedScores,
+          {
+            date: new Date().toISOString(),
+            category: settings.category,
+            difficulty: settings.difficulty,
+            score: newScore,
+            word: word
+          }
+        ];
+        localStorage.setItem('hangmanScores', JSON.stringify(newSavedScores));
+      }
     } else {
-      setAnimation('wrong');
-      setTimeout(() => setAnimation(null), 300);
-      setSoundEffects(prev => ({...prev, incorrectLetter: true}));
+      // Wrong guess
+      setSoundEffectTriggers(prev => ({...prev, incorrectLetter: true}));
+      setTimeout(() => setSoundEffectTriggers(prev => ({...prev, incorrectLetter: false})), 10);
+      
       setWrongGuesses(prev => prev + 1);
+      
+      // Check if the player has lost
+      if (wrongGuesses + 1 >= MAX_ATTEMPTS) {
+        setSoundEffectTriggers(prev => ({...prev, gameLost: true}));
+        setTimeout(() => setSoundEffectTriggers(prev => ({...prev, gameLost: false})), 10);
+        
+        setGameStatus('lost');
+      }
     }
   };
   
-  const getHint = () => {
+  const handleHint = () => {
     if (hints <= 0 || gameStatus !== 'playing') return;
     
-    // Find a letter that is in the word but not guessed yet
-    const unguessedLetters = wordLetters.filter(char => 
-      !guessedLetters.includes(char) && char !== ' ' && char !== '-'
-    );
-    
+    const unguessedLetters = wordLetters.filter(letter => !guessedLetters.includes(letter));
     if (unguessedLetters.length === 0) return;
     
     const randomIndex = Math.floor(Math.random() * unguessedLetters.length);
     const hintLetter = unguessedLetters[randomIndex];
     
-    // Don't subtract hints if the letter is already guessed
-    if (guessedLetters.includes(hintLetter)) return;
-    
     setHints(prev => prev - 1);
-    setSoundEffects(prev => ({...prev, hintUsed: true}));
+    setSoundEffectTriggers(prev => ({...prev, hintUsed: true}));
+    setTimeout(() => setSoundEffectTriggers(prev => ({...prev, hintUsed: false})), 10);
     setShowPowerupEffect(true);
     setTimeout(() => setShowPowerupEffect(false), 800);
     handleLetterGuess(hintLetter);
   };
   
   const resetGame = () => {
-    // Get a new word
+    setGuessedLetters([]);
+    setWrongGuesses(0);
+    setGameStatus('playing');
+    setTimer(0);
+    setScore(0);
+    
     const getRandomWord = () => {
       // Check if we're using custom words
       if (settings.category === 'custom' && settings.customWords && settings.customWords.length > 0) {
@@ -368,24 +502,64 @@ function GameContent({ settings, onBackToMenu, onGameEnd, isFullscreen }: Hangma
         return settings.customWords[randomIndex];
       }
       
-      // Get language-specific word lists
-      const languageWordLists = LANGUAGE_WORD_LISTS[settings.language] || LANGUAGE_WORD_LISTS.english;
-      
-      // Get category and difficulty word lists
-      const categoryWords = languageWordLists[settings.category as keyof typeof WORD_LISTS] || languageWordLists.animals;
-      const difficultyWords = categoryWords[settings.difficulty as keyof typeof categoryWords] || categoryWords.beginner;
-      
-      const randomIndex = Math.floor(Math.random() * difficultyWords.length);
-      return difficultyWords[randomIndex];
+      try {
+        // Get language-specific word lists
+        const languageWordLists = LANGUAGE_WORD_LISTS[settings.language] || LANGUAGE_WORD_LISTS.english || {};
+        
+        // First try to get the category from the selected language
+        const categoryWords = languageWordLists[settings.category as keyof typeof WORD_LISTS];
+        
+        // If category doesn't exist in selected language, try English
+        if (!categoryWords && settings.language !== 'english') {
+          const englishCategoryWords = LANGUAGE_WORD_LISTS.english?.[settings.category as keyof typeof WORD_LISTS];
+          
+          if (englishCategoryWords) {
+            const difficultyWords = englishCategoryWords[settings.difficulty as keyof (typeof englishCategoryWords)] || 
+                                   englishCategoryWords.beginner;
+            
+            if (difficultyWords && difficultyWords.length > 0) {
+              const randomIndex = Math.floor(Math.random() * difficultyWords.length);
+              return difficultyWords[randomIndex];
+            }
+          }
+        }
+        
+        // If we have a valid category, get words for the difficulty
+        if (categoryWords) {
+          const difficultyWords = categoryWords[settings.difficulty as keyof (typeof categoryWords)] || 
+                                 categoryWords.beginner;
+          
+          if (difficultyWords && difficultyWords.length > 0) {
+            const randomIndex = Math.floor(Math.random() * difficultyWords.length);
+            return difficultyWords[randomIndex];
+          }
+        }
+        
+        // If still no match, use animals as fallback
+        console.warn(`Category '${settings.category}' not found, falling back to 'animals'`);
+        const animalWords = languageWordLists.animals || LANGUAGE_WORD_LISTS.english?.animals;
+        
+        if (animalWords) {
+          const difficultyWords = animalWords[settings.difficulty as keyof (typeof animalWords)] || 
+                                 animalWords.beginner;
+          
+          if (difficultyWords && difficultyWords.length > 0) {
+            const randomIndex = Math.floor(Math.random() * difficultyWords.length);
+            return difficultyWords[randomIndex];
+          }
+        }
+        
+        // Last resort fallback
+        return 'fallback';
+      } catch (error) {
+        console.error('Error selecting word:', error);
+        return 'fallback'; // Emergency fallback word
+      }
     };
     
     const newWord = getRandomWord().toLowerCase();
     setWord(newWord);
     setWordLetters([...new Set(newWord.split(''))]);
-    setGuessedLetters([]);
-    setWrongGuesses(0);
-    setGameStatus('playing');
-    setTimer(0);
     
     // Restart the timer
     if (timerInterval) clearInterval(timerInterval);
@@ -421,7 +595,7 @@ function GameContent({ settings, onBackToMenu, onGameEnd, isFullscreen }: Hangma
   
   const renderThematicAnimation = () => {
     if (themeId === 'tokyo') {
-      return <TokyoNightsAnimation mistakes={wrongGuesses} maxMistakes={MAX_ATTEMPTS} />;
+      return <TokyoNightsAnimation mistakes={wrongGuesses} maxMistakes={MAX_ATTEMPTS} correctGuesses={correctLetterCounter} />;
     }
     
     if (themeId === 'temple') {
@@ -450,7 +624,7 @@ function GameContent({ settings, onBackToMenu, onGameEnd, isFullscreen }: Hangma
           
           if (isCorrect) {
             // Apply theme-specific styles for correct letters
-            buttonClass += ` ${themeClasses.accent} text-white`;
+            buttonClass += ` ${themeClassesState.accent} text-white`;
           } else if (isWrong) {
             // Apply styles for wrong letters
             buttonClass += " bg-red-600 text-white";
@@ -484,7 +658,7 @@ function GameContent({ settings, onBackToMenu, onGameEnd, isFullscreen }: Hangma
           <div key={index} className="text-center">
             <div className={`w-10 h-14 flex items-center justify-center rounded-lg ${
               guessedLetters.includes(letter) 
-                ? themeClasses.accent + ' text-white'
+                ? themeClassesState.accent + ' text-white'
                 : 'bg-gray-800 bg-opacity-50'
             }`}>
               <span className="text-2xl font-bold">
@@ -498,90 +672,220 @@ function GameContent({ settings, onBackToMenu, onGameEnd, isFullscreen }: Hangma
     );
   };
   
+  // Customize text based on theme
+  useEffect(() => {
+    if (themeId === 'tokyo') {
+      setThemeClassesState({
+        ...themeClasses,
+        background: 'bg-slate-900',
+        text: 'text-cyan-50',
+        accent: 'bg-pink-600',
+        button: 'bg-cyan-600 hover:bg-cyan-700',
+        dangerText: 'Password Attempts'
+      });
+    } else if (themeId === 'temple') {
+      setThemeClassesState({
+        ...themeClasses,
+        background: 'bg-amber-900',
+        text: 'text-amber-50',
+        accent: 'bg-amber-600',
+        button: 'bg-amber-700 hover:bg-amber-800',
+        dangerText: 'Escape Chances'
+      });
+    } else if (themeId === 'space') {
+      setThemeClassesState({
+        ...themeClasses,
+        background: 'bg-slate-800',
+        text: 'text-purple-50',
+        accent: 'bg-purple-600',
+        button: 'bg-purple-700 hover:bg-purple-800',
+        dangerText: 'Oxygen Level'
+      });
+    } else {
+      // Default pirate theme
+      setThemeClassesState({
+        ...themeClasses,
+        background: 'bg-blue-900',
+        text: 'text-amber-50',
+        accent: 'bg-amber-600',
+        button: 'bg-amber-700 hover:bg-amber-800',
+        dangerText: 'Lives Remaining'
+      });
+    }
+  }, [themeId, themeClasses]);
+
+  // Initialize background music
+  useEffect(() => {
+    // Create audio element for background music
+    if (typeof window !== 'undefined') {
+      backgroundMusicRef.current = new Audio();
+      
+      // Set the music based on theme
+      if (themeId === 'tokyo') {
+        backgroundMusicRef.current.src = '/games/hangman/sounds/songs/tokyonights.mp3';
+      } else if (themeId === 'temple') {
+        backgroundMusicRef.current.src = '/games/hangman/sounds/songs/lavatemple.mp3';
+      } else if (themeId === 'space') {
+        backgroundMusicRef.current.src = '/games/hangman/sounds/songs/spacevoyager.mp3';
+      } else {
+        backgroundMusicRef.current.src = '/games/hangman/sounds/songs/pirateadventure.mp3';
+      }
+      
+      backgroundMusicRef.current.loop = true;
+      backgroundMusicRef.current.volume = 0.3;
+      
+      // Try to autoplay (may be rejected by browser)
+      backgroundMusicRef.current.play().then(() => {
+        setMusicEnabled(true);
+      }).catch(e => {
+        console.log("Autoplay prevented. Music will play on first user interaction.");
+        // Will play on first user interaction
+      });
+    }
+    
+    return () => {
+      if (backgroundMusicRef.current) {
+        backgroundMusicRef.current.pause();
+        backgroundMusicRef.current = null;
+      }
+    };
+  }, [themeId]);
+
+  // Toggle background music
+  const toggleMusic = () => {
+    if (!backgroundMusicRef.current) return;
+    
+    if (musicEnabled) {
+      backgroundMusicRef.current.pause();
+    } else {
+      backgroundMusicRef.current.play().catch(e => console.error("Error playing music:", e));
+    }
+    
+    setMusicEnabled(prev => !prev);
+  };
+  
+  // Enable playing music on first user interaction
+  useEffect(() => {
+    const playMusicOnInteraction = () => {
+      if (backgroundMusicRef.current && !musicEnabled) {
+        backgroundMusicRef.current.play().then(() => {
+          setMusicEnabled(true);
+        }).catch(e => console.error("Error playing music:", e));
+      }
+      
+      // Remove event listeners after first interaction
+      document.removeEventListener('click', playMusicOnInteraction);
+      document.removeEventListener('keydown', playMusicOnInteraction);
+    };
+    
+    document.addEventListener('click', playMusicOnInteraction);
+    document.addEventListener('keydown', playMusicOnInteraction);
+    
+    return () => {
+      document.removeEventListener('click', playMusicOnInteraction);
+      document.removeEventListener('keydown', playMusicOnInteraction);
+    };
+  }, [musicEnabled]);
+
   return (
-    <div className={`relative ${themeClasses.background} ${themeClasses.text} p-6 rounded-xl shadow-lg ${isFullscreen ? 'h-full flex flex-col' : ''}`}>
+    <div className={`relative ${themeClassesState.background} ${themeClassesState.text} p-6 rounded-xl shadow-lg ${isFullscreen ? 'h-full flex flex-col' : ''}`}>
       {/* Sound effects component */}
       <SoundEffects
         theme={settings.theme}
-        onCorrect={soundEffects.correctLetter}
-        onIncorrect={soundEffects.incorrectLetter}
-        onWin={soundEffects.gameWon}
-        onLose={soundEffects.gameLost}
-        onHint={soundEffects.hintUsed}
+        onCorrect={soundEffectTriggers.correctLetter}
+        onIncorrect={soundEffectTriggers.incorrectLetter}
+        onWin={soundEffectTriggers.gameWon}
+        onLose={soundEffectTriggers.gameLost}
+        onHint={soundEffectTriggers.hintUsed}
         muted={!soundEnabled}
       />
       
+      {/* Top navigation and info bar */}
       <div className="flex justify-between items-center mb-4">
-        <button 
-          onClick={onBackToMenu}
-          className={`${themeClasses.button} px-4 py-2 rounded-lg text-white`}
-        >
-          Back to Menu
-        </button>
+        {!isFullscreen && (
+          <button 
+            onClick={onBackToMenu}
+            className="px-3 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white flex items-center"
+          >
+            Back to Menu
+          </button>
+        )}
         
-        <div className="flex items-center gap-2">
+        {/* Game info in a single line */}
+        <div className="flex-1 flex items-center justify-center gap-4">
+          <div className="text-sm font-medium">
+            {settings.category.charAt(0).toUpperCase() + settings.category.slice(1)} - {settings.difficulty.charAt(0).toUpperCase() + settings.difficulty.slice(1)}
+          </div>
+          
+          <div className="text-sm opacity-75">
+            {formatTime(timer)}
+          </div>
+          
+          <div className="text-sm">
+            <span className="opacity-75">
+              {themeClassesState.dangerText}:
+            </span> {MAX_ATTEMPTS - wrongGuesses}/{MAX_ATTEMPTS}
+          </div>
+        </div>
+        
+        {/* Control buttons */}
+        <div className="flex items-center space-x-2">
+          {/* Sound toggle button */}
           <button
             onClick={toggleSound}
-            className="p-2 rounded-full bg-gray-200 hover:bg-gray-300 text-gray-800"
-            title={soundEnabled ? "Mute sounds" : "Unmute sounds"}
+            className="p-2 rounded-full bg-gray-700 hover:bg-gray-600 text-white"
+            title={soundEnabled ? "Mute sound effects" : "Unmute sound effects"}
           >
             {soundEnabled ? "🔊" : "🔇"}
           </button>
-        </div>
-        
-        <div className="flex items-center gap-2">
+          
+          {/* Music toggle button */}
+          <button
+            onClick={toggleMusic}
+            className="p-2 rounded-full bg-gray-700 hover:bg-gray-600 text-white"
+            title={musicEnabled ? "Mute music" : "Play music"}
+          >
+            {musicEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
+          </button>
+          
+          {/* Hint button */}
           <button 
-            onClick={getHint}
+            onClick={handleHint}
             disabled={hints <= 0 || gameStatus !== 'playing'}
             className={`
               relative flex items-center gap-1 px-3 py-1 rounded-lg
               ${hints > 0 && gameStatus === 'playing' 
-                ? `${themeClasses.button}`
+                ? `${themeClassesState.button}`
                 : 'bg-gray-400 opacity-50'
               }
-              text-white
+              text-white text-sm font-medium
             `}
           >
             <Zap size={16} />
-            <span>Hint</span>
+            Hint
             <span className="ml-1">({hints})</span>
             
             {showPowerupEffect && (
               <motion.div
                 initial={{ scale: 0, opacity: 0 }}
-                animate={{ scale: 2, opacity: 0 }}
+                animate={{ scale: [0, 1.5, 2], opacity: [0, 1, 0] }}
                 transition={{ duration: 0.8 }}
-                className="absolute inset-0 bg-yellow-400 rounded-lg"
-                style={{ zIndex: -1 }}
+                className="absolute inset-0 rounded-lg bg-white bg-opacity-30 pointer-events-none"
               />
             )}
           </button>
         </div>
       </div>
       
-      <div className="mb-6">
-        <div className="text-center mb-2">
-          <h2 className="text-lg md:text-xl">{settings.category.charAt(0).toUpperCase() + settings.category.slice(1)} - {settings.difficulty.charAt(0).toUpperCase() + settings.difficulty.slice(1)}</h2>
-          <p className="text-sm opacity-75">{formatTime(timer)}</p>
-        </div>
-        
-        <div className="flex justify-between items-center mt-4">
-          <div className="text-sm">
-            <span className="opacity-75">
-              {themeClasses.dangerText}:
-            </span> {MAX_ATTEMPTS - wrongGuesses}/{MAX_ATTEMPTS}
-          </div>
-          
-          <div className="w-32 h-3 bg-gray-700 rounded-full overflow-hidden">
-            <div 
-              className="h-full rounded-full transition-all duration-500" 
-              style={{ 
-                width: `${100 - (wrongGuesses / MAX_ATTEMPTS * 100)}%`,
-                backgroundColor: wrongGuesses > 4 ? 'red' : wrongGuesses > 2 ? 'orange' : 'green',
-              }}
-            ></div>
-          </div>
-        </div>
+      {/* Progress bar */}
+      <div className="w-full h-3 bg-gray-700 rounded-full overflow-hidden mb-6">
+        <div 
+          className="h-full rounded-full transition-all duration-500" 
+          style={{ 
+            width: `${100 - (wrongGuesses / MAX_ATTEMPTS * 100)}%`,
+            backgroundColor: wrongGuesses > 4 ? 'red' : wrongGuesses > 2 ? 'orange' : 'green',
+          }}
+        ></div>
       </div>
       
       {renderThematicAnimation()}
@@ -596,8 +900,8 @@ function GameContent({ settings, onBackToMenu, onGameEnd, isFullscreen }: Hangma
           <div className="text-center my-8">
             <h2 className="text-2xl md:text-3xl font-bold mb-4">
               {gameStatus === 'won' 
-                ? (themeClasses.winMessage) 
-                : (themeClasses.loseMessage)}
+                ? (themeClassesState.winMessage) 
+                : (themeClassesState.loseMessage)}
             </h2>
             
             <p className="text-xl mb-4">
@@ -615,7 +919,7 @@ function GameContent({ settings, onBackToMenu, onGameEnd, isFullscreen }: Hangma
             <div className="flex justify-center gap-4 mt-6">
               <button
                 onClick={resetGame}
-                className={`${themeClasses.button} py-3 px-6 rounded-lg font-bold text-white`}
+                className={`${themeClassesState.button} py-3 px-6 rounded-lg font-bold text-white`}
               >
                 Play Again
               </button>

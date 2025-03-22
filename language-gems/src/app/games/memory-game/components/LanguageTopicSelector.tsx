@@ -4,31 +4,107 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 
 interface LanguageTopicSelectorProps {
-  onStartGame: (language: string, topic: string, difficulty: string) => void;
+  onStartGame: (
+    language: string, 
+    topic: string, 
+    difficulty: string,
+    customPairs?: Array<{ term: string, translation: string }>
+  ) => void;
 }
 
 // Available languages and topics
 const LANGUAGES = [
-  { code: 'english', name: 'English' },
-  { code: 'spanish', name: 'Spanish' },
-  { code: 'french', name: 'French' },
-  { code: 'german', name: 'German' },
-  { code: 'italian', name: 'Italian' },
-  { code: 'portuguese', name: 'Portuguese' },
-  { code: 'chinese', name: 'Chinese' },
-  { code: 'japanese', name: 'Japanese' },
-  { code: 'korean', name: 'Korean' },
-  { code: 'arabic', name: 'Arabic' },
-  { code: 'russian', name: 'Russian' }
+  { code: 'english', name: 'English', color: 'bg-indigo-100 border-indigo-300 text-indigo-700' },
+  { code: 'spanish', name: 'Spanish', color: 'bg-red-100 border-red-300 text-red-700' },
+  { code: 'french', name: 'French', color: 'bg-blue-100 border-blue-300 text-blue-700' },
+  { code: 'german', name: 'German', color: 'bg-yellow-100 border-yellow-300 text-yellow-800' },
+  { code: 'italian', name: 'Italian', color: 'bg-green-100 border-green-300 text-green-700' },
+  { code: 'portuguese', name: 'Portuguese', color: 'bg-green-100 border-green-300 text-green-700' },
+  { code: 'chinese', name: 'Chinese', color: 'bg-red-100 border-red-300 text-red-700' },
+  { code: 'japanese', name: 'Japanese', color: 'bg-pink-100 border-pink-300 text-pink-700' },
+  { code: 'korean', name: 'Korean', color: 'bg-blue-100 border-blue-300 text-blue-700' },
+  { code: 'arabic', name: 'Arabic', color: 'bg-amber-100 border-amber-300 text-amber-700' },
+  { code: 'russian', name: 'Russian', color: 'bg-blue-100 border-blue-300 text-blue-700' }
 ];
 
+// Category structure with hierarchical organization
+const CATEGORY_GROUPS = [
+  {
+    id: 'basics',
+    name: 'Basics',
+    categories: [
+      { code: 'numbers', name: 'Numbers', emoji: '🔢', bgColor: 'bg-blue-50' },
+      { code: 'colors', name: 'Colors', emoji: '🎨', bgColor: 'bg-green-50' },
+      { code: 'days', name: 'Days of the Week', emoji: '📅', bgColor: 'bg-yellow-50' },
+      { code: 'months', name: 'Months & Seasons', emoji: '🍂', bgColor: 'bg-orange-50' },
+      { code: 'greetings', name: 'Greetings & Introductions', emoji: '👋', bgColor: 'bg-purple-50' },
+      { code: 'phrases', name: 'Common Phrases', emoji: '💬', bgColor: 'bg-indigo-50' },
+    ]
+  },
+  {
+    id: 'people',
+    name: 'People & Relationships',
+    categories: [
+      { code: 'family', name: 'Family Members', emoji: '👪', bgColor: 'bg-pink-50' },
+      { code: 'physicaltraits', name: 'Physical Traits', emoji: '👤', bgColor: 'bg-amber-50' },
+      { code: 'personality', name: 'Personality Traits', emoji: '😊', bgColor: 'bg-teal-50' },
+      { code: 'professions', name: 'Professions & Jobs', emoji: '👨‍⚕️', bgColor: 'bg-emerald-50' },
+    ]
+  },
+  {
+    id: 'daily',
+    name: 'Home & Daily Life',
+    categories: [
+      { code: 'household', name: 'Household Items', emoji: '🏠', bgColor: 'bg-red-50' },
+      { code: 'rooms', name: 'Rooms in a House', emoji: '🛋️', bgColor: 'bg-blue-50' },
+      { code: 'routines', name: 'Daily Routines & Chores', emoji: '🧹', bgColor: 'bg-green-50' },
+    ]
+  },
+  {
+    id: 'food',
+    name: 'Food & Drinks',
+    categories: [
+      { code: 'foods', name: 'Common Foods', emoji: '🍔', bgColor: 'bg-yellow-50' },
+      { code: 'drinks', name: 'Drinks & Beverages', emoji: '🥤', bgColor: 'bg-purple-50' },
+      { code: 'fruitsveg', name: 'Fruits & Vegetables', emoji: '🍎', bgColor: 'bg-indigo-50' },
+      { code: 'restaurant', name: 'Restaurant & Ordering Food', emoji: '🍽️', bgColor: 'bg-pink-50' },
+    ]
+  },
+  {
+    id: 'travel',
+    name: 'Travel & Transportation',
+    categories: [
+      { code: 'countries', name: 'Countries & Nationalities', emoji: '🌎', bgColor: 'bg-amber-50' },
+      { code: 'directions', name: 'Directions & Places', emoji: '🧭', bgColor: 'bg-teal-50' },
+      { code: 'transport', name: 'Methods of Transport', emoji: '🚆', bgColor: 'bg-emerald-50' },
+    ]
+  },
+  {
+    id: 'nature',
+    name: 'Nature & Environment',
+    categories: [
+      { code: 'weather', name: 'Weather', emoji: '☀️', bgColor: 'bg-blue-50' },
+      { code: 'animals', name: 'Animals', emoji: '🐾', bgColor: 'bg-green-50' },
+      { code: 'plants', name: 'Plants & Trees', emoji: '🌳', bgColor: 'bg-yellow-50' },
+    ]
+  },
+  {
+    id: 'other',
+    name: 'Other',
+    categories: [
+      { code: 'custom', name: 'Custom Words', emoji: '✏️', bgColor: 'bg-purple-50' },
+    ]
+  }
+];
+
+// Original topics for backwards compatibility
 const TOPICS = [
-  { code: 'animals', name: 'Animals' },
-  { code: 'colors', name: 'Colors' },
-  { code: 'food', name: 'Food' },
-  { code: 'countries', name: 'Countries' },
-  { code: 'numbers', name: 'Numbers' },
-  { code: 'custom', name: 'Custom' }
+  { code: 'animals', name: 'Animals', emoji: '🐾', bgColor: 'bg-blue-50' },
+  { code: 'colors', name: 'Colors', emoji: '🎨', bgColor: 'bg-green-50' },
+  { code: 'food', name: 'Food', emoji: '🍔', bgColor: 'bg-yellow-50' },
+  { code: 'countries', name: 'Countries', emoji: '🌎', bgColor: 'bg-red-50' },
+  { code: 'numbers', name: 'Numbers', emoji: '🔢', bgColor: 'bg-purple-50' },
+  { code: 'custom', name: 'Custom', emoji: '✏️', bgColor: 'bg-indigo-50' }
 ];
 
 const DIFFICULTIES = [
@@ -46,6 +122,11 @@ export default function LanguageTopicSelector({ onStartGame }: LanguageTopicSele
   const [selectedLanguage, setSelectedLanguage] = useState<string>('');
   const [selectedTopic, setSelectedTopic] = useState<string>('');
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>('');
+  const [selectedCategoryGroup, setSelectedCategoryGroup] = useState<string | null>(null);
+  const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
+  const [tempCategory, setTempCategory] = useState('');
+  const [tempCategoryWords, setTempCategoryWords] = useState('');
+  const [customPairs, setCustomPairs] = useState<Array<{ term: string, translation: string }>>([]);
 
   // Handle language selection
   const handleLanguageSelect = (languageCode: string) => {
@@ -53,13 +134,14 @@ export default function LanguageTopicSelector({ onStartGame }: LanguageTopicSele
     setStep('topic');
   };
 
-  // Handle topic selection
+  // Handle topic selection with category groups
   const handleTopicSelect = (topicCode: string) => {
-    setSelectedTopic(topicCode);
-    if (topicCode.toLowerCase() === 'custom') {
+    if (topicCode === 'custom') {
+      setSelectedTopic(topicCode);
       // For custom topic, skip difficulty selection
       onStartGame(selectedLanguage, topicCode, 'custom');
     } else {
+      setSelectedTopic(topicCode);
       setStep('difficulty');
     }
   };
@@ -68,6 +150,25 @@ export default function LanguageTopicSelector({ onStartGame }: LanguageTopicSele
   const handleDifficultySelect = (difficultyCode: string) => {
     setSelectedDifficulty(difficultyCode);
     onStartGame(selectedLanguage, selectedTopic, difficultyCode);
+  };
+
+  // Handle temporary category submission
+  const handleTempCategorySubmit = () => {
+    if (tempCategory && tempCategoryWords) {
+      // Parse the comma-separated words into pairs
+      const lines = tempCategoryWords.split('\n');
+      const pairs = lines.map(line => {
+        const [term, translation] = line.split(',').map(item => item.trim());
+        return { term, translation };
+      }).filter(pair => pair.term && pair.translation);
+
+      if (pairs.length >= 3) {
+        setCustomPairs(pairs);
+        setSelectedTopic('custom');
+        onStartGame(selectedLanguage, 'custom', 'custom', pairs);
+        setShowAddCategoryModal(false);
+      }
+    }
   };
 
   // Go back to previous step
@@ -98,11 +199,11 @@ export default function LanguageTopicSelector({ onStartGame }: LanguageTopicSele
       {step === 'language' && (
         <div className="selection-step">
           <h2>Choose a Language</h2>
-          <div className="selection-grid">
+          <div className="selection-grid language-grid">
             {LANGUAGES.map((language) => (
               <button
                 key={language.code}
-                className="selection-button"
+                className={`language-button ${language.color}`}
                 onClick={() => handleLanguageSelect(language.code)}
               >
                 {language.name}
@@ -115,17 +216,111 @@ export default function LanguageTopicSelector({ onStartGame }: LanguageTopicSele
       {step === 'topic' && (
         <div className="selection-step">
           <h2>Choose a Topic</h2>
-          <div className="selection-grid">
-            {TOPICS.map((topic) => (
-              <button
-                key={topic.code}
-                className="selection-button"
-                onClick={() => handleTopicSelect(topic.code)}
-              >
-                {topic.name}
-              </button>
-            ))}
-          </div>
+          
+          {/* Show category groups if no group is selected */}
+          {!selectedCategoryGroup && (
+            <>
+              <div className="category-groups-grid">
+                {CATEGORY_GROUPS.map((group) => (
+                  <button
+                    key={group.id}
+                    className="category-group-button"
+                    onClick={() => setSelectedCategoryGroup(group.id)}
+                  >
+                    <span className="group-name">{group.name}</span>
+                    <span className="group-arrow">→</span>
+                  </button>
+                ))}
+              </div>
+              
+              <div className="custom-options">
+                <button
+                  className="custom-option-button"
+                  onClick={() => setShowAddCategoryModal(true)}
+                >
+                  Add Temporary Category
+                </button>
+              </div>
+            </>
+          )}
+          
+          {/* Show categories within a group if a group is selected */}
+          {selectedCategoryGroup && (
+            <>
+              <div className="back-to-groups">
+                <button 
+                  className="back-to-groups-button"
+                  onClick={() => setSelectedCategoryGroup(null)}
+                >
+                  ← Back to Categories
+                </button>
+                <h3 className="group-title">
+                  {CATEGORY_GROUPS.find(g => g.id === selectedCategoryGroup)?.name}
+                </h3>
+              </div>
+              
+              <div className="categories-grid">
+                {CATEGORY_GROUPS
+                  .find(g => g.id === selectedCategoryGroup)
+                  ?.categories.map((category) => (
+                    <button
+                      key={category.code}
+                      className={`category-button ${category.bgColor}`}
+                      onClick={() => handleTopicSelect(category.code)}
+                    >
+                      <span className="category-emoji">{category.emoji}</span>
+                      <span className="category-name">{category.name}</span>
+                    </button>
+                  ))}
+              </div>
+            </>
+          )}
+          
+          {/* Add Category Modal */}
+          {showAddCategoryModal && (
+            <div className="modal-overlay">
+              <div className="modal-content">
+                <h3>Add Temporary Category</h3>
+                <div className="modal-form">
+                  <div className="form-group">
+                    <label>Category Name</label>
+                    <input
+                      type="text"
+                      value={tempCategory}
+                      onChange={(e) => setTempCategory(e.target.value)}
+                      placeholder="e.g., Medical Terms"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Word Pairs (one pair per line, comma separated)</label>
+                    <textarea
+                      value={tempCategoryWords}
+                      onChange={(e) => setTempCategoryWords(e.target.value)}
+                      placeholder="doctor, médico
+nurse, enfermera
+hospital, hospital"
+                      rows={6}
+                    ></textarea>
+                  </div>
+                  <div className="modal-actions">
+                    <button 
+                      className="cancel-button"
+                      onClick={() => setShowAddCategoryModal(false)}
+                    >
+                      Cancel
+                    </button>
+                    <button 
+                      className="submit-button"
+                      onClick={handleTempCategorySubmit}
+                    >
+                      Add Category
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          
           <button className="back-button-secondary" onClick={goBack}>
             <i className="fas fa-arrow-left"></i> Back to Languages
           </button>
@@ -494,6 +689,204 @@ export default function LanguageTopicSelector({ onStartGame }: LanguageTopicSele
           .connector {
             width: 25px;
           }
+        }
+
+        .language-grid {
+          grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        }
+        
+        .language-button {
+          padding: 15px;
+          font-size: 16px;
+          border-radius: 10px;
+          border: 2px solid transparent;
+          transition: all 0.3s ease;
+          font-weight: 500;
+          text-align: center;
+        }
+        
+        .category-groups-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+          gap: 15px;
+          margin-bottom: 30px;
+        }
+        
+        .category-group-button {
+          background-color: #f0f0f0;
+          border: 2px solid #e0e0e0;
+          border-radius: 10px;
+          padding: 15px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          transition: all 0.3s ease;
+        }
+        
+        .category-group-button:hover {
+          border-color: #9c27b0;
+          background-color: #f3e5f5;
+        }
+        
+        .group-name {
+          font-weight: 500;
+          font-size: 16px;
+          color: #333;
+        }
+        
+        .group-arrow {
+          color: #9c27b0;
+          font-weight: bold;
+        }
+        
+        .back-to-groups {
+          margin-bottom: 20px;
+        }
+        
+        .back-to-groups-button {
+          background: none;
+          border: none;
+          color: #9c27b0;
+          font-weight: 500;
+          display: flex;
+          align-items: center;
+          cursor: pointer;
+          padding: 5px 0;
+          margin-bottom: 10px;
+        }
+        
+        .group-title {
+          font-size: 18px;
+          color: #333;
+          margin-bottom: 15px;
+        }
+        
+        .categories-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+          gap: 15px;
+          margin-bottom: 20px;
+        }
+        
+        .category-button {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: 20px;
+          border-radius: 10px;
+          transition: all 0.3s ease;
+          border: 2px solid transparent;
+        }
+        
+        .category-button:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .category-emoji {
+          font-size: 30px;
+          margin-bottom: 10px;
+        }
+        
+        .category-name {
+          font-weight: 500;
+          text-align: center;
+          font-size: 14px;
+        }
+        
+        .custom-options {
+          display: flex;
+          justify-content: center;
+          margin-bottom: 20px;
+        }
+        
+        .custom-option-button {
+          background-color: #e0f7fa;
+          border: 2px solid #80deea;
+          padding: 12px 20px;
+          border-radius: 10px;
+          font-weight: 500;
+          color: #00838f;
+          transition: all 0.3s ease;
+        }
+        
+        .custom-option-button:hover {
+          background-color: #b2ebf2;
+        }
+        
+        .modal-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background-color: rgba(0,0,0,0.5);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 1000;
+        }
+        
+        .modal-content {
+          background-color: white;
+          padding: 25px;
+          border-radius: 15px;
+          width: 90%;
+          max-width: 500px;
+          color: #333;
+          box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+        
+        .modal-content h3 {
+          margin-top: 0;
+          color: #333;
+          font-size: 20px;
+          margin-bottom: 20px;
+        }
+        
+        .form-group {
+          margin-bottom: 15px;
+        }
+        
+        .form-group label {
+          display: block;
+          margin-bottom: 5px;
+          font-weight: 500;
+          color: #555;
+        }
+        
+        .form-group input,
+        .form-group textarea {
+          width: 100%;
+          padding: 10px;
+          border: 1px solid #ddd;
+          border-radius: 5px;
+          font-size: 16px;
+        }
+        
+        .modal-actions {
+          display: flex;
+          justify-content: flex-end;
+          gap: 10px;
+          margin-top: 20px;
+        }
+        
+        .cancel-button {
+          background-color: #e0e0e0;
+          border: none;
+          padding: 10px 15px;
+          border-radius: 5px;
+          font-weight: 500;
+        }
+        
+        .submit-button {
+          background-color: #4caf50;
+          color: white;
+          border: none;
+          padding: 10px 15px;
+          border-radius: 5px;
+          font-weight: 500;
         }
       `}</style>
     </div>

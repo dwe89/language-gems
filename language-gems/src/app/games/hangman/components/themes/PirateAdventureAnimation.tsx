@@ -1,338 +1,464 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
-type PirateAdventureAnimationProps = {
+interface PirateAdventureAnimationProps {
   mistakes: number;
   maxMistakes: number;
-};
+}
 
-export default function PirateAdventureAnimation({ mistakes, maxMistakes }: PirateAdventureAnimationProps) {
-  const [animated, setAnimated] = useState(false);
-  const [clouds, setClouds] = useState<Array<{id: number, top: number, left: number, width: number, height: number, speed: number}>>([]);
-  const [birds, setBirds] = useState<Array<{id: number, top: number, left: number, size: number, speed: number}>>([]);
-  const dangerPercentage = (mistakes / maxMistakes) * 100;
+export default function PirateAdventureAnimation({
+  mistakes,
+  maxMistakes,
+}: PirateAdventureAnimationProps) {
+  const [showSplash, setShowSplash] = useState(false);
+  const [showLightning, setShowLightning] = useState(false);
+  const [showCannonFire, setShowCannonFire] = useState(false);
+  const [showCannonball, setShowCannonball] = useState(false);
+  const [cannonballPosition, setCannonballPosition] = useState({ x: 25, y: 50 });
+  const [shipTilt, setShipTilt] = useState(0);
+  const [shipSinkLevel, setShipSinkLevel] = useState(0);
+  const [birdPosition, setBirdPosition] = useState({ x: 10, y: 20 });
+  const [treasureGlow, setTreasureGlow] = useState(false);
+  const [showBlast, setShowBlast] = useState(false);
   
-  // Animation effect when mistakes change
-  useEffect(() => {
-    setAnimated(true);
-    const timer = setTimeout(() => setAnimated(false), 500);
-    return () => clearTimeout(timer);
-  }, [mistakes]);
+  // Calculate the danger level based on mistakes
+  const mistakeRatio = mistakes / maxMistakes;
+  const shipIntegrity = Math.max(0, 100 - (mistakeRatio * 100)).toFixed(0);
+  const stormSeverity = Math.min(100, mistakeRatio * 100);
   
-  // Generate clouds and birds
+  // Storm intensity and ship damage increases with mistakes
   useEffect(() => {
-    // Generate clouds
-    const cloudCount = 5;
-    const newClouds = Array.from({ length: cloudCount }, (_, i) => ({
-      id: i,
-      top: 5 + Math.random() * 20,
-      left: Math.random() * 100,
-      width: 30 + Math.random() * 40,
-      height: 15 + Math.random() * 10,
-      speed: 0.2 + Math.random() * 0.3
-    }));
-    setClouds(newClouds);
+    // Increase ship tilt with more mistakes
+    setShipTilt(Math.min(8, mistakeRatio * 12));
     
-    // Generate birds
-    const birdCount = 4;
-    const newBirds = Array.from({ length: birdCount }, (_, i) => ({
-      id: i,
-      top: 5 + Math.random() * 15,
-      left: 10 + Math.random() * 80,
-      size: 3 + Math.random() * 2,
-      speed: 1 + Math.random() * 2
-    }));
-    setBirds(newBirds);
+    // Increase ship sinking with more mistakes
+    setShipSinkLevel(Math.min(20, mistakeRatio * 25));
+    
+    // Trigger splash effect when mistakes change
+    if (mistakes > 0) {
+      setShowSplash(true);
+      setTimeout(() => setShowSplash(false), 700);
+    }
+  }, [mistakes, mistakeRatio]);
+  
+  // Random lightning in the background when storm intensifies
+  useEffect(() => {
+    if (mistakeRatio > 0.3) {
+      const lightningInterval = setInterval(() => {
+        if (Math.random() < (mistakeRatio * 0.4)) {
+        setShowLightning(true);
+          setTimeout(() => setShowLightning(false), 300);
+        }
+      }, 3000);
+      
+      return () => clearInterval(lightningInterval);
+    }
+  }, [mistakeRatio]);
+
+  // Cannon fire on mistakes
+  useEffect(() => {
+    if (mistakes > 0) {
+      // Fire cannon
+      setShowCannonFire(true);
+      setTimeout(() => setShowCannonFire(false), 500);
+      
+      // Show cannonball
+      setCannonballPosition({ x: 25, y: 50 });
+      setShowCannonball(true);
+      
+      // Animate cannonball
+      const cannonballInterval = setInterval(() => {
+        setCannonballPosition(prev => {
+          const newX = prev.x + 3;
+          const newY = prev.y + 0.5;
+          
+          if (newX > 45) {
+            clearInterval(cannonballInterval);
+            setShowCannonball(false);
+            // Show blast effect when cannonball hits
+            setShowBlast(true);
+            setTimeout(() => setShowBlast(false), 500);
+            return prev;
+          }
+          
+          return { x: newX, y: newY };
+        });
+      }, 50);
+      
+      // Create splash effect when ship is hit and sinks deeper
+      setTimeout(() => {
+        setShowSplash(true);
+        setTimeout(() => setShowSplash(false), 700);
+      }, 800); // Delay splash until after cannonball hits
+      
+      return () => clearInterval(cannonballInterval);
+    }
+  }, [mistakes, mistakeRatio]);
+  
+  // Flying bird animation
+  useEffect(() => {
+    const birdInterval = setInterval(() => {
+      setBirdPosition(prev => ({
+        x: (prev.x + 2) % 100,
+        y: prev.y + (Math.random() * 2 - 1)
+      }));
+    }, 100);
+    
+    return () => clearInterval(birdInterval);
+  }, []);
+
+  // Treasure chest glow effect
+  useEffect(() => {
+    const treasureInterval = setInterval(() => {
+      setTreasureGlow(prev => !prev);
+      }, 2000);
+    
+    return () => clearInterval(treasureInterval);
   }, []);
   
   return (
-    <div className={`relative w-full h-64 overflow-hidden rounded-xl shadow-2xl mb-6 ${animated ? 'animate-pulse' : ''}`}>
-      {/* Ocean background with gradient */}
-      <div className="absolute inset-0 bg-gradient-to-b from-blue-400 via-blue-600 to-blue-900">
-        {/* Sky */}
-        <div className="absolute inset-x-0 top-0 h-1/3 bg-gradient-to-b from-sky-400 to-blue-500"></div>
-        
-        {/* Sun */}
-        <div className="absolute top-5 right-10 w-12 h-12 bg-yellow-300 rounded-full opacity-80 animate-pulse"></div>
-        
-        {/* Clouds */}
-        {clouds.map((cloud) => (
-          <div 
-            key={cloud.id}
-            className="absolute bg-white rounded-full opacity-80"
-            style={{ 
-              top: `${cloud.top}%`, 
-              left: `${cloud.left}%`, 
-              width: `${cloud.width}px`, 
-              height: `${cloud.height}px`,
-              animation: `float ${10 / cloud.speed}s linear infinite`,
-              animationDelay: `${cloud.id * 2}s`
-            }}
-          >
-            {/* Cloud details */}
-            <div className="absolute top-1/4 left-1/4 w-1/2 h-1/2 bg-white rounded-full opacity-90"></div>
-            <div className="absolute top-0 left-1/3 w-1/3 h-2/3 bg-white rounded-full opacity-90"></div>
-            <div className="absolute top-1/3 left-1/6 w-1/3 h-1/3 bg-white rounded-full opacity-90"></div>
-            <div className="absolute top-1/4 right-1/6 w-1/3 h-1/2 bg-white rounded-full opacity-90"></div>
-          </div>
-        ))}
-        
-        {/* Birds */}
-        {birds.map((bird) => (
-          <div 
-            key={bird.id}
-            className="absolute"
-            style={{ 
-              top: `${bird.top}%`, 
-              left: `${bird.left}%`,
-              animation: `float ${8 / bird.speed}s linear infinite`,
-              animationDelay: `${bird.id}s`
-            }}
-          >
-            {/* Simple bird shape */}
-            <div className="relative">
-              <div 
-                className="absolute bg-black"
-                style={{ 
-                  width: `${bird.size}px`, 
-                  height: `${bird.size/2}px`,
-                  borderRadius: '50% 50% 0 0',
-                  transform: 'rotate(45deg)'
-                }}
-              ></div>
-              <div 
-                className="absolute bg-black"
-                style={{ 
-                  width: `${bird.size}px`, 
-                  height: `${bird.size/2}px`,
-                  borderRadius: '50% 50% 0 0',
-                  transform: 'rotate(-45deg)',
-                  left: `${bird.size * 0.7}px`
-                }}
-              ></div>
-            </div>
-          </div>
-        ))}
-        
-        {/* Islands */}
-        {/* Island 1 */}
-        <div className="absolute bottom-16 left-10 w-40 h-16 bg-yellow-700 rounded-t-full rounded-r-full">
-          {/* Sand details */}
-          <div className="absolute top-0 left-10 w-20 h-4 bg-yellow-600 rounded-full"></div>
-          <div className="absolute top-2 left-5 w-10 h-2 bg-yellow-600 rounded-full"></div>
-          
-          {/* Palm tree 1 */}
-          <div className="absolute bottom-5 left-5 w-2 h-10 bg-amber-800 rounded-full transform rotate-6"></div>
-          <div className="absolute bottom-14 left-2 w-8 h-5 bg-green-700 rounded-full"></div>
-          <div className="absolute bottom-12 left-0 w-6 h-4 bg-green-700 rounded-full"></div>
-          <div className="absolute bottom-13 left-6 w-7 h-4 bg-green-700 rounded-full"></div>
-          
-          {/* Palm tree 2 */}
-          <div className="absolute bottom-6 right-10 w-2 h-12 bg-amber-800 rounded-full transform -rotate-6"></div>
-          <div className="absolute bottom-16 right-7 w-8 h-5 bg-green-700 rounded-full"></div>
-          <div className="absolute bottom-14 right-12 w-6 h-4 bg-green-700 rounded-full"></div>
-          <div className="absolute bottom-15 right-5 w-7 h-4 bg-green-700 rounded-full"></div>
-          
-          {/* Treasure chest */}
-          <div className="absolute bottom-4 left-20 w-6 h-4 bg-amber-900 rounded-sm border border-amber-700"></div>
-          <div className="absolute bottom-6 left-20 w-6 h-2 bg-amber-800 rounded-b-sm border border-amber-700"></div>
-          <div className="absolute bottom-5 left-22 w-2 h-1 bg-yellow-500 rounded-full animate-pulse"></div>
-        </div>
-        
-        {/* Island 2 */}
-        <div className="absolute bottom-12 right-5 w-30 h-12 bg-yellow-700 rounded-t-full rounded-l-full">
-          {/* Sand details */}
-          <div className="absolute top-0 right-8 w-15 h-3 bg-yellow-600 rounded-full"></div>
-          
-          {/* Palm tree */}
-          <div className="absolute bottom-4 right-10 w-2 h-8 bg-amber-800 rounded-full transform -rotate-12"></div>
-          <div className="absolute bottom-11 right-7 w-8 h-5 bg-green-700 rounded-full"></div>
-          <div className="absolute bottom-9 right-12 w-6 h-4 bg-green-700 rounded-full"></div>
-          
-          {/* Animal (crab) */}
-          <div className="absolute bottom-2 right-20 w-4 h-3 bg-red-500 rounded-full animate-bobUpDown"></div>
-          <div className="absolute bottom-3 right-18 w-1 h-2 bg-red-500 rounded-full"></div>
-          <div className="absolute bottom-3 right-23 w-1 h-2 bg-red-500 rounded-full"></div>
-        </div>
-        
-        {/* Animated waves - improved with multiple layers */}
-        <div 
-          className="absolute bottom-0 left-0 right-0 h-24 bg-blue-600 opacity-70"
-          style={{
-            clipPath: 'polygon(0% 100%, 0% 40%, 2% 45%, 4% 40%, 6% 45%, 8% 40%, 10% 45%, 12% 40%, 14% 45%, 16% 40%, 18% 45%, 20% 40%, 22% 45%, 24% 40%, 26% 45%, 28% 40%, 30% 45%, 32% 40%, 34% 45%, 36% 40%, 38% 45%, 40% 40%, 42% 45%, 44% 40%, 46% 45%, 48% 40%, 50% 45%, 52% 40%, 54% 45%, 56% 40%, 58% 45%, 60% 40%, 62% 45%, 64% 40%, 66% 45%, 68% 40%, 70% 45%, 72% 40%, 74% 45%, 76% 40%, 78% 45%, 80% 40%, 82% 45%, 84% 40%, 86% 45%, 88% 40%, 90% 45%, 92% 40%, 94% 45%, 96% 40%, 98% 45%, 100% 40%, 100% 100%)',
-            animation: 'waveMotion 10s infinite linear'
-          }}
-        ></div>
-        <div 
-          className="absolute bottom-0 left-0 right-0 h-20 bg-blue-500 opacity-60"
-          style={{
-            clipPath: 'polygon(0% 100%, 0% 45%, 2% 40%, 4% 45%, 6% 40%, 8% 45%, 10% 40%, 12% 45%, 14% 40%, 16% 45%, 18% 40%, 20% 45%, 22% 40%, 24% 45%, 26% 40%, 28% 45%, 30% 40%, 32% 45%, 34% 40%, 36% 45%, 38% 40%, 40% 45%, 42% 40%, 44% 45%, 46% 40%, 48% 45%, 50% 40%, 52% 45%, 54% 40%, 56% 45%, 58% 40%, 60% 45%, 62% 40%, 64% 45%, 66% 40%, 68% 45%, 70% 40%, 72% 45%, 74% 40%, 76% 45%, 78% 40%, 80% 45%, 82% 40%, 84% 40%, 86% 45%, 88% 40%, 90% 45%, 92% 45%, 94% 40%, 96% 45%, 98% 40%, 100% 45%, 100% 100%)',
-            animation: 'waveMotion 8s infinite linear reverse'
-          }}
-        ></div>
-        <div 
-          className="absolute bottom-0 left-0 right-0 h-16 bg-blue-400 opacity-50"
-          style={{
-            clipPath: 'polygon(0% 100%, 0% 45%, 2% 50%, 4% 45%, 6% 50%, 8% 45%, 10% 50%, 12% 45%, 14% 50%, 16% 45%, 18% 50%, 20% 45%, 22% 50%, 24% 45%, 26% 50%, 28% 45%, 30% 50%, 32% 45%, 34% 50%, 36% 45%, 38% 50%, 40% 45%, 42% 50%, 44% 45%, 46% 50%, 48% 45%, 50% 50%, 52% 45%, 54% 50%, 56% 45%, 58% 50%, 60% 45%, 62% 50%, 64% 45%, 66% 50%, 68% 45%, 70% 50%, 72% 45%, 74% 50%, 76% 45%, 78% 50%, 80% 45%, 82% 50%, 84% 45%, 86% 50%, 88% 45%, 90% 50%, 92% 45%, 94% 50%, 96% 45%, 98% 50%, 100% 45%, 100% 100%)',
-            animation: 'waveMotion 6s infinite linear'
-          }}
-        ></div>
-        
-        {/* Wave foam/splash effects as mistakes increase */}
-        {mistakes > 2 && (
-          <>
-            <div className="absolute bottom-16 left-1/4 w-3 h-3 rounded-full bg-white opacity-80 animate-bobUpDown"></div>
-            <div className="absolute bottom-14 left-1/3 w-2 h-2 rounded-full bg-white opacity-70" style={{animationDelay: '0.5s'}}></div>
-          </>
-        )}
-        
-        {mistakes > 4 && (
-          <>
-            <div className="absolute bottom-18 left-2/3 w-4 h-4 rounded-full bg-white opacity-80 animate-bobUpDown"></div>
-            <div className="absolute bottom-16 left-1/2 w-3 h-3 rounded-full bg-white opacity-70" style={{animationDelay: '0.3s'}}></div>
-            <div className="absolute bottom-14 right-1/4 w-2 h-2 rounded-full bg-white opacity-60" style={{animationDelay: '0.7s'}}></div>
-          </>
-        )}
-      </div>
-      
-      {/* Ship */}
+    <div className="relative w-full h-80 md:h-96 lg:h-[30rem] mb-4 overflow-hidden rounded-xl">
+      {/* Sky background with weather effects */}
       <div 
-        className="absolute left-1/2 transform -translate-x-1/2 transition-all duration-1000" 
+        className="absolute inset-0 transition-all duration-1000"
         style={{
-          bottom: `${Math.max(20 - mistakes * 5, 0)}%`,
-          transform: `translateX(-50%) rotate(${mistakes > 3 ? (mistakes - 3) * 3 : 0}deg)`,
+          background: `linear-gradient(to bottom, 
+            ${mistakeRatio > 0.7 ? 'rgb(30, 41, 59)' : mistakeRatio > 0.4 ? 'rgb(51, 65, 85)' : 'rgb(186, 230, 253)'}, 
+            ${mistakeRatio > 0.5 ? 'rgb(15, 23, 42)' : 'rgb(144, 224, 255)'} 70%)`
         }}
       >
-        <div className="relative w-48 h-32">
-          {/* Ship hull */}
-          <div className="w-48 h-24 bg-amber-800 rounded-b-xl rounded-t-lg border-t-2 border-amber-700 relative overflow-hidden">
-            {/* Ship damage */}
-            {mistakes >= 1 && (
-              <div className="absolute top-2 right-5 w-8 h-5 bg-amber-900 rounded-full"></div>
-            )}
-            {mistakes >= 2 && (
-              <div className="absolute top-10 left-8 w-10 h-6 bg-amber-900 rounded-full"></div>
-            )}
-            {mistakes >= 3 && (
-              <div className="absolute bottom-2 right-12 w-9 h-7 bg-amber-900 rounded-full"></div>
-            )}
-            {mistakes >= 4 && (
-              <div className="absolute bottom-5 left-3 w-8 h-7 bg-blue-800 rounded-full animate-pulse"></div>
-            )}
-            {mistakes >= 5 && (
-              <div className="absolute top-5 left-20 w-9 h-8 bg-blue-800 rounded-full animate-pulse"></div>
-            )}
-            
-            {/* Water inside ship based on wrong guesses */}
+        {/* Lightning flash when there's a storm */}
+        {showLightning && mistakeRatio > 0.4 && (
+          <div className="absolute inset-0 bg-yellow-300 opacity-40 z-10"></div>
+        )}
+        
+        {/* Lightning bolt strikes in bad weather */}
+        {showLightning && mistakeRatio > 0.5 && (
+          <div className="absolute inset-0 z-10">
             <div 
-              className="absolute bottom-0 left-0 w-full bg-blue-500 transition-all duration-700"
-              style={{ 
-                height: `${mistakes * 20}%`,
-                opacity: 0.7
-              }}
+              className="absolute lightning-bolt" 
+            style={{ 
+                left: `${30 + Math.random() * 40}%`, 
+                top: 0, 
+                height: `${30 + Math.random() * 30}%`,
+                boxShadow: '0 0 10px 2px rgba(250, 204, 21, 0.7)'
+                }}
+              ></div>
+          </div>
+        )}
+        
+        {/* Clouds that appear and darken with storm severity */}
+        <div 
+          className="absolute top-5 left-10 w-60 h-20 rounded-t-[50px] rounded-b-[30px] bg-white transition-opacity duration-1000"
+          style={{ opacity: Math.min(mistakeRatio * 0.8 + 0.2, 0.9) }}
+        ></div>
+        <div 
+          className="absolute top-10 left-[30%] w-80 h-24 rounded-t-[60px] rounded-b-[40px] bg-white transition-opacity duration-1000"
+          style={{ opacity: Math.min(mistakeRatio * 0.8 + 0.1, 0.8) }}
+        ></div>
+        <div 
+          className="absolute top-8 right-20 w-70 h-16 rounded-t-[40px] rounded-b-[30px] bg-white transition-opacity duration-1000"
+          style={{ opacity: Math.min(mistakeRatio * 0.8 + 0.1, 0.7) }}
+        ></div>
+        
+        {/* Dark storm clouds that appear with higher mistake counts */}
+        {mistakeRatio > 0.3 && (
+          <>
+            <div 
+              className="absolute top-12 left-[20%] w-100 h-30 rounded-full bg-slate-700 transition-opacity duration-1000" 
+              style={{ opacity: Math.min((mistakeRatio - 0.3) * 1.4, 0.6) }}
             ></div>
-            
-            {/* Cabin */}
-            <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-24 h-10 bg-amber-700 rounded-t-lg"></div>
-            {/* Windows */}
-            <div className="absolute top-3 left-1/3 w-4 h-4 bg-yellow-300 rounded-full opacity-70"></div>
-            <div className="absolute top-3 right-1/3 w-4 h-4 bg-yellow-300 rounded-full opacity-70"></div>
-            
-            {/* Ship details */}
-            <div className="absolute bottom-2 left-6 w-36 h-2 bg-amber-900"></div>
-            <div className="absolute bottom-6 left-4 w-40 h-2 bg-amber-900"></div>
-          </div>
-          
-          {/* Mast */}
-          <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 w-3 h-36 bg-amber-900"></div>
-          
-          {/* Sail */}
-          <div className="absolute bottom-36 left-1/4 w-24 h-24 bg-gray-200 rounded-l-full overflow-hidden animate-sway" style={{transformOrigin: 'center left'}}>
-            {/* Skull and crossbones */}
-            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-3xl">☠️</div>
-            {/* Sail details */}
-            <div className="absolute top-5 left-0 w-full h-1 bg-gray-300"></div>
-            <div className="absolute top-15 left-0 w-full h-1 bg-gray-300"></div>
-          </div>
-          
-          {/* Crow's nest */}
-          <div className="absolute bottom-45 left-1/2 transform -translate-x-1/2 w-6 h-3 bg-amber-800 rounded-full"></div>
-          {/* Pirate in crow's nest */}
-          {mistakes < 4 && (
-            <div className="absolute bottom-47 left-1/2 transform -translate-x-1/2 w-4 h-4 bg-gray-800 rounded-full">
-              {/* Eye patch */}
-              <div className="absolute top-1 left-1 w-1 h-1 bg-amber-700 rounded-full"></div>
-            </div>
-          )}
-          
-          {/* Flag */}
-          <div className="absolute bottom-52 left-1/2 transform -translate-x-1/2 w-10 h-6 bg-black">
-            <div className="absolute inset-0 flex items-center justify-center text-sm">🏴‍☠️</div>
-          </div>
+            <div 
+              className="absolute top-16 right-[30%] w-90 h-25 rounded-full bg-slate-800 transition-opacity duration-1000"
+              style={{ opacity: Math.min((mistakeRatio - 0.3) * 1.4, 0.7) }}
+            ></div>
+          </>
+        )}
+        
+        {mistakeRatio > 0.5 && (
+          <>
+            <div 
+              className="absolute top-4 left-20 w-90 h-20 rounded-full bg-slate-900 transition-opacity duration-1000"
+              style={{ opacity: Math.min((mistakeRatio - 0.5) * 2, 0.8) }}
+            ></div>
+            <div 
+              className="absolute top-2 right-10 w-60 h-18 rounded-full bg-slate-950 animate-drift transition-opacity duration-1000"
+              style={{ opacity: Math.min((mistakeRatio - 0.5) * 2, 0.9) }}
+            ></div>
+          </>
+        )}
+        
+        {/* Flying birds */}
+        <div 
+          className="absolute w-6 h-2 transition-opacity duration-1000" 
+          style={{ 
+            top: `${birdPosition.y}%`, 
+            left: `${birdPosition.x}%`,
+            opacity: Math.max(0, 1 - mistakeRatio * 1.2)
+          }}
+        >
+          <div className="absolute top-0 left-0 w-2 h-1 bg-black rotate-[20deg]"></div>
+          <div className="absolute top-0 left-2 w-2 h-1 bg-black -rotate-[20deg]"></div>
         </div>
       </div>
       
-      {/* Fish jumping occasionally */}
-      {Math.random() > 0.7 && (
-        <div 
-          className="absolute w-6 h-3 bg-silver-400 rounded-full"
-          style={{ 
-            bottom: '20%', 
-            left: '30%',
-            transform: 'rotate(45deg)',
-            animation: 'bobUpDown 1.5s ease-in-out infinite'
-          }}
-        >
-          <div className="absolute right-0 w-2 h-3 bg-silver-400 rounded-r-full" style={{transform: 'skew(0, 30deg)'}}></div>
+      {/* Ocean with dynamic waves simulation - refined for perfection */}
+      <div 
+        className="absolute bottom-0 left-0 right-0 h-[50%] transition-all duration-1000 overflow-hidden"
+        style={{ 
+          background: `linear-gradient(to bottom, 
+            ${mistakeRatio > 0.7 ? 'rgb(8, 47, 73)' : mistakeRatio > 0.4 ? 'rgb(3, 105, 161)' : 'rgb(56, 189, 248)'}, 
+            ${mistakeRatio > 0.7 ? 'rgb(3, 30, 47)' : mistakeRatio > 0.4 ? 'rgb(1, 65, 101)' : 'rgb(14, 116, 144)'} 85%,
+            rgb(2, 44, 70) 100%)`
+        }}
+      >
+        {/* Simple clean water effect */}
+        <div className="absolute inset-0 ocean-depth"></div>
+        
+        {/* Refined wave simulation - more subtle animation matching image */}
+        <div className="absolute inset-x-0 top-[-65px] h-[100px] wave-container">
+          <svg className="waves" xmlns="http://www.w3.org/2000/svg" xmlnsXlink="http://www.w3.org/1999/xlink"
+            viewBox="0 24 150 28" preserveAspectRatio="none" shapeRendering="auto">
+            <defs>
+              <path id="gentle-wave" 
+                d="M-160 44c30 0 58-18 88-18s 58 18 88 18 58-18 88-18 58 18 88 18 v44h-352z" />
+            </defs>
+            <g className="parallax">
+              <use xlinkHref="#gentle-wave" x="48" y="0" 
+                style={{
+                  fill: `rgba(255,255,255,${0.25 + mistakeRatio * 0.2})`,
+                  animationDuration: `${Math.max(6, 18 - mistakeRatio * 8)}s`
+                }} 
+              />
+              <use xlinkHref="#gentle-wave" x="48" y="3" 
+                style={{
+                  fill: `rgba(255,255,255,${0.2 + mistakeRatio * 0.2})`,
+                  animationDuration: `${Math.max(7, 20 - mistakeRatio * 8)}s`
+                }} 
+              />
+            </g>
+          </svg>
         </div>
-      )}
-      
-      {/* Seagull occasionally */}
-      {Math.random() > 0.5 && (
-        <div 
-          className="absolute"
-          style={{ 
-            bottom: '70%', 
-            left: Math.random() * 80 + '%',
-            animation: 'float 20s linear infinite'
-          }}
-        >
-          <div className="relative">
-            <div className="absolute bg-white w-6 h-2" style={{borderRadius: '50% 50% 0 0', transform: 'rotate(30deg)'}}></div>
-            <div className="absolute bg-white w-6 h-2 left-4" style={{borderRadius: '50% 50% 0 0', transform: 'rotate(-30deg)'}}></div>
-            <div className="absolute top-1 left-3 w-2 h-2 bg-white rounded-full"></div>
+        
+        {/* Second set of waves - more dramatic but only visible with mistakes */}
+        {mistakeRatio > 0.2 && (
+          <div className="absolute inset-x-0 top-[-60px] h-[100px] wave-container">
+            <svg className="waves" xmlns="http://www.w3.org/2000/svg" xmlnsXlink="http://www.w3.org/1999/xlink"
+              viewBox="0 24 150 28" preserveAspectRatio="none" shapeRendering="auto">
+              <g className="parallax">
+                <use xlinkHref="#gentle-wave" x="48" y="0" 
+                  style={{
+                    fill: `rgba(255,255,255,${Math.min((mistakeRatio - 0.2) * 0.5, 0.4)})`,
+                    animationDuration: `${Math.max(4, 10 - mistakeRatio * 5)}s`,
+                    transform: `scaleY(${1 + mistakeRatio * 0.8})`
+                  }} 
+                />
+              </g>
+            </svg>
           </div>
+        )}
+        
+        {/* Water splashes when ship is hit */}
+        {showSplash && (
+          <>
+            <div className="absolute top-[45%] left-[45%] w-16 h-20 splash-effect"></div>
+            <div className="absolute top-[44%] left-[47%] w-14 h-18 splash-effect" style={{ animationDelay: '0.1s' }}></div>
+            <div className="absolute top-[46%] left-[43%] w-12 h-16 splash-effect" style={{ animationDelay: '0.2s' }}></div>
+          </>
+        )}
+      </div>
+      
+      {/* Left island - perfectly positioned */}
+      <div className="absolute bottom-[49%] left-[12%] w-30 h-16 bg-amber-800 rounded-t-full">
+        {/* Sand details */}
+        <div className="absolute top-0 inset-x-0 h-2 bg-amber-200 rounded-t-full"></div>
+        
+        {/* Palm tree */}
+        <div className="absolute top-1 left-10 w-1.5 h-8 bg-amber-900"></div>
+        <div className="absolute top-1 left-10 w-8 h-4 bg-green-800 rounded-full -rotate-15 origin-bottom-left"></div>
+        <div className="absolute top-1 left-10 w-8 h-4 bg-green-800 rounded-full rotate-15 origin-bottom-left"></div>
+        <div className="absolute top-0 left-10 w-6 h-3 bg-green-800 rounded-full -rotate-30 origin-bottom-left"></div>
+      </div>
+      
+      {/* Right island - perfectly positioned */}
+      <div className="absolute bottom-[49%] right-[12%] w-30 h-16 bg-amber-800 rounded-t-full">
+        {/* Sand details */}
+        <div className="absolute top-0 inset-x-0 h-2 bg-amber-200 rounded-t-full"></div>
+        
+        {/* Palm tree */}
+        <div className="absolute top-1 right-5 w-1.5 h-8 bg-amber-900"></div>
+        <div className="absolute top-1 right-5 w-8 h-4 bg-green-800 rounded-full -rotate-15 origin-bottom-left"></div>
+        <div className="absolute top-1 right-5 w-8 h-4 bg-green-800 rounded-full rotate-15 origin-bottom-left"></div>
+        <div className="absolute top-0 right-5 w-6 h-3 bg-green-800 rounded-full -rotate-30 origin-bottom-left"></div>
+      </div>
+      
+      {/* Simplified ship design - perfectly positioned */}
+      <div 
+        className="absolute left-[50%] bottom-[49%] transform -translate-x-1/2 transition-all duration-500"
+        style={{ 
+          transform: `translateX(-50%) rotate(${shipTilt}deg)`,
+          width: '40px',
+          height: '36px'
+        }}
+      >
+        {/* Ship hull */}
+        <div className="absolute bottom-0 left-0 right-0 h-16 bg-amber-800 rounded-b-full">
+          {/* Hull damage indicators */}
+          {Array.from({ length: Math.ceil(mistakeRatio * 5) }).map((_, index) => (
+            <div 
+              key={index}
+              className="absolute bg-slate-950 rounded-full opacity-80"
+              style={{ 
+                width: `${4 + Math.random() * 3}px`,
+                height: `${3 + Math.random() * 4}px`,
+                bottom: `${Math.random() * 14}px`,
+                left: `${5 + (index * 7) + Math.random() * 5}px`
+              }}
+            ></div>
+          ))}
         </div>
-      )}
+          
+        {/* Mast */}
+        <div className="absolute bottom-16 left-1/2 transform -translate-x-1/2 w-2 h-32 bg-amber-900"></div>
+          
+        {/* Sail - crisp white with clear skull */}
+        <div 
+          className="absolute bottom-20 left-1/2 transform -translate-x-1/2 w-28 h-24 bg-white rounded-sm"
+          style={{ 
+            clipPath: mistakeRatio > 0.5 ? 
+              'polygon(0% 0%, 100% 0%, 100% 100%, 75% 80%, 65% 100%, 30% 70%, 0% 100%)' : 
+              'polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)',
+          }}
+        >
+          {/* Clearer pirate symbol on sail */}
+          <div className="absolute top-8 left-1/2 transform -translate-x-1/2 text-2xl font-bold text-black">☠</div>
+        </div>
+      </div>
       
-      {/* Storm effects with more mistakes */}
-      {mistakes > 3 && (
-        <>
-          <div className="absolute top-1/4 left-1/4 w-screen h-1 bg-white opacity-50 animate-pulse transform rotate-45"></div>
-          {mistakes > 4 && (
-            <>
-              <div className="absolute top-1/3 right-1/3 w-screen h-1 bg-white opacity-40 animate-pulse transform -rotate-45"></div>
-              <div className="absolute top-0 left-0 right-0 bottom-0 bg-black opacity-10"></div>
-            </>
-          )}
-        </>
-      )}
-      
-      {/* Ship integrity meter */}
-      <div className="absolute bottom-4 left-4 right-4">
-        <div className="text-amber-300 text-xs mb-1 font-bold">Ship Integrity: {Math.round(100 - (mistakes / maxMistakes * 100))}%</div>
-        <div className="w-full h-2 bg-gray-800 rounded-full overflow-hidden">
+      {/* Ship integrity indicator bar - perfectly styled */}
+      <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 w-full max-w-md px-4">
+        <div className="text-white text-sm font-bold mb-1 text-center">Ship Integrity: {shipIntegrity}%</div>
+        <div className="h-2 bg-slate-800 bg-opacity-30 rounded-full overflow-hidden">
           <div 
-            className="h-full rounded-full transition-all duration-500"
+            className="h-full rounded-full transition-all duration-300" 
             style={{ 
-              width: `${100 - (mistakes / maxMistakes * 100)}%`,
-              backgroundColor: mistakes > (maxMistakes * 0.6) ? 'rgb(220, 38, 38)' : mistakes > (maxMistakes * 0.3) ? 'rgb(234, 88, 12)' : 'rgb(74, 222, 128)',
-              boxShadow: `0 0 5px ${mistakes > (maxMistakes * 0.6) ? 'rgb(220, 38, 38)' : mistakes > (maxMistakes * 0.3) ? 'rgb(234, 88, 12)' : 'rgb(74, 222, 128)'}`
+              width: `${shipIntegrity}%`,
+              background: mistakeRatio > 0.7 ? 
+                'linear-gradient(to right, #ef4444, #f97316)' : 
+                mistakeRatio > 0.4 ? 
+                'linear-gradient(to right, #f97316, #facc15)' : 
+                'linear-gradient(to right, #22c55e, #84cc16)'
             }}
           ></div>
         </div>
       </div>
+      
+      {/* Warning messages that appear with high mistake counts */}
+      {mistakeRatio > 0.8 && (
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-red-500 font-bold text-2xl animate-pulse">
+          ABANDON SHIP!
+        </div>
+      )}
+      
+      {/* CSS for animations - perfect subtle animations */}
+      <style jsx>{`
+        @keyframes wave-animation {
+          0% { background-position: 0 0; }
+          100% { background-position: 200px 0; }
+        }
+        
+        @keyframes drift {
+          0%, 100% { transform: translateX(0); }
+          50% { transform: translateX(20px); }
+        }
+        
+        @keyframes splash {
+          0% { transform: scale(0.3) translateY(0); opacity: 0.9; }
+          50% { transform: scale(1.2) translateY(-25px); opacity: 0.8; }
+          100% { transform: scale(2) translateY(-40px); opacity: 0; }
+        }
+        
+        @keyframes cannonfire {
+          0% { transform: scaleX(0.3); opacity: 0.9; }
+          50% { transform: scaleX(1.5); opacity: 0.8; }
+          100% { transform: scaleX(2.5); opacity: 0; }
+        }
+        
+        @keyframes blast {
+          0% { transform: scale(0.3); opacity: 0.9; }
+          50% { transform: scale(1.2); opacity: 0.8; }
+          100% { transform: scale(2); opacity: 0; }
+        }
+        
+        .lightning-bolt {
+          position: absolute;
+          width: 3px;
+          background: linear-gradient(to bottom, rgba(250, 204, 21, 0.9), rgba(250, 204, 21, 0.7));
+          clip-path: polygon(
+            0% 0%, 100% 0%, 80% 20%, 100% 20%, 
+            70% 40%, 100% 40%, 60% 60%, 
+            80% 60%, 40% 80%, 60% 80%, 
+            20% 100%, 40% 100%, 0% 100%
+          );
+        }
+        
+        /* Refined wave animations */
+        .wave-container {
+          width: 100%;
+          height: 100%;
+          position: absolute;
+          left: 0;
+          right: 0;
+        }
+        
+        .waves {
+          position: relative;
+          width: 100%;
+          height: 100%;
+          margin-bottom: -7px;
+          min-height: 100px;
+          max-height: 150px;
+        }
+        
+        .parallax > use {
+          animation: move-forever linear infinite;
+          animation-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+        
+        @keyframes move-forever {
+          0% { transform: translate3d(-90px, 0, 0); }
+          100% { transform: translate3d(85px, 0, 0); }
+        }
+        
+        .ocean-depth {
+          background: radial-gradient(
+            ellipse at center,
+            rgba(0, 0, 0, 0) 0%,
+            rgba(0, 0, 0, 0.15) 85%,
+            rgba(0, 0, 0, 0.2) 100%
+          );
+        }
+        
+        .splash-effect {
+          border-radius: 42% 58% 70% 30% / 45% 45% 55% 55%;
+          background: radial-gradient(circle, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.5) 60%, rgba(255,255,255,0) 100%);
+          animation: splash-rise 1.5s ease-out forwards;
+          opacity: 0;
+          filter: blur(2px);
+        }
+        
+        @keyframes splash-rise {
+          0% { opacity: 0.8; transform: scale(0.3) translateY(0); border-radius: 42% 58% 70% 30% / 45% 45% 55% 55%; }
+          50% { opacity: 0.9; transform: scale(1.5) translateY(-50px); border-radius: 38% 62% 64% 36% / 58% 42% 58% 42%; }
+          100% { opacity: 0; transform: scale(2) translateY(-70px); border-radius: 24% 76% 35% 65% / 72% 28% 72% 28%; }
+        }
+        
+        .whitecap-container {
+          height: 20%;
+          pointer-events: none;
+        }
+      `}</style>
     </div>
   );
 } 
