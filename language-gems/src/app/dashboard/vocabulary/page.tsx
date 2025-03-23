@@ -1,5 +1,8 @@
 'use client';
 
+// Skip static generation for this page
+export const dynamic = 'force-dynamic';
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../../components/auth/AuthProvider';
 import { supabase } from '../../../lib/supabase';

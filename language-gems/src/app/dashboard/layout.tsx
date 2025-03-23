@@ -60,7 +60,8 @@ export default function DashboardLayout({
   
   const handleSignOut = async () => {
     await signOut();
-    // Router will handle redirect via the auth provider
+    // Force redirect to homepage
+    window.location.href = '/';
   };
   
   return (
