@@ -12,48 +12,6 @@ type SoundEffectsProps = {
   muted?: boolean;
 }
 
-// Using sounds from free CDNs
-const themeSounds = {
-  default: {
-    correct: 'https://assets.mixkit.co/sfx/preview/mixkit-arcade-game-jump-coin-216.mp3',
-    incorrect: 'https://assets.mixkit.co/sfx/preview/mixkit-negative-tone-interface-tap-2568.mp3',
-    win: 'https://assets.mixkit.co/sfx/preview/mixkit-winning-chimes-2015.mp3',
-    lose: 'https://assets.mixkit.co/sfx/preview/mixkit-failure-arcade-alert-notification-240.mp3',
-    hint: 'https://assets.mixkit.co/sfx/preview/mixkit-game-ball-tap-2073.mp3',
-  },
-  tokyo: {
-    correct: 'https://assets.mixkit.co/sfx/preview/mixkit-futuristic-technology-device-power-on-406.mp3',
-    incorrect: 'https://assets.mixkit.co/sfx/preview/mixkit-tech-break-fail-notification-171.mp3',
-    win: 'https://assets.mixkit.co/sfx/preview/mixkit-video-game-win-2016.mp3',
-    lose: 'https://assets.mixkit.co/sfx/preview/mixkit-electronic-retro-block-hit-2185.mp3', 
-    hint: 'https://assets.mixkit.co/sfx/preview/mixkit-sci-fi-interface-zoom-890.mp3',
-  },
-  pirate: {
-    correct: 'https://assets.mixkit.co/sfx/preview/mixkit-positive-interface-beep-221.mp3',
-    incorrect: 'https://assets.mixkit.co/sfx/preview/mixkit-cannon-fire-shot-1678.mp3',
-    win: 'https://assets.mixkit.co/sfx/preview/mixkit-medieval-show-fanfare-announcement-226.mp3',
-    lose: 'https://assets.mixkit.co/sfx/preview/mixkit-wood-hard-hit-2182.mp3', 
-    hint: 'https://assets.mixkit.co/sfx/preview/mixkit-coins-handling-1939.mp3',
-  },
-  space: {
-    correct: 'https://assets.mixkit.co/sfx/preview/mixkit-space-coin-win-notification-271.mp3',
-    incorrect: 'https://assets.mixkit.co/sfx/preview/mixkit-sci-fi-click-900.mp3',
-    win: 'https://assets.mixkit.co/sfx/preview/mixkit-magical-coin-win-1936.mp3',
-    lose: 'https://assets.mixkit.co/sfx/preview/mixkit-sci-fi-virus-scaner-alert-273.mp3',
-    hint: 'https://assets.mixkit.co/sfx/preview/mixkit-sci-fi-laser-gun-shot-3113.mp3',
-  },
-  temple: {
-    correct: 'https://assets.mixkit.co/sfx/preview/mixkit-bell-notification-933.mp3',
-    incorrect: 'https://assets.mixkit.co/sfx/preview/mixkit-falling-rock-small-boulder-1272.mp3',
-    win: 'https://assets.mixkit.co/sfx/preview/mixkit-medieval-show-fanfare-announcement-226.mp3',
-    lose: 'https://assets.mixkit.co/sfx/preview/mixkit-lava-bubble-1328.mp3',
-    hint: 'https://assets.mixkit.co/sfx/preview/mixkit-mysterious-wind-undead-ambient-2451.mp3',
-  }
-};
-
-// Attribution: Sounds from Mixkit.co - Free Sound Effects
-// License: Free to use in any project
-
 export default function SoundEffects({ 
   theme = 'default', 
   onCorrect = false,
@@ -63,91 +21,147 @@ export default function SoundEffects({
   onHint = false,
   muted = false
 }: SoundEffectsProps) {
+  const [sounds, setSounds] = useState<Record<string, HTMLAudioElement | null>>({});
+  const [loaded, setLoaded] = useState(false);
   
-  const correctAudio = useRef<HTMLAudioElement | null>(null);
-  const incorrectAudio = useRef<HTMLAudioElement | null>(null);
-  const winAudio = useRef<HTMLAudioElement | null>(null);
-  const loseAudio = useRef<HTMLAudioElement | null>(null);
-  const hintAudio = useRef<HTMLAudioElement | null>(null);
-  
-  // Initialize audio elements on client
+  // Initialize sound effects based on theme
   useEffect(() => {
-    correctAudio.current = new Audio(themeSounds[theme as keyof typeof themeSounds]?.correct || themeSounds.default.correct);
-    incorrectAudio.current = new Audio(themeSounds[theme as keyof typeof themeSounds]?.incorrect || themeSounds.default.incorrect);
-    winAudio.current = new Audio(themeSounds[theme as keyof typeof themeSounds]?.win || themeSounds.default.win);
-    loseAudio.current = new Audio(themeSounds[theme as keyof typeof themeSounds]?.lose || themeSounds.default.lose);
-    hintAudio.current = new Audio(themeSounds[theme as keyof typeof themeSounds]?.hint || themeSounds.default.hint);
+    // Only load sounds if not muted
+    if (muted) return;
     
-    // Set volume
-    const setVolume = (audio: HTMLAudioElement | null) => {
-      if (audio) audio.volume = 0.5;
-    };
+    const soundEffects: Record<string, HTMLAudioElement | null> = {};
     
-    setVolume(correctAudio.current);
-    setVolume(incorrectAudio.current);
-    setVolume(winAudio.current);
-    setVolume(loseAudio.current);
-    setVolume(hintAudio.current);
+    // Common sounds
+    soundEffects.correct = new Audio('/games/hangman/sounds/common/correct.mp3');
+    soundEffects.wrong = new Audio('/games/hangman/sounds/common/wrong.mp3');
+    soundEffects.win = new Audio('/games/hangman/sounds/common/win.mp3');
+    soundEffects.lose = new Audio('/games/hangman/sounds/common/lose.mp3');
+    soundEffects.hint = new Audio('/games/hangman/sounds/common/hint.mp3');
     
-    // Preload sounds
-    const preloadAudio = (audio: HTMLAudioElement | null) => {
-      if (audio) {
-        audio.preload = 'auto';
-        // Listen for canplaythrough event to ensure audio is ready
-        audio.addEventListener('canplaythrough', () => {
-          // Audio is ready to play
-        }, { once: true });
-        // Force load
-        audio.load();
-      }
-    };
+    // Theme-specific sounds
+    if (theme === 'space') {
+      soundEffects.asteroidHit = new Audio('/games/hangman/sounds/space/asteroid-hit.mp3');
+      soundEffects.alarm = new Audio('/games/hangman/sounds/space/alarm.mp3');
+      soundEffects.spacePing = new Audio('/games/hangman/sounds/space/space-ping.mp3');
+    } 
+    else if (theme === 'underwater') {
+      soundEffects.bubble = new Audio('/games/hangman/sounds/underwater/bubble.mp3');
+      soundEffects.splash = new Audio('/games/hangman/sounds/underwater/splash.mp3');
+      soundEffects.sonar = new Audio('/games/hangman/sounds/underwater/sonar.mp3');
+    }
+    else if (theme === 'temple') {
+      // Lava Temple specific sounds
+      soundEffects.lavaWave = new Audio('/games/hangman/sounds/lava-temple/lava-wave.mp3');
+      soundEffects.wrongGuess = new Audio('/games/hangman/sounds/lava-temple/wrong-guess.mp3');
+      soundEffects.glyphCorrect = new Audio('/games/hangman/sounds/lava-temple/glyph-correct.mp3');
+      
+      // Stone sliding sounds for puzzle elements
+      soundEffects.stoneSlide1 = new Audio('/games/hangman/sounds/lava-temple/stone-slide-1.mp3');
+      soundEffects.stoneSlide2 = new Audio('/games/hangman/sounds/lava-temple/stone-slide-2.mp3');
+      soundEffects.stoneSlide3 = new Audio('/games/hangman/sounds/lava-temple/stone-slide-3.mp3');
+      
+      // Lava bubble sounds
+      soundEffects.lavaBubble1 = new Audio('/games/hangman/sounds/lava-temple/lava-bubble-1.mp3');
+      soundEffects.lavaBubble2 = new Audio('/games/hangman/sounds/lava-temple/lava-bubble-2.mp3');
+      
+      // Door unlock sound
+      soundEffects.doorUnlock = new Audio('/games/hangman/sounds/lava-temple/door-unlock.mp3');
+      
+      // Trap activation sounds
+      soundEffects.trapActivate = new Audio('/games/hangman/sounds/lava-temple/trap-activate.mp3');
+      
+      // Adjust volumes for lava temple sounds
+      soundEffects.lavaWave.volume = 0.7;
+      soundEffects.wrongGuess.volume = 0.8;
+      soundEffects.glyphCorrect.volume = 0.7;
+      soundEffects.stoneSlide1.volume = 0.6;
+      soundEffects.stoneSlide2.volume = 0.6;
+      soundEffects.stoneSlide3.volume = 0.6;
+      soundEffects.lavaBubble1.volume = 0.5;
+      soundEffects.lavaBubble2.volume = 0.5;
+      soundEffects.doorUnlock.volume = 0.8;
+      soundEffects.trapActivate.volume = 0.7;
+    }
     
-    preloadAudio(correctAudio.current);
-    preloadAudio(incorrectAudio.current);
-    preloadAudio(winAudio.current);
-    preloadAudio(loseAudio.current);
-    preloadAudio(hintAudio.current);
+    // Set volume for common sounds
+    Object.values(soundEffects).forEach(sound => {
+      if (sound) sound.volume = 0.5;
+    });
     
-    // Clean up on unmount
+    // Set all sounds
+    setSounds(soundEffects);
+    setLoaded(true);
+    
+    // Cleanup function to stop all sounds
     return () => {
-      correctAudio.current = null;
-      incorrectAudio.current = null;
-      winAudio.current = null;
-      loseAudio.current = null;
-      hintAudio.current = null;
+      Object.values(soundEffects).forEach(sound => {
+        if (sound) {
+          sound.pause();
+          sound.currentTime = 0;
+        }
+      });
     };
-  }, [theme]);
+  }, [theme, muted]);
   
   // Play sounds based on props
   useEffect(() => {
-    if (muted) return;
+    if (muted || !loaded) return;
     
-    if (onCorrect && correctAudio.current) {
-      correctAudio.current.currentTime = 0;
-      correctAudio.current.play().catch(e => console.error("Error playing sound:", e));
+    const playSound = (soundName: string) => {
+      const sound = sounds[soundName];
+      if (sound) {
+        sound.currentTime = 0;
+        sound.play().catch(err => console.error("Could not play sound:", err));
+      }
+    };
+    
+    if (onCorrect) {
+      playSound(theme === 'temple' ? 'glyphCorrect' : 'correct');
     }
     
-    if (onIncorrect && incorrectAudio.current) {
-      incorrectAudio.current.currentTime = 0;
-      incorrectAudio.current.play().catch(e => console.error("Error playing sound:", e));
+    if (onIncorrect) {
+      playSound(theme === 'temple' ? 'wrongGuess' : 'wrong');
     }
     
-    if (onWin && winAudio.current) {
-      winAudio.current.currentTime = 0;
-      winAudio.current.play().catch(e => console.error("Error playing sound:", e));
+    if (onWin) {
+      playSound('win');
+      if (theme === 'temple') {
+        playSound('doorUnlock');
+      }
     }
     
-    if (onLose && loseAudio.current) {
-      loseAudio.current.currentTime = 0;
-      loseAudio.current.play().catch(e => console.error("Error playing sound:", e));
+    if (onLose) {
+      playSound('lose');
+      if (theme === 'temple') {
+        playSound('lavaWave');
+      }
     }
     
-    if (onHint && hintAudio.current) {
-      hintAudio.current.currentTime = 0;
-      hintAudio.current.play().catch(e => console.error("Error playing sound:", e));
+    if (onHint) {
+      playSound('hint');
     }
-  }, [onCorrect, onIncorrect, onWin, onLose, onHint, muted]);
+    
+  }, [onCorrect, onIncorrect, onWin, onLose, onHint, sounds, muted, loaded, theme]);
   
-  // This component doesn't render anything
+  // Expose sound playing function to window for other components
+  useEffect(() => {
+    if (typeof window !== 'undefined' && loaded && !muted) {
+      (window as any).playHangmanSound = (soundName: string) => {
+        const sound = sounds[soundName];
+        if (sound) {
+          sound.currentTime = 0;
+          sound.play().catch(err => console.error("Could not play sound:", err));
+        }
+      };
+    }
+    
+    return () => {
+      if (typeof window !== 'undefined') {
+        delete (window as any).playHangmanSound;
+      }
+    };
+  }, [loaded, sounds, muted]);
+  
+  // No visible UI, this is just for sound management
   return null;
 } 

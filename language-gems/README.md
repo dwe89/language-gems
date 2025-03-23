@@ -1,30 +1,56 @@
-# LanguageGems 💎
+# Language Gems
 
-A multi-language learning platform for schools and individual learners. LanguageGems makes language acquisition fun through gamification with a gems and treasure theme. :)
-dfdf
-## Features
+Language Gems is an interactive language learning platform designed for schools and educational institutions, offering a comprehensive solution for language teachers to manage their classes, track student progress, and create engaging learning experiences.
 
-- **Multi-Language Support**: Learn multiple languages with pre-built vocabulary lists
-- **Gamified Learning**: Earn gems and unlock achievements as you progress
-- **Interactive Exercises**: Quizzes, matching games, and pronunciation challenges
-- **For Schools**: Special features for teachers to track progress and assign homework
-- **Customizable Vocabulary**: Teachers can create and assign custom vocabulary lists
-- **Progress Tracking**: Monitor your learning journey with detailed analytics
+## 🌟 Features
 
-## Tech Stack
+### For Teachers
+- **Dashboard:** Central hub for teachers to manage all aspects of their language classes
+- **Class Management:** Create and manage class lists, generate login credentials for students
+- **Student Management:** View and manage student profiles, track individual progress
+- **Custom Content Creation:** Upload custom vocabulary lists to generate games and exercises
+- **Progress Tracking:** Monitor student performance with detailed analytics and insights
+- **Leaderboards:** Foster healthy competition with class and individual achievement tracking
+- **Assignments:** Create and assign tasks to students with deadlines and requirements
 
-- **Frontend**: Next.js, React, TypeScript, TailwindCSS
-- **Backend**: Supabase (Authentication, Database)
-- **Payments**: Stripe for subscription management
-- **Hosting**: Cloudflare Pages
+### For Students
+- **Interactive Learning:** Engaging games and exercises to practice vocabulary and grammar
+- **Progress Tracking:** Visualize learning progress and identify areas for improvement
+- **Achievements:** Earn badges and rewards for consistent practice and skill mastery
+- **Personalized Learning:** Adaptive content that adjusts to individual learning pace and needs
 
-## Getting Started
+## 🚀 Development Status
+
+### Completed Pages
+- ✅ Dashboard Home
+- ✅ Classes Management
+- ✅ Student Management
+- ✅ Custom Content Creation
+- ✅ Vocabulary Management
+- ✅ Settings
+- ✅ Progress Tracking
+- ✅ Leaderboards
+
+### In Progress
+- 🔄 Assignments
+- 🔄 Resource Library
+- 🔄 Professional Development
+- 🔄 Collaboration Hub
+- 🔄 Analytics & Insights
+- 🔄 Cultural Hub
+- 🔄 Feedback & Support
+
+## 🛠️ Technology Stack
+
+- **Frontend:** Next.js, React, TailwindCSS
+- **Backend:** Supabase (PostgreSQL, Authentication, Storage)
+- **Deployment:** Vercel
+
+## 📋 Getting Started
 
 ### Prerequisites
-
-- Node.js 18+ and npm
-- Supabase account
-- Stripe account (for payments)
+- Node.js (v14 or later)
+- npm or yarn
 
 ### Installation
 
@@ -37,53 +63,59 @@ cd language-gems
 2. Install dependencies
 ```bash
 npm install
+# or
+yarn install
 ```
 
-3. Create a `.env.local` file with your credentials
+3. Set up environment variables
+```bash
+cp .env.example .env.local
 ```
-# Supabase
-NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
+Edit `.env.local` with your Supabase credentials
 
-# Stripe
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=your-stripe-publishable-key
-STRIPE_SECRET_KEY=your-stripe-secret-key
-STRIPE_WEBHOOK_SECRET=your-stripe-webhook-secret
-```
-
-4. Start the development server
+4. Run the development server
 ```bash
 npm run dev
+# or
+yarn dev
 ```
 
 5. Open [http://localhost:3000](http://localhost:3000) in your browser
 
-## Project Structure
+## 📦 Project Structure
 
 ```
 language-gems/
-├── src/
-│   ├── app/              # Next.js app router pages
-│   ├── components/       # Reusable React components
-│   ├── lib/              # Utility functions and services
-│   ├── hooks/            # Custom React hooks
-│   └── types/            # TypeScript type definitions
 ├── public/               # Static assets
-├── .env.local            # Environment variables (not in version control)
+├── src/
+│   ├── app/              # Next.js app router
+│   │   ├── dashboard/    # Teacher dashboard pages
+│   │   ├── auth/         # Authentication pages
+│   │   └── ...           # Other app routes
+│   ├── components/       # Reusable React components
+│   ├── lib/              # Utility functions and types
+│   ├── middleware.ts     # Route protection middleware
+│   └── ...               # Other source files
+├── styles/               # Global styles
 └── ...                   # Configuration files
 ```
 
-## Deployment
+## 🔒 Authentication
 
-This application is designed to be deployed on Cloudflare Pages. Follow their documentation for deploying a Next.js application.
+The app uses Supabase for authentication and implements role-based access control:
+- **Public routes:** Landing pages, marketing content
+- **Protected routes:** Require authentication
+- **Teacher-only routes:** Accessible only to users with teacher role
+- **Student routes:** Default authenticated routes for student users
 
-## License
+## 🤝 Contributing
 
-[MIT](LICENSE)
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-## Acknowledgements
+## 📝 License
 
-- Illustrations and design inspiration from various sources
-- Next.js team for the incredible framework
-- Supabase for the backend services
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+---
+
+© 2023-2025 Language Gems. All rights reserved.

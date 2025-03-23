@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useAuth } from '../../components/auth/AuthProvider';
 
 const games = [
   {
@@ -109,20 +110,66 @@ const games = [
 export default function GamesPage() {
   const [filter, setFilter] = React.useState('all');
   const [difficulty, setDifficulty] = React.useState('all');
+  const { user, refreshSession } = useAuth();
+  const isAuthenticated = !!user;
 
-  const filteredGames = games.filter(game => 
+  useEffect(() => {
+    // Explicitly refresh the auth session when component mounts
+    const checkAuthStatus = async () => {
+      console.log('Games page - Initial auth state:', { 
+        isAuthenticated, 
+        userId: user?.id,
+        userMetadata: user?.user_metadata 
+      });
+      
+      // Refresh session to ensure we have the latest auth state
+      await refreshSession();
+      
+      console.log('Games page - Auth state after refresh:', { 
+        isAuthenticated: !!user, 
+        userId: user?.id,
+        userMetadata: user?.user_metadata 
+      });
+    };
+    
+    checkAuthStatus();
+  }, [user, isAuthenticated, refreshSession]);
+
+  // For non-authenticated users, only show a subset of games as preview
+  const previewGames = isAuthenticated ? games : games.slice(0, 3);
+  
+  const filteredGames = previewGames.filter(game => 
     (filter === 'all' || game.available === (filter === 'available')) &&
     (difficulty === 'all' || game.difficulty.toLowerCase() === difficulty)
   );
 
   return (
     <div className="container mx-auto px-4 py-12">
-      <div className="text-center mb-12">
+      <div className="text-center mb-8">
         <h1 className="text-4xl font-bold mb-4">Language Learning Games</h1>
         <p className="text-xl text-gray-600 max-w-2xl mx-auto">
           Enhance your language skills with our interactive games designed to make learning fun and effective.
         </p>
       </div>
+
+      {!isAuthenticated && (
+        <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-8 rounded-md">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-blue-700">
+                <span className="font-bold">Preview Mode:</span> You're viewing a limited selection of games. 
+                <Link href="/auth/signup" className="ml-1 font-medium underline">Sign up</Link> or 
+                <Link href="/auth/login" className="ml-1 font-medium underline">log in</Link> to access all games with full functionality.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="flex justify-center mb-8 space-x-4">
         <div className="flex items-center space-x-2">
@@ -172,12 +219,21 @@ export default function GamesPage() {
               </div>
 
               {game.available ? (
-                <Link 
-                  href={`/games/${game.id}`} 
-                  className="inline-block bg-white text-gray-800 font-medium py-2 px-6 rounded-full shadow hover:bg-gray-100 transition-colors text-center"
-                >
-                  Play Now
-                </Link>
+                isAuthenticated ? (
+                  <Link 
+                    href={`/games/${game.id}`} 
+                    className="inline-block bg-white text-gray-800 font-medium py-2 px-6 rounded-full shadow hover:bg-gray-100 transition-colors text-center"
+                  >
+                    Play Now
+                  </Link>
+                ) : (
+                  <Link 
+                    href="/auth/signup" 
+                    className="inline-block bg-white text-gray-800 font-medium py-2 px-6 rounded-full shadow hover:bg-gray-100 transition-colors text-center"
+                  >
+                    Sign Up to Play
+                  </Link>
+                )
               ) : (
                 <button 
                   disabled 
@@ -190,6 +246,29 @@ export default function GamesPage() {
           </div>
         ))}
       </div>
+      
+      {!isAuthenticated && (
+        <div className="mt-12 bg-blue-600 text-white p-8 rounded-lg shadow-lg text-center">
+          <h2 className="text-2xl font-bold mb-4">Unlock all language learning games!</h2>
+          <p className="mb-6 text-lg">
+            Create an account to access our full collection of interactive games and track your progress.
+          </p>
+          <div className="flex justify-center space-x-4">
+            <Link 
+              href="/auth/signup" 
+              className="bg-white text-blue-600 font-bold py-3 px-8 rounded-full hover:bg-blue-50 transition-colors"
+            >
+              Sign Up Free
+            </Link>
+            <Link 
+              href="/auth/login" 
+              className="bg-blue-700 text-white font-bold py-3 px-8 rounded-full hover:bg-blue-800 transition-colors"
+            >
+              Log In
+            </Link>
+          </div>
+        </div>
+      )}
     </div>
   );
 } 

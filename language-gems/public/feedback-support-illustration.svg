@@ -1,0 +1,40 @@
+<svg width="240" height="160" viewBox="0 0 240 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="120" cy="80" r="60" fill="#DBEAFE" opacity="0.6"/>
+  
+  <!-- Teacher figure -->
+  <circle cx="100" cy="70" r="20" fill="#93C5FD"/>
+  <circle cx="100" cy="60" r="12" fill="#BFDBFE"/>
+  <rect x="90" y="70" width="20" height="40" rx="2" fill="#3B82F6"/>
+  
+  <!-- Question mark -->
+  <circle cx="150" cy="70" r="25" fill="#EFF6FF" stroke="#1D4ED8" strokeWidth="2"/>
+  <path d="M150 70V73M150 63C150 60 152 57 155 57C158 57 160 60 160 63C160 66 158 67 155 68C153 69 150 71 150 73" stroke="#1D4ED8" strokeWidth="3" strokeLinecap="round"/>
+  <circle cx="150" cy="80" r="2" fill="#1D4ED8"/>
+  
+  <!-- Sapphire gem -->
+  <path d="M125 95L115 110L125 125L135 110L125 95Z" fill="#2563EB" stroke="#1E40AF" strokeWidth="2"/>
+  <path d="M125 95L135 110L125 125L115 110L125 95Z" fill="#3B82F6" stroke="#1E40AF" strokeWidth="2"/>
+  
+  <!-- Sparkles around gem -->
+  <path d="M115 95L117 93L119 95L117 97L115 95Z" fill="#60A5FA" class="animate-sparkle"/>
+  <path d="M135 95L137 93L139 95L137 97L135 95Z" fill="#60A5FA" class="animate-sparkle"/>
+  <path d="M125 120L127 118L129 120L127 122L125 120Z" fill="#60A5FA" class="animate-sparkle"/>
+  
+  <!-- Support chat window -->
+  <rect x="160" y="95" width="60" height="40" rx="4" fill="white" stroke="#1E40AF" strokeWidth="2"/>
+  <rect x="160" y="95" width="60" height="10" rx="4" fill="#1E40AF"/>
+  <circle cx="165" cy="100" r="2" fill="#FEF3C7"/>
+  <circle cx="172" cy="100" r="2" fill="#FEE2E2"/>
+  <circle cx="179" cy="100" r="2" fill="#E0F2FE"/>
+  
+  <!-- Chat bubbles in window -->
+  <rect x="165" y="110" width="40" height="5" rx="2.5" fill="#EFF6FF"/>
+  <rect x="165" y="120" width="30" height="5" rx="2.5" fill="#EFF6FF"/>
+  
+  <!-- Teacher's smile -->
+  <path d="M95 65C95 65 98 68 105 65" stroke="#1E40AF" strokeWidth="1.5" strokeLinecap="round"/>
+  
+  <!-- Decorative elements -->
+  <path d="M70 40L74 46L80 46L75 52L77 58L70 54L63 58L65 52L60 46L66 46L70 40Z" fill="#BFDBFE" opacity="0.6"/>
+  <path d="M180 40L184 46L190 46L185 52L187 58L180 54L173 58L175 52L170 46L176 46L180 40Z" fill="#BFDBFE" opacity="0.6"/>
+</svg> 

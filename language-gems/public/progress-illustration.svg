@@ -1,0 +1,27 @@
+<svg width="240" height="160" viewBox="0 0 240 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="120" cy="80" r="60" fill="#FEF3C7" opacity="0.6"/>
+  
+  <!-- Chart Base -->
+  <path d="M60 130H220M60 130V40" stroke="#FCD34D" strokeWidth="3" strokeLinecap="round"/>
+  
+  <!-- Bars -->
+  <rect x="80" y="90" width="20" height="40" rx="4" fill="#FBBF24" />
+  <rect x="110" y="70" width="20" height="60" rx="4" fill="#F59E0B" />
+  <rect x="140" y="50" width="20" height="80" rx="4" fill="#F97316" />
+  <rect x="170" y="60" width="20" height="70" rx="4" fill="#FB923C" />
+  <rect x="200" y="65" width="20" height="65" rx="4" fill="#FDBA74" />
+  
+  <!-- Gem on Top -->
+  <path d="M140 30L130 40V50L140 60L150 50V40L140 30Z" fill="#F59E0B" stroke="#D97706" strokeWidth="2"/>
+  <path d="M140 30L150 40L140 50L130 40L140 30Z" fill="#FBBF24" stroke="#D97706" strokeWidth="2"/>
+  
+  <!-- Sparkles -->
+  <path d="M135 20L140 15L145 20L140 25L135 20Z" fill="#FCD34D" class="animate-sparkle"/>
+  <path d="M155 35L158 32L161 35L158 38L155 35Z" fill="#FCD34D" class="animate-sparkle"/>
+  <path d="M125 45L128 42L131 45L128 48L125 45Z" fill="#FCD34D" class="animate-sparkle"/>
+  
+  <!-- Dotted Lines -->
+  <path d="M60 90H220" stroke="#F59E0B" strokeWidth="1" strokeDasharray="4 4"/>
+  <path d="M60 70H220" stroke="#F59E0B" strokeWidth="1" strokeDasharray="4 4"/>
+  <path d="M60 50H220" stroke="#F59E0B" strokeWidth="1" strokeDasharray="4 4"/>
+</svg> 

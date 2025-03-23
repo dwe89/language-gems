@@ -1,12 +1,9 @@
-import AuthForm from 'gems/components/auth/AuthForm';
-import Navigation from 'gems/components/layout/Navigation';
+import AuthForm from '../../../components/auth/AuthForm';
 import Footer from 'gems/components/layout/Footer';
 
 export default function SignupPage() {
   return (
-    <div className="flex flex-col min-h-screen">
-      <Navigation />
-      
+    <div className="flex flex-col min-h-screen bg-gradient-to-b from-indigo-900 to-blue-900">
       <main className="flex-grow flex items-center justify-center py-16 px-4">
         <AuthForm mode="signup" />
       </main>
