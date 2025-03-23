@@ -1,5 +1,9 @@
 'use client';
 
+// Add export config to skip static generation
+export const dynamic = 'force-dynamic';
+export const fetchCache = 'force-no-store';
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../../components/auth/AuthProvider';
 import { useRouter } from 'next/navigation';

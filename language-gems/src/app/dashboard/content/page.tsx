@@ -11,6 +11,10 @@ import {
   BookOpen, CheckCircle, ArrowUpRight
 } from 'lucide-react';
 
+// Add export config to skip static generation
+export const dynamic = 'force-dynamic';
+export const fetchCache = 'force-no-store';
+
 type WordPair = {
   term: string;
   definition: string;

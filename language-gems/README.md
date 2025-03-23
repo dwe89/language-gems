@@ -68,10 +68,16 @@ yarn install
 ```
 
 3. Set up environment variables
+Copy the `.env.example` file to `.env.local` and fill in your Supabase credentials:
 ```bash
 cp .env.example .env.local
 ```
-Edit `.env.local` with your Supabase credentials
+
+Edit `.env.local` and add your Supabase URL and Anon Key:
+```bash
+NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+```
 
 4. Run the development server
 ```bash
@@ -119,3 +125,16 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ---
 
 © 2023-2025 Language Gems. All rights reserved.
+
+## Deployment
+
+### Deploying to Vercel
+
+1. Push your code to a GitHub repository
+2. Connect your repository to Vercel
+3. Set the environment variables in the Vercel project settings:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+4. Deploy
+
+**Important:** Make sure to set the environment variables in your Vercel project settings before deploying to avoid build errors.

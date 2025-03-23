@@ -7,6 +7,10 @@ import { Plus, Users, BookOpen, School, MoreVertical, Filter, Search, Trash2, Ed
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import type { Database } from '../../../lib/database.types';
 
+// Add export config to skip static generation
+export const dynamic = 'force-dynamic';
+export const fetchCache = 'force-no-store';
+
 type ClassData = {
   id: string;
   name: string;
