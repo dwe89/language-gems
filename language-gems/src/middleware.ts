@@ -13,6 +13,27 @@ export async function middleware(req: NextRequest) {
   
   if (error) {
     console.error('Error in middleware getting session:', error);
+    // If there's an error getting the session, treat as not authenticated
+    // This helps with sign-out issues
+    return res;
+  }
+
+  // If the user just signed out (detected by presence of 'signedOut' cookie)
+  const signedOutCookie = req.cookies.get('signedOut');
+  if (signedOutCookie && signedOutCookie.value === 'true') {
+    // Clear the cookie in the response
+    const response = NextResponse.next();
+    response.cookies.delete('signedOut');
+    
+    // If trying to access protected routes, redirect to home
+    const path = req.nextUrl.pathname;
+    if (path.startsWith('/dashboard') || path.startsWith('/profile')) {
+      const redirectUrl = req.nextUrl.clone();
+      redirectUrl.pathname = '/';
+      return NextResponse.redirect(redirectUrl);
+    }
+    
+    return response;
   }
 
   console.log('Session check in middleware:', {
@@ -46,7 +67,6 @@ export async function middleware(req: NextRequest) {
 
   // Content preview routes (limited content visible without auth)
   const previewRoutes = [
-    '/games',
     '/languages',
     '/themes',
   ];
@@ -73,7 +93,7 @@ export async function middleware(req: NextRequest) {
   const path = req.nextUrl.pathname;
 
   // If user is authenticated on landing page or preview routes, redirect to dashboard
-  if (session && (path === '/' || previewRoutes.some(route => path === route))) {
+  if (session && (path === '/' || (previewRoutes.some(route => path === route) && path !== '/games'))) {
     const userRole = session.user.user_metadata?.role || 'student';
     console.log('Authenticated user on landing page, redirecting to dashboard');
     

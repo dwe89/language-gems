@@ -7,30 +7,27 @@ import {
   Search, Bell, User as UserIcon, Menu, ChevronDown, ChevronRight,
   BookOpen, PenTool, BarChart2, Upload, Trophy, GraduationCap,
   Users, CheckCircle, Plus, Play, Award, Book, Zap, Clock, Calendar,
-  Globe, MessageCircle, PieChart
+  Globe, MessageCircle, PieChart, Gamepad2
 } from 'lucide-react';
 
 export default function DashboardPage() {
-  console.log("DashboardPage component started rendering");
   const { user, isLoading: authLoading } = useAuth();
-  const [loading, setLoading] = useState(false); // Set initial loading to false
+  const [loading, setLoading] = useState(true);
   
   useEffect(() => {
     console.log('User in dashboard:', {
       id: user?.id,
       email: user?.email,
       metadata: user?.user_metadata,
-      role: user?.user_metadata?.role,
-      isLoading: loading,
-      authLoading
+      role: user?.user_metadata?.role
     });
-  }, [user, loading, authLoading]);
+    
+    // Set loading to false even if user is not fully loaded yet
+    // This prevents getting stuck in loading state
+    setLoading(false);
+  }, [user]);
   
-  console.log("Before rendering decision, states:", { authLoading, loading });
-  
-  // Force render the dashboard regardless of loading state
-  // Comment out loading checks for now
-  /*
+  // If auth is still loading, show a loading spinner
   if (authLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -39,6 +36,7 @@ export default function DashboardPage() {
     );
   }
   
+  // Show loading state from local component state
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -46,15 +44,14 @@ export default function DashboardPage() {
       </div>
     );
   }
-  */
 
-  // Always render Teacher Dashboard for now
-  console.log("Rendering TeacherDashboard");
-  return <TeacherDashboard username={user?.user_metadata?.name || 'Teacher'} />;
+  // For testing purposes, force teacher view
+  const isTeacher = true; // user?.user_metadata?.role === 'teacher';
+  
+  return isTeacher ? <TeacherDashboard username={user?.user_metadata?.name || 'Teacher'} /> : <StudentDashboard />;
 }
 
 function TeacherDashboard({ username = 'Ms. Carter' }: { username?: string }) {
-  console.log("TeacherDashboard rendering with username:", username);
   return (
     <div className="min-h-screen bg-gradient-to-br from-teal-50 via-teal-100 to-rose-100">
       {/* Remove Top Navigation Bar since it's in the layout now */}
@@ -220,6 +217,17 @@ function TeacherDashboard({ username = 'Ms. Carter' }: { username?: string }) {
             buttonColor="bg-amber-500 hover:bg-amber-600"
             imageSrc="/cultural-exploration-illustration.svg"
             href="/dashboard/cultural"
+          />
+          
+          {/* New Games Card */}
+          <DashboardCard 
+            title="Language Learning Games"
+            description="Access interactive games for language learning"
+            icon={<Gamepad2 className="h-8 w-8 text-cyan-600" />}
+            buttonText="Browse Games"
+            buttonColor="bg-cyan-500 hover:bg-cyan-600"
+            imageSrc="/games-illustration.svg"
+            href="/games"
           />
         </section>
         
