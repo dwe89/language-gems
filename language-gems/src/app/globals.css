@@ -54,27 +54,37 @@ body {
   }
 }
 
+@keyframes shake {
+  0% { transform: translateX(0); }
+  25% { transform: translateX(-3px); }
+  50% { transform: translateX(3px); }
+  75% { transform: translateX(-3px); }
+  100% { transform: translateX(0); }
+}
+
+.animate-shake {
+  animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+}
+
 @keyframes fall {
-  0% {
-    transform: translateY(0) rotate(0deg);
+  from {
+    transform: translateY(-100vh);
+    opacity: 1;
   }
-  100% {
-    transform: translateY(200px) rotate(360deg);
+  to {
+    transform: translateY(100vh);
+    opacity: 0.7;
   }
 }
 
 @keyframes twinkle {
-  0% {
-    opacity: 0.3;
+  0%, 100% {
+    opacity: 1;
     transform: scale(1);
   }
   50% {
-    opacity: 1;
-    transform: scale(1.3);
-  }
-  100% {
-    opacity: 0.3;
-    transform: scale(1);
+    opacity: 0.5;
+    transform: scale(0.7);
   }
 }
 

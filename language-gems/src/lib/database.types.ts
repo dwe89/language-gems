@@ -111,6 +111,7 @@ export type Database = {
           subscription_type: string | null
           custom_sets_count: number | null
           max_custom_sets: number | null
+          username: string | null
         }
         Insert: {
           id?: number
@@ -123,6 +124,7 @@ export type Database = {
           subscription_type?: string | null
           custom_sets_count?: number | null
           max_custom_sets?: number | null
+          username?: string | null
         }
         Update: {
           id?: number
@@ -135,6 +137,7 @@ export type Database = {
           subscription_type?: string | null
           custom_sets_count?: number | null
           max_custom_sets?: number | null
+          username?: string | null
         }
       }
       subscription_plans: {

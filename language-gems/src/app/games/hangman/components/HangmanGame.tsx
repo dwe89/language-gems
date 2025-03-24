@@ -10,6 +10,9 @@ import LavaTempleAnimation from './themes/LavaTempleAnimation';
 import SpaceExplorerAnimation from './themes/SpaceExplorerAnimation';
 import PirateAdventureAnimation from './themes/PirateAdventureAnimation';
 import SoundEffects from './SoundEffects';
+import TempleGuardianModal from './TempleGuardianModal';
+import TokyoNightsModal from './TokyoNightsModal';
+import SpaceExplorerModal from './SpaceExplorerModal';
 
 interface HangmanGameProps {
   settings: {
@@ -284,6 +287,10 @@ function GameContent({ settings, onBackToMenu, onGameEnd, isFullscreen }: Hangma
 
   // Add a state to track correct guesses for the Tokyo Nights theme
   const [correctLetterCounter, setCorrectLetterCounter] = useState(0);
+
+  const [showTempleGuardianModal, setShowTempleGuardianModal] = useState(false);
+  const [showTokyoNightsModal, setShowTokyoNightsModal] = useState(false);
+  const [showSpaceExplorerModal, setShowSpaceExplorerModal] = useState(false);
 
   // Initialize game
   useEffect(() => {
@@ -595,7 +602,10 @@ function GameContent({ settings, onBackToMenu, onGameEnd, isFullscreen }: Hangma
   
   const renderThematicAnimation = () => {
     if (themeId === 'tokyo') {
-      return <TokyoNightsAnimation mistakes={wrongGuesses} maxMistakes={MAX_ATTEMPTS} correctGuesses={correctLetterCounter} />;
+      return <TokyoNightsAnimation
+        mistakes={wrongGuesses}
+        maxMistakes={MAX_ATTEMPTS}
+      />;
     }
     
     if (themeId === 'temple') {
@@ -787,6 +797,38 @@ function GameContent({ settings, onBackToMenu, onGameEnd, isFullscreen }: Hangma
     };
   }, [musicEnabled]);
 
+  // Add an effect to show the theme-specific modals when theme is selected
+  useEffect(() => {
+    if (settings.theme === 'lava-temple') {
+      // Check if it's the first time showing this modal in this session
+      const hasSeenModal = sessionStorage.getItem('has-seen-temple-guardian-modal');
+      if (!hasSeenModal) {
+        setShowTempleGuardianModal(true);
+        sessionStorage.setItem('has-seen-temple-guardian-modal', 'true');
+      }
+    }
+    
+    // Show Tokyo Nights modal when theme is tokyo
+    if (settings.theme === 'tokyo') {
+      // Check if it's the first time showing this modal in this session
+      const hasSeenModal = sessionStorage.getItem('has-seen-tokyo-nights-modal');
+      if (!hasSeenModal) {
+        setShowTokyoNightsModal(true);
+        sessionStorage.setItem('has-seen-tokyo-nights-modal', 'true');
+      }
+    }
+    
+    // Show Space Explorer modal when theme is space
+    if (settings.theme === 'space') {
+      // Check if it's the first time showing this modal in this session
+      const hasSeenModal = sessionStorage.getItem('has-seen-space-explorer-modal');
+      if (!hasSeenModal) {
+        setShowSpaceExplorerModal(true);
+        sessionStorage.setItem('has-seen-space-explorer-modal', 'true');
+      }
+    }
+  }, [settings.theme]);
+
   return (
     <div className={`relative ${themeClassesState.background} ${themeClassesState.text} p-6 rounded-xl shadow-lg ${isFullscreen ? 'h-full flex flex-col' : ''}`}>
       {/* Sound effects component */}
@@ -934,6 +976,22 @@ function GameContent({ settings, onBackToMenu, onGameEnd, isFullscreen }: Hangma
           </div>
         )}
       </div>
+      
+      {/* Theme-specific Modals */}
+      <TempleGuardianModal 
+        isOpen={showTempleGuardianModal} 
+        onClose={() => setShowTempleGuardianModal(false)} 
+      />
+      
+      <TokyoNightsModal 
+        isOpen={showTokyoNightsModal} 
+        onClose={() => setShowTokyoNightsModal(false)} 
+      />
+      
+      <SpaceExplorerModal 
+        isOpen={showSpaceExplorerModal} 
+        onClose={() => setShowSpaceExplorerModal(false)} 
+      />
     </div>
   );
 }

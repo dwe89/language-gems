@@ -5,6 +5,7 @@ import { useAuth } from '../../../../components/auth/AuthProvider';
 import { supabase } from '../../../../lib/supabase';
 import { ArrowLeft, ArrowRight, Check, X, Volume2, Bookmark, BookmarkCheck } from 'lucide-react';
 import Link from 'next/link';
+import { use } from 'react';
 
 // Define types for our data
 type Word = {
@@ -28,20 +29,26 @@ type WordList = {
 // Learning modes
 type Mode = 'browse' | 'flashcards' | 'quiz' | 'match';
 
+type VocabularyListParams = {
+  listId: string
+};
+
 export default function VocabularyListPage({ params }: { params: { listId: string } }) {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
-  const [list, setList] = useState<WordList | null>(null);
+  const [vocabularyList, setVocabularyList] = useState<VocabularyList | null>(null);
+  const [words, setWords] = useState<Word[]>([]);
   const [mode, setMode] = useState<Mode>('browse');
-  
-  // For flashcard mode
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
-  const [showDefinition, setShowDefinition] = useState(false);
-  
-  // For quiz mode
+  const [showTranslation, setShowTranslation] = useState(false);
+  const [matchPairs, setMatchPairs] = useState<MatchPair[]>([]);
+  const [selectedMatchPair, setSelectedMatchPair] = useState<SelectedMatchPair | null>(null);
+  const [completedPairs, setCompletedPairs] = useState<string[]>([]);
   const [quizAnswers, setQuizAnswers] = useState<{ [key: string]: string }>({});
   const [quizSubmitted, setQuizSubmitted] = useState(false);
   const [quizScore, setQuizScore] = useState(0);
+  
+  const listId = params.listId;
   
   useEffect(() => {
     async function fetchWordList() {
@@ -124,7 +131,8 @@ export default function VocabularyListPage({ params }: { params: { listId: strin
           ]
         };
         
-        setList(mockList);
+        setVocabularyList(mockList);
+        setWords(mockList.words);
       } catch (error) {
         console.error('Error fetching word list:', error);
       } finally {
@@ -136,16 +144,16 @@ export default function VocabularyListPage({ params }: { params: { listId: strin
   }, [params.listId, user]);
   
   const toggleWordMastery = (wordId: string) => {
-    if (!list) return;
+    if (!vocabularyList) return;
     
-    setList({
-      ...list,
-      words: list.words.map(word => 
+    setVocabularyList({
+      ...vocabularyList,
+      words: vocabularyList.words.map(word => 
         word.id === wordId 
           ? { ...word, mastered: !word.mastered } 
           : word
       ),
-      progress: calculateProgress(list.words.map(word => 
+      progress: calculateProgress(vocabularyList.words.map(word => 
         word.id === wordId 
           ? { ...word, mastered: !word.mastered } 
           : word
@@ -160,28 +168,28 @@ export default function VocabularyListPage({ params }: { params: { listId: strin
   };
   
   const nextCard = () => {
-    if (!list) return;
-    setShowDefinition(false);
-    setCurrentCardIndex((currentCardIndex + 1) % list.words.length);
+    if (!vocabularyList) return;
+    setShowTranslation(false);
+    setCurrentCardIndex((currentCardIndex + 1) % vocabularyList.words.length);
   };
   
   const prevCard = () => {
-    if (!list) return;
-    setShowDefinition(false);
-    setCurrentCardIndex((currentCardIndex - 1 + list.words.length) % list.words.length);
+    if (!vocabularyList) return;
+    setShowTranslation(false);
+    setCurrentCardIndex((currentCardIndex - 1 + vocabularyList.words.length) % vocabularyList.words.length);
   };
   
   const handleQuizSubmit = () => {
-    if (!list) return;
+    if (!vocabularyList) return;
     
     let correct = 0;
-    list.words.forEach(word => {
+    vocabularyList.words.forEach(word => {
       if (quizAnswers[word.id]?.toLowerCase().trim() === word.term.toLowerCase().trim()) {
         correct++;
       }
     });
     
-    const score = Math.round((correct / list.words.length) * 100);
+    const score = Math.round((correct / vocabularyList.words.length) * 100);
     setQuizScore(score);
     setQuizSubmitted(true);
   };
@@ -209,7 +217,7 @@ export default function VocabularyListPage({ params }: { params: { listId: strin
     );
   }
   
-  if (!list) {
+  if (!vocabularyList) {
     return (
       <div className="text-center py-12">
         <h2 className="text-2xl font-bold text-white mb-4">Word List Not Found</h2>
@@ -235,28 +243,28 @@ export default function VocabularyListPage({ params }: { params: { listId: strin
           <ArrowLeft className="h-4 w-4 mr-1" />
           Back to All Lists
         </Link>
-        <h1 className="text-3xl font-bold text-white mb-2">{list.name}</h1>
-        <p className="text-gray-300">{list.description}</p>
+        <h1 className="text-3xl font-bold text-white mb-2">{vocabularyList.name}</h1>
+        <p className="text-gray-300">{vocabularyList.description}</p>
         
-        {list.assigned_by && list.due_date && (
+        {vocabularyList.assigned_by && vocabularyList.due_date && (
           <div className="mt-2 text-sm text-gray-400">
-            Assigned by {list.assigned_by} • Due {new Date(list.due_date).toLocaleDateString()}
+            Assigned by {vocabularyList.assigned_by} • Due {new Date(vocabularyList.due_date).toLocaleDateString()}
           </div>
         )}
         
         <div className="mt-4 flex flex-wrap items-center">
           <div className="mr-4 mb-2">
-            <div className="text-sm font-medium text-gray-300">{list.progress}% mastered</div>
+            <div className="text-sm font-medium text-gray-300">{vocabularyList.progress}% mastered</div>
             <div className="w-48 bg-indigo-950/50 rounded-full h-2 mt-1">
               <div 
                 className="bg-gradient-to-r from-cyan-500 to-blue-500 h-2 rounded-full" 
-                style={{ width: `${list.progress}%` }}
+                style={{ width: `${vocabularyList.progress}%` }}
               ></div>
             </div>
           </div>
           
           <div className="text-sm text-gray-400">
-            {list.words.filter(w => w.mastered).length} of {list.words.length} words mastered
+            {vocabularyList.words.filter(w => w.mastered).length} of {vocabularyList.words.length} words mastered
           </div>
         </div>
       </div>
@@ -297,7 +305,7 @@ export default function VocabularyListPage({ params }: { params: { listId: strin
           <h2 className="text-xl font-semibold text-white mb-6">All Words</h2>
           
           <div className="space-y-4">
-            {list.words.map(word => (
+            {vocabularyList.words.map(word => (
               <div 
                 key={word.id} 
                 className={`p-4 rounded-lg ${word.mastered 
@@ -350,26 +358,26 @@ export default function VocabularyListPage({ params }: { params: { listId: strin
       )}
       
       {/* Flashcard Mode */}
-      {mode === 'flashcards' && list.words.length > 0 && (
+      {mode === 'flashcards' && vocabularyList.words.length > 0 && (
         <div className="bg-indigo-900/30 backdrop-blur-sm rounded-lg p-6">
           <h2 className="text-xl font-semibold text-white mb-6">Flashcards</h2>
           
           <div className="flex justify-center mb-6">
             <div className="text-gray-300">
-              Card {currentCardIndex + 1} of {list.words.length}
+              Card {currentCardIndex + 1} of {vocabularyList.words.length}
             </div>
           </div>
           
           <div 
             className="bg-indigo-800/40 rounded-lg p-8 min-h-[300px] flex flex-col items-center justify-center cursor-pointer mx-auto max-w-xl"
-            onClick={() => setShowDefinition(!showDefinition)}
+            onClick={() => setShowTranslation(!showTranslation)}
           >
-            {!showDefinition ? (
+            {!showTranslation ? (
               <>
-                <h3 className="text-2xl font-bold text-white mb-4">{list.words[currentCardIndex].term}</h3>
+                <h3 className="text-2xl font-bold text-white mb-4">{vocabularyList.words[currentCardIndex].term}</h3>
                 <p className="text-cyan-400 text-sm">Click to reveal definition</p>
                 <button 
-                  onClick={(e) => { e.stopPropagation(); speakWord(list.words[currentCardIndex].term); }} 
+                  onClick={(e) => { e.stopPropagation(); speakWord(vocabularyList.words[currentCardIndex].term); }} 
                   className="absolute top-4 right-4 text-cyan-400 hover:text-cyan-300"
                   aria-label="Pronounce word"
                 >
@@ -378,10 +386,10 @@ export default function VocabularyListPage({ params }: { params: { listId: strin
               </>
             ) : (
               <>
-                <h3 className="text-xl font-medium text-white mb-2">{list.words[currentCardIndex].term}</h3>
-                <p className="text-gray-300 text-center mb-4">{list.words[currentCardIndex].definition}</p>
-                {list.words[currentCardIndex].example && (
-                  <p className="text-gray-400 text-sm italic text-center">"{list.words[currentCardIndex].example}"</p>
+                <h3 className="text-xl font-medium text-white mb-2">{vocabularyList.words[currentCardIndex].term}</h3>
+                <p className="text-gray-300 text-center mb-4">{vocabularyList.words[currentCardIndex].definition}</p>
+                {vocabularyList.words[currentCardIndex].example && (
+                  <p className="text-gray-400 text-sm italic text-center">"{vocabularyList.words[currentCardIndex].example}"</p>
                 )}
                 <p className="text-cyan-400 text-sm mt-4">Click to see term</p>
               </>
@@ -398,14 +406,14 @@ export default function VocabularyListPage({ params }: { params: { listId: strin
             </button>
             
             <button
-              onClick={() => toggleWordMastery(list.words[currentCardIndex].id)}
+              onClick={() => toggleWordMastery(vocabularyList.words[currentCardIndex].id)}
               className={`flex items-center px-4 py-2 rounded-md ${
-                list.words[currentCardIndex].mastered 
+                vocabularyList.words[currentCardIndex].mastered 
                   ? 'bg-green-600/30 text-green-300 hover:bg-green-600/40' 
                   : 'bg-indigo-700/30 text-gray-300 hover:bg-indigo-700/50'
               }`}
             >
-              {list.words[currentCardIndex].mastered ? (
+              {vocabularyList.words[currentCardIndex].mastered ? (
                 <>
                   <BookmarkCheck className="h-4 w-4 mr-1" />
                   Mastered
@@ -441,7 +449,7 @@ export default function VocabularyListPage({ params }: { params: { listId: strin
               </p>
               
               <div className="space-y-6">
-                {list.words.map((word, index) => (
+                {vocabularyList.words.map((word, index) => (
                   <div key={word.id} className="bg-indigo-800/30 rounded-lg p-4">
                     <div className="mb-2">
                       <span className="text-gray-400 text-sm">#{index + 1}</span>
@@ -490,7 +498,7 @@ export default function VocabularyListPage({ params }: { params: { listId: strin
               </div>
               
               <div className="space-y-4 mb-8">
-                {list.words.map(word => {
+                {vocabularyList.words.map(word => {
                   const userAnswer = quizAnswers[word.id] || '';
                   const isCorrect = userAnswer.toLowerCase().trim() === word.term.toLowerCase().trim();
                   

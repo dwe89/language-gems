@@ -14,7 +14,6 @@ export async function middleware(req: NextRequest) {
   if (error) {
     console.error('Error in middleware getting session:', error);
     // If there's an error getting the session, treat as not authenticated
-    // This helps with sign-out issues
     return res;
   }
 
@@ -92,6 +91,11 @@ export async function middleware(req: NextRequest) {
   // Get current path without query params
   const path = req.nextUrl.pathname;
 
+  // IMPORTANT: Allow navigation within dashboard subpages without redirecting
+  if (session && path.startsWith('/dashboard/')) {
+    return res;
+  }
+
   // If user is authenticated on landing page or preview routes, redirect to dashboard
   if (session && (path === '/' || (previewRoutes.some(route => path === route) && path !== '/games'))) {
     const userRole = session.user.user_metadata?.role || 'student';
@@ -135,9 +139,8 @@ export async function middleware(req: NextRequest) {
       console.error('Error fetching user profile in middleware:', profileError);
     }
 
-    console.log('Teacher check:', { userProfile, userId: session.user.id });
-
-    if (!userProfile || userProfile.role !== 'teacher') {
+    // Only redirect if specifically not a teacher (allow navigation if role check fails)
+    if (userProfile && userProfile.role !== 'teacher') {
       console.log('Non-teacher attempting to access teacher route, redirecting to dashboard');
       // Redirect non-teachers to dashboard
       const redirectUrl = req.nextUrl.clone();

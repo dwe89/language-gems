@@ -11,7 +11,7 @@ interface AuthFormProps {
 }
 
 export default function AuthForm({ mode }: AuthFormProps) {
-  const [email, setEmail] = useState('');
+  const [emailOrUsername, setEmailOrUsername] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
@@ -24,7 +24,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
     setLoading(true);
 
     try {
-      console.log(`Attempting to ${mode} with email: ${email}`);
+      console.log(`Attempting to ${mode} with identifier: ${emailOrUsername}`);
       
       if (mode === 'login') {
         // Use the API route instead of direct Supabase call
@@ -34,7 +34,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            email,
+            identifier: emailOrUsername, // This could be either email or username
             password
           }),
         });
@@ -54,7 +54,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
       } else {
         // For signup - continue using Supabase directly since we need to create a profile
         const { data, error } = await supabase.auth.signUp({ 
-          email, 
+          email: emailOrUsername, 
           password, 
           options: { 
             data: { 
@@ -76,7 +76,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
             .from('user_profiles')
             .insert({
               user_id: data.user.id,
-              email: data.user.email || email,
+              email: data.user.email || emailOrUsername,
               role: 'student',
               display_name: name,
               subscription_type: 'free'
@@ -95,7 +95,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            email,
+            email: emailOrUsername,
             password
           }),
         });
@@ -226,18 +226,23 @@ export default function AuthForm({ mode }: AuthFormProps) {
         )}
 
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-200 mb-1">
-            Email Address
+          <label htmlFor="emailOrUsername" className="block text-sm font-medium text-gray-200 mb-1">
+            {mode === 'login' ? 'Username or Email' : 'Email Address'}
           </label>
           <input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            id="emailOrUsername"
+            type={mode === 'signup' ? 'email' : 'text'}
+            value={emailOrUsername}
+            onChange={(e) => setEmailOrUsername(e.target.value)}
             className="w-full p-3 bg-indigo-800/50 border border-indigo-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"
-            placeholder="Enter your email"
+            placeholder={mode === 'login' ? "Enter your username or email" : "Enter your email"}
             required
           />
+          {mode === 'login' && (
+            <p className="text-xs text-gray-400 mt-1">
+              Students can log in with the username provided by their teacher
+            </p>
+          )}
         </div>
 
         <div>

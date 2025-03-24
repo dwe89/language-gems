@@ -144,15 +144,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     try {
+      // First clear local state to prevent flashes of authenticated content
+      setUser(null);
+      setSession(null);
+      
+      // Set a signedOut cookie to help middleware detect signout
+      document.cookie = "signedOut=true; path=/; max-age=60"; // Valid for 60 seconds
+      
+      // Clear any authentication cookies or localStorage items
+      document.cookie.split(';').forEach(cookie => {
+        const [name] = cookie.split('=');
+        if (name.trim().includes('supabase') || name.trim().includes('sb-')) {
+          document.cookie = `${name.trim()}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/;`;
+        }
+      });
+      
+      // Then perform Supabase sign out
       const { error } = await supabase.auth.signOut();
       if (error) {
         console.error('Error signing out:', error);
-      } else {
-        // Force navigation to homepage
-        window.location.href = '/';
       }
+      
+      // Force a hard redirect to home page and prevent back navigation
+      router.refresh(); // Clear Next.js cache 
+      setTimeout(() => {
+        window.location.replace('/'); // Hard redirect that replaces history
+      }, 100); // Small delay to ensure cookies are processed
     } catch (error) {
       console.error('Exception signing out:', error);
+      // If there's an error, still try to redirect
+      window.location.replace('/');
     }
   };
 

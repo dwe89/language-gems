@@ -7,7 +7,7 @@ import {
   Search, Bell, User as UserIcon, Menu, ChevronDown, ChevronRight,
   BookOpen, PenTool, BarChart2, Upload, Trophy, GraduationCap,
   Users, CheckCircle, Plus, Play, Award, Book, Zap, Clock, Calendar,
-  Globe, MessageCircle, PieChart, Gamepad2
+  Globe, MessageCircle, PieChart, Gamepad2, MinusCircle, PlusCircle
 } from 'lucide-react';
 
 export default function DashboardPage() {
@@ -52,6 +52,8 @@ export default function DashboardPage() {
 }
 
 function TeacherDashboard({ username = 'Ms. Carter' }: { username?: string }) {
+  const [helpWidgetVisible, setHelpWidgetVisible] = useState(true);
+  
   return (
     <div className="min-h-screen bg-gradient-to-br from-teal-50 via-teal-100 to-rose-100">
       {/* Remove Top Navigation Bar since it's in the layout now */}
@@ -232,24 +234,41 @@ function TeacherDashboard({ username = 'Ms. Carter' }: { username?: string }) {
         </section>
         
         {/* Support & Feedback Widget */}
-        <div className="fixed bottom-6 left-6 bg-white rounded-lg shadow-lg border-2 border-blue-400 p-4 w-64 transform transition-transform hover:scale-105">
-          <div className="flex items-center mb-3">
-            <img 
-              src="/feedback-support-illustration.svg" 
-              alt="Support" 
-              className="w-10 h-10 mr-3"
-            />
-            <div>
-              <h3 className="font-montserrat font-bold text-gray-800">Need Help?</h3>
-              <p className="text-xs text-gray-600">Chat with support or share feedback</p>
+        {helpWidgetVisible ? (
+          <div className="fixed bottom-6 left-6 bg-white rounded-lg shadow-lg border-2 border-blue-400 p-4 w-64 transform transition-transform hover:scale-105">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center">
+                <img 
+                  src="/feedback-support-illustration.svg" 
+                  alt="Support" 
+                  className="w-10 h-10 mr-3"
+                />
+                <div>
+                  <h3 className="font-montserrat font-bold text-gray-800">Need Help?</h3>
+                  <p className="text-xs text-gray-600">Chat with support or share feedback</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setHelpWidgetVisible(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <MinusCircle size={18} />
+              </button>
             </div>
+            
+            <button className="w-full bg-blue-500 hover:bg-blue-600 text-white rounded py-2 flex items-center justify-center">
+              <MessageCircle className="h-4 w-4 mr-2" />
+              Get Support
+            </button>
           </div>
-          
-          <button className="w-full bg-blue-500 hover:bg-blue-600 text-white rounded py-2 flex items-center justify-center">
-            <MessageCircle className="h-4 w-4 mr-2" />
-            Get Support
+        ) : (
+          <button 
+            onClick={() => setHelpWidgetVisible(true)}
+            className="fixed bottom-6 left-6 bg-blue-500 text-white p-3 rounded-full shadow-lg hover:bg-blue-600 transition-all"
+          >
+            <PlusCircle size={20} />
           </button>
-        </div>
+        )}
       </main>
     </div>
   );
@@ -319,7 +338,7 @@ function DashboardCard({
             className="max-h-full max-w-full object-contain group-hover:animate-float"
             onError={(e) => {
               const target = e.target as HTMLImageElement;
-              target.src = "https://via.placeholder.com/150x100?text=Image";
+              target.src = "/placeholder.svg";
             }}
           />
         </div>
