@@ -2,7 +2,8 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Gamepad2, Search, Filter, ChevronDown, BookOpen, Clock, Star, Users } from 'lucide-react';
+import Image from 'next/image';
+import { Gamepad2, Search, Filter, ChevronDown, BookOpen, Clock, Star, Users, Building2, Rocket, Castle, DollarSign, CircleOff, DoorOpen, Puzzle, TagIcon } from 'lucide-react';
 import { useAuth } from '../../components/auth/AuthProvider';
 
 type Game = {
@@ -15,10 +16,126 @@ type Game = {
   timeToComplete: string;
   rating: number;
   playCount: number;
+  popular: boolean;
+  languages: string[];
+  path: string;
 };
+
+const gameCategories = [
+  { id: 'all', name: 'All Games' },
+  { id: 'popular', name: 'Popular' },
+  { id: 'new', name: 'New' },
+  { id: 'vocabulary', name: 'Vocabulary' },
+  { id: 'grammar', name: 'Grammar' },
+  { id: 'verbs', name: 'Verbs' },
+];
+
+const games = [
+  {
+    id: 'speed-builder',
+    title: 'Speed Builder 🏗️',
+    description: 'Drag and drop words to build sentences before time runs out',
+    category: ['new', 'vocabulary', 'grammar'],
+    imageSrc: '/images/games/placeholder.jpg',
+    icon: <Building2 className="text-indigo-500" size={20} />,
+    popular: true,
+    languages: ['English', 'Spanish', 'French', 'German'],
+    path: '/games/speed-builder'
+  },
+  {
+    id: 'word-blast',
+    title: 'Word Blast 🚀',
+    description: 'Launch rockets by selecting the correct word translations',
+    category: ['new', 'vocabulary'],
+    imageSrc: '/images/games/placeholder.jpg',
+    icon: <Rocket className="text-orange-500" size={20} />,
+    popular: false,
+    languages: ['English', 'Spanish', 'French'],
+    path: '/games/word-blast',
+  },
+  {
+    id: 'sentence-towers',
+    title: 'Sentence Towers 🏰',
+    description: 'Build towers by answering vocabulary questions correctly',
+    category: ['vocabulary', 'grammar'],
+    imageSrc: '/images/games/placeholder.jpg',
+    icon: <Castle className="text-amber-500" size={20} />,
+    popular: false,
+    languages: ['English', 'Spanish', 'Japanese'],
+    path: '/games/sentence-towers',
+  },
+  {
+    id: 'translation-tycoon',
+    title: 'Translation Tycoon 💰',
+    description: 'Earn virtual money by translating words and sentences',
+    category: ['vocabulary'],
+    imageSrc: '/images/games/placeholder.jpg',
+    icon: <DollarSign className="text-emerald-500" size={20} />,
+    popular: true,
+    languages: ['English', 'Spanish', 'French', 'German', 'Italian'],
+    path: '/games/translation-tycoon',
+  },
+  {
+    id: 'balloon-pop',
+    title: 'Balloon Pop Quiz 🎈',
+    description: 'Pop balloons with correct word translations',
+    category: ['vocabulary'],
+    imageSrc: '/images/games/placeholder.jpg',
+    icon: <CircleOff className="text-pink-500" size={20} />,
+    popular: false,
+    languages: ['English', 'Spanish', 'French'],
+    path: '/games/balloon-pop',
+  },
+  {
+    id: 'escape-translation',
+    title: 'Escape Translation Trap 🏃‍♀️🔐',
+    description: 'Translate words correctly to escape the room',
+    category: ['new', 'vocabulary'],
+    imageSrc: '/images/games/placeholder.jpg',
+    icon: <DoorOpen className="text-purple-500" size={20} />,
+    popular: false,
+    languages: ['English', 'Spanish', 'French', 'German'],
+    path: '/games/escape-translation',
+  },
+  {
+    id: 'hangman',
+    title: 'Hangman',
+    description: 'Classic word guessing game to practice vocabulary',
+    category: ['popular', 'vocabulary'],
+    imageSrc: '/images/games/placeholder.jpg',
+    icon: <Puzzle className="text-cyan-500" size={20} />,
+    popular: true,
+    languages: ['English', 'Spanish', 'French', 'German', 'Italian', 'Japanese'],
+    path: '/games/hangman',
+  },
+  {
+    id: 'word-scramble',
+    title: 'Word Scramble',
+    description: 'Unscramble letters to form words',
+    category: ['vocabulary'],
+    imageSrc: '/images/games/placeholder.jpg',
+    icon: <TagIcon className="text-blue-500" size={20} />,
+    popular: true,
+    languages: ['English', 'Spanish', 'French'],
+    path: '/games/word-scramble',
+  },
+  {
+    id: 'memory-game',
+    title: 'Memory Match',
+    description: 'Match word pairs in this classic memory game',
+    category: ['vocabulary'],
+    imageSrc: '/images/games/placeholder.jpg',
+    icon: <Gamepad2 className="text-green-500" size={20} />,
+    popular: false,
+    languages: ['English', 'Spanish', 'French', 'German'],
+    path: '/games/memory-game',
+  },
+];
 
 export default function GamesPage() {
   const { user } = useAuth();
+  const [activeCategory, setActiveCategory] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [games, setGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
@@ -31,6 +148,62 @@ export default function GamesPage() {
       // Real games that are implemented in the codebase
       const actualGames: Game[] = [
         {
+          id: 'translation-tycoon',
+          name: 'Translation Tycoon',
+          description: 'Build your translation empire! Earn coins by translating words correctly, then invest in buildings and upgrades to grow your business.',
+          thumbnail: '/images/games/translation-tycoon.png',
+          category: 'vocabulary',
+          difficulty: 'beginner',
+          timeToComplete: '5-15 min',
+          rating: 4.8,
+          playCount: 12000,
+          popular: true,
+          languages: ['English', 'Spanish', 'French', 'German', 'Italian'],
+          path: '/games/translation-tycoon'
+        },
+        {
+          id: 'speed-builder',
+          name: 'Speed Builder',
+          description: 'Drag and drop words to build sentences correctly before time runs out.',
+          thumbnail: '/images/games/speed-builder.jpg',
+          category: 'vocabulary',
+          difficulty: 'beginner',
+          timeToComplete: '5-10 min',
+          rating: 4.9,
+          playCount: 15200,
+          popular: true,
+          languages: ['English', 'Spanish', 'French', 'German'],
+          path: '/games/speed-builder'
+        },
+        {
+          id: 'word-blast',
+          name: 'Word Blast',
+          description: 'Launch rockets with correct word translations before time runs out!',
+          thumbnail: '/images/games/word-blast.jpg',
+          category: 'vocabulary',
+          difficulty: 'beginner',
+          timeToComplete: '3-8 min',
+          rating: 4.8,
+          playCount: 9700,
+          popular: true,
+          languages: ['English', 'Spanish', 'French'],
+          path: '/games/word-blast'
+        },
+        {
+          id: 'sentence-towers',
+          name: 'Sentence Towers',
+          description: 'Build towers by matching words to translations. Wrong answers make towers fall!',
+          thumbnail: '/images/games/sentence-towers.jpg',
+          category: 'vocabulary',
+          difficulty: 'intermediate',
+          timeToComplete: '5-10 min',
+          rating: 4.7,
+          playCount: 8600,
+          popular: true,
+          languages: ['English', 'Spanish', 'French', 'German'],
+          path: '/games/sentence-towers'
+        },
+        {
           id: 'hangman',
           name: 'Hangman',
           description: 'Guess the word before the hangman is complete. Excellent for vocabulary practice.',
@@ -39,7 +212,10 @@ export default function GamesPage() {
           difficulty: 'beginner',
           timeToComplete: '5-10 min',
           rating: 4.8,
-          playCount: 14500
+          playCount: 14500,
+          popular: true,
+          languages: ['English', 'Spanish', 'French', 'German', 'Italian', 'Japanese'],
+          path: '/games/hangman'
         },
         {
           id: 'memory-game',
@@ -50,7 +226,10 @@ export default function GamesPage() {
           difficulty: 'beginner',
           timeToComplete: '5-10 min',
           rating: 4.7,
-          playCount: 12800
+          playCount: 12800,
+          popular: false,
+          languages: ['English', 'Spanish', 'French', 'German'],
+          path: '/games/memory-game'
         },
         {
           id: 'noughts-and-crosses',
@@ -61,7 +240,10 @@ export default function GamesPage() {
           difficulty: 'beginner',
           timeToComplete: '3-5 min',
           rating: 4.5,
-          playCount: 9700
+          playCount: 9700,
+          popular: false,
+          languages: ['English', 'Spanish', 'French', 'German'],
+          path: '/games/noughts-and-crosses'
         },
         {
           id: 'verb-conjugation-ladder',
@@ -72,7 +254,10 @@ export default function GamesPage() {
           difficulty: 'intermediate',
           timeToComplete: '10-15 min',
           rating: 4.6,
-          playCount: 8200
+          playCount: 8200,
+          popular: false,
+          languages: ['English', 'Spanish', 'French', 'German'],
+          path: '/games/verb-conjugation-ladder'
         },
         {
           id: 'sentence-builder',
@@ -83,7 +268,10 @@ export default function GamesPage() {
           difficulty: 'intermediate',
           timeToComplete: '8-12 min',
           rating: 4.4,
-          playCount: 7500
+          playCount: 7500,
+          popular: false,
+          languages: ['English', 'Spanish', 'French', 'German'],
+          path: '/games/sentence-builder'
         },
         {
           id: 'word-association',
@@ -94,7 +282,10 @@ export default function GamesPage() {
           difficulty: 'intermediate',
           timeToComplete: '5-8 min',
           rating: 4.3,
-          playCount: 6800
+          playCount: 6800,
+          popular: false,
+          languages: ['English', 'Spanish', 'French', 'German'],
+          path: '/games/word-association'
         },
         {
           id: 'word-scramble',
@@ -105,7 +296,10 @@ export default function GamesPage() {
           difficulty: 'beginner',
           timeToComplete: '5-10 min',
           rating: 4.5,
-          playCount: 10200
+          playCount: 10200,
+          popular: true,
+          languages: ['English', 'Spanish', 'French'],
+          path: '/games/word-scramble'
         }
       ];
       
@@ -122,6 +316,13 @@ export default function GamesPage() {
   const filteredGames = filter === 'all' 
     ? games 
     : games.filter(game => game.category === filter || game.difficulty === filter);
+
+  // Filter games based on active category and search query
+  const filteredGamesByCategory = games.filter(game => 
+    (activeCategory === 'all' || (activeCategory === 'popular' && game.popular) || game.category.includes(activeCategory)) &&
+    (game.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+     game.description.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
 
   return (
     <div className="bg-slate-900 min-h-screen text-white">
@@ -153,6 +354,8 @@ export default function GamesPage() {
               type="text"
               placeholder="Search games..."
               className="pl-10 pr-4 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white w-full sm:w-80"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
           
@@ -190,7 +393,7 @@ export default function GamesPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredGames.map((game) => (
+            {filteredGamesByCategory.map((game) => (
               <div 
                 key={game.id}
                 className="bg-slate-800 rounded-xl overflow-hidden border border-slate-700 shadow-xl hover:shadow-cyan-900/10 transition-all duration-300 hover:-translate-y-1"
@@ -241,7 +444,7 @@ export default function GamesPage() {
                   
                   <div className="flex space-x-3">
                     <Link 
-                      href={`/games/${game.id}`}
+                      href={game.path}
                       className="flex-1 bg-cyan-600 hover:bg-cyan-700 text-white text-center py-2 rounded-lg font-medium"
                     >
                       Play Now

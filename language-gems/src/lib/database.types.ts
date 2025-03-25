@@ -99,6 +99,103 @@ export type Database = {
           level?: string
         }
       }
+      assignments: {
+        Row: {
+          id: string
+          title: string
+          description: string | null
+          teacher_id: string
+          class_id: string
+          game_type: string
+          due_date: string | null
+          created_at: string
+          updated_at: string
+          status: string
+          points: number
+          time_limit: number
+          game_config: Json
+          vocabulary_list_id: string | null
+        }
+        Insert: {
+          id?: string
+          title: string
+          description?: string | null
+          teacher_id: string
+          class_id: string
+          game_type: string
+          due_date?: string | null
+          created_at?: string
+          updated_at?: string
+          status?: string
+          points?: number
+          time_limit?: number
+          game_config?: Json
+          vocabulary_list_id?: string | null
+        }
+        Update: {
+          id?: string
+          title?: string
+          description?: string | null
+          teacher_id?: string
+          class_id?: string
+          game_type?: string
+          due_date?: string | null
+          created_at?: string
+          updated_at?: string
+          status?: string
+          points?: number
+          time_limit?: number
+          game_config?: Json
+          vocabulary_list_id?: string | null
+        }
+      }
+      assignment_progress: {
+        Row: {
+          id: string
+          assignment_id: string
+          student_id: string
+          started_at: string
+          completed_at: string | null
+          score: number
+          accuracy: number
+          attempts: number
+          time_spent: number
+          metrics: Json
+          status: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          assignment_id: string
+          student_id: string
+          started_at?: string
+          completed_at?: string | null
+          score?: number
+          accuracy?: number
+          attempts?: number
+          time_spent?: number
+          metrics?: Json
+          status?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          assignment_id?: string
+          student_id?: string
+          started_at?: string
+          completed_at?: string | null
+          score?: number
+          accuracy?: number
+          attempts?: number
+          time_spent?: number
+          metrics?: Json
+          status?: string
+          created_at?: string
+          updated_at?: string
+        }
+      }
       user_profiles: {
         Row: {
           id: number
