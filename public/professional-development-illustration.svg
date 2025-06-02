@@ -1,0 +1,40 @@
+<svg width="240" height="160" viewBox="0 0 240 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="120" cy="80" r="60" fill="#EFF6FF" opacity="0.6"/>
+  
+  <!-- Teacher figure -->
+  <circle cx="120" cy="50" r="20" fill="#BFDBFE"/>
+  <circle cx="120" cy="40" r="12" fill="#E0F2FE"/>
+  <rect x="105" y="60" width="30" height="50" rx="2" fill="#3B82F6"/>
+  
+  <!-- Arms -->
+  <path d="M105 70C105 70 90 75 85 90" stroke="#3B82F6" strokeWidth="5" strokeLinecap="round"/>
+  <path d="M135 70C135 70 150 75 155 80" stroke="#3B82F6" strokeWidth="5" strokeLinecap="round"/>
+  
+  <!-- Hands -->
+  <circle cx="85" cy="90" r="6" fill="#E0F2FE"/>
+  <circle cx="155" cy="80" r="6" fill="#E0F2FE"/>
+  
+  <!-- Sapphire gem -->
+  <path d="M155 65L145 80L155 95L165 80L155 65Z" fill="#2563EB" stroke="#1E40AF" strokeWidth="2"/>
+  <path d="M155 65L165 80L155 95L145 80L155 65Z" fill="#3B82F6" stroke="#1E40AF" strokeWidth="2"/>
+  
+  <!-- Sparkles around gem -->
+  <path d="M150 60L152 58L154 60L152 62L150 60Z" fill="#60A5FA" class="animate-sparkle"/>
+  <path d="M170 75L172 73L174 75L172 77L170 75Z" fill="#60A5FA" class="animate-sparkle"/>
+  <path d="M165 95L167 93L169 95L167 97L165 95Z" fill="#60A5FA" class="animate-sparkle"/>
+  <path d="M140 85L142 83L144 85L142 87L140 85Z" fill="#60A5FA" class="animate-sparkle"/>
+  
+  <!-- Teacher's glasses -->
+  <circle cx="112" cy="40" r="5" stroke="#1E40AF" strokeWidth="1.5" fill="none"/>
+  <circle cx="128" cy="40" r="5" stroke="#1E40AF" strokeWidth="1.5" fill="none"/>
+  <path d="M117 40H123" stroke="#1E40AF" strokeWidth="1.5"/>
+  
+  <!-- Teacher's smile -->
+  <path d="M115 45C115 45 118 48 125 45" stroke="#1E40AF" strokeWidth="1.5" strokeLinecap="round"/>
+  
+  <!-- Board/screen in background -->
+  <rect x="70" y="100" width="100" height="40" rx="4" fill="#DBEAFE"/>
+  <rect x="80" y="110" width="40" height="5" rx="1" fill="#3B82F6"/>
+  <rect x="80" y="120" width="30" height="5" rx="1" fill="#3B82F6"/>
+  <rect x="130" y="110" width="30" height="20" rx="2" fill="#93C5FD"/>
+</svg> 

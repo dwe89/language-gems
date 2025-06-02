@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="60px" height="120px" viewBox="0 0 60 120" version="1.1" xmlns="http://www.w3.org/2000/svg">
+    <title>Building Level 1</title>
+    <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <rect fill="#CFD8DC" x="10" y="60" width="40" height="60"></rect>
+        <rect fill="#B0BEC5" x="10" y="60" width="40" height="10"></rect>
+        <rect fill="#B0BEC5" x="10" y="80" width="40" height="10"></rect>
+        <rect fill="#B0BEC5" x="10" y="100" width="40" height="10"></rect>
+        <rect fill="#78909C" x="20" y="110" width="20" height="10"></rect>
+        <rect fill="#1B5E20" x="5" y="60" width="5" height="60"></rect>
+        <rect fill="#1B5E20" x="50" y="60" width="5" height="60"></rect>
+        <rect fill="#1B5E20" x="20" y="40" width="20" height="20"></rect>
+    </g>
+</svg> 

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <path d="M50 10L90 40L50 90L10 40z" fill="#059669" />
+  <path d="M50 10L90 40L50 50L10 40z" fill="#10b981" />
+  <path d="M50 50L90 40L50 90z" fill="#047857" />
+  <path d="M50 50L10 40L50 90z" fill="#065f46" />
+  <path d="M50 10L50 50L75 25z" fill="#6ee7b7" opacity="0.5" />
+  <path d="M30 20L40 30L50 10z" fill="#a7f3d0" opacity="0.7" />
+</svg> 

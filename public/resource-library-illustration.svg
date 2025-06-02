@@ -1,0 +1,36 @@
+<svg width="240" height="160" viewBox="0 0 240 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="120" cy="80" r="60" fill="#D1FAE5" opacity="0.6"/>
+  
+  <!-- Bookshelf Base -->
+  <rect x="40" y="40" width="160" height="90" rx="4" fill="#059669"/>
+  <rect x="45" y="45" width="150" height="80" rx="2" fill="#10B981"/>
+  
+  <!-- Shelf Dividers -->
+  <rect x="45" y="80" width="150" height="5" fill="#047857"/>
+  <rect x="45" y="115" width="150" height="10" fill="#047857"/>
+  
+  <!-- Gem-shaped Books - Top Shelf -->
+  <path d="M55 50L60 60L55 70L50 60L55 50Z" fill="#EC4899"/>
+  <path d="M75 45L85 60L75 75L65 60L75 45Z" fill="#8B5CF6"/>
+  <path d="M105 50L115 60L105 70L95 60L105 50Z" fill="#3B82F6"/>
+  <path d="M130 45L140 60L130 75L120 60L130 45Z" fill="#F43F5E"/>
+  <path d="M160 50L170 60L160 70L150 60L160 50Z" fill="#F59E0B"/>
+  <path d="M185 45L190 60L185 75L180 60L185 45Z" fill="#10B981"/>
+  
+  <!-- Gem-shaped Books - Bottom Shelf -->
+  <path d="M60 85L70 95L60 105L50 95L60 85Z" fill="#F97316"/>
+  <path d="M90 85L100 95L90 105L80 95L90 85Z" fill="#06B6D4"/>
+  <path d="M120 85L130 95L120 105L110 95L120 85Z" fill="#EF4444"/>
+  <path d="M150 85L160 95L150 105L140 95L150 85Z" fill="#8B5CF6"/>
+  <path d="M180 85L190 95L180 105L170 95L180 85Z" fill="#F59E0B"/>
+  
+  <!-- Sparkles -->
+  <path d="M55 35L57 40L62 40L58 43L60 48L55 45L50 48L52 43L48 40L53 40L55 35Z" fill="#FBBF24"/>
+  <path d="M140 30L142 35L147 35L143 38L145 43L140 40L135 43L137 38L133 35L138 35L140 30Z" fill="#FBBF24"/>
+  <path d="M200 60L202 65L207 65L203 68L205 73L200 70L195 73L197 68L193 65L198 65L200 60Z" fill="#FBBF24"/>
+  
+  <!-- Reading Lamp -->
+  <rect x="195" y="115" width="5" height="20" fill="#6B7280"/>
+  <path d="M185 115 L210 115 L205 95 L190 95 Z" fill="#6B7280"/>
+  <circle cx="197.5" cy="105" r="5" fill="#FBBF24" opacity="0.8"/>
+</svg> 

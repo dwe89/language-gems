@@ -1,0 +1,26 @@
+<svg width="240" height="160" viewBox="0 0 240 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="120" cy="80" r="60" fill="#E6FFFA" opacity="0.6"/>
+  
+  <!-- Student 1 -->
+  <circle cx="90" cy="70" r="20" fill="#4FD1C5"/>
+  <circle cx="90" cy="55" r="12" fill="#FCD34D"/>
+  <rect x="78" y="72" width="24" height="30" rx="4" fill="#3B82F6"/>
+  <rect x="82" y="102" width="16" height="20" rx="2" fill="#60A5FA"/>
+  
+  <!-- Student 2 -->
+  <circle cx="130" cy="65" r="18" fill="#F87171"/>
+  <circle cx="130" cy="52" r="10" fill="#FBBF24"/>
+  <rect x="120" y="65" width="20" height="25" rx="4" fill="#8B5CF6"/>
+  <rect x="124" y="90" width="12" height="18" rx="2" fill="#A78BFA"/>
+  
+  <!-- Student 3 -->
+  <circle cx="170" cy="75" r="22" fill="#34D399"/>
+  <circle cx="170" cy="58" r="14" fill="#FB923C"/>
+  <rect x="156" y="75" width="28" height="35" rx="4" fill="#EC4899"/>
+  <rect x="162" y="110" width="16" height="20" rx="2" fill="#F9A8D4"/>
+  
+  <!-- Books -->
+  <rect x="68" y="115" width="15" height="20" rx="2" transform="rotate(-15 68 115)" fill="#F43F5E"/>
+  <rect x="130" y="105" width="15" height="20" rx="2" transform="rotate(10 130 105)" fill="#8B5CF6"/>
+  <rect x="190" y="120" width="15" height="20" rx="2" transform="rotate(-5 190 120)" fill="#10B981"/>
+</svg> 

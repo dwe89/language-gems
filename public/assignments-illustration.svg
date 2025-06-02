@@ -1,0 +1,26 @@
+<svg width="240" height="160" viewBox="0 0 240 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="120" cy="80" r="60" fill="#FEF2F2" opacity="0.6"/>
+  
+  <!-- Papers/Assignments -->
+  <rect x="90" y="40" width="80" height="100" rx="4" fill="#FFFFFF" stroke="#F43F5E" strokeWidth="2"/>
+  <rect x="85" y="45" width="80" height="100" rx="4" fill="#FFFFFF" stroke="#F43F5E" strokeWidth="2"/>
+  <rect x="80" y="50" width="80" height="100" rx="4" fill="#FFFFFF" stroke="#F43F5E" strokeWidth="2"/>
+  
+  <!-- Content Lines -->
+  <rect x="95" y="70" width="50" height="4" rx="2" fill="#FCA5A5"/>
+  <rect x="95" y="85" width="40" height="4" rx="2" fill="#FCA5A5"/>
+  <rect x="95" y="100" width="45" height="4" rx="2" fill="#FCA5A5"/>
+  <rect x="95" y="115" width="30" height="4" rx="2" fill="#FCA5A5"/>
+  
+  <!-- Speech Bubble -->
+  <path d="M170 65C170 56.7157 176.716 50 185 50H205C213.284 50 220 56.7157 220 65V85C220 93.2843 213.284 100 205 100H195L182 113V100H185C176.716 100 170 93.2843 170 85V65Z" fill="#FB7185"/>
+  
+  <!-- Speech Bubble Content -->
+  <rect x="182" y="65" width="25" height="3" rx="1.5" fill="white"/>
+  <rect x="182" y="75" width="20" height="3" rx="1.5" fill="white"/>
+  <rect x="182" y="85" width="15" height="3" rx="1.5" fill="white"/>
+  
+  <!-- Decorative Elements -->
+  <circle cx="160" cy="40" r="10" fill="#FECDD3"/>
+  <circle cx="80" cy="120" r="8" fill="#FECDD3"/>
+</svg> 

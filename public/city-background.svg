@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="800px" height="200px" viewBox="0 0 800 200" version="1.1" xmlns="http://www.w3.org/2000/svg">
+    <title>City Background</title>
+    <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <rect fill="#E0F2F1" x="0" y="0" width="800" height="200"></rect>
+        
+        <!-- Sky gradient -->
+        <rect fill="#B2DFDB" x="0" y="0" width="800" height="120"></rect>
+        
+        <!-- Ground -->
+        <rect fill="#4DB6AC" x="0" y="120" width="800" height="80"></rect>
+        
+        <!-- Sun -->
+        <circle fill="#FFEB3B" cx="700" cy="50" r="30"></circle>
+        
+        <!-- Background buildings silhouette -->
+        <g fill="#26A69A">
+            <rect x="10" y="70" width="30" height="50"></rect>
+            <rect x="40" y="50" width="50" height="70"></rect>
+            <rect x="90" y="40" width="30" height="80"></rect>
+            <rect x="120" y="60" width="40" height="60"></rect>
+            <rect x="160" y="30" width="20" height="90"></rect>
+            <rect x="180" y="50" width="60" height="70"></rect>
+            <rect x="240" y="40" width="30" height="80"></rect>
+            <rect x="270" y="60" width="50" height="60"></rect>
+            <rect x="320" y="30" width="20" height="90"></rect>
+            <rect x="340" y="50" width="40" height="70"></rect>
+            <rect x="380" y="70" width="30" height="50"></rect>
+            <rect x="410" y="40" width="60" height="80"></rect>
+            <rect x="470" y="60" width="40" height="60"></rect>
+            <rect x="510" y="30" width="20" height="90"></rect>
+            <rect x="530" y="50" width="50" height="70"></rect>
+            <rect x="580" y="40" width="30" height="80"></rect>
+            <rect x="610" y="60" width="70" height="60"></rect>
+            <rect x="680" y="70" width="30" height="50"></rect>
+            <rect x="710" y="40" width="50" height="80"></rect>
+            <rect x="760" y="60" width="40" height="60"></rect>
+        </g>
+        
+        <!-- Building plot markers -->
+        <g fill="#00796B" opacity="0.3">
+            <rect x="100" y="120" width="60" height="5"></rect>
+            <rect x="250" y="120" width="60" height="5"></rect>
+            <rect x="400" y="120" width="60" height="5"></rect>
+            <rect x="550" y="120" width="60" height="5"></rect>
+        </g>
+        
+        <!-- Roads -->
+        <rect fill="#607D8B" x="0" y="125" width="800" height="10"></rect>
+        
+        <!-- Road markings -->
+        <g fill="#FFFFFF" opacity="0.7">
+            <rect x="20" y="129" width="30" height="2"></rect>
+            <rect x="70" y="129" width="30" height="2"></rect>
+            <rect x="120" y="129" width="30" height="2"></rect>
+            <rect x="170" y="129" width="30" height="2"></rect>
+            <rect x="220" y="129" width="30" height="2"></rect>
+            <rect x="270" y="129" width="30" height="2"></rect>
+            <rect x="320" y="129" width="30" height="2"></rect>
+            <rect x="370" y="129" width="30" height="2"></rect>
+            <rect x="420" y="129" width="30" height="2"></rect>
+            <rect x="470" y="129" width="30" height="2"></rect>
+            <rect x="520" y="129" width="30" height="2"></rect>
+            <rect x="570" y="129" width="30" height="2"></rect>
+            <rect x="620" y="129" width="30" height="2"></rect>
+            <rect x="670" y="129" width="30" height="2"></rect>
+            <rect x="720" y="129" width="30" height="2"></rect>
+            <rect x="770" y="129" width="30" height="2"></rect>
+        </g>
+    </g>
+</svg> 

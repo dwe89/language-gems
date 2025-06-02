@@ -1,0 +1,39 @@
+<svg width="240" height="160" viewBox="0 0 240 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="120" cy="80" r="60" fill="#FFFBEB" opacity="0.6"/>
+  
+  <!-- Globe Base -->
+  <circle cx="120" cy="80" r="50" fill="#FEFCE8" stroke="#D97706" strokeWidth="2"/>
+  
+  <!-- Globe Grid Lines - Horizontal -->
+  <path d="M70 80 H170" stroke="#FBBF24" strokeWidth="1"/>
+  <path d="M72 60 H168" stroke="#FBBF24" strokeWidth="1"/>
+  <path d="M72 100 H168" stroke="#FBBF24" strokeWidth="1"/>
+  
+  <!-- Globe Grid Lines - Vertical -->
+  <path d="M120 30 V130" stroke="#FBBF24" strokeWidth="1"/>
+  <ellipse cx="120" cy="80" rx="30" ry="50" stroke="#FBBF24" strokeWidth="1"/>
+  <ellipse cx="120" cy="80" rx="15" ry="50" stroke="#FBBF24" strokeWidth="1" transform="rotate(90 120 80)"/>
+  
+  <!-- Continents -->
+  <path d="M100 50C100 50 90 55 95 70C100 85 90 95 95 110C100 125 120 120 135 110C150 100 145 85 140 75C135 65 130 55 125 50C120 45 105 45 100 50Z" fill="#FCD34D"/>
+  <path d="M160 65C160 65 150 75 155 85C160 95 165 90 160 65Z" fill="#FCD34D"/>
+  <path d="M80 65C80 65 75 85 85 95C95 105 90 90 80 65Z" fill="#FCD34D"/>
+  
+  <!-- Gem Markers -->
+  <path d="M95 60L100 65L95 70L90 65L95 60Z" fill="#F43F5E" stroke="#BE123C" strokeWidth="1"/> <!-- France -->
+  <path d="M110 65L115 70L110 75L105 70L110 65Z" fill="#0284C7" stroke="#0C4A6E" strokeWidth="1"/> <!-- Spain -->
+  <path d="M125 90L130 95L125 100L120 95L125 90Z" fill="#16A34A" stroke="#166534" strokeWidth="1"/> <!-- Brazil -->
+  <path d="M145 70L150 75L145 80L140 75L145 70Z" fill="#9F1239" stroke="#4C0519" strokeWidth="1"/> <!-- Japan -->
+  <path d="M85 85L90 90L85 95L80 90L85 85Z" fill="#0D9488" stroke="#115E59" strokeWidth="1"/> <!-- USA -->
+  
+  <!-- Sparkles -->
+  <path d="M95 55L97 57L95 59L93 57L95 55Z" fill="#FBBF24" class="animate-sparkle"/>
+  <path d="M110 60L112 62L110 64L108 62L110 60Z" fill="#FBBF24" class="animate-sparkle"/>
+  <path d="M125 85L127 87L125 89L123 87L125 85Z" fill="#FBBF24" class="animate-sparkle"/>
+  <path d="M145 65L147 67L145 69L143 67L145 65Z" fill="#FBBF24" class="animate-sparkle"/>
+  <path d="M85 80L87 82L85 84L83 82L85 80Z" fill="#FBBF24" class="animate-sparkle"/>
+  
+  <!-- Decorative Elements -->
+  <path d="M40 60L42 65L48 65L43 68L45 73L40 70L35 73L37 68L32 65L38 65L40 60Z" fill="#FCD34D"/>
+  <path d="M200 60L202 65L208 65L203 68L205 73L200 70L195 73L197 68L192 65L198 65L200 60Z" fill="#FCD34D"/>
+</svg> 

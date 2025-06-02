@@ -1,0 +1,40 @@
+<svg width="240" height="160" viewBox="0 0 240 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="120" cy="80" r="60" fill="#FEE2E2" opacity="0.6"/>
+  
+  <!-- Teacher 1 -->
+  <circle cx="80" cy="90" r="18" fill="#FECACA"/>
+  <circle cx="80" cy="80" r="10" fill="#FEF3C7"/>
+  <rect x="70" y="90" width="20" height="30" rx="2" fill="#EF4444"/>
+  
+  <!-- Teacher 2 -->
+  <circle cx="160" cy="90" r="18" fill="#FECACA"/>
+  <circle cx="160" cy="80" r="10" fill="#FEE2E2"/>
+  <rect x="150" y="90" width="20" height="30" rx="2" fill="#FB7185"/>
+  
+  <!-- Speech Bubble 1 -->
+  <path d="M45 65C45 56.7157 51.7157 50 60 50H90C98.2843 50 105 56.7157 105 65V75C105 83.2843 98.2843 90 90 90H75L60 105V90C51.7157 90 45 83.2843 45 75V65Z" fill="#FCA5A5"/>
+  
+  <!-- Speech Bubble 2 -->
+  <path d="M135 55C135 46.7157 141.716 40 150 40H180C188.284 40 195 46.7157 195 55V65C195 73.2843 188.284 80 180 80H170L155 95V80C141.716 80 135 73.2843 135 65V55Z" fill="#FECDD3"/>
+  
+  <!-- Speech Bubble Content -->
+  <rect x="60" y="63" width="30" height="3" rx="1.5" fill="white"/>
+  <rect x="60" y="70" width="25" height="3" rx="1.5" fill="white"/>
+  <rect x="60" y="77" width="20" height="3" rx="1.5" fill="white"/>
+  
+  <rect x="150" y="53" width="30" height="3" rx="1.5" fill="white"/>
+  <rect x="150" y="60" width="25" height="3" rx="1.5" fill="white"/>
+  <rect x="150" y="67" width="20" height="3" rx="1.5" fill="white"/>
+  
+  <!-- Ruby Gem -->
+  <path d="M120 50L110 65L120 80L130 65L120 50Z" fill="#E11D48" stroke="#9F1239" strokeWidth="2"/>
+  <path d="M120 50L130 65L120 80L110 65L120 50Z" fill="#F43F5E" stroke="#9F1239" strokeWidth="2"/>
+  
+  <!-- Sparkles -->
+  <path d="M115 40L118 43L115 46L112 43L115 40Z" fill="#FB7185" class="animate-sparkle"/>
+  <path d="M125 40L128 43L125 46L122 43L125 40Z" fill="#FB7185" class="animate-sparkle"/>
+  <path d="M120 30L123 33L120 36L117 33L120 30Z" fill="#FB7185" class="animate-sparkle"/>
+  
+  <!-- Connection Line -->
+  <path d="M95 105C95 105 120 115 145 105" stroke="#FCA5A5" strokeWidth="2" strokeDasharray="4 2"/>
+</svg> 

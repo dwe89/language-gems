@@ -1,0 +1,273 @@
+/* Sentence Towers Game Styles */
+
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  10%, 30%, 50%, 70%, 90% {
+    transform: translateX(-5px);
+  }
+  20%, 40%, 60%, 80% {
+    transform: translateX(5px);
+  }
+}
+
+@keyframes fall {
+  0% {
+    transform: translateY(0) rotate(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) rotate(45deg);
+    opacity: 0;
+  }
+}
+
+@keyframes rise {
+  0% {
+    transform: translateY(50px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes glow {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(0, 255, 255, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(0, 255, 255, 0.9);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+/* Tower elements */
+.tower-container {
+  perspective: 1000px;
+  transform-style: preserve-3d;
+  width: 100%;
+  position: relative;
+}
+
+.tower-base {
+  width: 100%;
+  height: 40px;
+  background: linear-gradient(to right, #5e4532, #8b7355, #5e4532);
+  border-radius: 5px;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+  transform: rotateX(60deg);
+  margin-bottom: 20px;
+}
+
+.tower-block {
+  width: 90%;
+  margin: 0 auto 2px auto;
+  height: 60px;
+  border-radius: 5px;
+  transition: all 0.3s ease;
+  transform-origin: center bottom;
+  position: relative;
+  z-index: 1;
+  animation: rise 0.5s ease-out;
+}
+
+.tower-block.standard {
+  background: linear-gradient(to right, #3a506b, #5b7da4, #3a506b);
+  border: 2px solid #4b6584;
+}
+
+.tower-block.bonus {
+  background: linear-gradient(to right, #6a5acd, #836FFF, #6a5acd);
+  border: 2px solid #483D8B;
+}
+
+.tower-block.challenge {
+  background: linear-gradient(to right, #b33939, #d63031, #b33939);
+  border: 2px solid #8a2424;
+}
+
+.tower-block.fragile {
+  background: linear-gradient(to right, #f7b731, #fed330, #f7b731);
+  border: 2px solid #d1a429;
+}
+
+.tower-block.shaking {
+  animation: shake 0.5s ease-in-out infinite;
+}
+
+.tower-block.falling {
+  animation: fall 1s ease-in forwards;
+}
+
+.tower-block.correct {
+  box-shadow: 0 0 15px rgba(0, 255, 0, 0.5);
+}
+
+.tower-block.incorrect {
+  box-shadow: 0 0 15px rgba(255, 0, 0, 0.5);
+}
+
+/* Game UI elements */
+.word-option {
+  cursor: pointer;
+  padding: 12px 16px;
+  border-radius: 8px;
+  background-color: rgba(30, 41, 59, 0.7);
+  border: 2px solid rgba(71, 85, 105, 0.5);
+  transition: all 0.2s ease;
+  margin-bottom: 10px;
+  backdrop-filter: blur(4px);
+}
+
+.word-option:hover {
+  transform: translateY(-3px);
+  background-color: rgba(30, 41, 59, 0.9);
+  border-color: rgba(0, 191, 255, 0.7);
+  box-shadow: 0 4px 12px rgba(0, 191, 255, 0.2);
+}
+
+.word-option:active {
+  transform: translateY(0);
+}
+
+.level-badge {
+  padding: 8px 16px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #1e293b, #334155);
+  border: 1px solid #475569;
+  color: white;
+  font-weight: bold;
+  margin-bottom: 16px;
+  display: inline-block;
+}
+
+.score-display {
+  padding: 8px 16px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #1e293b, #334155);
+  border: 1px solid #475569;
+  color: white;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.timer-display {
+  padding: 8px 16px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #1e293b, #334155);
+  border: 1px solid #475569;
+  color: white;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.timer-display.low {
+  animation: pulse 0.5s ease-in-out infinite;
+  background: linear-gradient(135deg, #881337, #9f1239);
+  border-color: #e11d48;
+}
+
+.game-controls {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+/* Tower info/stats */
+.tower-info {
+  background: rgba(15, 23, 42, 0.6);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 24px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-around;
+  gap: 12px;
+  backdrop-filter: blur(4px);
+}
+
+.tower-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 12px;
+  background: rgba(30, 41, 59, 0.7);
+  border-radius: 6px;
+  min-width: 100px;
+}
+
+.tower-stat-label {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  margin-bottom: 4px;
+}
+
+.tower-stat-value {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: white;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 640px) {
+  .game-controls {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .tower-info {
+    flex-direction: column;
+  }
+  
+  .tower-block {
+    height: 50px;
+  }
+}
+
+/* For typing mode */
+.animate-shake {
+  animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+.typing-container {
+  position: relative;
+  margin-bottom: 16px;
+}
+
+.typing-input {
+  width: 100%;
+  padding: 12px 16px;
+  background-color: rgba(30, 41, 59, 0.7);
+  border: 2px solid rgba(71, 85, 105, 0.5);
+  border-radius: 8px;
+  color: white;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(4px);
+}
+
+.typing-input:focus {
+  background-color: rgba(30, 41, 59, 0.9);
+  border-color: rgba(0, 191, 255, 0.7);
+  box-shadow: 0 4px 12px rgba(0, 191, 255, 0.2);
+  outline: none;
+}
+
+.typing-input.error {
+  border-color: rgba(239, 68, 68, 0.7);
+  animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+} 

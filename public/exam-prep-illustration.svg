@@ -1,0 +1,38 @@
+<svg width="240" height="160" viewBox="0 0 240 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="120" cy="80" r="60" fill="#ECFDF5" opacity="0.6"/>
+  
+  <!-- Graduation Cap -->
+  <path d="M120 40L70 60L120 80L170 60L120 40Z" fill="#0D9488" stroke="#14B8A6" strokeWidth="2"/>
+  <rect x="118" y="80" width="4" height="25" fill="#0D9488"/>
+  <path d="M110 95H130C130 100.523 125.523 105 120 105C114.477 105 110 100.523 110 95Z" fill="#0D9488"/>
+  
+  <!-- Tassel -->
+  <path d="M118 80C118 80 115 92 122 95" stroke="#F0FDFA" strokeWidth="2"/>
+  <circle cx="122" cy="95" r="3" fill="#F0FDFA"/>
+  
+  <!-- Exam Paper 1 -->
+  <rect x="60" y="90" width="40" height="50" rx="2" fill="white" stroke="#0D9488" strokeWidth="1"/>
+  <rect x="65" y="100" width="30" height="2" rx="1" fill="#14B8A6"/>
+  <rect x="65" y="110" width="20" height="2" rx="1" fill="#14B8A6"/>
+  <rect x="65" y="120" width="25" height="2" rx="1" fill="#14B8A6"/>
+  <rect x="65" y="130" width="15" height="2" rx="1" fill="#14B8A6"/>
+  
+  <!-- Exam Paper 2 -->
+  <rect x="140" y="90" width="40" height="50" rx="2" fill="white" stroke="#0D9488" strokeWidth="1"/>
+  <rect x="145" y="100" width="20" height="2" rx="1" fill="#14B8A6"/>
+  <rect x="145" y="110" width="30" height="2" rx="1" fill="#14B8A6"/>
+  <rect x="145" y="120" width="15" height="2" rx="1" fill="#14B8A6"/>
+  <rect x="145" y="130" width="25" height="2" rx="1" fill="#14B8A6"/>
+  
+  <!-- AQA Logo -->
+  <rect x="70" y="75" width="25" height="10" rx="2" fill="#E11D48"/>
+  <text x="73" y="83" font-family="Arial" font-size="7" fill="white">AQA</text>
+  
+  <!-- Edexcel Logo -->
+  <rect x="145" y="75" width="25" height="10" rx="2" fill="#2563EB"/>
+  <text x="148" y="83" font-family="Arial" font-size="5" fill="white">EDEXCEL</text>
+  
+  <!-- Stars -->
+  <path d="M50 50L52 55L58 55L53 58L55 63L50 60L45 63L47 58L42 55L48 55L50 50Z" fill="#34D399"/>
+  <path d="M190 50L192 55L198 55L193 58L195 63L190 60L185 63L187 58L182 55L188 55L190 50Z" fill="#34D399"/>
+</svg> 

@@ -1,0 +1,91 @@
+.gameContainer {
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, #87CEEB 0%, #B0E0E6 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.statsBar {
+  display: flex;
+  justify-content: space-around;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.9);
+  border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+}
+
+.stat {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #333;
+}
+
+.cityArea {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 2rem;
+  position: relative;
+}
+
+.buildingsRow {
+  display: flex;
+  justify-content: space-around;
+  align-items: flex-end;
+  margin-bottom: 2rem;
+}
+
+.roadSection {
+  height: 100px;
+  background: #555;
+  position: relative;
+  margin-top: auto;
+}
+
+.progressPanel {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.9);
+  padding: 1rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.milestone {
+  margin: 1rem 0;
+}
+
+.progressBar {
+  height: 8px;
+  background: #ddd;
+  border-radius: 4px;
+  margin-top: 0.5rem;
+  overflow: hidden;
+}
+
+.progressBar::after {
+  content: '';
+  display: block;
+  height: 100%;
+  background: #4CAF50;
+  width: var(--progress, 0%);
+  transition: width 0.3s ease;
+}
+
+/* City background variations */
+.cityDay {
+  background: linear-gradient(180deg, #87CEEB 0%, #B0E0E6 100%);
+}
+
+.citySunset {
+  background: linear-gradient(180deg, #FF7F50 0%, #FFB6C1 100%);
+}
+
+.cityNight {
+  background: linear-gradient(180deg, #191970 0%, #483D8B 100%);
+} 

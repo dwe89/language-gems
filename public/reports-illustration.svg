@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="400" height="200" viewBox="0 0 400 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="400" height="200" rx="10" fill="#F0F9FF" />
+  
+  <!-- Background Elements -->
+  <circle cx="60" cy="40" r="20" fill="#DBEAFE" />
+  <circle cx="340" cy="160" r="30" fill="#DBEAFE" />
+  <path d="M310 50C330 30 360 40 370 60" stroke="#93C5FD" stroke-width="4" stroke-linecap="round" />
+  
+  <!-- Chart Elements -->
+  <rect x="100" y="60" width="200" height="120" rx="8" fill="white" stroke="#93C5FD" stroke-width="2" />
+  
+  <!-- Pie Chart -->
+  <path d="M200 100 L200 70 A30 30 0 0 1 226 85 Z" fill="#3B82F6" />
+  <path d="M200 100 L226 85 A30 30 0 0 1 226 115 Z" fill="#60A5FA" />
+  <path d="M200 100 L226 115 A30 30 0 0 1 200 130 Z" fill="#93C5FD" />
+  <path d="M200 100 L200 130 A30 30 0 0 1 174 115 Z" fill="#BFDBFE" />
+  <path d="M200 100 L174 115 A30 30 0 0 1 174 85 Z" fill="#DBEAFE" />
+  <path d="M200 100 L174 85 A30 30 0 0 1 200 70 Z" fill="#EFF6FF" />
+  
+  <!-- Bar Chart -->
+  <rect x="260" y="70" width="10" height="50" fill="#3B82F6" rx="2" />
+  <rect x="280" y="80" width="10" height="40" fill="#60A5FA" rx="2" />
+  <rect x="300" y="90" width="10" height="30" fill="#93C5FD" rx="2" />
+  <rect x="320" y="60" width="10" height="60" fill="#BFDBFE" rx="2" />
+  
+  <!-- Chart Axis -->
+  <line x1="120" y1="150" x2="340" y2="150" stroke="#93C5FD" stroke-width="2" />
+  <line x1="120" y1="70" x2="120" y2="150" stroke="#93C5FD" stroke-width="2" />
+  
+  <!-- Chart Bars -->
+  <rect x="140" y="110" width="15" height="40" rx="2" fill="#3B82F6" />
+  <rect x="160" y="90" width="15" height="60" rx="2" fill="#60A5FA" />
+  <rect x="180" y="130" width="15" height="20" rx="2" fill="#93C5FD" />
+  <rect x="200" y="100" width="15" height="50" rx="2" fill="#BFDBFE" />
+  
+  <!-- Report Icon -->
+  <rect x="40" y="90" width="40" height="50" rx="4" fill="white" stroke="#3B82F6" stroke-width="2" />
+  <line x1="50" y1="100" x2="70" y2="100" stroke="#3B82F6" stroke-width="2" />
+  <line x1="50" y1="110" x2="70" y2="110" stroke="#3B82F6" stroke-width="2" />
+  <line x1="50" y1="120" x2="70" y2="120" stroke="#3B82F6" stroke-width="2" />
+  <line x1="50" y1="130" x2="60" y2="130" stroke="#3B82F6" stroke-width="2" />
+</svg> 

@@ -1,0 +1,48 @@
+<svg width="240" height="160" viewBox="0 0 240 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="120" cy="80" r="60" fill="#F5F3FF" opacity="0.6"/>
+  
+  <!-- Chart Base -->
+  <path d="M50 130H190M50 130V50" stroke="#8B5CF6" strokeWidth="3" strokeLinecap="round"/>
+  
+  <!-- Gem Bar 1 -->
+  <path d="M70 80L80 90V130H60V90L70 80Z" fill="#C4B5FD"/>
+  <path d="M70 80L80 90L70 100L60 90L70 80Z" fill="#A78BFA"/>
+  
+  <!-- Gem Bar 2 -->
+  <path d="M100 60L110 70V130H90V70L100 60Z" fill="#C4B5FD"/>
+  <path d="M100 60L110 70L100 80L90 70L100 60Z" fill="#A78BFA"/>
+  
+  <!-- Gem Bar 3 -->
+  <path d="M130 70L140 80V130H120V80L130 70Z" fill="#C4B5FD"/>
+  <path d="M130 70L140 80L130 90L120 80L130 70Z" fill="#A78BFA"/>
+  
+  <!-- Gem Bar 4 -->
+  <path d="M160 50L170 60V130H150V60L160 50Z" fill="#C4B5FD"/>
+  <path d="M160 50L170 60L160 70L150 60L160 50Z" fill="#A78BFA"/>
+  
+  <!-- Grid Lines -->
+  <path d="M50 90H190" stroke="#E9D5FF" strokeWidth="1" strokeDasharray="4 4"/>
+  <path d="M50 70H190" stroke="#E9D5FF" strokeWidth="1" strokeDasharray="4 4"/>
+  <path d="M50 110H190" stroke="#E9D5FF" strokeWidth="1" strokeDasharray="4 4"/>
+  
+  <!-- Axis Labels -->
+  <text x="65" y="145" font-family="Arial" font-size="10" fill="#6D28D9">Q1</text>
+  <text x="95" y="145" font-family="Arial" font-size="10" fill="#6D28D9">Q2</text>
+  <text x="125" y="145" font-family="Arial" font-size="10" fill="#6D28D9">Q3</text>
+  <text x="155" y="145" font-family="Arial" font-size="10" fill="#6D28D9">Q4</text>
+  
+  <!-- Sparkles -->
+  <path d="M70 65L72 67L70 69L68 67L70 65Z" fill="#A78BFA" class="animate-sparkle"/>
+  <path d="M100 45L102 47L100 49L98 47L100 45Z" fill="#A78BFA" class="animate-sparkle"/>
+  <path d="M130 55L132 57L130 59L128 57L130 55Z" fill="#A78BFA" class="animate-sparkle"/>
+  <path d="M160 35L162 37L160 39L158 37L160 35Z" fill="#A78BFA" class="animate-sparkle"/>
+  
+  <!-- Data Points -->
+  <circle cx="70" cy="80" r="3" fill="#7C3AED"/>
+  <circle cx="100" cy="60" r="3" fill="#7C3AED"/>
+  <circle cx="130" cy="70" r="3" fill="#7C3AED"/>
+  <circle cx="160" cy="50" r="3" fill="#7C3AED"/>
+  
+  <!-- Trendline -->
+  <path d="M70 80C70 80 85 65 100 60C115 55 115 70 130 70C145 70 160 50 160 50" stroke="#7C3AED" strokeWidth="2" strokeDasharray="5 3"/>
+</svg> 
