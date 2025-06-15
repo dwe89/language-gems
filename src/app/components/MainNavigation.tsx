@@ -36,12 +36,16 @@ export default function MainNavigation() {
   // Different navigation items based on authentication state
   const publicNavItems = [
     { name: 'Games', path: '/games' },
+    { name: 'Blog', path: '/blog' },
+    { name: 'Shop', path: '/shop' },
     { name: 'Custom Lessons', path: '/themes' },
     { name: 'Progress Tracking', path: '/premium' },
   ];
 
   const authenticatedNavItems = [
     { name: 'Games', path: '/games' },
+    { name: 'Blog', path: '/blog' },
+    { name: 'Shop', path: '/shop' },
     { name: 'Custom Lessons', path: '/dashboard' },
     { name: 'Progress Tracking', path: '/dashboard/progress' },
   ];
