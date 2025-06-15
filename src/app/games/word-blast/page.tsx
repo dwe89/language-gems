@@ -6,7 +6,7 @@ import {
   RocketIcon, Clock, RefreshCw, Star, CheckCircle2, 
   Zap, SnowflakeIcon, Award, Shield
 } from 'lucide-react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createBrowserClient } from '@supabase/ssr';
 import { useSearchParams } from 'next/navigation';
 import confetti from 'canvas-confetti';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -142,7 +142,7 @@ export default function WordBlastGame() {
   
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const searchParams = useSearchParams();
-  const supabase = createClientComponentClient();
+  const supabase = createBrowserClient();
   
   // Initialize game
   useEffect(() => {

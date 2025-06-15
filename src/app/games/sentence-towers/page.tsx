@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createBrowserClient } from '@supabase/ssr';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Castle, Clock, Star, RefreshCw, PlayIcon, PauseIcon, 
@@ -97,7 +97,7 @@ export default function SentenceTowersGame() {
   // Game settings
   const [vocabulary, setVocabulary] = useState(sampleVocabulary);
   const searchParams = useSearchParams();
-  const supabase = createClientComponentClient();
+  const supabase = createBrowserClient();
   
   const [currentTargetWord, setCurrentTargetWord] = useState<{
     id: string;

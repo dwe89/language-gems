@@ -290,29 +290,6 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Stats Section */}
-      <div className="w-full bg-slate-800 py-16">
-        <div className="container mx-auto px-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-            <div>
-              <div className="text-3xl md:text-4xl font-bold text-white mb-2">1000+</div>
-              <div className="text-slate-300">Schools Worldwide</div>
-            </div>
-            <div>
-              <div className="text-3xl md:text-4xl font-bold text-white mb-2">50+</div>
-              <div className="text-slate-300">Languages Supported</div>
-            </div>
-            <div>
-              <div className="text-3xl md:text-4xl font-bold text-white mb-2">95%</div>
-              <div className="text-slate-300">Teacher Satisfaction</div>
-            </div>
-            <div>
-              <div className="text-3xl md:text-4xl font-bold text-white mb-2">2M+</div>
-              <div className="text-slate-300">Students Learning</div>
-            </div>
-          </div>
-        </div>
-      </div>
 
       {/* Footer */}
       <footer className="w-full bg-slate-900 text-white py-16">

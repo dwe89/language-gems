@@ -4,13 +4,7 @@ import React, { useState } from 'react';
 import { UserCircle2, User, Calendar, Key, RefreshCw, Trash2, Eye, EyeOff, Copy, CheckCircle } from 'lucide-react';
 import { Card, CardContent } from "../ui/card";
 import { Button } from "../ui/button";
-import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator
-} from "../ui/dropdown-menu";
+import { SimpleDropdown } from "../ui/simple-dropdown";
 import { 
   Dialog, 
   DialogContent, 
@@ -19,7 +13,6 @@ import {
   DialogFooter,
   DialogDescription
 } from "../ui/dialog";
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Alert, AlertDescription } from "../ui/alert";
 
 type StudentProps = {
@@ -72,20 +65,23 @@ export function StudentCard({ student, classId, onStudentDeleted }: StudentProps
     setPassword(null);
     
     try {
-      const supabase = createClientComponentClient();
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .select('initial_password')
-        .eq('user_id', student.id)
-        .single();
+      const response = await fetch('/api/students/password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          studentId: student.id
+        }),
+      });
       
-      if (error) throw error;
+      const data = await response.json();
       
-      if (data && data.initial_password) {
-        setPassword(data.initial_password);
-      } else {
-        setPassword('(Password not available)');
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to fetch password');
       }
+      
+      setPassword(data.password);
     } catch (err) {
       console.error('Error fetching password:', err);
       setError('Failed to retrieve password');
@@ -100,9 +96,6 @@ export function StudentCard({ student, classId, onStudentDeleted }: StudentProps
     setSuccess('');
     
     try {
-      // Generate a new random password
-      const newPassword = Math.random().toString(36).slice(-8) + Math.random().toString(10).slice(-2);
-      
       // Call the server to reset the password
       const response = await fetch('/api/students/reset-password', {
         method: 'POST',
@@ -110,8 +103,7 @@ export function StudentCard({ student, classId, onStudentDeleted }: StudentProps
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          studentId: student.id,
-          newPassword
+          studentId: student.id
         }),
       });
       
@@ -121,7 +113,7 @@ export function StudentCard({ student, classId, onStudentDeleted }: StudentProps
         throw new Error(data.error || 'Failed to reset password');
       }
       
-      setPassword(newPassword);
+      setPassword(data.password);
       setSuccess('Password reset successfully');
       setShowPassword(true);
     } catch (err) {
@@ -182,91 +174,100 @@ export function StudentCard({ student, classId, onStudentDeleted }: StudentProps
   
   return (
     <>
-      <Card className="overflow-hidden border border-slate-700/50 bg-slate-800/80 hover:bg-slate-800 transition-colors shadow-md">
+      <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-slate-900/95 to-slate-800/95 hover:from-slate-800/95 hover:to-slate-700/95 transition-all duration-300 shadow-lg hover:shadow-xl backdrop-blur-sm">
         <CardContent className="p-0">
-          <div className="bg-gradient-to-r from-indigo-950 via-indigo-900 to-indigo-800 p-5">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <div className="h-14 w-14 rounded-full bg-indigo-700/50 border border-indigo-600/50 text-white flex items-center justify-center mr-4">
-                  <UserCircle2 className="h-10 w-10" />
+          {/* Main card content */}
+          <div className="p-6">
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex items-center space-x-4">
+                <div className="relative">
+                  <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg">
+                    <UserCircle2 className="h-7 w-7 text-white" />
+                  </div>
+                  <div className={`absolute -bottom-1 -right-1 h-4 w-4 rounded-full border-2 border-slate-800 ${activityStatus.color.replace('text-', 'bg-')}`}></div>
                 </div>
                 <div>
-                  <h3 className="font-semibold text-white text-lg">{student.name}</h3>
-                  <div className="flex items-center text-indigo-200 text-sm mt-1">
+                  <h3 className="font-bold text-white text-lg leading-tight">{student.name}</h3>
+                  <div className="flex items-center text-slate-400 text-sm mt-1">
                     <User className="h-3.5 w-3.5 mr-1.5" />
-                    <span>@{student.username}</span>
+                    <span className="font-medium">@{student.username}</span>
                   </div>
                 </div>
               </div>
               
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-white hover:text-white hover:bg-indigo-800 rounded-full">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-more-vertical"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-40">
-                  <DropdownMenuItem onClick={() => {
-                    setShowPasswordDialog(true);
-                    fetchStudentPassword();
-                  }} className="cursor-pointer">
-                    <Key className="h-4 w-4 mr-2" />
-                    View Password
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => {
-                    setShowPasswordDialog(true);
-                    resetStudentPassword();
-                  }} className="cursor-pointer">
-                    <RefreshCw className="h-4 w-4 mr-2" />
-                    Reset Password
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem className="text-red-400 hover:text-red-300 hover:bg-red-900/50 cursor-pointer" onClick={() => setShowDeleteDialog(true)}>
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Remove Student
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <div className="opacity-0 group-hover:opacity-100 transition-all duration-200">
+                <SimpleDropdown
+                  items={[
+                    {
+                      label: 'View Password',
+                      onClick: () => setShowPasswordDialog(true),
+                      icon: <Key className="h-4 w-4" />
+                    },
+                    {
+                      label: 'Reset Password',
+                      onClick: resetStudentPassword,
+                      icon: <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                    },
+                    {
+                      label: 'Remove Student',
+                      onClick: () => setShowDeleteDialog(true),
+                      icon: <Trash2 className="h-4 w-4" />,
+                      variant: 'destructive'
+                    }
+                  ]}
+                />
+              </div>
             </div>
-          </div>
-          
-          <div className="p-5">
-            <div className="flex flex-col gap-3">
-              <div className="flex justify-between items-center">
-                <div className="text-sm text-gray-300 flex items-center">
-                  <Calendar className="h-4 w-4 mr-1.5 text-gray-400" />
-                  Joined {formatDate(student.joined_date)}
+            
+            {/* Progress and stats */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-slate-400 font-medium">Progress</span>
+                <span className="text-white font-bold">{student.progress}%</span>
+              </div>
+              <div className="w-full bg-slate-700/50 rounded-full h-2.5 overflow-hidden">
+                <div 
+                  className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full transition-all duration-500 ease-out"
+                  style={{ width: `${student.progress}%` }}
+                ></div>
+              </div>
+              
+              <div className="flex items-center justify-between pt-2">
+                <div className="flex items-center text-slate-400 text-sm">
+                  <Calendar className="h-3.5 w-3.5 mr-1.5" />
+                  <span>Joined {formatDate(student.joined_date)}</span>
                 </div>
-                <div className={`text-sm px-2.5 py-1 rounded-full font-medium ${
-                  activityStatus.status === 'Active' ? 'bg-green-900/40 text-green-300 border border-green-800/50' :
-                  activityStatus.status === 'Recent' ? 'bg-teal-900/40 text-teal-300 border border-teal-800/50' :
-                  activityStatus.status === 'Away' ? 'bg-yellow-900/40 text-yellow-300 border border-yellow-800/50' :
-                  'bg-red-900/40 text-red-300 border border-red-800/50'
+                <div className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${
+                  activityStatus.status === 'Active' ? 'bg-emerald-900/50 text-emerald-300 border border-emerald-800/50' :
+                  activityStatus.status === 'Recent' ? 'bg-teal-900/50 text-teal-300 border border-teal-800/50' :
+                  activityStatus.status === 'Away' ? 'bg-amber-900/50 text-amber-300 border border-amber-800/50' :
+                  'bg-red-900/50 text-red-300 border border-red-800/50'
                 }`}>
                   {activityStatus.status}
                 </div>
               </div>
-              
-              <div className="mt-2">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm text-gray-300">Progress</span>
-                  <span className="text-sm font-medium px-2 py-0.5 rounded bg-slate-700/50 text-white">
-                    {student.progress}%
-                  </span>
-                </div>
-                <div className="w-full bg-slate-700/50 rounded-full h-2.5 overflow-hidden border border-slate-600/30">
-                  <div 
-                    className={`h-2.5 rounded-full ${
-                      student.progress < 30 ? 'bg-gradient-to-r from-red-600 to-red-500' :
-                      student.progress < 70 ? 'bg-gradient-to-r from-amber-500 to-yellow-500' :
-                      'bg-gradient-to-r from-emerald-600 to-green-500'
-                    }`}
-                    style={{ width: `${student.progress}%` }}
-                  ></div>
+            </div>
+          </div>
+          
+          {/* Success/Error messages */}
+          {success && (
+            <div className="px-6 pb-4">
+              <div className="bg-emerald-900/50 border border-emerald-800/50 rounded-lg p-3">
+                <div className="flex items-center">
+                  <CheckCircle className="h-4 w-4 text-emerald-400 mr-2" />
+                  <span className="text-emerald-300 text-sm font-medium">{success}</span>
                 </div>
               </div>
             </div>
-          </div>
+          )}
+          
+          {error && (
+            <div className="px-6 pb-4">
+              <Alert className="bg-red-900/50 border-red-800/50">
+                <AlertDescription className="text-red-300 text-sm">{error}</AlertDescription>
+              </Alert>
+            </div>
+          )}
         </CardContent>
       </Card>
       

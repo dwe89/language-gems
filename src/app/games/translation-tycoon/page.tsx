@@ -6,7 +6,7 @@ import {
   HelpCircle, Share2
 } from 'lucide-react';
 import Link from 'next/link';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createBrowserClient } from '@supabase/ssr';
 import { useSearchParams } from 'next/navigation';
 import confetti from 'canvas-confetti';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -226,7 +226,7 @@ function TranslationTycoonGameInner() {
   // Refs and hooks
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const passiveIncomeRef = useRef<NodeJS.Timeout | null>(null);
-  const supabase = createClientComponentClient();
+  const supabase = createBrowserClient();
   
   // Initialize game
   useEffect(() => {

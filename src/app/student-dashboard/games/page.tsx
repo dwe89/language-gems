@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Hexagon, Star, Clock, Users, Loader2, BookOpen } from 'lucide-react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createBrowserClient } from '@supabase/ssr';
 import { useAuth } from '../../../components/auth/AuthProvider';
 import { useGameProgress } from '../../../hooks/useGameProgress';
 import { GameSummary } from '../../../services/gameProgressService';
@@ -108,7 +108,7 @@ const LoadingState = () => (
 
 export default function GamesPage() {
   const { user } = useAuth();
-  const supabase = createClientComponentClient();
+  const supabase = createBrowserClient();
   const { getGameProgress, getStats } = useGameProgress();
   const [games, setGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);

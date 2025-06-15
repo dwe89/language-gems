@@ -560,3 +560,109 @@ const LanguageGemsHangman = () => {
           {/* Digital barrier */}
           <div 
             className="absolute top-0 inset-x-0 bg-gradient-to-b from-pink-500 to-transparent"
+            style={{ 
+              height: `${dangerPercentage}%`, 
+              transition: 'height 1s ease-in-out'
+            }}
+          ></div>
+        </div>
+      );
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-indigo-900 to-purple-900 p-4">
+      <div className="max-w-md mx-auto">
+        {renderThemeBackground()}
+        <div className="bg-white rounded-xl shadow-xl p-6">
+          <h1 className="text-2xl font-bold text-center mb-6">Hangman Game</h1>
+          
+          {!gameStarted ? (
+            <div className="text-center space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Choose Theme:
+                </label>
+                <select 
+                  value={selectedTheme?.name || ''} 
+                  onChange={(e) => {
+                    const theme = themes.find(t => t.name === e.target.value);
+                    setSelectedTheme(theme);
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Select a theme</option>
+                  {themes.map(theme => (
+                    <option key={theme.name} value={theme.name}>{theme.name}</option>
+                  ))}
+                </select>
+              </div>
+              
+              <button 
+                onClick={startGame}
+                disabled={!selectedTheme}
+                className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+              >
+                Start Game
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="text-center">
+                <div className="text-lg font-mono tracking-widest mb-2">
+                  {renderWord()}
+                </div>
+                <div className="text-sm text-gray-600">
+                  Wrong guesses: {wrongGuesses}/{maxWrongGuesses}
+                </div>
+                {selectedTheme && selectedTheme.name === 'Space Escape' && (
+                  <div className="text-xs text-red-600 mt-1">
+                    Oxygen: {Math.max(0, 100 - dangerPercentage)}%
+                  </div>
+                )}
+                {selectedTheme && selectedTheme.name === 'Lava Temple' && (
+                  <div className="text-xs text-orange-600 mt-1">
+                    Lava level: {dangerPercentage}%
+                  </div>
+                )}
+                {selectedTheme && selectedTheme.name === 'Tokyo Nights' && (
+                  <div className="text-xs text-cyan-600 mt-1">
+                    Shield: {Math.max(0, 100 - dangerPercentage)}%
+                  </div>
+                )}
+              </div>
+              
+              {renderKeyboard()}
+              
+              {hintsAvailable > 0 && !isGameWon && !isGameLost && (
+                <button 
+                  onClick={useHint}
+                  className="w-full bg-yellow-500 text-white py-2 px-4 rounded-md hover:bg-yellow-600"
+                >
+                  Use Hint ({hintsAvailable} left)
+                </button>
+              )}
+              
+              {(isGameWon || isGameLost) && (
+                <div className="text-center space-y-2">
+                  <div className={`text-lg font-bold ${isGameWon ? 'text-green-600' : 'text-red-600'}`}>
+                    {isGameWon ? 'Congratulations! 🎉' : 'Game Over! 💀'}
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    The word was: <span className="font-bold">{currentWord}</span>
+                  </div>
+                  <button 
+                    onClick={startGame}
+                    className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700"
+                  >
+                    Play Again
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -18,6 +18,8 @@ export default function Navigation() {
             <li><Link href="/themes" className="gem-nav-item">Themes</Link></li>
             <li><Link href="/languages" className="gem-nav-item">Languages</Link></li>
             <li><Link href="/exercises" className="gem-nav-item">Exercises</Link></li>
+            <li><Link href="/blog" className="gem-nav-item">Blog</Link></li>
+            <li><Link href="/shop" className="gem-nav-item">Shop</Link></li>
           </ul>
         </div>
         
@@ -87,6 +89,20 @@ export default function Navigation() {
               onClick={() => setIsMenuOpen(false)}
             >
               Exercises
+            </Link>
+            <Link 
+              href="/blog" 
+              className="block gem-nav-item"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Blog
+            </Link>
+            <Link 
+              href="/shop" 
+              className="block gem-nav-item"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Shop
             </Link>
             <div className="pt-3 space-y-2">
               <Link 

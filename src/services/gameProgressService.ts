@@ -1,4 +1,4 @@
-import { SupabaseClient, createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { SupabaseClient, createBrowserClient } from '@supabase/ssr';
 
 /**
  * Interface for game progress data
@@ -48,7 +48,7 @@ export class GameProgressService {
   private statsCache: Map<string, GameStats> = new Map();
   
   constructor(supabaseClient?: SupabaseClient) {
-    this.supabase = supabaseClient || createClientComponentClient();
+    this.supabase = supabaseClient || createBrowserClient();
   }
   
   /**

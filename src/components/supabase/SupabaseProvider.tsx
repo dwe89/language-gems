@@ -1,11 +1,11 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createBrowserClient } from '@supabase/ssr';
 import { Database } from '../../lib/database.types';
 
 type SupabaseContext = {
-  supabase: ReturnType<typeof createClientComponentClient<Database>>;
+  supabase: ReturnType<typeof createBrowserClient<Database>>;
 };
 
 const Context = createContext<SupabaseContext | undefined>(undefined);
@@ -15,7 +15,10 @@ export default function SupabaseProvider({
 }: {
   children: ReactNode;
 }) {
-  const [supabase] = useState(() => createClientComponentClient<Database>());
+  const [supabase] = useState(() => createBrowserClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  ));
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {});

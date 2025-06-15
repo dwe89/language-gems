@@ -3,9 +3,9 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-import { Lightbulb, RefreshCw, Clock, Trophy, AlertCircle, ArrowLeft, Shuffle, ZapOff, Building2, Star, Eye, EyeOff, Zap, HeartPulse, Sparkles } from 'lucide-react';
+import { Lightbulb, RefreshCw, Clock, Trophy, AlertCircle, ArrowLeft, Shuffle, ZapOff, Building2, Star, Eye, EyeOff, Zap, HeartPulse, Sparkles, Play } from 'lucide-react';
 import Link from 'next/link';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createBrowserClient } from '@supabase/ssr';
 import { useSearchParams } from 'next/navigation';
 import confetti from 'canvas-confetti';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -17,22 +17,28 @@ import { WordTarget } from './components/WordTarget';
 import { PowerUpButton } from './components/PowerUpButton';
 import { ThemeSelector } from './components/ThemeSelector';
 import { SoundProvider, SoundControls, useSound } from './components/SoundManager';
+import { ModeSelector } from './components/ModeSelector';
+import { CurriculumDisplay } from './components/CurriculumDisplay';
+import { LanguageToggle } from './components/LanguageToggle';
 import { 
   WordItem, GameState, GameSettings, GameStats, PowerUp, 
-  ThemeType, DifficultyLevel, TranslationDirection, SentenceData 
+  ThemeType, DifficultyLevel, TranslationDirection, SentenceData,
+  GameMode, CurriculumMetadata, GCSETier, FreePlayConfig, AssignmentData
 } from './types';
 
-// Example sentences
-const sampleSentences: SentenceData[] = [
-  { id: '1', text: 'The cat sleeps on the mat', originalText: 'The cat sleeps on the mat', translatedText: 'El gato duerme sobre la alfombra', language: 'es' },
-  { id: '2', text: 'I like to read books', originalText: 'I like to read books', translatedText: 'Me gusta leer libros', language: 'es' },
-  { id: '3', text: 'The weather is nice today', originalText: 'The weather is nice today', translatedText: 'El tiempo está agradable hoy', language: 'es' },
-  { id: '4', text: 'She plays the piano well', originalText: 'She plays the piano well', translatedText: 'Ella toca bien el piano', language: 'es' },
-  { id: '5', text: 'We are going to the park', originalText: 'We are going to the park', translatedText: 'Vamos al parque', language: 'es' },
-  { id: '6', text: 'They have a beautiful garden', originalText: 'They have a beautiful garden', translatedText: 'Ellos tienen un jardín hermoso', language: 'es' },
-  { id: '7', text: 'The sun rises in the east', originalText: 'The sun rises in the east', translatedText: 'El sol sale por el este', language: 'es' },
-  { id: '8', text: 'My brother is a doctor', originalText: 'My brother is a doctor', translatedText: 'Mi hermano es médico', language: 'es' }
-];
+// Available sentences will be fetched from API
+const DEFAULT_SENTENCE: SentenceData = { 
+  id: 'loading', 
+  text: 'Cargando...', 
+  originalText: 'Loading...', 
+  translatedText: 'Cargando...', 
+  language: 'es',
+  curriculum: {
+    tier: 'Foundation',
+    theme: 'People and lifestyle',
+    topic: 'Identity and relationships'
+  }
+};
 
 // Default power-ups
 const defaultPowerUps: PowerUp[] = [
@@ -50,7 +56,12 @@ function SpeedBuilderGameInner() {
   const [gameSettings, setGameSettings] = useState<GameSettings>({
     timeLimit: 120, ghostMode: false, ghostDuration: 3, theme: 'default', difficulty: 'medium', 
     powerUpsEnabled: true, vocabularyId: null, translationDirection: 'fromNative', 
-    soundEffects: true, backgroundMusic: true, persistCustomSentence: false
+    soundEffects: true, backgroundMusic: true, persistCustomSentence: false,
+    gameMode: 'freeplay',
+    assignmentId: null,
+    curriculum: undefined,
+    adaptiveLearning: false,
+    showExplanations: true
   });
   const [currentSentence, setCurrentSentence] = useState<SentenceData | null>(null);
   const [shuffledWords, setShuffledWords] = useState<WordItem[]>([]);
@@ -65,9 +76,19 @@ function SpeedBuilderGameInner() {
   const [sentenceFlashActive, setSentenceFlashActive] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const ghostTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const playSound = useSound();
-  const searchParams = useSearchParams(); // Keep if used
-  const [assignmentId, setAssignmentId] = useState<string | null>(null); // Keep if used
+  const { playSound } = useSound();
+  const searchParams = useSearchParams();
+  const [assignmentId, setAssignmentId] = useState<string | null>(null);
+  const [availableSentences, setAvailableSentences] = useState<SentenceData[]>([]);
+  const [isLoadingSentences, setIsLoadingSentences] = useState(false);
+  const [assignmentData, setAssignmentData] = useState<AssignmentData | null>(null);
+  const [freePlayConfig, setFreePlayConfig] = useState<FreePlayConfig>({
+    selectedTier: 'Foundation',
+    enableStars: true,
+    enableLeaderboard: true,
+    enableAdaptiveLearning: false
+  });
+  const supabase = createBrowserClient();
 
   // --- Utility Functions (Defined First) ---
   const shuffleArray = useCallback(<T,>(array: T[]): T[] => {
@@ -100,6 +121,75 @@ function SpeedBuilderGameInner() {
     });
   }, []);
 
+  // --- API Functions ---
+  const fetchSentences = useCallback(async () => {
+    setIsLoadingSentences(true);
+    try {
+      const requestBody = {
+        mode: gameSettings.gameMode,
+        assignmentId: gameSettings.assignmentId,
+        theme: freePlayConfig.selectedTheme,
+        topic: freePlayConfig.selectedTopic,
+        tier: freePlayConfig.selectedTier,
+        grammarFocus: freePlayConfig.grammarFocus,
+        count: 10,
+        difficulty: gameSettings.difficulty
+      };
+
+      const response = await fetch('/api/games/speed-builder/sentences', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody)
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch sentences');
+      }
+
+      const data = await response.json();
+      setAvailableSentences(data.sentences || []);
+    } catch (error) {
+      console.error('Error fetching sentences:', error);
+      // Fallback to default sentence
+      setAvailableSentences([DEFAULT_SENTENCE]);
+    } finally {
+      setIsLoadingSentences(false);
+    }
+  }, [gameSettings.gameMode, gameSettings.assignmentId, gameSettings.difficulty, freePlayConfig]);
+
+  // Initialize game on mount and when params change
+  useEffect(() => {
+    const initializeGame = async () => {
+      // Check URL params for assignment mode
+      if (searchParams) {
+        const assignmentParam = searchParams.get('assignment');
+        const modeParam = searchParams.get('mode');
+        
+        if (assignmentParam) {
+          setGameSettings(prev => ({
+            ...prev,
+            gameMode: 'assignment',
+            assignmentId: assignmentParam
+          }));
+          setAssignmentId(assignmentParam);
+        } else if (modeParam === 'assignment') {
+          setGameSettings(prev => ({ ...prev, gameMode: 'assignment' }));
+        }
+      }
+
+      // Fetch initial sentences
+      await fetchSentences();
+    };
+
+    initializeGame();
+  }, [searchParams, fetchSentences]);
+
+  // Fetch sentences when game mode or config changes
+  useEffect(() => {
+    if (gameState !== 'ready') return;
+    fetchSentences();
+  }, [gameSettings.gameMode, gameSettings.assignmentId, freePlayConfig, fetchSentences, gameState]);
+
   // --- Core Game Logic Callbacks ---
   const loadNewSentence = useCallback((index: number) => {
     let sentenceData: SentenceData | null = null;
@@ -115,12 +205,12 @@ function SpeedBuilderGameInner() {
             language: 'custom'
         };
     } else {
-        if (sampleSentences.length > 0) {
-            const sentenceIndex = index % sampleSentences.length;
-            sentenceData = sampleSentences[sentenceIndex];
+        if (availableSentences.length > 0) {
+            const sentenceIndex = index % availableSentences.length;
+            sentenceData = availableSentences[sentenceIndex];
             sentenceTextToUse = gameSettings.translationDirection === 'toNative' 
-                                ? sentenceData.translatedText 
-                                : sentenceData.originalText;
+                                ? sentenceData.originalText  // English (original)
+                                : sentenceData.translatedText; // Spanish (translated)
             // Ensure the 'text' property aligns with the text being used
             sentenceData = { ...sentenceData, text: sentenceTextToUse }; 
         }
@@ -133,8 +223,6 @@ function SpeedBuilderGameInner() {
          id: `${sentenceData!.id}-word-${i}`,
          text: word,
          index: i,
-         // translation: undefined, // Optional fields don't need explicit undefined
-         // correct: undefined, 
        }));
       setShuffledWords(shuffleArray(words));
       setPlacedWords(new Array(words.length).fill(null));
@@ -144,7 +232,7 @@ function SpeedBuilderGameInner() {
       console.error("Failed to load a sentence.");
       setGameState('error');
     }
-  }, [shuffleArray, customSentenceInput, useCustomSentence, gameSettings.translationDirection, levelIndex]); // Added levelIndex dependency
+  }, [shuffleArray, customSentenceInput, useCustomSentence, gameSettings.translationDirection, availableSentences]);
 
   const handleWordDrop = useCallback((wordId: string, targetIndex: number): boolean => {
       const wordBeingDropped = shuffledWords.find(w => w.id === wordId) || placedWords.find(w => w?.id === wordId);
@@ -262,7 +350,7 @@ function SpeedBuilderGameInner() {
       }, gameSettings.ghostDuration * 1000);
     }
     if (typeof playSound === 'function') {
-      playSound('start');
+      playSound('ui');
     }
   };
 
@@ -305,7 +393,7 @@ function SpeedBuilderGameInner() {
       if (gameState === 'completed') { // Only proceed if completed
           const nextLevel = levelIndex + 1;
           // Check if next level exists (for sample sentences)
-          if (!useCustomSentence && nextLevel >= sampleSentences.length) {
+          if (!useCustomSentence && nextLevel >= availableSentences.length) {
               console.log("All sample sentences completed.");
               // Maybe show a final completion message?
               resetGame(); // Or go back to ready state
@@ -331,6 +419,31 @@ function SpeedBuilderGameInner() {
       confetti({ particleCount: 150, spread: 90, origin: { y: 0.6 } }); 
   };
   const saveProgress = async () => { console.log("Saving progress..."); }; // Placeholder
+
+  // --- Mode and Config Handlers ---
+  const handleModeChange = useCallback((mode: GameMode) => {
+    setGameSettings(prev => ({ ...prev, gameMode: mode }));
+    if (mode === 'freeplay') {
+      setAssignmentId(null);
+      setAssignmentData(null);
+    }
+  }, []);
+
+  const handleFreePlayConfigChange = useCallback((config: Partial<FreePlayConfig>) => {
+    setFreePlayConfig(prev => ({ ...prev, ...config }));
+  }, []);
+
+  const handleToggleExplanations = useCallback(() => {
+    setGameSettings(prev => ({ ...prev, showExplanations: !prev.showExplanations }));
+  }, []);
+
+  const handleTranslationDirectionChange = useCallback((direction: TranslationDirection) => {
+    setGameSettings(prev => ({ ...prev, translationDirection: direction }));
+    // Reload current sentence with new direction
+    if (availableSentences.length > 0) {
+      loadNewSentence(levelIndex);
+    }
+  }, [availableSentences.length, levelIndex, loadNewSentence]);
 
   // --- Power-up Handlers ---
   const activatePowerUp = (id: string) => {
@@ -404,8 +517,39 @@ function SpeedBuilderGameInner() {
           <SoundControls />
         </header>
 
-        {/* Custom Sentence Input (Ready State) */} 
+        {/* Mode Selector - only show in ready state */}
         {gameState === 'ready' && (
+          <ModeSelector
+            gameMode={gameSettings.gameMode}
+            onModeChange={handleModeChange}
+            freePlayConfig={freePlayConfig}
+            onFreePlayConfigChange={handleFreePlayConfigChange}
+            isAssignmentMode={gameSettings.gameMode === 'assignment' && !!assignmentData}
+            assignmentData={assignmentData || undefined}
+          />
+        )}
+
+        {/* Language Toggle - show in ready state and free play mode */}
+        {gameState === 'ready' && gameSettings.gameMode === 'freeplay' && (
+          <LanguageToggle
+            translationDirection={gameSettings.translationDirection}
+            onDirectionChange={handleTranslationDirectionChange}
+            currentSentence={availableSentences[levelIndex] || null}
+          />
+        )}
+
+        {/* Curriculum Display - show when playing and sentence has curriculum info */}
+        {(gameState === 'playing' || gameState === 'paused') && currentSentence?.curriculum && (
+          <CurriculumDisplay
+            currentSentence={currentSentence}
+            showExplanations={gameSettings.showExplanations || false}
+            gameMode={gameSettings.gameMode}
+            onToggleExplanations={handleToggleExplanations}
+          />
+        )}
+
+        {/* Custom Sentence Input (Ready State - Free Play Only) */} 
+        {gameState === 'ready' && gameSettings.gameMode === 'freeplay' && (
           <div className="custom-sentence-area mb-6 p-4 bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm rounded-lg shadow-md max-w-2xl mx-auto w-full">
             <h3 className="text-lg font-semibold mb-3 text-center text-gray-700 dark:text-gray-300">Create Your Own Challenge</h3>
             <textarea
@@ -423,6 +567,40 @@ function SpeedBuilderGameInner() {
             >
               Use This Sentence & Start
             </button>
+          </div>
+        )}
+
+        {/* Start Game Button - for pre-loaded sentences */}
+        {gameState === 'ready' && !useCustomSentence && availableSentences.length > 0 && (
+          <div className="text-center mb-6">
+            <motion.button
+              onClick={startGame}
+              disabled={isLoadingSentences}
+              className="px-8 py-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-bold text-xl rounded-lg shadow-lg transition-colors flex items-center gap-3 mx-auto"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              {isLoadingSentences ? (
+                <>
+                  <motion.div
+                    className="w-6 h-6 border-2 border-white border-t-transparent rounded-full"
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                  />
+                  Loading...
+                </>
+              ) : (
+                <>
+                  <Play className="h-6 w-6" />
+                  Start Game
+                </>
+              )}
+            </motion.button>
+            {availableSentences.length > 0 && (
+              <p className="text-sm text-gray-600 mt-2">
+                Ready with {availableSentences.length} sentences!
+              </p>
+            )}
           </div>
         )}
 
@@ -525,7 +703,7 @@ function SpeedBuilderGameInner() {
                         <p className="text-xl mb-4">Score: {stats.score} | Accuracy: {Math.round(stats.accuracy * 100)}%</p>
                         <div className="flex gap-4">
                             {/* Show 'Next' only if not custom OR if more sample sentences exist */} 
-                            {(!useCustomSentence && sampleSentences.length > levelIndex + 1) && (
+                            {(!useCustomSentence && availableSentences.length > levelIndex + 1) && (
                                 <button onClick={handleNextLevel} className="px-6 py-2 bg-green-500 hover:bg-green-600 rounded shadow text-lg transition-colors">Next Sentence</button>
                             )}
                             <button onClick={() => resetGame()} className="px-6 py-2 bg-blue-500 hover:bg-blue-600 rounded shadow text-lg transition-colors">Play Again</button>

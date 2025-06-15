@@ -2,8 +2,9 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { Session, User } from '@supabase/supabase-js';
-import { supabase } from '../../lib/supabase';
+import { createBrowserClient } from '@supabase/ssr';
 import { useRouter } from 'next/navigation';
+import type { Database } from '../../lib/database.types';
 
 type AuthContextType = {
   user: User | null;
@@ -15,25 +16,38 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// At top, after imports, create client once
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+
+// Initialize a single Supabase browser client instance (module-level singleton)
+export const supabaseBrowser = createBrowserClient<Database>(supabaseUrl, supabaseAnonKey);
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
-
+  
   // Function to refresh the session and update state
   const refreshSession = async () => {
     try {
-      const { data: { session: currentSession }, error } = await supabase.auth.getSession();
+      // Get both current session and refresh it
+      const { data: { session: currentSession }, error } = await supabaseBrowser.auth.getSession();
       
       if (error) {
         console.error('Error refreshing session:', error);
+        // If there's an error, try to get user directly
+        const { data: { user: currentUser } } = await supabaseBrowser.auth.getUser();
+        if (currentUser) {
+          setUser(currentUser);
+        }
         return;
       }
 
       // If we have a session, fetch the user's profile to ensure we have role information
       if (currentSession?.user) {
-        const { data: profile } = await supabase
+        const { data: profile } = await supabaseBrowser
           .from('user_profiles')
           .select('role')
           .eq('user_id', currentSession.user.id)
@@ -52,6 +66,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(currentSession?.user || null);
     } catch (error) {
       console.error('Exception refreshing auth:', error);
+      // Try one more time with just getUser
+      try {
+        const { data: { user: fallbackUser } } = await supabaseBrowser.auth.getUser();
+        if (fallbackUser) {
+          setUser(fallbackUser);
+        }
+      } catch (fallbackError) {
+        console.error('Fallback auth check failed:', fallbackError);
+      }
     }
   };
 
@@ -61,7 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Get the current session
     const initializeAuth = async () => {
       try {
-        const { data: { session: currentSession }, error } = await supabase.auth.getSession();
+        const { data: { session: currentSession }, error } = await supabaseBrowser.auth.getSession();
         
         if (error) {
           console.error('Error getting session:', error);
@@ -70,7 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         // If we have a session, fetch the user's profile
         if (currentSession?.user && mounted) {
-          const { data: profile } = await supabase
+          const { data: profile } = await supabaseBrowser
             .from('user_profiles')
             .select('role')
             .eq('user_id', currentSession.user.id)
@@ -102,12 +125,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     initializeAuth();
 
     // Listen for authentication changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, currentSession) => {
+    const { data: { subscription } } = supabaseBrowser.auth.onAuthStateChange(
+      async (event: any, currentSession: Session | null) => {
         if (mounted) {
           // If we have a session, fetch the user's profile
           if (currentSession?.user) {
-            const { data: profile } = await supabase
+            const { data: profile } = await supabaseBrowser
               .from('user_profiles')
               .select('role')
               .eq('user_id', currentSession.user.id)
@@ -170,7 +193,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
       
       // Then perform Supabase sign out
-      const { error } = await supabase.auth.signOut();
+      const { error } = await supabaseBrowser.auth.signOut();
       if (error) {
         console.error('Error signing out:', error);
       }

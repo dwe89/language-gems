@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createBrowserClient } from '@supabase/ssr';
 import { useAuth } from '../../../../components/auth/AuthProvider';
 import { useGameProgress } from '../../../../hooks/useGameProgress';
 import { GameProgress, GameSummary } from '../../../../services/gameProgressService';
@@ -175,7 +175,7 @@ export default function GameDetailPage() {
   const gameId = params?.gameId || '';
   const router = useRouter();
   const { user } = useAuth();
-  const supabase = createClientComponentClient();
+  const supabase = createBrowserClient();
   const { saveProgress, getGameProgress, loading: progressLoading } = useGameProgress();
   
   const [game, setGame] = useState<any>(null);

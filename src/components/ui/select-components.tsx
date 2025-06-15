@@ -3,7 +3,6 @@
 import * as React from 'react';
 import { cn } from '../../lib/utils';
 import { Check, ChevronDown } from 'lucide-react';
-import * as SelectPrimitive from "@radix-ui/react-select";
 
 // Context to share state
 const SelectContext = React.createContext<{
@@ -120,16 +119,16 @@ const SelectContent = React.forwardRef<
 SelectContent.displayName = 'SelectContent';
 
 const SelectLabel = React.forwardRef<
-  React.ElementRef<typeof SelectPrimitive.Label>,
-  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Label>
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
-  <SelectPrimitive.Label
+  <div
     ref={ref}
     className={cn("py-1.5 pl-8 pr-2 text-sm font-semibold text-gray-200", className)}
     {...props}
   />
 ))
-SelectLabel.displayName = SelectPrimitive.Label.displayName
+SelectLabel.displayName = 'SelectLabel'
 
 const SelectItem = React.forwardRef<
   HTMLDivElement,

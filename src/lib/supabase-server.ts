@@ -1,9 +1,9 @@
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
-export const createClient = () => {
-  // We need to manually get cookie headers in server components
-  const cookieStore = cookies();
+export const createClient = async () => {
+  // Await cookies before using them for Next.js 15 compatibility
+  const cookieStore = await cookies();
   
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -12,6 +12,12 @@ export const createClient = () => {
       cookies: {
         get(name) {
           return cookieStore.get(name)?.value;
+        },
+        set(name, value, options) {
+          cookieStore.set(name, value, options);
+        },
+        remove(name, options) {
+          cookieStore.set(name, '', { ...options, maxAge: 0 });
         },
       },
     }
