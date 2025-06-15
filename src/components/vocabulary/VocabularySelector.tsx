@@ -59,7 +59,10 @@ export default function VocabularySelector({
   const [itemCount, setItemCount] = useState(20);
   const [difficulty, setDifficulty] = useState<string>('');
   
-  const supabase = createBrowserClient();
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+  );
 
   // Load themes and topics on component mount
   useEffect(() => {

@@ -108,7 +108,10 @@ const LoadingState = () => (
 
 export default function GamesPage() {
   const { user } = useAuth();
-  const supabase = createBrowserClient();
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+  );
   const { getGameProgress, getStats } = useGameProgress();
   const [games, setGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
@@ -402,4 +405,7 @@ export default function GamesPage() {
       </div>
     </div>
   );
-} 
+}
+
+// Force client-side rendering to avoid build issues with Supabase
+export const dynamic = 'force-dynamic'; 

@@ -6,8 +6,11 @@ export async function POST(request: Request) {
     console.log('=== GET STUDENT PASSWORD API CALLED ===');
     
     // Get the service role key
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhldHN2cGZ1bmF6d2tvbnRkcGRoIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTczOTgyMzAwMiwiZXhwIjoyMDU1Mzk5MDAyfQ.m40XgEXpqK613HUfx8kx-liXMGGMNBIus759th80wns';
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    
+    if (!serviceRoleKey) {
+      return NextResponse.json({ error: 'Service configuration error' }, { status: 500 });
+    }
     
     // Create admin client
     const adminClient = createClient(

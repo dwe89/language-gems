@@ -48,7 +48,10 @@ export class GameProgressService {
   private statsCache: Map<string, GameStats> = new Map();
   
   constructor(supabaseClient?: SupabaseClient) {
-    this.supabase = supabaseClient || createBrowserClient();
+    this.supabase = supabaseClient || createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+    );
   }
   
   /**

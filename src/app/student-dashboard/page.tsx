@@ -101,7 +101,10 @@ const LoadingState = () => (
 
 export default function StudentDashboard() {
   const { user } = useAuth();
-  const supabase = createBrowserClient<Database>();
+  const supabase = createBrowserClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+  );
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     totalPoints: 0,
@@ -444,4 +447,7 @@ export default function StudentDashboard() {
       </div>
     </div>
   );
-} 
+}
+
+// Force client-side rendering to avoid build issues with Supabase
+export const dynamic = 'force-dynamic'; 
