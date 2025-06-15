@@ -1,6 +1,5 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { createClient } from '@supabase/supabase-js';
-import { cookies } from 'next/headers';
+import { createClient } from '../../../../lib/supabase-server';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
@@ -15,13 +14,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'New password is required' }, { status: 400 });
     }
     
-    // Create a regular Supabase client for authentication
-    const supabase = createRouteHandlerClient({
-      cookies: () => cookies()
-    });
+    // Create a Supabase client for authentication
+    const supabase = await createClient();
     
     // Create an admin client with service role for user management
-    const adminClient = createClient(
+    const adminClient = createSupabaseClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
       {
@@ -56,12 +53,13 @@ export async function POST(request: Request) {
     const { data: teacherAccess, error: accessError } = await supabase
       .from('class_enrollments')
       .select(`
-        classes:class_id(teacher_id)
+        classes!inner(teacher_id)
       `)
       .eq('student_id', studentId)
+      .eq('classes.teacher_id', teacherId)
       .limit(1);
     
-    if (accessError || !teacherAccess || teacherAccess.length === 0 || !teacherAccess[0].classes || teacherAccess[0].classes.teacher_id !== teacherId) {
+    if (accessError || !teacherAccess || teacherAccess.length === 0) {
       return NextResponse.json({ success: false, error: 'Not authorized to manage this student' }, { status: 403 });
     }
     

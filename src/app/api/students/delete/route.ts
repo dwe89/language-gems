@@ -1,5 +1,4 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { createClient } from '../../../../lib/supabase-server';
 import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
@@ -14,10 +13,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'Class ID is required' }, { status: 400 });
     }
     
-    // Create a regular Supabase client
-    const supabase = createRouteHandlerClient({
-      cookies: () => cookies()
-    });
+    // Create a Supabase client
+    const supabase = await createClient();
     
     // Get the current user to verify they are authorized
     const { data: { session } } = await supabase.auth.getSession();

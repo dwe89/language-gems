@@ -1,6 +1,5 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { createClient } from '@supabase/supabase-js';
-import { cookies } from 'next/headers';
+import { createClient } from '../../../../lib/supabase-server';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 import { generateUsername } from '../../../../lib/utils';
 
@@ -18,12 +17,10 @@ function generatePassword() {
 export async function POST(request: Request) {
   try {
     // Only allow authenticated teachers to run this
-    const supabase = createRouteHandlerClient({
-      cookies: () => cookies()
-    });
+    const supabase = await createClient();
 
     // Create an admin client with service role for user updates
-    const adminClient = createClient(
+    const adminClient = createSupabaseClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
       {
