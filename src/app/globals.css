@@ -303,12 +303,12 @@ body {
 
 @layer utilities {
   .heading-font {
-    font-family: var(--font-montserrat);
+    font-family: var(--font-cinzel);
     font-weight: 700;
   }
   
   .body-font {
-    font-family: var(--font-roboto);
+    font-family: var(--font-inter);
     font-weight: 400;
   }
   

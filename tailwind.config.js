@@ -12,8 +12,10 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        montserrat: ['var(--font-montserrat)'],
-        roboto: ['var(--font-roboto)'],
+        inter: ['var(--font-inter)'],
+        cinzel: ['var(--font-cinzel)'],
+        pirata: ['var(--font-pirata)'],
+        sans: ['var(--font-inter)', 'Inter', 'system-ui', 'sans-serif'],
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
