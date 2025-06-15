@@ -6,7 +6,8 @@ export const fetchCache = 'force-no-store';
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../../components/auth/AuthProvider';
-import { supabaseBrowser } from '../../../components/auth/AuthProvider';import Link from 'next/link';
+import { supabaseBrowser } from '../../../../components/auth/AuthProvider';
+import Link from 'next/link';
 import { 
   ArrowLeft, Users, Calendar, Clock, Book, Settings, 
   Download, Upload, UserPlus, Mail, Pencil, Trash2, 
@@ -72,10 +73,9 @@ export default function ClassDetailPage({ params }: { params: Promise<{ classId:
       
       try {
         setLoading(true);
-        const supabase = createClientComponentClient();
         
         // Fetch actual class data
-        const { data: classDataResult, error: classError } = await supabase
+        const { data: classDataResult, error: classError } = await supabaseBrowser
           .from('classes')
           .select('*')
           .eq('id', classId)
@@ -96,7 +96,7 @@ export default function ClassDetailPage({ params }: { params: Promise<{ classId:
         setClassData(classDataResult);
         
         // Fetch students in the class
-        const { data: enrollments, error: studentsError } = await supabase
+        const { data: enrollments, error: studentsError } = await supabaseBrowser
           .from('class_enrollments')
           .select(`
             student_id,
@@ -111,7 +111,7 @@ export default function ClassDetailPage({ params }: { params: Promise<{ classId:
           const studentIds = enrollments.map(item => item.student_id);
           
           // Fetch user profiles for these students
-          const { data: userProfiles, error: profilesError } = await supabase
+          const { data: userProfiles, error: profilesError } = await supabaseBrowser
             .from('user_profiles')
             .select('user_id, display_name, username')
             .in('user_id', studentIds);
@@ -142,7 +142,7 @@ export default function ClassDetailPage({ params }: { params: Promise<{ classId:
         }
         
         // Fetch word lists/assignments (simplified for now)
-        const { data: assignments, error: assignmentsError } = await supabase
+        const { data: assignments, error: assignmentsError } = await supabaseBrowser
           .from('assignments')
           .select('*')
           .eq('class_id', classId);

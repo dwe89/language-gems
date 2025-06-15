@@ -20,7 +20,8 @@ import {
   ArrowUpRight,
   Sparkles
 } from 'lucide-react';
-import { supabaseBrowser } from '../../../components/auth/AuthProvider';import type { Database } from '../../../lib/database.types';
+import { supabaseBrowser } from '../../../components/auth/AuthProvider';
+import type { Database } from '../../../lib/database.types';
 
 // Type definitions
 type Student = {
@@ -71,8 +72,6 @@ export default function ReportsPage() {
   const [selectedChart, setSelectedChart] = useState<string>('progress');
   const [reportData, setReportData] = useState<ReportData | null>(null);
   
-  const supabase = createClientComponentClient<Database>();
-  
   // Fetch real data from database
   useEffect(() => {
     if (!user) return;
@@ -82,7 +81,7 @@ export default function ReportsPage() {
         setLoading(true);
         
         // Fetch teacher's classes
-        const { data: classesData, error: classesError } = await supabase
+        const { data: classesData, error: classesError } = await supabaseBrowser
           .from('classes')
           .select('*')
           .eq('teacher_id', user.id);
@@ -92,7 +91,7 @@ export default function ReportsPage() {
         }
 
         // Fetch real students enrolled in this teacher's classes
-        const { data: enrollmentsData, error: enrollmentsError } = await supabase
+        const { data: enrollmentsData, error: enrollmentsError } = await supabaseBrowser
           .from('class_enrollments')
           .select(`
             student_id,
@@ -110,7 +109,7 @@ export default function ReportsPage() {
         if (enrollmentsData && enrollmentsData.length > 0) {
           const studentIds = enrollmentsData.map(enrollment => enrollment.student_id);
           
-          const { data: userProfiles } = await supabase
+          const { data: userProfiles } = await supabaseBrowser
             .from('user_profiles')
             .select('user_id, display_name, email')
             .in('user_id', studentIds);
@@ -181,7 +180,7 @@ export default function ReportsPage() {
     };
 
     fetchData();
-  }, [user, supabase]);
+  }, [user, supabaseBrowser]);
   
   // Filter students based on selected class
   const filteredStudents = selectedClass === 'all' 

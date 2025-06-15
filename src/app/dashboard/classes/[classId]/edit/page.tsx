@@ -6,7 +6,8 @@ export const fetchCache = 'force-no-store';
 
 import React, { useState, useEffect, use } from 'react';
 import { useAuth } from '../../../../../components/auth/AuthProvider';
-import { supabaseBrowser } from '../../../components/auth/AuthProvider';import Link from 'next/link';
+import { supabaseBrowser } from '../../../../../components/auth/AuthProvider';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { 
   ArrowLeft, Save, Loader2
@@ -58,10 +59,9 @@ export default function EditClassPage({ params }: { params: Promise<{ classId: s
       
       try {
         setLoading(true);
-        const supabase = createClientComponentClient();
         
         // Fetch class data
-        const { data: classDataResult, error: classError } = await supabase
+        const { data: classDataResult, error: classError } = await supabaseBrowser
           .from('classes')
           .select('*')
           .eq('id', classId)
@@ -117,9 +117,8 @@ export default function EditClassPage({ params }: { params: Promise<{ classId: s
     
     try {
       setSaving(true);
-      const supabase = createClientComponentClient();
       
-      const { error: updateError } = await supabase
+      const { error: updateError } = await supabaseBrowser
         .from('classes')
         .update({
           name: classData.name,

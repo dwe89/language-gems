@@ -82,20 +82,20 @@ export async function GET(
       .select(`
         id,
         title,
-        game_type,
+        type,
         created_at,
         due_date,
-        teacher_id,
+        created_by,
         class_id,
-        vocabulary_list_id
+        vocabulary_assignment_list_id
       `)
       .eq('id', assignmentId)
-      .eq('teacher_id', user.id)
+      .eq('created_by', user.id)
       .single();
 
     if (assignmentError || !assignment) {
       return NextResponse.json(
-        { error: 'Assignment not found or unauthorized' },
+        { error: 'Assignment not found or access denied' },
         { status: 404 }
       );
     }
@@ -111,39 +111,33 @@ export async function GET(
       console.error('Error fetching class info:', classError);
     }
 
-    // Get students in the class
-    const { data: classStudents, error: studentsError } = await supabase
-      .from('class_students')
+    // Get class enrollment data
+    const { data: enrollments, error: enrollmentsError } = await supabase
+      .from('class_enrollments')
       .select(`
         student_id,
-        profiles (
-          first_name,
-          last_name
+        user_profiles!inner(
+          id,
+          display_name
         )
       `)
       .eq('class_id', assignment.class_id);
 
-    if (studentsError) {
-      console.error('Error fetching students:', studentsError);
-    }
-
-    // Get assignment progress for all students
-    const { data: progressData, error: progressError } = await supabase
-      .from('assignment_progress')
-      .select('*')
-      .eq('assignment_id', assignmentId);
-
-    if (progressError) {
-      console.error('Error fetching progress:', progressError);
+    if (enrollmentsError) {
+      console.error('Error fetching enrollments:', enrollmentsError);
+      return NextResponse.json(
+        { error: 'Failed to fetch class data' },
+        { status: 500 }
+      );
     }
 
     // Get vocabulary count for this assignment
     let vocabularyCount = 0;
-    if (assignment.vocabulary_list_id) {
+    if (assignment.vocabulary_assignment_list_id) {
       const { data: vocabCount, error: vocabCountError } = await supabase
         .from('vocabulary_assignment_items')
         .select('id')
-        .eq('assignment_list_id', assignment.vocabulary_list_id);
+        .eq('assignment_list_id', assignment.vocabulary_assignment_list_id);
 
       if (!vocabCountError && vocabCount) {
         vocabularyCount = vocabCount.length;
@@ -177,23 +171,20 @@ export async function GET(
     const vocabularyStatsMap = new Map();
 
     // Initialize student progress data
-    if (classStudents) {
-      classStudents.forEach(student => {
-        const progress = progressData?.find(p => p.student_id === student.student_id);
-        const studentName = student.profiles ? 
-          `${student.profiles.first_name} ${student.profiles.last_name}` : 
-          'Unknown Student';
+    if (enrollments) {
+      enrollments.forEach(student => {
+        const studentName = student.user_profiles?.display_name || 'Unknown Student';
 
         studentProgressMap.set(student.student_id, {
           student_id: student.student_id,
           student_name: studentName,
-          status: progress?.status || 'not_started',
-          score: progress?.score || 0,
-          accuracy: progress?.accuracy || 0,
-          attempts: progress?.attempts || 0,
-          time_spent: progress?.time_spent || 0,
-          started_at: progress?.started_at || null,
-          completed_at: progress?.completed_at || null,
+          status: 'not_started',
+          score: 0,
+          accuracy: 0,
+          attempts: 0,
+          time_spent: 0,
+          started_at: null,
+          completed_at: null,
           vocabulary_mastery: []
         });
       });
@@ -275,7 +266,7 @@ export async function GET(
       assignment: {
         id: assignment.id,
         title: assignment.title,
-        game_type: assignment.game_type,
+        game_type: assignment.type,
         created_at: assignment.created_at,
         due_date: assignment.due_date,
         total_vocabulary: vocabularyCount

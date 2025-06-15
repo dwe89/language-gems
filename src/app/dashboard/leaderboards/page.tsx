@@ -6,7 +6,8 @@ export const fetchCache = 'force-no-store';
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../../components/auth/AuthProvider';
-import { supabaseBrowser } from '../../../components/auth/AuthProvider';import Link from 'next/link';
+import { supabaseBrowser } from '../../../components/auth/AuthProvider';
+import Link from 'next/link';
 import { 
   Trophy, Medal, Award, Star, Target, TrendingUp, Users, ChevronRight, Filter,
   Crown, Zap, Calendar, User, BarChart3, ChevronDown, ChevronUp, Search
@@ -56,8 +57,6 @@ export default function LeaderboardsPage() {
   const [view, setView] = useState<'students' | 'classes'>('students');
   const [searchQuery, setSearchQuery] = useState('');
 
-  const supabase = createClientComponentClient<Database>();
-
   // Fetch real data from database
   useEffect(() => {
     if (!user) return;
@@ -65,7 +64,7 @@ export default function LeaderboardsPage() {
     const fetchData = async () => {
       try {
         // Fetch teacher's classes
-        const { data: classesData, error: classesError } = await supabase
+        const { data: classesData, error: classesError } = await supabaseBrowser
           .from('classes')
           .select('*')
           .eq('teacher_id', user.id);
@@ -75,7 +74,7 @@ export default function LeaderboardsPage() {
         }
 
         // Fetch real students enrolled in this teacher's classes
-        const { data: enrollmentsData, error: enrollmentsError } = await supabase
+        const { data: enrollmentsData, error: enrollmentsError } = await supabaseBrowser
           .from('class_enrollments')
           .select(`
             student_id,
@@ -91,7 +90,7 @@ export default function LeaderboardsPage() {
 
         // Get student profiles separately
         const studentIds = enrollmentsData?.map(e => e.student_id) || [];
-        const { data: profilesData, error: profilesError } = await supabase
+        const { data: profilesData, error: profilesError } = await supabaseBrowser
           .from('user_profiles')
           .select('user_id, display_name, email')
           .in('user_id', studentIds);
@@ -150,7 +149,7 @@ export default function LeaderboardsPage() {
     };
 
     fetchData();
-  }, [user, supabase]);
+  }, [user, supabaseBrowser]);
 
   // Filter students based on selected class and search query
   const filteredStudents = students.filter(student => {
