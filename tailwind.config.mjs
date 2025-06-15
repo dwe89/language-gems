@@ -1,9 +1,13 @@
 /** @type {import('tailwindcss').Config} */
-module.exports = {
+const config = {
   content: [
+    './src/**/*.{js,ts,jsx,tsx,mdx}',
     './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
     './src/components/**/*.{js,ts,jsx,tsx,mdx}',
     './src/app/**/*.{js,ts,jsx,tsx,mdx}',
+    './components/**/*.{js,ts,jsx,tsx,mdx}',
+    './pages/**/*.{js,ts,jsx,tsx,mdx}',
+    './app/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   theme: {
     extend: {
@@ -19,6 +23,8 @@ module.exports = {
       animation: {
         'sparkle': 'sparkle 1.5s linear infinite',
         'float': 'float 3s ease-in-out infinite',
+        'float-delayed': 'float 3s ease-in-out infinite 1s',
+        'float-slow': 'float 4s ease-in-out infinite',
         'ping-slow': 'ping 3s cubic-bezier(0, 0, 0.2, 1) infinite',
         'fade-in': 'fadeIn 0.5s ease-in-out',
       },
@@ -49,4 +55,6 @@ module.exports = {
     },
   },
   plugins: [],
-}; 
+};
+
+export default config; 
