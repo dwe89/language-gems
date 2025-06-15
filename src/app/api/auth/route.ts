@@ -1,4 +1,4 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '../../../lib/supabase-server';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
@@ -11,7 +11,7 @@ export async function POST(request: Request) {
     console.log('API login attempt with identifier:', identifier || email || role, 'schoolCode:', schoolCode);
     
     // Create a Supabase client
-    const supabase = createRouteHandlerClient({ cookies });
+    const supabase = await createClient();
 
     let loginResult;
     

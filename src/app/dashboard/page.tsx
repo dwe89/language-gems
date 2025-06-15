@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../components/auth/AuthProvider';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import Link from 'next/link';
 import { 
   Search, Bell, User as UserIcon, Menu, ChevronDown, ChevronRight,
@@ -10,10 +9,10 @@ import {
   Users, CheckCircle, Plus, Play, Award, Book, Zap, Clock, Calendar,
   Globe, MessageCircle, PieChart, Gamepad2, MinusCircle, PlusCircle
 } from 'lucide-react';
+import { supabaseBrowser } from '../../components/auth/AuthProvider';
 
 export default function DashboardPage() {
   const { user, isLoading: authLoading } = useAuth();
-  const [loading, setLoading] = useState(true);
   
   useEffect(() => {
     console.log('User in dashboard:', {
@@ -22,26 +21,16 @@ export default function DashboardPage() {
       metadata: user?.user_metadata,
       role: user?.user_metadata?.role
     });
-    
-    // Set loading to false even if user is not fully loaded yet
-    // This prevents getting stuck in loading state
-    setLoading(false);
   }, [user]);
   
   // If auth is still loading, show a loading spinner
   if (authLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-teal-500"></div>
-      </div>
-    );
-  }
-  
-  // Show loading state from local component state
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-teal-500"></div>
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-teal-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading dashboard...</p>
+        </div>
       </div>
     );
   }
@@ -59,7 +48,6 @@ function TeacherDashboard({ username = 'Ms. Carter' }: { username?: string }) {
     completionRate: 0,
     loading: true
   });
-  const supabase = createClientComponentClient();
 
   useEffect(() => {
     if (!user) return;
@@ -67,7 +55,7 @@ function TeacherDashboard({ username = 'Ms. Carter' }: { username?: string }) {
     const fetchRealStats = async () => {
       try {
         // Get total enrolled students for this teacher
-        const { data: enrollments } = await supabase
+        const { data: enrollments } = await supabaseBrowser
           .from('class_enrollments')
           .select(`
             student_id,
@@ -78,7 +66,7 @@ function TeacherDashboard({ username = 'Ms. Carter' }: { username?: string }) {
         const activeStudents = enrollments?.length || 0;
 
         // Get active assignments for this teacher
-        const { data: assignments } = await supabase
+        const { data: assignments } = await supabaseBrowser
           .from('assignments')
           .select('id')
           .eq('teacher_id', user.id)
@@ -89,7 +77,7 @@ function TeacherDashboard({ username = 'Ms. Carter' }: { username?: string }) {
         // Calculate completion rate (only if there are assignments)
         let completionRate = 0;
         if (activeAssignments > 0) {
-          const { data: progress } = await supabase
+          const { data: progress } = await supabaseBrowser
             .from('assignment_progress')
             .select('status, assignment_id')
             .in('assignment_id', assignments?.map(a => a.id) || []);
@@ -118,78 +106,104 @@ function TeacherDashboard({ username = 'Ms. Carter' }: { username?: string }) {
     };
 
     fetchRealStats();
-  }, [user, supabase]);
+  }, [user]);
   
   return (
-    <div className="min-h-screen bg-gradient-to-br from-teal-50 via-teal-100 to-rose-100">
-      {/* Remove Top Navigation Bar since it's in the layout now */}
-      
-      <main className="max-w-7xl mx-auto px-4 py-8">
-        {/* Welcome Section */}
-        <section className="mb-8 bg-gradient-to-r from-teal-600 to-rose-400 rounded-xl p-6 shadow-lg text-white relative overflow-hidden">
-          <div className="relative z-10">
-            <h2 className="text-2xl md:text-3xl font-montserrat font-bold mb-1">
-              Welcome, {username}! <span className="hidden sm:inline">Let's Spark Language Learning Today!</span>
-            </h2>
-            <div className="w-24 h-1 bg-coral-400 mb-6"></div>
+    <div className="min-h-screen">
+      {/* Welcome Section */}
+      <section className="relative overflow-hidden">
+        <div className="max-w-7xl mx-auto px-6 py-12">
+          <div className="relative bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 rounded-2xl p-8 shadow-2xl overflow-hidden">
+            {/* Background Pattern */}
+            <div className="absolute inset-0 bg-white/10 backdrop-blur-sm"></div>
+            <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full -translate-y-48 translate-x-48"></div>
+            <div className="absolute bottom-0 left-0 w-64 h-64 bg-white/5 rounded-full translate-y-32 -translate-x-32"></div>
             
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-              <StatCard 
-                icon={<Users className="h-5 w-5" />} 
-                label="Active Students" 
-                value={stats.loading ? "..." : stats.activeStudents.toString()} 
-                bgColor="bg-emerald-500/80"
-              />
-              <StatCard 
-                icon={<PenTool className="h-5 w-5" />} 
-                label="Active Assignments" 
-                value={stats.loading ? "..." : stats.activeAssignments.toString()} 
-                bgColor="bg-rose-400/80"
-              />
-              <StatCard 
-                icon={<CheckCircle className="h-5 w-5" />} 
-                label="Avg. Completion Rate" 
-                value={stats.loading ? "..." : stats.activeAssignments > 0 ? `${stats.completionRate}%` : "N/A"} 
-                bgColor="bg-amber-400/80"
-              />
+            <div className="relative z-10">
+              <div className="mb-8">
+                <h2 className="text-3xl md:text-4xl font-bold text-white mb-3">
+                  Welcome back, {username}! ✨
+                </h2>
+                <p className="text-indigo-100 text-lg max-w-2xl">
+                  Let's create amazing learning experiences for your students today
+                </p>
+              </div>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
+                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-2xl font-bold text-white mb-1">
+                        {stats.loading ? "..." : stats.activeStudents.toString()}
+                      </div>
+                      <div className="text-indigo-100 text-sm font-medium">Active Students</div>
+                    </div>
+                    <div className="w-12 h-12 bg-emerald-500/20 rounded-xl flex items-center justify-center">
+                      <Users className="h-6 w-6 text-emerald-300" />
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-2xl font-bold text-white mb-1">
+                        {stats.loading ? "..." : stats.activeAssignments.toString()}
+                      </div>
+                      <div className="text-indigo-100 text-sm font-medium">Active Assignments</div>
+                    </div>
+                    <div className="w-12 h-12 bg-orange-500/20 rounded-xl flex items-center justify-center">
+                      <PenTool className="h-6 w-6 text-orange-300" />
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-2xl font-bold text-white mb-1">
+                        {stats.loading ? "..." : stats.activeAssignments > 0 ? `${stats.completionRate}%` : "N/A"}
+                      </div>
+                      <div className="text-indigo-100 text-sm font-medium">Avg. Completion</div>
+                    </div>
+                    <div className="w-12 h-12 bg-yellow-500/20 rounded-xl flex items-center justify-center">
+                      <CheckCircle className="h-6 w-6 text-yellow-300" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <Link 
+                href="/dashboard/classes/new" 
+                className="inline-flex items-center px-6 py-3 bg-white/15 hover:bg-white/25 backdrop-blur-sm text-white font-semibold rounded-xl border border-white/30 transition-all duration-200 hover:scale-105 hover:shadow-lg"
+              >
+                <Plus className="h-5 w-5 mr-2" />
+                Create New Class
+              </Link>
             </div>
-            
-            <Link href="/dashboard/classes/new" className="bg-emerald-500 hover:bg-emerald-600 text-white py-2 px-4 rounded-lg shadow flex items-center transition-all duration-300 transform hover:scale-105 inline-flex">
-              <Plus className="h-4 w-4 mr-2" />
-              Create New Class
-            </Link>
           </div>
-          
-          {/* Decorative background elements */}
-          <div className="absolute top-4 right-4 opacity-10">
-            <svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M30 40H170L150 160H50L30 40Z" stroke="white" strokeWidth="4"/>
-              <path d="M60 20L70 40M140 20L130 40" stroke="white" strokeWidth="4"/>
-              <circle cx="100" cy="100" r="30" stroke="white" strokeWidth="4"/>
-              <path d="M70 100H130M100 70V130" stroke="white" strokeWidth="4"/>
-            </svg>
-          </div>
-        </section>
-        
-        {/* Main Dashboard Grid */}
-        <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          {/* Row 1 */}
+        </div>
+      </section>
+      
+      {/* Main Dashboard Grid */}
+      <section className="max-w-7xl mx-auto px-6 pb-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           <DashboardCard 
             title="Manage Classes & Students"
             description="Add students, generate logins, and view rosters"
-            icon={<BookOpen className="h-8 w-8 text-emerald-600" />}
+            icon={<BookOpen className="h-7 w-7 text-indigo-600" />}
             buttonText="View Classes"
-            buttonColor="bg-emerald-500 hover:bg-emerald-600"
+            buttonColor="bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800"
             imageSrc="/classes-illustration.svg"
             href="/dashboard/classes"
           />
           
           <DashboardCard 
             title="Create & Assign Tasks"
-            description="Set vocab games, grammar exercises, or exam prep"
-            icon={<PenTool className="h-8 w-8 text-rose-500" />}
+            description="Set vocabulary games, grammar exercises, or exam prep"
+            icon={<PenTool className="h-7 w-7 text-orange-600" />}
             buttonText="New Assignment"
-            buttonColor="bg-rose-500 hover:bg-rose-600"
+            buttonColor="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"
             imageSrc="/assignments-illustration.svg"
             href="/dashboard/assignments/new"
           />
@@ -197,167 +211,75 @@ function TeacherDashboard({ username = 'Ms. Carter' }: { username?: string }) {
           <DashboardCard 
             title="Track Student Progress"
             description="See scores, time spent, and skill mastery"
-            icon={<BarChart2 className="h-8 w-8 text-amber-500" />}
+            icon={<BarChart2 className="h-7 w-7 text-purple-600" />}
             buttonText="View Reports"
-            buttonColor="bg-amber-500 hover:bg-amber-600"
+            buttonColor="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800"
             imageSrc="/progress-illustration.svg"
             href="/dashboard/progress"
           />
           
-          {/* Row 2 */}
           <DashboardCard 
             title="Browse Learning Content"
             description="Upload materials or browse our content library"
-            icon={<Upload className="h-8 w-8 text-indigo-500" />}
+            icon={<Upload className="h-7 w-7 text-emerald-600" />}
             buttonText="Manage Content"
-            buttonColor="bg-indigo-500 hover:bg-indigo-600"
+            buttonColor="bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800"
             imageSrc="/content-illustration.svg"
             href="/dashboard/content"
           />
           
           <DashboardCard 
             title="Interactive Learning Games"
-            description="Engage students with vocabulary and grammar games"
-            icon={<Trophy className="h-8 w-8 text-purple-500" />}
-            buttonText="View Games"
-            buttonColor="bg-purple-500 hover:bg-purple-600"
+            description="Engage students with fun, educational activities"
+            icon={<Gamepad2 className="h-7 w-7 text-pink-600" />}
+            buttonText="Explore Games"
+            buttonColor="bg-gradient-to-r from-pink-600 to-pink-700 hover:from-pink-700 hover:to-pink-800"
             imageSrc="/games-illustration.svg"
             href="/dashboard/games"
           />
           
           <DashboardCard 
             title="Competition & Leaderboards"
-            description="Motivate students with class competitions"
-            icon={<GraduationCap className="h-8 w-8 text-pink-500" />}
-            buttonText="View Rankings"
-            buttonColor="bg-pink-500 hover:bg-pink-600"
+            description="Motivate students with challenges and rankings"
+            icon={<Trophy className="h-7 w-7 text-amber-600" />}
+            buttonText="View Leaderboards"
+            buttonColor="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700"
             imageSrc="/competition-illustration.svg"
             href="/dashboard/leaderboards"
           />
-        </section>
-        
-        {/* Quick Actions & Recent Activity */}
-        <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Quick Actions */}
-          <div className="bg-white rounded-xl shadow-md p-6">
-            <h3 className="font-montserrat font-bold text-gray-800 mb-4 flex items-center">
-              <Zap className="h-5 w-5 text-amber-500 mr-2" />
-              Quick Actions
-            </h3>
-            <div className="space-y-3">
-              <NavLink 
-                icon={<Plus className="h-4 w-4" />} 
-                label="Create New Class" 
-                href="/dashboard/classes/new" 
-              />
-              <NavLink 
-                icon={<PenTool className="h-4 w-4" />} 
-                label="Create Assignment" 
-                href="/dashboard/assignments/new" 
-              />
-              <NavLink 
-                icon={<BookOpen className="h-4 w-4" />} 
-                label="Upload Vocabulary List" 
-                href="/dashboard/vocabulary/new" 
-              />
-              <NavLink 
-                icon={<Gamepad2 className="h-4 w-4" />} 
-                label="Launch Class Game" 
-                href="/dashboard/games/launch" 
-              />
-            </div>
-          </div>
-          
-          {/* Getting Started Guide */}
-          <div className="lg:col-span-2 bg-white rounded-xl shadow-md p-6">
-            <h3 className="font-montserrat font-bold text-gray-800 mb-4 flex items-center">
-              <Clock className="h-5 w-5 text-teal-500 mr-2" />
-              Getting Started
-            </h3>
-            
-            {stats.activeStudents === 0 ? (
-              <div className="space-y-4">
-                <div className="flex items-start space-x-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                  <div className="bg-blue-500 rounded-full p-1">
-                    <Users className="h-4 w-4 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-800">Create your first class</p>
-                    <p className="text-xs text-gray-500">Add students and start teaching</p>
-                    <Link href="/dashboard/classes/new" className="text-xs text-blue-600 hover:text-blue-800 mt-1 inline-block">
-                      Create Class →
-                    </Link>
-                  </div>
-                </div>
-                
-                <div className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
-                  <div className="bg-gray-400 rounded-full p-1">
-                    <PenTool className="h-4 w-4 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-500">Create your first assignment</p>
-                    <p className="text-xs text-gray-400">Available after creating a class</p>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="flex items-start space-x-3 p-3 bg-emerald-50 rounded-lg">
-                  <div className="bg-emerald-500 rounded-full p-1">
-                    <CheckCircle className="h-4 w-4 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-800">You have {stats.activeStudents} students enrolled</p>
-                    <p className="text-xs text-gray-500">Ready to create assignments</p>
-                  </div>
-                </div>
-                
-                {stats.activeAssignments === 0 ? (
-                  <div className="flex items-start space-x-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                    <div className="bg-blue-500 rounded-full p-1">
-                      <PenTool className="h-4 w-4 text-white" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-800">Create your first assignment</p>
-                      <p className="text-xs text-gray-500">Start engaging your students</p>
-                      <Link href="/dashboard/assignments/new" className="text-xs text-blue-600 hover:text-blue-800 mt-1 inline-block">
-                        Create Assignment →
-                      </Link>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex items-start space-x-3 p-3 bg-emerald-50 rounded-lg">
-                    <div className="bg-emerald-500 rounded-full p-1">
-                      <CheckCircle className="h-4 w-4 text-white" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-800">You have {stats.activeAssignments} active assignments</p>
-                      <p className="text-xs text-gray-500">Students are working on their tasks</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </section>
-        
-        {/* Help Widget (conditionally shown) */}
-        {helpWidgetVisible && (
-          <div className="fixed bottom-6 right-6 bg-gradient-to-r from-teal-500 to-rose-400 text-white p-4 rounded-xl shadow-lg max-w-sm z-50">
+        </div>
+      </section>
+
+      {/* Help Widget */}
+      {helpWidgetVisible && (
+        <div className="fixed bottom-6 right-6 z-40">
+          <div className="bg-white rounded-xl shadow-xl border border-slate-200 p-6 max-w-sm">
             <button 
               onClick={() => setHelpWidgetVisible(false)}
-              className="absolute top-2 right-2 text-white hover:text-gray-200"
+              className="absolute top-3 right-3 p-1 rounded-lg hover:bg-slate-100 transition-colors"
             >
-              <MinusCircle className="h-4 w-4" />
+              <MinusCircle className="h-4 w-4 text-slate-500" />
             </button>
-            <h4 className="font-bold mb-2">Welcome to LanguageGems! 🎓</h4>
-            <p className="text-sm mb-3">Ready to get started? Create your first class and add students to begin their language learning journey.</p>
-            <Link href="/dashboard/classes/new" className="inline-block bg-white text-teal-600 px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors">
-              Create First Class
-            </Link>
+            <div className="mb-4">
+              <h3 className="font-bold text-slate-900 mb-2 flex items-center">
+                <div className="w-8 h-8 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center mr-3">
+                  <GraduationCap className="h-4 w-4 text-white" />
+                </div>
+                Welcome to LanguageGems! 🎉
+              </h3>
+              <p className="text-slate-600 text-sm leading-relaxed mb-4">
+                Ready to get started? Create your first class and add students to begin their language learning journey.
+              </p>
+              <Link 
+                href="/dashboard/classes/new"
+                className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-sm font-medium rounded-lg transition-all duration-200 hover:shadow-lg"
+              >
+                Create First Class
+              </Link>
+            </div>
           </div>
-        )}
-      </main>
+        </div>
+      )}
     </div>
   );
 }
@@ -408,30 +330,34 @@ function DashboardCard({
   href: string
 }) {
   return (
-    <div className="bg-white rounded-xl shadow-md overflow-hidden transition-all duration-300 hover:shadow-lg hover:translate-y-[-5px] group">
-      <div className="p-6">
-        <div className="flex items-center mb-4">
-          <div className="mr-3 bg-gray-100 rounded-full p-2 group-hover:animate-sparkle">
+    <div className="group relative bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-200/60 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 overflow-hidden">
+      {/* Subtle gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-br from-white/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+      
+      <div className="relative p-8">
+        <div className="flex items-start justify-between mb-6">
+          <div className="flex items-center space-x-4">
+            <div className="p-3 bg-slate-100/80 rounded-xl group-hover:scale-110 transition-transform duration-300">
+              {icon}
+            </div>
+            <div>
+              <h3 className="font-bold text-slate-900 text-lg leading-tight">{title}</h3>
+              <p className="text-slate-600 text-sm mt-1 leading-relaxed">{description}</p>
+            </div>
+          </div>
+        </div>
+        
+        {/* Illustration area with better placeholder */}
+        <div className="flex justify-center items-center h-24 mb-8 rounded-xl bg-slate-50/50 group-hover:bg-slate-100/50 transition-colors duration-300">
+          <div className="w-16 h-16 bg-gradient-to-br from-slate-200 to-slate-300 rounded-2xl flex items-center justify-center">
             {icon}
           </div>
-          <h3 className="font-montserrat font-bold text-gray-800">{title}</h3>
         </div>
         
-        <p className="text-sm text-gray-600 mb-4">{description}</p>
-        
-        <div className="flex justify-center mb-4 h-32 items-center">
-          <img 
-            src={imageSrc} 
-            alt={title} 
-            className="max-h-full max-w-full object-contain group-hover:animate-float"
-            onError={(e) => {
-              const target = e.target as HTMLImageElement;
-              target.src = "/placeholder.svg";
-            }}
-          />
-        </div>
-        
-        <Link href={href} className={`block w-full ${buttonColor} text-white py-2 rounded-lg transition-colors text-center`}>
+        <Link 
+          href={href} 
+          className={`block w-full ${buttonColor} text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 text-center shadow-md hover:shadow-lg group-hover:scale-105`}
+        >
           {buttonText}
         </Link>
       </div>

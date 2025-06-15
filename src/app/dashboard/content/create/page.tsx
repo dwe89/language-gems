@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { 
   ArrowLeft, Upload, Plus, Trash2, Save, HelpCircle, X
 } from 'lucide-react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { supabaseBrowser } from '../../../../components/auth/AuthProvider';
 import type { Database } from '../../../../lib/database.types';
 
 type WordPair = {
@@ -22,7 +22,7 @@ export default function CreateContentPage() {
   const [error, setError] = useState('');
   const [showTips, setShowTips] = useState(false);
   
-  const supabase = createClientComponentClient<Database>();
+  const supabase = supabaseBrowser;
   
   const [formData, setFormData] = useState({
     name: '',

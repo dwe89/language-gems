@@ -2,743 +2,511 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../../../components/auth/AuthProvider';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { 
   ArrowLeft, Calendar, BookOpen, BookmarkIcon, FileText, 
   Users, AlarmClock, Clock, Rocket, Building2, Castle, 
   DollarSign, CircleOff, DoorOpen, Puzzle, PlayCircle, 
   RefreshCw, CheckCircle, Headphones, Mic, Volume2, MessageSquare, 
-  PenTool, FileEdit, Feather, Award
+  PenTool, FileEdit, Feather, Award, Plus, X, Eye, Trash2,
+  Zap, Brain, Target, Gamepad2, Timer, Star, Settings,
+  Shuffle, Grid3X3, Type, Layers, Smile
 } from 'lucide-react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createBrowserClient } from '@supabase/ssr';
 import type { Database } from '../../../../lib/database.types';
 
-// Game type definitions
-const GAME_TYPES = [
+// Complete games list aligned with actual games directory
+const AVAILABLE_GAMES = [
   { 
-    id: 'speed_builder', 
-    name: 'Speed Builder 🏗️', 
-    description: 'Students must drag and drop words into the correct order to build a sentence before time runs out.',
-    icon: <Building2 className="text-indigo-500" size={24} />,
-    configOptions: ['sentences', 'timeLimit', 'ghostMode']
+    id: 'speed-builder', 
+    name: 'Speed Builder', 
+    description: 'Build sentences by dragging words into the correct order before time runs out',
+    icon: <Building2 className="text-indigo-500" size={20} />,
+    category: 'grammar',
+    difficulty: 'intermediate',
+    timeToComplete: '5-10 min',
+    path: '/games/speed-builder'
   },
   { 
-    id: 'word_blast', 
-    name: 'Word Blast 🚀', 
-    description: 'Students launch rockets by selecting the correct translation of a word before time runs out.',
-    icon: <Rocket className="text-orange-500" size={24} />,
-    configOptions: ['vocabulary', 'timeLimit', 'survivalMode', 'powerUps']
+    id: 'gem-collector', 
+    name: 'Gem Collector', 
+    description: 'Collect translation gems while avoiding wrong answers in this fast-paced adventure',
+    icon: <Star className="text-purple-500" size={20} />,
+    category: 'vocabulary',
+    difficulty: 'beginner',
+    timeToComplete: '3-8 min',
+    path: '/games/gem-collector'
   },
   { 
-    id: 'sentence_towers', 
-    name: 'Sentence Towers 🏰', 
-    description: 'Each correct answer adds a block to a tower. Build the highest tower before time runs out.',
-    icon: <Castle className="text-amber-500" size={24} />,
-    configOptions: ['vocabulary', 'sentences', 'timeLimit', 'towerFalling']
+    id: 'translation-tycoon', 
+    name: 'Translation Tycoon', 
+    description: 'Build your translation business empire by earning coins from correct translations',
+    icon: <DollarSign className="text-emerald-500" size={20} />,
+    category: 'vocabulary',
+    difficulty: 'intermediate',
+    timeToComplete: '8-15 min',
+    path: '/games/translation-tycoon'
   },
   { 
-    id: 'translation_tycoon', 
-    name: 'Translation Tycoon 💰', 
-    description: 'Students earn virtual money by correctly translating words and build their translation business.',
-    icon: <DollarSign className="text-emerald-500" size={24} />,
-    configOptions: ['vocabulary', 'sentences', 'challengeWords', 'startingCurrency']
-  },
-  { 
-    id: 'balloon_pop', 
-    name: 'Balloon Pop Quiz 🎈', 
-    description: 'Students see a word and must pop the balloon with the correct translation.',
-    icon: <CircleOff className="text-pink-500" size={24} />,
-    configOptions: ['vocabulary', 'freezePenalty', 'progressiveDifficulty']
-  },
-  { 
-    id: 'escape_translation', 
-    name: 'Escape the Translation Trap 🏃‍♀️🔐', 
-    description: 'Students must translate key words correctly to escape a room.',
-    icon: <DoorOpen className="text-purple-500" size={24} />,
-    configOptions: ['vocabulary', 'sentences', 'trickWords', 'lives']
+    id: 'word-blast', 
+    name: 'Word Blast', 
+    description: 'Launch rockets by selecting correct translations before time runs out',
+    icon: <Rocket className="text-orange-500" size={20} />,
+    category: 'vocabulary',
+    difficulty: 'beginner',
+    timeToComplete: '5-12 min',
+    path: '/games/word-blast'
   },
   { 
     id: 'hangman', 
     name: 'Hangman', 
-    description: 'Classic word guessing game where students guess letters to reveal a hidden word.',
-    icon: <Puzzle className="text-cyan-500" size={24} />,
-    configOptions: ['vocabulary', 'hintMode', 'difficultyLevel']
+    description: 'Classic word guessing game with vocabulary practice',
+    icon: <Puzzle className="text-cyan-500" size={20} />,
+    category: 'vocabulary',
+    difficulty: 'beginner',
+    timeToComplete: '3-7 min',
+    path: '/games/hangman'
+  },
+  { 
+    id: 'memory-game', 
+    name: 'Memory Match', 
+    description: 'Match vocabulary pairs in this memory-building card game',
+    icon: <Brain className="text-pink-500" size={20} />,
+    category: 'vocabulary',
+    difficulty: 'beginner',
+    timeToComplete: '5-10 min',
+    path: '/games/memory-game'
+  },
+  { 
+    id: 'verb-conjugation-ladder', 
+    name: 'Verb Conjugation Ladder', 
+    description: 'Climb the ladder by mastering verb conjugations step by step',
+    icon: <Layers className="text-blue-500" size={20} />,
+    category: 'grammar',
+    difficulty: 'intermediate',
+    timeToComplete: '8-15 min',
+    path: '/games/verb-conjugation-ladder'
+  },
+  { 
+    id: 'word-guesser', 
+    name: 'Word Guesser', 
+    description: 'Guess words from clues and context in this engaging challenge',
+    icon: <Target className="text-red-500" size={20} />,
+    category: 'vocabulary',
+    difficulty: 'intermediate',
+    timeToComplete: '5-12 min',
+    path: '/games/word-guesser'
+  },
+  { 
+    id: 'sentence-towers', 
+    name: 'Sentence Towers', 
+    description: 'Build towering sentences by stacking words in the correct order',
+    icon: <Castle className="text-amber-500" size={20} />,
+    category: 'grammar',
+    difficulty: 'intermediate',
+    timeToComplete: '6-12 min',
+    path: '/games/sentence-towers'
+  },
+  { 
+    id: 'noughts-and-crosses', 
+    name: 'Tic-Tac-Toe Vocabulary', 
+    description: 'Win tic-tac-toe by answering vocabulary questions correctly',
+    icon: <Grid3X3 className="text-green-500" size={20} />,
+    category: 'vocabulary',
+    difficulty: 'beginner',
+    timeToComplete: '3-8 min',
+    path: '/games/noughts-and-crosses'
+  },
+  { 
+    id: 'sentence-builder', 
+    name: 'Sentence Builder', 
+    description: 'Construct grammatically correct sentences from word fragments',
+    icon: <Type className="text-violet-500" size={20} />,
+    category: 'grammar',
+    difficulty: 'intermediate',
+    timeToComplete: '5-10 min',
+    path: '/games/sentence-builder'
+  },
+  { 
+    id: 'word-association', 
+    name: 'Word Association', 
+    description: 'Connect related words and build vocabulary through associations',
+    icon: <RefreshCw className="text-teal-500" size={20} />,
+    category: 'vocabulary',
+    difficulty: 'intermediate',
+    timeToComplete: '4-9 min',
+    path: '/games/word-association'
+  },
+  { 
+    id: 'word-scramble', 
+    name: 'Word Scramble', 
+    description: 'Unscramble letters to form correct vocabulary words',
+    icon: <Shuffle className="text-lime-500" size={20} />,
+    category: 'vocabulary',
+    difficulty: 'beginner',
+    timeToComplete: '3-7 min',
+    path: '/games/word-scramble'
   }
 ];
 
-// Add assignment categories
-const ASSIGNMENT_CATEGORIES = [
+const GRAMMAR_ACTIVITIES = [
   {
-    id: 'games',
-    name: 'Games',
-    description: 'Interactive language learning games',
-    icon: <PlayCircle className="text-blue-500" size={24} />,
-    types: GAME_TYPES
-  },
-  {
-    id: 'grammar',
-    name: 'Grammar',
-    description: 'Grammar exercises and quizzes',
-    icon: <BookOpen className="text-purple-500" size={24} />,
-    types: [
-      {
-        id: 'sentence_builder',
-        name: 'Sentence Builder',
-        description: 'Build correct sentences from given words',
-        icon: <Building2 className="text-indigo-500" size={24} />,
-        configOptions: ['difficulty', 'timeLimit', 'hints']
-      },
-      {
-        id: 'verb_conjugation',
-        name: 'Verb Conjugation',
-        description: 'Practice verb conjugations in different tenses',
-        icon: <RefreshCw className="text-green-500" size={24} />,
-        configOptions: ['tense', 'verbs', 'difficulty']
-      },
-      {
-        id: 'grammar_quiz',
-        name: 'Grammar Quiz',
-        description: 'Multiple choice grammar questions',
-        icon: <CheckCircle className="text-amber-500" size={24} />,
-        configOptions: ['questions', 'timeLimit', 'feedback']
-      }
-    ]
-  },
-  {
-    id: 'exam_prep',
-    name: 'Exam Preparation',
-    description: 'Practice tests and exam preparation materials',
-    icon: <Award className="text-red-500" size={24} />,
-    types: [
-      {
-        id: 'practice_test',
-        name: 'Practice Test',
-        description: 'Full-length practice exam',
-        icon: <FileText className="text-red-500" size={24} />,
-        configOptions: ['duration', 'sections', 'scoring']
-      },
-      {
-        id: 'vocabulary_test',
-        name: 'Vocabulary Test',
-        description: 'Test vocabulary knowledge',
-        icon: <BookmarkIcon className="text-orange-500" size={24} />,
-        configOptions: ['wordCount', 'difficulty', 'timeLimit']
-      },
-      {
-        id: 'listening_test',
-        name: 'Listening Test',
-        description: 'Practice listening comprehension',
-        icon: <Headphones className="text-blue-500" size={24} />,
-        configOptions: ['audioClips', 'questions', 'repeats']
-      }
-    ]
-  },
-  {
-    id: 'speaking',
-    name: 'Speaking Practice',
-    description: 'Speaking and pronunciation exercises',
-    icon: <Mic className="text-green-500" size={24} />,
-    types: [
-      {
-        id: 'pronunciation',
-        name: 'Pronunciation Practice',
-        description: 'Practice pronunciation with audio feedback',
-        icon: <Volume2 className="text-teal-500" size={24} />,
-        configOptions: ['words', 'feedback', 'difficulty']
-      },
-      {
-        id: 'conversation',
-        name: 'Conversation Practice',
-        description: 'Practice conversations with AI',
-        icon: <MessageSquare className="text-purple-500" size={24} />,
-        configOptions: ['topics', 'difficulty', 'timeLimit']
-      }
-    ]
-  },
-  {
-    id: 'writing',
-    name: 'Writing',
-    description: 'Writing exercises and assignments',
-    icon: <PenTool className="text-amber-500" size={24} />,
-    types: [
-      {
-        id: 'essay',
-        name: 'Essay Writing',
-        description: 'Write essays on given topics',
-        icon: <FileEdit className="text-blue-500" size={24} />,
-        configOptions: ['topics', 'wordLimit', 'timeLimit']
-      },
-      {
-        id: 'creative_writing',
-        name: 'Creative Writing',
-        description: 'Creative writing prompts and exercises',
-        icon: <Feather className="text-purple-500" size={24} />,
-        configOptions: ['prompts', 'style', 'wordLimit']
-      }
-    ]
+    id: 'verb_conjugation_drill',
+    name: 'Verb Conjugation Drill',
+    description: 'Practice verb conjugations in different tenses',
+    icon: <RefreshCw className="text-green-500" size={20} />,
+    category: 'grammar',
+    difficulty: 'intermediate',
+    timeToComplete: '10-15 min',
+    path: undefined
   }
 ];
+
+const EXAM_PREP_ACTIVITIES = [
+  {
+    id: 'gcse_vocabulary_review',
+    name: 'GCSE Vocabulary Review',
+    description: 'Review essential GCSE vocabulary with targeted practice',
+    icon: <Award className="text-gold-500" size={20} />,
+    category: 'exam_prep',
+    difficulty: 'advanced',
+    timeToComplete: '15-25 min',
+    path: undefined
+  }
+];
+
+interface SelectedActivity {
+  id: string;
+  name: string;
+  description: string;
+  icon: any;
+  category: string;
+  difficulty: string;
+  timeToComplete: string;
+  path?: string;
+}
 
 export default function NewAssignmentPage() {
   const { user } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [classes, setClasses] = useState<any[]>([]);
-  const [wordlists, setWordlists] = useState<any[]>([]);
+  const [vocabularyLists, setVocabularyLists] = useState<any[]>([]);
   const [error, setError] = useState('');
-  const [selectedGameType, setSelectedGameType] = useState<string | null>(null);
+  const [success, setSuccess] = useState('');
   
-  const supabase = createClientComponentClient<Database>();
-  
+  // Form state
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    type: 'game',
-    category: 'games',
-    game_type: '',
     assigned_to: '',
     due_date: '',
-    status: 'draft',
-    points: '10',
-    time_limit: '15',
-    vocabulary_list_id: '',
-    game_config: {
-      ghostMode: false,
-      survivalMode: false,
-      powerUps: false,
-      towerFalling: false,
-      challengeWords: false,
-      freezePenalty: false,
-      progressiveDifficulty: false,
-      trickWords: false,
-      lives: 3,
-      hintMode: false,
-      difficultyLevel: 'medium',
-      sentences: []
-    }
+    status: 'active',
+    points: 10,
+    time_limit: 30
   });
 
+  // Vocabulary assignment state
+  const [vocabularySelection, setVocabularySelection] = useState({
+    type: 'theme_based' as 'theme_based' | 'topic_based' | 'custom_list' | 'difficulty_based',
+    theme: '',
+    topic: '',
+    customListId: '',
+    difficulty: 'beginner',
+    wordCount: 20
+  });
+
+  // Activity selection state
+  const [selectedActivities, setSelectedActivities] = useState<SelectedActivity[]>([]);
+  const [activeTab, setActiveTab] = useState<'games' | 'grammar' | 'exam_prep'>('games');
+
   useEffect(() => {
-    // In a real implementation, we would fetch classes from the database
-    const sampleClasses = [
-      { id: '1', name: 'Spanish 101', level: 'Beginner' },
-      { id: '2', name: 'Spanish 201', level: 'Intermediate' },
-      { id: '3', name: 'Japanese Beginners', level: 'Beginner' },
-      { id: '4', name: 'German 301', level: 'Advanced' },
-    ];
-    
-    const sampleWordlists = [
-      { id: '1', name: 'Basic Spanish Vocabulary', word_count: 50 },
-      { id: '2', name: 'Food and Dining', word_count: 30 },
-      { id: '3', name: 'Travel Phrases', word_count: 25 },
-      { id: '4', name: 'Common Verbs', word_count: 40 },
-    ];
-    
-    setClasses(sampleClasses);
-    setWordlists(sampleWordlists);
-    setLoading(false);
-  }, [user]);
+    if (user) {
+      fetchData();
+      
+      // Check for pre-selected game from URL params
+      const gameParam = searchParams?.get('game');
+      if (gameParam === '3') { // Speed Builder
+        const speedBuilder = AVAILABLE_GAMES.find(g => g.id === 'speed-builder');
+        if (speedBuilder) {
+          setSelectedActivities([speedBuilder]);
+        }
+      }
+    } else if (!user && loading) {
+      setLoading(false);
+      setError('Please log in to create assignments');
+    }
+  }, [user, loading, searchParams]);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const supabase = createBrowserClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+
+      // Fetch classes with better error handling
+      const { data: classesData, error: classesError } = await supabase
+        .from('classes')
+        .select('*')
+        .eq('teacher_id', user!.id)
+        .order('name');
+
+      if (classesError) {
+        console.error('Classes fetch error:', classesError);
+        throw new Error(`Failed to load classes: ${classesError.message}`);
+      }
+
+      setClasses(classesData || []);
+
+      // Fetch vocabulary assignment lists
+      const { data: vocabularyData, error: vocabularyError } = await supabase
+        .from('vocabulary_assignment_lists')
+        .select('*')
+        .eq('teacher_id', user!.id)
+        .order('name');
+
+      if (vocabularyError) {
+        console.error('Vocabulary lists fetch error:', vocabularyError);
+        // Don't throw error for vocabulary lists as they're optional
+      }
+
+      setVocabularyLists(vocabularyData || []);
+    } catch (err) {
+      console.error('Error fetching data:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load data. Please refresh the page.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    
-    if (name === 'game_type') {
-      setSelectedGameType(value);
-    }
-    
     setFormData(prev => ({ ...prev, [name]: value }));
   };
-  
-  const handleConfigChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value, type } = e.target;
-    const checked = (e.target as HTMLInputElement).checked;
-    
-    setFormData(prev => ({
-      ...prev,
-      game_config: {
-        ...prev.game_config,
-        [name]: type === 'checkbox' ? checked : value
-      }
-    }));
+
+  const handleVocabularyChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setVocabularySelection(prev => ({ ...prev, [name]: value }));
+  };
+
+  const addActivity = (activity: SelectedActivity) => {
+    if (!selectedActivities.find(a => a.id === activity.id)) {
+      setSelectedActivities(prev => [...prev, activity]);
+    }
+  };
+
+  const removeActivity = (activityId: string) => {
+    setSelectedActivities(prev => prev.filter(a => a.id !== activityId));
+  };
+
+  const getDifficultyColor = (difficulty: string) => {
+    switch (difficulty) {
+      case 'beginner': return 'text-green-600 bg-green-50 border-green-200';
+      case 'intermediate': return 'text-amber-600 bg-amber-50 border-amber-200';
+      case 'advanced': return 'text-red-600 bg-red-50 border-red-200';
+      default: return 'text-gray-600 bg-gray-50 border-gray-200';
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitting(true);
-    setError('');
-    
+    if (!user) return;
+
+    if (selectedActivities.length === 0) {
+      setError('Please select at least one activity for the assignment');
+      return;
+    }
+
     try {
-      // Validate form
-      if (!formData.title.trim()) {
-        throw new Error('Title is required');
+      setSubmitting(true);
+      setError('');
+      setSuccess('');
+
+      const results = [];
+      
+      for (const activity of selectedActivities) {
+        const assignmentData = {
+          title: selectedActivities.length === 1 
+            ? formData.title || activity.name
+            : `${formData.title || 'Assignment'}: ${activity.name}`,
+          description: formData.description,
+          gameType: activity.id,
+          classId: formData.assigned_to,
+          dueDate: formData.due_date,
+          timeLimit: formData.time_limit,
+          points: formData.points,
+          vocabularySelection: vocabularySelection
+        };
+
+        const response = await fetch('/api/assignments/create', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(assignmentData)
+        });
+
+        const result = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(result.error || 'Failed to create assignment');
+        }
+        
+        results.push(result);
       }
+
+      setSuccess(`Successfully created ${results.length} assignment${results.length > 1 ? 's' : ''}!`);
       
-      if (!formData.assigned_to) {
-        throw new Error('Please select a class');
-      }
-      
-      if (!formData.due_date) {
-        throw new Error('Due date is required');
-      }
-      
-      if (!formData.game_type) {
-        throw new Error('Please select a game type');
-      }
-      
-      // In a real implementation, we would save to the database
-      // const { data, error } = await supabase
-      //   .from('assignments')
-      //   .insert([{ 
-      //     title: formData.title,
-      //     description: formData.description,
-      //     teacher_id: user?.id,
-      //     class_id: formData.assigned_to,
-      //     game_type: formData.game_type,
-      //     due_date: formData.due_date,
-      //     status: formData.status,
-      //     points: parseInt(formData.points),
-      //     time_limit: parseInt(formData.time_limit),
-      //     vocabulary_list_id: formData.vocabulary_list_id || null,
-      //     game_config: formData.game_config
-      //   }])
-      //   .select();
-      
-      // if (error) throw error;
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Redirect to assignments page
-      router.push('/dashboard/assignments');
-    } catch (err: any) {
-      setError(err.message || 'Failed to create assignment');
+      setTimeout(() => {
+        router.push('/dashboard/assignments');
+      }, 2000);
+
+    } catch (err) {
+      console.error('Error creating assignment:', err);
+      setError(err instanceof Error ? err.message : 'Failed to create assignment');
+    } finally {
       setSubmitting(false);
     }
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+        <div className="container mx-auto px-6 py-8">
+          <div className="flex items-center justify-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+          </div>
+        </div>
       </div>
     );
   }
 
+  const getCurrentActivities = () => {
+    switch (activeTab) {
+      case 'games': return AVAILABLE_GAMES;
+      case 'grammar': return GRAMMAR_ACTIVITIES;
+      case 'exam_prep': return EXAM_PREP_ACTIVITIES;
+      default: return AVAILABLE_GAMES;
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-teal-50 via-teal-100 to-rose-100 p-6">
-      <div className="max-w-4xl mx-auto">
-        <header className="mb-8 flex items-center">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+      <div className="container mx-auto px-6 py-8">
+        <div className="flex items-center justify-between mb-8">
           <Link 
             href="/dashboard/assignments" 
-            className="mr-4 p-2 rounded-full hover:bg-white/20 transition-colors"
+            className="flex items-center text-indigo-600 hover:text-indigo-700 transition-colors"
           >
-            <ArrowLeft className="text-teal-700" size={24} />
+            <ArrowLeft size={20} className="mr-2" />
+            Back to Assignments
           </Link>
-          <div>
-            <h1 className="text-3xl font-bold text-teal-800 mb-2">Create New Assignment</h1>
-            <p className="text-teal-600">Set up an assignment for your students</p>
-          </div>
-        </header>
+        </div>
 
-        <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-gray-900 mb-4">Create New Assignment</h1>
+            <p className="text-lg text-gray-600">
+              Build engaging assignments by selecting activities and vocabulary for your students
+            </p>
+          </div>
+
           {error && (
-            <div className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
               {error}
             </div>
           )}
           
-          <form onSubmit={handleSubmit}>
-            <div className="grid grid-cols-1 gap-6">
-              <div>
-                <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
-                  Assignment Title*
-                </label>
-                <input
-                  type="text"
-                  id="title"
-                  name="title"
-                  value={formData.title}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                  placeholder="e.g. French Food Vocabulary Quiz"
-                  required
-                />
-              </div>
-              
-              <div>
-                <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-                  Description
-                </label>
-                <textarea
-                  id="description"
-                  name="description"
-                  value={formData.description}
-                  onChange={handleChange}
-                  rows={3}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                  placeholder="Describe what students need to do"
-                />
-              </div>
-              
-              {/* Assignment Category Selection */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-3">
-                  Assignment Category*
-                </label>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {ASSIGNMENT_CATEGORIES.map((category) => (
-                    <div 
-                      key={category.id}
-                      onClick={() => {
-                        setFormData(prev => ({ 
-                          ...prev, 
-                          category: category.id,
-                          type: category.id === 'games' ? 'game' : 'assignment'
-                        }));
-                      }}
-                      className={`p-4 border rounded-lg cursor-pointer transition-all ${
-                        formData.category === category.id 
-                          ? 'border-teal-500 bg-teal-50 ring-2 ring-teal-500' 
-                          : 'border-gray-200 hover:border-teal-300 hover:bg-teal-50/30'
-                      }`}
-                    >
-                      <div className="flex items-center mb-2">
-                        {category.icon}
-                        <h3 className="ml-2 font-medium">{category.name}</h3>
-                      </div>
-                      <p className="text-sm text-gray-600">{category.description}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              
-              {/* Assignment Type Selection - shown only when a category is selected */}
-              {formData.category && (
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-3">
-                    {formData.category === 'games' ? 'Game Type*' : 'Assignment Type*'}
-                  </label>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {ASSIGNMENT_CATEGORIES.find(c => c.id === formData.category)?.types.map((type) => (
-                      <div 
-                        key={type.id}
-                        onClick={() => {
-                          setFormData(prev => ({ ...prev, game_type: type.id }));
-                        }}
-                        className={`p-4 border rounded-lg cursor-pointer transition-all ${
-                          formData.game_type === type.id 
-                            ? 'border-teal-500 bg-teal-50 ring-2 ring-teal-500' 
-                            : 'border-gray-200 hover:border-teal-300 hover:bg-teal-50/30'
-                        }`}
-                      >
-                        <div className="flex items-center mb-2">
-                          {type.icon}
-                          <h3 className="ml-2 font-medium">{type.name}</h3>
-                        </div>
-                        <p className="text-sm text-gray-600">{type.description}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-              
-              {/* Game Configuration Options - shown only when a game type is selected */}
-              {selectedGameType && (
-                <div className="border rounded-lg p-4 bg-teal-50/50">
-                  <div className="flex justify-between mb-3">
-                    <h3 className="font-medium text-teal-800">Game Configuration</h3>
-                    <Link
-                      href={`/games/${selectedGameType.replace('_', '-')}`}
-                      target="_blank"
-                      className="text-teal-600 hover:text-teal-800 flex items-center text-sm"
-                    >
-                      <PlayCircle size={16} className="mr-1" />
-                      Try this game
-                    </Link>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Vocabulary List Selection */}
-                    {GAME_TYPES.find(g => g.id === selectedGameType)?.configOptions.includes('vocabulary') && (
-                      <div>
-                        <label htmlFor="vocabulary_list_id" className="block text-sm font-medium text-gray-700 mb-1">
-                          Vocabulary List
-                        </label>
-                        <select
-                          id="vocabulary_list_id"
-                          name="vocabulary_list_id"
-                          value={formData.vocabulary_list_id}
-                          onChange={handleChange}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                        >
-                          <option value="">Select a vocabulary list</option>
-                          {wordlists.map(list => (
-                            <option key={list.id} value={list.id}>
-                              {list.name} ({list.word_count} words)
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    )}
-                    
-                    {/* Boolean Options */}
-                    {selectedGameType === 'speed_builder' && (
-                      <div className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          id="ghostMode"
-                          name="ghostMode"
-                          checked={formData.game_config.ghostMode}
-                          onChange={handleConfigChange}
-                          className="w-4 h-4 text-teal-600 border-gray-300 rounded focus:ring-teal-500"
-                        />
-                        <label htmlFor="ghostMode" className="text-sm text-gray-700">
-                          Enable Ghost Mode (sentence disappears)
-                        </label>
-                      </div>
-                    )}
-                    
-                    {selectedGameType === 'word_blast' && (
-                      <>
-                        <div className="flex items-center space-x-2">
-                          <input
-                            type="checkbox"
-                            id="survivalMode"
-                            name="survivalMode"
-                            checked={formData.game_config.survivalMode}
-                            onChange={handleConfigChange}
-                            className="w-4 h-4 text-teal-600 border-gray-300 rounded focus:ring-teal-500"
-                          />
-                          <label htmlFor="survivalMode" className="text-sm text-gray-700">
-                            Enable Survival Mode
-                          </label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <input
-                            type="checkbox"
-                            id="powerUps"
-                            name="powerUps"
-                            checked={formData.game_config.powerUps}
-                            onChange={handleConfigChange}
-                            className="w-4 h-4 text-teal-600 border-gray-300 rounded focus:ring-teal-500"
-                          />
-                          <label htmlFor="powerUps" className="text-sm text-gray-700">
-                            Enable Power-Ups
-                          </label>
-                        </div>
-                      </>
-                    )}
-                    
-                    {selectedGameType === 'sentence_towers' && (
-                      <div className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          id="towerFalling"
-                          name="towerFalling"
-                          checked={formData.game_config.towerFalling}
-                          onChange={handleConfigChange}
-                          className="w-4 h-4 text-teal-600 border-gray-300 rounded focus:ring-teal-500"
-                        />
-                        <label htmlFor="towerFalling" className="text-sm text-gray-700">
-                          Enable Tower Falling on Mistakes
-                        </label>
-                      </div>
-                    )}
-                    
-                    {selectedGameType === 'translation_tycoon' && (
-                      <div className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          id="challengeWords"
-                          name="challengeWords"
-                          checked={formData.game_config.challengeWords}
-                          onChange={handleConfigChange}
-                          className="w-4 h-4 text-teal-600 border-gray-300 rounded focus:ring-teal-500"
-                        />
-                        <label htmlFor="challengeWords" className="text-sm text-gray-700">
-                          Include Challenge Words (Bonus Points)
-                        </label>
-                      </div>
-                    )}
-                    
-                    {selectedGameType === 'balloon_pop' && (
-                      <>
-                        <div className="flex items-center space-x-2">
-                          <input
-                            type="checkbox"
-                            id="freezePenalty"
-                            name="freezePenalty"
-                            checked={formData.game_config.freezePenalty}
-                            onChange={handleConfigChange}
-                            className="w-4 h-4 text-teal-600 border-gray-300 rounded focus:ring-teal-500"
-                          />
-                          <label htmlFor="freezePenalty" className="text-sm text-gray-700">
-                            Enable Freeze Penalty
-                          </label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <input
-                            type="checkbox"
-                            id="progressiveDifficulty"
-                            name="progressiveDifficulty"
-                            checked={formData.game_config.progressiveDifficulty}
-                            onChange={handleConfigChange}
-                            className="w-4 h-4 text-teal-600 border-gray-300 rounded focus:ring-teal-500"
-                          />
-                          <label htmlFor="progressiveDifficulty" className="text-sm text-gray-700">
-                            Progressive Difficulty
-                          </label>
-                        </div>
-                      </>
-                    )}
-                    
-                    {selectedGameType === 'escape_translation' && (
-                      <>
-                        <div className="flex items-center space-x-2">
-                          <input
-                            type="checkbox"
-                            id="trickWords"
-                            name="trickWords"
-                            checked={formData.game_config.trickWords}
-                            onChange={handleConfigChange}
-                            className="w-4 h-4 text-teal-600 border-gray-300 rounded focus:ring-teal-500"
-                          />
-                          <label htmlFor="trickWords" className="text-sm text-gray-700">
-                            Include Trick Words (Extra Challenge)
-                          </label>
-                        </div>
-                        <div>
-                          <label htmlFor="lives" className="block text-sm font-medium text-gray-700 mb-1">
-                            Number of Lives
-                          </label>
-                          <input
-                            type="number"
-                            id="lives"
-                            name="lives"
-                            value={formData.game_config.lives}
-                            onChange={handleConfigChange}
-                            min="1"
-                            max="5"
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                          />
-                        </div>
-                      </>
-                    )}
-                    
-                    {selectedGameType === 'hangman' && (
-                      <>
-                        <div className="flex items-center space-x-2">
-                          <input
-                            type="checkbox"
-                            id="hintMode"
-                            name="hintMode"
-                            checked={formData.game_config.hintMode}
-                            onChange={handleConfigChange}
-                            className="w-4 h-4 text-teal-600 border-gray-300 rounded focus:ring-teal-500"
-                          />
-                          <label htmlFor="hintMode" className="text-sm text-gray-700">
-                            Enable Hints
-                          </label>
-                        </div>
-                        <div>
-                          <label htmlFor="difficultyLevel" className="block text-sm font-medium text-gray-700 mb-1">
-                            Difficulty Level
-                          </label>
-                          <select
-                            id="difficultyLevel"
-                            name="difficultyLevel"
-                            value={formData.game_config.difficultyLevel}
-                            onChange={handleConfigChange}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                          >
-                            <option value="easy">Easy</option>
-                            <option value="medium">Medium</option>
-                            <option value="hard">Hard</option>
-                          </select>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </div>
-              )}
+          {success && (
+            <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg text-green-700">
+              {success}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-8">
+            <div className="bg-white rounded-xl shadow-lg p-6 border border-indigo-100">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                <FileText className="mr-2 text-indigo-600" size={24} />
+                Assignment Details
+              </h2>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label htmlFor="assigned_to" className="block text-sm font-medium text-gray-700 mb-1">
-                    Assign to Class*
+                  <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
+                    Assignment Title
                   </label>
-                  <div className="relative">
-                    <select
-                      id="assigned_to"
-                      name="assigned_to"
-                      value={formData.assigned_to}
-                      onChange={handleChange}
-                      className="w-full appearance-none px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                      required
-                    >
-                      <option value="">Select a class</option>
-                      {classes.map(cls => (
-                        <option key={cls.id} value={cls.id}>{cls.name}</option>
-                      ))}
-                    </select>
-                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                      <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                        <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
-                      </svg>
-                    </div>
-                  </div>
+                  <input
+                    type="text"
+                    id="title"
+                    name="title"
+                    value={formData.title}
+                    onChange={handleChange}
+                    placeholder="e.g., Week 3 Vocabulary Practice"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                  />
                 </div>
                 
                 <div>
-                  <label htmlFor="due_date" className="block text-sm font-medium text-gray-700 mb-1">
-                    Due Date*
+                  <label htmlFor="assigned_to" className="block text-sm font-medium text-gray-700 mb-2">
+                    Assign to Class *
                   </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Calendar size={16} className="text-gray-400" />
-                    </div>
-                    <input
-                      type="date"
-                      id="due_date"
-                      name="due_date"
-                      value={formData.due_date}
-                      onChange={handleChange}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                      required
-                    />
-                  </div>
+                  <select
+                    id="assigned_to"
+                    name="assigned_to"
+                    value={formData.assigned_to}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                    required
+                  >
+                    <option value="">Select a class</option>
+                    {classes.map(cls => (
+                      <option key={cls.id} value={cls.id}>{cls.name}</option>
+                    ))}
+                  </select>
+                  {classes.length === 0 && (
+                    <p className="text-sm text-gray-500 mt-1">
+                      No classes found. Create a class first before creating assignments.
+                    </p>
+                  )}
                 </div>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div>
-                  <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
-                    Status
+                
+                <div className="md:col-span-2">
+                  <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
+                    Description (Optional)
                   </label>
-                  <div className="relative">
-                    <select
-                      id="status"
-                      name="status"
-                      value={formData.status}
-                      onChange={handleChange}
-                      className="w-full appearance-none px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                    >
-                      <option value="draft">Draft - Save for later</option>
-                      <option value="active">Active - Assign immediately</option>
-                      <option value="scheduled">Scheduled - Assign on specific date</option>
-                    </select>
-                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                      <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                        <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
-                      </svg>
-                    </div>
-                  </div>
+                  <textarea
+                    id="description"
+                    name="description"
+                    value={formData.description}
+                    onChange={handleChange}
+                    rows={3}
+                    placeholder="Add instructions or context for this assignment..."
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors resize-none"
+                  />
                 </div>
                 
                 <div>
-                  <label htmlFor="points" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="due_date" className="block text-sm font-medium text-gray-700 mb-2">
+                    Due Date *
+                  </label>
+                  <input
+                    type="date"
+                    id="due_date"
+                    name="due_date"
+                    value={formData.due_date}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label htmlFor="points" className="block text-sm font-medium text-gray-700 mb-2">
                     Points
                   </label>
                   <input
@@ -747,51 +515,280 @@ export default function NewAssignmentPage() {
                     name="points"
                     value={formData.points}
                     onChange={handleChange}
-                    min="0"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                    min="1"
+                    max="100"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
                   />
                 </div>
-                
+              </div>
+            </div>
+
+            {/* Vocabulary Assignment Configuration */}
+            <div className="bg-white rounded-xl shadow-lg p-6 border border-indigo-100">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                <BookOpen className="mr-2 text-indigo-600" size={24} />
+                Vocabulary Assignment
+              </h2>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label htmlFor="time_limit" className="block text-sm font-medium text-gray-700 mb-1">
-                    Time Limit (minutes)
+                  <label htmlFor="vocabularyType" className="block text-sm font-medium text-gray-700 mb-2">
+                    Vocabulary Selection Method
                   </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Clock size={16} className="text-gray-400" />
-                    </div>
-                    <input
-                      type="number"
-                      id="time_limit"
-                      name="time_limit"
-                      value={formData.time_limit}
-                      onChange={handleChange}
-                      min="0"
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                    />
+                  <select
+                    id="vocabularyType"
+                    name="type"
+                    value={vocabularySelection.type}
+                    onChange={handleVocabularyChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                  >
+                    <option value="theme_based">Theme-based Selection</option>
+                    <option value="topic_based">Topic-based Selection</option>
+                    <option value="custom_list">Custom Vocabulary List</option>
+                    <option value="difficulty_based">Difficulty-based Selection</option>
+                  </select>
+                </div>
+
+                {vocabularySelection.type === 'theme_based' && (
+                  <div>
+                    <label htmlFor="theme" className="block text-sm font-medium text-gray-700 mb-2">
+                      Theme
+                    </label>
+                    <select
+                      id="theme"
+                      name="theme"
+                      value={vocabularySelection.theme}
+                      onChange={handleVocabularyChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                    >
+                      <option value="">Select a theme</option>
+                      <option value="family">Family & Relationships</option>
+                      <option value="food">Food & Drink</option>
+                      <option value="travel">Travel & Transportation</option>
+                      <option value="school">School & Education</option>
+                      <option value="hobbies">Hobbies & Interests</option>
+                    </select>
                   </div>
+                )}
+
+                {vocabularySelection.type === 'custom_list' && (
+                  <div>
+                    <label htmlFor="customListId" className="block text-sm font-medium text-gray-700 mb-2">
+                      Custom List
+                    </label>
+                    <select
+                      id="customListId"
+                      name="customListId"
+                      value={vocabularySelection.customListId}
+                      onChange={handleVocabularyChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                    >
+                      <option value="">Select a custom list</option>
+                      {vocabularyLists.map(list => (
+                        <option key={list.id} value={list.id}>{list.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {vocabularySelection.type === 'difficulty_based' && (
+                  <div>
+                    <label htmlFor="difficulty" className="block text-sm font-medium text-gray-700 mb-2">
+                      Difficulty Level
+                    </label>
+                    <select
+                      id="difficulty"
+                      name="difficulty"
+                      value={vocabularySelection.difficulty}
+                      onChange={handleVocabularyChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                    >
+                      <option value="beginner">Beginner</option>
+                      <option value="intermediate">Intermediate</option>
+                      <option value="advanced">Advanced</option>
+                    </select>
+                  </div>
+                )}
+
+                <div>
+                  <label htmlFor="wordCount" className="block text-sm font-medium text-gray-700 mb-2">
+                    Number of Words
+                  </label>
+                  <input
+                    type="number"
+                    id="wordCount"
+                    name="wordCount"
+                    value={vocabularySelection.wordCount}
+                    onChange={handleVocabularyChange}
+                    min="5"
+                    max="50"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                  />
                 </div>
               </div>
+            </div>
+
+            {selectedActivities.length > 0 && (
+              <div className="bg-white rounded-xl shadow-lg p-6 border border-indigo-100">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <CheckCircle className="mr-2 text-green-600" size={20} />
+                  Selected Activities ({selectedActivities.length})
+                </h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {selectedActivities.map((activity) => (
+                    <div key={activity.id} className="flex items-center justify-between p-4 bg-indigo-50 border border-indigo-200 rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        {activity.icon}
+                        <div>
+                          <h4 className="font-medium text-gray-900">{activity.name}</h4>
+                          <p className="text-sm text-gray-600">{activity.timeToComplete}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        {activity.path && (
+                          <Link
+                            href={activity.path}
+                            target="_blank"
+                            className="p-1 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-100 rounded"
+                          >
+                            <Eye size={16} />
+                          </Link>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => removeActivity(activity.id)}
+                          className="p-1 text-red-600 hover:text-red-700 hover:bg-red-100 rounded"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="bg-white rounded-xl shadow-lg p-6 border border-indigo-100">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                <Plus className="mr-2 text-indigo-600" size={20} />
+                Add Activities
+              </h3>
               
-              <div className="pt-4 flex justify-end space-x-3">
-                <Link 
-                  href="/dashboard/assignments"
-                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
-                >
-                  Cancel
-                </Link>
+              <div className="flex space-x-1 p-1 bg-gray-100 rounded-lg mb-6">
                 <button
-                  type="submit"
-                  disabled={submitting}
-                  className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  type="button"
+                  onClick={() => setActiveTab('games')}
+                  className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                    activeTab === 'games'
+                      ? 'bg-white text-indigo-600 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
                 >
-                  {submitting ? 'Creating...' : 'Create Assignment'}
+                  <Gamepad2 className="inline mr-1" size={16} />
+                  Games ({AVAILABLE_GAMES.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('grammar')}
+                  className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                    activeTab === 'grammar'
+                      ? 'bg-white text-indigo-600 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  <BookOpen className="inline mr-1" size={16} />
+                  Grammar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('exam_prep')}
+                  className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                    activeTab === 'exam_prep'
+                      ? 'bg-white text-indigo-600 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  <Award className="inline mr-1" size={16} />
+                  Exam Prep
                 </button>
               </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {getCurrentActivities().map((activity) => {
+                  const isSelected = selectedActivities.find(a => a.id === activity.id);
+                  
+                  return (
+                    <div
+                      key={activity.id}
+                      className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                        isSelected
+                          ? 'border-green-500 bg-green-50'
+                          : 'border-gray-200 hover:border-indigo-300 hover:bg-indigo-50'
+                      }`}
+                      onClick={() => isSelected ? removeActivity(activity.id) : addActivity(activity)}
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex items-center">
+                          {activity.icon}
+                          <span className={`ml-2 px-2 py-1 text-xs rounded-full border ${getDifficultyColor(activity.difficulty)}`}>
+                            {activity.difficulty}
+                          </span>
+                        </div>
+                        {isSelected && <CheckCircle className="text-green-600" size={20} />}
+                      </div>
+                      
+                      <h4 className="font-semibold text-gray-900 mb-1">{activity.name}</h4>
+                      <p className="text-sm text-gray-600 mb-2">{activity.description}</p>
+                      
+                      <div className="flex items-center justify-between text-xs text-gray-500">
+                        <span className="flex items-center">
+                          <Timer className="mr-1" size={12} />
+                          {activity.timeToComplete}
+                        </span>
+                        {activity.path && (
+                          <Link
+                            href={activity.path}
+                            target="_blank"
+                            onClick={(e) => e.stopPropagation()}
+                            className="text-indigo-600 hover:text-indigo-700 flex items-center"
+                          >
+                            <Eye className="mr-1" size={12} />
+                            Preview
+                          </Link>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-4">
+              <Link 
+                href="/dashboard/assignments"
+                className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </Link>
+              <button
+                type="submit"
+                disabled={submitting || selectedActivities.length === 0}
+                className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center"
+              >
+                {submitting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Creating...
+                  </>
+                ) : (
+                  `Create Assignment${selectedActivities.length > 1 ? 's' : ''}`
+                )}
+              </button>
             </div>
           </form>
         </div>
       </div>
     </div>
   );
-} 
+}

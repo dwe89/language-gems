@@ -20,8 +20,7 @@ import {
   ArrowUpRight,
   Sparkles
 } from 'lucide-react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import type { Database } from '../../../lib/database.types';
+import { supabaseBrowser } from '../../../components/auth/AuthProvider';import type { Database } from '../../../lib/database.types';
 
 // Type definitions
 type Student = {

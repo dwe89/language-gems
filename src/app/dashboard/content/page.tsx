@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '../../../components/auth/AuthProvider';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { supabaseBrowser } from '../../../components/auth/AuthProvider';
 import type { Database } from '../../../lib/database.types';
 import { 
   Plus, Trash2, Edit, Save, X, Search, 
@@ -46,7 +46,7 @@ export default function ContentPage() {
   const [newListIsPublic, setNewListIsPublic] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  const supabase = createClientComponentClient<Database>();
+  const supabase = supabaseBrowser;
   
   useEffect(() => {
     loadWordLists();

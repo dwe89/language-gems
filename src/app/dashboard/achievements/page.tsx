@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../../components/auth/AuthProvider';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { 
+import { supabaseBrowser } from '../../../components/auth/AuthProvider';import { 
   Trophy, Medal, Award, Star, Clock, Users, ChevronLeft, 
   TrendingUp, Target, Zap, BookOpen, Calendar
 } from 'lucide-react';

@@ -12,8 +12,25 @@ import {
   Users, User, ChevronRight, Calendar, Clock, Award,
   BookOpen, CheckCircle, Star, TrendingUp
 } from 'lucide-react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { supabaseBrowser } from '../../../components/auth/AuthProvider';
 import type { Database } from '../../../lib/database.types';
+
+// Define types for our data
+type Enrollment = {
+  student_id: string;
+  enrolled_at: string;
+  classes: {
+    id: string;
+    name: string;
+    teacher_id: string;
+  }[] | null;
+};
+
+type UserProfile = {
+  user_id: string;
+  display_name: string | null;
+  email: string;
+};
 
 export default function ProgressPage() {
   const { user } = useAuth();
@@ -27,7 +44,7 @@ export default function ProgressPage() {
   const [view, setView] = useState<'list' | 'class' | 'detailed'>('list');
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
 
-  const supabase = createClientComponentClient<Database>();
+  const supabase = supabaseBrowser;
 
   // Fetch real data from database
   useEffect(() => {
@@ -62,7 +79,7 @@ export default function ProgressPage() {
         // Get student profiles separately
         let studentsData: any[] = [];
         if (enrollmentsData && enrollmentsData.length > 0) {
-          const studentIds = enrollmentsData.map(enrollment => enrollment.student_id);
+          const studentIds = enrollmentsData.map((enrollment: Enrollment) => enrollment.student_id);
           
           const { data: userProfiles } = await supabase
             .from('user_profiles')
@@ -70,9 +87,9 @@ export default function ProgressPage() {
             .in('user_id', studentIds);
 
           // Transform the data to match our student format
-          studentsData = enrollmentsData.map(enrollment => {
-            const profile = userProfiles?.find(p => p.user_id === enrollment.student_id);
-            const classInfo = enrollment.classes[0]; // Get first class (should only be one due to inner join)
+          studentsData = enrollmentsData.map((enrollment: Enrollment) => {
+            const profile = userProfiles?.find((p: UserProfile) => p.user_id === enrollment.student_id);
+            const classInfo = enrollment.classes?.[0];
             
             return {
               id: enrollment.student_id,
@@ -169,11 +186,19 @@ export default function ProgressPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-teal-50 via-teal-100 to-rose-100 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50/30 to-purple-50/30 p-6">
       <div className="max-w-7xl mx-auto">
+        {/* Page Header */}
         <header className="mb-8">
-          <h1 className="text-3xl font-bold text-teal-800 mb-2">Progress Tracking</h1>
-          <p className="text-teal-600">Monitor your students' progress and identify areas for improvement</p>
+          <div className="flex items-center space-x-3 mb-4">
+            <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center">
+              <BarChart2 className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">Student Progress</h1>
+              <p className="text-slate-600">Monitor your students' learning journey and achievements</p>
+            </div>
+          </div>
         </header>
 
         {view === 'detailed' && selectedStudent ? (
@@ -186,23 +211,25 @@ export default function ProgressPage() {
           />
         ) : (
           <>
-            <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-                <div className="relative w-full sm:w-1/3">
-                  <input
-                    type="text"
-                    placeholder="Search students..."
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                  <Search className="absolute left-3 top-2.5 text-gray-400" size={18} />
-                </div>
-                
-                <div className="flex flex-wrap gap-3">
+            {/* Controls Panel */}
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-200/60 shadow-lg p-6 mb-8">
+              <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6">
+                {/* Search and Filter */}
+                <div className="flex flex-1 max-w-3xl gap-3 flex-wrap">
+                  <div className="relative flex-1 min-w-[250px]">
+                    <input
+                      type="text"
+                      placeholder="Search students..."
+                      className="w-full pl-11 pr-4 py-3 border border-slate-300/60 rounded-xl bg-white/80 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 shadow-sm"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                    <Search className="absolute left-4 top-3.5 text-slate-400" size={18} />
+                  </div>
+                  
                   <div className="relative">
                     <select
-                      className="pl-3 pr-8 py-2 border border-gray-300 rounded-lg appearance-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                      className="pl-4 pr-10 py-3 border border-slate-300/60 rounded-xl bg-white/80 appearance-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 shadow-sm font-medium text-slate-700 min-w-[150px]"
                       value={selectedClass}
                       onChange={(e) => setSelectedClass(e.target.value)}
                     >
@@ -211,212 +238,286 @@ export default function ProgressPage() {
                         <option key={cls.id} value={cls.id}>{cls.name}</option>
                       ))}
                     </select>
-                    <Filter className="absolute right-2 top-2.5 text-gray-400 pointer-events-none" size={16} />
+                    <Filter className="absolute right-3 top-3.5 text-slate-400 pointer-events-none" size={16} />
                   </div>
-                  
-                  <div className="flex items-center space-x-2 bg-gray-100 rounded-lg p-1">
+                </div>
+                
+                {/* View Controls */}
+                <div className="flex items-center gap-3">
+                  <div className="bg-slate-100/80 rounded-xl p-1 flex">
                     <button
-                      className={`px-3 py-1 rounded-md text-sm transition-colors ${
-                        view === 'list' ? 'bg-white text-teal-600 shadow-sm' : 'text-gray-600'
-                      }`}
                       onClick={() => setView('list')}
+                      className={`px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${
+                        view === 'list'
+                          ? 'bg-white text-indigo-600 shadow-sm'
+                          : 'text-slate-600 hover:text-slate-800'
+                      }`}
                     >
+                      <Users className="h-4 w-4 mr-2 inline" />
                       List View
                     </button>
                     <button
-                      className={`px-3 py-1 rounded-md text-sm transition-colors ${
-                        view === 'class' ? 'bg-white text-teal-600 shadow-sm' : 'text-gray-600'
-                      }`}
                       onClick={() => setView('class')}
+                      className={`px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${
+                        view === 'class'
+                          ? 'bg-white text-indigo-600 shadow-sm'
+                          : 'text-slate-600 hover:text-slate-800'
+                      }`}
                     >
+                      <BookOpen className="h-4 w-4 mr-2 inline" />
                       Class View
                     </button>
                   </div>
                 </div>
               </div>
-
-              {view === 'list' ? (
-                <div className="overflow-hidden">
-                  {sortedStudents.length === 0 ? (
-                    <div className="text-center py-12">
-                      <Users className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">No students found</h3>
-                      <p className="text-gray-500 mb-6">
-                        {students.length === 0 
-                          ? "You don't have any students enrolled yet. Add students to your classes to start tracking their progress."
-                          : "Try adjusting your search or filter criteria."
-                        }
-                      </p>
-                      {students.length === 0 && (
-                        <Link 
-                          href="/dashboard/classes"
-                          className="inline-flex items-center px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors"
-                        >
-                          <Users className="h-4 w-4 mr-2" />
-                          Manage Classes
-                        </Link>
-                      )}
-                    </div>
-                  ) : (
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            <button 
-                              className="flex items-center space-x-1 hover:text-teal-600"
-                              onClick={() => toggleSort('name')}
-                            >
-                              <span>Student</span>
-                              {sortBy === 'name' && (
-                                sortDir === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />
-                              )}
-                            </button>
-                          </th>
-                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            <button 
-                              className="flex items-center space-x-1 hover:text-teal-600"
-                              onClick={() => toggleSort('class')}
-                            >
-                              <span>Class</span>
-                              {sortBy === 'class' && (
-                                sortDir === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />
-                              )}
-                            </button>
-                          </th>
-                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            <button 
-                              className="flex items-center space-x-1 hover:text-teal-600"
-                              onClick={() => toggleSort('progress')}
-                            >
-                              <span>Overall Progress</span>
-                              {sortBy === 'progress' && (
-                                sortDir === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />
-                              )}
-                            </button>
-                          </th>
-                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Enrollment Date
-                          </th>
-                          <th scope="col" className="relative px-6 py-3">
-                            <span className="sr-only">Actions</span>
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {sortedStudents.map((student) => (
-                          <tr key={student.id} className="hover:bg-gray-50">
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="flex items-center">
-                                <div className="flex-shrink-0 h-10 w-10 bg-teal-600 rounded-full flex items-center justify-center text-white">
-                                  {student.name.charAt(0)}
-                                </div>
-                                <div className="ml-4">
-                                  <div className="font-medium text-gray-900">{student.name}</div>
-                                  <div className="text-sm text-gray-500">{student.email}</div>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                {student.class}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="flex items-center">
-                                <div className="w-full bg-gray-200 rounded-full h-2.5 mr-2 max-w-36">
-                                  <div 
-                                    className="bg-gray-400 h-2.5 rounded-full" 
-                                    style={{ width: `${student.progress.overall}%` }}
-                                  ></div>
-                                </div>
-                                <span className="text-sm font-medium text-gray-700">{student.progress.overall}%</span>
-                              </div>
-                              <div className="text-xs text-gray-500 mt-1">
-                                No progress data yet
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {student.enrolled_at ? new Date(student.enrolled_at).toLocaleDateString() : 'Unknown'}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                              <button 
-                                className="text-teal-600 hover:text-teal-900 flex items-center"
-                                onClick={() => handleViewDetails(student)}
-                              >
-                                <span className="mr-1">Details</span>
-                                <ChevronRight size={16} />
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  )}
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {classes.map(cls => {
-                    const classStudents = students.filter(s => s.classId === cls.id);
-                    return (
-                      <div key={cls.id} className="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-xl p-6 border border-blue-200">
-                        <div className="flex items-center justify-between mb-4">
-                          <h3 className="text-lg font-semibold text-gray-800">{cls.name}</h3>
-                          <div className="bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-medium">
-                            {classStudents.length} students
-                          </div>
-                        </div>
-                        
-                        <div className="mb-4">
-                          <div className="flex justify-between text-sm mb-2">
-                            <span className="text-gray-600">Class Average</span>
-                            <span className="font-medium text-gray-800">0%</span>
-                          </div>
-                          <div className="w-full bg-blue-200 rounded-full h-2">
-                            <div 
-                              className="bg-blue-600 h-2 rounded-full" 
-                              style={{ width: '0%' }}
-                            ></div>
-                          </div>
-                        </div>
-                        
-                        <div className="flex justify-between items-center text-sm">
-                          <span className="text-gray-500">
-                            {classStudents.length} Students
-                          </span>
-                          <button 
-                            className="text-teal-600 hover:text-teal-900 flex items-center"
-                            onClick={() => {
-                              setSelectedClass(cls.id);
-                              setView('list');
-                            }}
-                          >
-                            View Students <ChevronRight size={16} className="ml-1" />
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                  
-                  {classes.length === 0 && (
-                    <div className="col-span-full text-center py-12">
-                      <BookOpen className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">No classes yet</h3>
-                      <p className="text-gray-500 mb-6">Create your first class to start tracking student progress.</p>
-                      <Link 
-                        href="/dashboard/classes/new"
-                        className="inline-flex items-center px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors"
-                      >
-                        <BookOpen className="h-4 w-4 mr-2" />
-                        Create Class
-                      </Link>
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
+
+            {/* Progress Content */}
+            {view === 'list' ? (
+              <StudentListView 
+                students={sortedStudents}
+                sortBy={sortBy}
+                sortDir={sortDir}
+                onSort={toggleSort}
+                onViewDetails={handleViewDetails}
+              />
+            ) : (
+              <ClassProgressView 
+                classes={classes}
+                students={students}
+                getClassAverage={getClassAverage}
+              />
+            )}
           </>
         )}
       </div>
+    </div>
+  );
+}
+
+// Student List View Component
+function StudentListView({ 
+  students, 
+  sortBy, 
+  sortDir, 
+  onSort, 
+  onViewDetails 
+}: { 
+  students: any[], 
+  sortBy: string, 
+  sortDir: 'asc' | 'desc', 
+  onSort: (criteria: string) => void, 
+  onViewDetails: (student: any) => void 
+}) {
+  if (students.length === 0) {
+    return (
+      <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-slate-200/60 shadow-lg p-12 text-center">
+        <div className="max-w-md mx-auto">
+          <div className="w-20 h-20 mx-auto bg-gradient-to-br from-indigo-100 to-purple-100 rounded-2xl flex items-center justify-center mb-6 border border-indigo-200/50">
+            <Users className="h-10 w-10 text-indigo-500" />
+          </div>
+          <h3 className="text-xl font-bold text-slate-900 mb-3">No students found</h3>
+          <p className="text-slate-600 mb-8 leading-relaxed">
+            You don't have any students enrolled yet. Add students to your classes to start tracking their progress.
+          </p>
+          <Link 
+            href="/dashboard/classes"
+            className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl inline-flex items-center space-x-2"
+          >
+            <Users className="h-4 w-4" />
+            <span>Manage Classes</span>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-slate-200/60 shadow-lg overflow-hidden">
+      <div className="p-6 border-b border-slate-200/60">
+        <h3 className="text-lg font-bold text-slate-900">Student Progress Overview</h3>
+        <p className="text-slate-600 text-sm mt-1">{students.length} student{students.length !== 1 ? 's' : ''} found</p>
+      </div>
+      
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-slate-200/60">
+          <thead className="bg-slate-50/50">
+            <tr>
+              <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                <button 
+                  className="flex items-center space-x-1 hover:text-indigo-600 transition-colors"
+                  onClick={() => onSort('name')}
+                >
+                  <span>Student</span>
+                  {sortBy === 'name' && (
+                    sortDir === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />
+                  )}
+                </button>
+              </th>
+              <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                <button 
+                  className="flex items-center space-x-1 hover:text-indigo-600 transition-colors"
+                  onClick={() => onSort('class')}
+                >
+                  <span>Class</span>
+                  {sortBy === 'class' && (
+                    sortDir === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />
+                  )}
+                </button>
+              </th>
+              <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                <button 
+                  className="flex items-center space-x-1 hover:text-indigo-600 transition-colors"
+                  onClick={() => onSort('progress')}
+                >
+                  <span>Overall Progress</span>
+                  {sortBy === 'progress' && (
+                    sortDir === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />
+                  )}
+                </button>
+              </th>
+              <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                Enrolled
+              </th>
+              <th scope="col" className="relative px-6 py-4">
+                <span className="sr-only">Actions</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-slate-200/60">
+            {students.map((student) => (
+              <tr key={student.id} className="hover:bg-slate-50/50 transition-colors">
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="flex items-center">
+                    <div className="flex-shrink-0 h-10 w-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center text-white font-semibold">
+                      {student.name.charAt(0)}
+                    </div>
+                    <div className="ml-4">
+                      <div className="font-semibold text-slate-900">{student.name}</div>
+                      <div className="text-sm text-slate-500">{student.email}</div>
+                    </div>
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-700 border border-indigo-200">
+                    {student.class}
+                  </span>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="flex items-center">
+                    <div className="w-full bg-slate-200 rounded-full h-2.5 mr-3 max-w-32">
+                      <div 
+                        className="bg-gradient-to-r from-indigo-500 to-purple-600 h-2.5 rounded-full transition-all duration-300" 
+                        style={{ width: `${student.progress.overall}%` }}
+                      ></div>
+                    </div>
+                    <span className="text-sm font-semibold text-slate-700 min-w-[35px]">{student.progress.overall}%</span>
+                  </div>
+                  <div className="text-xs text-slate-400 mt-1">
+                    No progress data yet
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                  {student.enrolled_at ? new Date(student.enrolled_at).toLocaleDateString() : 'Unknown'}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <button 
+                    className="text-indigo-600 hover:text-indigo-900 flex items-center font-semibold transition-colors"
+                    onClick={() => onViewDetails(student)}
+                  >
+                    <span className="mr-1">Details</span>
+                    <ChevronRight size={16} />
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// Class Progress View Component
+function ClassProgressView({ 
+  classes, 
+  students, 
+  getClassAverage 
+}: { 
+  classes: any[], 
+  students: any[], 
+  getClassAverage: (classId: string) => number 
+}) {
+  if (classes.length === 0) {
+    return (
+      <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-slate-200/60 shadow-lg p-12 text-center">
+        <div className="max-w-md mx-auto">
+          <div className="w-20 h-20 mx-auto bg-gradient-to-br from-indigo-100 to-purple-100 rounded-2xl flex items-center justify-center mb-6 border border-indigo-200/50">
+            <BookOpen className="h-10 w-10 text-indigo-500" />
+          </div>
+          <h3 className="text-xl font-bold text-slate-900 mb-3">No classes yet</h3>
+          <p className="text-slate-600 mb-8 leading-relaxed">Create your first class to start tracking student progress.</p>
+          <Link 
+            href="/dashboard/classes"
+            className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl inline-flex items-center space-x-2"
+          >
+            <BookOpen className="h-4 w-4" />
+            <span>Create Class</span>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+      {classes.map(cls => {
+        const classStudents = students.filter(s => s.classId === cls.id);
+        const average = getClassAverage(cls.id);
+        
+        return (
+          <div key={cls.id} className="bg-white/90 backdrop-blur-sm rounded-2xl border border-slate-200/60 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group">
+            <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-6 text-white">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-xl font-bold">{cls.name}</h3>
+                <div className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-semibold">
+                  {classStudents.length} students
+                </div>
+              </div>
+              <p className="text-indigo-100 text-sm">{cls.description || 'No description available'}</p>
+            </div>
+            
+            <div className="p-6">
+              <div className="mb-6">
+                <div className="flex justify-between text-sm mb-2">
+                  <span className="text-slate-600 font-medium">Class Average</span>
+                  <span className="font-bold text-slate-900">{average}%</span>
+                </div>
+                <div className="w-full bg-slate-200 rounded-full h-3">
+                  <div 
+                    className="bg-gradient-to-r from-indigo-500 to-purple-600 h-3 rounded-full transition-all duration-500" 
+                    style={{ width: `${average}%` }}
+                  ></div>
+                </div>
+              </div>
+              
+              <div className="flex justify-between items-center">
+                <div className="text-sm text-slate-500">
+                  <div className="flex items-center space-x-1">
+                    <Users className="h-4 w-4" />
+                    <span>{classStudents.length} students enrolled</span>
+                  </div>
+                </div>
+                <button 
+                  className="text-indigo-600 hover:text-indigo-900 flex items-center font-semibold text-sm transition-colors group-hover:text-purple-600"
+                >
+                  View Details <ChevronRight size={16} className="ml-1 group-hover:translate-x-1 transition-transform" />
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -429,69 +530,98 @@ function StudentDetailView({
   onBack: () => void 
 }) {
   return (
-    <div className="bg-white rounded-xl shadow-lg p-6">
-      <div className="flex items-center justify-between mb-6">
-        <button 
-          onClick={onBack}
-          className="flex items-center text-teal-600 hover:text-teal-800"
-        >
-          <ChevronRight size={20} className="rotate-180 mr-1" />
-          Back to Progress
-        </button>
-        <h2 className="text-2xl font-bold text-gray-800">{student.name}</h2>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-slate-200/60 shadow-lg p-6">
+        <div className="flex items-center justify-between">
+          <button 
+            onClick={onBack}
+            className="flex items-center text-indigo-600 hover:text-indigo-800 font-semibold transition-colors"
+          >
+            <ChevronRight size={20} className="rotate-180 mr-2" />
+            Back to Progress
+          </button>
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-slate-900">{student.name}</h2>
+            <p className="text-slate-600">{student.class}</p>
+          </div>
+          <div className="w-24"></div>
+        </div>
       </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        <div className="bg-gray-50 rounded-xl p-5">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-            <Award className="mr-2 text-teal-600" size={20} />
+
+      {/* Student Information */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-slate-200/60 shadow-lg p-6">
+          <h3 className="text-lg font-bold text-slate-900 mb-6 flex items-center">
+            <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center mr-3">
+              <User className="h-4 w-4 text-white" />
+            </div>
             Student Information
           </h3>
           
-          <div className="space-y-3">
-            <div className="flex justify-between">
-              <span className="text-gray-600">Email:</span>
-              <span className="font-medium">{student.email}</span>
+          <div className="space-y-4">
+            <div className="flex justify-between items-center py-3 border-b border-slate-100">
+              <span className="text-slate-600 font-medium">Email:</span>
+              <span className="font-semibold text-slate-900">{student.email}</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600">Class:</span>
-              <span className="font-medium">{student.class}</span>
+            <div className="flex justify-between items-center py-3 border-b border-slate-100">
+              <span className="text-slate-600 font-medium">Class:</span>
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-indigo-100 text-indigo-700 border border-indigo-200">
+                {student.class}
+              </span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600">Enrolled:</span>
-              <span className="font-medium">
+            <div className="flex justify-between items-center py-3">
+              <span className="text-slate-600 font-medium">Enrolled:</span>
+              <span className="font-semibold text-slate-900">
                 {student.enrolled_at ? new Date(student.enrolled_at).toLocaleDateString() : 'Unknown'}
               </span>
             </div>
           </div>
         </div>
         
-        <div className="bg-gray-50 rounded-xl p-5">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-            <BarChart2 className="mr-2 text-teal-600" size={20} />
+        <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-slate-200/60 shadow-lg p-6">
+          <h3 className="text-lg font-bold text-slate-900 mb-6 flex items-center">
+            <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center mr-3">
+              <BarChart2 className="h-4 w-4 text-white" />
+            </div>
             Progress Status
           </h3>
           
           <div className="text-center">
-            <div className="text-2xl font-bold text-gray-800 mb-2">0%</div>
-            <div className="text-gray-500 mb-4">Overall Progress</div>
-            <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+            <div className="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-2">
+              {student.progress.overall}%
+            </div>
+            <div className="text-slate-600 mb-4 font-medium">Overall Progress</div>
+            <div className="w-full bg-slate-200 rounded-full h-3 mb-4">
+              <div 
+                className="bg-gradient-to-r from-indigo-500 to-purple-600 h-3 rounded-full transition-all duration-500" 
+                style={{ width: `${student.progress.overall}%` }}
+              ></div>
+            </div>
+            <div className="bg-amber-100 text-amber-800 px-4 py-2 rounded-xl text-sm font-semibold border border-amber-200">
               No assignments completed yet
             </div>
           </div>
         </div>
       </div>
       
-      <div className="bg-gray-50 rounded-xl p-5">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-          <Clock className="mr-2 text-teal-600" size={20} />
+      {/* Recent Activity */}
+      <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-slate-200/60 shadow-lg p-6">
+        <h3 className="text-lg font-bold text-slate-900 mb-6 flex items-center">
+          <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center mr-3">
+            <Clock className="h-4 w-4 text-white" />
+          </div>
           Recent Activity
         </h3>
         
-        <div className="text-center py-8">
-          <Clock className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-          <p className="text-gray-500">No activity data available</p>
-          <p className="text-sm text-gray-400 mt-1">Activities will appear here once the student starts completing assignments</p>
+        <div className="text-center py-12">
+          <div className="w-20 h-20 mx-auto bg-gradient-to-br from-slate-100 to-slate-200 rounded-2xl flex items-center justify-center mb-6 border border-slate-200">
+            <Clock className="h-10 w-10 text-slate-400" />
+          </div>
+          <h4 className="text-lg font-semibold text-slate-900 mb-2">No activity data available</h4>
+          <p className="text-slate-600 leading-relaxed max-w-md mx-auto">
+            Activities will appear here once the student starts completing assignments and participating in games.
+          </p>
         </div>
       </div>
     </div>

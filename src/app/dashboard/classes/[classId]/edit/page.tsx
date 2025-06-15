@@ -6,8 +6,7 @@ export const fetchCache = 'force-no-store';
 
 import React, { useState, useEffect, use } from 'react';
 import { useAuth } from '../../../../../components/auth/AuthProvider';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import Link from 'next/link';
+import { supabaseBrowser } from '../../../components/auth/AuthProvider';import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { 
   ArrowLeft, Save, Loader2

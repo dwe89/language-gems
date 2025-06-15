@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../../../components/auth/AuthProvider';
-import { createBrowserClient } from '@supabase/ssr';
+import { supabaseBrowser } from '../../../../components/auth/AuthProvider';
 import { Upload, Download, CheckCircle, AlertCircle, FileText, Eye, Loader2 } from 'lucide-react';
 
 interface VocabularyItem {
@@ -24,10 +24,7 @@ export default function VocabularyImportPage() {
   const [importResults, setImportResults] = useState<{ success: number; errors: string[] } | null>(null);
   const [error, setError] = useState<string | null>(null);
   
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
-  );
+  const supabase = supabaseBrowser;
 
   useEffect(() => {
     setMounted(true);
@@ -366,7 +363,4 @@ export default function VocabularyImportPage() {
       </div>
     </div>
   );
-}
-
-// Force client-side rendering to avoid build issues with Supabase
-export const dynamic = 'force-dynamic'; 
+} 
