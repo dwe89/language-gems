@@ -11,7 +11,7 @@ import Link from 'next/link';
 import { 
   ArrowLeft, Users, Calendar, Clock, Book, Settings, 
   Download, Upload, UserPlus, Mail, Pencil, Trash2, 
-  CheckCircle, ChevronRight
+  CheckCircle, ChevronRight, FileText
 } from 'lucide-react';
 import { Button } from "../../../../components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../../components/ui/tabs";
@@ -19,7 +19,9 @@ import { Card, CardContent } from "../../../../components/ui/card";
 import { StudentCard } from "../../../../components/classes/StudentCard";
 import { AssignmentCard } from "../../../../components/classes/AssignmentCard";
 import { BulkAddStudentsModal } from "../../../../components/classes/BulkAddStudentsModal";
+import { downloadStudentCredentialsPDF, type StudentCredential } from "../../../../lib/pdf-utils";
 import { use } from 'react';
+import { AddStudentModal } from "../../../../components/classes/AddStudentModal";
 
 // Define types for our data
 type ClassData = {
@@ -66,6 +68,8 @@ export default function ClassDetailPage({ params }: { params: Promise<{ classId:
   const [students, setStudents] = useState<Student[]>([]);
   const [wordLists, setWordLists] = useState<WordList[]>([]);
   const [showBulkAddModal, setShowBulkAddModal] = useState(false);
+  const [showAddStudentModal, setShowAddStudentModal] = useState(false);
+  const [downloadingPDF, setDownloadingPDF] = useState(false);
   
   useEffect(() => {
     async function fetchClassData() {
@@ -73,9 +77,10 @@ export default function ClassDetailPage({ params }: { params: Promise<{ classId:
       
       try {
         setLoading(true);
+        const supabase = supabaseBrowser;
         
         // Fetch actual class data
-        const { data: classDataResult, error: classError } = await supabaseBrowser
+        const { data: classDataResult, error: classError } = await supabase
           .from('classes')
           .select('*')
           .eq('id', classId)
@@ -96,7 +101,7 @@ export default function ClassDetailPage({ params }: { params: Promise<{ classId:
         setClassData(classDataResult);
         
         // Fetch students in the class
-        const { data: enrollments, error: studentsError } = await supabaseBrowser
+        const { data: enrollments, error: studentsError } = await supabase
           .from('class_enrollments')
           .select(`
             student_id,
@@ -111,7 +116,7 @@ export default function ClassDetailPage({ params }: { params: Promise<{ classId:
           const studentIds = enrollments.map(item => item.student_id);
           
           // Fetch user profiles for these students
-          const { data: userProfiles, error: profilesError } = await supabaseBrowser
+          const { data: userProfiles, error: profilesError } = await supabase
             .from('user_profiles')
             .select('user_id, display_name, username')
             .in('user_id', studentIds);
@@ -142,7 +147,7 @@ export default function ClassDetailPage({ params }: { params: Promise<{ classId:
         }
         
         // Fetch word lists/assignments (simplified for now)
-        const { data: assignments, error: assignmentsError } = await supabaseBrowser
+        const { data: assignments, error: assignmentsError } = await supabase
           .from('assignments')
           .select('*')
           .eq('class_id', classId);
@@ -190,113 +195,203 @@ export default function ClassDetailPage({ params }: { params: Promise<{ classId:
     if (diffInDays < 14) return { status: 'Away', color: 'text-yellow-400' };
     return { status: 'Inactive', color: 'text-red-400' };
   };
+
+  const downloadCredentialsPDF = async () => {
+    if (!classData || students.length === 0) return;
+    
+    setDownloadingPDF(true);
+    try {
+      const response = await fetch('/api/students/credentials', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          classId: classId
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to fetch credentials');
+      }
+
+      if (data.students.length === 0) {
+        alert('No student credentials found for this class.');
+        return;
+      }
+
+      // Download the PDF
+      downloadStudentCredentialsPDF(data.students, data.className);
+      
+    } catch (error) {
+      console.error('Error downloading PDF:', error);
+      alert('Failed to download student credentials. Please try again.');
+    } finally {
+      setDownloadingPDF(false);
+    }
+  };
+
+  const fixStudentCredentials = async () => {
+    if (!classData) return;
+    
+    setDownloadingPDF(true); // Reuse the loading state
+    try {
+      const response = await fetch('/api/students/fix-credentials', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ classId }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to fix credentials');
+      }
+
+      alert(`Successfully fixed credentials for ${data.fixed} students!`);
+      
+      // Refresh the page to show updated data
+      window.location.reload();
+      
+    } catch (error) {
+      console.error('Error fixing credentials:', error);
+      alert('Failed to fix student credentials. Please try again.');
+    } finally {
+      setDownloadingPDF(false);
+    }
+  };
   
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center h-64 space-y-4">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-cyan-500"></div>
-        <p className="text-gray-400 text-lg">Loading class data...</p>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50/30 to-purple-50/30 p-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-200/60 shadow-lg p-12 text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-500 border-t-transparent mx-auto mb-4"></div>
+            <p className="text-slate-600 font-medium">Loading class details...</p>
+          </div>
+        </div>
       </div>
     );
   }
   
   if (!classData) {
     return (
-      <div className="flex flex-col space-y-6">
-        <div className="text-center py-16 px-4 bg-gray-800/30 border border-gray-700 rounded-lg">
-          <h2 className="text-2xl font-bold text-white mb-4">Class Not Found</h2>
-          <p className="text-gray-300 mb-6 max-w-lg mx-auto">The class you're looking for doesn't exist or you don't have access to it.</p>
-          <Link 
-            href="/dashboard/classes" 
-            className="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md transition-colors"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Classes
-          </Link>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50/30 to-purple-50/30 p-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-slate-200/60 shadow-lg p-12 text-center">
+            <div className="max-w-md mx-auto">
+              <div className="w-20 h-20 mx-auto bg-gradient-to-br from-red-100 to-red-200 rounded-2xl flex items-center justify-center mb-6 border border-red-200">
+                <Users className="h-10 w-10 text-red-600" />
+              </div>
+              <h2 className="text-2xl font-bold text-slate-900 mb-3">Class Not Found</h2>
+              <p className="text-slate-600 mb-6 leading-relaxed">The class you're looking for doesn't exist or you don't have access to it.</p>
+              <Link 
+                href="/dashboard/classes" 
+                className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl font-semibold transition-all duration-200 shadow-md hover:shadow-lg"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Classes
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
     );
   }
   
   return (
-    <div className="flex flex-col space-y-6">
-      {/* Header with navigation */}
-      <div className="flex items-center text-sm text-gray-400 mb-2">
-        <Link href="/dashboard/classes" className="hover:text-gray-300">Classes</Link>
-        <ChevronRight className="h-4 w-4 mx-1" />
-        <span className="text-gray-300">{classData.name}</span>
-      </div>
-      
-      {/* Main class header */}
-      <div className="bg-gradient-to-r from-teal-900/70 to-emerald-900/70 rounded-xl border border-teal-800/50 overflow-hidden shadow-xl">
-        <div className="p-8">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-            <div className="flex-1">
-              <h1 className="text-3xl lg:text-4xl font-bold text-white tracking-tight">{classData.name}</h1>
-              {classData.description && (
-                <p className="mt-2 text-teal-100/90 text-lg max-w-2xl">{classData.description}</p>
-              )}
-              
-              <div className="flex flex-wrap items-center mt-5 gap-3">
-                <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium ${
-                  classData.level === 'beginner' ? 'bg-green-900/60 text-green-200 border border-green-800/70' :
-                  classData.level === 'intermediate' ? 'bg-yellow-900/60 text-yellow-200 border border-yellow-800/70' :
-                  'bg-red-900/60 text-red-200 border border-red-800/70'
-                }`}>
-                  <Book className="h-4 w-4 mr-1.5" />
-                  {classData.level.charAt(0).toUpperCase() + classData.level.slice(1)}
-                </span>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50/30 to-purple-50/30 p-6">
+      <div className="max-w-7xl mx-auto space-y-8">
+        {/* Breadcrumb Navigation */}
+        <nav className="flex items-center space-x-2 text-sm">
+          <Link 
+            href="/dashboard/classes" 
+            className="text-slate-600 hover:text-indigo-600 font-medium transition-colors"
+          >
+            Classes
+          </Link>
+          <ChevronRight className="h-4 w-4 text-slate-400" />
+          <span className="text-slate-900 font-semibold">{classData.name}</span>
+        </nav>
+
+        {/* Class Header */}
+        <div className="bg-gradient-to-br from-indigo-600 via-purple-600 to-purple-700 rounded-2xl shadow-xl overflow-hidden">
+          <div className="p-8 lg:p-10">
+            <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-8">
+              <div className="flex-1">
+                <h1 className="text-4xl lg:text-5xl font-bold text-white tracking-tight mb-4">
+                  {classData.name}
+                </h1>
+                {classData.description && (
+                  <p className="text-white/90 text-lg mb-6 max-w-2xl leading-relaxed">
+                    {classData.description}
+                  </p>
+                )}
                 
-                <span className="inline-flex items-center px-3 py-1.5 rounded-full bg-white/10 text-white text-sm border border-white/20">
-                  <Users className="h-4 w-4 mr-1.5" />
-                  {students.length} Student{students.length !== 1 ? 's' : ''}
-                </span>
-                
-                <span className="inline-flex items-center px-3 py-1.5 rounded-full bg-white/10 text-white text-sm border border-white/20">
-                  <Calendar className="h-4 w-4 mr-1.5" />
-                  Created {formatDate(classData.created_at)}
-                </span>
-              </div>
-            </div>
-            
-            <div className="flex flex-col gap-4">
-              <div className="bg-white/10 backdrop-blur-sm px-6 py-5 rounded-lg border border-white/20 shadow-lg">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-xs uppercase tracking-wider text-teal-200/80 font-semibold mb-1">Class Code</div>
-                    <div className="text-3xl font-bold text-white tracking-wide">{classData.code || 'No code'}</div>
-                  </div>
-                  <Link 
-                    href={`/dashboard/classes/${classId}/edit`} 
-                    className="ml-4 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white hover:text-white transition-all"
-                  >
-                    <Pencil className="h-5 w-5" />
-                  </Link>
+                <div className="flex flex-wrap items-center gap-3">
+                  <span className={`inline-flex items-center px-4 py-2 rounded-xl text-sm font-semibold backdrop-blur-sm border ${
+                    classData.level === 'beginner' ? 'bg-emerald-500/20 text-emerald-100 border-emerald-400/30' :
+                    classData.level === 'intermediate' ? 'bg-amber-500/20 text-amber-100 border-amber-400/30' :
+                    'bg-red-500/20 text-red-100 border-red-400/30'
+                  }`}>
+                    <Book className="h-4 w-4 mr-2" />
+                    {classData.level.charAt(0).toUpperCase() + classData.level.slice(1)}
+                  </span>
+                  
+                  <span className="inline-flex items-center px-4 py-2 rounded-xl bg-white/20 text-white text-sm font-semibold backdrop-blur-sm border border-white/30">
+                    <Users className="h-4 w-4 mr-2" />
+                    {students.length} Student{students.length !== 1 ? 's' : ''}
+                  </span>
+                  
+                  <span className="inline-flex items-center px-4 py-2 rounded-xl bg-white/20 text-white text-sm font-semibold backdrop-blur-sm border border-white/30">
+                    <Calendar className="h-4 w-4 mr-2" />
+                    Created {formatDate(classData.created_at)}
+                  </span>
                 </div>
               </div>
               
-              <div className="flex justify-end">
-                <Button onClick={() => setShowBulkAddModal(true)} className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-md">
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  Add Student
-                </Button>
+              <div className="lg:w-80">
+                <div className="bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20 p-6 shadow-lg">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="text-white/80 text-sm font-semibold uppercase tracking-wider">
+                      Class Code
+                    </div>
+                    <Link 
+                      href={`/dashboard/classes/${classId}/edit`} 
+                      className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all duration-200 hover:scale-105"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Link>
+                  </div>
+                  <div className="text-3xl font-bold text-white tracking-wide font-mono">
+                    {classData.code || 'No code'}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
-      
-      {/* Tabs Section */}
-      <div className="bg-slate-900/50 rounded-xl border border-slate-800/80 overflow-hidden shadow-lg">
-        <div className="border-b border-slate-800">
+
+        {/* Tabs Section */}
+        <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-slate-200/60 shadow-lg overflow-hidden">
           <Tabs defaultValue="students" className="w-full">
-            <div className="px-6 pt-4">
-              <TabsList className="w-full sm:w-auto bg-slate-800/80 border border-slate-700/50">
-                <TabsTrigger value="students" className="px-5 py-2.5 data-[state=active]:bg-indigo-700/80 data-[state=active]:text-white">
+            <div className="border-b border-slate-200/60 bg-slate-50/50 px-8 pt-6">
+              <TabsList className="bg-white/80 border border-slate-200/60 shadow-sm">
+                <TabsTrigger 
+                  value="students" 
+                  className="px-6 py-3 data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-600 data-[state=active]:to-purple-600 data-[state=active]:text-white font-semibold"
+                >
                   <Users className="h-4 w-4 mr-2" />
                   Students
                 </TabsTrigger>
-                <TabsTrigger value="assignments" className="px-5 py-2.5 data-[state=active]:bg-indigo-700/80 data-[state=active]:text-white">
+                <TabsTrigger 
+                  value="assignments" 
+                  className="px-6 py-3 data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-600 data-[state=active]:to-purple-600 data-[state=active]:text-white font-semibold"
+                >
                   <Book className="h-4 w-4 mr-2" />
                   Assignments
                 </TabsTrigger>
@@ -304,96 +399,163 @@ export default function ClassDetailPage({ params }: { params: Promise<{ classId:
             </div>
 
             <TabsContent value="students" className="m-0">
-              <div className="p-6 space-y-6">
-                <div className="flex flex-wrap justify-between items-center border-b border-slate-800 pb-4">
-                  <h2 className="text-2xl font-bold text-white">Students</h2>
-                  <div className="flex space-x-3 mt-2 sm:mt-0">
-                    <Button variant="outline" onClick={() => setShowBulkAddModal(true)} className="border-slate-700 bg-slate-800/50 hover:bg-slate-800 text-gray-300 hover:text-white">
+              <div className="p-8 space-y-8">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                  <div>
+                    <h2 className="text-2xl font-bold text-slate-900">Students</h2>
+                    <p className="text-slate-600 mt-1">Manage your class members and track their progress</p>
+                  </div>
+                  
+                  <div className="flex flex-wrap gap-3">
+                    {students.length > 0 && (
+                      <button
+                        onClick={downloadCredentialsPDF}
+                        disabled={downloadingPDF}
+                        className="inline-flex items-center px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-xl font-semibold transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50"
+                      >
+                        {downloadingPDF ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
+                            Generating...
+                          </>
+                        ) : (
+                          <>
+                            <FileText className="h-4 w-4 mr-2" />
+                            Download Credentials
+                          </>
+                        )}
+                      </button>
+                    )}
+                    
+                    <button
+                      onClick={() => setShowAddStudentModal(true)}
+                      className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl font-semibold transition-all duration-200 shadow-md hover:shadow-lg"
+                    >
+                      <UserPlus className="h-4 w-4 mr-2" />
+                      Add Student
+                    </button>
+                    
+                    <button
+                      onClick={() => setShowBulkAddModal(true)}
+                      className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl font-semibold transition-all duration-200 shadow-md hover:shadow-lg"
+                    >
                       <Users className="h-4 w-4 mr-2" />
                       Add Multiple
-                    </Button>
+                    </button>
                   </div>
                 </div>
                 
-                <div className="pt-2">
-                  {students.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                      {students.map((student) => (
-                        <StudentCard 
-                          key={student.id} 
-                          student={student} 
-                          classId={classId}
-                          onStudentDeleted={(studentId) => {
-                            setStudents(students.filter(s => s.id !== studentId));
-                          }}
-                        />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-20 px-4 bg-slate-800/30 border border-slate-700/50 rounded-lg">
-                      <Users className="h-16 w-16 mx-auto text-slate-600 mb-4" />
-                      <p className="text-slate-300 text-xl font-medium mb-2">No students added yet</p>
-                      <p className="text-slate-400 max-w-md mx-auto mb-6">Add students to your class to track their progress and assign work.</p>
-                      <Button onClick={() => setShowBulkAddModal(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white">
+                {students.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                    {students.map((student) => (
+                      <StudentCard 
+                        key={student.id} 
+                        student={student} 
+                        classId={classId}
+                        onStudentDeleted={(studentId) => {
+                          setStudents(students.filter(s => s.id !== studentId));
+                        }}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="bg-gradient-to-br from-slate-50 to-indigo-50/50 rounded-2xl border border-slate-200/60 p-12 text-center">
+                    <div className="max-w-md mx-auto">
+                      <div className="w-20 h-20 mx-auto bg-gradient-to-br from-indigo-100 to-purple-100 rounded-2xl flex items-center justify-center mb-6 border border-indigo-200/50">
+                        <Users className="h-10 w-10 text-indigo-500" />
+                      </div>
+                      <h3 className="text-xl font-bold text-slate-900 mb-3">No students yet</h3>
+                      <p className="text-slate-600 mb-8 leading-relaxed">
+                        Add students to your class to track their progress and assign vocabulary work.
+                      </p>
+                      <button
+                        onClick={() => setShowAddStudentModal(true)}
+                        className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl"
+                      >
                         <UserPlus className="h-4 w-4 mr-2" />
-                        Add First Student
-                      </Button>
+                        Add Your First Student
+                      </button>
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
             </TabsContent>
 
             <TabsContent value="assignments" className="m-0">
-              <div className="p-6 space-y-6">
-                <div className="flex flex-wrap justify-between items-center border-b border-slate-800 pb-4">
-                  <h2 className="text-2xl font-bold text-white">Assignments</h2>
-                  <Button className="mt-2 sm:mt-0 bg-indigo-600 hover:bg-indigo-700 text-white">
+              <div className="p-8 space-y-8">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                  <div>
+                    <h2 className="text-2xl font-bold text-slate-900">Assignments</h2>
+                    <p className="text-slate-600 mt-1">Create and manage vocabulary assignments for your students</p>
+                  </div>
+                  
+                  <Link
+                    href={`/dashboard/assignments/new?classId=${classId}`}
+                    className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl font-semibold transition-all duration-200 shadow-md hover:shadow-lg"
+                  >
                     <Book className="h-4 w-4 mr-2" />
                     Create Assignment
-                  </Button>
+                  </Link>
                 </div>
                 
-                <div className="pt-2">
-                  {wordLists.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                      {wordLists.map((assignment) => (
-                        <AssignmentCard 
-                          key={assignment.id} 
-                          assignment={{
-                            ...assignment,
-                            totalStudents: students.length
-                          }} 
-                        />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-20 px-4 bg-slate-800/30 border border-slate-700/50 rounded-lg">
-                      <Book className="h-16 w-16 mx-auto text-slate-600 mb-4" />
-                      <p className="text-slate-300 text-xl font-medium mb-2">No assignments created yet</p>
-                      <p className="text-slate-400 max-w-md mx-auto mb-6">Create assignments to give your students vocabulary lists to learn.</p>
-                      <Button className="bg-indigo-600 hover:bg-indigo-700 text-white">
+                {wordLists.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {wordLists.map((assignment) => (
+                      <AssignmentCard 
+                        key={assignment.id} 
+                        assignment={{
+                          ...assignment,
+                          totalStudents: students.length
+                        }} 
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="bg-gradient-to-br from-slate-50 to-indigo-50/50 rounded-2xl border border-slate-200/60 p-12 text-center">
+                    <div className="max-w-md mx-auto">
+                      <div className="w-20 h-20 mx-auto bg-gradient-to-br from-indigo-100 to-purple-100 rounded-2xl flex items-center justify-center mb-6 border border-indigo-200/50">
+                        <Book className="h-10 w-10 text-indigo-500" />
+                      </div>
+                      <h3 className="text-xl font-bold text-slate-900 mb-3">No assignments yet</h3>
+                      <p className="text-slate-600 mb-8 leading-relaxed">
+                        Create assignments to give your students vocabulary lists to learn.
+                      </p>
+                      <Link
+                        href={`/dashboard/assignments/new?classId=${classId}`}
+                        className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl"
+                      >
                         <Book className="h-4 w-4 mr-2" />
                         Create First Assignment
-                      </Button>
+                      </Link>
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
             </TabsContent>
           </Tabs>
         </div>
-      </div>
 
-      <BulkAddStudentsModal
-        isOpen={showBulkAddModal}
-        onClose={() => setShowBulkAddModal(false)}
-        classId={classId}
-        onStudentsAdded={(newStudents) => {
-          setStudents((prev) => [...prev, ...newStudents]);
-          setShowBulkAddModal(false);
-        }}
-      />
+        {/* Modals */}
+        <AddStudentModal
+          isOpen={showAddStudentModal}
+          onClose={() => setShowAddStudentModal(false)}
+          classId={classId}
+          onStudentAdded={(newStudent: Student) => {
+            setStudents((prev) => [...prev, newStudent]);
+            setShowAddStudentModal(false);
+          }}
+        />
+
+        <BulkAddStudentsModal
+          isOpen={showBulkAddModal}
+          onClose={() => setShowBulkAddModal(false)}
+          classId={classId}
+          onStudentsAdded={(newStudents) => {
+            setStudents((prev) => [...prev, ...newStudents]);
+            setShowBulkAddModal(false);
+          }}
+        />
+      </div>
     </div>
   );
 } 

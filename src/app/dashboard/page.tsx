@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../components/auth/AuthProvider';
+import TeacherNavigation from '../../components/TeacherNavigation';
 import Link from 'next/link';
 import { 
-  Search, Bell, User as UserIcon, Menu, ChevronDown, ChevronRight,
-  BookOpen, PenTool, BarChart2, Upload, Trophy, GraduationCap,
-  Users, CheckCircle, Plus, Play, Award, Book, Zap, Clock, Calendar,
-  Globe, MessageCircle, PieChart, Gamepad2, MinusCircle, PlusCircle
+  BookOpen, PenTool, BarChart2, Users, CheckCircle, Plus, Crown, Lock,
+  TrendingUp, Calendar, FileText, Award, Settings, Zap, Upload, Trophy,
+  Gamepad2, MinusCircle, GraduationCap
 } from 'lucide-react';
 import { supabaseBrowser } from '../../components/auth/AuthProvider';
 

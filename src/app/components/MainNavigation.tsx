@@ -53,14 +53,19 @@ export default function MainNavigation() {
   // Use the appropriate navigation items based on auth state
   const navItems = user ? authenticatedNavItems : publicNavItems;
 
-  // Add debug output to check authentication state
+  // Add debug output to check authentication state (only log significant changes)
   useEffect(() => {
-    console.log('Auth state in MainNavigation:', { 
+    const userState = {
       isAuthenticated: !!user, 
       userId: user?.id,
-      userMetadata: user?.user_metadata
-    });
-  }, [user]);
+      role: user?.user_metadata?.role
+    };
+    
+    // Only log if state actually changed
+    if (user !== null) {
+      console.log('Auth state changed in MainNavigation:', userState);
+    }
+  }, [user?.id, user?.user_metadata?.role]); // Only depend on specific fields that matter
 
   return (
     <header className="bg-gradient-to-r from-blue-900 via-blue-800 to-teal-700 py-3 relative z-10">

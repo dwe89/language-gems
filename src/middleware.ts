@@ -60,6 +60,7 @@ export async function middleware(req: NextRequest) {
   // Get the session with improved error handling
   let session = null;
   let user = null;
+  let userRole = null;
   
   try {
     // Try to get the user from the current session
@@ -68,6 +69,15 @@ export async function middleware(req: NextRequest) {
     if (!error && currentUser) {
       session = { user: currentUser };
       user = currentUser;
+      
+      // Fetch user role from the database
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('role')
+        .eq('user_id', currentUser.id)
+        .single();
+      
+      userRole = profile?.role || null;
       
       // Refresh the session to ensure it stays valid
       await supabase.auth.getSession();
@@ -100,6 +110,7 @@ export async function middleware(req: NextRequest) {
     console.log('Session check in middleware:', {
       isAuthenticated: !!session,
       userId: user?.id,
+      userRole,
       path
     });
   }
@@ -141,44 +152,53 @@ export async function middleware(req: NextRequest) {
   const authRoutes = ['/auth/login', '/auth/signup'];
   const isAuthRoute = authRoutes.includes(path);
 
-  // Check if student trying to access teacher routes
-  if (session && (path === '/dashboard' || path.startsWith('/dashboard/'))) {
-    const userRole = user?.user_metadata?.role;
-    
-    if (userRole === 'student') {
-      const redirectUrl = new URL('/student-dashboard', req.url);
+  // Don't redirect users who are explicitly navigating to account, shop, or cart pages
+  const nonRedirectPaths = ['/account', '/shop', '/cart', '/checkout'];
+  const shouldSkipRoleRedirects = nonRedirectPaths.some(route => path.startsWith(route));
+
+  if (!shouldSkipRoleRedirects) {
+    // Check if student trying to access teacher routes
+    if (session && (path === '/dashboard' || path.startsWith('/dashboard/'))) {
+      if (userRole === 'student') {
+        const redirectUrl = new URL('/student-dashboard', req.url);
+        return NextResponse.redirect(redirectUrl);
+      }
+    }
+
+    // Check if teacher/admin trying to access student routes
+    if (session && (path === '/student-dashboard' || path.startsWith('/student-dashboard/'))) {
+      if (userRole === 'teacher' || userRole === 'admin') {
+        const redirectUrl = new URL('/dashboard', req.url);
+        return NextResponse.redirect(redirectUrl);
+      }
+    }
+
+    // If user is authenticated on landing page, redirect based on role but default to account
+    if (session && path === '/') {
+      const redirectUrl = req.nextUrl.clone();
+      
+      if (userRole === 'student') {
+        redirectUrl.pathname = '/student-dashboard';
+      } else if (userRole === 'teacher' || userRole === 'admin') {
+        redirectUrl.pathname = '/dashboard';
+      } else {
+        // For users without a defined role, go to account page
+        redirectUrl.pathname = '/account';
+      }
+      
       return NextResponse.redirect(redirectUrl);
     }
-  }
-
-  // Check if teacher/admin trying to access student routes
-  if (session && (path === '/student-dashboard' || path.startsWith('/student-dashboard/'))) {
-    const userRole = user?.user_metadata?.role;
-    
-    if (userRole === 'teacher' || userRole === 'admin') {
-      const redirectUrl = new URL('/dashboard', req.url);
-      return NextResponse.redirect(redirectUrl);
-    }
-  }
-
-  // If user is authenticated on landing page, redirect to dashboard
-  if (session && path === '/') {
-    const userRole = user?.user_metadata?.role || 'student';
-    const redirectUrl = req.nextUrl.clone();
-    redirectUrl.pathname = userRole === 'student' ? '/student-dashboard' : '/dashboard';
-    return NextResponse.redirect(redirectUrl);
   }
 
   // If on auth routes and already logged in, redirect to dashboard
   if (isAuthRoute && session) {
     const redirectUrl = req.nextUrl.clone();
-    const userRole = user?.user_metadata?.role || 'student';
     redirectUrl.pathname = userRole === 'student' ? '/student-dashboard' : '/dashboard';
     return NextResponse.redirect(redirectUrl);
   }
 
   // Check if the route is protected and user is not authenticated
-  const protectedPaths = ['/dashboard', '/student-dashboard', '/profile', '/exercises', '/languages/learn', '/themes/explore', '/learn'];
+  const protectedPaths = ['/dashboard', '/student-dashboard', '/profile', '/exercises', '/languages/learn', '/themes/explore', '/learn', '/account', '/cart'];
   const isProtectedRoute = protectedPaths.some(route => path.startsWith(route));
 
   if (isProtectedRoute && !session) {
@@ -187,6 +207,37 @@ export async function middleware(req: NextRequest) {
     redirectUrl.pathname = '/auth/login';
     redirectUrl.searchParams.set('redirectedFrom', path);
     return NextResponse.redirect(redirectUrl);
+  }
+
+  // Check for premium routes that require subscription
+  const premiumPaths = ['/dashboard'];
+  const isPremiumRoute = premiumPaths.some(route => path.startsWith(route));
+
+  if (isPremiumRoute && session && user) {
+    try {
+      // Check user's subscription status
+      const { data: subscription } = await supabase
+        .from('subscriptions')
+        .select('status')
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+        .single();
+
+      // If no active subscription and user is not admin, redirect to upgrade page
+      if (!subscription && userRole !== 'admin') {
+        const redirectUrl = req.nextUrl.clone();
+        redirectUrl.pathname = '/account/upgrade';
+        return NextResponse.redirect(redirectUrl);
+      }
+    } catch (error) {
+      // If there's an error checking subscription, allow access for admins
+      console.warn('Error checking subscription in middleware:', error);
+      if (userRole !== 'admin') {
+        const redirectUrl = req.nextUrl.clone();
+        redirectUrl.pathname = '/account/upgrade';
+        return NextResponse.redirect(redirectUrl);
+      }
+    }
   }
 
   return supabaseResponse;
