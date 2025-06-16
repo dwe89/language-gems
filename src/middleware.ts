@@ -198,7 +198,7 @@ export async function middleware(req: NextRequest) {
   }
 
   // Check if the route is protected and user is not authenticated
-  const protectedPaths = ['/dashboard', '/student-dashboard', '/profile', '/exercises', '/languages/learn', '/themes/explore', '/learn', '/account', '/cart'];
+  const protectedPaths = ['/dashboard', '/student-dashboard', '/profile', '/exercises', '/languages/learn', '/themes/explore', '/learn', '/account', '/cart', '/admin'];
   const isProtectedRoute = protectedPaths.some(route => path.startsWith(route));
 
   if (isProtectedRoute && !session) {
@@ -207,6 +207,16 @@ export async function middleware(req: NextRequest) {
     redirectUrl.pathname = '/auth/login';
     redirectUrl.searchParams.set('redirectedFrom', path);
     return NextResponse.redirect(redirectUrl);
+  }
+
+  // Admin routes protection - only allow admin users
+  if (path.startsWith('/admin') && session) {
+    if (userRole !== 'admin') {
+      // Non-admin users trying to access admin routes - redirect to their appropriate dashboard
+      const redirectUrl = req.nextUrl.clone();
+      redirectUrl.pathname = userRole === 'student' ? '/student-dashboard' : '/account';
+      return NextResponse.redirect(redirectUrl);
+    }
   }
 
   // Check for premium routes that require subscription
@@ -258,5 +268,6 @@ export const config = {
     '/learn/:path*',
     '/auth/:path*',
     '/coming-soon/:path*',
+    '/admin/:path*',
   ],
 }; 

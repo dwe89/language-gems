@@ -292,7 +292,7 @@ export default function AdminNewProductPage() {
 
   // Redirect to login if not authenticated
   if (!user) {
-    window.location.href = '/auth/login';
+    router.push('/auth/login');
     return null;
   }
 
