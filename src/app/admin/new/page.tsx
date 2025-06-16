@@ -14,6 +14,15 @@ interface ProductForm {
   thumbnail: File | null;
   tags: string[];
   createStripeProduct: boolean;
+  // Enhanced fields
+  target_audience: string;
+  difficulty_level: string;
+  page_count: number;
+  file_size: string;
+  learning_objectives: string[];
+  table_of_contents: string[];
+  sample_content: string;
+  preview_images: File[];
 }
 
 export default function AdminNewProductPage() {
@@ -30,6 +39,15 @@ export default function AdminNewProductPage() {
     thumbnail: null,
     tags: [],
     createStripeProduct: false,
+    // Enhanced fields
+    target_audience: '',
+    difficulty_level: '',
+    page_count: 0,
+    file_size: '',
+    learning_objectives: [],
+    table_of_contents: [],
+    sample_content: '',
+    preview_images: [],
   });
   const [errors, setErrors] = useState<string[]>([]);
   const [success, setSuccess] = useState(false);
@@ -123,6 +141,65 @@ export default function AdminNewProductPage() {
       ...prev, 
       tags: prev.tags.filter(tag => tag !== tagToRemove) 
     }));
+  };
+
+  // Helper functions for enhanced fields
+  const addLearningObjective = (objective: string) => {
+    const trimmed = objective.trim();
+    if (trimmed && !formData.learning_objectives.includes(trimmed)) {
+      setFormData(prev => ({ 
+        ...prev, 
+        learning_objectives: [...prev.learning_objectives, trimmed] 
+      }));
+    }
+  };
+
+  const removeLearningObjective = (index: number) => {
+    setFormData(prev => ({ 
+      ...prev, 
+      learning_objectives: prev.learning_objectives.filter((_, i) => i !== index) 
+    }));
+  };
+
+  const addTableOfContentsItem = (item: string) => {
+    const trimmed = item.trim();
+    if (trimmed && !formData.table_of_contents.includes(trimmed)) {
+      setFormData(prev => ({ 
+        ...prev, 
+        table_of_contents: [...prev.table_of_contents, trimmed] 
+      }));
+    }
+  };
+
+  const removeTableOfContentsItem = (index: number) => {
+    setFormData(prev => ({ 
+      ...prev, 
+      table_of_contents: prev.table_of_contents.filter((_, i) => i !== index) 
+    }));
+  };
+
+  const handlePreviewImagesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length > 0) {
+      // Validate each file
+      const validFiles: File[] = [];
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+      
+      for (const file of files) {
+        if (!allowedTypes.includes(file.type)) {
+          setErrors(['Preview images must be JPG, PNG, GIF, or WebP files.']);
+          return;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+          setErrors(['Preview images must be less than 5MB each.']);
+          return;
+        }
+        validFiles.push(file);
+      }
+      
+      setFormData(prev => ({ ...prev, preview_images: validFiles }));
+      setErrors([]);
+    }
   };
 
   const uploadFile = async (file: File, folder: string = 'documents'): Promise<string> => {

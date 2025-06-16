@@ -6,6 +6,8 @@ import Link from 'next/link';
 import { supabase } from '../../../lib/supabase';
 import { ArrowLeft, Star, Download, Shield, Clock, Tag, CreditCard } from 'lucide-react';
 import { loadStripe } from '@stripe/stripe-js';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface Product {
   id: string;
@@ -16,7 +18,16 @@ interface Product {
   stripe_price_id: string;
   tags: string[];
   file_path: string;
+  thumbnail_url?: string;
   created_at: string;
+  preview_images?: string[];
+  sample_content?: string;
+  learning_objectives?: string[];
+  target_audience?: string;
+  difficulty_level?: string;
+  page_count?: number;
+  file_size?: string;
+  table_of_contents?: string[];
 }
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
@@ -147,10 +158,73 @@ export default function ProductPage() {
 
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-            {/* Product Image/Preview */}
+            {/* Product Images/Preview */}
             <div className="space-y-6">
-              <div className="bg-gradient-to-br from-indigo-100 to-purple-100 rounded-2xl p-12 flex items-center justify-center">
-                <div className="text-indigo-600 text-8xl">📚</div>
+              {/* Main Product Image */}
+              <div className="bg-gradient-to-br from-indigo-100 to-purple-100 rounded-2xl overflow-hidden">
+                {product.thumbnail_url ? (
+                  <img 
+                    src={product.thumbnail_url} 
+                    alt={product.name}
+                    className="w-full h-64 object-cover"
+                  />
+                ) : (
+                  <div className="p-12 flex items-center justify-center">
+                    <div className="text-indigo-600 text-8xl">📚</div>
+                  </div>
+                )}
+              </div>
+
+              {/* Preview Images Gallery */}
+              {product.preview_images && product.preview_images.length > 0 && (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-slate-800">Preview</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    {product.preview_images.slice(0, 4).map((image, index) => (
+                      <div key={index} className="bg-white rounded-xl p-2 shadow-lg">
+                        <img 
+                          src={image} 
+                          alt={`${product.name} preview ${index + 1}`}
+                          className="w-full h-32 object-cover rounded-lg"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  {product.preview_images.length > 4 && (
+                    <p className="text-sm text-slate-500 text-center">
+                      +{product.preview_images.length - 4} more preview images
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* File Details */}
+              <div className="bg-white rounded-xl p-4 shadow-lg">
+                <h3 className="text-lg font-semibold text-slate-800 mb-3">File Details</h3>
+                <div className="space-y-2">
+                  {product.page_count && (
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">Pages:</span>
+                      <span className="font-medium">{product.page_count}</span>
+                    </div>
+                  )}
+                  {product.file_size && (
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">File Size:</span>
+                      <span className="font-medium">{product.file_size}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Format:</span>
+                    <span className="font-medium">PDF</span>
+                  </div>
+                  {product.difficulty_level && (
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">Level:</span>
+                      <span className="font-medium">{product.difficulty_level}</span>
+                    </div>
+                  )}
+                </div>
               </div>
               
               {/* Features */}
@@ -194,11 +268,61 @@ export default function ProductPage() {
               </div>
 
               {/* Description */}
-              <div className="prose prose-slate max-w-none">
-                <p className="text-lg text-slate-600 leading-relaxed">
+              <div className="prose prose-slate max-w-none prose-lg text-slate-600">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
                   {product.description}
-                </p>
+                </ReactMarkdown>
               </div>
+
+              {/* Target Audience */}
+              {product.target_audience && (
+                <div className="bg-blue-50 rounded-xl p-6 border border-blue-200">
+                  <h3 className="text-lg font-semibold text-slate-800 mb-2">Who This Is For</h3>
+                  <p className="text-slate-600">{product.target_audience}</p>
+                </div>
+              )}
+
+              {/* Learning Objectives */}
+              {product.learning_objectives && product.learning_objectives.length > 0 && (
+                <div className="bg-green-50 rounded-xl p-6 border border-green-200">
+                  <h3 className="text-lg font-semibold text-slate-800 mb-4">Learning Objectives</h3>
+                  <ul className="space-y-2">
+                    {product.learning_objectives.map((objective, index) => (
+                      <li key={index} className="flex items-start text-slate-600">
+                        <div className="w-2 h-2 bg-green-500 rounded-full mr-3 mt-2 flex-shrink-0"></div>
+                        <span>{objective}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Table of Contents */}
+              {product.table_of_contents && product.table_of_contents.length > 0 && (
+                <div className="bg-slate-50 rounded-xl p-6 border border-slate-200">
+                  <h3 className="text-lg font-semibold text-slate-800 mb-4">What's Inside</h3>
+                  <ul className="space-y-2">
+                    {product.table_of_contents.map((item, index) => (
+                      <li key={index} className="flex items-center text-slate-600">
+                        <span className="text-indigo-600 font-medium mr-3">{index + 1}.</span>
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Sample Content */}
+              {product.sample_content && (
+                <div className="bg-yellow-50 rounded-xl p-6 border border-yellow-200">
+                  <h3 className="text-lg font-semibold text-slate-800 mb-4">Sample Content</h3>
+                  <div className="prose prose-sm text-slate-600 max-w-none">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {product.sample_content}
+                    </ReactMarkdown>
+                  </div>
+                </div>
+              )}
 
               {/* Purchase Button */}
               <div className="space-y-4">
