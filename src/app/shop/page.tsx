@@ -1,11 +1,12 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useCart } from '../../contexts/CartContext';
 import { CartSidebar } from '../../components/cart/CartSidebar';
 import { supabaseBrowser } from '../../components/auth/AuthProvider';
 import { Product } from '../../types/ecommerce';
-import { ShoppingCart, Search, Filter, Star } from 'lucide-react';
+import { ShoppingCart, Search, Filter, Star, ExternalLink } from 'lucide-react';
 
 export default function ShopPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -145,22 +146,31 @@ export default function ShopPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredProducts.map((product) => (
-              <div key={product.id} className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden">
-                {/* Product Image */}
-                <div className="h-48 bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center">
-                  <span className="text-6xl">📚</span>
-                </div>
+              <div key={product.id} className="bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden group">
+                {/* Clickable Product Image and Title */}
+                <Link href={`/product/${product.slug}`} className="block">
+                  {/* Product Image */}
+                  <div className="h-48 bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center group-hover:scale-105 transition-transform duration-200 relative">
+                    <span className="text-6xl">📚</span>
+                    <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                      <ExternalLink className="h-5 w-5 text-indigo-600" />
+                    </div>
+                  </div>
 
-                {/* Product Content */}
-                <div className="p-6">
-                  <h3 className="text-lg font-semibold text-slate-800 mb-2 line-clamp-2">
-                    {product.name}
-                  </h3>
-                  
-                  <p className="text-slate-600 text-sm mb-4 line-clamp-3">
-                    {product.description}
-                  </p>
+                  {/* Product Title and Description */}
+                  <div className="p-6 pb-2">
+                    <h3 className="text-lg font-semibold text-slate-800 mb-2 line-clamp-2 group-hover:text-indigo-600 transition-colors">
+                      {product.name}
+                    </h3>
+                    
+                    <p className="text-slate-600 text-sm mb-0 line-clamp-3">
+                      {product.description}
+                    </p>
+                  </div>
+                </Link>
 
+                {/* Non-clickable content */}
+                <div className="px-6 pb-6">
                   {/* Tags */}
                   {product.tags && product.tags.length > 0 && (
                     <div className="flex flex-wrap gap-2 mb-4">

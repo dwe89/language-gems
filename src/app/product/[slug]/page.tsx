@@ -28,10 +28,10 @@ export default function ProductPage() {
   const [purchasing, setPurchasing] = useState(false);
 
   useEffect(() => {
-    if (params.slug) {
+    if (params?.slug) {
       fetchProduct(params.slug as string);
     }
-  }, [params.slug]);
+  }, [params?.slug]);
 
   const fetchProduct = async (slug: string) => {
     try {
@@ -56,7 +56,7 @@ export default function ProductPage() {
   };
 
   const handlePurchase = async () => {
-    if (!product?.stripe_price_id) return;
+    if (!product) return;
     
     setPurchasing(true);
     
@@ -67,22 +67,33 @@ export default function ProductPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          priceId: product.stripe_price_id,
-          productId: product.id,
+          items: [{
+            product_id: product.id,
+            quantity: 1
+          }],
+          customer_email: null // Guest checkout for now
         }),
       });
 
-      const { sessionId } = await response.json();
+      if (!response.ok) {
+        throw new Error('Failed to create checkout session');
+      }
+
+      const data = await response.json();
       
-      const stripe = await stripePromise;
-      if (stripe) {
-        const { error } = await stripe.redirectToCheckout({ sessionId });
-        if (error) {
-          console.error('Error redirecting to checkout:', error);
-        }
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      // Use the checkout URL directly
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error('No checkout URL received');
       }
     } catch (error) {
       console.error('Error creating checkout session:', error);
+      alert('Failed to start checkout. Please try again.');
     } finally {
       setPurchasing(false);
     }
