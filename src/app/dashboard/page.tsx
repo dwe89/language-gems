@@ -59,7 +59,7 @@ export default function DashboardPage() {
 
 function TeacherDashboard({ username = 'Ms. Carter' }: { username?: string }) {
   const { user } = useAuth();
-  const [helpWidgetVisible, setHelpWidgetVisible] = useState(true);
+  const [helpWidgetVisible, setHelpWidgetVisible] = useState(false);
   const [stats, setStats] = useState({
     activeStudents: 0,
     activeAssignments: 0,
@@ -72,6 +72,15 @@ function TeacherDashboard({ username = 'Ms. Carter' }: { username?: string }) {
 
     async function fetchDashboardData() {
       try {
+        // First, check if the user has any classes to determine if we should show the welcome widget
+        const { data: classesData, error: classesError } = await supabaseBrowser
+          .from('classes')
+          .select('id')
+          .eq('created_by', user!.id);
+
+        // Show welcome widget only if user has no classes
+        setHelpWidgetVisible(!classesData || classesData.length === 0);
+
         // Fetch student count from class enrollments using created_by
         const { data: studentData, error: studentError } = await supabaseBrowser
           .from('class_enrollments')
