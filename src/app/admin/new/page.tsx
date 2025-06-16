@@ -301,6 +301,16 @@ export default function AdminNewProductPage() {
         setUploadProgress(45);
       }
 
+      // Upload preview images if provided
+      const previewImageUrls: string[] = [];
+      if (formData.preview_images.length > 0) {
+        for (const [index, image] of formData.preview_images.entries()) {
+          const imageUrl = await uploadFile(image, 'previews');
+          previewImageUrls.push(imageUrl);
+          setUploadProgress(45 + (index + 1) * (10 / formData.preview_images.length));
+        }
+      }
+
       // Prepare product data
       const productData = {
         name: formData.name,
@@ -308,8 +318,18 @@ export default function AdminNewProductPage() {
         description: formData.description,
         price_cents: formData.price_cents,
         file_path: fileUrl,
+        thumbnail_url: thumbnailUrl,
         tags: formData.tags,
         is_active: true,
+        // Enhanced fields
+        target_audience: formData.target_audience || null,
+        difficulty_level: formData.difficulty_level || null,
+        page_count: formData.page_count || null,
+        file_size: formData.file_size || null,
+        learning_objectives: formData.learning_objectives.length > 0 ? formData.learning_objectives : null,
+        table_of_contents: formData.table_of_contents.length > 0 ? formData.table_of_contents : null,
+        sample_content: formData.sample_content || null,
+        preview_images: previewImageUrls.length > 0 ? previewImageUrls : null,
       };
 
       setUploadProgress(60);
@@ -649,8 +669,272 @@ export default function AdminNewProductPage() {
               </div>
             </div>
 
+            {/* Enhanced Product Information */}
+            <div className="border-t pt-6">
+              <h3 className="text-lg font-medium text-slate-800 mb-4">Enhanced Product Information</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Target Audience */}
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Target Audience
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.target_audience}
+                    onChange={(e) => setFormData(prev => ({ ...prev, target_audience: e.target.value }))}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    placeholder="e.g., Intermediate Spanish learners, ages 16+"
+                    disabled={loading}
+                  />
+                </div>
+
+                {/* Difficulty Level */}
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Difficulty Level
+                  </label>
+                  <select
+                    value={formData.difficulty_level}
+                    onChange={(e) => setFormData(prev => ({ ...prev, difficulty_level: e.target.value }))}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    disabled={loading}
+                  >
+                    <option value="">Select level</option>
+                    <option value="Beginner">Beginner</option>
+                    <option value="Elementary">Elementary</option>
+                    <option value="Intermediate">Intermediate</option>
+                    <option value="Upper-Intermediate">Upper-Intermediate</option>
+                    <option value="Advanced">Advanced</option>
+                    <option value="Proficiency">Proficiency</option>
+                  </select>
+                </div>
+
+                {/* Page Count */}
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Page Count
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.page_count || ''}
+                    onChange={(e) => setFormData(prev => ({ ...prev, page_count: parseInt(e.target.value) || 0 }))}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    placeholder="e.g., 25"
+                    min="1"
+                    disabled={loading}
+                  />
+                </div>
+
+                {/* File Size */}
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    File Size
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.file_size}
+                    onChange={(e) => setFormData(prev => ({ ...prev, file_size: e.target.value }))}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    placeholder="e.g., 2.5 MB"
+                    disabled={loading}
+                  />
+                </div>
+              </div>
+
+              {/* Sample Content */}
+              <div className="mt-6">
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Sample Content
+                </label>
+                <textarea
+                  value={formData.sample_content}
+                  onChange={(e) => setFormData(prev => ({ ...prev, sample_content: e.target.value }))}
+                  rows={4}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  placeholder="Provide a sample or excerpt from the content (supports Markdown formatting)..."
+                  disabled={loading}
+                />
+                <p className="text-sm text-slate-500 mt-1">
+                  Use Markdown for formatting (e.g., **bold**, *italic*, bullet points)
+                </p>
+              </div>
+
+              {/* Learning Objectives */}
+              <div className="mt-6">
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Learning Objectives
+                </label>
+                <div className="space-y-3">
+                  <div className="flex space-x-2">
+                    <input
+                      type="text"
+                      placeholder="Add a learning objective and press Enter"
+                      className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      disabled={loading}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          const target = e.target as HTMLInputElement;
+                          addLearningObjective(target.value);
+                          target.value = '';
+                        }
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const input = document.querySelector('input[placeholder="Add a learning objective and press Enter"]') as HTMLInputElement;
+                        if (input) {
+                          addLearningObjective(input.value);
+                          input.value = '';
+                        }
+                      }}
+                      className="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 disabled:opacity-50"
+                      disabled={loading}
+                    >
+                      Add
+                    </button>
+                  </div>
+                  
+                  {formData.learning_objectives.length > 0 && (
+                    <div className="space-y-2">
+                      {formData.learning_objectives.map((objective, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200"
+                        >
+                          <span className="text-slate-800">{objective}</span>
+                          <button
+                            type="button"
+                            onClick={() => removeLearningObjective(index)}
+                            className="text-red-600 hover:text-red-800"
+                            disabled={loading}
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Table of Contents */}
+              <div className="mt-6">
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Table of Contents
+                </label>
+                <div className="space-y-3">
+                  <div className="flex space-x-2">
+                    <input
+                      type="text"
+                      placeholder="Add a section/chapter and press Enter"
+                      className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      disabled={loading}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          const target = e.target as HTMLInputElement;
+                          addTableOfContentsItem(target.value);
+                          target.value = '';
+                        }
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const input = document.querySelector('input[placeholder="Add a section/chapter and press Enter"]') as HTMLInputElement;
+                        if (input) {
+                          addTableOfContentsItem(input.value);
+                          input.value = '';
+                        }
+                      }}
+                      className="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 disabled:opacity-50"
+                      disabled={loading}
+                    >
+                      Add
+                    </button>
+                  </div>
+                  
+                  {formData.table_of_contents.length > 0 && (
+                    <div className="space-y-2">
+                      {formData.table_of_contents.map((item, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200"
+                        >
+                          <span className="text-slate-800">
+                            <span className="text-indigo-600 font-medium mr-2">{index + 1}.</span>
+                            {item}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => removeTableOfContentsItem(index)}
+                            className="text-red-600 hover:text-red-800"
+                            disabled={loading}
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Preview Images */}
+              <div className="mt-6">
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Preview Images (Optional)
+                </label>
+                <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center hover:border-slate-400 transition-colors">
+                  <input
+                    type="file"
+                    accept=".jpg,.jpeg,.png,.gif,.webp,image/jpeg,image/png,image/gif,image/webp"
+                    onChange={handlePreviewImagesChange}
+                    className="hidden"
+                    id="preview-images-upload"
+                    multiple
+                    disabled={loading}
+                  />
+                  <label htmlFor="preview-images-upload" className="cursor-pointer">
+                    <Upload className="w-8 h-8 text-slate-400 mx-auto mb-2" />
+                    <div className="text-sm text-slate-600">
+                      {formData.preview_images.length > 0 ? (
+                        <div>
+                          <p className="font-medium text-slate-800">
+                            {formData.preview_images.length} preview image{formData.preview_images.length !== 1 ? 's' : ''} selected
+                          </p>
+                          <p className="text-slate-500">
+                            Total size: {(formData.preview_images.reduce((sum, file) => sum + file.size, 0) / 1024 / 1024).toFixed(2)} MB
+                          </p>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              setFormData(prev => ({ ...prev, preview_images: [] }));
+                            }}
+                            className="text-red-600 hover:text-red-700 text-xs mt-1"
+                            disabled={loading}
+                          >
+                            Remove all
+                          </button>
+                        </div>
+                      ) : (
+                        <div>
+                          <p className="font-medium">Click to upload preview images</p>
+                          <p className="text-slate-500">Show customers what's inside your product</p>
+                          <p className="text-xs text-slate-400 mt-1">JPG, PNG, GIF, or WebP files • Max 5MB each</p>
+                        </div>
+                      )}
+                    </div>
+                  </label>
+                </div>
+              </div>
+            </div>
+
             {/* Stripe Integration */}
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 border-t pt-6">
               <input
                 type="checkbox"
                 id="create-stripe"
