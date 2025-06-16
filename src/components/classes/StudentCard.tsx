@@ -63,6 +63,7 @@ export function StudentCard({ student, classId, onStudentDeleted }: StudentProps
     setLoading(true);
     setError('');
     setPassword(null);
+    setShowPasswordDialog(true);
     
     try {
       const response = await fetch('/api/students/password', {
@@ -116,6 +117,7 @@ export function StudentCard({ student, classId, onStudentDeleted }: StudentProps
       setPassword(data.password);
       setSuccess('Password reset successfully');
       setShowPassword(true);
+      setShowPasswordDialog(true);
     } catch (err) {
       console.error('Error resetting password:', err);
       setError('Failed to reset password');
@@ -174,23 +176,28 @@ export function StudentCard({ student, classId, onStudentDeleted }: StudentProps
   
   return (
     <>
-      <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-slate-900/95 to-slate-800/95 hover:from-slate-800/95 hover:to-slate-700/95 transition-all duration-300 shadow-lg hover:shadow-xl backdrop-blur-sm">
+      <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-white via-slate-50 to-indigo-50/30 hover:from-white hover:to-indigo-50/50 transition-all duration-300 shadow-lg hover:shadow-xl backdrop-blur-sm border border-slate-200/60">
         <CardContent className="p-0">
           {/* Main card content */}
           <div className="p-6">
-            <div className="flex items-start justify-between mb-4">
+            <div className="flex items-start justify-between mb-6">
               <div className="flex items-center space-x-4">
                 <div className="relative">
-                  <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg">
-                    <UserCircle2 className="h-7 w-7 text-white" />
+                  <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-lg ring-4 ring-white/50">
+                    <UserCircle2 className="h-8 w-8 text-white" />
                   </div>
-                  <div className={`absolute -bottom-1 -right-1 h-4 w-4 rounded-full border-2 border-slate-800 ${activityStatus.color.replace('text-', 'bg-')}`}></div>
+                  <div className={`absolute -bottom-1 -right-1 h-5 w-5 rounded-full border-3 border-white shadow-sm ${
+                    activityStatus.status === 'Active' ? 'bg-emerald-500' :
+                    activityStatus.status === 'Recent' ? 'bg-teal-500' :
+                    activityStatus.status === 'Away' ? 'bg-amber-500' :
+                    'bg-red-500'
+                  }`}></div>
                 </div>
                 <div>
-                  <h3 className="font-bold text-white text-lg leading-tight">{student.name}</h3>
-                  <div className="flex items-center text-slate-400 text-sm mt-1">
-                    <User className="h-3.5 w-3.5 mr-1.5" />
-                    <span className="font-medium">@{student.username}</span>
+                  <h3 className="font-bold text-slate-900 text-xl leading-tight">{student.name}</h3>
+                  <div className="flex items-center text-slate-500 text-sm mt-1.5">
+                    <User className="h-4 w-4 mr-2" />
+                    <span className="font-medium bg-slate-100 px-2 py-1 rounded-md">@{student.username}</span>
                   </div>
                 </div>
               </div>
@@ -200,7 +207,7 @@ export function StudentCard({ student, classId, onStudentDeleted }: StudentProps
                   items={[
                     {
                       label: 'View Password',
-                      onClick: () => setShowPasswordDialog(true),
+                      onClick: fetchStudentPassword,
                       icon: <Key className="h-4 w-4" />
                     },
                     {
@@ -220,28 +227,28 @@ export function StudentCard({ student, classId, onStudentDeleted }: StudentProps
             </div>
             
             {/* Progress and stats */}
-            <div className="space-y-3">
+            <div className="space-y-4">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-slate-400 font-medium">Progress</span>
-                <span className="text-white font-bold">{student.progress}%</span>
+                <span className="text-slate-600 font-medium">Learning Progress</span>
+                <span className="text-slate-900 font-bold text-lg">{student.progress}%</span>
               </div>
-              <div className="w-full bg-slate-700/50 rounded-full h-2.5 overflow-hidden">
+              <div className="w-full bg-slate-200/80 rounded-full h-3 overflow-hidden shadow-inner">
                 <div 
-                  className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full transition-all duration-500 ease-out"
+                  className="h-full bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 rounded-full transition-all duration-700 ease-out shadow-sm"
                   style={{ width: `${student.progress}%` }}
                 ></div>
               </div>
               
-              <div className="flex items-center justify-between pt-2">
-                <div className="flex items-center text-slate-400 text-sm">
-                  <Calendar className="h-3.5 w-3.5 mr-1.5" />
+              <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+                <div className="flex items-center text-slate-500 text-sm">
+                  <Calendar className="h-4 w-4 mr-2" />
                   <span>Joined {formatDate(student.joined_date)}</span>
                 </div>
-                <div className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${
-                  activityStatus.status === 'Active' ? 'bg-emerald-900/50 text-emerald-300 border border-emerald-800/50' :
-                  activityStatus.status === 'Recent' ? 'bg-teal-900/50 text-teal-300 border border-teal-800/50' :
-                  activityStatus.status === 'Away' ? 'bg-amber-900/50 text-amber-300 border border-amber-800/50' :
-                  'bg-red-900/50 text-red-300 border border-red-800/50'
+                <div className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-bold shadow-sm ${
+                  activityStatus.status === 'Active' ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' :
+                  activityStatus.status === 'Recent' ? 'bg-teal-100 text-teal-700 border border-teal-200' :
+                  activityStatus.status === 'Away' ? 'bg-amber-100 text-amber-700 border border-amber-200' :
+                  'bg-red-100 text-red-700 border border-red-200'
                 }`}>
                   {activityStatus.status}
                 </div>
@@ -251,20 +258,20 @@ export function StudentCard({ student, classId, onStudentDeleted }: StudentProps
           
           {/* Success/Error messages */}
           {success && (
-            <div className="px-6 pb-4">
-              <div className="bg-emerald-900/50 border border-emerald-800/50 rounded-lg p-3">
+            <div className="px-6 pb-6">
+              <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
                 <div className="flex items-center">
-                  <CheckCircle className="h-4 w-4 text-emerald-400 mr-2" />
-                  <span className="text-emerald-300 text-sm font-medium">{success}</span>
+                  <CheckCircle className="h-5 w-5 text-emerald-600 mr-3" />
+                  <span className="text-emerald-800 text-sm font-medium">{success}</span>
                 </div>
               </div>
             </div>
           )}
           
           {error && (
-            <div className="px-6 pb-4">
-              <Alert className="bg-red-900/50 border-red-800/50">
-                <AlertDescription className="text-red-300 text-sm">{error}</AlertDescription>
+            <div className="px-6 pb-6">
+              <Alert className="bg-red-50 border-red-200">
+                <AlertDescription className="text-red-800 text-sm">{error}</AlertDescription>
               </Alert>
             </div>
           )}

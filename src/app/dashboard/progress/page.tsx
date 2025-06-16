@@ -15,15 +15,18 @@ import {
 import { supabaseBrowser } from '../../../components/auth/AuthProvider';
 import type { Database } from '../../../lib/database.types';
 
-// Define types for our data
+// Type definitions
+type Class = {
+  id: string;
+  name: string;
+  created_by: string;
+};
+
 type Enrollment = {
   student_id: string;
   enrolled_at: string;
-  classes: {
-    id: string;
-    name: string;
-    teacher_id: string;
-  }[] | null;
+  class_id: string;
+  classes?: Class;
 };
 
 type UserProfile = {
@@ -61,7 +64,7 @@ export default function ProgressPage() {
 
     const fetchData = async () => {
       try {
-        // Fetch teacher's classes
+        // Fetch teacher's classes first
         const { data: classesData, error: classesError } = await supabase
           .from('classes')
           .select('*')
@@ -69,27 +72,33 @@ export default function ProgressPage() {
 
         if (classesError) {
           console.error('Error fetching classes:', classesError);
+          return;
         }
 
-        // Fetch real students enrolled in this teacher's classes
+        if (!classesData || classesData.length === 0) {
+          setClasses([]);
+          setStudents([]);
+          setLoading(false);
+          return;
+        }
+
+        const classIds = classesData.map(c => c.id);
+
+        // Fetch enrollments for these classes
         const { data: enrollmentsData, error: enrollmentsError } = await supabase
           .from('class_enrollments')
-          .select(`
-            student_id,
-            enrolled_at,
-            class_id,
-            classes!inner(id, name, created_by)
-          `)
-          .eq('classes.created_by', user.id);
+          .select('student_id, enrolled_at, class_id')
+          .in('class_id', classIds);
 
         if (enrollmentsError) {
           console.error('Error fetching enrollments:', enrollmentsError);
+          return;
         }
 
         // Get student profiles separately
         let studentsData: any[] = [];
         if (enrollmentsData && enrollmentsData.length > 0) {
-          const studentIds = enrollmentsData.map((enrollment: Enrollment) => enrollment.student_id);
+          const studentIds = enrollmentsData.map(enrollment => enrollment.student_id);
           
           const { data: userProfiles } = await supabase
             .from('user_profiles')
@@ -97,9 +106,9 @@ export default function ProgressPage() {
             .in('user_id', studentIds);
 
           // Transform the data to match our student format
-          studentsData = enrollmentsData.map((enrollment: Enrollment) => {
+          studentsData = enrollmentsData.map(enrollment => {
             const profile = userProfiles?.find((p: UserProfile) => p.user_id === enrollment.student_id);
-            const classInfo = enrollment.classes?.[0];
+            const classInfo = classesData.find(c => c.id === enrollment.class_id);
             
             return {
               id: enrollment.student_id,

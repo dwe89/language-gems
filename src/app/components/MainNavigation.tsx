@@ -101,9 +101,9 @@ export default function MainNavigation() {
               <>
                 <Link
                   href="/dashboard"
-                  className="py-2 px-4 text-white hover:text-yellow-200 transition-colors flex items-center"
+                  className="py-2 px-6 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-full font-bold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center"
                 >
-                  <Settings className="mr-1 h-4 w-4" />
+                  <Settings className="mr-2 h-4 w-4" />
                   <span>Dashboard</span>
                 </Link>
                 <button
@@ -186,7 +186,7 @@ export default function MainNavigation() {
                   <>
                     <Link
                       href="/dashboard"
-                      className="block text-white hover:text-yellow-200 transition-colors mb-3"
+                      className="block py-3 px-4 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-full font-bold transition-all duration-200 shadow-lg text-center mb-3"
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       Dashboard

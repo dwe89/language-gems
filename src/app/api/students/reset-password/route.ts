@@ -1,6 +1,7 @@
 import { createClient } from '../../../../lib/supabase-server';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
+import { generatePassword } from '../../../../lib/student-credentials';
 
 export async function POST(request: Request) {
   try {
@@ -10,9 +11,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'Student ID is required' }, { status: 400 });
     }
     
-    if (!newPassword) {
-      return NextResponse.json({ success: false, error: 'New password is required' }, { status: 400 });
-    }
+    // Generate a new password if one wasn't provided
+    const passwordToUse = newPassword || generatePassword();
     
     // Create a Supabase client for authentication
     const supabase = await createClient();
@@ -66,7 +66,7 @@ export async function POST(request: Request) {
     // Update the user's password
     const { error: updateError } = await adminClient.auth.admin.updateUserById(
       studentId,
-      { password: newPassword }
+      { password: passwordToUse }
     );
     
     if (updateError) {
@@ -76,7 +76,7 @@ export async function POST(request: Request) {
     // Update the initial_password in user_profiles
     const { error: updateProfileError } = await supabase
       .from('user_profiles')
-      .update({ initial_password: newPassword })
+      .update({ initial_password: passwordToUse })
       .eq('user_id', studentId);
     
     if (updateProfileError) {
@@ -84,7 +84,10 @@ export async function POST(request: Request) {
       console.error('Failed to update initial_password in profile:', updateProfileError);
     }
     
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ 
+      success: true, 
+      password: passwordToUse 
+    });
   } catch (err) {
     console.error('API exception:', err);
     return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
