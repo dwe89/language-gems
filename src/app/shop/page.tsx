@@ -150,8 +150,16 @@ export default function ShopPage() {
                 {/* Clickable Product Image and Title */}
                 <Link href={`/product/${product.slug}`} className="block">
                   {/* Product Image */}
-                  <div className="h-48 bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center group-hover:scale-105 transition-transform duration-200 relative">
-                    <span className="text-6xl">📚</span>
+                  <div className="h-48 bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center group-hover:scale-105 transition-transform duration-200 relative overflow-hidden">
+                    {product.thumbnail_url ? (
+                      <img 
+                        src={product.thumbnail_url} 
+                        alt={product.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-6xl">📚</span>
+                    )}
                     <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                       <ExternalLink className="h-5 w-5 text-indigo-600" />
                     </div>
