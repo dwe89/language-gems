@@ -198,10 +198,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Optional warning if initialization takes a long time, but with a shorter timeout
     authTimeout.current = setTimeout(() => {
-      if (mounted) {
+      if (mounted && isInitializing.current) {
         console.warn('Authentication initialization is taking longer than expected (>3s)');
-        // NOTE: We deliberately DO NOT mutate isLoading or isInitializing here
-        // to avoid prematurely treating the user as unauthenticated.
+        // Force completion if it's been too long
+        setIsLoading(false);
+        isInitializing.current = false;
       }
     }, 3000);
 
@@ -257,7 +258,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.log('Auth state change event:', event, 'Session:', !!currentSession);
         
         try {
-          await updateAuthState(currentSession);
+          // Only process auth changes if not in initial loading state
+          if (!isInitializing.current) {
+            await updateAuthState(currentSession);
+          }
 
           // Handle cleanup for signout only
           if (event === 'SIGNED_OUT') {
@@ -265,6 +269,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             profileCache.current.clear();
             lastProfileFetch.current.clear();
             currentUserId.current = null;
+            isInitializing.current = false;
           }
         } catch (error) {
           console.error('Error in auth state change handler:', error);

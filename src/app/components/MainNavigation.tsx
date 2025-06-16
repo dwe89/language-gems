@@ -9,7 +9,8 @@ import { LogOut, User, Settings } from 'lucide-react';
 export default function MainNavigation() {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { user, signOut, refreshSession } = useAuth();
+  const [isMounted, setIsMounted] = useState(false);
+  const { user, signOut, refreshSession, isLoading } = useAuth();
   const router = useRouter();
 
   const isActive = (path: string) => {
@@ -24,14 +25,21 @@ export default function MainNavigation() {
     // Redirect handled in AuthProvider
   };
 
+  // Mount check to prevent hydration mismatch
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   // Refresh auth session when component mounts
   useEffect(() => {
-    const refreshAuth = async () => {
-      await refreshSession();
-    };
-    
-    refreshAuth();
-  }, [refreshSession]);
+    if (isMounted) {
+      const refreshAuth = async () => {
+        await refreshSession();
+      };
+      
+      refreshAuth();
+    }
+  }, [refreshSession, isMounted]);
 
   // Different navigation items based on authentication state
   const publicNavItems = [
@@ -50,8 +58,8 @@ export default function MainNavigation() {
     { name: 'Progress Tracking', path: '/dashboard/progress' },
   ];
 
-  // Use the appropriate navigation items based on auth state
-  const navItems = user ? authenticatedNavItems : publicNavItems;
+  // Use the appropriate navigation items based on auth state, but only after mounting
+  const navItems = (isMounted && user) ? authenticatedNavItems : publicNavItems;
 
   // Add debug output to check authentication state (only log significant changes)
   useEffect(() => {
@@ -72,7 +80,7 @@ export default function MainNavigation() {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between">
           <Link 
-            href={user ? "/account" : "/"} 
+            href={(isMounted && user) ? "/account" : "/"} 
             className="font-bold text-2xl text-white flex items-center"
           >
             <span className="text-3xl mr-2">💎</span>
@@ -97,7 +105,7 @@ export default function MainNavigation() {
           </nav>
 
           <div className="hidden md:flex items-center space-x-3">
-            {user ? (
+            {(isMounted && user) ? (
               <>
                 <Link
                   href="/dashboard"
@@ -182,7 +190,7 @@ export default function MainNavigation() {
                 </li>
               ))}
               <li className="pt-4 border-t border-blue-700">
-                {user ? (
+                {(isMounted && user) ? (
                   <>
                     <Link
                       href="/dashboard"
