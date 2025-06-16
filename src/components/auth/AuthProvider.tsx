@@ -105,6 +105,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           .single();
         role = profileData?.role;
       }
+
+      // Temporary admin override for specific email during testing
+      const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || "admin@languagegems.com";
+      if (currentUser.email === adminEmail) {
+        role = 'admin';
+      }
       
       // Check subscription status
       let hasSubscription = false;
@@ -132,57 +138,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Function to update auth state safely
   const updateAuthState = useCallback(async (currentSession: Session | null) => {
     try {
-      let updatedSession = currentSession;
-      
-      // If we have a session and user, fetch profile data
-      if (currentSession?.user) {
-        const userId = currentSession.user.id;
-        
-        // Only fetch profile if user ID changed or we don't have cached data
-        if (currentUserId.current !== userId || !profileCache.current.has(userId)) {
-          const profile = await fetchUserProfile(userId);
-          
-          if (profile) {
-            // Create a new session object with updated user metadata
-            updatedSession = {
-              ...currentSession,
-              user: {
-                ...currentSession.user,
-                user_metadata: {
-                  ...currentSession.user.user_metadata,
-                  role: profile.role,
-                  subscription_type: profile.subscription_type
-                }
-              }
-            };
-          }
-        }
-        
-        currentUserId.current = userId;
-      } else {
-        currentUserId.current = null;
-      }
-      
-      setSession(updatedSession);
-      setUser(updatedSession?.user || null);
-      setIsLoading(false);
+      setSession(currentSession);
+      setUser(currentSession?.user || null);
 
-      // Get complete user data
-      if (updatedSession?.user) {
-        const userData = await getUserData(updatedSession.user);
+      // Get complete user data if we have a user
+      if (currentSession?.user) {
+        const userData = await getUserData(currentSession.user);
         setUserRole(userData.role);
         setHasSubscription(userData.hasSubscription);
+        currentUserId.current = currentSession.user.id;
       } else {
         setUserRole(null);
         setHasSubscription(false);
+        currentUserId.current = null;
       }
+      
+      setIsLoading(false);
     } catch (error) {
       console.error('Error updating auth state:', error);
       setSession(currentSession);
       setUser(currentSession?.user || null);
+      setUserRole(null);
+      setHasSubscription(false);
       setIsLoading(false);
     }
-  }, [fetchUserProfile]);
+  }, []);
 
   // Function to refresh the session
   const refreshSession = useCallback(async () => {
@@ -216,18 +196,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     console.log('Starting auth initialization...');
     isInitializing.current = true;
 
-    // Optional warning if initialization takes a long time. We no longer
-    // force-fail authentication after an arbitrary timeout because that was
-    // causing false negatives (e.g. on slow connections). Instead, simply log
-    // a warning so we still allow the normal auth flow (or the
-    // onAuthStateChange callback) to complete.
+    // Optional warning if initialization takes a long time, but with a shorter timeout
     authTimeout.current = setTimeout(() => {
       if (mounted) {
-        console.warn('Authentication initialization is taking longer than expected (>8s)');
+        console.warn('Authentication initialization is taking longer than expected (>3s)');
         // NOTE: We deliberately DO NOT mutate isLoading or isInitializing here
         // to avoid prematurely treating the user as unauthenticated.
       }
-    }, 8000);
+    }, 3000);
 
     // Get the current session
     const initializeAuth = async () => {

@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useAuth, supabaseBrowser } from '../../components/auth/AuthProvider';
 import { 
   Package, 
@@ -24,7 +23,6 @@ interface DashboardStats {
 }
 
 export default function AdminDashboardPage() {
-  const router = useRouter();
   const { user, isLoading: authLoading } = useAuth();
   const [stats, setStats] = useState<DashboardStats>({
     totalProducts: 0,
@@ -133,9 +131,8 @@ export default function AdminDashboardPage() {
     );
   }
 
-  // Redirect to login if not authenticated
+  // If not authenticated, don't render anything (layout will handle it)
   if (!user) {
-    router.push('/auth/login');
     return null;
   }
 

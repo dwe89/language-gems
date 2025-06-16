@@ -166,13 +166,11 @@ export default function AdminNewProductPage() {
 
       const result = await response.json();
       return {
-        stripe_product_id: result.productId,
         stripe_price_id: result.priceId,
       };
     } catch (error) {
       console.error('Stripe product creation failed:', error);
       return {
-        stripe_product_id: null,
         stripe_price_id: null,
       };
     }
@@ -289,9 +287,8 @@ export default function AdminNewProductPage() {
     );
   }
 
-  // Redirect to login if not authenticated
+  // If not authenticated, don't render anything (layout will handle it)
   if (!user) {
-    router.push('/auth/login');
     return null;
   }
 

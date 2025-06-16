@@ -7,7 +7,6 @@ export interface Product {
   description: string | null;
   price_cents: number;
   file_path: string | null;
-  stripe_product_id: string | null;
   stripe_price_id: string | null;
   tags: string[] | null;
   is_active: boolean;

@@ -78,6 +78,12 @@ export async function middleware(req: NextRequest) {
         .single();
       
       userRole = profile?.role || null;
+
+      // Temporary admin override for specific email during testing
+      const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || "admin@languagegems.com";
+      if (currentUser.email === adminEmail) {
+        userRole = 'admin';
+      }
       
       // Refresh the session to ensure it stays valid
       await supabase.auth.getSession();

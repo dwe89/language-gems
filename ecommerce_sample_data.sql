@@ -19,4 +19,4 @@ INSERT INTO public.products (name, slug, description, price_cents, tags, is_acti
 ('Phonics & Pronunciation Guide - Multi Language', 'phonics-pronunciation-guide', 'International phonetic alphabet guide with audio examples for French, Spanish, German, and Italian pronunciation.', 1699, ARRAY['phonics', 'pronunciation', 'ipa', 'audio'], true);
 
 -- Note: file_url will be populated when files are actually uploaded
--- stripe_product_id and stripe_price_id will be populated when integrated with Stripe 
+-- file_path and stripe_price_id will be populated when integrated with Stripe 

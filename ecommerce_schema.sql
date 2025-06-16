@@ -6,13 +6,13 @@ CREATE TABLE IF NOT EXISTS public.products (
   slug TEXT UNIQUE NOT NULL,
   description TEXT,
   price_cents INTEGER NOT NULL, -- Price in pence (e.g., 1500 = £15.00)
-  file_url TEXT, -- URL to the PDF/digital file in Supabase storage
-  stripe_product_id TEXT, -- Stripe product ID for integration
+  file_path TEXT, -- Path to the PDF/digital file in Supabase storage
   stripe_price_id TEXT, -- Stripe price ID for checkout
   tags TEXT[], -- Array of tags for categorization
   is_active BOOLEAN DEFAULT true,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  thumbnail_url TEXT -- URL to the thumbnail image
 );
 
 -- Orders table for tracking purchases

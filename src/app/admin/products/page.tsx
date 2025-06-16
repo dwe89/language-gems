@@ -4,42 +4,41 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { Plus, Edit, Trash2, Save, X, Eye, EyeOff, FileText, Package } from 'lucide-react';
 
-interface Product {
+interface EditProductData {
+  name: string;
+  slug: string;
+  description: string;
+  price_cents: number;
+  stripe_price_id: string;
+  tags: string;
+  is_active: boolean;
+}
+
+interface ProductWithDetails {
   id: string;
   name: string;
   slug: string;
   description: string;
-  price_cents: number; // in pence - matching database schema
-  stripe_product_id: string;
+  price_cents: number;
   stripe_price_id: string;
-  file_path: string;
+  file_path: string | null;
+  tags: string[] | null;
   is_active: boolean;
   created_at: string;
-}
-
-interface ProductForm {
-  name: string;
-  slug: string;
-  description: string;
-  price_cents: number; // in pence - matching database schema
-  stripe_product_id: string;
-  stripe_price_id: string;
-  file_path: string;
-  is_active: boolean;
+  updated_at: string;
 }
 
 export default function AdminProductsPage() {
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<ProductWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [formData, setFormData] = useState<ProductForm>({
+  const [editingProduct, setEditingProduct] = useState<ProductWithDetails | null>(null);
+  const [editData, setEditData] = useState<EditProductData>({
     name: '',
     slug: '',
     description: '',
     price_cents: 0,
-    stripe_product_id: '',
     stripe_price_id: '',
-    file_path: '',
+    tags: '',
     is_active: true,
   });
 
@@ -68,14 +67,14 @@ export default function AdminProductsPage() {
     
     try {
       const productData = {
-        ...formData,
-        price_cents: Number(formData.price_cents),
+        ...editData,
+        price_cents: Number(editData.price_cents),
       };
 
       const { error } = await supabase
         .from('products')
         .update(productData)
-        .eq('id', editingId);
+        .eq('id', editingProduct?.id);
 
       if (error) throw error;
 
@@ -88,16 +87,15 @@ export default function AdminProductsPage() {
     }
   };
 
-  const handleEdit = (product: Product) => {
-    setEditingId(product.id);
-    setFormData({
+  const handleEdit = (product: ProductWithDetails) => {
+    setEditingProduct(product);
+    setEditData({
       name: product.name,
       slug: product.slug,
       description: product.description,
       price_cents: product.price_cents,
-      stripe_product_id: product.stripe_product_id || '',
       stripe_price_id: product.stripe_price_id || '',
-      file_path: product.file_path || '',
+      tags: product.tags ? product.tags.join(',') : '',
       is_active: product.is_active,
     });
   };
@@ -135,17 +133,16 @@ export default function AdminProductsPage() {
   };
 
   const resetForm = () => {
-    setFormData({
+    setEditData({
       name: '',
       slug: '',
       description: '',
       price_cents: 0,
-      stripe_product_id: '',
       stripe_price_id: '',
-      file_path: '',
+      tags: '',
       is_active: true,
     });
-    setEditingId(null);
+    setEditingProduct(null);
   };
 
   const formatPrice = (pricePence: number) => {
@@ -179,7 +176,7 @@ export default function AdminProductsPage() {
       </div>
 
       {/* Edit Form Modal */}
-      {editingId && (
+      {editingProduct && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
@@ -199,8 +196,8 @@ export default function AdminProductsPage() {
                 </label>
                 <input
                   type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                  value={editData.name}
+                  onChange={(e) => setEditData(prev => ({ ...prev, name: e.target.value }))}
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                   required
                 />
@@ -212,8 +209,8 @@ export default function AdminProductsPage() {
                 </label>
                 <input
                   type="text"
-                  value={formData.slug}
-                  onChange={(e) => setFormData(prev => ({ ...prev, slug: e.target.value }))}
+                  value={editData.slug}
+                  onChange={(e) => setEditData(prev => ({ ...prev, slug: e.target.value }))}
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                   required
                 />
@@ -224,8 +221,8 @@ export default function AdminProductsPage() {
                   Description
                 </label>
                 <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                  value={editData.description}
+                  onChange={(e) => setEditData(prev => ({ ...prev, description: e.target.value }))}
                   rows={4}
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 />
@@ -237,13 +234,13 @@ export default function AdminProductsPage() {
                 </label>
                 <input
                   type="number"
-                  value={formData.price_cents}
-                  onChange={(e) => setFormData(prev => ({ ...prev, price_cents: parseInt(e.target.value) || 0 }))}
+                  value={editData.price_cents}
+                  onChange={(e) => setEditData(prev => ({ ...prev, price_cents: parseInt(e.target.value) || 0 }))}
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                   required
                 />
                 <p className="text-sm text-slate-500 mt-1">
-                  Display price: {formatPrice(formData.price_cents)}
+                  Display price: {formatPrice(editData.price_cents)}
                 </p>
               </div>
 
@@ -251,8 +248,8 @@ export default function AdminProductsPage() {
                 <input
                   type="checkbox"
                   id="is_active"
-                  checked={formData.is_active}
-                  onChange={(e) => setFormData(prev => ({ ...prev, is_active: e.target.checked }))}
+                  checked={editData.is_active}
+                  onChange={(e) => setEditData(prev => ({ ...prev, is_active: e.target.checked }))}
                   className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
                 />
                 <label htmlFor="is_active" className="text-sm font-medium text-slate-700">
