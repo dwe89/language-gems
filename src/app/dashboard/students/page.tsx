@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '../../../components/auth/AuthProvider';
-import { supabase } from '../../../lib/supabase';
+import { useAuth, supabaseBrowser } from '../../../components/auth/AuthProvider';
 import Link from 'next/link';
 import { Search, UserPlus, Filter, Mail, ArrowUpDown, BookOpen, UserCheck, UserX, Download } from 'lucide-react';
 
@@ -51,7 +50,7 @@ export default function StudentsPage() {
         setLoading(true);
         
         // Fetch real students data from Supabase
-        const { data: teacherStudents, error } = await supabase
+        const { data: teacherStudents, error } = await supabaseBrowser
           .rpc('get_teacher_students', { teacher_user_id: user.id });
         
         if (error) {

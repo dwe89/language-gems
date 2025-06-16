@@ -2,8 +2,7 @@
 
 import React, { createContext, useContext, useReducer, useEffect, useState, useRef } from 'react';
 import { LocalCartItem, Product } from '../types/ecommerce';
-import { useAuth } from '../components/auth/AuthProvider';
-import { supabase } from '../lib/supabase';
+import { useAuth, supabaseBrowser } from '../components/auth/AuthProvider';
 import Toast from '../components/Toast';
 
 interface CartState {
@@ -190,7 +189,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
     try {
       // Get server cart
-      const { data: serverCart, error } = await supabase
+      const { data: serverCart, error } = await supabaseBrowser
         .from('user_carts')
         .select(`
           *,
@@ -225,7 +224,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         mergedItems.push(localItem);
         
         // Save local item to server
-        await supabase
+        await supabaseBrowser
           .from('user_carts')
           .upsert({
             user_id: user.id,

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useCart } from '../../contexts/CartContext';
 import { CartSidebar } from '../../components/cart/CartSidebar';
-import { supabase } from '../../lib/supabase';
+import { supabaseBrowser } from '../../components/auth/AuthProvider';
 import { Product } from '../../types/ecommerce';
 import { ShoppingCart, Search, Filter, Star } from 'lucide-react';
 
@@ -21,7 +21,7 @@ export default function ShopPage() {
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      const { data, error } = await supabaseBrowser
         .from('products')
         .select('*')
         .eq('is_active', true)
