@@ -50,15 +50,17 @@ export default function AdminNewProductPage() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Validate file type - support PDF and DOC files
+      // Validate file type - support PDF, DOC, and PowerPoint files
       const allowedTypes = [
         'application/pdf',
         'application/msword',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.ms-powerpoint',
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation'
       ];
       
       if (!allowedTypes.includes(file.type)) {
-        setErrors(['Please select a PDF, DOC, or DOCX file.']);
+        setErrors(['Please select a PDF, DOC, DOCX, PPT, or PPTX file.']);
         return;
       }
       
@@ -142,7 +144,7 @@ export default function AdminNewProductPage() {
     }
 
     if (!formData.file) {
-      newErrors.push('Document file (PDF, DOC, or DOCX) is required.');
+      newErrors.push('Document file (PDF, DOC, DOCX, PPT, or PPTX) is required.');
     }
 
     setErrors(newErrors);
@@ -231,7 +233,7 @@ export default function AdminNewProductPage() {
           </button>
           <div>
             <h1 className="text-3xl font-bold text-slate-800">Add New Product</h1>
-            <p className="text-slate-600 mt-2">Upload a new educational document (PDF, DOC, or DOCX) and add product information</p>
+            <p className="text-slate-600 mt-2">Upload a new educational document (PDF, DOC, DOCX, PPT, or PPTX) and add product information</p>
           </div>
         </div>
 
@@ -360,7 +362,7 @@ export default function AdminNewProductPage() {
               <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center hover:border-slate-400 transition-colors">
                 <input
                   type="file"
-                  accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                  accept=".pdf,.doc,.docx,.ppt,.pptx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation"
                   onChange={handleFileChange}
                   className="hidden"
                   id="file-upload"
@@ -379,7 +381,7 @@ export default function AdminNewProductPage() {
                     ) : (
                       <div>
                         <p className="font-medium">Click to upload document</p>
-                        <p className="text-slate-500">PDF, DOC, or DOCX files</p>
+                        <p className="text-slate-500">PDF, DOC, DOCX, PPT, or PPTX files</p>
                         <p className="text-xs text-slate-400 mt-1">Max file size: 50MB</p>
                       </div>
                     )}
