@@ -20,6 +20,8 @@ interface DashboardStats {
   activeProducts: number;
   totalRevenue: number; // This would come from orders/payments
   totalDownloads: number; // This would come from download tracking
+  totalBlogPosts: number;
+  publishedBlogPosts: number;
 }
 
 export default function AdminDashboardPage() {
@@ -29,6 +31,8 @@ export default function AdminDashboardPage() {
     activeProducts: 0,
     totalRevenue: 0,
     totalDownloads: 0,
+    totalBlogPosts: 0,
+    publishedBlogPosts: 0,
   });
   const [loading, setLoading] = useState(true);
   const [recentProducts, setRecentProducts] = useState<any[]>([]);

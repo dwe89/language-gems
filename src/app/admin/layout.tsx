@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Package, Plus, Home } from 'lucide-react';
+import { Package, Plus, Home, FileText } from 'lucide-react';
 import { useAuth, supabaseBrowser } from '../../components/auth/AuthProvider';
 
 export default function AdminLayout({
@@ -84,6 +84,13 @@ export default function AdminLayout({
                 >
                   <Package className="w-4 h-4" />
                   <span>Products</span>
+                </Link>
+                <Link 
+                  href="/admin/blog" 
+                  className="flex items-center space-x-2 text-slate-700 hover:text-indigo-600 font-medium transition-colors"
+                >
+                  <FileText className="w-4 h-4" />
+                  <span>Blog</span>
                 </Link>
                 <Link 
                   href="/admin/new" 
