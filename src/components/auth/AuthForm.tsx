@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { supabaseBrowser } from './AuthProvider';
+import { useAuth } from './AuthProvider';
 
 // This is a placeholder for the actual authentication logic that would be implemented with Supabase
 interface AuthFormProps {
@@ -19,6 +19,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [isStudentLogin, setIsStudentLogin] = useState(false);
   const router = useRouter();
+  const { signIn } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,106 +30,42 @@ export default function AuthForm({ mode }: AuthFormProps) {
       console.log(`Attempting to ${mode} with identifier: ${emailOrUsername}`);
       
       if (mode === 'login') {
-        // Use the API route instead of direct Supabase call
-        const response = await fetch('/api/auth', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            identifier: emailOrUsername, // This could be either email or username
-            password,
-            schoolCode: isStudentLogin ? schoolCode : undefined
-          }),
-        });
+        // Use the signIn method from auth context
+        const { error: signInError } = await signIn(emailOrUsername, password);
         
-        const data = await response.json();
-        
-        if (!response.ok) {
-          throw new Error(data.error || 'Login failed');
+        if (signInError) {
+          throw new Error(signInError);
         }
         
-        console.log('Login successful via API:', data);
+        console.log('Login successful, navigating to account page');
         
-        // Perform a client-side sign-in to persist the session in localStorage
-        try {
-          const emailForClient = data.user?.email || emailOrUsername;
-          const { error: clientSignInError } = await supabaseBrowser.auth.signInWithPassword({
-            email: emailForClient,
-            password,
-          });
-          if (clientSignInError) {
-            console.warn('Client-side sign-in after API login failed:', clientSignInError.message);
-          }
-        } catch (clientSignInException) {
-          console.error('Exception during client-side sign-in:', clientSignInException);
-        }
-        
-        // Redirect to dashboard with a delay to ensure cookies are set
-        setTimeout(() => {
-          window.location.href = data.redirectUrl || '/account';
-        }, 500);
+        // Use router navigation instead of window.location
+        router.push('/account');
       } else {
-        // For signup - continue using Supabase directly since we need to create a profile
-        const { data, error } = await supabaseBrowser.auth.signUp({ 
-          email: emailOrUsername, 
-          password, 
-          options: { 
-            data: { 
-              name, 
-              role: 'student' 
-            } 
-          } 
-        });
-        
-        console.log('Signup response data:', data);
-        
-        if (error) throw error;
-        
-        // Create user profile on signup
-        if (data.user) {
-          console.log('Creating user profile with ID:', data.user.id);
-          
-          const { error: profileError } = await supabaseBrowser
-            .from('user_profiles')
-            .insert({
-              user_id: data.user.id,
-              email: data.user.email || emailOrUsername,
-              role: 'student',
-              display_name: name,
-              subscription_type: 'free'
-            });
-            
-          if (profileError) {
-            console.error('Profile creation error:', profileError);
-            throw profileError;
-          }
-        }
-
-        // After signup, use the API to login immediately
-        const loginResponse = await fetch('/api/auth', {
+        // For signup - use the API route
+        const response = await fetch('/api/auth/signup', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
             email: emailOrUsername,
-            password
+            password,
+            name,
+            role: 'student'
           }),
         });
         
-        const loginData = await loginResponse.json();
+        const data = await response.json();
         
-        if (!loginResponse.ok) {
-          throw new Error(loginData.error || 'Post-signup login failed');
+        if (!response.ok) {
+          throw new Error(data.error || 'Signup failed');
         }
         
-        console.log('Post-signup login successful:', loginData);
+        console.log('Signup successful, navigating to account page');
         
-        // Redirect to dashboard with a delay to ensure cookies are set
-        setTimeout(() => {
-          window.location.href = loginData.redirectUrl || '/account';
-        }, 500);
+        // Use router navigation instead of window.location
+        router.push('/account');
       }
     } catch (err) {
       console.error('Authentication error:', err);
@@ -138,35 +75,18 @@ export default function AuthForm({ mode }: AuthFormProps) {
     }
   };
 
-  // Update teacher login function to use the API endpoint
+  // Update teacher login function to use auth context
   const loginAsTeacher = async () => {
     setLoading(true);
     try {
-      // Use the API route instead of direct Supabase call
-      const response = await fetch('/api/auth', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          role: 'teacher',
-          email: 'teacher@example.com',
-          password: 'password123'
-        }),
-      });
+      const { error: signInError } = await signIn('teacher@example.com', 'password123');
       
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.error || 'Login failed');
+      if (signInError) {
+        throw new Error(signInError);
       }
       
-      console.log('Teacher login successful via API:', data);
-      
-      // Redirect to dashboard with a delay to ensure cookies are set
-      setTimeout(() => {
-        window.location.href = data.redirectUrl || '/account';
-      }, 500);
+      console.log('Teacher login successful, navigating to account page');
+      router.push('/account');
     } catch (err) {
       console.error('Teacher login error:', err);
       setError('Failed to login as teacher. Check if this account exists in Supabase.');
@@ -175,35 +95,18 @@ export default function AuthForm({ mode }: AuthFormProps) {
     }
   };
 
-  // Update student login function to use the API endpoint
+  // Update student login function to use auth context
   const loginAsStudent = async () => {
     setLoading(true);
     try {
-      // Use the API route instead of direct Supabase call
-      const response = await fetch('/api/auth', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          role: 'student',
-          email: 'student@example.com',
-          password: 'password123'
-        }),
-      });
+      const { error: signInError } = await signIn('student@example.com', 'password123');
       
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.error || 'Login failed');
+      if (signInError) {
+        throw new Error(signInError);
       }
       
-      console.log('Student login successful via API:', data);
-      
-      // Redirect to dashboard with a delay to ensure cookies are set
-      setTimeout(() => {
-        window.location.href = data.redirectUrl || '/student-dashboard';
-      }, 500);
+      console.log('Student login successful, navigating to account page');
+      router.push('/account');
     } catch (err) {
       console.error('Student login error:', err);
       setError('Failed to login as student. Check if this account exists in Supabase.');

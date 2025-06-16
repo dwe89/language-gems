@@ -8,7 +8,7 @@ import { Order, OrderItem } from '../../../types/ecommerce';
 import { ArrowLeft, Download, Calendar, CreditCard, Package, ExternalLink } from 'lucide-react';
 
 export default function OrdersPage() {
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
   const [orders, setOrders] = useState<(Order & { order_items: (OrderItem & { product: any })[] })[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -70,6 +70,17 @@ export default function OrdersPage() {
         return 'bg-slate-100 text-slate-800';
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500 mx-auto mb-4"></div>
+          <p className="text-slate-600">Loading your orders...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!user) {
     return (

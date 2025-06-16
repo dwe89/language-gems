@@ -6,7 +6,19 @@ import { useAuth } from '../../components/auth/AuthProvider';
 import { User, ShoppingBag, Settings, CreditCard, Crown, ArrowRight } from 'lucide-react';
 
 export default function AccountPage() {
-  const { user } = useAuth();
+  const { user, isLoading, userRole, hasSubscription, isAdmin, isTeacher } = useAuth();
+
+  // Show loading state while auth is initializing
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500 mx-auto mb-4"></div>
+          <p className="text-slate-600">Loading your account...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!user) {
     return (
@@ -39,13 +51,20 @@ export default function AccountPage() {
       href: '/account/settings',
       color: 'from-slate-500 to-slate-600'
     },
-    {
+    ...(hasSubscription ? [] : [{
       title: 'Upgrade to Premium',
       description: 'Access the full dashboard and premium features',
       icon: Crown,
       href: '/account/upgrade',
       color: 'from-purple-500 to-pink-600'
-    }
+    }]),
+    ...(isTeacher ? [{
+      title: 'Teacher Dashboard',
+      description: 'Manage your classes, assignments, and student progress',
+      icon: User,
+      href: '/dashboard',
+      color: 'from-indigo-500 to-blue-600'
+    }] : [])
   ];
 
   return (
@@ -60,6 +79,19 @@ export default function AccountPage() {
             <div>
               <h1 className="text-2xl font-bold text-slate-900">Welcome back!</h1>
               <p className="text-slate-600">{user.email}</p>
+              <div className="flex items-center space-x-2 mt-2">
+                {userRole && (
+                  <span className="px-2 py-1 bg-indigo-100 text-indigo-700 text-xs rounded-full capitalize">
+                    {userRole}
+                  </span>
+                )}
+                {hasSubscription && (
+                  <span className="px-2 py-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs rounded-full flex items-center">
+                    <Crown className="h-3 w-3 mr-1" />
+                    Premium
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         </div>

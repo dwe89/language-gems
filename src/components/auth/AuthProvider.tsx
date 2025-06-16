@@ -207,18 +207,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let mounted = true;
-
-    // Prevent multiple initializations
-    if (isInitializing.current) {
+    
+    // If already initialized, don't run again
+    if (isInitializing.current === false && !isLoading) {
       return;
     }
-    
+
+    console.log('Starting auth initialization...');
     isInitializing.current = true;
 
     // Set a reasonable timeout to prevent infinite loading
     authTimeout.current = setTimeout(() => {
       if (mounted) {
-        console.warn('Authentication initialization timed out');
+        console.warn('Authentication initialization timed out after 8 seconds');
         setIsLoading(false);
         isInitializing.current = false;
       }
@@ -227,6 +228,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Get the current session
     const initializeAuth = async () => {
       try {
+        console.log('Fetching current session...');
         const { data: { session: currentSession }, error } = await supabaseBrowser.auth.getSession();
         
         if (error) {
@@ -234,18 +236,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (mounted) {
             setIsLoading(false);
             isInitializing.current = false;
+            if (authTimeout.current) {
+              clearTimeout(authTimeout.current);
+            }
           }
           return;
         }
 
+        console.log('Session fetched, updating auth state...', !!currentSession);
+
         if (mounted) {
-          // Clear the timeout *before* we await the potentially long profile fetch
+          // Clear the timeout since we're about to complete
           if (authTimeout.current) {
             clearTimeout(authTimeout.current);
           }
 
           await updateAuthState(currentSession);
           isInitializing.current = false;
+          console.log('Auth initialization completed successfully');
         }
       } catch (error) {
         console.error('Error initializing auth:', error);
@@ -271,35 +279,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
           await updateAuthState(currentSession);
 
-          // Handle navigation based on auth state (only for certain events)
-          if (event === 'SIGNED_IN') {
-            // Only redirect if we're on the login page or home page
-            const currentPath = window.location.pathname;
-            if (currentPath === '/auth/login' || currentPath === '/') {
-              // Small delay to ensure state is set
-              setTimeout(() => {
-                // Redirect based on user role
-                const userRole = currentSession?.user?.user_metadata?.role;
-                if (userRole === 'student') {
-                  router.push('/student-dashboard');
-                } else if (userRole === 'teacher' || userRole === 'admin') {
-                  router.push('/account');
-                } else {
-                  // Default to account page for unknown roles
-                  router.push('/account');
-                }
-              }, 100);
-            }
-          } else if (event === 'SIGNED_OUT') {
+          // Handle cleanup for signout only
+          if (event === 'SIGNED_OUT') {
             // Clear cached data
             profileCache.current.clear();
             lastProfileFetch.current.clear();
             currentUserId.current = null;
-            
-            // Small delay to ensure cleanup
-            setTimeout(() => {
-              router.push('/');
-            }, 100);
           }
         } catch (error) {
           console.error('Error in auth state change handler:', error);
@@ -310,13 +295,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => {
       mounted = false;
-      isInitializing.current = false;
       if (authTimeout.current) {
         clearTimeout(authTimeout.current);
       }
       subscription.unsubscribe();
     };
-  }, [router, updateAuthState]);
+  }, []); // Remove dependencies to prevent re-running
 
   const signOut = async () => {
     try {
