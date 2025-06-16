@@ -50,9 +50,23 @@ export default function AuthForm({ mode }: AuthFormProps) {
         
         console.log('Login successful via API:', data);
         
+        // Perform a client-side sign-in to persist the session in localStorage
+        try {
+          const emailForClient = data.user?.email || emailOrUsername;
+          const { error: clientSignInError } = await supabaseBrowser.auth.signInWithPassword({
+            email: emailForClient,
+            password,
+          });
+          if (clientSignInError) {
+            console.warn('Client-side sign-in after API login failed:', clientSignInError.message);
+          }
+        } catch (clientSignInException) {
+          console.error('Exception during client-side sign-in:', clientSignInException);
+        }
+        
         // Redirect to dashboard with a delay to ensure cookies are set
         setTimeout(() => {
-          window.location.href = data.redirectUrl || '/dashboard';
+          window.location.href = data.redirectUrl || '/account';
         }, 500);
       } else {
         // For signup - continue using Supabase directly since we need to create a profile
@@ -113,7 +127,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
         
         // Redirect to dashboard with a delay to ensure cookies are set
         setTimeout(() => {
-          window.location.href = loginData.redirectUrl || '/dashboard';
+          window.location.href = loginData.redirectUrl || '/account';
         }, 500);
       }
     } catch (err) {
@@ -151,7 +165,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
       
       // Redirect to dashboard with a delay to ensure cookies are set
       setTimeout(() => {
-        window.location.href = data.redirectUrl || '/dashboard';
+        window.location.href = data.redirectUrl || '/account';
       }, 500);
     } catch (err) {
       console.error('Teacher login error:', err);
@@ -188,7 +202,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
       
       // Redirect to dashboard with a delay to ensure cookies are set
       setTimeout(() => {
-        window.location.href = data.redirectUrl || '/dashboard';
+        window.location.href = data.redirectUrl || '/student-dashboard';
       }, 500);
     } catch (err) {
       console.error('Student login error:', err);

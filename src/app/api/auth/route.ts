@@ -132,7 +132,7 @@ export async function POST(request: Request) {
             
             return NextResponse.json({ 
               success: true, 
-              redirectUrl: '/dashboard',
+              redirectUrl: userWithUsername.user_metadata?.role === 'student' ? '/student-dashboard' : '/account',
               user: {
                 id: userWithUsername.id,
                 email: userWithUsername.email,
@@ -157,7 +157,7 @@ export async function POST(request: Request) {
             
             return NextResponse.json({ 
               success: true, 
-              redirectUrl: '/dashboard',
+              redirectUrl: userProfileData.role === 'student' ? '/student-dashboard' : '/account',
               user: {
                 id: userProfileData.user_id,
                 email: userProfileData.email,
@@ -182,7 +182,7 @@ export async function POST(request: Request) {
     // Return success with redirect URL
     return NextResponse.json({ 
       success: true, 
-      redirectUrl: '/dashboard',
+      redirectUrl: data.user?.user_metadata?.role === 'student' ? '/student-dashboard' : '/account',
       user: {
         id: data.user?.id,
         email: data.user?.email

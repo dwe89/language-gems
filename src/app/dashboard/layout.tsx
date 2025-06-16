@@ -12,47 +12,11 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user } = useAuth();
-  const [hasSubscription, setHasSubscription] = useState(false);
-  const [checkingSubscription, setCheckingSubscription] = useState(true);
-
-  useEffect(() => {
-    checkSubscriptionStatus();
-  }, [user]);
-
-  const checkSubscriptionStatus = async () => {
-    if (!user) {
-      setCheckingSubscription(false);
-      return;
-    }
-
-    try {
-      // Check if user is admin - admins have full access
-      if (user.user_metadata?.role === 'admin') {
-        setHasSubscription(true);
-        setCheckingSubscription(false);
-        return;
-      }
-
-      const { data, error } = await supabaseBrowser
-        .from('subscriptions')
-        .select('status')
-        .eq('user_id', user.id)
-        .eq('status', 'active')
-        .single();
-
-      setHasSubscription(!!data);
-    } catch (error) {
-      console.error('Error checking subscription:', error);
-      setHasSubscription(false);
-    } finally {
-      setCheckingSubscription(false);
-    }
-  };
+  const { user, hasSubscription, isLoading } = useAuth();
 
   // Show upgrade banner for free users
   const UpgradeBanner = () => {
-    if (hasSubscription || checkingSubscription) return null;
+    if (hasSubscription || isLoading) return null;
 
     return (
       <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white">
@@ -80,7 +44,7 @@ export default function DashboardLayout({
   return (
     <TeacherNavigation>
       <UpgradeBanner />
-      {!hasSubscription && !checkingSubscription && (
+      {!hasSubscription && !isLoading && (
         <div className="bg-slate-100 border-b border-slate-200">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
             <div className="flex items-center text-sm text-slate-600">

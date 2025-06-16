@@ -180,7 +180,7 @@ export async function middleware(req: NextRequest) {
       if (userRole === 'student') {
         redirectUrl.pathname = '/student-dashboard';
       } else if (userRole === 'teacher' || userRole === 'admin') {
-        redirectUrl.pathname = '/dashboard';
+        redirectUrl.pathname = '/account';
       } else {
         // For users without a defined role, go to account page
         redirectUrl.pathname = '/account';
@@ -193,7 +193,7 @@ export async function middleware(req: NextRequest) {
   // If on auth routes and already logged in, redirect to dashboard
   if (isAuthRoute && session) {
     const redirectUrl = req.nextUrl.clone();
-    redirectUrl.pathname = userRole === 'student' ? '/student-dashboard' : '/dashboard';
+    redirectUrl.pathname = userRole === 'student' ? '/student-dashboard' : '/account';
     return NextResponse.redirect(redirectUrl);
   }
 

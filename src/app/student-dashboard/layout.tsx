@@ -51,7 +51,7 @@ export default function StudentDashboardLayout({
     // Check if user data is loaded and the user is a teacher or admin
     if (user && (user.user_metadata?.role === 'teacher' || user.user_metadata?.role === 'admin')) {
       console.log('Teacher or admin accessing student dashboard, redirecting to teacher dashboard');
-      router.push('/dashboard');
+      router.push('/account');
     }
   }, [user, router]);
   

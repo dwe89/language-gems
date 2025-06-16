@@ -26,47 +26,11 @@ interface TeacherNavigationProps {
 }
 
 export default function TeacherNavigation({ children }: TeacherNavigationProps) {
-  const { user, signOut } = useAuth();
+  const { user, signOut, hasSubscription, isAdmin } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [hasSubscription, setHasSubscription] = useState(false);
-  const [checkingSubscription, setCheckingSubscription] = useState(true);
-
-  useEffect(() => {
-    checkSubscriptionStatus();
-  }, [user]);
-
-  const checkSubscriptionStatus = async () => {
-    if (!user) {
-      setCheckingSubscription(false);
-      return;
-    }
-
-    try {
-      // Check if user is admin - admins have full access
-      if (user.user_metadata?.role === 'admin') {
-        setHasSubscription(true);
-        setCheckingSubscription(false);
-        return;
-      }
-
-      const { data, error } = await supabaseBrowser
-        .from('subscriptions')
-        .select('status')
-        .eq('user_id', user.id)
-        .eq('status', 'active')
-        .single();
-
-      setHasSubscription(!!data);
-    } catch (error) {
-      console.error('Error checking subscription:', error);
-      setHasSubscription(false);
-    } finally {
-      setCheckingSubscription(false);
-    }
-  };
 
   const menuItems = [
     {
@@ -90,27 +54,6 @@ export default function TeacherNavigation({ children }: TeacherNavigationProps) 
       premium: true,
       description: 'Create and track assignments'
     },
-    {
-      name: 'Shop',
-      href: '/shop',
-      icon: ShoppingBag,
-      premium: false,
-      description: 'Browse educational resources'
-    },
-    {
-      name: 'Account',
-      href: '/account',
-      icon: User,
-      premium: false,
-      description: 'Profile and settings'
-    },
-    {
-      name: 'Order History',
-      href: '/account/orders',
-      icon: History,
-      premium: false,
-      description: 'View purchased resources'
-    }
   ];
 
   const handleNavClick = (item: typeof menuItems[0]) => {
@@ -132,26 +75,31 @@ export default function TeacherNavigation({ children }: TeacherNavigationProps) 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
-            <Link href="/dashboard" className="flex items-center">
-              <span className="text-xl font-bold text-indigo-600">LanguageGems</span>
-              {!hasSubscription && (
-                <span className="ml-2 px-2 py-1 bg-slate-100 text-slate-600 text-xs rounded-full">
-                  Free
-                </span>
-              )}
-              {hasSubscription && (
-                <span className="ml-2 px-2 py-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs rounded-full flex items-center">
-                  <Crown className="h-3 w-3 mr-1" />
-                  Premium
-                </span>
-              )}
-            </Link>
+            <div className="flex items-center space-x-4">
+              <Link href="/" className="flex items-center text-slate-500 hover:text-slate-700 text-sm">
+                ← Back to Site
+              </Link>
+              <Link href="/dashboard" className="flex items-center">
+                <span className="text-xl font-bold text-indigo-600">LanguageGems Dashboard</span>
+                {!hasSubscription && (
+                  <span className="ml-2 px-2 py-1 bg-slate-100 text-slate-600 text-xs rounded-full">
+                    Free
+                  </span>
+                )}
+                {hasSubscription && (
+                  <span className="ml-2 px-2 py-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs rounded-full flex items-center">
+                    <Crown className="h-3 w-3 mr-1" />
+                    Premium
+                  </span>
+                )}
+              </Link>
+            </div>
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-8">
               {menuItems.map((item) => {
                 const IconComponent = item.icon;
-                const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
+                const isActive = pathname === item.href || (pathname && pathname.startsWith(item.href + '/'));
                 const isLocked = item.premium && !hasSubscription;
 
                 return (
@@ -245,7 +193,7 @@ export default function TeacherNavigation({ children }: TeacherNavigationProps) 
             <div className="px-2 pt-2 pb-3 space-y-1 bg-white border-t border-slate-200">
               {menuItems.map((item) => {
                 const IconComponent = item.icon;
-                const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
+                const isActive = pathname === item.href || (pathname && pathname.startsWith(item.href + '/'));
                 const isLocked = item.premium && !hasSubscription;
 
                 return (
@@ -256,7 +204,7 @@ export default function TeacherNavigation({ children }: TeacherNavigationProps) 
                       setIsMobileMenuOpen(false);
                     }}
                     className={`flex items-center w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      isActive
+                      (pathname === item.href || (pathname && pathname.startsWith(item.href + '/')))
                         ? 'bg-indigo-100 text-indigo-700'
                         : isLocked
                         ? 'text-slate-400'

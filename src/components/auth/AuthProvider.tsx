@@ -6,13 +6,19 @@ import { createBrowserClient } from '@supabase/ssr';
 import { useRouter } from 'next/navigation';
 import type { Database } from '../../lib/database.types';
 
-type AuthContextType = {
+interface AuthContextType {
   user: User | null;
   session: Session | null;
   isLoading: boolean;
+  signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
   refreshSession: () => Promise<void>;
-};
+  userRole: string | null;
+  hasSubscription: boolean;
+  isAdmin: boolean;
+  isTeacher: boolean;
+  isStudent: boolean;
+}
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -27,13 +33,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [hasSubscription, setHasSubscription] = useState(false);
   const router = useRouter();
   const profileCache = useRef<Map<string, any>>(new Map());
   const lastProfileFetch = useRef<Map<string, number>>(new Map());
-  const isInitializing = useRef(false);
+  const isInitializing = useRef(true);
   const authTimeout = useRef<NodeJS.Timeout | null>(null);
   const currentUserId = useRef<string | null>(null);
   
+  // Derived authentication states
+  const isAdmin = userRole === 'admin';
+  const isTeacher = userRole === 'teacher' || isAdmin;
+  const isStudent = userRole === 'student';
+
   // Helper function to fetch user profile with caching
   const fetchUserProfile = useCallback(async (userId: string) => {
     const cacheKey = userId;
@@ -74,6 +87,48 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return null;
   }, []);
   
+  // Unified function to get complete user data
+  const getUserData = async (currentUser: User): Promise<{
+    role: string | null;
+    hasSubscription: boolean;
+  }> => {
+    try {
+      // First check metadata
+      let role = currentUser.user_metadata?.role;
+      
+      // If no role in metadata, check user_profiles
+      if (!role) {
+        const { data: profileData } = await supabaseBrowser
+          .from('user_profiles')
+          .select('role')
+          .eq('user_id', currentUser.id)
+          .single();
+        role = profileData?.role;
+      }
+      
+      // Check subscription status
+      let hasSubscription = false;
+      if (role === 'admin') {
+        // Admins always have subscription access
+        hasSubscription = true;
+      } else {
+        // Check subscriptions table for others
+        const { data: subData } = await supabaseBrowser
+          .from('subscriptions')
+          .select('status')
+          .eq('user_id', currentUser.id)
+          .eq('status', 'active')
+          .single();
+        hasSubscription = !!subData;
+      }
+      
+      return { role, hasSubscription };
+    } catch (error) {
+      console.error('Error getting user data:', error);
+      return { role: null, hasSubscription: false };
+    }
+  };
+
   // Function to update auth state safely
   const updateAuthState = useCallback(async (currentSession: Session | null) => {
     try {
@@ -111,6 +166,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(updatedSession);
       setUser(updatedSession?.user || null);
       setIsLoading(false);
+
+      // Get complete user data
+      if (updatedSession?.user) {
+        const userData = await getUserData(updatedSession.user);
+        setUserRole(userData.role);
+        setHasSubscription(userData.hasSubscription);
+      } else {
+        setUserRole(null);
+        setHasSubscription(false);
+      }
     } catch (error) {
       console.error('Error updating auth state:', error);
       setSession(currentSession);
@@ -125,20 +190,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.log('Auth still loading, skipping refresh');
       return;
     }
-    
+
     try {
-      const { data: { session: currentSession }, error } = await supabaseBrowser.auth.getSession();
+      const { data: { session: refreshedSession }, error } = await supabaseBrowser.auth.getSession();
       
       if (error) {
         console.error('Error refreshing session:', error);
         return;
       }
 
-      await updateAuthState(currentSession);
+      await updateAuthState(refreshedSession);
     } catch (error) {
-      console.error('Exception refreshing auth:', error);
+      console.error('Exception during session refresh:', error);
     }
-  }, [isLoading, updateAuthState]);
+  }, [isLoading]);
 
   useEffect(() => {
     let mounted = true;
@@ -174,11 +239,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         if (mounted) {
-          await updateAuthState(currentSession);
-          isInitializing.current = false;
+          // Clear the timeout *before* we await the potentially long profile fetch
           if (authTimeout.current) {
             clearTimeout(authTimeout.current);
           }
+
+          await updateAuthState(currentSession);
+          isInitializing.current = false;
         }
       } catch (error) {
         console.error('Error initializing auth:', error);
@@ -216,7 +283,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 if (userRole === 'student') {
                   router.push('/student-dashboard');
                 } else if (userRole === 'teacher' || userRole === 'admin') {
-                  router.push('/dashboard');
+                  router.push('/account');
                 } else {
                   // Default to account page for unknown roles
                   router.push('/account');
@@ -301,8 +368,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const signIn = async (email: string, password: string): Promise<{ error: string | null }> => {
+    try {
+      const { error } = await supabaseBrowser.auth.signInWithPassword({
+        email,
+        password,
+      });
+      
+      if (error) {
+        return { error: error.message };
+      }
+      
+      return { error: null };
+    } catch (err) {
+      return { error: 'An unexpected error occurred' };
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, session, isLoading, signOut, refreshSession }}>
+    <AuthContext.Provider value={{ user, session, isLoading, signIn, signOut, refreshSession, userRole, hasSubscription, isAdmin, isTeacher, isStudent }}>
       {children}
     </AuthContext.Provider>
   );

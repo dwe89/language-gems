@@ -46,7 +46,7 @@ export default function MainNavigation() {
     { name: 'Games', path: '/games' },
     { name: 'Blog', path: '/blog' },
     { name: 'Shop', path: '/shop' },
-    { name: 'Custom Lessons', path: '/dashboard' },
+    { name: 'Custom Lessons', path: '/dashboard/content' },
     { name: 'Progress Tracking', path: '/dashboard/progress' },
   ];
 
@@ -72,7 +72,7 @@ export default function MainNavigation() {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between">
           <Link 
-            href={user ? "/dashboard" : "/"} 
+            href={user ? "/account" : "/"} 
             className="font-bold text-2xl text-white flex items-center"
           >
             <span className="text-3xl mr-2">💎</span>
@@ -100,11 +100,11 @@ export default function MainNavigation() {
             {user ? (
               <>
                 <Link
-                  href="/dashboard/settings"
+                  href="/dashboard"
                   className="py-2 px-4 text-white hover:text-yellow-200 transition-colors flex items-center"
                 >
                   <Settings className="mr-1 h-4 w-4" />
-                  <span>Creator Login</span>
+                  <span>Dashboard</span>
                 </Link>
                 <button
                   onClick={handleSignOut}
@@ -185,11 +185,11 @@ export default function MainNavigation() {
                 {user ? (
                   <>
                     <Link
-                      href="/dashboard/settings"
+                      href="/dashboard"
                       className="block text-white hover:text-yellow-200 transition-colors mb-3"
                       onClick={() => setMobileMenuOpen(false)}
                     >
-                      Settings
+                      Dashboard
                     </Link>
                     <button
                       onClick={() => {
