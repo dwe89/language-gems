@@ -6,7 +6,7 @@ export interface Product {
   slug: string;
   description: string | null;
   price_cents: number;
-  file_url: string | null;
+  file_path: string | null;
   stripe_product_id: string | null;
   stripe_price_id: string | null;
   tags: string[] | null;

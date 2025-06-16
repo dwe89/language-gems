@@ -10,7 +10,7 @@ import Link from 'next/link';
 import { 
   Search, Filter, BarChart2, ArrowUp, ArrowDown, 
   Users, User, ChevronRight, Calendar, Clock, Award,
-  BookOpen, CheckCircle, Star, TrendingUp
+  BookOpen, CheckCircle, Star, TrendingUp, AlertCircle
 } from 'lucide-react';
 import { supabaseBrowser } from '../../../components/auth/AuthProvider';
 import type { Database } from '../../../lib/database.types';
@@ -55,6 +55,7 @@ export default function ProgressPage() {
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
   const [view, setView] = useState<'list' | 'class' | 'detailed'>('list');
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const supabase = supabaseBrowser;
 
@@ -64,6 +65,7 @@ export default function ProgressPage() {
 
     const fetchData = async () => {
       try {
+        setError(null);
         // Fetch teacher's classes first
         const { data: classesData, error: classesError } = await supabase
           .from('classes')
@@ -72,12 +74,17 @@ export default function ProgressPage() {
 
         if (classesError) {
           console.error('Error fetching classes:', classesError);
+          setError('Unable to load classes. This might be because you haven\'t created any classes yet.');
+          setClasses([]);
+          setStudents([]);
+          setLoading(false);
           return;
         }
 
         if (!classesData || classesData.length === 0) {
           setClasses([]);
           setStudents([]);
+          setError('No classes found. Create your first class to start tracking student progress.');
           setLoading(false);
           return;
         }
@@ -92,6 +99,10 @@ export default function ProgressPage() {
 
         if (enrollmentsError) {
           console.error('Error fetching enrollments:', enrollmentsError);
+          setError('Unable to load student enrollments.');
+          setClasses(classesData);
+          setStudents([]);
+          setLoading(false);
           return;
         }
 
@@ -100,10 +111,19 @@ export default function ProgressPage() {
         if (enrollmentsData && enrollmentsData.length > 0) {
           const studentIds = enrollmentsData.map(enrollment => enrollment.student_id);
           
-          const { data: userProfiles } = await supabase
+          const { data: userProfiles, error: profilesError } = await supabase
             .from('user_profiles')
             .select('user_id, display_name, email')
             .in('user_id', studentIds);
+
+          if (profilesError) {
+            console.error('Error fetching user profiles:', profilesError);
+            setError('Unable to load student profiles.');
+            setClasses(classesData);
+            setStudents([]);
+            setLoading(false);
+            return;
+          }
 
           // Transform the data to match our student format
           studentsData = enrollmentsData.map(enrollment => {
@@ -136,6 +156,7 @@ export default function ProgressPage() {
         setClasses(classesData || []);
       } catch (error) {
         console.error('Error fetching data:', error);
+        setError('An unexpected error occurred while loading data. Please try again.');
         setStudents([]);
         setClasses([]);
       } finally {
@@ -219,6 +240,36 @@ export default function ProgressPage() {
             </div>
           </div>
         </header>
+
+        {/* Error Display */}
+        {error && (
+          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-8 rounded-lg">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <AlertCircle className="h-5 w-5 text-yellow-400" />
+              </div>
+              <div className="ml-3">
+                <p className="text-sm text-yellow-700">{error}</p>
+                <div className="mt-2">
+                  <div className="flex space-x-2">
+                    <Link 
+                      href="/dashboard/classes"
+                      className="text-sm bg-yellow-100 hover:bg-yellow-200 text-yellow-800 px-3 py-1 rounded-md transition-colors"
+                    >
+                      Create a Class
+                    </Link>
+                    <button
+                      onClick={() => window.location.reload()}
+                      className="text-sm bg-yellow-100 hover:bg-yellow-200 text-yellow-800 px-3 py-1 rounded-md transition-colors"
+                    >
+                      Retry
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {view === 'detailed' && selectedStudent ? (
           <StudentDetailView 

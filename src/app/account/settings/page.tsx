@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '../../../components/auth/AuthProvider';
-import { supabase } from '../../../lib/supabase';
+import { supabaseBrowser } from '../../../components/auth/AuthProvider';
 import { ArrowLeft, User, Mail, Lock, Bell, Globe, Save, AlertCircle } from 'lucide-react';
 
 export default function SettingsPage() {
@@ -36,7 +36,7 @@ export default function SettingsPage() {
 
     try {
       // Get user profile data
-      const { data: profile, error } = await supabase
+      const { data: profile, error } = await supabaseBrowser
         .from('user_profiles')
         .select('*')
         .eq('user_id', user.id)
@@ -52,7 +52,7 @@ export default function SettingsPage() {
         });
       } else {
         // Create profile if it doesn't exist
-        await supabase
+        await supabaseBrowser
           .from('user_profiles')
           .insert({
             user_id: user.id,
@@ -74,7 +74,7 @@ export default function SettingsPage() {
 
     try {
       // Update user profile
-      const { error } = await supabase
+      const { error } = await supabaseBrowser
         .from('user_profiles')
         .upsert({
           user_id: user.id,

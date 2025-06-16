@@ -232,8 +232,7 @@ export default function AdminNewProductPage() {
         slug: formData.slug,
         description: formData.description,
         price_cents: formData.price_cents,
-        file_url: fileUrl,
-        thumbnail_url: thumbnailUrl,
+        file_path: fileUrl,
         tags: formData.tags,
         is_active: true,
       };

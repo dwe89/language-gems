@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../../components/auth/AuthProvider';
-import { supabase } from '../../../lib/supabase';
+import { supabaseBrowser } from '../../../components/auth/AuthProvider';
 import Link from 'next/link';
 import { BookOpen, Users, Award, ArrowRight, Calendar, Clock } from 'lucide-react';
 

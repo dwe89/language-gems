@@ -12,7 +12,7 @@ interface Product {
   price_cents: number; // in pence - matching database schema
   stripe_product_id: string;
   stripe_price_id: string;
-  file_url: string;
+  file_path: string;
   is_active: boolean;
   created_at: string;
 }
@@ -24,7 +24,7 @@ interface ProductForm {
   price_cents: number; // in pence - matching database schema
   stripe_product_id: string;
   stripe_price_id: string;
-  file_url: string;
+  file_path: string;
   is_active: boolean;
 }
 
@@ -39,7 +39,7 @@ export default function AdminProductsPage() {
     price_cents: 0,
     stripe_product_id: '',
     stripe_price_id: '',
-    file_url: '',
+    file_path: '',
     is_active: true,
   });
 
@@ -97,7 +97,7 @@ export default function AdminProductsPage() {
       price_cents: product.price_cents,
       stripe_product_id: product.stripe_product_id || '',
       stripe_price_id: product.stripe_price_id || '',
-      file_url: product.file_url || '',
+      file_path: product.file_path || '',
       is_active: product.is_active,
     });
   };
@@ -142,7 +142,7 @@ export default function AdminProductsPage() {
       price_cents: 0,
       stripe_product_id: '',
       stripe_price_id: '',
-      file_url: '',
+      file_path: '',
       is_active: true,
     });
     setEditingId(null);
@@ -330,9 +330,9 @@ export default function AdminProductsPage() {
                     </button>
                   </td>
                   <td className="px-6 py-4">
-                    {product.file_url ? (
+                    {product.file_path ? (
                       <a
-                        href={product.file_url}
+                        href={product.file_path}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center space-x-1 text-indigo-600 hover:text-indigo-700"
