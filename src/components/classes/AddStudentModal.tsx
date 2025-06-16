@@ -11,6 +11,7 @@ import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Alert, AlertDescription } from "../ui/alert";
 import { Loader2, UserPlus } from "lucide-react";
+import { useAuth } from "../auth/AuthProvider";
 
 export type AddStudentModalProps = {
   isOpen: boolean;
@@ -31,6 +32,7 @@ export function AddStudentModal({
   classId,
   onStudentAdded,
 }: AddStudentModalProps) {
+  const { user } = useAuth();
   const [studentName, setStudentName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -45,6 +47,23 @@ export function AddStudentModal({
     setError("");
 
     try {
+      // Get teacher's school initials from their profile or use default
+      let schoolInitials = "LG"; // Default fallback
+      
+      if (user) {
+        try {
+          const response = await fetch('/api/user/profile');
+          if (response.ok) {
+            const profileData = await response.json();
+            if (profileData.school_initials) {
+              schoolInitials = profileData.school_initials;
+            }
+          }
+        } catch (profileError) {
+          console.log('Could not fetch profile, using default school initials');
+        }
+      }
+
       const response = await fetch("/api/students/bulk", {
         method: "POST",
         headers: {
@@ -53,6 +72,7 @@ export function AddStudentModal({
         body: JSON.stringify({
           students: [{ name: studentName.trim() }],
           classId,
+          schoolInitials, // Now included in the request
         }),
       });
 
@@ -71,6 +91,10 @@ export function AddStudentModal({
           progress: 0,
           joined_date: new Date().toISOString(),
         });
+        
+        // Reset form
+        setStudentName("");
+        onClose();
       }
     } catch (err: any) {
       console.error("Error adding student:", err);
