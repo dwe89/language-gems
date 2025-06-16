@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { supabase } from '../../../lib/supabase';
+import { supabaseBrowser, useAuth } from '../../../components/auth/AuthProvider';
 import { Plus, Edit, Trash2, Save, X, Eye, EyeOff, FileText, Package } from 'lucide-react';
 
 interface EditProductData {
@@ -29,6 +29,7 @@ interface ProductWithDetails {
 }
 
 export default function AdminProductsPage() {
+  const { user, isLoading: authLoading } = useAuth();
   const [products, setProducts] = useState<ProductWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingProduct, setEditingProduct] = useState<ProductWithDetails | null>(null);
@@ -43,12 +44,14 @@ export default function AdminProductsPage() {
   });
 
   useEffect(() => {
-    fetchProducts();
-  }, []);
+    if (user) {
+      fetchProducts();
+    }
+  }, [user]);
 
   const fetchProducts = async () => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await supabaseBrowser
         .from('products')
         .select('*')
         .order('created_at', { ascending: false });
@@ -71,7 +74,7 @@ export default function AdminProductsPage() {
         price_cents: Number(editData.price_cents),
       };
 
-      const { error } = await supabase
+      const { error } = await supabaseBrowser
         .from('products')
         .update(productData)
         .eq('id', editingProduct?.id);
@@ -104,7 +107,7 @@ export default function AdminProductsPage() {
     if (!confirm('Are you sure you want to delete this product?')) return;
 
     try {
-      const { error } = await supabase
+      const { error } = await supabaseBrowser
         .from('products')
         .delete()
         .eq('id', id);
@@ -119,7 +122,7 @@ export default function AdminProductsPage() {
 
   const toggleActive = async (id: string, currentStatus: boolean) => {
     try {
-      const { error } = await supabase
+      const { error } = await supabaseBrowser
         .from('products')
         .update({ is_active: !currentStatus })
         .eq('id', id);
@@ -149,7 +152,7 @@ export default function AdminProductsPage() {
     return `£${(pricePence / 100).toFixed(2)}`;
   };
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="container mx-auto px-6 py-20">
         <div className="flex items-center justify-center">
@@ -157,6 +160,10 @@ export default function AdminProductsPage() {
         </div>
       </div>
     );
+  }
+
+  if (!user) {
+    return null;
   }
 
   return (
