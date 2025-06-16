@@ -9,7 +9,7 @@ interface Product {
   name: string;
   slug: string;
   description: string;
-  price: number; // in pence
+  price_cents: number; // in pence - matching database schema
   stripe_product_id: string;
   stripe_price_id: string;
   file_url: string;
@@ -21,7 +21,7 @@ interface ProductForm {
   name: string;
   slug: string;
   description: string;
-  price: number;
+  price_cents: number; // in pence - matching database schema
   stripe_product_id: string;
   stripe_price_id: string;
   file_url: string;
@@ -36,7 +36,7 @@ export default function AdminProductsPage() {
     name: '',
     slug: '',
     description: '',
-    price: 0,
+    price_cents: 0,
     stripe_product_id: '',
     stripe_price_id: '',
     file_url: '',
@@ -69,7 +69,7 @@ export default function AdminProductsPage() {
     try {
       const productData = {
         ...formData,
-        price: Number(formData.price),
+        price_cents: Number(formData.price_cents),
       };
 
       const { error } = await supabase
@@ -94,7 +94,7 @@ export default function AdminProductsPage() {
       name: product.name,
       slug: product.slug,
       description: product.description,
-      price: product.price,
+      price_cents: product.price_cents,
       stripe_product_id: product.stripe_product_id || '',
       stripe_price_id: product.stripe_price_id || '',
       file_url: product.file_url || '',
@@ -139,7 +139,7 @@ export default function AdminProductsPage() {
       name: '',
       slug: '',
       description: '',
-      price: 0,
+      price_cents: 0,
       stripe_product_id: '',
       stripe_price_id: '',
       file_url: '',
@@ -237,13 +237,13 @@ export default function AdminProductsPage() {
                 </label>
                 <input
                   type="number"
-                  value={formData.price}
-                  onChange={(e) => setFormData(prev => ({ ...prev, price: parseInt(e.target.value) || 0 }))}
+                  value={formData.price_cents}
+                  onChange={(e) => setFormData(prev => ({ ...prev, price_cents: parseInt(e.target.value) || 0 }))}
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                   required
                 />
                 <p className="text-sm text-slate-500 mt-1">
-                  Display price: {formatPrice(formData.price)}
+                  Display price: {formatPrice(formData.price_cents)}
                 </p>
               </div>
 
@@ -305,7 +305,7 @@ export default function AdminProductsPage() {
                     </div>
                   </td>
                   <td className="px-6 py-4 text-slate-900">
-                    {formatPrice(product.price)}
+                    {formatPrice(product.price_cents)}
                   </td>
                   <td className="px-6 py-4">
                     <button

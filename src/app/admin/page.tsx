@@ -1,0 +1,279 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { supabase } from '../../lib/supabase';
+import { 
+  Package, 
+  Plus, 
+  TrendingUp, 
+  Users, 
+  DollarSign, 
+  Eye,
+  FileText,
+  ShoppingCart,
+  Calendar
+} from 'lucide-react';
+
+interface DashboardStats {
+  totalProducts: number;
+  activeProducts: number;
+  totalRevenue: number; // This would come from orders/payments
+  totalDownloads: number; // This would come from download tracking
+}
+
+export default function AdminDashboardPage() {
+  const [stats, setStats] = useState<DashboardStats>({
+    totalProducts: 0,
+    activeProducts: 0,
+    totalRevenue: 0,
+    totalDownloads: 0,
+  });
+  const [loading, setLoading] = useState(true);
+  const [recentProducts, setRecentProducts] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      // Fetch products stats
+      const { data: products, error: productsError } = await supabase
+        .from('products')
+        .select('id, name, price, is_active, created_at');
+
+      if (productsError) throw productsError;
+
+      const totalProducts = products?.length || 0;
+      const activeProducts = products?.filter(p => p.is_active).length || 0;
+      
+      // Get recent products (last 5)
+      const recent = products
+        ?.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .slice(0, 5) || [];
+
+      setStats({
+        totalProducts,
+        activeProducts,
+        totalRevenue: 0, // Would come from payments/orders table
+        totalDownloads: 0, // Would come from downloads tracking
+      });
+      
+      setRecentProducts(recent);
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatPrice = (pricePence: number) => {
+    return `£${(pricePence / 100).toFixed(2)}`;
+  };
+
+  const quickActions = [
+    {
+      title: 'Add New Product',
+      description: 'Upload a new educational PDF and create a product',
+      href: '/admin/new',
+      icon: Plus,
+      color: 'bg-green-500 hover:bg-green-600',
+    },
+    {
+      title: 'Manage Products',
+      description: 'View, edit, and manage all your products',
+      href: '/admin/products',
+      icon: Package,
+      color: 'bg-blue-500 hover:bg-blue-600',
+    },
+    {
+      title: 'View Shop',
+      description: 'See how your products appear to customers',
+      href: '/shop',
+      icon: ShoppingCart,
+      color: 'bg-purple-500 hover:bg-purple-600',
+    },
+  ];
+
+  const upcomingFeatures = [
+    {
+      title: 'Order Management',
+      description: 'Track and manage customer orders',
+      icon: FileText,
+      status: 'Coming Soon',
+    },
+    {
+      title: 'Analytics Dashboard',
+      description: 'Detailed sales and download analytics',
+      icon: TrendingUp,
+      status: 'Coming Soon',
+    },
+    {
+      title: 'Customer Management',
+      description: 'Manage customer accounts and support',
+      icon: Users,
+      status: 'Coming Soon',
+    },
+  ];
+
+  if (loading) {
+    return (
+      <div className="container mx-auto px-6 py-20">
+        <div className="flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="container mx-auto px-6 py-12">
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-slate-800 mb-2">Admin Dashboard</h1>
+        <p className="text-slate-600">Welcome to your LanguageGems admin panel. Manage your products and monitor your business.</p>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-slate-600">Total Products</p>
+              <p className="text-3xl font-bold text-slate-900">{stats.totalProducts}</p>
+            </div>
+            <div className="bg-blue-100 rounded-full p-3">
+              <Package className="w-6 h-6 text-blue-600" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-slate-600">Active Products</p>
+              <p className="text-3xl font-bold text-slate-900">{stats.activeProducts}</p>
+            </div>
+            <div className="bg-green-100 rounded-full p-3">
+              <Eye className="w-6 h-6 text-green-600" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-slate-600">Total Revenue</p>
+              <p className="text-3xl font-bold text-slate-900">£{stats.totalRevenue.toFixed(2)}</p>
+            </div>
+            <div className="bg-yellow-100 rounded-full p-3">
+              <DollarSign className="w-6 h-6 text-yellow-600" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-slate-600">Downloads</p>
+              <p className="text-3xl font-bold text-slate-900">{stats.totalDownloads}</p>
+            </div>
+            <div className="bg-purple-100 rounded-full p-3">
+              <TrendingUp className="w-6 h-6 text-purple-600" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Quick Actions */}
+        <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+          <h2 className="text-xl font-bold text-slate-800 mb-4">Quick Actions</h2>
+          <div className="space-y-4">
+            {quickActions.map((action, index) => (
+              <Link
+                key={index}
+                href={action.href}
+                className="flex items-center p-4 border border-slate-200 rounded-lg hover:border-slate-300 transition-colors group"
+              >
+                <div className={`p-3 rounded-lg ${action.color} transition-colors`}>
+                  <action.icon className="w-6 h-6 text-white" />
+                </div>
+                <div className="ml-4">
+                  <h3 className="font-medium text-slate-900 group-hover:text-indigo-600">{action.title}</h3>
+                  <p className="text-sm text-slate-600">{action.description}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        {/* Recent Products */}
+        <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-slate-800">Recent Products</h2>
+            <Link 
+              href="/admin/products"
+              className="text-indigo-600 hover:text-indigo-700 text-sm font-medium"
+            >
+              View All
+            </Link>
+          </div>
+          
+          {recentProducts.length > 0 ? (
+            <div className="space-y-3">
+              {recentProducts.map((product) => (
+                <div key={product.id} className="flex items-center justify-between p-3 border border-slate-200 rounded-lg">
+                  <div>
+                    <h3 className="font-medium text-slate-900">{product.name}</h3>
+                    <p className="text-sm text-slate-600">
+                      {formatPrice(product.price)} • {product.is_active ? 'Active' : 'Inactive'}
+                    </p>
+                  </div>
+                  <div className="text-xs text-slate-500">
+                    {new Date(product.created_at).toLocaleDateString()}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <Package className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+              <p className="text-slate-500">No products yet</p>
+              <Link 
+                href="/admin/new"
+                className="text-indigo-600 hover:text-indigo-700 text-sm font-medium"
+              >
+                Add your first product
+              </Link>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Upcoming Features */}
+      <div className="mt-8">
+        <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+          <h2 className="text-xl font-bold text-slate-800 mb-4">Upcoming Features</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {upcomingFeatures.map((feature, index) => (
+              <div key={index} className="p-4 border border-slate-200 rounded-lg">
+                <div className="flex items-center mb-2">
+                  <div className="bg-slate-100 rounded-lg p-2">
+                    <feature.icon className="w-5 h-5 text-slate-600" />
+                  </div>
+                  <span className="ml-2 text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded-full">
+                    {feature.status}
+                  </span>
+                </div>
+                <h3 className="font-medium text-slate-900 mb-1">{feature.title}</h3>
+                <p className="text-sm text-slate-600">{feature.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+} 

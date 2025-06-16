@@ -9,7 +9,7 @@ interface ProductForm {
   name: string;
   slug: string;
   description: string;
-  price: number; // in pence
+  price_cents: number; // in pence - matching database schema
   file: File | null;
   createStripeProduct: boolean;
 }
@@ -22,7 +22,7 @@ export default function AdminNewProductPage() {
     name: '',
     slug: '',
     description: '',
-    price: 0,
+    price_cents: 0,
     file: null,
     createStripeProduct: false,
   });
@@ -36,7 +36,7 @@ export default function AdminNewProductPage() {
       .replace(/[^a-z0-9 -]/g, '')
       .replace(/\s+/g, '-')
       .replace(/-+/g, '-')
-      .trim('-');
+      .replace(/^-+|-+$/g, ''); // Remove leading and trailing dashes
   };
 
   const handleNameChange = (name: string) => {
@@ -98,7 +98,7 @@ export default function AdminNewProductPage() {
         body: JSON.stringify({
           name: productData.name,
           description: productData.description,
-          price: productData.price,
+          price: productData.price_cents,
         }),
       });
 
@@ -131,7 +131,7 @@ export default function AdminNewProductPage() {
       newErrors.push('Slug is required.');
     }
 
-    if (formData.price <= 0) {
+    if (formData.price_cents <= 0) {
       newErrors.push('Price must be greater than 0.');
     }
 
@@ -166,7 +166,7 @@ export default function AdminNewProductPage() {
         name: formData.name,
         slug: formData.slug,
         description: formData.description,
-        price: formData.price,
+        price_cents: formData.price_cents,
         file_url: fileUrl,
         is_active: true,
       };
@@ -333,8 +333,8 @@ export default function AdminNewProductPage() {
               </label>
               <input
                 type="number"
-                value={formData.price}
-                onChange={(e) => setFormData(prev => ({ ...prev, price: parseInt(e.target.value) || 0 }))}
+                value={formData.price_cents}
+                onChange={(e) => setFormData(prev => ({ ...prev, price_cents: parseInt(e.target.value) || 0 }))}
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 placeholder="999"
                 min="1"
@@ -342,7 +342,7 @@ export default function AdminNewProductPage() {
                 disabled={loading}
               />
               <p className="text-sm text-slate-500 mt-1">
-                Display price: {formatPrice(formData.price)}
+                Display price: {formatPrice(formData.price_cents)}
               </p>
             </div>
 
