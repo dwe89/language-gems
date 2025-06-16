@@ -11,6 +11,8 @@ interface ProductForm {
   description: string;
   price_cents: number; // in pence - matching database schema
   file: File | null;
+  thumbnail: File | null;
+  tags: string[];
   createStripeProduct: boolean;
 }
 
@@ -24,6 +26,8 @@ export default function AdminNewProductPage() {
     description: '',
     price_cents: 0,
     file: null,
+    thumbnail: null,
+    tags: [],
     createStripeProduct: false,
   });
   const [errors, setErrors] = useState<string[]>([]);
@@ -75,10 +79,55 @@ export default function AdminNewProductPage() {
     }
   };
 
-  const uploadFile = async (file: File): Promise<string> => {
+  const handleThumbnailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file type - support common image formats
+      const allowedTypes = [
+        'image/jpeg',
+        'image/jpg',
+        'image/png',
+        'image/gif',
+        'image/webp'
+      ];
+      
+      if (!allowedTypes.includes(file.type)) {
+        setErrors(['Please select a JPG, PNG, GIF, or WebP image file.']);
+        return;
+      }
+      
+      // Validate file size (5MB max for images)
+      if (file.size > 5 * 1024 * 1024) {
+        setErrors(['Thumbnail image size must be less than 5MB.']);
+        return;
+      }
+      
+      setFormData(prev => ({ ...prev, thumbnail: file }));
+      setErrors([]);
+    }
+  };
+
+  const addTag = (tag: string) => {
+    const trimmedTag = tag.trim().toLowerCase();
+    if (trimmedTag && !formData.tags.includes(trimmedTag)) {
+      setFormData(prev => ({ 
+        ...prev, 
+        tags: [...prev.tags, trimmedTag] 
+      }));
+    }
+  };
+
+  const removeTag = (tagToRemove: string) => {
+    setFormData(prev => ({ 
+      ...prev, 
+      tags: prev.tags.filter(tag => tag !== tagToRemove) 
+    }));
+  };
+
+  const uploadFile = async (file: File, folder: string = 'documents'): Promise<string> => {
     const fileExt = file.name.split('.').pop();
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-    const filePath = `products/${fileName}`;
+    const filePath = `products/${folder}/${fileName}`;
 
     const { error: uploadError } = await supabase.storage
       .from('products')
@@ -163,11 +212,18 @@ export default function AdminNewProductPage() {
     setErrors([]);
 
     try {
-      // Upload file
-      setUploadProgress(25);
-      const fileUrl = await uploadFile(formData.file!);
+      // Upload document file
+      setUploadProgress(15);
+      const fileUrl = await uploadFile(formData.file!, 'documents');
       
-      setUploadProgress(50);
+      setUploadProgress(30);
+
+      // Upload thumbnail if provided
+      let thumbnailUrl = null;
+      if (formData.thumbnail) {
+        thumbnailUrl = await uploadFile(formData.thumbnail, 'thumbnails');
+        setUploadProgress(45);
+      }
 
       // Prepare product data
       const productData = {
@@ -176,10 +232,12 @@ export default function AdminNewProductPage() {
         description: formData.description,
         price_cents: formData.price_cents,
         file_url: fileUrl,
+        thumbnail_url: thumbnailUrl,
+        tags: formData.tags,
         is_active: true,
       };
 
-      setUploadProgress(75);
+      setUploadProgress(60);
 
       // Create Stripe product if requested
       let stripeData = {};
@@ -387,6 +445,116 @@ export default function AdminNewProductPage() {
                     )}
                   </div>
                 </label>
+              </div>
+            </div>
+
+            {/* Thumbnail Upload */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Thumbnail Image (Optional)
+              </label>
+              <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center hover:border-slate-400 transition-colors">
+                <input
+                  type="file"
+                  accept=".jpg,.jpeg,.png,.gif,.webp,image/jpeg,image/png,image/gif,image/webp"
+                  onChange={handleThumbnailChange}
+                  className="hidden"
+                  id="thumbnail-upload"
+                  disabled={loading}
+                />
+                <label htmlFor="thumbnail-upload" className="cursor-pointer">
+                  <Upload className="w-8 h-8 text-slate-400 mx-auto mb-2" />
+                  <div className="text-sm text-slate-600">
+                    {formData.thumbnail ? (
+                      <div>
+                        <p className="font-medium text-slate-800">{formData.thumbnail.name}</p>
+                        <p className="text-slate-500">
+                          {(formData.thumbnail.size / 1024 / 1024).toFixed(2)} MB
+                        </p>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setFormData(prev => ({ ...prev, thumbnail: null }));
+                          }}
+                          className="text-red-600 hover:text-red-700 text-xs mt-1"
+                          disabled={loading}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ) : (
+                      <div>
+                        <p className="font-medium">Click to upload thumbnail</p>
+                        <p className="text-slate-500">JPG, PNG, GIF, or WebP files</p>
+                        <p className="text-xs text-slate-400 mt-1">Max file size: 5MB</p>
+                      </div>
+                    )}
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            {/* Tags */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Tags
+              </label>
+              <div className="space-y-3">
+                <div className="flex space-x-2">
+                  <input
+                    type="text"
+                    placeholder="Add a tag and press Enter"
+                    className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    disabled={loading}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        const target = e.target as HTMLInputElement;
+                        addTag(target.value);
+                        target.value = '';
+                      }
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const input = document.querySelector('input[placeholder="Add a tag and press Enter"]') as HTMLInputElement;
+                      if (input) {
+                        addTag(input.value);
+                        input.value = '';
+                      }
+                    }}
+                    className="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 disabled:opacity-50"
+                    disabled={loading}
+                  >
+                    Add
+                  </button>
+                </div>
+                
+                {formData.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {formData.tags.map((tag, index) => (
+                      <span
+                        key={index}
+                        className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-indigo-100 text-indigo-800"
+                      >
+                        {tag}
+                        <button
+                          type="button"
+                          onClick={() => removeTag(tag)}
+                          className="ml-2 text-indigo-600 hover:text-indigo-800"
+                          disabled={loading}
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <p className="text-sm text-slate-500">
+                  Tags help categorize your product and make it easier to find.
+                </p>
               </div>
             </div>
 
