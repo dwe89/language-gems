@@ -52,8 +52,17 @@ export default function AdminDashboardPage() {
 
       if (productsError) throw productsError;
 
+      // Fetch blog posts stats
+      const { data: blogPosts, error: blogError } = await supabaseBrowser
+        .from('blog_posts')
+        .select('id, is_published');
+
+      if (blogError) throw blogError;
+
       const totalProducts = products?.length || 0;
       const activeProducts = products?.filter(p => p.is_active).length || 0;
+      const totalBlogPosts = blogPosts?.length || 0;
+      const publishedBlogPosts = blogPosts?.filter(p => p.is_published).length || 0;
       
       // Get recent products (last 5)
       const recent = products
@@ -65,6 +74,8 @@ export default function AdminDashboardPage() {
         activeProducts,
         totalRevenue: 0, // Would come from payments/orders table
         totalDownloads: 0, // Would come from downloads tracking
+        totalBlogPosts,
+        publishedBlogPosts,
       });
       
       setRecentProducts(recent);

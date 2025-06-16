@@ -5,6 +5,7 @@ import ClientLayout from './components/ClientLayout'
 import { Suspense } from 'react'
 import { AuthProvider } from '../components/auth/AuthProvider'
 import { CartProvider } from '../contexts/CartContext'
+import SupabaseProvider from '../components/supabase/SupabaseProvider'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 
@@ -35,13 +36,15 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.variable} ${cinzel.variable} ${pirataOne.variable} font-sans`}>
-        <AuthProvider>
-          <CartProvider>
-            <Suspense fallback={<div>Loading...</div>}>
-              <ClientLayout>{children}</ClientLayout>
-            </Suspense>
-          </CartProvider>
-        </AuthProvider>
+        <SupabaseProvider>
+          <AuthProvider>
+            <CartProvider>
+              <Suspense fallback={<div>Loading...</div>}>
+                <ClientLayout>{children}</ClientLayout>
+              </Suspense>
+            </CartProvider>
+          </AuthProvider>
+        </SupabaseProvider>
       </body>
     </html>
   )
