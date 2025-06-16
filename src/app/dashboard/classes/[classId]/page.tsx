@@ -30,7 +30,7 @@ type ClassData = {
   description: string;
   level: string;
   created_at: string;
-  code: string;
+  year_group: string;
   teacher_id: string;
 };
 
@@ -358,17 +358,41 @@ export default function ClassDetailPage({ params }: { params: Promise<{ classId:
                 <div className="bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20 p-6 shadow-lg">
                   <div className="flex items-center justify-between mb-4">
                     <div className="text-white/80 text-sm font-semibold uppercase tracking-wider">
-                      Class Code
+                      Quick Actions
                     </div>
                     <Link 
                       href={`/dashboard/classes/${classId}/edit`} 
                       className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all duration-200 hover:scale-105"
+                      title="Edit Class Settings"
                     >
-                      <Pencil className="h-4 w-4" />
+                      <Settings className="h-4 w-4" />
                     </Link>
                   </div>
-                  <div className="text-3xl font-bold text-white tracking-wide font-mono">
-                    {classData.code || 'No code'}
+                  <div className="space-y-3">
+                    <button
+                      onClick={() => setShowAddStudentModal(true)}
+                      className="w-full text-left p-3 bg-white/10 hover:bg-white/20 rounded-xl transition-all duration-200 flex items-center text-white"
+                    >
+                      <UserPlus className="h-4 w-4 mr-3" />
+                      <span className="font-medium">Add Student</span>
+                    </button>
+                    <Link
+                      href={`/dashboard/assignments/new?classId=${classId}`}
+                      className="w-full text-left p-3 bg-white/10 hover:bg-white/20 rounded-xl transition-all duration-200 flex items-center text-white"
+                    >
+                      <Book className="h-4 w-4 mr-3" />
+                      <span className="font-medium">Create Assignment</span>
+                    </Link>
+                    {students.length > 0 && (
+                      <button
+                        onClick={downloadCredentialsPDF}
+                        disabled={downloadingPDF}
+                        className="w-full text-left p-3 bg-white/10 hover:bg-white/20 rounded-xl transition-all duration-200 flex items-center text-white disabled:opacity-50"
+                      >
+                        <FileText className="h-4 w-4 mr-3" />
+                        <span className="font-medium">Download Credentials</span>
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
