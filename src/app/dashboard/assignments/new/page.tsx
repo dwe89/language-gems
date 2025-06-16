@@ -13,8 +13,7 @@ import {
   Zap, Brain, Target, Gamepad2, Timer, Star, Settings,
   Shuffle, Grid3X3, Type, Layers, Smile
 } from 'lucide-react';
-import { createBrowserClient } from '@supabase/ssr';
-import type { Database } from '../../../../lib/database.types';
+import { supabaseBrowser } from '../../../../components/auth/AuthProvider';
 
 // Complete games list aligned with actual games directory
 const AVAILABLE_GAMES = [
@@ -244,10 +243,7 @@ export default function NewAssignmentPage() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const supabase = createBrowserClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+      const supabase = supabaseBrowser;
 
       // Fetch classes using created_by
       const { data: classesData, error: classesError } = await supabase

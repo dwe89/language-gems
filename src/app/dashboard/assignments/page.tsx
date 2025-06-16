@@ -11,8 +11,7 @@ import {
   Search, FileText, Edit, Trash2, Plus, Filter, Calendar, Clock,
   BookOpen, CheckCircle, XCircle, Users, BookmarkIcon, BarChart3
 } from 'lucide-react';
-import { createBrowserClient } from '@supabase/ssr';
-import type { Database } from '../../../lib/database.types';
+import { supabaseBrowser } from '../../../components/auth/AuthProvider';
 import { AssignmentCard } from '../../../components/classes/AssignmentCard';
 
 export default function AssignmentsPage() {
@@ -25,10 +24,7 @@ export default function AssignmentsPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
-  const supabase = createBrowserClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  const supabase = supabaseBrowser;
 
   // Fetch real data from database
   useEffect(() => {

@@ -12,8 +12,7 @@ import {
 import { supabaseBrowser } from '../../components/auth/AuthProvider';
 
 export default function DashboardPage() {
-  const { user, isLoading: authLoading, refreshSession } = useAuth();
-  const [initialLoad, setInitialLoad] = useState(true);
+  const { user, isLoading: authLoading } = useAuth();
   
   useEffect(() => {
     console.log('User in dashboard:', {
@@ -22,25 +21,15 @@ export default function DashboardPage() {
       metadata: user?.user_metadata,
       role: user?.user_metadata?.role
     });
-    
-    // If user is undefined but we're not loading, try refreshing the session
-    if (!user && !authLoading && initialLoad) {
-      console.log('User undefined, refreshing session...');
-      refreshSession();
-      setInitialLoad(false);
-    }
-  }, [user, authLoading, refreshSession, initialLoad]);
+  }, [user]);
   
-  // If auth is still loading or we're on the initial load, show a loading spinner
-  if (authLoading || (initialLoad && !user)) {
+  // If auth is still loading, show a loading spinner
+  if (authLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-teal-500 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading dashboard...</p>
-          {!authLoading && initialLoad && (
-            <p className="text-sm text-gray-500 mt-2">Refreshing authentication...</p>
-          )}
         </div>
       </div>
     );

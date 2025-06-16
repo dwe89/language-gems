@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth } from '../../components/auth/AuthProvider';
-import { createBrowserClient } from '@supabase/ssr';
+import { supabaseBrowser } from '../../components/auth/AuthProvider';
 import { 
   BookOpen, BarChart2, Edit, Award, Hexagon, Trophy, Loader2
 } from 'lucide-react';
@@ -101,10 +101,7 @@ const LoadingState = () => (
 
 export default function StudentDashboard() {
   const { user } = useAuth();
-  const supabase = createBrowserClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
-  );
+  const supabase = supabaseBrowser;
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     totalPoints: 0,
