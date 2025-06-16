@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '../../../lib/supabase';
+import { supabaseBrowser } from '../../../components/auth/AuthProvider';
 import { Upload, Save, ArrowLeft, AlertCircle, CheckCircle } from 'lucide-react';
 
 interface ProductForm {
@@ -129,7 +129,7 @@ export default function AdminNewProductPage() {
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
     const filePath = `products/${folder}/${fileName}`;
 
-    const { error: uploadError } = await supabase.storage
+    const { error: uploadError } = await supabaseBrowser.storage
       .from('products')
       .upload(filePath, file);
 
@@ -138,7 +138,7 @@ export default function AdminNewProductPage() {
     }
 
     // Get the public URL
-    const { data } = supabase.storage
+    const { data } = supabaseBrowser.storage
       .from('products')
       .getPublicUrl(filePath);
 
@@ -246,7 +246,7 @@ export default function AdminNewProductPage() {
       }
 
       // Insert into Supabase
-      const { error } = await supabase
+      const { error } = await supabaseBrowser
         .from('products')
         .insert({
           ...productData,
