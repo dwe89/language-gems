@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabaseBrowser } from '../../../components/auth/AuthProvider';
+import { useAuth, supabaseBrowser } from '../../../components/auth/AuthProvider';
 import { Upload, Save, ArrowLeft, AlertCircle, CheckCircle } from 'lucide-react';
 
 interface ProductForm {
@@ -18,6 +18,7 @@ interface ProductForm {
 
 export default function AdminNewProductPage() {
   const router = useRouter();
+  const { user, isLoading: authLoading } = useAuth();
   const [loading, setLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [formData, setFormData] = useState<ProductForm>({
@@ -277,6 +278,23 @@ export default function AdminNewProductPage() {
   const formatPrice = (pricePence: number) => {
     return `£${(pricePence / 100).toFixed(2)}`;
   };
+
+  // Show loading state while checking authentication
+  if (authLoading) {
+    return (
+      <div className="container mx-auto px-6 py-20">
+        <div className="flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
+        </div>
+      </div>
+    );
+  }
+
+  // Redirect to login if not authenticated
+  if (!user) {
+    window.location.href = '/auth/login';
+    return null;
+  }
 
   return (
     <div className="container mx-auto px-6 py-12">

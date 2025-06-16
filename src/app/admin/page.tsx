@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { supabase } from '../../lib/supabase';
+import { useAuth, supabaseBrowser } from '../../components/auth/AuthProvider';
 import { 
   Package, 
   Plus, 
@@ -23,6 +23,7 @@ interface DashboardStats {
 }
 
 export default function AdminDashboardPage() {
+  const { user, isLoading: authLoading } = useAuth();
   const [stats, setStats] = useState<DashboardStats>({
     totalProducts: 0,
     activeProducts: 0,
@@ -33,13 +34,15 @@ export default function AdminDashboardPage() {
   const [recentProducts, setRecentProducts] = useState<any[]>([]);
 
   useEffect(() => {
-    fetchDashboardData();
-  }, []);
+    if (user && !authLoading) {
+      fetchDashboardData();
+    }
+  }, [user, authLoading]);
 
   const fetchDashboardData = async () => {
     try {
       // Fetch products stats
-      const { data: products, error: productsError } = await supabase
+      const { data: products, error: productsError } = await supabaseBrowser
         .from('products')
         .select('id, name, price_cents, is_active, created_at');
 
@@ -117,7 +120,8 @@ export default function AdminDashboardPage() {
     },
   ];
 
-  if (loading) {
+  // Show loading state while checking authentication or fetching data
+  if (authLoading || loading) {
     return (
       <div className="container mx-auto px-6 py-20">
         <div className="flex items-center justify-center">
@@ -125,6 +129,12 @@ export default function AdminDashboardPage() {
         </div>
       </div>
     );
+  }
+
+  // Redirect to login if not authenticated
+  if (!user) {
+    window.location.href = '/auth/login';
+    return null;
   }
 
   return (
