@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Settings, Package, Plus, Home } from 'lucide-react';
-import { supabaseBrowser } from '../../components/auth/AuthProvider';
+import { supabase } from '../../lib/supabase';
 
 export default function AdminLayout({
   children,
@@ -23,7 +23,7 @@ export default function AdminLayout({
 
   const checkAuth = async () => {
     try {
-      const { data: { user } } = await supabaseBrowser.auth.getUser();
+      const { data: { user } } = await supabase.auth.getUser();
       
       console.log('Admin Auth Debug:', {
         user: user,
@@ -152,7 +152,7 @@ export default function AdminLayout({
               </div>
               <button 
                 onClick={async () => {
-                  await supabaseBrowser.auth.signOut();
+                  await supabase.auth.signOut();
                   router.push('/');
                 }}
                 className="text-slate-700 hover:text-red-600 font-medium transition-colors"

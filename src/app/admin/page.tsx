@@ -41,7 +41,7 @@ export default function AdminDashboardPage() {
       // Fetch products stats
       const { data: products, error: productsError } = await supabase
         .from('products')
-        .select('id, name, price, is_active, created_at');
+        .select('id, name, price_cents, is_active, created_at');
 
       if (productsError) throw productsError;
 
@@ -228,7 +228,7 @@ export default function AdminDashboardPage() {
                   <div>
                     <h3 className="font-medium text-slate-900">{product.name}</h3>
                     <p className="text-sm text-slate-600">
-                      {formatPrice(product.price)} • {product.is_active ? 'Active' : 'Inactive'}
+                      {formatPrice(product.price_cents)} • {product.is_active ? 'Active' : 'Inactive'}
                     </p>
                   </div>
                   <div className="text-xs text-slate-500">
