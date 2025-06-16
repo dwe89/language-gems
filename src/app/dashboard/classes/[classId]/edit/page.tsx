@@ -10,10 +10,10 @@ import { supabaseBrowser } from '../../../../../components/auth/AuthProvider';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { 
-  ArrowLeft, Save, Loader2
+  ArrowLeft, Save, Loader2, Settings, BookOpen, Users, GraduationCap
 } from 'lucide-react';
 import { Button } from "../../../../../components/ui/button";
-import { Card, CardContent } from "../../../../../components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "../../../../../components/ui/card";
 import { Label } from "../../../../../components/ui/label";
 import { Input } from "../../../../../components/ui/input";
 import { Textarea } from "../../../../../components/ui/textarea";
@@ -31,7 +31,7 @@ type ClassData = {
   name: string;
   description: string;
   level: string;
-  code: string;
+  year_group: string;
   teacher_id: string;
 };
 
@@ -48,7 +48,7 @@ export default function EditClassPage({ params }: { params: Promise<{ classId: s
     name: '',
     description: '',
     level: 'beginner',
-    code: '',
+    year_group: '',
     teacher_id: ''
   });
   const [error, setError] = useState('');
@@ -80,7 +80,13 @@ export default function EditClassPage({ params }: { params: Promise<{ classId: s
           return;
         }
         
-        setClassData(classDataResult);
+        setClassData({
+          ...classDataResult,
+          name: classDataResult.name || '',
+          description: classDataResult.description || '',
+          level: classDataResult.level || 'beginner',
+          year_group: classDataResult.year_group || '',
+        });
       } catch (error) {
         console.error('Error fetching class data:', error);
         setError('An unexpected error occurred.');
@@ -124,7 +130,7 @@ export default function EditClassPage({ params }: { params: Promise<{ classId: s
           name: classData.name,
           description: classData.description,
           level: classData.level,
-          code: classData.code,
+          year_group: classData.year_group,
         })
         .eq('id', classId);
       
@@ -144,110 +150,212 @@ export default function EditClassPage({ params }: { params: Promise<{ classId: s
   
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-cyan-500"></div>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+        <div className="flex items-center justify-center h-96">
+          <div className="flex flex-col items-center space-y-4">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-200 border-t-indigo-600"></div>
+            <p className="text-slate-600 font-medium">Loading class details...</p>
+          </div>
+        </div>
       </div>
     );
   }
   
   return (
-    <div className="container py-10">
-      <div className="mb-8">
-        <Link 
-          href={`/dashboard/classes/${classId}`} 
-          className="inline-flex items-center text-cyan-400 hover:text-cyan-300 mb-4"
-        >
-          <ArrowLeft className="h-4 w-4 mr-1" />
-          Back to Class
-        </Link>
-        <h1 className="text-3xl font-bold text-white">Edit Class</h1>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      {/* Header Section */}
+      <div className="bg-white/70 backdrop-blur-sm border-b border-slate-200/50 sticky top-0 z-10">
+        <div className="max-w-4xl mx-auto px-6 py-4">
+          <Link 
+            href={`/dashboard/classes/${classId}`} 
+            className="inline-flex items-center text-slate-600 hover:text-indigo-600 transition-colors duration-200 group"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2 transition-transform group-hover:-translate-x-1" />
+            <span className="font-medium">Back to Class</span>
+          </Link>
+        </div>
       </div>
-      
-      <Card className="border border-gray-700 bg-gray-800 shadow-lg">
-        <CardContent className="p-6">
-          {error && (
-            <div className="mb-4 p-3 bg-red-900/30 border border-red-800/50 rounded-md text-red-300">
-              {error}
+
+      {/* Main Content */}
+      <div className="max-w-4xl mx-auto px-6 py-8">
+        {/* Page Header */}
+        <div className="mb-8">
+          <div className="flex items-center space-x-3 mb-2">
+            <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+              <Settings className="h-5 w-5 text-white" />
             </div>
-          )}
+            <div>
+              <h1 className="text-3xl font-bold text-slate-900">Edit Class Settings</h1>
+              <p className="text-slate-600 mt-1">Update your class information and preferences</p>
+            </div>
+          </div>
+        </div>
+        
+        {/* Form Card */}
+        <Card className="border-0 bg-white/70 backdrop-blur-sm shadow-xl shadow-slate-200/50 overflow-hidden">
+          <CardHeader className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 text-white relative overflow-hidden">
+            {/* Background Pattern */}
+            <div className="absolute inset-0 bg-white/10 backdrop-blur-sm"></div>
+            <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-16 translate-x-16"></div>
+            <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-12 -translate-x-12"></div>
+            
+            <div className="relative z-10">
+              <CardTitle className="text-2xl font-bold flex items-center">
+                <BookOpen className="h-6 w-6 mr-3" />
+                Class Configuration
+              </CardTitle>
+              <p className="text-indigo-100 mt-2">
+                Customize how your class appears to students and manage basic settings
+              </p>
+            </div>
+          </CardHeader>
           
-          <form onSubmit={handleSubmit}>
-            <div className="space-y-6">
-              <div>
-                <Label htmlFor="name" className="text-white text-base">Class Name</Label>
-                <Input 
-                  id="name"
-                  name="name"
-                  value={classData.name}
-                  onChange={handleInputChange}
-                  placeholder="e.g. Beginner Spanish"
-                  className="mt-1.5 bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-cyan-500"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="description" className="text-white text-base">Description</Label>
-                <Textarea 
-                  id="description"
-                  name="description"
-                  value={classData.description}
-                  onChange={handleInputChange}
-                  placeholder="Describe your class"
-                  rows={3}
-                  className="mt-1.5 bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-cyan-500"
-                />
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <CardContent className="p-8">
+            {error && (
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 flex items-start space-x-3">
+                <div className="w-5 h-5 bg-red-500 rounded-full flex-shrink-0 mt-0.5"></div>
                 <div>
-                  <Label htmlFor="level" className="text-white text-base">Level</Label>
-                  <Select 
-                    value={classData.level} 
-                    onValueChange={(value: string) => handleSelectChange('level', value)}
-                  >
-                    <SelectTrigger className="mt-1.5 bg-gray-700 border-gray-600 text-white">
-                      <SelectValue placeholder="Select level" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-gray-800 border-gray-700 text-white">
-                      <SelectItem value="beginner" className="text-white focus:bg-gray-700 hover:bg-gray-700">Beginner</SelectItem>
-                      <SelectItem value="intermediate" className="text-white focus:bg-gray-700 hover:bg-gray-700">Intermediate</SelectItem>
-                      <SelectItem value="advanced" className="text-white focus:bg-gray-700 hover:bg-gray-700">Advanced</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <p className="font-semibold">Error</p>
+                  <p className="text-sm mt-1">{error}</p>
+                </div>
+              </div>
+            )}
+            
+            <form onSubmit={handleSubmit} className="space-y-8">
+              {/* Basic Information Section */}
+              <div className="space-y-6">
+                <div className="flex items-center space-x-3 mb-4">
+                  <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center">
+                    <BookOpen className="h-4 w-4 text-white" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-slate-800">Basic Information</h3>
                 </div>
                 
-                <div>
-                  <Label htmlFor="code" className="text-white text-base">Class Code</Label>
-                  <Input 
-                    id="code"
-                    name="code"
-                    value={classData.code}
-                    onChange={handleInputChange}
-                    placeholder="e.g. SPA101"
-                    className="mt-1.5 bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-cyan-500"
-                  />
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="name" className="text-slate-700 font-medium text-base flex items-center">
+                      Class Name
+                      <span className="text-red-500 ml-1">*</span>
+                    </Label>
+                    <Input 
+                      id="name"
+                      name="name"
+                      value={classData.name}
+                      onChange={handleInputChange}
+                      placeholder="e.g. Advanced Spanish - Fall 2024"
+                      className="mt-2 bg-white/80 border-slate-200 text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 rounded-xl h-12 text-lg"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="description" className="text-slate-700 font-medium text-base">Description</Label>
+                    <p className="text-sm text-slate-500 mt-1 mb-2">Help students understand what this class covers</p>
+                    <Textarea 
+                      id="description"
+                      name="description"
+                      value={classData.description}
+                      onChange={handleInputChange}
+                      placeholder="This class focuses on advanced conversational Spanish, cultural immersion, and literature analysis..."
+                      rows={4}
+                      className="mt-1 bg-white/80 border-slate-200 text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 rounded-xl text-base leading-relaxed"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Class Details Section */}
+              <div className="border-t border-slate-200 pt-8">
+                <div className="flex items-center space-x-3 mb-6">
+                  <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-lg flex items-center justify-center">
+                    <GraduationCap className="h-4 w-4 text-white" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-slate-800">Class Details</h3>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <Label htmlFor="level" className="text-slate-700 font-medium text-base">Difficulty Level</Label>
+                    <p className="text-sm text-slate-500 mt-1 mb-2">Choose the appropriate skill level for your students</p>
+                    <Select 
+                      value={classData.level} 
+                      onValueChange={(value: string) => handleSelectChange('level', value)}
+                    >
+                      <SelectTrigger className="mt-1 bg-white/80 border-slate-200 text-slate-900 rounded-xl h-12 text-base">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white border-slate-200 shadow-lg rounded-xl">
+                        <SelectItem value="beginner" className="text-slate-900 focus:bg-slate-50 rounded-lg mx-1 my-0.5">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-3 h-3 bg-green-400 rounded-full"></div>
+                            <span>Beginner</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="intermediate" className="text-slate-900 focus:bg-slate-50 rounded-lg mx-1 my-0.5">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
+                            <span>Intermediate</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="advanced" className="text-slate-900 focus:bg-slate-50 rounded-lg mx-1 my-0.5">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-3 h-3 bg-red-400 rounded-full"></div>
+                            <span>Advanced</span>
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="year_group" className="text-slate-700 font-medium text-base">Year Group</Label>
+                    <p className="text-sm text-slate-500 mt-1 mb-2">Academic year or grade level for this class</p>
+                    <Input 
+                      id="year_group"
+                      name="year_group"
+                      value={classData.year_group}
+                      onChange={handleInputChange}
+                      placeholder="e.g. Year 7, 9th Grade, Form 4"
+                      className="mt-1 bg-white/80 border-slate-200 text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 rounded-xl h-12 text-base"
+                    />
+                  </div>
                 </div>
               </div>
               
-              <div className="flex justify-end pt-4">
-                <Button type="submit" disabled={saving} className="bg-cyan-600 hover:bg-cyan-700">
-                  {saving ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="h-4 w-4 mr-2" />
-                      Save Changes
-                    </>
-                  )}
-                </Button>
+              {/* Action Buttons */}
+              <div className="border-t border-slate-200 pt-8">
+                <div className="flex justify-end space-x-4">
+                  <Link href={`/dashboard/classes/${classId}`}>
+                    <Button 
+                      type="button"
+                      variant="outline" 
+                      className="border-slate-300 text-slate-700 hover:bg-slate-50 rounded-xl px-6 py-3 font-medium"
+                    >
+                      Cancel
+                    </Button>
+                  </Link>
+                  <Button 
+                    type="submit" 
+                    disabled={saving} 
+                    className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl px-8 py-3 font-semibold shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50"
+                  >
+                    {saving ? (
+                      <>
+                        <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                        Saving Changes...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="h-5 w-5 mr-2" />
+                        Save Changes
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 } 
