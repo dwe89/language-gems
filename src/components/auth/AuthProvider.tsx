@@ -216,12 +216,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     console.log('Starting auth initialization...');
     isInitializing.current = true;
 
-    // Set a reasonable timeout to prevent infinite loading
+    // Optional warning if initialization takes a long time. We no longer
+    // force-fail authentication after an arbitrary timeout because that was
+    // causing false negatives (e.g. on slow connections). Instead, simply log
+    // a warning so we still allow the normal auth flow (or the
+    // onAuthStateChange callback) to complete.
     authTimeout.current = setTimeout(() => {
       if (mounted) {
-        console.warn('Authentication initialization timed out after 8 seconds');
-        setIsLoading(false);
-        isInitializing.current = false;
+        console.warn('Authentication initialization is taking longer than expected (>8s)');
+        // NOTE: We deliberately DO NOT mutate isLoading or isInitializing here
+        // to avoid prematurely treating the user as unauthenticated.
       }
     }, 8000);
 
