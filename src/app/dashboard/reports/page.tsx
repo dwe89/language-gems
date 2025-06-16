@@ -80,34 +80,34 @@ export default function ReportsPage() {
       try {
         setLoading(true);
         
-        // Fetch teacher's classes
-        const { data: classesData, error: classesError } = await supabaseBrowser
-          .from('classes')
-          .select('*')
-          .eq('teacher_id', user.id);
-
-        if (classesError) {
-          console.error('Error fetching classes:', classesError);
+        // Fetch assignments - use created_by instead of teacher_id
+        const { data: assignmentsData, error: assignmentsError } = await supabaseBrowser
+          .from('assignments')
+          .select('id')
+          .eq('created_by', user.id);
+        
+        if (assignmentsError) {
+          console.error('Error fetching assignments:', assignmentsError);
         }
 
-        // Fetch real students enrolled in this teacher's classes
-        const { data: enrollmentsData, error: enrollmentsError } = await supabaseBrowser
+        // Fetch students and classes - use created_by instead of teacher_id
+        const { data: studentsData, error: studentsError } = await supabaseBrowser
           .from('class_enrollments')
           .select(`
             student_id,
-            enrolled_at,
-            classes!inner(id, name, teacher_id)
+            classes!inner(id, name, created_by),
+            user_profiles!inner(display_name)
           `)
-          .eq('classes.teacher_id', user.id);
+          .eq('classes.created_by', user.id);
 
-        if (enrollmentsError) {
-          console.error('Error fetching enrollments:', enrollmentsError);
+        if (studentsError) {
+          console.error('Error fetching students:', studentsError);
         }
 
         // Get student profiles separately
-        let studentsData: Student[] = [];
-        if (enrollmentsData && enrollmentsData.length > 0) {
-          const studentIds = enrollmentsData.map(enrollment => enrollment.student_id);
+        let studentsDataFormatted: Student[] = [];
+        if (studentsData && studentsData.length > 0) {
+          const studentIds = studentsData.map(enrollment => enrollment.student_id);
           
           const { data: userProfiles } = await supabaseBrowser
             .from('user_profiles')
@@ -115,7 +115,7 @@ export default function ReportsPage() {
             .in('user_id', studentIds);
 
           // Transform the data
-          studentsData = enrollmentsData.map(enrollment => {
+          studentsDataFormatted = studentsData.map(enrollment => {
             const profile = userProfiles?.find(p => p.user_id === enrollment.student_id);
             const classInfo = enrollment.classes[0]; // Get first class (should only be one due to inner join)
             
@@ -133,16 +133,13 @@ export default function ReportsPage() {
           });
         }
 
-        const classesFormatted: Class[] = classesData?.map(cls => {
-          const classStudents = studentsData.filter(s => s.class_id === cls.id);
-          return {
-            id: cls.id,
-            name: cls.name,
-            students: classStudents.length,
-            average_progress: 0, // No progress tracking yet
-            created_at: cls.created_at || new Date().toISOString()
-          };
-        }) || [];
+        const classesFormatted: Class[] = studentsDataFormatted.map(student => ({
+          id: student.class_id,
+          name: student.name,
+          students: 1,
+          average_progress: 0, // No progress tracking yet
+          created_at: new Date().toISOString()
+        }));
 
         // Set empty report data since we don't have tracking yet
         const emptyReportData: ReportData = {
@@ -166,7 +163,7 @@ export default function ReportsPage() {
           ]
         };
 
-        setStudents(studentsData);
+        setStudents(studentsDataFormatted);
         setClasses(classesFormatted);
         setReportData(emptyReportData);
       } catch (error) {

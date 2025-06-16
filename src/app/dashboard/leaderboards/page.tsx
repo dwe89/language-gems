@@ -67,7 +67,7 @@ export default function LeaderboardsPage() {
         const { data: classesData, error: classesError } = await supabaseBrowser
           .from('classes')
           .select('*')
-          .eq('teacher_id', user.id);
+          .eq('created_by', user.id);
 
         if (classesError) {
           console.error('Error fetching classes:', classesError);

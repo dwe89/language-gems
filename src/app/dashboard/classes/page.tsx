@@ -19,7 +19,7 @@ type ClassData = {
   year_group: string;
   created_at: string;
   student_count?: number;
-  teacher_id?: string;
+  created_by?: string;
 };
 
 export default function ClassesPage() {
@@ -78,7 +78,7 @@ export default function ClassesPage() {
       const { data: classesData, error: classesError } = await supabaseBrowser
         .from('classes')
         .select('*')
-        .eq('teacher_id', user.id);
+        .eq('created_by', user.id);
       
       console.log('Classes query result:', { classesData, classesError });
       
@@ -97,7 +97,7 @@ export default function ClassesPage() {
               year_group: '7',
               created_at: new Date().toISOString(),
               student_count: 0,
-              teacher_id: user.id
+              created_by: user.id
             },
             {
               id: 'sample-2',
@@ -107,7 +107,7 @@ export default function ClassesPage() {
               year_group: '9',
               created_at: new Date().toISOString(),
               student_count: 0,
-              teacher_id: user.id
+              created_by: user.id
             }
           ];
           setClasses(sampleClasses);
@@ -185,7 +185,7 @@ export default function ClassesPage() {
         description: newClass.description || null,
         level: newClass.level,
         year_group: newClass.year_group,
-        teacher_id: user.id,
+        created_by: user.id,
         created_at: new Date().toISOString()
       };
       

@@ -446,57 +446,6 @@ export default function WordBlastGame() {
     setVocabulary(sampleVocabulary.map(word => ({ ...word, correct: false })));
   };
   
-  // Save game progress (in a real app)
-  const saveProgress = async () => {
-    if (!assignmentId) return;
-    
-    try {
-      // Calculate accuracy
-      const accuracy = vocabulary.length > 0 
-        ? vocabulary.filter(w => w.correct).length / vocabulary.length
-        : 0;
-      
-      const userId = supabase.auth.getUser().then(({ data }) => data.user?.id);
-        
-      // Save progress to Supabase
-      const { data, error } = await supabase
-        .from('assignment_progress')
-        .upsert({
-          assignment_id: assignmentId,
-          student_id: await userId, // Current user ID
-          score: score,
-          accuracy: accuracy,
-          attempts: 1, // Increment this if multiple attempts
-          time_spent: gameSettings.timeLimit - timeLeft,
-          metrics: {
-            level,
-            lives_remaining: lives,
-            max_streak: streak,
-            power_ups_used: powerUps.filter(p => p.cooldown > 0).length,
-            final_state: gameState
-          },
-          status: gameState === 'completed' ? 'completed' : 'in_progress',
-          completed_at: gameState === 'completed' ? new Date().toISOString() : null,
-        })
-        .select();
-        
-      if (error) {
-        console.error('Error saving progress:', error);
-      } else {
-        console.log('Progress saved successfully:', data);
-      }
-    } catch (err) {
-      console.error('Failed to save progress:', err);
-    }
-  };
-  
-  // On game state change, save progress automatically
-  useEffect(() => {
-    if (assignmentId && (gameState === 'completed' || gameState === 'timeout')) {
-      saveProgress();
-    }
-  }, [gameState, assignmentId]);
-  
   // Confetti effect on completion
   const triggerConfetti = () => {
     confetti({
@@ -687,7 +636,7 @@ export default function WordBlastGame() {
               </p>
               <div className="flex flex-col sm:flex-row justify-center gap-4 mt-6">
                 <button
-                  onClick={resetGame}
+                  onClick={() => resetGame()}
                   className="px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-lg font-medium hover:from-indigo-600 hover:to-purple-600 transition-colors flex items-center justify-center"
                 >
                   <RefreshCw className="mr-2" size={18} />
@@ -714,7 +663,7 @@ export default function WordBlastGame() {
             
             {(gameState === 'playing' || gameState === 'completed' || gameState === 'timeout') && (
               <button
-                onClick={saveProgress}
+                onClick={resetGame}
                 className="text-indigo-400 hover:text-indigo-300"
               >
                 Save Progress

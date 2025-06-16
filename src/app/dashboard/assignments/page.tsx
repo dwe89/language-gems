@@ -43,7 +43,7 @@ export default function AssignmentsPage() {
             *,
             classes!inner(name)
           `)
-          .eq('created_by', user?.id)
+          .eq('created_by', user.id)
           .order('created_at', { ascending: false });
 
         if (assignmentsError) {

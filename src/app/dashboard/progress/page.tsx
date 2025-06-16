@@ -32,6 +32,15 @@ type UserProfile = {
   email: string;
 };
 
+interface AssignmentOverview {
+  id: string;
+  title: string;
+  class_name: string;
+  total_students: number;
+  submissions: number;
+  created_by: string;
+}
+
 export default function ProgressPage() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -56,7 +65,7 @@ export default function ProgressPage() {
         const { data: classesData, error: classesError } = await supabase
           .from('classes')
           .select('*')
-          .eq('teacher_id', user.id);
+          .eq('created_by', user.id);
 
         if (classesError) {
           console.error('Error fetching classes:', classesError);
@@ -68,9 +77,10 @@ export default function ProgressPage() {
           .select(`
             student_id,
             enrolled_at,
-            classes!inner(id, name, teacher_id)
+            class_id,
+            classes!inner(id, name, created_by)
           `)
-          .eq('classes.teacher_id', user.id);
+          .eq('classes.created_by', user.id);
 
         if (enrollmentsError) {
           console.error('Error fetching enrollments:', enrollmentsError);

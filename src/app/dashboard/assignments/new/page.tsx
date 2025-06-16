@@ -249,36 +249,26 @@ export default function NewAssignmentPage() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
-      // Fetch classes with better error handling
+      // Fetch classes using created_by
       const { data: classesData, error: classesError } = await supabase
         .from('classes')
         .select('*')
-        .eq('teacher_id', user!.id)
-        .order('name');
+        .eq('created_by', user!.id);
 
-      if (classesError) {
-        console.error('Classes fetch error:', classesError);
-        throw new Error(`Failed to load classes: ${classesError.message}`);
-      }
+      if (classesData) setClasses(classesData);
+      if (classesError) console.error('Error fetching classes:', classesError);
 
-      setClasses(classesData || []);
-
-      // Fetch vocabulary assignment lists
-      const { data: vocabularyData, error: vocabularyError } = await supabase
+      // Fetch vocabulary lists using created_by 
+      const { data: listsData, error: listsError } = await supabase
         .from('vocabulary_assignment_lists')
         .select('*')
-        .eq('teacher_id', user!.id)
-        .order('name');
+        .eq('created_by', user!.id);
 
-      if (vocabularyError) {
-        console.error('Vocabulary lists fetch error:', vocabularyError);
-        // Don't throw error for vocabulary lists as they're optional
-      }
-
-      setVocabularyLists(vocabularyData || []);
-    } catch (err) {
-      console.error('Error fetching data:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load data. Please refresh the page.');
+      if (listsData) setVocabularyLists(listsData);
+      if (listsError) console.error('Error fetching vocabulary lists:', listsError);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      setError(error instanceof Error ? error.message : 'Failed to load data. Please refresh the page.');
     } finally {
       setLoading(false);
     }

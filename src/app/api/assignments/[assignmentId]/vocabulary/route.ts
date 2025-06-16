@@ -28,19 +28,17 @@ export async function GET(
 
     const assignmentId = params.assignmentId;
 
-    // Verify the user has access to this assignment (either as student or teacher)
+    // Get assignment and verify teacher ownership
     const { data: assignment, error: assignmentError } = await supabase
       .from('assignments')
       .select(`
         id,
         title,
-        game_type,
-        vocabulary_list_id,
-        teacher_id,
+        type,
         class_id,
-        time_limit,
-        points,
-        game_config
+        vocabulary_assignment_list_id,
+        created_by,
+        config
       `)
       .eq('id', assignmentId)
       .single();
@@ -52,20 +50,33 @@ export async function GET(
       );
     }
 
-    // Check if user is the teacher
-    const isTeacher = assignment.teacher_id === user.id;
-    
+    const isTeacher = assignment.created_by === user.id;
+
+    // Get students in the class
+    const { data: students, error: studentsError } = await supabase
+      .from('class_enrollments')
+      .select(`
+        student_id,
+        user_profiles!inner(
+          id,
+          display_name
+        )
+      `)
+      .eq('class_id', assignment.class_id);
+
+    if (studentsError) {
+      console.error('Error fetching students:', studentsError);
+      return NextResponse.json(
+        { error: 'Failed to fetch students' },
+        { status: 500 }
+      );
+    }
+
     // Check if user is a student in the class
     let isStudent = false;
     if (!isTeacher) {
-      const { data: studentClass, error: studentError } = await supabase
-        .from('class_students')
-        .select('id')
-        .eq('class_id', assignment.class_id)
-        .eq('student_id', user.id)
-        .single();
-
-      isStudent = !studentError && !!studentClass;
+      const student = students.find((student: any) => student.student_id === user.id);
+      isStudent = !!student;
     }
 
     if (!isTeacher && !isStudent) {
@@ -76,15 +87,13 @@ export async function GET(
     }
 
     // Get the vocabulary list for this assignment
-    if (!assignment.vocabulary_list_id) {
+    if (!assignment.vocabulary_assignment_list_id) {
       return NextResponse.json({
         assignment: {
           id: assignment.id,
           title: assignment.title,
-          gameType: assignment.game_type,
-          timeLimit: assignment.time_limit,
-          points: assignment.points,
-          gameConfig: assignment.game_config
+          type: assignment.type,
+          config: assignment.config
         },
         vocabulary: []
       });
@@ -105,7 +114,7 @@ export async function GET(
           part_of_speech
         )
       `)
-      .eq('assignment_list_id', assignment.vocabulary_list_id)
+      .eq('assignment_list_id', assignment.vocabulary_assignment_list_id)
       .order('order_position');
 
     if (vocabError) {
@@ -127,51 +136,18 @@ export async function GET(
       order_position: item.order_position
     })) || [];
 
-    // If this is a student request, also get/create their progress record
-    let studentProgress = null;
-    if (isStudent) {
-      const { data: progress, error: progressError } = await supabase
-        .from('assignment_progress')
-        .select('*')
-        .eq('assignment_id', assignmentId)
-        .eq('student_id', user.id)
-        .single();
-
-      if (progressError && progressError.code !== 'PGRST116') {
-        console.error('Error fetching progress:', progressError);
-      } else if (!progress) {
-        // Create progress record if it doesn't exist
-        const { data: newProgress, error: createError } = await supabase
-          .from('assignment_progress')
-          .insert([{
-            assignment_id: assignmentId,
-            student_id: user.id,
-            status: 'not_started'
-          }])
-          .select()
-          .single();
-
-        if (createError) {
-          console.error('Error creating progress:', createError);
-        } else {
-          studentProgress = newProgress;
-        }
-      } else {
-        studentProgress = progress;
-      }
-    }
-
     return NextResponse.json({
       assignment: {
         id: assignment.id,
         title: assignment.title,
-        gameType: assignment.game_type,
-        timeLimit: assignment.time_limit,
-        points: assignment.points,
-        gameConfig: assignment.game_config
+        type: assignment.type,
+        config: assignment.config
       },
       vocabulary,
-      studentProgress: isStudent ? studentProgress : null
+      students: students.map((student: any) => ({
+        id: student.student_id,
+        displayName: student.user_profiles.display_name
+      }))
     });
 
   } catch (error) {

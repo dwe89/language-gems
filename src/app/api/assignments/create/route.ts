@@ -72,12 +72,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify teacher owns the class
+    // Validate that the class belongs to the teacher
     const { data: classData, error: classError } = await supabase
       .from('classes')
-      .select('id, teacher_id')
+      .select('id, created_by')
       .eq('id', body.classId)
-      .eq('teacher_id', user.id)
+      .eq('created_by', user.id)
       .single();
 
     if (classError || !classData) {
@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
         .insert([{
           name: `${body.title} - Vocabulary List`,
           description: `Auto-generated vocabulary list for ${body.title}`,
-          teacher_id: user.id,
+          created_by: user.id,
           selection_criteria: body.vocabularySelection
         }])
         .select()
@@ -121,17 +121,18 @@ export async function POST(request: NextRequest) {
     // Create the assignment
     const { data: assignment, error: assignmentError } = await supabase
       .from('assignments')
-      .insert([{
+      .insert({
         title: body.title,
         description: body.description,
-        created_by: user.id,
-        class_id: body.classId,
         type: body.gameType,
+        class_id: body.classId,
         due_date: body.dueDate,
         points: body.points || 10,
-        status: 'active',
-        wordlist_id: vocabularyListId
-      }])
+        vocabulary_assignment_list_id: vocabularyListId,
+        created_by: user.id,
+        config: body.gameConfig,
+        status: 'active'
+      })
       .select()
       .single();
 
@@ -143,30 +144,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create progress records for all students in the class
-    const { data: students, error: studentsError } = await supabase
-      .from('student_classes')
-      .select('student_id')
-      .eq('class_id', body.classId);
-
-    if (!studentsError && students && students.length > 0) {
-      const progressRecords = students.map(student => ({
-        assignment_id: assignment.id,
-        student_id: student.student_id,
-        status: 'not_started' as const,
-        score: 0,
-        created_at: new Date().toISOString()
-      }));
-
-      const { error: progressError } = await supabase
-        .from('assignment_progress')
-        .insert(progressRecords);
-
-      if (progressError) {
-        console.error('Progress records creation error:', progressError);
-        // Don't fail the assignment creation if progress records fail
-      }
-    }
+    // Don't create assignment_progress entries here - they will be created when students start the assignment
+    // The student_vocabulary_assignment_progress table will track individual vocabulary progress
 
     return NextResponse.json({
       success: true,

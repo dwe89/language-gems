@@ -52,45 +52,56 @@ function TeacherDashboard({ username = 'Ms. Carter' }: { username?: string }) {
   useEffect(() => {
     if (!user) return;
 
-    const fetchRealStats = async () => {
+    async function fetchDashboardData() {
       try {
-        // Get total enrolled students for this teacher
-        const { data: enrollments } = await supabaseBrowser
+        // Fetch student count from class enrollments using created_by
+        const { data: studentData, error: studentError } = await supabaseBrowser
           .from('class_enrollments')
           .select(`
             student_id,
-            classes!inner(teacher_id)
+            classes!inner(created_by)
           `)
-          .eq('classes.teacher_id', user.id);
+          .eq('classes.created_by', user.id);
 
-        const activeStudents = enrollments?.length || 0;
+        if (studentData) {
+          setStats({
+            ...stats,
+            activeStudents: studentData.length,
+            loading: false
+          });
+        }
 
-        // Get active assignments for this teacher
-        const { data: assignments } = await supabaseBrowser
+        // Fetch assignments count using created_by
+        const { data: assignmentData, error: assignmentError } = await supabaseBrowser
           .from('assignments')
           .select('id')
-          .eq('teacher_id', user.id)
+          .eq('created_by', user.id)
           .eq('status', 'active');
 
-        const activeAssignments = assignments?.length || 0;
+        if (assignmentData) {
+          setStats({
+            ...stats,
+            activeAssignments: assignmentData.length,
+            loading: false
+          });
+        }
+
+        // Use student_vocabulary_assignment_progress instead of assignment_progress
+        const { data: progressData, error: progressError } = await supabaseBrowser
+          .from('student_vocabulary_assignment_progress')
+          .select('*');
 
         // Calculate completion rate (only if there are assignments)
         let completionRate = 0;
-        if (activeAssignments > 0) {
-          const { data: progress } = await supabaseBrowser
-            .from('assignment_progress')
-            .select('status, assignment_id')
-            .in('assignment_id', assignments?.map(a => a.id) || []);
-
-          if (progress && progress.length > 0) {
-            const completed = progress.filter(p => p.status === 'completed').length;
-            completionRate = Math.round((completed / progress.length) * 100);
+        if (assignmentData && assignmentData.length > 0) {
+          if (progressData && progressData.length > 0) {
+            const completed = progressData.filter(p => p.status === 'completed').length;
+            completionRate = Math.round((completed / progressData.length) * 100);
           }
         }
 
         setStats({
-          activeStudents,
-          activeAssignments,
+          ...stats,
           completionRate,
           loading: false
         });
@@ -103,9 +114,9 @@ function TeacherDashboard({ username = 'Ms. Carter' }: { username?: string }) {
           loading: false
         });
       }
-    };
+    }
 
-    fetchRealStats();
+    fetchDashboardData();
   }, [user]);
   
   return (

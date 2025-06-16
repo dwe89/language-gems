@@ -56,7 +56,7 @@ export default function TeacherVocabularyDashboard() {
       try {
         // Fetch vocabulary lists
         const { data: listsData, error: listsError } = await supabase
-          .from('vocabulary_lists')
+          .from('vocabulary_assignment_lists')
           .select('*, vocabulary_items(id)');
         
         if (listsError) {
@@ -167,7 +167,7 @@ export default function TeacherVocabularyDashboard() {
     if (window.confirm('Are you sure you want to delete this vocabulary list? This action cannot be undone.')) {
       try {
         const { error } = await supabase
-          .from('vocabulary_lists')
+          .from('vocabulary_assignment_lists')
           .delete()
           .eq('id', listId);
         

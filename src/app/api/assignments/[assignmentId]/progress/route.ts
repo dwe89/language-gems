@@ -46,7 +46,7 @@ export async function POST(
     // Verify the assignment exists and user has access
     const { data: assignment, error: assignmentError } = await supabase
       .from('assignments')
-      .select('id, class_id, teacher_id, vocabulary_list_id')
+      .select('id, class_id, created_by, vocabulary_assignment_list_id')
       .eq('id', assignmentId)
       .single();
 
@@ -57,15 +57,27 @@ export async function POST(
       );
     }
 
-    // Verify student is in the class
-    const { data: studentClass, error: studentError } = await supabase
-      .from('class_students')
-      .select('id')
-      .eq('class_id', assignment.class_id)
-      .eq('student_id', user.id)
-      .single();
+    // Check if user is the teacher or a student in the class
+    let isTeacher = false;
+    let isStudent = false;
 
-    if (studentError || !studentClass) {
+    if (assignment.created_by === user.id) {
+      isTeacher = true;
+    } else {
+      // Check if user is a student in this class
+      const { data: enrollment } = await supabase
+        .from('class_enrollments')
+        .select('student_id')
+        .eq('class_id', assignment.class_id)
+        .eq('student_id', user.id)
+        .single();
+      
+      if (enrollment) {
+        isStudent = true;
+      }
+    }
+
+    if (!isTeacher && !isStudent) {
       return NextResponse.json(
         { error: 'Access denied' },
         { status: 403 }
@@ -193,40 +205,68 @@ export async function GET(
 
     const assignmentId = params.assignmentId;
 
-    // Get assignment progress
-    const { data: progress, error: progressError } = await supabase
-      .from('assignment_progress')
-      .select('*')
-      .eq('assignment_id', assignmentId)
-      .eq('student_id', user.id)
+    // Get assignment and verify ownership
+    const { data: assignment, error: assignmentError } = await supabase
+      .from('assignments')
+      .select('id, class_id, created_by, vocabulary_assignment_list_id')
+      .eq('id', assignmentId)
       .single();
 
-    if (progressError && progressError.code !== 'PGRST116') {
-      console.error('Error fetching progress:', progressError);
+    if (assignmentError || !assignment) {
       return NextResponse.json(
-        { error: 'Failed to fetch progress' },
-        { status: 500 }
+        { error: 'Assignment not found' },
+        { status: 404 }
       );
     }
 
-    // Get vocabulary-level progress
-    const { data: vocabularyProgress, error: vocabError } = await supabase
-      .from('student_vocabulary_assignment_progress')
+    // Check if user is the teacher or a student in the class
+    let isTeacher = false;
+    let isStudent = false;
+
+    if (assignment.created_by === user.id) {
+      isTeacher = true;
+    } else {
+      // Check if user is a student in this class
+      const { data: enrollment } = await supabase
+        .from('class_enrollments')
+        .select('student_id')
+        .eq('class_id', assignment.class_id)
+        .eq('student_id', user.id)
+        .single();
+      
+      if (enrollment) {
+        isStudent = true;
+      }
+    }
+
+    if (!isTeacher && !isStudent) {
+      return NextResponse.json(
+        { error: 'Access denied' },
+        { status: 403 }
+      );
+    }
+
+    // Get class enrollments instead of assignment_progress
+    const { data: enrollments, error: enrollmentsError } = await supabase
+      .from('class_enrollments')
       .select(`
-        vocabulary_id,
-        attempts,
-        correct_attempts,
-        mastery_level,
-        last_attempted_at,
-        vocabulary (
-          spanish,
-          english,
-          theme,
-          topic
+        student_id,
+        user_profiles!inner(
+          id,
+          display_name
         )
       `)
-      .eq('assignment_id', assignmentId)
-      .eq('student_id', user.id);
+      .eq('class_id', assignment.class_id);
+
+    if (enrollmentsError) {
+      console.error('Error fetching enrollments:', enrollmentsError);
+    }
+
+    // Get vocabulary progress from student_vocabulary_assignment_progress
+    const { data: vocabularyProgress, error: vocabError } = await supabase
+      .from('student_vocabulary_assignment_progress')
+      .select('*')
+      .eq('assignment_id', assignmentId);
 
     if (vocabError) {
       console.error('Error fetching vocabulary progress:', vocabError);
@@ -245,8 +285,21 @@ export async function GET(
       console.error('Error fetching game sessions:', sessionsError);
     }
 
+    // Build progress data from enrollments and vocabulary progress instead of assignment_progress
+    const progressData = enrollments?.map(enrollment => {
+      const studentVocabProgress = vocabularyProgress?.filter(vp => vp.student_id === enrollment.student_id) || [];
+      
+      return {
+        student_id: enrollment.student_id,
+        student_name: enrollment.user_profiles.display_name,
+        vocabulary_progress: studentVocabProgress,
+        completion_percentage: calculateCompletionPercentage(studentVocabProgress),
+        last_activity: getLastActivity(studentVocabProgress)
+      };
+    }) || [];
+
     return NextResponse.json({
-      progress: progress || null,
+      progress: progressData,
       vocabularyProgress: vocabularyProgress || [],
       gameSessions: gameSessions || []
     });

@@ -143,15 +143,49 @@ export default function StudentDashboard() {
           
         setAssignments(assignmentsData || []);
         
-        // Get assignment progress for this student
-        const { data: progressData } = await supabase
-          .from('assignment_progress')
-          .select('*')
+        // Get assignment progress from student_vocabulary_assignment_progress instead of assignment_progress
+        const { data: assignmentProgress, error: progressError } = await supabase
+          .from('student_vocabulary_assignment_progress')
+          .select(`
+            assignment_id,
+            mastery_level,
+            last_attempted_at,
+            assignments (
+              id,
+              title,
+              type,
+              due_date
+            )
+          `)
           .eq('student_id', user.id);
+
+        if (progressError) {
+          console.error('Error fetching assignment progress:', progressError);
+        }
+
+        // Calculate progress statistics from vocabulary progress data
+        const progressStats = {
+          completed: assignmentProgress?.filter(p => p.mastery_level === 'mastered').length || 0,
+          in_progress: assignmentProgress?.filter(p => p.mastery_level === 'learning').length || 0,
+          total: assignmentProgress?.length || 0
+        };
+
+        // Use student_vocabulary_assignment_progress data for assignment display
+        const recentAssignments = assignmentProgress
+          ?.filter(p => p.assignments)
+          ?.slice(0, 5)
+          ?.map(p => ({
+            id: p.assignment_id,
+            title: p.assignments?.title || 'Untitled Assignment',
+            type: p.assignments?.type || 'unknown',
+            due_date: p.assignments?.due_date,
+            status: p.mastery_level === 'mastered' ? 'completed' : 'in_progress',
+            progress: p.mastery_level === 'mastered' ? 100 : 50
+          })) || [];
         
         // Calculate statistics
-        const completedAssignments = progressData?.filter(p => p.status === 'completed')?.length || 0;
-        const totalPoints = progressData?.reduce((sum, p) => sum + p.score, 0) || 0;
+        const completedAssignments = progressStats.completed;
+        const totalPoints = progressStats.total;
         
         // Calculate level based on points (simple algorithm)
         const level = Math.max(1, Math.floor(totalPoints / 100) + 1);
