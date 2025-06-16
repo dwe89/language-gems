@@ -50,15 +50,21 @@ export default function AdminNewProductPage() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Validate file type
-      if (file.type !== 'application/pdf') {
-        setErrors(['Please select a PDF file.']);
+      // Validate file type - support PDF and DOC files
+      const allowedTypes = [
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      ];
+      
+      if (!allowedTypes.includes(file.type)) {
+        setErrors(['Please select a PDF, DOC, or DOCX file.']);
         return;
       }
       
-      // Validate file size (10MB max)
-      if (file.size > 10 * 1024 * 1024) {
-        setErrors(['File size must be less than 10MB.']);
+      // Validate file size (50MB max to match bucket limit)
+      if (file.size > 50 * 1024 * 1024) {
+        setErrors(['File size must be less than 50MB.']);
         return;
       }
       
@@ -136,7 +142,7 @@ export default function AdminNewProductPage() {
     }
 
     if (!formData.file) {
-      newErrors.push('PDF file is required.');
+      newErrors.push('Document file (PDF, DOC, or DOCX) is required.');
     }
 
     setErrors(newErrors);
@@ -225,7 +231,7 @@ export default function AdminNewProductPage() {
           </button>
           <div>
             <h1 className="text-3xl font-bold text-slate-800">Add New Product</h1>
-            <p className="text-slate-600 mt-2">Upload a new educational PDF and add product information</p>
+            <p className="text-slate-600 mt-2">Upload a new educational document (PDF, DOC, or DOCX) and add product information</p>
           </div>
         </div>
 
@@ -349,12 +355,12 @@ export default function AdminNewProductPage() {
             {/* File Upload */}
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                PDF File *
+                Document File *
               </label>
               <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center hover:border-slate-400 transition-colors">
                 <input
                   type="file"
-                  accept=".pdf"
+                  accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                   onChange={handleFileChange}
                   className="hidden"
                   id="file-upload"
@@ -372,9 +378,9 @@ export default function AdminNewProductPage() {
                       </div>
                     ) : (
                       <div>
-                        <p className="font-medium">Click to upload PDF</p>
-                        <p className="text-slate-500">or drag and drop</p>
-                        <p className="text-xs text-slate-400 mt-1">Max file size: 10MB</p>
+                        <p className="font-medium">Click to upload document</p>
+                        <p className="text-slate-500">PDF, DOC, or DOCX files</p>
+                        <p className="text-xs text-slate-400 mt-1">Max file size: 50MB</p>
                       </div>
                     )}
                   </div>

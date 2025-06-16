@@ -39,19 +39,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const now = Date.now();
     const lastFetch = lastProfileFetch.current.get(cacheKey) || 0;
     
-    // Only fetch if we haven't fetched in the last 5 minutes
-    if (profileCache.current.has(cacheKey) && (now - lastFetch) < 5 * 60 * 1000) {
+    // Only fetch if we haven't fetched in the last 2 minutes (reduced from 5)
+    if (profileCache.current.has(cacheKey) && (now - lastFetch) < 2 * 60 * 1000) {
       return profileCache.current.get(cacheKey);
     }
     
     try {
-      // Add timeout to profile fetch
+      // Reduced timeout for faster response
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 2000); // Reduced to 2 seconds
       
       const { data: profile, error } = await supabaseBrowser
         .from('user_profiles')
-        .select('role')
+        .select('role, subscription_type')
         .eq('user_id', userId)
         .abortSignal(controller.signal)
         .single();
@@ -77,9 +77,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Function to refresh the session and update state
   const refreshSession = async () => {
     try {
-      // Add timeout to session refresh
+      // Reduced timeout for faster response
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 3000); // Reduced to 3 seconds
       
       const { data: { session: currentSession }, error } = await supabaseBrowser.auth.getSession();
       
@@ -90,13 +90,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // If there's an error, try to get user directly with timeout
         try {
           const userController = new AbortController();
-          const userTimeoutId = setTimeout(() => userController.abort(), 3000);
+          const userTimeoutId = setTimeout(() => userController.abort(), 2000); // Reduced timeout
           
           const { data: { user: currentUser } } = await supabaseBrowser.auth.getUser();
           clearTimeout(userTimeoutId);
           
           if (currentUser) {
             setUser(currentUser);
+            setIsLoading(false);
           }
         } catch (userError) {
           console.error('Fallback user fetch failed:', userError);
@@ -112,13 +113,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // Update the user's metadata with the role from the profile
           currentSession.user.user_metadata = {
             ...currentSession.user.user_metadata,
-            role: profile.role
+            role: profile.role,
+            subscription_type: profile.subscription_type
           };
         }
       }
       
       setSession(currentSession);
       setUser(currentSession?.user || null);
+      setIsLoading(false);
     } catch (error: any) {
       if (error.name === 'AbortError') {
         console.warn('Session refresh timed out');
@@ -141,19 +144,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     isInitializing.current = true;
 
-    // Set a maximum loading timeout to prevent infinite loading
+    // Reduced maximum loading timeout to prevent infinite loading
     authTimeout.current = setTimeout(() => {
       if (mounted) {
         console.warn('Authentication initialization timed out');
         setIsLoading(false);
+        isInitializing.current = false;
       }
-    }, 8000); // 8 second maximum
+    }, 5000); // Reduced to 5 seconds
 
     // Get the current session
     const initializeAuth = async () => {
       try {
+        // Reduced timeout for faster initialization
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+        const timeoutId = setTimeout(() => controller.abort(), 3000); // Reduced to 3 seconds
         
         const { data: { session: currentSession }, error } = await supabaseBrowser.auth.getSession();
         
@@ -163,6 +168,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           console.error('Error getting session:', error);
           if (mounted) {
             setIsLoading(false);
+            isInitializing.current = false;
           }
           return;
         }
@@ -175,7 +181,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             // Update the user's metadata with the role from the profile
             currentSession.user.user_metadata = {
               ...currentSession.user.user_metadata,
-              role: profile.role
+              role: profile.role,
+              subscription_type: profile.subscription_type
             };
           }
         }
@@ -184,6 +191,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setSession(currentSession);
           setUser(currentSession?.user || null);
           setIsLoading(false);
+          isInitializing.current = false;
+          if (authTimeout.current) {
+            clearTimeout(authTimeout.current);
+          }
         }
       } catch (error: any) {
         if (error.name === 'AbortError') {
@@ -191,7 +202,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } else {
           console.error('Error initializing auth:', error);
         }
-      } finally {
         if (mounted) {
           setIsLoading(false);
           isInitializing.current = false;
@@ -209,6 +219,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       async (event: any, currentSession: Session | null) => {
         if (!mounted) return;
         
+        console.log('Auth state change event:', event, 'Session:', !!currentSession);
+        
         try {
           // If we have a session, fetch the user's profile with timeout
           if (currentSession?.user) {
@@ -218,7 +230,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               // Update the user's metadata with the role from the profile
               currentSession.user.user_metadata = {
                 ...currentSession.user.user_metadata,
-                role: profile.role
+                role: profile.role,
+                subscription_type: profile.subscription_type
               };
             }
           }
@@ -268,7 +281,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       subscription.unsubscribe();
     };
-  }, []); // Empty dependency array to prevent re-initialization
+  }, [router]);
 
   const signOut = async () => {
     try {

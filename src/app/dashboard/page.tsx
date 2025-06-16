@@ -12,7 +12,8 @@ import {
 import { supabaseBrowser } from '../../components/auth/AuthProvider';
 
 export default function DashboardPage() {
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, isLoading: authLoading, refreshSession } = useAuth();
+  const [initialLoad, setInitialLoad] = useState(true);
   
   useEffect(() => {
     console.log('User in dashboard:', {
@@ -21,22 +22,50 @@ export default function DashboardPage() {
       metadata: user?.user_metadata,
       role: user?.user_metadata?.role
     });
-  }, [user]);
+    
+    // If user is undefined but we're not loading, try refreshing the session
+    if (!user && !authLoading && initialLoad) {
+      console.log('User undefined, refreshing session...');
+      refreshSession();
+      setInitialLoad(false);
+    }
+  }, [user, authLoading, refreshSession, initialLoad]);
   
-  // If auth is still loading, show a loading spinner
-  if (authLoading) {
+  // If auth is still loading or we're on the initial load, show a loading spinner
+  if (authLoading || (initialLoad && !user)) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-teal-500 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading dashboard...</p>
+          {!authLoading && initialLoad && (
+            <p className="text-sm text-gray-500 mt-2">Refreshing authentication...</p>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // If user is still null after auth loading is complete, show error
+  if (!user && !authLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold text-gray-800 mb-4">Authentication Required</h2>
+          <p className="text-gray-600 mb-6">Please sign in to access your dashboard</p>
+          <Link 
+            href="/auth/login"
+            className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+          >
+            Sign In
+          </Link>
         </div>
       </div>
     );
   }
 
   // This route is only for teachers - students should use /student-dashboard
-  return <TeacherDashboard username={user?.user_metadata?.name || 'Teacher'} />;
+  return <TeacherDashboard username={user?.user_metadata?.name || user?.email?.split('@')[0] || 'Teacher'} />;
 }
 
 function TeacherDashboard({ username = 'Ms. Carter' }: { username?: string }) {
@@ -61,29 +90,27 @@ function TeacherDashboard({ username = 'Ms. Carter' }: { username?: string }) {
             student_id,
             classes!inner(created_by)
           `)
-          .eq('classes.created_by', user.id);
+          .eq('classes.created_by', user!.id);
 
         if (studentData) {
-          setStats({
-            ...stats,
-            activeStudents: studentData.length,
-            loading: false
-          });
+          setStats(prevStats => ({
+            ...prevStats,
+            activeStudents: studentData.length
+          }));
         }
 
         // Fetch assignments count using created_by
         const { data: assignmentData, error: assignmentError } = await supabaseBrowser
           .from('assignments')
           .select('id')
-          .eq('created_by', user.id)
+          .eq('created_by', user!.id)
           .eq('status', 'active');
 
         if (assignmentData) {
-          setStats({
-            ...stats,
-            activeAssignments: assignmentData.length,
-            loading: false
-          });
+          setStats(prevStats => ({
+            ...prevStats,
+            activeAssignments: assignmentData.length
+          }));
         }
 
         // Use student_vocabulary_assignment_progress instead of assignment_progress
@@ -100,11 +127,11 @@ function TeacherDashboard({ username = 'Ms. Carter' }: { username?: string }) {
           }
         }
 
-        setStats({
-          ...stats,
+        setStats(prevStats => ({
+          ...prevStats,
           completionRate,
           loading: false
-        });
+        }));
       } catch (error) {
         console.error('Error fetching dashboard stats:', error);
         setStats({

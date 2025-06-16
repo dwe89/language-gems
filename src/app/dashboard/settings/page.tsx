@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../../components/auth/AuthProvider';
-import { supabase } from '../../../lib/supabase';
+import { supabaseBrowser } from '../../../components/auth/AuthProvider';
 import { Save, User, Lock, Mail } from 'lucide-react';
 
 export default function SettingsPage() {
@@ -28,7 +28,7 @@ export default function SettingsPage() {
         setLoading(true);
         
         // Fetch user profile
-        const { data, error } = await supabase
+        const { data, error } = await supabaseBrowser
           .from('user_profiles')
           .select('*')
           .eq('user_id', user.id)
@@ -62,7 +62,7 @@ export default function SettingsPage() {
       setErrorMessage('');
       
       // Update user profile
-      const { error } = await supabase
+      const { error } = await supabaseBrowser
         .from('user_profiles')
         .update({
           display_name: profile.display_name
@@ -77,7 +77,7 @@ export default function SettingsPage() {
           throw new Error('New passwords do not match');
         }
         
-        const { error: passwordError } = await supabase.auth.updateUser({
+        const { error: passwordError } = await supabaseBrowser.auth.updateUser({
           password: profile.new_password
         });
         

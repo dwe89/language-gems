@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { supabase } from '../../lib/supabase';
+import { supabaseBrowser } from './AuthProvider';
 
 // This is a placeholder for the actual authentication logic that would be implemented with Supabase
 interface AuthFormProps {
@@ -56,7 +56,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
         }, 500);
       } else {
         // For signup - continue using Supabase directly since we need to create a profile
-        const { data, error } = await supabase.auth.signUp({ 
+        const { data, error } = await supabaseBrowser.auth.signUp({ 
           email: emailOrUsername, 
           password, 
           options: { 
@@ -75,7 +75,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
         if (data.user) {
           console.log('Creating user profile with ID:', data.user.id);
           
-          const { error: profileError } = await supabase
+          const { error: profileError } = await supabaseBrowser
             .from('user_profiles')
             .insert({
               user_id: data.user.id,
