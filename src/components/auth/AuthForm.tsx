@@ -39,17 +39,39 @@ export default function AuthForm({ mode }: AuthFormProps) {
       console.log(`Attempting to ${mode} with identifier: ${finalEmailOrUsername}`);
       
       if (mode === 'login') {
-        // Use the signIn method from auth context
-        const { error: signInError } = await signIn(finalEmailOrUsername, password);
-        
-        if (signInError) {
-          throw new Error(signInError);
+        if (isStudentLogin) {
+          // Use student login API
+          const response = await fetch('/api/auth/student-login', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              username: emailOrUsername,
+              schoolCode: schoolCode,
+              password: password
+            }),
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            throw new Error(data.error || 'Student login failed');
+          }
+
+          console.log('Student login successful, navigating to account page');
+          router.push('/account');
+        } else {
+          // Use the signIn method from auth context for teachers/admins
+          const { error: signInError } = await signIn(finalEmailOrUsername, password);
+          
+          if (signInError) {
+            throw new Error(signInError);
+          }
+          
+          console.log('Login successful, navigating to account page');
+          router.push('/account');
         }
-        
-        console.log('Login successful, navigating to account page');
-        
-        // Use router navigation instead of window.location
-        router.push('/account');
       } else {
         // For signup - use the API route
         const response = await fetch('/api/auth/signup', {
