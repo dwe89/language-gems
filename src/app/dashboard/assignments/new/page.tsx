@@ -224,6 +224,29 @@ export default function NewAssignmentPage() {
 
   // Create a ref to track if data has already been fetched
   const [dataFetched, setDataFetched] = useState(false);
+  const [vocabularyPreview, setVocabularyPreview] = useState<any[]>([]);
+  const [previewLoading, setPreviewLoading] = useState(false);
+
+  // Memory Game grid configurations
+  const MEMORY_GAME_GRIDS = [
+    { pairs: 3, grid: '3×2', description: 'Easy - 3 pairs', totalCards: 6 },
+    { pairs: 4, grid: '4×2', description: 'Easy - 4 pairs', totalCards: 8 },
+    { pairs: 5, grid: '5×2', description: 'Medium - 5 pairs', totalCards: 10 },
+    { pairs: 6, grid: '4×3', description: 'Medium - 6 pairs', totalCards: 12 },
+    { pairs: 8, grid: '4×4', description: 'Hard - 8 pairs', totalCards: 16 },
+    { pairs: 10, grid: '5×4', description: 'Expert - 10 pairs', totalCards: 20 }
+  ];
+
+  // Get recommended grid size for selected activities
+  const getRecommendedGridSize = () => {
+    const memoryGame = selectedActivities.find(a => a.id === 'memory-game');
+    if (memoryGame) {
+      const wordCount = vocabularySelection.wordCount || 6;
+      const bestGrid = MEMORY_GAME_GRIDS.find(g => g.pairs >= wordCount) || MEMORY_GAME_GRIDS[MEMORY_GAME_GRIDS.length - 1];
+      return bestGrid;
+    }
+    return null;
+  };
 
   // Fetch data function without dependencies that cause loops
   const fetchData = useCallback(async () => {
@@ -294,6 +317,36 @@ export default function NewAssignmentPage() {
   const handleVocabularyChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setVocabularySelection(prev => ({ ...prev, [name]: value }));
+    
+    // Clear preview when selection changes
+    setVocabularyPreview([]);
+  };
+
+  const fetchVocabularyPreview = async () => {
+    try {
+      setPreviewLoading(true);
+      const response = await fetch('/api/vocabulary/preview', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(vocabularySelection)
+      });
+
+      const result = await response.json();
+      
+      if (response.ok) {
+        setVocabularyPreview(result.vocabulary || []);
+      } else {
+        console.error('Preview error:', result.error);
+        setError('Failed to load vocabulary preview');
+      }
+    } catch (error) {
+      console.error('Preview fetch error:', error);
+      setError('Failed to load vocabulary preview');
+    } finally {
+      setPreviewLoading(false);
+    }
   };
 
   const addActivity = (activity: SelectedActivity) => {
@@ -627,6 +680,74 @@ export default function NewAssignmentPage() {
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
                   />
                 </div>
+              </div>
+
+              {/* Vocabulary Preview Section */}
+              <div className="mt-6 pt-6 border-t border-gray-200">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-medium text-gray-900">Vocabulary Preview</h3>
+                  <button
+                    type="button"
+                    onClick={fetchVocabularyPreview}
+                    disabled={previewLoading}
+                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center"
+                  >
+                    {previewLoading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Loading...
+                      </>
+                    ) : (
+                      <>
+                        <Eye className="mr-2" size={16} />
+                        Preview Vocabulary
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {/* Grid Size Recommendation for Memory Game */}
+                {getRecommendedGridSize() && (
+                  <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="flex items-center mb-2">
+                      <Brain className="mr-2 text-blue-600" size={16} />
+                      <span className="font-medium text-blue-900">Memory Game Grid Recommendation</span>
+                    </div>
+                    <p className="text-sm text-blue-700">
+                      For {vocabularySelection.wordCount} words, we recommend a{' '}
+                      <strong>{getRecommendedGridSize()?.grid}</strong> grid ({getRecommendedGridSize()?.description}).
+                      This will create {getRecommendedGridSize()?.totalCards} cards total.
+                    </p>
+                  </div>
+                )}
+
+                {vocabularyPreview.length > 0 && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-60 overflow-y-auto">
+                    {vocabularyPreview.map((word, index) => (
+                      <div key={word.id || index} className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                        <div className="flex justify-between items-start mb-1">
+                          <span className="font-medium text-gray-900">{word.spanish}</span>
+                          <span className="text-xs text-gray-500">#{index + 1}</span>
+                        </div>
+                        <span className="text-sm text-gray-600">{word.english}</span>
+                        {word.theme && (
+                          <div className="mt-1">
+                            <span className="text-xs px-2 py-1 bg-indigo-100 text-indigo-700 rounded">
+                              {word.theme}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {vocabularyPreview.length === 0 && !previewLoading && (
+                  <div className="text-center py-8 text-gray-500">
+                    <BookOpen className="mx-auto mb-2" size={32} />
+                    <p>Click "Preview Vocabulary" to see the words that will be used in this assignment.</p>
+                  </div>
+                )}
               </div>
             </div>
 

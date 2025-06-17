@@ -75,9 +75,9 @@ export async function POST(request: NextRequest) {
     // Validate that the class belongs to the teacher
     const { data: classData, error: classError } = await supabase
       .from('classes')
-      .select('id, created_by')
+      .select('id, teacher_id')
       .eq('id', body.classId)
-      .eq('created_by', user.id)
+      .eq('teacher_id', user.id)
       .single();
 
     if (classError || !classData) {
@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
         .insert([{
           name: `${body.title} - Vocabulary List`,
           description: `Auto-generated vocabulary list for ${body.title}`,
-          created_by: user.id,
+          teacher_id: user.id,
           selection_criteria: body.vocabularySelection
         }])
         .select()
