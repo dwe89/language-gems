@@ -190,21 +190,36 @@ export default function AssignmentsPage() {
                 >
                   <Plus size={18} />
                   <span>Create Assignment</span>
-                  <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className={`w-4 h-4 ml-1 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
                 </button>
                 {dropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-64 bg-white/95 backdrop-blur-sm rounded-xl shadow-xl border border-slate-200 z-10">
-                    <div className="py-2">
-                      <Link href="/dashboard/assignments/new" className="block px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition-colors font-medium">
-                        📝 Standard Assignment
-                      </Link>
-                      <Link href="/dashboard/assignments/new/exam" className="block px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition-colors font-medium">
-                        🎯 Exam Assignment
-                      </Link>
+                  <>
+                    {/* Overlay to close dropdown when clicking outside */}
+                    <div 
+                      className="fixed inset-0 z-10" 
+                      onClick={() => setDropdownOpen(false)}
+                    />
+                    <div className="absolute right-0 mt-2 w-64 bg-white/95 backdrop-blur-sm rounded-xl shadow-xl border border-slate-200 z-20">
+                      <div className="py-2">
+                        <Link 
+                          href="/dashboard/assignments/new" 
+                          className="block px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition-colors font-medium"
+                          onClick={() => setDropdownOpen(false)}
+                        >
+                          📝 Standard Assignment
+                        </Link>
+                        <Link 
+                          href="/dashboard/assignments/new/exam" 
+                          className="block px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition-colors font-medium"
+                          onClick={() => setDropdownOpen(false)}
+                        >
+                          🎯 Exam Assignment
+                        </Link>
+                      </div>
                     </div>
-                  </div>
+                  </>
                 )}
               </div>
             </div>

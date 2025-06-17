@@ -98,7 +98,12 @@ export async function POST(request: NextRequest) {
           name: `${body.title} - Vocabulary List`,
           description: `Auto-generated vocabulary list for ${body.title}`,
           teacher_id: user.id,
-          selection_criteria: body.vocabularySelection
+          theme: body.vocabularySelection.theme || null,
+          topic: body.vocabularySelection.topic || null,
+          difficulty_level: body.vocabularySelection.difficulty || 'beginner',
+          word_count: body.vocabularySelection.wordCount || 20,
+          vocabulary_items: [], // Will be populated later
+          is_public: false
         }])
         .select()
         .single();

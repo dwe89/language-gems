@@ -61,12 +61,34 @@ interface AssignmentAnalytics {
   };
 }
 
+const createClient = async () => {
+  const cookieStore = await cookies();
+  
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name) {
+          return cookieStore.get(name)?.value;
+        },
+        set(name, value, options) {
+          cookieStore.set(name, value, options);
+        },
+        remove(name, options) {
+          cookieStore.delete(name);
+        },
+      },
+    }
+  );
+};
+
 export async function GET(
   request: NextRequest,
   { params }: { params: { assignmentId: string } }
 ) {
   try {
-    const supabase = createServerClient<Database>({ cookies });
+    const supabase = await createClient();
     
     // Verify authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -115,11 +137,7 @@ export async function GET(
     const { data: enrollments, error: enrollmentsError } = await supabase
       .from('class_enrollments')
       .select(`
-        student_id,
-        user_profiles!inner(
-          id,
-          display_name
-        )
+        student_id
       `)
       .eq('class_id', assignment.class_id);
 
@@ -129,6 +147,25 @@ export async function GET(
         { error: 'Failed to fetch class data' },
         { status: 500 }
       );
+    }
+
+    // Get student display names separately to avoid complex joins
+    const studentIds = enrollments?.map(e => e.student_id) || [];
+    const { data: studentProfiles, error: profilesError } = await supabase
+      .from('user_profiles')
+      .select('user_id, display_name')
+      .in('user_id', studentIds);
+
+    if (profilesError) {
+      console.error('Error fetching student profiles:', profilesError);
+    }
+
+    // Create a map of student IDs to display names
+    const studentNameMap = new Map();
+    if (studentProfiles) {
+      studentProfiles.forEach(profile => {
+        studentNameMap.set(profile.user_id, profile.display_name || 'Unknown Student');
+      });
     }
 
     // Get vocabulary count for this assignment
@@ -173,7 +210,7 @@ export async function GET(
     // Initialize student progress data
     if (enrollments) {
       enrollments.forEach(student => {
-        const studentName = student.user_profiles?.display_name || 'Unknown Student';
+        const studentName = studentNameMap.get(student.student_id) || 'Unknown Student';
 
         studentProgressMap.set(student.student_id, {
           student_id: student.student_id,
