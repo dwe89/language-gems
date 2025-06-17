@@ -44,7 +44,13 @@ export default function StudentDashboardLayout({
   const { user, signOut } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [isHydrated, setIsHydrated] = useState(false);
   const router = useRouter();
+  
+  // Handle hydration
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
   
   // Add check for teacher/admin role and redirect
   useEffect(() => {
@@ -55,8 +61,8 @@ export default function StudentDashboardLayout({
     }
   }, [user, router]);
   
-  // Get username from user data
-  const username = user?.user_metadata?.name || user?.email || 'Student';
+  // Get username from user data - only show after hydration to prevent mismatch
+  const username = isHydrated ? (user?.user_metadata?.name || user?.email || 'Student') : 'Student';
   
   const handleSignOut = async () => {
     await signOut();

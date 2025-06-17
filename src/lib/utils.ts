@@ -37,4 +37,32 @@ export function generateUsername(fullName: string, suffix?: number): string {
   }
   
   return username;
+}
+
+/**
+ * Utility function to log errors with detailed information
+ * Handles Supabase errors, JavaScript errors, and unknown error types
+ */
+export function logError(message: string, error: unknown) {
+  if (error && typeof error === 'object' && 'message' in error) {
+    // Handle Supabase errors and JavaScript Error objects
+    const errorObj = error as any;
+    console.error(message, {
+      message: errorObj.message || 'Unknown error',
+      details: errorObj.details || undefined,
+      hint: errorObj.hint || undefined,
+      code: errorObj.code || undefined,
+      name: errorObj.name || undefined,
+      stack: errorObj.stack || undefined,
+      ...(errorObj.error && { nestedError: errorObj.error })
+    });
+  } else if (typeof error === 'string') {
+    console.error(message, { message: error });
+  } else {
+    console.error(message, { 
+      message: 'Unknown error type',
+      rawError: error,
+      type: typeof error
+    });
+  }
 } 

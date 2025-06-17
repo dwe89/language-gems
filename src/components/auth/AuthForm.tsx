@@ -40,7 +40,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
       
       if (mode === 'login') {
         if (isStudentLogin) {
-          // Use student login API
+          // First verify student credentials via API
           const response = await fetch('/api/auth/student-login', {
             method: 'POST',
             headers: {
@@ -59,8 +59,15 @@ export default function AuthForm({ mode }: AuthFormProps) {
             throw new Error(data.error || 'Student login failed');
           }
 
-          console.log('Student login successful, navigating to account page');
-          router.push('/account');
+          // If verification successful, use the returned email and password to sign in normally
+          const { error: signInError } = await signIn(data.user.email, password);
+          
+          if (signInError) {
+            throw new Error(signInError);
+          }
+          
+          console.log('Student login successful, navigating to student dashboard');
+          router.push('/student-dashboard');
         } else {
           // Use the signIn method from auth context for teachers/admins
           const { error: signInError } = await signIn(finalEmailOrUsername, password);

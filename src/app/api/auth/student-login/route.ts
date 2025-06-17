@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '../../../../lib/supabase-server';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,10 +13,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Create service role client to bypass RLS for user lookup
+    const adminClient = createSupabaseClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
+      }
+    );
+
+    // Create regular client for auth operations
     const supabase = await createClient();
 
-    // First, find the student by username and school code
-    const { data: student, error: studentError } = await supabase
+    // First, find the student by username and school code using admin client
+    const { data: student, error: studentError } = await adminClient
       .from('user_profiles')
       .select('user_id, email, username, school_initials, initial_password, role')
       .eq('username', username.toLowerCase())
@@ -24,7 +38,6 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (studentError || !student) {
-      console.log('Student not found:', { username, schoolCode });
       return NextResponse.json(
         { error: 'Invalid username or school code' },
         { status: 401 }

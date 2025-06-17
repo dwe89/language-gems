@@ -4,6 +4,7 @@ import React, { createContext, useContext, useReducer, useEffect, useState, useR
 import { LocalCartItem, Product } from '../types/ecommerce';
 import { useAuth, supabaseBrowser } from '../components/auth/AuthProvider';
 import Toast from '../components/Toast';
+import { logError } from '../lib/utils';
 
 interface CartState {
   items: LocalCartItem[];
@@ -115,7 +116,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         const parsedCart = JSON.parse(savedCart);
         dispatch({ type: 'SET_CART', payload: parsedCart });
       } catch (error) {
-        console.error('Error parsing saved cart:', error);
+        logError('Error parsing saved cart:', error);
       }
     }
   }, []);
@@ -197,7 +198,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         `)
         .eq('user_id', user.id);
 
-      if (error) throw error;
+      if (error) {
+        logError('Cart sync Supabase error:', error);
+        throw error;
+      }
 
       // Merge local cart with server cart
       const mergedItems: LocalCartItem[] = [];
@@ -236,7 +240,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       dispatch({ type: 'SET_CART', payload: mergedItems });
 
     } catch (error) {
-      console.error('Error syncing cart with server:', error);
+      logError('Error syncing cart with server:', error);
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
     }

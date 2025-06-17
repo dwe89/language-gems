@@ -146,13 +146,7 @@ export default function StudentDashboard() {
           .select(`
             assignment_id,
             mastery_level,
-            last_attempted_at,
-            assignments (
-              id,
-              title,
-              type,
-              due_date
-            )
+            last_attempted_at
           `)
           .eq('student_id', user.id);
 
@@ -160,25 +154,42 @@ export default function StudentDashboard() {
           console.error('Error fetching assignment progress:', progressError);
         }
 
+        // Get unique assignment IDs to fetch assignment details
+        const uniqueAssignmentIds = [...new Set(assignmentProgress?.map(p => p.assignment_id) || [])];
+        
+        // Get assignment details filtered by student's classes
+        const { data: assignmentDetails } = await supabase
+          .from('assignments')
+          .select('id, title, type, due_date, class_id')
+          .in('id', uniqueAssignmentIds)
+          .in('class_id', classIds); // Filter by student's enrolled classes
+
         // Calculate progress statistics from vocabulary progress data
         const progressStats = {
-          completed: assignmentProgress?.filter(p => p.mastery_level === 'mastered').length || 0,
-          in_progress: assignmentProgress?.filter(p => p.mastery_level === 'learning').length || 0,
-          total: assignmentProgress?.length || 0
+          completed: assignmentProgress?.filter(p => p.mastery_level >= 3).length || 0, // mastery_level 3+ = mastered
+          in_progress: assignmentProgress?.filter(p => p.mastery_level > 0 && p.mastery_level < 3).length || 0,
+          total: uniqueAssignmentIds.length || 0
         };
 
-        // Use student_vocabulary_assignment_progress data for assignment display
-        const recentAssignments = assignmentProgress
-          ?.filter(p => p.assignments)
-          ?.slice(0, 5)
-          ?.map(p => ({
-            id: p.assignment_id,
-            title: p.assignments?.title || 'Untitled Assignment',
-            type: p.assignments?.type || 'unknown',
-            due_date: p.assignments?.due_date,
-            status: p.mastery_level === 'mastered' ? 'completed' : 'in_progress',
-            progress: p.mastery_level === 'mastered' ? 100 : 50
-          })) || [];
+        // Create assignment summary with progress
+        const assignmentSummary = uniqueAssignmentIds.map(assignmentId => {
+          const assignment = assignmentDetails?.find(a => a.id === assignmentId);
+          const progressItems = assignmentProgress?.filter(p => p.assignment_id === assignmentId) || [];
+          const averageMastery = progressItems.length > 0 
+            ? progressItems.reduce((sum, p) => sum + p.mastery_level, 0) / progressItems.length 
+            : 0;
+          
+          return {
+            id: assignmentId,
+            title: assignment?.title || 'Untitled Assignment',
+            type: assignment?.type || 'unknown',
+            due_date: assignment?.due_date,
+            status: averageMastery >= 3 ? 'completed' : averageMastery > 0 ? 'in_progress' : 'not_started',
+            progress: Math.min(100, Math.round((averageMastery / 4) * 100))
+          };
+        });
+
+        const recentAssignments = assignmentSummary.slice(0, 5);
         
         // Calculate statistics
         const completedAssignments = progressStats.completed;
@@ -208,13 +219,15 @@ export default function StudentDashboard() {
           
           // Get progress for all classmates
           const { data: classProgressData } = await supabase
-            .from('assignment_progress')
-            .select('student_id, score')
+            .from('student_vocabulary_assignment_progress')
+            .select('student_id, assignment_id, mastery_level')
             .in('student_id', studentIds);
             
-          // Calculate total scores per student
+          // Calculate total scores per student (count mastered assignments)
           const scoresByStudent = (classProgressData || []).reduce((acc, curr) => {
-            acc[curr.student_id] = (acc[curr.student_id] || 0) + curr.score;
+            if (curr.mastery_level >= 3) { // mastery_level 3+ = mastered
+              acc[curr.student_id] = (acc[curr.student_id] || 0) + 1;
+            }
             return acc;
           }, {} as Record<string, number>);
           

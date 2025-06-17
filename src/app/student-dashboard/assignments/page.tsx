@@ -5,6 +5,7 @@ import { Hexagon, Clock, CheckCircle, BookOpen, Gamepad2, ArrowRight } from 'luc
 import Link from 'next/link';
 import { useAuth } from '../../../components/auth/AuthProvider';
 import { supabaseBrowser } from '../../../components/auth/AuthProvider';
+import { logError } from '../../../lib/utils';
 
 type Assignment = {
   id: string;
@@ -18,6 +19,7 @@ type Assignment = {
   activities?: string[];
   className?: string;
   points?: number;
+  type?: string; // Game type like "memory-game", "speed-builder", etc.
 };
 
 // Assignment Card Component
@@ -107,10 +109,13 @@ const AssignmentCard = ({
       )}
       
       <div className="flex space-x-2">
-        <button className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg transition-colors font-medium flex items-center justify-center">
+        <Link 
+          href={`/games/${assignment.type || 'memory-game'}?assignment=${assignment.id}`}
+          className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg transition-colors font-medium flex items-center justify-center"
+        >
           {assignment.status === 'completed' ? 'Review Assignment' : 'Continue Assignment'}
           <ArrowRight className="h-4 w-4 ml-1" />
-        </button>
+        </Link>
         {assignment.status !== 'completed' && (
           <Link 
             href="/student-dashboard/games"
@@ -146,15 +151,17 @@ export default function AssignmentsPage() {
           .eq('student_id', user.id);
 
         if (enrollmentError) {
-          console.error('Error fetching enrollments:', enrollmentError);
+          logError('Error fetching enrollments:', enrollmentError);
           setError('Failed to load class data');
           return;
         }
 
+        // Handle case where student has no enrollments
         if (!enrollments || enrollments.length === 0) {
-          console.log('No class enrollments found for student');
+          console.log('Student has no class enrollments');
           setCurrentAssignments([]);
           setCompletedAssignments([]);
+          setLoading(false);
           return;
         }
 
@@ -170,34 +177,21 @@ export default function AssignmentsPage() {
             due_date,
             points,
             status,
+            type,
             class_id
           `)
           .in('class_id', classIds)
           .order('created_at', { ascending: false });
 
         if (assignmentError) {
-          console.error('Error fetching assignments:', assignmentError);
+          logError('Error fetching assignments:', assignmentError);
           setError('Failed to load assignments');
           return;
         }
 
-        // Get class names for the assignments
-        const { data: classes, error: classError } = await supabase
-          .from('classes')
-          .select('id, name')
-          .in('id', classIds);
-
-        if (classError) {
-          console.error('Error fetching class names:', classError);
-        }
-
-        // Create a map of class IDs to names
+        // Skip class names for now to avoid permission issues
+        // TODO: Get class names through a different approach or API endpoint
         const classNameMap = new Map();
-        if (classes) {
-          classes.forEach(cls => {
-            classNameMap.set(cls.id, cls.name);
-          });
-        }
 
         console.log('Fetched assignments:', assignments);
 
@@ -211,8 +205,9 @@ export default function AssignmentsPage() {
           gemType: ['purple', 'blue', 'yellow', 'green', 'red'][index % 5] as any,
           gameCount: 1, // TODO: Count actual activities
           activities: ['Memory Game'], // TODO: Get actual activities
-          className: classNameMap.get(assignment.class_id) || 'Unknown Class',
-          points: assignment.points
+          className: classNameMap.get(assignment.class_id) || 'Your Class',
+          points: assignment.points,
+          type: assignment.type
         }));
 
         // For now, treat all as current assignments
@@ -221,7 +216,7 @@ export default function AssignmentsPage() {
         setCompletedAssignments([]);
 
       } catch (err) {
-        console.error('Error in fetchAssignments:', err);
+        logError('Error in fetchAssignments:', err);
         setError('Failed to load assignments');
       } finally {
         setLoading(false);
