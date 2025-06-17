@@ -24,6 +24,7 @@ export default function MemoryGamePage() {
   const [showCustomModal, setShowCustomModal] = useState(false);
   const [assignmentData, setAssignmentData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string>('');
 
   // Load assignment data if assignment ID is provided
   useEffect(() => {
@@ -34,9 +35,11 @@ export default function MemoryGamePage() {
         .then(data => {
           if (data.vocabulary) {
             const wordPairs = data.vocabulary.map((vocab: any) => ({
-              id: vocab.id,
+              id: vocab.vocabulary_id || vocab.id,
               spanish: vocab.spanish,
-              english: vocab.english
+              english: vocab.english,
+              theme: vocab.theme,
+              topic: vocab.topic
             }));
             setAssignmentData(data);
             setCustomWords(wordPairs);
@@ -45,6 +48,7 @@ export default function MemoryGamePage() {
         })
         .catch(error => {
           console.error('Error loading assignment:', error);
+          setError('Failed to load assignment. Please try again.');
         })
         .finally(() => {
           setLoading(false);

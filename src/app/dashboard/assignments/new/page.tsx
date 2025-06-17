@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../../../components/auth/AuthProvider';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
@@ -222,53 +222,69 @@ export default function NewAssignmentPage() {
   const [selectedActivities, setSelectedActivities] = useState<SelectedActivity[]>([]);
   const [activeTab, setActiveTab] = useState<'games' | 'grammar' | 'exam_prep'>('games');
 
-  useEffect(() => {
-    if (user) {
-      fetchData();
-      
-      // Check for pre-selected game from URL params
-      const gameParam = searchParams?.get('game');
-      if (gameParam === '3') { // Speed Builder
-        const speedBuilder = AVAILABLE_GAMES.find(g => g.id === 'speed-builder');
-        if (speedBuilder) {
-          setSelectedActivities([speedBuilder]);
-        }
-      }
-    } else if (!user && loading) {
-      setLoading(false);
-      setError('Please log in to create assignments');
-    }
-  }, [user, loading, searchParams]);
+  // Create a ref to track if data has already been fetched
+  const [dataFetched, setDataFetched] = useState(false);
 
-  const fetchData = async () => {
+  // Fetch data function without dependencies that cause loops
+  const fetchData = useCallback(async () => {
+    if (!user) return;
+    
     try {
       setLoading(true);
       const supabase = supabaseBrowser;
 
-      // Fetch classes using created_by
+      // Fetch classes using teacher_id instead of created_by
       const { data: classesData, error: classesError } = await supabase
         .from('classes')
         .select('*')
-        .eq('created_by', user!.id);
+        .eq('teacher_id', user.id);
 
       if (classesData) setClasses(classesData);
       if (classesError) console.error('Error fetching classes:', classesError);
 
-      // Fetch vocabulary lists using created_by 
+      // Fetch vocabulary lists using teacher_id instead of created_by 
       const { data: listsData, error: listsError } = await supabase
         .from('vocabulary_assignment_lists')
         .select('*')
-        .eq('created_by', user!.id);
+        .eq('teacher_id', user.id);
 
       if (listsData) setVocabularyLists(listsData);
       if (listsError) console.error('Error fetching vocabulary lists:', listsError);
+
+      setDataFetched(true);
     } catch (error) {
       console.error('Error fetching data:', error);
       setError(error instanceof Error ? error.message : 'Failed to load data. Please refresh the page.');
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
+
+  // Effect for data fetching - only run once when user is available
+  useEffect(() => {
+    if (user && !dataFetched) {
+      fetchData();
+    } else if (!user) {
+      setLoading(false);
+      setError('Please log in to create assignments');
+    }
+  }, [user, dataFetched, fetchData]);
+
+  // Separate effect for handling URL parameters (only run once)
+  useEffect(() => {
+    const gameParam = searchParams?.get('game');
+    if (gameParam === '2') { // Memory Game
+      const memoryGame = AVAILABLE_GAMES.find(g => g.id === 'memory-game');
+      if (memoryGame) {
+        setSelectedActivities([memoryGame]);
+      }
+    } else if (gameParam === '3') { // Speed Builder
+      const speedBuilder = AVAILABLE_GAMES.find(g => g.id === 'speed-builder');
+      if (speedBuilder) {
+        setSelectedActivities([speedBuilder]);
+      }
+    }
+  }, [searchParams]); // Include searchParams as dependency
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
