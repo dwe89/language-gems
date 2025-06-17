@@ -23,15 +23,24 @@ export default function AuthForm({ mode }: AuthFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
     setLoading(true);
+    setError('');
 
     try {
-      console.log(`Attempting to ${mode} with identifier: ${emailOrUsername}`);
+      let finalEmailOrUsername = emailOrUsername;
+      
+      // If it's a student login and the input doesn't contain @, convert username to email
+      if (mode === 'login' && isStudentLogin && !emailOrUsername.includes('@')) {
+        // Convert username to student email format
+        finalEmailOrUsername = `${emailOrUsername}@student.languagegems.com`;
+        console.log(`Converting username '${emailOrUsername}' to email '${finalEmailOrUsername}'`);
+      }
+      
+      console.log(`Attempting to ${mode} with identifier: ${finalEmailOrUsername}`);
       
       if (mode === 'login') {
         // Use the signIn method from auth context
-        const { error: signInError } = await signIn(emailOrUsername, password);
+        const { error: signInError } = await signIn(finalEmailOrUsername, password);
         
         if (signInError) {
           throw new Error(signInError);
@@ -49,7 +58,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            email: emailOrUsername,
+            email: finalEmailOrUsername,
             password,
             name,
             role: 'student'

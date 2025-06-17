@@ -85,7 +85,7 @@ const createClient = async () => {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { assignmentId: string } }
+  { params }: { params: Promise<{ assignmentId: string }> }
 ) {
   try {
     const supabase = await createClient();
@@ -96,7 +96,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const assignmentId = params.assignmentId;
+    const { assignmentId } = await params;
 
     // Get assignment and verify teacher ownership
     const { data: assignment, error: assignmentError } = await supabase

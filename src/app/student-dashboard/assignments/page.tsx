@@ -1,18 +1,23 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Hexagon, Clock, CheckCircle, BookOpen, Gamepad2, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
+import { useAuth } from '../../../components/auth/AuthProvider';
+import { supabaseBrowser } from '../../../components/auth/AuthProvider';
 
 type Assignment = {
   id: string;
   title: string;
+  description?: string;
   dueDate: string;
   status: 'completed' | 'in-progress' | 'not-started';
   progress?: number;
   gemType: 'purple' | 'blue' | 'yellow' | 'green' | 'red';
   gameCount?: number;
   activities?: string[];
+  className?: string;
+  points?: number;
 };
 
 // Assignment Card Component
@@ -49,10 +54,20 @@ const AssignmentCard = ({
         </div>
         <div className="flex-1">
           <h3 className="font-bold text-lg text-gray-900">{assignment.title}</h3>
+          {assignment.className && (
+            <div className="text-sm text-gray-600 font-medium">
+              Class: {assignment.className}
+            </div>
+          )}
           <div className="flex items-center text-sm text-gray-500 mt-1">
             <Clock className="h-4 w-4 mr-1" />
             <span>Due: {assignment.dueDate}</span>
           </div>
+          {assignment.points && (
+            <div className="flex items-center text-sm text-indigo-600 mt-1">
+              <span>Points: {assignment.points}</span>
+            </div>
+          )}
           {assignment.gameCount && (
             <div className="flex items-center text-sm text-indigo-600 mt-1">
               <Gamepad2 className="h-4 w-4 mr-1" />
@@ -110,58 +125,139 @@ const AssignmentCard = ({
 };
 
 export default function AssignmentsPage() {
-  // Sample data with enhanced information
-  const currentAssignments: Assignment[] = [
-    {
-      id: '1',
-      title: 'Basic Spanish Verbs',
-      dueDate: 'Tomorrow, 11:59 PM',
-      status: 'in-progress',
-      progress: 75,
-      gemType: 'purple',
-      gameCount: 4,
-      activities: ['Gem Collector', 'Translation Tycoon', 'Speed Builder', 'Vocabulary Quiz']
-    },
-    {
-      id: '2',
-      title: 'French Vocabulary Quiz',
-      dueDate: 'Today, 5:00 PM',
-      status: 'not-started',
-      gemType: 'blue',
-      gameCount: 2,
-      activities: ['Memory Game', 'Word Blast']
-    },
-    {
-      id: '3',
-      title: 'German Grammar Exercise',
-      dueDate: 'Friday, 3:00 PM',
-      status: 'not-started',
-      gemType: 'yellow',
-      gameCount: 3,
-      activities: ['Hangman', 'Sentence Towers', 'Grammar Challenge']
-    }
-  ];
-  
-  const completedAssignments: Assignment[] = [
-    {
-      id: '4',
-      title: 'Italian Pronunciation',
-      dueDate: 'Yesterday',
-      status: 'completed',
-      gemType: 'green',
-      gameCount: 2,
-      activities: ['Pronunciation Game', 'Audio Matching']
-    },
-    {
-      id: '5',
-      title: 'Spanish Conversation',
-      dueDate: 'May 10, 2023',
-      status: 'completed',
-      gemType: 'red',
-      gameCount: 5,
-      activities: ['Dialogue Builder', 'Role Play', 'Conversation Practice']
-    }
-  ];
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [currentAssignments, setCurrentAssignments] = useState<Assignment[]>([]);
+  const [completedAssignments, setCompletedAssignments] = useState<Assignment[]>([]);
+  const [error, setError] = useState<string>('');
+
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchAssignments = async () => {
+      try {
+        setLoading(true);
+        const supabase = supabaseBrowser;
+
+        // Get student's class enrollments
+        const { data: enrollments, error: enrollmentError } = await supabase
+          .from('class_enrollments')
+          .select('class_id')
+          .eq('student_id', user.id);
+
+        if (enrollmentError) {
+          console.error('Error fetching enrollments:', enrollmentError);
+          setError('Failed to load class data');
+          return;
+        }
+
+        if (!enrollments || enrollments.length === 0) {
+          console.log('No class enrollments found for student');
+          setCurrentAssignments([]);
+          setCompletedAssignments([]);
+          return;
+        }
+
+        const classIds = enrollments.map(e => e.class_id);
+
+        // Fetch assignments for student's classes
+        const { data: assignments, error: assignmentError } = await supabase
+          .from('assignments')
+          .select(`
+            id,
+            title,
+            description,
+            due_date,
+            points,
+            status,
+            class_id
+          `)
+          .in('class_id', classIds)
+          .order('created_at', { ascending: false });
+
+        if (assignmentError) {
+          console.error('Error fetching assignments:', assignmentError);
+          setError('Failed to load assignments');
+          return;
+        }
+
+        // Get class names for the assignments
+        const { data: classes, error: classError } = await supabase
+          .from('classes')
+          .select('id, name')
+          .in('id', classIds);
+
+        if (classError) {
+          console.error('Error fetching class names:', classError);
+        }
+
+        // Create a map of class IDs to names
+        const classNameMap = new Map();
+        if (classes) {
+          classes.forEach(cls => {
+            classNameMap.set(cls.id, cls.name);
+          });
+        }
+
+        console.log('Fetched assignments:', assignments);
+
+        // Transform assignments to match our type
+        const transformedAssignments: Assignment[] = (assignments || []).map((assignment: any, index) => ({
+          id: assignment.id,
+          title: assignment.title,
+          description: assignment.description,
+          dueDate: assignment.due_date ? new Date(assignment.due_date).toLocaleDateString() : 'No due date',
+          status: 'not-started' as const, // TODO: Get actual status from student progress
+          gemType: ['purple', 'blue', 'yellow', 'green', 'red'][index % 5] as any,
+          gameCount: 1, // TODO: Count actual activities
+          activities: ['Memory Game'], // TODO: Get actual activities
+          className: classNameMap.get(assignment.class_id) || 'Unknown Class',
+          points: assignment.points
+        }));
+
+        // For now, treat all as current assignments
+        // TODO: Separate based on actual completion status
+        setCurrentAssignments(transformedAssignments);
+        setCompletedAssignments([]);
+
+      } catch (err) {
+        console.error('Error in fetchAssignments:', err);
+        setError('Failed to load assignments');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAssignments();
+  }, [user]);
+
+  if (loading) {
+    return (
+      <div className="space-y-8">
+        <div>
+          <h1 className="text-3xl font-bold text-white">📚 Assignments</h1>
+          <p className="text-indigo-100 mt-2">Loading your assignments...</p>
+        </div>
+        <div className="flex items-center justify-center py-20">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-8">
+        <div>
+          <h1 className="text-3xl font-bold text-white">📚 Assignments</h1>
+          <p className="text-indigo-100 mt-2">Error loading assignments</p>
+        </div>
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+          {error}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -223,35 +319,26 @@ export default function AssignmentsPage() {
 
       {/* Current Assignments */}
       <div className="bg-white rounded-xl p-6 shadow-lg">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">⏰ Current Assignments</h2>
-          <div className="flex items-center space-x-4">
-            <span className="text-indigo-600 font-medium">{currentAssignments.length} assignments</span>
-            {currentAssignments.some(a => a.status === 'in-progress') && (
-              <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
-                {currentAssignments.filter(a => a.status === 'in-progress').length} in progress
-              </span>
-            )}
-          </div>
-        </div>
+        <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
+          <span className="bg-blue-100 text-blue-600 rounded-full p-2 mr-3">
+            <BookOpen className="h-5 w-5" />
+          </span>
+          Current Assignments ({currentAssignments.length})
+        </h2>
         
         {currentAssignments.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {currentAssignments.map(assignment => (
+            {currentAssignments.map((assignment) => (
               <AssignmentCard key={assignment.id} assignment={assignment} />
             ))}
           </div>
         ) : (
           <div className="text-center py-12">
-            <CheckCircle className="h-16 w-16 text-green-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">All Caught Up!</h3>
-            <p className="text-gray-500 mb-4">No current assignments. Check back later for new tasks.</p>
-            <Link 
-              href="/student-dashboard/games"
-              className="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-3 rounded-lg font-medium transition-colors"
-            >
-              🎮 Play Games for Fun
-            </Link>
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <BookOpen className="h-8 w-8 text-gray-400" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No assignments yet</h3>
+            <p className="text-gray-600">Your teacher hasn't assigned any work yet. Check back later!</p>
           </div>
         )}
       </div>
