@@ -226,6 +226,8 @@ export default function NewAssignmentPage() {
   const [dataFetched, setDataFetched] = useState(false);
   const [vocabularyPreview, setVocabularyPreview] = useState<any[]>([]);
   const [previewLoading, setPreviewLoading] = useState(false);
+  const [availableThemes, setAvailableThemes] = useState<string[]>([]);
+  const [availableTopics, setAvailableTopics] = useState<string[]>([]);
 
   // Memory Game grid configurations
   const MEMORY_GAME_GRIDS = [
@@ -262,24 +264,58 @@ export default function NewAssignmentPage() {
         .select('*')
         .eq('teacher_id', user.id);
 
-      if (classesData) setClasses(classesData);
-      if (classesError) console.error('Error fetching classes:', classesError);
+      if (classesError) {
+        console.error('Error fetching classes:', classesError);
+        setError('Failed to load classes');
+        return;
+      }
 
-      // Fetch vocabulary lists using teacher_id instead of created_by 
-      const { data: listsData, error: listsError } = await supabase
+      setClasses(classesData || []);
+
+      // Fetch vocabulary lists
+      const { data: vocabularyListsData, error: vocabularyListsError } = await supabase
         .from('vocabulary_assignment_lists')
         .select('*')
         .eq('teacher_id', user.id);
 
-      if (listsData) setVocabularyLists(listsData);
-      if (listsError) console.error('Error fetching vocabulary lists:', listsError);
+      if (vocabularyListsError) {
+        console.error('Error fetching vocabulary lists:', vocabularyListsError);
+      } else {
+        setVocabularyLists(vocabularyListsData || []);
+      }
 
-      setDataFetched(true);
-    } catch (error) {
-      console.error('Error fetching data:', error);
-      setError(error instanceof Error ? error.message : 'Failed to load data. Please refresh the page.');
+      // Fetch available themes
+      const { data: themesData, error: themesError } = await supabase
+        .from('vocabulary')
+        .select('theme')
+        .not('theme', 'is', null);
+
+      if (themesError) {
+        console.error('Error fetching themes:', themesError);
+      } else {
+        const uniqueThemes = [...new Set(themesData?.map(item => item.theme) || [])];
+        setAvailableThemes(uniqueThemes.sort());
+      }
+
+      // Fetch available topics
+      const { data: topicsData, error: topicsError } = await supabase
+        .from('vocabulary')
+        .select('topic')
+        .not('topic', 'is', null);
+
+      if (topicsError) {
+        console.error('Error fetching topics:', topicsError);
+      } else {
+        const uniqueTopics = [...new Set(topicsData?.map(item => item.topic) || [])];
+        setAvailableTopics(uniqueTopics.sort());
+      }
+
+    } catch (err) {
+      console.error('Error in fetchData:', err);
+      setError('Failed to load data');
     } finally {
       setLoading(false);
+      setDataFetched(true);
     }
   }, [user]);
 
@@ -617,11 +653,29 @@ export default function NewAssignmentPage() {
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
                     >
                       <option value="">Select a theme</option>
-                      <option value="family">Family & Relationships</option>
-                      <option value="food">Food & Drink</option>
-                      <option value="travel">Travel & Transportation</option>
-                      <option value="school">School & Education</option>
-                      <option value="hobbies">Hobbies & Interests</option>
+                      {availableThemes.map(theme => (
+                        <option key={theme} value={theme}>{theme}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {vocabularySelection.type === 'topic_based' && (
+                  <div>
+                    <label htmlFor="topic" className="block text-sm font-medium text-gray-700 mb-2">
+                      Topic
+                    </label>
+                    <select
+                      id="topic"
+                      name="topic"
+                      value={vocabularySelection.topic}
+                      onChange={handleVocabularyChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                    >
+                      <option value="">Select a topic</option>
+                      {availableTopics.map(topic => (
+                        <option key={topic} value={topic}>{topic}</option>
+                      ))}
                     </select>
                   </div>
                 )}

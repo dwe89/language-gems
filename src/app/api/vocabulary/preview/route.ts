@@ -28,7 +28,7 @@ const createClient = async () => {
           cookieStore.set(name, value, options);
         },
         remove(name, options) {
-          cookieStore.set(name, '', { ...options, maxAge: 0 });
+          cookieStore.delete(name);
         },
       },
     }
@@ -46,71 +46,55 @@ export async function POST(request: NextRequest) {
     }
 
     const body: VocabularyPreviewRequest = await request.json();
-    
-    let vocabularyData = [];
 
-    if (body.type === 'custom_list' && body.customListId) {
-      // Fetch from custom vocabulary list
-      const { data: customVocab, error: customError } = await supabase
-        .from('vocabulary_assignment_items')
-        .select(`
-          vocabulary_id,
-          order_index,
-          vocabulary:vocabulary_id (
-            id,
-            spanish,
-            english,
-            theme,
-            topic,
-            difficulty
-          )
-        `)
-        .eq('vocabulary_assignment_list_id', body.customListId)
-        .order('order_index');
+    let query = supabase
+      .from('vocabulary')
+      .select('id, spanish, english, theme, topic, part_of_speech');
 
-      if (customError) {
-        console.error('Custom vocabulary fetch error:', customError);
-        return NextResponse.json({ error: 'Failed to fetch custom vocabulary' }, { status: 500 });
-      }
+    // Apply filters based on selection type
+    switch (body.type) {
+      case 'theme_based':
+        if (body.theme) {
+          query = query.eq('theme', body.theme);
+        }
+        break;
+        
+      case 'topic_based':
+        if (body.topic) {
+          query = query.eq('topic', body.topic);
+        }
+        break;
+        
+      case 'custom_list':
+        if (body.customListId) {
+          // For custom lists, we'd need to join with the custom wordlists table
+          // For now, return a sample from the main vocabulary
+          query = query.limit(body.wordCount || 10);
+        }
+        break;
+        
+      default:
+        // Default to a general selection
+        break;
+    }
 
-      vocabularyData = customVocab?.map(item => item.vocabulary) || [];
-    } else {
-      // Fetch from main vocabulary table based on criteria
-      let query = supabase
-        .from('vocabulary')
-        .select('id, spanish, english, difficulty, theme, topic');
+    // Limit the results
+    const limit = Math.min(body.wordCount || 10, 50);
+    query = query.limit(limit);
 
-      // Apply filters based on selection criteria
-      if (body.theme) {
-        query = query.eq('theme', body.theme);
-      }
-      
-      if (body.topic) {
-        query = query.eq('topic', body.topic);
-      }
-      
-      if (body.difficulty) {
-        query = query.eq('difficulty', body.difficulty);
-      }
+    const { data: vocabulary, error } = await query;
 
-      // Limit the number of words
-      const wordCount = body.wordCount || 20;
-      query = query.limit(wordCount);
-
-      const { data: vocabWords, error: vocabError } = await query;
-
-      if (vocabError) {
-        console.error('Vocabulary fetch error:', vocabError);
-        return NextResponse.json({ error: 'Failed to fetch vocabulary' }, { status: 500 });
-      }
-
-      vocabularyData = vocabWords || [];
+    if (error) {
+      console.error('Vocabulary fetch error:', error);
+      return NextResponse.json(
+        { error: 'Failed to fetch vocabulary' },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({
-      success: true,
-      vocabulary: vocabularyData,
-      count: vocabularyData.length,
+      vocabulary: vocabulary || [],
+      count: vocabulary?.length || 0,
       criteria: body
     });
 
