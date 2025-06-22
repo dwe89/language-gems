@@ -38,6 +38,7 @@ interface WordItem {
   id: string;
   text: string;
   index: number;
+  correctPosition: number;
   translation?: string;
   correct?: boolean;
   gemType?: 'ruby' | 'sapphire' | 'emerald' | 'diamond' | 'amethyst' | 'topaz';
@@ -483,9 +484,10 @@ export const GemSpeedBuilder: React.FC<{
   mode?: 'assignment' | 'freeplay';
   theme?: string;
   topic?: string;
+  tier?: string;
   vocabularyList?: any[];
   onGameComplete?: (stats: GameStats) => void;
-}> = ({ assignmentId, mode = 'freeplay', theme, topic, vocabularyList, onGameComplete }) => {
+}> = ({ assignmentId, mode = 'freeplay', theme, topic, tier, vocabularyList, onGameComplete }) => {
   // State
   const [gameState, setGameState] = useState<'ready' | 'playing' | 'paused' | 'completed'>('ready');
   const [currentSentence, setCurrentSentence] = useState<SentenceData | null>(null);
@@ -555,7 +557,7 @@ export const GemSpeedBuilder: React.FC<{
           assignmentId,
           theme: theme || 'Animals',
           topic: topic || 'Basic Conversation',
-          tier: 'Foundation',
+          tier: tier || 'Foundation',
           count: 10,
           difficulty: 'medium',
           vocabularyList: vocabularyList || []
@@ -629,6 +631,7 @@ export const GemSpeedBuilder: React.FC<{
       id: `word-${index}`,
       text: word,
       index,
+      correctPosition: index,
       correct: false,
       gemType: (['ruby', 'sapphire', 'emerald', 'amethyst', 'topaz', 'diamond'][index % 6] as 'ruby' | 'sapphire' | 'emerald' | 'amethyst' | 'topaz' | 'diamond')
     }));
@@ -649,6 +652,31 @@ export const GemSpeedBuilder: React.FC<{
     }));
   };
 
+  // Track sentence completion
+  const trackSentenceCompletion = async (success: boolean) => {
+    if (sessionId && sessionId.startsWith('demo-')) return; // Skip for demo mode
+    
+    try {
+      // This would send completion data to the API for tracking
+      console.log(`Sentence ${success ? 'completed' : 'failed'}`);
+    } catch (error) {
+      console.error('Error tracking sentence completion:', error);
+    }
+  };
+
+  // Load next sentence
+  const loadNextSentence = () => {
+    setCurrentSentenceIndex(prev => prev + 1);
+    
+    if (currentSentenceIndex + 1 >= availableSentences.length) {
+      // No more sentences, end the game
+      endGame();
+    } else {
+      // Load the next sentence
+      loadSentence(availableSentences[currentSentenceIndex + 1]);
+    }
+  };
+
   // Start game session
   const startGame = async () => {
     try {
@@ -662,7 +690,7 @@ export const GemSpeedBuilder: React.FC<{
           settings: {
             timeLimit: 120,
             difficulty: 'medium',
-            tier: 'Foundation'
+            tier: tier || 'Foundation'
           }
         })
       });
