@@ -169,7 +169,7 @@ export class EnhancedAssignmentService {
   async useTemplate(templateId: string): Promise<void> {
     const { error } = await this.supabase
       .from('assignment_templates')
-      .update({ usage_count: this.supabase.sql`usage_count + 1` })
+      .update({ usage_count: 1 })
       .eq('id', templateId);
 
     if (error) {
@@ -196,7 +196,7 @@ export class EnhancedAssignmentService {
         due_date: assignmentData.due_date ? new Date(assignmentData.due_date).toISOString() : null,
         vocabulary_assignment_list_id: assignmentData.vocabulary_list_id,
         created_by: teacherId,
-        config: {
+        game_        game_config: {
           ...assignmentData.config,
           max_attempts: assignmentData.max_attempts,
           auto_grade: assignmentData.auto_grade,
@@ -253,7 +253,7 @@ export class EnhancedAssignmentService {
   private async initializeStudentProgress(assignmentId: string, classId: string): Promise<void> {
     // Get all students in the class
     const { data: students, error: studentsError } = await this.supabase
-      .from('class_memberships')
+      .from('class_enrollments')
       .select('student_id')
       .eq('class_id', classId);
 

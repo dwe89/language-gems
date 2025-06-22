@@ -201,7 +201,7 @@ export default function AssignmentsPage() {
                       className="fixed inset-0 z-10" 
                       onClick={() => setDropdownOpen(false)}
                     />
-                    <div className="absolute right-0 mt-2 w-72 bg-white/95 backdrop-blur-sm rounded-xl shadow-xl border border-slate-200 z-20">
+                    <div className="absolute right-0 mt-2 w-72 bg-white/95 backdrop-blur-sm rounded-xl shadow-xl border border-slate-200 z-50">
                       <div className="py-2">
                         <Link 
                           href="/dashboard/assignments/new/enhanced" 
