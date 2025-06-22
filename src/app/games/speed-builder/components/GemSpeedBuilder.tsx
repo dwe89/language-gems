@@ -805,35 +805,50 @@ export const GemSpeedBuilder: React.FC<{
       highestStreak: Math.max(prev.highestStreak, isCorrect ? prev.streak + 1 : prev.streak)
     }));
 
+    console.log('Checking if all words placed:', newPlacedWords.every(w => w !== null));
+    console.log('Placed words:', newPlacedWords.map(w => w ? w.text : 'null'));
+    
     if (newPlacedWords.every(w => w !== null)) {
-      checkSentenceComplete();
+      console.log('All words placed, checking sentence completion...');
+      // Pass the newPlacedWords directly to avoid state timing issues
+      checkSentenceCompleteWithWords(newPlacedWords);
     }
   };
 
-  // Check if sentence is complete
-  const checkSentenceComplete = () => {
-    if (placedWords.length === 0 || placedWords.some(w => w === null)) return;
+  // Check if sentence is complete (with words array parameter)
+  const checkSentenceCompleteWithWords = (wordsArray: (WordItem | null)[]) => {
+    if (wordsArray.length === 0 || wordsArray.some(w => w === null)) return;
     
-    const isCorrect = placedWords.every((word, index) => {
+    // Debug: Check what we're actually comparing
+    console.log('Checking sentence completion with words array:');
+    wordsArray.forEach((word, index) => {
+      if (word) {
+        console.log(`Position ${index}: word="${word.text}", correctPosition=${word.correctPosition}, index=${word.index}`);
+      }
+    });
+    
+    const isCorrect = wordsArray.every((word, index) => {
       if (!word || !currentSentence) return false;
       return word.correctPosition === index;
     });
+    
+    console.log('Sentence is correct:', isCorrect);
 
     if (isCorrect) {
       // Play success sound and create gem effect (no floating gems)
       soundSystem.play('sentence-complete');
-      createGemCollectionEffect(placedWords.length);
+      createGemCollectionEffect(wordsArray.length);
       
       // Update stats
       const newStats = {
         ...stats,
-        score: stats.score + (placedWords.length * 10),
-        accuracy: Math.round(((stats.sentencesCompleted + 1) / (stats.totalWordsPlaced + placedWords.length)) * 100),
+        score: stats.score + (wordsArray.length * 10),
+        accuracy: Math.round(((stats.sentencesCompleted + 1) / (stats.totalWordsPlaced + wordsArray.length)) * 100),
         sentencesCompleted: stats.sentencesCompleted + 1,
         streak: stats.streak + 1,
         highestStreak: Math.max(stats.highestStreak, stats.streak + 1),
-        totalWordsPlaced: stats.totalWordsPlaced + placedWords.length,
-        gemsCollected: stats.gemsCollected + placedWords.length
+        totalWordsPlaced: stats.totalWordsPlaced + wordsArray.length,
+        gemsCollected: stats.gemsCollected + wordsArray.length
       };
       
       setStats(newStats);
@@ -856,6 +871,11 @@ export const GemSpeedBuilder: React.FC<{
         setTimeout(loadNextSentence, 1000);
       }, 500);
     }
+  };
+
+  // Check if sentence is complete (legacy function using state)
+  const checkSentenceComplete = () => {
+    checkSentenceCompleteWithWords(placedWords);
   };
 
   // Enhanced power-up activation
