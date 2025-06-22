@@ -151,13 +151,13 @@ export async function POST(request: NextRequest) {
       .insert({
         title: body.title,
         description: body.description,
-        type: body.gameType,
+        game_type: body.gameType,
         class_id: body.classId,
         due_date: body.dueDate,
         points: body.points || 10,
         vocabulary_assignment_list_id: vocabularyListId,
-        created_by: user.id,
-        config: gameConfig,
+        teacher_id: user.id,
+        game_config: gameConfig,
         status: 'active'
       })
       .select()
@@ -179,7 +179,7 @@ export async function POST(request: NextRequest) {
       assignment: {
         id: assignment.id,
         title: assignment.title,
-        type: assignment.type,
+        type: assignment.game_type,
         status: assignment.status,
         vocabularyListId
       }
@@ -202,7 +202,7 @@ async function populateVocabularyList(
   try {
     let query = supabase
       .from('vocabulary')
-      .select('id, word, translation, difficulty, theme, topic');
+      .select('id, spanish, english, theme, topic, part_of_speech');
 
     // Apply filters based on selection criteria
     if (criteria.theme) {
@@ -237,9 +237,9 @@ async function populateVocabularyList(
 
       // Insert vocabulary items into the assignment list
       const vocabularyItems = selectedWords.map((word: any, index: number) => ({
-        vocabulary_assignment_list_id: listId,
+        assignment_list_id: listId,
         vocabulary_id: word.id,
-        order_index: index
+        order_position: index
       }));
 
       const { error: insertError } = await supabase
