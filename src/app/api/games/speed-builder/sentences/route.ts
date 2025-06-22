@@ -187,6 +187,236 @@ const FOUNDATION_SENTENCES = [
     theme: 'Communication and the world around us',
     topic: 'Environment and where people live',
     grammar: 'house-descriptions'
+  },
+  // Family and Friends sentences
+  {
+    spanish: 'Mi familia es muy importante para mí',
+    english: 'My family is very important to me',
+    theme: 'People and lifestyle',
+    topic: 'Family and Friends',
+    grammar: 'family-importance'
+  },
+  {
+    spanish: 'Tengo dos hermanos mayores',
+    english: 'I have two older brothers',
+    theme: 'People and lifestyle',
+    topic: 'Family and Friends',
+    grammar: 'family-members'
+  },
+  {
+    spanish: 'Mi mejor amigo se llama Carlos',
+    english: 'My best friend is called Carlos',
+    theme: 'People and lifestyle',
+    topic: 'Family and Friends',
+    grammar: 'friendship'
+  },
+  {
+    spanish: 'Mis abuelos viven cerca',
+    english: 'My grandparents live nearby',
+    theme: 'People and lifestyle',
+    topic: 'Family and Friends',
+    grammar: 'family-location'
+  },
+  {
+    spanish: 'Hablo con mis amigos todos los días',
+    english: 'I talk with my friends every day',
+    theme: 'People and lifestyle',
+    topic: 'Family and Friends',
+    grammar: 'daily-communication'
+  },
+  // School sentences
+  {
+    spanish: 'Mi asignatura favorita es matemáticas',
+    english: 'My favorite subject is mathematics',
+    theme: 'People and lifestyle',
+    topic: 'School Subjects',
+    grammar: 'school-preferences'
+  },
+  {
+    spanish: 'Tengo clase de ciencias a las diez',
+    english: 'I have science class at ten',
+    theme: 'People and lifestyle',
+    topic: 'School Day and Routine',
+    grammar: 'school-schedule'
+  },
+  {
+    spanish: 'El profesor explica la lección',
+    english: 'The teacher explains the lesson',
+    theme: 'People and lifestyle',
+    topic: 'School Types and School System',
+    grammar: 'classroom-activities'
+  },
+  {
+    spanish: 'Hago los deberes en casa',
+    english: 'I do homework at home',
+    theme: 'People and lifestyle',
+    topic: 'School Day and Routine',
+    grammar: 'homework-routine'
+  },
+  {
+    spanish: 'En el recreo juego con mis amigos',
+    english: 'At break time I play with my friends',
+    theme: 'People and lifestyle',
+    topic: 'School Day and Routine',
+    grammar: 'break-activities'
+  },
+  // Travel and Holiday sentences
+  {
+    spanish: 'En verano voy a la playa',
+    english: 'In summer I go to the beach',
+    theme: 'Communication and the world around us',
+    topic: 'Holiday Activities and Experiences',
+    grammar: 'holiday-activities'
+  },
+  {
+    spanish: 'Viajo en avión a España',
+    english: 'I travel by plane to Spain',
+    theme: 'Communication and the world around us',
+    topic: 'Transport',
+    grammar: 'travel-transport'
+  },
+  {
+    spanish: 'El hotel tiene piscina',
+    english: 'The hotel has a swimming pool',
+    theme: 'Communication and the world around us',
+    topic: 'Accommodation',
+    grammar: 'hotel-facilities'
+  },
+  {
+    spanish: 'Hoy llueve mucho',
+    english: 'Today it is raining a lot',
+    theme: 'Communication and the world around us',
+    topic: 'Weather',
+    grammar: 'weather-present'
+  },
+  {
+    spanish: 'Mañana hará sol',
+    english: 'Tomorrow it will be sunny',
+    theme: 'Communication and the world around us',
+    topic: 'Weather',
+    grammar: 'weather-future'
+  },
+  {
+    spanish: 'En invierno nieva mucho',
+    english: 'In winter it snows a lot',
+    theme: 'Communication and the world around us',
+    topic: 'Weather',
+    grammar: 'weather-seasons'
+  },
+  {
+    spanish: 'El viento sopla fuerte',
+    english: 'The wind blows strong',
+    theme: 'Communication and the world around us',
+    topic: 'Weather',
+    grammar: 'weather-conditions'
+  },
+  {
+    spanish: 'Hace frío en la montaña',
+    english: 'It is cold in the mountain',
+    theme: 'Communication and the world around us',
+    topic: 'Weather',
+    grammar: 'weather-temperature'
+  },
+  {
+    spanish: 'El cielo está nublado',
+    english: 'The sky is cloudy',
+    theme: 'Communication and the world around us',
+    topic: 'Weather',
+    grammar: 'weather-descriptions'
+  },
+  {
+    spanish: 'Necesito un mapa de la ciudad',
+    english: 'I need a map of the city',
+    theme: 'Communication and the world around us',
+    topic: 'Tourist Information and Directions',
+    grammar: 'tourist-needs'
+  },
+  // Career and Future sentences
+  {
+    spanish: 'Quiero ser médico en el futuro',
+    english: 'I want to be a doctor in the future',
+    theme: 'People and lifestyle',
+    topic: 'Career Choices and Ambitions',
+    grammar: 'future-aspirations'
+  },
+  {
+    spanish: 'Estudio para el examen',
+    english: 'I study for the exam',
+    theme: 'People and lifestyle',
+    topic: 'Further Education and Training',
+    grammar: 'study-preparation'
+  },
+  {
+    spanish: 'Trabajo los fines de semana',
+    english: 'I work on weekends',
+    theme: 'People and lifestyle',
+    topic: 'Jobs and Employment',
+    grammar: 'work-schedule'
+  },
+  {
+    spanish: 'Mi hermana va a la universidad',
+    english: 'My sister goes to university',
+    theme: 'People and lifestyle',
+    topic: 'Further Education and Training',
+    grammar: 'higher-education'
+  },
+  // Environmental and Global sentences
+  {
+    spanish: 'Reciclamos en casa',
+    english: 'We recycle at home',
+    theme: 'Communication and the world around us',
+    topic: 'Environmental Issues',
+    grammar: 'environmental-actions'
+  },
+  {
+    spanish: 'Es importante cuidar el planeta',
+    english: 'It is important to take care of the planet',
+    theme: 'Communication and the world around us',
+    topic: 'Environmental Issues',
+    grammar: 'environmental-importance'
+  },
+  {
+    spanish: 'Como frutas y verduras',
+    english: 'I eat fruits and vegetables',
+    theme: 'People and lifestyle',
+    topic: 'Healthy Living',
+    grammar: 'healthy-eating'
+  },
+  {
+    spanish: 'Hago ejercicio todos los días',
+    english: 'I exercise every day',
+    theme: 'People and lifestyle',
+    topic: 'Healthy Living',
+    grammar: 'exercise-routine'
+  },
+  // Animals and Nature (for free topics)
+  {
+    spanish: 'Mi perro es muy cariñoso',
+    english: 'My dog is very affectionate',
+    theme: 'Popular culture',
+    topic: 'Pets and Domestic Animals',
+    grammar: 'pet-descriptions'
+  },
+  {
+    spanish: 'Los leones viven en África',
+    english: 'Lions live in Africa',
+    theme: 'Communication and the world around us',
+    topic: 'Wild Animals',
+    grammar: 'animal-habitats'
+  },
+  {
+    spanish: 'Me gustan los animales',
+    english: 'I like animals',
+    theme: 'Popular culture',
+    topic: 'Pets and Domestic Animals',
+    grammar: 'animal-preferences'
+  },
+  {
+    spanish: 'El bosque es muy verde',
+    english: 'The forest is very green',
+    theme: 'Communication and the world around us',
+    topic: 'Environment and Conservation',
+    grammar: 'nature-descriptions'
   }
 ];
 
@@ -327,6 +557,8 @@ export async function POST(request: NextRequest) {
 
     } else {
       // Free play mode - generate sentences based on selected criteria
+      console.log('Free play mode - filtering criteria:', { theme, topic, grammarFocus, tier });
+      
       let vocabularyQuery = supabase
         .from('vocabulary')
         .select('*');
@@ -350,21 +582,63 @@ export async function POST(request: NextRequest) {
 
       // For now, use pre-made sentences filtered by criteria
       let availableSentences = FOUNDATION_SENTENCES;
+      console.log('Total available sentences before filtering:', availableSentences.length);
 
+      // More flexible filtering logic
       if (theme) {
-        availableSentences = availableSentences.filter(sentence => 
-          sentence.theme.toLowerCase().includes(theme.toLowerCase())
-        );
+        const themeFiltered = availableSentences.filter(sentence => {
+          const themeMatch = sentence.theme.toLowerCase().includes(theme.toLowerCase()) ||
+                           theme.toLowerCase().includes(sentence.theme.toLowerCase());
+          return themeMatch;
+        });
+        console.log(`Theme filter (${theme}) matched:`, themeFiltered.length, 'sentences');
+        availableSentences = themeFiltered;
       }
-      if (topic) {
-        availableSentences = availableSentences.filter(sentence => 
-          sentence.topic.toLowerCase().includes(topic.toLowerCase())
-        );
+      
+      if (topic && availableSentences.length > 0) {
+        const topicFiltered = availableSentences.filter(sentence => {
+          const topicMatch = sentence.topic.toLowerCase().includes(topic.toLowerCase()) ||
+                           topic.toLowerCase().includes(sentence.topic.toLowerCase()) ||
+                           // Also check for partial matches
+                           sentence.topic.toLowerCase().replace(/\s+/g, '').includes(topic.toLowerCase().replace(/\s+/g, '')) ||
+                           topic.toLowerCase().replace(/\s+/g, '').includes(sentence.topic.toLowerCase().replace(/\s+/g, ''));
+          return topicMatch;
+        });
+        console.log(`Topic filter (${topic}) matched:`, topicFiltered.length, 'sentences');
+        availableSentences = topicFiltered;
       }
-      if (grammarFocus) {
-        availableSentences = availableSentences.filter(sentence => 
+      
+      if (grammarFocus && availableSentences.length > 0) {
+        const grammarFiltered = availableSentences.filter(sentence => 
           sentence.grammar.includes(grammarFocus)
         );
+        console.log(`Grammar filter (${grammarFocus}) matched:`, grammarFiltered.length, 'sentences');
+        availableSentences = grammarFiltered;
+      }
+
+      console.log('Final filtered sentences count:', availableSentences.length);
+
+      // If no exact matches, fall back to broader theme matching
+      if (availableSentences.length === 0 && theme) {
+        console.log('No exact matches, trying broader theme matching...');
+        availableSentences = FOUNDATION_SENTENCES.filter(sentence => {
+          // Broader theme mapping
+          const themeKeywords: Record<string, string[]> = {
+            'People and lifestyle': ['family', 'friends', 'identity', 'school', 'work', 'lifestyle', 'health'],
+            'Communication and the world around us': ['travel', 'environment', 'weather', 'location', 'transport', 'holiday'],
+            'Popular culture': ['animals', 'culture', 'entertainment', 'technology', 'modern']
+          };
+          
+          const sentenceThemeKeywords = themeKeywords[sentence.theme] || [];
+          const requestThemeWords = theme.toLowerCase().split(/\s+/);
+          
+          return sentenceThemeKeywords.some((keyword: string) => 
+            requestThemeWords.some((word: string) => 
+              keyword.includes(word) || word.includes(keyword)
+            )
+          );
+        });
+        console.log('Broader theme matching found:', availableSentences.length, 'sentences');
       }
 
       // Shuffle and take requested count
@@ -390,6 +664,7 @@ export async function POST(request: NextRequest) {
 
     if (sentences.length === 0) {
       // Fallback to a basic sentence if no matches found
+      console.log('No sentences found after filtering, using fallback. Request was:', { mode, theme, topic, tier, grammarFocus });
       sentences = [{
         id: 'fallback-1',
         text: 'Hola me llamo Pedro',
@@ -406,6 +681,8 @@ export async function POST(request: NextRequest) {
         explanation: 'This sentence practices basic introductions',
         vocabularyWords: []
       }];
+    } else {
+      console.log(`Returning ${sentences.length} sentences for request:`, { mode, theme, topic, tier });
     }
 
     return NextResponse.json({ sentences });

@@ -87,62 +87,44 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create vocabulary assignment list based on selection criteria
-    let vocabularyListId: string | null = null;
-    
-    if (body.vocabularySelection && body.vocabularySelection.type !== 'custom_list') {
-      // Create a new vocabulary assignment list
-      const { data: newVocabList, error: vocabListError } = await supabase
-        .from('vocabulary_assignment_lists')
-        .insert([{
-          name: `${body.title} - Vocabulary List`,
-          description: `Auto-generated vocabulary list for ${body.title}`,
-          teacher_id: user.id,
-          theme: body.vocabularySelection.theme || null,
-          topic: body.vocabularySelection.topic || null,
-          difficulty_level: body.vocabularySelection.difficulty || 'beginner',
-          word_count: Math.min(
-            body.vocabularySelection.wordCount || 10,
-            // Enforce 10-item limit for theme/topic based selections
-            (body.vocabularySelection.type === 'theme_based' || body.vocabularySelection.type === 'topic_based') ? 10 : 50
-          ),
-          vocabulary_items: [], // Will be populated later
-          is_public: false
-        }])
-        .select()
-        .single();
-
-      if (vocabListError) {
-        console.error('Vocabulary list creation error:', vocabListError);
-        // Continue without vocabulary list if creation fails
-      } else {
-        vocabularyListId = newVocabList.id;
-        
-        // Populate vocabulary list based on selection criteria
-        if (vocabularyListId) {
-          await populateVocabularyList(supabase, vocabularyListId, body.vocabularySelection);
-        }
-      }
-    } else if (body.vocabularySelection?.customListId) {
-      vocabularyListId = body.vocabularySelection.customListId;
-    }
-
     // Prepare game configuration based on game type
     let gameConfig = body.gameConfig || {};
 
-    // Add specific configurations for gem collector game
-    if (body.gameType === 'gem-collector') {
+    let vocabularyListId = null;
+
+    // Handle sentence-based games (like Speed Builder) differently
+    if (body.gameType === 'speed-builder') {
+      console.log('Creating Speed Builder assignment - using sentence-based approach');
+      
+      // For Speed Builder, we don't create a vocabulary list
+      // Instead, the game config will specify the sentence selection criteria
       gameConfig = {
         ...gameConfig,
-        language: gameConfig.language || 'spanish',
+        mode: 'assignment',
+        language: 'spanish',
         difficulty: body.vocabularySelection?.difficulty || 'beginner',
         theme: body.vocabularySelection?.theme,
         topic: body.vocabularySelection?.topic,
-        sentenceCount: Math.min(body.vocabularySelection?.wordCount || 10, 15), // Limit sentences for gem collector
-        speedBoostEnabled: gameConfig.speedBoostEnabled !== false, // Default to true
-        livesCount: gameConfig.livesCount || 3,
-        timeLimit: body.timeLimit || 600 // 10 minutes default for gem collector
+        tier: 'Foundation', // Default to Foundation tier
+        sentenceCount: Math.min(body.vocabularySelection?.wordCount || 15, 20), // Limit sentences
+        timeLimit: body.timeLimit || 600, // 10 minutes default
+        allowRetries: true,
+        showProgress: true
       };
+
+      console.log('Speed Builder game config:', gameConfig);
+      
+    } else {
+      // Handle vocabulary-based games (existing logic)
+      console.log('Creating vocabulary-based assignment');
+      
+      vocabularyListId = await createVocabularyList(supabase, user.id, body);
+      if (!vocabularyListId) {
+        return NextResponse.json(
+          { error: 'Failed to create vocabulary list' },
+          { status: 500 }
+        );
+      }
     }
 
     // Create the assignment
@@ -155,7 +137,7 @@ export async function POST(request: NextRequest) {
         class_id: body.classId,
         due_date: body.dueDate,
         points: body.points || 10,
-        vocabulary_assignment_list_id: vocabularyListId,
+        vocabulary_assignment_list_id: vocabularyListId, // Will be null for sentence-based games
         teacher_id: user.id,
         game_config: gameConfig,
         status: 'active'
@@ -181,7 +163,8 @@ export async function POST(request: NextRequest) {
         title: assignment.title,
         type: assignment.game_type,
         status: assignment.status,
-        vocabularyListId
+        vocabularyListId,
+        gameConfig
       }
     });
 
@@ -252,6 +235,58 @@ async function populateVocabularyList(
     }
   } catch (error) {
     console.error('Error populating vocabulary list:', error);
+  }
+}
+
+async function createVocabularyList(
+  supabase: any,
+  teacherId: string,
+  body: CreateAssignmentRequest
+) {
+  try {
+    let vocabularyListId: string | null = null;
+
+    if (body.vocabularySelection && body.vocabularySelection.type !== 'custom_list') {
+      // Create a new vocabulary assignment list
+      const { data: newVocabList, error: vocabListError } = await supabase
+        .from('vocabulary_assignment_lists')
+        .insert([{
+          name: `${body.title} - Vocabulary List`,
+          description: `Auto-generated vocabulary list for ${body.title}`,
+          teacher_id: teacherId,
+          theme: body.vocabularySelection.theme || null,
+          topic: body.vocabularySelection.topic || null,
+          difficulty_level: body.vocabularySelection.difficulty || 'beginner',
+          word_count: Math.min(
+            body.vocabularySelection.wordCount || 10,
+            // Enforce 10-item limit for theme/topic based selections
+            (body.vocabularySelection.type === 'theme_based' || body.vocabularySelection.type === 'topic_based') ? 10 : 50
+          ),
+          vocabulary_items: [], // Will be populated later
+          is_public: false
+        }])
+        .select()
+        .single();
+
+      if (vocabListError) {
+        console.error('Vocabulary list creation error:', vocabListError);
+        // Continue without vocabulary list if creation fails
+      } else {
+        vocabularyListId = newVocabList.id;
+        
+        // Populate vocabulary list based on selection criteria
+        if (vocabularyListId) {
+          await populateVocabularyList(supabase, vocabularyListId, body.vocabularySelection);
+        }
+      }
+    } else if (body.vocabularySelection?.customListId) {
+      vocabularyListId = body.vocabularySelection.customListId;
+    }
+
+    return vocabularyListId;
+  } catch (error) {
+    console.error('Error creating vocabulary list:', error);
+    return null;
   }
 }
 

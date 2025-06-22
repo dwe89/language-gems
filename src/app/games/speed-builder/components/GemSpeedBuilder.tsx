@@ -538,7 +538,14 @@ export const GemSpeedBuilder: React.FC<{
 
   // Initialize game
   useEffect(() => {
-    fetchSentences();
+    const initializeGame = async () => {
+      // Load assignment config first (if in assignment mode)
+      await loadAssignmentConfig();
+      // Then fetch sentences with the updated config
+      fetchSentences();
+    };
+    
+    initializeGame();
   }, [assignmentId, mode]);
 
   // Timer effect
@@ -564,7 +571,53 @@ export const GemSpeedBuilder: React.FC<{
     }
   }, [placedWords, gameState]);
 
-  // Fetch sentences from API with theme/topic support
+  // Load assignment configuration for assignment mode
+  const loadAssignmentConfig = async () => {
+    if (!assignmentId || mode !== 'assignment') return;
+    
+    try {
+      console.log('Loading assignment config for assignment:', assignmentId);
+      
+      // Get the user session for authentication
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const response = await fetch(`/api/assignments/${assignmentId}`, {
+        method: 'GET',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Assignment config loaded:', data);
+        
+        // Extract game config
+        const gameConfig = data.assignment?.game_config || {};
+        console.log('Speed Builder game config:', gameConfig);
+        
+        // Override theme/topic from assignment config
+        if (gameConfig.theme) {
+          theme = gameConfig.theme;
+        }
+        if (gameConfig.topic) {
+          topic = gameConfig.topic;
+        }
+        if (gameConfig.tier) {
+          tier = gameConfig.tier;
+        }
+        
+        console.log('Updated config from assignment - theme:', theme, 'topic:', topic, 'tier:', tier);
+        
+      } else {
+        console.error('Failed to load assignment config, status:', response.status);
+      }
+    } catch (error) {
+      console.error('Error loading assignment config:', error);
+    }
+  };
+
   const fetchSentences = async () => {
     try {
       setIsLoading(true);
