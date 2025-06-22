@@ -139,14 +139,15 @@ export async function POST(request: NextRequest) {
       .insert({
         title: body.title,
         description: body.description,
-        game_type: body.gameType,
+        type: body.gameType, // Use 'type' not 'game_type'
         class_id: body.classId,
         due_date: body.dueDate,
         points: body.points || 10,
-        vocabulary_list_id: vocabularyListId, // Will be null for sentence-based games
-        teacher_id: user.id,
-        status: 'active'
-        // Temporarily removing game_config to test schema cache issue
+        vocabulary_assignment_list_id: vocabularyListId, // This column exists!
+        created_by: user.id, // Use 'created_by' not 'teacher_id'
+        status: 'active',
+        // Store game config in vocabulary_criteria for now since game_config doesn't exist
+        vocabulary_criteria: gameConfig
       })
       .select()
       .single();

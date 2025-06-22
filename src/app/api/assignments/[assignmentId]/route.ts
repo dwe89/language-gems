@@ -34,13 +34,12 @@ export async function GET(
         id,
         title,
         description,
-        game_type,
-        game_config,
+        type,
+        vocabulary_criteria,
         due_date,
         points,
-        time_limit,
         status,
-        teacher_id,
+        created_by,
         class_id,
         vocabulary_assignment_list_id,
         created_at
@@ -58,7 +57,7 @@ export async function GET(
 
     // Check if user has access to this assignment
     // Either as a teacher (owns the assignment) or as a student (in the class)
-    if (assignment.teacher_id === user.id) {
+    if (assignment.created_by === user.id) {
       // Teacher access - return full details
       return NextResponse.json({
         success: true,
@@ -88,11 +87,10 @@ export async function GET(
           id: assignment.id,
           title: assignment.title,
           description: assignment.description,
-          game_type: assignment.game_type,
-          game_config: assignment.game_config,
+          game_type: assignment.type, // Use 'type' column
+          game_config: assignment.vocabulary_criteria, // Use 'vocabulary_criteria' as game config
           due_date: assignment.due_date,
           points: assignment.points,
-          time_limit: assignment.time_limit,
           status: assignment.status
         },
         access_level: 'student'
