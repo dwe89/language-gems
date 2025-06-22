@@ -89,7 +89,6 @@ export default function EnhancedAssignmentCreator({
     description: '',
     game_type: '',
     class_id: classId,
-    points: 100,
     time_limit: 15,
     max_attempts: 3,
     auto_grade: true,
@@ -211,7 +210,6 @@ export default function EnhancedAssignmentCreator({
           game_type: template.game_type,
           class_id: classId,
           config: template.default_config,
-          points: 100,
           time_limit: template.estimated_duration,
           max_attempts: template.max_attempts,
           auto_grade: true,
@@ -394,21 +392,7 @@ export default function EnhancedAssignmentCreator({
           />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Points
-            </label>
-            <input
-              type="number"
-              value={assignmentData.points || 100}
-              onChange={(e) => setAssignmentData(prev => ({ ...prev, points: parseInt(e.target.value) }))}
-              min="1"
-              max="1000"
-              className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-            />
-          </div>
-
+        <div className="grid grid-cols-1 gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Due Date (Optional)
@@ -466,63 +450,6 @@ export default function EnhancedAssignmentCreator({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {/* Game Settings */}
-        <div className="bg-white rounded-xl p-6 border border-gray-200">
-          <h4 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-            <Gamepad2 className="h-5 w-5 mr-2 text-purple-600" />
-            Game Settings
-          </h4>
-
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Overall Difficulty Level
-              </label>
-              <select
-                value={gameConfig.difficulty}
-                onChange={(e) => setGameConfig(prev => ({ ...prev, difficulty: e.target.value }))}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2"
-              >
-                <option value="beginner">Beginner Explorer</option>
-                <option value="intermediate">Skilled Adventurer</option>
-                <option value="advanced">Master Gem Hunter</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Time Limit (minutes)
-              </label>
-              <input
-                type="range"
-                min="5"
-                max="60"
-                value={gameConfig.timeLimit}
-                onChange={(e) => setGameConfig(prev => ({ ...prev, timeLimit: parseInt(e.target.value) }))}
-                className="w-full"
-              />
-              <div className="text-sm text-gray-600 mt-1">{gameConfig.timeLimit} minutes</div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Maximum Attempts
-              </label>
-              <select
-                value={gameConfig.maxAttempts}
-                onChange={(e) => setGameConfig(prev => ({ ...prev, maxAttempts: parseInt(e.target.value) }))}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2"
-              >
-                <option value={1}>1 attempt (Challenge mode)</option>
-                <option value={2}>2 attempts</option>
-                <option value={3}>3 attempts (Recommended)</option>
-                <option value={5}>5 attempts (Practice mode)</option>
-                <option value={-1}>Unlimited attempts</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
         {/* Adventure Features */}
         <div className="bg-white rounded-xl p-6 border border-gray-200">
           <h4 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
@@ -641,10 +568,6 @@ export default function EnhancedAssignmentCreator({
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <div className="text-sm text-gray-500">Points</div>
-                <div className="font-medium">{assignmentData.points}</div>
-              </div>
-              <div>
                 <div className="text-sm text-gray-500">Due Date</div>
                 <div className="font-medium">
                   {assignmentData.due_date 
@@ -674,15 +597,13 @@ export default function EnhancedAssignmentCreator({
                 }
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <div className="text-sm text-gray-500">Difficulty</div>
-                <div className="font-medium capitalize">{gameConfig.difficulty}</div>
-              </div>
-              <div>
-                <div className="text-sm text-gray-500">Time Limit</div>
-                <div className="font-medium">{gameConfig.timeLimit} minutes</div>
-              </div>
+            <div>
+              <div className="text-sm text-gray-500">Difficulty</div>
+              <div className="font-medium capitalize">{gameConfig.difficulty}</div>
+            </div>
+            <div>
+              <div className="text-sm text-gray-500">Time Limit</div>
+              <div className="font-medium">{gameConfig.timeLimit} minutes</div>
             </div>
             <div>
               <div className="text-sm text-gray-500">Max Attempts</div>

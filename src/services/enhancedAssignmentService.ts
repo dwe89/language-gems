@@ -63,10 +63,9 @@ export interface AssignmentCreationData {
   description?: string;
   game_type: string;
   class_id: string;
-  due_date?: Date;
+  due_date?: string;
   vocabulary_list_id?: string;
   config: Record<string, any>;
-  points: number;
   time_limit: number;
   max_attempts: number;
   auto_grade: boolean;
@@ -194,7 +193,7 @@ export class EnhancedAssignmentService {
         description: assignmentData.description,
         type: assignmentData.game_type,
         class_id: assignmentData.class_id,
-        due_date: assignmentData.due_date?.toISOString(),
+        due_date: assignmentData.due_date ? new Date(assignmentData.due_date).toISOString() : null,
         vocabulary_assignment_list_id: assignmentData.vocabulary_list_id,
         created_by: teacherId,
         config: {
@@ -205,7 +204,6 @@ export class EnhancedAssignmentService {
           hints_allowed: assignmentData.hints_allowed,
           power_ups_enabled: assignmentData.power_ups_enabled
         },
-        points: assignmentData.points,
         time_limit: assignmentData.time_limit,
         status: 'active'
       })

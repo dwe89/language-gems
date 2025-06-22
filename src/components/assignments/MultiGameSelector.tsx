@@ -60,27 +60,99 @@ const AVAILABLE_GAMES: GameOption[] = [
     type: 'vocabulary'
   },
   {
+    id: 'translation-tycoon',
+    name: 'Translation Tycoon',
+    description: 'Build your business empire by making correct translations and smart investments',
+    icon: <DollarSign className="h-5 w-5" />,
+    color: 'from-green-500 to-emerald-500',
+    category: 'vocabulary',
+    difficulty: 'intermediate',
+    estimatedTime: '8-15 min',
+    features: ['Strategy gameplay', 'Economic simulation', 'Progress tracking'],
+    type: 'vocabulary'
+  },
+  {
+    id: 'hangman',
+    name: 'Hangman',
+    description: 'Guess the word letter by letter before running out of chances',
+    icon: <Type className="h-5 w-5" />,
+    color: 'from-red-500 to-pink-500',
+    category: 'vocabulary',
+    difficulty: 'beginner',
+    estimatedTime: '3-7 min',
+    features: ['Classic gameplay', 'Letter hints', 'Multiple chances'],
+    type: 'vocabulary'
+  },
+  {
+    id: 'word-scramble',
+    name: 'Word Scramble',
+    description: 'Unscramble letters to form the correct translation',
+    icon: <Shuffle className="h-5 w-5" />,
+    color: 'from-blue-500 to-cyan-500',
+    category: 'vocabulary',
+    difficulty: 'intermediate',
+    estimatedTime: '4-8 min',
+    features: ['Letter manipulation', 'Hint system', 'Time bonuses'],
+    type: 'vocabulary'
+  },
+  {
     id: 'speed-builder',
     name: 'Speed Builder',
-    description: 'Build sentences by dragging words into the correct order before time runs out',
+    description: 'Build sentences by dragging words into the correct order',
     icon: <Zap className="h-5 w-5" />,
     color: 'from-yellow-500 to-orange-500',
     category: 'grammar',
     difficulty: 'intermediate',
     estimatedTime: '5-10 min',
-    features: ['Drag & drop', 'Time pressure', 'Grammar focus'],
+    features: ['Drag & drop', 'Grammar focus', 'Sentence construction'],
+    type: 'sentence'
+  },
+  {
+    id: 'sentence-towers',
+    name: 'Sentence Towers',
+    description: 'Stack sentence components to build towering grammatical structures',
+    icon: <Castle className="h-5 w-5" />,
+    color: 'from-indigo-500 to-purple-500',
+    category: 'grammar',
+    difficulty: 'advanced',
+    estimatedTime: '6-12 min',
+    features: ['Tower building', 'Complex grammar', 'Strategic thinking'],
+    type: 'sentence'
+  },
+  {
+    id: 'verb-conjugation-ladder',
+    name: 'Verb Ladder',
+    description: 'Climb the ladder by correctly conjugating verbs at each level',
+    icon: <Layers className="h-5 w-5" />,
+    color: 'from-teal-500 to-green-500',
+    category: 'grammar',
+    difficulty: 'intermediate',
+    estimatedTime: '7-12 min',
+    features: ['Progressive difficulty', 'Verb mastery', 'Level progression'],
     type: 'sentence'
   },
   {
     id: 'word-blast',
     name: 'Word Blast',
-    description: 'Launch rockets by selecting correct translations before time runs out',
+    description: 'Launch rockets by selecting correct translations',
     icon: <Rocket className="h-5 w-5" />,
     color: 'from-orange-500 to-red-500',
     category: 'vocabulary',
     difficulty: 'beginner',
     estimatedTime: '5-12 min',
-    features: ['Time pressure', 'Visual effects', 'Score multipliers'],
+    features: ['Action gameplay', 'Visual effects', 'Score multipliers'],
+    type: 'vocabulary'
+  },
+  {
+    id: 'noughts-and-crosses',
+    name: 'Tic-Tac-Toe',
+    description: 'Win at tic-tac-toe by answering vocabulary questions correctly',
+    icon: <Target className="h-5 w-5" />,
+    color: 'from-gray-500 to-slate-500',
+    category: 'vocabulary',
+    difficulty: 'beginner',
+    estimatedTime: '3-6 min',
+    features: ['Classic game', 'Quick rounds', 'Strategic thinking'],
     type: 'vocabulary'
   }
 ];

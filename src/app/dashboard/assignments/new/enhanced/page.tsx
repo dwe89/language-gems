@@ -34,7 +34,10 @@ export default function EnhancedAssignmentPage() {
       try {
         const { data: classesData, error } = await supabase
           .from('classes')
-          .select('*')
+          .select(`
+            *,
+            student_classes!inner(count)
+          `)
           .eq('teacher_id', user.id)
           .order('name');
 
@@ -157,7 +160,7 @@ export default function EnhancedAssignmentPage() {
                   <h3 className="font-medium text-gray-900">{cls.name}</h3>
                   <p className="text-sm text-gray-600">{cls.description || 'No description'}</p>
                   <div className="text-xs text-gray-500 mt-2">
-                    {cls.student_count || 0} students
+                    {cls.student_classes?.length || 0} students
                   </div>
                 </button>
               ))}
