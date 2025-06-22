@@ -795,21 +795,23 @@ export const GemSpeedBuilder: React.FC<{
       soundSystem.play('word-wrong');
     }
 
-    // Update stats
-    setStats(prev => ({
-      ...prev,
-      totalWordsPlaced: prev.totalWordsPlaced + 1,
-      accuracy: (prev.totalWordsPlaced * prev.accuracy + (isCorrect ? 1 : 0)) / (prev.totalWordsPlaced + 1),
-      score: prev.score + (isCorrect ? (10 + prev.streak) * prev.bonusMultiplier : -2),
-      streak: isCorrect ? prev.streak + 1 : 0,
-      highestStreak: Math.max(prev.highestStreak, isCorrect ? prev.streak + 1 : prev.streak)
-    }));
+    // Update stats (individual word placement)
+    setStats(prev => {
+      const newTotalWordsPlaced = prev.totalWordsPlaced + 1;
+      const correctPlacements = (prev.accuracy / 100) * prev.totalWordsPlaced + (isCorrect ? 1 : 0);
+      const newAccuracy = Math.round((correctPlacements / newTotalWordsPlaced) * 100);
+      
+      return {
+        ...prev,
+        totalWordsPlaced: newTotalWordsPlaced,
+        accuracy: newAccuracy,
+        score: prev.score + (isCorrect ? (10 + prev.streak) * prev.bonusMultiplier : -2),
+        streak: isCorrect ? prev.streak + 1 : 0,
+        highestStreak: Math.max(prev.highestStreak, isCorrect ? prev.streak + 1 : prev.streak)
+      };
+    });
 
-    console.log('Checking if all words placed:', newPlacedWords.every(w => w !== null));
-    console.log('Placed words:', newPlacedWords.map(w => w ? w.text : 'null'));
-    
     if (newPlacedWords.every(w => w !== null)) {
-      console.log('All words placed, checking sentence completion...');
       // Pass the newPlacedWords directly to avoid state timing issues
       checkSentenceCompleteWithWords(newPlacedWords);
     }
@@ -819,37 +821,37 @@ export const GemSpeedBuilder: React.FC<{
   const checkSentenceCompleteWithWords = (wordsArray: (WordItem | null)[]) => {
     if (wordsArray.length === 0 || wordsArray.some(w => w === null)) return;
     
-    // Debug: Check what we're actually comparing
-    console.log('Checking sentence completion with words array:');
-    wordsArray.forEach((word, index) => {
-      if (word) {
-        console.log(`Position ${index}: word="${word.text}", correctPosition=${word.correctPosition}, index=${word.index}`);
-      }
-    });
-    
     const isCorrect = wordsArray.every((word, index) => {
       if (!word || !currentSentence) return false;
       return word.correctPosition === index;
     });
-    
-    console.log('Sentence is correct:', isCorrect);
 
     if (isCorrect) {
       // Play success sound and create gem effect (no floating gems)
       soundSystem.play('sentence-complete');
       createGemCollectionEffect(wordsArray.length);
       
-      // Update stats
+      // Update stats with fixed calculations
+      const newTotalWordsPlaced = stats.totalWordsPlaced + wordsArray.length;
+      const newSentencesCompleted = stats.sentencesCompleted + 1;
+      // For now, accuracy is 100% if you complete sentences (since wrong placements are corrected)
+      const newAccuracy = 100; 
+      const baseGemsEarned = wordsArray.length; // 1 gem per word in sentence
+      const streakBonus = Math.min(stats.streak, 3); // Max 3 bonus gems for streak
+      const totalGemsEarned = baseGemsEarned + streakBonus;
+      
       const newStats = {
         ...stats,
         score: stats.score + (wordsArray.length * 10),
-        accuracy: Math.round(((stats.sentencesCompleted + 1) / (stats.totalWordsPlaced + wordsArray.length)) * 100),
-        sentencesCompleted: stats.sentencesCompleted + 1,
+        accuracy: newAccuracy, // Should be 100% if all sentences completed correctly
+        sentencesCompleted: newSentencesCompleted,
         streak: stats.streak + 1,
         highestStreak: Math.max(stats.highestStreak, stats.streak + 1),
-        totalWordsPlaced: stats.totalWordsPlaced + wordsArray.length,
-        gemsCollected: stats.gemsCollected + wordsArray.length
+        totalWordsPlaced: newTotalWordsPlaced,
+        gemsCollected: stats.gemsCollected + totalGemsEarned
       };
+      
+
       
       setStats(newStats);
       
