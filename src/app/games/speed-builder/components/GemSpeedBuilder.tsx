@@ -210,9 +210,10 @@ const GemDropTarget: React.FC<{
   index: number;
   word: WordItem | null;
   onDrop: (word: WordItem, index: number) => void;
+  showSentenceResult?: boolean;
   isCorrect?: boolean;
   showGhostWord?: string;
-}> = ({ index, word, onDrop, isCorrect, showGhostWord }) => {
+}> = ({ index, word, onDrop, showSentenceResult = false, isCorrect, showGhostWord }) => {
   const [{ isOver, canDrop }, drop] = useDrop(() => ({
     accept: 'word',
     drop: (item: WordItem) => onDrop(item, index),
@@ -229,6 +230,9 @@ const GemDropTarget: React.FC<{
     }
   };
 
+  // Only show correctness after sentence completion
+  const showFeedback = showSentenceResult && word;
+
   return (
     <motion.div
       ref={drop as any}
@@ -240,13 +244,13 @@ const GemDropTarget: React.FC<{
         borderColor: isOver 
           ? 'rgba(255, 255, 255, 0.8)' 
           : word 
-            ? (isCorrect ? 'rgba(34, 197, 94, 0.8)' : 'rgba(239, 68, 68, 0.8)')
+            ? (showFeedback && isCorrect ? 'rgba(34, 197, 94, 0.8)' : showFeedback && !isCorrect ? 'rgba(239, 68, 68, 0.8)' : 'rgba(255, 255, 255, 0.6)')
             : 'rgba(255, 255, 255, 0.3)'
       }}
       whileHover={{ 
         scale: word ? 1.05 : 1.02,
         borderColor: word 
-          ? (isCorrect ? 'rgba(34, 197, 94, 1)' : 'rgba(239, 68, 68, 1)')
+          ? (showFeedback && isCorrect ? 'rgba(34, 197, 94, 1)' : showFeedback && !isCorrect ? 'rgba(239, 68, 68, 1)' : 'rgba(255, 255, 255, 0.8)')
           : 'rgba(255, 255, 255, 0.6)'
       }}
       transition={{ type: "spring", stiffness: 300, damping: 25 }}
@@ -258,12 +262,11 @@ const GemDropTarget: React.FC<{
         transition-all duration-300
         ${isOver ? 'bg-white/20 shadow-lg' : ''}
         ${word ? 'cursor-pointer hover:bg-white/10' : 'cursor-default'}
-        ${word && !isCorrect ? 'animate-pulse' : ''}
       `}
     >
-      {/* Background effect */}
+      {/* Background effect - only show after sentence completion */}
       <div className="absolute inset-0 rounded-2xl overflow-hidden">
-        {word && (
+        {word && showFeedback && (
           <motion.div
             animate={{ 
               background: isCorrect 
@@ -288,9 +291,11 @@ const GemDropTarget: React.FC<{
           exit={{ scale: 0 }}
           className={`
             px-6 py-3 rounded-xl border-2 
-            ${isCorrect 
-              ? 'bg-gradient-to-br from-green-400 to-green-600 border-green-300' 
-              : 'bg-gradient-to-br from-red-400 to-red-600 border-red-300'
+            ${showFeedback 
+              ? (isCorrect 
+                ? 'bg-gradient-to-br from-green-400 to-green-600 border-green-300' 
+                : 'bg-gradient-to-br from-red-400 to-red-600 border-red-300')
+              : 'bg-gradient-to-br from-blue-400 to-purple-600 border-blue-300'
             }
             text-white font-bold text-lg text-center
             shadow-lg backdrop-blur-sm
@@ -300,22 +305,24 @@ const GemDropTarget: React.FC<{
         >
           <span className="relative z-10 drop-shadow-sm">{word.text}</span>
           
-          {/* Correct/incorrect indicator */}
-          <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-white flex items-center justify-center">
-            {isCorrect ? (
-              <CheckCircle2 className="w-4 h-4 text-green-600" />
-            ) : (
-              <motion.div
-                animate={{ rotate: [0, 10, -10, 0] }}
-                transition={{ repeat: Infinity, duration: 0.5 }}
-              >
-                ❌
-              </motion.div>
-            )}
-          </div>
+          {/* Correct/incorrect indicator - only after sentence completion */}
+          {showFeedback && (
+            <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-white flex items-center justify-center">
+              {isCorrect ? (
+                <CheckCircle2 className="w-4 h-4 text-green-600" />
+              ) : (
+                <motion.div
+                  animate={{ rotate: [0, 10, -10, 0] }}
+                  transition={{ repeat: Infinity, duration: 0.5 }}
+                >
+                  ❌
+                </motion.div>
+              )}
+            </div>
+          )}
 
-          {/* Remove hint */}
-          {!isCorrect && (
+          {/* Remove hint - only show if feedback indicates it's wrong */}
+          {showFeedback && !isCorrect && (
             <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 text-xs text-white/70 whitespace-nowrap">
               Click to remove
             </div>
@@ -522,6 +529,7 @@ export const GemSpeedBuilder: React.FC<{
   const [showGhostMode, setShowGhostMode] = useState(false);
   const [hintWordIndex, setHintWordIndex] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showSentenceResult, setShowSentenceResult] = useState(false);
 
   
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -548,49 +556,71 @@ export const GemSpeedBuilder: React.FC<{
     };
   }, [gameState, timeLeft]);
 
+  // Check for sentence completion when placedWords changes
+  useEffect(() => {
+    if (gameState === 'playing' && placedWords.every(w => w !== null)) {
+      console.log('Sentence complete detected, checking correctness');
+      checkSentenceCompleteWithWords(placedWords);
+    }
+  }, [placedWords, gameState]);
+
   // Fetch sentences from API with theme/topic support
   const fetchSentences = async () => {
     try {
       setIsLoading(true);
       
-      // Map theme selections to API themes
+      // Map theme selections to API themes  
       const themeMapping: { [key: string]: string } = {
-        'Animals': 'People and lifestyle',
-        'Travel': 'Communication and the world around us',
-        'Family': 'People and lifestyle',
+        'Identity and Culture': 'People and lifestyle',
+        'Local Area, Holiday and Travel': 'Communication and the world around us',
         'School': 'People and lifestyle',
-        'Food': 'People and lifestyle',
-        'Sports': 'Popular culture',
-        'Hobbies': 'Popular culture'
+        'Future Aspirations, Study and Work': 'People and lifestyle',
+        'International and Global Dimension': 'Communication and the world around us',
+        'Animals and Nature': 'Communication and the world around us',
+        'Travel and Culture': 'Communication and the world around us',
+        'Technology and Modern Life': 'Popular culture'
       };
       
       const apiTheme = themeMapping[theme || ''] || 'People and lifestyle';
       
+      const requestBody = {
+        mode,
+        assignmentId,
+        theme: apiTheme,
+        topic: topic || 'Identity and relationships',
+        tier: tier || 'Foundation',
+        count: 15, // Request more sentences for progression
+        difficulty: 'medium',
+        vocabularyList: vocabularyList || []
+      };
+      
+      console.log('Sending API request with:', requestBody);
+      
       const response = await fetch('/api/games/speed-builder/sentences', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          mode,
-          assignmentId,
-          theme: apiTheme,
-          topic: topic || 'Identity and relationships',
-          tier: tier || 'Foundation',
-          count: 10,
-          difficulty: 'medium',
-          vocabularyList: vocabularyList || []
-        })
+        body: JSON.stringify(requestBody)
       });
 
+      console.log('API response status:', response.status);
+      
       if (response.ok) {
         const data = await response.json();
+        console.log('API response data:', data);
         setAvailableSentences(data.sentences || []);
         if (data.sentences?.length > 0) {
+          console.log('Loading first sentence:', data.sentences[0]);
           loadSentence(data.sentences[0]);
           return; // Success, exit early
+        } else {
+          console.log('API returned no sentences, falling back to demo sentences');
         }
+      } else {
+        console.log('API response not ok, status:', response.status);
       }
       
       // If API fails or returns no sentences, use fallback demo sentences
+      console.log('Using fallback demo sentences for theme:', theme, 'topic:', topic);
       const demoSentences = generateDemoSentences(theme, topic);
       setAvailableSentences(demoSentences);
       if (demoSentences.length > 0) {
@@ -611,6 +641,7 @@ export const GemSpeedBuilder: React.FC<{
 
   // Generate demo sentences based on theme/topic
   const generateDemoSentences = (selectedTheme?: string, selectedTopic?: string): SentenceData[] => {
+    
     const animalSentences = [
       { spanish: "El gato come pescado", english: "The cat eats fish" },
       { spanish: "Los perros corren en el parque", english: "The dogs run in the park" },
@@ -645,14 +676,19 @@ export const GemSpeedBuilder: React.FC<{
 
     let selectedSentences;
     switch (selectedTheme) {
-      case 'Travel':
+      case 'Local Area, Holiday and Travel':
+      case 'Travel and Culture':
         selectedSentences = travelSentences;
         break;
-      case 'Family':
+      case 'Identity and Culture':
+      case 'Family and Friends':
         selectedSentences = familySentences;
         break;
       case 'School':
         selectedSentences = schoolSentences;
+        break;
+      case 'Animals and Nature':
+        selectedSentences = animalSentences;
         break;
       default:
         selectedSentences = animalSentences;
@@ -675,11 +711,13 @@ export const GemSpeedBuilder: React.FC<{
 
   // Load a sentence for the game
   const loadSentence = (sentence: SentenceData) => {
+    console.log('Loading sentence:', sentence.text);
     setCurrentSentence(sentence);
+    setShowSentenceResult(false); // Reset feedback state
     
     // Split sentence into words and assign gem types
     const words = sentence.text.split(' ').map((word, index) => ({
-      id: `word-${index}`,
+      id: `word-${sentence.id}-${index}`, // More unique IDs
       text: word,
       index,
       correctPosition: index,
@@ -687,11 +725,16 @@ export const GemSpeedBuilder: React.FC<{
       gemType: (['ruby', 'sapphire', 'emerald', 'amethyst', 'topaz', 'diamond'][index % 6] as 'ruby' | 'sapphire' | 'emerald' | 'amethyst' | 'topaz' | 'diamond')
     }));
     
+    console.log('Created words:', words);
+    
     // Shuffle words for gameplay - using a deterministic shuffle to avoid hydration issues
     const shuffled = [...words].sort((a, b) => a.text.length - b.text.length).reverse();
     setShuffledWords(shuffled);
     setPlacedWords(new Array(words.length).fill(null));
     setHintWordIndex(null);
+    
+    console.log('Shuffled words:', shuffled);
+    console.log('Initialized placed words array with length:', words.length);
   };
 
   // Create gem collection effect (simplified - no floating gems)
@@ -729,6 +772,7 @@ export const GemSpeedBuilder: React.FC<{
       setShuffledWords([]);
       setHintWordIndex(null);
       setShowGhostMode(false);
+      setShowSentenceResult(false);
       
       // Load the next sentence
       loadSentence(availableSentences[nextIndex]);
@@ -771,98 +815,91 @@ export const GemSpeedBuilder: React.FC<{
     setTimeLeft(120);
   };
 
-  // Fixed word drop with proper handling and removal
+  // Simplified and reliable word drop handling
   const handleWordDrop = (word: WordItem, targetIndex: number) => {
     if (gameState !== 'playing') return;
 
-    const newPlacedWords = [...placedWords];
-    
-    // Handle removing word (clicking on placed word)
+    console.log(`Dropping word "${word.text}" (id: ${word.id}) to position ${targetIndex}`);
+
+    // Handle removing word (clicking on placed word) - targetIndex = -1
     if (targetIndex === -1) {
-      const currentIndex = newPlacedWords.findIndex(w => w?.id === word.id);
-      if (currentIndex !== -1) {
-        newPlacedWords[currentIndex] = null;
-        setPlacedWords(newPlacedWords);
-        
-        // Add word back to shuffled words - ensure it's not already there
-        setShuffledWords(prev => {
-          const exists = prev.some(w => w.id === word.id);
-          if (!exists) {
-            return [...prev, word];
-          }
-          return prev;
-        });
-      }
+      console.log('Removing word from placed position');
+      setPlacedWords(prevPlaced => {
+        const currentIndex = prevPlaced.findIndex(w => w?.id === word.id);
+        if (currentIndex !== -1) {
+          const newPlacedWords = [...prevPlaced];
+          newPlacedWords[currentIndex] = null;
+          
+          // Add back to shuffled words
+          setShuffledWords(prevShuffled => {
+            const wordExists = prevShuffled.some(w => w.id === word.id);
+            return wordExists ? prevShuffled : [...prevShuffled, word];
+          });
+          
+          console.log(`Removed word from position ${currentIndex}, added back to shuffled`);
+          return newPlacedWords;
+        }
+        return prevPlaced;
+      });
       soundSystem.play('drop');
       return;
     }
-    
-    // Find current position of the dropped word
-    const currentIndex = newPlacedWords.findIndex(w => w?.id === word.id);
-    
-    // Remove word from shuffled words first (if it's coming from there)
-    if (currentIndex === -1) {
-      setShuffledWords(prev => prev.filter(w => w.id !== word.id));
-    }
-    
-    // If target position is occupied, swap the words
-    if (newPlacedWords[targetIndex]) {
-      if (currentIndex !== -1) {
-        // Swap: put the target word back in the current word's position
-        newPlacedWords[currentIndex] = newPlacedWords[targetIndex];
-      } else {
-        // Put displaced word back to available words
-        const displacedWord = newPlacedWords[targetIndex];
-        if (displacedWord) {
-          setShuffledWords(prev => {
-            const exists = prev.some(w => w.id === displacedWord.id);
-            if (!exists) {
-              return [...prev, displacedWord];
-            }
-            return prev;
-          });
-        }
-      }
-    } else {
-      // Clear the current position if word was already placed
-      if (currentIndex !== -1) {
-        newPlacedWords[currentIndex] = null;
-      }
-    }
 
-    // Place the word in the target position
-    newPlacedWords[targetIndex] = word;
-    setPlacedWords(newPlacedWords);
-
-    // Check if placement is correct and create gem effect
-    const isCorrect = word.index === targetIndex;
-    if (isCorrect) {
-      createGemCollectionEffect(2 + stats.streak);
-      soundSystem.play('word-place');
-    } else {
-      soundSystem.play('word-wrong');
-    }
-
-    // Update stats (individual word placement)
-    setStats(prev => {
-      const newTotalWordsPlaced = prev.totalWordsPlaced + 1;
-      const correctPlacements = (prev.accuracy / 100) * prev.totalWordsPlaced + (isCorrect ? 1 : 0);
-      const newAccuracy = Math.round((correctPlacements / newTotalWordsPlaced) * 100);
+    // Normal drop operation - use functional updates to ensure consistency
+    setPlacedWords(prevPlaced => {
+      console.log('Current placed words in setter:', prevPlaced.map((w, i) => `[${i}]: ${w ? `${w.text}(${w.id})` : 'null'}`));
       
-      return {
-        ...prev,
-        totalWordsPlaced: newTotalWordsPlaced,
-        accuracy: newAccuracy,
-        score: prev.score + (isCorrect ? (10 + prev.streak) * prev.bonusMultiplier : -2),
-        streak: isCorrect ? prev.streak + 1 : 0,
-        highestStreak: Math.max(prev.highestStreak, isCorrect ? prev.streak + 1 : prev.streak)
-      };
+      const newPlacedWords = [...prevPlaced];
+      
+      // Find where the word currently is in placed words
+      const currentPlacedIndex = prevPlaced.findIndex(w => w?.id === word.id);
+      console.log(`Word currently at placed index: ${currentPlacedIndex}`);
+      console.log(`Target position ${targetIndex} currently has:`, newPlacedWords[targetIndex] ? `${newPlacedWords[targetIndex]?.text}(${newPlacedWords[targetIndex]?.id})` : 'null');
+      
+      // Only displace if there's actually a DIFFERENT word at the target position
+      if (newPlacedWords[targetIndex] && newPlacedWords[targetIndex]?.id !== word.id) {
+        const displacedWord = newPlacedWords[targetIndex];
+        console.log(`Displacing DIFFERENT word "${displacedWord?.text}" from position ${targetIndex}`);
+        
+        // Add displaced word back to shuffled
+        setShuffledWords(prevShuffled => {
+          const existsInShuffled = prevShuffled.some(w => w.id === displacedWord!.id);
+          return existsInShuffled ? prevShuffled : [...prevShuffled, displacedWord!];
+        });
+      }
+      
+      // Remove the word from its current placed position (only if it's different from target)
+      if (currentPlacedIndex !== -1 && currentPlacedIndex !== targetIndex) {
+        newPlacedWords[currentPlacedIndex] = null;
+        console.log(`Cleared word from its previous placed position ${currentPlacedIndex}`);
+      }
+      
+      // Place the word in the target position
+      newPlacedWords[targetIndex] = word;
+      console.log(`Placed word "${word.text}" at position ${targetIndex}`);
+      
+      console.log('New placed words:', newPlacedWords.map((w, i) => `[${i}]: ${w ? `${w.text}(${w.id})` : 'null'}`));
+      
+      return newPlacedWords;
     });
 
-    if (newPlacedWords.every(w => w !== null)) {
-      // Pass the newPlacedWords directly to avoid state timing issues
-      checkSentenceCompleteWithWords(newPlacedWords);
-    }
+    // Remove word from shuffled words
+    setShuffledWords(prevShuffled => {
+      const currentShuffledIndex = prevShuffled.findIndex(w => w.id === word.id);
+      if (currentShuffledIndex !== -1) {
+        const newShuffledWords = [...prevShuffled];
+        newShuffledWords.splice(currentShuffledIndex, 1);
+        console.log(`Removed word from shuffled position ${currentShuffledIndex}`);
+        console.log('New shuffled words:', newShuffledWords.map(w => `${w.text}(${w.id})`));
+        return newShuffledWords;
+      }
+      return prevShuffled;
+    });
+
+    // Play sound
+    soundSystem.play('drop');
+
+    // Check if sentence is complete - we'll do this in a useEffect to ensure state is updated
   };
 
   // Check if sentence is complete (with words array parameter)
@@ -874,41 +911,34 @@ export const GemSpeedBuilder: React.FC<{
       return word.correctPosition === index;
     });
 
+    // Show feedback first
+    setShowSentenceResult(true);
+
     if (isCorrect) {
-      // Play success sound and create gem effect (no floating gems)
+      // Sentence is correct - celebrate and move to next
       soundSystem.play('sentence-complete');
       createGemCollectionEffect(wordsArray.length);
       
-      // Update stats with fixed calculations
-      const newTotalWordsPlaced = stats.totalWordsPlaced + wordsArray.length;
+      // Update stats
       const newSentencesCompleted = stats.sentencesCompleted + 1;
-      // For now, accuracy is 100% if you complete sentences (since wrong placements are corrected)
-      const newAccuracy = 100; 
-      const baseGemsEarned = wordsArray.length; // 1 gem per word in sentence
-      const streakBonus = Math.min(stats.streak, 3); // Max 3 bonus gems for streak
+      const baseGemsEarned = wordsArray.length;
+      const streakBonus = Math.min(stats.streak, 3);
       const totalGemsEarned = baseGemsEarned + streakBonus;
       
-      const newStats = {
-        ...stats,
-        score: stats.score + (wordsArray.length * 10),
-        accuracy: newAccuracy, // Should be 100% if all sentences completed correctly
+      setStats(prev => ({
+        ...prev,
+        score: prev.score + (wordsArray.length * 10),
         sentencesCompleted: newSentencesCompleted,
-        streak: stats.streak + 1,
-        highestStreak: Math.max(stats.highestStreak, stats.streak + 1),
-        totalWordsPlaced: newTotalWordsPlaced,
-        gemsCollected: stats.gemsCollected + totalGemsEarned
-      };
-      
-
-      
-      setStats(newStats);
+        streak: prev.streak + 1,
+        highestStreak: Math.max(prev.highestStreak, prev.streak + 1),
+        gemsCollected: prev.gemsCollected + totalGemsEarned
+      }));
       
       // Track sentence completion
       trackSentenceCompletion(true);
       
       // Show celebration effect
       setTimeout(() => {
-        // Use confetti instead of floating gems
         if (typeof window !== 'undefined' && window.confetti) {
           window.confetti({
             particleCount: 50,
@@ -917,9 +947,44 @@ export const GemSpeedBuilder: React.FC<{
           });
         }
         
-        // Load next sentence after brief delay
-        setTimeout(loadNextSentence, 1000);
+        // Move to next sentence after celebration
+        setTimeout(() => {
+          setShowSentenceResult(false);
+          loadNextSentence();
+        }, 1500);
       }, 500);
+
+    } else {
+      // Sentence has errors - give option to fix
+      soundSystem.play('word-wrong');
+      
+      // After 3 seconds, give option to correct or move wrong words back
+      setTimeout(() => {
+        // Auto-return incorrect words to available pool
+        const incorrectWords = wordsArray.filter((word, index) => 
+          word && word.correctPosition !== index
+        );
+        
+        if (incorrectWords.length > 0) {
+          // Remove incorrect words from placed positions
+          const newPlacedWords = [...placedWords];
+          wordsArray.forEach((word, index) => {
+            if (word && word.correctPosition !== index) {
+              newPlacedWords[index] = null;
+            }
+          });
+          setPlacedWords(newPlacedWords);
+          
+          // Add incorrect words back to shuffled words
+          setShuffledWords(prev => {
+            const currentIds = prev.map(w => w.id);
+            const newWords = incorrectWords.filter((w): w is WordItem => w !== null && !currentIds.includes(w.id));
+            return [...prev, ...newWords];
+          });
+        }
+        
+        setShowSentenceResult(false);
+      }, 3000);
     }
   };
 
@@ -1210,6 +1275,7 @@ export const GemSpeedBuilder: React.FC<{
                       index={index}
                       word={word}
                       onDrop={handleWordDrop}
+                      showSentenceResult={showSentenceResult}
                       isCorrect={word?.index === index}
                       showGhostWord={showGhostMode ? currentSentence.text.split(' ')[index] : undefined}
                     />
