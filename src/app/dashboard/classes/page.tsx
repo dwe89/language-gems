@@ -133,7 +133,8 @@ export default function ClassesPage() {
       const { data: enrollmentsData, error: enrollmentsError } = await supabaseBrowser
         .from('class_enrollments')
         .select('class_id')
-        .in('class_id', classIds);
+        .in('class_id', classIds)
+        .eq('status', 'active');
       
       if (enrollmentsError) {
         console.error('Error fetching enrollments:', enrollmentsError);
