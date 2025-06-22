@@ -143,7 +143,7 @@ export async function POST(request: NextRequest) {
         class_id: body.classId,
         due_date: body.dueDate,
         points: body.points || 10,
-        vocabulary_assignment_list_id: vocabularyListId, // Will be null for sentence-based games
+        vocabulary_list_id: vocabularyListId, // Will be null for sentence-based games
         teacher_id: user.id,
         status: 'active'
         // Temporarily removing game_config to test schema cache issue
