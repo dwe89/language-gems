@@ -11,7 +11,8 @@ import {
 import { useAuth } from '../auth/AuthProvider';
 import { useSupabase } from '../supabase/SupabaseProvider';
 import { EnhancedAssignmentService, AssignmentCreationData } from '../../services/enhancedAssignmentService';
-import EnhancedVocabularySelector from '../vocabulary/EnhancedVocabularySelector';
+import MultiGameSelector from './MultiGameSelector';
+import SmartAssignmentConfig from './SmartAssignmentConfig';
 
 // =====================================================
 // TYPES AND INTERFACES
@@ -25,8 +26,31 @@ interface AssignmentStep {
   completed: boolean;
 }
 
+interface VocabularyConfig {
+  source: 'theme' | 'topic' | 'custom' | 'create' | '';
+  theme?: string;
+  topic?: string;
+  customListId?: string;
+  customList?: any;
+  wordCount?: number;
+  difficulty?: string;
+}
+
+interface SentenceConfig {
+  source: 'theme' | 'topic' | 'custom' | 'create' | '';
+  theme?: string;
+  topic?: string;
+  customSetId?: string;
+  customSet?: any;
+  sentenceCount?: number;
+  difficulty?: string;
+  grammarFocus?: string;
+}
+
 interface GameConfiguration {
-  gameType: string;
+  selectedGames: string[];
+  vocabularyConfig: VocabularyConfig;
+  sentenceConfig: SentenceConfig;
   difficulty: string;
   timeLimit: number;
   maxAttempts: number;
@@ -34,8 +58,6 @@ interface GameConfiguration {
   hintsAllowed: boolean;
   autoGrade: boolean;
   feedbackEnabled: boolean;
-  theme: string;
-  customSettings: Record<string, any>;
 }
 
 interface EnhancedAssignmentCreatorProps {
@@ -44,53 +66,6 @@ interface EnhancedAssignmentCreatorProps {
   onCancel?: () => void;
   templateId?: string;
 }
-
-// =====================================================
-// GAME TYPE CONFIGURATIONS
-// =====================================================
-
-const GAME_TYPES = {
-  gem_collector: {
-    name: 'Gem Collector Adventure',
-    description: 'Collect vocabulary gems by building sentences word by word',
-    icon: <Gem className="h-6 w-6" />,
-    color: 'from-purple-500 to-blue-500',
-    features: ['Power-ups', 'Achievements', 'Real-time scoring', 'Sentence building'],
-    estimatedTime: '10-15 minutes',
-    difficulty: 'Beginner to Advanced',
-    theme: 'gem_mining'
-  },
-  memory_game: {
-    name: 'Memory Crystal Mine',
-    description: 'Match vocabulary pairs to discover hidden crystals',
-    icon: <Brain className="h-6 w-6" />,
-    color: 'from-green-500 to-teal-500',
-    features: ['Memory training', 'Progressive difficulty', 'Visual learning'],
-    estimatedTime: '8-12 minutes',
-    difficulty: 'Beginner to Intermediate',
-    theme: 'crystal_caves'
-  },
-  speed_builder: {
-    name: 'Diamond Rush',
-    description: 'Race against time to build vocabulary combinations',
-    icon: <Zap className="h-6 w-6" />,
-    color: 'from-yellow-500 to-orange-500',
-    features: ['Speed challenges', 'Combo multipliers', 'Time pressure'],
-    estimatedTime: '5-10 minutes',
-    difficulty: 'Intermediate to Advanced',
-    theme: 'diamond_rush'
-  },
-  word_scramble: {
-    name: 'Treasure Hunt',
-    description: 'Unscramble words to find hidden vocabulary treasures',
-    icon: <Crown className="h-6 w-6" />,
-    color: 'from-pink-500 to-red-500',
-    features: ['Word puzzles', 'Hint system', 'Progressive unlocking'],
-    estimatedTime: '12-18 minutes',
-    difficulty: 'All levels',
-    theme: 'treasure_hunt'
-  }
-};
 
 // =====================================================
 // ENHANCED ASSIGNMENT CREATOR COMPONENT
@@ -113,7 +88,7 @@ export default function EnhancedAssignmentCreator({
   const [assignmentData, setAssignmentData] = useState<Partial<AssignmentCreationData>>({
     title: '',
     description: '',
-    game_type: 'gem_collector',
+    game_type: '',
     class_id: classId,
     points: 100,
     time_limit: 15,
@@ -124,20 +99,28 @@ export default function EnhancedAssignmentCreator({
     power_ups_enabled: true,
     config: {}
   });
-  const [selectedVocabulary, setSelectedVocabulary] = useState<any[]>([]);
-  const [vocabularyConfig, setVocabularyConfig] = useState<any>({});
+
   const [gameConfig, setGameConfig] = useState<GameConfiguration>({
-    gameType: 'gem_collector',
+    selectedGames: [],
+    vocabularyConfig: {
+      source: '',
+      wordCount: 10,
+      difficulty: 'intermediate'
+    },
+    sentenceConfig: {
+      source: '',
+      sentenceCount: 10,
+      difficulty: 'intermediate'
+    },
     difficulty: 'intermediate',
     timeLimit: 15,
     maxAttempts: 3,
     powerUpsEnabled: true,
     hintsAllowed: true,
     autoGrade: true,
-    feedbackEnabled: true,
-    theme: 'gem_mining',
-    customSettings: {}
+    feedbackEnabled: true
   });
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [previewMode, setPreviewMode] = useState(false);
@@ -152,29 +135,29 @@ export default function EnhancedAssignmentCreator({
       completed: !!assignmentData.title && !!assignmentData.description
     },
     {
-      id: 'game',
-      title: 'Choose Adventure',
-      description: 'Select the game type and theme',
+      id: 'games',
+      title: 'Choose Games',
+      description: 'Select games for this assignment',
       icon: <Gamepad2 className="h-5 w-5" />,
-      completed: !!assignmentData.game_type
+      completed: gameConfig.selectedGames.length > 0
     },
     {
-      id: 'vocabulary',
-      title: 'Select Gems',
-      description: 'Choose vocabulary for the adventure',
+      id: 'content',
+      title: 'Configure Content',
+      description: 'Set up vocabulary and sentence content',
       icon: <Gem className="h-5 w-5" />,
-      completed: selectedVocabulary.length > 0
+      completed: (gameConfig.vocabularyConfig.source !== '' || gameConfig.sentenceConfig.source !== '') && gameConfig.selectedGames.length > 0
     },
     {
       id: 'settings',
-      title: 'Configure Quest',
-      description: 'Set difficulty and game settings',
+      title: 'Game Settings',
+      description: 'Configure difficulty and game options',
       icon: <Settings className="h-5 w-5" />,
       completed: true // Always completed as it has defaults
     },
     {
       id: 'review',
-      title: 'Launch Mission',
+      title: 'Launch Assignment',
       description: 'Review and create assignment',
       icon: <Trophy className="h-5 w-5" />,
       completed: false
@@ -195,7 +178,7 @@ export default function EnhancedAssignmentCreator({
     // Update assignment data when game config changes
     setAssignmentData(prev => ({
       ...prev,
-      game_type: gameConfig.gameType,
+      game_type: gameConfig.selectedGames[0] || '', // Primary game for compatibility
       time_limit: gameConfig.timeLimit,
       max_attempts: gameConfig.maxAttempts,
       auto_grade: gameConfig.autoGrade,
@@ -204,13 +187,13 @@ export default function EnhancedAssignmentCreator({
       power_ups_enabled: gameConfig.powerUpsEnabled,
       config: {
         ...prev.config,
-        difficulty: gameConfig.difficulty,
-        theme: gameConfig.theme,
-        customSettings: gameConfig.customSettings,
-        vocabularyConfig
+        selectedGames: gameConfig.selectedGames,
+        vocabularyConfig: gameConfig.vocabularyConfig,
+        sentenceConfig: gameConfig.sentenceConfig,
+        difficulty: gameConfig.difficulty
       }
     }));
-  }, [gameConfig, vocabularyConfig]);
+  }, [gameConfig]);
 
   // =====================================================
   // DATA LOADING
@@ -241,7 +224,7 @@ export default function EnhancedAssignmentCreator({
         // Update game config from template
         setGameConfig(prev => ({
           ...prev,
-          gameType: template.game_type,
+          selectedGames: template.default_config?.selectedGames || [template.game_type],
           difficulty: template.difficulty_level,
           timeLimit: template.estimated_duration,
           maxAttempts: template.max_attempts
@@ -271,24 +254,24 @@ export default function EnhancedAssignmentCreator({
     }
   };
 
-  const handleVocabularyChange = (vocabulary: any[], listId?: string) => {
-    setSelectedVocabulary(vocabulary);
-    setAssignmentData(prev => ({
+  const handleGameSelectionChange = (selectedGames: string[]) => {
+    setGameConfig(prev => ({
       ...prev,
-      vocabulary_list_id: listId
+      selectedGames
     }));
   };
 
-  const handleVocabularyConfigChange = (config: any) => {
-    setVocabularyConfig(config);
-  };
-
-  const handleGameTypeChange = (gameType: string) => {
-    const gameInfo = GAME_TYPES[gameType];
+  const handleVocabularyConfigChange = (vocabularyConfig: VocabularyConfig) => {
     setGameConfig(prev => ({
       ...prev,
-      gameType,
-      theme: gameInfo?.theme || 'gem_mining'
+      vocabularyConfig
+    }));
+  };
+
+  const handleSentenceConfigChange = (sentenceConfig: SentenceConfig) => {
+    setGameConfig(prev => ({
+      ...prev,
+      sentenceConfig
     }));
   };
 
@@ -297,74 +280,69 @@ export default function EnhancedAssignmentCreator({
       setLoading(true);
       setError(null);
 
-      // Validate required fields
-      if (!assignmentData.title || !assignmentData.description) {
-        setError('Please fill in all required fields');
-        return;
+      if (!user) {
+        throw new Error('User not authenticated');
       }
 
-      if (selectedVocabulary.length === 0) {
-        setError('Please select vocabulary for the assignment');
-        return;
+      if (gameConfig.selectedGames.length === 0) {
+        throw new Error('Please select at least one game');
       }
 
-      // Create vocabulary list if needed
-      let vocabularyListId = assignmentData.vocabulary_list_id;
-      
-      if (!vocabularyListId && selectedVocabulary.length > 0) {
-        // Create a new vocabulary list
-        const { data: listData, error: listError } = await supabase
-          .from('vocabulary_assignment_lists')
-          .insert({
-            name: `${assignmentData.title} - Vocabulary`,
-            description: `Vocabulary for ${assignmentData.title}`,
-            teacher_id: user?.id,
-            theme: vocabularyConfig.theme,
-            topic: vocabularyConfig.topic,
-            difficulty_level: gameConfig.difficulty,
-            vocabulary_items: selectedVocabulary.map(v => v.id),
-            word_count: selectedVocabulary.length,
-            is_public: false
-          })
-          .select()
-          .single();
+      // Validate content configuration
+      const needsVocabulary = gameConfig.selectedGames.some(gameId => {
+        const vocabGames = ['gem-collector', 'memory-game', 'word-blast', 'translation-tycoon', 'word-guesser', 'hangman', 'word-scramble', 'word-association', 'gem-rush', 'vocabulary-mining'];
+        return vocabGames.includes(gameId);
+      });
 
-        if (listError) throw listError;
-        vocabularyListId = listData.id;
+      const needsSentences = gameConfig.selectedGames.some(gameId => {
+        const sentenceGames = ['speed-builder', 'sentence-towers', 'sentence-builder', 'verb-conjugation-ladder'];
+        return sentenceGames.includes(gameId);
+      });
+
+      if (needsVocabulary && !gameConfig.vocabularyConfig.source) {
+        throw new Error('Please configure vocabulary content for the selected games');
       }
 
-      // Create the assignment
-      const assignmentId = await assignmentService.createEnhancedAssignment(
-        user?.id || '',
-        {
-          ...assignmentData,
-          vocabulary_list_id: vocabularyListId,
-          due_date: assignmentData.due_date ? new Date(assignmentData.due_date) : undefined
-        } as AssignmentCreationData
-      );
+      if (needsSentences && !gameConfig.sentenceConfig.source) {
+        throw new Error('Please configure sentence content for the selected games');
+      }
 
-      onAssignmentCreated?.(assignmentId);
-      
-    } catch (err: any) {
-      setError('Failed to create assignment: ' + err.message);
-      console.error('Error creating assignment:', err);
+      const assignmentId = await assignmentService.createAssignment({
+        ...assignmentData,
+        teacher_id: user.id,
+        game_type: gameConfig.selectedGames[0], // Primary game for compatibility
+        config: {
+          selectedGames: gameConfig.selectedGames,
+          vocabularyConfig: gameConfig.vocabularyConfig,
+          sentenceConfig: gameConfig.sentenceConfig,
+          difficulty: gameConfig.difficulty,
+          multiGame: true
+        }
+      } as AssignmentCreationData);
+
+      if (onAssignmentCreated) {
+        onAssignmentCreated(assignmentId);
+      }
+    } catch (error) {
+      console.error('Failed to create assignment:', error);
+      setError(error instanceof Error ? error.message : 'Failed to create assignment');
     } finally {
       setLoading(false);
     }
   };
 
   // =====================================================
-  // RENDER STEP CONTENT
+  // RENDER METHODS
   // =====================================================
 
   const renderStepContent = () => {
     switch (steps[currentStep].id) {
       case 'basic':
         return renderBasicDetailsStep();
-      case 'game':
+      case 'games':
         return renderGameSelectionStep();
-      case 'vocabulary':
-        return renderVocabularyStep();
+      case 'content':
+        return renderContentConfigurationStep();
       case 'settings':
         return renderSettingsStep();
       case 'review':
@@ -377,64 +355,66 @@ export default function EnhancedAssignmentCreator({
   const renderBasicDetailsStep = () => (
     <div className="space-y-6">
       <div className="text-center mb-8">
-        <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
+        <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center mx-auto mb-4">
           <BookOpen className="h-8 w-8 text-white" />
         </div>
-        <h3 className="text-2xl font-bold text-gray-800 mb-2">Create Your Learning Adventure</h3>
-        <p className="text-gray-600">Set up the basic details for your vocabulary quest</p>
+        <h3 className="text-2xl font-bold text-gray-800 mb-2">Assignment Details</h3>
+        <p className="text-gray-600">Set up the basic information for your assignment</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="md:col-span-2">
+      <div className="grid grid-cols-1 gap-6">
+        <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Adventure Title *
+            Assignment Title *
           </label>
           <input
             type="text"
             value={assignmentData.title || ''}
             onChange={(e) => setAssignmentData(prev => ({ ...prev, title: e.target.value }))}
-            placeholder="e.g., Spanish Food Vocabulary Quest"
-            className="w-full border border-gray-300 rounded-lg px-4 py-3 text-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            placeholder="Enter assignment title..."
           />
         </div>
 
-        <div className="md:col-span-2">
+        <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Adventure Description *
+            Description *
           </label>
           <textarea
             value={assignmentData.description || ''}
             onChange={(e) => setAssignmentData(prev => ({ ...prev, description: e.target.value }))}
-            placeholder="Describe what students will learn and accomplish in this adventure..."
             rows={4}
             className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            placeholder="Describe what students will learn..."
           />
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Quest Points
-          </label>
-          <input
-            type="number"
-            value={assignmentData.points || 100}
-            onChange={(e) => setAssignmentData(prev => ({ ...prev, points: parseInt(e.target.value) }))}
-            min="10"
-            max="1000"
-            className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-          />
-        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Points
+            </label>
+            <input
+              type="number"
+              value={assignmentData.points || 100}
+              onChange={(e) => setAssignmentData(prev => ({ ...prev, points: parseInt(e.target.value) }))}
+              min="1"
+              max="1000"
+              className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            />
+          </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Due Date (Optional)
-          </label>
-          <input
-            type="datetime-local"
-            value={assignmentData.due_date || ''}
-            onChange={(e) => setAssignmentData(prev => ({ ...prev, due_date: e.target.value }))}
-            className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-          />
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Due Date (Optional)
+            </label>
+            <input
+              type="datetime-local"
+              value={assignmentData.due_date || ''}
+              onChange={(e) => setAssignmentData(prev => ({ ...prev, due_date: e.target.value }))}
+              className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            />
+          </div>
         </div>
       </div>
     </div>
@@ -442,85 +422,30 @@ export default function EnhancedAssignmentCreator({
 
   const renderGameSelectionStep = () => (
     <div className="space-y-6">
-      <div className="text-center mb-8">
-        <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-teal-500 rounded-full flex items-center justify-center mx-auto mb-4">
-          <Gamepad2 className="h-8 w-8 text-white" />
-        </div>
-        <h3 className="text-2xl font-bold text-gray-800 mb-2">Choose Your Adventure Type</h3>
-        <p className="text-gray-600">Select the perfect game experience for your students</p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {Object.entries(GAME_TYPES).map(([key, game]) => (
-          <motion.button
-            key={key}
-            onClick={() => handleGameTypeChange(key)}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className={`p-6 rounded-xl border-2 transition-all text-left ${
-              gameConfig.gameType === key
-                ? 'border-purple-500 bg-purple-50'
-                : 'border-gray-200 bg-white hover:border-gray-300'
-            }`}
-          >
-            <div className="flex items-center justify-between mb-4">
-              <div className={`w-12 h-12 rounded-lg bg-gradient-to-r ${game.color} flex items-center justify-center text-white`}>
-                {game.icon}
-              </div>
-              {gameConfig.gameType === key && (
-                <CheckCircle className="h-6 w-6 text-purple-600" />
-              )}
-            </div>
-
-            <h4 className="text-lg font-bold text-gray-800 mb-2">{game.name}</h4>
-            <p className="text-gray-600 mb-4">{game.description}</p>
-
-            <div className="space-y-2 text-sm">
-              <div className="flex items-center justify-between">
-                <span className="text-gray-500">Duration:</span>
-                <span className="font-medium">{game.estimatedTime}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-gray-500">Difficulty:</span>
-                <span className="font-medium">{game.difficulty}</span>
-              </div>
-            </div>
-
-            <div className="mt-4">
-              <div className="text-xs text-gray-500 mb-2">Features:</div>
-              <div className="flex flex-wrap gap-1">
-                {game.features.map((feature) => (
-                  <span key={feature} className="text-xs bg-gray-100 px-2 py-1 rounded">
-                    {feature}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </motion.button>
-        ))}
-      </div>
+      <MultiGameSelector
+        selectedGames={gameConfig.selectedGames}
+        onSelectionChange={handleGameSelectionChange}
+        maxSelections={5}
+      />
     </div>
   );
 
-  const renderVocabularyStep = () => (
+  const renderContentConfigurationStep = () => (
     <div className="space-y-6">
       <div className="text-center mb-8">
         <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4">
           <Gem className="h-8 w-8 text-white" />
         </div>
-        <h3 className="text-2xl font-bold text-gray-800 mb-2">Select Your Vocabulary Gems</h3>
-        <p className="text-gray-600">Choose the words students will discover on their adventure</p>
+        <h3 className="text-2xl font-bold text-gray-800 mb-2">Configure Content</h3>
+        <p className="text-gray-600">Set up vocabulary and sentence content for your selected games</p>
       </div>
 
-      <EnhancedVocabularySelector
-        onSelectionChange={handleVocabularyChange}
-        onConfigChange={handleVocabularyConfigChange}
-        maxItems={50}
-        defaultSelection="theme"
-        showPreview={true}
-        gameType={gameConfig.gameType}
-        assignmentMode={true}
-        difficulty={gameConfig.difficulty}
+      <SmartAssignmentConfig
+        selectedGames={gameConfig.selectedGames}
+        vocabularyConfig={gameConfig.vocabularyConfig}
+        sentenceConfig={gameConfig.sentenceConfig}
+        onVocabularyChange={handleVocabularyConfigChange}
+        onSentenceChange={handleSentenceConfigChange}
       />
     </div>
   );
@@ -531,8 +456,8 @@ export default function EnhancedAssignmentCreator({
         <div className="w-16 h-16 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-4">
           <Settings className="h-8 w-8 text-white" />
         </div>
-        <h3 className="text-2xl font-bold text-gray-800 mb-2">Configure Your Quest</h3>
-        <p className="text-gray-600">Fine-tune the adventure settings for optimal learning</p>
+        <h3 className="text-2xl font-bold text-gray-800 mb-2">Game Settings</h3>
+        <p className="text-gray-600">Configure difficulty and gameplay options</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -546,7 +471,7 @@ export default function EnhancedAssignmentCreator({
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Difficulty Level
+                Overall Difficulty Level
               </label>
               <select
                 value={gameConfig.difficulty}
@@ -597,7 +522,7 @@ export default function EnhancedAssignmentCreator({
         <div className="bg-white rounded-xl p-6 border border-gray-200">
           <h4 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
             <Star className="h-5 w-5 mr-2 text-yellow-600" />
-            Adventure Features
+            Features
           </h4>
 
           <div className="space-y-4">
@@ -660,8 +585,8 @@ export default function EnhancedAssignmentCreator({
 
             <div className="flex items-center justify-between">
               <div>
-                <div className="font-medium text-gray-800">Detailed Feedback</div>
-                <div className="text-sm text-gray-600">Provide learning insights and suggestions</div>
+                <div className="font-medium text-gray-800">Feedback Enabled</div>
+                <div className="text-sm text-gray-600">Show detailed feedback after completion</div>
               </div>
               <button
                 onClick={() => setGameConfig(prev => ({ ...prev, feedbackEnabled: !prev.feedbackEnabled }))}
@@ -685,19 +610,19 @@ export default function EnhancedAssignmentCreator({
   const renderReviewStep = () => (
     <div className="space-y-6">
       <div className="text-center mb-8">
-        <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
+        <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4">
           <Trophy className="h-8 w-8 text-white" />
         </div>
-        <h3 className="text-2xl font-bold text-gray-800 mb-2">Launch Your Adventure</h3>
-        <p className="text-gray-600">Review your quest settings and deploy to students</p>
+        <h3 className="text-2xl font-bold text-gray-800 mb-2">Ready to Launch!</h3>
+        <p className="text-gray-600">Review your assignment details before creating</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Assignment Summary */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Assignment Overview */}
         <div className="bg-white rounded-xl p-6 border border-gray-200">
           <h4 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
             <BookOpen className="h-5 w-5 mr-2 text-blue-600" />
-            Adventure Summary
+            Assignment Overview
           </h4>
 
           <div className="space-y-3">
@@ -707,7 +632,7 @@ export default function EnhancedAssignmentCreator({
             </div>
             <div>
               <div className="text-sm text-gray-500">Description</div>
-              <div className="text-sm">{assignmentData.description}</div>
+              <div className="font-medium text-sm">{assignmentData.description}</div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -717,7 +642,7 @@ export default function EnhancedAssignmentCreator({
               <div>
                 <div className="text-sm text-gray-500">Due Date</div>
                 <div className="font-medium">
-                  {assignmentData.due_date
+                  {assignmentData.due_date 
                     ? new Date(assignmentData.due_date).toLocaleDateString()
                     : 'No due date'
                   }
@@ -736,8 +661,13 @@ export default function EnhancedAssignmentCreator({
 
           <div className="space-y-3">
             <div>
-              <div className="text-sm text-gray-500">Adventure Type</div>
-              <div className="font-medium">{GAME_TYPES[gameConfig.gameType]?.name}</div>
+              <div className="text-sm text-gray-500">Selected Games ({gameConfig.selectedGames.length})</div>
+              <div className="font-medium">
+                {gameConfig.selectedGames.length > 0 
+                  ? gameConfig.selectedGames.join(', ')
+                  : 'No games selected'
+                }
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -755,196 +685,141 @@ export default function EnhancedAssignmentCreator({
                 {gameConfig.maxAttempts === -1 ? 'Unlimited' : gameConfig.maxAttempts}
               </div>
             </div>
-            <div>
-              <div className="text-sm text-gray-500">Features Enabled</div>
-              <div className="flex flex-wrap gap-2 mt-1">
-                {gameConfig.powerUpsEnabled && (
-                  <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded">Power-ups</span>
-                )}
-                {gameConfig.hintsAllowed && (
-                  <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">Hints</span>
-                )}
-                {gameConfig.autoGrade && (
-                  <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">Auto-grade</span>
-                )}
-                {gameConfig.feedbackEnabled && (
-                  <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded">Feedback</span>
-                )}
-              </div>
-            </div>
           </div>
-        </div>
-
-        {/* Vocabulary Summary */}
-        <div className="bg-white rounded-xl p-6 border border-gray-200 lg:col-span-2">
-          <h4 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-            <Gem className="h-5 w-5 mr-2 text-purple-600" />
-            Vocabulary Gems ({selectedVocabulary.length})
-          </h4>
-
-          {selectedVocabulary.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 max-h-40 overflow-y-auto">
-              {selectedVocabulary.slice(0, 12).map((item) => (
-                <div key={item.id} className="flex items-center space-x-2 bg-gray-50 rounded px-3 py-2">
-                  <Gem className="h-4 w-4 text-purple-500" />
-                  <span className="text-sm">
-                    <strong>{item.spanish}</strong> - {item.english}
-                  </span>
-                </div>
-              ))}
-              {selectedVocabulary.length > 12 && (
-                <div className="flex items-center justify-center bg-gray-100 rounded px-3 py-2">
-                  <span className="text-sm text-gray-600">+{selectedVocabulary.length - 12} more gems</span>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="text-center py-8 text-gray-500">
-              <Gem className="h-12 w-12 mx-auto mb-2 opacity-50" />
-              <p>No vocabulary selected</p>
-            </div>
-          )}
         </div>
       </div>
 
-      {/* Error Display */}
-      {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <div className="flex items-center">
-            <AlertCircle className="h-5 w-5 text-red-500 mr-2" />
-            <span className="text-red-700">{error}</span>
-          </div>
-        </div>
-      )}
+      {/* Action Buttons */}
+      <div className="flex justify-center">
+        <button
+          onClick={handleCreateAssignment}
+          disabled={loading}
+          className="px-8 py-4 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white rounded-xl font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center"
+        >
+          {loading ? (
+            <>
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
+              Creating Assignment...
+            </>
+          ) : (
+            <>
+              <Trophy className="h-5 w-5 mr-2" />
+              Create Assignment
+            </>
+          )}
+        </button>
+      </div>
     </div>
   );
 
-  // =====================================================
-  // MAIN RENDER
-  // =====================================================
-
-  if (loading && !templateId) {
+  if (loading && !assignmentData.title) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-purple-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Creating your adventure...</p>
-        </div>
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50">
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">Adventure Creator</h1>
-          <p className="text-gray-600">Design engaging vocabulary adventures for your students</p>
-        </div>
+    <div className="max-w-6xl mx-auto">
+      {/* Header */}
+      <div className="text-center mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Create Multi-Game Assignment</h1>
+        <p className="text-gray-600">Build engaging assignments with multiple games and smart content configuration</p>
+      </div>
 
-        {/* Progress Steps */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            {steps.map((step, index) => (
-              <div key={step.id} className="flex items-center">
-                <div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${
-                    index <= currentStep
-                      ? 'bg-purple-600 border-purple-600 text-white'
-                      : step.completed
-                      ? 'bg-green-500 border-green-500 text-white'
-                      : 'bg-white border-gray-300 text-gray-400'
-                  }`}
-                >
-                  {step.completed && index !== currentStep ? (
-                    <CheckCircle className="h-5 w-5" />
-                  ) : (
-                    step.icon
-                  )}
-                </div>
-                <div className="ml-3 hidden md:block">
-                  <div className={`text-sm font-medium ${
-                    index <= currentStep ? 'text-purple-600' : 'text-gray-500'
-                  }`}>
-                    {step.title}
-                  </div>
-                  <div className="text-xs text-gray-500">{step.description}</div>
-                </div>
-                {index < steps.length - 1 && (
-                  <div className={`w-12 h-0.5 mx-4 ${
-                    index < currentStep ? 'bg-purple-600' : 'bg-gray-300'
-                  }`} />
+      {/* Error Display */}
+      {error && (
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center">
+          <AlertCircle className="h-5 w-5 text-red-600 mr-2" />
+          <span className="text-red-700">{error}</span>
+        </div>
+      )}
+
+      {/* Progress Steps */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between">
+          {steps.map((step, index) => (
+            <div key={step.id} className="flex items-center">
+              <div
+                className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-colors ${
+                  index < currentStep
+                    ? 'bg-green-500 border-green-500 text-white'
+                    : index === currentStep
+                    ? 'bg-purple-600 border-purple-600 text-white'
+                    : 'bg-gray-100 border-gray-300 text-gray-400'
+                }`}
+              >
+                {index < currentStep ? (
+                  <CheckCircle className="h-5 w-5" />
+                ) : (
+                  step.icon
                 )}
               </div>
-            ))}
-          </div>
+              <div className="ml-3">
+                <div className={`text-sm font-medium ${
+                  index <= currentStep ? 'text-gray-900' : 'text-gray-500'
+                }`}>
+                  {step.title}
+                </div>
+                <div className="text-xs text-gray-500">{step.description}</div>
+              </div>
+              {index < steps.length - 1 && (
+                <div className={`flex-1 h-0.5 mx-4 ${
+                  index < currentStep ? 'bg-green-500' : 'bg-gray-300'
+                }`} />
+              )}
+            </div>
+          ))}
         </div>
+      </div>
 
-        {/* Step Content */}
-        <div className="bg-white rounded-xl shadow-lg p-8 mb-8">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={currentStep}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.3 }}
-            >
-              {renderStepContent()}
-            </motion.div>
-          </AnimatePresence>
-        </div>
-
-        {/* Navigation */}
-        <div className="flex items-center justify-between">
-          <button
-            onClick={onCancel}
-            className="flex items-center space-x-2 px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
+      {/* Step Content */}
+      <div className="bg-white rounded-xl shadow-lg p-8 mb-8">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentStep}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.3 }}
           >
-            <span>Cancel</span>
-          </button>
+            {renderStepContent()}
+          </motion.div>
+        </AnimatePresence>
+      </div>
 
-          <div className="flex space-x-4">
-            {currentStep > 0 && (
-              <button
-                onClick={handlePrevious}
-                className="flex items-center space-x-2 px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                <span>Previous</span>
-              </button>
-            )}
+      {/* Navigation */}
+      <div className="flex justify-between">
+        <button
+          onClick={handlePrevious}
+          disabled={currentStep === 0}
+          className="flex items-center px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Previous
+        </button>
 
-            {currentStep < steps.length - 1 ? (
-              <button
-                onClick={handleNext}
-                disabled={!steps[currentStep].completed}
-                className="flex items-center space-x-2 px-6 py-3 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
-              >
-                <span>Next</span>
-                <ArrowRight className="h-4 w-4" />
-              </button>
-            ) : (
-              <button
-                onClick={handleCreateAssignment}
-                disabled={loading || selectedVocabulary.length === 0}
-                className="flex items-center space-x-2 px-8 py-3 bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed text-white rounded-lg transition-all shadow-lg"
-              >
-                {loading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    <span>Creating...</span>
-                  </>
-                ) : (
-                  <>
-                    <Trophy className="h-4 w-4" />
-                    <span>Launch Adventure</span>
-                  </>
-                )}
-              </button>
-            )}
-          </div>
+        <div className="flex space-x-4">
+          {onCancel && (
+            <button
+              onClick={onCancel}
+              className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+            >
+              Cancel
+            </button>
+          )}
+
+          {currentStep < steps.length - 1 ? (
+            <button
+              onClick={handleNext}
+              disabled={!steps[currentStep].completed}
+              className="flex items-center px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              Next
+              <ArrowRight className="h-4 w-4 ml-2" />
+            </button>
+          ) : null}
         </div>
       </div>
     </div>

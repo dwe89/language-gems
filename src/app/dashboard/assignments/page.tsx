@@ -201,8 +201,21 @@ export default function AssignmentsPage() {
                       className="fixed inset-0 z-10" 
                       onClick={() => setDropdownOpen(false)}
                     />
-                    <div className="absolute right-0 mt-2 w-64 bg-white/95 backdrop-blur-sm rounded-xl shadow-xl border border-slate-200 z-20">
+                    <div className="absolute right-0 mt-2 w-72 bg-white/95 backdrop-blur-sm rounded-xl shadow-xl border border-slate-200 z-20">
                       <div className="py-2">
+                        <Link 
+                          href="/dashboard/assignments/new/enhanced" 
+                          className="block px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition-colors font-medium border-b border-slate-100"
+                          onClick={() => setDropdownOpen(false)}
+                        >
+                          <div className="flex items-center">
+                            <span className="text-lg mr-3">🚀</span>
+                            <div>
+                              <div className="font-semibold text-indigo-600">Smart Multi-Game Assignment</div>
+                              <div className="text-xs text-slate-500">New! Dynamic content configuration</div>
+                            </div>
+                          </div>
+                        </Link>
                         <Link 
                           href="/dashboard/assignments/new" 
                           className="block px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition-colors font-medium"
