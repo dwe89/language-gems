@@ -593,8 +593,8 @@ export const GemSpeedBuilder: React.FC<{
         const data = await response.json();
         console.log('Assignment config loaded:', data);
         
-        // Extract game config
-        const gameConfig = data.assignment?.game_config || {};
+        // Extract game config from vocabulary_criteria field
+        const gameConfig = data.assignment?.game_config || data.assignment?.vocabulary_criteria || {};
         console.log('Speed Builder game config:', gameConfig);
         
         // Override theme/topic from assignment config
