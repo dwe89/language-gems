@@ -194,46 +194,6 @@ export default function AssignmentsPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
                 </button>
-                {dropdownOpen && (
-                  <>
-                    {/* Overlay to close dropdown when clicking outside */}
-                    <div 
-                      className="fixed inset-0 z-10" 
-                      onClick={() => setDropdownOpen(false)}
-                    />
-                    <div className="absolute right-0 mt-2 w-72 bg-white/95 backdrop-blur-sm rounded-xl shadow-xl border border-slate-200 z-50">
-                      <div className="py-2">
-                        <Link 
-                          href="/dashboard/assignments/new/enhanced" 
-                          className="block px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition-colors font-medium border-b border-slate-100"
-                          onClick={() => setDropdownOpen(false)}
-                        >
-                          <div className="flex items-center">
-                            <span className="text-lg mr-3">🚀</span>
-                            <div>
-                              <div className="font-semibold text-indigo-600">Smart Multi-Game Assignment</div>
-                              <div className="text-xs text-slate-500">New! Dynamic content configuration</div>
-                            </div>
-                          </div>
-                        </Link>
-                        <Link 
-                          href="/dashboard/assignments/new" 
-                          className="block px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition-colors font-medium"
-                          onClick={() => setDropdownOpen(false)}
-                        >
-                          📝 Standard Assignment
-                        </Link>
-                        <Link 
-                          href="/dashboard/assignments/new/exam" 
-                          className="block px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition-colors font-medium"
-                          onClick={() => setDropdownOpen(false)}
-                        >
-                          🎯 Exam Assignment
-                        </Link>
-                      </div>
-                    </div>
-                  </>
-                )}
               </div>
             </div>
           </div>
@@ -273,6 +233,48 @@ export default function AssignmentsPage() {
             </div>
           )}
         </div>
+
+        {/* Create Assignment Dropdown */}
+        {dropdownOpen && (
+          <>
+            {/* Overlay to close dropdown when clicking outside */}
+            <div 
+              className="fixed inset-0 z-[99998]" 
+              onClick={() => setDropdownOpen(false)}
+            />
+            <div className="fixed top-32 right-8 w-80 bg-white rounded-xl shadow-2xl border border-slate-200 z-[99999]">
+              <div className="py-2">
+                <Link 
+                  href="/dashboard/assignments/new/enhanced" 
+                  className="block px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition-colors font-medium border-b border-slate-100"
+                  onClick={() => setDropdownOpen(false)}
+                >
+                  <div className="flex items-center">
+                    <span className="text-lg mr-3">🚀</span>
+                    <div>
+                      <div className="font-semibold text-indigo-600">Smart Multi-Game Assignment</div>
+                      <div className="text-xs text-slate-500">New! Dynamic content configuration</div>
+                    </div>
+                  </div>
+                </Link>
+                <Link 
+                  href="/dashboard/assignments/new" 
+                  className="block px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition-colors font-medium"
+                  onClick={() => setDropdownOpen(false)}
+                >
+                  📝 Standard Assignment
+                </Link>
+                <Link 
+                  href="/dashboard/assignments/new/exam" 
+                  className="block px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition-colors font-medium"
+                  onClick={() => setDropdownOpen(false)}
+                >
+                  🎯 Exam Assignment
+                </Link>
+              </div>
+            </div>
+          </>
+        )}
 
         {/* Create Assignment Modal */}
         {showCreateModal && (

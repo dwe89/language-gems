@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { Card, CardContent } from "../ui/card";
-import { Book, Calendar, Users, Edit, Trash2, BarChart3, FileText, CheckCircle, Clock } from 'lucide-react';
+import { Book, Calendar, Users, Edit, Trash2, BarChart3, FileText, CheckCircle, Clock, Gamepad2 } from 'lucide-react';
 
 type AssignmentProps = {
   assignment: {
@@ -123,6 +123,18 @@ export function AssignmentCard({ assignment, onDelete }: AssignmentProps) {
               <span className="text-sm font-medium text-slate-700">Status</span>
               <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${getStatusColor(assignment.status)}`}>
                 {assignment.status.charAt(0).toUpperCase() + assignment.status.slice(1)}
+              </span>
+            </div>
+          )}
+          
+          {(assignment as any).game_type && (
+            <div className="flex items-center justify-between text-sm">
+              <div className="flex items-center text-slate-600">
+                <Gamepad2 className="h-4 w-4 mr-2" />
+                <span>Game Type</span>
+              </div>
+              <span className="text-slate-700 capitalize">
+                {((assignment as any).game_type as string).replace('-', ' ')}
               </span>
             </div>
           )}

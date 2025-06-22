@@ -130,11 +130,15 @@ export default function ClassesPage() {
       
       // Get student counts for each class
       const classIds = classesData.map(c => c.id);
+      console.log('Class IDs to query:', classIds);
+      
       const { data: enrollmentsData, error: enrollmentsError } = await supabaseBrowser
         .from('class_enrollments')
         .select('class_id')
         .in('class_id', classIds)
         .eq('status', 'active');
+      
+      console.log('Enrollments query result:', { enrollmentsData, enrollmentsError });
       
       if (enrollmentsError) {
         console.error('Error fetching enrollments:', enrollmentsError);

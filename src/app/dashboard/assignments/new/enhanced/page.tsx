@@ -142,40 +142,11 @@ export default function EnhancedAssignmentPage() {
           </Link>
         </div>
 
-        {/* Class Selection */}
-        {classes.length > 1 && (
-          <div className="bg-white rounded-xl shadow-lg p-6 mb-8 border border-indigo-100">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Select Class</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {classes.map((cls) => (
-                <button
-                  key={cls.id}
-                  onClick={() => setSelectedClassId(cls.id)}
-                  className={`p-4 rounded-lg border-2 transition-all text-left ${
-                    selectedClassId === cls.id
-                      ? 'border-indigo-500 bg-indigo-50'
-                      : 'border-gray-200 bg-white hover:border-gray-300'
-                  }`}
-                >
-                  <h3 className="font-medium text-gray-900">{cls.name}</h3>
-                  <p className="text-sm text-gray-600">{cls.description || 'No description'}</p>
-                  <div className="text-xs text-gray-500 mt-2">
-                    {cls.student_classes?.length || 0} students
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
         {/* Enhanced Assignment Creator */}
-        {selectedClassId && (
-          <EnhancedAssignmentCreator
-            classId={selectedClassId}
-            onAssignmentCreated={handleAssignmentCreated}
-            onCancel={handleCancel}
-          />
-        )}
+        <EnhancedAssignmentCreator
+          onAssignmentCreated={handleAssignmentCreated}
+          onCancel={handleCancel}
+        />
       </div>
     </div>
   );

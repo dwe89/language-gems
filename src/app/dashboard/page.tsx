@@ -92,7 +92,7 @@ function TeacherDashboard({ username = 'Ms. Carter' }: { username?: string }) {
           .from('class_enrollments')
           .select(`
             student_id,
-            classes!inner(teacher_id)
+            classes!inner(id, teacher_id)
           `)
           .eq('classes.teacher_id', user!.id);
 
@@ -107,11 +107,8 @@ function TeacherDashboard({ username = 'Ms. Carter' }: { username?: string }) {
         // Fetch assignments count
         const { data: assignmentsData, error: assignmentsError } = await supabaseBrowser
           .from('assignments')
-          .select(`
-            id,
-            classes!inner(teacher_id)
-          `)
-          .eq('classes.teacher_id', user!.id);
+          .select('id')
+          .eq('created_by', user!.id);
 
         if (assignmentsError) {
           console.error('Error fetching assignments:', assignmentsError);

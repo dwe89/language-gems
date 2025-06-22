@@ -61,7 +61,7 @@ interface GameConfiguration {
 }
 
 interface EnhancedAssignmentCreatorProps {
-  classId: string;
+  classId?: string;
   onAssignmentCreated?: (assignmentId: string) => void;
   onCancel?: () => void;
   templateId?: string;
@@ -88,7 +88,7 @@ export default function EnhancedAssignmentCreator({
     title: '',
     description: '',
     game_type: '',
-    class_id: classId,
+    class_id: classId || '',
     time_limit: 15,
     max_attempts: 3,
     auto_grade: true,
@@ -97,6 +97,9 @@ export default function EnhancedAssignmentCreator({
     power_ups_enabled: true,
     config: {}
   });
+
+  const [selectedClasses, setSelectedClasses] = useState<string[]>(classId ? [classId] : []);
+  const [availableClasses, setAvailableClasses] = useState<any[]>([]);
 
   const [gameConfig, setGameConfig] = useState<GameConfiguration>({
     selectedGames: [],
@@ -130,7 +133,7 @@ export default function EnhancedAssignmentCreator({
       title: 'Assignment Details',
       description: 'Set up basic assignment information',
       icon: <BookOpen className="h-5 w-5" />,
-      completed: !!assignmentData.title && !!assignmentData.description
+      completed: !!assignmentData.title && !!assignmentData.description && selectedClasses.length > 0
     },
     {
       id: 'games',
@@ -170,7 +173,29 @@ export default function EnhancedAssignmentCreator({
     if (templateId) {
       loadTemplate();
     }
+    loadAvailableClasses();
   }, [templateId]);
+
+  const loadAvailableClasses = async () => {
+    if (!user) return;
+    
+    try {
+      const { data: classes, error } = await supabaseBrowser
+        .from('classes')
+        .select('id, name, description')
+        .eq('teacher_id', user.id)
+        .order('name');
+        
+      if (error) {
+        console.error('Error loading classes:', error);
+        return;
+      }
+      
+      setAvailableClasses(classes || []);
+    } catch (error) {
+      console.error('Error loading classes:', error);
+    }
+  };
 
   useEffect(() => {
     // Update assignment data when game config changes
@@ -304,27 +329,39 @@ export default function EnhancedAssignmentCreator({
         throw new Error('Please configure sentence content for the selected games');
       }
 
-      const assignmentId = await assignmentService.createEnhancedAssignment(user.id, {
-        ...assignmentData,
-        game_type: gameConfig.selectedGames[0] || 'multi-game', // Primary game for compatibility
-        class_id: classId,
-        config: {
-          selectedGames: gameConfig.selectedGames,
-          vocabularyConfig: gameConfig.vocabularyConfig,
-          sentenceConfig: gameConfig.sentenceConfig,
-          difficulty: gameConfig.difficulty,
-          timeLimit: gameConfig.timeLimit,
-          maxAttempts: gameConfig.maxAttempts,
-          powerUpsEnabled: gameConfig.powerUpsEnabled,
-          hintsAllowed: gameConfig.hintsAllowed,
-          autoGrade: gameConfig.autoGrade,
-          feedbackEnabled: gameConfig.feedbackEnabled,
-          multiGame: true
-        }
-      } as AssignmentCreationData);
+      if (selectedClasses.length === 0) {
+        throw new Error('Please select at least one class');
+      }
+
+      const createdAssignments = [];
+      
+      // Create assignment for each selected class
+      for (const selectedClassId of selectedClasses) {
+        const assignmentForClass = {
+          ...assignmentData,
+          game_type: gameConfig.selectedGames[0] || 'multi-game', // Primary game for compatibility
+          class_id: selectedClassId,
+          config: {
+            selectedGames: gameConfig.selectedGames,
+            vocabularyConfig: gameConfig.vocabularyConfig,
+            sentenceConfig: gameConfig.sentenceConfig,
+            difficulty: gameConfig.difficulty,
+            timeLimit: gameConfig.timeLimit,
+            maxAttempts: gameConfig.maxAttempts,
+            powerUpsEnabled: gameConfig.powerUpsEnabled,
+            hintsAllowed: gameConfig.hintsAllowed,
+            autoGrade: gameConfig.autoGrade,
+            feedbackEnabled: gameConfig.feedbackEnabled,
+            multiGame: true
+          }
+        } as AssignmentCreationData;
+
+        const assignmentId = await assignmentService.createEnhancedAssignment(user.id, assignmentForClass);
+        createdAssignments.push(assignmentId);
+      }
 
       if (onAssignmentCreated) {
-        onAssignmentCreated(assignmentId);
+        onAssignmentCreated(createdAssignments[0]); // Return the first created assignment ID
       }
     } catch (error) {
       console.error('Failed to create assignment:', error);
@@ -392,17 +429,104 @@ export default function EnhancedAssignmentCreator({
           />
         </div>
 
-        <div className="grid grid-cols-1 gap-6">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Assign to Classes *
+          </label>
+          <div className="space-y-2 max-h-48 overflow-y-auto border border-gray-300 rounded-lg p-3">
+            {availableClasses.map((cls) => (
+              <label key={cls.id} className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={selectedClasses.includes(cls.id)}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setSelectedClasses(prev => [...prev, cls.id]);
+                    } else {
+                      setSelectedClasses(prev => prev.filter(id => id !== cls.id));
+                    }
+                  }}
+                  className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                />
+                <div>
+                  <div className="font-medium text-gray-900">{cls.name}</div>
+                  {cls.description && (
+                    <div className="text-sm text-gray-500">{cls.description}</div>
+                  )}
+                </div>
+              </label>
+            ))}
+          </div>
+          {selectedClasses.length === 0 && (
+            <p className="text-sm text-red-600 mt-1">Please select at least one class</p>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Due Date (Optional)
             </label>
             <input
-              type="datetime-local"
-              value={assignmentData.due_date || ''}
-              onChange={(e) => setAssignmentData(prev => ({ ...prev, due_date: e.target.value }))}
+              type="date"
+              value={assignmentData.due_date?.split('T')[0] || ''}
+              onChange={(e) => {
+                const date = e.target.value;
+                const time = assignmentData.due_date?.split('T')[1] || '23:59';
+                setAssignmentData(prev => ({ 
+                  ...prev, 
+                  due_date: date ? `${date}T${time}` : '' 
+                }));
+              }}
               className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
             />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Due Time (Optional)
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <select
+                value={assignmentData.due_date?.split('T')[1]?.split(':')[0] || '23'}
+                onChange={(e) => {
+                  const date = assignmentData.due_date?.split('T')[0] || '';
+                  const minutes = assignmentData.due_date?.split('T')[1]?.split(':')[1] || '59';
+                  if (date) {
+                    setAssignmentData(prev => ({ 
+                      ...prev, 
+                      due_date: `${date}T${e.target.value}:${minutes}` 
+                    }));
+                  }
+                }}
+                className="w-full border border-gray-300 rounded-lg px-3 py-3 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              >
+                {Array.from({ length: 24 }, (_, i) => (
+                  <option key={i} value={i.toString().padStart(2, '0')}>
+                    {i.toString().padStart(2, '0')}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={assignmentData.due_date?.split('T')[1]?.split(':')[1] || '59'}
+                onChange={(e) => {
+                  const date = assignmentData.due_date?.split('T')[0] || '';
+                  const hours = assignmentData.due_date?.split('T')[1]?.split(':')[0] || '23';
+                  if (date) {
+                    setAssignmentData(prev => ({ 
+                      ...prev, 
+                      due_date: `${date}T${hours}:${e.target.value}` 
+                    }));
+                  }
+                }}
+                className="w-full border border-gray-300 rounded-lg px-3 py-3 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              >
+                <option value="00">00</option>
+                <option value="15">15</option>
+                <option value="30">30</option>
+                <option value="45">45</option>
+              </select>
+            </div>
           </div>
         </div>
       </div>

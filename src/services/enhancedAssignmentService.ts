@@ -191,19 +191,17 @@ export class EnhancedAssignmentService {
       .insert({
         title: assignmentData.title,
         description: assignmentData.description,
-        type: assignmentData.game_type,
+        game_type: assignmentData.game_type,
         class_id: assignmentData.class_id,
         due_date: assignmentData.due_date ? new Date(assignmentData.due_date).toISOString() : null,
         vocabulary_assignment_list_id: assignmentData.vocabulary_list_id,
         created_by: teacherId,
-        game_config: {
-          ...assignmentData.config,
-          max_attempts: assignmentData.max_attempts,
-          auto_grade: assignmentData.auto_grade,
-          feedback_enabled: assignmentData.feedback_enabled,
-          hints_allowed: assignmentData.hints_allowed,
-          power_ups_enabled: assignmentData.power_ups_enabled
-        },
+        game_config: assignmentData.config,
+        max_attempts: assignmentData.max_attempts,
+        auto_grade: assignmentData.auto_grade,
+        feedback_enabled: assignmentData.feedback_enabled,
+        hints_allowed: assignmentData.hints_allowed,
+        power_ups_enabled: assignmentData.power_ups_enabled,
         time_limit: assignmentData.time_limit,
         status: 'active'
       })
@@ -363,7 +361,7 @@ export class EnhancedAssignmentService {
     }
 
     // Update average session time
-    updates.average_session_time = Math.round(updates.total_time_spent / updates.attempts_count);
+    updates.average_session_time = Math.round((updates.total_time_spent || 0) / (updates.attempts_count || 1));
 
     // Generate auto feedback
     updates.auto_feedback = this.generateAutoFeedback(sessionData, progress);
@@ -612,3 +610,6 @@ export class EnhancedAssignmentService {
     }));
   }
 }
+
+// Default export for convenience
+export default EnhancedAssignmentService;
