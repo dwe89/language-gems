@@ -3,142 +3,418 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { 
-  RocketIcon, Clock, RefreshCw, Star, CheckCircle2, 
-  Zap, SnowflakeIcon, Award, Shield
+  Play, 
+  Pause, 
+  RefreshCw, 
+  Star, 
+  CheckCircle2, 
+  Zap, 
+  Shield,
+  Award,
+  Settings,
+  Home,
+  Gem
 } from 'lucide-react';
 import { createBrowserClient } from '@supabase/ssr';
 import { useSearchParams } from 'next/navigation';
 import confetti from 'canvas-confetti';
 import { motion, AnimatePresence } from 'framer-motion';
-import { WordItem, PowerUp, GameState, GameSettings } from './types';
-import './word-blast.css';
+import { 
+  WordItem, 
+  PowerUp, 
+  GameState, 
+  GameSettings, 
+  GameStats, 
+  FallingGem, 
+  GemType 
+} from './types';
 
-// Sample vocabulary for demo purposes
-const sampleVocabulary = [
-  { id: '1', word: 'dog', translation: 'perro', correct: false, points: 10 },
-  { id: '2', word: 'cat', translation: 'gato', correct: false, points: 10 },
-  { id: '3', word: 'house', translation: 'casa', correct: false, points: 10 },
-  { id: '4', word: 'car', translation: 'coche', correct: false, points: 10 },
-  { id: '5', word: 'book', translation: 'libro', correct: false, points: 10 },
-  { id: '6', word: 'tree', translation: 'árbol', correct: false, points: 15 },
-  { id: '7', word: 'sun', translation: 'sol', correct: false, points: 10 },
-  { id: '8', word: 'moon', translation: 'luna', correct: false, points: 10 },
-  { id: '9', word: 'water', translation: 'agua', correct: false, points: 10 },
-  { id: '10', word: 'food', translation: 'comida', correct: false, points: 10 },
-  { id: '11', word: 'friend', translation: 'amigo', correct: false, points: 15 },
-  { id: '12', word: 'school', translation: 'escuela', correct: false, points: 15 },
-  { id: '13', word: 'teacher', translation: 'profesor', correct: false, points: 15 },
-  { id: '14', word: 'student', translation: 'estudiante', correct: false, points: 15 },
-  { id: '15', word: 'computer', translation: 'ordenador', correct: false, points: 20 },
+// Enhanced vocabulary with Spanish translations broken into words
+const enhancedVocabulary: WordItem[] = [
+  { id: '1', word: 'dog', translation: 'perro', correct: false, points: 10, category: 'noun' },
+  { id: '2', word: 'run', translation: 'correr', correct: false, points: 15, category: 'verb' },
+  { id: '3', word: 'beautiful', translation: 'hermoso', correct: false, points: 20, category: 'adjective' },
+  { id: '4', word: 'quickly', translation: 'rápidamente', correct: false, points: 25, category: 'adverb' },
+  { id: '5', word: 'cat', translation: 'gato', correct: false, points: 10, category: 'noun' },
+  { id: '6', word: 'house', translation: 'casa', correct: false, points: 10, category: 'noun' },
+  { id: '7', word: 'eat', translation: 'comer', correct: false, points: 15, category: 'verb' },
+  { id: '8', word: 'happy', translation: 'feliz', correct: false, points: 20, category: 'adjective' },
+  { id: '9', word: 'slowly', translation: 'lentamente', correct: false, points: 25, category: 'adverb' },
+  { id: '10', word: 'book', translation: 'libro', correct: false, points: 10, category: 'noun' },
 ];
 
-// Power-ups
-const powerUps: PowerUp[] = [
+// Translation challenges with their Spanish word breakdowns
+const translationChallenges = [
   {
-    id: 'superBoost',
-    type: 'superBoost',
-    icon: '⚡',
-    active: false,
-    cooldown: 0,
-    description: 'Instantly launches one correct rocket'
+    english: "I like horror films",
+    spanish: "Me gustan las películas de terror",
+    words: ["me", "gustan", "las", "películas", "de", "terror"]
   },
   {
-    id: 'timeFreeze',
-    type: 'timeFreeze',
-    icon: '❄️',
-    active: false,
-    cooldown: 0,
-    description: 'Freezes time for 5 seconds'
+    english: "The cat is sleeping",
+    spanish: "El gato está durmiendo", 
+    words: ["el", "gato", "está", "durmiendo"]
   },
   {
-    id: 'doublePoints',
-    type: 'doublePoints',
-    icon: '🌟',
-    active: false,
-    cooldown: 0,
-    description: 'Doubles points for next 3 correct answers'
+    english: "We eat breakfast",
+    spanish: "Comemos el desayuno",
+    words: ["comemos", "el", "desayuno"]
+  },
+  {
+    english: "She runs very fast",
+    spanish: "Ella corre muy rápido",
+    words: ["ella", "corre", "muy", "rápido"]
+  },
+  {
+    english: "The book is interesting",
+    spanish: "El libro es interesante",
+    words: ["el", "libro", "es", "interesante"]
+  },
+  {
+    english: "They are watching a scary movie",
+    spanish: "Están viendo una película de miedo",
+    words: ["están", "viendo", "una", "película", "de", "miedo"]
+  },
+  {
+    english: "My friends are tall",
+    spanish: "Mis amigos son altos",
+    words: ["mis", "amigos", "son", "altos"]
+  },
+  {
+    english: "The dog drinks water",
+    spanish: "El perro bebe agua",
+    words: ["el", "perro", "bebe", "agua"]
   }
 ];
 
-// Rocket animation component
-const Rocket = ({ 
-  word, 
-  isCorrect,
-  onComplete 
-}: { 
-  word: WordItem, 
-  isCorrect: boolean,
-  onComplete: () => void 
+// Smart decoy words that are grammatically challenging
+const getSmartDecoys = (correctWords: string[]) => {
+  const baseDecoys = [
+    "perro", "casa", "agua", "comida", "mesa", "silla", "verde", "azul", "rojo",
+    "grande", "pequeño", "nuevo", "viejo", "bueno", "malo", "alto", "bajo",
+    "caminar", "hablar", "escuchar", "mirar", "jugar", "trabajar", "estudiar",
+    "hoy", "mañana", "ayer", "siempre", "nunca", "aquí", "allí", "donde",
+    "cuando", "como", "porque", "pero", "y", "o", "si", "no"
+  ];
+  
+  // Add challenging grammatical variations based on correct words
+  const smartDecoys = [...baseDecoys];
+  
+  correctWords.forEach(word => {
+    switch (word) {
+      case "gustan":
+        smartDecoys.push("gusta"); // singular vs plural
+        break;
+      case "están":
+        smartDecoys.push("es", "son", "estoy"); // different forms of "to be"
+        break;
+      case "viendo":
+        smartDecoys.push("vemos", "ver", "veo"); // different verb forms
+        break;
+      case "una":
+        smartDecoys.push("un", "uno"); // gender variations
+        break;
+      case "película":
+        smartDecoys.push("películas"); // singular vs plural
+        break;
+      case "el":
+        smartDecoys.push("la", "los", "las"); // article variations
+        break;
+      case "gato":
+        smartDecoys.push("gata", "gatos"); // gender/number variations
+        break;
+      case "amigos":
+        smartDecoys.push("amigo", "amigas"); // gender/number variations
+        break;
+      case "son":
+        smartDecoys.push("es", "están", "somos"); // different forms of "to be"
+        break;
+      case "altos":
+        smartDecoys.push("alto", "alta", "altas"); // gender/number variations
+        break;
+      case "mis":
+        smartDecoys.push("mi", "tu", "sus"); // possessive variations
+        break;
+      case "bebe":
+        smartDecoys.push("beber", "bebemos", "bebes"); // verb variations
+        break;
+      case "perro":
+        smartDecoys.push("perra", "perros"); // gender/number variations
+        break;
+    }
+  });
+  
+  return smartDecoys.filter(decoy => !correctWords.includes(decoy.toLowerCase()));
+};
+
+// Interactive Gem Game Component
+interface InteractiveGemGameProps {
+  currentChallenge: typeof translationChallenges[0];
+  onCorrectAnswer: (points: number) => void;
+  onIncorrectAnswer: () => void;
+  onChallengeComplete: () => void;
+  isPaused: boolean;
+}
+
+const InteractiveGemGame: React.FC<InteractiveGemGameProps> = ({
+  currentChallenge,
+  onCorrectAnswer,
+  onIncorrectAnswer,
+  onChallengeComplete,
+  isPaused
 }) => {
+  const [fallingGems, setFallingGems] = useState<Array<{
+    id: string;
+    word: string;
+    isCorrect: boolean;
+    gemType: GemType;
+    position: { x: number; y: number };
+  }>>([]);
+  
+  const [collectedWords, setCollectedWords] = useState<string[]>([]);
+  const [nextGemId, setNextGemId] = useState(0);
+  const [challengeStartTime, setChallengeStartTime] = useState<number>(Date.now());
+  const [gemSpeed, setGemSpeed] = useState(8); // Initial fall duration in seconds
+  
+  // Get random gem type for visual variety
+  const getRandomGemType = (): GemType => {
+    const types: GemType[] = ['ruby', 'sapphire', 'emerald', 'amethyst', 'diamond', 'topaz'];
+    return types[Math.floor(Math.random() * types.length)];
+  };
+  
+  // Check if challenge is complete
+  useEffect(() => {
+    const allCorrectWords = currentChallenge.words;
+    const hasAllWords = allCorrectWords.every(word => 
+      collectedWords.includes(word.toLowerCase())
+    );
+    
+    if (hasAllWords && collectedWords.length > 0) {
+      // Calculate completion time and speed bonus
+      const completionTime = (Date.now() - challengeStartTime) / 1000;
+      const speedBonus = completionTime < 10 ? 50 : completionTime < 20 ? 25 : 0;
+      
+      setTimeout(() => {
+        onChallengeComplete();
+        setCollectedWords([]);
+        setChallengeStartTime(Date.now());
+        // Increase difficulty - gems fall faster
+        setGemSpeed(prev => Math.max(4, prev - 0.2));
+      }, 1000);
+    }
+  }, [collectedWords, currentChallenge.words, onChallengeComplete, challengeStartTime]);
+  
+  // Generate falling gems
+  useEffect(() => {
+    if (isPaused) return;
+    
+    const interval = setInterval(() => {
+      // Mix correct words from translation with decoy words
+      const correctWords = currentChallenge.words;
+      const availableDecoys = getSmartDecoys(correctWords);
+      
+      // 40% chance of correct word, 60% chance of decoy
+      let selectedWord: string;
+      let isCorrect: boolean;
+      
+      if (Math.random() < 0.4 && correctWords.length > 0) {
+        // Select a correct word that hasn't been collected yet
+        const unCollectedCorrect = correctWords.filter(word => 
+          !collectedWords.includes(word.toLowerCase())
+        );
+        
+        if (unCollectedCorrect.length > 0) {
+          selectedWord = unCollectedCorrect[Math.floor(Math.random() * unCollectedCorrect.length)];
+          isCorrect = true;
+        } else {
+          // All correct words collected, use decoy
+          selectedWord = availableDecoys[Math.floor(Math.random() * availableDecoys.length)];
+          isCorrect = false;
+        }
+      } else {
+        // Select random decoy word
+        selectedWord = availableDecoys[Math.floor(Math.random() * availableDecoys.length)];
+        isCorrect = false;
+      }
+      
+      const newGem = {
+        id: `gem-${nextGemId}`,
+        word: selectedWord,
+        isCorrect,
+        gemType: getRandomGemType(),
+        position: { 
+          x: Math.random() * 80 + 10, // 10-90% from left
+          y: -10 // Start above screen
+        }
+      };
+      
+      setFallingGems(prev => [...prev, newGem]);
+      setNextGemId(prev => prev + 1);
+      
+      // Remove gem after falling
+      setTimeout(() => {
+        setFallingGems(prev => prev.filter(gem => gem.id !== newGem.id));
+      }, 8000);
+    }, 1500); // Spawn gems every 1.5 seconds
+    
+    return () => clearInterval(interval);
+  }, [currentChallenge, isPaused, nextGemId, collectedWords]);
+  
+  // Handle gem click
+  const handleGemClick = (gem: typeof fallingGems[0]) => {
+    const isActuallyCorrect = currentChallenge.words.includes(gem.word.toLowerCase());
+    
+    if (isActuallyCorrect && !collectedWords.includes(gem.word.toLowerCase())) {
+      // Correct word clicked
+      setCollectedWords(prev => [...prev, gem.word.toLowerCase()]);
+      onCorrectAnswer(20);
+    } else {
+      // Wrong word clicked or word already collected
+      onIncorrectAnswer();
+    }
+    
+    // Remove clicked gem
+    setFallingGems(prev => prev.filter(g => g.id !== gem.id));
+  };
+  
+  const gemColors = {
+    ruby: 'from-red-500 to-red-700 border-red-400',
+    sapphire: 'from-blue-500 to-blue-700 border-blue-400',
+    emerald: 'from-green-500 to-green-700 border-green-400',
+    diamond: 'from-white to-gray-200 border-gray-300',
+    amethyst: 'from-purple-500 to-purple-700 border-purple-400',
+    topaz: 'from-yellow-500 to-yellow-700 border-yellow-400'
+  };
+  
   return (
-    <motion.div
-      className={`
-        p-4 rounded-lg flex flex-col items-center
-        ${isCorrect ? 'bg-gradient-to-r from-orange-500 to-amber-500' : 'bg-gray-700'}
-      `}
-      initial={{ y: 300, opacity: 1 }}
-      animate={isCorrect 
-        ? { y: -500, opacity: 0, scale: 0.7 } 
-        : { y: 50, opacity: 0.8, scale: 0.9 }}
-      transition={isCorrect
-        ? { duration: 1, ease: "easeOut" }
-        : { duration: 0.5, ease: "easeIn" }}
-      onAnimationComplete={onComplete}
-    >
-      <svg 
-        className={`w-12 h-12 ${isCorrect ? 'text-white' : 'text-gray-400'}`} 
-        viewBox="0 0 24 24" 
-        fill="none" 
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <path 
-          d="M12 2L9 9H15L12 16M12 16V22M5 9L2 6M19 9L22 6" 
-          stroke="currentColor" 
-          strokeWidth="2" 
-          strokeLinecap="round" 
-          strokeLinejoin="round"
-        />
-        <path 
-          d="M7 14C5.34315 14 4 12.6569 4 11V11C4 9.34315 5.34315 8 7 8" 
-          stroke="currentColor" 
-          strokeWidth="2" 
-          strokeLinecap="round"
-        />
-        <path 
-          d="M17 14C18.6569 14 20 12.6569 20 11V11C20 9.34315 18.6569 8 17 8" 
-          stroke="currentColor" 
-          strokeWidth="2" 
-          strokeLinecap="round"
-        />
-      </svg>
-      <div className={`mt-2 text-lg font-bold ${isCorrect ? 'text-white' : 'text-gray-300'}`}>
-        {word.word}
+    <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/50 to-purple-900/50 overflow-hidden">
+      {/* Crystal cavern background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-indigo-950/30 via-purple-900/30 to-blue-900/30" />
+      
+      {/* Falling Gems */}
+      {fallingGems.map((gem) => (
+        <motion.div
+          key={gem.id}
+          initial={{ y: -100 }}
+          animate={{ y: window.innerHeight + 100 }}
+          transition={{ duration: gemSpeed, ease: "linear" }}
+          className="absolute cursor-pointer"
+          style={{ 
+            left: `${gem.position.x}%`,
+            top: `${gem.position.y}%`
+          }}
+          onClick={() => handleGemClick(gem)}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+        >
+          {/* Gem Shape */}
+          <div className={`
+            w-20 h-20 relative transform rotate-45 rounded-lg
+            bg-gradient-to-br ${gemColors[gem.gemType]}
+            border-2 shadow-lg hover:shadow-xl
+            transition-all duration-200
+          `}>
+            {/* Sparkle effect */}
+            <div className="absolute inset-2 bg-white/30 rounded-sm transform -rotate-45" />
+            <div className="absolute top-1 left-3 w-2 h-2 bg-white/60 rounded-full" />
+            <div className="absolute bottom-2 right-1 w-1 h-1 bg-white/40 rounded-full" />
+          </div>
+          
+          {/* Spanish Word Text */}
+          <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 text-center">
+            <div className="bg-slate-900/90 rounded-lg px-2 py-1 text-white text-xs font-bold whitespace-nowrap">
+              {gem.word}
+            </div>
+          </div>
+        </motion.div>
+      ))}
+      
+      {/* Progress Display */}
+      <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 text-center">
+        <div className="bg-slate-900/80 backdrop-blur-sm rounded-xl p-4 border border-slate-700/50">
+          <p className="text-white text-sm mb-3">
+            Translate: <span className="font-bold text-orange-400">"{currentChallenge.english}"</span>
+          </p>
+          <p className="text-slate-300 text-xs mb-3">
+            Click the correct Spanish words to form the translation
+          </p>
+          
+          {/* Progress Indicator */}
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <span className="text-xs text-slate-400">Progress:</span>
+            <div className="flex gap-1">
+              {currentChallenge.words.map((_, index) => (
+                <div
+                  key={index}
+                  className={`w-3 h-3 rounded-full ${
+                    index < collectedWords.length
+                      ? 'bg-green-500'
+                      : 'bg-slate-700'
+                  }`}
+                />
+              ))}
+            </div>
+            <span className="text-xs text-slate-400">
+              {collectedWords.length}/{currentChallenge.words.length}
+            </span>
+          </div>
+          
+          {/* Collected Words (without revealing the full answer) */}
+          {collectedWords.length > 0 && (
+            <div className="text-xs text-green-400">
+              Collected: {collectedWords.join(" • ")}
+            </div>
+          )}
+        </div>
       </div>
-    </motion.div>
+    </div>
   );
 };
 
-export default function WordBlastGame() {
+export default function GemWordBlastGame() {
   const [gameState, setGameState] = useState<GameState>('ready');
   const [gameSettings, setGameSettings] = useState<GameSettings>({
     timeLimit: 60,
     survivalMode: false,
-    powerUpsEnabled: false,
-    vocabularyId: null
+    powerUpsEnabled: true,
+    vocabularyId: null,
+    difficulty: 'medium',
+    gemSpeed: 100,
+    maxGems: 8,
+    comboMultiplier: 1.5
   });
-  const [vocabulary, setVocabulary] = useState<WordItem[]>([]);
-  const [currentWord, setCurrentWord] = useState<WordItem | null>(null);
-  const [options, setOptions] = useState<string[]>([]);
-  const [score, setScore] = useState(0);
+  
+  const [currentChallenge, setCurrentChallenge] = useState(translationChallenges[0]);
+  const [gameStats, setGameStats] = useState<GameStats>({
+    score: 0,
+    combo: 0,
+    maxCombo: 0,
+    gemsCollected: 0,
+    gemsMissed: 0,
+    accuracy: 0,
+    fastestResponse: Infinity,
+    totalPlayTime: 0,
+    gemsByType: {
+      ruby: 0,
+      sapphire: 0,
+      emerald: 0,
+      diamond: 0,
+      amethyst: 0,
+      topaz: 0
+    }
+  });
+  
   const [timeLeft, setTimeLeft] = useState(gameSettings.timeLimit);
-  const [level, setLevel] = useState(1);
   const [lives, setLives] = useState(3);
-  const [streak, setStreak] = useState(0);
-  const [availablePowerUps, setAvailablePowerUps] = useState<PowerUp[]>([]);
-  const [doublePointsActive, setDoublePointsActive] = useState(false);
-  const [doublePointsCount, setDoublePointsCount] = useState(0);
-  const [rockets, setRockets] = useState<{id: string, word: WordItem, isCorrect: boolean}[]>([]);
   const [assignmentId, setAssignmentId] = useState<string | null>(null);
+  const [isPaused, setIsPaused] = useState(false);
+  const [isClient, setIsClient] = useState(false);
+  const [backgroundParticles, setBackgroundParticles] = useState<Array<{
+    id: number;
+    left: string;
+    top: string;
+    animationDuration: number;
+  }>>([]);
   
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const searchParams = useSearchParams();
@@ -147,36 +423,43 @@ export default function WordBlastGame() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
   
+  // Initialize client-side rendering
+  useEffect(() => {
+    setIsClient(true);
+    
+    // Generate background particles only on client
+    const particles = Array.from({ length: 20 }, (_, i) => ({
+      id: i,
+      left: `${Math.random() * 100}%`,
+      top: `${Math.random() * 100}%`,
+      animationDuration: Math.random() * 10 + 5,
+    }));
+    
+    setBackgroundParticles(particles);
+  }, []);
+  
   // Initialize game
   useEffect(() => {
-    // Check if this is launched from an assignment
     const assignmentIdParam = searchParams?.get('assignment');
     if (assignmentIdParam) {
       setAssignmentId(assignmentIdParam);
-      loadAssignmentSettings(assignmentIdParam);
     }
     
-    // Load vocabulary
-    setVocabulary(sampleVocabulary);
-    // Set power ups if enabled
-    if (gameSettings.powerUpsEnabled) {
-      setAvailablePowerUps(powerUps);
-    }
+    setCurrentChallenge(translationChallenges[Math.floor(Math.random() * translationChallenges.length)]);
     
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [searchParams, gameSettings.powerUpsEnabled]);
+  }, [searchParams]);
   
   // Timer effect
   useEffect(() => {
-    if (gameState === 'playing') {
+    if (gameState === 'playing' && !isPaused) {
       timerRef.current = setInterval(() => {
         setTimeLeft(prev => {
           if (prev <= 1) {
-            // Time's up
             clearInterval(timerRef.current!);
-            setGameState('timeout');
+            handleTimeUp();
             return 0;
           }
           return prev - 1;
@@ -189,492 +472,430 @@ export default function WordBlastGame() {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [gameState]);
+  }, [gameState, isPaused]);
   
-  // Effect to handle levels in survival mode
+  // Check for game over when lives reach 0
   useEffect(() => {
-    if (gameSettings.survivalMode && gameState === 'playing' && streak > 0 && streak % 5 === 0) {
-      // Increase level every 5 correct answers in a row
-      setLevel(prev => prev + 1);
+    if (lives <= 0 && gameState === 'playing') {
+      handleTimeUp();
     }
-  }, [streak, gameSettings.survivalMode, gameState]);
-  
-  // Effect to handle double points power-up
-  useEffect(() => {
-    if (doublePointsActive && doublePointsCount >= 3) {
-      setDoublePointsActive(false);
-      setDoublePointsCount(0);
-    }
-  }, [doublePointsActive, doublePointsCount]);
-  
-  // Load assignment settings
-  const loadAssignmentSettings = async (id: string) => {
-    // In a real app, we would fetch the assignment settings from Supabase
-    // const { data, error } = await supabase
-    //   .from('assignments')
-    //   .select('*')
-    //   .eq('id', id)
-    //   .single();
-    
-    // if (data) {
-    //   setGameSettings({
-    //     timeLimit: data.time_limit * 60, // convert minutes to seconds
-    //     survivalMode: data.game_config.survivalMode || false,
-    //     powerUpsEnabled: data.game_config.powerUps || false,
-    //     vocabularyId: data.vocabulary_list_id
-    //   });
-    //   
-    //   // Load custom vocabulary if provided
-    //   if (data.vocabulary_list_id) {
-    //     loadVocabulary(data.vocabulary_list_id);
-    //   }
-    // }
-    
-    // For now, simulate loading settings
-    setGameSettings({
-      timeLimit: 60,
-      survivalMode: Math.random() > 0.5, // randomly enable/disable
-      powerUpsEnabled: Math.random() > 0.5, // randomly enable/disable
-      vocabularyId: null
-    });
-    
-    setTimeLeft(60);
-    
-    if (Math.random() > 0.5) {
-      setAvailablePowerUps(powerUps);
-    }
-  };
-  
-  // Load vocabulary (in a real app, this would come from Supabase)
-  const loadVocabulary = async (vocabularyId: string) => {
-    // const { data, error } = await supabase
-    //   .from('custom_wordlists')
-    //   .select('words')
-    //   .eq('id', vocabularyId)
-    //   .single();
-    
-    // if (data && data.words) {
-    //   const wordList = data.words.map((word: any, index: number) => ({
-    //     id: `word-${index}`,
-    //     word: word.term,
-    //     translation: word.definition,
-    //     correct: false,
-    //     points: 10 + (index % 3 === 0 ? 5 : 0) // Some words worth more points
-    //   }));
-    //   
-    //   setVocabulary(wordList);
-    // }
-  };
+  }, [lives, gameState]);
   
   // Start the game
   const startGame = () => {
     setGameState('playing');
-    setScore(0);
-    setLevel(1);
+    setGameStats({
+      score: 0,
+      combo: 0,
+      maxCombo: 0,
+      gemsCollected: 0,
+      gemsMissed: 0,
+      accuracy: 0,
+      fastestResponse: Infinity,
+      totalPlayTime: 0,
+      gemsByType: {
+        ruby: 0,
+        sapphire: 0,
+        emerald: 0,
+        diamond: 0,
+        amethyst: 0,
+        topaz: 0
+      }
+    });
     setLives(3);
-    setStreak(0);
-    setDoublePointsActive(false);
-    setDoublePointsCount(0);
     setTimeLeft(gameSettings.timeLimit);
-    nextWord();
+    setCurrentChallenge(translationChallenges[Math.floor(Math.random() * translationChallenges.length)]);
+    setIsPaused(false);
   };
   
-  // Get next word and options
-  const nextWord = () => {
-    // Pick a random word from vocabulary that hasn't been used yet
-    const unusedWords = vocabulary.filter(word => !word.correct);
-    
-    if (unusedWords.length === 0) {
-      // All words used, game completed
-      setGameState('completed');
-      triggerConfetti();
-      return;
-    }
-    
-    const randomIndex = Math.floor(Math.random() * unusedWords.length);
-    const selectedWord = unusedWords[randomIndex];
-    setCurrentWord(selectedWord);
-    
-    // Generate options - one correct and 3 incorrect
-    const correctTranslation = selectedWord.translation;
-    const incorrectOptions = vocabulary
-      .filter(w => w.translation !== correctTranslation)
-      .map(w => w.translation)
-      .sort(() => Math.random() - 0.5)
-      .slice(0, 3);
-    
-    const allOptions = [...incorrectOptions, correctTranslation]
-      .sort(() => Math.random() - 0.5);
-    
-    setOptions(allOptions);
-  };
-  
-  // Handle option selection
-  const handleOptionSelect = (translation: string) => {
-    if (!currentWord || gameState !== 'playing') return;
-    
-    const isCorrect = translation === currentWord.translation;
-    
-    // Launch rocket animation
-    const rocketId = `rocket-${Date.now()}`;
-    setRockets(prev => [...prev, {
-      id: rocketId,
-      word: currentWord,
-      isCorrect
-    }]);
-    
-    if (isCorrect) {
-      // Update word as correct
-      setVocabulary(prev => 
-        prev.map(word => 
-          word.id === currentWord.id ? { ...word, correct: true } : word
-        )
-      );
-      
-      // Update score
-      const points = currentWord.points * (doublePointsActive ? 2 : 1) * level;
-      setScore(prev => prev + points);
-      
-      // Update streak and double points count
-      setStreak(prev => prev + 1);
-      if (doublePointsActive) {
-        setDoublePointsCount(prev => prev + 1);
-      }
-      
-      // Schedule next word
-      setTimeout(nextWord, 1000);
-    } else {
-      // Reset streak
-      setStreak(0);
-      
-      // Deduct life in survival mode
-      if (gameSettings.survivalMode) {
-        setLives(prev => {
-          if (prev <= 1) {
-            // Game over
-            setGameState('timeout');
-            return 0;
-          }
-          return prev - 1;
-        });
-      }
-      
-      // In non-survival mode or if still has lives, continue with next word
-      if (!gameSettings.survivalMode || lives > 1) {
-        setTimeout(nextWord, 1000);
-      }
-    }
-  };
-  
-  // Remove rocket when animation completes
-  const handleRocketAnimationComplete = (rocketId: string) => {
-    setRockets(prev => prev.filter(rocket => rocket.id !== rocketId));
-  };
-  
-  // Handle power-up activation
-  const activatePowerUp = (powerUpId: string) => {
-    if (gameState !== 'playing') return;
-    
-    const powerUp = availablePowerUps.find(p => p.id === powerUpId);
-    if (!powerUp || powerUp.cooldown > 0) return;
-    
-    switch (powerUp.type) {
-      case 'superBoost':
-        if (currentWord) {
-          // Automatically select correct option
-          handleOptionSelect(currentWord.translation);
-        }
-        break;
-      case 'timeFreeze':
-        // Pause timer for 5 seconds
-        if (timerRef.current) {
-          clearInterval(timerRef.current);
-          
-          setTimeout(() => {
-            if (gameState === 'playing') {
-              timerRef.current = setInterval(() => {
-                setTimeLeft(prev => {
-                  if (prev <= 1) {
-                    clearInterval(timerRef.current!);
-                    setGameState('timeout');
-                    return 0;
-                  }
-                  return prev - 1;
-                });
-              }, 1000);
-            }
-          }, 5000);
-        }
-        break;
-      case 'doublePoints':
-        // Enable double points for next 3 correct answers
-        setDoublePointsActive(true);
-        setDoublePointsCount(0);
-        break;
-    }
-    
-    // Set cooldown
-    setAvailablePowerUps(prev => 
-      prev.map(p => 
-        p.id === powerUpId ? { ...p, cooldown: 30 } : p
-      )
-    );
-  };
-  
-  // Reset cooldowns
-  useEffect(() => {
+  // Handle time up
+  const handleTimeUp = () => {
     if (gameState === 'playing') {
-      const cooldownInterval = setInterval(() => {
-        setAvailablePowerUps(prev => 
-          prev.map(p => 
-            p.cooldown > 0 ? { ...p, cooldown: p.cooldown - 1 } : p
-          )
-        );
-      }, 1000);
-      
-      return () => clearInterval(cooldownInterval);
+      setGameState('timeout');
+      if (gameStats.score > 0) {
+        triggerConfetti();
+      }
     }
-  }, [gameState]);
+  };
+  
+  // Pause/Resume game
+  const togglePause = () => {
+    setIsPaused(!isPaused);
+  };
   
   // Reset the game
   const resetGame = () => {
-    setScore(0);
-    setLevel(1);
-    setLives(3);
-    setStreak(0);
-    setDoublePointsActive(false);
-    setDoublePointsCount(0);
-    setTimeLeft(gameSettings.timeLimit);
     setGameState('ready');
-    setVocabulary(sampleVocabulary.map(word => ({ ...word, correct: false })));
+    setGameStats({
+      score: 0,
+      combo: 0,
+      maxCombo: 0,
+      gemsCollected: 0,
+      gemsMissed: 0,
+      accuracy: 0,
+      fastestResponse: Infinity,
+      totalPlayTime: 0,
+      gemsByType: {
+        ruby: 0,
+        sapphire: 0,
+        emerald: 0,
+        diamond: 0,
+        amethyst: 0,
+        topaz: 0
+      }
+    });
+    setLives(3);
+    setTimeLeft(gameSettings.timeLimit);
+    setIsPaused(false);
+    setCurrentChallenge(translationChallenges[Math.floor(Math.random() * translationChallenges.length)]);
   };
   
-  // Confetti effect on completion
+  // Handle challenge completion
+  const handleChallengeComplete = () => {
+    // Bonus points for completing the challenge
+    setGameStats(prev => ({
+      ...prev,
+      score: prev.score + 100,
+      combo: prev.combo + 3
+    }));
+    
+    triggerSuccessEffects();
+    
+    // Move to next challenge
+    setTimeout(() => {
+      setCurrentChallenge(translationChallenges[Math.floor(Math.random() * translationChallenges.length)]);
+    }, 1500);
+  };
+  
+  // Success effects
+  const triggerSuccessEffects = () => {
+    confetti({
+      particleCount: 30,
+      spread: 60,
+      origin: { y: 0.7 },
+      colors: ['#FFD700', '#FFA500', '#FF69B4', '#00CED1']
+    });
+  };
+  
+  // Completion confetti
   const triggerConfetti = () => {
     confetti({
       particleCount: 100,
       spread: 70,
-      origin: { y: 0.6 }
+      origin: { y: 0.6 },
+      colors: ['#FFD700', '#FFA500', '#FF69B4', '#00CED1', '#98FB98']
     });
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-blue-900 to-purple-900 p-6">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-blue-900 to-purple-900 relative overflow-hidden">
+      {/* Animated background particles - only render on client */}
+      {isClient && (
+        <div className="absolute inset-0 overflow-hidden">
+          {backgroundParticles.map((particle) => (
+            <motion.div
+              key={particle.id}
+              className="absolute w-1 h-1 bg-white rounded-full opacity-30"
+              animate={{
+                x: [0, 100],
+                y: [0, 100],
+                opacity: [0.3, 0.8, 0.3]
+              }}
+              transition={{
+                duration: particle.animationDuration,
+                repeat: Infinity,
+                ease: "linear"
+              }}
+              style={{
+                left: particle.left,
+                top: particle.top
+              }}
+            />
+          ))}
+        </div>
+      )}
+
+      <div className="relative z-10 min-h-screen">
         {/* Header */}
-        <header className="bg-slate-800/80 rounded-xl shadow-lg p-4 mb-6 flex flex-col md:flex-row items-center justify-between backdrop-blur-sm border border-slate-700/50">
-          <div className="flex items-center mb-4 md:mb-0">
-            <svg 
-              className="text-orange-500 mr-2 w-8 h-8" 
-              viewBox="0 0 24 24" 
-              fill="none" 
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path 
-                d="M12 2L9 9H15L12 16M12 16V22M5 9L2 6M19 9L22 6" 
-                stroke="currentColor" 
-                strokeWidth="2" 
-                strokeLinecap="round" 
-                strokeLinejoin="round"
-              />
-            </svg>
-            <h1 className="text-2xl font-bold text-white">Word Blast</h1>
-          </div>
-          
-          <div className="flex space-x-4 items-center">
-            <div className="bg-indigo-900/50 px-3 py-1 rounded-full flex items-center border border-indigo-700">
-              <Star className="text-yellow-500 mr-1" size={18} />
-              <span className="font-bold text-white">{score}</span>
+        <header className="absolute top-0 left-0 right-0 z-20 bg-slate-900/80 backdrop-blur-sm border-b border-slate-700/50">
+          <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+              >
+                <Gem className="text-orange-500 w-8 h-8" />
+              </motion.div>
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-orange-400 to-yellow-500 bg-clip-text text-transparent">
+                Gem Word Blast
+              </h1>
             </div>
             
-            <div className="bg-blue-900/50 px-3 py-1 rounded-full flex items-center border border-blue-700">
-              <Clock className="text-blue-400 mr-1" size={18} />
-              <span className="font-bold text-white">{timeLeft}s</span>
+            <div className="flex items-center space-x-4">
+              {gameState === 'playing' && (
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={togglePause}
+                  className="p-2 bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors"
+                >
+                  {isPaused ? <Play size={20} className="text-white" /> : <Pause size={20} className="text-white" />}
+                </motion.button>
+              )}
+              
+              <Link
+                href={assignmentId ? `/dashboard/assignments/${assignmentId}` : '/games'}
+                className="flex items-center space-x-2 text-indigo-400 hover:text-indigo-300 transition-colors"
+              >
+                <Home size={20} />
+                <span>{assignmentId ? 'Back to Assignment' : 'Back to Games'}</span>
+              </Link>
             </div>
-            
-            {gameSettings.survivalMode && (
-              <div className="bg-red-900/50 px-3 py-1 rounded-full flex items-center border border-red-700">
-                <Shield className="text-red-400 mr-1" size={18} />
-                <span className="font-bold text-white">{lives}</span>
-              </div>
-            )}
           </div>
         </header>
-        
-        {/* Game Container */}
-        <div className="bg-slate-800/70 rounded-xl shadow-lg p-6 mb-6 backdrop-blur-sm border border-slate-700/50">
+
+        {/* Main Game Area */}
+        <div className="pt-20 h-screen">
           {gameState === 'ready' && (
-            <div className="text-center py-10">
-              <h2 className="text-2xl font-bold text-white mb-4">Ready for Word Blast?</h2>
-              <p className="text-slate-300 mb-6">
-                Launch rockets with correct word translations before time runs out!
-                {gameSettings.survivalMode && (
-                  <span className="block mt-2 text-amber-400 font-medium">
-                    Survival Mode enabled! You have {lives} lives.
-                  </span>
-                )}
-                {gameSettings.powerUpsEnabled && (
-                  <span className="block mt-2 text-cyan-400 font-medium">
-                    Power-ups enabled! Use them wisely.
-                  </span>
-                )}
-              </p>
-              <button
-                onClick={startGame}
-                className="px-6 py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-lg font-medium hover:from-orange-600 hover:to-amber-600 transition-colors"
+            <div className="flex items-center justify-center min-h-[calc(100vh-5rem)]">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="text-center max-w-2xl mx-auto px-6"
               >
-                Start Game
-              </button>
+                <motion.div
+                  animate={{ 
+                    rotate: [0, 10, -10, 0],
+                    scale: [1, 1.1, 1]
+                  }}
+                  transition={{ 
+                    duration: 3,
+                    repeat: Infinity,
+                    ease: "easeInOut"
+                  }}
+                  className="mb-8"
+                >
+                  <Gem className="w-24 h-24 text-orange-500 mx-auto" />
+                </motion.div>
+                
+                <h2 className="text-4xl font-bold text-white mb-4">
+                  Ready for Gem Word Blast?
+                </h2>
+                
+                <p className="text-xl text-slate-300 mb-8 leading-relaxed">
+                  Translate English sentences by clicking the correct Spanish words! 
+                  Falling gems show Spanish words - click only the ones needed for the translation.
+                </p>
+                
+                <div className="bg-slate-800/50 rounded-xl p-4 mb-8 border border-slate-700">
+                  <h3 className="text-lg font-bold text-orange-400 mb-2">How to Play:</h3>
+                  <div className="text-left text-slate-300 space-y-1">
+                    <p>• Read the English sentence at the top</p>
+                    <p>• Click Spanish word gems that form the translation</p>
+                    <p>• Avoid decoy words that aren't part of the translation</p>
+                    <p>• Complete the translation to get bonus points!</p>
+                    <p>• You have 3 lives - wrong clicks cost a life</p>
+                  </div>
+                </div>
+                
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={startGame}
+                  className="mt-8 px-8 py-4 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-xl font-bold text-xl shadow-lg hover:shadow-orange-500/25 transition-all duration-300"
+                >
+                  <Play className="inline mr-2" size={24} />
+                  Start Gem Blast
+                </motion.button>
+              </motion.div>
             </div>
           )}
           
           {gameState === 'playing' && (
-            <div>
-              {/* Word Display */}
-              <div className="mb-8 text-center">
-                <div className="mb-2 flex justify-between items-center">
-                  <p className="text-sm text-slate-400">Level {level}</p>
-                  <p className="text-sm text-slate-400">
-                    Streak: <span className="text-amber-400">{streak}</span>
-                  </p>
-                </div>
-                
-                {currentWord && (
-                  <div className="p-6 bg-indigo-900/30 rounded-lg border border-indigo-700/50 mb-8">
-                    <p className="text-3xl font-bold text-white">{currentWord.word}</p>
-                  </div>
-                )}
-                
-                {/* Options */}
-                <div className="grid grid-cols-2 gap-4">
-                  {options.map((option, index) => (
-                    <button
-                      key={`option-${index}`}
-                      onClick={() => handleOptionSelect(option)}
-                      className="p-4 bg-slate-700 hover:bg-slate-600 border border-slate-600 rounded-lg text-white font-medium transition-colors"
+            <div className="relative h-full">
+              {/* Interactive Gem Game */}
+              <InteractiveGemGame 
+                currentChallenge={currentChallenge}
+                onCorrectAnswer={(points) => {
+                  setGameStats(prev => ({
+                    ...prev,
+                    score: prev.score + points,
+                    combo: prev.combo + 1,
+                    maxCombo: Math.max(prev.maxCombo, prev.combo + 1),
+                    gemsCollected: prev.gemsCollected + 1
+                  }));
+                  triggerSuccessEffects();
+                }}
+                onIncorrectAnswer={() => {
+                  setGameStats(prev => ({ ...prev, combo: 0, gemsMissed: prev.gemsMissed + 1 }));
+                  setLives(prev => Math.max(0, prev - 1));
+                }}
+                onChallengeComplete={handleChallengeComplete}
+                isPaused={isPaused}
+              />
+              
+              {/* Game UI Overlay */}
+              <div className="absolute inset-0 pointer-events-none z-10">
+                {/* Top Bar */}
+                <div className="absolute top-4 left-4 right-4 flex justify-between items-start">
+                  {/* Current Sentence */}
+                  <motion.div
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-slate-900/90 backdrop-blur-sm rounded-xl p-4 border border-slate-700/50 max-w-md pointer-events-auto"
+                  >
+                    <div className="text-sm text-slate-400 mb-1">Translate:</div>
+                    <div className="text-xl font-bold text-white">{currentChallenge.english}</div>
+                  </motion.div>
+
+                  {/* Stats */}
+                  <div className="flex flex-col items-end space-y-3">
+                    <motion.div
+                      initial={{ opacity: 0, y: -20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 backdrop-blur-sm rounded-xl p-3 border border-yellow-500/30 flex items-center space-x-2"
                     >
-                      {option}
-                    </button>
-                  ))}
+                      <Star className="text-yellow-500" size={20} />
+                      <span className="text-2xl font-bold text-white">{gameStats.score.toLocaleString()}</span>
+                    </motion.div>
+
+                    <motion.div
+                      initial={{ opacity: 0, y: -20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="bg-blue-500/20 backdrop-blur-sm rounded-xl p-3 border border-blue-500/30 flex items-center space-x-2"
+                    >
+                      <span className="text-lg font-bold text-white">
+                        {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
+                      </span>
+                    </motion.div>
+                    
+                    {/* Combo Display */}
+                    {gameStats.combo > 0 && (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.5 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="bg-gradient-to-r from-orange-500/20 to-red-500/20 backdrop-blur-sm rounded-xl p-3 border border-orange-500/30 flex items-center space-x-2"
+                      >
+                        <Zap className="text-orange-500" size={20} />
+                        <span className="text-lg font-bold text-white">{gameStats.combo}x</span>
+                      </motion.div>
+                    )}
+                    
+                    {/* Lives */}
+                    <motion.div
+                      initial={{ opacity: 0, y: -20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="bg-red-500/20 backdrop-blur-sm rounded-xl p-3 border border-red-500/30 flex items-center space-x-2"
+                    >
+                      <span className="text-lg font-bold text-white">♥ {lives}</span>
+                    </motion.div>
+                  </div>
                 </div>
               </div>
               
-              {/* Power-ups (if enabled) */}
-              {gameSettings.powerUpsEnabled && (
-                <div className="mt-8">
-                  <h3 className="text-sm font-medium text-slate-400 mb-2">Power-ups:</h3>
-                  <div className="flex justify-center gap-4">
-                    {availablePowerUps.map(powerUp => (
+              {/* Pause Overlay */}
+              <AnimatePresence>
+                {isPaused && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-30"
+                  >
+                    <motion.div
+                      initial={{ scale: 0.9 }}
+                      animate={{ scale: 1 }}
+                      exit={{ scale: 0.9 }}
+                      className="bg-slate-900 rounded-xl p-8 text-center border border-slate-700"
+                    >
+                      <Pause className="w-16 h-16 text-indigo-400 mx-auto mb-4" />
+                      <h3 className="text-2xl font-bold text-white mb-4">Game Paused</h3>
                       <button
-                        key={powerUp.id}
-                        onClick={() => activatePowerUp(powerUp.id)}
-                        disabled={powerUp.cooldown > 0}
-                        className={`
-                          p-4 rounded-full w-12 h-12 flex items-center justify-center relative
-                          ${powerUp.cooldown > 0 
-                            ? 'bg-slate-700 cursor-not-allowed' 
-                            : 'bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 cursor-pointer'}
-                        `}
-                        title={powerUp.description}
+                        onClick={togglePause}
+                        className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors"
                       >
-                        <span className="text-xl">{powerUp.icon}</span>
-                        {powerUp.cooldown > 0 && (
-                          <div className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                            {powerUp.cooldown}
-                          </div>
-                        )}
+                        Resume Game
                       </button>
-                    ))}
+                    </motion.div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
+          
+          {/* Game Over States */}
+          {(gameState === 'timeout' || gameState === 'completed') && (
+            <div className="flex items-center justify-center min-h-[calc(100vh-5rem)]">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="text-center max-w-2xl mx-auto px-6"
+              >
+                {gameState === 'completed' ? (
+                  <CheckCircle2 className="text-green-500 w-24 h-24 mx-auto mb-6" />
+                ) : (
+                  <Award className="text-orange-500 w-24 h-24 mx-auto mb-6" />
+                )}
+                
+                <h2 className="text-4xl font-bold text-white mb-4">
+                  {gameState === 'completed' ? 'All Gems Collected!' : 'Time\'s Up!'}
+                </h2>
+                
+                <div className="bg-slate-800/50 rounded-xl p-6 mb-8 border border-slate-700">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                    <div>
+                      <div className="text-3xl font-bold text-yellow-500">
+                        {gameStats.score.toLocaleString()}
+                      </div>
+                      <div className="text-slate-400">Score</div>
+                    </div>
+                    <div>
+                      <div className="text-3xl font-bold text-orange-500">
+                        {gameStats.maxCombo}x
+                      </div>
+                      <div className="text-slate-400">Max Combo</div>
+                    </div>
+                    <div>
+                      <div className="text-3xl font-bold text-green-500">
+                        {gameStats.accuracy.toFixed(1)}%
+                      </div>
+                      <div className="text-slate-400">Accuracy</div>
+                    </div>
+                    <div>
+                      <div className="text-3xl font-bold text-blue-500">
+                        {gameStats.gemsCollected}
+                      </div>
+                      <div className="text-slate-400">Gems</div>
+                    </div>
                   </div>
                 </div>
-              )}
-            </div>
-          )}
-          
-          {/* Rockets animation area */}
-          <div className="fixed bottom-0 left-0 right-0 h-screen pointer-events-none overflow-hidden">
-            <AnimatePresence>
-              {rockets.map(rocket => (
-                <motion.div
-                  key={rocket.id}
-                  className="absolute bottom-0"
-                  style={{ 
-                    left: `${Math.random() * 80 + 10}%`,
-                  }}
-                >
-                  <Rocket 
-                    word={rocket.word} 
-                    isCorrect={rocket.isCorrect}
-                    onComplete={() => handleRocketAnimationComplete(rocket.id)}
-                  />
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </div>
-          
-          {gameState === 'timeout' && (
-            <div className="text-center py-10">
-              <h2 className="text-2xl font-bold text-orange-500 mb-4">
-                {gameSettings.survivalMode && lives === 0 ? "Out of Lives!" : "Time's Up!"}
-              </h2>
-              <p className="text-slate-300 mb-4">
-                You scored {score} points and reached level {level}.
-              </p>
-              <button
-                onClick={resetGame}
-                className="px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-lg font-medium hover:from-indigo-600 hover:to-purple-600 transition-colors flex items-center mx-auto"
-              >
-                <RefreshCw className="mr-2" size={18} />
-                Play Again
-              </button>
-            </div>
-          )}
-          
-          {gameState === 'completed' && (
-            <div className="text-center py-10">
-              <CheckCircle2 className="text-green-500 w-16 h-16 mx-auto mb-4" />
-              <h2 className="text-2xl font-bold text-green-400 mb-4">All Words Mastered!</h2>
-              <p className="text-slate-300 mb-4">
-                Congratulations! You completed all words and scored {score} points.
-              </p>
-              <div className="flex flex-col sm:flex-row justify-center gap-4 mt-6">
-                <button
-                  onClick={() => resetGame()}
-                  className="px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-lg font-medium hover:from-indigo-600 hover:to-purple-600 transition-colors flex items-center justify-center"
-                >
-                  <RefreshCw className="mr-2" size={18} />
-                  Play Again
-                </button>
                 
-                <Link href="/games" className="px-6 py-3 border border-indigo-600 text-indigo-300 rounded-lg font-medium hover:bg-indigo-950/50 transition-colors">
-                  Return to Games
-                </Link>
-              </div>
+                <div className="flex flex-col sm:flex-row justify-center gap-4">
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={resetGame}
+                    className="px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-lg font-medium shadow-lg hover:shadow-indigo-500/25 transition-all duration-300 flex items-center justify-center"
+                  >
+                    <RefreshCw className="mr-2" size={18} />
+                    Play Again
+                  </motion.button>
+                  
+                  <Link 
+                    href={assignmentId ? `/dashboard/assignments/${assignmentId}` : '/games'}
+                    className="px-6 py-3 border border-indigo-600 text-indigo-300 rounded-lg font-medium hover:bg-indigo-950/50 transition-colors flex items-center justify-center"
+                  >
+                    <Home className="mr-2" size={18} />
+                    {assignmentId ? 'Back to Assignment' : 'Back to Games'}
+                  </Link>
+                </div>
+              </motion.div>
             </div>
           )}
-        </div>
-        
-        {/* Controls and Info */}
-        <div className="bg-slate-800/80 rounded-xl shadow-md p-4 backdrop-blur-sm border border-slate-700/50">
-          <div className="flex justify-between">
-            <Link
-              href={assignmentId ? `/dashboard/assignments/${assignmentId}` : '/games'}
-              className="text-indigo-400 hover:text-indigo-300 flex items-center"
-            >
-              {assignmentId ? 'Back to Assignment' : 'Back to Games'}
-            </Link>
-            
-            {(gameState === 'playing' || gameState === 'completed' || gameState === 'timeout') && (
-              <button
-                onClick={resetGame}
-                className="text-indigo-400 hover:text-indigo-300"
-              >
-                Save Progress
-              </button>
-            )}
-          </div>
         </div>
       </div>
     </div>
   );
-} 
+}
+
+

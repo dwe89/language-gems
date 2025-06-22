@@ -101,7 +101,11 @@ export async function POST(request: NextRequest) {
           theme: body.vocabularySelection.theme || null,
           topic: body.vocabularySelection.topic || null,
           difficulty_level: body.vocabularySelection.difficulty || 'beginner',
-          word_count: body.vocabularySelection.wordCount || 20,
+          word_count: Math.min(
+            body.vocabularySelection.wordCount || 10,
+            // Enforce 10-item limit for theme/topic based selections
+            (body.vocabularySelection.type === 'theme_based' || body.vocabularySelection.type === 'topic_based') ? 10 : 50
+          ),
           vocabulary_items: [], // Will be populated later
           is_public: false
         }])
@@ -123,6 +127,24 @@ export async function POST(request: NextRequest) {
       vocabularyListId = body.vocabularySelection.customListId;
     }
 
+    // Prepare game configuration based on game type
+    let gameConfig = body.gameConfig || {};
+
+    // Add specific configurations for gem collector game
+    if (body.gameType === 'gem-collector') {
+      gameConfig = {
+        ...gameConfig,
+        language: gameConfig.language || 'spanish',
+        difficulty: body.vocabularySelection?.difficulty || 'beginner',
+        theme: body.vocabularySelection?.theme,
+        topic: body.vocabularySelection?.topic,
+        sentenceCount: Math.min(body.vocabularySelection?.wordCount || 10, 15), // Limit sentences for gem collector
+        speedBoostEnabled: gameConfig.speedBoostEnabled !== false, // Default to true
+        livesCount: gameConfig.livesCount || 3,
+        timeLimit: body.timeLimit || 600 // 10 minutes default for gem collector
+      };
+    }
+
     // Create the assignment
     const { data: assignment, error: assignmentError } = await supabase
       .from('assignments')
@@ -135,7 +157,7 @@ export async function POST(request: NextRequest) {
         points: body.points || 10,
         vocabulary_assignment_list_id: vocabularyListId,
         created_by: user.id,
-        config: body.gameConfig,
+        config: gameConfig,
         status: 'active'
       })
       .select()
@@ -195,20 +217,26 @@ async function populateVocabularyList(
       query = query.eq('difficulty', criteria.difficulty);
     }
 
-    // Limit the number of words
-    const wordCount = criteria.wordCount || 20;
-    query = query.limit(wordCount);
-
-    const { data: vocabularyWords, error: vocabularyError } = await query;
+    // First get all matching vocabulary to enable random selection
+    const { data: allVocabulary, error: vocabularyError } = await query;
 
     if (vocabularyError) {
       console.error('Vocabulary fetch error:', vocabularyError);
       return;
     }
 
-    if (vocabularyWords && vocabularyWords.length > 0) {
+    if (allVocabulary && allVocabulary.length > 0) {
+      // Limit the number of words with random selection
+      const wordCount = Math.min(criteria.wordCount || 10, allVocabulary.length);
+      
+      // Randomly shuffle and select the specified number of words
+      const shuffled = [...allVocabulary].sort(() => 0.5 - Math.random());
+      const selectedWords = shuffled.slice(0, wordCount);
+      
+      console.log(`Selected ${selectedWords.length} vocabulary items from ${allVocabulary.length} available for theme: ${criteria.theme}, topic: ${criteria.topic}`);
+
       // Insert vocabulary items into the assignment list
-      const vocabularyItems = vocabularyWords.map((word: any, index: number) => ({
+      const vocabularyItems = selectedWords.map((word: any, index: number) => ({
         vocabulary_assignment_list_id: listId,
         vocabulary_id: word.id,
         order_index: index

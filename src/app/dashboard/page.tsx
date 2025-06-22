@@ -4,10 +4,10 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../components/auth/AuthProvider';
 import TeacherNavigation from '../../components/TeacherNavigation';
 import Link from 'next/link';
-import { 
+import {
   BookOpen, PenTool, BarChart2, Users, CheckCircle, Plus, Crown, Lock,
   TrendingUp, Calendar, FileText, Award, Settings, Zap, Upload, Trophy,
-  Gamepad2, MinusCircle, GraduationCap
+  Gamepad2, MinusCircle, GraduationCap, Pickaxe
 } from 'lucide-react';
 import { supabaseBrowser } from '../../components/auth/AuthProvider';
 
@@ -246,17 +246,27 @@ function TeacherDashboard({ username = 'Ms. Carter' }: { username?: string }) {
             href="/dashboard/progress"
           />
           
-          <DashboardCard 
-            title="Browse Learning Content"
-            description="Upload materials or browse our content library"
+          <DashboardCard
+            title="Vocabulary Management"
+            description="Create and manage vocabulary lists for your classes"
             icon={<Upload className="h-7 w-7 text-emerald-600" />}
-            buttonText="Manage Content"
+            buttonText="Manage Vocabulary"
             buttonColor="bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800"
             imageSrc="/content-illustration.svg"
-            href="/dashboard/content"
+            href="/dashboard/vocabulary"
           />
-          
-          <DashboardCard 
+
+          <DashboardCard
+            title="Vocabulary Mining Analytics"
+            description="Track student gem collection and vocabulary mastery"
+            icon={<Pickaxe className="h-7 w-7 text-yellow-600" />}
+            buttonText="View Mining Analytics"
+            buttonColor="bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700"
+            imageSrc="/mining-illustration.svg"
+            href="/dashboard/vocabulary-mining"
+          />
+
+          <DashboardCard
             title="Interactive Learning Games"
             description="Engage students with fun, educational activities"
             icon={<Gamepad2 className="h-7 w-7 text-pink-600" />}
@@ -265,8 +275,8 @@ function TeacherDashboard({ username = 'Ms. Carter' }: { username?: string }) {
             imageSrc="/games-illustration.svg"
             href="/dashboard/games"
           />
-          
-          <DashboardCard 
+
+          <DashboardCard
             title="Competition & Leaderboards"
             description="Motivate students with challenges and rankings"
             icon={<Trophy className="h-7 w-7 text-amber-600" />}
@@ -274,6 +284,16 @@ function TeacherDashboard({ username = 'Ms. Carter' }: { username?: string }) {
             buttonColor="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700"
             imageSrc="/competition-illustration.svg"
             href="/dashboard/leaderboards"
+          />
+
+          <DashboardCard
+            title="Gem Collector Analytics"
+            description="Track sentence translation game performance and progress"
+            icon={<span className="text-2xl">💎</span>}
+            buttonText="View Game Analytics"
+            buttonColor="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700"
+            imageSrc="/gem-collector-illustration.svg"
+            href="/dashboard/analytics/gem-collector"
           />
         </div>
       </section>

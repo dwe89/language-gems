@@ -15,18 +15,35 @@ interface VocabularyItem {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { assignmentId: string } }
+  { params }: { params: Promise<{ assignmentId: string }> }
 ) {
   try {
-    const supabase = createServerClient<Database>({ cookies });
-    
+    const cookieStore = await cookies();
+    const supabase = createServerClient<Database>(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name) {
+            return cookieStore.get(name)?.value;
+          },
+          set(name, value, options) {
+            cookieStore.set(name, value, options);
+          },
+          remove(name, options) {
+            cookieStore.set(name, '', { ...options, maxAge: 0 });
+          },
+        },
+      }
+    );
+
     // Verify authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const assignmentId = params.assignmentId;
+    const { assignmentId } = await params;
 
     // Get assignment and verify teacher ownership
     const { data: assignment, error: assignmentError } = await supabase
@@ -38,7 +55,7 @@ export async function GET(
         class_id,
         vocabulary_assignment_list_id,
         created_by,
-        config
+        vocabulary_criteria
       `)
       .eq('id', assignmentId)
       .single();
@@ -52,17 +69,26 @@ export async function GET(
 
     const isTeacher = assignment.created_by === user.id;
 
-    // Get students in the class
-    const { data: students, error: studentsError } = await supabase
+    // Get students in the class - using manual join since foreign key relationship may not be defined
+    const { data: enrollments, error: enrollmentsError } = await supabase
       .from('class_enrollments')
-      .select(`
-        student_id,
-        user_profiles!inner(
-          id,
-          display_name
-        )
-      `)
+      .select('student_id')
       .eq('class_id', assignment.class_id);
+
+    if (enrollmentsError) {
+      console.error('Error fetching enrollments:', enrollmentsError);
+      return NextResponse.json(
+        { error: 'Failed to fetch class enrollments' },
+        { status: 500 }
+      );
+    }
+
+    // Get user profiles for the enrolled students
+    const studentIds = enrollments?.map(e => e.student_id) || [];
+    const { data: students, error: studentsError } = await supabase
+      .from('user_profiles')
+      .select('user_id, display_name, email')
+      .in('user_id', studentIds);
 
     if (studentsError) {
       console.error('Error fetching students:', studentsError);
@@ -75,7 +101,7 @@ export async function GET(
     // Check if user is a student in the class
     let isStudent = false;
     if (!isTeacher) {
-      const student = students.find((student: any) => student.student_id === user.id);
+      const student = students?.find((student: any) => student.user_id === user.id);
       isStudent = !!student;
     }
 
@@ -93,37 +119,58 @@ export async function GET(
           id: assignment.id,
           title: assignment.title,
           type: assignment.type,
-          config: assignment.config
+          config: assignment.vocabulary_criteria || {}
         },
         vocabulary: []
       });
     }
 
-    // Fetch the fixed vocabulary list for this assignment
-    const { data: vocabularyItems, error: vocabError } = await supabase
+    // Fetch the fixed vocabulary list for this assignment - using manual join
+    // First get the vocabulary assignment items
+    const { data: assignmentItems, error: itemsError } = await supabase
       .from('vocabulary_assignment_items')
-      .select(`
-        vocabulary_id,
-        order_position,
-        vocabulary (
-          id,
-          spanish,
-          english,
-          theme,
-          topic,
-          part_of_speech
-        )
-      `)
+      .select('vocabulary_id, order_position')
       .eq('assignment_list_id', assignment.vocabulary_assignment_list_id)
       .order('order_position');
 
-    if (vocabError) {
-      console.error('Error fetching vocabulary:', vocabError);
+    if (itemsError) {
+      console.error('Error fetching assignment items:', itemsError);
       return NextResponse.json(
-        { error: 'Failed to fetch vocabulary' },
+        { error: 'Failed to fetch assignment vocabulary items' },
         { status: 500 }
       );
     }
+
+    // Then get the vocabulary details for those items
+    let vocabularyItems: any[] = [];
+    if (assignmentItems && assignmentItems.length > 0) {
+      const vocabularyIds = assignmentItems.map(item => item.vocabulary_id);
+
+      const { data: vocabularyData, error: vocabError } = await supabase
+        .from('vocabulary')
+        .select('id, spanish, english, theme, topic, part_of_speech')
+        .in('id', vocabularyIds);
+
+      if (vocabError) {
+        console.error('Error fetching vocabulary:', vocabError);
+        return NextResponse.json(
+          { error: 'Failed to fetch vocabulary details' },
+          { status: 500 }
+        );
+      }
+
+      // Combine the data with order positions
+      vocabularyItems = assignmentItems.map(item => {
+        const vocab = vocabularyData?.find(v => v.id === item.vocabulary_id);
+        return {
+          vocabulary_id: item.vocabulary_id,
+          order_position: item.order_position,
+          vocabulary: vocab
+        };
+      }).filter(item => item.vocabulary); // Remove items where vocabulary wasn't found
+    }
+
+    // Error handling is now done within the vocabulary fetching logic above
 
     // Format the vocabulary data
     const vocabulary: VocabularyItem[] = vocabularyItems?.map((item: any) => ({
@@ -141,13 +188,13 @@ export async function GET(
         id: assignment.id,
         title: assignment.title,
         type: assignment.type,
-        config: assignment.config
+        config: assignment.vocabulary_criteria || {}
       },
       vocabulary,
-      students: students.map((student: any) => ({
-        id: student.student_id,
-        displayName: student.user_profiles.display_name
-      }))
+      students: students?.map((student: any) => ({
+        id: student.user_id,
+        displayName: student.display_name
+      })) || []
     });
 
   } catch (error) {

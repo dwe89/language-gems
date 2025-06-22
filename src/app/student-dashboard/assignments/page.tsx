@@ -109,7 +109,7 @@ const AssignmentCard = ({
       )}
       
       <div className="flex space-x-2">
-        <Link 
+        <Link
           href={`/games/${assignment.type || 'memory-game'}?assignment=${assignment.id}`}
           className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg transition-colors font-medium flex items-center justify-center"
         >
@@ -117,8 +117,8 @@ const AssignmentCard = ({
           <ArrowRight className="h-4 w-4 ml-1" />
         </Link>
         {assignment.status !== 'completed' && (
-          <Link 
-            href="/student-dashboard/games"
+          <Link
+            href={assignment.type === 'gem-collector' ? '/games/gem-collector' : '/student-dashboard/games'}
             className="bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-4 rounded-lg transition-colors text-sm font-medium"
           >
             Free Play

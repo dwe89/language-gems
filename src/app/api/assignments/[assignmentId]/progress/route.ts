@@ -29,10 +29,27 @@ interface ProgressUpdateRequest {
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { assignmentId: string } }
+  { params }: { params: Promise<{ assignmentId: string }> }
 ) {
   try {
-    const supabase = createServerClient<Database>({ cookies });
+    const cookieStore = await cookies();
+    const supabase = createServerClient<Database>(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name) {
+            return cookieStore.get(name)?.value;
+          },
+          set(name, value, options) {
+            cookieStore.set(name, value, options);
+          },
+          remove(name, options) {
+            cookieStore.set(name, '', { ...options, maxAge: 0 });
+          },
+        },
+      }
+    );
     
     // Verify authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -40,14 +57,14 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const assignmentId = params.assignmentId;
+    const { assignmentId } = await params;
     const body: ProgressUpdateRequest = await request.json();
 
     // Verify the assignment exists and user has access
     const { data: assignment, error: assignmentError } = await supabase
       .from('assignments')
-      .select('id, class_id, created_by, vocabulary_assignment_list_id')
-      .eq('id', assignmentId)
+      .select('id, class_id, created_by, vocabulary_assignment_list_id, type')
+      .eq('id', parseInt(assignmentId))
       .single();
 
     if (assignmentError || !assignment) {
@@ -57,73 +74,27 @@ export async function POST(
       );
     }
 
-    // Check if user is the teacher or a student in the class
-    let isTeacher = false;
-    let isStudent = false;
-
-    if (assignment.created_by === user.id) {
-      isTeacher = true;
-    } else {
-      // Check if user is a student in this class
-      const { data: enrollment } = await supabase
-        .from('class_enrollments')
-        .select('student_id')
-        .eq('class_id', assignment.class_id)
-        .eq('student_id', user.id)
-        .single();
-      
-      if (enrollment) {
-        isStudent = true;
-      }
-    }
-
-    if (!isTeacher && !isStudent) {
+    // Check if user is a student in this class
+    const { data: enrollment } = await supabase
+      .from('class_enrollments')
+      .select('student_id')
+      .eq('class_id', assignment.class_id)
+      .eq('student_id', user.id)
+      .single();
+    
+    if (!enrollment && assignment.created_by !== user.id) {
       return NextResponse.json(
         { error: 'Access denied' },
         { status: 403 }
       );
     }
 
-    // Update or create assignment progress
-    const progressData: any = {
-      assignment_id: assignmentId,
-      student_id: user.id,
-      status: body.status,
-      score: body.score || 0,
-      accuracy: body.accuracy || 0,
-      attempts: body.attempts || 1,
-      time_spent: body.timeSpent || 0,
-      updated_at: new Date().toISOString()
-    };
-
-    if (body.status === 'started' && !body.score) {
-      progressData.started_at = new Date().toISOString();
-    }
-
-    if (body.status === 'completed') {
-      progressData.completed_at = new Date().toISOString();
-    }
-
-    const { data: updatedProgress, error: progressError } = await supabase
-      .from('assignment_progress')
-      .upsert([progressData])
-      .select()
-      .single();
-
-    if (progressError) {
-      console.error('Error updating progress:', progressError);
-      return NextResponse.json(
-        { error: 'Failed to update progress' },
-        { status: 500 }
-      );
-    }
-
-    // Create game session record if provided
+    // Create game session record directly (this is the main progress tracking)
     if (body.gameSession) {
       const gameSessionData = {
         student_id: user.id,
-        assignment_id: assignmentId,
-        game_type: '', // Will be fetched from assignment
+        assignment_id: parseInt(assignmentId),
+        game_type: assignment.type || 'memory-game',
         session_data: body.gameSession.sessionData,
         score: body.score || 0,
         accuracy: body.accuracy || 0,
@@ -132,53 +103,56 @@ export async function POST(
         completed_at: body.status === 'completed' ? new Date().toISOString() : null
       };
 
-      // Get game type from assignment
-      const { data: gameType } = await supabase
-        .from('assignments')
-        .select('game_type')
-        .eq('id', assignmentId)
-        .single();
-
-      if (gameType) {
-        gameSessionData.game_type = gameType.game_type;
-      }
-
-      const { error: sessionError } = await supabase
+      const { data: gameSession, error: sessionError } = await supabase
         .from('assignment_game_sessions')
-        .insert([gameSessionData]);
+        .insert(gameSessionData)
+        .select()
+        .single();
 
       if (sessionError) {
         console.error('Error creating game session:', sessionError);
+        return NextResponse.json(
+          { error: 'Failed to create game session', details: sessionError.message },
+          { status: 500 }
+        );
       }
-    }
 
-    // Update individual vocabulary progress if provided
-    if (body.vocabularyProgress && body.vocabularyProgress.length > 0) {
-      const vocabularyUpdates = body.vocabularyProgress.map(vocab => ({
-        student_id: user.id,
-        assignment_id: assignmentId,
-        vocabulary_id: vocab.vocabularyId,
-        attempts: vocab.attempts,
-        correct_attempts: vocab.correctAttempts,
-        last_attempted_at: new Date().toISOString(),
-        // Calculate mastery level based on accuracy
-        mastery_level: vocab.correctAttempts > 0 ? 
-          Math.min(5, Math.floor((vocab.correctAttempts / vocab.attempts) * 5)) : 0
-      }));
+      // Update individual vocabulary progress if provided
+      if (body.vocabularyProgress && body.vocabularyProgress.length > 0) {
+        const vocabularyUpdates = body.vocabularyProgress.map(vocab => ({
+          student_id: user.id,
+          assignment_id: parseInt(assignmentId),
+          vocabulary_id: vocab.vocabularyId,
+          attempts: vocab.attempts,
+          correct_attempts: vocab.correctAttempts,
+          last_attempted_at: new Date().toISOString(),
+          mastery_level: vocab.correctAttempts > 0 ? 
+            Math.min(5, Math.floor((vocab.correctAttempts / vocab.attempts) * 5)) : 0
+        }));
 
-      const { error: vocabError } = await supabase
-        .from('student_vocabulary_assignment_progress')
-        .upsert(vocabularyUpdates);
+        const { error: vocabError } = await supabase
+          .from('student_vocabulary_assignment_progress')
+          .upsert(vocabularyUpdates);
 
-      if (vocabError) {
-        console.error('Error updating vocabulary progress:', vocabError);
+        if (vocabError) {
+          console.error('Error updating vocabulary progress:', vocabError);
+          return NextResponse.json(
+            { error: 'Failed to update vocabulary progress', details: vocabError.message },
+            { status: 500 }
+          );
+        }
       }
-    }
 
-    return NextResponse.json({
-      success: true,
-      progress: updatedProgress
-    });
+      return NextResponse.json({
+        success: true,
+        gameSession: gameSession
+      });
+    } else {
+      return NextResponse.json({
+        success: true,
+        message: 'Progress saved successfully'
+      });
+    }
 
   } catch (error) {
     console.error('Progress update error:', error);
@@ -192,10 +166,27 @@ export async function POST(
 // GET endpoint to retrieve current progress
 export async function GET(
   request: NextRequest,
-  { params }: { params: { assignmentId: string } }
+  { params }: { params: Promise<{ assignmentId: string }> }
 ) {
   try {
-    const supabase = createServerClient<Database>({ cookies });
+    const cookieStore = await cookies();
+    const supabase = createServerClient<Database>(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name) {
+            return cookieStore.get(name)?.value;
+          },
+          set(name, value, options) {
+            cookieStore.set(name, value, options);
+          },
+          remove(name, options) {
+            cookieStore.set(name, '', { ...options, maxAge: 0 });
+          },
+        },
+      }
+    );
     
     // Verify authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -203,13 +194,13 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const assignmentId = params.assignmentId;
+    const { assignmentId } = await params;
 
     // Get assignment and verify ownership
     const { data: assignment, error: assignmentError } = await supabase
       .from('assignments')
       .select('id, class_id, created_by, vocabulary_assignment_list_id')
-      .eq('id', assignmentId)
+      .eq('id', parseInt(assignmentId))
       .single();
 
     if (assignmentError || !assignment) {
@@ -220,11 +211,10 @@ export async function GET(
     }
 
     // Check if user is the teacher or a student in the class
-    let isTeacher = false;
-    let isStudent = false;
+    let hasAccess = false;
 
     if (assignment.created_by === user.id) {
-      isTeacher = true;
+      hasAccess = true;
     } else {
       // Check if user is a student in this class
       const { data: enrollment } = await supabase
@@ -235,73 +225,34 @@ export async function GET(
         .single();
       
       if (enrollment) {
-        isStudent = true;
+        hasAccess = true;
       }
     }
 
-    if (!isTeacher && !isStudent) {
+    if (!hasAccess) {
       return NextResponse.json(
         { error: 'Access denied' },
         { status: 403 }
       );
     }
 
-    // Get class enrollments instead of assignment_progress
-    const { data: enrollments, error: enrollmentsError } = await supabase
-      .from('class_enrollments')
-      .select(`
-        student_id,
-        user_profiles!inner(
-          id,
-          display_name
-        )
-      `)
-      .eq('class_id', assignment.class_id);
-
-    if (enrollmentsError) {
-      console.error('Error fetching enrollments:', enrollmentsError);
-    }
-
-    // Get vocabulary progress from student_vocabulary_assignment_progress
-    const { data: vocabularyProgress, error: vocabError } = await supabase
-      .from('student_vocabulary_assignment_progress')
-      .select('*')
-      .eq('assignment_id', assignmentId);
-
-    if (vocabError) {
-      console.error('Error fetching vocabulary progress:', vocabError);
-    }
-
-    // Get game sessions
+    // Get game sessions for this assignment
     const { data: gameSessions, error: sessionsError } = await supabase
       .from('assignment_game_sessions')
       .select('*')
-      .eq('assignment_id', assignmentId)
-      .eq('student_id', user.id)
-      .order('created_at', { ascending: false })
-      .limit(10);
+      .eq('assignment_id', parseInt(assignmentId))
+      .order('created_at', { ascending: false });
 
-    if (sessionsError) {
-      console.error('Error fetching game sessions:', sessionsError);
-    }
-
-    // Build progress data from enrollments and vocabulary progress instead of assignment_progress
-    const progressData = enrollments?.map(enrollment => {
-      const studentVocabProgress = vocabularyProgress?.filter(vp => vp.student_id === enrollment.student_id) || [];
-      
-      return {
-        student_id: enrollment.student_id,
-        student_name: enrollment.user_profiles.display_name,
-        vocabulary_progress: studentVocabProgress,
-        completion_percentage: calculateCompletionPercentage(studentVocabProgress),
-        last_activity: getLastActivity(studentVocabProgress)
-      };
-    }) || [];
+    // Get vocabulary progress for this assignment
+    const { data: vocabularyProgress, error: vocabError } = await supabase
+      .from('student_vocabulary_assignment_progress')
+      .select('*')
+      .eq('assignment_id', parseInt(assignmentId));
 
     return NextResponse.json({
-      progress: progressData,
-      vocabularyProgress: vocabularyProgress || [],
-      gameSessions: gameSessions || []
+      success: true,
+      gameSessions: gameSessions || [],
+      vocabularyProgress: vocabularyProgress || []
     });
 
   } catch (error) {

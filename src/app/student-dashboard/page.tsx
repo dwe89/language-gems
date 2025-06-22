@@ -5,8 +5,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth } from '../../components/auth/AuthProvider';
 import { supabaseBrowser } from '../../components/auth/AuthProvider';
-import { 
-  BookOpen, BarChart2, Edit, Award, Hexagon, Trophy, Loader2
+import {
+  BookOpen, BarChart2, Edit, Award, Hexagon, Trophy, Loader2, Pickaxe
 } from 'lucide-react';
 import type { Database } from '../../lib/database.types';
 
@@ -288,23 +288,30 @@ export default function StudentDashboard() {
           gemColor="text-purple-500"
           buttonColor="bg-purple-600"
         />
-        <DashboardCard 
-          title="Games" 
-          icon={<Hexagon />} 
-          href="/student-dashboard/games"
+        <DashboardCard
+          title="Vocabulary Mining"
+          icon={<Pickaxe />}
+          href="/student-dashboard/vocabulary-mining"
           gemColor="text-yellow-500"
           buttonColor="bg-yellow-500"
         />
-        <DashboardCard 
-          title="Progress" 
-          icon={<BarChart2 />} 
+        <DashboardCard
+          title="Games"
+          icon={<Hexagon />}
+          href="/student-dashboard/games"
+          gemColor="text-blue-500"
+          buttonColor="bg-blue-500"
+        />
+        <DashboardCard
+          title="Progress"
+          icon={<BarChart2 />}
           href="/student-dashboard/progress"
           gemColor="text-green-500"
           buttonColor="bg-green-600"
         />
-        <DashboardCard 
-          title="Exam Prep" 
-          icon={<Edit />} 
+        <DashboardCard
+          title="Exam Prep"
+          icon={<Edit />}
           href="/student-dashboard/exam-prep"
           gemColor="text-pink-500"
           buttonColor="bg-pink-600"

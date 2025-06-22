@@ -12,6 +12,12 @@ type SentenceGenerationRequest = {
   count?: number;
   difficulty?: 'easy' | 'medium' | 'hard';
   vocabularyIds?: number[];
+  teacherSentences?: Array<{
+    spanish: string;
+    english: string;
+    grammarFocus?: string;
+    difficulty?: 'easy' | 'medium' | 'hard';
+  }>;
 }
 
 type VocabularyWord = {
@@ -222,7 +228,18 @@ function findWordByType(type: string, vocabulary: VocabularyWord[]): VocabularyW
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createServerClient({ cookies: () => cookies() });
+    const cookieStore = await cookies();
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return cookieStore.get(name)?.value;
+          },
+        },
+      }
+    );
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
@@ -230,9 +247,35 @@ export async function POST(request: NextRequest) {
     }
 
     const body: SentenceGenerationRequest = await request.json();
-    const { mode, assignmentId, theme, topic, tier = 'Foundation', grammarFocus, count = 10, difficulty = 'medium', vocabularyIds } = body;
+    const { mode, assignmentId, theme, topic, tier = 'Foundation', grammarFocus, count = 10, difficulty = 'medium', vocabularyIds, teacherSentences } = body;
 
     let sentences: any[] = [];
+
+    // If teacher sentences are provided, prioritize those
+    if (teacherSentences && teacherSentences.length > 0) {
+      sentences = teacherSentences.map((sentence, index) => ({
+        id: `teacher-${Date.now()}-${index}`,
+        text: sentence.spanish,
+        originalText: sentence.english,
+        translatedText: sentence.spanish,
+        language: 'es',
+        difficulty: sentence.difficulty || difficulty,
+        curriculum: {
+          tier,
+          theme: theme || 'Custom Content',
+          topic: topic || 'Teacher Created',
+          grammarFocus: sentence.grammarFocus || grammarFocus || 'custom'
+        },
+        explanation: `Teacher-created sentence${sentence.grammarFocus ? ` focusing on ${sentence.grammarFocus}` : ''}`,
+        vocabularyWords: [],
+        isTeacherCreated: true
+      }));
+
+      // If we have enough teacher sentences, return them
+      if (sentences.length >= count) {
+        return NextResponse.json({ sentences: sentences.slice(0, count) });
+      }
+    }
 
     if (mode === 'assignment' && assignmentId) {
       // For assignment mode, get sentences from the assignment configuration

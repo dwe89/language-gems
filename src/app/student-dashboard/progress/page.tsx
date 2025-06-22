@@ -1,10 +1,12 @@
 'use client';
 
-import React from 'react';
-import { 
-  BarChart2, TrendingUp, Clock, Calendar, Award, Target, 
+import React, { useState, useEffect } from 'react';
+import {
+  BarChart2, TrendingUp, Clock, Calendar, Award, Target,
   Book, MessageSquare, Mic, Pen, CheckCircle, Hexagon
 } from 'lucide-react';
+import { useAuth } from '../../../components/auth/AuthProvider';
+import { useSupabase } from '../../../components/supabase/SupabaseProvider';
 
 type ProgressCategory = {
   id: string;
@@ -14,6 +16,7 @@ type ProgressCategory = {
   icon: React.ReactNode;
   gemColor: string;
   lastAssessment: string;
+  timeSpent?: number;
 };
 
 type LanguageSkill = {
@@ -24,9 +27,28 @@ type LanguageSkill = {
   icon: React.ReactNode;
 };
 
-const ProgressCard = ({ category }: { category: ProgressCategory }) => {
+type AssignmentProgress = {
+  id: string;
+  assignment_id: string;
+  student_id: string;
+  status: 'not_started' | 'in_progress' | 'completed';
+  score: number;
+  accuracy: number;
+  attempts: number;
+  time_spent: number;
+  completed_at?: string;
+  updated_at: string;
+  assignment?: {
+    id: string;
+    title: string;
+    type: string;
+    due_date?: string;
+  };
+};
+
+const ProgressCard = ({ category, formatTimeSpent }: { category: ProgressCategory, formatTimeSpent: (seconds: number) => string }) => {
   const percentage = Math.round((category.score / category.total) * 100);
-  
+
   return (
     <div className="bg-white rounded-xl shadow-md p-5">
       <div className="flex items-center mb-4">
@@ -39,9 +61,15 @@ const ProgressCard = ({ category }: { category: ProgressCategory }) => {
             <Clock className="h-4 w-4 mr-1" />
             <span>Last assessment: {category.lastAssessment}</span>
           </div>
+          {category.timeSpent && category.timeSpent > 0 && (
+            <div className="text-sm text-blue-600 flex items-center mt-1">
+              <Target className="h-4 w-4 mr-1" />
+              <span>Time spent: {formatTimeSpent(category.timeSpent)}</span>
+            </div>
+          )}
         </div>
       </div>
-      
+
       <div className="mb-2 flex justify-between items-center">
         <span className="text-sm font-medium">{category.score} / {category.total} points</span>
         <span className="text-sm font-medium">{percentage}%</span>
@@ -113,105 +141,308 @@ const AchievementCard = ({
 };
 
 export default function ProgressPage() {
-  // Sample data
+  const { user } = useAuth();
+  const { supabase } = useSupabase();
+  const [assignmentProgress, setAssignmentProgress] = useState<AssignmentProgress[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string>('');
+
+  useEffect(() => {
+    const fetchAssignmentProgress = async () => {
+      if (!user) return;
+
+      try {
+        setLoading(true);
+        setError('');
+
+        // Get student's class enrollments
+        const { data: enrollments, error: enrollmentError } = await supabase
+          .from('class_enrollments')
+          .select('class_id')
+          .eq('student_id', user.id);
+
+        if (enrollmentError) {
+          throw enrollmentError;
+        }
+
+        const classIds = enrollments?.map(e => e.class_id) || [];
+
+        // Get assignment game sessions (this tracks progress for vocabulary assignments)
+        const { data: gameSessionsData, error: gameSessionsError } = await supabase
+          .from('assignment_game_sessions')
+          .select(`
+            *,
+            assignment:assignments(
+              id,
+              title,
+              type,
+              due_date,
+              class_id
+            )
+          `)
+          .eq('student_id', user.id);
+
+        if (gameSessionsError) {
+          throw gameSessionsError;
+        }
+
+        // Also get all assignments for the student's classes to show unstarted assignments
+        const { data: allAssignments, error: assignmentsError } = await supabase
+          .from('assignments')
+          .select('id, title, type, due_date, class_id')
+          .in('class_id', classIds);
+
+        if (assignmentsError) {
+          throw assignmentsError;
+        }
+
+        // Transform game sessions data to match expected assignment progress format
+        const completedProgress = gameSessionsData?.map(session => ({
+          id: session.id,
+          assignment_id: session.assignment_id,
+          student_id: session.student_id,
+          status: (session.completed_at ? 'completed' : 'in_progress') as 'not_started' | 'in_progress' | 'completed',
+          score: session.score || 0,
+          accuracy: parseFloat(session.accuracy) || 0,
+          attempts: 1, // Game sessions represent single attempts
+          time_spent: session.time_spent_seconds || 0,
+          completed_at: session.completed_at,
+          updated_at: session.updated_at,
+          assignment: session.assignment
+        })) || [];
+
+        // Create progress entries for assignments that haven't been started
+        const startedAssignmentIds = new Set(completedProgress.map(p => p.assignment_id));
+        const notStartedProgress = allAssignments?.filter(assignment => 
+          !startedAssignmentIds.has(assignment.id)
+        ).map(assignment => ({
+          id: `not-started-${assignment.id}`,
+          assignment_id: assignment.id,
+          student_id: user.id,
+          status: 'not_started' as 'not_started' | 'in_progress' | 'completed',
+          score: 0,
+          accuracy: 0,
+          attempts: 0,
+          time_spent: 0,
+          completed_at: null,
+          updated_at: new Date().toISOString(),
+          assignment: assignment
+        })) || [];
+
+        // Combine all progress data
+        const filteredProgress = [...completedProgress, ...notStartedProgress];
+
+        setAssignmentProgress(filteredProgress);
+      } catch (err) {
+        console.error('Error fetching assignment progress:', err);
+        setError('Failed to load progress data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAssignmentProgress();
+  }, [user, supabase]);
+
+  // Calculate progress statistics from real data
+  const completedAssignments = assignmentProgress.filter(p => p.status === 'completed').length;
+  const inProgressAssignments = assignmentProgress.filter(p => p.status === 'in_progress').length;
+  const totalAssignments = assignmentProgress.length;
+  const overallPercentage = totalAssignments > 0 ? Math.round((completedAssignments / totalAssignments) * 100) : 0;
+
+  // Calculate total time spent
+  const totalTimeSpent = assignmentProgress.reduce((sum, p) => sum + (p.time_spent || 0), 0);
+  const averageTimePerAssignment = completedAssignments > 0 ? Math.round(totalTimeSpent / completedAssignments) : 0;
+
+  // Calculate category scores based on assignment types and performance
+  const vocabularyAssignments = assignmentProgress.filter(p => 
+    p.assignment && ['memory-game', 'word_blast', 'speed-builder', 'gem-collector'].includes(p.assignment.type)
+  );
+  const vocabularyScore = vocabularyAssignments.length > 0
+    ? Math.round(vocabularyAssignments.reduce((sum, p) => sum + p.accuracy, 0) / vocabularyAssignments.length)
+    : 0;
+  const vocabularyTimeSpent = vocabularyAssignments.reduce((sum, p) => sum + (p.time_spent || 0), 0);
+
   const categories: ProgressCategory[] = [
     {
       id: '1',
       name: 'Vocabulary',
-      score: 840,
-      total: 1000,
+      score: vocabularyScore,
+      total: 100,
       icon: <Book className="h-6 w-6 text-white" />,
       gemColor: 'bg-blue-500',
-      lastAssessment: '3 days ago'
+      lastAssessment: vocabularyAssignments.length > 0
+        ? formatLastAssessment(vocabularyAssignments[vocabularyAssignments.length - 1].updated_at)
+        : 'No assessments yet',
+      timeSpent: vocabularyTimeSpent
     },
     {
       id: '2',
       name: 'Grammar',
-      score: 680,
-      total: 1000,
+      score: 0, // No grammar assignments yet
+      total: 100,
       icon: <Pen className="h-6 w-6 text-white" />,
       gemColor: 'bg-purple-500',
-      lastAssessment: '1 week ago'
+      lastAssessment: 'No assessments yet'
     },
     {
       id: '3',
       name: 'Speaking',
-      score: 750,
-      total: 1000,
+      score: 0, // No speaking assignments yet
+      total: 100,
       icon: <Mic className="h-6 w-6 text-white" />,
       gemColor: 'bg-green-500',
-      lastAssessment: '2 days ago'
+      lastAssessment: 'No assessments yet'
     },
     {
       id: '4',
       name: 'Comprehension',
-      score: 820,
-      total: 1000,
+      score: 0, // No comprehension assignments yet
+      total: 100,
       icon: <MessageSquare className="h-6 w-6 text-white" />,
       gemColor: 'bg-yellow-500',
-      lastAssessment: '5 days ago'
+      lastAssessment: 'No assessments yet'
     }
   ];
+
+  function formatLastAssessment(dateString: string): string {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+
+    if (diffInHours < 24) {
+      return `${diffInHours} hours ago`;
+    } else {
+      const diffInDays = Math.floor(diffInHours / 24);
+      return `${diffInDays} day${diffInDays === 1 ? '' : 's'} ago`;
+    }
+  }
+
+  function formatTimeSpent(seconds: number): string {
+    if (seconds < 60) {
+      return `${seconds}s`;
+    } else if (seconds < 3600) {
+      const minutes = Math.floor(seconds / 60);
+      const remainingSeconds = seconds % 60;
+      return remainingSeconds > 0 ? `${minutes}m ${remainingSeconds}s` : `${minutes}m`;
+    } else {
+      const hours = Math.floor(seconds / 3600);
+      const minutes = Math.floor((seconds % 3600) / 60);
+      return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
+    }
+  }
   
+  // Calculate skills based on real assignment progress
   const skills: LanguageSkill[] = [
     {
       id: '1',
-      name: 'Reading',
-      progress: 85,
-      level: 'Advanced',
+      name: 'Vocabulary Recognition',
+      progress: vocabularyScore,
+      level: vocabularyScore >= 80 ? 'Advanced' : vocabularyScore >= 60 ? 'Intermediate' : vocabularyScore > 0 ? 'Beginner' : 'Not assessed',
       icon: <Book className="h-5 w-5 text-indigo-600" />
     },
     {
       id: '2',
-      name: 'Writing',
-      progress: 70,
-      level: 'Intermediate',
+      name: 'Grammar Understanding',
+      progress: 0, // No grammar assignments yet
+      level: 'Not assessed',
       icon: <Pen className="h-5 w-5 text-indigo-600" />
     },
     {
       id: '3',
-      name: 'Listening',
-      progress: 60,
-      level: 'Intermediate',
+      name: 'Listening Comprehension',
+      progress: 0, // No listening assignments yet
+      level: 'Not assessed',
       icon: <MessageSquare className="h-5 w-5 text-indigo-600" />
     },
     {
       id: '4',
-      name: 'Speaking',
-      progress: 50,
-      level: 'Intermediate',
+      name: 'Speaking Fluency',
+      progress: 0, // No speaking assignments yet
+      level: 'Not assessed',
       icon: <Mic className="h-5 w-5 text-indigo-600" />
     }
   ];
   
-  const achievements = [
-    {
-      title: 'Vocabulary Master',
-      date: 'Earned 2 days ago',
-      description: 'Learned 500 new words in Spanish.',
-      icon: <Hexagon className="h-6 w-6" />,
-      color: 'bg-blue-500'
-    },
-    {
-      title: 'Perfect Streak',
-      date: 'Earned 1 week ago',
-      description: 'Completed exercises for 30 days in a row.',
-      icon: <TrendingUp className="h-6 w-6" />,
-      color: 'bg-green-500'
-    },
-    {
-      title: 'Grammar Expert',
-      date: 'Earned 2 weeks ago',
-      description: 'Mastered advanced verb conjugation.',
-      icon: <CheckCircle className="h-6 w-6" />,
-      color: 'bg-purple-500'
-    }
-  ];
+  // Generate achievements based on real progress
+  const achievements = [];
 
-  // Calculate total progress score
-  const totalScore = categories.reduce((sum, category) => sum + category.score, 0);
-  const totalPossible = categories.reduce((sum, category) => sum + category.total, 0);
-  const overallPercentage = Math.round((totalScore / totalPossible) * 100);
+  if (completedAssignments >= 1) {
+    achievements.push({
+      title: 'First Assignment Complete',
+      date: `Earned ${formatLastAssessment(assignmentProgress.find(p => p.status === 'completed')?.completed_at || '')}`,
+      description: 'Completed your first assignment!',
+      icon: <CheckCircle className="h-6 w-6" />,
+      color: 'bg-green-500'
+    });
+  }
+
+  if (completedAssignments >= 5) {
+    achievements.push({
+      title: 'Assignment Streak',
+      date: 'Recently earned',
+      description: 'Completed 5 assignments.',
+      icon: <TrendingUp className="h-6 w-6" />,
+      color: 'bg-blue-500'
+    });
+  }
+
+  if (vocabularyScore >= 80) {
+    achievements.push({
+      title: 'Vocabulary Master',
+      date: 'Recently earned',
+      description: 'Achieved 80% or higher accuracy in vocabulary games.',
+      icon: <Hexagon className="h-6 w-6" />,
+      color: 'bg-purple-500'
+    });
+  }
+
+  // If no achievements yet, show placeholder
+  if (achievements.length === 0) {
+    achievements.push({
+      title: 'Getting Started',
+      date: 'Complete assignments to earn achievements',
+      description: 'Your achievements will appear here as you progress.',
+      icon: <Target className="h-6 w-6" />,
+      color: 'bg-gray-400'
+    });
+  }
+
+  // Use the calculated overall percentage from assignment completion
+  // (already calculated above based on completed vs total assignments)
+
+  if (loading) {
+    return (
+      <div className="space-y-8">
+        <h1 className="text-3xl font-bold text-white mb-2">Progress Tracking</h1>
+        <div className="bg-white rounded-xl shadow-md p-6">
+          <div className="animate-pulse">
+            <div className="h-4 bg-gray-200 rounded w-1/4 mb-4"></div>
+            <div className="h-8 bg-gray-200 rounded w-1/2 mb-6"></div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {[1, 2, 3, 4].map(i => (
+                <div key={i} className="h-32 bg-gray-200 rounded"></div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-8">
+        <h1 className="text-3xl font-bold text-white mb-2">Progress Tracking</h1>
+        <div className="bg-white rounded-xl shadow-md p-6">
+          <div className="text-center py-8">
+            <div className="text-red-500 text-xl mb-2">⚠️ Error Loading Progress</div>
+            <p className="text-gray-600">{error}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -222,17 +453,52 @@ export default function ProgressPage() {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h2 className="text-2xl font-bold">Overall Progress</h2>
-            <p className="text-gray-600">You're making great progress!</p>
+            <p className="text-gray-600">
+              {totalAssignments === 0
+                ? "Complete assignments to see your progress!"
+                : `${completedAssignments} of ${totalAssignments} assignments completed`
+              }
+            </p>
           </div>
           <div className="text-3xl font-bold text-indigo-600">{overallPercentage}%</div>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {categories.map(category => (
-            <ProgressCard key={category.id} category={category} />
+            <ProgressCard key={category.id} category={category} formatTimeSpent={formatTimeSpent} />
           ))}
         </div>
       </div>
+
+      {/* Time Tracking Section */}
+      {totalAssignments > 0 && (
+        <div className="bg-white rounded-xl shadow-md p-6">
+          <h2 className="text-xl font-bold mb-6 flex items-center">
+            <Clock className="h-6 w-6 mr-2 text-indigo-600" />
+            Time Tracking
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="text-center">
+              <div className="text-3xl font-bold text-indigo-600 mb-2">
+                {formatTimeSpent(totalTimeSpent)}
+              </div>
+              <div className="text-gray-600 font-medium">Total Time Spent</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl font-bold text-green-600 mb-2">
+                {formatTimeSpent(averageTimePerAssignment)}
+              </div>
+              <div className="text-gray-600 font-medium">Average per Assignment</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl font-bold text-purple-600 mb-2">
+                {completedAssignments}
+              </div>
+              <div className="text-gray-600 font-medium">Assignments Completed</div>
+            </div>
+          </div>
+        </div>
+      )}
       
       {/* Language Skills Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

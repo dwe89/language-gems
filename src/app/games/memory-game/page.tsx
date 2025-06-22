@@ -9,6 +9,53 @@ import CustomWordsModal from './components/CustomWordsModal';
 import { WordPair } from './components/CustomWordsModal';
 import './styles.css';
 
+// Smart vocabulary rotation function
+function selectVocabularyWithRotation(allVocabulary: any[], maxCount: number, assignmentId: string): any[] {
+  // Get previously used vocabulary from localStorage
+  const storageKey = `vocabulary-rotation-${assignmentId}`;
+  const usedVocabularyIds = JSON.parse(localStorage.getItem(storageKey) || '[]') as number[];
+
+  // Separate unused and used vocabulary
+  const unusedVocabulary = allVocabulary.filter(vocab => !usedVocabularyIds.includes(vocab.id));
+  const usedVocabulary = allVocabulary.filter(vocab => usedVocabularyIds.includes(vocab.id));
+
+  let selectedVocabulary: any[] = [];
+
+  // First, prioritize unused vocabulary
+  if (unusedVocabulary.length >= maxCount) {
+    // We have enough unused vocabulary, randomly select from unused
+    selectedVocabulary = [...unusedVocabulary]
+      .sort(() => 0.5 - Math.random())
+      .slice(0, maxCount);
+  } else {
+    // Not enough unused vocabulary, use all unused + some used
+    selectedVocabulary = [...unusedVocabulary];
+
+    const remainingCount = maxCount - unusedVocabulary.length;
+    if (remainingCount > 0 && usedVocabulary.length > 0) {
+      const additionalVocabulary = [...usedVocabulary]
+        .sort(() => 0.5 - Math.random())
+        .slice(0, remainingCount);
+      selectedVocabulary.push(...additionalVocabulary);
+    }
+  }
+
+  // If we've used all vocabulary, reset the rotation
+  if (unusedVocabulary.length === 0 && usedVocabulary.length > 0) {
+    console.log('All vocabulary has been practiced. Resetting rotation.');
+    localStorage.removeItem(storageKey);
+  }
+
+  // Store the selected vocabulary IDs as used
+  const newUsedIds = [...usedVocabularyIds, ...selectedVocabulary.map(v => v.id)];
+  const uniqueUsedIds = [...new Set(newUsedIds)];
+  localStorage.setItem(storageKey, JSON.stringify(uniqueUsedIds));
+
+  console.log(`Smart rotation: Selected ${selectedVocabulary.length} words (${unusedVocabulary.length} unused, ${usedVocabulary.length} used)`);
+
+  return selectedVocabulary;
+}
+
 export default function MemoryGamePage() {
   const { user } = useAuth();
   const searchParams = useSearchParams();
@@ -28,33 +75,56 @@ export default function MemoryGamePage() {
 
   // Load assignment data if assignment ID is provided
   useEffect(() => {
-    if (assignmentId && user) {
+    if (assignmentId) {
       setLoading(true);
+      setError('');
+
       fetch(`/api/assignments/${assignmentId}/vocabulary`)
-        .then(res => res.json())
+        .then(res => {
+          if (!res.ok) {
+            throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+          }
+          return res.json();
+        })
         .then(data => {
-          if (data.vocabulary) {
-            const wordPairs = data.vocabulary.map((vocab: any) => ({
+          if (data.vocabulary && data.vocabulary.length > 0) {
+            // Limit vocabulary to maximum 10 items for playability
+            const maxVocabulary = 10;
+            let vocabularyToUse = data.vocabulary;
+
+            if (data.vocabulary.length > maxVocabulary) {
+              console.warn(`Assignment has ${data.vocabulary.length} vocabulary items. Limiting to ${maxVocabulary} for better gameplay.`);
+              // Smart vocabulary rotation: prioritize unused words
+              vocabularyToUse = selectVocabularyWithRotation(data.vocabulary, maxVocabulary, assignmentId);
+            }
+            
+            const wordPairs = vocabularyToUse.map((vocab: any) => ({
               id: vocab.vocabulary_id || vocab.id,
-              spanish: vocab.spanish,
-              english: vocab.english,
+              term: vocab.spanish,  // Spanish word as the term
+              translation: vocab.english,  // English as the translation
+              type: 'word' as const,
               theme: vocab.theme,
               topic: vocab.topic
             }));
-            setAssignmentData(data);
+            setAssignmentData({
+              ...data,
+              vocabulary: vocabularyToUse
+            });
             setCustomWords(wordPairs);
             setStage('game');
+          } else {
+            setError('No vocabulary found for this assignment.');
           }
         })
         .catch(error => {
           console.error('Error loading assignment:', error);
-          setError('Failed to load assignment. Please try again.');
+          setError(`Failed to load assignment: ${error.message}`);
         })
         .finally(() => {
           setLoading(false);
         });
     }
-  }, [assignmentId, user]);
+  }, [assignmentId]);
 
   const handleStartGame = (language: string, topic: string, difficulty: string) => {
     setGameOptions({
@@ -76,6 +146,12 @@ export default function MemoryGamePage() {
   };
 
   const handleBackToSettings = () => {
+    // In assignment mode, don't allow going back to selector
+    if (assignmentId) {
+      // Could redirect to dashboard or show a message
+      window.history.back(); // Go back to previous page (likely dashboard)
+      return;
+    }
     setStage('selector');
     setCustomWords([]);
   };
@@ -96,46 +172,64 @@ export default function MemoryGamePage() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="memory-game-container flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading assignment...</p>
-        </div>
-      </div>
-    );
-  }
+
 
   return (
     <div className="memory-game-container">
-      {assignmentId && assignmentData ? (
-        <div>
-          <div className="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded mb-4">
-            <h3 className="font-bold">Assignment: {assignmentData.assignment.title}</h3>
-            <p className="text-sm">Complete this memory game with the assigned vocabulary</p>
-          </div>
-          <MemoryGameMain 
-            language="Spanish" 
-            topic="Assignment" 
+      {assignmentId ? (
+        // Assignment Mode - either loading or playing
+        assignmentData ? (
+          <MemoryGameMain
+            language="Spanish"
+            topic="Assignment"
             difficulty="medium"
             onBackToSettings={handleBackToSettings}
             customWords={customWords}
+            isAssignmentMode={true}
+            assignmentTitle={assignmentData.assignment.title}
+            assignmentId={assignmentId}
           />
-        </div>
-      ) : stage === 'selector' ? (
-        <LanguageTopicSelector onStartGame={handleStartGame} />
+        ) : error ? (
+          // Error loading assignment
+          <div className="flex items-center justify-center min-h-screen">
+            <div className="text-center">
+              <div className="text-red-500 text-6xl mb-4">⚠️</div>
+              <h2 className="text-xl font-semibold text-gray-800 mb-2">Assignment Error</h2>
+              <p className="text-gray-600 mb-4">{error}</p>
+              <button
+                onClick={() => window.history.back()}
+                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+              >
+                Go Back
+              </button>
+            </div>
+          </div>
+        ) : (
+          // Loading assignment data - don't show selector
+          <div className="flex items-center justify-center min-h-screen">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading assignment...</p>
+            </div>
+          </div>
+        )
       ) : (
-        <MemoryGameMain 
-          language={gameOptions.language} 
-          topic={gameOptions.topic} 
-          difficulty={gameOptions.difficulty}
-          onBackToSettings={handleBackToSettings}
-          customWords={customWords.length > 0 ? customWords : undefined}
-        />
+        // Free Play Mode - show selector or game
+        stage === 'selector' ? (
+          <LanguageTopicSelector onStartGame={handleStartGame} />
+        ) : (
+          <MemoryGameMain
+            language={gameOptions.language}
+            topic={gameOptions.topic}
+            difficulty={gameOptions.difficulty}
+            onBackToSettings={handleBackToSettings}
+            customWords={customWords.length > 0 ? customWords : undefined}
+            isAssignmentMode={false}
+          />
+        )
       )}
 
-      <CustomWordsModal 
+      <CustomWordsModal
         isOpen={showCustomModal}
         onClose={() => setShowCustomModal(false)}
         onStartGame={handleCustomWordsStart}

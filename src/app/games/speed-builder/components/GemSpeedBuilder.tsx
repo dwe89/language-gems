@@ -23,7 +23,8 @@ import {
   Brain,
   Sparkles,
   Gem,
-  Crown
+  Crown,
+  Plus
 } from 'lucide-react';
 import Link from 'next/link';
 import { createBrowserClient } from '../../../../lib/supabase-client';
@@ -119,48 +120,7 @@ const backgroundGemPositions = [
   { left: 95, top: 25 }, { left: 5, top: 60 }, { left: 70, top: 45 }
 ];
 
-// Floating Gems Component
-const FloatingGems: React.FC<{ gems: FloatingGem[]; onCollect: (gem: FloatingGem) => void }> = ({ gems, onCollect }) => {
-  return (
-    <div className="fixed inset-0 pointer-events-none z-10">
-      {gems.map(gem => (
-        <motion.div
-          key={gem.id}
-          initial={{ x: gem.x, y: gem.y, scale: 0, rotate: 0 }}
-          animate={{ 
-            y: gem.y - 100, 
-            scale: [0, 1.2, 1], 
-            rotate: 360,
-            opacity: [0, 1, 0.8, 0]
-          }}
-          transition={{ 
-            duration: 2,
-            ease: "easeOut"
-          }}
-          className={`absolute w-8 h-8 pointer-events-auto cursor-pointer ${gemGlow[gem.type]}`}
-          onClick={() => onCollect(gem)}
-          onAnimationComplete={() => onCollect(gem)}
-        >
-          <div className={`w-full h-full bg-gradient-to-br ${gemColors[gem.type]} rounded-lg transform rotate-45 border-2 border-white/30`}>
-            <div className="absolute inset-1 bg-white/20 rounded border border-white/40"></div>
-            <motion.div
-              animate={{ scale: [1, 1.1, 1] }}
-              transition={{ repeat: Infinity, duration: 1 }}
-              className="absolute inset-0 bg-white/10 rounded"
-            />
-          </div>
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            className="absolute -top-1 -right-1 bg-yellow-400 text-black text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center"
-          >
-            {gem.value}
-          </motion.div>
-        </motion.div>
-      ))}
-    </div>
-  );
-};
+// Removed FloatingGems component - using simplified gem collection
 
 // Enhanced Gem Draggable Word Component
 const GemDraggableWord: React.FC<{
@@ -472,11 +432,60 @@ const GemPowerUpButton: React.FC<{
   );
 };
 
+// Sound system for enhanced audio feedback
+class SoundSystem {
+  private audioContext: AudioContext | null = null;
+  private sounds: { [key: string]: HTMLAudioElement } = {};
+  
+  constructor() {
+    if (typeof window !== 'undefined') {
+      // Pre-load available sounds
+      this.loadSound('correct', '/sounds/correct.mp3');
+      this.loadSound('incorrect', '/sounds/incorrect.mp3');
+      this.loadSound('drop', '/sounds/drop.mp3');
+      this.loadSound('powerup', '/sounds/powerup.mp3');
+      this.loadSound('game-complete', '/sounds/level-complete.mp3');
+      this.loadSound('ui-click', '/sounds/ui-click.mp3');
+    }
+  }
+  
+  private loadSound(name: string, path: string) {
+    try {
+      const audio = new Audio(path);
+      audio.preload = 'auto';
+      audio.volume = 0.6;
+      this.sounds[name] = audio;
+    } catch (error) {
+      console.warn(`Failed to load sound: ${name}`, error);
+    }
+  }
+  
+  play(soundName: string, volume: number = 0.6) {
+    try {
+      const sound = this.sounds[soundName];
+      if (sound) {
+        sound.volume = volume;
+        sound.currentTime = 0;
+        sound.play().catch(e => console.warn('Sound play failed:', e));
+      }
+    } catch (error) {
+      console.warn(`Failed to play sound: ${soundName}`, error);
+    }
+  }
+}
+
+// Initialize sound system
+const soundSystem = new SoundSystem();
+
 // Main Enhanced Gem Speed Builder Component
 export const GemSpeedBuilder: React.FC<{
   assignmentId?: string;
   mode?: 'assignment' | 'freeplay';
-}> = ({ assignmentId, mode = 'freeplay' }) => {
+  theme?: string;
+  topic?: string;
+  vocabularyList?: any[];
+  onGameComplete?: (stats: GameStats) => void;
+}> = ({ assignmentId, mode = 'freeplay', theme, topic, vocabularyList, onGameComplete }) => {
   // State
   const [gameState, setGameState] = useState<'ready' | 'playing' | 'paused' | 'completed'>('ready');
   const [currentSentence, setCurrentSentence] = useState<SentenceData | null>(null);
@@ -497,10 +506,10 @@ export const GemSpeedBuilder: React.FC<{
     bonusMultiplier: 1
   });
   const [powerUps, setPowerUps] = useState<PowerUp[]>([
-    { id: 'shuffle', type: 'shuffle', active: false, cooldown: 0, description: 'Rearrange', icon: 'shuffle', gemCost: 3 },
-    { id: 'hint', type: 'hint', active: false, cooldown: 0, description: 'Hint', icon: 'lightbulb', gemCost: 5 },
-    { id: 'glow', type: 'glow', active: false, cooldown: 0, description: 'Preview', icon: 'sparkles', gemCost: 4 },
-    { id: 'timeBoost', type: 'timeBoost', active: false, cooldown: 0, description: '+30s', icon: 'zap', gemCost: 7 }
+    { id: 'shuffle', type: 'shuffle', active: false, cooldown: 0, description: 'Reshuffle words', icon: '🎲', gemCost: 3 },
+    { id: 'hint', type: 'hint', active: false, cooldown: 0, description: 'Highlight correct word', icon: '💡', gemCost: 5 },
+    { id: 'glow', type: 'glow', active: false, cooldown: 0, description: 'Show word positions', icon: '✨', gemCost: 4 },
+    { id: 'timeBoost', type: 'timeBoost', active: false, cooldown: 0, description: 'Add 30 seconds', icon: '⏰', gemCost: 6 }
   ]);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [availableSentences, setAvailableSentences] = useState<SentenceData[]>([]);
@@ -508,7 +517,7 @@ export const GemSpeedBuilder: React.FC<{
   const [showGhostMode, setShowGhostMode] = useState(false);
   const [hintWordIndex, setHintWordIndex] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [floatingGems, setFloatingGems] = useState<FloatingGem[]>([]);
+
   
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const supabase = createBrowserClient();
@@ -534,7 +543,7 @@ export const GemSpeedBuilder: React.FC<{
     };
   }, [gameState, timeLeft]);
 
-  // Fetch sentences from API
+  // Fetch sentences from API with theme/topic support
   const fetchSentences = async () => {
     try {
       setIsLoading(true);
@@ -544,9 +553,12 @@ export const GemSpeedBuilder: React.FC<{
         body: JSON.stringify({
           mode,
           assignmentId,
+          theme: theme || 'Animals',
+          topic: topic || 'Basic Conversation',
           tier: 'Foundation',
           count: 10,
-          difficulty: 'medium'
+          difficulty: 'medium',
+          vocabularyList: vocabularyList || []
         })
       });
 
@@ -557,74 +569,8 @@ export const GemSpeedBuilder: React.FC<{
           loadSentence(data.sentences[0]);
         }
       } else {
-        // Fallback to demo sentences if API fails (e.g., not authenticated)
-        const demoSentences: SentenceData[] = [
-          {
-            id: 'demo-1',
-            text: 'Me llamo María',
-            originalText: 'Me llamo María',
-            translatedText: 'My name is María',
-            language: 'spanish',
-            difficulty: 'easy',
-            curriculum: {
-              tier: 'Foundation',
-              theme: 'People and lifestyle',
-              topic: 'Identity and relationships'
-            }
-          },
-          {
-            id: 'demo-2',
-            text: 'Tengo quince años',
-            originalText: 'Tengo quince años',
-            translatedText: 'I am fifteen years old',
-            language: 'spanish',
-            difficulty: 'easy',
-            curriculum: {
-              tier: 'Foundation',
-              theme: 'People and lifestyle',
-              topic: 'Identity and relationships'
-            }
-          },
-          {
-            id: 'demo-3',
-            text: 'Me gusta el fútbol',
-            originalText: 'Me gusta el fútbol',
-            translatedText: 'I like football',
-            language: 'spanish',
-            difficulty: 'medium',
-            curriculum: {
-              tier: 'Foundation',
-              theme: 'Popular culture',
-              topic: 'Free time activities'
-            }
-          },
-          {
-            id: 'demo-4',
-            text: 'Vivo en Madrid',
-            originalText: 'Vivo en Madrid',
-            translatedText: 'I live in Madrid',
-            language: 'spanish',
-            difficulty: 'easy',
-            curriculum: {
-              tier: 'Foundation',
-              theme: 'Communication and the world around us',
-              topic: 'Environment and where people live'
-            }
-          },
-          {
-            id: 'demo-5',
-            text: 'Mi hermana es simpática',
-            originalText: 'Mi hermana es simpática',
-            translatedText: 'My sister is nice',
-            language: 'spanish',
-            difficulty: 'medium',
-            curriculum: {
-              tier: 'Foundation',
-              theme: 'People and lifestyle',
-              topic: 'Identity and relationships'
-            }
-          }
-        ];
+        // Fallback demo sentences with theme integration
+        const demoSentences = generateDemoSentences(theme, topic);
         setAvailableSentences(demoSentences);
         if (demoSentences.length > 0) {
           loadSentence(demoSentences[0]);
@@ -632,35 +578,8 @@ export const GemSpeedBuilder: React.FC<{
       }
     } catch (error) {
       console.error('Error fetching sentences:', error);
-      // Fallback to demo sentences on any error
-      const demoSentences: SentenceData[] = [
-        {
-          id: 'demo-1',
-          text: 'Me llamo María',
-          originalText: 'Me llamo María',
-          translatedText: 'My name is María',
-          language: 'spanish',
-          difficulty: 'easy',
-          curriculum: {
-            tier: 'Foundation',
-            theme: 'People and lifestyle',
-            topic: 'Identity and relationships'
-          }
-        },
-        {
-          id: 'demo-2',
-          text: 'Tengo quince años',
-          originalText: 'Tengo quince años',
-          translatedText: 'I am fifteen years old',
-          language: 'spanish',
-          difficulty: 'easy',
-          curriculum: {
-            tier: 'Foundation',
-            theme: 'People and lifestyle',
-            topic: 'Identity and relationships'
-          }
-        }
-      ];
+      // Fallback demo sentences
+      const demoSentences = generateDemoSentences(theme, topic);
       setAvailableSentences(demoSentences);
       if (demoSentences.length > 0) {
         loadSentence(demoSentences[0]);
@@ -668,6 +587,37 @@ export const GemSpeedBuilder: React.FC<{
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Generate demo sentences based on theme/topic
+  const generateDemoSentences = (selectedTheme?: string, selectedTopic?: string): SentenceData[] => {
+    const animalSentences = [
+      { spanish: "El gato come pescado", english: "The cat eats fish" },
+      { spanish: "Los perros corren en el parque", english: "The dogs run in the park" },
+      { spanish: "Mi caballo es muy rápido", english: "My horse is very fast" },
+    ];
+
+    const travelSentences = [
+      { spanish: "Voy a la playa en verano", english: "I go to the beach in summer" },
+      { spanish: "El hotel está cerca del aeropuerto", english: "The hotel is near the airport" },
+      { spanish: "Necesito un mapa de la ciudad", english: "I need a map of the city" },
+    ];
+
+    const selectedSentences = selectedTheme === 'Travel' ? travelSentences : animalSentences;
+
+    return selectedSentences.map((sentence, index) => ({
+      id: `demo-${index}`,
+      text: sentence.spanish,
+      originalText: sentence.spanish,
+      translatedText: sentence.english,
+      language: 'Spanish',
+      difficulty: 'medium' as const,
+      curriculum: {
+        tier: 'Foundation' as const,
+        theme: selectedTheme || 'Animals',
+        topic: selectedTopic || 'Basic Conversation'
+      }
+    }));
   };
 
   // Load a sentence for the game
@@ -690,32 +640,13 @@ export const GemSpeedBuilder: React.FC<{
     setHintWordIndex(null);
   };
 
-  // Create floating gem
-  const createFloatingGem = (x: number, y: number, value: number = 1) => {
-    const gemTypes = ['ruby', 'sapphire', 'emerald', 'amethyst', 'topaz', 'diamond'];
-    const gem: FloatingGem = {
-      id: `gem-${Date.now()}-${value}`,
-      x,
-      y,
-      type: gemTypes[value % gemTypes.length] as any,
-      value
-    };
-    
-    setFloatingGems(prev => [...prev, gem]);
-    
-    // Auto-remove after animation
-    setTimeout(() => {
-      setFloatingGems(prev => prev.filter(g => g.id !== gem.id));
-    }, 2000);
-  };
-
-  // Collect floating gem
-  const collectGem = (gem: FloatingGem) => {
+  // Create gem collection effect (simplified - no floating gems)
+  const createGemCollectionEffect = (value: number = 1) => {
+    // Instead of floating gems, just update the gem counter with animation
     setStats(prev => ({
       ...prev,
-      gemsCollected: prev.gemsCollected + gem.value
+      gemsCollected: prev.gemsCollected + value
     }));
-    setFloatingGems(prev => prev.filter(g => g.id !== gem.id));
   };
 
   // Start game session
@@ -749,6 +680,7 @@ export const GemSpeedBuilder: React.FC<{
       setSessionId(`demo-${Date.now()}`);
     }
 
+    soundSystem.play('ui-click');
     setGameState('playing');
     setTimeLeft(120);
   };
@@ -775,6 +707,7 @@ export const GemSpeedBuilder: React.FC<{
           return prev;
         });
       }
+      soundSystem.play('drop');
       return;
     }
     
@@ -815,21 +748,13 @@ export const GemSpeedBuilder: React.FC<{
     newPlacedWords[targetIndex] = word;
     setPlacedWords(newPlacedWords);
 
-    // Create gem effect for correct placement
+    // Check if placement is correct and create gem effect
     const isCorrect = word.index === targetIndex;
     if (isCorrect) {
-      createFloatingGem(
-        window.innerWidth * 0.5,
-        window.innerHeight * 0.3,
-        2 + stats.streak
-      );
+      createGemCollectionEffect(2 + stats.streak);
+      soundSystem.play('correct');
     } else {
-      // Create red gem for wrong placement
-      createFloatingGem(
-        window.innerWidth * 0.5,
-        window.innerHeight * 0.4,
-        1
-      );
+      soundSystem.play('incorrect');
     }
 
     // Update stats
@@ -843,47 +768,55 @@ export const GemSpeedBuilder: React.FC<{
     }));
 
     if (newPlacedWords.every(w => w !== null)) {
-      checkSentenceCompletion(newPlacedWords);
+      checkSentenceComplete();
     }
   };
 
-  // Check sentence completion with gem rewards
-  const checkSentenceCompletion = (words: (WordItem | null)[]) => {
-    const isCorrect = words.every((word, index) => word?.index === index);
+  // Check if sentence is complete
+  const checkSentenceComplete = () => {
+    if (placedWords.length === 0 || placedWords.some(w => w === null)) return;
     
+    const isCorrect = placedWords.every((word, index) => {
+      if (!word || !currentSentence) return false;
+      return word.correctPosition === index;
+    });
+
     if (isCorrect) {
-      // Gem explosion for sentence completion!
-      for (let i = 0; i < 5; i++) {
-        setTimeout(() => {
-          createFloatingGem(
-            window.innerWidth * 0.5,
-            window.innerHeight * 0.4,
-            Math.floor(i) + 3
-          );
-        }, i * 100);
-      }
-
-      setStats(prev => ({
-        ...prev,
-        sentencesCompleted: prev.sentencesCompleted + 1,
-        score: prev.score + (50 + prev.streak * 10) * prev.bonusMultiplier
-      }));
-
+      // Play success sound and create gem effect (no floating gems)
+      soundSystem.play('correct');
+      createGemCollectionEffect(placedWords.length);
+      
+      // Update stats
+      const newStats = {
+        ...stats,
+        score: stats.score + (placedWords.length * 10),
+        accuracy: Math.round(((stats.sentencesCompleted + 1) / (stats.totalWordsPlaced + placedWords.length)) * 100),
+        sentencesCompleted: stats.sentencesCompleted + 1,
+        streak: stats.streak + 1,
+        highestStreak: Math.max(stats.highestStreak, stats.streak + 1),
+        totalWordsPlaced: stats.totalWordsPlaced + placedWords.length,
+        gemsCollected: stats.gemsCollected + placedWords.length
+      };
+      
+      setStats(newStats);
+      
+      // Track sentence completion
+      trackSentenceCompletion(true);
+      
+      // Show celebration effect
       setTimeout(() => {
-        const nextIndex = currentSentenceIndex + 1;
-        if (nextIndex < availableSentences.length) {
-          setCurrentSentenceIndex(nextIndex);
-          loadSentence(availableSentences[nextIndex]);
-        } else {
-          endGame();
+        // Use confetti instead of floating gems
+        if (typeof window !== 'undefined' && window.confetti) {
+          window.confetti({
+            particleCount: 50,
+            spread: 60,
+            origin: { y: 0.8 }
+          });
         }
-      }, 1500);
-
-      confetti({
-        particleCount: 50,
-        spread: 70,
-        origin: { y: 0.6 }
-      });
+        
+        // Load next sentence after brief delay
+        setTimeout(loadNextSentence, 1000);
+      }, 500);
     }
   };
 
@@ -930,6 +863,7 @@ export const GemSpeedBuilder: React.FC<{
         p.id === powerUpId ? { ...p, active: false, cooldown: 0 } : p
       ));
     }, 10000);
+    soundSystem.play('powerup');
   };
 
   const endGame = async () => {
@@ -971,6 +905,12 @@ export const GemSpeedBuilder: React.FC<{
       spread: 100,
       origin: { y: 0.6 }
     });
+    soundSystem.play('game-complete');
+    
+    // Call onGameComplete callback if provided
+    if (onGameComplete) {
+      onGameComplete(stats);
+    }
   };
 
   if (isLoading) {
@@ -991,8 +931,7 @@ export const GemSpeedBuilder: React.FC<{
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 relative overflow-hidden flex flex-col">
-        {/* Floating Gems */}
-        <FloatingGems gems={floatingGems} onCollect={collectGem} />
+        {/* Background gem effects only */}
         
         {/* Fixed Background Elements */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -1218,7 +1157,7 @@ export const GemSpeedBuilder: React.FC<{
               </motion.div>
               
               <h2 className="text-2xl font-bold text-white mb-4">
-                🎉 Gem Master! 🎉
+                🎉 Gem Master!
               </h2>
               
               <div className="grid grid-cols-2 gap-4 mb-6">
@@ -1267,7 +1206,7 @@ export const GemSpeedBuilder: React.FC<{
                   onClick={() => window.location.reload()}
                   className="px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-bold shadow-lg hover:shadow-purple-500/50 transition-all duration-300"
                 >
-                  <RefreshCw className="w-4 h-4 inline mr-2" />
+                  <Play className="w-4 h-4 inline mr-2" />
                   Play Again
                 </motion.button>
                 

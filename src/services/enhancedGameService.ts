@@ -1,0 +1,862 @@
+import { SupabaseClient } from '@supabase/supabase-js';
+import { createBrowserClient } from '@supabase/ssr';
+
+// =====================================================
+// TYPES AND INTERFACES
+// =====================================================
+
+export interface EnhancedGameSession {
+  id?: string;
+  student_id: string;
+  assignment_id?: string;
+  game_type: string;
+  session_mode: 'free_play' | 'assignment' | 'practice' | 'challenge';
+  
+  // Session metadata
+  started_at: Date;
+  ended_at?: Date;
+  duration_seconds: number;
+  
+  // Performance metrics
+  final_score: number;
+  max_score_possible: number;
+  accuracy_percentage: number;
+  completion_percentage: number;
+  
+  // Game-specific data
+  level_reached: number;
+  lives_used: number;
+  power_ups_used: PowerUpUsage[];
+  achievements_earned: string[];
+  
+  // Learning metrics
+  words_attempted: number;
+  words_correct: number;
+  unique_words_practiced: number;
+  average_response_time_ms: number;
+  
+  // Engagement metrics
+  pause_count: number;
+  hint_requests: number;
+  retry_attempts: number;
+  
+  // Session data
+  session_data: Record<string, any>;
+  device_info: Record<string, any>;
+}
+
+export interface WordPerformanceLog {
+  id?: string;
+  session_id: string;
+  vocabulary_id?: number;
+  
+  // Word details
+  word_text: string;
+  translation_text: string;
+  language_pair: string;
+  
+  // Performance data
+  attempt_number: number;
+  response_time_ms: number;
+  was_correct: boolean;
+  confidence_level?: number;
+  
+  // Context
+  difficulty_level: string;
+  hint_used: boolean;
+  power_up_active?: string;
+  streak_count: number;
+  
+  // Learning data
+  previous_attempts: number;
+  mastery_level: number;
+  
+  // Metadata
+  context_data: Record<string, any>;
+  timestamp: Date;
+}
+
+export interface PowerUpUsage {
+  type: string;
+  used_at: Date;
+  effect_duration?: number;
+  effectiveness_score?: number;
+}
+
+export interface GameLeaderboard {
+  id?: string;
+  game_type: string;
+  leaderboard_type: 'daily' | 'weekly' | 'monthly' | 'all_time' | 'class';
+  class_id?: string;
+  
+  // Ranking data
+  student_id: string;
+  rank_position: number;
+  score: number;
+  accuracy: number;
+  
+  // Time period
+  period_start: Date;
+  period_end: Date;
+  
+  // Metadata
+  games_played: number;
+  total_time_played: number;
+  achievements_count: number;
+}
+
+export interface StudentAchievement {
+  id?: string;
+  student_id: string;
+  achievement_type: string;
+  achievement_category: 'performance' | 'consistency' | 'improvement' | 'social' | 'milestone';
+  
+  // Achievement details
+  title: string;
+  description: string;
+  icon_name: string;
+  rarity: 'common' | 'rare' | 'epic' | 'legendary';
+  points_awarded: number;
+  
+  // Context
+  game_type?: string;
+  session_id?: string;
+  assignment_id?: string;
+  
+  // Achievement data
+  progress_data: Record<string, any>;
+  earned_at: Date;
+}
+
+export interface StudentGameProfile {
+  id?: string;
+  student_id: string;
+  
+  // Experience and levels
+  total_xp: number;
+  current_level: number;
+  xp_to_next_level: number;
+  
+  // Streaks and consistency
+  current_streak: number;
+  longest_streak: number;
+  last_activity_date: Date;
+  
+  // Game statistics
+  total_games_played: number;
+  total_time_played: number;
+  favorite_game_type?: string;
+  
+  // Achievement counts
+  total_achievements: number;
+  rare_achievements: number;
+  epic_achievements: number;
+  legendary_achievements: number;
+  
+  // Learning metrics
+  words_learned: number;
+  accuracy_average: number;
+  improvement_rate: number;
+  
+  // Social features
+  friends_count: number;
+  challenges_won: number;
+  challenges_lost: number;
+  
+  // Preferences
+  preferred_difficulty: string;
+  preferred_language_pair: string;
+  notification_preferences: Record<string, any>;
+  
+  // Profile customization
+  avatar_url?: string;
+  display_name?: string;
+  title?: string;
+  badge_showcase: string[];
+}
+
+export interface DailyChallenge {
+  id?: string;
+  challenge_date: Date;
+  challenge_type: string;
+  game_type: string;
+  
+  // Configuration
+  title: string;
+  description: string;
+  difficulty_level: string;
+  target_metric: string;
+  target_value: number;
+  
+  // Rewards
+  xp_reward: number;
+  achievement_id?: string;
+  
+  // Metadata
+  participation_count: number;
+  completion_count: number;
+}
+
+export interface AssignmentAnalytics {
+  id?: string;
+  assignment_id: string;
+  
+  // Class performance
+  total_students: number;
+  students_started: number;
+  students_completed: number;
+  completion_rate: number;
+  
+  // Performance metrics
+  average_score: number;
+  average_accuracy: number;
+  average_time_spent: number;
+  
+  // Difficulty analysis
+  difficulty_rating: number;
+  words_causing_difficulty: string[];
+  common_mistakes: Record<string, any>;
+  
+  // Engagement metrics
+  average_attempts: number;
+  dropout_rate: number;
+  help_requests: number;
+  
+  // Time analysis
+  peak_activity_hours: number[];
+  average_session_length: number;
+  
+  last_calculated_at: Date;
+}
+
+// =====================================================
+// ENHANCED GAME SERVICE CLASS
+// =====================================================
+
+export class EnhancedGameService {
+  private supabase: SupabaseClient;
+  
+  constructor(supabaseClient?: SupabaseClient) {
+    this.supabase = supabaseClient || createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+    );
+  }
+
+  // =====================================================
+  // GAME SESSION MANAGEMENT
+  // =====================================================
+
+  async startGameSession(sessionData: Partial<EnhancedGameSession>): Promise<string> {
+    const session: Partial<EnhancedGameSession> = {
+      ...sessionData,
+      started_at: new Date(),
+      duration_seconds: 0,
+      final_score: 0,
+      accuracy_percentage: 0,
+      completion_percentage: 0,
+      level_reached: 1,
+      lives_used: 0,
+      power_ups_used: [],
+      achievements_earned: [],
+      words_attempted: 0,
+      words_correct: 0,
+      unique_words_practiced: 0,
+      average_response_time_ms: 0,
+      pause_count: 0,
+      hint_requests: 0,
+      retry_attempts: 0,
+      session_data: {},
+      device_info: this.getDeviceInfo()
+    };
+
+    const { data, error } = await this.supabase
+      .from('enhanced_game_sessions')
+      .insert(session)
+      .select('id')
+      .single();
+
+    if (error) {
+      throw new Error(`Failed to start game session: ${error.message}`);
+    }
+
+    return data.id;
+  }
+
+  async updateGameSession(sessionId: string, updates: Partial<EnhancedGameSession>): Promise<void> {
+    const { error } = await this.supabase
+      .from('enhanced_game_sessions')
+      .update(updates)
+      .eq('id', sessionId);
+
+    if (error) {
+      throw new Error(`Failed to update game session: ${error.message}`);
+    }
+  }
+
+  async endGameSession(sessionId: string, finalData: Partial<EnhancedGameSession>): Promise<void> {
+    const endData = {
+      ...finalData,
+      ended_at: new Date()
+    };
+
+    await this.updateGameSession(sessionId, endData);
+
+    // Process achievements and update student profile
+    if (finalData.student_id) {
+      await this.processSessionAchievements(sessionId, finalData.student_id);
+      await this.updateStudentProfile(finalData.student_id, finalData);
+    }
+  }
+
+  // =====================================================
+  // WORD PERFORMANCE TRACKING
+  // =====================================================
+
+  async logWordPerformance(performanceData: WordPerformanceLog): Promise<void> {
+    const { error } = await this.supabase
+      .from('word_performance_logs')
+      .insert({
+        ...performanceData,
+        timestamp: new Date()
+      });
+
+    if (error) {
+      throw new Error(`Failed to log word performance: ${error.message}`);
+    }
+  }
+
+  async getWordPerformanceHistory(
+    studentId: string,
+    vocabularyId?: number,
+    limit: number = 50
+  ): Promise<WordPerformanceLog[]> {
+    let query = this.supabase
+      .from('word_performance_logs')
+      .select(`
+        *,
+        enhanced_game_sessions!inner(student_id)
+      `)
+      .eq('enhanced_game_sessions.student_id', studentId)
+      .order('timestamp', { ascending: false })
+      .limit(limit);
+
+    if (vocabularyId) {
+      query = query.eq('vocabulary_id', vocabularyId);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      throw new Error(`Failed to get word performance history: ${error.message}`);
+    }
+
+    return data || [];
+  }
+
+  // =====================================================
+  // ACHIEVEMENT SYSTEM
+  // =====================================================
+
+  async processSessionAchievements(sessionId: string, studentId: string): Promise<StudentAchievement[]> {
+    // Get session data
+    const { data: session, error: sessionError } = await this.supabase
+      .from('enhanced_game_sessions')
+      .select('*')
+      .eq('id', sessionId)
+      .single();
+
+    if (sessionError || !session) {
+      throw new Error('Failed to get session data for achievement processing');
+    }
+
+    const achievements: StudentAchievement[] = [];
+
+    // Check for various achievement conditions
+    const achievementChecks = [
+      this.checkPerformanceAchievements(session),
+      this.checkConsistencyAchievements(studentId, session),
+      this.checkImprovementAchievements(studentId, session),
+      this.checkMilestoneAchievements(studentId, session)
+    ];
+
+    const allAchievements = await Promise.all(achievementChecks);
+    achievements.push(...allAchievements.flat());
+
+    // Save new achievements
+    for (const achievement of achievements) {
+      await this.awardAchievement(achievement);
+    }
+
+    return achievements;
+  }
+
+  private async checkPerformanceAchievements(session: any): Promise<StudentAchievement[]> {
+    const achievements: StudentAchievement[] = [];
+
+    // Perfect Score Achievement
+    if (session.accuracy_percentage >= 100) {
+      achievements.push({
+        student_id: session.student_id,
+        achievement_type: 'perfect_score',
+        achievement_category: 'performance',
+        title: 'Perfect Score!',
+        description: 'Achieved 100% accuracy in a game session',
+        icon_name: 'trophy',
+        rarity: 'rare',
+        points_awarded: 100,
+        game_type: session.game_type,
+        session_id: session.id,
+        progress_data: { accuracy: session.accuracy_percentage },
+        earned_at: new Date()
+      });
+    }
+
+    // Speed Demon Achievement
+    if (session.average_response_time_ms < 2000 && session.words_attempted >= 10) {
+      achievements.push({
+        student_id: session.student_id,
+        achievement_type: 'speed_demon',
+        achievement_category: 'performance',
+        title: 'Speed Demon',
+        description: 'Average response time under 2 seconds',
+        icon_name: 'zap',
+        rarity: 'epic',
+        points_awarded: 150,
+        game_type: session.game_type,
+        session_id: session.id,
+        progress_data: { average_time: session.average_response_time_ms },
+        earned_at: new Date()
+      });
+    }
+
+    return achievements;
+  }
+
+  private async checkConsistencyAchievements(studentId: string, session: any): Promise<StudentAchievement[]> {
+    const achievements: StudentAchievement[] = [];
+
+    // Get student's current streak
+    const { data: profile } = await this.supabase
+      .from('student_game_profiles')
+      .select('current_streak, longest_streak')
+      .eq('student_id', studentId)
+      .single();
+
+    if (profile && profile.current_streak >= 7) {
+      achievements.push({
+        student_id: studentId,
+        achievement_type: 'week_warrior',
+        achievement_category: 'consistency',
+        title: 'Week Warrior',
+        description: 'Played games for 7 days in a row',
+        icon_name: 'calendar',
+        rarity: 'rare',
+        points_awarded: 200,
+        progress_data: { streak: profile.current_streak },
+        earned_at: new Date()
+      });
+    }
+
+    return achievements;
+  }
+
+  private async checkImprovementAchievements(studentId: string, session: any): Promise<StudentAchievement[]> {
+    const achievements: StudentAchievement[] = [];
+
+    // Get recent sessions to check improvement
+    const { data: recentSessions } = await this.supabase
+      .from('enhanced_game_sessions')
+      .select('accuracy_percentage, final_score')
+      .eq('student_id', studentId)
+      .eq('game_type', session.game_type)
+      .order('started_at', { ascending: false })
+      .limit(5);
+
+    if (recentSessions && recentSessions.length >= 3) {
+      const averageAccuracy = recentSessions.slice(1).reduce((sum, s) => sum + s.accuracy_percentage, 0) / (recentSessions.length - 1);
+
+      if (session.accuracy_percentage > averageAccuracy + 20) {
+        achievements.push({
+          student_id: studentId,
+          achievement_type: 'improvement_surge',
+          achievement_category: 'improvement',
+          title: 'Improvement Surge',
+          description: 'Improved accuracy by 20% or more',
+          icon_name: 'trending-up',
+          rarity: 'epic',
+          points_awarded: 175,
+          game_type: session.game_type,
+          session_id: session.id,
+          progress_data: {
+            previous_average: averageAccuracy,
+            current_accuracy: session.accuracy_percentage,
+            improvement: session.accuracy_percentage - averageAccuracy
+          },
+          earned_at: new Date()
+        });
+      }
+    }
+
+    return achievements;
+  }
+
+  private async checkMilestoneAchievements(studentId: string, session: any): Promise<StudentAchievement[]> {
+    const achievements: StudentAchievement[] = [];
+
+    // Get total games played
+    const { data: totalGames } = await this.supabase
+      .from('enhanced_game_sessions')
+      .select('id', { count: 'exact' })
+      .eq('student_id', studentId);
+
+    const gamesPlayed = totalGames?.length || 0;
+
+    // Milestone achievements
+    const milestones = [
+      { count: 10, title: 'Getting Started', rarity: 'common', points: 50 },
+      { count: 50, title: 'Dedicated Learner', rarity: 'rare', points: 100 },
+      { count: 100, title: 'Century Club', rarity: 'epic', points: 200 },
+      { count: 500, title: 'Game Master', rarity: 'legendary', points: 500 }
+    ];
+
+    for (const milestone of milestones) {
+      if (gamesPlayed === milestone.count) {
+        achievements.push({
+          student_id: studentId,
+          achievement_type: `milestone_${milestone.count}`,
+          achievement_category: 'milestone',
+          title: milestone.title,
+          description: `Played ${milestone.count} games`,
+          icon_name: 'star',
+          rarity: milestone.rarity as any,
+          points_awarded: milestone.points,
+          progress_data: { games_played: gamesPlayed },
+          earned_at: new Date()
+        });
+      }
+    }
+
+    return achievements;
+  }
+
+  async awardAchievement(achievement: StudentAchievement): Promise<void> {
+    // Check if achievement already exists
+    const { data: existing } = await this.supabase
+      .from('student_achievements')
+      .select('id')
+      .eq('student_id', achievement.student_id)
+      .eq('achievement_type', achievement.achievement_type)
+      .single();
+
+    if (existing) {
+      return; // Achievement already awarded
+    }
+
+    // Insert new achievement
+    const { error } = await this.supabase
+      .from('student_achievements')
+      .insert(achievement);
+
+    if (error) {
+      throw new Error(`Failed to award achievement: ${error.message}`);
+    }
+
+    // Update student profile with XP and achievement count
+    await this.addXPToStudent(achievement.student_id, achievement.points_awarded);
+  }
+
+  // =====================================================
+  // STUDENT PROFILE MANAGEMENT
+  // =====================================================
+
+  async getStudentProfile(studentId: string): Promise<StudentGameProfile | null> {
+    const { data, error } = await this.supabase
+      .from('student_game_profiles')
+      .select('*')
+      .eq('student_id', studentId)
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+      throw new Error(`Failed to get student profile: ${error.message}`);
+    }
+
+    return data;
+  }
+
+  async createStudentProfile(studentId: string): Promise<StudentGameProfile> {
+    const profile: Partial<StudentGameProfile> = {
+      student_id: studentId,
+      total_xp: 0,
+      current_level: 1,
+      xp_to_next_level: 100,
+      current_streak: 0,
+      longest_streak: 0,
+      last_activity_date: new Date(),
+      total_games_played: 0,
+      total_time_played: 0,
+      total_achievements: 0,
+      rare_achievements: 0,
+      epic_achievements: 0,
+      legendary_achievements: 0,
+      words_learned: 0,
+      accuracy_average: 0,
+      improvement_rate: 0,
+      friends_count: 0,
+      challenges_won: 0,
+      challenges_lost: 0,
+      preferred_difficulty: 'intermediate',
+      preferred_language_pair: 'english_spanish',
+      notification_preferences: {},
+      badge_showcase: []
+    };
+
+    const { data, error } = await this.supabase
+      .from('student_game_profiles')
+      .insert(profile)
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(`Failed to create student profile: ${error.message}`);
+    }
+
+    return data;
+  }
+
+  async updateStudentProfile(studentId: string, sessionData: Partial<EnhancedGameSession>): Promise<void> {
+    let profile = await this.getStudentProfile(studentId);
+
+    if (!profile) {
+      profile = await this.createStudentProfile(studentId);
+    }
+
+    // Calculate updates based on session data
+    const updates: Partial<StudentGameProfile> = {
+      total_games_played: profile.total_games_played + 1,
+      total_time_played: profile.total_time_played + (sessionData.duration_seconds || 0),
+      last_activity_date: new Date()
+    };
+
+    // Update accuracy average
+    if (sessionData.accuracy_percentage !== undefined) {
+      const newAccuracy = (profile.accuracy_average * profile.total_games_played + sessionData.accuracy_percentage) / (profile.total_games_played + 1);
+      updates.accuracy_average = Math.round(newAccuracy * 100) / 100;
+    }
+
+    // Update words learned
+    if (sessionData.unique_words_practiced) {
+      updates.words_learned = profile.words_learned + sessionData.unique_words_practiced;
+    }
+
+    // Update streak
+    const today = new Date().toDateString();
+    const lastActivity = new Date(profile.last_activity_date).toDateString();
+    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toDateString();
+
+    if (lastActivity === yesterday) {
+      updates.current_streak = profile.current_streak + 1;
+      updates.longest_streak = Math.max(profile.longest_streak, updates.current_streak);
+    } else if (lastActivity !== today) {
+      updates.current_streak = 1;
+    }
+
+    const { error } = await this.supabase
+      .from('student_game_profiles')
+      .update(updates)
+      .eq('student_id', studentId);
+
+    if (error) {
+      throw new Error(`Failed to update student profile: ${error.message}`);
+    }
+  }
+
+  async addXPToStudent(studentId: string, xpAmount: number): Promise<void> {
+    let profile = await this.getStudentProfile(studentId);
+
+    if (!profile) {
+      profile = await this.createStudentProfile(studentId);
+    }
+
+    const newTotalXP = profile.total_xp + xpAmount;
+    let newLevel = profile.current_level;
+    let xpToNextLevel = profile.xp_to_next_level;
+
+    // Calculate level progression
+    while (newTotalXP >= this.getXPRequiredForLevel(newLevel + 1)) {
+      newLevel++;
+      xpToNextLevel = this.getXPRequiredForLevel(newLevel + 1) - newTotalXP;
+    }
+
+    const { error } = await this.supabase
+      .from('student_game_profiles')
+      .update({
+        total_xp: newTotalXP,
+        current_level: newLevel,
+        xp_to_next_level: xpToNextLevel
+      })
+      .eq('student_id', studentId);
+
+    if (error) {
+      throw new Error(`Failed to add XP to student: ${error.message}`);
+    }
+  }
+
+  private getXPRequiredForLevel(level: number): number {
+    // Exponential XP curve: level^2 * 100
+    return level * level * 100;
+  }
+
+  // =====================================================
+  // LEADERBOARD MANAGEMENT
+  // =====================================================
+
+  async updateLeaderboards(sessionData: EnhancedGameSession): Promise<void> {
+    const leaderboardTypes = ['daily', 'weekly', 'monthly', 'all_time'];
+
+    for (const type of leaderboardTypes) {
+      await this.updateLeaderboard(sessionData, type as any);
+    }
+  }
+
+  private async updateLeaderboard(
+    sessionData: EnhancedGameSession,
+    leaderboardType: 'daily' | 'weekly' | 'monthly' | 'all_time'
+  ): Promise<void> {
+    const { periodStart, periodEnd } = this.getLeaderboardPeriod(leaderboardType);
+
+    // Get or create leaderboard entry
+    const { data: existing, error: fetchError } = await this.supabase
+      .from('game_leaderboards')
+      .select('*')
+      .eq('game_type', sessionData.game_type)
+      .eq('leaderboard_type', leaderboardType)
+      .eq('student_id', sessionData.student_id)
+      .eq('period_start', periodStart.toISOString())
+      .single();
+
+    if (fetchError && fetchError.code !== 'PGRST116') {
+      throw new Error(`Failed to fetch leaderboard entry: ${fetchError.message}`);
+    }
+
+    if (existing) {
+      // Update existing entry
+      const newScore = Math.max(existing.score, sessionData.final_score);
+      const newAccuracy = (existing.accuracy * existing.games_played + sessionData.accuracy_percentage) / (existing.games_played + 1);
+
+      const { error } = await this.supabase
+        .from('game_leaderboards')
+        .update({
+          score: newScore,
+          accuracy: Math.round(newAccuracy * 100) / 100,
+          games_played: existing.games_played + 1,
+          total_time_played: existing.total_time_played + sessionData.duration_seconds
+        })
+        .eq('id', existing.id);
+
+      if (error) {
+        throw new Error(`Failed to update leaderboard entry: ${error.message}`);
+      }
+    } else {
+      // Create new entry
+      const { error } = await this.supabase
+        .from('game_leaderboards')
+        .insert({
+          game_type: sessionData.game_type,
+          leaderboard_type: leaderboardType,
+          student_id: sessionData.student_id,
+          rank_position: 1, // Will be updated by rank calculation
+          score: sessionData.final_score,
+          accuracy: sessionData.accuracy_percentage,
+          period_start: periodStart,
+          period_end: periodEnd,
+          games_played: 1,
+          total_time_played: sessionData.duration_seconds,
+          achievements_count: sessionData.achievements_earned.length
+        });
+
+      if (error) {
+        throw new Error(`Failed to create leaderboard entry: ${error.message}`);
+      }
+    }
+
+    // Recalculate ranks for this leaderboard
+    await this.recalculateLeaderboardRanks(sessionData.game_type, leaderboardType, periodStart);
+  }
+
+  private getLeaderboardPeriod(type: 'daily' | 'weekly' | 'monthly' | 'all_time'): { periodStart: Date; periodEnd: Date } {
+    const now = new Date();
+
+    switch (type) {
+      case 'daily':
+        const dayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000 - 1);
+        return { periodStart: dayStart, periodEnd: dayEnd };
+
+      case 'weekly':
+        const weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay());
+        const weekEnd = new Date(weekStart.getTime() + 7 * 24 * 60 * 60 * 1000 - 1);
+        return { periodStart: weekStart, periodEnd: weekEnd };
+
+      case 'monthly':
+        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+        return { periodStart: monthStart, periodEnd: monthEnd };
+
+      case 'all_time':
+        return {
+          periodStart: new Date('2024-01-01'),
+          periodEnd: new Date('2099-12-31')
+        };
+    }
+  }
+
+  private async recalculateLeaderboardRanks(
+    gameType: string,
+    leaderboardType: string,
+    periodStart: Date
+  ): Promise<void> {
+    // Get all entries for this leaderboard, ordered by score desc
+    const { data: entries, error } = await this.supabase
+      .from('game_leaderboards')
+      .select('id, score')
+      .eq('game_type', gameType)
+      .eq('leaderboard_type', leaderboardType)
+      .eq('period_start', periodStart.toISOString())
+      .order('score', { ascending: false });
+
+    if (error) {
+      throw new Error(`Failed to get leaderboard entries: ${error.message}`);
+    }
+
+    // Update ranks
+    for (let i = 0; i < entries.length; i++) {
+      const { error: updateError } = await this.supabase
+        .from('game_leaderboards')
+        .update({ rank_position: i + 1 })
+        .eq('id', entries[i].id);
+
+      if (updateError) {
+        console.error(`Failed to update rank for entry ${entries[i].id}:`, updateError);
+      }
+    }
+  }
+
+  // =====================================================
+  // UTILITY METHODS
+  // =====================================================
+
+  private getDeviceInfo(): Record<string, any> {
+    if (typeof window === 'undefined') {
+      return {};
+    }
+
+    return {
+      userAgent: navigator.userAgent,
+      screenWidth: screen.width,
+      screenHeight: screen.height,
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      language: navigator.language
+    };
+  }
+}

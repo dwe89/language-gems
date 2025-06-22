@@ -54,7 +54,7 @@ export default function MainNavigation() {
     { name: 'Games', path: '/games' },
     { name: 'Blog', path: '/blog' },
     { name: 'Shop', path: '/shop' },
-    { name: 'Custom Lessons', path: '/dashboard/content' },
+    { name: 'Vocabulary', path: '/dashboard/vocabulary' },
     { name: 'Progress Tracking', path: '/dashboard/progress' },
   ];
 

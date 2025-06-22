@@ -4,22 +4,42 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../../../components/auth/AuthProvider';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { 
-  ArrowLeft, Calendar, BookOpen, BookmarkIcon, FileText, 
-  Users, AlarmClock, Clock, Rocket, Building2, Castle, 
-  DollarSign, CircleOff, DoorOpen, Puzzle, PlayCircle, 
-  RefreshCw, CheckCircle, Headphones, Mic, Volume2, MessageSquare, 
+import {
+  ArrowLeft, Calendar, BookOpen, BookmarkIcon, FileText,
+  Users, AlarmClock, Clock, Rocket, Building2, Castle,
+  DollarSign, CircleOff, DoorOpen, Puzzle, PlayCircle,
+  RefreshCw, CheckCircle, Headphones, Mic, Volume2, MessageSquare,
   PenTool, FileEdit, Feather, Award, Plus, X, Eye, Trash2,
   Zap, Brain, Target, Gamepad2, Timer, Star, Settings,
-  Shuffle, Grid3X3, Type, Layers, Smile
+  Shuffle, Grid3X3, Type, Layers, Smile, Pickaxe, Gem
 } from 'lucide-react';
 import { supabaseBrowser } from '../../../../components/auth/AuthProvider';
 
 // Complete games list aligned with actual games directory
 const AVAILABLE_GAMES = [
-  { 
-    id: 'speed-builder', 
-    name: 'Speed Builder', 
+  {
+    id: 'vocabulary-mining',
+    name: 'Vocabulary Mining',
+    description: 'Collect vocabulary gems through spaced repetition and practice sessions',
+    icon: <Pickaxe className="text-yellow-500" size={20} />,
+    category: 'vocabulary',
+    difficulty: 'adaptive',
+    timeToComplete: '10-20 min',
+    path: '/student-dashboard/vocabulary-mining/practice'
+  },
+  {
+    id: 'gem-rush',
+    name: 'Gem Rush',
+    description: 'Race against time to collect vocabulary gems in this fast-paced challenge',
+    icon: <Gem className="text-purple-500" size={20} />,
+    category: 'vocabulary',
+    difficulty: 'intermediate',
+    timeToComplete: '5-10 min',
+    path: '/games/gem-rush'
+  },
+  {
+    id: 'speed-builder',
+    name: 'Speed Builder',
     description: 'Build sentences by dragging words into the correct order before time runs out',
     icon: <Building2 className="text-indigo-500" size={20} />,
     category: 'grammar',
@@ -210,17 +230,29 @@ export default function NewAssignmentPage() {
 
   // Vocabulary assignment state
   const [vocabularySelection, setVocabularySelection] = useState({
-    type: 'theme_based' as 'theme_based' | 'topic_based' | 'custom_list' | 'difficulty_based',
+    type: 'theme_based' as 'theme_based' | 'topic_based' | 'custom_list',
     theme: '',
     topic: '',
     customListId: '',
-    difficulty: 'beginner',
-    wordCount: 20
+    wordCount: 10
   });
 
   // Activity selection state
   const [selectedActivities, setSelectedActivities] = useState<SelectedActivity[]>([]);
   const [activeTab, setActiveTab] = useState<'games' | 'grammar' | 'exam_prep'>('games');
+
+  // Vocabulary mining specific state
+  const [miningSettings, setMiningSettings] = useState({
+    targetGems: 10,
+    targetMastery: 80, // percentage
+    allowReview: true,
+    spacedRepetition: true,
+    difficultyAdaptive: true,
+    topicFocus: [] as string[],
+    gemTypes: ['common', 'uncommon', 'rare'] as string[],
+    dailyGoal: 5,
+    streakTarget: 3
+  });
 
   // Create a ref to track if data has already been fetched
   const [dataFetched, setDataFetched] = useState(false);
@@ -353,9 +385,17 @@ export default function NewAssignmentPage() {
   const handleVocabularyChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setVocabularySelection(prev => ({ ...prev, [name]: value }));
-    
+
     // Clear preview when selection changes
     setVocabularyPreview([]);
+  };
+
+  const handleMiningSettingsChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value, type, checked } = e.target;
+    setMiningSettings(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : type === 'number' ? parseInt(value) : value
+    }));
   };
 
   const fetchVocabularyPreview = async () => {
@@ -421,8 +461,27 @@ export default function NewAssignmentPage() {
       const results = [];
       
       for (const activity of selectedActivities) {
+        // Prepare game-specific configuration
+        let gameConfig = {};
+
+        if (activity.id === 'vocabulary-mining') {
+          gameConfig = miningSettings;
+        } else if (activity.id === 'gem-collector') {
+          const form = e.target as HTMLFormElement;
+          const formData = new FormData(form);
+
+          gameConfig = {
+            language: formData.get('gemCollectorLanguage') || 'spanish',
+            difficulty: formData.get('gemCollectorDifficulty') || 'beginner',
+            sentenceCount: parseInt(formData.get('gemCollectorSentenceCount') as string) || 10,
+            livesCount: parseInt(formData.get('gemCollectorLives') as string) || 3,
+            speedBoostEnabled: formData.get('gemCollectorSpeedBoost') === 'on',
+            timeLimit: formData.time_limit * 60 // Convert minutes to seconds
+          };
+        }
+
         const assignmentData = {
-          title: selectedActivities.length === 1 
+          title: selectedActivities.length === 1
             ? formData.title || activity.name
             : `${formData.title || 'Assignment'}: ${activity.name}`,
           description: formData.description,
@@ -431,7 +490,9 @@ export default function NewAssignmentPage() {
           dueDate: formData.due_date,
           timeLimit: formData.time_limit,
           points: formData.points,
-          vocabularySelection: vocabularySelection
+          vocabularySelection: vocabularySelection,
+          gameConfig: Object.keys(gameConfig).length > 0 ? gameConfig : undefined,
+          miningSettings: activity.id === 'vocabulary-mining' ? miningSettings : undefined
         };
 
         const response = await fetch('/api/assignments/create', {
@@ -636,8 +697,20 @@ export default function NewAssignmentPage() {
                     <option value="theme_based">Theme-based Selection</option>
                     <option value="topic_based">Topic-based Selection</option>
                     <option value="custom_list">Custom Vocabulary List</option>
-                    <option value="difficulty_based">Difficulty-based Selection</option>
                   </select>
+                  
+                  {/* Selection Type Info */}
+                  {(vocabularySelection.type === 'theme_based' || vocabularySelection.type === 'topic_based') && (
+                    <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                      <div className="flex items-start">
+                        <Shuffle className="mr-2 text-amber-600 mt-0.5" size={16} />
+                        <div className="text-sm text-amber-800">
+                          <p className="font-medium">Random Selection</p>
+                          <p>When you select a theme or topic, up to <strong>10 vocabulary items</strong> will be randomly selected from all available words in that category. This ensures a manageable and varied gameplay experience.</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {vocabularySelection.type === 'theme_based' && (
@@ -682,9 +755,18 @@ export default function NewAssignmentPage() {
 
                 {vocabularySelection.type === 'custom_list' && (
                   <div>
-                    <label htmlFor="customListId" className="block text-sm font-medium text-gray-700 mb-2">
-                      Custom List
-                    </label>
+                    <div className="flex items-center justify-between mb-2">
+                      <label htmlFor="customListId" className="block text-sm font-medium text-gray-700">
+                        Custom List
+                      </label>
+                      <Link
+                        href="/dashboard/vocabulary/create"
+                        className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-md transition-colors"
+                      >
+                        <Plus size={12} className="mr-1" />
+                        Create New List
+                      </Link>
+                    </div>
                     <select
                       id="customListId"
                       name="customListId"
@@ -697,31 +779,27 @@ export default function NewAssignmentPage() {
                         <option key={list.id} value={list.id}>{list.name}</option>
                       ))}
                     </select>
-                  </div>
-                )}
-
-                {vocabularySelection.type === 'difficulty_based' && (
-                  <div>
-                    <label htmlFor="difficulty" className="block text-sm font-medium text-gray-700 mb-2">
-                      Difficulty Level
-                    </label>
-                    <select
-                      id="difficulty"
-                      name="difficulty"
-                      value={vocabularySelection.difficulty}
-                      onChange={handleVocabularyChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-                    >
-                      <option value="beginner">Beginner</option>
-                      <option value="intermediate">Intermediate</option>
-                      <option value="advanced">Advanced</option>
-                    </select>
+                    
+                    {vocabularyLists.length === 0 && (
+                      <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                        <div className="flex items-start">
+                          <BookOpen className="mr-2 text-blue-600 mt-0.5" size={16} />
+                          <div className="text-sm text-blue-800">
+                            <p className="font-medium">No Custom Lists Found</p>
+                            <p>You haven't created any custom vocabulary lists yet. Click "Create New List" above to get started.</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 
                 <div>
                   <label htmlFor="wordCount" className="block text-sm font-medium text-gray-700 mb-2">
                     Number of Words
+                    {(vocabularySelection.type === 'theme_based' || vocabularySelection.type === 'topic_based') && (
+                      <span className="text-amber-600 ml-1">(max 20 for theme/topic selection)</span>
+                    )}
                   </label>
                   <input
                     type="number"
@@ -730,9 +808,18 @@ export default function NewAssignmentPage() {
                     value={vocabularySelection.wordCount}
                     onChange={handleVocabularyChange}
                     min="5"
-                    max="50"
+                    max={
+                      (vocabularySelection.type === 'theme_based' || vocabularySelection.type === 'topic_based') 
+                        ? "20" 
+                        : "50"
+                    }
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
                   />
+                  {(vocabularySelection.type === 'theme_based' || vocabularySelection.type === 'topic_based') && vocabularySelection.wordCount > 20 && (
+                    <p className="mt-1 text-sm text-amber-600">
+                      Word count will be limited to 20 for optimal gameplay experience.
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -804,6 +891,249 @@ export default function NewAssignmentPage() {
                 )}
               </div>
             </div>
+
+            {/* Gem Collector Settings */}
+            {selectedActivities.some(activity => activity.id === 'gem-collector') && (
+              <div className="bg-white rounded-xl shadow-lg p-6 border border-purple-100">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <Star className="mr-2 text-purple-600" size={20} />
+                  Gem Collector Game Settings
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Target Language
+                    </label>
+                    <select
+                      name="gemCollectorLanguage"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                      defaultValue="spanish"
+                    >
+                      <option value="spanish">Spanish</option>
+                      <option value="french">French</option>
+                      <option value="german">German</option>
+                      <option value="italian">Italian</option>
+                      <option value="portuguese">Portuguese</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Difficulty Level
+                    </label>
+                    <select
+                      name="gemCollectorDifficulty"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                      defaultValue="beginner"
+                    >
+                      <option value="beginner">Beginner</option>
+                      <option value="intermediate">Intermediate</option>
+                      <option value="advanced">Advanced</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Number of Sentences
+                    </label>
+                    <select
+                      name="gemCollectorSentenceCount"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                      defaultValue="10"
+                    >
+                      <option value="5">5 sentences (Quick)</option>
+                      <option value="10">10 sentences (Standard)</option>
+                      <option value="15">15 sentences (Extended)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Lives Count
+                    </label>
+                    <select
+                      name="gemCollectorLives"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                      defaultValue="3"
+                    >
+                      <option value="1">1 life (Hard)</option>
+                      <option value="3">3 lives (Standard)</option>
+                      <option value="5">5 lives (Easy)</option>
+                    </select>
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        name="gemCollectorSpeedBoost"
+                        id="gemCollectorSpeedBoost"
+                        defaultChecked={true}
+                        className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                      />
+                      <label htmlFor="gemCollectorSpeedBoost" className="ml-2 block text-sm text-gray-700">
+                        Enable speed boost feature (right arrow key)
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Vocabulary Mining Settings */}
+            {selectedActivities.some(activity => activity.id === 'vocabulary-mining') && (
+              <div className="bg-white rounded-xl shadow-lg p-6 border border-yellow-100">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <Pickaxe className="mr-2 text-yellow-600" size={20} />
+                  Vocabulary Mining Settings
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Target Goals */}
+                  <div className="space-y-4">
+                    <h4 className="font-medium text-gray-900">Target Goals</h4>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Target Gems to Collect
+                      </label>
+                      <input
+                        type="number"
+                        name="targetGems"
+                        value={miningSettings.targetGems}
+                        onChange={handleMiningSettingsChange}
+                        min="1"
+                        max="50"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Target Mastery Level (%)
+                      </label>
+                      <input
+                        type="number"
+                        name="targetMastery"
+                        value={miningSettings.targetMastery}
+                        onChange={handleMiningSettingsChange}
+                        min="50"
+                        max="100"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Daily Goal (gems per day)
+                      </label>
+                      <input
+                        type="number"
+                        name="dailyGoal"
+                        value={miningSettings.dailyGoal}
+                        onChange={handleMiningSettingsChange}
+                        min="1"
+                        max="20"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Mining Features */}
+                  <div className="space-y-4">
+                    <h4 className="font-medium text-gray-900">Mining Features</h4>
+
+                    <div className="space-y-3">
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          name="allowReview"
+                          checked={miningSettings.allowReview}
+                          onChange={handleMiningSettingsChange}
+                          className="rounded border-gray-300 text-yellow-600 focus:ring-yellow-500"
+                        />
+                        <span className="ml-2 text-sm text-gray-700">Allow spaced repetition reviews</span>
+                      </label>
+
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          name="spacedRepetition"
+                          checked={miningSettings.spacedRepetition}
+                          onChange={handleMiningSettingsChange}
+                          className="rounded border-gray-300 text-yellow-600 focus:ring-yellow-500"
+                        />
+                        <span className="ml-2 text-sm text-gray-700">Enable intelligent spaced repetition</span>
+                      </label>
+
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          name="difficultyAdaptive"
+                          checked={miningSettings.difficultyAdaptive}
+                          onChange={handleMiningSettingsChange}
+                          className="rounded border-gray-300 text-yellow-600 focus:ring-yellow-500"
+                        />
+                        <span className="ml-2 text-sm text-gray-700">Adaptive difficulty based on performance</span>
+                      </label>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Streak Target
+                      </label>
+                      <input
+                        type="number"
+                        name="streakTarget"
+                        value={miningSettings.streakTarget}
+                        onChange={handleMiningSettingsChange}
+                        min="1"
+                        max="10"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Gem Types Selection */}
+                <div className="mt-6 pt-6 border-t border-gray-200">
+                  <h4 className="font-medium text-gray-900 mb-3">Gem Types to Include</h4>
+                  <div className="flex flex-wrap gap-3">
+                    {[
+                      { type: 'common', color: '#94a3b8', name: 'Common' },
+                      { type: 'uncommon', color: '#22c55e', name: 'Uncommon' },
+                      { type: 'rare', color: '#3b82f6', name: 'Rare' },
+                      { type: 'epic', color: '#a855f7', name: 'Epic' },
+                      { type: 'legendary', color: '#f59e0b', name: 'Legendary' }
+                    ].map(gem => (
+                      <label key={gem.type} className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={miningSettings.gemTypes.includes(gem.type)}
+                          onChange={(e) => {
+                            const checked = e.target.checked;
+                            setMiningSettings(prev => ({
+                              ...prev,
+                              gemTypes: checked
+                                ? [...prev.gemTypes, gem.type]
+                                : prev.gemTypes.filter(t => t !== gem.type)
+                            }));
+                          }}
+                          className="rounded border-gray-300 text-yellow-600 focus:ring-yellow-500"
+                        />
+                        <span
+                          className="ml-2 px-3 py-1 rounded-full text-sm font-medium text-white"
+                          style={{ backgroundColor: gem.color }}
+                        >
+                          {gem.name}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {selectedActivities.length > 0 && (
               <div className="bg-white rounded-xl shadow-lg p-6 border border-indigo-100">

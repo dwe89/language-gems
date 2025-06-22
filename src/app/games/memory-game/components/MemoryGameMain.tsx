@@ -11,6 +11,9 @@ interface MemoryGameMainProps {
   difficulty: string;
   onBackToSettings: () => void;
   customWords?: WordPair[];
+  isAssignmentMode?: boolean;
+  assignmentTitle?: string;
+  assignmentId?: string;
 }
 
 // Vocabulary data for different topics and languages
@@ -922,6 +925,8 @@ interface Card {
   matched: boolean;
   pairId: number;
   isImage: boolean;
+  vocabularyId?: number;
+  firstAttemptTime?: Date;
 }
 
 // Add these constants for the settings modal
@@ -958,7 +963,7 @@ const DIFFICULTIES = [
   { code: 'expert', name: 'Expert (5×4)', pairs: 10, grid: '5x4' }
 ];
 
-export default function MemoryGameMain({ language, topic, difficulty, onBackToSettings, customWords }: MemoryGameMainProps) {
+export default function MemoryGameMain({ language, topic, difficulty, onBackToSettings, customWords, isAssignmentMode = false, assignmentTitle, assignmentId }: MemoryGameMainProps) {
   // Game state
   const [cards, setCards] = useState<Card[]>([]);
   const [matches, setMatches] = useState(0);
@@ -986,6 +991,20 @@ export default function MemoryGameMain({ language, topic, difficulty, onBackToSe
   
   // Add state for custom words
   const [currentCustomWords, setCurrentCustomWords] = useState<WordPair[]>(customWords || []);
+
+  // Add timer state for tracking time spent
+  const [startTime, setStartTime] = useState<Date | null>(null);
+  const [gameTime, setGameTime] = useState(0);
+
+  // Add vocabulary progress tracking
+  const [vocabularyProgress, setVocabularyProgress] = useState<Map<number, {
+    vocabularyId: number;
+    attempts: number;
+    correctAttempts: number;
+    responseTime: number;
+    wasCorrect: boolean;
+    firstAttemptTime?: Date;
+  }>>(new Map());
   
   // Initialize game
   useEffect(() => {
@@ -1082,8 +1101,65 @@ export default function MemoryGameMain({ language, topic, difficulty, onBackToSe
     }
   };
   
+  // Save assignment progress when game is completed
+  const saveAssignmentProgress = async (timeSpent: number, totalMatches: number, totalAttempts: number) => {
+    console.log('saveAssignmentProgress called:', { isAssignmentMode, assignmentId, timeSpent, totalMatches, totalAttempts });
+    console.log('vocabularyProgress:', vocabularyProgress);
+
+    if (!isAssignmentMode || !assignmentId) {
+      console.log('Not saving progress - not in assignment mode or no assignment ID');
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/assignments/${assignmentId}/progress`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          status: 'completed',
+          score: Math.round((totalMatches / totalAttempts) * 100), // Calculate accuracy percentage
+          accuracy: Math.round((totalMatches / totalAttempts) * 100),
+          timeSpent,
+          attempts: totalAttempts,
+          gameSession: {
+            sessionData: {
+              matches: totalMatches,
+              attempts: totalAttempts,
+              gameType: 'memory-game',
+              timeSpent: timeSpent
+            },
+            vocabularyPracticed: Array.from(vocabularyProgress.keys()),
+            wordsCorrect: totalMatches,
+            wordsAttempted: totalAttempts
+          },
+          vocabularyProgress: Array.from(vocabularyProgress.values()).map(progress => ({
+            vocabularyId: progress.vocabularyId,
+            attempts: progress.attempts,
+            correctAttempts: progress.correctAttempts,
+            responseTime: progress.responseTime,
+            wasCorrect: progress.wasCorrect
+          }))
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Failed to save assignment progress:', response.status, errorText);
+      } else {
+        const responseData = await response.json();
+        console.log('Assignment progress saved successfully:', responseData);
+      }
+    } catch (error) {
+      console.error('Error saving assignment progress:', error);
+    }
+  };
+
   // Initialize the game with cards
   const initializeGame = () => {
+    // Set start time when game begins
+    setStartTime(new Date());
     let totalPairs = 0;
     let wordPairs: any[] = [];
     
@@ -1174,6 +1250,8 @@ export default function MemoryGameMain({ language, topic, difficulty, onBackToSe
     
     // Create card pairs (term and translation cards)
     wordPairs.forEach((pair, index) => {
+      console.log('Creating cards for pair:', pair);
+
       // First card (term)
       newCards.push({
         id: index * 2,
@@ -1181,9 +1259,10 @@ export default function MemoryGameMain({ language, topic, difficulty, onBackToSe
         isImage: pair.isImage && pair.type === 'image',
         flipped: false,
         matched: false,
-        pairId: index
+        pairId: index,
+        vocabularyId: pair.id || pair.vocabulary_id // For assignment mode
       });
-      
+
       // Second card (translation)
       newCards.push({
         id: index * 2 + 1,
@@ -1191,9 +1270,12 @@ export default function MemoryGameMain({ language, topic, difficulty, onBackToSe
         isImage: pair.isImage && pair.type === 'image',
         flipped: false,
         matched: false,
-        pairId: index
+        pairId: index,
+        vocabularyId: pair.id || pair.vocabulary_id // For assignment mode
       });
     });
+
+    console.log('Created cards:', newCards.map(c => ({ id: c.id, value: c.value, vocabularyId: c.vocabularyId })));
     
     // Shuffle the cards
     for (let i = newCards.length - 1; i > 0; i--) {
@@ -1217,15 +1299,21 @@ export default function MemoryGameMain({ language, topic, difficulty, onBackToSe
       return;
     }
     
-    // Flip the card
-    const updatedCards = cards.map(c => 
-      c.id === card.id ? { ...c, flipped: true } : c
+    // Flip the card and set first attempt time if needed
+    const now = new Date();
+    const updatedCards = cards.map(c =>
+      c.id === card.id ? {
+        ...c,
+        flipped: true,
+        firstAttemptTime: c.firstAttemptTime || now
+      } : c
     );
     setCards(updatedCards);
-    
+
     // If it's the first card
     if (!firstCard) {
-      setFirstCard(card);
+      const cardWithTime = { ...card, firstAttemptTime: card.firstAttemptTime || now };
+      setFirstCard(cardWithTime);
       return;
     }
     
@@ -1251,6 +1339,34 @@ export default function MemoryGameMain({ language, topic, difficulty, onBackToSe
         setSecondCard(null);
         setCanFlip(true);
         setMatches(matches + 1);
+
+        // Track vocabulary progress for matched pair
+        if (isAssignmentMode && firstCard.vocabularyId) {
+          const now = new Date();
+          const responseTime = firstCard.firstAttemptTime ?
+            (now.getTime() - firstCard.firstAttemptTime.getTime()) / 1000 : 0;
+
+          setVocabularyProgress(prev => {
+            const newProgress = new Map(prev);
+            const existing = newProgress.get(firstCard.vocabularyId!) || {
+              vocabularyId: firstCard.vocabularyId!,
+              attempts: 0,
+              correctAttempts: 0,
+              responseTime: 0,
+              wasCorrect: false
+            };
+
+            newProgress.set(firstCard.vocabularyId!, {
+              ...existing,
+              attempts: existing.attempts + 1,
+              correctAttempts: existing.correctAttempts + 1,
+              responseTime: responseTime,
+              wasCorrect: true
+            });
+
+            return newProgress;
+          });
+        }
         
         // Check for win condition
         const totalPairs = cards.length / 2;
@@ -1259,6 +1375,13 @@ export default function MemoryGameMain({ language, topic, difficulty, onBackToSe
           if (winSoundRef.current) {
             winSoundRef.current.play();
           }
+
+          // Save assignment progress if in assignment mode
+          if (isAssignmentMode && startTime) {
+            const endTime = new Date();
+            const timeSpent = Math.round((endTime.getTime() - startTime.getTime()) / 1000); // in seconds
+            saveAssignmentProgress(timeSpent, matches + 1, attempts + 1);
+          }
         }
       }, 500);
     } else {
@@ -1266,9 +1389,36 @@ export default function MemoryGameMain({ language, topic, difficulty, onBackToSe
       if (wrongSoundRef.current) {
         wrongSoundRef.current.play();
       }
-      
+
+      // Track vocabulary progress for failed attempt
+      if (isAssignmentMode && firstCard.vocabularyId) {
+        const now = new Date();
+        const responseTime = firstCard.firstAttemptTime ?
+          (now.getTime() - firstCard.firstAttemptTime.getTime()) / 1000 : 0;
+
+        setVocabularyProgress(prev => {
+          const newProgress = new Map(prev);
+          const existing = newProgress.get(firstCard.vocabularyId!) || {
+            vocabularyId: firstCard.vocabularyId!,
+            attempts: 0,
+            correctAttempts: 0,
+            responseTime: 0,
+            wasCorrect: false
+          };
+
+          newProgress.set(firstCard.vocabularyId!, {
+            ...existing,
+            attempts: existing.attempts + 1,
+            responseTime: responseTime,
+            wasCorrect: false
+          });
+
+          return newProgress;
+        });
+      }
+
       setTimeout(() => {
-        const resetCards = cards.map(c => 
+        const resetCards = cards.map(c =>
           (c.id === firstCard.id || c.id === card.id) ? { ...c, flipped: false } : c
         );
         setCards(resetCards);
@@ -1348,17 +1498,32 @@ export default function MemoryGameMain({ language, topic, difficulty, onBackToSe
         <div className="header-content">
           <div className="left-controls">
             <button onClick={onBackToSettings} className="nav-btn">
-              <i className="fas fa-home"></i>
+              <i className={`fas ${isAssignmentMode ? 'fa-arrow-left' : 'fa-home'}`}></i>
+              {isAssignmentMode ? ' Back' : ''}
             </button>
-            <button onClick={toggleThemeModal} className="nav-btn">
-              <i className="fas fa-palette"></i> Theme
-            </button>
-            <button onClick={toggleSettingsModal} className="nav-btn">
-              <i className="fas fa-cog"></i> Settings
-            </button>
+            {!isAssignmentMode && (
+              <>
+                <button onClick={toggleThemeModal} className="nav-btn">
+                  <i className="fas fa-palette"></i> Theme
+                </button>
+                <button onClick={toggleSettingsModal} className="nav-btn">
+                  <i className="fas fa-cog"></i> Settings
+                </button>
+              </>
+            )}
           </div>
 
-          <h1 className="title">Memory Match</h1>
+          <h1 className="title">
+            {isAssignmentMode ? (
+              <div className="assignment-title">
+                <div className="assignment-badge">📝 Assignment</div>
+                <div className="assignment-name">{assignmentTitle}</div>
+                <div className="game-subtitle">Memory Match Game</div>
+              </div>
+            ) : (
+              'Memory Match'
+            )}
+          </h1>
 
           <div className="right-controls">
             <div className="stats-group">
@@ -1463,7 +1628,7 @@ export default function MemoryGameMain({ language, topic, difficulty, onBackToSe
       )}
 
       {/* Settings Modal */}
-      {showSettingsModal && (
+      {showSettingsModal && !isAssignmentMode && (
         <>
           <div className="modal-overlay" onClick={toggleSettingsModal}></div>
           <div className="modal" id="settingsModal">
@@ -1687,6 +1852,41 @@ export default function MemoryGameMain({ language, topic, difficulty, onBackToSe
           margin-top: 20px;
         }
         
+        .assignment-title {
+          text-align: center;
+          margin-bottom: 20px;
+        }
+
+        .assignment-badge {
+          display: inline-block;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: white;
+          padding: 6px 16px;
+          border-radius: 20px;
+          font-size: 0.85rem;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          margin-bottom: 8px;
+          box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        .assignment-name {
+          font-size: 1.8rem;
+          font-weight: bold;
+          color: #2d3748;
+          margin: 8px 0;
+          line-height: 1.2;
+          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .game-subtitle {
+          font-size: 1rem;
+          font-weight: 500;
+          color: #718096;
+          margin-top: 4px;
+        }
+
         @media (min-width: 768px) {
           .settings-grid {
             grid-template-columns: repeat(3, 1fr);
