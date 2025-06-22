@@ -127,7 +127,13 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Create the assignment
+    // Create the assignment - temporarily without game_config to test schema issue
+    console.log('Attempting to create assignment with data:', {
+      title: body.title,
+      game_type: body.gameType,
+      teacher_id: user.id
+    });
+    
     const { data: assignment, error: assignmentError } = await supabase
       .from('assignments')
       .insert({
@@ -139,8 +145,8 @@ export async function POST(request: NextRequest) {
         points: body.points || 10,
         vocabulary_assignment_list_id: vocabularyListId, // Will be null for sentence-based games
         teacher_id: user.id,
-        game_config: gameConfig,
         status: 'active'
+        // Temporarily removing game_config to test schema cache issue
       })
       .select()
       .single();
