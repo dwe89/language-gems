@@ -440,13 +440,16 @@ class SoundSystem {
   
   constructor() {
     if (typeof window !== 'undefined') {
-      // Pre-load available sounds
-      this.loadSound('correct', '/sounds/correct.mp3');
-      this.loadSound('incorrect', '/sounds/incorrect.mp3');
-      this.loadSound('drop', '/sounds/drop.mp3');
-      this.loadSound('powerup', '/sounds/powerup.mp3');
-      this.loadSound('game-complete', '/sounds/level-complete.mp3');
-      this.loadSound('ui-click', '/sounds/ui-click.mp3');
+      // Pre-load better quality game sounds
+      this.loadSound('word-place', '/sounds/speed-builder/word-place.mp3');        // Gentle "pop" when word is placed correctly
+      this.loadSound('word-wrong', '/sounds/speed-builder/word-wrong.mp3');        // Soft "buzz" for incorrect placement
+      this.loadSound('sentence-complete', '/sounds/speed-builder/sentence-complete.mp3'); // Triumphant chime for completed sentence
+      this.loadSound('gem-collect', '/sounds/speed-builder/gem-collect.mp3');      // Sparkly gem collection sound
+      this.loadSound('power-up', '/sounds/speed-builder/power-up.mp3');           // Magical whoosh for power-ups
+      this.loadSound('time-warning', '/sounds/speed-builder/time-warning.mp3');   // Gentle pulse when time is low
+      this.loadSound('game-start', '/sounds/speed-builder/game-start.mp3');       // Upbeat game start sound
+      this.loadSound('button-hover', '/sounds/speed-builder/button-hover.mp3');   // Subtle hover sound
+      this.loadSound('level-complete', '/sounds/speed-builder/level-complete.mp3'); // Celebration for game completion
     }
   }
   
@@ -666,14 +669,21 @@ export const GemSpeedBuilder: React.FC<{
 
   // Load next sentence
   const loadNextSentence = () => {
-    setCurrentSentenceIndex(prev => prev + 1);
+    const nextIndex = currentSentenceIndex + 1;
+    setCurrentSentenceIndex(nextIndex);
     
-    if (currentSentenceIndex + 1 >= availableSentences.length) {
+    if (nextIndex >= availableSentences.length) {
       // No more sentences, end the game
       endGame();
     } else {
+      // Reset game state for next sentence
+      setPlacedWords([]);
+      setShuffledWords([]);
+      setHintWordIndex(null);
+      setShowGhostMode(false);
+      
       // Load the next sentence
-      loadSentence(availableSentences[currentSentenceIndex + 1]);
+      loadSentence(availableSentences[nextIndex]);
     }
   };
 
@@ -708,7 +718,7 @@ export const GemSpeedBuilder: React.FC<{
       setSessionId(`demo-${Date.now()}`);
     }
 
-    soundSystem.play('ui-click');
+    soundSystem.play('game-start');
     setGameState('playing');
     setTimeLeft(120);
   };
@@ -780,9 +790,9 @@ export const GemSpeedBuilder: React.FC<{
     const isCorrect = word.index === targetIndex;
     if (isCorrect) {
       createGemCollectionEffect(2 + stats.streak);
-      soundSystem.play('correct');
+      soundSystem.play('word-place');
     } else {
-      soundSystem.play('incorrect');
+      soundSystem.play('word-wrong');
     }
 
     // Update stats
@@ -811,7 +821,7 @@ export const GemSpeedBuilder: React.FC<{
 
     if (isCorrect) {
       // Play success sound and create gem effect (no floating gems)
-      soundSystem.play('correct');
+      soundSystem.play('sentence-complete');
       createGemCollectionEffect(placedWords.length);
       
       // Update stats
@@ -891,7 +901,7 @@ export const GemSpeedBuilder: React.FC<{
         p.id === powerUpId ? { ...p, active: false, cooldown: 0 } : p
       ));
     }, 10000);
-    soundSystem.play('powerup');
+    soundSystem.play('power-up');
   };
 
   const endGame = async () => {
@@ -933,7 +943,7 @@ export const GemSpeedBuilder: React.FC<{
       spread: 100,
       origin: { y: 0.6 }
     });
-    soundSystem.play('game-complete');
+    soundSystem.play('level-complete');
     
     // Call onGameComplete callback if provided
     if (onGameComplete) {

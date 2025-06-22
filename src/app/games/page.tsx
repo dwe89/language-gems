@@ -311,23 +311,6 @@ export default function GamesPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
 
-  // If user is not authenticated, show login gate
-  if (!isLoading && !user) {
-    return <LoginRequiredGate />;
-  }
-
-  // Show loading state while checking auth
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-blue-50 to-purple-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-indigo-600 font-medium">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
   useEffect(() => {
     // This would be replaced with an actual API call in production
     const fetchGames = async () => {
@@ -528,6 +511,23 @@ export default function GamesPage() {
     
     fetchGames();
   }, []);
+
+  // If user is not authenticated, show login gate
+  if (!isLoading && !user) {
+    return <LoginRequiredGate />;
+  }
+
+  // Show loading state while checking auth
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-blue-50 to-purple-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-indigo-600 font-medium">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   const filteredGames = filter === 'all' 
     ? games 
