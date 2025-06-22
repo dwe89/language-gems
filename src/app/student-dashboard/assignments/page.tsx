@@ -110,7 +110,9 @@ const AssignmentCard = ({
       
       <div className="flex space-x-2">
         <Link
-          href={`/games/${assignment.type || 'memory-game'}?assignment=${assignment.id}`}
+          href={assignment.gameCount && assignment.gameCount > 1 
+            ? `/student-dashboard/assignments/${assignment.id}` 
+            : `/games/${assignment.type || 'memory-game'}?assignment=${assignment.id}`}
           className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg transition-colors font-medium flex items-center justify-center"
         >
           {assignment.status === 'completed' ? 'Review Assignment' : 'Continue Assignment'}
@@ -177,7 +179,8 @@ export default function AssignmentsPage() {
             due_date,
             points,
             status,
-            type,
+            game_type,
+            game_config,
             class_id
           `)
           .in('class_id', classIds)
@@ -196,19 +199,44 @@ export default function AssignmentsPage() {
         console.log('Fetched assignments:', assignments);
 
         // Transform assignments to match our type
-        const transformedAssignments: Assignment[] = (assignments || []).map((assignment: any, index) => ({
-          id: assignment.id,
-          title: assignment.title,
-          description: assignment.description,
-          dueDate: assignment.due_date ? new Date(assignment.due_date).toLocaleDateString() : 'No due date',
-          status: 'not-started' as const, // TODO: Get actual status from student progress
-          gemType: ['purple', 'blue', 'yellow', 'green', 'red'][index % 5] as any,
-          gameCount: 1, // TODO: Count actual activities
-          activities: ['Memory Game'], // TODO: Get actual activities
-          className: classNameMap.get(assignment.class_id) || 'Your Class',
-          points: assignment.points,
-          type: assignment.type
-        }));
+        const transformedAssignments: Assignment[] = (assignments || []).map((assignment: any, index) => {
+          const isMultiGame = assignment.game_config?.multiGame && assignment.game_config?.selectedGames?.length > 1;
+          const gameCount = isMultiGame ? assignment.game_config.selectedGames.length : 1;
+          const gameNames = isMultiGame 
+            ? assignment.game_config.selectedGames.map((gameId: string) => {
+                // Convert game IDs to readable names
+                const gameNameMap: Record<string, string> = {
+                  'memory-game': 'Memory Match',
+                  'word-blast': 'Word Blast',
+                  'speed-builder': 'Speed Builder',
+                  'translation-tycoon': 'Translation Tycoon',
+                  'verb-conjugation-ladder': 'Verb Ladder',
+                  'word-scramble': 'Word Scramble',
+                  'gem-collector': 'Gem Collector',
+                  'hangman': 'Hangman',
+                  'word-guesser': 'Word Guesser',
+                  'sentence-towers': 'Sentence Towers',
+                  'sentence-builder': 'Sentence Builder',
+                  'word-association': 'Word Association'
+                };
+                return gameNameMap[gameId] || gameId;
+              })
+            : [assignment.game_type || 'Game'];
+
+          return {
+            id: assignment.id,
+            title: assignment.title,
+            description: assignment.description,
+            dueDate: assignment.due_date ? new Date(assignment.due_date).toLocaleDateString() : 'No due date',
+            status: 'not-started' as const, // TODO: Get actual status from student progress
+            gemType: ['purple', 'blue', 'yellow', 'green', 'red'][index % 5] as any,
+            gameCount: gameCount,
+            activities: gameNames,
+            className: classNameMap.get(assignment.class_id) || 'Your Class',
+            points: assignment.points,
+            type: assignment.game_type
+          };
+        });
 
         // For now, treat all as current assignments
         // TODO: Separate based on actual completion status
