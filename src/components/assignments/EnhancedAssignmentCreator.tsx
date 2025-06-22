@@ -9,7 +9,7 @@ import {
   AlertCircle, Info, Gamepad2, Brain, Heart
 } from 'lucide-react';
 import { useAuth } from '../auth/AuthProvider';
-import { useSupabase } from '../supabase/SupabaseProvider';
+import { supabaseBrowser } from '../auth/AuthProvider';
 import { EnhancedAssignmentService, AssignmentCreationData } from '../../services/enhancedAssignmentService';
 import MultiGameSelector from './MultiGameSelector';
 import SmartAssignmentConfig from './SmartAssignmentConfig';
@@ -78,10 +78,9 @@ export default function EnhancedAssignmentCreator({
   templateId
 }: EnhancedAssignmentCreatorProps) {
   const { user } = useAuth();
-  const { supabase } = useSupabase();
   
   // Services
-  const [assignmentService] = useState(() => new EnhancedAssignmentService(supabase));
+  const [assignmentService] = useState(() => new EnhancedAssignmentService(supabaseBrowser));
   
   // State
   const [currentStep, setCurrentStep] = useState(0);
@@ -307,15 +306,21 @@ export default function EnhancedAssignmentCreator({
         throw new Error('Please configure sentence content for the selected games');
       }
 
-      const assignmentId = await assignmentService.createAssignment({
+      const assignmentId = await assignmentService.createEnhancedAssignment(user.id, {
         ...assignmentData,
-        teacher_id: user.id,
-        game_type: gameConfig.selectedGames[0], // Primary game for compatibility
+        game_type: gameConfig.selectedGames[0] || 'multi-game', // Primary game for compatibility
+        class_id: classId,
         config: {
           selectedGames: gameConfig.selectedGames,
           vocabularyConfig: gameConfig.vocabularyConfig,
           sentenceConfig: gameConfig.sentenceConfig,
           difficulty: gameConfig.difficulty,
+          timeLimit: gameConfig.timeLimit,
+          maxAttempts: gameConfig.maxAttempts,
+          powerUpsEnabled: gameConfig.powerUpsEnabled,
+          hintsAllowed: gameConfig.hintsAllowed,
+          autoGrade: gameConfig.autoGrade,
+          feedbackEnabled: gameConfig.feedbackEnabled,
           multiGame: true
         }
       } as AssignmentCreationData);
