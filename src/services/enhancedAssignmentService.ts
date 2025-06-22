@@ -196,7 +196,7 @@ export class EnhancedAssignmentService {
         due_date: assignmentData.due_date ? new Date(assignmentData.due_date).toISOString() : null,
         vocabulary_assignment_list_id: assignmentData.vocabulary_list_id,
         created_by: teacherId,
-        game_        game_config: {
+        game_config: {
           ...assignmentData.config,
           max_attempts: assignmentData.max_attempts,
           auto_grade: assignmentData.auto_grade,
