@@ -15,8 +15,10 @@ import {
   Clock,
   CheckCircle,
   AlertCircle,
-  Sparkles
+  Sparkles,
+  Upload
 } from 'lucide-react';
+import Link from 'next/link';
 import { createBrowserClient } from '@supabase/ssr';
 
 interface TeacherSentence {
@@ -241,15 +243,27 @@ export default function SpeedBuilderContentPage() {
               Create and manage custom sentences for your Speed Builder assignments
             </p>
           </div>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setShowCreateForm(true)}
-            className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-medium shadow-lg"
-          >
-            <Plus className="w-5 h-5 inline mr-2" />
-            Create Sentence
-          </motion.button>
+          <div className="flex space-x-3">
+            <Link href="/dashboard/content/speed-builder/bulk-upload">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="px-4 py-3 bg-green-100 text-green-700 rounded-xl font-medium hover:bg-green-200 transition-colors"
+              >
+                <Upload className="w-5 h-5 inline mr-2" />
+                Bulk Upload
+              </motion.button>
+            </Link>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setShowCreateForm(true)}
+              className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-medium shadow-lg"
+            >
+              <Plus className="w-5 h-5 inline mr-2" />
+              Create Sentence
+            </motion.button>
+          </div>
         </div>
 
         {/* Stats Cards */}

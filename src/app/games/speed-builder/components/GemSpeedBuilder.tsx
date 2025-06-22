@@ -552,14 +552,28 @@ export const GemSpeedBuilder: React.FC<{
   const fetchSentences = async () => {
     try {
       setIsLoading(true);
+      
+      // Map theme selections to API themes
+      const themeMapping: { [key: string]: string } = {
+        'Animals': 'People and lifestyle',
+        'Travel': 'Communication and the world around us',
+        'Family': 'People and lifestyle',
+        'School': 'People and lifestyle',
+        'Food': 'People and lifestyle',
+        'Sports': 'Popular culture',
+        'Hobbies': 'Popular culture'
+      };
+      
+      const apiTheme = themeMapping[theme || ''] || 'People and lifestyle';
+      
       const response = await fetch('/api/games/speed-builder/sentences', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           mode,
           assignmentId,
-          theme: theme || 'Animals',
-          topic: topic || 'Basic Conversation',
+          theme: apiTheme,
+          topic: topic || 'Identity and relationships',
           tier: tier || 'Foundation',
           count: 10,
           difficulty: 'medium',
@@ -572,14 +586,15 @@ export const GemSpeedBuilder: React.FC<{
         setAvailableSentences(data.sentences || []);
         if (data.sentences?.length > 0) {
           loadSentence(data.sentences[0]);
+          return; // Success, exit early
         }
-      } else {
-        // Fallback demo sentences with theme integration
-        const demoSentences = generateDemoSentences(theme, topic);
-        setAvailableSentences(demoSentences);
-        if (demoSentences.length > 0) {
-          loadSentence(demoSentences[0]);
-        }
+      }
+      
+      // If API fails or returns no sentences, use fallback demo sentences
+      const demoSentences = generateDemoSentences(theme, topic);
+      setAvailableSentences(demoSentences);
+      if (demoSentences.length > 0) {
+        loadSentence(demoSentences[0]);
       }
     } catch (error) {
       console.error('Error fetching sentences:', error);
@@ -600,15 +615,48 @@ export const GemSpeedBuilder: React.FC<{
       { spanish: "El gato come pescado", english: "The cat eats fish" },
       { spanish: "Los perros corren en el parque", english: "The dogs run in the park" },
       { spanish: "Mi caballo es muy rápido", english: "My horse is very fast" },
+      { spanish: "La vaca da leche fresca", english: "The cow gives fresh milk" },
+      { spanish: "Los pájaros vuelan alto", english: "The birds fly high" },
     ];
 
     const travelSentences = [
       { spanish: "Voy a la playa en verano", english: "I go to the beach in summer" },
       { spanish: "El hotel está cerca del aeropuerto", english: "The hotel is near the airport" },
       { spanish: "Necesito un mapa de la ciudad", english: "I need a map of the city" },
+      { spanish: "El tren llega a las cinco", english: "The train arrives at five" },
+      { spanish: "Mi maleta es muy pesada", english: "My suitcase is very heavy" },
     ];
 
-    const selectedSentences = selectedTheme === 'Travel' ? travelSentences : animalSentences;
+    const familySentences = [
+      { spanish: "Mi madre cocina muy bien", english: "My mother cooks very well" },
+      { spanish: "Tengo dos hermanos mayores", english: "I have two older brothers" },
+      { spanish: "Mis abuelos viven en España", english: "My grandparents live in Spain" },
+      { spanish: "Mi padre trabaja en oficina", english: "My father works in an office" },
+      { spanish: "La familia come junta", english: "The family eats together" },
+    ];
+
+    const schoolSentences = [
+      { spanish: "Estudio matemáticas y ciencias", english: "I study math and science" },
+      { spanish: "La profesora es muy simpática", english: "The teacher is very nice" },
+      { spanish: "Los estudiantes hacen preguntas", english: "The students ask questions" },
+      { spanish: "El examen es mañana", english: "The exam is tomorrow" },
+      { spanish: "Me gusta aprender idiomas", english: "I like learning languages" },
+    ];
+
+    let selectedSentences;
+    switch (selectedTheme) {
+      case 'Travel':
+        selectedSentences = travelSentences;
+        break;
+      case 'Family':
+        selectedSentences = familySentences;
+        break;
+      case 'School':
+        selectedSentences = schoolSentences;
+        break;
+      default:
+        selectedSentences = animalSentences;
+    }
 
     return selectedSentences.map((sentence, index) => ({
       id: `demo-${index}`,
