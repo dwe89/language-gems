@@ -7,81 +7,79 @@ export async function GET(request: NextRequest) {
     const cookieStore = await cookies();
     const session = cookieStore.get('session');
     
-    // For now, return structured GCSE curriculum data
-    // This could be enhanced to fetch from MCP Supabase in the future
+    // Try to fetch real data from the database
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/vocabulary?select=theme,topic`, {
+        headers: {
+          'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
+          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        
+        // Group the real data by theme and topic
+        const themeGroups: { [key: string]: string[] } = {};
+        
+        data.forEach((item: { theme: string; topic: string }) => {
+          if (item.theme && item.topic) {
+            if (!themeGroups[item.theme]) {
+              themeGroups[item.theme] = [];
+            }
+            if (!themeGroups[item.theme].includes(item.topic)) {
+              themeGroups[item.theme].push(item.topic);
+            }
+          }
+        });
+
+        // Structure as GCSE curriculum - both Foundation and Higher use same topics
+        const gcseCurriculum = {
+          Foundation: themeGroups,
+          Higher: themeGroups
+        };
+
+        return NextResponse.json(gcseCurriculum);
+      }
+    } catch (error) {
+      console.error('Error fetching from Supabase:', error);
+    }
+    
+    // Fallback to structured GCSE curriculum with real topics
     const gcseCurriculum = {
       Foundation: {
-        'Identity and Culture': [
-          'Family and Friends',
-          'Personal Relationships', 
-          'Marriage and Partnership',
-          'Social Media and Technology',
-          'Festivals and Traditions'
+        'People and lifestyle': [
+          'Identity and relationships',
+          'Healthy living and lifestyle', 
+          'Education and work'
         ],
-        'Local Area, Holiday and Travel': [
-          'Tourist Information and Directions',
-          'Weather',
-          'Transport',
-          'Accommodation',
-          'Holiday Activities and Experiences'
+        'Communication and the world around us': [
+          'Environment and where people live',
+          'Media and technology',
+          'Travel and tourism'
         ],
-        'School': [
-          'School Types and School System',
-          'School Subjects',
-          'School Day and Routine',
-          'Rules and Regulations',
-          'Problems at School'
-        ],
-        'Future Aspirations, Study and Work': [
-          'Further Education and Training',
-          'Career Choices and Ambitions',
-          'Jobs and Employment',
-          'Volunteering and Work Experience'
-        ],
-        'International and Global Dimension': [
-          'Environmental Issues',
-          'Poverty and Homelessness',
-          'Healthy Living',
-          'Life in Other Countries'
+        'Popular culture': [
+          'Free time activities',
+          'Celebrity culture',
+          'Customs, festivals and celebrations'
         ]
       },
       Higher: {
-        'Identity and Culture': [
-          'Regional Identity',
-          'National Identity', 
-          'International Identity',
-          'Cultural Life',
-          'Multiculturalism',
-          'Equality and Discrimination'
+        'People and lifestyle': [
+          'Identity and relationships',
+          'Healthy living and lifestyle', 
+          'Education and work'
         ],
-        'Local Area, Holiday and Travel': [
-          'Advantages and Disadvantages of Tourism',
-          'Holiday Disasters',
-          'Travel and Tourist Information',
-          'Town or Region',
-          'Natural and Built Environment'
+        'Communication and the world around us': [
+          'Environment and where people live',
+          'Media and technology',
+          'Travel and tourism'
         ],
-        'School': [
-          'Achievement and Underachievement',
-          'Getting the Best from School',
-          'Primary vs Secondary Education',
-          'Specialist Schools',
-          'Extra-curricular Activities'
-        ],
-        'Future Aspirations, Study and Work': [
-          'Communication Technology',
-          'Part-time Jobs',
-          'Studying and Working Abroad',
-          'Skills and Personal Qualities',
-          'Unemployment',
-          'Enterprise and Entrepreneurship'
-        ],
-        'International and Global Dimension': [
-          'Current Social Issues',
-          'Global Problems',
-          'Environmental Problems',
-          'Solutions to Environmental Problems',
-          'Contributing to Society'
+        'Popular culture': [
+          'Free time activities',
+          'Celebrity culture',
+          'Customs, festivals and celebrations'
         ]
       }
     };
