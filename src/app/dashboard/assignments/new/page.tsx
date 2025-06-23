@@ -19,13 +19,14 @@ import { supabaseBrowser } from '../../../../components/auth/AuthProvider';
 const AVAILABLE_GAMES = [
   {
     id: 'vocabulary-mining',
-    name: 'Vocabulary Mining',
-    description: 'Collect vocabulary gems through spaced repetition and practice sessions',
+    name: '🔥 Vocabulary Mining Pro',
+    description: '✨ Advanced vocabulary learning with spaced repetition, voice recognition, multiple modes (Learn/Match/Voice), and adaptive difficulty. Like Memrise + Quizlet combined!',
     icon: <Pickaxe className="text-yellow-500" size={20} />,
     category: 'vocabulary',
     difficulty: 'adaptive',
     timeToComplete: '10-20 min',
-    path: '/student-dashboard/vocabulary-mining/practice'
+    path: '/student-dashboard/vocabulary-mining/practice',
+    featured: true // Mark as featured for highlighting
   },
   {
     id: 'gem-rush',
@@ -983,11 +984,25 @@ export default function NewAssignmentPage() {
 
             {/* Vocabulary Mining Settings */}
             {selectedActivities.some(activity => activity.id === 'vocabulary-mining') && (
-              <div className="bg-white rounded-xl shadow-lg p-6 border border-yellow-100">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                  <Pickaxe className="mr-2 text-yellow-600" size={20} />
-                  Vocabulary Mining Settings
-                </h3>
+              <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-xl shadow-lg p-6 border-2 border-yellow-200">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                    <Pickaxe className="mr-2 text-yellow-600" size={20} />
+                    🔥 Vocabulary Mining Pro Settings
+                  </h3>
+                  <div className="bg-yellow-400 text-yellow-900 px-3 py-1 rounded-full text-sm font-semibold">
+                    ✨ Premium Features
+                  </div>
+                </div>
+                
+                <div className="bg-white/70 rounded-lg p-4 mb-6">
+                  <p className="text-sm text-gray-700 mb-2">
+                    <strong>🎯 Advanced Learning Features:</strong> Voice recognition, adaptive difficulty, spaced repetition, multiple learning modes (Learn/Match/Voice), and real-time visual feedback.
+                  </p>
+                  <p className="text-xs text-gray-600">
+                    Students get Memrise + Quizlet level experience with gem collection, streak tracking, and personalized learning paths.
+                  </p>
+                </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Target Goals */}
