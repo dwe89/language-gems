@@ -179,26 +179,55 @@ function VocabularyMiningPracticeContent() {
       utterance.pitch = 1.0;
       utterance.volume = 0.8;
       
-      // Try to get a specific voice based on language and gender preference
+      // Enhanced voice selection with better Spanish voices
       const voices = window.speechSynthesis.getVoices();
       if (voices.length > 0) {
-        let preferredVoice = voices.find(voice => {
-          const langMatch = voice.lang.startsWith(lang.split('-')[0]);
-          const genderMatch = voiceGender === 'female' ? 
-            voice.name.toLowerCase().includes('female') || 
-            voice.name.toLowerCase().includes('woman') ||
-            voice.name.toLowerCase().includes('zira') ||
-            voice.name.toLowerCase().includes('maria') :
-            voice.name.toLowerCase().includes('male') || 
-            voice.name.toLowerCase().includes('man') ||
-            voice.name.toLowerCase().includes('diego') ||
-            voice.name.toLowerCase().includes('david');
-          return langMatch && genderMatch;
-        });
+        let preferredVoice = null;
         
-        // Fallback to any voice with the correct language
-        if (!preferredVoice) {
-          preferredVoice = voices.find(voice => voice.lang.startsWith(lang.split('-')[0]));
+        if (lang.startsWith('es')) {
+          // Prioritize high-quality Spanish voices
+          preferredVoice = voices.find(voice => 
+            voice.lang.includes('es') && (
+              voice.name.toLowerCase().includes('mónica') ||
+              voice.name.toLowerCase().includes('remedios') ||
+              voice.name.toLowerCase().includes('marisol') ||
+              voice.name.toLowerCase().includes('sabina') ||
+              voice.name.toLowerCase().includes('miguel') ||
+              voice.name.toLowerCase().includes('diego') ||
+              voice.name.toLowerCase().includes('jorge')
+            )
+          );
+          
+          // Fallback to any Spanish voice
+          if (!preferredVoice) {
+            preferredVoice = voices.find(voice => 
+              voice.lang.includes('es-ES') || 
+              voice.lang.includes('es-MX') || 
+              voice.lang.includes('es-US') ||
+              voice.lang.startsWith('es')
+            );
+          }
+        } else {
+          // English voice selection
+          preferredVoice = voices.find(voice => {
+            const langMatch = voice.lang.startsWith(lang.split('-')[0]);
+            const genderMatch = voiceGender === 'female' ? 
+              voice.name.toLowerCase().includes('female') || 
+              voice.name.toLowerCase().includes('woman') ||
+              voice.name.toLowerCase().includes('zira') ||
+              voice.name.toLowerCase().includes('samantha') ||
+              voice.name.toLowerCase().includes('karen') :
+              voice.name.toLowerCase().includes('male') || 
+              voice.name.toLowerCase().includes('man') ||
+              voice.name.toLowerCase().includes('alex') ||
+              voice.name.toLowerCase().includes('daniel');
+            return langMatch && genderMatch;
+          });
+          
+          // Fallback to any English voice
+          if (!preferredVoice) {
+            preferredVoice = voices.find(voice => voice.lang.startsWith(lang.split('-')[0]));
+          }
         }
         
         if (preferredVoice) {
@@ -732,9 +761,12 @@ function VocabularyMiningPracticeContent() {
 
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="bg-white rounded-xl shadow-2xl p-8">
-            <div className="mb-6">
-              <GemMiningGame answerKey={answerKey} wasCorrect={true} />
-            </div>
+            {/* Temporarily hidden gem visual effect */}
+            {false && (
+              <div className="mb-6">
+                <GemMiningGame answerKey={answerKey} wasCorrect={true} />
+              </div>
+            )}
             
             <h2 className="text-2xl font-bold text-center mb-8">Match the Spanish terms with their English translations</h2>
             
@@ -742,10 +774,10 @@ function VocabularyMiningPracticeContent() {
               <div className="space-y-3">
                 <h3 className="font-semibold text-gray-700 mb-4">Spanish Terms</h3>
                 {unmatched.map(pair => (
-                  <button
+                  <div
                     key={pair.id + '-term'}
                     onClick={() => handleMatchSelection('term', pair.term)}
-                    className={`w-full p-4 rounded-lg border-2 text-left transition-colors ${
+                    className={`w-full p-4 rounded-lg border-2 text-left transition-colors cursor-pointer ${
                       selectedTerm === pair.term
                         ? 'border-blue-500 bg-blue-50'
                         : 'border-gray-200 hover:border-gray-300'
@@ -763,24 +795,24 @@ function VocabularyMiningPracticeContent() {
                         <Volume2 className="w-4 h-4" />
                       </button>
                     </div>
-                  </button>
+                  </div>
                 ))}
               </div>
               
               <div className="space-y-3">
                 <h3 className="font-semibold text-gray-700 mb-4">English Translations</h3>
                 {unmatched.map(pair => (
-                  <button
+                  <div
                     key={pair.id + '-translation'}
                     onClick={() => handleMatchSelection('translation', pair.translation)}
-                    className={`w-full p-4 rounded-lg border-2 text-left transition-colors ${
+                    className={`w-full p-4 rounded-lg border-2 text-left transition-colors cursor-pointer ${
                       selectedTranslation === pair.translation
                         ? 'border-green-500 bg-green-50'
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
                   >
                     {pair.translation}
-                  </button>
+                  </div>
                 ))}
               </div>
             </div>
@@ -888,9 +920,12 @@ function VocabularyMiningPracticeContent() {
 
       {/* Main Content */}
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-6">
-          <GemMiningGame answerKey={answerKey} wasCorrect={isCorrect} />
-        </div>
+        {/* Temporarily hidden gem visual effect */}
+        {false && (
+          <div className="mb-6">
+            <GemMiningGame answerKey={answerKey} wasCorrect={isCorrect} />
+          </div>
+        )}
 
         {currentGem && (
           <div className="bg-white rounded-xl shadow-2xl p-8">
