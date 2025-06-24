@@ -261,6 +261,37 @@ export default function CartPage() {
                     >
                       Test API
                     </button>
+                    <button
+                      onClick={async () => {
+                        if (state.items.length === 0) {
+                          alert('Add items to cart first');
+                          return;
+                        }
+                        try {
+                          const response = await fetch('/api/test/create-test-purchase', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              email: user?.email || 'test@example.com',
+                              productIds: state.items.map(item => item.product.id)
+                            })
+                          });
+                          const data = await response.json();
+                          if (data.success) {
+                            window.location.href = data.successUrl;
+                          } else {
+                            alert(`Test failed: ${data.error}`);
+                          }
+                        } catch (error) {
+                          console.error('Test purchase failed:', error);
+                          alert('Test purchase failed - check console');
+                        }
+                      }}
+                      className="text-green-600 hover:text-green-700 text-sm font-medium px-3 py-1 border border-green-200 rounded"
+                      title="Create test purchase (Development only)"
+                    >
+                      Test Purchase
+                    </button>
                   </div>
                 )}
               </div>

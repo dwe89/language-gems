@@ -7,9 +7,37 @@ import { CheckCircle, Download, ArrowRight, Home, ShoppingBag } from 'lucide-rea
 
 export default function CheckoutSuccessPage() {
   const searchParams = useSearchParams();
-  const sessionId = searchParams.get('session_id');
+  const sessionId = searchParams?.get('session_id');
   const [loading, setLoading] = useState(true);
   const [orderDetails, setOrderDetails] = useState<any>(null);
+  const [downloading, setDownloading] = useState<string | null>(null);
+
+  const handleDownload = async (orderId: string, productId: string, productName: string) => {
+    setDownloading(productId);
+    try {
+      const response = await fetch(`/api/orders/${orderId}/download/${productId}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.downloadUrl) {
+          // Create a temporary link to trigger download
+          const link = document.createElement('a');
+          link.href = data.downloadUrl;
+          link.download = productName;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }
+      } else {
+        const errorData = await response.json();
+        alert(`Download failed: ${errorData.error}`);
+      }
+    } catch (error) {
+      console.error('Download error:', error);
+      alert('Download failed. Please try again.');
+    } finally {
+      setDownloading(null);
+    }
+  };
 
   useEffect(() => {
     if (sessionId) {
@@ -21,10 +49,18 @@ export default function CheckoutSuccessPage() {
 
   const fetchOrderDetails = async () => {
     try {
+      console.log('Fetching order details for session:', sessionId);
       const response = await fetch(`/api/orders/by-session/${sessionId}`);
+      
+      console.log('Order fetch response:', response.status, response.ok);
+      
       if (response.ok) {
         const data = await response.json();
+        console.log('Order details received:', data);
         setOrderDetails(data);
+      } else {
+        const errorText = await response.text();
+        console.error('Failed to fetch order details:', response.status, errorText);
       }
     } catch (error) {
       console.error('Error fetching order details:', error);
@@ -89,6 +125,11 @@ export default function CheckoutSuccessPage() {
                 Session ID: {sessionId}
               </p>
             )}
+            {orderDetails?.order && (
+              <p className="text-sm text-green-600 mt-1">
+                Order #{orderDetails.order.id.slice(0, 8).toUpperCase()}
+              </p>
+            )}
           </div>
           
           <div className="p-6">
@@ -98,7 +139,9 @@ export default function CheckoutSuccessPage() {
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-slate-600">Order Status:</span>
-                    <span className="font-medium text-green-600">Completed</span>
+                    <span className="font-medium text-green-600">
+                      {orderDetails?.order?.status || 'Completed'}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-600">Payment Method:</span>
@@ -106,8 +149,21 @@ export default function CheckoutSuccessPage() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-600">Order Date:</span>
-                    <span className="font-medium">{new Date().toLocaleDateString()}</span>
+                    <span className="font-medium">
+                      {orderDetails?.order?.created_at 
+                        ? new Date(orderDetails.order.created_at).toLocaleDateString()
+                        : new Date().toLocaleDateString()
+                      }
+                    </span>
                   </div>
+                  {orderDetails?.order?.total_cents && (
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">Total:</span>
+                      <span className="font-medium">
+                        £{(orderDetails.order.total_cents / 100).toFixed(2)}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
               
@@ -131,6 +187,61 @@ export default function CheckoutSuccessPage() {
             </div>
           </div>
         </div>
+
+        {/* Purchased Items */}
+        {orderDetails?.order?.order_items && orderDetails.order.order_items.length > 0 && (
+          <div className="bg-white rounded-lg shadow-sm overflow-hidden mb-8">
+            <div className="px-6 py-4 border-b border-slate-200">
+              <h2 className="text-lg font-semibold text-slate-800">Your Purchases</h2>
+              <p className="text-sm text-slate-600 mt-1">Click download to access your educational resources</p>
+            </div>
+            
+            <div className="divide-y divide-slate-200">
+              {orderDetails.order.order_items.map((item: any) => (
+                <div key={item.id} className="p-6">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start space-x-4">
+                      <div className="w-16 h-16 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <span className="text-2xl">📚</span>
+                      </div>
+                      
+                      <div>
+                        <h3 className="font-semibold text-slate-800 mb-1">
+                          {item.product?.name || 'Educational Resource'}
+                        </h3>
+                        <p className="text-sm text-slate-600 mb-2">
+                          {item.product?.description || 'Premium educational content'}
+                        </p>
+                        <div className="flex items-center text-sm text-slate-500">
+                          <span>Quantity: {item.quantity}</span>
+                          <span className="mx-2">•</span>
+                          <span>£{(item.price_cents / 100).toFixed(2)}</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <button
+                      onClick={() => handleDownload(
+                        orderDetails.order.id,
+                        item.product.id,
+                        item.product.name
+                      )}
+                      disabled={downloading === item.product.id}
+                      className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 flex items-center"
+                    >
+                      {downloading === item.product.id ? (
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                      ) : (
+                        <Download className="h-4 w-4 mr-2" />
+                      )}
+                      {downloading === item.product.id ? 'Preparing...' : 'Download'}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Action Buttons */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
