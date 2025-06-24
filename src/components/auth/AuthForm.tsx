@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from './AuthProvider';
 
 // This is a placeholder for the actual authentication logic that would be implemented with Supabase
@@ -11,6 +11,7 @@ interface AuthFormProps {
 }
 
 export default function AuthForm({ mode }: AuthFormProps) {
+  const searchParams = useSearchParams();
   const [emailOrUsername, setEmailOrUsername] = useState('');
   const [password, setPassword] = useState('');
   const [schoolCode, setSchoolCode] = useState('');
@@ -20,6 +21,23 @@ export default function AuthForm({ mode }: AuthFormProps) {
   const [isStudentLogin, setIsStudentLogin] = useState(false);
   const router = useRouter();
   const { signIn } = useAuth();
+
+  // Handle URL error parameters
+  useEffect(() => {
+    const errorParam = searchParams?.get('error');
+    if (errorParam) {
+      switch (errorParam) {
+        case 'verification_failed':
+          setError('Email verification failed. Please try again or request a new verification email.');
+          break;
+        case 'invalid_verification_link':
+          setError('Invalid verification link. Please try signing up again.');
+          break;
+        default:
+          setError('An error occurred during authentication.');
+      }
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

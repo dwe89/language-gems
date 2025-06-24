@@ -32,10 +32,16 @@ export async function POST(request: NextRequest) {
       }
     );
 
+    // Get the origin for redirect URL
+    const origin = request.headers.get('origin') || process.env.NEXT_PUBLIC_BASE_URL || 'https://www.languagegems.com';
+
     // Resend verification email
     const { error } = await supabase.auth.resend({
       type: 'signup',
       email: email,
+      options: {
+        emailRedirectTo: `${origin}/api/auth/callback`
+      }
     });
 
     if (error) {

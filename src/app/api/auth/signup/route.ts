@@ -25,6 +25,9 @@ export async function POST(request: NextRequest) {
       }
     );
 
+    // Get the origin for redirect URL
+    const origin = request.headers.get('origin') || process.env.NEXT_PUBLIC_BASE_URL || 'https://www.languagegems.com';
+
     // Sign up the user
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -33,7 +36,8 @@ export async function POST(request: NextRequest) {
         data: {
           name,
           role
-        }
+        },
+        emailRedirectTo: `${origin}/api/auth/callback`
       }
     });
 
