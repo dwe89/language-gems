@@ -8,7 +8,7 @@ import { useAuth } from '../../components/auth/AuthProvider';
 import { ArrowLeft, Plus, Minus, Trash2, CreditCard, Lock, ShoppingBag } from 'lucide-react';
 
 export default function CartPage() {
-  const { state, updateQuantity, removeItem, clearCart, getTotalPrice, getTotalItems } = useCart();
+  const { state, updateQuantity, removeItem, clearCart, getTotalPrice, getTotalItems, clearServerCart } = useCart();
   const { user } = useAuth();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -27,6 +27,14 @@ export default function CartPage() {
 
     setLoading(true);
     try {
+      console.log('Starting checkout process...');
+      console.log('Current URL:', window.location.href);
+      console.log('Items to checkout:', state.items.map(item => ({
+        product_id: item.product.id,
+        quantity: item.quantity,
+        price_cents: item.product.price_cents
+      })));
+
       const response = await fetch('/api/stripe/create-checkout-session', {
         method: 'POST',
         headers: {
@@ -42,14 +50,23 @@ export default function CartPage() {
         }),
       });
 
+      console.log('API Response status:', response.status);
+      console.log('API Response ok:', response.ok);
+
       if (!response.ok) {
-        throw new Error('Failed to create checkout session');
+        const errorText = await response.text();
+        console.error('API Error Response:', errorText);
+        throw new Error(`Failed to create checkout session: ${response.status} ${errorText}`);
       }
 
-      const { url } = await response.json();
+      const responseData = await response.json();
+      console.log('API Response data:', responseData);
       
-      if (url) {
-        window.location.href = url;
+      if (responseData.url) {
+        console.log('Redirecting to Stripe checkout:', responseData.url);
+        window.location.href = responseData.url;
+      } else {
+        throw new Error('No checkout URL received from API');
       }
     } catch (error) {
       console.error('Error during checkout:', error);
@@ -209,13 +226,43 @@ export default function CartPage() {
               </div>
 
               {/* Clear Cart */}
-              <div className="px-6 py-4 border-t border-slate-200">
+              <div className="px-6 py-4 border-t border-slate-200 flex justify-between items-center">
                 <button
                   onClick={clearCart}
                   className="text-red-600 hover:text-red-700 text-sm font-medium"
                 >
                   Clear Cart
                 </button>
+                
+                {/* Debug buttons - only show in development */}
+                {process.env.NODE_ENV === 'development' && (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={clearServerCart}
+                      className="text-orange-600 hover:text-orange-700 text-sm font-medium px-3 py-1 border border-orange-200 rounded"
+                      title="Clear phantom cart items from server (Development only)"
+                    >
+                      Clear Server Cart
+                    </button>
+                    <button
+                      onClick={async () => {
+                        try {
+                          const response = await fetch('/api/stripe/debug');
+                          const data = await response.json();
+                          console.log('Debug info:', data);
+                          alert(`Debug info logged to console. Base URL: ${data.envVars.baseUrl}`);
+                        } catch (error) {
+                          console.error('Debug test failed:', error);
+                          alert('Debug test failed - check console');
+                        }
+                      }}
+                      className="text-blue-600 hover:text-blue-700 text-sm font-medium px-3 py-1 border border-blue-200 rounded"
+                      title="Test API connectivity (Development only)"
+                    >
+                      Test API
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>

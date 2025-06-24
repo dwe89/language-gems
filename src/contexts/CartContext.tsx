@@ -90,6 +90,7 @@ interface CartContextType {
   getTotalItems: () => number;
   getTotalPrice: () => number;
   syncWithServer: () => Promise<void>;
+  clearServerCart: () => Promise<void>;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -104,9 +105,20 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     isOpen: false,
     loading: false,
   });
-  const [toast, setToast] = useState({ show: false, message: '', type: 'success' as const });
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' as 'success' | 'error' | 'info' });
   const hasInitializedRef = useRef(false);
   const lastUserIdRef = useRef<string | null>(null);
+
+  // DEBUG: Add console logging to track cart changes
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Cart items changed:', state.items.map(item => ({
+        name: item.product.name,
+        quantity: item.quantity,
+        id: item.product.id
+      })));
+    }
+  }, [state.items]);
 
   // Load cart from localStorage on initial load
   useEffect(() => {
@@ -114,6 +126,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     if (savedCart) {
       try {
         const parsedCart = JSON.parse(savedCart);
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Loading cart from localStorage:', parsedCart);
+        }
         dispatch({ type: 'SET_CART', payload: parsedCart });
       } catch (error) {
         logError('Error parsing saved cart:', error);
@@ -144,7 +159,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       hasInitializedRef.current = false;
       lastUserIdRef.current = null;
     }
-  }, [isAuthenticated, user?.id]); // Only depend on user ID, not the entire user object
+  }, [isAuthenticated, user?.id]);
 
   const addItem = (product: Product) => {
     dispatch({ type: 'ADD_ITEM', payload: product });
@@ -189,6 +204,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     dispatch({ type: 'SET_LOADING', payload: true });
 
     try {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Starting cart sync with server for user:', user.id);
+      }
+
       // Get server cart
       const { data: serverCart, error } = await supabaseBrowser
         .from('user_carts')
@@ -203,21 +222,79 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         throw error;
       }
 
-      // Merge local cart with server cart
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Server cart data:', serverCart);
+        console.log('Current local cart:', state.items);
+      }
+
+      // IMPORTANT: Only merge if we have items in either local or server cart
+      // Don't automatically add old server items if local cart is empty
+      const hasLocalItems = state.items.length > 0;
+      const hasServerItems = serverCart && serverCart.length > 0;
+
+      if (!hasLocalItems && !hasServerItems) {
+        // Both carts are empty, nothing to sync
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Both local and server carts are empty, skipping sync');
+        }
+        return;
+      }
+
+      // If user has local items but no server items, just save local to server
+      if (hasLocalItems && !hasServerItems) {
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Saving local cart to server');
+        }
+        for (const localItem of state.items) {
+          await supabaseBrowser
+            .from('user_carts')
+            .upsert({
+              user_id: user.id,
+              product_id: localItem.product.id,
+              quantity: localItem.quantity
+            });
+        }
+        return;
+      }
+
+      // If user has server items but no local items, clear old server items
+      if (!hasLocalItems && hasServerItems) {
+        // PHANTOM CART FIX: Don't automatically restore old server cart items
+        // This prevents phantom cart items from appearing
+        
+        // Clear old server cart items to prevent phantom cart issue
+        await supabaseBrowser
+          .from('user_carts')
+          .delete()
+          .eq('user_id', user.id);
+        
+        return;
+      }
+
+      // If both have items, prioritize local cart (don't add quantities!)
       const mergedItems: LocalCartItem[] = [];
       const localCartMap = new Map(
         state.items.map(item => [item.product.id, item])
       );
 
-      // Add server items
+      // Add server items only if not in local cart
       if (serverCart) {
         for (const serverItem of serverCart) {
           if (serverItem.product) {
             const localItem = localCartMap.get(serverItem.product.id);
-            mergedItems.push({
-              product: serverItem.product,
-              quantity: localItem ? localItem.quantity + serverItem.quantity : serverItem.quantity
-            });
+            if (localItem) {
+              // Use local quantity, don't add them together!
+              mergedItems.push({
+                product: serverItem.product,
+                quantity: localItem.quantity
+              });
+            } else {
+              // Only add server item if not in local cart
+              mergedItems.push({
+                product: serverItem.product,
+                quantity: serverItem.quantity
+              });
+            }
             localCartMap.delete(serverItem.product.id);
           }
         }
@@ -226,15 +303,30 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       // Add remaining local items
       for (const localItem of localCartMap.values()) {
         mergedItems.push(localItem);
-        
-        // Save local item to server
+      }
+
+      // Update server cart to match merged cart
+      if (mergedItems.length > 0) {
+        // Clear existing server cart first
         await supabaseBrowser
           .from('user_carts')
-          .upsert({
-            user_id: user.id,
-            product_id: localItem.product.id,
-            quantity: localItem.quantity
-          });
+          .delete()
+          .eq('user_id', user.id);
+
+        // Insert merged items
+        const serverCartItems = mergedItems.map(item => ({
+          user_id: user.id,
+          product_id: item.product.id,
+          quantity: item.quantity
+        }));
+
+        await supabaseBrowser
+          .from('user_carts')
+          .insert(serverCartItems);
+      }
+
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Merged cart items:', mergedItems);
       }
 
       dispatch({ type: 'SET_CART', payload: mergedItems });
@@ -243,6 +335,31 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       logError('Error syncing cart with server:', error);
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
+    }
+  };
+
+  // Add a function to manually clear server cart
+  const clearServerCart = async () => {
+    if (!user) return;
+    
+    try {
+      await supabaseBrowser
+        .from('user_carts')
+        .delete()
+        .eq('user_id', user.id);
+      
+      setToast({ 
+        show: true, 
+        message: 'Server cart cleared successfully!', 
+        type: 'success' 
+      });
+    } catch (error) {
+      logError('Error clearing server cart:', error);
+      setToast({ 
+        show: true, 
+        message: 'Error clearing server cart', 
+        type: 'error' 
+      });
     }
   };
 
@@ -256,6 +373,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     getTotalItems,
     getTotalPrice,
     syncWithServer,
+    clearServerCart,
   };
 
   return (
