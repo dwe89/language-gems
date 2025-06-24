@@ -197,6 +197,12 @@ export default function AdminNewProductPage() {
         validFiles.push(file);
       }
       
+      // Limit to 10 images maximum
+      if (validFiles.length > 10) {
+        setErrors(['Maximum 10 preview images allowed.']);
+        return;
+      }
+      
       setFormData(prev => ({ ...prev, preview_images: validFiles }));
       setErrors([]);
     }
@@ -496,11 +502,20 @@ export default function AdminNewProductPage() {
               <textarea
                 value={formData.description}
                 onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                rows={4}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                placeholder="Describe what this product teaches and who it's for..."
+                rows={6}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-mono text-sm"
+                placeholder="Describe what this product teaches and who it's for...
+
+Line breaks, tabs, and formatting will be preserved.
+
+Use double line breaks for paragraphs.
+    Use tabs or spaces for indentation."
                 disabled={loading}
+                style={{ whiteSpace: 'pre-wrap' }}
               />
+              <p className="text-sm text-slate-500 mt-1">
+                Formatting will be preserved exactly as you type it (line breaks, tabs, indentation, etc.)
+              </p>
             </div>
 
             {/* Price */}
@@ -603,6 +618,67 @@ export default function AdminNewProductPage() {
                     )}
                   </div>
                 </label>
+              </div>
+            </div>
+
+            {/* Preview Images Upload */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Preview Images (Optional)
+              </label>
+              <div className="space-y-4">
+                <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center hover:border-slate-400 transition-colors">
+                  <input
+                    type="file"
+                    accept=".jpg,.jpeg,.png,.gif,.webp,image/jpeg,image/png,image/gif,image/webp"
+                    onChange={handlePreviewImagesChange}
+                    className="hidden"
+                    id="preview-images-upload"
+                    multiple
+                    disabled={loading}
+                  />
+                  <label htmlFor="preview-images-upload" className="cursor-pointer">
+                    <Upload className="w-8 h-8 text-slate-400 mx-auto mb-2" />
+                    <div className="text-sm text-slate-600">
+                      <p className="font-medium">Click to upload preview images</p>
+                      <p className="text-slate-500">JPG, PNG, GIF, or WebP files</p>
+                      <p className="text-xs text-slate-400 mt-1">Max 10 images, 5MB each</p>
+                    </div>
+                  </label>
+                </div>
+
+                {/* Preview Images Grid */}
+                {formData.preview_images.length > 0 && (
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {formData.preview_images.map((file, index) => (
+                      <div key={index} className="relative group">
+                        <div className="aspect-square bg-slate-100 rounded-lg overflow-hidden">
+                          <img
+                            src={URL.createObjectURL(file)}
+                            alt={`Preview ${index + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setFormData(prev => ({
+                              ...prev,
+                              preview_images: prev.preview_images.filter((_, i) => i !== index)
+                            }));
+                          }}
+                          className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full text-xs hover:bg-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                          disabled={loading}
+                        >
+                          ×
+                        </button>
+                        <p className="text-xs text-slate-500 mt-1 truncate">
+                          {file.name}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -749,13 +825,28 @@ export default function AdminNewProductPage() {
                 <textarea
                   value={formData.sample_content}
                   onChange={(e) => setFormData(prev => ({ ...prev, sample_content: e.target.value }))}
-                  rows={4}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                  placeholder="Provide a sample or excerpt from the content (supports Markdown formatting)..."
+                  rows={8}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-mono text-sm"
+                  placeholder="Provide a sample or excerpt from the content...
+
+Example formatting that will be preserved:
+
+Chapter 1: Introduction
+    • Learn basic greetings
+    • Understand pronunciation
+
+Grammar Rules:
+    1. Verb conjugations
+    2. Noun genders
+        - Masculine: el, un
+        - Feminine: la, una
+
+All tabs, spaces, and line breaks will be preserved exactly as typed."
                   disabled={loading}
+                  style={{ whiteSpace: 'pre-wrap' }}
                 />
                 <p className="text-sm text-slate-500 mt-1">
-                  Use Markdown for formatting (e.g., **bold**, *italic*, bullet points)
+                  Formatting will be preserved exactly as you type it (line breaks, tabs, indentation, bullet points, etc.)
                 </p>
               </div>
 

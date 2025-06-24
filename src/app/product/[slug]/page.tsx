@@ -1,13 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '../../../lib/supabase';
 import { ArrowLeft, Star, Download, Shield, Clock, Tag, CreditCard } from 'lucide-react';
 import { loadStripe } from '@stripe/stripe-js';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import ImageModal from '../../../components/ui/ImageModal';
 
 interface Product {
   id: string;
@@ -34,9 +35,13 @@ const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
 
 export default function ProductPage() {
   const params = useParams();
+  const router = useRouter();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [purchasing, setPurchasing] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalImages, setModalImages] = useState<string[]>([]);
+  const [modalIndex, setModalIndex] = useState(0);
 
   useEffect(() => {
     if (params?.slug) {
@@ -64,6 +69,31 @@ export default function ProductPage() {
 
   const formatPrice = (priceCents: number) => {
     return `£${(priceCents / 100).toFixed(2)}`;
+  };
+
+  const openModal = (images: string[], startIndex: number = 0) => {
+    setModalImages(images);
+    setModalIndex(startIndex);
+    setModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setModalOpen(false);
+    setModalImages([]);
+    setModalIndex(0);
+  };
+
+  const previousImage = () => {
+    setModalIndex((prev) => (prev > 0 ? prev - 1 : modalImages.length - 1));
+  };
+
+  const nextImage = () => {
+    setModalIndex((prev) => (prev < modalImages.length - 1 ? prev + 1 : 0));
+  };
+
+  const handleTagClick = (tag: string) => {
+    // Navigate to shop page with tag filter
+    router.push(`/shop?tag=${encodeURIComponent(tag)}`);
   };
 
   const handlePurchase = async () => {
@@ -161,13 +191,30 @@ export default function ProductPage() {
             {/* Product Images/Preview */}
             <div className="space-y-6">
               {/* Main Product Image */}
-              <div className="bg-gradient-to-br from-indigo-100 to-purple-100 rounded-2xl overflow-hidden">
+              <div 
+                className="bg-gradient-to-br from-indigo-100 to-purple-100 rounded-2xl overflow-hidden cursor-pointer group relative"
+                onClick={() => {
+                  const allImages = product.thumbnail_url 
+                    ? [product.thumbnail_url, ...(product.preview_images || [])]
+                    : (product.preview_images || []);
+                  if (allImages.length > 0) {
+                    openModal(allImages, 0);
+                  }
+                }}
+              >
                 {product.thumbnail_url ? (
-                  <img 
-                    src={product.thumbnail_url} 
-                    alt={product.name}
-                    className="w-full h-64 object-cover"
-                  />
+                  <>
+                    <img 
+                      src={product.thumbnail_url} 
+                      alt={product.name}
+                      className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
+                      <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-white text-sm font-medium px-3 py-1 bg-black bg-opacity-50 rounded-full">
+                        Click to enlarge
+                      </div>
+                    </div>
+                  </>
                 ) : (
                   <div className="p-12 flex items-center justify-center">
                     <div className="text-indigo-600 text-8xl">📚</div>
@@ -178,23 +225,35 @@ export default function ProductPage() {
               {/* Preview Images Gallery */}
               {product.preview_images && product.preview_images.length > 0 && (
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-slate-800">Preview</h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    {product.preview_images.slice(0, 4).map((image, index) => (
-                      <div key={index} className="bg-white rounded-xl p-2 shadow-lg">
+                  <h3 className="text-lg font-semibold text-slate-800">
+                    Preview Images ({product.preview_images.length})
+                  </h3>
+                  <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                    {product.preview_images.map((image, index) => (
+                      <div 
+                        key={index} 
+                        className="bg-white rounded-xl p-2 shadow-lg cursor-pointer group relative hover:shadow-xl transition-shadow duration-300"
+                        onClick={() => {
+                          const allImages = product.thumbnail_url 
+                            ? [product.thumbnail_url, ...product.preview_images!]
+                            : product.preview_images!;
+                          const imageIndex = product.thumbnail_url ? index + 1 : index;
+                          openModal(allImages, imageIndex);
+                        }}
+                      >
                         <img 
                           src={image} 
                           alt={`${product.name} preview ${index + 1}`}
-                          className="w-full h-32 object-cover rounded-lg"
+                          className="w-full h-32 object-cover rounded-lg group-hover:scale-105 transition-transform duration-300"
                         />
+                        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center rounded-xl">
+                          <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-white text-xs font-medium px-2 py-1 bg-black bg-opacity-50 rounded">
+                            View larger
+                          </div>
+                        </div>
                       </div>
                     ))}
                   </div>
-                  {product.preview_images.length > 4 && (
-                    <p className="text-sm text-slate-500 text-center">
-                      +{product.preview_images.length - 4} more preview images
-                    </p>
-                  )}
                 </div>
               )}
 
@@ -246,13 +305,15 @@ export default function ProductPage() {
               {product.tags && product.tags.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                   {product.tags.map(tag => (
-                    <span
+                    <button
                       key={tag}
-                      className="inline-flex items-center px-3 py-1 bg-indigo-100 text-indigo-700 text-sm font-medium rounded-full"
+                      onClick={() => handleTagClick(tag)}
+                      className="inline-flex items-center px-3 py-1 bg-indigo-100 text-indigo-700 text-sm font-medium rounded-full hover:bg-indigo-200 hover:text-indigo-800 transition-colors cursor-pointer"
+                      title={`See other products tagged with "${tag}"`}
                     >
                       <Tag className="h-3 w-3 mr-1" />
                       {tag.replace('-', ' ')}
-                    </span>
+                    </button>
                   ))}
                 </div>
               )}
@@ -269,9 +330,9 @@ export default function ProductPage() {
 
               {/* Description */}
               <div className="prose prose-slate max-w-none prose-lg text-slate-600">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                <div style={{ whiteSpace: 'pre-wrap' }} className="font-medium leading-relaxed">
                   {product.description}
-                </ReactMarkdown>
+                </div>
               </div>
 
               {/* Target Audience */}
@@ -317,9 +378,9 @@ export default function ProductPage() {
                 <div className="bg-yellow-50 rounded-xl p-6 border border-yellow-200">
                   <h3 className="text-lg font-semibold text-slate-800 mb-4">Sample Content</h3>
                   <div className="prose prose-sm text-slate-600 max-w-none">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    <div style={{ whiteSpace: 'pre-wrap' }} className="font-mono text-sm leading-relaxed">
                       {product.sample_content}
-                    </ReactMarkdown>
+                    </div>
                   </div>
                 </div>
               )}
@@ -419,6 +480,17 @@ export default function ProductPage() {
           </div>
         </div>
       </div>
+
+      {/* Image Modal */}
+      <ImageModal
+        isOpen={modalOpen}
+        onClose={closeModal}
+        images={modalImages}
+        currentIndex={modalIndex}
+        onPrevious={previousImage}
+        onNext={nextImage}
+        title={product.name}
+      />
     </div>
   );
 } 

@@ -7,8 +7,10 @@ import { CartSidebar } from '../../components/cart/CartSidebar';
 import { supabaseBrowser } from '../../components/auth/AuthProvider';
 import { Product } from '../../types/ecommerce';
 import { ShoppingCart, Search, Filter, Star, ExternalLink } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
 
 export default function ShopPage() {
+  const searchParams = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -17,7 +19,12 @@ export default function ShopPage() {
 
   useEffect(() => {
     fetchProducts();
-  }, []);
+    // Check for tag parameter in URL
+    const tagParam = searchParams?.get('tag');
+    if (tagParam) {
+      setSelectedTag(tagParam);
+    }
+  }, [searchParams]);
 
   const fetchProducts = async () => {
     setLoading(true);
