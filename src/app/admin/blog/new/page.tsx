@@ -2,9 +2,10 @@
 
 import { useState } from 'react';
 import { supabaseBrowser, useAuth } from '../../../../components/auth/AuthProvider';
-import { Save, ArrowLeft, Eye, FileText, User, Tag, Calendar } from 'lucide-react';
+import { Save, ArrowLeft, FileText, User, Tag, Calendar } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import TiptapEditor from '../../../../components/editor/TiptapEditor';
 
 interface BlogFormData {
   title: string;
@@ -29,7 +30,6 @@ export default function NewBlogPostPage() {
     is_published: true,
   });
   const [loading, setLoading] = useState(false);
-  const [showPreview, setShowPreview] = useState(false);
 
   const generateSlug = (title: string) => {
     return title
@@ -46,6 +46,10 @@ export default function NewBlogPostPage() {
       title,
       slug: generateSlug(title)
     }));
+  };
+
+  const handleContentChange = (content: string) => {
+    setFormData(prev => ({ ...prev, content }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -93,21 +97,6 @@ export default function NewBlogPostPage() {
     }
   };
 
-  const formatContent = (content: string) => {
-    // Simple markdown-like formatting for preview
-    return content
-      .replace(/^# (.+)$/gm, '<h1 class="text-2xl font-bold mb-4">$1</h1>')
-      .replace(/^## (.+)$/gm, '<h2 class="text-xl font-semibold mb-3">$1</h2>')
-      .replace(/^### (.+)$/gm, '<h3 class="text-lg font-medium mb-2">$1</h3>')
-      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*(.+?)\*/g, '<em>$1</em>')
-      .replace(/^- (.+)$/gm, '<li class="ml-4">• $1</li>')
-      .replace(/\n\n/g, '</p><p class="mb-4">')
-      .replace(/^\s*(.+)$/gm, '<p class="mb-4">$1</p>')
-      .replace(/<\/p><p class="mb-4"><li/g, '</p><ul><li')
-      .replace(/li><\/p>/g, 'li></ul>');
-  };
-
   if (authLoading) {
     return (
       <div className="container mx-auto px-6 py-20">
@@ -135,29 +124,15 @@ export default function NewBlogPostPage() {
           </Link>
           <div>
             <h1 className="text-3xl font-bold text-slate-800">Create New Blog Post</h1>
-            <p className="text-slate-600 mt-1">Write and publish a new blog post</p>
+            <p className="text-slate-600 mt-1">Write and publish a new blog post with our WYSIWYG editor</p>
           </div>
-        </div>
-        <div className="flex items-center space-x-3">
-          <button
-            type="button"
-            onClick={() => setShowPreview(!showPreview)}
-            className={`px-4 py-2 rounded-lg border transition-colors flex items-center gap-2 ${
-              showPreview
-                ? 'bg-indigo-50 border-indigo-200 text-indigo-700'
-                : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'
-            }`}
-          >
-            <Eye className="h-4 w-4" />
-            {showPreview ? 'Hide Preview' : 'Show Preview'}
-          </button>
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="max-w-4xl">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <form onSubmit={handleSubmit} className="max-w-5xl">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Main Content Area */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-3 space-y-6">
             {/* Title */}
             <div className="bg-white rounded-lg border p-6">
               <div className="flex items-center mb-4">
@@ -212,52 +187,21 @@ export default function NewBlogPostPage() {
               </div>
             </div>
 
-            {/* Content Editor */}
+            {/* WYSIWYG Content Editor */}
             <div className="bg-white rounded-lg border p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-slate-800">Content</h2>
+                <h2 className="text-lg font-semibold text-slate-800">Content *</h2>
                 <div className="flex items-center space-x-2">
-                  <span className="text-sm text-slate-500">Markdown supported</span>
+                  <span className="text-sm text-slate-500">WYSIWYG Editor with Image Upload</span>
                 </div>
               </div>
 
-              {showPreview ? (
-                <div className="border border-slate-300 rounded-lg p-4 min-h-[400px] bg-slate-50">
-                  <h3 className="text-sm font-medium text-slate-700 mb-3">Preview:</h3>
-                  <div 
-                    className="prose prose-slate max-w-none"
-                    dangerouslySetInnerHTML={{ 
-                      __html: formData.content ? formatContent(formData.content) : '<p class="text-slate-400 italic">Start writing to see preview...</p>' 
-                    }}
-                  />
-                </div>
-              ) : (
-                <textarea
-                  value={formData.content}
-                  onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
-                  rows={16}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-mono text-sm"
-                  placeholder="Write your blog post content here...
-
-# Heading 1
-## Heading 2
-### Heading 3
-
-**Bold text** and *italic text*
-
-- Bullet points
-- Another point
-
-This supports basic Markdown formatting."
-                  required
-                />
-              )}
-
-              {!showPreview && (
-                <div className="mt-2 text-xs text-slate-500">
-                  <strong>Markdown Tips:</strong> Use # for headings, **bold**, *italic*, - for bullet points
-                </div>
-              )}
+              <TiptapEditor
+                content={formData.content}
+                onChange={handleContentChange}
+                placeholder="Start writing your blog post... You can drag and drop images directly into the editor!"
+                className="border-slate-300"
+              />
             </div>
           </div>
 
@@ -325,6 +269,19 @@ This supports basic Markdown formatting."
               <p className="text-xs text-slate-500 mt-2">
                 Separate tags with commas
               </p>
+            </div>
+
+            {/* Editor Features Info */}
+            <div className="bg-indigo-50 rounded-lg border border-indigo-200 p-6">
+              <h3 className="text-sm font-semibold text-indigo-800 mb-3">Editor Features</h3>
+              <ul className="text-xs text-indigo-700 space-y-1">
+                <li>• Drag & drop images</li>
+                <li>• Rich text formatting</li>
+                <li>• Headings & lists</li>
+                <li>• Code blocks & quotes</li>
+                <li>• Links & tables</li>
+                <li>• Undo/redo support</li>
+              </ul>
             </div>
 
             {/* Submit Button */}

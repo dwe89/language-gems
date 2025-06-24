@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../components/auth/AuthProvider';
+import { getNavigationItems } from '../../lib/featureFlags';
 import { LogOut, User, Settings } from 'lucide-react';
 
 export default function MainNavigation() {
@@ -41,31 +42,15 @@ export default function MainNavigation() {
     }
   }, [refreshSession, isMounted]);
 
-  // Different navigation items based on authentication state
-  const publicNavItems = [
-    { name: 'Games', path: '/games' },
-    { name: 'Blog', path: '/blog' },
-    { name: 'Shop', path: '/shop' },
-    { name: 'Custom Lessons', path: '/themes' },
-    { name: 'Progress Tracking', path: '/premium' },
-  ];
-
-  const authenticatedNavItems = [
-    { name: 'Games', path: '/games' },
-    { name: 'Blog', path: '/blog' },
-    { name: 'Shop', path: '/shop' },
-    { name: 'Vocabulary', path: '/dashboard/vocabulary' },
-    { name: 'Progress Tracking', path: '/dashboard/progress' },
-  ];
-
-  // Use the appropriate navigation items based on auth state, but only after mounting
-  const navItems = (isMounted && user) ? authenticatedNavItems : publicNavItems;
+  // Get navigation items based on auth state and user email (for admin override)
+  const navItems = isMounted ? getNavigationItems(!!user, user?.email) : [];
 
   // Add debug output to check authentication state (only log significant changes)
   useEffect(() => {
     const userState = {
       isAuthenticated: !!user, 
       userId: user?.id,
+      email: user?.email,
       role: user?.user_metadata?.role
     };
     
@@ -73,7 +58,7 @@ export default function MainNavigation() {
     if (user !== null) {
       console.log('Auth state changed in MainNavigation:', userState);
     }
-  }, [user?.id, user?.user_metadata?.role]); // Only depend on specific fields that matter
+  }, [user?.id, user?.email, user?.user_metadata?.role]); // Only depend on specific fields that matter
 
   return (
     <header className="bg-gradient-to-r from-blue-900 via-blue-800 to-teal-700 py-3 relative z-10">
@@ -89,19 +74,27 @@ export default function MainNavigation() {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
-            {navItems.map((item) => (
-              <Link
-                key={item.path}
-                href={item.path}
-                className={`transition-colors text-white font-medium hover:text-yellow-200 ${
-                  isActive(item.path)
-                    ? 'text-yellow-300 font-bold'
-                    : ''
-                }`}
-              >
-                {item.name}
-              </Link>
-            ))}
+            {navItems.map((item) => {
+              const href = item.comingSoon ? item.comingSoonPath : item.path;
+              return (
+                <Link
+                  key={item.name}
+                  href={href || item.path}
+                  className={`transition-colors text-white font-medium hover:text-yellow-200 relative ${
+                    isActive(item.path)
+                      ? 'text-yellow-300 font-bold'
+                      : ''
+                  }`}
+                >
+                  {item.name}
+                  {item.comingSoon && (
+                    <span className="absolute -top-2 -right-2 text-xs bg-yellow-400 text-blue-900 px-1 py-0.5 rounded-full font-bold">
+                      Soon
+                    </span>
+                  )}
+                </Link>
+              );
+            })}
           </nav>
 
           <div className="hidden md:flex items-center space-x-3">
@@ -141,54 +134,54 @@ export default function MainNavigation() {
           </div>
 
           {/* Mobile Menu Button */}
-          <button
-            className="md:hidden text-white focus:outline-none"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          >
-            <svg
-              className="h-6 w-6"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+          <div className="md:hidden">
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="text-white p-2"
             >
-              {mobileMenuOpen ? (
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              ) : (
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 6h16M4 12h16m-7 6h7"
-                />
-              )}
-            </svg>
-          </button>
+              <svg 
+                className="w-6 h-6" 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                {mobileMenuOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
+            </button>
+          </div>
         </div>
 
         {/* Mobile Navigation */}
         {mobileMenuOpen && (
           <nav className="md:hidden mt-4 py-4 border-t border-blue-700">
             <ul className="space-y-4">
-              {navItems.map((item) => (
-                <li key={item.path}>
-                  <Link
-                    href={item.path}
-                    className={`block transition-colors text-white ${
-                      isActive(item.path)
-                        ? 'text-yellow-300 font-medium'
-                        : 'hover:text-yellow-200'
-                    }`}
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    {item.name}
-                  </Link>
-                </li>
-              ))}
+              {navItems.map((item) => {
+                const href = item.comingSoon ? item.comingSoonPath : item.path;
+                return (
+                  <li key={item.name}>
+                    <Link
+                      href={href || item.path}
+                      className={`block transition-colors text-white relative ${
+                        isActive(item.path)
+                          ? 'text-yellow-300 font-medium'
+                          : 'hover:text-yellow-200'
+                      }`}
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      {item.name}
+                      {item.comingSoon && (
+                        <span className="ml-2 text-xs bg-yellow-400 text-blue-900 px-2 py-1 rounded-full font-bold">
+                          Coming Soon
+                        </span>
+                      )}
+                    </Link>
+                  </li>
+                );
+              })}
               <li className="pt-4 border-t border-blue-700">
                 {(isMounted && user) ? (
                   <>

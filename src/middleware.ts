@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { getFeatureFlags } from './lib/featureFlags';
 
 // Feature flags - same logic as the client-side version
 const isDevelopment = process.env.NODE_ENV === 'development';
@@ -61,65 +62,53 @@ export async function middleware(req: NextRequest) {
   let session = null;
   let user = null;
   let userRole = null;
+  let userEmail = null;
   
   try {
-    // Try to get the user from the current session
-    const { data: { user: currentUser }, error } = await supabase.auth.getUser();
+    // Get current session
+    const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession();
     
-    if (!error && currentUser) {
-      session = { user: currentUser };
-      user = currentUser;
-      
-      // Fetch user role from the database
-      const { data: profile } = await supabase
-        .from('user_profiles')
-        .select('role')
-        .eq('user_id', currentUser.id)
-        .single();
-      
-      userRole = profile?.role || null;
+    if (sessionError) {
+      console.error('Session error in middleware:', sessionError);
+    } else {
+      session = currentSession;
+      user = currentSession?.user || null;
+      userEmail = user?.email || null;
 
-      // Temporary admin override for specific email during testing
-      const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || "admin@languagegems.com";
-      if (currentUser.email === adminEmail) {
-        userRole = 'admin';
+      // Get user role if we have a user
+      if (user) {
+        try {
+          // First check user metadata
+          userRole = user.user_metadata?.role;
+          
+          // If no role in metadata, check user_profiles table
+          if (!userRole) {
+            const { data: profileData, error: profileError } = await supabase
+              .from('user_profiles')
+              .select('role')
+              .eq('user_id', user.id)
+              .single();
+              
+            if (!profileError && profileData) {
+              userRole = profileData.role;
+            }
+          }
+
+          // Admin override for specific email
+          if (userEmail === 'danieletienne89@gmail.com') {
+            userRole = 'admin';
+          }
+        } catch (error) {
+          console.error('Error getting user role in middleware:', error);
+        }
       }
-      
-      // Refresh the session to ensure it stays valid
-      await supabase.auth.getSession();
     }
   } catch (error) {
-    console.error('Error in middleware getting user:', error);
-    // Clear any potentially corrupted session
-    supabaseResponse.cookies.delete('sb-access-token');
-    supabaseResponse.cookies.delete('sb-refresh-token');
+    console.error('Error in middleware auth check:', error);
   }
 
-  // If the user just signed out (detected by presence of 'signedOut' cookie)
-  const signedOutCookie = req.cookies.get('signedOut');
-  if (signedOutCookie && signedOutCookie.value === 'true') {
-    // Clear the cookie in the response
-    supabaseResponse.cookies.delete('signedOut');
-    
-    // If trying to access protected routes, redirect to home
-    if (path.startsWith('/dashboard') || path.startsWith('/profile')) {
-      const redirectUrl = req.nextUrl.clone();
-      redirectUrl.pathname = '/';
-      return NextResponse.redirect(redirectUrl);
-    }
-    
-    return supabaseResponse;
-  }
-
-  // Development logging
-  if (process.env.NODE_ENV === 'development') {
-    console.log('Session check in middleware:', {
-      isAuthenticated: !!session,
-      userId: user?.id,
-      userRole,
-      path
-    });
-  }
+  // Get feature flags with admin override
+  const featureFlags = getFeatureFlags(userEmail);
 
   // Feature flag checking - redirect disabled features to specific coming-soon pages
   const featureRoutes = {
@@ -164,10 +153,13 @@ export async function middleware(req: NextRequest) {
 
   if (!shouldSkipRoleRedirects) {
     // In production, redirect dashboard access to preview page unless accessing preview page itself
+    // BUT allow admin users to access all features
     const isProduction = process.env.NODE_ENV === 'production';
     if (isProduction && session && (path === '/dashboard' || path.startsWith('/dashboard/'))) {
       const isPreviewPage = path === '/dashboard/preview';
-      if (!isPreviewPage) {
+      const isAdmin = userRole === 'admin';
+      
+      if (!isPreviewPage && !isAdmin) {
         // Check if user has active subscription
         try {
           const { data: subscription } = await supabase
@@ -177,17 +169,15 @@ export async function middleware(req: NextRequest) {
             .eq('status', 'active')
             .single();
 
-          // If no active subscription and user is not admin, redirect to preview
-          if (!subscription && userRole !== 'admin') {
+          // If no active subscription, redirect to preview
+          if (!subscription) {
             const redirectUrl = new URL('/dashboard/preview', req.url);
             return NextResponse.redirect(redirectUrl);
           }
         } catch (error) {
-          // If there's an error checking subscription, redirect non-admins to preview
-          if (userRole !== 'admin') {
-            const redirectUrl = new URL('/dashboard/preview', req.url);
-            return NextResponse.redirect(redirectUrl);
-          }
+          // If there's an error checking subscription, redirect to preview
+          const redirectUrl = new URL('/dashboard/preview', req.url);
+          return NextResponse.redirect(redirectUrl);
         }
       }
     }
@@ -201,9 +191,12 @@ export async function middleware(req: NextRequest) {
     }
 
     // In production, redirect student dashboard access to preview page unless accessing preview page itself
+    // BUT allow admin users to access all features
     if (isProduction && session && (path === '/student-dashboard' || path.startsWith('/student-dashboard/'))) {
       const isPreviewPage = path === '/student-dashboard/preview';
-      if (!isPreviewPage && userRole === 'student') {
+      const isAdmin = userRole === 'admin';
+      
+      if (!isPreviewPage && userRole === 'student' && !isAdmin) {
         // Check if user has active subscription
         try {
           const { data: subscription } = await supabase
@@ -239,7 +232,9 @@ export async function middleware(req: NextRequest) {
       const redirectUrl = req.nextUrl.clone();
       
       // In production, users without roles should go to blog instead of dashboards
-      if (isProduction && !userRole) {
+      // BUT admin users can access dashboards
+      const isAdmin = userRole === 'admin';
+      if (isProduction && !userRole && !isAdmin) {
         redirectUrl.pathname = '/blog';
       } else if (userRole === 'student') {
         redirectUrl.pathname = '/student-dashboard';
@@ -254,7 +249,9 @@ export async function middleware(req: NextRequest) {
     }
 
     // Handle dashboard/student-dashboard access for users without roles in production
-    if (isProduction && session && !userRole) {
+    // BUT allow admin users to access all features
+    const isAdmin = userRole === 'admin';
+    if (isProduction && session && !userRole && !isAdmin) {
       if (path === '/dashboard' || path.startsWith('/dashboard/')) {
         const redirectUrl = new URL('/dashboard/preview', req.url);
         return NextResponse.redirect(redirectUrl);
@@ -278,52 +275,10 @@ export async function middleware(req: NextRequest) {
   const isProtectedRoute = protectedPaths.some(route => path.startsWith(route));
 
   if (isProtectedRoute && !session) {
-    // Redirect to login if attempting to access protected route without auth
     const redirectUrl = req.nextUrl.clone();
     redirectUrl.pathname = '/auth/login';
-    redirectUrl.searchParams.set('redirectedFrom', path);
+    redirectUrl.searchParams.set('redirectTo', req.nextUrl.pathname);
     return NextResponse.redirect(redirectUrl);
-  }
-
-  // Admin routes protection - only allow admin users
-  if (path.startsWith('/admin') && session) {
-    if (userRole !== 'admin') {
-      // Non-admin users trying to access admin routes - redirect to their appropriate dashboard
-      const redirectUrl = req.nextUrl.clone();
-      redirectUrl.pathname = userRole === 'student' ? '/student-dashboard' : '/account';
-      return NextResponse.redirect(redirectUrl);
-    }
-  }
-
-  // Check for premium routes that require subscription
-  const premiumPaths = ['/dashboard'];
-  const isPremiumRoute = premiumPaths.some(route => path.startsWith(route));
-
-  if (isPremiumRoute && session && user) {
-    try {
-      // Check user's subscription status
-      const { data: subscription } = await supabase
-        .from('subscriptions')
-        .select('status')
-        .eq('user_id', user.id)
-        .eq('status', 'active')
-        .single();
-
-      // If no active subscription and user is not admin, redirect to upgrade page
-      if (!subscription && userRole !== 'admin') {
-        const redirectUrl = req.nextUrl.clone();
-        redirectUrl.pathname = '/account/upgrade';
-        return NextResponse.redirect(redirectUrl);
-      }
-    } catch (error) {
-      // If there's an error checking subscription, allow access for admins
-      console.warn('Error checking subscription in middleware:', error);
-      if (userRole !== 'admin') {
-        const redirectUrl = req.nextUrl.clone();
-        redirectUrl.pathname = '/account/upgrade';
-        return NextResponse.redirect(redirectUrl);
-      }
-    }
   }
 
   return supabaseResponse;
@@ -331,19 +286,7 @@ export async function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
-    // Only run middleware on routes that actually need auth checking
-    '/',
-    '/dashboard/:path*',
-    '/student-dashboard/:path*',
-    '/profile/:path*',
-    '/exercises/:path*',
-    '/languages/learn/:path*',
-    '/themes/:path*',
-    '/games/:path*',
-    '/premium/:path*',
-    '/learn/:path*',
-    '/auth/:path*',
-    '/coming-soon/:path*',
-    '/admin/:path*',
+    // Skip all internal paths (_next, etc)
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }; 

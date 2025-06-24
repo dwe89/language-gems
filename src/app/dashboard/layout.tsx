@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../components/auth/AuthProvider';
+import { getFeatureFlags } from '../../lib/featureFlags';
 import TeacherNavigation from '../../components/TeacherNavigation';
 import { supabaseBrowser } from '../../components/auth/AuthProvider';
 import { Crown, Lock, Zap } from 'lucide-react';
@@ -19,16 +20,19 @@ export default function DashboardLayout({
 
   // Check if we should redirect to preview in production
   useEffect(() => {
-    const isProduction = process.env.NODE_ENV === 'production';
-    const isPreviewPage = window.location.pathname === '/dashboard/preview';
-    
-    // In production, redirect to preview unless user has subscription or is already on preview page
-    if (isProduction && !hasSubscription && !isLoading && !isPreviewPage) {
-      setShouldRedirect(true);
-      router.push('/dashboard/preview');
-      return;
+    if (!isLoading && user) {
+      const flags = getFeatureFlags(user.email);
+      const isProduction = process.env.NODE_ENV === 'production';
+      const isPreviewPage = window.location.pathname === '/dashboard/preview';
+      
+      // In production, redirect to preview unless user has subscription, admin access, or is already on preview page
+      if (isProduction && !hasSubscription && !flags.customLessons && !isPreviewPage) {
+        setShouldRedirect(true);
+        router.push('/dashboard/preview');
+        return;
+      }
     }
-  }, [hasSubscription, isLoading, router]);
+  }, [hasSubscription, isLoading, user, router]);
 
   // Show loading while checking redirect
   if (shouldRedirect || isLoading) {
@@ -40,6 +44,11 @@ export default function DashboardLayout({
         </div>
       </div>
     );
+  }
+
+  // If no user, don't render anything - middleware will redirect
+  if (!user) {
+    return null;
   }
 
   // Show upgrade banner for free users
