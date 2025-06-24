@@ -100,10 +100,15 @@ export default function AuthForm({ mode }: AuthFormProps) {
           throw new Error(data.error || 'Signup failed');
         }
         
-        console.log('Signup successful, navigating to account page');
+        console.log('Signup successful, redirect URL:', data.redirectUrl);
         
-        // Use router navigation instead of window.location
-        router.push('/account');
+        // Store email for verification page if needed
+        if (data.needsEmailVerification) {
+          localStorage.setItem('pendingVerificationEmail', finalEmailOrUsername);
+        }
+        
+        // Use the redirect URL from the response
+        router.push(data.redirectUrl);
       }
     } catch (err) {
       console.error('Authentication error:', err);

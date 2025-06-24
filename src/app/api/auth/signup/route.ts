@@ -60,10 +60,14 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Check if email confirmation is required
+    const needsConfirmation = !data.user?.email_confirmed_at && data.user?.confirmation_sent_at;
+
     return NextResponse.json({
       success: true,
       user: data.user,
-      redirectUrl: '/account'
+      needsEmailVerification: needsConfirmation,
+      redirectUrl: needsConfirmation ? `/auth/verify-email?email=${encodeURIComponent(email)}` : '/account'
     });
 
   } catch (error) {
