@@ -33,6 +33,7 @@ export default function AdminBlogPage() {
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingPost, setEditingPost] = useState<BlogPost | null>(null);
+  const [previewingPost, setPreviewingPost] = useState<BlogPost | null>(null);
   const [editData, setEditData] = useState<EditBlogData>({
     title: '',
     slug: '',
@@ -173,7 +174,7 @@ export default function AdminBlogPage() {
       .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
       .replace(/\s+/g, '-') // Replace spaces with hyphens
       .replace(/-+/g, '-') // Replace multiple hyphens with single
-      .trim('-'); // Remove leading/trailing hyphens
+      .replace(/^-+|-+$/g, ''); // Remove leading/trailing hyphens
   };
 
   const handleTitleChange = (title: string) => {
@@ -351,6 +352,130 @@ export default function AdminBlogPage() {
         </div>
       )}
 
+      {/* Preview Modal */}
+      {previewingPost && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b border-slate-200">
+              <div>
+                <h2 className="text-xl font-semibold text-slate-800">Blog Post Preview</h2>
+                <p className="text-sm text-slate-600 mt-1">How this post will appear when published</p>
+              </div>
+              <button
+                onClick={() => setPreviewingPost(null)}
+                className="text-slate-400 hover:text-slate-600"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            {/* Preview Content */}
+            <div className="flex-1 overflow-y-auto">
+              <div className="bg-gradient-to-br from-indigo-50 via-white to-purple-50 min-h-full">
+                {/* Hero Section */}
+                <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white">
+                  <div className="container mx-auto px-6 py-12">
+                    {/* Tags */}
+                    {previewingPost.tags && previewingPost.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mb-6">
+                        {previewingPost.tags.map(tag => (
+                          <span
+                            key={tag}
+                            className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-sm font-medium"
+                          >
+                            {tag.replace('-', ' ')}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    
+                    {/* Title */}
+                    <h1 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">
+                      {previewingPost.title}
+                    </h1>
+                    
+                    {/* Meta */}
+                    <div className="flex flex-wrap items-center gap-6 text-white/80">
+                      <div className="flex items-center">
+                        <User className="h-4 w-4 mr-2" />
+                        <span>{previewingPost.author || 'LanguageGems Team'}</span>
+                      </div>
+                      <div className="flex items-center">
+                        <Calendar className="h-4 w-4 mr-2" />
+                        <span>{formatDate(previewingPost.created_at)}</span>
+                      </div>
+                      <div className="flex items-center">
+                        <Eye className="h-4 w-4 mr-2" />
+                        <span>2 min read • 308 words</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Main Content */}
+                <div className="container mx-auto px-6 py-12">
+                  <div className="max-w-4xl mx-auto">
+                    <div className="bg-white rounded-3xl shadow-xl p-8 lg:p-12">
+                      {/* Excerpt */}
+                      {previewingPost.excerpt && (
+                        <div className="text-xl text-slate-600 leading-relaxed mb-8 pb-8 border-b border-slate-200">
+                          {previewingPost.excerpt}
+                        </div>
+                      )}
+                      
+                      {/* Content */}
+                      <div 
+                        className="prose prose-lg prose-slate max-w-none"
+                        dangerouslySetInnerHTML={{ 
+                          __html: previewingPost.content
+                            .replace(/<h2>/g, '<h2 class="text-2xl font-semibold mb-4 mt-8 text-slate-800">')
+                            .replace(/<h3>/g, '<h3 class="text-xl font-semibold mb-3 mt-6 text-slate-800">')
+                            .replace(/<h4>/g, '<h4 class="text-lg font-semibold mb-2 mt-4 text-slate-800">')
+                            .replace(/<p>/g, '<p class="text-slate-600 leading-relaxed mb-4">')
+                            .replace(/<ul>/g, '<ul class="list-disc list-inside mb-4 text-slate-600">')
+                            .replace(/<ol>/g, '<ol class="list-decimal list-inside mb-4 text-slate-600">')
+                            .replace(/<blockquote>/g, '<blockquote class="border-l-4 border-indigo-500 bg-indigo-50 pl-6 py-4 my-6 italic text-slate-700">')
+                            .replace(/<a /g, '<a class="text-indigo-600 hover:text-indigo-800 underline" ')
+                            .replace(/<code>/g, '<code class="bg-slate-100 px-2 py-1 rounded text-sm font-mono text-slate-800">')
+                            .replace(/<pre>/g, '<pre class="bg-slate-900 text-white p-4 rounded-lg overflow-x-auto my-6">')
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-6 border-t border-slate-200 bg-slate-50">
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-slate-600">
+                  Preview of how this post will appear on your blog
+                </div>
+                <div className="flex items-center space-x-3">
+                  <button
+                    onClick={() => {
+                      window.open(`/blog/${previewingPost.slug}`, '_blank');
+                    }}
+                    className="px-4 py-2 text-indigo-600 border border-indigo-600 rounded-lg hover:bg-indigo-50 transition-colors flex items-center gap-2"
+                  >
+                    <Eye className="h-4 w-4" />
+                    View Live
+                  </button>
+                  <button
+                    onClick={() => setPreviewingPost(null)}
+                    className="px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors"
+                  >
+                    Close Preview
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Posts Table */}
       <div className="bg-white rounded-lg shadow-sm border">
         <div className="overflow-x-auto">
@@ -454,6 +579,13 @@ export default function AdminBlogPage() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-center space-x-2">
+                        <button
+                          onClick={() => setPreviewingPost(post)}
+                          className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                          title="Preview post"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </button>
                         <button
                           onClick={() => handleEdit(post)}
                           className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"

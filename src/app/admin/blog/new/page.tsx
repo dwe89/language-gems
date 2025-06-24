@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { supabaseBrowser, useAuth } from '../../../../components/auth/AuthProvider';
-import { Save, ArrowLeft, FileText, User, Tag, Calendar } from 'lucide-react';
+import { Save, ArrowLeft, FileText, User, Tag, Calendar, Eye, X } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import TiptapEditor from '../../../../components/editor/TiptapEditor';
@@ -30,6 +30,7 @@ export default function NewBlogPostPage() {
     is_published: true,
   });
   const [loading, setLoading] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
 
   const generateSlug = (title: string) => {
     return title
@@ -37,7 +38,7 @@ export default function NewBlogPostPage() {
       .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
       .replace(/\s+/g, '-') // Replace spaces with hyphens
       .replace(/-+/g, '-') // Replace multiple hyphens with single
-      .trim('-'); // Remove leading/trailing hyphens
+      .replace(/^-+|-+$/g, ''); // Remove leading/trailing hyphens
   };
 
   const handleTitleChange = (title: string) => {
@@ -284,8 +285,22 @@ export default function NewBlogPostPage() {
               </ul>
             </div>
 
-            {/* Submit Button */}
-            <div className="bg-white rounded-lg border p-6">
+            {/* Action Buttons */}
+            <div className="bg-white rounded-lg border p-6 space-y-3">
+              <button
+                type="button"
+                onClick={() => setShowPreview(true)}
+                disabled={!formData.title.trim() || !formData.content.trim()}
+                className={`w-full px-4 py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 ${
+                  !formData.title.trim() || !formData.content.trim()
+                    ? 'bg-slate-300 text-slate-500 cursor-not-allowed'
+                    : 'bg-slate-600 text-white hover:bg-slate-700'
+                }`}
+              >
+                <Eye className="h-4 w-4" />
+                Preview Post
+              </button>
+              
               <button
                 type="submit"
                 disabled={loading || !formData.title.trim() || !formData.content.trim()}
@@ -311,6 +326,125 @@ export default function NewBlogPostPage() {
           </div>
         </div>
       </form>
+
+      {/* Preview Modal */}
+      {showPreview && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b border-slate-200">
+              <div>
+                <h2 className="text-xl font-semibold text-slate-800">Blog Post Preview</h2>
+                <p className="text-sm text-slate-600 mt-1">How this post will appear when published</p>
+              </div>
+              <button
+                onClick={() => setShowPreview(false)}
+                className="text-slate-400 hover:text-slate-600"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            {/* Preview Content */}
+            <div className="flex-1 overflow-y-auto">
+              <div className="bg-gradient-to-br from-indigo-50 via-white to-purple-50 min-h-full">
+                {/* Hero Section */}
+                <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white">
+                  <div className="container mx-auto px-6 py-12">
+                    {/* Tags */}
+                    {formData.tags && formData.tags.trim() && (
+                      <div className="flex flex-wrap gap-2 mb-6">
+                        {formData.tags.split(',').map((tag, index) => (
+                          <span
+                            key={index}
+                            className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-sm font-medium"
+                          >
+                            {tag.trim().replace('-', ' ')}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    
+                    {/* Title */}
+                    <h1 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">
+                      {formData.title || 'Untitled Post'}
+                    </h1>
+                    
+                    {/* Meta */}
+                    <div className="flex flex-wrap items-center gap-6 text-white/80">
+                      <div className="flex items-center">
+                        <User className="h-4 w-4 mr-2" />
+                        <span>{formData.author || 'LanguageGems Team'}</span>
+                      </div>
+                      <div className="flex items-center">
+                        <Calendar className="h-4 w-4 mr-2" />
+                        <span>{new Date().toLocaleDateString('en-GB', {
+                          day: '2-digit',
+                          month: 'short',
+                          year: 'numeric'
+                        })}</span>
+                      </div>
+                      <div className="flex items-center">
+                        <Eye className="h-4 w-4 mr-2" />
+                        <span>New post • {Math.ceil(formData.content.length / 200)} min read</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Main Content */}
+                <div className="container mx-auto px-6 py-12">
+                  <div className="max-w-4xl mx-auto">
+                    <div className="bg-white rounded-3xl shadow-xl p-8 lg:p-12">
+                      {/* Excerpt */}
+                      {formData.excerpt && (
+                        <div className="text-xl text-slate-600 leading-relaxed mb-8 pb-8 border-b border-slate-200">
+                          {formData.excerpt}
+                        </div>
+                      )}
+                      
+                      {/* Content */}
+                      <div 
+                        className="prose prose-lg prose-slate max-w-none"
+                        dangerouslySetInnerHTML={{ 
+                          __html: formData.content
+                            .replace(/<h2>/g, '<h2 class="text-2xl font-semibold mb-4 mt-8 text-slate-800">')
+                            .replace(/<h3>/g, '<h3 class="text-xl font-semibold mb-3 mt-6 text-slate-800">')
+                            .replace(/<h4>/g, '<h4 class="text-lg font-semibold mb-2 mt-4 text-slate-800">')
+                            .replace(/<p>/g, '<p class="text-slate-600 leading-relaxed mb-4">')
+                            .replace(/<ul>/g, '<ul class="list-disc list-inside mb-4 text-slate-600">')
+                            .replace(/<ol>/g, '<ol class="list-decimal list-inside mb-4 text-slate-600">')
+                            .replace(/<blockquote>/g, '<blockquote class="border-l-4 border-indigo-500 bg-indigo-50 pl-6 py-4 my-6 italic text-slate-700">')
+                            .replace(/<a /g, '<a class="text-indigo-600 hover:text-indigo-800 underline" ')
+                            .replace(/<code>/g, '<code class="bg-slate-100 px-2 py-1 rounded text-sm font-mono text-slate-800">')
+                            .replace(/<pre>/g, '<pre class="bg-slate-900 text-white p-4 rounded-lg overflow-x-auto my-6">')
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-6 border-t border-slate-200 bg-slate-50">
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-slate-600">
+                  Preview of how this post will appear on your blog
+                </div>
+                <div className="flex items-center space-x-3">
+                  <button
+                    onClick={() => setShowPreview(false)}
+                    className="px-4 py-2 text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
+                  >
+                    Close Preview
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 } 
