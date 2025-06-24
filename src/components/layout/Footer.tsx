@@ -33,14 +33,12 @@ export default function Footer() {
           </div>
           
           <div>
-            <h3 className="text-lg font-semibold mb-4 text-white">Languages</h3>
+            <h3 className="text-lg font-semibold mb-4 text-white">Platform</h3>
             <ul className="space-y-2 text-gray-300">
-              <li><Link href="/learn/english" className="hover:text-white">English</Link></li>
-              <li><Link href="/learn/spanish" className="hover:text-white">Spanish</Link></li>
-              <li><Link href="/learn/french" className="hover:text-white">French</Link></li>
-              <li><Link href="/learn/german" className="hover:text-white">German</Link></li>
-              <li><Link href="/learn/japanese" className="hover:text-white">Japanese</Link></li>
-              <li><Link href="/learn/chinese" className="hover:text-white">Chinese</Link></li>
+              <li><Link href="/games" className="hover:text-white">Interactive Games</Link></li>
+              <li><Link href="/themes" className="hover:text-white">Themes</Link></li>
+              <li><Link href="/languages" className="hover:text-white">Languages</Link></li>
+              <li><Link href="/exercises" className="hover:text-white">Exercises</Link></li>
             </ul>
           </div>
           
@@ -49,9 +47,7 @@ export default function Footer() {
             <ul className="space-y-2 text-gray-300">
               <li><Link href="/blog" className="hover:text-white">Blog</Link></li>
               <li><Link href="/about" className="hover:text-white">About</Link></li>
-              <li><Link href="/resources/faq" className="hover:text-white">FAQ</Link></li>
-              <li><Link href="/resources/support" className="hover:text-white">Support</Link></li>
-              <li><Link href="/resources/tutorials" className="hover:text-white">Tutorials</Link></li>
+              <li><Link href="/shop" className="hover:text-white">Shop</Link></li>
             </ul>
           </div>
           
