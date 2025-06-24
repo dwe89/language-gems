@@ -26,10 +26,10 @@ export default function BlogPostPage() {
   const [relatedPosts, setRelatedPosts] = useState<BlogPost[]>([]);
 
   useEffect(() => {
-    if (params.slug) {
+    if (params?.slug) {
       fetchPost(params.slug as string);
     }
-  }, [params.slug]);
+  }, [params?.slug]);
 
   const fetchPost = async (slug: string) => {
     try {
@@ -191,25 +191,44 @@ export default function BlogPostPage() {
           {/* Content */}
           <div className="bg-white rounded-2xl shadow-lg p-8 lg:p-12 mb-12">
             <div className="prose prose-lg prose-slate max-w-none prose-headings:text-slate-800 prose-headings:font-bold prose-p:text-slate-600 prose-p:leading-relaxed prose-a:text-indigo-600 prose-a:no-underline hover:prose-a:underline prose-strong:text-slate-800 prose-ul:text-slate-600 prose-ol:text-slate-600">
-              <ReactMarkdown 
-                remarkPlugins={[remarkGfm]}
-                components={{
-                  h1: ({children}) => <h1 className="text-3xl font-bold mb-6 text-slate-800">{children}</h1>,
-                  h2: ({children}) => <h2 className="text-2xl font-semibold mb-4 text-slate-800">{children}</h2>,
-                  h3: ({children}) => <h3 className="text-xl font-medium mb-3 text-slate-800">{children}</h3>,
-                  p: ({children}) => <p className="mb-4 text-slate-600 leading-relaxed">{children}</p>,
-                  ul: ({children}) => <ul className="mb-4 space-y-2">{children}</ul>,
-                  ol: ({children}) => <ol className="mb-4 space-y-2">{children}</ol>,
-                  li: ({children}) => <li className="text-slate-600 ml-4">{children}</li>,
-                  strong: ({children}) => <strong className="font-semibold text-slate-800">{children}</strong>,
-                  em: ({children}) => <em className="italic text-slate-600">{children}</em>,
-                  blockquote: ({children}) => <blockquote className="border-l-4 border-indigo-500 pl-4 italic text-slate-600 my-6">{children}</blockquote>,
-                  code: ({children}) => <code className="bg-slate-100 px-2 py-1 rounded text-sm font-mono text-slate-800">{children}</code>,
-                  pre: ({children}) => <pre className="bg-slate-100 p-4 rounded-lg overflow-x-auto mb-4 text-sm">{children}</pre>,
-                }}
-              >
-                {post.content}
-              </ReactMarkdown>
+              {post.content.includes('<') ? (
+                // If content contains HTML tags, render as HTML with proper styling
+                <div 
+                  className="formatted-content"
+                  dangerouslySetInnerHTML={{ 
+                    __html: post.content
+                      .replace(/<h2>/g, '<h2 class="text-2xl font-semibold mb-4 text-slate-800">')
+                      .replace(/<h3>/g, '<h3 class="text-xl font-medium mb-3 text-slate-800">')
+                      .replace(/<p>/g, '<p class="mb-4 text-slate-600 leading-relaxed">')
+                      .replace(/<ul>/g, '<ul class="mb-4 space-y-2 list-disc list-inside">')
+                      .replace(/<ol>/g, '<ol class="mb-4 space-y-2 list-decimal list-inside">')
+                      .replace(/<li>/g, '<li class="text-slate-600">')
+                      .replace(/<strong>/g, '<strong class="font-semibold text-slate-800">')
+                      .replace(/<em>/g, '<em class="italic text-slate-600">')
+                  }}
+                />
+              ) : (
+                // If content is markdown, use ReactMarkdown
+                <ReactMarkdown 
+                  remarkPlugins={[remarkGfm]}
+                  components={{
+                    h1: ({children}) => <h1 className="text-3xl font-bold mb-6 text-slate-800">{children}</h1>,
+                    h2: ({children}) => <h2 className="text-2xl font-semibold mb-4 text-slate-800">{children}</h2>,
+                    h3: ({children}) => <h3 className="text-xl font-medium mb-3 text-slate-800">{children}</h3>,
+                    p: ({children}) => <p className="mb-4 text-slate-600 leading-relaxed">{children}</p>,
+                    ul: ({children}) => <ul className="mb-4 space-y-2 list-disc list-inside">{children}</ul>,
+                    ol: ({children}) => <ol className="mb-4 space-y-2 list-decimal list-inside">{children}</ol>,
+                    li: ({children}) => <li className="text-slate-600">{children}</li>,
+                    strong: ({children}) => <strong className="font-semibold text-slate-800">{children}</strong>,
+                    em: ({children}) => <em className="italic text-slate-600">{children}</em>,
+                    blockquote: ({children}) => <blockquote className="border-l-4 border-indigo-500 pl-4 italic text-slate-600 my-6">{children}</blockquote>,
+                    code: ({children}) => <code className="bg-slate-100 px-2 py-1 rounded text-sm font-mono text-slate-800">{children}</code>,
+                    pre: ({children}) => <pre className="bg-slate-100 p-4 rounded-lg overflow-x-auto mb-4 text-sm">{children}</pre>,
+                  }}
+                >
+                  {post.content}
+                </ReactMarkdown>
+              )}
             </div>
           </div>
 
