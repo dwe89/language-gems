@@ -28,6 +28,12 @@ export async function POST(request: NextRequest) {
     // Get the origin for redirect URL
     const origin = request.headers.get('origin') || process.env.NEXT_PUBLIC_BASE_URL || 'https://www.languagegems.com';
 
+    // Determine user role based on environment
+    // In production: don't assign roles on signup (assign during premium subscription)
+    // In development: assign student role for testing purposes
+    const isProduction = process.env.NODE_ENV === 'production';
+    const userRole = isProduction ? null : 'student';  // No role assignment in production
+
     // Sign up the user
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -35,7 +41,7 @@ export async function POST(request: NextRequest) {
       options: {
         data: {
           name,
-          role
+          role: userRole  // Only assign role in development
         },
         emailRedirectTo: `${origin}/api/auth/callback`
       }
@@ -53,7 +59,7 @@ export async function POST(request: NextRequest) {
         .insert({
           user_id: data.user.id,
           email: data.user.email || email,
-          role: role,
+          role: userRole,  // Only assign role in development
           display_name: name,
           subscription_type: 'free'
         });
@@ -64,20 +70,24 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Check if email confirmation is required
-    const needsConfirmation = !data.user?.email_confirmed_at && data.user?.confirmation_sent_at;
-
-    return NextResponse.json({
+    // Return success response
+    const response = {
       success: true,
-      user: data.user,
-      needsEmailVerification: needsConfirmation,
-      redirectUrl: needsConfirmation ? `/auth/verify-email?email=${encodeURIComponent(email)}` : '/account'
-    });
+      needsEmailVerification: !!data.user && !data.session,
+      // In production, redirect to blog/shop since no role is assigned
+      // In development, redirect based on role
+      redirectUrl: isProduction ? '/blog' : (userRole === 'student' ? '/student-dashboard' : '/account')
+    };
 
+    if (data.session) {
+      response.redirectUrl = isProduction ? '/blog' : (userRole === 'student' ? '/student-dashboard' : '/account');
+    }
+
+    return NextResponse.json(response);
   } catch (error) {
-    console.error('Signup API error:', error);
+    console.error('Signup error:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'An unexpected error occurred' },
       { status: 500 }
     );
   }

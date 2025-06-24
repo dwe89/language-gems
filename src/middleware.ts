@@ -163,11 +163,66 @@ export async function middleware(req: NextRequest) {
   const shouldSkipRoleRedirects = nonRedirectPaths.some(route => path.startsWith(route));
 
   if (!shouldSkipRoleRedirects) {
+    // In production, redirect dashboard access to preview page unless accessing preview page itself
+    const isProduction = process.env.NODE_ENV === 'production';
+    if (isProduction && session && (path === '/dashboard' || path.startsWith('/dashboard/'))) {
+      const isPreviewPage = path === '/dashboard/preview';
+      if (!isPreviewPage) {
+        // Check if user has active subscription
+        try {
+          const { data: subscription } = await supabase
+            .from('subscriptions')
+            .select('status')
+            .eq('user_id', user?.id)
+            .eq('status', 'active')
+            .single();
+
+          // If no active subscription and user is not admin, redirect to preview
+          if (!subscription && userRole !== 'admin') {
+            const redirectUrl = new URL('/dashboard/preview', req.url);
+            return NextResponse.redirect(redirectUrl);
+          }
+        } catch (error) {
+          // If there's an error checking subscription, redirect non-admins to preview
+          if (userRole !== 'admin') {
+            const redirectUrl = new URL('/dashboard/preview', req.url);
+            return NextResponse.redirect(redirectUrl);
+          }
+        }
+      }
+    }
+
     // Check if student trying to access teacher routes
     if (session && (path === '/dashboard' || path.startsWith('/dashboard/'))) {
       if (userRole === 'student') {
         const redirectUrl = new URL('/student-dashboard', req.url);
         return NextResponse.redirect(redirectUrl);
+      }
+    }
+
+    // In production, redirect student dashboard access to preview page unless accessing preview page itself
+    if (isProduction && session && (path === '/student-dashboard' || path.startsWith('/student-dashboard/'))) {
+      const isPreviewPage = path === '/student-dashboard/preview';
+      if (!isPreviewPage && userRole === 'student') {
+        // Check if user has active subscription
+        try {
+          const { data: subscription } = await supabase
+            .from('subscriptions')
+            .select('status')
+            .eq('user_id', user?.id)
+            .eq('status', 'active')
+            .single();
+
+          // If no active subscription, redirect to preview
+          if (!subscription) {
+            const redirectUrl = new URL('/student-dashboard/preview', req.url);
+            return NextResponse.redirect(redirectUrl);
+          }
+        } catch (error) {
+          // If there's an error checking subscription, redirect to preview
+          const redirectUrl = new URL('/student-dashboard/preview', req.url);
+          return NextResponse.redirect(redirectUrl);
+        }
       }
     }
 
@@ -183,7 +238,10 @@ export async function middleware(req: NextRequest) {
     if (session && path === '/') {
       const redirectUrl = req.nextUrl.clone();
       
-      if (userRole === 'student') {
+      // In production, users without roles should go to blog instead of dashboards
+      if (isProduction && !userRole) {
+        redirectUrl.pathname = '/blog';
+      } else if (userRole === 'student') {
         redirectUrl.pathname = '/student-dashboard';
       } else if (userRole === 'teacher' || userRole === 'admin') {
         redirectUrl.pathname = '/account';
@@ -193,6 +251,18 @@ export async function middleware(req: NextRequest) {
       }
       
       return NextResponse.redirect(redirectUrl);
+    }
+
+    // Handle dashboard/student-dashboard access for users without roles in production
+    if (isProduction && session && !userRole) {
+      if (path === '/dashboard' || path.startsWith('/dashboard/')) {
+        const redirectUrl = new URL('/dashboard/preview', req.url);
+        return NextResponse.redirect(redirectUrl);
+      }
+      if (path === '/student-dashboard' || path.startsWith('/student-dashboard/')) {
+        const redirectUrl = new URL('/student-dashboard/preview', req.url);
+        return NextResponse.redirect(redirectUrl);
+      }
     }
   }
 

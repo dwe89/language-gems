@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '../../components/auth/AuthProvider';
 import TeacherNavigation from '../../components/TeacherNavigation';
 import { supabaseBrowser } from '../../components/auth/AuthProvider';
@@ -13,6 +14,33 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const { user, hasSubscription, isLoading } = useAuth();
+  const router = useRouter();
+  const [shouldRedirect, setShouldRedirect] = useState(false);
+
+  // Check if we should redirect to preview in production
+  useEffect(() => {
+    const isProduction = process.env.NODE_ENV === 'production';
+    const isPreviewPage = window.location.pathname === '/dashboard/preview';
+    
+    // In production, redirect to preview unless user has subscription or is already on preview page
+    if (isProduction && !hasSubscription && !isLoading && !isPreviewPage) {
+      setShouldRedirect(true);
+      router.push('/dashboard/preview');
+      return;
+    }
+  }, [hasSubscription, isLoading, router]);
+
+  // Show loading while checking redirect
+  if (shouldRedirect || isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500 mx-auto mb-4"></div>
+          <p className="text-slate-600">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Show upgrade banner for free users
   const UpgradeBanner = () => {

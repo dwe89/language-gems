@@ -41,10 +41,11 @@ export default function StudentDashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, signOut } = useAuth();
+  const { user, signOut, hasSubscription, isLoading } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
+  const [shouldRedirect, setShouldRedirect] = useState(false);
   const router = useRouter();
   
   // Handle hydration
@@ -60,6 +61,31 @@ export default function StudentDashboardLayout({
       router.push('/account');
     }
   }, [user, router]);
+
+  // Check if we should redirect to preview in production
+  useEffect(() => {
+    const isProduction = process.env.NODE_ENV === 'production';
+    const isPreviewPage = window.location.pathname === '/student-dashboard/preview';
+    
+    // In production, redirect to preview unless user has subscription or is already on preview page
+    if (isProduction && !hasSubscription && !isLoading && !isPreviewPage) {
+      setShouldRedirect(true);
+      router.push('/student-dashboard/preview');
+      return;
+    }
+  }, [hasSubscription, isLoading, router]);
+
+  // Show loading while checking redirect
+  if (shouldRedirect || isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-600 to-purple-700 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white mx-auto mb-4"></div>
+          <p className="text-white">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
   
   // Get username from user data - only show after hydration to prevent mismatch
   const username = isHydrated ? (user?.user_metadata?.name || user?.email || 'Student') : 'Student';
