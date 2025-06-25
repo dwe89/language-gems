@@ -216,7 +216,7 @@ export default function TopicPage() {
         
         <div className="flex items-center mb-6">
           <Link 
-            href={`/freebies/${language}/${keyStage}`}
+            href={`/resources/${language}/${keyStage}`}
             className="inline-flex items-center text-emerald-600 hover:opacity-80 mr-4"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -308,14 +308,14 @@ export default function TopicPage() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
-              href={`/freebies/${language}/${keyStage}`}
+              href={`/resources/${language}/${keyStage}`}
               className="inline-flex items-center bg-white/20 text-white px-6 py-3 rounded-lg font-medium hover:bg-white/30 transition-colors"
             >
               <ArrowLeft className="h-5 w-5 mr-2" />
               Back to {keyStageUpper} Topics
             </Link>
             <Link
-              href={`/freebies/${language}`}
+              href={`/resources/${language}`}
               className="inline-flex items-center bg-white text-slate-800 px-6 py-3 rounded-lg font-medium hover:bg-white/90 transition-colors"
             >
               Explore All {capitalizedLanguage}

@@ -79,7 +79,7 @@ export default function CurriculumNavigator({ onReturnToHub }: CurriculumNavigat
     const topic = TOPICS[selectedKeyStage || '']?.find(t => t.id === topicId);
     if (topic && selectedLanguage && selectedKeyStage) {
       // Navigate to specific topic page
-      window.location.href = `/freebies/${selectedLanguage}/${selectedKeyStage}/${topicId}`;
+      window.location.href = `/resources/${selectedLanguage}/${selectedKeyStage}/${topicId}`;
     }
   };
 
@@ -201,7 +201,7 @@ export default function CurriculumNavigator({ onReturnToHub }: CurriculumNavigat
           <div className="flex items-center justify-between">
             <h3 className="text-2xl font-bold text-slate-800">Topics</h3>
             <Link
-              href={`/freebies/${selectedLanguage}/${selectedKeyStage}`}
+              href={`/resources/${selectedLanguage}/${selectedKeyStage}`}
               className="inline-flex items-center text-indigo-600 hover:text-indigo-700 font-medium"
             >
               <Search className="h-4 w-4 mr-2" />

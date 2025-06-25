@@ -46,14 +46,14 @@ const LANGUAGE_CONFIGS = {
 };
 
 interface PageProps {
-  params: {
+  params: Promise<{
     language: string;
     keyStage: string;
-  };
+  }>;
 }
 
-export default function LanguageKeyStage({ params }: PageProps) {
-  const { language, keyStage } = params;
+export default async function LanguageKeyStage({ params }: PageProps) {
+  const { language, keyStage } = await params;
   
   const languageConfig = LANGUAGE_CONFIGS[language as keyof typeof LANGUAGE_CONFIGS];
   const topicConfigs = TOPIC_CONFIGS[keyStage as keyof typeof TOPIC_CONFIGS];

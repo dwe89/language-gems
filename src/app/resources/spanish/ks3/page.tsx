@@ -291,7 +291,7 @@ export default function SpanishKS3Page() {
                 </div>
 
                 <Link
-                  href={`/freebies/spanish/ks3/${topic.id}`}
+                  href={`/resources/spanish/ks3/${topic.id}`}
                   className="w-full inline-flex items-center justify-center bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors font-medium"
                 >
                   Explore {topic.name}
