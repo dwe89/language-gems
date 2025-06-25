@@ -12,8 +12,6 @@ interface Resource {
   description: string;
   type: string;
   level: string;
-  downloadCount: number;
-  rating: number;
   featured: boolean;
   fileType: string;
   pages?: number;
@@ -290,20 +288,6 @@ export default function TopicPage() {
                           </a>
                         )}
                       </div>
-                    </div>
-                    
-                    <div className="text-right">
-                      {resource.rating > 0 && (
-                        <>
-                          <div className="text-lg font-bold text-emerald-600">{resource.rating.toFixed(1)}</div>
-                          <div className="flex items-center justify-end mb-1">
-                            {[...Array(5)].map((_, i) => (
-                              <Star key={i} className={`h-3 w-3 ${i < Math.floor(resource.rating) ? 'text-yellow-400 fill-current' : 'text-gray-300'}`} />
-                            ))}
-                          </div>
-                        </>
-                      )}
-                      <div className="text-xs text-slate-500">{resource.downloadCount?.toLocaleString() || 0} downloads</div>
                     </div>
                   </div>
                 </div>

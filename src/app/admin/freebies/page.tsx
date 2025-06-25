@@ -25,8 +25,6 @@ interface FreebieResource {
   featured: boolean;
   premium: boolean;
   skills: string[];
-  download_count: number;
-  rating: number;
   file_url: string;
   preview_url?: string;
   file_name: string;
@@ -81,7 +79,7 @@ export default function FreebiesAdminPage() {
   const [selectedTopic, setSelectedTopic] = useState('');
   const [selectedType, setSelectedType] = useState('');
   const [selectedLevel, setSelectedLevel] = useState('');
-  const [sortBy, setSortBy] = useState<'created_at' | 'title' | 'download_count'>('created_at');
+  const [sortBy, setSortBy] = useState<'created_at' | 'title'>('created_at');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   // Mock data for demonstration - in production, fetch from Supabase
@@ -100,8 +98,6 @@ export default function FreebiesAdminPage() {
         featured: true,
         premium: false,
         skills: ['Vocabulary', 'Reading', 'Writing'],
-        download_count: 234,
-        rating: 4.5,
         file_url: '/freebies/downloads/identity-vocabulary-spanish.pdf',
         preview_url: '/freebies/preview/identity-vocabulary-spanish',
         file_name: 'identity-vocabulary-spanish.pdf',
@@ -122,8 +118,6 @@ export default function FreebiesAdminPage() {
         featured: false,
         premium: false,
         skills: ['Grammar', 'Writing', 'Speaking'],
-        download_count: 156,
-        rating: 4.3,
         file_url: '/freebies/downloads/school-grammar-spanish.pdf',
         file_name: 'school-grammar-spanish.pdf',
         file_size: 1024 * 1024 * 3.2,
@@ -143,8 +137,6 @@ export default function FreebiesAdminPage() {
         featured: true,
         premium: false,
         skills: ['Listening', 'Comprehension'],
-        download_count: 89,
-        rating: 4.7,
         file_url: '/freebies/downloads/technology-listening-spanish.zip',
         file_name: 'technology-listening-spanish.zip',
         file_size: 1024 * 1024 * 12.5,
@@ -162,7 +154,7 @@ export default function FreebiesAdminPage() {
     return TOPICS_BY_KEY_STAGE[selectedKeyStage] || {};
   };
 
-  const filteredResources = resources.filter(resource => {
+      const filteredResources = resources.filter(resource => {
     const matchesSearch = !searchTerm || 
       resource.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       resource.description.toLowerCase().includes(searchTerm.toLowerCase());
@@ -180,8 +172,6 @@ export default function FreebiesAdminPage() {
       return order * (new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
     } else if (sortBy === 'title') {
       return order * a.title.localeCompare(b.title);
-    } else if (sortBy === 'download_count') {
-      return order * (a.download_count - b.download_count);
     }
     return 0;
   });
@@ -216,8 +206,6 @@ export default function FreebiesAdminPage() {
       featured: formData.featured,
       premium: formData.premium,
       skills: formData.skills || [],
-      download_count: 0,
-      rating: 0,
       file_url: `/freebies/downloads/${formData.file?.name || 'new-resource.pdf'}`,
       preview_url: formData.previewUrl,
       file_name: formData.file?.name || 'new-resource.pdf',
@@ -500,16 +488,10 @@ export default function FreebiesAdminPage() {
                         )}
                       </div>
                     </td>
-                    <td className="py-3 px-4">
+                    <td className="px-6 py-4 whitespace-nowrap text-right">
                       <div className="text-sm">
-                        <div className="font-medium">{resource.download_count.toLocaleString()}</div>
-                        <div className="text-slate-500">
-                          {resource.rating > 0 && (
-                            <span className="flex items-center">
-                              <Star className="h-3 w-3 text-yellow-400 mr-1" />
-                              {resource.rating.toFixed(1)}
-                            </span>
-                          )}
+                        <div className="font-medium text-slate-600">
+                          {formatFileSize(resource.file_size)}
                         </div>
                       </div>
                     </td>
