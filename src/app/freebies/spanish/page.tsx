@@ -2,10 +2,10 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { ArrowLeft, ChevronRight, Star, Download, Users, BookOpen, Globe, GraduationCap } from 'lucide-react';
 import FreebiesBreadcrumb from '../../../components/freebies/FreebiesBreadcrumb';
-import { BookOpen, Users, GraduationCap, ArrowLeft, Download } from 'lucide-react';
 
-interface KeyStageData {
+interface KeyStage {
   id: string;
   name: string;
   description: string;
@@ -13,268 +13,251 @@ interface KeyStageData {
   topicCount: number;
   resourceCount: number;
   color: string;
+  bgColor: string;
+  borderColor: string;
 }
 
-const KEY_STAGES: KeyStageData[] = [
+interface FeaturedResource {
+  id: string;
+  title: string;
+  description: string;
+  level: string;
+  topicArea: string;
+  downloadCount: number;
+  featured: boolean;
+}
+
+const KEY_STAGES: KeyStage[] = [
   {
     id: 'ks3',
-    name: 'KS3 (Years 7-9)',
-    description: 'Foundation Spanish vocabulary and grammar',
+    name: 'KS3',
+    description: 'Foundation Spanish for beginners',
     yearGroups: 'Years 7-9',
-    topicCount: 8,
-    resourceCount: 23,
-    color: 'green'
+    topicCount: 6,
+    resourceCount: 28,
+    color: 'text-green-700',
+    bgColor: 'bg-green-50',
+    borderColor: 'border-green-200'
   },
   {
     id: 'ks4',
-    name: 'KS4 (Years 10-11)',
-    description: 'GCSE Spanish preparation materials',
+    name: 'KS4',
+    description: 'GCSE Spanish preparation',
     yearGroups: 'Years 10-11',
-    topicCount: 6,
-    resourceCount: 18,
-    color: 'blue'
+    topicCount: 5,
+    resourceCount: 22,
+    color: 'text-orange-700',
+    bgColor: 'bg-orange-50',
+    borderColor: 'border-orange-200'
   },
   {
     id: 'ks5',
-    name: 'KS5 (Years 12-13)',
+    name: 'KS5',
     description: 'A-Level Spanish advanced topics',
     yearGroups: 'Years 12-13',
     topicCount: 4,
-    resourceCount: 8,
-    color: 'purple'
+    resourceCount: 12,
+    color: 'text-purple-700',
+    bgColor: 'bg-purple-50',
+    borderColor: 'border-purple-200'
   }
 ];
 
-const FEATURED_RESOURCES = [
+const FEATURED_RESOURCES: FeaturedResource[] = [
   {
     id: 'house-home',
     title: 'House and Home - Vocabulary Builder',
-    description: 'Essential vocabulary for describing your house, rooms, and furniture.',
-    level: 'KS3',
-    pages: 4,
-    featured: true
-  },
-  {
-    id: 'ser-vs-estar',
-    title: 'Ser vs Estar - Complete Guide',
-    description: 'Master the difference between ser and estar with clear explanations.',
-    level: 'KS4',
-    pages: 8,
+    description: 'Essential vocabulary for describing your house, rooms, and furniture with practical exercises.',
+    level: 'Beginner',
+    topicArea: 'KS3 • House & Home',
+    downloadCount: 1247,
     featured: true
   },
   {
     id: 'environment',
-    title: 'Environment and Climate Change',
-    description: 'Advanced vocabulary for discussing environmental issues.',
-    level: 'KS5',
-    pages: 7,
+    title: 'The Environment and Climate Change',
+    description: 'Advanced vocabulary for discussing environmental issues and climate change for GCSE preparation.',
+    level: 'Advanced',
+    topicArea: 'KS4 • Environment',
+    downloadCount: 892,
+    featured: true
+  },
+  {
+    id: 'identity',
+    title: 'All About Me - Identity and Personality',
+    description: 'Perfect starter resource for describing yourself, your family, and personality traits.',
+    level: 'Beginner',
+    topicArea: 'KS3 • Identity',
+    downloadCount: 1156,
     featured: true
   }
 ];
 
+const breadcrumbItems = [
+  { label: 'Freebies', href: '/freebies' },
+  { label: 'Spanish', active: true }
+];
+
 export default function SpanishFreebiesPage() {
-  const breadcrumbItems = [
-    { label: 'Freebies', href: '/freebies' },
-    { label: 'Spanish', active: true }
-  ];
-
-  const getColorClasses = (color: string) => {
-    const colorMap = {
-      green: {
-        bg: 'from-green-50 to-emerald-50',
-        border: 'border-green-200',
-        text: 'text-green-700',
-        button: 'bg-green-600 hover:bg-green-700'
-      },
-      blue: {
-        bg: 'from-blue-50 to-indigo-50',
-        border: 'border-blue-200',
-        text: 'text-blue-700',
-        button: 'bg-blue-600 hover:bg-blue-700'
-      },
-      purple: {
-        bg: 'from-purple-50 to-violet-50',
-        border: 'border-purple-200',
-        text: 'text-purple-700',
-        button: 'bg-purple-600 hover:bg-purple-700'
-      }
-    };
-    return colorMap[color as keyof typeof colorMap] || colorMap.blue;
-  };
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-red-600 via-yellow-600 to-red-600 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <div className="text-center">
-            <div className="flex justify-center mb-6">
-              <div className="text-6xl">🇪🇸</div>
-            </div>
-            <h1 className="text-4xl md:text-5xl font-bold mb-6">
-              Spanish Learning Resources
-            </h1>
-            <p className="text-xl md:text-2xl text-red-100 mb-8 max-w-3xl mx-auto">
-              Comprehensive collection of Spanish worksheets, grammar guides, and practice materials 
-              organized by key stage and curriculum requirements.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <div className="flex items-center text-red-200">
-                <BookOpen className="h-5 w-5 mr-2" />
-                <span>49 Resources Available</span>
-              </div>
-              <div className="flex items-center text-red-200">
-                <Users className="h-5 w-5 mr-2" />
-                <span>All Levels Covered</span>
-              </div>
-              <div className="flex items-center text-red-200">
-                <GraduationCap className="h-5 w-5 mr-2" />
-                <span>Exam Focused</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Breadcrumb */}
-        <div className="flex items-center justify-between mb-8">
-          <FreebiesBreadcrumb items={breadcrumbItems} />
-          <Link
-            href="/freebies"
-            className="inline-flex items-center text-indigo-600 hover:text-indigo-700 font-medium"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Freebies Hub
-          </Link>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="bg-white rounded-xl shadow-sm p-6 mb-8">
-          <div className="flex flex-col md:flex-row gap-4 justify-between items-center">
-            <div>
-              <h2 className="text-xl font-bold text-slate-800 mb-2">
-                Browse Spanish Resources
-              </h2>
-              <p className="text-slate-600">
-                Choose how you'd like to explore our Spanish materials
+    <div className="min-h-screen bg-gradient-to-br from-red-50 via-yellow-50 to-orange-50">
+      <div className="container mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="mb-8">
+          <FreebiesBreadcrumb items={breadcrumbItems} className="mb-4" />
+          
+          <div className="flex items-center mb-4">
+            <Link 
+              href="/freebies"
+              className="inline-flex items-center text-red-600 hover:text-red-700 mr-4"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Freebies
+            </Link>
+            <div className="flex-1">
+              <h1 className="text-4xl font-bold text-slate-800 mb-2">
+                Spanish Resources
+              </h1>
+              <p className="text-xl text-slate-600">
+                Comprehensive Spanish learning materials organized by key stage
               </p>
             </div>
-            <div className="flex gap-3">
-              <Link
-                href="/freebies?language=Spanish"
-                className="inline-flex items-center px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors"
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Search All Spanish Resources
-              </Link>
-              <Link
-                href="/freebies"
-                className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-              >
-                Browse All Languages
-              </Link>
+          </div>
+
+          {/* Spain Flag Colors Banner */}
+          <div className="w-full h-2 bg-gradient-to-r from-red-500 via-yellow-400 to-red-500 rounded-full mb-6"></div>
+        </div>
+
+        {/* Quick Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+          <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
+            <div className="flex items-center mb-3">
+              <BookOpen className="h-8 w-8 text-red-600 mr-3" />
+              <div>
+                <h3 className="text-2xl font-bold text-slate-800">62</h3>
+                <p className="text-slate-600">Total Resources</p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
+            <div className="flex items-center mb-3">
+              <GraduationCap className="h-8 w-8 text-yellow-600 mr-3" />
+              <div>
+                <h3 className="text-2xl font-bold text-slate-800">15</h3>
+                <p className="text-slate-600">Topic Areas</p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
+            <div className="flex items-center mb-3">
+              <Users className="h-8 w-8 text-orange-600 mr-3" />
+              <div>
+                <h3 className="text-2xl font-bold text-slate-800">3.2k</h3>
+                <p className="text-slate-600">Downloads</p>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Key Stages Grid */}
+        {/* Key Stages */}
         <div className="mb-12">
-          <h2 className="text-3xl font-bold text-slate-800 mb-8 text-center">
-            Choose Your Level
-          </h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {KEY_STAGES.map((keyStage) => {
-              const colors = getColorClasses(keyStage.color);
-              return (
-                <Link
-                  key={keyStage.id}
-                  href={`/freebies/spanish/${keyStage.id}`}
-                  className={`block bg-gradient-to-br ${colors.bg} rounded-xl p-8 border ${colors.border} hover:shadow-lg transition-all duration-300 group`}
-                >
-                  <div className="text-center">
-                    <h3 className="text-2xl font-bold text-slate-800 mb-3 group-hover:text-indigo-600">
-                      {keyStage.name}
-                    </h3>
-                    <p className="text-slate-600 mb-4">
-                      {keyStage.description}
-                    </p>
-                    <div className="space-y-2 mb-6">
-                      <div className={`text-sm font-medium ${colors.text}`}>
-                        {keyStage.yearGroups}
-                      </div>
-                      <div className="text-slate-500 text-sm">
-                        {keyStage.topicCount} topics • {keyStage.resourceCount} resources
-                      </div>
-                    </div>
-                    <div className={`inline-flex items-center px-4 py-2 ${colors.button} text-white rounded-lg font-medium transition-colors`}>
-                      Explore Topics
-                    </div>
+          <h2 className="text-3xl font-bold text-slate-800 mb-6">Browse by Key Stage</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {KEY_STAGES.map((keyStage) => (
+              <Link
+                key={keyStage.id}
+                href={`/freebies/spanish/${keyStage.id}`}
+                className={`block ${keyStage.bgColor} rounded-xl p-6 border ${keyStage.borderColor} hover:shadow-lg transition-all duration-300 group`}
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className={`text-2xl font-bold ${keyStage.color}`}>
+                    {keyStage.name}
+                  </h3>
+                  <ChevronRight className={`h-6 w-6 ${keyStage.color} group-hover:translate-x-1 transition-transform`} />
+                </div>
+                
+                <p className="text-slate-700 mb-3">{keyStage.description}</p>
+                <p className="text-sm text-slate-600 mb-4">{keyStage.yearGroups}</p>
+                
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className={`font-medium ${keyStage.color}`}>{keyStage.topicCount}</span>
+                    <span className="text-slate-600"> Topics</span>
                   </div>
-                </Link>
-              );
-            })}
+                  <div>
+                    <span className={`font-medium ${keyStage.color}`}>{keyStage.resourceCount}</span>
+                    <span className="text-slate-600"> Resources</span>
+                  </div>
+                </div>
+              </Link>
+            ))}
           </div>
         </div>
 
         {/* Featured Resources */}
         <div className="mb-12">
-          <h2 className="text-3xl font-bold text-slate-800 mb-8 text-center">
-            ⭐ Featured Spanish Resources
-          </h2>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-3xl font-bold text-slate-800">Featured Spanish Resources</h2>
+            <Link 
+              href="/freebies"
+              className="inline-flex items-center text-red-600 hover:text-red-700 font-medium"
+            >
+              Search All Resources
+              <ChevronRight className="h-4 w-4 ml-1" />
+            </Link>
+          </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {FEATURED_RESOURCES.map((resource) => (
-              <div key={resource.id} className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden border border-slate-200">
-                <div className="bg-gradient-to-r from-red-500 to-yellow-500 p-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-white font-semibold text-sm">Featured</span>
-                    <span className="text-white text-xs bg-white/20 px-2 py-1 rounded">
-                      {resource.level}
-                    </span>
+              <div
+                key={resource.id}
+                className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-shadow"
+              >
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center">
+                    <Star className="h-5 w-5 text-yellow-500 mr-2" />
+                    <span className="text-sm font-medium text-yellow-600">Featured</span>
+                  </div>
+                  <span className="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded-full">
+                    {resource.level}
+                  </span>
+                </div>
+                
+                <h3 className="text-xl font-bold text-slate-800 mb-2">{resource.title}</h3>
+                <p className="text-slate-600 mb-3">{resource.description}</p>
+                
+                <div className="flex items-center justify-between text-sm text-slate-500 mb-4">
+                  <span>{resource.topicArea}</span>
+                  <div className="flex items-center">
+                    <Download className="h-4 w-4 mr-1" />
+                    {resource.downloadCount.toLocaleString()}
                   </div>
                 </div>
                 
-                <div className="p-6">
-                  <h3 className="text-xl font-bold text-slate-800 mb-3">
-                    {resource.title}
-                  </h3>
-                  <p className="text-slate-600 mb-4">
-                    {resource.description}
-                  </p>
-                  
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-slate-500">
-                      {resource.pages} pages
-                    </span>
-                    <button className="bg-gradient-to-r from-red-600 to-yellow-600 text-white px-4 py-2 rounded-lg font-medium hover:from-red-700 hover:to-yellow-700 transition-all">
-                      <Download className="h-4 w-4 mr-2 inline" />
-                      Download
-                    </button>
-                  </div>
-                </div>
+                <button className="w-full bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors font-medium">
+                  Download Resource
+                </button>
               </div>
             ))}
           </div>
         </div>
 
-        {/* All Resources CTA */}
-        <div className="bg-gradient-to-r from-red-600 to-yellow-600 rounded-xl p-8 text-white text-center">
-          <h2 className="text-2xl font-bold mb-4">
-            Ready to Explore All Spanish Resources?
-          </h2>
-          <p className="text-red-100 mb-6 max-w-2xl mx-auto">
-            Access our complete collection of Spanish worksheets, grammar guides, 
-            and practice materials with advanced search and filtering options.
+        {/* Cross Navigation */}
+        <div className="bg-white rounded-xl p-8 border border-slate-200 shadow-sm text-center">
+          <h3 className="text-2xl font-bold text-slate-800 mb-3">
+            Looking for something specific?
+          </h3>
+          <p className="text-slate-600 mb-6">
+            Use our search and filter tools to find exactly what you need across all languages and topics.
           </p>
           <Link
-            href="/freebies?language=Spanish"
-            className="inline-flex items-center bg-white text-red-600 px-8 py-3 rounded-lg font-semibold hover:bg-red-50 transition-colors"
+            href="/freebies"
+            className="inline-flex items-center bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition-colors font-medium"
           >
-            <Download className="h-5 w-5 mr-2" />
-            Browse All Spanish Resources
+            <Globe className="h-5 w-5 mr-2" />
+            Search All Resources
           </Link>
         </div>
       </div>

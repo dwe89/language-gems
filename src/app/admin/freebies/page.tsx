@@ -8,7 +8,7 @@ import {
   Plus, Upload, Download, Edit, Trash2, Search, Filter, 
   FileText, Globe, BookOpen, GraduationCap, Star, Eye,
   Calendar, Tag, Languages, Users, CheckCircle, X,
-  AlertCircle, Save, MoreVertical
+  AlertCircle, Save, MoreVertical, ExternalLink
 } from 'lucide-react';
 
 interface FreebieResource {
@@ -16,49 +16,59 @@ interface FreebieResource {
   title: string;
   description: string;
   language: string;
-  category: string;
+  keyStage: string;
   topic: string;
-  year_groups: string[];
+  type: 'worksheet' | 'audio' | 'video' | 'interactive' | 'assessment';
   level: 'Beginner' | 'Intermediate' | 'Advanced';
-  pages: number;
+  pages?: number;
+  duration?: string;
   featured: boolean;
   premium: boolean;
+  skills: string[];
   download_count: number;
+  rating: number;
   file_url: string;
+  preview_url?: string;
   file_name: string;
   file_size: number;
   created_at: string;
   updated_at: string;
 }
 
-interface Category {
-  id: string;
-  name: string;
-  icon: string;
-  description: string;
-}
-
-const LANGUAGES = ['Spanish', 'French', 'German', 'Italian', 'All Languages'];
-const YEAR_GROUPS = ['Year 7', 'Year 8', 'Year 9', 'Year 10', 'Year 11', 'Year 12', 'Year 13', 'KS3', 'KS4', 'KS5'];
+const LANGUAGES = ['spanish', 'french', 'german', 'italian'];
+const KEY_STAGES = ['ks3', 'ks4', 'ks5'];
 const LEVELS = ['Beginner', 'Intermediate', 'Advanced'];
+const RESOURCE_TYPES = ['worksheet', 'audio', 'video', 'interactive', 'assessment'];
 
-const CATEGORIES = [
-  { id: 'themes', name: 'Themed Worksheets', icon: '🌍', description: 'Topic-based vocabulary and conversation practice' },
-  { id: 'grammar', name: 'Grammar Essentials', icon: '📚', description: 'Structured grammar practice and reference sheets' },
-  { id: 'exam-prep', name: 'Exam Preparation', icon: '🎓', description: 'GCSE and A-Level focused materials' },
-  { id: 'vocabulary', name: 'Vocabulary Building', icon: '📝', description: 'Word lists and vocabulary exercises' },
-  { id: 'culture', name: 'Culture & Traditions', icon: '🎭', description: 'Cultural insights and traditional practices' },
-  { id: 'assessment', name: 'Assessment Tools', icon: '📊', description: 'Tests, quizzes, and evaluation materials' }
-];
-
-const TOPICS = {
-  themes: ['Identity & Family', 'School Life', 'Free Time & Hobbies', 'Local Area & Town', 'House & Home', 'Food & Drink', 'Technology', 'Environment', 'Travel & Holidays'],
-  grammar: ['Present Tense', 'Past Tense', 'Future Tense', 'Ser vs Estar', 'Adjectives', 'Numbers', 'Pronouns', 'Prepositions'],
-  'exam-prep': ['Speaking Practice', 'Listening Exercises', 'Reading Comprehension', 'Writing Tasks', 'Photo Cards', 'Role Play'],
-  vocabulary: ['Basic Vocabulary', 'Advanced Vocabulary', 'Thematic Lists', 'Cognates', 'False Friends'],
-  culture: ['Festivals', 'Food Culture', 'History', 'Art & Literature', 'Music & Dance', 'Traditions'],
-  assessment: ['Progress Tests', 'Unit Assessments', 'Mock Exams', 'Self-Assessment', 'Rubrics']
+// Topic configurations by key stage (matching our dynamic page structure)
+const TOPICS_BY_KEY_STAGE: Record<string, Record<string, string>> = {
+  ks3: {
+    identity: 'Identity & Family',
+    school: 'School Life',
+    'free-time': 'Free Time & Hobbies',
+    'local-area': 'Local Area',
+    'house-home': 'House & Home',
+    'food-drink': 'Food & Drink'
+  },
+  ks4: {
+    technology: 'Technology & Social Media',
+    environment: 'Environment & Global Issues',
+    'travel-tourism': 'Travel & Tourism',
+    'work-career': 'Work & Career',
+    culture: 'Culture & Festivals'
+  },
+  ks5: {
+    literature: 'Literature & Arts',
+    'politics-society': 'Politics & Society',
+    'business-economics': 'Business & Economics',
+    'science-technology': 'Science & Technology'
+  }
 };
+
+const COMMON_SKILLS = [
+  'Vocabulary', 'Grammar', 'Reading', 'Writing', 'Speaking', 'Listening', 
+  'Pronunciation', 'Cultural Knowledge', 'Assessment', 'Comprehension'
+];
 
 export default function FreebiesAdminPage() {
   const { user } = useAuth();
@@ -67,56 +77,90 @@ export default function FreebiesAdminPage() {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedLanguage, setSelectedLanguage] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedKeyStage, setSelectedKeyStage] = useState('');
+  const [selectedTopic, setSelectedTopic] = useState('');
+  const [selectedType, setSelectedType] = useState('');
   const [selectedLevel, setSelectedLevel] = useState('');
   const [sortBy, setSortBy] = useState<'created_at' | 'title' | 'download_count'>('created_at');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
-  // Mock data for now - replace with actual database calls
+  // Mock data for demonstration - in production, fetch from Supabase
   useEffect(() => {
-    // In production, fetch from Supabase
-    setResources([
+    const mockResources: FreebieResource[] = [
       {
         id: '1',
-        title: 'House and Home - Vocabulary Builder',
-        description: 'Essential vocabulary for describing your house, rooms, and furniture.',
-        language: 'Spanish',
-        category: 'themes',
-        topic: 'House & Home',
-        year_groups: ['Year 7', 'Year 8', 'KS3'],
+        title: 'Identity & Family Vocabulary Builder',
+        description: 'Essential vocabulary for describing yourself, family members, and relationships.',
+        language: 'spanish',
+        keyStage: 'ks3',
+        topic: 'identity',
+        type: 'worksheet',
         level: 'Beginner',
         pages: 4,
         featured: true,
         premium: false,
+        skills: ['Vocabulary', 'Reading', 'Writing'],
         download_count: 234,
-        file_url: '/freebies/downloads/house-home-spanish.pdf',
-        file_name: 'house-home-spanish.pdf',
+        rating: 4.5,
+        file_url: '/freebies/downloads/identity-vocabulary-spanish.pdf',
+        preview_url: '/freebies/preview/identity-vocabulary-spanish',
+        file_name: 'identity-vocabulary-spanish.pdf',
         file_size: 1024 * 1024 * 2.5, // 2.5MB
         created_at: '2024-01-15T10:30:00Z',
         updated_at: '2024-01-15T10:30:00Z'
       },
       {
         id: '2',
-        title: 'Ser vs Estar - Complete Guide',
-        description: 'Master the difference between ser and estar with clear explanations.',
-        language: 'Spanish',
-        category: 'grammar',
-        topic: 'Ser vs Estar',
-        year_groups: ['Year 9', 'Year 10', 'Year 11'],
+        title: 'School Life Grammar Practice',
+        description: 'Grammar structures and patterns for school-related topics with clear explanations.',
+        language: 'spanish',
+        keyStage: 'ks3',
+        topic: 'school',
+        type: 'worksheet',
         level: 'Intermediate',
-        pages: 8,
+        pages: 6,
         featured: false,
-        premium: true,
+        premium: false,
+        skills: ['Grammar', 'Writing', 'Speaking'],
         download_count: 156,
-        file_url: '/freebies/downloads/ser-estar-spanish.pdf',
-        file_name: 'ser-estar-spanish.pdf',
-        file_size: 1024 * 1024 * 4.2,
+        rating: 4.3,
+        file_url: '/freebies/downloads/school-grammar-spanish.pdf',
+        file_name: 'school-grammar-spanish.pdf',
+        file_size: 1024 * 1024 * 3.2,
         created_at: '2024-01-10T14:20:00Z',
         updated_at: '2024-01-12T09:15:00Z'
+      },
+      {
+        id: '3',
+        title: 'Technology Listening Practice',
+        description: 'Audio exercises with native speakers discussing technology topics.',
+        language: 'spanish',
+        keyStage: 'ks4',
+        topic: 'technology',
+        type: 'audio',
+        level: 'Advanced',
+        duration: '15 mins',
+        featured: true,
+        premium: false,
+        skills: ['Listening', 'Comprehension'],
+        download_count: 89,
+        rating: 4.7,
+        file_url: '/freebies/downloads/technology-listening-spanish.zip',
+        file_name: 'technology-listening-spanish.zip',
+        file_size: 1024 * 1024 * 12.5,
+        created_at: '2024-01-08T16:45:00Z',
+        updated_at: '2024-01-08T16:45:00Z'
       }
-    ]);
+    ];
+    
+    setResources(mockResources);
     setLoading(false);
   }, []);
+
+  const getAvailableTopics = () => {
+    if (!selectedKeyStage) return {};
+    return TOPICS_BY_KEY_STAGE[selectedKeyStage] || {};
+  };
 
   const filteredResources = resources.filter(resource => {
     const matchesSearch = !searchTerm || 
@@ -124,10 +168,12 @@ export default function FreebiesAdminPage() {
       resource.description.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesLanguage = !selectedLanguage || resource.language === selectedLanguage;
-    const matchesCategory = !selectedCategory || resource.category === selectedCategory;
+    const matchesKeyStage = !selectedKeyStage || resource.keyStage === selectedKeyStage;
+    const matchesTopic = !selectedTopic || resource.topic === selectedTopic;
+    const matchesType = !selectedType || resource.type === selectedType;
     const matchesLevel = !selectedLevel || resource.level === selectedLevel;
 
-    return matchesSearch && matchesLanguage && matchesCategory && matchesLevel;
+    return matchesSearch && matchesLanguage && matchesKeyStage && matchesTopic && matchesType && matchesLevel;
   }).sort((a, b) => {
     const order = sortOrder === 'asc' ? 1 : -1;
     if (sortBy === 'created_at') {
@@ -154,27 +200,26 @@ export default function FreebiesAdminPage() {
   };
 
   const handleSaveResource = async (formData: any) => {
-    // In production, this would:
-    // 1. Upload the file to Supabase Storage
-    // 2. Save the metadata to the database
-    // 3. Update the local state
     console.log('Saving resource:', formData);
     
-    // Mock implementation
     const newResource: FreebieResource = {
       id: Date.now().toString(),
       title: formData.title,
       description: formData.description,
       language: formData.language,
-      category: formData.category,
+      keyStage: formData.keyStage,
       topic: formData.topic,
-      year_groups: formData.yearGroups,
+      type: formData.type,
       level: formData.level,
       pages: formData.pages,
+      duration: formData.duration,
       featured: formData.featured,
       premium: formData.premium,
+      skills: formData.skills || [],
       download_count: 0,
+      rating: 0,
       file_url: `/freebies/downloads/${formData.file?.name || 'new-resource.pdf'}`,
+      preview_url: formData.previewUrl,
       file_name: formData.file?.name || 'new-resource.pdf',
       file_size: formData.file?.size || 0,
       created_at: new Date().toISOString(),
@@ -182,6 +227,11 @@ export default function FreebiesAdminPage() {
     };
     
     setResources(prev => [newResource, ...prev]);
+    setShowUploadModal(false);
+  };
+
+  const generateTopicPageUrl = (resource: FreebieResource) => {
+    return `/freebies/${resource.language}/${resource.keyStage}/${resource.topic}`;
   };
 
   const stats = {
@@ -198,6 +248,9 @@ export default function FreebiesAdminPage() {
         <div>
           <h1 className="text-3xl font-bold text-slate-800 mb-2">Freebies Management</h1>
           <p className="text-slate-600">Upload, organize, and manage your free language learning resources</p>
+          <p className="text-sm text-slate-500 mt-1">
+            Resources are organized by language → key stage → topic structure
+          </p>
         </div>
         <button
           onClick={() => setShowUploadModal(true)}
@@ -259,9 +312,31 @@ export default function FreebiesAdminPage() {
         </div>
       </div>
 
+      {/* Topic Structure Guide */}
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 mb-8 border border-blue-200">
+        <h3 className="text-lg font-semibold text-blue-900 mb-2">Resource Organization</h3>
+        <p className="text-blue-700 mb-4">
+          Resources are automatically organized into topic pages based on the structure below:
+        </p>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+          {Object.entries(TOPICS_BY_KEY_STAGE).map(([keyStage, topics]) => (
+            <div key={keyStage} className="bg-white rounded-lg p-4 border border-blue-200">
+              <h4 className="font-semibold text-blue-900 mb-2">{keyStage.toUpperCase()}</h4>
+              <ul className="space-y-1">
+                {Object.entries(topics).map(([slug, name]) => (
+                  <li key={slug} className="text-blue-700">
+                    <code className="text-xs bg-blue-100 px-1 rounded">{slug}</code> → {name}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* Filters */}
       <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 mb-8">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
             <input
@@ -280,18 +355,44 @@ export default function FreebiesAdminPage() {
           >
             <option value="">All Languages</option>
             {LANGUAGES.map(lang => (
-              <option key={lang} value={lang}>{lang}</option>
+              <option key={lang} value={lang}>{lang.charAt(0).toUpperCase() + lang.slice(1)}</option>
             ))}
           </select>
 
           <select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
+            value={selectedKeyStage}
+            onChange={(e) => {
+              setSelectedKeyStage(e.target.value);
+              setSelectedTopic(''); // Reset topic when key stage changes
+            }}
             className="px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
           >
-            <option value="">All Categories</option>
-            {CATEGORIES.map(cat => (
-              <option key={cat.id} value={cat.id}>{cat.name}</option>
+            <option value="">All Key Stages</option>
+            {KEY_STAGES.map(ks => (
+              <option key={ks} value={ks}>{ks.toUpperCase()}</option>
+            ))}
+          </select>
+
+          <select
+            value={selectedTopic}
+            onChange={(e) => setSelectedTopic(e.target.value)}
+            className="px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            disabled={!selectedKeyStage}
+          >
+            <option value="">All Topics</option>
+            {Object.entries(getAvailableTopics()).map(([slug, name]) => (
+              <option key={slug} value={slug}>{name}</option>
+            ))}
+          </select>
+
+          <select
+            value={selectedType}
+            onChange={(e) => setSelectedType(e.target.value)}
+            className="px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+          >
+            <option value="">All Types</option>
+            {RESOURCE_TYPES.map(type => (
+              <option key={type} value={type}>{type.charAt(0).toUpperCase() + type.slice(1)}</option>
             ))}
           </select>
 
@@ -305,23 +406,6 @@ export default function FreebiesAdminPage() {
               <option key={level} value={level}>{level}</option>
             ))}
           </select>
-
-          <select
-            value={`${sortBy}-${sortOrder}`}
-            onChange={(e) => {
-              const [field, order] = e.target.value.split('-');
-              setSortBy(field as typeof sortBy);
-              setSortOrder(order as typeof sortOrder);
-            }}
-            className="px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-          >
-            <option value="created_at-desc">Newest First</option>
-            <option value="created_at-asc">Oldest First</option>
-            <option value="title-asc">Title A-Z</option>
-            <option value="title-desc">Title Z-A</option>
-            <option value="download_count-desc">Most Downloaded</option>
-            <option value="download_count-asc">Least Downloaded</option>
-          </select>
         </div>
       </div>
 
@@ -333,11 +417,11 @@ export default function FreebiesAdminPage() {
               <tr>
                 <th className="text-left py-3 px-4 font-medium text-slate-700">Resource</th>
                 <th className="text-left py-3 px-4 font-medium text-slate-700">Language</th>
-                <th className="text-left py-3 px-4 font-medium text-slate-700">Category</th>
+                <th className="text-left py-3 px-4 font-medium text-slate-700">Location</th>
+                <th className="text-left py-3 px-4 font-medium text-slate-700">Type</th>
                 <th className="text-left py-3 px-4 font-medium text-slate-700">Level</th>
                 <th className="text-left py-3 px-4 font-medium text-slate-700">Status</th>
                 <th className="text-left py-3 px-4 font-medium text-slate-700">Downloads</th>
-                <th className="text-left py-3 px-4 font-medium text-slate-700">Created</th>
                 <th className="text-right py-3 px-4 font-medium text-slate-700">Actions</th>
               </tr>
             </thead>
@@ -351,77 +435,97 @@ export default function FreebiesAdminPage() {
               ) : filteredResources.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="py-12 text-center text-slate-500">
-                    No resources found
+                    No resources found matching your filters
                   </td>
                 </tr>
               ) : (
                 filteredResources.map((resource) => (
                   <tr key={resource.id} className="hover:bg-slate-50">
-                    <td className="py-4 px-4">
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0 mr-3">
-                          <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
-                            <FileText className="h-5 w-5 text-indigo-600" />
-                          </div>
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-medium text-slate-900 truncate">
-                            {resource.title}
-                          </p>
-                          <p className="text-sm text-slate-500 truncate">
-                            {resource.pages} pages • {formatFileSize(resource.file_size)}
-                          </p>
+                    <td className="py-3 px-4">
+                      <div>
+                        <h3 className="font-medium text-slate-900">{resource.title}</h3>
+                        <p className="text-sm text-slate-500 mt-1">{resource.description}</p>
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {resource.skills.map((skill) => (
+                            <span key={skill} className="inline-block bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded">
+                              {skill}
+                            </span>
+                          ))}
                         </div>
                       </div>
                     </td>
-                    <td className="py-4 px-4">
-                      <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
-                        {resource.language}
+                    <td className="py-3 px-4">
+                      <span className="inline-block bg-slate-100 text-slate-700 text-sm px-2 py-1 rounded">
+                        {resource.language.charAt(0).toUpperCase() + resource.language.slice(1)}
                       </span>
                     </td>
-                    <td className="py-4 px-4">
-                      <span className="text-sm text-slate-900">
-                        {CATEGORIES.find(c => c.id === resource.category)?.name}
+                    <td className="py-3 px-4">
+                      <div className="text-sm">
+                        <div>{resource.keyStage.toUpperCase()}</div>
+                        <div className="text-slate-500">
+                          {TOPICS_BY_KEY_STAGE[resource.keyStage]?.[resource.topic] || resource.topic}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-3 px-4">
+                      <span className="inline-block bg-gray-100 text-gray-700 text-sm px-2 py-1 rounded">
+                        {resource.type}
                       </span>
                     </td>
-                    <td className="py-4 px-4">
-                      <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                        resource.level === 'Beginner' ? 'bg-green-100 text-green-800' :
-                        resource.level === 'Intermediate' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-red-100 text-red-800'
+                    <td className="py-3 px-4">
+                      <span className={`inline-block text-sm px-2 py-1 rounded ${
+                        resource.level === 'Beginner' ? 'bg-green-100 text-green-700' :
+                        resource.level === 'Intermediate' ? 'bg-yellow-100 text-yellow-700' :
+                        'bg-red-100 text-red-700'
                       }`}>
                         {resource.level}
                       </span>
                     </td>
-                    <td className="py-4 px-4">
+                    <td className="py-3 px-4">
                       <div className="flex items-center space-x-2">
                         {resource.featured && (
-                          <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
-                            Featured
+                          <span className="flex items-center text-yellow-600">
+                            <Star className="h-4 w-4 mr-1" />
+                            <span className="text-xs">Featured</span>
                           </span>
                         )}
                         {resource.premium && (
-                          <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-800">
-                            Premium
+                          <span className="flex items-center text-purple-600">
+                            <GraduationCap className="h-4 w-4 mr-1" />
+                            <span className="text-xs">Premium</span>
                           </span>
+                        )}
+                        {!resource.featured && !resource.premium && (
+                          <span className="text-gray-500 text-xs">Standard</span>
                         )}
                       </div>
                     </td>
-                    <td className="py-4 px-4 text-sm text-slate-900">
-                      {resource.download_count.toLocaleString()}
+                    <td className="py-3 px-4">
+                      <div className="text-sm">
+                        <div className="font-medium">{resource.download_count.toLocaleString()}</div>
+                        <div className="text-slate-500">
+                          {resource.rating > 0 && (
+                            <span className="flex items-center">
+                              <Star className="h-3 w-3 text-yellow-400 mr-1" />
+                              {resource.rating.toFixed(1)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     </td>
-                    <td className="py-4 px-4 text-sm text-slate-500">
-                      {formatDate(resource.created_at)}
-                    </td>
-                    <td className="py-4 px-4 text-right">
+                    <td className="py-3 px-4 text-right">
                       <div className="flex items-center justify-end space-x-2">
-                        <button className="text-slate-400 hover:text-slate-600">
-                          <Eye className="h-4 w-4" />
-                        </button>
-                        <button className="text-slate-400 hover:text-indigo-600">
+                        <Link
+                          href={generateTopicPageUrl(resource)}
+                          className="text-indigo-600 hover:text-indigo-700"
+                          title="View on topic page"
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                        </Link>
+                        <button className="text-slate-600 hover:text-slate-700">
                           <Edit className="h-4 w-4" />
                         </button>
-                        <button className="text-slate-400 hover:text-red-600">
+                        <button className="text-red-600 hover:text-red-700">
                           <Trash2 className="h-4 w-4" />
                         </button>
                       </div>
@@ -437,8 +541,14 @@ export default function FreebiesAdminPage() {
       {/* Upload Modal */}
       {showUploadModal && (
         <FreebiesUploadForm
-          onClose={() => setShowUploadModal(false)}
           onSave={handleSaveResource}
+          onCancel={() => setShowUploadModal(false)}
+          topicsByKeyStage={TOPICS_BY_KEY_STAGE}
+          languages={LANGUAGES}
+          keyStages={KEY_STAGES}
+          levels={LEVELS}
+          resourceTypes={RESOURCE_TYPES}
+          commonSkills={COMMON_SKILLS}
         />
       )}
     </div>

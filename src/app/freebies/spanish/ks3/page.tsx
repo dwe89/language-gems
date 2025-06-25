@@ -2,11 +2,8 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { ArrowLeft, ChevronRight, Search, Users, BookOpen, Globe, Home, Music, GraduationCap, Download, Star, Filter } from 'lucide-react';
 import FreebiesBreadcrumb from '../../../../components/freebies/FreebiesBreadcrumb';
-import { 
-  ArrowLeft, Download, Search, Users, Home, BookOpen, 
-  Music, Globe, UtensilsCrossed, Star 
-} from 'lucide-react';
 
 interface Topic {
   id: string;
@@ -14,396 +11,351 @@ interface Topic {
   description: string;
   resourceCount: number;
   icon: React.ReactNode;
-  featured?: boolean;
-  resources: {
-    id: string;
-    title: string;
-    description: string;
-    pages: number;
-    level: string;
-  }[];
+  featured: boolean;
+  sampleResources: SampleResource[];
+}
+
+interface SampleResource {
+  title: string;
+  type: string;
+  level: string;
 }
 
 const TOPICS: Topic[] = [
   {
     id: 'identity',
     name: 'Identity & Family',
-    description: 'Personal information, family members, relationships, and describing people',
-    resourceCount: 5,
+    description: 'Personal information, describing yourself, family members, and relationships',
+    resourceCount: 8,
     icon: <Users className="h-6 w-6" />,
     featured: true,
-    resources: [
-      {
-        id: 'all-about-me',
-        title: 'All About Me - Identity and Personality',
-        description: 'Describe yourself, your family, and personality traits.',
-        pages: 3,
-        level: 'Beginner'
-      },
-      {
-        id: 'family-members',
-        title: 'Family Members and Relationships',
-        description: 'Complete vocabulary for family members and descriptions.',
-        pages: 4,
-        level: 'Beginner'
-      }
+    sampleResources: [
+      { title: 'All About Me - Vocabulary Builder', type: 'Worksheet', level: 'Beginner' },
+      { title: 'Family Members Practice', type: 'Exercise', level: 'Beginner' },
+      { title: 'Describing People', type: 'Grammar Guide', level: 'Beginner' }
     ]
   },
   {
     id: 'school',
     name: 'School Life',
-    description: 'Subjects, facilities, school routines, and education vocabulary',
-    resourceCount: 4,
-    icon: <BookOpen className="h-6 w-6" />,
-    resources: [
-      {
-        id: 'school-subjects',
-        title: 'School Subjects and Timetables',
-        description: 'Learn all school subjects and how to talk about your timetable.',
-        pages: 3,
-        level: 'Beginner'
-      },
-      {
-        id: 'school-facilities',
-        title: 'School Facilities and Rules',
-        description: 'Vocabulary for school buildings, rooms, and school rules.',
-        pages: 4,
-        level: 'Beginner'
-      }
+    description: 'School subjects, facilities, routines, and describing your school experience',
+    resourceCount: 6,
+    icon: <GraduationCap className="h-6 w-6" />,
+    featured: false,
+    sampleResources: [
+      { title: 'School Subjects Vocabulary', type: 'Worksheet', level: 'Beginner' },
+      { title: 'My School Day Timetable', type: 'Activity', level: 'Beginner' },
+      { title: 'School Facilities Guide', type: 'Reference', level: 'Beginner' }
     ]
   },
   {
     id: 'free-time',
     name: 'Free Time & Hobbies',
     description: 'Sports, music, entertainment, leisure activities, and expressing preferences',
-    resourceCount: 6,
+    resourceCount: 7,
     icon: <Music className="h-6 w-6" />,
     featured: true,
-    resources: [
-      {
-        id: 'free-time-activities',
-        title: 'Free Time Activities and Hobbies',
-        description: 'Express your interests and talk about leisure activities.',
-        pages: 5,
-        level: 'Beginner'
-      },
-      {
-        id: 'sports',
-        title: 'Sports and Exercise',
-        description: 'Complete sports vocabulary and expressing preferences.',
-        pages: 4,
-        level: 'Beginner'
-      }
+    sampleResources: [
+      { title: 'Sports and Activities Vocabulary', type: 'Worksheet', level: 'Beginner' },
+      { title: 'Expressing Likes and Dislikes', type: 'Grammar', level: 'Beginner' },
+      { title: 'Weekend Activities Practice', type: 'Exercise', level: 'Beginner' }
     ]
   },
   {
     id: 'local-area',
-    name: 'Local Area & Town',
-    description: 'Towns, directions, transport, shopping, and local amenities',
-    resourceCount: 4,
+    name: 'Local Area',
+    description: 'Describing your town, giving directions, transport, and local amenities',
+    resourceCount: 5,
     icon: <Globe className="h-6 w-6" />,
-    resources: [
-      {
-        id: 'my-town',
-        title: 'My Town and Local Area',
-        description: 'Describe your town and local amenities.',
-        pages: 5,
-        level: 'Intermediate'
-      },
-      {
-        id: 'directions',
-        title: 'Directions and Transport',
-        description: 'Give and follow directions, talk about transport.',
-        pages: 4,
-        level: 'Intermediate'
-      }
+    featured: false,
+    sampleResources: [
+      { title: 'Places in Town Vocabulary', type: 'Worksheet', level: 'Intermediate' },
+      { title: 'Giving Directions Practice', type: 'Activity', level: 'Intermediate' },
+      { title: 'Transport Methods Guide', type: 'Reference', level: 'Beginner' }
     ]
   },
   {
     id: 'house-home',
     name: 'House & Home',
-    description: 'Rooms, furniture, household items, and describing your home',
-    resourceCount: 3,
+    description: 'Rooms, furniture, household items, and describing where you live',
+    resourceCount: 6,
     icon: <Home className="h-6 w-6" />,
     featured: true,
-    resources: [
-      {
-        id: 'house-rooms',
-        title: 'House and Home - Vocabulary Builder',
-        description: 'Essential vocabulary for describing your house and rooms.',
-        pages: 4,
-        level: 'Beginner'
-      },
-      {
-        id: 'furniture',
-        title: 'Furniture and Household Items',
-        description: 'Complete furniture vocabulary with descriptions.',
-        pages: 3,
-        level: 'Beginner'
-      }
+    sampleResources: [
+      { title: 'House and Home Vocabulary Builder', type: 'Worksheet', level: 'Beginner' },
+      { title: 'Rooms and Furniture', type: 'Exercise', level: 'Beginner' },
+      { title: 'Describing Your House', type: 'Speaking Practice', level: 'Beginner' }
     ]
   },
   {
     id: 'food-drink',
     name: 'Food & Drink',
-    description: 'Meals, restaurants, shopping for food, and healthy eating',
+    description: 'Meals, restaurants, food preferences, and healthy eating vocabulary',
     resourceCount: 4,
-    icon: <UtensilsCrossed className="h-6 w-6" />,
-    resources: [
-      {
-        id: 'food-vocabulary',
-        title: 'Food and Drink Vocabulary',
-        description: 'Essential food vocabulary and meal times.',
-        pages: 5,
-        level: 'Beginner'
-      },
-      {
-        id: 'restaurant',
-        title: 'At the Restaurant',
-        description: 'Ordering food, restaurant etiquette, and preferences.',
-        pages: 4,
-        level: 'Intermediate'
-      }
+    icon: <BookOpen className="h-6 w-6" />,
+    featured: false,
+    sampleResources: [
+      { title: 'Food and Drink Vocabulary', type: 'Worksheet', level: 'Beginner' },
+      { title: 'At the Restaurant Dialogue', type: 'Speaking', level: 'Intermediate' },
+      { title: 'Healthy Eating Discussion', type: 'Activity', level: 'Intermediate' }
     ]
   }
 ];
 
-export default function KS3SpanishPage() {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
+const breadcrumbItems = [
+  { label: 'Freebies', href: '/freebies' },
+  { label: 'Spanish', href: '/freebies/spanish' },
+  { label: 'KS3', active: true }
+];
 
-  const breadcrumbItems = [
-    { label: 'Freebies', href: '/freebies' },
-    { label: 'Spanish', href: '/freebies/spanish' },
-    { label: 'KS3 (Years 7-9)', active: true }
-  ];
+export default function SpanishKS3Page() {
+  const [selectedFilter, setSelectedFilter] = useState<'all' | 'featured' | 'high-resource'>('all');
 
-  const filteredTopics = TOPICS.filter(topic => 
-    !searchTerm || 
-    topic.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    topic.description.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredTopics = TOPICS.filter(topic => {
+    if (selectedFilter === 'featured') return topic.featured;
+    if (selectedFilter === 'high-resource') return topic.resourceCount >= 6;
+    return true;
+  });
 
-  const featuredTopics = TOPICS.filter(topic => topic.featured);
+  const totalResources = TOPICS.reduce((sum, topic) => sum + topic.resourceCount, 0);
+  const featuredCount = TOPICS.filter(topic => topic.featured).length;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-green-600 via-emerald-600 to-green-600 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <div className="text-center">
-            <div className="flex justify-center mb-6">
-              <div className="text-6xl">📚</div>
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50">
+      <div className="container mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="mb-8">
+          <FreebiesBreadcrumb items={breadcrumbItems} className="mb-4" />
+          
+          <div className="flex items-center mb-4">
+            <Link 
+              href="/freebies/spanish"
+              className="inline-flex items-center text-green-600 hover:text-green-700 mr-4"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Spanish
+            </Link>
+            <div className="flex-1">
+              <div className="flex items-center mb-2">
+                <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-medium mr-3">
+                  KS3
+                </span>
+                <h1 className="text-4xl font-bold text-slate-800">
+                  Foundation Spanish Topics
+                </h1>
+              </div>
+              <p className="text-xl text-slate-600">
+                Essential vocabulary and grammar for Years 7-9
+              </p>
             </div>
-            <h1 className="text-4xl md:text-5xl font-bold mb-6">
-              KS3 Spanish Resources
-            </h1>
-            <p className="text-xl md:text-2xl text-green-100 mb-8 max-w-3xl mx-auto">
-              Foundation level Spanish resources for Years 7-9. Build vocabulary 
-              and grammar skills with topic-based worksheets and activities.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <div className="flex items-center text-green-200">
-                <BookOpen className="h-5 w-5 mr-2" />
-                <span>23 Resources Available</span>
-              </div>
-              <div className="flex items-center text-green-200">
-                <Users className="h-5 w-5 mr-2" />
-                <span>Years 7-9</span>
-              </div>
-              <div className="flex items-center text-green-200">
-                <Star className="h-5 w-5 mr-2" />
-                <span>Beginner Friendly</span>
-              </div>
+          </div>
+
+          {/* KS3 Color Banner */}
+          <div className="w-full h-2 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full mb-6"></div>
+        </div>
+
+        {/* Quick Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+          <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-600">{TOPICS.length}</div>
+              <div className="text-sm text-slate-600">Topics</div>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-600">{totalResources}</div>
+              <div className="text-sm text-slate-600">Resources</div>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-600">{featuredCount}</div>
+              <div className="text-sm text-slate-600">Featured</div>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-600">Years 7-9</div>
+              <div className="text-sm text-slate-600">Age Group</div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Breadcrumb */}
-        <div className="flex items-center justify-between mb-8">
-          <FreebiesBreadcrumb items={breadcrumbItems} />
-          <Link
-            href="/freebies/spanish"
-            className="inline-flex items-center text-indigo-600 hover:text-indigo-700 font-medium"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Spanish Resources
-          </Link>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="bg-white rounded-xl shadow-sm p-6 mb-8">
-          <div className="flex flex-col md:flex-row gap-4 justify-between items-center">
-            <div>
-              <h2 className="text-xl font-bold text-slate-800 mb-2">
-                KS3 Spanish Topics
-              </h2>
-              <p className="text-slate-600">
-                Choose a topic to explore resources or search all KS3 materials
-              </p>
+        {/* Filter Options */}
+        <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm mb-8">
+          <div className="flex flex-col md:flex-row items-center justify-between">
+            <div className="mb-4 md:mb-0">
+              <h3 className="text-lg font-bold text-slate-800 mb-1">Browse Topics</h3>
+              <p className="text-slate-600">Choose a topic area to explore specific resources</p>
             </div>
-            <div className="flex gap-3">
+            
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                <Filter className="h-4 w-4 text-slate-500" />
+                <span className="text-sm text-slate-600">Filter:</span>
+              </div>
+              
+              <div className="flex bg-slate-100 rounded-lg p-1">
+                <button
+                  onClick={() => setSelectedFilter('all')}
+                  className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                    selectedFilter === 'all' 
+                      ? 'bg-white text-slate-800 shadow-sm' 
+                      : 'text-slate-600 hover:text-slate-800'
+                  }`}
+                >
+                  All Topics
+                </button>
+                <button
+                  onClick={() => setSelectedFilter('featured')}
+                  className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                    selectedFilter === 'featured' 
+                      ? 'bg-white text-slate-800 shadow-sm' 
+                      : 'text-slate-600 hover:text-slate-800'
+                  }`}
+                >
+                  Featured
+                </button>
+                <button
+                  onClick={() => setSelectedFilter('high-resource')}
+                  className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                    selectedFilter === 'high-resource' 
+                      ? 'bg-white text-slate-800 shadow-sm' 
+                      : 'text-slate-600 hover:text-slate-800'
+                  }`}
+                >
+                  Most Resources
+                </button>
+              </div>
+              
               <Link
-                href="/freebies?language=Spanish&yearGroup=KS3"
-                className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                href="/freebies?language=Spanish&level=KS3"
+                className="inline-flex items-center text-green-600 hover:text-green-700 font-medium text-sm"
               >
-                <Search className="h-4 w-4 mr-2" />
-                Search All KS3 Resources
+                <Search className="h-4 w-4 mr-1" />
+                Search All
               </Link>
             </div>
           </div>
         </div>
 
-        {/* Search */}
-        <div className="bg-white rounded-xl shadow-sm p-6 mb-8">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search topics..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-            />
-          </div>
-        </div>
-
-        {/* Featured Topics */}
-        {!searchTerm && featuredTopics.length > 0 && (
-          <div className="mb-12">
-            <h2 className="text-3xl font-bold text-slate-800 mb-8 text-center">
-              ⭐ Popular KS3 Topics
-            </h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {featuredTopics.map((topic) => (
-                <div key={topic.id} className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden border border-green-200">
-                  <div className="bg-gradient-to-r from-green-500 to-emerald-500 p-4">
-                    <div className="flex items-center justify-between">
-                      <span className="text-white font-semibold text-sm">Featured</span>
-                      <div className="text-white">
-                        {topic.icon}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="p-6">
-                    <h3 className="text-xl font-bold text-slate-800 mb-3">
-                      {topic.name}
-                    </h3>
-                    <p className="text-slate-600 mb-4">
-                      {topic.description}
-                    </p>
-                    
-                    <div className="flex items-center justify-between mb-4">
-                      <span className="text-sm text-slate-500">
-                        {topic.resourceCount} resources
-                      </span>
-                    </div>
-                    
-                    <Link
-                      href={`/freebies/spanish/ks3/${topic.id}`}
-                      className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-2 px-4 rounded-lg font-medium hover:from-green-700 hover:to-emerald-700 transition-all inline-block text-center"
-                    >
-                      Explore Topic
-                    </Link>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* All Topics Grid */}
-        <div className="mb-12">
-          <h2 className="text-3xl font-bold text-slate-800 mb-8 text-center">
-            {searchTerm ? 'Search Results' : 'All KS3 Topics'}
-          </h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredTopics.map((topic) => (
-              <div key={topic.id} className="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 border border-slate-200">
-                <div className="p-6">
-                  <div className="flex items-center mb-4">
-                    <div className="p-3 bg-green-100 rounded-lg mr-4 text-green-600">
+        {/* Topics Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-12">
+          {filteredTopics.map((topic) => (
+            <div key={topic.id} className="bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden">
+              {/* Topic Header */}
+              <div className="p-6 border-b border-slate-100">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center">
+                    <div className="bg-green-100 text-green-600 p-3 rounded-lg mr-4">
                       {topic.icon}
                     </div>
                     <div>
-                      <h3 className="text-lg font-bold text-slate-800">
-                        {topic.name}
-                      </h3>
-                      <span className="text-sm text-slate-500">
-                        {topic.resourceCount} resources
-                      </span>
+                      <div className="flex items-center mb-1">
+                        <h3 className="text-xl font-bold text-slate-800 mr-2">{topic.name}</h3>
+                        {topic.featured && (
+                          <Star className="h-4 w-4 text-yellow-500" />
+                        )}
+                      </div>
+                      <p className="text-slate-600">{topic.description}</p>
                     </div>
                   </div>
-                  
-                  <p className="text-slate-600 mb-4 text-sm">
-                    {topic.description}
-                  </p>
-                  
-                  <div className="space-y-2 mb-4">
-                    {topic.resources.slice(0, 2).map((resource) => (
-                      <div key={resource.id} className="text-xs text-slate-500 bg-slate-50 p-2 rounded">
-                        • {resource.title}
-                      </div>
-                    ))}
-                    {topic.resources.length > 2 && (
-                      <div className="text-xs text-slate-400">
-                        +{topic.resources.length - 2} more resources
-                      </div>
-                    )}
+                  <div className="text-right">
+                    <div className="text-2xl font-bold text-green-600">{topic.resourceCount}</div>
+                    <div className="text-xs text-slate-500">resources</div>
                   </div>
-                  
-                  <Link
-                    href={`/freebies/spanish/ks3/${topic.id}`}
-                    className="w-full bg-green-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-green-700 transition-colors inline-block text-center text-sm"
-                  >
-                    View Resources
-                  </Link>
                 </div>
               </div>
-            ))}
+
+              {/* Sample Resources */}
+              <div className="p-6">
+                <h4 className="text-sm font-medium text-slate-800 mb-3">Sample Resources:</h4>
+                <div className="space-y-2 mb-4">
+                  {topic.sampleResources.map((resource, index) => (
+                    <div key={index} className="flex items-center justify-between text-sm">
+                      <span className="text-slate-700">{resource.title}</span>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded">
+                          {resource.type}
+                        </span>
+                        <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
+                          {resource.level}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <Link
+                  href={`/freebies/spanish/ks3/${topic.id}`}
+                  className="w-full inline-flex items-center justify-center bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors font-medium"
+                >
+                  Explore {topic.name}
+                  <ChevronRight className="h-4 w-4 ml-2" />
+                </Link>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Quick Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
+            <h3 className="text-xl font-bold text-slate-800 mb-3">Looking for something specific?</h3>
+            <p className="text-slate-600 mb-4">
+              Use our advanced search to find resources across all Spanish topics and levels.
+            </p>
+            <Link
+              href="/freebies?language=Spanish"
+              className="inline-flex items-center bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors font-medium"
+            >
+              <Search className="h-4 w-4 mr-2" />
+              Search All Spanish Resources
+            </Link>
+          </div>
+
+          <div className="bg-green-50 rounded-xl p-6 border border-green-200">
+            <h3 className="text-xl font-bold text-slate-800 mb-3">Ready for the next level?</h3>
+            <p className="text-slate-600 mb-4">
+              Explore KS4 topics for more advanced Spanish vocabulary and grammar.
+            </p>
+            <Link
+              href="/freebies/spanish/ks4"
+              className="inline-flex items-center bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors font-medium"
+            >
+              <GraduationCap className="h-4 w-4 mr-2" />
+              Explore KS4 Topics
+            </Link>
           </div>
         </div>
 
-        {filteredTopics.length === 0 && (
-          <div className="text-center py-12">
-            <div className="text-6xl mb-4">🔍</div>
-            <h3 className="text-xl font-medium text-slate-600 mb-2">
-              No topics found
-            </h3>
-            <p className="text-slate-500">
-              Try adjusting your search or browse all topics
-            </p>
-          </div>
-        )}
-
-        {/* Browse All CTA */}
+        {/* Featured Resources Callout */}
         <div className="bg-gradient-to-r from-green-600 to-emerald-600 rounded-xl p-8 text-white text-center">
-          <h2 className="text-2xl font-bold mb-4">
-            Need More Advanced Resources?
-          </h2>
+          <Star className="h-12 w-12 text-yellow-300 mx-auto mb-4" />
+          <h3 className="text-2xl font-bold mb-3">
+            Most Popular KS3 Spanish Resources
+          </h3>
           <p className="text-green-100 mb-6 max-w-2xl mx-auto">
-            Ready to move to GCSE level? Explore our KS4 Spanish resources 
-            designed for Years 10-11 and exam preparation.
+            Our featured topics contain the most downloaded and highly-rated resources for foundation Spanish learners.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
-              href="/freebies/spanish/ks4"
-              className="inline-flex items-center bg-white text-green-600 px-6 py-3 rounded-lg font-semibold hover:bg-green-50 transition-colors"
+              href="/freebies/spanish/ks3/identity"
+              className="inline-flex items-center bg-white text-green-600 px-6 py-3 rounded-lg font-medium hover:bg-green-50 transition-colors"
             >
-              Explore KS4 Spanish
+              <Users className="h-5 w-5 mr-2" />
+              Identity & Family
             </Link>
             <Link
-              href="/freebies?language=Spanish"
-              className="inline-flex items-center border-2 border-white text-white px-6 py-3 rounded-lg font-semibold hover:bg-white hover:text-green-600 transition-colors"
+              href="/freebies/spanish/ks3/house-home"
+              className="inline-flex items-center bg-white text-green-600 px-6 py-3 rounded-lg font-medium hover:bg-green-50 transition-colors"
             >
-              <Search className="h-4 w-4 mr-2" />
-              Browse All Spanish
+              <Home className="h-5 w-5 mr-2" />
+              House & Home
             </Link>
           </div>
         </div>
