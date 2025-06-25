@@ -353,7 +353,7 @@ export default function FreebiesPage() {
   const featuredWorksheets = getAllWorksheets().filter(w => w.featured);
 
   const breadcrumbItems = [
-    { label: 'Freebies', href: '/freebies', active: true }
+    { label: 'Resources', active: true }
   ];
 
   const handleReturnToHub = () => {
@@ -637,6 +637,16 @@ export default function FreebiesPage() {
           onTabChange={(tab) => setActiveView(tab as 'hub' | 'curriculum')}
           className="mb-8"
         />
+
+        {/* Page title update */}
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold text-slate-800 mb-4">
+            Learning Resources
+          </h1>
+          <p className="text-xl text-slate-600 max-w-3xl mx-auto">
+            Discover free worksheets, activities, and materials to enhance your language learning journey
+          </p>
+        </div>
 
         {/* Conditional Content */}
         {activeView === 'curriculum' ? (

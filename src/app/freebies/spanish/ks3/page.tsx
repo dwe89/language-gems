@@ -103,7 +103,7 @@ const TOPICS: Topic[] = [
 ];
 
 const breadcrumbItems = [
-  { label: 'Freebies', href: '/freebies' },
+  { label: 'Resources', href: '/freebies' },
   { label: 'Spanish', href: '/freebies/spanish' },
   { label: 'KS3', active: true }
 ];

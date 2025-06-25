@@ -100,7 +100,7 @@ export default function CurriculumNavigator({ onReturnToHub }: CurriculumNavigat
         onClick={onReturnToHub}
         className="text-indigo-600 hover:text-indigo-700 font-medium"
       >
-        Freebies Hub
+        Resources Hub
       </button>
       <ChevronRight className="h-4 w-4 text-slate-400" />
       <span className="text-slate-600">Curriculum View</span>
@@ -130,7 +130,7 @@ export default function CurriculumNavigator({ onReturnToHub }: CurriculumNavigat
           className="inline-flex items-center text-indigo-600 hover:text-indigo-700 mb-4"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Freebies Hub
+          Back to Resources Hub
         </button>
         <h2 className="text-3xl font-bold text-slate-800 mb-2">
           Browse by Curriculum

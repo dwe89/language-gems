@@ -80,18 +80,11 @@ export const getNavigationItems = (isAuthenticated: boolean = false, userEmail?:
       comingSoonPath: '/coming-soon/games'
     },
     {
-      name: 'Freebies',
+      name: 'Resources',
       path: '/freebies',
       enabled: true,
       comingSoon: false,
       comingSoonPath: null
-    },
-    {
-      name: 'Custom Lessons',
-      path: isAuthenticated ? '/dashboard' : '/themes',
-      enabled: flags.customLessons,
-      comingSoon: !flags.customLessons,
-      comingSoonPath: '/coming-soon/themes'
     },
     {
       name: 'Blog',
@@ -113,13 +106,6 @@ export const getNavigationItems = (isAuthenticated: boolean = false, userEmail?:
       enabled: flags.shop,
       comingSoon: false,
       comingSoonPath: null
-    },
-    {
-      name: 'Progress Tracking',
-      path: isAuthenticated ? '/dashboard/progress' : '/premium',
-      enabled: flags.progressTracking,
-      comingSoon: !flags.progressTracking,
-      comingSoonPath: '/coming-soon/progress'
     }
   ];
 

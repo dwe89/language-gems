@@ -28,8 +28,8 @@ export default function Home() {
                 </span>
               </h1>
               
-              <p className="text-xl md:text-2xl text-slate-600 mb-8 leading-relaxed">
-                Interactive games, comprehensive lessons, and progress tracking designed for modern language education
+              <p className="text-lg md:text-xl text-slate-600 mb-8 leading-relaxed max-w-3xl mx-auto">
+                Interactive games, comprehensive lessons, and engaging content designed for modern language education
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4 mb-8">
@@ -83,12 +83,12 @@ export default function Home() {
                   <div className="flex items-center gap-2 mb-2">
                     <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
                       <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
                       </svg>
                     </div>
-                    <span className="text-sm font-semibold text-slate-800">Progress Tracking</span>
+                    <span className="text-sm font-semibold text-slate-800">Free Resources</span>
                   </div>
-                  <p className="text-xs text-slate-600">Real-time analytics & reporting</p>
+                  <p className="text-xs text-slate-600">Worksheets, activities & materials</p>
                 </div>
                 
                 <div className="absolute -bottom-4 -right-4 bg-white rounded-xl p-4 shadow-lg border border-slate-100 max-w-48">
@@ -125,7 +125,7 @@ export default function Home() {
             </p>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-1 gap-8 max-w-md mx-auto">
             {/* Interactive Games Card */}
             <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-8 hover:shadow-xl transition-all duration-300 border border-blue-100">
               <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center mb-6">
@@ -144,54 +144,6 @@ export default function Home() {
               </div>
               <Link href="/games" className="inline-flex items-center text-blue-600 font-semibold hover:text-blue-700 transition-colors">
                 Explore Games
-                <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </Link>
-            </div>
-            
-            {/* Custom Lessons Card */}
-            <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-2xl p-8 hover:shadow-xl transition-all duration-300 border border-emerald-100">
-              <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-green-600 rounded-xl flex items-center justify-center mb-6">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                </svg>
-              </div>
-              <h3 className="text-2xl font-bold text-slate-800 mb-4">Custom Lessons</h3>
-              <p className="text-slate-600 mb-6 leading-relaxed">
-                Create personalized learning paths with adaptive content that adjusts to each student's progress and learning style.
-              </p>
-              <div className="flex flex-wrap gap-2 mb-6">
-                <span className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-sm font-medium">Adaptive</span>
-                <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">Personalized</span>
-                <span className="px-3 py-1 bg-teal-100 text-teal-700 rounded-full text-sm font-medium">Curriculum</span>
-              </div>
-              <Link href="/themes" className="inline-flex items-center text-emerald-600 font-semibold hover:text-emerald-700 transition-colors">
-                Create Lessons
-                <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </Link>
-            </div>
-            
-            {/* Progress Analytics Card */}
-            <div className="bg-gradient-to-br from-purple-50 to-violet-50 rounded-2xl p-8 hover:shadow-xl transition-all duration-300 border border-purple-100">
-              <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-violet-600 rounded-xl flex items-center justify-center mb-6">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
-              </div>
-              <h3 className="text-2xl font-bold text-slate-800 mb-4">Progress Analytics</h3>
-              <p className="text-slate-600 mb-6 leading-relaxed">
-                Detailed insights and reports help teachers track student progress and identify areas for improvement.
-              </p>
-              <div className="flex flex-wrap gap-2 mb-6">
-                <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-medium">Analytics</span>
-                <span className="px-3 py-1 bg-violet-100 text-violet-700 rounded-full text-sm font-medium">Reports</span>
-                <span className="px-3 py-1 bg-pink-100 text-pink-700 rounded-full text-sm font-medium">Insights</span>
-              </div>
-              <Link href="/progress" className="inline-flex items-center text-purple-600 font-semibold hover:text-purple-700 transition-colors">
-                View Analytics
                 <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
@@ -217,7 +169,7 @@ export default function Home() {
               </h2>
               
               <p className="text-xl text-slate-600 mb-8 leading-relaxed">
-                Watch how our platform transforms traditional language learning with interactive content, real-time feedback, and comprehensive progress tracking.
+                Watch how our platform transforms traditional language learning with interactive content and real-time feedback.
               </p>
               
               <div className="space-y-4 mb-8">

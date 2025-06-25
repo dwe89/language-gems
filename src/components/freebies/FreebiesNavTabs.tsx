@@ -17,7 +17,7 @@ interface FreebiesNavTabsProps {
 const TABS: NavTab[] = [
   {
     id: 'hub',
-    label: 'Freebies Hub',
+    label: 'Resources Hub',
     description: 'Search and filter all resources',
     icon: <Search className="h-5 w-5" />
   },

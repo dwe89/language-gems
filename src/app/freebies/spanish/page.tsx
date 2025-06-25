@@ -94,7 +94,7 @@ const FEATURED_RESOURCES: FeaturedResource[] = [
 ];
 
 const breadcrumbItems = [
-  { label: 'Freebies', href: '/freebies' },
+  { label: 'Resources', href: '/freebies' },
   { label: 'Spanish', active: true }
 ];
 
@@ -112,7 +112,7 @@ export default function SpanishFreebiesPage() {
               className="inline-flex items-center text-red-600 hover:text-red-700 mr-4"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Freebies
+              Back to Resources
             </Link>
             <div className="flex-1">
               <h1 className="text-4xl font-bold text-slate-800 mb-2">
