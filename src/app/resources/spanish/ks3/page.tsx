@@ -103,8 +103,8 @@ const TOPICS: Topic[] = [
 ];
 
 const breadcrumbItems = [
-  { label: 'Resources', href: '/freebies' },
-  { label: 'Spanish', href: '/freebies/spanish' },
+  { label: 'Resources', href: '/resources' },
+  { label: 'Spanish', href: '/resources/spanish' },
   { label: 'KS3', active: true }
 ];
 
@@ -129,7 +129,7 @@ export default function SpanishKS3Page() {
           
           <div className="flex items-center mb-4">
             <Link 
-              href="/freebies/spanish"
+              href="/resources/spanish"
               className="inline-flex items-center text-green-600 hover:text-green-700 mr-4"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
@@ -233,7 +233,7 @@ export default function SpanishKS3Page() {
               </div>
               
               <Link
-                href="/freebies?language=Spanish&level=KS3"
+                href="/resources?language=Spanish&level=KS3"
                 className="inline-flex items-center text-green-600 hover:text-green-700 font-medium text-sm"
               >
                 <Search className="h-4 w-4 mr-1" />
@@ -310,7 +310,7 @@ export default function SpanishKS3Page() {
               Use our advanced search to find resources across all Spanish topics and levels.
             </p>
             <Link
-              href="/freebies?language=Spanish"
+              href="/resources?language=Spanish"
               className="inline-flex items-center bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors font-medium"
             >
               <Search className="h-4 w-4 mr-2" />
@@ -324,7 +324,7 @@ export default function SpanishKS3Page() {
               Explore KS4 topics for more advanced Spanish vocabulary and grammar.
             </p>
             <Link
-              href="/freebies/spanish/ks4"
+                              href="/resources/spanish/ks4"
               className="inline-flex items-center bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors font-medium"
             >
               <GraduationCap className="h-4 w-4 mr-2" />
@@ -344,14 +344,14 @@ export default function SpanishKS3Page() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
-              href="/freebies/spanish/ks3/identity"
+                              href="/resources/spanish/ks3/identity"
               className="inline-flex items-center bg-white text-green-600 px-6 py-3 rounded-lg font-medium hover:bg-green-50 transition-colors"
             >
               <Users className="h-5 w-5 mr-2" />
               Identity & Family
             </Link>
             <Link
-              href="/freebies/spanish/ks3/house-home"
+                              href="/resources/spanish/ks3/house-home"
               className="inline-flex items-center bg-white text-green-600 px-6 py-3 rounded-lg font-medium hover:bg-green-50 transition-colors"
             >
               <Home className="h-5 w-5 mr-2" />

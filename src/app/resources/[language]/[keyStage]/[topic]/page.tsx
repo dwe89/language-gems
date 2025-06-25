@@ -159,7 +159,7 @@ export default function TopicPage() {
     const fetchResources = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`/api/freebies/resources?language=${language}&keyStage=${keyStage}&topic=${topic}`);
+        const response = await fetch(`/api/resources/resources?language=${language}&keyStage=${keyStage}&topic=${topic}`);
         if (response.ok) {
           const data = await response.json();
           setResources(data.resources || []);
@@ -180,7 +180,7 @@ export default function TopicPage() {
         <div className="text-center">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">Topic Not Found</h1>
           <p className="text-gray-600 mb-8">The topic you're looking for doesn't exist.</p>
-          <Link href="/freebies" className="bg-blue-600 text-white px-6 py-3 rounded-lg">
+          <Link href="/resources" className="bg-blue-600 text-white px-6 py-3 rounded-lg">
             Back to Resources
           </Link>
         </div>
@@ -192,9 +192,9 @@ export default function TopicPage() {
   const keyStageUpper = keyStage.toUpperCase();
 
   const breadcrumbItems = [
-    { label: 'Resources', href: '/freebies' },
-    { label: capitalizedLanguage, href: `/freebies/${language}` },
-    { label: keyStageUpper, href: `/freebies/${language}/${keyStage}` },
+    { label: 'Resources', href: '/resources' },
+    { label: capitalizedLanguage, href: `/resources/${language}` },
+    { label: keyStageUpper, href: `/resources/${language}/${keyStage}` },
     { label: topicConfig.name, active: true }
   ];
 

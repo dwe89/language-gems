@@ -81,7 +81,7 @@ export const getNavigationItems = (isAuthenticated: boolean = false, userEmail?:
     },
     {
       name: 'Resources',
-      path: '/freebies',
+      path: '/resources',
       enabled: true,
       comingSoon: false,
       comingSoonPath: null

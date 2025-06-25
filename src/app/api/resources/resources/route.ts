@@ -53,8 +53,8 @@ function generateMockResources(language: string, keyStage: string, topic: string
       fileType: 'PDF',
       pages: Math.floor(Math.random() * 5) + 3,
       skills: ['Vocabulary', 'Reading', 'Writing'],
-      downloadUrl: `/freebies/downloads/${topic}-vocabulary-${language}.pdf`,
-      previewUrl: `/freebies/preview/${topic}-vocabulary-${language}`,
+      downloadUrl: `/resources/downloads/${topic}-vocabulary-${language}.pdf`,
+      previewUrl: `/resources/preview/${topic}-vocabulary-${language}`,
       language,
       keyStage,
       topic
@@ -69,7 +69,7 @@ function generateMockResources(language: string, keyStage: string, topic: string
       fileType: 'PDF',
       pages: Math.floor(Math.random() * 4) + 4,
       skills: ['Grammar', 'Writing', 'Speaking'],
-      downloadUrl: `/freebies/downloads/${topic}-grammar-${language}.pdf`,
+      downloadUrl: `/resources/downloads/${topic}-grammar-${language}.pdf`,
       language,
       keyStage,
       topic
@@ -84,7 +84,7 @@ function generateMockResources(language: string, keyStage: string, topic: string
       fileType: 'MP3 + PDF',
       duration: `${Math.floor(Math.random() * 15) + 10} mins`,
       skills: ['Listening', 'Comprehension'],
-      downloadUrl: `/freebies/downloads/${topic}-listening-${language}.zip`,
+      downloadUrl: `/resources/downloads/${topic}-listening-${language}.zip`,
       language,
       keyStage,
       topic
@@ -103,7 +103,7 @@ function generateMockResources(language: string, keyStage: string, topic: string
       fileType: 'PDF Pack',
       pages: Math.floor(Math.random() * 6) + 6,
       skills: ['Assessment', 'All Skills'],
-      downloadUrl: `/freebies/downloads/${topic}-assessment-${language}.pdf`,
+      downloadUrl: `/resources/downloads/${topic}-assessment-${language}.pdf`,
       language,
       keyStage,
       topic
