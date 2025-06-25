@@ -1,0 +1,38 @@
+# Free Worksheet Downloads Directory
+
+This directory contains downloadable worksheets for the Language Gems freebies section.
+
+## Expected Files:
+
+### Themed Worksheets:
+- house-home-spanish.pdf
+- local-area-spanish.pdf
+- music-entertainment-french.pdf
+- technology-german.pdf
+- free-time-spanish.pdf
+- environment-spanish.pdf
+- holidays-french.pdf
+- school-german.pdf
+- identity-spanish.pdf
+
+### Grammar Worksheets:
+- numbers-1-10.pdf
+- numbers-1-50-spanish.pdf
+- numbers-1-100-french.pdf
+- present-tense-spanish.pdf
+- past-tense-spanish.pdf
+- future-tense-french.pdf
+- ser-estar-spanish.pdf
+
+### Exam Preparation:
+- gcse-speaking-spanish.pdf
+- writing-structures-french.pdf
+- listening-strategies.pdf
+
+### Cultural Studies:
+- spanish-festivals.pdf
+- french-cuisine.pdf
+
+## Note:
+In production, these would be actual PDF files created by teachers and educational content creators.
+For demo purposes, you can add actual PDF worksheets with these exact filenames. 

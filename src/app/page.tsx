@@ -40,10 +40,10 @@ export default function Home() {
                   </svg>
                 </Link>
                 
-                <Link href="/demo" className="inline-flex items-center justify-center border-2 border-slate-300 text-slate-700 font-semibold rounded-xl px-8 py-4 text-lg hover:border-blue-500 hover:text-blue-600 transition-all">
-                  Watch Demo
+                <Link href="/freebies" className="inline-flex items-center justify-center bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold rounded-xl px-8 py-4 text-lg shadow-lg hover:shadow-xl transform transition-all hover:scale-105">
+                  Free Worksheets
                   <svg className="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1.01M15 10h1.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
                   </svg>
                 </Link>
               </div>

@@ -86,6 +86,13 @@ export default function AdminLayout({
                   <span>Products</span>
                 </Link>
                 <Link 
+                  href="/admin/freebies" 
+                  className="flex items-center space-x-2 text-slate-700 hover:text-indigo-600 font-medium transition-colors"
+                >
+                  <FileText className="w-4 h-4" />
+                  <span>Freebies</span>
+                </Link>
+                <Link 
                   href="/admin/blog" 
                   className="flex items-center space-x-2 text-slate-700 hover:text-indigo-600 font-medium transition-colors"
                 >

@@ -80,6 +80,13 @@ export const getNavigationItems = (isAuthenticated: boolean = false, userEmail?:
       comingSoonPath: '/coming-soon/games'
     },
     {
+      name: 'Freebies',
+      path: '/freebies',
+      enabled: true,
+      comingSoon: false,
+      comingSoonPath: null
+    },
+    {
       name: 'Custom Lessons',
       path: isAuthenticated ? '/dashboard' : '/themes',
       enabled: flags.customLessons,
