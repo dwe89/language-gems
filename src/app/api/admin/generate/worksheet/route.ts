@@ -134,13 +134,13 @@ Exercise types to use: fill-blank, multiple-choice, translation, conjugation, sh
 Make it engaging, educational, and appropriate for ${level} level.`;
 
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+      model: 'gpt-4.1-nano',
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: `Generate the worksheet now.` }
       ],
       temperature: 0.7,
-      max_tokens: 3000
+      max_tokens: 5000
     });
 
     let worksheetContent: WorksheetContent;

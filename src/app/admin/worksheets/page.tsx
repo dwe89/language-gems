@@ -65,21 +65,6 @@ export default function AdminWorksheetsPage() {
     setGeneratedWorksheet(null);
 
     try {
-      // For now, simulate API call - you can implement the actual API later
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      
-      // Mock response for demonstration
-      const mockWorksheet: GeneratedWorksheet = {
-        title: `${formData.language} ${formData.worksheetType} - ${formData.topic}`,
-        pdfUrl: `/worksheets/mock-worksheet-${Date.now()}.pdf`,
-        filename: `Mock-Worksheet-${Date.now()}.pdf`
-      };
-      
-      setGeneratedWorksheet(mockWorksheet);
-      
-      /* 
-      Real API call would look like this:
-      
       const response = await fetch('/api/admin/generate/worksheet', {
         method: 'POST',
         headers: {
@@ -89,12 +74,16 @@ export default function AdminWorksheetsPage() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to generate worksheet');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to generate worksheet');
       }
 
       const result = await response.json();
-      setGeneratedWorksheet(result);
-      */
+      setGeneratedWorksheet({
+        title: result.worksheet.title,
+        pdfUrl: result.pdfUrl,
+        filename: result.filename
+      });
       
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to generate worksheet');
@@ -111,7 +100,7 @@ export default function AdminWorksheetsPage() {
         <p className="text-slate-600">Create professional language learning worksheets with AI assistance</p>
         <div className="flex items-center mt-2 text-sm text-purple-600">
           <Sparkles className="w-4 h-4 mr-1" />
-          <span>Powered by OpenAI GPT-4</span>
+          <span>Powered by OpenAI GPT-4o-mini</span>
         </div>
       </div>
 
