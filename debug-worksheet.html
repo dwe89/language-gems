@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spanish Present Tense - Regular Verbs</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka+One:wght@400&family=Open+Sans:wght@400;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Open Sans', sans-serif;
+            background: white;
+            color: #333;
+            line-height: 1.4;
+        }
+        
+        .page {
+            width: 8.5in;
+            height: 11in;
+            margin: 0;
+            background: white;
+            padding: 0.5in;
+            position: relative;
+            page-break-after: always;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .page:last-child {
+            page-break-after: avoid;
+        }
+        
+        .header {
+            height: 1.5in;
+            background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
+            color: white;
+            text-align: center;
+            padding: 15px;
+            margin: -0.5in -0.5in 0 -0.5in;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            flex-shrink: 0;
+        }
+        
+        .header h1 {
+            font-family: 'Fredoka One', cursive;
+            font-size: 2.2em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            letter-spacing: 2px;
+            margin-bottom: 5px;
+        }
+        
+        .header h2 {
+            font-size: 1.1em;
+            font-weight: 600;
+            opacity: 0.95;
+        }
+        
+        .gem-icon {
+            position: absolute;
+            font-size: 2em;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        
+        .gem-icon:first-child {
+            left: 20px;
+        }
+        
+        .gem-icon:last-child {
+            right: 20px;
+        }
+        
+        .student-info {
+            height: 0.6in;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            margin: 15px 0;
+            padding: 10px 0;
+            border-bottom: 2px solid #E5E7EB;
+            flex-shrink: 0;
+        }
+        
+        .info-field {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .info-field label {
+            font-weight: 700;
+            color: #8B5CF6;
+            font-size: 14px;
+        }
+        
+        .underline {
+            border-bottom: 2px solid #333;
+            width: 200px;
+            height: 20px;
+        }
+        
+        .content-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            overflow: hidden;
+        }
+        
+        .section {
+            height: 2.2in;
+            border: 2px solid #8B5CF6;
+            border-radius: 12px;
+            padding: 15px;
+            background: #FAFBFF;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+        
+        .section-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+            flex-shrink: 0;
+        }
+        
+        .section-number {
+            background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 16px;
+            margin-right: 12px;
+            box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);
+            flex-shrink: 0;
+        }
+        
+        .section h3 {
+            font-weight: 700;
+            color: #374151;
+            font-size: 16px;
+        }
+        
+        .section-content {
+            flex: 1;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .exercise-item {
+            margin: 6px 0;
+            font-size: 14px;
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+        }
+        
+        .exercise-item .number {
+            font-weight: 600;
+            color: #8B5CF6;
+            min-width: 20px;
+            flex-shrink: 0;
+        }
+        
+        .blank {
+            border-bottom: 2px solid #333;
+            display: inline-block;
+            min-width: 80px;
+            height: 20px;
+            margin: 0 3px;
+        }
+        
+        .blank-line {
+            border-bottom: 2px solid #333;
+            display: inline-block;
+            width: 200px;
+            height: 20px;
+        }
+        
+        .two-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            height: 100%;
+        }
+        
+        .column h4 {
+            color: #8B5CF6;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-align: center;
+            border-bottom: 2px solid #E5E7EB;
+            padding-bottom: 5px;
+        }
+        
+        .conjugation-table {
+            margin: 10px 0;
+        }
+        
+        .conjugation-table h4 {
+            color: #F59E0B;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 8px;
+        }
+        
+        .conjugation-table table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        
+        .conjugation-table th,
+        .conjugation-table td {
+            border: 1px solid #D1D5DB;
+            padding: 6px;
+            text-align: center;
+        }
+        
+        .conjugation-table th {
+            background: #F3F4F6;
+            font-weight: 600;
+            color: #374151;
+        }
+        
+        .fill-in {
+            background: #F9FAFB;
+            min-height: 25px;
+        }
+        
+        .writing-prompt {
+            margin: 8px 0;
+        }
+        
+        .writing-lines {
+            margin: 8px 0 0 25px;
+        }
+        
+        .writing-line {
+            border-bottom: 1px solid #D1D5DB;
+            height: 24px;
+            margin: 3px 0;
+        }
+        
+        .choices {
+            margin-left: 25px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        
+        .choices label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        
+        .footer {
+            height: 0.4in;
+            text-align: center;
+            font-weight: 600;
+            color: #8B5CF6;
+            font-size: 12px;
+            border-top: 2px solid #E5E7EB;
+            padding-top: 8px;
+            margin-top: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            flex-shrink: 0;
+        }
+        
+        .gem-icon-small {
+            font-size: 1em;
+            margin: 0 10px;
+        }
+        
+        .page-number {
+            position: absolute;
+            right: 20px;
+            font-size: 11px;
+            color: #6B7280;
+        }
+        
+        @media print {
+            body { background: white; }
+            .page { 
+                box-shadow: none; 
+                margin: 0; 
+                border: none;
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+
+        <div class="page" data-page="1">
+            <div class="header">
+                <div class="gem-icon">💎</div>
+                <h1>LANGUAGE GEMS</h1>
+                <h2>Spanish Present Tense - Regular Verbs</h2>
+                <div class="gem-icon">💎</div>
+            </div>
+            
+            <div class="student-info">
+                <div class="info-field">
+                    <label>NAME:</label>
+                    <div class="underline"></div>
+                </div>
+                <div class="info-field">
+                    <label>DATE:</label>
+                    <div class="underline"></div>
+                </div>
+                <div class="info-field">
+                    <label>CLASS:</label>
+                    <div class="underline"></div>
+                </div>
+            </div>
+            
+            <div class="content-area">
+        
+        <div class="section" data-type="fillBlanks">
+            <div class="section-header">
+                <div class="section-number">1</div>
+                <h3>Fill in the Blanks</h3>
+            </div>
+            <div class="section-content">
+                <div class="exercise-item">
+                <span class="number">1.</span> 
+                Yo <span class="blank"></span> español todos los días. (hablar)
+            </div><div class="exercise-item">
+                <span class="number">2.</span> 
+                Ella <span class="blank"></span> en una oficina. (trabajar)
+            </div><div class="exercise-item">
+                <span class="number">3.</span> 
+                Nosotros <span class="blank"></span> la televisión. (mirar)
+            </div><div class="exercise-item">
+                <span class="number">4.</span> 
+                Ellos <span class="blank"></span> mucho chocolate. (comer)
+            </div><div class="exercise-item">
+                <span class="number">5.</span> 
+                Tú <span class="blank"></span> libros interesantes. (leer)
+            </div><div class="exercise-item">
+                <span class="number">6.</span> 
+                Vosotros <span class="blank"></span> en Madrid. (vivir)
+            </div>
+            </div>
+        </div>
+        
+        <div class="section" data-type="multipleChoice">
+            <div class="section-header">
+                <div class="section-number">2</div>
+                <h3>Multiple Choice</h3>
+            </div>
+            <div class="section-content">
+                <div class="exercise-item">
+                <p><span class="number">1.</span> What is the correct conjugation of 'hablar' for 'él'?</p>
+                <div class="choices">
+                    <label><input type="radio" name="q0"> habla</label><label><input type="radio" name="q0"> hablas</label><label><input type="radio" name="q0"> hablamos</label><label><input type="radio" name="q0"> hablan</label>
+                </div>
+            </div><div class="exercise-item">
+                <p><span class="number">2.</span> Which ending is used for -ER verbs with 'nosotros'?</p>
+                <div class="choices">
+                    <label><input type="radio" name="q1"> -amos</label><label><input type="radio" name="q1"> -emos</label><label><input type="radio" name="q1"> -imos</label><label><input type="radio" name="q1"> -en</label>
+                </div>
+            </div><div class="exercise-item">
+                <p><span class="number">3.</span> 'Viven' is the conjugation for:</p>
+                <div class="choices">
+                    <label><input type="radio" name="q2"> yo</label><label><input type="radio" name="q2"> tú</label><label><input type="radio" name="q2"> él/ella</label><label><input type="radio" name="q2"> ellos/ellas</label>
+                </div>
+            </div>
+            </div>
+        </div>
+        
+        <div class="section" data-type="conjugationTable">
+            <div class="section-header">
+                <div class="section-number">3</div>
+                <h3>Verb Conjugation Tables</h3>
+            </div>
+            <div class="section-content">
+                
+            <div class="conjugation-table">
+                <h4>HABLAR (to speak)</h4>
+                <table>
+                    <tr>
+                        <th>Pronoun</th>
+                        <th>Conjugation</th>
+                    </tr>
+                    
+                        <tr>
+                            <td>yo</td>
+                            <td class="fill-in"></td>
+                        </tr>
+                    
+                        <tr>
+                            <td>tú</td>
+                            <td class="fill-in"></td>
+                        </tr>
+                    
+                        <tr>
+                            <td>él/ella/usted</td>
+                            <td class="fill-in"></td>
+                        </tr>
+                    
+                        <tr>
+                            <td>nosotros</td>
+                            <td class="fill-in"></td>
+                        </tr>
+                    
+                        <tr>
+                            <td>vosotros</td>
+                            <td class="fill-in"></td>
+                        </tr>
+                    
+                        <tr>
+                            <td>ellos/ellas/ustedes</td>
+                            <td class="fill-in"></td>
+                        </tr>
+                    
+                </table>
+            </div>
+        
+            <div class="conjugation-table">
+                <h4>COMER (to eat)</h4>
+                <table>
+                    <tr>
+                        <th>Pronoun</th>
+                        <th>Conjugation</th>
+                    </tr>
+                    
+                        <tr>
+                            <td>yo</td>
+                            <td class="fill-in"></td>
+                        </tr>
+                    
+                        <tr>
+                            <td>tú</td>
+                            <td class="fill-in"></td>
+                        </tr>
+                    
+                        <tr>
+                            <td>él/ella/usted</td>
+                            <td class="fill-in"></td>
+                        </tr>
+                    
+                        <tr>
+                            <td>nosotros</td>
+                            <td class="fill-in"></td>
+                        </tr>
+                    
+                        <tr>
+                            <td>vosotros</td>
+                            <td class="fill-in"></td>
+                        </tr>
+                    
+                        <tr>
+                            <td>ellos/ellas/ustedes</td>
+                            <td class="fill-in"></td>
+                        </tr>
+                    
+                </table>
+            </div>
+        
+            </div>
+        </div>
+        
+            </div>
+            <div class="footer">
+                <div class="gem-icon-small">💎</div>
+                www.languagegems.com - Unlock the Gems of Language Learning
+                <div class="gem-icon-small">💎</div>
+                <div class="page-number">Page 1</div>
+            </div>
+        </div>
+        
+        <div class="page" data-page="2">
+            <div class="header">
+                <div class="gem-icon">💎</div>
+                <h1>LANGUAGE GEMS</h1>
+                <h2>Spanish Present Tense - Regular Verbs</h2>
+                <div class="gem-icon">💎</div>
+            </div>
+            
+            <div class="student-info">
+                <div class="info-field">
+                    <label>NAME:</label>
+                    <div class="underline"></div>
+                </div>
+                <div class="info-field">
+                    <label>DATE:</label>
+                    <div class="underline"></div>
+                </div>
+                <div class="info-field">
+                    <label>CLASS:</label>
+                    <div class="underline"></div>
+                </div>
+            </div>
+            
+            <div class="content-area">
+        
+        <div class="section" data-type="translation">
+            <div class="section-header">
+                <div class="section-number">4</div>
+                <h3>Translation Practice</h3>
+            </div>
+            <div class="section-content">
+                
+        <div class="two-column">
+            <div class="column">
+                <h4>Spanish</h4>
+                
+                    <div class="exercise-item">
+                        <span class="number">1.</span> Yo hablo inglés y francés.
+                    </div>
+                
+                    <div class="exercise-item">
+                        <span class="number">2.</span> Ella come pizza los viernes.
+                    </div>
+                
+                    <div class="exercise-item">
+                        <span class="number">3.</span> Nosotros vivimos en una casa grande.
+                    </div>
+                
+                    <div class="exercise-item">
+                        <span class="number">4.</span> Ellos estudian medicina.
+                    </div>
+                
+                    <div class="exercise-item">
+                        <span class="number">5.</span> Tú trabajas en el hospital.
+                    </div>
+                
+                    <div class="exercise-item">
+                        <span class="number">6.</span> Vosotros leéis el periódico.
+                    </div>
+                
+            </div>
+            <div class="column">
+                <h4>English</h4>
+                
+                    <div class="exercise-item">
+                        <span class="number">1.</span> 
+                        <span class="blank-line"></span>
+                    </div>
+                
+                    <div class="exercise-item">
+                        <span class="number">2.</span> 
+                        <span class="blank-line"></span>
+                    </div>
+                
+                    <div class="exercise-item">
+                        <span class="number">3.</span> 
+                        <span class="blank-line"></span>
+                    </div>
+                
+                    <div class="exercise-item">
+                        <span class="number">4.</span> 
+                        <span class="blank-line"></span>
+                    </div>
+                
+                    <div class="exercise-item">
+                        <span class="number">5.</span> 
+                        <span class="blank-line"></span>
+                    </div>
+                
+                    <div class="exercise-item">
+                        <span class="number">6.</span> 
+                        <span class="blank-line"></span>
+                    </div>
+                
+            </div>
+        </div>
+        
+            </div>
+        </div>
+        
+        <div class="section" data-type="writing">
+            <div class="section-header">
+                <div class="section-number">5</div>
+                <h3>Creative Writing</h3>
+            </div>
+            <div class="section-content">
+                
+            <div class="writing-prompt">
+                <p><span class="number">1.</span> Write 3 sentences about your daily routine using -AR verbs:</p>
+                <div class="writing-lines">
+                    <div class="writing-line"></div><div class="writing-line"></div><div class="writing-line"></div><div class="writing-line"></div>
+                </div>
+            </div>
+        
+            <div class="writing-prompt">
+                <p><span class="number">2.</span> Describe what your family members do using -ER verbs:</p>
+                <div class="writing-lines">
+                    <div class="writing-line"></div><div class="writing-line"></div><div class="writing-line"></div><div class="writing-line"></div>
+                </div>
+            </div>
+        
+            <div class="writing-prompt">
+                <p><span class="number">3.</span> Create a short story (4-5 sentences) using at least 5 different regular verbs:</p>
+                <div class="writing-lines">
+                    <div class="writing-line"></div><div class="writing-line"></div><div class="writing-line"></div><div class="writing-line"></div>
+                </div>
+            </div>
+        
+            </div>
+        </div>
+        
+            </div>
+            <div class="footer">
+                <div class="gem-icon-small">💎</div>
+                www.languagegems.com - Unlock the Gems of Language Learning
+                <div class="gem-icon-small">💎</div>
+                <div class="page-number">Page 2</div>
+            </div>
+        </div>
+        
+</body>
+</html>

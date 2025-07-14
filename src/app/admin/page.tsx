@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useAuth, supabaseBrowser } from '../../components/auth/AuthProvider';
 import { 
@@ -36,28 +36,34 @@ export default function AdminDashboardPage() {
   });
   const [loading, setLoading] = useState(true);
   const [recentProducts, setRecentProducts] = useState<any[]>([]);
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [hasError, setHasError] = useState(false);
 
-  useEffect(() => {
-    if (user && !authLoading) {
-      fetchDashboardData();
-    }
-  }, [user, authLoading]);
+  const fetchDashboardData = useCallback(async () => {
+    if (!user) return;
 
-  const fetchDashboardData = async () => {
     try {
+      setHasError(false);
+      
       // Fetch products stats
       const { data: products, error: productsError } = await supabaseBrowser
         .from('products')
         .select('id, name, price_cents, is_active, created_at');
 
-      if (productsError) throw productsError;
+      if (productsError) {
+        console.error('Products error:', productsError);
+        throw productsError;
+      }
 
       // Fetch blog posts stats
       const { data: blogPosts, error: blogError } = await supabaseBrowser
         .from('blog_posts')
         .select('id, is_published');
 
-      if (blogError) throw blogError;
+      if (blogError) {
+        console.error('Blog posts error:', blogError);
+        throw blogError;
+      }
 
       const totalProducts = products?.length || 0;
       const activeProducts = products?.filter(p => p.is_active).length || 0;
@@ -81,16 +87,31 @@ export default function AdminDashboardPage() {
       setRecentProducts(recent);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
+      setHasError(true);
     } finally {
       setLoading(false);
+      setIsInitialized(true);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (user && !authLoading && !isInitialized) {
+      fetchDashboardData();
+    }
+  }, [user, authLoading, isInitialized, fetchDashboardData]);
 
   const formatPrice = (pricePence: number) => {
     return `£${(pricePence / 100).toFixed(2)}`;
   };
 
   const quickActions = [
+    {
+      title: 'AI Worksheet Generator',
+      description: 'Create professional worksheets with AI assistance',
+      href: '/admin/worksheets',
+      icon: FileText,
+      color: 'bg-gradient-to-r from-purple-500 to-orange-500 hover:from-purple-600 hover:to-orange-600',
+    },
     {
       title: 'Add New Product',
       description: 'Upload a new educational PDF and create a product',
@@ -136,11 +157,14 @@ export default function AdminDashboardPage() {
   ];
 
   // Show loading state while checking authentication or fetching data
-  if (authLoading || loading) {
+  if (authLoading || (loading && !isInitialized)) {
     return (
       <div className="container mx-auto px-6 py-20">
         <div className="flex items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+            <div className="text-slate-600">Loading dashboard...</div>
+          </div>
         </div>
       </div>
     );
@@ -148,7 +172,31 @@ export default function AdminDashboardPage() {
 
   // If not authenticated, don't render anything (layout will handle it)
   if (!user) {
-    return null;
+    return (
+      <div className="container mx-auto px-6 py-20">
+        <div className="flex items-center justify-center">
+          <div className="text-slate-600">Please wait...</div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (hasError) {
+    return (
+      <div className="container mx-auto px-6 py-20">
+        <div className="text-center">
+          <div className="text-red-600 text-lg font-semibold mb-4">Error Loading Dashboard</div>
+          <div className="text-slate-600 mb-4">There was an error loading your dashboard data.</div>
+          <button 
+            onClick={fetchDashboardData}
+            className="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -217,7 +265,7 @@ export default function AdminDashboardPage() {
           <div className="space-y-4">
             {quickActions.map((action, index) => (
               <Link
-                key={index}
+                key={`action-${index}`}
                 href={action.href}
                 className="flex items-center p-4 border border-slate-200 rounded-lg hover:border-slate-300 transition-colors group"
               >
@@ -248,7 +296,7 @@ export default function AdminDashboardPage() {
           {recentProducts.length > 0 ? (
             <div className="space-y-3">
               {recentProducts.map((product) => (
-                <div key={product.id} className="flex items-center justify-between p-3 border border-slate-200 rounded-lg">
+                <div key={`product-${product.id}`} className="flex items-center justify-between p-3 border border-slate-200 rounded-lg">
                   <div>
                     <h3 className="font-medium text-slate-900">{product.name}</h3>
                     <p className="text-sm text-slate-600">
@@ -282,7 +330,7 @@ export default function AdminDashboardPage() {
           <h2 className="text-xl font-bold text-slate-800 mb-4">Upcoming Features</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {upcomingFeatures.map((feature, index) => (
-              <div key={index} className="p-4 border border-slate-200 rounded-lg">
+              <div key={`feature-${index}`} className="p-4 border border-slate-200 rounded-lg">
                 <div className="flex items-center mb-2">
                   <div className="bg-slate-100 rounded-lg p-2">
                     <feature.icon className="w-5 h-5 text-slate-600" />

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Package, Plus, Home, FileText } from 'lucide-react';
@@ -11,11 +11,36 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, isLoading, userRole, isAdmin } = useAuth();
+  const { user, isLoading: authLoading, userRole, isAdmin } = useAuth();
   const router = useRouter();
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [showAccessDenied, setShowAccessDenied] = useState(false);
   
+  // Handle authentication state changes more gracefully
+  useEffect(() => {
+    if (!authLoading) {
+      setIsInitialized(true);
+      
+      // Show access denied only after auth is fully loaded
+      if (user && !isAdmin) {
+        setShowAccessDenied(true);
+      }
+    }
+  }, [authLoading, user, isAdmin]);
+
+  const handleSignOut = useCallback(async () => {
+    try {
+      await supabaseBrowser.auth.signOut();
+      router.push('/');
+    } catch (error) {
+      console.error('Error signing out:', error);
+      // Fallback redirect
+      window.location.href = '/';
+    }
+  }, [router]);
+
   // Show loading state while auth is initializing
-  if (isLoading) {
+  if (!isInitialized || authLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50/30 to-purple-50/30 flex items-center justify-center">
         <div className="text-center">
@@ -28,11 +53,17 @@ export default function AdminLayout({
 
   // If not authenticated, don't render anything - middleware will handle redirect
   if (!user) {
-    return null;
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50/30 to-purple-50/30 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-slate-600">Redirecting to login...</div>
+        </div>
+      </div>
+    );
   }
 
   // If not admin, show access denied
-  if (!isAdmin) {
+  if (showAccessDenied) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50/30 to-purple-50/30 flex items-center justify-center">
         <div className="text-center">
@@ -100,6 +131,13 @@ export default function AdminLayout({
                   <span>Blog</span>
                 </Link>
                 <Link 
+                  href="/admin/worksheets" 
+                  className="flex items-center space-x-2 text-slate-700 hover:text-indigo-600 font-medium transition-colors"
+                >
+                  <FileText className="w-4 h-4" />
+                  <span>AI Worksheets</span>
+                </Link>
+                <Link 
                   href="/admin/new" 
                   className="flex items-center space-x-2 text-slate-700 hover:text-indigo-600 font-medium transition-colors"
                 >
@@ -113,10 +151,7 @@ export default function AdminLayout({
                 Welcome, {user.email}
               </div>
               <button 
-                onClick={async () => {
-                  await supabaseBrowser.auth.signOut();
-                  router.push('/');
-                }}
+                onClick={handleSignOut}
                 className="text-slate-700 hover:text-red-600 font-medium transition-colors"
               >
                 Logout

@@ -32,21 +32,23 @@ export async function middleware(req: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll() {
-          return req.cookies.getAll();
+        get(name: string) {
+          return req.cookies.get(name)?.value;
         },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            req.cookies.set(name, value);
-            supabaseResponse.cookies.set(name, value, {
-              ...options,
-              // Ensure cookies are properly set with secure defaults
-              httpOnly: false, // Allow client-side access
-              secure: process.env.NODE_ENV === 'production',
-              sameSite: 'lax',
-              path: '/',
-            });
+        set(name: string, value: string, options: any) {
+          req.cookies.set(name, value);
+          supabaseResponse.cookies.set(name, value, {
+            ...options,
+            // Ensure cookies are properly set with secure defaults
+            httpOnly: false, // Allow client-side access
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            path: '/',
           });
+        },
+        remove(name: string, options: any) {
+          req.cookies.delete(name);
+          supabaseResponse.cookies.set(name, '', { ...options, maxAge: 0 });
         },
       },
     }
@@ -78,25 +80,28 @@ export async function middleware(req: NextRequest) {
       // Get user role if we have a user
       if (user) {
         try {
-          // First check user metadata
-          userRole = user.user_metadata?.role;
+          // Admin override for specific email - MUST BE FIRST
+          const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || "admin@languagegems.com";
+          const devAdminEmail = "danieletienne89@gmail.com";
           
-          // If no role in metadata, check user_profiles table
-          if (!userRole) {
-            const { data: profileData, error: profileError } = await supabase
-              .from('user_profiles')
-              .select('role')
-              .eq('user_id', user.id)
-              .single();
-              
-            if (!profileError && profileData) {
-              userRole = profileData.role;
-            }
-          }
-
-          // Admin override for specific email
-          if (userEmail === 'danieletienne89@gmail.com') {
+          if (userEmail === adminEmail || userEmail === devAdminEmail) {
             userRole = 'admin';
+          } else {
+            // First check user metadata
+            userRole = user.user_metadata?.role;
+            
+            // If no role in metadata, check user_profiles table
+            if (!userRole) {
+              const { data: profileData, error: profileError } = await supabase
+                .from('user_profiles')
+                .select('role')
+                .eq('user_id', user.id)
+                .single();
+                
+              if (!profileError && profileData) {
+                userRole = profileData.role;
+              }
+            }
           }
         } catch (error) {
           console.error('Error getting user role in middleware:', error);
@@ -270,8 +275,29 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(redirectUrl);
   }
 
+  // Check admin routes first - require admin role
+  if (path.startsWith('/admin')) {
+    if (!session) {
+      // Not authenticated, redirect to login
+      const redirectUrl = req.nextUrl.clone();
+      redirectUrl.pathname = '/auth/login';
+      redirectUrl.searchParams.set('redirectTo', req.nextUrl.pathname);
+      return NextResponse.redirect(redirectUrl);
+    }
+    
+    if (userRole !== 'admin') {
+      // Authenticated but not admin, redirect to account
+      const redirectUrl = req.nextUrl.clone();
+      redirectUrl.pathname = '/account';
+      return NextResponse.redirect(redirectUrl);
+    }
+    
+    // Admin user, allow access
+    return supabaseResponse;
+  }
+
   // Check if the route is protected and user is not authenticated
-  const protectedPaths = ['/dashboard', '/student-dashboard', '/profile', '/exercises', '/languages/learn', '/themes/explore', '/learn', '/account', '/cart', '/admin'];
+  const protectedPaths = ['/dashboard', '/student-dashboard', '/profile', '/exercises', '/languages/learn', '/themes/explore', '/learn', '/account', '/cart'];
   const isProtectedRoute = protectedPaths.some(route => path.startsWith(route));
 
   if (isProtectedRoute && !session) {

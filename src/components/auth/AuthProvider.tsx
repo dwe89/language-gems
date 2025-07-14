@@ -93,26 +93,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     hasSubscription: boolean;
   }> => {
     try {
+      // Temporary admin override for specific email during testing - MUST BE FIRST
+      const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || "admin@languagegems.com";
+      const devAdminEmail = "danieletienne89@gmail.com";
+      
+      if (currentUser.email === adminEmail || currentUser.email === devAdminEmail) {
+        console.log('Setting admin role for email:', currentUser.email);
+        const result = { role: 'admin', hasSubscription: true };
+        console.log('getUserData returning for admin:', result);
+        return result;
+      }
+
       // First check metadata
       let role = currentUser.user_metadata?.role;
+      console.log('Role from user_metadata:', role);
       
-      // If no role in metadata, check user_profiles
+      // If no role in metadata, check user_profiles table
       if (!role) {
-        const { data: profileData } = await supabaseBrowser
+        const { data: profileData, error: profileError } = await supabaseBrowser
           .from('user_profiles')
           .select('role')
           .eq('user_id', currentUser.id)
           .single();
-        role = profileData?.role;
+          
+        if (profileError && profileError.code !== 'PGRST116') {
+          console.error('Error fetching user profile:', profileError);
+        } else if (profileData) {
+          role = profileData.role;
+          console.log('Role from user_profiles:', role);
+        }
       }
 
-      // Temporary admin override for specific email during testing
-      const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || "admin@languagegems.com";
-      if (currentUser.email === adminEmail) {
-        role = 'admin';
-      }
-      
-      // Check subscription status
       let hasSubscription = false;
       if (role === 'admin') {
         // Admins always have subscription access
@@ -128,7 +139,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         hasSubscription = !!subData;
       }
       
-      return { role, hasSubscription };
+      const result = { role, hasSubscription };
+      console.log('getUserData returning:', result);
+      return result;
     } catch (error) {
       console.error('Error getting user data:', error);
       return { role: null, hasSubscription: false };
@@ -138,22 +151,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Function to update auth state safely
   const updateAuthState = useCallback(async (currentSession: Session | null) => {
     try {
+      console.log('updateAuthState called with session:', !!currentSession);
       setSession(currentSession);
       setUser(currentSession?.user || null);
 
       // Get complete user data if we have a user
       if (currentSession?.user) {
+        console.log('Getting user data for:', currentSession.user.email);
         const userData = await getUserData(currentSession.user);
+        console.log('Setting user role in state:', userData.role);
+        console.log('Setting subscription status:', userData.hasSubscription);
         setUserRole(userData.role);
         setHasSubscription(userData.hasSubscription);
         currentUserId.current = currentSession.user.id;
       } else {
+        console.log('No user session, clearing auth state');
         setUserRole(null);
         setHasSubscription(false);
         currentUserId.current = null;
       }
       
       setIsLoading(false);
+      console.log('updateAuthState completed');
     } catch (error) {
       console.error('Error updating auth state:', error);
       setSession(currentSession);

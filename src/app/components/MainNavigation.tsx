@@ -11,7 +11,7 @@ export default function MainNavigation() {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
-  const { user, signOut, refreshSession, isLoading } = useAuth();
+  const { user, signOut, refreshSession, isLoading, userRole } = useAuth();
   const router = useRouter();
 
   const isActive = (path: string) => {
@@ -21,44 +21,50 @@ export default function MainNavigation() {
     return false;
   };
 
-  const handleSignOut = async () => {
-    await signOut();
-    // Redirect handled in AuthProvider
+  const navItems = getNavigationItems();
+
+  // Handle user avatar click
+  const handleUserAvatarClick = () => {
+    router.push('/account');
   };
 
-  // Mount check to prevent hydration mismatch
+  // Handle logout
+  const handleLogout = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
+
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
-  // Refresh auth session when component mounts
+  // Periodically refresh session to keep auth state fresh
   useEffect(() => {
-    if (isMounted) {
-      const refreshAuth = async () => {
-        await refreshSession();
-      };
-      
-      refreshAuth();
+    if (user && !isLoading) {
+      const interval = setInterval(() => {
+        refreshSession();
+      }, 5 * 60 * 1000); // 5 minutes
+
+      return () => clearInterval(interval);
     }
-  }, [refreshSession, isMounted]);
+  }, [user, isLoading, refreshSession]);
 
-  // Get navigation items based on auth state and user email (for admin override)
-  const navItems = isMounted ? getNavigationItems(!!user, user?.email) : [];
-
-  // Add debug output to check authentication state (only log significant changes)
   useEffect(() => {
     const userState = {
       isAuthenticated: !!user, 
       userId: user?.id,
       email: user?.email,
-      role: user?.user_metadata?.role
+      role: userRole  // Use userRole from AuthProvider instead of user_metadata
     };
     
     // Only log if state actually changed
     if (user !== null) {
       console.log('Auth state changed in MainNavigation:', userState);
     }
-  }, [user?.id, user?.email, user?.user_metadata?.role]); // Only depend on specific fields that matter
+  }, [user?.id, user?.email, userRole]); // Update dependency to use userRole
 
   return (
     <header className="bg-gradient-to-r from-blue-900 via-blue-800 to-teal-700 py-3 relative z-10">
@@ -108,7 +114,7 @@ export default function MainNavigation() {
                   <span>Dashboard</span>
                 </Link>
                 <button
-                  onClick={handleSignOut}
+                  onClick={handleLogout}
                   className="py-2 px-6 bg-yellow-400 hover:bg-yellow-300 text-blue-800 rounded-full font-medium transition-colors flex items-center"
                 >
                   <LogOut className="mr-1 h-4 w-4" />
@@ -194,7 +200,7 @@ export default function MainNavigation() {
                     </Link>
                     <button
                       onClick={() => {
-                        handleSignOut();
+                        handleLogout();
                         setMobileMenuOpen(false);
                       }}
                       className="block w-full text-left text-white hover:text-yellow-200 transition-colors"
