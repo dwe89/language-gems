@@ -6,9 +6,12 @@ import { writeFile, readFile } from 'fs/promises';
 import path from 'path';
 import puppeteer from 'puppeteer';
 
-// Initialize OpenAI
+// Initialize OpenAI with project-based API key support
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
+  organization: process.env.OPENAI_ORG_ID, // Optional: for organization-scoped keys
+  project: process.env.OPENAI_PROJECT_ID, // Optional: for project-scoped keys
+  dangerouslyAllowBrowser: false,
 });
 
 interface WorksheetRequest {
@@ -133,15 +136,34 @@ Generate a JSON response with this exact structure:
 Exercise types to use: fill-blank, multiple-choice, translation, conjugation, short-answer
 Make it engaging, educational, and appropriate for ${level} level.`;
 
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4.1-nano',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: `Generate the worksheet now.` }
-      ],
-      temperature: 0.7,
-      max_tokens: 5000
-    });
+    let completion;
+    try {
+      completion = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: `Generate the worksheet now.` }
+        ],
+        temperature: 0.7,
+        max_tokens: 5000
+      });
+    } catch (apiError: any) {
+      console.error('OpenAI API Error Details:', {
+        status: apiError.status,
+        code: apiError.code,
+        type: apiError.type,
+        message: apiError.message
+      });
+      
+      if (apiError.status === 401) {
+        return NextResponse.json({ 
+          error: 'OpenAI API authentication failed. Please check your API key configuration.',
+          details: 'This appears to be a project-based API key. Ensure it has the correct permissions and is not expired.'
+        }, { status: 500 });
+      }
+      
+      throw apiError; // Re-throw for other errors
+    }
 
     let worksheetContent: WorksheetContent;
     try {
