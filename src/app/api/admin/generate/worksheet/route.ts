@@ -95,13 +95,20 @@ export async function POST(request: NextRequest) {
 
 Create a comprehensive ${language} ${worksheetType} worksheet for ${level} level students on the topic of "${topic}".
 
-Requirements:
+CRITICAL REQUIREMENTS:
 - Target level: ${level}
 - Focus: ${worksheetType}
-- Exercise types: ${exerciseTypes.join(', ')}
-- Must include: Student info section (NAME, DATE, CLASS fields)
+- ONLY include these exercise types: ${exerciseTypes.join(', ')}
+- DO NOT include any exercise types not in this list: ${exerciseTypes.join(', ')}
+- Number of questions per exercise type:
+  * fill-blank: 8 questions
+  * multiple-choice: 6 questions  
+  * conjugation: 5 conjugation tables
+  * translation: 6 translation exercises
+  * short-answer: 5 short answer questions
+- Must include: Student info section (NAME, DATE fields only)
 - Must include: Clear instructions for each section
-- Must include: Answer key or reference section
+- DO NOT include answer key or reference section unless specifically requested
 ${customPrompt ? `- Additional requirements: ${customPrompt}` : ''}
 
 Generate a JSON response with this exact structure:
@@ -110,7 +117,7 @@ Generate a JSON response with this exact structure:
   "studentInfo": {
     "nameField": true,
     "dateField": true,
-    "classField": true
+    "classField": false
   },
   "sections": [
     {
@@ -121,31 +128,28 @@ Generate a JSON response with this exact structure:
         {
           "question": "Question text",
           "options": ["A) Option 1", "B) Option 2", "C) Option 3", "D) Option 4"],
-          "answer": "Correct answer",
+          "answer": "Correct answer for conjugation reference only",
           "type": "multiple-choice"
         }
       ]
     }
-  ],
-  "referenceSection": {
-    "title": "Reference/Answer Key",
-    "content": "Reference material or answers"
-  }
+  ]
 }
 
 Exercise types to use: fill-blank, multiple-choice, translation, conjugation, short-answer
+IMPORTANT: Only create sections for the exercise types specified: ${exerciseTypes.join(', ')}
 Make it engaging, educational, and appropriate for ${level} level.`;
 
     let completion;
     try {
       completion = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
+        model: 'gpt-4.1-nano',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: `Generate the worksheet now.` }
         ],
         temperature: 0.7,
-        max_tokens: 5000
+        max_tokens: 10000
       });
     } catch (apiError: any) {
       console.error('OpenAI API Error Details:', {
@@ -242,7 +246,7 @@ function generateWorksheetHTML(content: WorksheetContent): string {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${content.title}</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&family=Fredoka+One&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka+One:wght@400&family=Open+Sans:wght@400;600;700&display=swap');
         
         * {
             margin: 0;
@@ -252,172 +256,229 @@ function generateWorksheetHTML(content: WorksheetContent): string {
         
         body {
             font-family: 'Open Sans', sans-serif;
-            font-size: 14px;
-            line-height: 1.6;
+            background: linear-gradient(135deg, #f5f3f0 0%, #ede8e3 100%);
             color: #333;
-            background: white;
+            line-height: 1.5;
+            font-size: 16px;
         }
         
         .page {
             width: 8.5in;
-            min-height: 11in;
+            height: 11in;
             margin: 0 auto;
             background: white;
+            padding: 0.5in;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            page-break-after: always;
+            border: 3px solid #8B5CF6;
+            position: relative;
             display: flex;
             flex-direction: column;
-            page-break-after: always;
         }
         
         .page:last-child {
             page-break-after: avoid;
         }
         
-        /* Header */
         .header {
-            background: linear-gradient(135deg, #8B5CF6 0%, #F59E0B 100%);
+            background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
             color: white;
-            padding: 20px;
             text-align: center;
-            position: relative;
-            height: 1.5in;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-        
-        .header::before {
-            content: '💎';
-            position: absolute;
-            left: 20px;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 24px;
-        }
-        
-        .header::after {
-            content: '💎';
-            position: absolute;
-            right: 20px;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 24px;
+            padding: 20px;
+            margin: -0.5in -0.5in 20px -0.5in;
+            border-bottom: 3px solid #8B5CF6;
         }
         
         .header h1 {
             font-family: 'Fredoka One', cursive;
-            font-size: 28px;
-            margin-bottom: 8px;
+            font-size: 2.8em;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            letter-spacing: 3px;
         }
         
         .header .subtitle {
-            font-size: 16px;
+            font-size: 1.2em;
             font-weight: 600;
+            margin-top: 8px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
         }
         
-        /* Student Info */
-        .student-info {
-            background: #F8FAFC;
-            border: 2px solid #E2E8F0;
-            border-radius: 8px;
-            padding: 20px;
-            margin: 20px;
-            height: 0.8in;
+        .name-date {
             display: flex;
             justify-content: space-between;
-            align-items: center;
-        }
-        
-        .student-field {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .student-field label {
+            margin-bottom: 20px;
             font-weight: 600;
-            color: #374151;
+            font-size: 16px;
         }
         
-        .student-field .line {
-            border-bottom: 2px solid #6B7280;
-            width: 150px;
-            height: 2px;
+        .name-date span {
+            border-bottom: 2px solid #333;
+            padding-bottom: 2px;
+            min-width: 300px;
         }
         
-        /* Content */
         .content {
             flex: 1;
-            padding: 0 20px;
-            display: flex;
-            flex-direction: column;
         }
         
         .section {
-            margin-bottom: 30px;
+            border: 2px dashed #666;
+            margin: 20px 0;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             break-inside: avoid;
         }
         
-        .section-title {
-            background: linear-gradient(135deg, #8B5CF6, #F59E0B);
+        .section-number {
+            background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
             color: white;
-            padding: 12px 20px;
-            border-radius: 8px;
-            font-size: 18px;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 20px;
+            float: left;
+            margin-right: 15px;
+            margin-top: -5px;
+            box-shadow: 0 3px 6px rgba(139, 92, 246, 0.3);
+        }
+        
+        .section h3 {
             font-weight: 700;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
+            color: #374151;
+            font-size: 18px;
         }
         
         .section-instructions {
-            background: #F1F5F9;
-            padding: 10px 15px;
-            border-radius: 6px;
-            margin-bottom: 15px;
             font-style: italic;
-            color: #475569;
+            color: #6B7280;
+            margin-bottom: 15px;
+            font-size: 16px;
         }
         
-        .exercise {
-            margin-bottom: 20px;
-            padding: 15px;
-            border: 1px solid #E2E8F0;
-            border-radius: 6px;
-            background: white;
-        }
-        
-        .exercise-question {
-            font-weight: 600;
-            margin-bottom: 10px;
-            color: #374151;
-        }
-        
-        .exercise-options {
+        .two-column {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            margin-top: 10px;
+            gap: 20px;
+        }
+        
+        .exercise-item {
+            margin: 12px 0;
+            font-size: 16px;
+        }
+        
+        .exercise-item .number {
+            font-weight: 600;
+            color: #8B5CF6;
+        }
+        
+        .blank {
+            border-bottom: 2px solid #333;
+            display: inline-block;
+            min-width: 100px;
+            margin: 0 5px;
+        }
+        
+        .table-container {
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        th, td {
+            border: 2px solid #8B5CF6;
+            padding: 15px;
+            text-align: center;
+            font-size: 16px;
+        }
+        
+        th {
+            background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
+            color: white;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        td {
+            background: #F8FAFC;
+            position: relative;
+        }
+        
+        .conjugation-line {
+            border-bottom: 1px solid #666;
+            height: 25px;
+            margin: 5px 0;
+            width: 100%;
+        }
+        
+        .challenge-area {
+            background: #F3F4F6;
+            border: 2px solid #D1D5DB;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        
+        .challenge-line {
+            border-bottom: 1px solid #6B7280;
+            height: 30px;
+            margin: 15px 0;
+        }
+        
+        .footer {
+            position: absolute;
+            bottom: 0.3in;
+            left: 0.5in;
+            right: 0.5in;
+            text-align: center;
+            font-weight: 600;
+            color: #8B5CF6;
+            font-size: 16px;
+            margin-top: auto;
+        }
+        
+        .gem-accent {
+            color: #F59E0B;
+            font-weight: 700;
         }
         
         .option {
             display: flex;
             align-items: center;
             gap: 8px;
-            padding: 5px 0;
+            padding: 8px 0;
+            font-size: 16px;
         }
         
         .option-circle {
-            width: 16px;
-            height: 16px;
+            width: 18px;
+            height: 18px;
             border: 2px solid #6B7280;
             border-radius: 50%;
             flex-shrink: 0;
         }
         
-        .answer-line {
-            border-bottom: 2px dashed #6B7280;
-            height: 24px;
-            margin: 8px 0;
-            min-width: 200px;
+        .exercise-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
         }
         
         .reference-section {
@@ -425,7 +486,7 @@ function generateWorksheetHTML(content: WorksheetContent): string {
             border: 2px solid #3B82F6;
             border-radius: 8px;
             padding: 20px;
-            margin-top: 20px;
+            margin: 20px 0;
         }
         
         .reference-title {
@@ -440,28 +501,14 @@ function generateWorksheetHTML(content: WorksheetContent): string {
             white-space: pre-line;
         }
         
-        /* Footer */
-        .footer {
-            margin-top: auto;
-            background: linear-gradient(135deg, #8B5CF6, #F59E0B);
-            color: white;
-            text-align: center;
-            padding: 15px;
-            font-size: 12px;
-            height: 0.6in;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
         @media print {
-            .page {
-                margin: 0;
-                page-break-after: always;
+            body {
+                background: white;
             }
-            
-            .page:last-child {
-                page-break-after: avoid;
+            .page {
+                box-shadow: none;
+                margin: 0;
+                border: none;
             }
         }
     </style>
@@ -469,43 +516,55 @@ function generateWorksheetHTML(content: WorksheetContent): string {
 <body>
     <div class="page">
         <div class="header">
-            <h1>LANGUAGE GEMS</h1>
-            <div class="subtitle">${content.title}</div>
+            <h1>${content.title.toUpperCase()}</h1>
+            <div class="subtitle">Language Gems Professional Worksheet</div>
         </div>
         
-        ${content.studentInfo ? `
-        <div class="student-info">
-            ${content.studentInfo.nameField ? `
-            <div class="student-field">
-                <label>NAME:</label>
-                <div class="line"></div>
-            </div>
-            ` : ''}
-            ${content.studentInfo.dateField ? `
-            <div class="student-field">
-                <label>DATE:</label>
-                <div class="line"></div>
-            </div>
-            ` : ''}
-            ${content.studentInfo.classField ? `
-            <div class="student-field">
-                <label>CLASS:</label>
-                <div class="line"></div>
-            </div>
-            ` : ''}
+        <div class="name-date">
+            <div>NAME: <span></span></div>
+            <div>DATE: <span></span></div>
         </div>
-        ` : ''}
         
         <div class="content">
-            ${content.sections.map(section => `
+            ${content.sections.map((section, sectionIndex) => `
             <div class="section">
-                <div class="section-title">${section.title}</div>
+                <div class="section-number">${sectionIndex + 1}</div>
+                <h3>${section.title}</h3>
                 ${section.instructions ? `<div class="section-instructions">${section.instructions}</div>` : ''}
                 
+                ${section.exercises.length <= 10 && section.exercises.every(ex => ex.type === 'fill-blank' || ex.type === 'multiple-choice') ? `
+                <div class="two-column">
+                    <div>
+                        ${section.exercises.slice(0, Math.ceil(section.exercises.length / 2)).map((exercise, index) => `
+                        <div class="exercise-item">
+                            <span class="number">${index + 1}.</span> 
+                            ${exercise.question}
+                            ${exercise.type === 'fill-blank' ? '<span class="blank"></span>' : ''}
+                            ${exercise.type === 'multiple-choice' && exercise.options ? 
+                                exercise.options.map(opt => `<div>${opt}</div>`).join('') : ''
+                            }
+                        </div>
+                        `).join('')}
+                    </div>
+                    <div>
+                        ${section.exercises.slice(Math.ceil(section.exercises.length / 2)).map((exercise, index) => `
+                        <div class="exercise-item">
+                            <span class="number">${Math.ceil(section.exercises.length / 2) + index + 1}.</span> 
+                            ${exercise.question}
+                            ${exercise.type === 'fill-blank' ? '<span class="blank"></span>' : ''}
+                            ${exercise.type === 'multiple-choice' && exercise.options ? 
+                                exercise.options.map(opt => `<div>${opt}</div>`).join('') : ''
+                            }
+                        </div>
+                        `).join('')}
+                    </div>
+                </div>
+                ` : `
                 ${section.exercises.map((exercise, index) => `
-                <div class="exercise">
-                    <div class="exercise-question">${index + 1}. ${exercise.question}</div>
-                    
+                <div class="exercise-item">
+                    <span class="number">${index + 1}.</span> 
+                    ${exercise.question}
+                    ${exercise.type === 'fill-blank' ? '<span class="blank"></span>' : ''}
                     ${exercise.type === 'multiple-choice' && exercise.options ? `
                     <div class="exercise-options">
                         ${exercise.options.map(option => `
@@ -515,24 +574,36 @@ function generateWorksheetHTML(content: WorksheetContent): string {
                         </div>
                         `).join('')}
                     </div>
-                    ` : `
-                    <div class="answer-line"></div>
-                    `}
+                    ` : ''}
+                    ${exercise.type === 'conjugation' ? `
+                    <div class="table-container">
+                        <table>
+                            <tr>
+                                <th>PRONOUN</th>
+                                <th>VERB FORM</th>
+                                <th>ENGLISH</th>
+                            </tr>
+                            <tr><td><strong>Yo</strong></td><td><div class="conjugation-line"></div></td><td>I ${exercise.answer || 'verb'}</td></tr>
+                            <tr><td><strong>Tú</strong></td><td><div class="conjugation-line"></div></td><td>You ${exercise.answer || 'verb'}</td></tr>
+                            <tr><td><strong>Él/Ella</strong></td><td><div class="conjugation-line"></div></td><td>He/She ${exercise.answer || 'verb'}s</td></tr>
+                            <tr><td><strong>Nosotros</strong></td><td><div class="conjugation-line"></div></td><td>We ${exercise.answer || 'verb'}</td></tr>
+                            <tr><td><strong>Vosotros</strong></td><td><div class="conjugation-line"></div></td><td>You all ${exercise.answer || 'verb'}</td></tr>
+                            <tr><td><strong>Ellos</strong></td><td><div class="conjugation-line"></div></td><td>They ${exercise.answer || 'verb'}</td></tr>
+                        </table>
+                    </div>
+                    ` : ''}
+                    ${exercise.type === 'translation' || exercise.type === 'short-answer' ? `
+                    <div class="conjugation-line"></div>
+                    ` : ''}
                 </div>
                 `).join('')}
-            </div>
-            `).join('')}
-            
-            ${content.referenceSection ? `
-            <div class="reference-section">
-                <div class="reference-title">${content.referenceSection.title}</div>
-                <div class="reference-content">${content.referenceSection.content}</div>
-            </div>
-            ` : ''}
-        </div>
-        
-        <div class="footer">
-            www.languagegems.com - Unlock the Gems of Language Learning
+                `}
+                     </div>
+         `).join('')}
+         </div>
+          
+          <div class="footer">
+            🌟 <span class="gem-accent">www.languagegems.com</span> 🌟
         </div>
     </div>
 </body>

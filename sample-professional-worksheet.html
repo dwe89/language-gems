@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spanish Present Tense Professional Worksheet</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka+One:wght@400&family=Open+Sans:wght@400;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Open Sans', sans-serif;
+            background: linear-gradient(135deg, #f5f3f0 0%, #ede8e3 100%);
+            color: #333;
+            line-height: 1.5;
+            font-size: 16px;
+        }
+        
+        .page {
+            width: 8.5in;
+            height: 11in;
+            margin: 0 auto;
+            background: white;
+            padding: 0.5in;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            page-break-after: always;
+            border: 3px solid #8B5CF6;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .page:last-child {
+            page-break-after: avoid;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+            color: white;
+            text-align: center;
+            padding: 20px;
+            margin: -0.5in -0.5in 20px -0.5in;
+            border-bottom: 3px solid #8B5CF6;
+        }
+        
+        .header h1 {
+            font-family: 'Fredoka One', cursive;
+            font-size: 2.8em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            letter-spacing: 3px;
+        }
+        
+        .header .subtitle {
+            font-size: 1.2em;
+            font-weight: 600;
+            margin-top: 8px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+        }
+        
+        .name-date {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            font-weight: 600;
+            font-size: 16px;
+        }
+        
+        .name-date span {
+            border-bottom: 2px solid #333;
+            padding-bottom: 2px;
+            min-width: 300px;
+        }
+        
+        .content {
+            flex: 1;
+        }
+        
+        .section {
+            border: 2px dashed #666;
+            margin: 20px 0;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            break-inside: avoid;
+        }
+        
+        .section-number {
+            background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 20px;
+            float: left;
+            margin-right: 15px;
+            margin-top: -5px;
+            box-shadow: 0 3px 6px rgba(139, 92, 246, 0.3);
+        }
+        
+        .section h3 {
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: #374151;
+            font-size: 18px;
+        }
+        
+        .section-instructions {
+            font-style: italic;
+            color: #6B7280;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+        
+        .two-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        .exercise-item {
+            margin: 12px 0;
+            font-size: 16px;
+        }
+        
+        .exercise-item .number {
+            font-weight: 600;
+            color: #8B5CF6;
+        }
+        
+        .blank {
+            border-bottom: 2px solid #333;
+            display: inline-block;
+            min-width: 100px;
+            margin: 0 5px;
+        }
+        
+        .table-container {
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        th, td {
+            border: 2px solid #8B5CF6;
+            padding: 15px;
+            text-align: center;
+            font-size: 16px;
+        }
+        
+        th {
+            background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
+            color: white;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        td {
+            background: #F8FAFC;
+            position: relative;
+        }
+        
+        .conjugation-line {
+            border-bottom: 1px solid #666;
+            height: 25px;
+            margin: 5px 0;
+            width: 100%;
+        }
+        
+        .footer {
+            position: absolute;
+            bottom: 0.3in;
+            left: 0.5in;
+            right: 0.5in;
+            text-align: center;
+            font-weight: 600;
+            color: #8B5CF6;
+            font-size: 16px;
+            margin-top: auto;
+        }
+        
+        .gem-accent {
+            color: #F59E0B;
+            font-weight: 700;
+        }
+        
+        .option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 0;
+            font-size: 16px;
+        }
+        
+        .option-circle {
+            width: 18px;
+            height: 18px;
+            border: 2px solid #6B7280;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        
+        .exercise-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        @media print {
+            body {
+                background: white;
+            }
+            .page {
+                box-shadow: none;
+                margin: 0;
+                border: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <div class="header">
+            <h1>SPANISH PRESENT TENSE</h1>
+            <div class="subtitle">Language Gems Professional Worksheet</div>
+        </div>
+        
+        <div class="name-date">
+            <div>NAME: <span></span></div>
+            <div>DATE: <span></span></div>
+        </div>
+        
+        <div class="content">
+            <div class="section">
+                <div class="section-number">1</div>
+                <h3>Fill in the blanks with the correct present tense form</h3>
+                <div class="section-instructions">Complete each sentence with the appropriate verb conjugation</div>
+                
+                <div class="two-column">
+                    <div>
+                        <div class="exercise-item">
+                            <span class="number">1.</span> Yo <span class="blank"></span> (hablar) español.
+                        </div>
+                        <div class="exercise-item">
+                            <span class="number">2.</span> Tú <span class="blank"></span> (comer) una manzana.
+                        </div>
+                        <div class="exercise-item">
+                            <span class="number">3.</span> Él <span class="blank"></span> (vivir) en Madrid.
+                        </div>
+                        <div class="exercise-item">
+                            <span class="number">4.</span> Nosotros <span class="blank"></span> (estudiar) matemáticas.
+                        </div>
+                    </div>
+                    <div>
+                        <div class="exercise-item">
+                            <span class="number">5.</span> Vosotros <span class="blank"></span> (leer) libros.
+                        </div>
+                        <div class="exercise-item">
+                            <span class="number">6.</span> Ellos <span class="blank"></span> (correr) en el parque.
+                        </div>
+                        <div class="exercise-item">
+                            <span class="number">7.</span> Ella <span class="blank"></span> (trabajar) en una oficina.
+                        </div>
+                        <div class="exercise-item">
+                            <span class="number">8.</span> Tú <span class="blank"></span> (escribir) una carta.
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section">
+                <div class="section-number">2</div>
+                <h3>Multiple Choice - Circle the correct verb form</h3>
+                <div class="section-instructions">Choose the correct conjugation for each sentence</div>
+                
+                <div class="exercise-item">
+                    <span class="number">1.</span> Yo _______ español en la escuela.
+                    <div class="exercise-options">
+                        <div class="option">
+                            <div class="option-circle"></div>
+                            <span>A) hablo</span>
+                        </div>
+                        <div class="option">
+                            <div class="option-circle"></div>
+                            <span>B) habla</span>
+                        </div>
+                        <div class="option">
+                            <div class="option-circle"></div>
+                            <span>C) hablan</span>
+                        </div>
+                        <div class="option">
+                            <div class="option-circle"></div>
+                            <span>D) hablas</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="exercise-item">
+                    <span class="number">2.</span> Tú _______ mucha fruta.
+                    <div class="exercise-options">
+                        <div class="option">
+                            <div class="option-circle"></div>
+                            <span>A) come</span>
+                        </div>
+                        <div class="option">
+                            <div class="option-circle"></div>
+                            <span>B) comes</span>
+                        </div>
+                        <div class="option">
+                            <div class="option-circle"></div>
+                            <span>C) comemos</span>
+                        </div>
+                        <div class="option">
+                            <div class="option-circle"></div>
+                            <span>D) comen</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="exercise-item">
+                    <span class="number">3.</span> Nosotros _______ en Madrid.
+                    <div class="exercise-options">
+                        <div class="option">
+                            <div class="option-circle"></div>
+                            <span>A) vivo</span>
+                        </div>
+                        <div class="option">
+                            <div class="option-circle"></div>
+                            <span>B) vives</span>
+                        </div>
+                        <div class="option">
+                            <div class="option-circle"></div>
+                            <span>C) vivimos</span>
+                        </div>
+                        <div class="option">
+                            <div class="option-circle"></div>
+                            <span>D) viven</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="exercise-item">
+                    <span class="number">4.</span> Ellas _______ libros interesantes.
+                    <div class="exercise-options">
+                        <div class="option">
+                            <div class="option-circle"></div>
+                            <span>A) lee</span>
+                        </div>
+                        <div class="option">
+                            <div class="option-circle"></div>
+                            <span>B) lees</span>
+                        </div>
+                        <div class="option">
+                            <div class="option-circle"></div>
+                            <span>C) leemos</span>
+                        </div>
+                        <div class="option">
+                            <div class="option-circle"></div>
+                            <span>D) leen</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="exercise-item">
+                    <span class="number">5.</span> Vosotros _______ en el parque.
+                    <div class="exercise-options">
+                        <div class="option">
+                            <div class="option-circle"></div>
+                            <span>A) corren</span>
+                        </div>
+                        <div class="option">
+                            <div class="option-circle"></div>
+                            <span>B) corre</span>
+                        </div>
+                        <div class="option">
+                            <div class="option-circle"></div>
+                            <span>C) corréis</span>
+                        </div>
+                        <div class="option">
+                            <div class="option-circle"></div>
+                            <span>D) corremos</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="exercise-item">
+                    <span class="number">6.</span> Mi hermana _______ en una oficina.
+                    <div class="exercise-options">
+                        <div class="option">
+                            <div class="option-circle"></div>
+                            <span>A) trabajas</span>
+                        </div>
+                        <div class="option">
+                            <div class="option-circle"></div>
+                            <span>B) trabaja</span>
+                        </div>
+                        <div class="option">
+                            <div class="option-circle"></div>
+                            <span>C) trabajamos</span>
+                        </div>
+                        <div class="option">
+                            <div class="option-circle"></div>
+                            <span>D) trabajan</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section">
+                <div class="section-number">3</div>
+                <h3>Conjugation Table - Complete the table</h3>
+                <div class="section-instructions">Fill in all the missing verb forms for the verb HABLAR (to speak)</div>
+                
+                <div class="table-container">
+                    <table>
+                        <tr>
+                            <th>PRONOUN</th>
+                            <th>VERB FORM</th>
+                            <th>ENGLISH</th>
+                        </tr>
+                        <tr>
+                            <td><strong>Yo</strong></td>
+                            <td><div class="conjugation-line"></div></td>
+                            <td>I speak</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Tú</strong></td>
+                            <td><div class="conjugation-line"></div></td>
+                            <td>You speak</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Él/Ella</strong></td>
+                            <td><div class="conjugation-line"></div></td>
+                            <td>He/She speaks</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Nosotros</strong></td>
+                            <td><div class="conjugation-line"></div></td>
+                            <td>We speak</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Vosotros</strong></td>
+                            <td><div class="conjugation-line"></div></td>
+                            <td>You all speak</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Ellos</strong></td>
+                            <td><div class="conjugation-line"></div></td>
+                            <td>They speak</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            🌟 <span class="gem-accent">www.languagegems.com</span> 🌟
+        </div>
+    </div>
+</body>
+</html> 
