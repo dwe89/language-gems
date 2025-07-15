@@ -92,47 +92,46 @@ export default function AdminWorksheetsPage() {
     }
   };
 
-  // Generate PDF using html2pdf.js
-  const generatePDF = (html: string, filename: string) => {
-    // Check if html2pdf is loaded
-    const html2pdf = (window as any).html2pdf;
-    if (!html2pdf) {
-      setError('PDF generation library not loaded. Please refresh the page and try again.');
+  // Generate PDF using browser print functionality
+  const openPrintView = async () => {
+    if (!generatedWorksheet?.html) {
+      setError('No worksheet content to print');
       return;
     }
 
-    // Find or create the preview container
-    let previewContainer = document.getElementById('worksheet-preview-container');
-    if (!previewContainer) {
-      setError('Worksheet preview not found. Please try generating the worksheet again.');
-      return;
-    }
+    try {
+      const response = await fetch('/api/admin/generate/worksheet/print', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ html: generatedWorksheet.html }),
+      });
 
-    // Add a small delay to ensure content is fully rendered
-    setTimeout(() => {
-      try {
-        html2pdf()
-          .set({
-            margin: 7,
-            filename: `${filename}.pdf`,
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, useCORS: true },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-          })
-          .from(previewContainer)
-          .save()
-          .then(() => {
-            console.log('PDF generated successfully');
-          })
-          .catch((error: Error) => {
-            console.error('PDF generation error:', error);
-            setError('Failed to generate PDF. Please try again.');
-          });
-      } catch (error) {
-        console.error('PDF generation error:', error);
-        setError('Failed to generate PDF. Please try again.');
+      if (!response.ok) {
+        throw new Error('Failed to generate print view');
       }
-    }, 500); // 500ms delay to ensure fonts and styles are loaded
+
+      const htmlContent = await response.text();
+      
+      // Create a new window/tab with the clean HTML
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(htmlContent);
+        printWindow.document.close();
+        
+        // Optional: Automatically open print dialog after a short delay
+        setTimeout(() => {
+          printWindow.focus();
+          printWindow.print();
+        }, 1000);
+      } else {
+        setError('Please allow popups to open the print view');
+      }
+    } catch (error) {
+      console.error('Error opening print view:', error);
+      setError('Failed to open print view');
+    }
   };
 
   return (
@@ -327,11 +326,11 @@ export default function AdminWorksheetsPage() {
                 
                 <div className="space-y-2">
                   <button
-                    onClick={() => generatePDF(generatedWorksheet.html, generatedWorksheet.filename)}
+                    onClick={() => openPrintView()}
                     className="w-full bg-gradient-to-r from-purple-600 to-orange-500 text-white py-2 px-4 rounded-lg font-medium hover:from-purple-700 hover:to-orange-600 transition-all duration-200 flex items-center justify-center"
                   >
-                    <Download className="w-4 h-4 mr-2" />
-                    Download PDF
+                    <BookOpen className="w-4 h-4 mr-2" />
+                    Print Worksheet
                   </button>
                   
                   <button
