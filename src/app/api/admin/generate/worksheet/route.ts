@@ -4,7 +4,8 @@ import { cookies } from 'next/headers';
 import OpenAI from 'openai';
 import { writeFile, readFile } from 'fs/promises';
 import path from 'path';
-import puppeteer from 'puppeteer';
+import fs from 'fs';
+import PDFDocument from 'pdfkit';
 
 // Initialize OpenAI with project-based API key support
 const openai = new OpenAI({
@@ -185,27 +186,91 @@ Make it engaging, educational, and appropriate for ${level} level.`;
     // Generate HTML using our intelligent template
     const html = generateWorksheetHTML(worksheetContent);
 
-    // Generate PDF using Puppeteer
-    const browser = await puppeteer.launch({
-      headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
-    });
-
-    const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: 'networkidle0' });
+    // Generate PDF using PDFKit (much lighter than Puppeteer)
+    const doc = new PDFDocument();
+    const buffers: Buffer[] = [];
     
-    const pdfBuffer = await page.pdf({
-      format: 'A4',
-      margin: {
-        top: '0.5in',
-        right: '0.5in',
-        bottom: '0.5in',
-        left: '0.5in'
-      },
-      printBackground: true
+    // Collect the PDF data
+    doc.on('data', (buffer: Buffer) => buffers.push(buffer));
+    
+    // Create the PDF content from worksheet data
+    doc.fontSize(20).text(worksheetContent.title, 100, 100);
+    
+    let yPosition = 140;
+    
+    // Add student info fields if enabled
+    if (worksheetContent.studentInfo.nameField) {
+      doc.fontSize(12).text('Name: ___________________', 100, yPosition);
+      yPosition += 20;
+    }
+    if (worksheetContent.studentInfo.dateField) {
+      doc.fontSize(12).text('Date: ___________________', 100, yPosition);
+      yPosition += 20;
+    }
+    if (worksheetContent.studentInfo.classField) {
+      doc.fontSize(12).text('Class: ___________________', 100, yPosition);
+      yPosition += 20;
+    }
+    
+    yPosition += 20;
+    
+    // Add sections
+    worksheetContent.sections.forEach((section, sectionIndex) => {
+      if (yPosition > 700) {
+        doc.addPage();
+        yPosition = 50;
+      }
+      
+      doc.fontSize(16).text(section.title, 100, yPosition);
+      yPosition += 25;
+      
+      if (section.instructions) {
+        doc.fontSize(10).text(section.instructions, 100, yPosition);
+        yPosition += 20;
+      }
+      
+      section.exercises.forEach((exercise, exerciseIndex) => {
+        if (yPosition > 700) {
+          doc.addPage();
+          yPosition = 50;
+        }
+        
+        doc.fontSize(11).text(`${exerciseIndex + 1}. ${exercise.question}`, 120, yPosition);
+        yPosition += 15;
+        
+        if (exercise.options) {
+          exercise.options.forEach((option, optIndex) => {
+            doc.fontSize(10).text(`   ${String.fromCharCode(97 + optIndex)}) ${option}`, 140, yPosition);
+            yPosition += 12;
+          });
+        }
+        yPosition += 8;
+      });
+      
+      yPosition += 20;
     });
-
-    await browser.close();
+    
+    // Add reference section if it exists
+    if (worksheetContent.referenceSection) {
+      if (yPosition > 600) {
+        doc.addPage();
+        yPosition = 50;
+      }
+      
+      doc.fontSize(14).text(worksheetContent.referenceSection.title, 100, yPosition);
+      yPosition += 20;
+      doc.fontSize(10).text(worksheetContent.referenceSection.content, 100, yPosition);
+    }
+    
+    // Finalize the PDF
+    doc.end();
+    
+    // Wait for PDF generation to complete
+    const pdfBuffer = await new Promise<Buffer>((resolve) => {
+      doc.on('end', () => {
+        resolve(Buffer.concat(buffers));
+      });
+    });
 
     // Save PDF file
     const timestamp = new Date().toISOString().split('T')[0];
@@ -213,7 +278,6 @@ Make it engaging, educational, and appropriate for ${level} level.`;
     const filepath = path.join(process.cwd(), 'public', 'worksheets', filename);
 
     // Ensure directory exists
-    const fs = require('fs');
     const dir = path.dirname(filepath);
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
