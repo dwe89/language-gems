@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { 
   ArrowLeft, Play, Trophy, Users, BarChart3, Clock, Zap, Star, Gamepad2, Target, Award, 
   Crown, FileText, Calendar, Settings, GraduationCap, Gem, Bell, ChevronRight, Pickaxe,
-  Eye, Brain, Construction, Puzzle, Zap as Lightning, Crosshair, Shuffle, Layers
+  Eye, Brain, Construction, Puzzle, Bolt as Lightning, Crosshair, Shuffle, Layers
 } from 'lucide-react';
 
 export default function GamesComingSoon() {

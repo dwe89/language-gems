@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spanish Present Tense: Regular Verbs - Language Gems</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka+One:wght@400&family=Open+Sans:wght@400;600;700&family=Poppins:wght@300;400;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Open Sans', sans-serif;
+            background: white;
+            color: #333;
+            line-height: 1.5;
+        }
+        
+        .page {
+            width: 8.5in;
+            height: 11in;
+            margin: 0 auto;
+            background: white;
+            padding: 0.6in;
+            page-break-after: always;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .page:last-child {
+            page-break-after: avoid;
+        }
+        
+        /* Header with branding */
+        .header {
+            background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
+            color: white;
+            text-align: center;
+            padding: 25px 20px;
+            margin: -0.6in -0.6in 25px -0.6in;
+            border-bottom: 4px solid #F59E0B;
+            position: relative;
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="gems" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse"><polygon points="10,2 18,8 14,18 6,18 2,8" fill="rgba(245,158,11,0.1)" /></pattern></defs><rect width="100" height="100" fill="url(%23gems)" /></svg>') repeat;
+            opacity: 0.3;
+        }
+        
+        .logo-area {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 10px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .gem-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+            clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        
+        .brand-name {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 700;
+            font-size: 28px;
+            letter-spacing: 2px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .header h1 {
+            font-family: 'Fredoka One', cursive;
+            font-size: 2.2em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            letter-spacing: 2px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        /* Student info section */
+        .student-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 25px;
+            padding: 15px;
+            background: linear-gradient(135deg, #F8FAFC 0%, #E2E8F0 100%);
+            border: 2px solid #8B5CF6;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .info-field {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .info-field span {
+            border-bottom: 2px solid #374151;
+            padding-bottom: 3px;
+            min-width: 120px;
+            flex: 1;
+        }
+        
+        /* Content area */
+        .content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Introductory Explanation */
+        .intro-explanation {
+            background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+            border: 2px solid #F59E0B;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        
+        .intro-explanation h3 {
+            color: #92400E;
+            font-weight: 700;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        
+        .intro-explanation p {
+            color: #78350F;
+            line-height: 1.6;
+            font-size: 14px;
+        }
+        
+        /* Reference section */
+        .reference-section {
+            background: linear-gradient(135deg, #EBF8FF 0%, #BFE6FF 100%);
+            border: 2px solid #3B82F6;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .reference-section h3 {
+            color: #1E40AF;
+            font-weight: 700;
+            margin-bottom: 15px;
+            font-size: 16px;
+            text-align: center;
+        }
+        
+        /* Sections */
+        .section {
+            border: 2px solid #8B5CF6;
+            margin: 15px 0;
+            padding: 20px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 3px 10px rgba(139, 92, 246, 0.15);
+            position: relative;
+            break-inside: avoid;
+        }
+        
+        .section-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #E5E7EB;
+        }
+        
+        .section-number {
+            background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 18px;
+            margin-right: 15px;
+            box-shadow: 0 4px 8px rgba(245, 158, 11, 0.3);
+            border: 3px solid white;
+        }
+        
+        .section-title {
+            font-weight: 700;
+            color: #374151;
+            font-size: 16px;
+            flex: 1;
+        }
+        
+        .instructions {
+            font-style: italic;
+            color: #6B7280;
+            margin-bottom: 15px;
+            font-size: 14px;
+            background: #F8FAFC;
+            padding: 10px 15px;
+            border-radius: 8px;
+            border-left: 4px solid #8B5CF6;
+        }
+        
+        /* Exercise layouts */
+        .two-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+        }
+        
+        .exercise-item {
+            margin: 10px 0;
+            font-size: 14px;
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+        }
+        
+        .exercise-number {
+            font-weight: 600;
+            color: #8B5CF6;
+            min-width: 25px;
+        }
+        
+        .blank {
+            border-bottom: 2px solid #374151;
+            display: inline-block;
+            min-width: 100px;
+            margin: 0 5px;
+            padding: 2px 5px;
+        }
+        
+        /* Tables */
+        .table-container {
+            margin: 20px 0;
+            break-inside: avoid;
+        }
+        
+        .table-title {
+            text-align: center;
+            color: #8B5CF6;
+            margin: 15px 0;
+            font-weight: 700;
+            font-size: 16px;
+            background: linear-gradient(135deg, #F3F4F6 0%, #E5E7EB 100%);
+            padding: 10px;
+            border-radius: 8px;
+            border: 2px solid #8B5CF6;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.15);
+        }
+        
+        th, td {
+            border: 2px solid #8B5CF6;
+            padding: 15px 12px;
+            text-align: center;
+            font-size: 14px;
+        }
+        
+        th {
+            background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
+            color: white;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        td {
+            background: #FAFBFC;
+            min-height: 35px;
+        }
+        
+        /* Footer */
+        .footer {
+            margin-top: auto;
+            text-align: center;
+            padding: 15px 0;
+            border-top: 2px solid #E5E7EB;
+            background: linear-gradient(135deg, #F8FAFC 0%, #E2E8F0 100%);
+            margin-left: -0.6in;
+            margin-right: -0.6in;
+            margin-bottom: -0.6in;
+            position: relative;
+        }
+        
+        .footer-content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-weight: 600;
+            color: #8B5CF6;
+            font-size: 14px;
+        }
+        
+        .footer .gem-icon {
+            width: 20px;
+            height: 20px;
+        }
+        
+        .slogan {
+            font-style: italic;
+            color: #6B7280;
+            font-size: 12px;
+            margin-top: 5px;
+            font-weight: 400;
+        }
+        
+        /* Print optimizations */
+        @media print {
+            body {
+                background: white;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            
+            .page {
+                margin: 0;
+                box-shadow: none;
+            }
+            
+            .section {
+                break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <div class="header">
+            <div class="logo-area">
+                <div class="gem-icon"></div>
+                <div class="brand-name">LANGUAGE GEMS</div>
+                <div class="gem-icon"></div>
+            </div>
+            <h1>SPANISH PRESENT TENSE: REGULAR VERBS</h1>
+        </div>
+        
+        <div class="student-info">
+            <div class="info-field">
+                <strong>NAME:</strong> <span></span>
+            </div>
+            <div class="info-field">
+                <strong>DATE:</strong> <span></span>
+            </div>
+            <div class="info-field">
+                <strong>CLASS:</strong> <span></span>
+            </div>
+        </div>
+        
+        <div class="content">
+            
+            <div class="intro-explanation">
+                <h3>What is the Present Tense?</h3>
+                <p>The present tense is used to talk about actions happening now or regularly. For example, 'Yo hablo' means 'I speak'. It helps you describe routines and facts.</p>
+            </div>
+            
+            
+            
+            <div class="reference-section">
+                <h3>Reference Guide</h3>
+                
+                <div class="table-container">
+                    <div class="table-title">AR VERBS (HABLAR - to speak)</div>
+                    <table>
+                        <tr>
+                            <th>PRONOUN</th>
+                            <th>VERB FORM</th>
+                            <th>ENGLISH</th>
+                        </tr>
+                        <tr><td><strong>Yo</strong></td><td>hablo</td><td>I speak</td></tr>
+                        <tr><td><strong>Tú</strong></td><td>hablas</td><td>You speak</td></tr>
+                        <tr><td><strong>Él/Ella/Usted</strong></td><td>habla</td><td>He/She speaks</td></tr>
+                        <tr><td><strong>Nosotros/as</strong></td><td>hablamos</td><td>We speak</td></tr>
+                        <tr><td><strong>Vosotros/as</strong></td><td>habláis</td><td>You all speak</td></tr>
+                        <tr><td><strong>Ellos/Ellas/Ustedes</strong></td><td>hablan</td><td>They speak</td></tr>
+                    </table>
+                </div>
+                
+                <div class="table-container">
+                    <div class="table-title">ER VERBS (COMER - to eat)</div>
+                    <table>
+                        <tr>
+                            <th>PRONOUN</th>
+                            <th>VERB FORM</th>
+                            <th>ENGLISH</th>
+                        </tr>
+                        <tr><td><strong>Yo</strong></td><td>como</td><td>I eat</td></tr>
+                        <tr><td><strong>Tú</strong></td><td>comes</td><td>You eat</td></tr>
+                        <tr><td><strong>Él/Ella/Usted</strong></td><td>come</td><td>He/She eats</td></tr>
+                        <tr><td><strong>Nosotros/as</strong></td><td>comemos</td><td>We eat</td></tr>
+                        <tr><td><strong>Vosotros/as</strong></td><td>coméis</td><td>You all eat</td></tr>
+                        <tr><td><strong>Ellos/Ellas/Ustedes</strong></td><td>comen</td><td>They eat</td></tr>
+                    </table>
+                </div>
+                
+                <div class="table-container">
+                    <div class="table-title">IR VERBS (VIVIR - to live)</div>
+                    <table>
+                        <tr>
+                            <th>PRONOUN</th>
+                            <th>VERB FORM</th>
+                            <th>ENGLISH</th>
+                        </tr>
+                        <tr><td><strong>Yo</strong></td><td>vivo</td><td>I live</td></tr>
+                        <tr><td><strong>Tú</strong></td><td>vives</td><td>You live</td></tr>
+                        <tr><td><strong>Él/Ella/Usted</strong></td><td>vive</td><td>He/She lives</td></tr>
+                        <tr><td><strong>Nosotros/as</strong></td><td>vivimos</td><td>We live</td></tr>
+                        <tr><td><strong>Vosotros/as</strong></td><td>vivís</td><td>You all live</td></tr>
+                        <tr><td><strong>Ellos/Ellas/Ustedes</strong></td><td>viven</td><td>They live</td></tr>
+                    </table>
+                </div>
+                
+            </div>
+            
+            
+            
+            <div class="section">
+                <div class="section-header">
+                    <div class="section-number">1</div>
+                    <div class="section-title">A. Multiple Choice - Select the Correct Form</div>
+                </div>
+                <div class="instructions">Choose the correct form for each sentence</div>
+                
+                
+                <div class="two-column">
+                    <div>
+                        
+                        <div class="exercise-item">
+                            <span class="exercise-number">1.</span>
+                            <div>
+                                Yo _____ (hablar) español
+                                
+                                <div style="margin-top: 5px;"><div style="margin-left: 0px; font-size: 13px;">a) hablo</div><div style="margin-left: 0px; font-size: 13px;">b) hablas</div><div style="margin-left: 0px; font-size: 13px;">c) habla</div></div>
+                            </div>
+                        </div>
+                        
+                        <div class="exercise-item">
+                            <span class="exercise-number">2.</span>
+                            <div>
+                                Ellos _____ (comer) manzanas
+                                
+                                <div style="margin-top: 5px;"><div style="margin-left: 0px; font-size: 13px;">a) come</div><div style="margin-left: 0px; font-size: 13px;">b) comen</div><div style="margin-left: 0px; font-size: 13px;">c) comemos</div></div>
+                            </div>
+                        </div>
+                        
+                        <div class="exercise-item">
+                            <span class="exercise-number">3.</span>
+                            <div>
+                                Nosotras _____ (vivir) en Madrid
+                                
+                                <div style="margin-top: 5px;"><div style="margin-left: 0px; font-size: 13px;">a) vivo</div><div style="margin-left: 0px; font-size: 13px;">b) vives</div><div style="margin-left: 0px; font-size: 13px;">c) vivimos</div></div>
+                            </div>
+                        </div>
+                        
+                    </div>
+                    <div>
+                        
+                        <div class="exercise-item">
+                            <span class="exercise-number">4.</span>
+                            <div>
+                                Tú _____ (hablar) muy bien
+                                
+                                <div style="margin-top: 5px;"><div style="margin-left: 0px; font-size: 13px;">a) hablas</div><div style="margin-left: 0px; font-size: 13px;">b) habla</div><div style="margin-left: 0px; font-size: 13px;">c) hablamos</div></div>
+                            </div>
+                        </div>
+                        
+                        <div class="exercise-item">
+                            <span class="exercise-number">5.</span>
+                            <div>
+                                Ustedes _____ (comer) en el restaurante
+                                
+                                <div style="margin-top: 5px;"><div style="margin-left: 0px; font-size: 13px;">a) coméis</div><div style="margin-left: 0px; font-size: 13px;">b) comemos</div><div style="margin-left: 0px; font-size: 13px;">c) comen</div></div>
+                            </div>
+                        </div>
+                        
+                        <div class="exercise-item">
+                            <span class="exercise-number">6.</span>
+                            <div>
+                                Mi hermano _____ (vivir) en México
+                                
+                                <div style="margin-top: 5px;"><div style="margin-left: 0px; font-size: 13px;">a) vivo</div><div style="margin-left: 0px; font-size: 13px;">b) vive</div><div style="margin-left: 0px; font-size: 13px;">c) vivís</div></div>
+                            </div>
+                        </div>
+                        
+                    </div>
+                </div>
+                
+            </div>
+            
+            <div class="section">
+                <div class="section-header">
+                    <div class="section-number">2</div>
+                    <div class="section-title">B. Fill in the Gaps - Apply in Context</div>
+                </div>
+                <div class="instructions">Complete each sentence with the correct form of the verb in brackets</div>
+                
+                
+                <div class="two-column">
+                    <div>
+                        
+                        <div class="exercise-item">
+                            <span class="exercise-number">1.</span>
+                            <div>
+                                Yo _____ (hablar) inglés y español.
+                                <span class="blank"></span>
+                                
+                            </div>
+                        </div>
+                        
+                        <div class="exercise-item">
+                            <span class="exercise-number">2.</span>
+                            <div>
+                                Nosotros _____ (comer) pasta los domingos.
+                                <span class="blank"></span>
+                                
+                            </div>
+                        </div>
+                        
+                        <div class="exercise-item">
+                            <span class="exercise-number">3.</span>
+                            <div>
+                                Ella _____ (vivir) en Barcelona.
+                                <span class="blank"></span>
+                                
+                            </div>
+                        </div>
+                        
+                        <div class="exercise-item">
+                            <span class="exercise-number">4.</span>
+                            <div>
+                                Tú _____ (hablar) francés muy bien.
+                                <span class="blank"></span>
+                                
+                            </div>
+                        </div>
+                        
+                    </div>
+                    <div>
+                        
+                        <div class="exercise-item">
+                            <span class="exercise-number">5.</span>
+                            <div>
+                                Ellas _____ (comer) ensalada para la cena.
+                                <span class="blank"></span>
+                                
+                            </div>
+                        </div>
+                        
+                        <div class="exercise-item">
+                            <span class="exercise-number">6.</span>
+                            <div>
+                                Mi hermana _____ (vivir) en Argentina.
+                                <span class="blank"></span>
+                                
+                            </div>
+                        </div>
+                        
+                        <div class="exercise-item">
+                            <span class="exercise-number">7.</span>
+                            <div>
+                                Nosotros _____ (hablar) con amigos todos los días.
+                                <span class="blank"></span>
+                                
+                            </div>
+                        </div>
+                        
+                        <div class="exercise-item">
+                            <span class="exercise-number">8.</span>
+                            <div>
+                                Ustedes _____ (comer) en la cafetería.
+                                <span class="blank"></span>
+                                
+                            </div>
+                        </div>
+                        
+                    </div>
+                </div>
+                
+            </div>
+            
+            <div class="section">
+                <div class="section-header">
+                    <div class="section-number">3</div>
+                    <div class="section-title">C. Error Correction - Fix the Mistakes</div>
+                </div>
+                <div class="instructions">Each sentence contains one error. Write the correct form in the blank</div>
+                
+                
+                <div class="two-column">
+                    <div>
+                        
+                        <div class="exercise-item">
+                            <span class="exercise-number">1.</span>
+                            <div>
+                                Yo comen tacos todos los días <span class="blank"></span>
+                            </div>
+                        </div>
+                        
+                        <div class="exercise-item">
+                            <span class="exercise-number">2.</span>
+                            <div>
+                                Nosotras vive en Sevilla <span class="blank"></span>
+                            </div>
+                        </div>
+                        
+                        <div class="exercise-item">
+                            <span class="exercise-number">3.</span>
+                            <div>
+                                Ellos habla muy rápido <span class="blank"></span>
+                            </div>
+                        </div>
+                        
+                    </div>
+                    <div>
+                        
+                        <div class="exercise-item">
+                            <span class="exercise-number">4.</span>
+                            <div>
+                                Tú comer muchas frutas <span class="blank"></span>
+                            </div>
+                        </div>
+                        
+                        <div class="exercise-item">
+                            <span class="exercise-number">5.</span>
+                            <div>
+                                Ustedes vive en la ciudad <span class="blank"></span>
+                            </div>
+                        </div>
+                        
+                        <div class="exercise-item">
+                            <span class="exercise-number">6.</span>
+                            <div>
+                                Mi hermano y yo hablan inglés <span class="blank"></span>
+                            </div>
+                        </div>
+                        
+                    </div>
+                </div>
+                
+            </div>
+            
+            <div class="section">
+                <div class="section-header">
+                    <div class="section-number">4</div>
+                    <div class="section-title">D. Complete the Conjugation Tables</div>
+                </div>
+                <div class="instructions">Fill in all the missing verb forms</div>
+                
+                
+                <div class="table-container">
+                    <div class="table-title">VIVIR (to live)</div>
+                    <table>
+                        <tr>
+                            <th>PRONOUN</th>
+                            <th>VERB FORM</th>
+                            <th>ENGLISH</th>
+                        </tr>
+                        <tr><td><strong>Yo</strong></td><td></td><td>I vivo, vives, vive, vivimos, vivís, viven</td></tr>
+                        <tr><td><strong>Tú</strong></td><td></td><td>You vivo, vives, vive, vivimos, vivís, viven</td></tr>
+                        <tr><td><strong>Él/Ella/Usted</strong></td><td></td><td>He/She vivo, vives, vive, vivimos, vivís, vivens</td></tr>
+                        <tr><td><strong>Nosotros/as</strong></td><td></td><td>We vivo, vives, vive, vivimos, vivís, viven</td></tr>
+                        <tr><td><strong>Vosotros/as</strong></td><td></td><td>You all vivo, vives, vive, vivimos, vivís, viven</td></tr>
+                        <tr><td><strong>Ellos/Ellas/Ustedes</strong></td><td></td><td>They vivo, vives, vive, vivimos, vivís, viven</td></tr>
+                    </table>
+                </div>
+                
+                <div class="table-container">
+                    <div class="table-title">COMER (to eat)</div>
+                    <table>
+                        <tr>
+                            <th>PRONOUN</th>
+                            <th>VERB FORM</th>
+                            <th>ENGLISH</th>
+                        </tr>
+                        <tr><td><strong>Yo</strong></td><td></td><td>I como, comes, come, comemos, coméis, comen</td></tr>
+                        <tr><td><strong>Tú</strong></td><td></td><td>You como, comes, come, comemos, coméis, comen</td></tr>
+                        <tr><td><strong>Él/Ella/Usted</strong></td><td></td><td>He/She como, comes, come, comemos, coméis, comens</td></tr>
+                        <tr><td><strong>Nosotros/as</strong></td><td></td><td>We como, comes, come, comemos, coméis, comen</td></tr>
+                        <tr><td><strong>Vosotros/as</strong></td><td></td><td>You all como, comes, come, comemos, coméis, comen</td></tr>
+                        <tr><td><strong>Ellos/Ellas/Ustedes</strong></td><td></td><td>They como, comes, come, comemos, coméis, comen</td></tr>
+                    </table>
+                </div>
+                
+            </div>
+            
+        </div>
+        
+        <div class="footer">
+            <div class="footer-content">
+                <div class="gem-icon"></div>
+                <span><strong>www.languagegems.com</strong></span>
+                <div class="gem-icon"></div>
+            </div>
+            <div class="slogan">Unlock the Gems of Language Learning</div>
+        </div>
+    </div>
+</body>
+</html>

@@ -9,7 +9,7 @@ import {
   BarChart2, Gamepad2, Award, Calendar, FileText, MessageSquare,
   Video, Headphones, Globe, Sparkles, GraduationCap, Target,
   Play, Eye, ChevronRight, Bell, Gem, Brain, Construction, 
-  Puzzle, Shuffle, Layers, Crosshair, Lightning
+  Puzzle, Shuffle, Layers, Crosshair, Bolt
 } from 'lucide-react';
 
 export default function UpgradePage() {
@@ -122,7 +122,7 @@ export default function UpgradePage() {
     {
       title: "Word Blast",
       description: "Fast-paced word recognition and typing game",
-      icon: <Lightning className="w-6 h-6" />,
+      icon: <Bolt className="w-6 h-6" />,
       category: "Speed",
       difficulty: "Hard"
     },

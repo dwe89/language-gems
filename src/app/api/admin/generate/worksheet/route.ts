@@ -5,7 +5,7 @@ import OpenAI from 'openai';
 import { writeFile, readFile } from 'fs/promises';
 import path from 'path';
 import fs from 'fs';
-import PDFDocument from 'pdfkit';
+// Removed puppeteer/chromium - using client-side html2pdf.js instead
 
 // Initialize OpenAI with project-based API key support
 const openai = new OpenAI({
@@ -32,6 +32,19 @@ interface WorksheetContent {
     dateField: boolean;
     classField: boolean;
   };
+  introductoryExplanation?: {
+    title: string;
+    content: string;
+  };
+  referenceSection?: {
+    title: string;
+    conjugationTables?: Array<{
+      verb: string;
+      type: string;
+      english: string;
+    }>;
+    content?: string;
+  };
   sections: Array<{
     title: string;
     type: string;
@@ -40,13 +53,9 @@ interface WorksheetContent {
       question: string;
       options?: string[];
       answer?: string;
-      type: 'fill-blank' | 'multiple-choice' | 'translation' | 'conjugation' | 'short-answer';
+      type: 'fill-blank' | 'multiple-choice' | 'translation' | 'conjugation' | 'short-answer' | 'error-correction' | 'conjugation-tables';
     }>;
   }>;
-  referenceSection?: {
-    title: string;
-    content: string;
-  };
 }
 
 export async function POST(request: NextRequest) {
@@ -94,52 +103,129 @@ export async function POST(request: NextRequest) {
     // Generate worksheet content using OpenAI
     const systemPrompt = `You are an expert language teacher creating professional worksheets for Language Gems.
 
-Create a comprehensive ${language} ${worksheetType} worksheet for ${level} level students on the topic of "${topic}".
+Create a comprehensive ${language} grammar worksheet for ${level} level students on the topic of "${topic}".
 
-CRITICAL REQUIREMENTS:
-- Target level: ${level}
-- Focus: ${worksheetType}
-- ONLY include these exercise types: ${exerciseTypes.join(', ')}
-- DO NOT include any exercise types not in this list: ${exerciseTypes.join(', ')}
-- Number of questions per exercise type:
-  * fill-blank: 8 questions
-  * multiple-choice: 6 questions  
-  * conjugation: 5 conjugation tables
-  * translation: 6 translation exercises
-  * short-answer: 5 short answer questions
-- Must include: Student info section (NAME, DATE fields only)
-- Must include: Clear instructions for each section
-- DO NOT include answer key or reference section unless specifically requested
-${customPrompt ? `- Additional requirements: ${customPrompt}` : ''}
+CRITICAL REQUIREMENTS - FOLLOW THIS EXACT STRUCTURE:
 
-Generate a JSON response with this exact structure:
+1. **Target Student**: ${level} level - structured for clear progression
+2. **Worksheet Type**: Grammar (${topic})
+
+**MANDATORY STRUCTURE FOR ALL GRAMMAR WORKSHEETS:**
+
+🟩 **1. Introductory Explanation** (Include this as a reference section)
+- Short, friendly grammar explanation in English
+- When and why this grammar point is used
+- Simple examples with translations
+- Keep to 2-3 sentences max, very beginner-friendly
+
+🟨 **2. Reference Conjugation Tables** (If applicable to grammar topic)
+- Show complete conjugation examples 
+- Include English translations
+- Use regular verbs as examples (hablar, comer, vivir for Spanish)
+
+🔡 **3. Practice Activities** (Create exactly these 4 sections):
+
+**Section A: Multiple Choice - Select the Correct Form (6 items)**
+- Focus on form recognition and pattern awareness
+- Clear, simple questions with 3-4 options each
+- MUST include exactly 6 exercises with question and options array
+
+**Section B: Fill in the Gaps - Apply in Context (8 items)**  
+- Students complete sentences with correct forms
+- Include English hints in brackets for vocabulary
+- Use predictable, frequent vocabulary
+- MUST include exactly 8 exercises with complete sentences
+
+**Section C: Error Correction - Fix the Mistakes (6 items)**
+- Present sentences with grammar errors to correct
+- Focus on common mistakes for this level
+- Provide blank space for corrections
+- MUST include exactly 6 exercises with incorrect sentences
+
+**Section D: Complete the Conjugation Tables (2-3 tables)**
+- Students fill in full conjugation patterns
+- Include English translations for reference
+- Focus on regular patterns for this level
+- MUST include 2-3 exercises with verb names as questions
+
+CRITICAL FORMATTING REQUIREMENTS:
+- Title must be clear and specific to the grammar point
+- Each section MUST be labeled exactly as specified above (A, B, C, D)
+- Instructions must be clear and beginner-friendly
+- Include vocabulary hints in English when needed
+- NO answer keys included in worksheet
+
+RESPOND ONLY WITH VALID JSON. Generate a JSON response with this exact structure:
 {
-  "title": "Worksheet Title",
+  "title": "Spanish Present Tense: Regular Verbs",
   "studentInfo": {
     "nameField": true,
     "dateField": true,
-    "classField": false
+    "classField": true
+  },
+  "introductoryExplanation": {
+    "title": "What is the Present Tense?",
+    "content": "Short explanation of when and why this grammar is used, with simple examples"
+  },
+  "referenceSection": {
+    "title": "Reference Guide",
+    "conjugationTables": [
+      {
+        "verb": "hablar",
+        "type": "AR",
+        "english": "to speak"
+      }
+    ]
   },
   "sections": [
     {
-      "title": "Section Title",
-      "type": "exercise_type",
-      "instructions": "Clear instructions for students",
+      "title": "A. Multiple Choice - Select the Correct Form",
+      "type": "multiple-choice",
+      "instructions": "Choose the correct form for each sentence",
       "exercises": [
         {
-          "question": "Question text",
-          "options": ["A) Option 1", "B) Option 2", "C) Option 3", "D) Option 4"],
-          "answer": "Correct answer for conjugation reference only",
+          "question": "Yo _____ (hablar) español",
+          "options": ["a) hablo", "b) hablas", "c) habla"],
           "type": "multiple-choice"
+        }
+      ]
+    },
+    {
+      "title": "B. Fill in the Gaps - Apply in Context", 
+      "type": "fill-blank",
+      "instructions": "Complete each sentence with the correct form of the verb in brackets",
+      "exercises": [
+        {
+          "question": "Nosotros _____ (comer) pizza",
+          "type": "fill-blank"
+        }
+      ]
+    },
+    {
+      "title": "C. Error Correction - Fix the Mistakes",
+      "type": "error-correction", 
+      "instructions": "Each sentence contains one error. Write the correct form in the blank",
+      "exercises": [
+        {
+          "question": "Yo comen tacos todos los días",
+          "type": "error-correction"
+        }
+      ]
+    },
+    {
+      "title": "D. Complete the Conjugation Tables",
+      "type": "conjugation-tables",
+      "instructions": "Fill in all the missing verb forms", 
+      "exercises": [
+        {
+          "question": "VIVIR (to live)",
+          "answer": "live",
+          "type": "conjugation-tables"
         }
       ]
     }
   ]
-}
-
-Exercise types to use: fill-blank, multiple-choice, translation, conjugation, short-answer
-IMPORTANT: Only create sections for the exercise types specified: ${exerciseTypes.join(', ')}
-Make it engaging, educational, and appropriate for ${level} level.`;
+}`;
 
     let completion;
     try {
@@ -147,7 +233,7 @@ Make it engaging, educational, and appropriate for ${level} level.`;
         model: 'gpt-4.1-nano',
         messages: [
           { role: 'system', content: systemPrompt },
-          { role: 'user', content: `Generate the worksheet now.` }
+          { role: 'user', content: `Generate the worksheet now. Follow the exact structure specified. Return ONLY valid JSON with no additional text or explanations.` }
         ],
         temperature: 0.7,
         max_tokens: 10000
@@ -173,122 +259,63 @@ Make it engaging, educational, and appropriate for ${level} level.`;
     let worksheetContent: WorksheetContent;
     try {
       const responseText = completion.choices[0].message.content || '';
-      const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) {
-        throw new Error('No JSON found in response');
+      console.log('OpenAI Response Text:', responseText.substring(0, 500), '...');
+      
+      // Try to find JSON block more carefully
+      let jsonText = '';
+      const jsonStartMatch = responseText.match(/\{/);
+      if (jsonStartMatch) {
+        const startIndex = jsonStartMatch.index!;
+        let braceCount = 0;
+        let endIndex = startIndex;
+        
+        for (let i = startIndex; i < responseText.length; i++) {
+          const char = responseText[i];
+          if (char === '{') braceCount++;
+          if (char === '}') braceCount--;
+          if (braceCount === 0) {
+            endIndex = i;
+            break;
+          }
+        }
+        
+        jsonText = responseText.substring(startIndex, endIndex + 1);
       }
-      worksheetContent = JSON.parse(jsonMatch[0]);
-    } catch (parseError) {
+      
+      if (!jsonText) {
+        // Fallback: try the original regex approach
+        const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) {
+          throw new Error('No JSON found in response');
+        }
+        jsonText = jsonMatch[0];
+      }
+      
+      console.log('Extracted JSON:', jsonText.substring(0, 200), '...');
+      worksheetContent = JSON.parse(jsonText);
+    } catch (parseError: any) {
       console.error('Failed to parse OpenAI response:', parseError);
-      return NextResponse.json({ error: 'Failed to generate worksheet content' }, { status: 500 });
+      console.error('Response length:', completion.choices[0].message.content?.length);
+      console.error('First 1000 chars:', completion.choices[0].message.content?.substring(0, 1000));
+      
+      return NextResponse.json({ 
+        error: 'Failed to generate worksheet content',
+        details: `JSON Parse Error: ${parseError.message}`,
+        responsePreview: completion.choices[0].message.content?.substring(0, 500)
+      }, { status: 500 });
     }
 
-    // Generate HTML using our intelligent template
+    // Generate HTML using our beautiful template
     const html = generateWorksheetHTML(worksheetContent);
 
-    // Generate PDF using PDFKit (much lighter than Puppeteer)
-    const doc = new PDFDocument();
-    const buffers: Buffer[] = [];
-    
-    // Collect the PDF data
-    doc.on('data', (buffer: Buffer) => buffers.push(buffer));
-    
-    // Create the PDF content from worksheet data
-    doc.fontSize(20).text(worksheetContent.title, 100, 100);
-    
-    let yPosition = 140;
-    
-    // Add student info fields if enabled
-    if (worksheetContent.studentInfo.nameField) {
-      doc.fontSize(12).text('Name: ___________________', 100, yPosition);
-      yPosition += 20;
-    }
-    if (worksheetContent.studentInfo.dateField) {
-      doc.fontSize(12).text('Date: ___________________', 100, yPosition);
-      yPosition += 20;
-    }
-    if (worksheetContent.studentInfo.classField) {
-      doc.fontSize(12).text('Class: ___________________', 100, yPosition);
-      yPosition += 20;
-    }
-    
-    yPosition += 20;
-    
-    // Add sections
-    worksheetContent.sections.forEach((section, sectionIndex) => {
-      if (yPosition > 700) {
-        doc.addPage();
-        yPosition = 50;
-      }
-      
-      doc.fontSize(16).text(section.title, 100, yPosition);
-      yPosition += 25;
-      
-      if (section.instructions) {
-        doc.fontSize(10).text(section.instructions, 100, yPosition);
-        yPosition += 20;
-      }
-      
-      section.exercises.forEach((exercise, exerciseIndex) => {
-        if (yPosition > 700) {
-          doc.addPage();
-          yPosition = 50;
-        }
-        
-        doc.fontSize(11).text(`${exerciseIndex + 1}. ${exercise.question}`, 120, yPosition);
-        yPosition += 15;
-        
-        if (exercise.options) {
-          exercise.options.forEach((option, optIndex) => {
-            doc.fontSize(10).text(`   ${String.fromCharCode(97 + optIndex)}) ${option}`, 140, yPosition);
-            yPosition += 12;
-          });
-        }
-        yPosition += 8;
-      });
-      
-      yPosition += 20;
-    });
-    
-    // Add reference section if it exists
-    if (worksheetContent.referenceSection) {
-      if (yPosition > 600) {
-        doc.addPage();
-        yPosition = 50;
-      }
-      
-      doc.fontSize(14).text(worksheetContent.referenceSection.title, 100, yPosition);
-      yPosition += 20;
-      doc.fontSize(10).text(worksheetContent.referenceSection.content, 100, yPosition);
-    }
-    
-    // Finalize the PDF
-    doc.end();
-    
-    // Wait for PDF generation to complete
-    const pdfBuffer = await new Promise<Buffer>((resolve) => {
-      doc.on('end', () => {
-        resolve(Buffer.concat(buffers));
-      });
-    });
-
-    // Save PDF file
+    // Return HTML for client-side PDF generation using html2pdf.js
     const timestamp = new Date().toISOString().split('T')[0];
-    const filename = `${worksheetContent.title.replace(/[^a-zA-Z0-9]/g, '-')}-${timestamp}.pdf`;
-    const filepath = path.join(process.cwd(), 'public', 'worksheets', filename);
-
-    // Ensure directory exists
-    const dir = path.dirname(filepath);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-
-    await writeFile(filepath, pdfBuffer);
+    const filename = `${worksheetContent.title.replace(/[^a-zA-Z0-9]/g, '-')}-${timestamp}`;
 
     return NextResponse.json({
       success: true,
       worksheet: worksheetContent,
-      pdfUrl: `/worksheets/${filename}`,
+      html: html,
       filename: filename
     });
 
@@ -308,15 +335,14 @@ Make it engaging, educational, and appropriate for ${level} level.`;
 }
 
 function generateWorksheetHTML(content: WorksheetContent): string {
-  return `
-<!DOCTYPE html>
+  return `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${content.title}</title>
+    <title>${content.title} - Language Gems</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Fredoka+One:wght@400&family=Open+Sans:wght@400;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka+One:wght@400&family=Open+Sans:wght@400;600;700&family=Poppins:wght@300;400;600;700&display=swap');
         
         * {
             margin: 0;
@@ -326,10 +352,9 @@ function generateWorksheetHTML(content: WorksheetContent): string {
         
         body {
             font-family: 'Open Sans', sans-serif;
-            background: linear-gradient(135deg, #f5f3f0 0%, #ede8e3 100%);
+            background: white;
             color: #333;
             line-height: 1.5;
-            font-size: 16px;
         }
         
         .page {
@@ -337,10 +362,8 @@ function generateWorksheetHTML(content: WorksheetContent): string {
             height: 11in;
             margin: 0 auto;
             background: white;
-            padding: 0.5in;
-            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            padding: 0.6in;
             page-break-after: always;
-            border: 3px solid #8B5CF6;
             position: relative;
             display: flex;
             flex-direction: column;
@@ -350,59 +373,159 @@ function generateWorksheetHTML(content: WorksheetContent): string {
             page-break-after: avoid;
         }
         
+        /* Header with branding */
         .header {
-            background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+            background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
             color: white;
             text-align: center;
-            padding: 20px;
-            margin: -0.5in -0.5in 20px -0.5in;
-            border-bottom: 3px solid #8B5CF6;
+            padding: 25px 20px;
+            margin: -0.6in -0.6in 25px -0.6in;
+            border-bottom: 4px solid #F59E0B;
+            position: relative;
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="gems" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse"><polygon points="10,2 18,8 14,18 6,18 2,8" fill="rgba(245,158,11,0.1)" /></pattern></defs><rect width="100" height="100" fill="url(%23gems)" /></svg>') repeat;
+            opacity: 0.3;
+        }
+        
+        .logo-area {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 10px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .gem-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+            clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        
+        .brand-name {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 700;
+            font-size: 28px;
+            letter-spacing: 2px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
         }
         
         .header h1 {
             font-family: 'Fredoka One', cursive;
-            font-size: 2.8em;
+            font-size: 2.2em;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-            letter-spacing: 3px;
+            letter-spacing: 2px;
+            position: relative;
+            z-index: 1;
         }
         
-        .header .subtitle {
-            font-size: 1.2em;
+        /* Student info section */
+        .student-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 25px;
+            padding: 15px;
+            background: linear-gradient(135deg, #F8FAFC 0%, #E2E8F0 100%);
+            border: 2px solid #8B5CF6;
+            border-radius: 12px;
             font-weight: 600;
-            margin-top: 8px;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+            font-size: 14px;
         }
         
-        .name-date {
+        .info-field {
             display: flex;
-            justify-content: space-between;
-            margin-bottom: 20px;
-            font-weight: 600;
-            font-size: 16px;
+            align-items: center;
+            gap: 10px;
         }
         
-        .name-date span {
-            border-bottom: 2px solid #333;
-            padding-bottom: 2px;
-            min-width: 300px;
-        }
-        
-        .content {
+        .info-field span {
+            border-bottom: 2px solid #374151;
+            padding-bottom: 3px;
+            min-width: 120px;
             flex: 1;
         }
         
+        /* Content area */
+        .content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Introductory Explanation */
+        .intro-explanation {
+            background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+            border: 2px solid #F59E0B;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        
+        .intro-explanation h3 {
+            color: #92400E;
+            font-weight: 700;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        
+        .intro-explanation p {
+            color: #78350F;
+            line-height: 1.6;
+            font-size: 14px;
+        }
+        
+        /* Reference section */
+        .reference-section {
+            background: linear-gradient(135deg, #EBF8FF 0%, #BFE6FF 100%);
+            border: 2px solid #3B82F6;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .reference-section h3 {
+            color: #1E40AF;
+            font-weight: 700;
+            margin-bottom: 15px;
+            font-size: 16px;
+            text-align: center;
+        }
+        
+        /* Sections */
         .section {
-            border: 2px dashed #666;
-            margin: 20px 0;
-            padding: 15px;
+            border: 2px solid #8B5CF6;
+            margin: 15px 0;
+            padding: 20px;
             background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-radius: 12px;
+            box-shadow: 0 3px 10px rgba(139, 92, 246, 0.15);
+            position: relative;
             break-inside: avoid;
         }
         
+        .section-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #E5E7EB;
+        }
+        
         .section-number {
-            background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
+            background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
             color: white;
             width: 40px;
             height: 40px;
@@ -411,70 +534,91 @@ function generateWorksheetHTML(content: WorksheetContent): string {
             align-items: center;
             justify-content: center;
             font-weight: bold;
-            font-size: 20px;
-            float: left;
-            margin-right: 15px;
-            margin-top: -5px;
-            box-shadow: 0 3px 6px rgba(139, 92, 246, 0.3);
-        }
-        
-        .section h3 {
-            font-weight: 700;
-            margin-bottom: 10px;
-            color: #374151;
             font-size: 18px;
+            margin-right: 15px;
+            box-shadow: 0 4px 8px rgba(245, 158, 11, 0.3);
+            border: 3px solid white;
         }
         
-        .section-instructions {
+        .section-title {
+            font-weight: 700;
+            color: #374151;
+            font-size: 16px;
+            flex: 1;
+        }
+        
+        .instructions {
             font-style: italic;
             color: #6B7280;
             margin-bottom: 15px;
-            font-size: 16px;
+            font-size: 14px;
+            background: #F8FAFC;
+            padding: 10px 15px;
+            border-radius: 8px;
+            border-left: 4px solid #8B5CF6;
         }
         
+        /* Exercise layouts */
         .two-column {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 20px;
+            gap: 25px;
         }
         
         .exercise-item {
-            margin: 12px 0;
-            font-size: 16px;
+            margin: 10px 0;
+            font-size: 14px;
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
         }
         
-        .exercise-item .number {
+        .exercise-number {
             font-weight: 600;
             color: #8B5CF6;
+            min-width: 25px;
         }
         
         .blank {
-            border-bottom: 2px solid #333;
+            border-bottom: 2px solid #374151;
             display: inline-block;
             min-width: 100px;
             margin: 0 5px;
+            padding: 2px 5px;
         }
         
+        /* Tables */
         .table-container {
-            overflow-x: auto;
+            margin: 20px 0;
+            break-inside: avoid;
+        }
+        
+        .table-title {
+            text-align: center;
+            color: #8B5CF6;
             margin: 15px 0;
+            font-weight: 700;
+            font-size: 16px;
+            background: linear-gradient(135deg, #F3F4F6 0%, #E5E7EB 100%);
+            padding: 10px;
+            border-radius: 8px;
+            border: 2px solid #8B5CF6;
         }
         
         table {
             width: 100%;
             border-collapse: collapse;
-            margin: 15px 0;
             background: white;
-            border-radius: 8px;
+            border-radius: 10px;
             overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.15);
         }
         
         th, td {
             border: 2px solid #8B5CF6;
-            padding: 15px;
+            padding: 15px 12px;
             text-align: center;
-            font-size: 16px;
+            font-size: 14px;
         }
         
         th {
@@ -486,99 +630,61 @@ function generateWorksheetHTML(content: WorksheetContent): string {
         }
         
         td {
-            background: #F8FAFC;
+            background: #FAFBFC;
+            min-height: 35px;
+        }
+        
+        /* Footer */
+        .footer {
+            margin-top: auto;
+            text-align: center;
+            padding: 15px 0;
+            border-top: 2px solid #E5E7EB;
+            background: linear-gradient(135deg, #F8FAFC 0%, #E2E8F0 100%);
+            margin-left: -0.6in;
+            margin-right: -0.6in;
+            margin-bottom: -0.6in;
             position: relative;
         }
         
-        .conjugation-line {
-            border-bottom: 1px solid #666;
-            height: 25px;
-            margin: 5px 0;
-            width: 100%;
-        }
-        
-        .challenge-area {
-            background: #F3F4F6;
-            border: 2px solid #D1D5DB;
-            border-radius: 8px;
-            padding: 15px;
-            margin: 15px 0;
-        }
-        
-        .challenge-line {
-            border-bottom: 1px solid #6B7280;
-            height: 30px;
-            margin: 15px 0;
-        }
-        
-        .footer {
-            position: absolute;
-            bottom: 0.3in;
-            left: 0.5in;
-            right: 0.5in;
-            text-align: center;
-            font-weight: 600;
-            color: #8B5CF6;
-            font-size: 16px;
-            margin-top: auto;
-        }
-        
-        .gem-accent {
-            color: #F59E0B;
-            font-weight: 700;
-        }
-        
-        .option {
+        .footer-content {
             display: flex;
             align-items: center;
-            gap: 8px;
-            padding: 8px 0;
-            font-size: 16px;
-        }
-        
-        .option-circle {
-            width: 18px;
-            height: 18px;
-            border: 2px solid #6B7280;
-            border-radius: 50%;
-            flex-shrink: 0;
-        }
-        
-        .exercise-options {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
+            justify-content: center;
             gap: 10px;
-            margin-top: 10px;
+            font-weight: 600;
+            color: #8B5CF6;
+            font-size: 14px;
         }
         
-        .reference-section {
-            background: #EFF6FF;
-            border: 2px solid #3B82F6;
-            border-radius: 8px;
-            padding: 20px;
-            margin: 20px 0;
+        .footer .gem-icon {
+            width: 20px;
+            height: 20px;
         }
         
-        .reference-title {
-            color: #1E40AF;
-            font-size: 18px;
-            font-weight: 700;
-            margin-bottom: 15px;
+        .slogan {
+            font-style: italic;
+            color: #6B7280;
+            font-size: 12px;
+            margin-top: 5px;
+            font-weight: 400;
         }
         
-        .reference-content {
-            color: #374151;
-            white-space: pre-line;
-        }
-        
+        /* Print optimizations */
         @media print {
             body {
                 background: white;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
             }
+            
             .page {
-                box-shadow: none;
                 margin: 0;
-                border: none;
+                box-shadow: none;
+            }
+            
+            .section {
+                break-inside: avoid;
             }
         }
     </style>
@@ -586,96 +692,197 @@ function generateWorksheetHTML(content: WorksheetContent): string {
 <body>
     <div class="page">
         <div class="header">
+            <div class="logo-area">
+                <div class="gem-icon"></div>
+                <div class="brand-name">LANGUAGE GEMS</div>
+                <div class="gem-icon"></div>
+            </div>
             <h1>${content.title.toUpperCase()}</h1>
-            <div class="subtitle">Language Gems Professional Worksheet</div>
         </div>
         
-        <div class="name-date">
-            <div>NAME: <span></span></div>
-            <div>DATE: <span></span></div>
+        <div class="student-info">
+            <div class="info-field">
+                <strong>NAME:</strong> <span></span>
+            </div>
+            <div class="info-field">
+                <strong>DATE:</strong> <span></span>
+            </div>
+            <div class="info-field">
+                <strong>CLASS:</strong> <span></span>
+            </div>
         </div>
         
         <div class="content">
+            ${content.introductoryExplanation ? `
+            <div class="intro-explanation">
+                <h3>${content.introductoryExplanation.title}</h3>
+                <p>${content.introductoryExplanation.content}</p>
+            </div>
+            ` : ''}
+            
+            ${content.referenceSection && content.referenceSection.conjugationTables ? `
+            <div class="reference-section">
+                <h3>${content.referenceSection.title}</h3>
+                ${content.referenceSection.conjugationTables.map(table => `
+                <div class="table-container">
+                    <div class="table-title">${table.type} VERBS (${table.verb.toUpperCase()} - ${table.english})</div>
+                    <table>
+                        <tr>
+                            <th>PRONOUN</th>
+                            <th>VERB FORM</th>
+                            <th>ENGLISH</th>
+                        </tr>
+                        <tr><td><strong>Yo</strong></td><td>${getVerbForm(table.verb, table.type, 'yo')}</td><td>I ${table.english.replace('to ', '')}</td></tr>
+                        <tr><td><strong>Tú</strong></td><td>${getVerbForm(table.verb, table.type, 'tu')}</td><td>You ${table.english.replace('to ', '')}</td></tr>
+                        <tr><td><strong>Él/Ella/Usted</strong></td><td>${getVerbForm(table.verb, table.type, 'el')}</td><td>He/She ${table.english.replace('to ', '')}s</td></tr>
+                        <tr><td><strong>Nosotros/as</strong></td><td>${getVerbForm(table.verb, table.type, 'nosotros')}</td><td>We ${table.english.replace('to ', '')}</td></tr>
+                        <tr><td><strong>Vosotros/as</strong></td><td>${getVerbForm(table.verb, table.type, 'vosotros')}</td><td>You all ${table.english.replace('to ', '')}</td></tr>
+                        <tr><td><strong>Ellos/Ellas/Ustedes</strong></td><td>${getVerbForm(table.verb, table.type, 'ellos')}</td><td>They ${table.english.replace('to ', '')}</td></tr>
+                    </table>
+                </div>
+                `).join('')}
+            </div>
+            ` : ''}
+            
             ${content.sections.map((section, sectionIndex) => `
             <div class="section">
-                <div class="section-number">${sectionIndex + 1}</div>
-                <h3>${section.title}</h3>
-                ${section.instructions ? `<div class="section-instructions">${section.instructions}</div>` : ''}
+                <div class="section-header">
+                    <div class="section-number">${sectionIndex + 1}</div>
+                    <div class="section-title">${section.title}</div>
+                </div>
+                <div class="instructions">${section.instructions}</div>
                 
-                ${section.exercises.length <= 10 && section.exercises.every(ex => ex.type === 'fill-blank' || ex.type === 'multiple-choice') ? `
+                ${(section.type === 'multiple-choice' || section.type === 'fill-blank') && section.exercises.length <= 8 ? `
                 <div class="two-column">
                     <div>
                         ${section.exercises.slice(0, Math.ceil(section.exercises.length / 2)).map((exercise, index) => `
                         <div class="exercise-item">
-                            <span class="number">${index + 1}.</span> 
-                            ${exercise.question}
-                            ${exercise.type === 'fill-blank' ? '<span class="blank"></span>' : ''}
-                            ${exercise.type === 'multiple-choice' && exercise.options ? 
-                                exercise.options.map(opt => `<div>${opt}</div>`).join('') : ''
-                            }
+                            <span class="exercise-number">${index + 1}.</span>
+                            <div>
+                                ${exercise.question}
+                                ${exercise.type === 'fill-blank' ? '<span class="blank"></span>' : ''}
+                                ${exercise.type === 'multiple-choice' && exercise.options ? 
+                                    '<div style="margin-top: 5px;">' + exercise.options.map(opt => `<div style="margin-left: 0px; font-size: 13px;">${opt}</div>`).join('') + '</div>' : ''
+                                }
+                            </div>
                         </div>
                         `).join('')}
                     </div>
                     <div>
                         ${section.exercises.slice(Math.ceil(section.exercises.length / 2)).map((exercise, index) => `
                         <div class="exercise-item">
-                            <span class="number">${Math.ceil(section.exercises.length / 2) + index + 1}.</span> 
-                            ${exercise.question}
-                            ${exercise.type === 'fill-blank' ? '<span class="blank"></span>' : ''}
-                            ${exercise.type === 'multiple-choice' && exercise.options ? 
-                                exercise.options.map(opt => `<div>${opt}</div>`).join('') : ''
-                            }
+                            <span class="exercise-number">${Math.ceil(section.exercises.length / 2) + index + 1}.</span>
+                            <div>
+                                ${exercise.question}
+                                ${exercise.type === 'fill-blank' ? '<span class="blank"></span>' : ''}
+                                ${exercise.type === 'multiple-choice' && exercise.options ? 
+                                    '<div style="margin-top: 5px;">' + exercise.options.map(opt => `<div style="margin-left: 0px; font-size: 13px;">${opt}</div>`).join('') + '</div>' : ''
+                                }
+                            </div>
                         </div>
                         `).join('')}
                     </div>
                 </div>
-                ` : `
-                ${section.exercises.map((exercise, index) => `
-                <div class="exercise-item">
-                    <span class="number">${index + 1}.</span> 
-                    ${exercise.question}
-                    ${exercise.type === 'fill-blank' ? '<span class="blank"></span>' : ''}
-                    ${exercise.type === 'multiple-choice' && exercise.options ? `
-                    <div class="exercise-options">
-                        ${exercise.options.map(option => `
-                        <div class="option">
-                            <div class="option-circle"></div>
-                            <span>${option}</span>
+                ` : section.type === 'error-correction' ? `
+                <div class="two-column">
+                    <div>
+                        ${section.exercises.slice(0, Math.ceil(section.exercises.length / 2)).map((exercise, index) => `
+                        <div class="exercise-item">
+                            <span class="exercise-number">${index + 1}.</span>
+                            <div>
+                                ${exercise.question} <span class="blank"></span>
+                            </div>
                         </div>
                         `).join('')}
                     </div>
-                    ` : ''}
-                    ${exercise.type === 'conjugation' ? `
-                    <div class="table-container">
-                        <table>
-                            <tr>
-                                <th>PRONOUN</th>
-                                <th>VERB FORM</th>
-                                <th>ENGLISH</th>
-                            </tr>
-                            <tr><td><strong>Yo</strong></td><td><div class="conjugation-line"></div></td><td>I ${exercise.answer || 'verb'}</td></tr>
-                            <tr><td><strong>Tú</strong></td><td><div class="conjugation-line"></div></td><td>You ${exercise.answer || 'verb'}</td></tr>
-                            <tr><td><strong>Él/Ella</strong></td><td><div class="conjugation-line"></div></td><td>He/She ${exercise.answer || 'verb'}s</td></tr>
-                            <tr><td><strong>Nosotros</strong></td><td><div class="conjugation-line"></div></td><td>We ${exercise.answer || 'verb'}</td></tr>
-                            <tr><td><strong>Vosotros</strong></td><td><div class="conjugation-line"></div></td><td>You all ${exercise.answer || 'verb'}</td></tr>
-                            <tr><td><strong>Ellos</strong></td><td><div class="conjugation-line"></div></td><td>They ${exercise.answer || 'verb'}</td></tr>
-                        </table>
+                    <div>
+                        ${section.exercises.slice(Math.ceil(section.exercises.length / 2)).map((exercise, index) => `
+                        <div class="exercise-item">
+                            <span class="exercise-number">${Math.ceil(section.exercises.length / 2) + index + 1}.</span>
+                            <div>
+                                ${exercise.question} <span class="blank"></span>
+                            </div>
+                        </div>
+                        `).join('')}
                     </div>
-                    ` : ''}
-                    ${exercise.type === 'translation' || exercise.type === 'short-answer' ? `
-                    <div class="conjugation-line"></div>
-                    ` : ''}
+                </div>
+                ` : section.type === 'conjugation-tables' ? 
+                section.exercises.map((exercise, index) => `
+                <div class="table-container">
+                    <div class="table-title">${exercise.question}</div>
+                    <table>
+                        <tr>
+                            <th>PRONOUN</th>
+                            <th>VERB FORM</th>
+                            <th>ENGLISH</th>
+                        </tr>
+                        <tr><td><strong>Yo</strong></td><td></td><td>I ${exercise.answer || 'verb'}</td></tr>
+                        <tr><td><strong>Tú</strong></td><td></td><td>You ${exercise.answer || 'verb'}</td></tr>
+                        <tr><td><strong>Él/Ella/Usted</strong></td><td></td><td>He/She ${exercise.answer || 'verb'}s</td></tr>
+                        <tr><td><strong>Nosotros/as</strong></td><td></td><td>We ${exercise.answer || 'verb'}</td></tr>
+                        <tr><td><strong>Vosotros/as</strong></td><td></td><td>You all ${exercise.answer || 'verb'}</td></tr>
+                        <tr><td><strong>Ellos/Ellas/Ustedes</strong></td><td></td><td>They ${exercise.answer || 'verb'}</td></tr>
+                    </table>
+                </div>
+                `).join('') : 
+                section.exercises.map((exercise, index) => `
+                <div class="exercise-item">
+                    <span class="exercise-number">${index + 1}.</span>
+                    <div>
+                        ${exercise.question} <span class="blank" style="min-width: 280px;"></span>
+                    </div>
                 </div>
                 `).join('')}
-                `}
-                     </div>
-         `).join('')}
-         </div>
-          
-          <div class="footer">
-            🌟 <span class="gem-accent">www.languagegems.com</span> 🌟
+            </div>
+            `).join('')}
+        </div>
+        
+        <div class="footer">
+            <div class="footer-content">
+                <div class="gem-icon"></div>
+                <span><strong>www.languagegems.com</strong></span>
+                <div class="gem-icon"></div>
+            </div>
+            <div class="slogan">Unlock the Gems of Language Learning</div>
         </div>
     </div>
 </body>
 </html>`;
+
+function getVerbForm(verb: string, type: string, pronoun: string): string {
+  const stem = verb.slice(0, -2);
+  
+  if (type === 'AR') {
+    switch (pronoun) {
+      case 'yo': return stem + 'o';
+      case 'tu': return stem + 'as';
+      case 'el': return stem + 'a';
+      case 'nosotros': return stem + 'amos';
+      case 'vosotros': return stem + 'áis';
+      case 'ellos': return stem + 'an';
+      default: return '';
+    }
+  } else if (type === 'ER') {
+    switch (pronoun) {
+      case 'yo': return stem + 'o';
+      case 'tu': return stem + 'es';
+      case 'el': return stem + 'e';
+      case 'nosotros': return stem + 'emos';
+      case 'vosotros': return stem + 'éis';
+      case 'ellos': return stem + 'en';
+      default: return '';
+    }
+  } else if (type === 'IR') {
+    switch (pronoun) {
+      case 'yo': return stem + 'o';
+      case 'tu': return stem + 'es';
+      case 'el': return stem + 'e';
+      case 'nosotros': return stem + 'imos';
+      case 'vosotros': return stem + 'ís';
+      case 'ellos': return stem + 'en';
+      default: return '';
+    }
+  }
+  return '';
+}
 } 

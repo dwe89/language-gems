@@ -7,7 +7,7 @@ import { useAuth } from '../../../components/auth/AuthProvider';
 import { useSupabase } from '../../../components/supabase/SupabaseProvider';
 import Link from 'next/link';
 import { 
-  CircleCheck, CircleX, Clock, BookOpen, 
+  CheckCircle, XCircle, Clock, BookOpen, 
   BarChart2, Filter, Search, Calendar, 
   ListFilter, ArrowUpDown, PlayCircle
 } from 'lucide-react';
@@ -235,7 +235,7 @@ export default function VocabularyDashboard() {
         
         <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg p-4 shadow-md">
           <div className="flex items-center">
-            <CircleCheck className="h-8 w-8 mr-3" />
+                            <CheckCircle className="h-8 w-8 mr-3" />
             <div>
               <p className="text-sm font-medium opacity-80">Mastered Words</p>
               <p className="text-2xl font-bold">{stats.knownWords}</p>
@@ -245,7 +245,7 @@ export default function VocabularyDashboard() {
         
         <div className="bg-gradient-to-r from-red-500 to-orange-600 text-white rounded-lg p-4 shadow-md">
           <div className="flex items-center">
-            <CircleX className="h-8 w-8 mr-3" />
+                            <XCircle className="h-8 w-8 mr-3" />
             <div>
               <p className="text-sm font-medium opacity-80">Weak Words</p>
               <p className="text-2xl font-bold">{stats.weakWords}</p>

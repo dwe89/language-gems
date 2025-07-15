@@ -35,6 +35,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" defer></script>
+      </head>
       <body className={`${inter.variable} ${cinzel.variable} ${pirataOne.variable} font-sans`}>
         <SupabaseProvider>
           <AuthProvider>

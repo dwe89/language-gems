@@ -15,7 +15,7 @@ interface WorksheetFormData {
 
 interface GeneratedWorksheet {
   title: string;
-  pdfUrl: string;
+  html: string;
   filename: string;
 }
 
@@ -81,7 +81,7 @@ export default function AdminWorksheetsPage() {
       const result = await response.json();
       setGeneratedWorksheet({
         title: result.worksheet.title,
-        pdfUrl: result.pdfUrl,
+        html: result.html,
         filename: result.filename
       });
       
@@ -89,6 +89,50 @@ export default function AdminWorksheetsPage() {
       setError(err instanceof Error ? err.message : 'Failed to generate worksheet');
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  // Generate PDF using html2pdf.js
+  const generatePDF = (html: string, filename: string) => {
+    // Check if html2pdf is loaded
+    const html2pdf = (window as any).html2pdf;
+    if (!html2pdf) {
+      setError('PDF generation library not loaded. Please refresh the page and try again.');
+      return;
+    }
+
+    // Create a temporary container for the HTML
+    const container = document.createElement('div');
+    container.innerHTML = html;
+    container.style.position = 'absolute';
+    container.style.left = '-9999px';
+    container.style.top = '-9999px';
+    document.body.appendChild(container);
+
+    try {
+      html2pdf()
+        .set({
+          margin: 7,
+          filename: `${filename}.pdf`,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        })
+        .from(container)
+        .save()
+        .then(() => {
+          // Clean up
+          document.body.removeChild(container);
+        })
+        .catch((error: Error) => {
+          console.error('PDF generation error:', error);
+          setError('Failed to generate PDF. Please try again.');
+          document.body.removeChild(container);
+        });
+    } catch (error) {
+      console.error('PDF generation error:', error);
+      setError('Failed to generate PDF. Please try again.');
+      document.body.removeChild(container);
     }
   };
 
@@ -283,22 +327,20 @@ export default function AdminWorksheetsPage() {
                 <p className="text-sm text-slate-600 mb-4">Filename: {generatedWorksheet.filename}</p>
                 
                 <div className="space-y-2">
-                  <a
-                    href={generatedWorksheet.pdfUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <button
+                    onClick={() => generatePDF(generatedWorksheet.html, generatedWorksheet.filename)}
                     className="w-full bg-gradient-to-r from-purple-600 to-orange-500 text-white py-2 px-4 rounded-lg font-medium hover:from-purple-700 hover:to-orange-600 transition-all duration-200 flex items-center justify-center"
                   >
                     <Download className="w-4 h-4 mr-2" />
                     Download PDF
-                  </a>
+                  </button>
                   
                   <button
-                    onClick={() => window.open(generatedWorksheet.pdfUrl, '_blank')}
+                    onClick={() => window.print()}
                     className="w-full bg-slate-100 text-slate-700 py-2 px-4 rounded-lg font-medium hover:bg-slate-200 transition-colors flex items-center justify-center"
                   >
                     <BookOpen className="w-4 h-4 mr-2" />
-                    Preview in New Tab
+                    Print Worksheet
                   </button>
                 </div>
               </div>

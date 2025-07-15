@@ -14,11 +14,7 @@ const config = {
       use: 'ignore-loader',
     });
 
-    // Add ignore-loader for problematic chrome-aws-lambda files
-    config.module.rules.push({
-      test: /chrome-aws-lambda.*\.js\.map$/,
-      loader: 'ignore-loader',
-    });
+    // Keep general .js.map ignore for any future needs
 
     // Exclude server-only packages from client bundle
     if (!isServer) {
@@ -30,11 +26,7 @@ const config = {
         child_process: false,
       };
       
-      config.externals = config.externals || [];
-      config.externals.push({
-        'puppeteer-core': 'puppeteer-core',
-        'chrome-aws-lambda': 'chrome-aws-lambda',
-      });
+      // No longer need to externalize puppeteer/chromium
     }
     
     return config;
