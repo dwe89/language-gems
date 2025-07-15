@@ -45,6 +45,7 @@ export default function ShopPage() {
   };
 
   const formatPrice = (priceCents: number) => {
+    if (priceCents === 0) return 'FREE';
     return `£${(priceCents / 100).toFixed(2)}`;
   };
 
@@ -213,10 +214,14 @@ export default function ShopPage() {
                     
                     <button
                       onClick={() => addItem(product)}
-                      className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center space-x-2"
+                      className={`px-4 py-2 text-white rounded-lg transition-colors flex items-center space-x-2 ${
+                        product.price_cents === 0 
+                          ? 'bg-green-600 hover:bg-green-700' 
+                          : 'bg-indigo-600 hover:bg-indigo-700'
+                      }`}
                     >
                       <ShoppingCart className="h-4 w-4" />
-                      <span>Add to Cart</span>
+                      <span>{product.price_cents === 0 ? 'Get for FREE' : 'Add to Cart'}</span>
                     </button>
                   </div>
                 </div>

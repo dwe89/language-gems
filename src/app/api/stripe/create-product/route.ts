@@ -24,16 +24,21 @@ export async function POST(request: NextRequest) {
       type: 'good',
     });
 
-    // Create price in Stripe
-    const stripePrice = await stripe.prices.create({
-      product: product.id,
-      unit_amount: price, // price is already in pence
-      currency: 'gbp',
-    });
+    let priceId = null;
+    
+    // Only create a Stripe price if the product isn't free
+    if (price > 0) {
+      const stripePrice = await stripe.prices.create({
+        product: product.id,
+        unit_amount: price, // price is already in pence
+        currency: 'gbp',
+      });
+      priceId = stripePrice.id;
+    }
 
     return NextResponse.json({
       productId: product.id,
-      priceId: stripePrice.id,
+      priceId: priceId,
     });
 
   } catch (error: any) {

@@ -27,7 +27,44 @@ export default function CartPage() {
 
     setLoading(true);
     try {
-      console.log('Starting checkout process...');
+      // Check if all items are free
+      const totalPrice = getTotalPrice();
+      
+      if (totalPrice === 0) {
+        // Handle free items - create order directly without Stripe
+        console.log('Processing free items checkout...');
+        
+        const response = await fetch('/api/orders/create-free-order', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            items: state.items.map(item => ({
+              product_id: item.product.id,
+              quantity: item.quantity,
+              price_cents: item.product.price_cents
+            })),
+            customer_email: user?.email || null
+          }),
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Free order API Error Response:', errorText);
+          throw new Error(`Failed to create free order: ${response.status} ${errorText}`);
+        }
+
+        const responseData = await response.json();
+        console.log('Free order created:', responseData);
+        
+        // Redirect to success page
+        window.location.href = `/checkout/success?order_id=${responseData.order_id}`;
+        return;
+      }
+
+      // Handle paid items - go through Stripe
+      console.log('Starting paid checkout process...');
       console.log('Current URL:', window.location.href);
       console.log('Items to checkout:', state.items.map(item => ({
         product_id: item.product.id,
@@ -355,16 +392,18 @@ export default function CartPage() {
                   ) : (
                     <>
                       <CreditCard className="h-5 w-5 mr-2" />
-                      Proceed to Checkout
+                      {getTotalPrice() === 0 ? 'Get Free Items' : 'Proceed to Checkout'}
                     </>
                   )}
                 </button>
 
                 {/* Security Notice */}
-                <div className="flex items-center justify-center text-sm text-slate-500">
-                  <Lock className="h-4 w-4 mr-1" />
-                  Secure checkout powered by Stripe
-                </div>
+                {getTotalPrice() > 0 && (
+                  <div className="flex items-center justify-center text-sm text-slate-500">
+                    <Lock className="h-4 w-4 mr-1" />
+                    Secure checkout powered by Stripe
+                  </div>
+                )}
 
                 {/* Continue Shopping */}
                 <Link

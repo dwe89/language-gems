@@ -29,6 +29,7 @@ interface FreebieResource {
   preview_url?: string;
   file_name: string;
   file_size: number;
+  download_count?: number;
   created_at: string;
   updated_at: string;
 }
@@ -226,7 +227,7 @@ export default function FreebiesAdminPage() {
     total: resources.length,
     featured: resources.filter(r => r.featured).length,
     premium: resources.filter(r => r.premium).length,
-    totalDownloads: resources.reduce((sum, r) => sum + r.download_count, 0)
+    totalDownloads: resources.reduce((sum, r) => sum + (r.download_count || 0), 0)
   };
 
   return (
@@ -449,7 +450,7 @@ export default function FreebiesAdminPage() {
                     </td>
                     <td className="py-3 px-4">
                       <div className="text-sm">
-                        <div>{resource.keyStage.toUpperCase()}</div>
+                        <div>{resource.keyStage?.toUpperCase() || 'N/A'}</div>
                         <div className="text-slate-500">
                           {TOPICS_BY_KEY_STAGE[resource.keyStage]?.[resource.topic] || resource.topic}
                         </div>
@@ -524,13 +525,7 @@ export default function FreebiesAdminPage() {
       {showUploadModal && (
         <FreebiesUploadForm
           onSave={handleSaveResource}
-          onCancel={() => setShowUploadModal(false)}
-          topicsByKeyStage={TOPICS_BY_KEY_STAGE}
-          languages={LANGUAGES}
-          keyStages={KEY_STAGES}
-          levels={LEVELS}
-          resourceTypes={RESOURCE_TYPES}
-          commonSkills={COMMON_SKILLS}
+          onClose={() => setShowUploadModal(false)}
         />
       )}
     </div>

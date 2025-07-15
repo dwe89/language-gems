@@ -270,8 +270,8 @@ export default function AdminNewProductPage() {
       newErrors.push('Slug is required.');
     }
 
-    if (formData.price_cents <= 0) {
-      newErrors.push('Price must be greater than 0.');
+    if (formData.price_cents < 0) {
+      newErrors.push('Price must be 0 or greater.');
     }
 
     if (!formData.file) {
@@ -528,13 +528,13 @@ Use double line breaks for paragraphs.
                 value={formData.price_cents}
                 onChange={(e) => setFormData(prev => ({ ...prev, price_cents: parseInt(e.target.value) || 0 }))}
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                placeholder="999"
-                min="1"
+                placeholder="0 for free, 999 for £9.99"
+                min="0"
                 required
                 disabled={loading}
               />
               <p className="text-sm text-slate-500 mt-1">
-                Display price: {formatPrice(formData.price_cents)}
+                Display price: {formData.price_cents === 0 ? 'FREE' : formatPrice(formData.price_cents)}
               </p>
             </div>
 

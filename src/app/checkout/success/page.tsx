@@ -8,6 +8,7 @@ import { CheckCircle, Download, ArrowRight, Home, ShoppingBag } from 'lucide-rea
 export default function CheckoutSuccessPage() {
   const searchParams = useSearchParams();
   const sessionId = searchParams?.get('session_id');
+  const orderId = searchParams?.get('order_id');
   const [loading, setLoading] = useState(true);
   const [orderDetails, setOrderDetails] = useState<any>(null);
   const [downloading, setDownloading] = useState<string | null>(null);
@@ -40,17 +41,26 @@ export default function CheckoutSuccessPage() {
   };
 
   useEffect(() => {
-    if (sessionId) {
+    if (sessionId || orderId) {
       fetchOrderDetails();
     } else {
       setLoading(false);
     }
-  }, [sessionId]);
+  }, [sessionId, orderId]);
 
   const fetchOrderDetails = async () => {
     try {
-      console.log('Fetching order details for session:', sessionId);
-      const response = await fetch(`/api/orders/by-session/${sessionId}`);
+      let response;
+      
+      if (sessionId) {
+        console.log('Fetching order details for session:', sessionId);
+        response = await fetch(`/api/orders/by-session/${sessionId}`);
+      } else if (orderId) {
+        console.log('Fetching order details for order:', orderId);
+        response = await fetch(`/api/orders/${orderId}`);
+      } else {
+        throw new Error('No session ID or order ID provided');
+      }
       
       console.log('Order fetch response:', response.status, response.ok);
       
@@ -80,7 +90,7 @@ export default function CheckoutSuccessPage() {
     );
   }
 
-  if (!sessionId) {
+  if (!sessionId && !orderId) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="max-w-md mx-auto text-center">
@@ -123,6 +133,11 @@ export default function CheckoutSuccessPage() {
             {sessionId && (
               <p className="text-sm text-green-600 mt-1">
                 Session ID: {sessionId}
+              </p>
+            )}
+            {orderId && (
+              <p className="text-sm text-green-600 mt-1">
+                Order ID: {orderId.slice(0, 8).toUpperCase()}
               </p>
             )}
             {orderDetails?.order && (
