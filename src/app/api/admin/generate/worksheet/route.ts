@@ -74,6 +74,9 @@ interface WorksheetContent {
         english?: string;
         sentence?: string;
       }>;
+      original?: string; // For error correction
+      error?: string; // For error correction
+      text?: string; // For error correction
     }>;
   }>;
 }
@@ -123,70 +126,70 @@ export async function POST(request: NextRequest) {
     // Generate worksheet content using OpenAI
     const systemPrompt = `You are an expert ${language} teacher. Create a ${level} level worksheet on "${topic}".
 
-IMPORTANT: The topic is "${topic}" - make sure ALL verb endings and examples match this tense/topic exactly.
+Return ONLY valid JSON. Use "${topic}" tense consistently throughout.
 
-Return ONLY valid JSON with this exact structure:
+Heuristic for fitting on a single page:
+- Fill in the Blanks: 8 questions
+- Multiple Choice: 8 questions
+- Error Correction: 6 questions
+- Matching: 6 pairs
+- Word Order: 6 questions
+- Translation (each direction): 6 items
 
+Structure:
 {
   "title": "${topic} in ${language}",
-  "studentInfo": {
-    "nameField": true,
-    "dateField": true,
-    "classField": true
-  },
+  "studentInfo": {"nameField": true, "dateField": true, "classField": true},
   "introductoryExplanation": {
     "title": "Grammar Explanation",
-    "content": "Clear explanation of ${topic} with 2 specific examples showing this tense"
+    "content": "Brief explanation of ${topic} with examples"
   },
   "referenceSection": {
     "title": "Quick Reference",
-    "verbType": "determine from topic (present/future/past/etc)",
     "content": "Key patterns for ${topic}"
   },
   "exercises": [
     {
       "type": "fill_in_blanks",
-      "title": "Fill in the Blanks",
+      "title": "Fill in the Blanks", 
       "instructions": "Complete with the correct ${topic} form.",
-      "questions": [15 questions using ${topic} tense]
+      "questions": [8 questions]
     },
     {
       "type": "multiple_choice",
-      "title": "Multiple Choice", 
+      "title": "Multiple Choice",
       "instructions": "Choose the correct ${topic} form.",
-      "questions": [15 questions using ${topic} tense]
+      "questions": [8 questions]
     },
     {
-      "type": "error_correction",
+      "type": "error_correction", 
       "title": "Error Correction",
       "instructions": "Fix the error - write the correct ${topic} form.",
-      "questions": [10 questions with ${topic} errors to fix]
+      "questions": [6 questions]
     },
     {
       "type": "matching",
       "title": "Match the Words",
       "instructions": "Match the Spanish and English forms.",
-      "questions": [10 matching pairs using ${topic}]
+      "questions": [6 pairs]
     },
     {
       "type": "word_order",
-      "title": "Put the Words in Correct Order", 
+      "title": "Put the Words in Correct Order",
       "instructions": "Rearrange to make correct sentences.",
-      "questions": [8 scrambled sentences using ${topic}]
+      "questions": [6 questions]
     },
     {
       "type": "translation_both_ways",
-      "title": "Translation Practice",
+      "title": "Translation Practice", 
       "instructions": "Translate between Spanish and English.",
       "questions": [
-        {"section": "spanish_to_english", "items": [6 Spanish sentences to translate]},
-        {"section": "english_to_spanish", "items": [6 English sentences to translate]}
+        {"section": "spanish_to_english", "items": [6 items]},
+        {"section": "english_to_spanish", "items": [6 items]}
       ]
     }
   ]
-}
-
-CRITICAL: Make sure ALL verbs, endings, and examples use "${topic}" tense consistently throughout.`;
+}`;
 
     let completion;
     try {
@@ -197,7 +200,7 @@ CRITICAL: Make sure ALL verbs, endings, and examples use "${topic}" tense consis
           { role: 'user', content: `Generate the worksheet now. Follow the exact structure specified. Return ONLY valid JSON with no additional text or explanations.` }
         ],
         temperature: 0.7,
-        max_tokens: 16000
+        max_tokens: 15000
       });
     } catch (apiError: any) {
       console.error('OpenAI API Error Details:', {
@@ -220,10 +223,26 @@ CRITICAL: Make sure ALL verbs, endings, and examples use "${topic}" tense consis
     let worksheetContent: WorksheetContent;
     try {
       const responseText = completion.choices[0].message.content || '';
-      console.log('OpenAI Response Text:', responseText.substring(0, 500), '...');
+      console.log('OpenAI Response Text Length:', responseText.length);
+      console.log('OpenAI Response Text Preview:', responseText.substring(0, 500), '...');
+      console.log('OpenAI Response Text End:', responseText.substring(responseText.length - 200));
+      
+      // Check if response was truncated
+      if (completion.choices[0].finish_reason === 'length') {
+        console.warn('OpenAI response was truncated due to max_tokens limit');
+        return NextResponse.json({ 
+          error: 'Response was truncated. Try reducing complexity or increasing max_tokens.',
+          details: 'The OpenAI response was cut off due to token limits.',
+          responsePreview: responseText.substring(0, 1000)
+        }, { status: 500 });
+      }
       
       // Clean the response text and extract JSON
       let jsonText = responseText.trim();
+      
+      // Log the cleaning process
+      console.log('Original response starts with:', jsonText.substring(0, 50));
+      console.log('Original response ends with:', jsonText.substring(jsonText.length - 50));
       
       // Remove any markdown code blocks if present
       if (jsonText.startsWith('```json')) {
@@ -236,6 +255,8 @@ CRITICAL: Make sure ALL verbs, endings, and examples use "${topic}" tense consis
       const firstBrace = jsonText.indexOf('{');
       const lastBrace = jsonText.lastIndexOf('}');
       
+      console.log('First brace at:', firstBrace, 'Last brace at:', lastBrace);
+      
       if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
         jsonText = jsonText.substring(firstBrace, lastBrace + 1);
       } else {
@@ -243,16 +264,27 @@ CRITICAL: Make sure ALL verbs, endings, and examples use "${topic}" tense consis
       }
       
       console.log('Extracted JSON:', jsonText.substring(0, 200), '...');
+      console.log('Extracted JSON length:', jsonText.length);
+      
       worksheetContent = JSON.parse(jsonText);
+      
+      // Validate that we have exercises
+      if (!worksheetContent.exercises || worksheetContent.exercises.length === 0) {
+        throw new Error('No exercises found in generated content');
+      }
+      
+      console.log('Successfully parsed worksheet with', worksheetContent.exercises.length, 'exercises');
     } catch (parseError: any) {
       console.error('Failed to parse OpenAI response:', parseError);
       console.error('Response length:', completion.choices[0].message.content?.length);
+      console.error('Finish reason:', completion.choices[0].finish_reason);
       console.error('Raw response:', completion.choices[0].message.content);
       
       return NextResponse.json({ 
         error: 'Failed to generate worksheet content',
         details: `JSON Parse Error: ${parseError.message}`,
         responsePreview: completion.choices[0].message.content?.substring(0, 1000),
+        finishReason: completion.choices[0].finish_reason,
         fullResponse: process.env.NODE_ENV === 'development' ? completion.choices[0].message.content : undefined
       }, { status: 500 });
     }
@@ -337,11 +369,23 @@ function generateWorksheetHTML(content: WorksheetContent): string {
             box-sizing: border-box;
         }
         
+        html, body {
+            height: 100%;
+        }
         body {
             font-family: 'Open Sans', sans-serif;
             background: linear-gradient(135deg, #f5f3f0 0%, #ede8e3 100%);
             color: #333;
             line-height: 1.4;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .page {
+            /* Remove flexbox for print overflow compatibility */
+        }
+        .footer {
+            /* No sticky/flexbox, just a normal block at the end of .page */
         }
         
         .page {
@@ -641,12 +685,10 @@ function generateWorksheetHTML(content: WorksheetContent): string {
         <div class="header">
             <h1>${content.title.toUpperCase()}</h1>
         </div>
-        
         <div class="name-date">
             <div>NAME: <span></span></div>
             <div>DATE: <span></span></div>
         </div>
-
         <div class="content">
         ${content.introductoryExplanation ? `
         <div class="intro-section">
@@ -684,13 +726,13 @@ function generateWorksheetHTML(content: WorksheetContent): string {
                 <div class="section-number">${index + 1}</div>
                 <h3>${exercise.title}</h3>
                 <div class="instructions">${exercise.instructions}</div>
-                ${exercise.questions.slice(0, 10).map((q, qIndex) => `
+                ${exercise.questions.map((q, qIndex) => `
                 <div class="exercise-item">
                     <span class="number">${qIndex + 1}.</span> 
                                          ${exercise.type === 'multiple_choice' ? 
                          `${q.sentence || ''} (${q.options ? q.options.join(' / ') : 'a / b / c'})` :
                      exercise.type === 'error_correction' ?
-                         `${q.incorrect || q.sentence || ''} <span class="blank"></span>` :
+                         `${q.incorrect || q.original || q.error || q.sentence || q.text || ''} <span class="blank"></span>` :
                      (exercise.type === 'translation' || exercise.type.includes('translation')) ?
                          `${q.english || q.sentence || ''} <span class="blank"></span>` :
                          `${(q.sentence || '').replace(/\[.*?\]/g, '<span class="blank"></span>')}`
@@ -714,15 +756,6 @@ function generateWorksheetHTML(content: WorksheetContent): string {
     
     <!-- PAGE 2 -->
     <div class="page">
-        <div class="header">
-            <h1>MORE PRACTICE</h1>
-        </div>
-        
-        <div class="name-date">
-            <div>NAME: <span></span></div>
-            <div>DATE: <span></span></div>
-        </div>
-        
         <div class="content">
         ${content.exercises.slice(2).map((exercise, index) => {
             if (exercise.type === 'matching') {
@@ -743,7 +776,7 @@ function generateWorksheetHTML(content: WorksheetContent): string {
                         </div>
                         <div class="matching-column">
                             <h4>English</h4>
-                            ${exercise.questions.slice(0, 10).map((q, qIndex) => `
+                            ${(() => { const shuffledEng = [...exercise.questions.slice(0, 10)].sort(() => 0.5 - Math.random()); return shuffledEng; })().map((q, qIndex) => `
                             <div class="matching-item">
                                 <span class="number">${qIndex + 1}.</span>
                                 <span>${q.english || q.answer || ''}</span>
@@ -798,13 +831,13 @@ function generateWorksheetHTML(content: WorksheetContent): string {
                     <div class="section-number">${index + 3}</div>
                     <h3>${exercise.title}</h3>
                     <div class="instructions">${exercise.instructions}</div>
-                    ${exercise.questions.slice(0, 10).map((q, qIndex) => `
+                    ${exercise.questions.map((q, qIndex) => `
                     <div class="exercise-item">
                         <span class="number">${qIndex + 1}.</span> 
                         ${exercise.type === 'multiple_choice' ? 
                              `${q.sentence || ''} (${q.options ? q.options.join(' / ') : 'a / b / c'})` :
                          exercise.type === 'error_correction' ?
-                             `${q.incorrect || q.sentence || ''} <span class="blank"></span>` :
+                             `${q.incorrect || q.original || q.error || q.sentence || q.text || ''} <span class="blank"></span>` :
                          (exercise.type === 'translation' || exercise.type.includes('translation')) ?
                              `${q.english || q.sentence || ''} <span class="blank"></span>` :
                              `${(q.sentence || '').replace(/\[.*?\]/g, '<span class="blank"></span>')}`
