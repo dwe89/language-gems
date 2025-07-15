@@ -68,24 +68,40 @@ export default function AdminProductsPage() {
     e.preventDefault();
     
     try {
+      // Convert tags string to array for Supabase
+      const tagsArray = editData.tags 
+        ? editData.tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0)
+        : [];
+
       const productData = {
-        ...editData,
+        name: editData.name,
+        slug: editData.slug,
+        description: editData.description,
         price_cents: Number(editData.price_cents),
+        stripe_price_id: editData.stripe_price_id || null,
+        tags: tagsArray, // Send as array, not string
+        is_active: editData.is_active,
       };
+
+      console.log('Updating product with data:', productData);
 
       const { error } = await supabaseBrowser
         .from('products')
         .update(productData)
         .eq('id', editingProduct?.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
 
       // Reset form and refresh
       resetForm();
       fetchProducts();
+      alert('Product updated successfully!');
     } catch (error) {
       console.error('Error saving product:', error);
-      alert('Error saving product. Please try again.');
+      alert(`Error saving product: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 

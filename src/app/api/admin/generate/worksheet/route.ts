@@ -294,9 +294,15 @@ Make it engaging, educational, and appropriate for ${level} level.`;
 
   } catch (error) {
     console.error('Worksheet generation error:', error);
+    
+    // Ensure we always return proper JSON
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    console.error('Full error details:', errorMessage);
+    
     return NextResponse.json({ 
+      success: false,
       error: 'Failed to generate worksheet',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      details: process.env.NODE_ENV === 'development' ? errorMessage : 'Internal server error'
     }, { status: 500 });
   }
 }
