@@ -54,11 +54,11 @@ interface WorksheetContent {
     }>;
   };
   exercises: Array<{
-    type: 'fill_in_blanks' | 'multiple_choice' | 'error_correction' | 'translation';
+    type: 'fill_in_blanks' | 'multiple_choice' | 'error_correction' | 'translation' | 'matching' | 'word_order' | 'translation_both_ways';
     title: string;
     instructions: string;
     questions: Array<{
-      number: number;
+      number?: number;
       sentence?: string;
       verb?: string;
       options?: string[];
@@ -67,6 +67,13 @@ interface WorksheetContent {
       spanish?: string;
       incorrect?: string;
       correct?: string;
+      scrambled?: string;
+      section?: string;
+      items?: Array<{
+        spanish?: string;
+        english?: string;
+        sentence?: string;
+      }>;
     }>;
   }>;
 }
@@ -116,10 +123,12 @@ export async function POST(request: NextRequest) {
     // Generate worksheet content using OpenAI
     const systemPrompt = `You are an expert ${language} teacher. Create a ${level} level worksheet on "${topic}".
 
+IMPORTANT: The topic is "${topic}" - make sure ALL verb endings and examples match this tense/topic exactly.
+
 Return ONLY valid JSON with this exact structure:
 
 {
-  "title": "Present Tense Irregular Verbs in ${language}",
+  "title": "${topic} in ${language}",
   "studentInfo": {
     "nameField": true,
     "dateField": true,
@@ -127,53 +136,57 @@ Return ONLY valid JSON with this exact structure:
   },
   "introductoryExplanation": {
     "title": "Grammar Explanation",
-    "content": "Brief explanation of ${topic} with 2 examples"
+    "content": "Clear explanation of ${topic} with 2 specific examples showing this tense"
   },
   "referenceSection": {
     "title": "Quick Reference",
+    "verbType": "determine from topic (present/future/past/etc)",
     "content": "Key patterns for ${topic}"
   },
   "exercises": [
     {
       "type": "fill_in_blanks",
       "title": "Fill in the Blanks",
-      "instructions": "Complete with the correct form.",
-      "questions": [
-        {"number": 1, "sentence": "Yo ___ (hablar) español."},
-        {"number": 2, "sentence": "Tú ___ (comer) pizza."}
-      ]
+      "instructions": "Complete with the correct ${topic} form.",
+      "questions": [15 questions using ${topic} tense]
     },
     {
       "type": "multiple_choice",
       "title": "Multiple Choice", 
-      "instructions": "Choose the correct answer.",
-      "questions": [
-        {"number": 1, "sentence": "Yo ___ español.", "options": ["hablo", "habla", "hablan"]},
-        {"number": 2, "sentence": "Tú ___ pizza.", "options": ["come", "comes", "comen"]}
-      ]
+      "instructions": "Choose the correct ${topic} form.",
+      "questions": [15 questions using ${topic} tense]
     },
     {
       "type": "error_correction",
       "title": "Error Correction",
-      "instructions": "Fix the error.",
-      "questions": [
-        {"number": 1, "incorrect": "Yo come pizza.", "correct": "como"},
-        {"number": 2, "incorrect": "Tú habla español.", "correct": "hablas"}
-      ]
+      "instructions": "Fix the error - write the correct ${topic} form.",
+      "questions": [10 questions with ${topic} errors to fix]
     },
     {
-      "type": "translation",
-      "title": "Translation",
-      "instructions": "Translate to ${language}.",
+      "type": "matching",
+      "title": "Match the Words",
+      "instructions": "Match the Spanish and English forms.",
+      "questions": [10 matching pairs using ${topic}]
+    },
+    {
+      "type": "word_order",
+      "title": "Put the Words in Correct Order", 
+      "instructions": "Rearrange to make correct sentences.",
+      "questions": [8 scrambled sentences using ${topic}]
+    },
+    {
+      "type": "translation_both_ways",
+      "title": "Translation Practice",
+      "instructions": "Translate between Spanish and English.",
       "questions": [
-        {"number": 1, "english": "I speak Spanish.", "spanish": "Yo hablo español."},
-        {"number": 2, "english": "You eat pizza.", "spanish": "Tú comes pizza."}
+        {"section": "spanish_to_english", "items": [6 Spanish sentences to translate]},
+        {"section": "english_to_spanish", "items": [6 English sentences to translate]}
       ]
     }
   ]
 }
 
-Create 15 fill-in-blanks, 15 multiple choice, 10 error correction, and 8 translation questions about ${topic} for ${level} students.`;
+CRITICAL: Make sure ALL verbs, endings, and examples use "${topic}" tense consistently throughout.`;
 
     let completion;
     try {
@@ -274,6 +287,40 @@ Create 15 fill-in-blanks, 15 multiple choice, 10 error correction, and 8 transla
 }
 
 function generateWorksheetHTML(content: WorksheetContent): string {
+    // Helper function to get correct verb endings based on topic
+    const getVerbEndings = (topic: string) => {
+        const topicLower = topic.toLowerCase();
+        
+        if (topicLower.includes('future') || topicLower.includes('futuro')) {
+            return {
+                ar: ['-é', '-ás', '-á', '-emos', '-éis', '-án'],
+                er: ['-é', '-ás', '-á', '-emos', '-éis', '-án'], 
+                ir: ['-é', '-ás', '-á', '-emos', '-éis', '-án']
+            };
+        } else if (topicLower.includes('past') || topicLower.includes('preterite') || topicLower.includes('pasado')) {
+            return {
+                ar: ['-é', '-aste', '-ó', '-amos', '-asteis', '-aron'],
+                er: ['-í', '-iste', '-ió', '-imos', '-isteis', '-ieron'],
+                ir: ['-í', '-iste', '-ió', '-imos', '-isteis', '-ieron']
+            };
+        } else if (topicLower.includes('imperfect') || topicLower.includes('imperfecto')) {
+            return {
+                ar: ['-aba', '-abas', '-aba', '-ábamos', '-abais', '-aban'],
+                er: ['-ía', '-ías', '-ía', '-íamos', '-íais', '-ían'],
+                ir: ['-ía', '-ías', '-ía', '-íamos', '-íais', '-ían']
+            };
+        } else {
+            // Default to present tense
+            return {
+                ar: ['-o', '-as', '-a', '-amos', '-áis', '-an'],
+                er: ['-o', '-es', '-e', '-emos', '-éis', '-en'],
+                ir: ['-o', '-es', '-e', '-imos', '-ís', '-en']
+            };
+        }
+    };
+
+    const endings = getVerbEndings(content.title);
+
     return `
 <!DOCTYPE html>
 <html lang="en">
@@ -307,6 +354,8 @@ function generateWorksheetHTML(content: WorksheetContent): string {
             page-break-after: always;
             border: 3px solid #8B5CF6;
             position: relative;
+            display: flex;
+            flex-direction: column;
         }
         
         .page:last-child {
@@ -340,15 +389,19 @@ function generateWorksheetHTML(content: WorksheetContent): string {
         .name-date span {
             border-bottom: 2px solid #333;
             padding-bottom: 2px;
-            min-width: 280px;
+            min-width: 320px;
+        }
+
+        .content {
+            flex: 1;
         }
 
         .intro-section {
             margin-bottom: 15px;
-            padding: 12px;
+            padding: 15px;
             background: #F8FAFC;
-            border-left: 4px solid #8B5CF6;
-            border-radius: 6px;
+            border: 2px dashed #8B5CF6;
+            border-radius: 8px;
         }
 
         .intro-section h3 {
@@ -411,98 +464,74 @@ function generateWorksheetHTML(content: WorksheetContent): string {
         .exercise-item {
             margin: 6px 0;
             font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
         
         .exercise-item .number {
             font-weight: 600;
             color: #8B5CF6;
+            min-width: 25px;
         }
         
         .blank {
-            border-bottom: 1px solid #333;
+            border-bottom: 2px solid #333;
             display: inline-block;
-            min-width: 70px;
-            margin: 0 3px;
-        }
-        
-        .table-container {
-            overflow-x: auto;
-            margin: 10px 0;
-        }
-        
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 10px 0;
-            background: white;
-            border-radius: 6px;
-            overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-        
-        th, td {
-            border: 2px solid #8B5CF6;
-            padding: 8px;
-            text-align: center;
-            font-size: 13px;
-        }
-        
-        th {
-            background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
-            color: white;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        
-        td {
-            background: #F8FAFC;
+            min-width: 120px;
+            margin: 0 5px;
+            padding: 2px 5px;
         }
 
         .reference-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
-            margin: 10px 0;
+            gap: 15px;
+            margin: 15px 0;
             text-align: center;
         }
 
         .reference-card {
-            padding: 10px;
-            border-radius: 6px;
+            padding: 15px;
+            border-radius: 8px;
             border: 2px solid;
-            font-size: 13px;
+            font-size: 14px;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.1);
         }
 
         .ar-verbs {
             background: #FEF3C7;
             border-color: #F59E0B;
-            color: #D97706;
+            color: #92400E;
         }
 
         .er-verbs {
             background: #DBEAFE;
             border-color: #3B82F6;
-            color: #1D4ED8;
+            color: #1E40AF;
         }
 
         .ir-verbs {
-            background: #DCFCE7;
+            background: #D1FAE5;
             border-color: #10B981;
             color: #047857;
         }
 
         .reference-card h4 {
             font-weight: 700;
-            margin-bottom: 6px;
+            margin-bottom: 8px;
+            font-size: 15px;
         }
         
         .footer {
-            position: absolute;
-            bottom: 0.4in;
-            left: 0;
-            right: 0;
+            margin-top: auto;
             text-align: center;
+            padding: 15px 0;
+            border-top: 2px solid #E5E7EB;
+            background: linear-gradient(135deg, #F8FAFC 0%, #E2E8F0 100%);
+            margin-left: -0.4in;
+            margin-right: -0.4in;
+            margin-bottom: -0.4in;
             font-weight: 600;
             color: #8B5CF6;
             font-size: 14px;
@@ -511,6 +540,87 @@ function generateWorksheetHTML(content: WorksheetContent): string {
         .gem-accent {
             color: #F59E0B;
             font-weight: 700;
+        }
+
+        .footer-content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-weight: 600;
+            color: #8B5CF6;
+            font-size: 14px;
+        }
+
+        .gem-icon {
+            width: 20px;
+            height: 20px;
+            background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+            clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .slogan {
+            font-style: italic;
+            color: #6B7280;
+            font-size: 12px;
+            margin-top: 5px;
+            font-weight: 400;
+        }
+
+        .matching-table {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 15px 0;
+        }
+
+        .matching-column {
+            border: 2px solid #8B5CF6;
+            border-radius: 8px;
+            padding: 15px;
+            background: #F8FAFC;
+        }
+
+        .matching-item {
+            margin: 8px 0;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .word-order-item {
+            margin: 15px 0;
+            padding: 10px;
+            background: #F3F4F6;
+            border-radius: 6px;
+            border-left: 4px solid #8B5CF6;
+        }
+
+        .scrambled-words {
+            font-weight: 600;
+            color: #8B5CF6;
+            margin-bottom: 5px;
+        }
+
+        .answer-line {
+            border-bottom: 2px solid #374151;
+            height: 25px;
+            margin: 8px 0;
+            position: relative;
+        }
+
+        .answer-line::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            width: 3px;
+            height: 3px;
+            background: #8B5CF6;
+            border-radius: 50%;
+            transform: translateY(-50%);
         }
         
         @media print {
@@ -537,6 +647,7 @@ function generateWorksheetHTML(content: WorksheetContent): string {
             <div>DATE: <span></span></div>
         </div>
 
+        <div class="content">
         ${content.introductoryExplanation ? `
         <div class="intro-section">
             <h3>${content.introductoryExplanation.title}</h3>
@@ -550,18 +661,18 @@ function generateWorksheetHTML(content: WorksheetContent): string {
             <div class="reference-grid">
                 <div class="reference-card ar-verbs">
                     <h4>-AR Verbs</h4>
-                    <div>-o, -as, -a</div>
-                    <div>-amos, -áis, -an</div>
+                    <div>${endings.ar.slice(0, 3).join(', ')}</div>
+                    <div>${endings.ar.slice(3).join(', ')}</div>
                 </div>
                 <div class="reference-card er-verbs">
                     <h4>-ER Verbs</h4>
-                    <div>-o, -es, -e</div>
-                    <div>-emos, -éis, -en</div>
+                    <div>${endings.er.slice(0, 3).join(', ')}</div>
+                    <div>${endings.er.slice(3).join(', ')}</div>
                 </div>
                 <div class="reference-card ir-verbs">
                     <h4>-IR Verbs</h4>
-                    <div>-o, -es, -e</div>
-                    <div>-imos, -ís, -en</div>
+                    <div>${endings.ir.slice(0, 3).join(', ')}</div>
+                    <div>${endings.ir.slice(3).join(', ')}</div>
                 </div>
             </div>
         </div>
@@ -580,8 +691,8 @@ function generateWorksheetHTML(content: WorksheetContent): string {
                          `${q.sentence || ''} (${q.options ? q.options.join(' / ') : 'a / b / c'})` :
                      exercise.type === 'error_correction' ?
                          `${q.incorrect || q.sentence || ''} <span class="blank"></span>` :
-                     exercise.type === 'translation' ?
-                         `${q.english || q.sentence || ''} <span class="blank" style="min-width: 120px;"></span>` :
+                     (exercise.type === 'translation' || exercise.type.includes('translation')) ?
+                         `${q.english || q.sentence || ''} <span class="blank"></span>` :
                          `${(q.sentence || '').replace(/\[.*?\]/g, '<span class="blank"></span>')}`
                      }
                 </div>
@@ -589,16 +700,22 @@ function generateWorksheetHTML(content: WorksheetContent): string {
             </div>
             `).join('')}
         </div>
+        </div>
         
         <div class="footer">
-            🌟 <span class="gem-accent">www.languagegems.com</span> 🌟
+            <div class="footer-content">
+                <div class="gem-icon"></div>
+                <span><strong>www.languagegems.com</strong></span>
+                <div class="gem-icon"></div>
+            </div>
+            <div class="slogan">Unlock the Gems of Language Learning</div>
         </div>
     </div>
     
     <!-- PAGE 2 -->
     <div class="page">
         <div class="header">
-            <h1>CONTINUED</h1>
+            <h1>MORE PRACTICE</h1>
         </div>
         
         <div class="name-date">
@@ -606,31 +723,106 @@ function generateWorksheetHTML(content: WorksheetContent): string {
             <div>DATE: <span></span></div>
         </div>
         
-        <div class="two-column">
-            ${content.exercises.slice(2, 4).map((exercise, index) => `
-            <div class="section">
-                <div class="section-number">${index + 3}</div>
-                <h3>${exercise.title}</h3>
-                <div class="instructions">${exercise.instructions}</div>
-                ${exercise.questions.slice(0, exercise.type === 'translation' ? 8 : 10).map((q, qIndex) => `
-                <div class="exercise-item">
-                    <span class="number">${qIndex + 1}.</span> 
-                                         ${exercise.type === 'multiple_choice' ? 
-                         `${q.sentence || ''} (${q.options ? q.options.join(' / ') : 'a / b / c'})` :
-                     exercise.type === 'error_correction' ?
-                         `${q.incorrect || q.sentence || ''} <span class="blank"></span>` :
-                     exercise.type === 'translation' ?
-                         `${q.english || q.sentence || ''} <span class="blank" style="min-width: 150px;"></span>` :
-                         `${(q.sentence || '').replace(/\[.*?\]/g, '<span class="blank"></span>')}`
-                     }
-                </div>
-                `).join('')}
-            </div>
-            `).join('')}
+        <div class="content">
+        ${content.exercises.slice(2).map((exercise, index) => {
+            if (exercise.type === 'matching') {
+                return `
+                <div class="section">
+                    <div class="section-number">${index + 3}</div>
+                    <h3>${exercise.title}</h3>
+                    <div class="instructions">${exercise.instructions}</div>
+                    <div class="matching-table">
+                        <div class="matching-column">
+                            <h4>Spanish</h4>
+                            ${exercise.questions.slice(0, 10).map((q, qIndex) => `
+                            <div class="matching-item">
+                                <span class="number">${String.fromCharCode(65 + qIndex)}.</span>
+                                <span>${q.spanish || q.sentence || ''}</span>
+                            </div>
+                            `).join('')}
+                        </div>
+                        <div class="matching-column">
+                            <h4>English</h4>
+                            ${exercise.questions.slice(0, 10).map((q, qIndex) => `
+                            <div class="matching-item">
+                                <span class="number">${qIndex + 1}.</span>
+                                <span>${q.english || q.answer || ''}</span>
+                            </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>`;
+            } else if (exercise.type === 'word_order') {
+                return `
+                <div class="section">
+                    <div class="section-number">${index + 3}</div>
+                    <h3>${exercise.title}</h3>
+                    <div class="instructions">${exercise.instructions}</div>
+                    ${exercise.questions.slice(0, 8).map((q, qIndex) => `
+                    <div class="word-order-item">
+                        <div class="scrambled-words">${String.fromCharCode(65 + qIndex)}. ${q.scrambled || q.sentence || ''}</div>
+                        <div class="answer-line"></div>
+                    </div>
+                    `).join('')}
+                </div>`;
+            } else if (exercise.type === 'translation_both_ways') {
+                return `
+                <div class="section">
+                    <div class="section-number">${index + 3}</div>
+                    <h3>${exercise.title}</h3>
+                    <div class="instructions">${exercise.instructions}</div>
+                    <div class="two-column">
+                        <div>
+                            <h4>Spanish to English</h4>
+                            ${exercise.questions[0]?.items?.slice(0, 6).map((q, qIndex) => `
+                            <div class="exercise-item">
+                                <span class="number">${qIndex + 1}.</span>
+                                ${q.spanish || q.sentence || ''} <span class="blank"></span>
+                            </div>
+                            `).join('') || ''}
+                        </div>
+                        <div>
+                            <h4>English to Spanish</h4>
+                            ${exercise.questions[1]?.items?.slice(0, 6).map((q, qIndex) => `
+                            <div class="exercise-item">
+                                <span class="number">${qIndex + 1}.</span>
+                                ${q.english || q.sentence || ''} <span class="blank"></span>
+                            </div>
+                            `).join('') || ''}
+                        </div>
+                    </div>
+                </div>`;
+            } else {
+                return `
+                <div class="section">
+                    <div class="section-number">${index + 3}</div>
+                    <h3>${exercise.title}</h3>
+                    <div class="instructions">${exercise.instructions}</div>
+                    ${exercise.questions.slice(0, 10).map((q, qIndex) => `
+                    <div class="exercise-item">
+                        <span class="number">${qIndex + 1}.</span> 
+                        ${exercise.type === 'multiple_choice' ? 
+                             `${q.sentence || ''} (${q.options ? q.options.join(' / ') : 'a / b / c'})` :
+                         exercise.type === 'error_correction' ?
+                             `${q.incorrect || q.sentence || ''} <span class="blank"></span>` :
+                         (exercise.type === 'translation' || exercise.type.includes('translation')) ?
+                             `${q.english || q.sentence || ''} <span class="blank"></span>` :
+                             `${(q.sentence || '').replace(/\[.*?\]/g, '<span class="blank"></span>')}`
+                         }
+                    </div>
+                    `).join('')}
+                </div>`;
+            }
+        }).join('')}
         </div>
         
         <div class="footer">
-            🌟 <span class="gem-accent">www.languagegems.com</span> 🌟
+            <div class="footer-content">
+                <div class="gem-icon"></div>
+                <span><strong>www.languagegems.com</strong></span>
+                <div class="gem-icon"></div>
+            </div>
+            <div class="slogan">Unlock the Gems of Language Learning</div>
         </div>
     </div>
 </body>
