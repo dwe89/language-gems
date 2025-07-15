@@ -101,39 +101,38 @@ export default function AdminWorksheetsPage() {
       return;
     }
 
-    // Create a temporary container for the HTML
-    const container = document.createElement('div');
-    container.innerHTML = html;
-    container.style.position = 'absolute';
-    container.style.left = '-9999px';
-    container.style.top = '-9999px';
-    document.body.appendChild(container);
-
-    try {
-      html2pdf()
-        .set({
-          margin: 7,
-          filename: `${filename}.pdf`,
-          image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: { scale: 2, useCORS: true },
-          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        })
-        .from(container)
-        .save()
-        .then(() => {
-          // Clean up
-          document.body.removeChild(container);
-        })
-        .catch((error: Error) => {
-          console.error('PDF generation error:', error);
-          setError('Failed to generate PDF. Please try again.');
-          document.body.removeChild(container);
-        });
-    } catch (error) {
-      console.error('PDF generation error:', error);
-      setError('Failed to generate PDF. Please try again.');
-      document.body.removeChild(container);
+    // Find or create the preview container
+    let previewContainer = document.getElementById('worksheet-preview-container');
+    if (!previewContainer) {
+      setError('Worksheet preview not found. Please try generating the worksheet again.');
+      return;
     }
+
+    // Add a small delay to ensure content is fully rendered
+    setTimeout(() => {
+      try {
+        html2pdf()
+          .set({
+            margin: 7,
+            filename: `${filename}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+          })
+          .from(previewContainer)
+          .save()
+          .then(() => {
+            console.log('PDF generated successfully');
+          })
+          .catch((error: Error) => {
+            console.error('PDF generation error:', error);
+            setError('Failed to generate PDF. Please try again.');
+          });
+      } catch (error) {
+        console.error('PDF generation error:', error);
+        setError('Failed to generate PDF. Please try again.');
+      }
+    }, 500); // 500ms delay to ensure fonts and styles are loaded
   };
 
   return (
@@ -342,6 +341,16 @@ export default function AdminWorksheetsPage() {
                     <BookOpen className="w-4 h-4 mr-2" />
                     Print Worksheet
                   </button>
+                </div>
+                
+                {/* Worksheet Preview */}
+                <div className="mt-6">
+                  <h4 className="font-semibold text-slate-800 mb-3">Worksheet Preview</h4>
+                  <div 
+                    id="worksheet-preview-container"
+                    className="border border-slate-200 rounded-lg bg-white max-h-96 overflow-y-auto"
+                    dangerouslySetInnerHTML={{ __html: generatedWorksheet.html }}
+                  />
                 </div>
               </div>
             </div>
