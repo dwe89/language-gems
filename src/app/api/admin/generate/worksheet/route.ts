@@ -128,14 +128,6 @@ export async function POST(request: NextRequest) {
 
 Return ONLY valid JSON. Use "${topic}" tense consistently throughout.
 
-Heuristic for fitting on a single page:
-- Fill in the Blanks: 8 questions
-- Multiple Choice: 8 questions
-- Error Correction: 6 questions
-- Matching: 6 pairs
-- Word Order: 6 questions
-- Translation (each direction): 6 items
-
 Structure:
 {
   "title": "${topic} in ${language}",
@@ -153,39 +145,116 @@ Structure:
       "type": "fill_in_blanks",
       "title": "Fill in the Blanks", 
       "instructions": "Complete with the correct ${topic} form.",
-      "questions": [8 questions]
+      "questions": [
+        {"sentence": "Yo ___ (hablar) español."},
+        {"sentence": "Tú ___ (comer) pan."},
+        {"sentence": "Él ___ (vivir) aquí."},
+        {"sentence": "Nosotros ___ (leer) libros."},
+        {"sentence": "Vosotros ___ (correr) rápido."},
+        {"sentence": "Ellos ___ (bailar) salsa."},
+        {"sentence": "Ella ___ (trabajar) mucho."},
+        {"sentence": "Tú ___ (escribir) una carta."},
+        {"sentence": "Nosotros ___ (beber) agua."},
+        {"sentence": "Ellas ___ (cantar) bien."}
+      ]
     },
     {
       "type": "multiple_choice",
       "title": "Multiple Choice",
       "instructions": "Choose the correct ${topic} form.",
-      "questions": [8 questions]
+      "questions": [
+        {"sentence": "Yo ___ español.", "options": ["hablo", "habla", "hablan"]},
+        {"sentence": "Tú ___ pan.", "options": ["comes", "come", "comemos"]},
+        {"sentence": "Él ___ aquí.", "options": ["vive", "vivo", "viven"]},
+        {"sentence": "Nosotros ___ libros.", "options": ["leemos", "lee", "leen"]},
+        {"sentence": "Vosotros ___ rápido.", "options": ["corréis", "corre", "corren"]},
+        {"sentence": "Ellos ___ salsa.", "options": ["bailan", "baila", "bailas"]},
+        {"sentence": "Ella ___ mucho.", "options": ["trabaja", "trabajo", "trabajas"]},
+        {"sentence": "Tú ___ una carta.", "options": ["escribes", "escribo", "escriben"]},
+        {"sentence": "Nosotros ___ agua.", "options": ["bebemos", "bebo", "beben"]},
+        {"sentence": "Ellas ___ bien.", "options": ["cantan", "canto", "cantas"]}
+      ]
     },
     {
       "type": "error_correction", 
       "title": "Error Correction",
       "instructions": "Fix the error - write the correct ${topic} form.",
-      "questions": [6 questions]
+      "questions": [
+        {"incorrect": "Yo comen arroz todos los días."},
+        {"incorrect": "Tú habla muy rápido."},
+        {"incorrect": "Nosotros vivís en una casa grande."},
+        {"incorrect": "Ellos estudia en la universidad."},
+        {"incorrect": "Ella trabajan en una oficina."},
+        {"incorrect": "Vosotros corre en el parque."},
+        {"incorrect": "Ustedes lee muchos libros."},
+        {"incorrect": "Mi hermano bailas salsa."},
+        {"incorrect": "Tú escribimos una carta."},
+        {"incorrect": "Yo bebes agua con limón."}
+      ]
     },
     {
       "type": "matching",
       "title": "Match the Words",
       "instructions": "Match the Spanish and English forms.",
-      "questions": [6 pairs]
+      "questions": [
+        {"spanish": "hablo", "english": "I speak"},
+        {"spanish": "comes", "english": "you eat"},
+        {"spanish": "vive", "english": "he/she lives"},
+        {"spanish": "leemos", "english": "we read"},
+        {"spanish": "corréis", "english": "you all run"},
+        {"spanish": "bailan", "english": "they dance"},
+        {"spanish": "trabaja", "english": "she works"},
+        {"spanish": "escribes", "english": "you write"},
+        {"spanish": "bebemos", "english": "we drink"},
+        {"spanish": "cantan", "english": "they sing"}
+      ]
     },
     {
       "type": "word_order",
       "title": "Put the Words in Correct Order",
       "instructions": "Rearrange to make correct sentences.",
-      "questions": [6 questions]
+      "questions": [
+        {"scrambled": "español / hablo / yo"},
+        {"scrambled": "come / ella / pan"},
+        {"scrambled": "libros / leemos / nosotros"},
+        {"scrambled": "rápido / vosotros / corréis"},
+        {"scrambled": "salsa / ellos / bailan"},
+        {"scrambled": "mucho / trabaja / ella"},
+        {"scrambled": "una carta / tú / escribes"},
+        {"scrambled": "agua / bebemos / nosotros"},
+        {"scrambled": "bien / ellas / cantan"},
+        {"scrambled": "trabajo / yo / hago"}
+      ]
     },
     {
       "type": "translation_both_ways",
       "title": "Translation Practice", 
       "instructions": "Translate between Spanish and English.",
       "questions": [
-        {"section": "spanish_to_english", "items": [6 items]},
-        {"section": "english_to_spanish", "items": [6 items]}
+        {"section": "spanish_to_english", "items": [
+          {"spanish": "Hablo español."},
+          {"spanish": "Come pan."},
+          {"spanish": "Vivimos en Madrid."},
+          {"spanish": "Leemos libros."},
+          {"spanish": "Ellos bailan salsa."},
+          {"spanish": "Ella trabaja mucho."},
+          {"spanish": "Tú escribes una carta."},
+          {"spanish": "Nosotros bebemos agua."},
+          {"spanish": "Ellas cantan bien."},
+          {"spanish": "Yo hago trabajo."}
+        ]},
+        {"section": "english_to_spanish", "items": [
+          {"english": "I speak Spanish."},
+          {"english": "You eat bread."},
+          {"english": "We live in Madrid."},
+          {"english": "We read books."},
+          {"english": "They dance salsa."},
+          {"english": "She works a lot."},
+          {"english": "You write a letter."},
+          {"english": "We drink water."},
+          {"english": "They sing well."},
+          {"english": "I do work."}
+        ]}
       ]
     }
   ]
@@ -369,23 +438,11 @@ function generateWorksheetHTML(content: WorksheetContent): string {
             box-sizing: border-box;
         }
         
-        html, body {
-            height: 100%;
-        }
         body {
             font-family: 'Open Sans', sans-serif;
             background: linear-gradient(135deg, #f5f3f0 0%, #ede8e3 100%);
             color: #333;
             line-height: 1.4;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-        .page {
-            /* Remove flexbox for print overflow compatibility */
-        }
-        .footer {
-            /* No sticky/flexbox, just a normal block at the end of .page */
         }
         
         .page {
@@ -685,10 +742,12 @@ function generateWorksheetHTML(content: WorksheetContent): string {
         <div class="header">
             <h1>${content.title.toUpperCase()}</h1>
         </div>
+        
         <div class="name-date">
             <div>NAME: <span></span></div>
             <div>DATE: <span></span></div>
         </div>
+
         <div class="content">
         ${content.introductoryExplanation ? `
         <div class="intro-section">
@@ -756,6 +815,15 @@ function generateWorksheetHTML(content: WorksheetContent): string {
     
     <!-- PAGE 2 -->
     <div class="page">
+        <div class="header">
+            <h1>MORE PRACTICE</h1>
+        </div>
+        
+        <div class="name-date">
+            <div>NAME: <span></span></div>
+            <div>DATE: <span></span></div>
+        </div>
+        
         <div class="content">
         ${content.exercises.slice(2).map((exercise, index) => {
             if (exercise.type === 'matching') {
