@@ -25,7 +25,6 @@ const LANGUAGES: CurriculumLevel[] = [
   { id: 'spanish', name: 'Spanish', description: 'Comprehensive Spanish language resources', resourceCount: 45 },
   { id: 'french', name: 'French', description: 'Complete French curriculum materials', resourceCount: 38 },
   { id: 'german', name: 'German', description: 'Structured German learning resources', resourceCount: 29 },
-  { id: 'italian', name: 'Italian', description: 'Italian language learning materials', resourceCount: 15 }
 ];
 
 const KEY_STAGES: CurriculumLevel[] = [
@@ -36,19 +35,30 @@ const KEY_STAGES: CurriculumLevel[] = [
 
 const TOPICS: Record<string, Topic[]> = {
   ks3: [
-    { id: 'identity', name: 'Identity & Family', description: 'Personal information, family members, relationships', resourceCount: 12, icon: <Users className="h-5 w-5" /> },
-    { id: 'school', name: 'School Life', description: 'Subjects, facilities, school routines', resourceCount: 8, icon: <Book className="h-5 w-5" /> },
-    { id: 'free-time', name: 'Free Time & Hobbies', description: 'Sports, music, entertainment, leisure activities', resourceCount: 10, icon: <Globe className="h-5 w-5" /> },
-    { id: 'local-area', name: 'Local Area', description: 'Towns, directions, transport, shopping', resourceCount: 9, icon: <Globe className="h-5 w-5" /> },
-    { id: 'house-home', name: 'House & Home', description: 'Rooms, furniture, household items', resourceCount: 7, icon: <Globe className="h-5 w-5" /> },
-    { id: 'food-drink', name: 'Food & Drink', description: 'Meals, restaurants, healthy eating', resourceCount: 8, icon: <Globe className="h-5 w-5" /> }
+    { id: 'basics-core-language', name: 'Basics & Core Language', description: 'Greetings, common phrases, numbers, classroom language, and more', resourceCount: 10, icon: <Users className="h-5 w-5" /> },
+    { id: 'identity-personal-life', name: 'Identity & Personal Life', description: 'Personal information, family, friends, and pets', resourceCount: 10, icon: <Users className="h-5 w-5" /> },
+    { id: 'home-local-area', name: 'Home & Local Area', description: 'House, local area, shops, and directions', resourceCount: 10, icon: <Globe className="h-5 w-5" /> },
+    { id: 'school-education', name: 'School & Education', description: 'School subjects, rules, objects, and routines', resourceCount: 10, icon: <Book className="h-5 w-5" /> },
+    { id: 'free-time-leisure', name: 'Free Time & Leisure', description: 'Hobbies, sports, music, and social activities', resourceCount: 10, icon: <Globe className="h-5 w-5" /> },
+    { id: 'food-drink', name: 'Food & Drink', description: 'Meals, food vocabulary, shopping, and eating out', resourceCount: 10, icon: <Globe className="h-5 w-5" /> },
+    { id: 'clothes-shopping', name: 'Clothes & Shopping', description: 'Clothes, accessories, and shopping phrases', resourceCount: 10, icon: <Globe className="h-5 w-5" /> },
+    { id: 'technology-communication', name: 'Technology & Communication', description: 'Mobile phones, social media, and digital devices', resourceCount: 10, icon: <Globe className="h-5 w-5" /> },
+    { id: 'health-lifestyle', name: 'Health & Lifestyle', description: 'Body, illnesses, doctor, and healthy living', resourceCount: 10, icon: <Globe className="h-5 w-5" /> },
+    { id: 'holidays-travel', name: 'Holidays & Travel', description: 'Countries, transport, accommodation, and weather', resourceCount: 10, icon: <Globe className="h-5 w-5" /> },
+    { id: 'jobs-future-plans', name: 'Jobs & Future Plans', description: 'Professions, ambitions, and job qualities', resourceCount: 10, icon: <Globe className="h-5 w-5" /> },
+    { id: 'nature-environment', name: 'Nature & Environment', description: 'Animals, weather, environmental problems, and global issues', resourceCount: 10, icon: <Globe className="h-5 w-5" /> },
+    { id: 'culture-festivals', name: 'Culture & Festivals', description: 'Traditions, festivals, and celebrations in Spanish-speaking countries', resourceCount: 10, icon: <Globe className="h-5 w-5" /> },
   ],
   ks4: [
-    { id: 'technology', name: 'Technology & Social Media', description: 'Digital communication, online safety', resourceCount: 6, icon: <Globe className="h-5 w-5" /> },
-    { id: 'environment', name: 'Environment & Global Issues', description: 'Climate change, conservation, social problems', resourceCount: 8, icon: <Globe className="h-5 w-5" /> },
-    { id: 'travel-tourism', name: 'Travel & Tourism', description: 'Holidays, transport, cultural experiences', resourceCount: 7, icon: <Globe className="h-5 w-5" /> },
-    { id: 'work-career', name: 'Work & Career', description: 'Jobs, work experience, future plans', resourceCount: 9, icon: <Globe className="h-5 w-5" /> },
-    { id: 'culture', name: 'Culture & Festivals', description: 'Traditions, celebrations, cultural differences', resourceCount: 6, icon: <Globe className="h-5 w-5" /> }
+    { id: 'identity-and-relationships-with-others', name: 'Identity and relationships with others', description: 'Personal identity, family, friends, and social relationships', resourceCount: 8, icon: <Users className="h-5 w-5" /> },
+    { id: 'healthy-living-and-lifestyle', name: 'Healthy living and lifestyle', description: 'Health, fitness, diet, and lifestyle choices', resourceCount: 7, icon: <Globe className="h-5 w-5" /> },
+    { id: 'education-and-work', name: 'Education and work', description: 'School life, career choices, and work experience', resourceCount: 9, icon: <Book className="h-5 w-5" /> },
+    { id: 'free-time-activities', name: 'Free-time activities', description: 'Hobbies, sports, entertainment, and leisure', resourceCount: 10, icon: <Globe className="h-5 w-5" /> },
+    { id: 'customs-festivals-and-celebrations', name: 'Customs, festivals and celebrations', description: 'Traditions, cultural events, and celebrations', resourceCount: 6, icon: <Globe className="h-5 w-5" /> },
+    { id: 'celebrity-culture', name: 'Celebrity culture', description: 'Famous people, media, and popular culture', resourceCount: 5, icon: <Globe className="h-5 w-5" /> },
+    { id: 'travel-and-tourism-including-places-of-interest', name: 'Travel and tourism, including places of interest', description: 'Holidays, transport, destinations, and tourist attractions', resourceCount: 8, icon: <Globe className="h-5 w-5" /> },
+    { id: 'media-and-technology', name: 'Media and technology', description: 'Digital communication, social media, and modern technology', resourceCount: 7, icon: <Globe className="h-5 w-5" /> },
+    { id: 'the-environment-and-where-people-live', name: 'The environment and where people live', description: 'Environmental issues, housing, and local areas', resourceCount: 9, icon: <Globe className="h-5 w-5" /> }
   ],
   ks5: [
     { id: 'literature', name: 'Literature & Arts', description: 'Literary analysis, cultural movements', resourceCount: 5, icon: <Book className="h-5 w-5" /> },
@@ -59,67 +69,10 @@ const TOPICS: Record<string, Topic[]> = {
 };
 
 export default function CurriculumNavigator({ onReturnToHub }: CurriculumNavigatorProps) {
-  const [selectedLanguage, setSelectedLanguage] = useState<string | null>(null);
-  const [selectedKeyStage, setSelectedKeyStage] = useState<string | null>(null);
-  const [breadcrumb, setBreadcrumb] = useState<string[]>([]);
-
   const handleLanguageSelect = (languageId: string) => {
-    setSelectedLanguage(languageId);
-    setSelectedKeyStage(null);
-    setBreadcrumb([LANGUAGES.find(l => l.id === languageId)?.name || '']);
+    // Navigate directly to the language page
+    window.location.href = `/resources/${languageId}`;
   };
-
-  const handleKeyStageSelect = (keyStageId: string) => {
-    setSelectedKeyStage(keyStageId);
-    const keyStage = KEY_STAGES.find(ks => ks.id === keyStageId);
-    setBreadcrumb(prev => [...prev.slice(0, 1), keyStage?.name || '']);
-  };
-
-  const handleTopicSelect = (topicId: string) => {
-    const topic = TOPICS[selectedKeyStage || '']?.find(t => t.id === topicId);
-    if (topic && selectedLanguage && selectedKeyStage) {
-      // Navigate to specific topic page
-      window.location.href = `/resources/${selectedLanguage}/${selectedKeyStage}/${topicId}`;
-    }
-  };
-
-  const resetToLanguages = () => {
-    setSelectedLanguage(null);
-    setSelectedKeyStage(null);
-    setBreadcrumb([]);
-  };
-
-  const resetToKeyStages = () => {
-    setSelectedKeyStage(null);
-    setBreadcrumb(prev => prev.slice(0, 1));
-  };
-
-  const renderBreadcrumb = () => (
-    <div className="flex items-center space-x-2 mb-6 text-sm">
-      <button
-        onClick={onReturnToHub}
-        className="text-indigo-600 hover:text-indigo-700 font-medium"
-      >
-        Resources Hub
-      </button>
-      <ChevronRight className="h-4 w-4 text-slate-400" />
-      <span className="text-slate-600">Curriculum View</span>
-      {breadcrumb.map((crumb, index) => (
-        <React.Fragment key={index}>
-          <ChevronRight className="h-4 w-4 text-slate-400" />
-          <button
-            onClick={() => {
-              if (index === 0) resetToKeyStages();
-              else if (index === 1) resetToLanguages();
-            }}
-            className={`${index === breadcrumb.length - 1 ? 'text-slate-800 font-medium' : 'text-indigo-600 hover:text-indigo-700'}`}
-          >
-            {crumb}
-          </button>
-        </React.Fragment>
-      ))}
-    </div>
-  );
 
   return (
     <div className="space-y-6">
@@ -140,102 +93,29 @@ export default function CurriculumNavigator({ onReturnToHub }: CurriculumNavigat
         </p>
       </div>
 
-      {/* Breadcrumb */}
-      {breadcrumb.length > 0 && renderBreadcrumb()}
-
       {/* Language Selection */}
-      {!selectedLanguage && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {LANGUAGES.map((language) => (
-            <button
-              key={language.id}
-              onClick={() => handleLanguageSelect(language.id)}
-              className="bg-white rounded-xl p-6 border border-slate-200 hover:border-indigo-300 hover:shadow-lg transition-all duration-300 text-left group"
-            >
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-xl font-bold text-slate-800 group-hover:text-indigo-600">
-                  {language.name}
-                </h3>
-                <ChevronRight className="h-5 w-5 text-slate-400 group-hover:text-indigo-500" />
-              </div>
-              <p className="text-slate-600 mb-3">
-                {language.description}
-              </p>
-              <div className="text-sm text-indigo-600 font-medium">
-                {language.resourceCount} resources available
-              </div>
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* Key Stage Selection */}
-      {selectedLanguage && !selectedKeyStage && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {KEY_STAGES.map((keyStage) => (
-            <button
-              key={keyStage.id}
-              onClick={() => handleKeyStageSelect(keyStage.id)}
-              className="bg-white rounded-xl p-6 border border-slate-200 hover:border-indigo-300 hover:shadow-lg transition-all duration-300 text-left group"
-            >
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-xl font-bold text-slate-800 group-hover:text-indigo-600">
-                  {keyStage.name}
-                </h3>
-                <ChevronRight className="h-5 w-5 text-slate-400 group-hover:text-indigo-500" />
-              </div>
-              <p className="text-slate-600 mb-3">
-                {keyStage.description}
-              </p>
-              <div className="text-sm text-indigo-600 font-medium">
-                {keyStage.resourceCount} resources available
-              </div>
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* Topic Selection */}
-      {selectedLanguage && selectedKeyStage && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-2xl font-bold text-slate-800">Topics</h3>
-            <Link
-              href={`/resources/${selectedLanguage}/${selectedKeyStage}`}
-              className="inline-flex items-center text-indigo-600 hover:text-indigo-700 font-medium"
-            >
-              <Search className="h-4 w-4 mr-2" />
-              Search All Resources
-            </Link>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {TOPICS[selectedKeyStage]?.map((topic) => (
-              <button
-                key={topic.id}
-                onClick={() => handleTopicSelect(topic.id)}
-                className="bg-white rounded-xl p-6 border border-slate-200 hover:border-indigo-300 hover:shadow-lg transition-all duration-300 text-left group"
-              >
-                <div className="flex items-center mb-3">
-                  <div className="p-2 bg-indigo-100 rounded-lg mr-3 group-hover:bg-indigo-200">
-                    {topic.icon}
-                  </div>
-                  <h4 className="text-lg font-bold text-slate-800 group-hover:text-indigo-600 flex-1">
-                    {topic.name}
-                  </h4>
-                  <ChevronRight className="h-5 w-5 text-slate-400 group-hover:text-indigo-500" />
-                </div>
-                <p className="text-slate-600 mb-3 text-sm">
-                  {topic.description}
-                </p>
-                <div className="text-sm text-indigo-600 font-medium">
-                  {topic.resourceCount} resources
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {LANGUAGES.map((language) => (
+          <button
+            key={language.id}
+            onClick={() => handleLanguageSelect(language.id)}
+            className="bg-white rounded-xl p-6 border border-slate-200 hover:border-indigo-300 hover:shadow-lg transition-all duration-300 text-left group"
+          >
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-xl font-bold text-slate-800 group-hover:text-indigo-600">
+                {language.name}
+              </h3>
+              <ChevronRight className="h-5 w-5 text-slate-400 group-hover:text-indigo-500" />
+            </div>
+            <p className="text-slate-600 mb-3">
+              {language.description}
+            </p>
+            <div className="text-sm text-indigo-600 font-medium">
+              {language.resourceCount} resources available
+            </div>
+          </button>
+        ))}
+      </div>
     </div>
   );
 } 

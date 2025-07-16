@@ -126,13 +126,6 @@ export default function AdminDashboardPage() {
       icon: Package,
       color: 'bg-blue-500 hover:bg-blue-600',
     },
-    {
-      title: 'View Shop',
-      description: 'See how your products appear to customers',
-      href: '/shop',
-      icon: ShoppingCart,
-      color: 'bg-purple-500 hover:bg-purple-600',
-    },
   ];
 
   const upcomingFeatures = [

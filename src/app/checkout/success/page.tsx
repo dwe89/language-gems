@@ -267,15 +267,7 @@ export default function CheckoutSuccessPage() {
             <Download className="h-5 w-5 mr-2" />
             View My Orders
           </Link>
-          
-          <Link
-            href="/shop"
-            className="flex items-center justify-center px-6 py-3 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"
-          >
-            <ShoppingBag className="h-5 w-5 mr-2" />
-            Continue Shopping
-          </Link>
-          
+          {/* Removed 'Continue Shopping' button to /shop */}
           <Link
             href="/"
             className="flex items-center justify-center px-6 py-3 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"

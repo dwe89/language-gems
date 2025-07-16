@@ -176,13 +176,7 @@ export default function AdminProductsPage() {
           <h1 className="text-3xl font-bold text-slate-800">Product Management</h1>
           <p className="text-slate-600 mt-2">Manage your digital products and files</p>
         </div>
-        <a
-          href="/admin/new"
-          className="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition-colors flex items-center space-x-2"
-        >
-          <Plus className="w-5 h-5" />
-          <span>Add Product</span>
-        </a>
+        {/* Removed Add Product button */}
       </div>
 
       {/* Products Table */}

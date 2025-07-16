@@ -117,13 +117,6 @@ export default function AdminLayout({
                   <span>Products</span>
                 </Link>
                 <Link 
-                  href="/admin/freebies" 
-                  className="flex items-center space-x-2 text-slate-700 hover:text-indigo-600 font-medium transition-colors"
-                >
-                  <FileText className="w-4 h-4" />
-                  <span>Freebies</span>
-                </Link>
-                <Link 
                   href="/admin/blog" 
                   className="flex items-center space-x-2 text-slate-700 hover:text-indigo-600 font-medium transition-colors"
                 >
@@ -145,17 +138,6 @@ export default function AdminLayout({
                   <span>Add Product</span>
                 </Link>
               </div>
-            </div>
-            <div className="flex items-center space-x-4">
-              <div className="text-sm text-slate-600">
-                Welcome, {user.email}
-              </div>
-              <button 
-                onClick={handleSignOut}
-                className="text-slate-700 hover:text-red-600 font-medium transition-colors"
-              >
-                Logout
-              </button>
             </div>
           </div>
         </div>

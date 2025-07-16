@@ -100,13 +100,6 @@ export const getNavigationItems = (isAuthenticated: boolean = false, userEmail?:
       comingSoon: false,
       comingSoonPath: null
     },
-    {
-      name: 'Shop',
-      path: '/shop',
-      enabled: flags.shop,
-      comingSoon: false,
-      comingSoonPath: null
-    }
   ];
 
   return baseItems;

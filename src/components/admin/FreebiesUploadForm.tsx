@@ -38,7 +38,21 @@ const CATEGORIES = [
 ];
 
 const TOPICS = {
-  themes: ['Identity & Family', 'School Life', 'Free Time & Hobbies', 'Local Area & Town', 'House & Home', 'Food & Drink', 'Technology', 'Environment', 'Travel & Holidays'],
+  themes: [
+    'Basics & Core Language',
+    'Identity & Personal Life',
+    'Home & Local Area',
+    'School & Education',
+    'Free Time & Leisure',
+    'Food & Drink',
+    'Clothes & Shopping',
+    'Technology & Communication',
+    'Health & Lifestyle',
+    'Holidays & Travel',
+    'Jobs & Future Plans',
+    'Nature & Environment',
+    'Culture & Festivals',
+  ],
   grammar: ['Present Tense', 'Past Tense', 'Future Tense', 'Ser vs Estar', 'Adjectives', 'Numbers', 'Pronouns', 'Prepositions'],
   'exam-prep': ['Speaking Practice', 'Listening Exercises', 'Reading Comprehension', 'Writing Tasks', 'Photo Cards', 'Role Play'],
   vocabulary: ['Basic Vocabulary', 'Advanced Vocabulary', 'Thematic Lists', 'Cognates', 'False Friends'],

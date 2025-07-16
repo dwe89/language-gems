@@ -132,43 +132,6 @@ export default function TeacherNavigation({ children }: TeacherNavigationProps) 
                   Upgrade
                 </Link>
               )}
-
-              {/* User Menu */}
-              <div className="relative">
-                <button
-                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  className="flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                >
-                  <div className="h-8 w-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center">
-                    <User className="h-4 w-4 text-white" />
-                  </div>
-                  <ChevronDown className="h-4 w-4 ml-1 text-slate-400" />
-                </button>
-
-                {isDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 z-50">
-                    <div className="py-1">
-                      <div className="px-4 py-2 text-sm text-slate-500 border-b">
-                        {user?.email}
-                      </div>
-                      <Link
-                        href="/account/settings"
-                        className="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
-                      >
-                        <Settings className="h-4 w-4 mr-2" />
-                        Settings
-                      </Link>
-                      <button
-                        onClick={handleSignOut}
-                        className="flex items-center w-full px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
-                      >
-                        <LogOut className="h-4 w-4 mr-2" />
-                        Sign Out
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
             </div>
 
             {/* Mobile menu button */}
@@ -228,30 +191,6 @@ export default function TeacherNavigation({ children }: TeacherNavigationProps) 
                   Upgrade to Premium
                 </Link>
               )}
-
-              <div className="border-t border-slate-200 pt-3">
-                <div className="px-3 py-2 text-xs text-slate-500">
-                  {user?.email}
-                </div>
-                <Link
-                  href="/account/settings"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center w-full px-3 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg"
-                >
-                  <Settings className="h-4 w-4 mr-3" />
-                  Settings
-                </Link>
-                <button
-                  onClick={() => {
-                    handleSignOut();
-                    setIsMobileMenuOpen(false);
-                  }}
-                  className="flex items-center w-full px-3 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg"
-                >
-                  <LogOut className="h-4 w-4 mr-3" />
-                  Sign Out
-                </button>
-              </div>
             </div>
           </div>
         )}

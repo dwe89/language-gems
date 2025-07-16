@@ -42,19 +42,30 @@ const RESOURCE_TYPES = ['worksheet', 'audio', 'video', 'interactive', 'assessmen
 // Topic configurations by key stage (matching our dynamic page structure)
 const TOPICS_BY_KEY_STAGE: Record<string, Record<string, string>> = {
   ks3: {
-    identity: 'Identity & Family',
-    school: 'School Life',
-    'free-time': 'Free Time & Hobbies',
-    'local-area': 'Local Area',
-    'house-home': 'House & Home',
-    'food-drink': 'Food & Drink'
+    'basics-core-language': 'Basics & Core Language',
+    'identity-personal-life': 'Identity & Personal Life',
+    'home-local-area': 'Home & Local Area',
+    'school-education': 'School & Education',
+    'free-time-leisure': 'Free Time & Leisure',
+    'food-drink': 'Food & Drink',
+    'clothes-shopping': 'Clothes & Shopping',
+    'technology-communication': 'Technology & Communication',
+    'health-lifestyle': 'Health & Lifestyle',
+    'holidays-travel': 'Holidays & Travel',
+    'jobs-future-plans': 'Jobs & Future Plans',
+    'nature-environment': 'Nature & Environment',
+    'culture-festivals': 'Culture & Festivals',
   },
   ks4: {
-    technology: 'Technology & Social Media',
-    environment: 'Environment & Global Issues',
-    'travel-tourism': 'Travel & Tourism',
-    'work-career': 'Work & Career',
-    culture: 'Culture & Festivals'
+    'identity-and-relationships-with-others': 'Identity and relationships with others',
+    'healthy-living-and-lifestyle': 'Healthy living and lifestyle',
+    'education-and-work': 'Education and work',
+    'free-time-activities': 'Free-time activities',
+    'customs-festivals-and-celebrations': 'Customs, festivals and celebrations',
+    'celebrity-culture': 'Celebrity culture',
+    'travel-and-tourism-including-places-of-interest': 'Travel and tourism, including places of interest',
+    'media-and-technology': 'Media and technology',
+    'the-environment-and-where-people-live': 'The environment and where people live'
   },
   ks5: {
     literature: 'Literature & Arts',

@@ -23,6 +23,13 @@ interface ProductForm {
   table_of_contents: string[];
   sample_content: string;
   preview_images: File[];
+  // Curriculum categorization
+  language: string;
+  key_stage: string;
+  category_type: string;
+  topic_slug: string;
+  theme_number: number | null;
+  topic_number: number | null;
 }
 
 export default function AdminNewProductPage() {
@@ -48,6 +55,13 @@ export default function AdminNewProductPage() {
     table_of_contents: [],
     sample_content: '',
     preview_images: [],
+    // Curriculum categorization
+    language: '',
+    key_stage: '',
+    category_type: 'topic',
+    topic_slug: '',
+    theme_number: null,
+    topic_number: null,
   });
   const [errors, setErrors] = useState<string[]>([]);
   const [success, setSuccess] = useState(false);
@@ -336,6 +350,13 @@ export default function AdminNewProductPage() {
         table_of_contents: formData.table_of_contents.length > 0 ? formData.table_of_contents : null,
         sample_content: formData.sample_content || null,
         preview_images: previewImageUrls.length > 0 ? previewImageUrls : null,
+        // Curriculum categorization
+        language: formData.language,
+        key_stage: formData.key_stage,
+        category_type: formData.category_type,
+        topic_slug: formData.topic_slug,
+        theme_number: formData.theme_number,
+        topic_number: formData.topic_number,
       };
 
       setUploadProgress(60);
@@ -377,6 +398,51 @@ export default function AdminNewProductPage() {
 
   const formatPrice = (pricePence: number) => {
     return `£${(pricePence / 100).toFixed(2)}`;
+  };
+
+  // Get topic options based on selected key stage
+  const getTopicOptions = () => {
+    if (!formData.key_stage) return [];
+
+    const topicMappings = {
+      ks3: [
+        { value: 'basics-core-language', label: 'Basics & Core Language', theme_number: null, topic_number: null },
+        { value: 'identity-personal-life', label: 'Identity & Personal Life', theme_number: null, topic_number: null },
+        { value: 'home-local-area', label: 'Home & Local Area', theme_number: null, topic_number: null },
+        { value: 'school-education', label: 'School & Education', theme_number: null, topic_number: null },
+        { value: 'free-time-leisure', label: 'Free Time & Leisure', theme_number: null, topic_number: null },
+        { value: 'food-drink', label: 'Food & Drink', theme_number: null, topic_number: null },
+        { value: 'clothes-shopping', label: 'Clothes & Shopping', theme_number: null, topic_number: null },
+        { value: 'technology-communication', label: 'Technology & Communication', theme_number: null, topic_number: null },
+        { value: 'health-lifestyle', label: 'Health & Lifestyle', theme_number: null, topic_number: null },
+        { value: 'holidays-travel', label: 'Holidays & Travel', theme_number: null, topic_number: null },
+        { value: 'jobs-future-plans', label: 'Jobs & Future Plans', theme_number: null, topic_number: null },
+        { value: 'nature-environment', label: 'Nature & Environment', theme_number: null, topic_number: null },
+        { value: 'culture-festivals', label: 'Culture & Festivals', theme_number: null, topic_number: null },
+      ],
+      ks4: [
+        // Theme 1: People and lifestyle
+        { value: 'identity-and-relationships-with-others', label: 'Theme 1: Identity and relationships with others', theme_number: 1, topic_number: 1 },
+        { value: 'healthy-living-and-lifestyle', label: 'Theme 1: Healthy living and lifestyle', theme_number: 1, topic_number: 2 },
+        { value: 'education-and-work', label: 'Theme 1: Education and work', theme_number: 1, topic_number: 3 },
+        // Theme 2: Popular culture
+        { value: 'free-time-activities', label: 'Theme 2: Free-time activities', theme_number: 2, topic_number: 1 },
+        { value: 'customs-festivals-and-celebrations', label: 'Theme 2: Customs, festivals and celebrations', theme_number: 2, topic_number: 2 },
+        { value: 'celebrity-culture', label: 'Theme 2: Celebrity culture', theme_number: 2, topic_number: 3 },
+        // Theme 3: Communication and the world around us
+        { value: 'travel-and-tourism-including-places-of-interest', label: 'Theme 3: Travel and tourism, including places of interest', theme_number: 3, topic_number: 1 },
+        { value: 'media-and-technology', label: 'Theme 3: Media and technology', theme_number: 3, topic_number: 2 },
+        { value: 'the-environment-and-where-people-live', label: 'Theme 3: The environment and where people live', theme_number: 3, topic_number: 3 }
+      ],
+      ks5: [
+        { value: 'literature', label: 'Literature & Arts', theme_number: null, topic_number: null },
+        { value: 'politics-society', label: 'Politics & Society', theme_number: null, topic_number: null },
+        { value: 'business-economics', label: 'Business & Economics', theme_number: null, topic_number: null },
+        { value: 'science-technology', label: 'Science & Technology', theme_number: null, topic_number: null }
+      ]
+    };
+
+    return topicMappings[formData.key_stage as keyof typeof topicMappings] || [];
   };
 
   // Show loading state while checking authentication
@@ -682,10 +748,114 @@ Use double line breaks for paragraphs.
               </div>
             </div>
 
+            {/* Curriculum Categorization */}
+            <div className="border-t pt-6">
+              <h3 className="text-lg font-medium text-slate-800 mb-4">Curriculum Categorization</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                {/* Language */}
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Language *
+                  </label>
+                  <select
+                    value={formData.language || ''}
+                    onChange={(e) => setFormData(prev => ({ ...prev, language: e.target.value, key_stage: '', category_type: 'topic', topic_slug: '' }))}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    required
+                    disabled={loading}
+                  >
+                    <option value="">Select Language</option>
+                    <option value="spanish">Spanish</option>
+                    <option value="french">French</option>
+                    <option value="german">German</option>
+                  </select>
+                </div>
+
+                {/* Key Stage */}
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Key Stage *
+                  </label>
+                  <select
+                    value={formData.key_stage || ''}
+                    onChange={(e) => setFormData(prev => ({ ...prev, key_stage: e.target.value, category_type: 'topic', topic_slug: '' }))}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    required
+                    disabled={loading || !formData.language}
+                  >
+                    <option value="">Select Key Stage</option>
+                    <option value="ks3">KS3 (Years 7-9)</option>
+                    <option value="ks4">KS4 (Years 10-11)</option>
+                    <option value="ks5">KS5 (Years 12-13)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Category Type */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Category Type *
+                </label>
+                <select
+                  value={formData.category_type}
+                  onChange={(e) => setFormData(prev => ({ ...prev, category_type: e.target.value, topic_slug: '', theme_number: null, topic_number: null }))}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  required
+                  disabled={loading || !formData.key_stage}
+                >
+                  <option value="topic">Curriculum Topics</option>
+                  <option value="grammar">Grammar</option>
+                  <option value="exam-practice">Exam Practice</option>
+                  <option value="core-skills">Core Skills</option>
+                  <option value="knowledge-organisers">Knowledge Organisers</option>
+                </select>
+                <p className="text-sm text-slate-500 mt-1">
+                  {formData.category_type === 'topic' 
+                    ? 'Resources tied to specific curriculum topics' 
+                    : 'General skill-based resources not tied to specific topics'
+                  }
+                </p>
+              </div>
+
+              {/* Topic Selection (only for topic category) */}
+              {formData.category_type === 'topic' && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Topic *
+                  </label>
+                  <select
+                    value={formData.topic_slug || ''}
+                    onChange={(e) => {
+                      const selectedTopic = getTopicOptions().find(t => t.value === e.target.value);
+                      setFormData(prev => ({ 
+                        ...prev, 
+                        topic_slug: e.target.value,
+                        theme_number: selectedTopic?.theme_number || null,
+                        topic_number: selectedTopic?.topic_number || null
+                      }));
+                    }}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    required
+                    disabled={loading || !formData.key_stage}
+                  >
+                    <option value="">Select Topic</option>
+                    {getTopicOptions().map(topic => (
+                      <option key={topic.value} value={topic.value}>
+                        {topic.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              <p className="text-sm text-slate-500 mt-2">
+                This determines where your resource will appear in the curriculum structure.
+              </p>
+            </div>
+
             {/* Tags */}
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                Tags
+                Additional Tags (Optional)
               </label>
               <div className="space-y-3">
                 <div className="flex space-x-2">
@@ -740,7 +910,7 @@ Use double line breaks for paragraphs.
                   </div>
                 )}
                 <p className="text-sm text-slate-500">
-                  Tags help categorize your product and make it easier to find.
+                  Additional tags for search and filtering (e.g., grammar, vocabulary, exam-prep).
                 </p>
               </div>
             </div>

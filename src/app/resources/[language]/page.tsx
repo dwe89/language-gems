@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, BookOpen, GraduationCap, Users, ChevronRight, Star, Download, Globe } from 'lucide-react';
-import FreebiesBreadcrumb from '../../../components/freebies/FreebiesBreadcrumb';
+import { ArrowLeft, BookOpen, GraduationCap, Users, ChevronRight, ExternalLink } from 'lucide-react';
 
 interface PageProps {
   params: {
@@ -17,51 +16,12 @@ interface KeyStage {
   description: string;
   yearGroups: string;
   topicCount: number;
-  resourceCount: number;
-  color: string;
-  bgColor: string;
-  borderColor: string;
-}
-
-interface FeaturedResource {
-  id: string;
-  title: string;
-  description: string;
-  level: string;
-  topicArea: string;
-  downloadCount: number;
-  featured: boolean;
 }
 
 const LANGUAGE_CONFIGS = {
-  spanish: { 
-    name: 'Spanish', 
-    flag: '🇪🇸', 
-    color: 'from-red-500 to-yellow-500',
-    totalResources: 62,
-    totalDownloads: '3.2k'
-  },
-  french: { 
-    name: 'French', 
-    flag: '🇫🇷', 
-    color: 'from-blue-500 to-red-500',
-    totalResources: 58,
-    totalDownloads: '2.8k'
-  },
-  german: { 
-    name: 'German', 
-    flag: '🇩🇪', 
-    color: 'from-black to-red-500',
-    totalResources: 45,
-    totalDownloads: '2.1k'
-  },
-  italian: { 
-    name: 'Italian', 
-    flag: '🇮🇹', 
-    color: 'from-green-500 to-red-500',
-    totalResources: 38,
-    totalDownloads: '1.9k'
-  }
+  spanish: { name: 'Spanish', flag: '🇪🇸' },
+  french: { name: 'French', flag: '🇫🇷' },
+  german: { name: 'German', flag: '🇩🇪' }
 };
 
 const KEY_STAGES: KeyStage[] = [
@@ -70,47 +30,35 @@ const KEY_STAGES: KeyStage[] = [
     name: 'Key Stage 3',
     description: 'Foundation vocabulary and grammar for beginners',
     yearGroups: 'Years 7-9 (Ages 11-14)',
-    topicCount: 6,
-    resourceCount: 28,
-    color: 'text-blue-600',
-    bgColor: 'bg-blue-50',
-    borderColor: 'border-blue-200'
+    topicCount: 6
   },
   {
     id: 'ks4',
     name: 'Key Stage 4',
     description: 'GCSE preparation materials and exam practice',
     yearGroups: 'Years 10-11 (Ages 14-16)',
-    topicCount: 5,
-    resourceCount: 22,
-    color: 'text-green-600',
-    bgColor: 'bg-green-50',
-    borderColor: 'border-green-200'
+    topicCount: 9
   },
   {
     id: 'ks5',
     name: 'Key Stage 5',
     description: 'A-Level content and advanced language skills',
     yearGroups: 'Years 12-13 (Ages 16-18)',
-    topicCount: 4,
-    resourceCount: 15,
-    color: 'text-purple-600',
-    bgColor: 'bg-purple-50',
-    borderColor: 'border-purple-200'
+    topicCount: 4
   }
 ];
 
 export default function LanguagePage({ params }: PageProps) {
   const { language } = params;
   const languageConfig = LANGUAGE_CONFIGS[language as keyof typeof LANGUAGE_CONFIGS];
-  
+
   if (!languageConfig) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">Language Not Found</h1>
-          <p className="text-gray-600 mb-8">The language you're looking for isn't available yet.</p>
-          <Link href="/resources" className="bg-blue-600 text-white px-6 py-3 rounded-lg">
+          <h1 className="text-4xl font-bold text-slate-900 mb-4">Language Not Found</h1>
+          <p className="text-slate-600 mb-8">The language you're looking for isn't available yet.</p>
+          <Link href="/resources" className="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition-colors">
             Back to Resources
           </Link>
         </div>
@@ -119,139 +67,80 @@ export default function LanguagePage({ params }: PageProps) {
   }
 
   const capitalizedLanguage = languageConfig.name;
-  
-  const breadcrumbItems = [
-    { label: 'Resources', href: '/resources' },
-    { label: capitalizedLanguage, active: true }
-  ];
-
-  // Mock featured resources - these would come from a database in production
-  const FEATURED_RESOURCES: FeaturedResource[] = [
-    {
-      id: 'identity',
-      title: `All About Me - Identity and Personality`,
-      description: `Perfect starter resource for describing yourself, your family, and personality traits in ${capitalizedLanguage}.`,
-      level: 'Beginner',
-      topicArea: 'KS3 • Identity',
-      downloadCount: Math.floor(Math.random() * 500) + 800,
-      featured: true
-    },
-    {
-      id: 'environment',
-      title: `The Environment and Climate Change`,
-      description: `Advanced vocabulary for discussing environmental issues and climate change for GCSE preparation.`,
-      level: 'Advanced',
-      topicArea: 'KS4 • Environment',
-      downloadCount: Math.floor(Math.random() * 400) + 600,
-      featured: true
-    },
-    {
-      id: 'house-home',
-      title: `House and Home - Vocabulary Builder`,
-      description: `Essential vocabulary for describing your house, rooms, and furniture with practical exercises.`,
-      level: 'Beginner',
-      topicArea: 'KS3 • House & Home',
-      downloadCount: Math.floor(Math.random() * 600) + 700,
-      featured: true
-    }
-  ];
 
   return (
-    <div className={`min-h-screen bg-gradient-to-br ${languageConfig.color} bg-opacity-10`}>
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <FreebiesBreadcrumb items={breadcrumbItems} className="mb-4" />
-          
+    <div className="min-h-screen bg-slate-50">
+      {/* Header */}
+      <div className="bg-white border-b border-slate-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex items-center mb-4">
-            <Link 
+            <Link
               href="/resources"
-              className="inline-flex items-center text-blue-600 hover:text-blue-700 mr-4"
+              className="inline-flex items-center text-indigo-600 hover:text-indigo-700 mr-4"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Resources
             </Link>
           </div>
-          
-          <div className="flex items-center mb-6">
-            <div className={`w-16 h-16 bg-gradient-to-r ${languageConfig.color} rounded-xl flex items-center justify-center text-2xl mr-6 shadow-lg`}>
-              {languageConfig.flag}
-            </div>
-            <div>
-              <h1 className="text-4xl font-bold text-slate-800 mb-2">
-                {capitalizedLanguage} Resources
-              </h1>
-              <p className="text-xl text-slate-600">
-                Comprehensive {capitalizedLanguage} learning materials organized by key stage
-              </p>
-            </div>
-          </div>
 
-          {/* Language Flag Colors Banner */}
-          <div className={`w-full h-2 bg-gradient-to-r ${languageConfig.color} rounded-full mb-6`}></div>
-        </div>
-
-        {/* Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-          <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
-            <div className="flex items-center mb-3">
-              <BookOpen className="h-8 w-8 text-blue-600 mr-3" />
-              <div>
-                <h3 className="text-2xl font-bold text-slate-800">{languageConfig.totalResources}</h3>
-                <p className="text-slate-600">Total Resources</p>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <div className="w-16 h-16 bg-indigo-100 rounded-xl flex items-center justify-center text-2xl mr-6">
+                {languageConfig.flag}
               </div>
-            </div>
-          </div>
-          
-          <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
-            <div className="flex items-center mb-3">
-              <GraduationCap className="h-8 w-8 text-green-600 mr-3" />
               <div>
-                <h3 className="text-2xl font-bold text-slate-800">15</h3>
-                <p className="text-slate-600">Topic Areas</p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
-            <div className="flex items-center mb-3">
-              <Users className="h-8 w-8 text-purple-600 mr-3" />
-              <div>
-                <h3 className="text-2xl font-bold text-slate-800">{languageConfig.totalDownloads}</h3>
-                <p className="text-slate-600">Downloads</p>
+                <h1 className="text-3xl font-bold text-slate-900">
+                  {capitalizedLanguage} Resources
+                </h1>
+                <p className="text-slate-600 mt-2">
+                  Professional {capitalizedLanguage} learning materials organized by curriculum level
+                </p>
               </div>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Key Stages */}
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Key Stages Grid */}
         <div className="mb-12">
-          <h2 className="text-3xl font-bold text-slate-800 mb-6">Browse by Key Stage</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <h2 className="text-2xl font-bold text-slate-900 mb-6">Browse by Key Stage</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {KEY_STAGES.map((keyStage) => (
               <Link
                 key={keyStage.id}
                 href={`/resources/${language}/${keyStage.id}`}
-                className={`block ${keyStage.bgColor} rounded-xl p-6 border ${keyStage.borderColor} hover:shadow-lg transition-all duration-300 group`}
+                className="bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden group border border-slate-200"
               >
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className={`text-2xl font-bold ${keyStage.color}`}>
-                    {keyStage.name}
-                  </h3>
-                  <ChevronRight className={`h-6 w-6 ${keyStage.color} group-hover:translate-x-1 transition-transform`} />
-                </div>
-                
-                <p className="text-slate-700 mb-3">{keyStage.description}</p>
-                <p className="text-sm text-slate-600 mb-4">{keyStage.yearGroups}</p>
-                
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className={`font-medium ${keyStage.color}`}>{keyStage.topicCount}</span>
-                    <span className="text-slate-600"> Topics</span>
+                {/* Card Header */}
+                <div className="h-32 bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center group-hover:scale-105 transition-transform duration-200 relative overflow-hidden">
+                  <div className="text-4xl">
+                    {keyStage.id === 'ks3' && '📚'}
+                    {keyStage.id === 'ks4' && '🎓'}
+                    {keyStage.id === 'ks5' && '🏆'}
                   </div>
-                  <div>
-                    <span className={`font-medium ${keyStage.color}`}>{keyStage.resourceCount}</span>
-                    <span className="text-slate-600"> Resources</span>
+                  <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    <ExternalLink className="h-5 w-5 text-indigo-600" />
+                  </div>
+                </div>
+
+                {/* Card Content */}
+                <div className="p-6">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-xl font-semibold text-slate-800 group-hover:text-indigo-600 transition-colors">
+                      {keyStage.name}
+                    </h3>
+                    <ChevronRight className="h-5 w-5 text-slate-400 group-hover:text-indigo-500 group-hover:translate-x-1 transition-all" />
+                  </div>
+
+                  <p className="text-slate-600 text-sm mb-4">{keyStage.description}</p>
+                  <p className="text-xs text-slate-500 mb-4">{keyStage.yearGroups}</p>
+
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="text-indigo-600 font-medium">
+                      {keyStage.topicCount} Topics Available
+                    </div>
                   </div>
                 </div>
               </Link>
@@ -259,69 +148,29 @@ export default function LanguagePage({ params }: PageProps) {
           </div>
         </div>
 
-        {/* Featured Resources */}
-        <div className="mb-12">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-3xl font-bold text-slate-800">Featured {capitalizedLanguage} Resources</h2>
-            <Link 
-              href="/resources"
-              className="inline-flex items-center text-blue-600 hover:text-blue-700 font-medium"
-            >
-              Search All Resources
-              <ChevronRight className="h-4 w-4 ml-1" />
-            </Link>
-          </div>
-          
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {FEATURED_RESOURCES.map((resource) => (
-              <div
-                key={resource.id}
-                className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-shadow"
-              >
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center">
-                    <Star className="h-5 w-5 text-yellow-500 mr-2" />
-                    <span className="text-sm font-medium text-yellow-600">Featured</span>
-                  </div>
-                  <span className="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded-full">
-                    {resource.level}
-                  </span>
-                </div>
-                
-                <h3 className="text-xl font-bold text-slate-800 mb-2">{resource.title}</h3>
-                <p className="text-slate-600 mb-3">{resource.description}</p>
-                
-                <div className="flex items-center justify-between text-sm text-slate-500 mb-4">
-                  <span>{resource.topicArea}</span>
-                  <div className="flex items-center">
-                    <Download className="h-4 w-4 mr-1" />
-                    {resource.downloadCount.toLocaleString()}
-                  </div>
-                </div>
-                
-                <button className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium">
-                  Download Resource
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Cross Navigation */}
-        <div className="bg-white rounded-xl p-8 border border-slate-200 shadow-sm text-center">
-          <h3 className="text-2xl font-bold text-slate-800 mb-3">
-            Looking for something specific?
+        {/* Overview Section */}
+        <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-8 text-center">
+          <h3 className="text-2xl font-bold text-slate-900 mb-3">
+            Comprehensive {capitalizedLanguage} Curriculum
           </h3>
-          <p className="text-slate-600 mb-6">
-            Use our search and filter tools to find exactly what you need across all languages and topics.
+          <p className="text-slate-600 mb-6 max-w-2xl mx-auto">
+            Our {capitalizedLanguage} resources are carefully structured to support learning from foundation level through to advanced study,
+            aligned with UK curriculum standards and exam specifications.
           </p>
-          <Link
-            href="/resources"
-            className="inline-flex items-center bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition-colors font-medium"
-          >
-            <Globe className="h-5 w-5 mr-2" />
-            Search All Resources
-          </Link>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-2xl mx-auto">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-indigo-600 mb-1">3</div>
+              <div className="text-slate-600 text-sm">Key Stages</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-600 mb-1">19</div>
+              <div className="text-slate-600 text-sm">Topic Areas</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-purple-600 mb-1">Professional</div>
+              <div className="text-slate-600 text-sm">Quality Materials</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

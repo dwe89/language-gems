@@ -92,8 +92,8 @@ export default function ProductPage() {
   };
 
   const handleTagClick = (tag: string) => {
-    // Navigate to shop page with tag filter
-    router.push(`/shop?tag=${encodeURIComponent(tag)}`);
+    // Shop page is deprecated; do nothing or show a message
+    // router.push(`/shop?tag=${encodeURIComponent(tag)}`);
   };
 
   const handlePurchase = async () => {

@@ -10,347 +10,86 @@ import {
   Download, Search, Filter, Star, BookOpen, Users, 
   GraduationCap, Globe, Music, Home, MapPin, Laptop,
   Leaf, Plane, School, User, Calculator, Clock,
-  FileText, Gift, Lock, CheckCircle
+  FileText, Gift, Lock, CheckCircle, ShoppingCart, ExternalLink
 } from 'lucide-react';
+import { useCart } from '../../contexts/CartContext';
+import { CartSidebar } from '../../components/cart/CartSidebar';
+import { supabaseBrowser } from '../../components/auth/AuthProvider';
+import { Product } from '../../types/ecommerce';
+import { useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 
-interface WorksheetCategory {
-  id: string;
-  name: string;
-  icon: React.ReactNode;
-  description: string;
-  worksheets: Worksheet[];
-}
+// Remove WorksheetCategory and Worksheet interfaces
+// Remove YEAR_GROUPS and any worksheet-specific constants
+// Remove getAllProducts, getFilteredProducts, featuredProducts, and worksheet logic
+// Ensure export default function is ResourcesPage
+// Render product grid using only Product properties as previously described
 
-interface Worksheet {
-  id: string;
-  title: string;
-  description: string;
-  yearGroups: string[];
-  language: string;
-  level: 'Beginner' | 'Intermediate' | 'Advanced';
-  pages: number;
-  fileType: 'PDF';
-  downloadUrl: string;
-  featured?: boolean;
-  premium?: boolean;
-}
+const LANGUAGES = ['Spanish', 'French', 'German', 'All Languages'];
 
-const YEAR_GROUPS = [
-  'Year 7', 'Year 8', 'Year 9', 'Year 10', 'Year 11', 
-  'Year 12', 'Year 13', 'KS3', 'KS4', 'KS5'
-];
-
-const LANGUAGES = ['Spanish', 'French', 'German', 'Italian', 'All Languages'];
-
-export default function FreebiesPage() {
+export default function ResourcesPage() {
   const { user } = useAuth();
-  const [activeView, setActiveView] = useState<'hub' | 'curriculum'>('hub');
+  const searchParams = useSearchParams();
+  const [activeView, setActiveView] = useState<'hub' | 'curriculum' | 'skills'>('hub');
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [selectedYearGroup, setSelectedYearGroup] = useState<string | null>(null);
-  const [selectedLanguage, setSelectedLanguage] = useState<string | null>(null);
+  const [selectedTag, setSelectedTag] = useState<string>('');
+  const [selectedLanguage, setSelectedLanguage] = useState<string>('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [selectedExamBoard, setSelectedExamBoard] = useState<string>('');
+  const { addItem, toggleCart, getTotalItems } = useCart();
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
 
-  // Mock data - in production this would come from your database
-  const categories: WorksheetCategory[] = [
-    {
-      id: 'themes',
-      name: 'Themed Worksheets',
-      icon: <Globe className="h-6 w-6" />,
-      description: 'Topic-based vocabulary and conversation practice',
-      worksheets: [
-        {
-          id: 'house-home',
-          title: 'House and Home - Vocabulary Builder',
-          description: 'Essential vocabulary for describing your house, rooms, and furniture. Includes exercises on prepositions and house descriptions.',
-          yearGroups: ['Year 7', 'Year 8', 'KS3'],
-          language: 'Spanish',
-          level: 'Beginner',
-          pages: 4,
-          fileType: 'PDF',
-          downloadUrl: '/freebies/downloads/house-home-spanish.pdf',
-          featured: true
-        },
-        {
-          id: 'local-area',
-          title: 'My Local Area - Places and Directions',
-          description: 'Learn to describe your town, give directions, and talk about local amenities. Perfect for GCSE preparation.',
-          yearGroups: ['Year 9', 'Year 10', 'Year 11', 'KS4'],
-          language: 'Spanish',
-          level: 'Intermediate',
-          pages: 6,
-          fileType: 'PDF',
-          downloadUrl: '/freebies/downloads/local-area-spanish.pdf'
-        },
-        {
-          id: 'music-entertainment',
-          title: 'Music and Entertainment',
-          description: 'Vocabulary and phrases for discussing music, films, TV shows, and entertainment preferences.',
-          yearGroups: ['Year 8', 'Year 9', 'Year 10'],
-          language: 'French',
-          level: 'Intermediate',
-          pages: 5,
-          fileType: 'PDF',
-          downloadUrl: '/freebies/downloads/music-entertainment-french.pdf'
-        },
-        {
-          id: 'technology',
-          title: 'Technology in Daily Life',
-          description: 'Modern vocabulary for smartphones, social media, and digital communication.',
-          yearGroups: ['Year 9', 'Year 10', 'Year 11'],
-          language: 'German',
-          level: 'Intermediate',
-          pages: 4,
-          fileType: 'PDF',
-          downloadUrl: '/freebies/downloads/technology-german.pdf',
-          featured: true
-        },
-        {
-          id: 'free-time',
-          title: 'Free Time Activities and Hobbies',
-          description: 'Express your interests and talk about leisure activities with confidence.',
-          yearGroups: ['Year 7', 'Year 8', 'Year 9'],
-          language: 'Spanish',
-          level: 'Beginner',
-          pages: 5,
-          fileType: 'PDF',
-          downloadUrl: '/freebies/downloads/free-time-spanish.pdf'
-        },
-        {
-          id: 'environment',
-          title: 'The Environment and Climate Change',
-          description: 'Essential vocabulary for discussing environmental issues and climate change.',
-          yearGroups: ['Year 10', 'Year 11', 'Year 12'],
-          language: 'Spanish',
-          level: 'Advanced',
-          pages: 7,
-          fileType: 'PDF',
-          downloadUrl: '/freebies/downloads/environment-spanish.pdf'
-        },
-        {
-          id: 'holidays',
-          title: 'Holidays and Travel',
-          description: 'Everything you need for booking trips, describing holidays, and travel experiences.',
-          yearGroups: ['Year 8', 'Year 9', 'Year 10'],
-          language: 'French',
-          level: 'Intermediate',
-          pages: 6,
-          fileType: 'PDF',
-          downloadUrl: '/freebies/downloads/holidays-french.pdf'
-        },
-        {
-          id: 'school-education',
-          title: 'School and Education',
-          description: 'Vocabulary for subjects, school facilities, and education systems.',
-          yearGroups: ['Year 7', 'Year 8', 'KS3'],
-          language: 'German',
-          level: 'Beginner',
-          pages: 4,
-          fileType: 'PDF',
-          downloadUrl: '/freebies/downloads/school-german.pdf'
-        },
-        {
-          id: 'all-about-me',
-          title: 'All About Me - Identity and Personality',
-          description: 'Describe yourself, your family, and personality traits.',
-          yearGroups: ['Year 7', 'Year 8'],
-          language: 'Spanish',
-          level: 'Beginner',
-          pages: 3,
-          fileType: 'PDF',
-          downloadUrl: '/freebies/downloads/identity-spanish.pdf',
-          featured: true
-        }
-      ]
-    },
-    {
-      id: 'grammar',
-      name: 'Grammar Essentials',
-      icon: <BookOpen className="h-6 w-6" />,
-      description: 'Structured grammar practice and reference sheets',
-      worksheets: [
-        {
-          id: 'numbers-1-10',
-          title: 'Numbers 1-10 Practice Pack',
-          description: 'Complete practice set for numbers 1-10 with pronunciation guide and exercises.',
-          yearGroups: ['Year 7', 'KS3'],
-          language: 'All Languages',
-          level: 'Beginner',
-          pages: 3,
-          fileType: 'PDF',
-          downloadUrl: '/freebies/downloads/numbers-1-10.pdf'
-        },
-        {
-          id: 'numbers-1-50',
-          title: 'Numbers 1-50 Mastery',
-          description: 'Extended number practice including patterns, calculations, and real-world applications.',
-          yearGroups: ['Year 7', 'Year 8'],
-          language: 'Spanish',
-          level: 'Beginner',
-          pages: 5,
-          fileType: 'PDF',
-          downloadUrl: '/freebies/downloads/numbers-1-50-spanish.pdf'
-        },
-        {
-          id: 'numbers-1-100',
-          title: 'Numbers 1-100 Complete Guide',
-          description: 'Comprehensive number practice with complex calculations and advanced exercises.',
-          yearGroups: ['Year 8', 'Year 9'],
-          language: 'French',
-          level: 'Intermediate',
-          pages: 6,
-          fileType: 'PDF',
-          downloadUrl: '/freebies/downloads/numbers-1-100-french.pdf'
-        },
-        {
-          id: 'ser-vs-estar',
-          title: 'Ser vs Estar - Complete Guide',
-          description: 'Master the difference between ser and estar with clear explanations and practice exercises.',
-          yearGroups: ['Year 9', 'Year 10', 'Year 11'],
-          language: 'Spanish',
-          level: 'Intermediate',
-          pages: 8,
-          fileType: 'PDF',
-          downloadUrl: '/freebies/downloads/ser-estar-spanish.pdf'
-        },
-        {
-          id: 'present-tense-regular',
-          title: 'Present Tense - Regular Verbs',
-          description: 'Foundation worksheet for regular present tense verb conjugations.',
-          yearGroups: ['Year 7', 'Year 8'],
-          language: 'Spanish',
-          level: 'Beginner',
-          pages: 4,
-          fileType: 'PDF',
-          downloadUrl: '/freebies/downloads/present-regular-spanish.pdf'
-        },
-        {
-          id: 'past-tense-intro',
-          title: 'Past Tense Introduction',
-          description: 'Introduction to past tense forms with common irregular verbs.',
-          yearGroups: ['Year 9', 'Year 10'],
-          language: 'French',
-          level: 'Intermediate',
-          pages: 7,
-          fileType: 'PDF',
-          downloadUrl: '/freebies/downloads/past-tense-french.pdf'
-        },
-        {
-          id: 'adjective-agreement',
-          title: 'Adjective Agreement Rules',
-          description: 'Complete guide to adjective agreement including position and exceptions.',
-          yearGroups: ['Year 8', 'Year 9', 'Year 10'],
-          language: 'French',
-          level: 'Intermediate',
-          pages: 5,
-          fileType: 'PDF',
-          downloadUrl: '/freebies/downloads/adjectives-french.pdf'
-        }
-      ]
-    },
-    {
-      id: 'exam-prep',
-      name: 'Exam Preparation',
-      icon: <GraduationCap className="h-6 w-6" />,
-      description: 'GCSE and A-Level focused materials',
-      worksheets: [
-        {
-          id: 'gcse-speaking-prep',
-          title: 'GCSE Speaking Exam Preparation',
-          description: 'Practice questions and model answers for the GCSE Spanish speaking exam.',
-          yearGroups: ['Year 10', 'Year 11', 'KS4'],
-          language: 'Spanish',
-          level: 'Intermediate',
-          pages: 12,
-          fileType: 'PDF',
-          downloadUrl: '/freebies/downloads/gcse-speaking-spanish.pdf',
-          premium: true
-        },
-        {
-          id: 'photo-card-practice',
-          title: 'Photo Card Description Practice',
-          description: 'Sample photo cards with vocabulary and phrases for exam preparation.',
-          yearGroups: ['Year 10', 'Year 11'],
-          language: 'French',
-          level: 'Intermediate',
-          pages: 8,
-          fileType: 'PDF',
-          downloadUrl: '/freebies/downloads/photo-cards-french.pdf',
-          premium: true
-        },
-        {
-          id: 'role-play-scenarios',
-          title: 'Role Play Scenarios',
-          description: 'Common role play situations with helpful phrases and responses.',
-          yearGroups: ['Year 9', 'Year 10', 'Year 11'],
-          language: 'German',
-          level: 'Intermediate',
-          pages: 10,
-          fileType: 'PDF',
-          downloadUrl: '/freebies/downloads/role-play-german.pdf',
-          premium: true
-        }
-      ]
-    }
-  ];
+  // Remove mock categories and worksheets data
 
-  const getAllWorksheets = () => {
-    return categories.flatMap(cat => cat.worksheets);
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const fetchProducts = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabaseBrowser
+        .from('products')
+        .select('*')
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      setProducts(data || []);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const getFilteredWorksheets = () => {
-    let worksheets = getAllWorksheets();
-
-    if (selectedCategory) {
-      const category = categories.find(cat => cat.id === selectedCategory);
-      worksheets = category ? category.worksheets : [];
+  const handleDownload = (product: Product) => {
+    if (!product.file_path) {
+      alert('Product file path is not available.');
+      return;
     }
 
-    if (searchTerm) {
-      worksheets = worksheets.filter(worksheet => 
-        worksheet.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        worksheet.description.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    if (selectedYearGroup) {
-      worksheets = worksheets.filter(worksheet =>
-        worksheet.yearGroups.includes(selectedYearGroup)
-      );
-    }
-
-    if (selectedLanguage && selectedLanguage !== 'All Languages') {
-      worksheets = worksheets.filter(worksheet =>
-        worksheet.language === selectedLanguage || worksheet.language === 'All Languages'
-      );
-    }
-
-    return worksheets;
-  };
-
-  const handleDownload = (worksheet: Worksheet) => {
-    if (worksheet.premium && !user) {
+    if (product.price_cents > 0 && !user) {
       setShowAuthPrompt(true);
       return;
     }
 
     // In production, this would trigger the actual download
     // For now, we'll just show an alert
-    if (worksheet.premium && !user) {
+    if (product.price_cents > 0 && !user) {
       alert('Please sign in to download premium worksheets');
       return;
     }
 
     // Create download link
     const link = document.createElement('a');
-    link.href = worksheet.downloadUrl;
-    link.download = `${worksheet.title.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+    link.href = product.file_path;
+    link.download = `${product.name.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
-
-  const featuredWorksheets = getAllWorksheets().filter(w => w.featured);
 
   const breadcrumbItems = [
     { label: 'Resources', active: true }
@@ -363,78 +102,6 @@ export default function FreebiesPage() {
   const renderHubContent = () => (
     <>
       {/* Featured Resources */}
-      {featuredWorksheets.length > 0 && (
-        <div className="py-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-slate-800 mb-4">
-              ⭐ Featured Resources
-            </h2>
-            <p className="text-xl text-slate-600">
-              Our most popular and highly-rated worksheets
-            </p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
-            {featuredWorksheets.slice(0, 3).map((worksheet) => (
-              <div key={worksheet.id} className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden border border-indigo-100">
-                <div className="bg-gradient-to-r from-indigo-500 to-purple-600 p-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-white font-semibold text-sm">Featured</span>
-                    <Star className="h-5 w-5 text-yellow-300 fill-current" />
-                  </div>
-                </div>
-                
-                <div className="p-6">
-                  <h3 className="text-xl font-bold text-slate-800 mb-3">
-                    {worksheet.title}
-                  </h3>
-                  <p className="text-slate-600 mb-4 line-clamp-3">
-                    {worksheet.description}
-                  </p>
-                  
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    <span className="px-2 py-1 bg-indigo-100 text-indigo-700 text-xs rounded-full">
-                      {worksheet.language}
-                    </span>
-                    <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">
-                      {worksheet.level}
-                    </span>
-                    <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full">
-                      {worksheet.pages} pages
-                    </span>
-                  </div>
-                  
-                  <div className="text-sm text-slate-500 mb-4">
-                    Suitable for: {worksheet.yearGroups.join(', ')}
-                  </div>
-                  
-                  <button
-                    onClick={() => handleDownload(worksheet)}
-                    className={`w-full py-3 px-4 rounded-lg font-semibold transition-all duration-200 flex items-center justify-center ${
-                      worksheet.premium && !user
-                        ? 'bg-gradient-to-r from-yellow-500 to-orange-500 text-white hover:from-yellow-600 hover:to-orange-600'
-                        : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700'
-                    }`}
-                  >
-                    {worksheet.premium && !user ? (
-                      <>
-                        <Lock className="h-4 w-4 mr-2" />
-                        Sign In to Download
-                      </>
-                    ) : (
-                      <>
-                        <Download className="h-4 w-4 mr-2" />
-                        Free Download
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* Filters and Search */}
       <div className="bg-white rounded-xl shadow-sm p-6 mb-8">
         <h3 className="text-lg font-semibold text-slate-800 mb-4">Find Your Perfect Worksheet</h3>
@@ -455,27 +122,26 @@ export default function FreebiesPage() {
           {/* Category Filter */}
           <select
             value={selectedCategory || ''}
-            onChange={(e) => setSelectedCategory(e.target.value || null)}
+            onChange={(e) => setSelectedCategory(e.target.value || '')}
             className="px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
           >
             <option value="">All Categories</option>
-            {categories.map(category => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
+            {/* Category options will need to be fetched from the database */}
+            <option value="themes">Themed Worksheets</option>
+            <option value="grammar">Grammar Essentials</option>
+            <option value="exam-prep">Exam Preparation</option>
           </select>
 
           {/* Year Group Filter */}
           <select
-            value={selectedYearGroup || ''}
-            onChange={(e) => setSelectedYearGroup(e.target.value || null)}
+            value={selectedLanguage || ''}
+            onChange={(e) => setSelectedLanguage(e.target.value || '')}
             className="px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
           >
-            <option value="">All Year Groups</option>
-            {YEAR_GROUPS.map(year => (
-              <option key={year} value={year}>
-                {year}
+            <option value="">All Languages</option>
+            {LANGUAGES.map(lang => (
+              <option key={lang} value={lang}>
+                {lang}
               </option>
             ))}
           </select>
@@ -483,7 +149,7 @@ export default function FreebiesPage() {
           {/* Language Filter */}
           <select
             value={selectedLanguage || ''}
-            onChange={(e) => setSelectedLanguage(e.target.value || null)}
+            onChange={(e) => setSelectedLanguage(e.target.value || '')}
             className="px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
           >
             <option value="">All Languages</option>
@@ -496,14 +162,13 @@ export default function FreebiesPage() {
         </div>
 
         {/* Clear Filters */}
-        {(searchTerm || selectedCategory || selectedYearGroup || selectedLanguage) && (
+        {(searchTerm || selectedCategory || selectedLanguage) && (
           <div className="mt-4">
             <button
               onClick={() => {
                 setSearchTerm('');
-                setSelectedCategory(null);
-                setSelectedYearGroup(null);
-                setSelectedLanguage(null);
+                setSelectedCategory('');
+                setSelectedLanguage('');
               }}
               className="text-indigo-600 hover:text-indigo-700 text-sm font-medium"
             >
@@ -515,68 +180,54 @@ export default function FreebiesPage() {
 
       {/* Results */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
-        {getFilteredWorksheets().map((worksheet) => (
-          <div key={worksheet.id} className="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden border border-slate-200">
-            <div className="p-6">
-              <div className="flex items-start justify-between mb-3">
-                <h3 className="text-lg font-bold text-slate-800 line-clamp-2 flex-1">
-                  {worksheet.title}
-                </h3>
-                {worksheet.premium && (
-                  <div className="ml-2">
-                    <span className="px-2 py-1 bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-xs rounded-full">
-                      Premium
-                    </span>
-                  </div>
-                )}
-              </div>
-              
-              <p className="text-slate-600 mb-4 line-clamp-3 text-sm">
-                {worksheet.description}
-              </p>
-              
-              <div className="flex flex-wrap gap-2 mb-4">
-                <span className="px-2 py-1 bg-indigo-100 text-indigo-700 text-xs rounded-full">
-                  {worksheet.language}
-                </span>
-                <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">
-                  {worksheet.level}
-                </span>
-                <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full">
-                  {worksheet.pages} pages
-                </span>
-              </div>
-              
-              <div className="text-sm text-slate-500 mb-4">
-                {worksheet.yearGroups.join(', ')}
-              </div>
-              
-              <button
-                onClick={() => handleDownload(worksheet)}
-                className={`w-full py-2 px-4 rounded-lg font-medium transition-all duration-200 flex items-center justify-center text-sm ${
-                  worksheet.premium && !user
-                    ? 'bg-gradient-to-r from-yellow-500 to-orange-500 text-white hover:from-yellow-600 hover:to-orange-600'
-                    : 'bg-indigo-600 text-white hover:bg-indigo-700'
-                }`}
-              >
-                {worksheet.premium && !user ? (
-                  <>
+        {products.map((product) => (
+          <div key={product.id} className="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden border border-slate-200">
+          <div className="p-6">
+            <div className="flex items-start justify-between mb-3">
+              <h3 className="text-lg font-bold text-slate-800 line-clamp-2 flex-1">
+                  {product.name}
+              </h3>
+            </div>
+            
+            <p className="text-slate-600 mb-4 line-clamp-3 text-sm">
+                {product.description}
+            </p>
+            
+            <div className="flex flex-wrap gap-2 mb-4">
+              <span className="px-2 py-1 bg-indigo-100 text-indigo-700 text-xs rounded-full">
+                  {(product.tags || []).join(', ')}
+              </span>
+              <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">
+                  {product.price_cents === 0 ? 'Free' : `$${(product.price_cents / 100).toFixed(2)}`}
+              </span>
+            </div>
+            
+            <button
+                onClick={() => handleDownload(product)}
+              className={`w-full py-2 px-4 rounded-lg font-medium transition-all duration-200 flex items-center justify-center text-sm ${
+                  product.price_cents > 0 && !user
+                  ? 'bg-gradient-to-r from-yellow-500 to-orange-500 text-white hover:from-yellow-600 hover:to-orange-600'
+                  : 'bg-indigo-600 text-white hover:bg-indigo-700'
+              }`}
+            >
+                {product.price_cents > 0 && !user ? (
+                <>
                     <Lock className="h-4 w-4 mr-2" />
                     Sign In Required
-                  </>
-                ) : (
-                  <>
+                </>
+              ) : (
+                <>
                     <Download className="h-4 w-4 mr-2" />
                     Download
-                  </>
-                )}
-              </button>
-            </div>
+                </>
+              )}
+            </button>
           </div>
+        </div>
         ))}
       </div>
 
-      {getFilteredWorksheets().length === 0 && (
+      {products.length === 0 && (
         <div className="text-center py-12">
           <div className="text-6xl mb-4">📚</div>
           <h3 className="text-xl font-medium text-slate-600 mb-2">
@@ -590,166 +241,292 @@ export default function FreebiesPage() {
     </>
   );
 
+  // Add formatPrice helper
+  const formatPrice = (priceCents: number) => {
+    if (priceCents === 0) return 'FREE';
+    return `£${(priceCents / 100).toFixed(2)}`;
+  };
+
+  // Add getAllTags helper
+  const getAllTags = () => {
+    const tags = new Set<string>();
+    products.forEach((product: Product) => {
+      product.tags?.forEach((tag: string) => tags.add(tag));
+    });
+    return Array.from(tags);
+  };
+
+  // Helper to check if a product matches a tag (case-insensitive)
+  const hasTag = (product: Product, tag: string) =>
+    product.tags?.some((t: string) => t.toLowerCase() === tag.toLowerCase());
+
+  // Add filteredProducts logic
+  const filteredProducts = products.filter((product: Product) => {
+    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.description?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesTag = !selectedTag || hasTag(product, selectedTag);
+    const matchesLanguage = !selectedLanguage || hasTag(product, selectedLanguage);
+    const matchesCategory = !selectedCategory || hasTag(product, selectedCategory);
+    const matchesExamBoard = !selectedExamBoard || hasTag(product, selectedExamBoard);
+    return matchesSearch && matchesTag && matchesLanguage && matchesCategory && matchesExamBoard;
+  });
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      {/* Hero Section */}
-      <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-600 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <div className="text-center">
-            <div className="flex justify-center mb-6">
-              <div className="p-4 bg-white/20 rounded-full">
-                <Gift className="h-12 w-12" />
-              </div>
+    <div className="min-h-screen bg-slate-50">
+      <div className="bg-white border-b border-slate-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-slate-900">Educational Resources</h1>
+              <p className="text-slate-600 mt-2">Premium materials to enhance your language learning journey</p>
             </div>
-            <h1 className="text-4xl md:text-5xl font-bold mb-6">
-              Free Language Learning Resources
-            </h1>
-            <p className="text-xl md:text-2xl text-indigo-100 mb-8 max-w-3xl mx-auto">
-              Download high-quality worksheets, practice materials, and study guides 
-              designed by language teachers for students of all levels.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <div className="flex items-center text-indigo-200">
-                <CheckCircle className="h-5 w-5 mr-2" />
-                <span>Curriculum Aligned</span>
-              </div>
-              <div className="flex items-center text-indigo-200">
-                <CheckCircle className="h-5 w-5 mr-2" />
-                <span>Teacher Created</span>
-              </div>
-              <div className="flex items-center text-indigo-200">
-                <CheckCircle className="h-5 w-5 mr-2" />
-                <span>Instant Download</span>
-              </div>
+            <div className="flex items-center gap-4">
+              <Link
+                href="/resources"
+                className="px-6 py-3 bg-green-600 text-white rounded-lg font-bold text-lg shadow-lg hover:bg-green-700 transition-colors"
+                style={{ minWidth: 160 }}
+              >
+                🎁 Freebies
+              </Link>
+              <button
+                onClick={toggleCart}
+                className="relative p-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+              >
+                <ShoppingCart className="h-6 w-6" />
+                {getTotalItems() > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-6 w-6 flex items-center justify-center">
+                    {getTotalItems()}
+                  </span>
+                )}
+              </button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Breadcrumb */}
-        <FreebiesBreadcrumb items={breadcrumbItems} className="mb-6" />
-
-        {/* Navigation Tabs */}
+      {/* Tab Navigation */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <FreebiesNavTabs 
           activeTab={activeView} 
-          onTabChange={(tab) => setActiveView(tab as 'hub' | 'curriculum')}
+          onTabChange={(tab) => setActiveView(tab as 'hub' | 'curriculum' | 'skills')}
           className="mb-8"
         />
+      </div>
 
-        {/* Page title update */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-slate-800 mb-4">
-            Learning Resources
-          </h1>
-          <p className="text-xl text-slate-600 max-w-3xl mx-auto">
-            Discover free worksheets, activities, and materials to enhance your language learning journey
-          </p>
-        </div>
-
-        {/* Conditional Content */}
+      {/* Main Content: Curriculum, Hub, or Skills Hub */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {activeView === 'curriculum' ? (
           <CurriculumNavigator onReturnToHub={handleReturnToHub} />
+        ) : activeView === 'skills' ? (
+          <SkillsHubLanding />
         ) : (
-          renderHubContent()
+          <>
+            {/* Filters */}
+            <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
+              <div className="flex flex-col lg:flex-row gap-4 flex-wrap">
+                {/* Search */}
+                <div className="flex-1 relative min-w-[200px]">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="Search products..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  />
+                </div>
+                {/* Language Filter */}
+                <div className="relative min-w-[160px]">
+                  <select
+                    value={selectedLanguage}
+                    onChange={e => setSelectedLanguage(e.target.value)}
+                    className="px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 appearance-none bg-white w-full"
+                  >
+                    <option value="">All Languages</option>
+                    {['French', 'Spanish', 'German'].map(lang => (
+                      <option key={lang} value={lang}>{lang}</option>
+                    ))}
+                  </select>
+                  <Filter className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400 pointer-events-none" />
+                </div>
+                {/* Category Filter */}
+                <div className="relative min-w-[160px]">
+                  <select
+                    value={selectedCategory}
+                    onChange={e => setSelectedCategory(e.target.value)}
+                    className="px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 appearance-none bg-white w-full"
+                  >
+                    <option value="">All Types</option>
+                    {['Grammar', 'Vocabulary', 'Worksheets', 'Listening', 'Reading', 'Writing', 'Speaking'].map(cat => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                  <Filter className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400 pointer-events-none" />
+                </div>
+                {/* Exam Board Filter */}
+                <div className="relative min-w-[160px]">
+                  <select
+                    value={selectedExamBoard}
+                    onChange={e => setSelectedExamBoard(e.target.value)}
+                    className="px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 appearance-none bg-white w-full"
+                  >
+                    <option value="">All Exam Boards</option>
+                    {['AQA', 'Edexcel', 'OCR', 'WJEC', 'CIE'].map(board => (
+                      <option key={board} value={board}>{board}</option>
+                    ))}
+                  </select>
+                  <Filter className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400 pointer-events-none" />
+                </div>
+                {/* Tag Filter */}
+                <div className="relative min-w-[160px]">
+                  <select
+                    value={selectedTag || ''}
+                    onChange={(e) => setSelectedTag(e.target.value || '')}
+                    className="px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 appearance-none bg-white w-full"
+                  >
+                    <option value="">All Categories</option>
+                    {getAllTags().map(tag => (
+                      <option key={tag} value={tag}>
+                        {tag.charAt(0).toUpperCase() + tag.slice(1)}
+                      </option>
+                    ))}
+                  </select>
+                  <Filter className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400 pointer-events-none" />
+                </div>
+              </div>
+            </div>
+
+            {/* Products Grid */}
+            {filteredProducts.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="text-6xl mb-4">📚</div>
+                <h3 className="text-xl font-medium text-slate-600 mb-2">
+                  {searchTerm || selectedTag ? 'No products found' : 'No products available'}
+                </h3>
+                <p className="text-slate-500">
+                  {searchTerm || selectedTag 
+                    ? 'Try adjusting your search or filter criteria'
+                    : 'Check back soon for new educational resources'
+                  }
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {filteredProducts.map((product) => (
+                  <div key={product.id} className="bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden group">
+                    {/* Clickable Product Image and Title */}
+                    <Link href={`/product/${product.slug}`} className="block">
+                      {/* Product Image */}
+                      <div className="h-48 bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center group-hover:scale-105 transition-transform duration-200 relative overflow-hidden">
+                        {product.thumbnail_url ? (
+                          <img 
+                            src={product.thumbnail_url} 
+                            alt={product.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-6xl">📚</span>
+                        )}
+                        <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                          <ExternalLink className="h-5 w-5 text-indigo-600" />
+                        </div>
+                      </div>
+
+                      {/* Product Title and Description */}
+                      <div className="p-6 pb-2">
+                        <h3 className="text-lg font-semibold text-slate-800 mb-2 line-clamp-2 group-hover:text-indigo-600 transition-colors">
+                          {product.name}
+                        </h3>
+                        
+                        <p className="text-slate-600 text-sm mb-0 line-clamp-3">
+                          {product.description}
+                        </p>
+                      </div>
+                    </Link>
+
+                    {/* Non-clickable content */}
+                    <div className="px-6 pb-6">
+                      {/* Tags */}
+                      {product.tags && product.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mb-4">
+                          {product.tags.slice(0, 3).map((tag) => (
+                            <span
+                              key={tag}
+                              className="px-2 py-1 bg-indigo-100 text-indigo-700 text-xs rounded-full"
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                          {product.tags.length > 3 && (
+                            <span className="px-2 py-1 bg-slate-100 text-slate-600 text-xs rounded-full">
+                              +{product.tags.length - 3} more
+                            </span>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Price and Add to Cart */}
+                      <div className="flex items-center justify-between">
+                        <div className="text-2xl font-bold text-indigo-600">
+                          {formatPrice(product.price_cents)}
+                        </div>
+                        
+                        <button
+                          onClick={() => addItem(product)}
+                          className={`px-4 py-2 text-white rounded-lg transition-colors flex items-center space-x-2 ${
+                            product.price_cents === 0 
+                              ? 'bg-green-600 hover:bg-green-700' 
+                              : 'bg-indigo-600 hover:bg-indigo-700'
+                          }`}
+                        >
+                          <ShoppingCart className="h-4 w-4" />
+                          <span>{product.price_cents === 0 ? 'Get for FREE' : 'Add to Cart'}</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
         )}
       </div>
 
-      {/* Explore More Section */}
-      <div className="bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-slate-800 mb-4">
-              Want More Learning Resources?
-            </h2>
-            <p className="text-xl text-slate-600 max-w-2xl mx-auto">
-              Explore our interactive games, structured lessons, and comprehensive learning paths
-            </p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <Link
-              href="/games"
-              className="group bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-8 border border-blue-100 hover:shadow-lg transition-all duration-300"
-            >
-              <div className="text-center">
-                <div className="text-4xl mb-4">🎮</div>
-                <h3 className="text-xl font-bold text-slate-800 mb-3">Interactive Games</h3>
-                <p className="text-slate-600 mb-4">
-                  Learn vocabulary and grammar through engaging games and activities
-                </p>
-                <span className="text-blue-600 font-medium group-hover:text-blue-700">
-                  Play Now →
-                </span>
-              </div>
-            </Link>
-            
-            <Link
-              href="/learn"
-              className="group bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-8 border border-green-100 hover:shadow-lg transition-all duration-300"
-            >
-              <div className="text-center">
-                <div className="text-4xl mb-4">📚</div>
-                <h3 className="text-xl font-bold text-slate-800 mb-3">Structured Courses</h3>
-                <p className="text-slate-600 mb-4">
-                  Follow guided learning paths designed by language experts
-                </p>
-                <span className="text-green-600 font-medium group-hover:text-green-700">
-                  Start Learning →
-                </span>
-              </div>
-            </Link>
-            
-            <Link
-              href="/shop"
-              className="group bg-gradient-to-br from-purple-50 to-violet-50 rounded-xl p-8 border border-purple-100 hover:shadow-lg transition-all duration-300"
-            >
-              <div className="text-center">
-                <div className="text-4xl mb-4">📖</div>
-                <h3 className="text-xl font-bold text-slate-800 mb-3">Premium Resources</h3>
-                <p className="text-slate-600 mb-4">
-                  Access exclusive materials and advanced learning tools
-                </p>
-                <span className="text-purple-600 font-medium group-hover:text-purple-700">
-                  Browse Shop →
-                </span>
-              </div>
-            </Link>
-          </div>
+      {/* Cart Sidebar */}
+      <CartSidebar />
+    </div>
+  );
+} 
+
+function SkillsHubLanding() {
+  const router = useRouter();
+  return (
+    <div className="bg-white rounded-xl shadow-sm p-8">
+      <h2 className="text-3xl font-bold mb-2 text-center">Skills Hub</h2>
+      <p className="text-slate-600 text-center mb-8">Master core language skills with targeted resources.</p>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        {/* Grammar Card */}
+        <div className="bg-indigo-50 rounded-lg p-6 shadow text-center flex flex-col items-center cursor-pointer hover:shadow-lg transition" onClick={() => router.push('/resources/skills/grammar')}>
+          <BookOpen className="h-10 w-10 text-indigo-500 mb-3" />
+          <h3 className="text-xl font-bold mb-2">Grammar</h3>
+          <p className="text-slate-700 mb-4">Verb conjugations, tenses, sentence structures</p>
+          <span className="inline-block mt-auto px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors">Explore Grammar</span>
+        </div>
+        {/* Vocabulary Card */}
+        <div className="bg-green-50 rounded-lg p-6 shadow text-center flex flex-col items-center cursor-pointer hover:shadow-lg transition" onClick={() => router.push('/resources/skills/vocabulary')}>
+          <Users className="h-10 w-10 text-green-500 mb-3" />
+          <h3 className="text-xl font-bold mb-2">Vocabulary</h3>
+          <p className="text-slate-700 mb-4">Word lists, vocab booklets, frequency-based packs</p>
+          <span className="inline-block mt-auto px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors">Explore Vocabulary</span>
+        </div>
+        {/* Exam Practice Card */}
+        <div className="bg-yellow-50 rounded-lg p-6 shadow text-center flex flex-col items-center cursor-pointer hover:shadow-lg transition" onClick={() => router.push('/resources/skills/exam-practice')}>
+          <FileText className="h-10 w-10 text-yellow-500 mb-3" />
+          <h3 className="text-xl font-bold mb-2">Exam Practice</h3>
+          <p className="text-slate-700 mb-4">Reading, listening, speaking, writing tasks</p>
+          <span className="inline-block mt-auto px-4 py-2 bg-yellow-600 text-white rounded-lg font-medium hover:bg-yellow-700 transition-colors">Explore Exam Practice</span>
         </div>
       </div>
-
-      {/* Sign-up CTA */}
-      {!user && (
-        <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-            <div className="text-center">
-              <h2 className="text-3xl font-bold mb-4">
-                Want Access to Premium Worksheets?
-              </h2>
-              <p className="text-xl text-indigo-100 mb-8 max-w-2xl mx-auto">
-                Sign up for a free account to access our premium worksheet collection, 
-                track your downloads, and get notified about new resources.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link
-                  href="/auth/signup"
-                  className="bg-white text-indigo-600 px-8 py-3 rounded-lg font-semibold hover:bg-indigo-50 transition-colors"
-                >
-                  Create Free Account
-                </Link>
-                <Link
-                  href="/auth/login"
-                  className="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-indigo-600 transition-colors"
-                >
-                  Sign In
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 } 
