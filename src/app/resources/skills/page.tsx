@@ -1,6 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { BookOpen, Users, FileText, Globe } from 'lucide-react';
+import FreebiesBreadcrumb from '../../../components/freebies/FreebiesBreadcrumb';
 
 const LANGUAGES = [
   {
@@ -50,15 +51,39 @@ const SKILL_AREAS = [
   }
 ];
 
+const colorMap = {
+  indigo: {
+    border: 'hover:border-indigo-200',
+    bg: 'hover:bg-indigo-50',
+    text: 'group-hover/skill:text-indigo-700',
+    icon: 'text-indigo-600'
+  },
+  green: {
+    border: 'hover:border-green-200',
+    bg: 'hover:bg-green-50',
+    text: 'group-hover/skill:text-green-700',
+    icon: 'text-green-600'
+  },
+  yellow: {
+    border: 'hover:border-yellow-200',
+    bg: 'hover:bg-yellow-50',
+    text: 'group-hover/skill:text-yellow-700',
+    icon: 'text-yellow-600'
+  }
+};
+
 export default function SkillsHubPage() {
   return (
     <div className="min-h-screen bg-slate-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 mb-6">
-          <Link href="/resources" className="text-indigo-600 hover:text-indigo-700">Resources</Link>
-          <span className="text-slate-400">/</span>
-          <span className="text-slate-600">Skills Hub</span>
+          <FreebiesBreadcrumb
+            items={[
+              { label: 'Resources', href: '/resources' },
+              { label: 'Skills Hub', active: true }
+            ]}
+          />
         </div>
 
         {/* Header */}
@@ -78,24 +103,26 @@ export default function SkillsHubPage() {
             {LANGUAGES.map((language) => (
               <div key={language.id} className="bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden group">
                 <div className="p-8 text-center">
-                  <div className="text-6xl mb-4">{language.flag}</div>
-                  <h3 className="text-2xl font-bold text-slate-900 mb-2">{language.name}</h3>
+                  <Link href={`/resources/skills/${language.id}`} className="text-6xl mb-4 block hover:scale-110 transition-transform duration-200">{language.flag}</Link>
+                  <h3 className="text-2xl font-bold text-slate-900 mb-2">
+                    <Link href={`/resources/skills/${language.id}`}>{language.name}</Link>
+                  </h3>
                   <p className="text-slate-600 mb-6">{language.description}</p>
-                  
                   {/* Skill Areas for this language */}
                   <div className="space-y-3">
                     {SKILL_AREAS.map((skill) => {
                       const Icon = skill.icon;
+                      const color = colorMap[skill.color as keyof typeof colorMap];
                       return (
                         <Link
                           key={skill.id}
                           href={`/resources/skills/${language.id}/${skill.id}`}
-                          className={`block p-4 rounded-lg border-2 border-transparent hover:border-${skill.color}-200 hover:bg-${skill.color}-50 transition-all duration-200 group/skill`}
+                          className={`block p-4 rounded-lg border-2 border-transparent ${color.border} ${color.bg} transition-all duration-200 group/skill`}
                         >
                           <div className="flex items-center gap-3">
-                            <Icon className={`h-5 w-5 text-${skill.color}-600`} />
+                            <Icon className={`h-5 w-5 ${color.icon}`} />
                             <div className="text-left flex-1">
-                              <div className={`font-semibold text-slate-800 group-hover/skill:text-${skill.color}-700`}>
+                              <div className={`font-semibold text-slate-800 ${color.text}`}>
                                 {skill.name}
                               </div>
                               <div className="text-sm text-slate-500">

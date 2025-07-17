@@ -1,6 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { ArrowLeft, FileText, Clock, Download, Target } from 'lucide-react';
+import FreebiesBreadcrumb from '../../../../../components/freebies/FreebiesBreadcrumb';
 
 const SPANISH_EXAM_TOPICS = [
   {
@@ -65,13 +66,14 @@ export default function SpanishExamPracticePage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 mb-6">
-          <Link href="/resources" className="text-yellow-600 hover:text-yellow-700">Resources</Link>
-          <span className="text-slate-400">/</span>
-          <Link href="/resources/skills" className="text-yellow-600 hover:text-yellow-700">Skills Hub</Link>
-          <span className="text-slate-400">/</span>
-          <Link href="/resources/skills/spanish" className="text-yellow-600 hover:text-yellow-700">Spanish</Link>
-          <span className="text-slate-400">/</span>
-          <span className="text-slate-600">Exam Practice</span>
+          <FreebiesBreadcrumb
+            items={[
+              { label: 'Resources', href: '/resources' },
+              { label: 'Skills Hub', href: '/resources/skills' },
+              { label: 'Spanish', href: '/resources/skills/spanish' },
+              { label: 'Exam Practice', active: true }
+            ]}
+          />
         </div>
 
         {/* Header */}

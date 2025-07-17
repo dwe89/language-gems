@@ -40,6 +40,7 @@ export default function ResourcesPage() {
   const [selectedExamBoard, setSelectedExamBoard] = useState<string>('');
   const { addItem, toggleCart, getTotalItems } = useCart();
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
+  const router = useRouter();
 
   // Remove mock categories and worksheets data
 
@@ -308,7 +309,13 @@ export default function ResourcesPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <FreebiesNavTabs 
           activeTab={activeView} 
-          onTabChange={(tab) => setActiveView(tab as 'hub' | 'curriculum' | 'skills')}
+          onTabChange={(tab) => {
+            if (tab === 'skills') {
+              router.push('/resources/skills');
+            } else {
+              setActiveView(tab as 'hub' | 'curriculum' | 'skills');
+            }
+          }}
           className="mb-8"
         />
       </div>

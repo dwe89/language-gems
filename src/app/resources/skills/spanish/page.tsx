@@ -1,6 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { ArrowLeft, BookOpen, Users, FileText } from 'lucide-react';
+import FreebiesBreadcrumb from '../../../../components/freebies/FreebiesBreadcrumb';
 
 const SPANISH_SKILLS = [
   {
@@ -35,11 +36,13 @@ export default function SpanishSkillsPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 mb-6">
-          <Link href="/resources" className="text-indigo-600 hover:text-indigo-700">Resources</Link>
-          <span className="text-slate-400">/</span>
-          <Link href="/resources/skills" className="text-indigo-600 hover:text-indigo-700">Skills Hub</Link>
-          <span className="text-slate-400">/</span>
-          <span className="text-slate-600">Spanish</span>
+          <FreebiesBreadcrumb
+            items={[
+              { label: 'Resources', href: '/resources' },
+              { label: 'Skills Hub', href: '/resources/skills' },
+              { label: 'Spanish', active: true }
+            ]}
+          />
         </div>
 
         {/* Header */}
