@@ -450,6 +450,38 @@ export type Database = {
           updated_at?: string | null
         }
       }
+      vocabulary: {
+        Row: {
+          id: number
+          theme: string | null
+          topic: string | null
+          part_of_speech: string | null
+          spanish: string | null
+          english: string | null
+          frequency_score?: number | null
+          difficulty_level?: string | null
+        }
+        Insert: {
+          id?: number
+          theme?: string | null
+          topic?: string | null
+          part_of_speech?: string | null
+          spanish?: string | null
+          english?: string | null
+          frequency_score?: number | null
+          difficulty_level?: string | null
+        }
+        Update: {
+          id?: number
+          theme?: string | null
+          topic?: string | null
+          part_of_speech?: string | null
+          spanish?: string | null
+          english?: string | null
+          frequency_score?: number | null
+          difficulty_level?: string | null
+        }
+      }
       // Add other tables as needed
     }
     Views: {

@@ -1,6 +1,6 @@
 // Feature flags configuration based on environment
 // In development: all features work
-// In production: only Blog and Shop are enabled, others show "Coming Soon"
+// In production: Blog, Shop, and Games (BETA) are enabled, others show "Coming Soon"
 // Admin override: specific admin email can access all features even in production
 
 export interface FeatureFlags {
@@ -48,7 +48,7 @@ export const getFeatureFlags = (userEmail?: string | null): FeatureFlags => {
     auth: true,
     
     // Development vs Production feature flags
-    games: isDevelopment,
+    games: true, // Now enabled in production with BETA status
     customLessons: isDevelopment,
     progressTracking: isDevelopment,
   };

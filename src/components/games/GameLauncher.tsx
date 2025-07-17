@@ -3,16 +3,14 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Gem, Diamond, Sparkles, Crown, Star, Zap,
   Play, Settings, Trophy, Target, BookOpen,
   Users, Clock, Award, Brain, Heart, Eye,
   ArrowRight, ChevronDown, Info, Gamepad2
 } from 'lucide-react';
 import { useAuth } from '../auth/AuthProvider';
 import { useSupabase } from '../supabase/SupabaseProvider';
-import { GemThemeProvider, GemCard, GemButton, GemIcon, GemBadge } from '../ui/GemTheme';
 import EnhancedGemCollector from './EnhancedGemCollector';
-import EnhancedVocabularySelector from '../vocabulary/EnhancedVocabularySelector';
+import SimpleVocabularySelector from '../vocabulary/SimpleVocabularySelector';
 
 // =====================================================
 // TYPES AND INTERFACES
@@ -28,7 +26,6 @@ interface GameMode {
   estimatedTime: string;
   difficulty: string;
   unlocked: boolean;
-  gemReward: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
 }
 
 interface GameLauncherProps {
@@ -47,56 +44,30 @@ interface GameLauncherProps {
 const GAME_MODES: GameMode[] = [
   {
     id: 'free_play',
-    name: 'Free Exploration',
-    description: 'Explore the gem mines at your own pace',
-    icon: <Gem className="h-6 w-6" />,
-    color: 'from-blue-500 to-cyan-500',
-    features: ['Choose your vocabulary', 'No time pressure', 'Practice mode'],
-    estimatedTime: '10-20 minutes',
-    difficulty: 'All levels',
-    unlocked: true,
-    gemReward: 'common'
+    name: 'Free Practice',
+    description: 'Choose your own vocabulary and practice at your own pace',
+    icon: <BookOpen className="h-6 w-6" />,
+    color: 'blue',
+    features: ['Choose vocabulary', 'Unlimited time', 'Progress tracking'],
+    estimatedTime: '5-30 min',
+    difficulty: 'Any level',
+    unlocked: true
   },
   {
     id: 'assignment',
-    name: 'Assigned Quest',
-    description: 'Complete teacher-assigned vocabulary missions',
+    name: 'Assigned Practice',
+    description: 'Complete teacher-assigned vocabulary practice',
     icon: <Target className="h-6 w-6" />,
-    color: 'from-purple-500 to-pink-500',
-    features: ['Structured learning', 'Progress tracking', 'Graded results'],
-    estimatedTime: '15-25 minutes',
-    difficulty: 'Teacher set',
-    unlocked: true,
-    gemReward: 'rare'
-  },
-  {
-    id: 'challenge',
-    name: 'Daily Challenge',
-    description: 'Take on today\'s special gem hunting challenge',
-    icon: <Crown className="h-6 w-6" />,
-    color: 'from-yellow-500 to-orange-500',
-    features: ['Daily rewards', 'Leaderboards', 'Special achievements'],
-    estimatedTime: '5-15 minutes',
-    difficulty: 'Varies daily',
-    unlocked: true,
-    gemReward: 'epic'
-  },
-  {
-    id: 'speed_run',
-    name: 'Speed Mining',
-    description: 'Race against time to collect as many gems as possible',
-    icon: <Zap className="h-6 w-6" />,
-    color: 'from-red-500 to-pink-500',
-    features: ['Time pressure', 'Speed bonuses', 'Quick thinking'],
-    estimatedTime: '3-8 minutes',
-    difficulty: 'Advanced',
-    unlocked: false, // Unlock after completing 10 games
-    gemReward: 'legendary'
+    color: 'green',
+    features: ['Teacher selected', 'Progress tracked', 'Submit results'],
+    estimatedTime: '10-20 min',
+    difficulty: 'Variable',
+    unlocked: true
   }
 ];
 
 // =====================================================
-// GAME LAUNCHER COMPONENT
+// MAIN COMPONENT
 // =====================================================
 
 export default function GameLauncher({
@@ -109,59 +80,92 @@ export default function GameLauncher({
 }: GameLauncherProps) {
   const { user } = useAuth();
   const { supabase } = useSupabase();
-  
+
   // State
-  const [currentView, setCurrentView] = useState<'mode_select' | 'vocabulary_select' | 'game_config' | 'playing'>('mode_select');
-  const [selectedMode, setSelectedMode] = useState<string>(mode);
+  const [selectedGameMode, setSelectedGameMode] = useState<string>(mode);
   const [selectedVocabulary, setSelectedVocabulary] = useState<any[]>(preselectedVocabulary);
-  const [vocabularyConfig, setVocabularyConfig] = useState<any>({});
-  const [finalGameConfig, setFinalGameConfig] = useState<any>(gameConfig);
-  const [playerStats, setPlayerStats] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
+  const [currentScreen, setCurrentScreen] = useState<'mode_select' | 'vocabulary_select' | 'game'>('mode_select');
+  const [finalGameConfig, setFinalGameConfig] = useState<Record<string, any>>(gameConfig);
+  const [userStats, setUserStats] = useState({
+    level: 1,
+    totalScore: 0,
+    streak: 0,
+    wordsLearned: 0
+  });
 
   // =====================================================
-  // EFFECTS
+  // INITIALIZATION
   // =====================================================
 
   useEffect(() => {
-    loadPlayerStats();
+    loadUserStats();
     
-    // If assignment mode or vocabulary is preselected, skip to game
-    if (assignmentId || preselectedVocabulary.length > 0) {
-      setCurrentView('playing');
+    // If vocabulary is preselected, skip to game
+    if (preselectedVocabulary.length > 0) {
+      setCurrentScreen('game');
+      setFinalGameConfig((prev: any) => ({
+        ...prev,
+        vocabulary: preselectedVocabulary
+      }));
+    } else if (mode === 'assignment' && assignmentId) {
+      loadAssignmentVocabulary();
+    } else {
+      setCurrentScreen('vocabulary_select');
     }
   }, []);
 
-  useEffect(() => {
-    // Update final config when vocabulary changes
-    setFinalGameConfig(prev => ({
-      ...prev,
-      ...vocabularyConfig,
-      vocabulary: selectedVocabulary,
-      mode: selectedMode
-    }));
-  }, [selectedVocabulary, vocabularyConfig, selectedMode]);
-
-  // =====================================================
-  // DATA LOADING
-  // =====================================================
-
-  const loadPlayerStats = async () => {
+  const loadUserStats = async () => {
     if (!user) return;
-    
-    try {
-      // Load player profile and stats
-      const { data: profile } = await supabase
-        .from('student_game_profiles')
-        .select('*')
-        .eq('student_id', user.id)
-        .single();
 
-      if (profile) {
-        setPlayerStats(profile);
+    try {
+      const { data } = await supabase
+        .from('user_vocabulary_progress')
+        .select('*')
+        .eq('user_id', user.id);
+
+      if (data) {
+        const stats = data.reduce(
+          (acc, record) => ({
+            totalScore: acc.totalScore + (record.times_correct * 100),
+            wordsLearned: acc.wordsLearned + (record.is_learned ? 1 : 0),
+            streak: Math.max(acc.streak, record.times_correct)
+          }),
+          { totalScore: 0, wordsLearned: 0, streak: 0 }
+        );
+        
+        setUserStats(prev => ({
+          ...prev,
+          ...stats,
+          level: Math.floor(stats.wordsLearned / 10) + 1
+        }));
       }
     } catch (error) {
-      console.error('Failed to load player stats:', error);
+      console.error('Failed to load user stats:', error);
+    }
+  };
+
+  const loadAssignmentVocabulary = async () => {
+    if (!assignmentId) return;
+
+    try {
+      // Load assignment vocabulary (placeholder - adjust based on your schema)
+      const { data } = await supabase
+        .from('assignment_vocabulary')
+        .select('vocabulary(*)')
+        .eq('assignment_id', assignmentId);
+
+      if (data) {
+        const vocabList = data.map(item => item.vocabulary);
+        setSelectedVocabulary(vocabList);
+        setFinalGameConfig((prev: any) => ({
+          ...prev,
+          vocabulary: vocabList,
+          assignmentId
+        }));
+        setCurrentScreen('game');
+      }
+    } catch (error) {
+      console.error('Failed to load assignment vocabulary:', error);
     }
   };
 
@@ -169,213 +173,161 @@ export default function GameLauncher({
   // EVENT HANDLERS
   // =====================================================
 
-  const handleModeSelect = (modeId: string) => {
-    setSelectedMode(modeId);
-    
-    // If assignment mode, go directly to game
-    if (modeId === 'assignment' && assignmentId) {
-      setCurrentView('playing');
+  const handleGameModeSelect = (modeId: string) => {
+    setSelectedGameMode(modeId);
+    if (modeId === 'free_play') {
+      setCurrentScreen('vocabulary_select');
     } else {
-      setCurrentView('vocabulary_select');
+      setCurrentScreen('game');
     }
   };
 
   const handleVocabularySelected = (vocabulary: any[]) => {
     setSelectedVocabulary(vocabulary);
-    if (vocabulary.length > 0) {
-      setCurrentView('playing');
-    }
+    setFinalGameConfig((prev: any) => ({
+      ...prev,
+      vocabulary
+    }));
+  };
+
+  const handleStartGame = () => {
+    setCurrentScreen('game');
   };
 
   const handleGameComplete = (results: any) => {
-    // Update player stats
-    loadPlayerStats();
-    
-    // Call parent callback
     onGameComplete?.(results);
-    
-    // Return to mode selection
-    setCurrentView('mode_select');
+  };
+
+  const handleGameExit = () => {
+    setCurrentScreen('vocabulary_select');
   };
 
   // =====================================================
-  // RENDER METHODS
+  // RENDER SCREENS
   // =====================================================
 
   const renderModeSelection = () => (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="text-center">
-        <div className="w-20 h-20 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center mx-auto mb-6">
-          <Diamond className="h-10 w-10 text-white" />
-        </div>
-        <h1 className="text-4xl font-bold text-gray-800 mb-4">Gem Mining Adventures</h1>
-        <p className="text-xl text-gray-600 mb-2">Choose your vocabulary learning adventure</p>
-        
-        {playerStats && (
-          <div className="flex items-center justify-center space-x-6 mt-6">
-            <GemBadge type="level" variant="primary">
-              Level {playerStats.current_level}
-            </GemBadge>
-            <GemBadge type="score" variant="success">
-              {playerStats.total_xp} XP
-            </GemBadge>
-            <GemBadge type="streak" variant="warning">
-              {playerStats.current_streak} day streak
-            </GemBadge>
-            <GemBadge type="achievement" variant="secondary">
-              {playerStats.total_achievements} achievements
-            </GemBadge>
+    <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 p-6">
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-white/10 backdrop-blur-md rounded-2xl mb-6">
+            <BookOpen className="h-10 w-10 text-white" />
           </div>
-        )}
-      </div>
-
-      {/* Game Modes Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-        {GAME_MODES.map((gameMode) => (
-          <GemCard
-            key={gameMode.id}
-            title={gameMode.name}
-            subtitle={gameMode.description}
-            icon={gameMode.icon}
-            onClick={() => gameMode.unlocked && handleModeSelect(gameMode.id)}
-            selected={selectedMode === gameMode.id}
-            className={`${!gameMode.unlocked ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:shadow-xl'}`}
-          >
-            <div className="space-y-4">
-              {/* Features */}
-              <div>
-                <div className="text-sm font-medium text-gray-700 mb-2">Features:</div>
-                <div className="flex flex-wrap gap-2">
-                  {gameMode.features.map((feature) => (
-                    <span key={feature} className="text-xs bg-gray-100 px-2 py-1 rounded">
-                      {feature}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              {/* Stats */}
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <div className="text-gray-500">Duration</div>
-                  <div className="font-medium">{gameMode.estimatedTime}</div>
-                </div>
-                <div>
-                  <div className="text-gray-500">Difficulty</div>
-                  <div className="font-medium">{gameMode.difficulty}</div>
-                </div>
-              </div>
-
-              {/* Gem Reward */}
-              <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-                <span className="text-sm text-gray-600">Gem Reward:</span>
-                <div className="flex items-center space-x-2">
-                  <GemIcon type={gameMode.gemReward} size="sm" />
-                  <span className="text-sm font-medium capitalize">{gameMode.gemReward}</span>
-                </div>
-              </div>
-
-              {/* Action Button */}
-              <div className="pt-2">
-                {gameMode.unlocked ? (
-                  <GemButton
-                    variant="gem"
-                    gemType={gameMode.gemReward}
-                    size="md"
-                    onClick={() => handleModeSelect(gameMode.id)}
-                    className="w-full"
-                  >
-                    <div className="flex items-center justify-center space-x-2">
-                      <Play className="h-4 w-4" />
-                      <span>Start Adventure</span>
-                    </div>
-                  </GemButton>
-                ) : (
-                  <div className="text-center py-2">
-                    <div className="text-sm text-gray-500 mb-1">🔒 Locked</div>
-                    <div className="text-xs text-gray-400">Complete 10 games to unlock</div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </GemCard>
-        ))}
-      </div>
-
-      {/* Quick Stats */}
-      {playerStats && (
-        <div className="bg-white rounded-xl p-6 border border-gray-200 max-w-2xl mx-auto">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-            <Trophy className="h-5 w-5 mr-2 text-yellow-500" />
-            Your Mining Progress
-          </h3>
+          <h1 className="text-4xl font-bold text-white mb-4">Language Learning</h1>
+          <p className="text-xl text-white/80">Choose your practice mode</p>
           
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-purple-600">{playerStats.total_games_played}</div>
-              <div className="text-sm text-gray-600">Games Played</div>
+          {/* User Stats */}
+          <div className="flex justify-center space-x-6 mt-8">
+            <div className="bg-white/10 backdrop-blur-md rounded-lg px-4 py-2">
+              <div className="text-white text-sm opacity-80">Level</div>
+              <div className="text-white font-bold">{userStats.level}</div>
             </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">{playerStats.words_learned}</div>
-              <div className="text-sm text-gray-600">Words Learned</div>
+            <div className="bg-white/10 backdrop-blur-md rounded-lg px-4 py-2">
+              <div className="text-white text-sm opacity-80">Score</div>
+              <div className="text-white font-bold">{userStats.totalScore.toLocaleString()}</div>
             </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">{Math.round(playerStats.accuracy_average)}%</div>
-              <div className="text-sm text-gray-600">Avg Accuracy</div>
+            <div className="bg-white/10 backdrop-blur-md rounded-lg px-4 py-2">
+              <div className="text-white text-sm opacity-80">Streak</div>
+              <div className="text-white font-bold">{userStats.streak}</div>
             </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-yellow-600">{Math.round(playerStats.total_time_played / 60)}</div>
-              <div className="text-sm text-gray-600">Hours Played</div>
+            <div className="bg-white/10 backdrop-blur-md rounded-lg px-4 py-2">
+              <div className="text-white text-sm opacity-80">Words Learned</div>
+              <div className="text-white font-bold">{userStats.wordsLearned}</div>
             </div>
           </div>
         </div>
-      )}
+
+        {/* Game Modes */}
+        <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8">
+          <h2 className="text-2xl font-bold text-white mb-8 text-center">Select Practice Mode</h2>
+          
+          <div className="grid md:grid-cols-2 gap-6">
+            {GAME_MODES.map((gameMode) => (
+              <motion.div
+                key={gameMode.id}
+                whileHover={{ scale: 1.02 }}
+                className="bg-white rounded-xl p-6 shadow-lg cursor-pointer transition-all"
+                onClick={() => handleGameModeSelect(gameMode.id)}
+              >
+                <div className="flex items-start space-x-4">
+                  <div className={`w-12 h-12 bg-${gameMode.color}-100 rounded-lg flex items-center justify-center`}>
+                    <div className={`text-${gameMode.color}-600`}>
+                      {gameMode.icon}
+                    </div>
+                  </div>
+                  
+                  <div className="flex-1">
+                    <h3 className="text-xl font-bold text-gray-800 mb-2">{gameMode.name}</h3>
+                    <p className="text-gray-600 mb-4">{gameMode.description}</p>
+                    
+                    <div className="space-y-2 mb-4">
+                      {gameMode.features.map((feature, index) => (
+                        <div key={index} className="flex items-center space-x-2 text-sm">
+                          <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                          <span className="text-gray-600">{feature}</span>
+                        </div>
+                      ))}
+                    </div>
+                    
+                    <div className="flex justify-between items-center text-sm text-gray-500">
+                      <span>{gameMode.estimatedTime}</span>
+                      <span>{gameMode.difficulty}</span>
+                    </div>
+                  </div>
+                  
+                  <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center space-x-2">
+                    <span>Select</span>
+                    <ArrowRight className="h-4 w-4" />
+                  </button>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   );
 
   const renderVocabularySelection = () => (
-    <div className="space-y-6">
-      <div className="text-center mb-8">
-        <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4">
-          <Gem className="h-8 w-8 text-white" />
+    <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 p-6">
+      <div className="max-w-4xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-white/10 backdrop-blur-md rounded-xl mb-4">
+            <BookOpen className="h-8 w-8 text-white" />
+          </div>
+          <h1 className="text-3xl font-bold text-white mb-2">Choose Your Vocabulary</h1>
+          <p className="text-white/80">Select the words you want to practice</p>
         </div>
-        <h2 className="text-2xl font-bold text-gray-800 mb-2">Choose Your Vocabulary Gems</h2>
-        <p className="text-gray-600">Select the words you want to practice in your adventure</p>
-      </div>
 
-      <EnhancedVocabularySelector
-        onSelectionChange={handleVocabularySelected}
-        onConfigChange={setVocabularyConfig}
-        maxItems={50}
-        defaultSelection="theme"
-        showPreview={true}
-        gameType="gem_collector"
-        assignmentMode={selectedMode === 'assignment'}
-        difficulty="intermediate"
-      />
+        {/* Vocabulary Selector */}
+        <SimpleVocabularySelector
+          onSelectionChange={handleVocabularySelected}
+          onStartGame={handleStartGame}
+          maxItems={50}
+        />
 
-      <div className="flex justify-center space-x-4">
-        <GemButton
-          variant="secondary"
-          onClick={() => setCurrentView('mode_select')}
-        >
-          Back to Modes
-        </GemButton>
+        {/* Back Button */}
+        <div className="text-center mt-6">
+          <button
+            onClick={() => setCurrentScreen('mode_select')}
+            className="px-6 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors"
+          >
+            ← Back to Mode Selection
+          </button>
+        </div>
       </div>
     </div>
   );
 
   const renderGame = () => (
     <EnhancedGemCollector
-      mode={selectedMode as any}
+      mode={selectedGameMode as any}
       assignmentId={assignmentId}
       config={finalGameConfig}
       onGameComplete={handleGameComplete}
-      onExit={() => {
-        onExit?.();
-        setCurrentView('mode_select');
-      }}
+      onExit={handleGameExit}
     />
   );
 
@@ -384,45 +336,18 @@ export default function GameLauncher({
   // =====================================================
 
   return (
-    <GemThemeProvider theme="crystal">
-      <div className="min-h-screen">
-        <AnimatePresence mode="wait">
-          {currentView === 'mode_select' && (
-            <motion.div
-              key="mode_select"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="container mx-auto px-4 py-8"
-            >
-              {renderModeSelection()}
-            </motion.div>
-          )}
-
-          {currentView === 'vocabulary_select' && (
-            <motion.div
-              key="vocabulary_select"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="container mx-auto px-4 py-8"
-            >
-              {renderVocabularySelection()}
-            </motion.div>
-          )}
-
-          {currentView === 'playing' && (
-            <motion.div
-              key="playing"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-            >
-              {renderGame()}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-    </GemThemeProvider>
+    <AnimatePresence mode="wait">
+      <motion.div
+        key={currentScreen}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -20 }}
+        transition={{ duration: 0.3 }}
+      >
+        {currentScreen === 'mode_select' && renderModeSelection()}
+        {currentScreen === 'vocabulary_select' && renderVocabularySelection()}
+        {currentScreen === 'game' && renderGame()}
+      </motion.div>
+    </AnimatePresence>
   );
 }

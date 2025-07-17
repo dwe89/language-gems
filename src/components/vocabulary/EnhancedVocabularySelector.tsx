@@ -6,7 +6,7 @@ import {
   Gem, Diamond, Sparkles, Crown, Star, Zap,
   Search, Filter, ChevronDown, ChevronRight,
   Target, BookOpen, Users, Clock, Trophy,
-  Plus, Minus, Eye, Shuffle, CheckCircle2
+  Plus, Minus, Eye, Shuffle, CheckCircle2, Play
 } from 'lucide-react';
 import { createBrowserClient } from '@supabase/ssr';
 
@@ -52,6 +52,7 @@ interface EnhancedVocabularySelectorProps {
   assignmentMode?: boolean;
   difficulty?: string;
   onConfigChange?: (config: any) => void;
+  onStartGame?: () => void;
 }
 
 // =====================================================
@@ -106,21 +107,20 @@ const GEM_TYPES = {
   }
 };
 
-const THEME_ICONS = {
-  'Daily Life': { icon: '🏠', color: 'from-blue-500 to-blue-700', description: 'Essential everyday gems' },
-  'Travel': { icon: '✈️', color: 'from-green-500 to-green-700', description: 'Adventure vocabulary gems' },
-  'Food': { icon: '🍽️', color: 'from-yellow-500 to-yellow-700', description: 'Culinary vocabulary gems' },
-  'Business': { icon: '💼', color: 'from-red-500 to-red-700', description: 'Professional vocabulary gems' },
-  'Culture': { icon: '🎭', color: 'from-purple-500 to-purple-700', description: 'Cultural vocabulary gems' },
-  'Education': { icon: '📚', color: 'from-indigo-500 to-indigo-700', description: 'Academic vocabulary gems' },
+const THEME_ICONS: Record<string, { icon: string; color: string; description: string }> = {
+  'Daily Life': { icon: '🏠', color: 'from-blue-500 to-blue-700', description: 'Essential daily vocabulary' },
+  'Travel': { icon: '✈️', color: 'from-green-500 to-green-700', description: 'Travel and transportation gems' },
+  'Food': { icon: '🍎', color: 'from-red-500 to-red-700', description: 'Food and dining vocabulary' },
+  'Business': { icon: '💼', color: 'from-gray-500 to-gray-700', description: 'Professional vocabulary gems' },
+  'Education': { icon: '📚', color: 'from-purple-500 to-purple-700', description: 'Academic vocabulary gems' },
+  'Entertainment': { icon: '🎭', color: 'from-pink-500 to-pink-700', description: 'Entertainment vocabulary gems' },
+  'Health': { icon: '⚕️', color: 'from-teal-500 to-teal-700', description: 'Health and medical gems' },
   'Technology': { icon: '💻', color: 'from-cyan-500 to-cyan-700', description: 'Tech vocabulary gems' },
-  'Health': { icon: '🏥', color: 'from-pink-500 to-pink-700', description: 'Medical vocabulary gems' },
-  'Sports': { icon: '⚽', color: 'from-orange-500 to-orange-700', description: 'Sports vocabulary gems' },
-  'Nature': { icon: '🌿', color: 'from-emerald-500 to-emerald-700', description: 'Nature vocabulary gems' }
+  'Nature': { icon: '🌳', color: 'from-emerald-500 to-emerald-700', description: 'Nature vocabulary gems' }
 };
 
 // =====================================================
-// ENHANCED VOCABULARY SELECTOR COMPONENT
+// MAIN COMPONENT
 // =====================================================
 
 export default function EnhancedVocabularySelector({
@@ -131,7 +131,8 @@ export default function EnhancedVocabularySelector({
   gameType = 'gem_collector',
   assignmentMode = false,
   difficulty = 'intermediate',
-  onConfigChange
+  onConfigChange,
+  onStartGame
 }: EnhancedVocabularySelectorProps) {
   // State
   const [selectionType, setSelectionType] = useState<'theme' | 'topic' | 'custom' | 'mining'>(defaultSelection);
@@ -147,6 +148,7 @@ export default function EnhancedVocabularySelector({
   const [selectedGemTypes, setSelectedGemTypes] = useState<string[]>(['common', 'uncommon', 'rare']);
   const [itemCount, setItemCount] = useState(20);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [difficultyState, setDifficulty] = useState(difficulty);
 
   // Supabase client
   const supabase = createBrowserClient(
@@ -169,7 +171,7 @@ export default function EnhancedVocabularySelector({
     } else if (selectedTopic) {
       loadVocabularyByTopic(selectedTopic);
     }
-  }, [selectedTheme, selectedTopic, difficulty, selectedGemTypes, itemCount]);
+  }, [selectedTheme, selectedTopic, difficultyState, selectedGemTypes, itemCount]);
 
   useEffect(() => {
     onSelectionChange(selectedItems);
@@ -177,20 +179,22 @@ export default function EnhancedVocabularySelector({
       onConfigChange({
         theme: selectedTheme,
         topic: selectedTopic,
-        difficulty,
+        difficulty: difficultyState,
         gemTypes: selectedGemTypes,
         itemCount,
         selectionType
       });
     }
-  }, [selectedItems, selectedTheme, selectedTopic, difficulty, selectedGemTypes, itemCount, selectionType]);
+  }, [selectedItems, selectedTheme, selectedTopic, difficultyState, selectedGemTypes, itemCount, selectionType]);
 
   const loadThemesAndTopics = async () => {
     try {
-      const { data: themeData } = await supabase
+      const { data: themeData, error } = await supabase
         .from('vocabulary')
         .select('theme, topic, gem_type')
         .order('theme', { ascending: true });
+
+      console.log('Vocabulary data loaded:', { themeData, error, count: themeData?.length });
 
       if (themeData) {
         const themeMap = new Map<string, { topics: Set<string>; gemCounts: any }>();
@@ -212,11 +216,11 @@ export default function EnhancedVocabularySelector({
         });
 
         const themesArray: VocabularyTheme[] = Array.from(themeMap.entries()).map(([name, info]) => {
-          const themeConfig = THEME_ICONS[name] || { icon: '💎', color: 'from-gray-500 to-gray-700', description: 'Vocabulary gems' };
+          const themeConfig = THEME_ICONS[name as keyof typeof THEME_ICONS] || { icon: '💎', color: 'from-gray-500 to-gray-700', description: 'Vocabulary gems' };
           return {
             name,
             topics: Array.from(info.topics),
-            wordCount: Object.values(info.gemCounts).reduce((a, b) => a + b, 0),
+            wordCount: Number(Object.values(info.gemCounts).reduce((a, b) => (a as number) + (b as number), 0)),
             gemDistribution: info.gemCounts,
             icon: themeConfig.icon,
             color: themeConfig.color,
@@ -224,6 +228,7 @@ export default function EnhancedVocabularySelector({
           };
         });
 
+        console.log('Themes processed:', themesArray);
         setThemes(themesArray);
         setTopics(Array.from(uniqueTopics).sort());
       }
@@ -265,7 +270,7 @@ export default function EnhancedVocabularySelector({
           intermediate: [40, 80],
           advanced: [0, 40]
         };
-        const range = difficultyRanges[difficulty];
+        const range = difficultyRanges[difficultyState as keyof typeof difficultyRanges];
         if (range) {
           query = query.gte('frequency_score', range[0]).lte('frequency_score', range[1]);
         }
@@ -321,13 +326,11 @@ export default function EnhancedVocabularySelector({
   const handleThemeSelect = (theme: string) => {
     setSelectedTheme(theme);
     setSelectedTopic('');
-    setSelectionType('theme');
   };
 
   const handleTopicSelect = (topic: string) => {
     setSelectedTopic(topic);
     setSelectedTheme('');
-    setSelectionType('topic');
   };
 
   const handleItemToggle = (item: VocabularyItem) => {
@@ -354,7 +357,7 @@ export default function EnhancedVocabularySelector({
   };
 
   const getGemIcon = (gemType: string) => {
-    const gem = GEM_TYPES[gemType] || GEM_TYPES.common;
+    const gem = GEM_TYPES[gemType as keyof typeof GEM_TYPES] || GEM_TYPES.common;
     return (
       <div className={`inline-flex items-center justify-center w-6 h-6 rounded-full bg-gradient-to-r ${gem.color}`}>
         <div className="text-white text-xs">
@@ -377,17 +380,89 @@ export default function EnhancedVocabularySelector({
             <Diamond className="h-6 w-6 text-white" />
           </div>
           <div>
-            <h3 className="text-xl font-bold text-gray-800">Gem Vocabulary Selector</h3>
+            <h3 className="text-lg font-semibold text-gray-800">Gem Vocabulary Selector</h3>
             <p className="text-sm text-gray-600">Choose your vocabulary gems for the adventure</p>
           </div>
         </div>
-        
-        {assignmentMode && (
-          <div className="flex items-center space-x-2 bg-blue-100 px-3 py-1 rounded-full">
-            <Trophy className="h-4 w-4 text-blue-600" />
-            <span className="text-sm font-medium text-blue-600">Assignment Mode</span>
-          </div>
-        )}
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={() => {
+              // If no vocabulary selected, use some default vocabulary
+              if (selectedItems.length === 0) {
+                const defaultVocab: VocabularyItem[] = availableItems.length > 0 ? availableItems.slice(0, 10) : [
+                  {
+                    id: 1,
+                    theme: 'Daily Life',
+                    topic: 'Greetings',
+                    part_of_speech: 'expression',
+                    spanish: 'Hola',
+                    english: 'Hello',
+                    gem_type: 'common',
+                    frequency_score: 95,
+                    difficulty_level: 'beginner'
+                  },
+                  {
+                    id: 2,
+                    theme: 'Daily Life',
+                    topic: 'Greetings',
+                    part_of_speech: 'expression',
+                    spanish: 'Adiós',
+                    english: 'Goodbye',
+                    gem_type: 'common',
+                    frequency_score: 90,
+                    difficulty_level: 'beginner'
+                  },
+                  {
+                    id: 3,
+                    theme: 'Daily Life',
+                    topic: 'Basic Words',
+                    part_of_speech: 'noun',
+                    spanish: 'Agua',
+                    english: 'Water',
+                    gem_type: 'common',
+                    frequency_score: 85,
+                    difficulty_level: 'beginner'
+                  },
+                  {
+                    id: 4,
+                    theme: 'Daily Life',
+                    topic: 'Basic Words',
+                    part_of_speech: 'noun',
+                    spanish: 'Casa',
+                    english: 'House',
+                    gem_type: 'common',
+                    frequency_score: 80,
+                    difficulty_level: 'beginner'
+                  },
+                  {
+                    id: 5,
+                    theme: 'Daily Life',
+                    topic: 'Basic Words',
+                    part_of_speech: 'noun',
+                    spanish: 'Comida',
+                    english: 'Food',
+                    gem_type: 'common',
+                    frequency_score: 75,
+                    difficulty_level: 'beginner'
+                  }
+                ];
+                setSelectedItems(defaultVocab);
+                onSelectionChange(defaultVocab);
+              } else {
+                onSelectionChange(selectedItems);
+              }
+              
+              // Call onStartGame if provided
+              if (onStartGame) {
+                onStartGame();
+              }
+            }}
+            className="px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 transition-all duration-200 font-medium text-sm flex items-center space-x-2"
+          >
+            <Play className="h-4 w-4" />
+            <span>Start Game</span>
+          </button>
+        </div>
       </div>
 
       {/* Selection Type Tabs */}
@@ -468,7 +543,7 @@ export default function EnhancedVocabularySelector({
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Difficulty Level</label>
                 <select
-                  value={difficulty}
+                  value={difficultyState}
                   onChange={(e) => setDifficulty(e.target.value)}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
                 >
