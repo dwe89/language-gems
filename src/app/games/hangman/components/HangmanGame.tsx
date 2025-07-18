@@ -9,6 +9,7 @@ import TokyoNightsAnimation from './themes/TokyoNightsAnimation';
 import LavaTempleAnimation from './themes/LavaTempleAnimation';
 import SpaceExplorerAnimation from './themes/SpaceExplorerAnimation';
 import PirateAdventureAnimation from './themes/PirateAdventureAnimation';
+import ClassicHangmanAnimation from './themes/ClassicHangmanAnimation';
 import SoundEffects from './SoundEffects';
 import TempleGuardianModal from './TempleGuardianModal';
 import TokyoNightsModal from './TokyoNightsModal';
@@ -601,6 +602,10 @@ function GameContent({ settings, onBackToMenu, onGameEnd, isFullscreen }: Hangma
   };
   
   const renderThematicAnimation = () => {
+    if (themeId === 'default') {
+      return <ClassicHangmanAnimation mistakes={wrongGuesses} maxMistakes={MAX_ATTEMPTS} />;
+    }
+    
     if (themeId === 'tokyo') {
       return <TokyoNightsAnimation
         mistakes={wrongGuesses}
@@ -616,7 +621,7 @@ function GameContent({ settings, onBackToMenu, onGameEnd, isFullscreen }: Hangma
       return <SpaceExplorerAnimation mistakes={wrongGuesses} maxMistakes={MAX_ATTEMPTS} />;
     }
     
-    // Default pirate theme animation
+    // Pirate theme animation
     return <PirateAdventureAnimation mistakes={wrongGuesses} maxMistakes={MAX_ATTEMPTS} />;
   };
   
@@ -731,7 +736,9 @@ function GameContent({ settings, onBackToMenu, onGameEnd, isFullscreen }: Hangma
       backgroundMusicRef.current = new Audio();
       
       // Set the music based on theme
-      if (themeId === 'tokyo') {
+      if (themeId === 'default') {
+        backgroundMusicRef.current.src = '/games/hangman/sounds/background.mp3';
+      } else if (themeId === 'tokyo') {
         backgroundMusicRef.current.src = '/games/hangman/sounds/songs/tokyonights.mp3';
       } else if (themeId === 'temple') {
         backgroundMusicRef.current.src = '/games/hangman/sounds/songs/lavatemple.mp3';

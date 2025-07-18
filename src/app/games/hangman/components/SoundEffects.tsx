@@ -39,7 +39,15 @@ export default function SoundEffects({
     soundEffects.hint = new Audio('/games/hangman/sounds/common/hint.mp3');
     
     // Theme-specific sounds
-    if (theme === 'space') {
+    if (theme === 'default') {
+      // Classic hangman background music
+      soundEffects.backgroundMusic = new Audio('/games/hangman/sounds/background.mp3');
+      if (soundEffects.backgroundMusic) {
+        soundEffects.backgroundMusic.loop = true;
+        soundEffects.backgroundMusic.volume = 0.3;
+      }
+    }
+    else if (theme === 'space') {
       soundEffects.asteroidHit = new Audio('/games/hangman/sounds/space/asteroid-hit.mp3');
       soundEffects.alarm = new Audio('/games/hangman/sounds/space/alarm.mp3');
       soundEffects.spacePing = new Audio('/games/hangman/sounds/space/space-ping.mp3');

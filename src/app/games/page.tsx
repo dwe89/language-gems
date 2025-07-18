@@ -285,6 +285,17 @@ const games = [
     languages: ['English', 'Spanish', 'French', 'German'],
     path: '/games/memory-game',
   },
+  {
+    id: 'verb-quest',
+    title: 'Verb Quest ⚔️',
+    description: 'Embark on an RPG adventure to master Spanish verb conjugations through epic battles',
+    category: ['new', 'verbs', 'popular'],
+    imageSrc: '/images/games/placeholder.jpg',
+    icon: <Castle className="text-emerald-600" size={20} />,
+    popular: true,
+    languages: ['Spanish'],
+    path: '/games/verb-quest',
+  },
 
 ];
 
@@ -474,22 +485,23 @@ export default function GamesPage() {
   );
 
   return (
-    <div className="bg-slate-900 min-h-screen text-white">
+    <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 min-h-screen">
       <div className="max-w-7xl mx-auto px-4 py-8">
         <header className="mb-8">
           <div className="flex items-center mb-2">
-            <Gamepad2 className="h-6 w-6 text-cyan-400 mr-2" />
-            <h1 className="text-3xl font-bold">Language Learning Games</h1>
+            <Gamepad2 className="h-6 w-6 text-indigo-600 mr-2" />
+            <h1 className="text-3xl font-bold text-gray-900">Language Learning Games</h1>
+            <span className="ml-3 bg-orange-500 text-white text-sm px-3 py-1 rounded-full font-bold">BETA</span>
           </div>
-          <p className="text-slate-300 max-w-2xl">
-            Engage with interactive games designed to make language learning fun and effective.
+          <p className="text-gray-600 max-w-2xl">
+            🎮 Engage with interactive games designed to make language learning fun and effective.
             All games are available to teachers and students with an active account.
           </p>
 
           {user && (
-            <div className="mt-4 p-4 bg-gradient-to-r from-cyan-800 to-indigo-800 rounded-lg">
-              <p className="text-cyan-200">
-                <span className="font-bold">Pro Tip:</span> As a teacher, you can assign any of these games to your students
+            <div className="mt-4 p-4 bg-gradient-to-r from-blue-100 to-indigo-100 rounded-xl border border-blue-200">
+              <p className="text-blue-800">
+                <span className="font-bold">💡 Pro Tip:</span> As a teacher, you can assign any of these games to your students
                 from the assignments page or directly from each game.
               </p>
             </div>
@@ -498,11 +510,11 @@ export default function GamesPage() {
 
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
           <div className="relative">
-            <Search className="h-5 w-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Search className="h-5 w-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
               type="text"
               placeholder="Search games..."
-              className="pl-10 pr-4 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white w-full sm:w-80"
+              className="pl-10 pr-4 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 w-full sm:w-80 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -510,7 +522,7 @@ export default function GamesPage() {
 
           <div className="flex space-x-3">
             <div className="relative">
-              <button className="flex items-center space-x-1 bg-slate-800 text-white px-4 py-2 rounded-lg border border-slate-700">
+              <button className="flex items-center space-x-1 bg-white text-gray-700 px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50">
                 <Filter className="h-4 w-4" />
                 <span>Filter</span>
                 <ChevronDown className="h-4 w-4" />
@@ -520,7 +532,7 @@ export default function GamesPage() {
             </div>
 
             <select
-              className="bg-slate-800 text-white px-4 py-2 rounded-lg border border-slate-700"
+              className="bg-white text-gray-700 px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500"
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
             >
@@ -529,55 +541,52 @@ export default function GamesPage() {
               <option value="grammar">Grammar</option>
               <option value="listening">Listening</option>
               <option value="spelling">Spelling</option>
-
             </select>
           </div>
         </div>
 
         {loading ? (
           <div className="flex items-center justify-center h-60">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-cyan-500"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredGamesByCategory.map((game) => (
               <div
                 key={game.id}
-                className="bg-slate-800 rounded-xl overflow-hidden border border-slate-700 shadow-xl hover:shadow-cyan-900/10 transition-all duration-300 hover:-translate-y-1"
+                className="bg-white rounded-xl overflow-hidden border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 hover:border-indigo-300"
               >
-                <div className="h-40 bg-slate-700 flex items-center justify-center relative">
-                  {/* This would be an image in production */}
-                  <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-cyan-900 to-indigo-900">
-                    <Gamepad2 className="h-16 w-16 text-slate-300/50" />
+                <div className="h-40 bg-gradient-to-br from-indigo-400 via-purple-500 to-pink-500 flex items-center justify-center relative">
+                  {/* Game icon/image area */}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Gamepad2 className="h-16 w-16 text-white/80" />
                   </div>
                   <div className="absolute top-2 left-2 bg-orange-500 text-white text-xs px-2 py-1 rounded-full font-bold">
                     BETA
                   </div>
-                  <div className="absolute top-2 right-2 bg-slate-800/80 text-xs px-2 py-1 rounded-full">
+                  <div className="absolute top-2 right-2 bg-white/20 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-full">
                     {game.category}
                   </div>
                 </div>
 
                 <div className="p-5">
-                  <h3 className="text-xl font-bold text-white mb-2">{game.name}</h3>
-                  <p className="text-slate-300 text-sm mb-4">{game.description}</p>
-
-
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">{game.name}</h3>
+                  <p className="text-gray-600 text-sm mb-4">{game.description}</p>
 
                   <div className="flex space-x-3">
                     <Link
                       href={game.path}
-                      className="flex-1 bg-cyan-600 hover:bg-cyan-700 text-white text-center py-2 rounded-lg font-medium"
+                      className="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-center py-2 rounded-lg font-medium transition-all transform hover:scale-105"
                     >
-                      Play Now
+                      🎮 Play Now
                     </Link>
 
                     {user?.user_metadata?.role === 'teacher' && (
                       <Link
                         href={`/dashboard/assignments/new?gameId=${game.id}`}
-                        className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white text-center py-2 rounded-lg font-medium"
+                        className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-center py-2 rounded-lg font-medium transition-all transform hover:scale-105"
                       >
-                        Assign
+                        📚 Assign
                       </Link>
                     )}
                   </div>
