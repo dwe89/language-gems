@@ -170,9 +170,9 @@ const AnimatedCrane = ({
         <motion.div
           className="absolute top-6 left-32 w-1 bg-gray-800 shadow-sm"
           animate={{
-            height: phase === 'descending' ? 140 + (towerHeight * 17) : 
-                   phase === 'lifting' || phase === 'moving' ? 100 + (towerHeight * 17) : 
-                   60 + (towerHeight * 17)
+            height: phase === 'descending' ? 100 + (towerHeight * 17) : 
+                   phase === 'lifting' || phase === 'moving' ? 80 + (towerHeight * 17) : 
+                   50 + (towerHeight * 17)
           }}
           transition={{ duration: 0.6 }}
         />
@@ -181,9 +181,9 @@ const AnimatedCrane = ({
         <motion.div
           className="absolute left-31 bg-gray-700 w-3 h-3 rounded-full shadow-lg border border-gray-900"
           animate={{
-            top: phase === 'descending' ? 146 + (towerHeight * 17) : 
-                phase === 'lifting' || phase === 'moving' ? 106 + (towerHeight * 17) : 
-                66 + (towerHeight * 17)
+            top: phase === 'descending' ? 106 + (towerHeight * 17) : 
+                phase === 'lifting' || phase === 'moving' ? 86 + (towerHeight * 17) : 
+                56 + (towerHeight * 17)
           }}
           transition={{ duration: 0.6 }}
         >
@@ -354,7 +354,8 @@ export default function ImprovedSentenceTowers() {
   const generateWordOptions = useCallback(() => {
     const unusedWords = vocabulary.filter(word => !word.correct);
     
-    if (unusedWords.length === 0) {
+    // Check if all words are completed (8 words = game completion)
+    if (unusedWords.length === 0 || gameState.wordsCompleted >= 8) {
       setGameState(prev => ({ ...prev, status: 'completed' }));
       return;
     }
@@ -428,17 +429,27 @@ export default function ImprovedSentenceTowers() {
     }, 1500);
 
     // Update game state
-    setGameState(prev => ({
-      ...prev,
-      score: prev.score + totalPoints,
-      blocksPlaced: prev.blocksPlaced + 1,
-      currentHeight: prev.currentHeight + 1,
-      maxHeight: Math.max(prev.maxHeight, prev.currentHeight + 1),
-      streak: prev.streak + 1,
-      multiplier: Math.min(3, 1 + Math.floor(prev.streak / 10) * 0.5),
-      wordsCompleted: prev.wordsCompleted + 1,
-      currentLevel: Math.floor(prev.blocksPlaced / 5) + 1
-    }));
+    setGameState(prev => {
+      const newWordsCompleted = prev.wordsCompleted + 1;
+      const updatedState = {
+        ...prev,
+        score: prev.score + totalPoints,
+        blocksPlaced: prev.blocksPlaced + 1,
+        currentHeight: prev.currentHeight + 1,
+        maxHeight: Math.max(prev.maxHeight, prev.currentHeight + 1),
+        streak: prev.streak + 1,
+        multiplier: Math.min(3, 1 + Math.floor(prev.streak / 10) * 0.5),
+        wordsCompleted: newWordsCompleted,
+        currentLevel: Math.floor(prev.blocksPlaced / 5) + 1
+      };
+      
+      // Check for completion after updating
+      if (newWordsCompleted >= 8) {
+        return { ...updatedState, status: 'completed' };
+      }
+      
+      return updatedState;
+    });
   }, [gameState, towerBlocks, addParticleEffect]);
 
   // Enhanced incorrect answer handling
@@ -676,10 +687,10 @@ export default function ImprovedSentenceTowers() {
       </div>
 
       {/* Main Game Area */}
-      <div className="relative z-10 flex justify-center items-end h-96 mb-8">
+      <div className="relative z-10 flex justify-center items-end h-80 mb-8">
         {/* Target Word Display */}
         {currentTargetWord && gameState.status === 'playing' && (
-          <div className="absolute top-0 left-8">
+          <div className="absolute -top-16 left-8">
             <motion.div
               key={currentTargetWord.id}
               initial={{ opacity: 0, x: -50, scale: 0.8 }}
@@ -787,7 +798,7 @@ export default function ImprovedSentenceTowers() {
         
         {/* Tower height indicator */}
         {towerBlocks.length > 0 && (
-          <div className="absolute right-8 top-0 bg-black/50 backdrop-blur-md rounded-xl p-4 border border-green-500/30">
+          <div className="absolute -right-4 -top-16 bg-black/50 backdrop-blur-md rounded-xl p-4 border border-green-500/30">
             <div className="text-green-400 text-sm font-bold mb-2 text-center">HEIGHT</div>
             <div className="text-center">
               <div className="text-4xl font-bold text-white">{gameState.currentHeight}</div>
