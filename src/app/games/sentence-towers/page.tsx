@@ -4,8 +4,9 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowLeft, Flame, Clock, Trophy, Star, Settings, 
-  Volume2, VolumeX, Pause, Play, RotateCcw
+  Volume2, VolumeX, Pause, Play, RotateCcw, Maximize, Minimize
 } from 'lucide-react';
+import { useSounds } from './hooks/useSounds';
 
 // Enhanced Types
 interface TowerBlock {
@@ -17,10 +18,11 @@ interface TowerBlock {
   position: number;
   isShaking: boolean;
   createdAt: number;
+  responseTime?: number; // Add response time for time-based scoring
 }
 
 interface GameState {
-  status: 'ready' | 'playing' | 'paused' | 'completed' | 'failed';
+  status: 'ready' | 'playing' | 'paused' | 'failed';
   score: number;
   blocksPlaced: number;
   blocksFallen: number;
@@ -45,7 +47,7 @@ interface WordOption {
 
 interface ParticleEffect {
   id: string;
-  type: 'success' | 'error' | 'placement' | 'destruction' | 'combo';
+  type: 'success' | 'error' | 'placement' | 'destruction' | 'combo' | 'lightning' | 'timebonus';
   position: { x: number; y: number };
   intensity: number;
   timestamp: number;
@@ -101,9 +103,37 @@ const ParticleSystem = ({ effects }: { effects: ParticleEffect[] }) => {
             </div>
           )}
           {effect.type === 'combo' && (
-            <div className="text-yellow-400 text-5xl font-bold animate-pulse">
-              🔥 COMBO x{effect.intensity}
-            </div>
+            <motion.div
+              initial={{ scale: 0, rotate: -180 }}
+              animate={{ scale: 1.5, rotate: 0 }}
+              transition={{ type: "spring", stiffness: 200 }}
+              className="text-yellow-400 text-5xl font-bold"
+            >
+              <div className="relative">
+                🔥 COMBO x{effect.intensity}
+                <div className="absolute inset-0 animate-pulse bg-yellow-400/20 rounded-full blur-xl"></div>
+              </div>
+            </motion.div>
+          )}
+          {effect.type === 'lightning' && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.5 }}
+              animate={{ opacity: [0, 1, 0], scale: [0.5, 2, 0.5] }}
+              transition={{ duration: 0.8, times: [0, 0.3, 1] }}
+              className="text-electric-blue text-6xl font-bold"
+            >
+              ⚡ MULTIPLIER x{effect.intensity}!
+            </motion.div>
+          )}
+          {effect.type === 'timebonus' && (
+            <motion.div
+              initial={{ y: 0, opacity: 1 }}
+              animate={{ y: -50, opacity: 0 }}
+              transition={{ duration: 1.5 }}
+              className="text-cyan-400 text-3xl font-bold"
+            >
+              ⏱️ SPEED BONUS +{effect.intensity}!
+            </motion.div>
           )}
         </motion.div>
       ))}
@@ -302,9 +332,18 @@ export default function ImprovedSentenceTowers() {
   const [showSettings, setShowSettings] = useState(false);
   const [craneLifting, setCraneLifting] = useState(false);
   const [craneWord, setCraneWord] = useState('');
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [screenShake, setScreenShake] = useState(false);
+  const [questionStartTime, setQuestionStartTime] = useState<number>(0);
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const effectIdRef = useRef(0);
+
+  // Constants for tower display
+  const VISIBLE_BLOCKS = 7; // Only show last 7 blocks
+
+  // Sound effects hook
+  const sounds = useSounds(settings.soundEnabled);
 
   // Enhanced particle effect system
   const addParticleEffect = useCallback((
@@ -326,6 +365,12 @@ export default function ImprovedSentenceTowers() {
     setTimeout(() => {
       setParticleEffects(prev => prev.filter(e => e.id !== newEffect.id));
     }, 2000);
+  }, []);
+
+  // Screen shake effect
+  const triggerScreenShake = useCallback(() => {
+    setScreenShake(true);
+    setTimeout(() => setScreenShake(false), 500);
   }, []);
 
   // Enhanced timer with pause functionality
@@ -354,19 +399,80 @@ export default function ImprovedSentenceTowers() {
   const generateWordOptions = useCallback(() => {
     const unusedWords = vocabulary.filter(word => !word.correct);
     
-    // Check if all words are completed (8 words = game completion)
-    if (unusedWords.length === 0 || gameState.wordsCompleted >= 8) {
-      setGameState(prev => ({ ...prev, status: 'completed' }));
+    // If we've used all words, reset the vocabulary to continue playing
+    if (unusedWords.length === 0) {
+      setVocabulary(enhancedVocabulary.map(word => ({ ...word, correct: false })));
+      // Use the reset vocabulary for this round
+      const resetWords = enhancedVocabulary;
+      const shuffled = [...resetWords].sort(() => Math.random() - 0.5);
+      const targetWord = shuffled[0];
+      
+      setCurrentTargetWord({
+        id: targetWord.id,
+        word: targetWord.word,
+        translation: targetWord.translation,
+        isCorrect: true,
+        difficulty: targetWord.difficulty
+      });
+      
+      // Record question start time for speed bonuses
+      setQuestionStartTime(Date.now());
+      
+      // Ensure we have at least 4 options
+      const incorrectOptions = shuffled.slice(1, 4);
+      const allOptions = [targetWord, ...incorrectOptions].sort(() => Math.random() - 0.5);
+      
+      setWordOptions(allOptions.map(word => ({
+        id: word.id,
+        word: word.word,
+        translation: word.translation,
+        isCorrect: word.id === targetWord.id,
+        difficulty: word.difficulty
+      })));
       return;
     }
     
-    // Select words based on current level difficulty
-    const levelDifficulty = Math.min(5, Math.floor(gameState.currentLevel / 2) + 1);
+    // Dynamic difficulty: increase based on current level and accuracy
+    const baseDifficulty = Math.min(5, Math.floor(gameState.currentLevel / 2) + 1);
+    const accuracyBonus = gameState.accuracy > 0.8 ? 1 : 0;
+    const levelDifficulty = baseDifficulty + accuracyBonus;
+    
     const availableWords = unusedWords.filter(word => 
       word.difficulty <= levelDifficulty + 1 && word.difficulty >= levelDifficulty - 1
     );
     
-    const targetWords = availableWords.length > 0 ? availableWords : unusedWords;
+    // Ensure we have enough words for options
+    const targetWords = availableWords.length >= 4 ? availableWords : unusedWords;
+    if (targetWords.length < 4) {
+      // If still not enough, use the full vocabulary
+      const fullVocab = enhancedVocabulary;
+      const shuffled = [...fullVocab].sort(() => Math.random() - 0.5);
+      const targetWord = shuffled[0];
+      
+      setCurrentTargetWord({
+        id: targetWord.id,
+        word: targetWord.word,
+        translation: targetWord.translation,
+        isCorrect: true,
+        difficulty: targetWord.difficulty
+      });
+      
+      // Record question start time for speed bonuses
+      setQuestionStartTime(Date.now());
+      
+      const incorrectOptions = shuffled.slice(1, 4);
+      const allOptions = [targetWord, ...incorrectOptions].sort(() => Math.random() - 0.5);
+      
+      setWordOptions(allOptions.map(word => ({
+        id: word.id,
+        word: word.word,
+        translation: word.translation,
+        isCorrect: word.id === targetWord.id,
+        difficulty: word.difficulty
+      })));
+      return;
+    }
+    
     const shuffled = [...targetWords].sort(() => Math.random() - 0.5);
     const targetWord = shuffled[0];
     
@@ -378,7 +484,27 @@ export default function ImprovedSentenceTowers() {
       difficulty: targetWord.difficulty
     });
     
-    const incorrectOptions = shuffled.slice(1, 4);
+    // Record question start time for speed bonuses
+    setQuestionStartTime(Date.now());
+    
+    // Always ensure 4 options by selecting 3 incorrect ones
+    const remainingWords = shuffled.slice(1);
+    const incorrectOptions = remainingWords.slice(0, 3);
+    
+    // If we don't have enough incorrect options from filtered words, add from all words
+    while (incorrectOptions.length < 3) {
+      const additionalOptions = enhancedVocabulary.filter(word => 
+        word.id !== targetWord.id && 
+        !incorrectOptions.some(opt => opt.id === word.id)
+      );
+      if (additionalOptions.length > 0) {
+        const randomOption = additionalOptions[Math.floor(Math.random() * additionalOptions.length)];
+        incorrectOptions.push({ ...randomOption, correct: false });
+      } else {
+        break;
+      }
+    }
+    
     const allOptions = [targetWord, ...incorrectOptions].sort(() => Math.random() - 0.5);
     
     setWordOptions(allOptions.map(word => ({
@@ -388,21 +514,28 @@ export default function ImprovedSentenceTowers() {
       isCorrect: word.id === targetWord.id,
       difficulty: word.difficulty
     })));
-  }, [vocabulary, gameState.currentLevel]);
+  }, [vocabulary, gameState.currentLevel, gameState.accuracy]);
 
   // Enhanced correct answer handling
   const handleCorrectAnswer = useCallback((option: WordOption) => {
+    // Play correct answer sound
+    sounds.playCorrectAnswer();
+    
     setVocabulary(prev => 
       prev.map(word => 
         word.id === option.id ? { ...word, correct: true } : word
       )
     );
 
-    // Enhanced scoring with multipliers
+    // Calculate response time and speed bonus
+    const responseTime = Date.now() - questionStartTime;
+    const speedBonus = responseTime < 3000 ? Math.floor((3000 - responseTime) / 100) * 5 : 0;
+
+    // Enhanced scoring with multipliers and speed bonuses
     const basePoints = 10 + (option.difficulty * 5);
     const streakBonus = Math.floor(gameState.streak / 3) * 5;
     const levelBonus = gameState.currentLevel * 2;
-    const totalPoints = Math.floor((basePoints + streakBonus + levelBonus) * gameState.multiplier);
+    const totalPoints = Math.floor((basePoints + streakBonus + levelBonus + speedBonus) * gameState.multiplier);
 
     const newBlock: TowerBlock = {
       id: `block-${Date.now()}`,
@@ -412,54 +545,72 @@ export default function ImprovedSentenceTowers() {
       points: totalPoints,
       position: towerBlocks.length,
       isShaking: false,
-      createdAt: Date.now()
+      createdAt: Date.now(),
+      responseTime
     };
 
     // Trigger enhanced animations
     setCraneLifting(true);
     setCraneWord(option.word);
+    sounds.playCraneMovement();
+    
+    // Show speed bonus effect if applicable
+    if (speedBonus > 0) {
+      addParticleEffect('timebonus', { x: window.innerWidth / 2, y: window.innerHeight / 3 }, speedBonus);
+    }
     
     setTimeout(() => {
       setTowerBlocks(prev => [...prev, newBlock]);
+      sounds.playBlockPlacement();
       addParticleEffect('success', { x: window.innerWidth / 2, y: window.innerHeight / 2 }, gameState.multiplier);
       
-      if (gameState.streak > 0 && gameState.streak % 5 === 0) {
-        addParticleEffect('combo', { x: window.innerWidth / 2, y: window.innerHeight / 3 }, gameState.streak / 5);
+      // Enhanced combo celebrations
+      if (gameState.streak > 0 && (gameState.streak + 1) % 5 === 0) {
+        addParticleEffect('combo', { x: window.innerWidth / 2, y: window.innerHeight / 3 }, (gameState.streak + 1) / 5);
+      }
+      
+      // Lightning effect for high multipliers
+      if (gameState.multiplier >= 2) {
+        addParticleEffect('lightning', { x: window.innerWidth / 2, y: window.innerHeight / 4 }, gameState.multiplier);
       }
     }, 1500);
 
     // Update game state
     setGameState(prev => {
       const newWordsCompleted = prev.wordsCompleted + 1;
+      const newStreak = prev.streak + 1;
       const updatedState = {
         ...prev,
         score: prev.score + totalPoints,
         blocksPlaced: prev.blocksPlaced + 1,
         currentHeight: prev.currentHeight + 1,
         maxHeight: Math.max(prev.maxHeight, prev.currentHeight + 1),
-        streak: prev.streak + 1,
-        multiplier: Math.min(3, 1 + Math.floor(prev.streak / 10) * 0.5),
+        streak: newStreak,
+        multiplier: Math.min(3, 1 + Math.floor(newStreak / 10) * 0.5),
         wordsCompleted: newWordsCompleted,
-        currentLevel: Math.floor(prev.blocksPlaced / 5) + 1
+        currentLevel: Math.floor(prev.blocksPlaced / 5) + 1,
+        accuracy: (prev.blocksPlaced + 1) > 0 ? (prev.blocksPlaced + 1 - prev.blocksFallen) / (prev.blocksPlaced + 1) : 1
       };
-      
-      // Check for completion after updating
-      if (newWordsCompleted >= 8) {
-        return { ...updatedState, status: 'completed' };
-      }
       
       return updatedState;
     });
-  }, [gameState, towerBlocks, addParticleEffect]);
+  }, [gameState, towerBlocks, addParticleEffect, sounds, questionStartTime]);
 
   // Enhanced incorrect answer handling
   const handleIncorrectAnswer = useCallback(() => {
+    // Play wrong answer sound
+    sounds.playWrongAnswer();
+    
+    // Trigger screen shake effect
+    triggerScreenShake();
+    
     if (settings.towerFalling && towerBlocks.length > 0) {
       const fallCount = getDifficultySettings(settings.difficulty).fallCount;
       const blocksToFall = Math.min(fallCount, towerBlocks.length);
       const fallingIds = towerBlocks.slice(-blocksToFall).map(block => block.id);
       
       setFallingBlocks(fallingIds);
+      sounds.playBlockFalling();
       addParticleEffect('destruction', { x: window.innerWidth / 2, y: window.innerHeight / 2 + 100 });
       
       setTimeout(() => {
@@ -472,14 +623,14 @@ export default function ImprovedSentenceTowers() {
           currentHeight: prev.currentHeight - blocksToFall,
           streak: 0,
           multiplier: 1,
-          accuracy: prev.blocksPlaced > 0 ? (prev.blocksPlaced - prev.blocksFallen) / prev.blocksPlaced : 1
+          accuracy: prev.blocksPlaced > 0 ? (prev.blocksPlaced - (prev.blocksFallen + blocksToFall)) / prev.blocksPlaced : 1
         }));
       }, 1000);
     } else {
       addParticleEffect('error', { x: window.innerWidth / 2, y: window.innerHeight / 2 });
       setGameState(prev => ({ ...prev, streak: 0, multiplier: 1 }));
     }
-  }, [settings, towerBlocks, addParticleEffect]);
+  }, [settings, towerBlocks, addParticleEffect, sounds, triggerScreenShake]);
 
   // Enhanced option selection
   const handleSelectOption = useCallback((option: WordOption) => {
@@ -551,13 +702,24 @@ export default function ImprovedSentenceTowers() {
     setParticleEffects([]);
     setVocabulary(enhancedVocabulary.map(word => ({ ...word, correct: false })));
     generateWordOptions();
+    
+    // Start background music
+    sounds.playBackgroundMusic();
   };
 
   const pauseGame = () => {
+    const newStatus = gameState.status === 'playing' ? 'paused' : 'playing';
     setGameState(prev => ({ 
       ...prev, 
-      status: prev.status === 'playing' ? 'paused' : 'playing' 
+      status: newStatus
     }));
+    
+    // Control background music based on pause state
+    if (newStatus === 'paused') {
+      sounds.stopBackgroundMusic();
+    } else {
+      sounds.playBackgroundMusic();
+    }
   };
 
   const resetGame = () => {
@@ -565,6 +727,9 @@ export default function ImprovedSentenceTowers() {
     setTowerBlocks([]);
     setFallingBlocks([]);
     setParticleEffects([]);
+    
+    // Stop background music
+    sounds.stopBackgroundMusic();
   };
 
   const formatTime = (seconds: number) => {
@@ -572,6 +737,37 @@ export default function ImprovedSentenceTowers() {
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
+
+  // Fullscreen functionality
+  const toggleFullscreen = async () => {
+    if (!document.fullscreenElement) {
+      try {
+        await document.documentElement.requestFullscreen();
+        setIsFullscreen(true);
+      } catch (err) {
+        console.error('Error attempting to enable fullscreen:', err);
+      }
+    } else {
+      try {
+        await document.exitFullscreen();
+        setIsFullscreen(false);
+      } catch (err) {
+        console.error('Error attempting to exit fullscreen:', err);
+      }
+    }
+  };
+
+  // Listen for fullscreen changes
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    };
+  }, []);
 
   // Initialize word options
   useEffect(() => {
@@ -581,7 +777,20 @@ export default function ImprovedSentenceTowers() {
   }, [gameState.status, wordOptions.length, generateWordOptions]);
 
   return (
-    <div className="min-h-screen relative overflow-hidden">
+    <div className={`min-h-screen relative overflow-hidden ${screenShake ? 'animate-pulse' : ''}`}>
+      <motion.div
+        animate={screenShake ? {
+          x: [-10, 10],
+          y: [-5, 5]
+        } : { x: 0, y: 0 }}
+        transition={{ 
+          duration: 0.5, 
+          type: "spring",
+          repeat: screenShake ? 2 : 0,
+          repeatType: "reverse"
+        }}
+        className="w-full h-full"
+      >
       {/* Enhanced Background */}
       <DynamicBackground 
         level={gameState.currentLevel}
@@ -592,220 +801,164 @@ export default function ImprovedSentenceTowers() {
       {/* Particle Effects */}
       <ParticleSystem effects={particleEffects} />
 
-      {/* Header */}
-      <div className="relative z-20 flex items-center justify-between p-6">
-        <button 
-          onClick={() => window.history.back()}
-          className="p-3 bg-black/30 hover:bg-black/50 rounded-xl backdrop-blur-md border border-white/20 transition-all duration-300"
-        >
-          <ArrowLeft className="h-6 w-6 text-white" />
-        </button>
-        
-        <div className="text-center">
-          <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-yellow-500">
-            Sentence Towers
-          </h1>
-          <div className="text-sm text-white/80 mt-1">
-            Level {gameState.currentLevel} • {gameState.wordsCompleted}/{gameState.totalWords} Words
+      {/* Simplified Header with left-aligned title */}
+      <div className="relative z-20 flex items-center justify-between p-4 md:p-6">
+        <div className="flex items-center space-x-4">
+          <button 
+            onClick={() => window.history.back()}
+            className="p-2 md:p-3 bg-black/30 hover:bg-black/50 rounded-xl backdrop-blur-md border border-white/20 transition-all duration-300"
+          >
+            <ArrowLeft className="h-5 w-5 md:h-6 md:w-6 text-white" />
+          </button>
+          
+          <div>
+            <h1 className="text-2xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-yellow-500">
+              Sentence Towers
+            </h1>
           </div>
         </div>
 
         <div className="flex items-center space-x-2">
           <button
-            onClick={() => setSettings(prev => ({ ...prev, soundEnabled: !prev.soundEnabled }))}
-            className="p-3 bg-black/30 hover:bg-black/50 rounded-xl backdrop-blur-md border border-white/20 transition-all duration-300"
+            onClick={toggleFullscreen}
+            className="p-2 md:p-3 bg-black/30 hover:bg-black/50 rounded-xl backdrop-blur-md border border-white/20 transition-all duration-300"
+            title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+          >
+            {isFullscreen ? (
+              <Minimize className="h-4 w-4 md:h-5 md:w-5 text-white" />
+            ) : (
+              <Maximize className="h-4 w-4 md:h-5 md:w-5 text-white" />
+            )}
+          </button>
+          
+          <button
+            onClick={() => {
+              const newSoundEnabled = !settings.soundEnabled;
+              setSettings(prev => ({ ...prev, soundEnabled: newSoundEnabled }));
+              sounds.mute(!newSoundEnabled);
+              if (!newSoundEnabled) {
+                sounds.stopBackgroundMusic();
+              } else if (gameState.status === 'playing') {
+                sounds.playBackgroundMusic();
+              }
+            }}
+            className="p-2 md:p-3 bg-black/30 hover:bg-black/50 rounded-xl backdrop-blur-md border border-white/20 transition-all duration-300"
           >
             {settings.soundEnabled ? (
-              <Volume2 className="h-5 w-5 text-white" />
+              <Volume2 className="h-4 w-4 md:h-5 md:w-5 text-white" />
             ) : (
-              <VolumeX className="h-5 w-5 text-white" />
+              <VolumeX className="h-4 w-4 md:h-5 md:w-5 text-white" />
             )}
           </button>
           
           {gameState.status === 'playing' && (
             <button
               onClick={pauseGame}
-              className="p-3 bg-black/30 hover:bg-black/50 rounded-xl backdrop-blur-md border border-white/20 transition-all duration-300"
+              className="p-2 md:p-3 bg-black/30 hover:bg-black/50 rounded-xl backdrop-blur-md border border-white/20 transition-all duration-300"
             >
-              <Pause className="h-5 w-5 text-white" />
+              <Pause className="h-4 w-4 md:h-5 md:w-5 text-white" />
             </button>
           )}
           
           <button
             onClick={() => setShowSettings(!showSettings)}
-            className="p-3 bg-black/30 hover:bg-black/50 rounded-xl backdrop-blur-md border border-white/20 transition-all duration-300"
+            className="p-2 md:p-3 bg-black/30 hover:bg-black/50 rounded-xl backdrop-blur-md border border-white/20 transition-all duration-300"
           >
-            <Settings className="h-5 w-5 text-white" />
+            <Settings className="h-4 w-4 md:h-5 md:w-5 text-white" />
           </button>
         </div>
       </div>
 
-      {/* Enhanced Game HUD */}
-      <div className="relative z-20 px-6 mb-6">
-        <div className="flex justify-between items-center">
-          <div className="bg-black/50 backdrop-blur-md rounded-xl p-4 border border-orange-500/30">
-            <div className="text-orange-400 text-sm font-bold mb-1">SCORE</div>
-            <div className="text-2xl font-bold text-white">{gameState.score.toLocaleString()}</div>
-            {gameState.multiplier > 1 && (
-              <div className="text-xs text-yellow-400">×{gameState.multiplier.toFixed(1)} multiplier</div>
-            )}
-          </div>
-
-          <div className="bg-black/50 backdrop-blur-md rounded-xl p-4 border border-blue-500/30">
-            <div className="text-blue-400 text-sm font-bold mb-1 text-center">TIME</div>
-            <div className={`text-2xl font-bold text-center ${
-              gameState.timeLeft <= 30 ? 'text-red-400' : 
-              gameState.timeLeft <= 60 ? 'text-orange-400' : 'text-green-400'
-            }`}>
-              {formatTime(gameState.timeLeft)}
-            </div>
-          </div>
-
-          <div className="bg-black/50 backdrop-blur-md rounded-xl p-4 border border-purple-500/30">
-            <div className="text-purple-400 text-sm font-bold mb-1">PROGRESS</div>
-            <div className="w-32 h-2 bg-gray-700 rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-300"
-                style={{ width: `${(gameState.wordsCompleted / gameState.totalWords) * 100}%` }}
-              />
-            </div>
-            <div className="text-white text-sm mt-1">Height: {gameState.currentHeight}</div>
-          </div>
-
-          {gameState.streak > 0 && (
-            <div className="bg-black/50 backdrop-blur-md rounded-xl p-4 border border-red-500/30">
-              <div className="flex items-center space-x-2">
-                <Flame className="h-5 w-5 text-red-400" />
-                <div>
-                  <div className="text-red-400 text-sm font-bold">STREAK</div>
-                  <div className="text-white font-bold">{gameState.streak}</div>
-                </div>
-              </div>
-            </div>
+      {/* Left Sidebar Stats - hidden on mobile, positioned to avoid tower overlap */}
+      <div className="hidden lg:block fixed left-4 top-1/2 transform -translate-y-1/2 z-20 space-y-4">
+        {/* Score */}
+        <div className="bg-black/70 backdrop-blur-md rounded-xl p-3 border border-orange-500/30 min-w-[120px]">
+          <div className="text-orange-400 text-xs font-bold mb-1">SCORE</div>
+          <div className="text-lg font-bold text-white">{gameState.score.toLocaleString()}</div>
+          {gameState.multiplier > 1 && (
+            <div className="text-xs text-yellow-400">×{gameState.multiplier.toFixed(1)}</div>
           )}
+        </div>
+
+        {/* Streak */}
+        <div className="bg-black/70 backdrop-blur-md rounded-xl p-3 border border-red-500/30">
+          <div className="flex items-center space-x-2">
+            <Flame className="h-4 w-4 text-red-400" />
+            <div>
+              <div className="text-red-400 text-xs font-bold">STREAK</div>
+              <div className="text-white font-bold text-lg">{gameState.streak}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Level Progress */}
+        <div className="bg-black/70 backdrop-blur-md rounded-xl p-3 border border-purple-500/30">
+          <div className="text-purple-400 text-xs font-bold mb-2">LEVEL</div>
+          <div className="text-center">
+            <div className="text-xl font-bold text-white">{gameState.currentLevel}</div>
+            <div className="text-xs text-white/60">current level</div>
+          </div>
+          <div className="w-16 h-2 bg-gray-700 rounded-full overflow-hidden mt-2">
+            <div 
+              className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-300"
+              style={{ width: `${((gameState.blocksPlaced % 5) / 5) * 100}%` }}
+            />
+          </div>
+          <div className="text-white text-xs mt-1">{gameState.blocksPlaced % 5}/5 to next</div>
         </div>
       </div>
 
-      {/* Main Game Area */}
-      <div className="relative z-10 flex justify-center items-end h-80 mb-8">
-        {/* Target Word Display */}
+      {/* Right Sidebar Stats + Translation Box */}
+      <div className="hidden lg:block fixed right-4 top-1/2 transform -translate-y-1/2 z-20 space-y-4">
+        {/* Target Word Display - moved to right sidebar */}
         {currentTargetWord && gameState.status === 'playing' && (
-          <div className="absolute -top-16 left-8">
-            <motion.div
-              key={currentTargetWord.id}
-              initial={{ opacity: 0, x: -50, scale: 0.8 }}
-              animate={{ opacity: 1, x: 0, scale: 1 }}
-              transition={{ type: "spring", stiffness: 200 }}
-              className="bg-gradient-to-r from-orange-500 to-yellow-600 rounded-2xl p-6 shadow-2xl border-4 border-orange-300"
-            >
-              <div className="text-center">
-                <div className="text-sm font-semibold text-orange-100 mb-2">
-                  Translate:
-                </div>
-                <div className="text-3xl font-bold text-white">
-                  {currentTargetWord.word}
-                </div>
-                <div className="text-xs text-orange-200 mt-1">
-                  Difficulty: {currentTargetWord.difficulty}/5
-                </div>
+          <motion.div
+            key={currentTargetWord.id}
+            initial={{ opacity: 0, x: 50, scale: 0.8 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            transition={{ type: "spring", stiffness: 200 }}
+            className="bg-gradient-to-r from-orange-500 to-yellow-600 rounded-2xl p-4 shadow-2xl border-4 border-orange-300 min-w-[200px]"
+          >
+            <div className="text-center">
+              <div className="text-sm font-semibold text-orange-100 mb-1">
+                Translate:
               </div>
-            </motion.div>
-          </div>
+              <div className="text-2xl font-bold text-white">
+                {currentTargetWord.word}
+              </div>
+              <div className="text-xs text-orange-200 mt-1">
+                Difficulty: {currentTargetWord.difficulty}/5
+              </div>
+            </div>
+          </motion.div>
         )}
 
-        {/* Enhanced Tower with Crane */}
-        <div className="flex flex-col-reverse items-center space-y-reverse space-y-1 relative">
-          <AnimatedCrane
-            isLifting={craneLifting}
-            liftedWord={craneWord}
-            towerHeight={towerBlocks.length}
-            onComplete={() => {
-              setCraneLifting(false);
-              setCraneWord('');
-            }}
-          />
-          
-          {/* Tower Blocks */}
-          {towerBlocks.map((block, index) => (
-            <motion.div
-              key={block.id}
-              initial={{ y: -200, opacity: 0, scale: 0, rotate: -10 }}
-              animate={{ 
-                y: 0, 
-                opacity: 1,
-                scale: 1,
-                rotate: fallingBlocks.includes(block.id) ? (Math.random() > 0.5 ? 45 : -45) : 0,
-                x: fallingBlocks.includes(block.id) ? (Math.random() > 0.5 ? 300 : -300) : 0
-              }}
-              exit={{ 
-                y: 500, 
-                opacity: 0, 
-                scale: 0.5,
-                rotate: Math.random() * 360,
-                transition: { duration: 1 }
-              }}
-              transition={{ 
-                duration: 0.8,
-                delay: index * 0.1,
-                type: "spring", 
-                stiffness: 100 
-              }}
-              className={`w-48 h-16 rounded-lg border-4 shadow-2xl backdrop-blur-md relative overflow-hidden ${getBlockStyle(block.type, block.isShaking)}`}
-              style={{ zIndex: towerBlocks.length - index }}
-            >
-              {/* Block content */}
-              <div className="absolute inset-0 flex items-center justify-between p-3">
-                <div className="flex-1">
-                  <div className="text-white font-bold text-lg">{block.word}</div>
-                  <div className="text-white/80 text-sm">{block.translation}</div>
-                </div>
-                <div className="text-right">
-                  <div className="text-white/60 text-xs uppercase font-semibold">
-                    {block.type}
-                  </div>
-                  <div className="text-yellow-300 font-bold">+{block.points}</div>
-                </div>
-              </div>
-              
-              {/* Block type indicator */}
-              <div className="absolute top-1 right-1">
-                {block.type === 'bonus' && (
-                  <Star className="h-4 w-4 text-yellow-300" />
-                )}
-                {block.type === 'challenge' && (
-                  <Trophy className="h-4 w-4 text-red-300" />
-                )}
-                {block.type === 'fragile' && (
-                  <div className="h-3 w-3 bg-gray-400 rounded-full" />
-                )}
-              </div>
-              
-              {/* Particle trails for falling blocks */}
-              {fallingBlocks.includes(block.id) && (
-                <div className="absolute inset-0 bg-red-500/20 animate-pulse" />
-              )}
-            </motion.div>
-          ))}
-          
-          {/* Tower base */}
-          <div className="w-60 h-8 bg-gradient-to-r from-stone-600 to-stone-800 rounded-lg border-4 border-stone-700 shadow-2xl relative">
-            <div className="absolute inset-0 bg-gradient-to-t from-stone-900/50 to-transparent rounded-md" />
-            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-stone-200 font-bold text-sm">
-              FOUNDATION
-            </div>
+        {/* Timer */}
+        <div className="bg-black/70 backdrop-blur-md rounded-xl p-3 border border-blue-500/30">
+          <div className="text-blue-400 text-xs font-bold mb-1 text-center">TIME</div>
+          <div className={`text-xl font-bold text-center ${
+            gameState.timeLeft <= 30 ? 'text-red-400' : 
+            gameState.timeLeft <= 60 ? 'text-orange-400' : 'text-green-400'
+          }`}>
+            {formatTime(gameState.timeLeft)}
           </div>
         </div>
-        
-        {/* Tower height indicator */}
+
+        {/* Current Height */}
         {towerBlocks.length > 0 && (
-          <div className="absolute -right-4 -top-16 bg-black/50 backdrop-blur-md rounded-xl p-4 border border-green-500/30">
-            <div className="text-green-400 text-sm font-bold mb-2 text-center">HEIGHT</div>
+          <div className="bg-black/70 backdrop-blur-md rounded-xl p-3 border border-green-500/30">
+            <div className="text-green-400 text-xs font-bold mb-1 text-center">TOWER HEIGHT</div>
             <div className="text-center">
-              <div className="text-4xl font-bold text-white">{gameState.currentHeight}</div>
-              <div className="text-xs text-white/60">blocks</div>
+              <div className="text-xl font-bold text-white">{gameState.currentHeight}</div>
+              <div className="text-xs text-white/60">total blocks</div>
+              {towerBlocks.length > VISIBLE_BLOCKS && (
+                <div className="text-xs text-green-400 mt-1">
+                  Showing top {Math.min(VISIBLE_BLOCKS, towerBlocks.length)}
+                </div>
+              )}
             </div>
             {gameState.maxHeight > gameState.currentHeight && (
-              <div className="text-xs text-green-400 mt-1">
+              <div className="text-xs text-green-400 mt-1 text-center">
                 Best: {gameState.maxHeight}
               </div>
             )}
@@ -813,13 +966,168 @@ export default function ImprovedSentenceTowers() {
         )}
       </div>
 
+      {/* Mobile translation box and bottom stats bar */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-20 px-4 pb-2 space-y-2">
+        {/* Mobile Translation Box */}
+        {currentTargetWord && gameState.status === 'playing' && (
+          <motion.div
+            key={currentTargetWord.id}
+            initial={{ opacity: 0, y: 50, scale: 0.8 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ type: "spring", stiffness: 200 }}
+            className="bg-gradient-to-r from-orange-500 to-yellow-600 rounded-2xl p-4 shadow-2xl border-4 border-orange-300"
+          >
+            <div className="text-center">
+              <div className="text-sm font-semibold text-orange-100 mb-1">
+                Translate:
+              </div>
+              <div className="text-xl font-bold text-white">
+                {currentTargetWord.word}
+              </div>
+              <div className="text-xs text-orange-200 mt-1">
+                Difficulty: {currentTargetWord.difficulty}/5
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Mobile Stats Bar */}
+        <div className="bg-black/70 backdrop-blur-md rounded-xl p-2 border border-white/30">
+          <div className="flex justify-between items-center text-xs">
+            <div className="text-center">
+              <div className="text-orange-400 text-[10px] font-bold">SCORE</div>
+              <div className="text-white font-bold text-sm">{gameState.score.toLocaleString()}</div>
+            </div>
+            <div className="text-center">
+              <div className={`text-[10px] font-bold ${
+                gameState.timeLeft <= 30 ? 'text-red-400' : 
+                gameState.timeLeft <= 60 ? 'text-orange-400' : 'text-blue-400'
+              }`}>TIME</div>
+              <div className={`font-bold text-sm ${
+                gameState.timeLeft <= 30 ? 'text-red-400' : 
+                gameState.timeLeft <= 60 ? 'text-orange-400' : 'text-green-400'
+              }`}>
+                {formatTime(gameState.timeLeft)}
+              </div>
+            </div>
+            <div className="text-center">
+              <div className="text-purple-400 text-[10px] font-bold">LEVEL</div>
+              <div className="text-white font-bold text-sm">{gameState.currentLevel}</div>
+            </div>
+            <div className="text-center">
+              <div className="text-red-400 text-[10px] font-bold">STREAK</div>
+              <div className="text-white font-bold text-sm">{gameState.streak}</div>
+            </div>
+            <div className="text-center">
+              <div className="text-green-400 text-[10px] font-bold">HEIGHT</div>
+              <div className="text-white font-bold text-sm">{gameState.currentHeight}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Game Area */}
+      <div className="relative z-10 px-4 flex flex-col items-center pt-4">
+        {/* Tower container - optimized height for both fullscreen and windowed mode */}
+        <div className="flex justify-center items-end mb-4" style={{ minHeight: '450px' }}>
+          {/* Enhanced Tower with Crane */}
+          <div className="flex flex-col-reverse items-center space-y-reverse space-y-1 relative">
+            <AnimatedCrane
+              isLifting={craneLifting}
+              liftedWord={craneWord}
+              towerHeight={towerBlocks.length}
+              onComplete={() => {
+                setCraneLifting(false);
+                setCraneWord('');
+              }}
+            />
+            
+            {/* Tower Blocks - Only show last VISIBLE_BLOCKS for better fullscreen experience */}
+            {towerBlocks.slice(-VISIBLE_BLOCKS).map((block, index) => {
+              const relativeIndex = towerBlocks.length > VISIBLE_BLOCKS ? 
+                index : 
+                towerBlocks.length - towerBlocks.slice(-VISIBLE_BLOCKS).length + index;
+              
+              return (
+                <motion.div
+                  key={block.id}
+                  initial={{ y: -200, opacity: 0, scale: 0, rotate: -10 }}
+                  animate={{ 
+                    y: 0, 
+                    opacity: 1,
+                    scale: 1,
+                    rotate: fallingBlocks.includes(block.id) ? (Math.random() > 0.5 ? 45 : -45) : 0,
+                    x: fallingBlocks.includes(block.id) ? (Math.random() > 0.5 ? 300 : -300) : 0
+                  }}
+                  exit={{ 
+                    y: 500, 
+                    opacity: 0, 
+                    scale: 0.5,
+                    rotate: Math.random() * 360,
+                    transition: { duration: 1 }
+                  }}
+                  transition={{ 
+                    duration: 0.8,
+                    delay: index * 0.1,
+                    type: "spring", 
+                    stiffness: 100 
+                  }}
+                  className={`w-48 h-16 rounded-lg border-4 shadow-2xl backdrop-blur-md relative overflow-hidden ${getBlockStyle(block.type, block.isShaking)}`}
+                  style={{ zIndex: VISIBLE_BLOCKS - index }}
+                >
+                {/* Block content */}
+                <div className="absolute inset-0 flex items-center justify-between p-3">
+                  <div className="flex-1">
+                    <div className="text-white font-bold text-lg">{block.word}</div>
+                    <div className="text-white/80 text-sm">{block.translation}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-white/60 text-xs uppercase font-semibold">
+                      {block.type}
+                    </div>
+                    <div className="text-yellow-300 font-bold">+{block.points}</div>
+                  </div>
+                </div>
+                
+                {/* Block type indicator */}
+                <div className="absolute top-1 right-1">
+                  {block.type === 'bonus' && (
+                    <Star className="h-4 w-4 text-yellow-300" />
+                  )}
+                  {block.type === 'challenge' && (
+                    <Trophy className="h-4 w-4 text-red-300" />
+                  )}
+                  {block.type === 'fragile' && (
+                    <div className="h-3 w-3 bg-gray-400 rounded-full" />
+                  )}
+                </div>
+                
+                {/* Particle trails for falling blocks */}
+                {fallingBlocks.includes(block.id) && (
+                  <div className="absolute inset-0 bg-red-500/20 animate-pulse" />
+                )}
+              </motion.div>
+              );
+            })}
+            
+            {/* Tower base */}
+            <div className="w-60 h-8 bg-gradient-to-r from-stone-600 to-stone-800 rounded-lg border-4 border-stone-700 shadow-2xl relative">
+              <div className="absolute inset-0 bg-gradient-to-t from-stone-900/50 to-transparent rounded-md" />
+              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-stone-200 font-bold text-sm">
+                FOUNDATION
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Word Options */}
       {gameState.status === 'playing' && wordOptions.length > 0 && (
-        <div className="relative z-20 px-6 mb-8">
+        <div className="relative z-20 px-4 mb-4">
           <motion.div
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex justify-center space-x-4"
+            className="flex flex-wrap justify-center gap-3"
           >
             {wordOptions.map((option, index) => (
               <motion.button
@@ -830,7 +1138,7 @@ export default function ImprovedSentenceTowers() {
                 onClick={() => handleSelectOption(option)}
                 disabled={selectedOption !== null}
                 className={`
-                  relative px-6 py-4 rounded-2xl border-4 backdrop-blur-md shadow-2xl transition-all duration-300 min-w-32 group
+                  relative px-4 py-3 rounded-2xl border-4 backdrop-blur-md shadow-2xl transition-all duration-300 min-w-[120px] group
                   ${selectedOption === option.id 
                     ? option.isCorrect 
                       ? 'bg-green-500/30 border-green-400 scale-110' 
@@ -841,7 +1149,7 @@ export default function ImprovedSentenceTowers() {
                 `}
               >
                 <div className="text-center">
-                  <div className="text-white font-bold text-lg group-hover:scale-110 transition-transform">
+                  <div className="text-white font-bold text-base md:text-lg group-hover:scale-110 transition-transform">
                     {option.translation}
                   </div>
                   {settings.showHints && (
@@ -873,7 +1181,7 @@ export default function ImprovedSentenceTowers() {
                 className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50"
               >
                 <div className={`
-                  text-6xl font-bold px-8 py-6 rounded-3xl backdrop-blur-md border-4 shadow-2xl
+                  text-4xl md:text-6xl font-bold px-6 py-4 md:px-8 md:py-6 rounded-3xl backdrop-blur-md border-4 shadow-2xl
                   ${feedbackVisible === 'correct' 
                     ? 'text-green-400 bg-green-500/20 border-green-400' 
                     : 'text-red-400 bg-red-500/20 border-red-400'
@@ -907,8 +1215,8 @@ export default function ImprovedSentenceTowers() {
                   Sentence Towers
                 </h2>
                 <p className="text-white/80 text-lg leading-relaxed">
-                  Build your tower by translating words correctly! Each correct answer adds a block to your tower. 
-                  Wrong answers make blocks fall. How high can you build?
+                  Build the tallest tower possible! Answer translation questions correctly to add blocks. 
+                  Wrong answers make blocks fall. How high can you build before time runs out?
                 </p>
               </div>
               
@@ -922,8 +1230,8 @@ export default function ImprovedSentenceTowers() {
                   <span className="font-semibold">{formatTime(settings.timeLimit)}</span>
                 </div>
                 <div className="flex items-center justify-between text-white/70">
-                  <span>Words to Learn:</span>
-                  <span className="font-semibold">{enhancedVocabulary.length}</span>
+                  <span>Challenge:</span>
+                  <span className="font-semibold">Build as high as possible!</span>
                 </div>
               </div>
               
@@ -970,56 +1278,6 @@ export default function ImprovedSentenceTowers() {
           </motion.div>
         )}
 
-        {/* Completion Screen */}
-        {gameState.status === 'completed' && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center"
-          >
-            <motion.div
-              initial={{ scale: 0.8, y: 50 }}
-              animate={{ scale: 1, y: 0 }}
-              className="bg-gradient-to-br from-green-500/20 to-emerald-500/20 backdrop-blur-md rounded-3xl p-12 border-4 border-green-400/50 text-center max-w-lg mx-4"
-            >
-              <Trophy className="h-20 w-20 text-yellow-400 mx-auto mb-6" />
-              <h2 className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-500 mb-4">
-                Congratulations!
-              </h2>
-              <p className="text-white/80 text-lg mb-8">
-                You've completed all the words and built an amazing tower!
-              </p>
-              
-              <div className="grid grid-cols-2 gap-4 mb-8">
-                <div className="bg-black/30 rounded-xl p-4">
-                  <div className="text-yellow-400 text-sm font-bold">FINAL SCORE</div>
-                  <div className="text-2xl font-bold text-white">{gameState.score.toLocaleString()}</div>
-                </div>
-                <div className="bg-black/30 rounded-xl p-4">
-                  <div className="text-green-400 text-sm font-bold">MAX HEIGHT</div>
-                  <div className="text-2xl font-bold text-white">{gameState.maxHeight}</div>
-                </div>
-                <div className="bg-black/30 rounded-xl p-4">
-                  <div className="text-blue-400 text-sm font-bold">ACCURACY</div>
-                  <div className="text-2xl font-bold text-white">{Math.round(gameState.accuracy * 100)}%</div>
-                </div>
-                <div className="bg-black/30 rounded-xl p-4">
-                  <div className="text-purple-400 text-sm font-bold">TIME LEFT</div>
-                  <div className="text-2xl font-bold text-white">{formatTime(gameState.timeLeft)}</div>
-                </div>
-              </div>
-              
-              <button
-                onClick={resetGame}
-                className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-400 hover:to-emerald-400 text-white font-bold py-4 px-8 rounded-2xl text-xl transition-all duration-300 hover:scale-105 shadow-2xl"
-              >
-                Play Again! 🎮
-              </button>
-            </motion.div>
-          </motion.div>
-        )}
-
         {/* Failure Screen */}
         {gameState.status === 'failed' && (
           <motion.div
@@ -1035,10 +1293,12 @@ export default function ImprovedSentenceTowers() {
             >
               <Clock className="h-20 w-20 text-red-400 mx-auto mb-6" />
               <h2 className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-orange-500 mb-4">
-                Time's Up!
+                Tower Complete!
               </h2>
               <p className="text-white/80 text-lg mb-8">
-                Your tower reached {gameState.currentHeight} blocks high! Great effort!
+                Amazing! Your tower reached {gameState.currentHeight} blocks high! 
+                {gameState.currentHeight >= 10 ? " That's incredible!" : 
+                 gameState.currentHeight >= 5 ? " Great building!" : " Keep practicing!"}
               </p>
               
               <div className="grid grid-cols-2 gap-4 mb-8">
@@ -1179,6 +1439,7 @@ export default function ImprovedSentenceTowers() {
           </motion.div>
         )}
       </AnimatePresence>
+      </motion.div>
     </div>
   );
 }
