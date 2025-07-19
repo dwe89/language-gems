@@ -58,7 +58,7 @@ export default function StudentAssignmentDetailPage() {
           'word-blast': { name: 'Word Blast', description: 'Fast-paced rocket shooting with translations' },
           'speed-builder': { name: 'Speed Builder', description: 'Build sentences quickly and accurately' },
           'translation-tycoon': { name: 'Translation Tycoon', description: 'Build your business empire with vocabulary' },
-          'verb-conjugation-ladder': { name: 'Verb Ladder', description: 'Climb the mountain by conjugating verbs' },
+          'conjugation-duel': { name: 'Conjugation Duel', description: 'Epic verb battles in different arenas' },
           'word-scramble': { name: 'Word Scramble', description: 'Unscramble letters to form words' },
           'gem-collector': { name: 'Gem Collector', description: 'Collect gems by translating words correctly' },
           'hangman': { name: 'Hangman', description: 'Guess the word before the drawing is complete' },

@@ -210,7 +210,7 @@ export default function AssignmentsPage() {
                   'word-blast': 'Word Blast',
                   'speed-builder': 'Speed Builder',
                   'translation-tycoon': 'Translation Tycoon',
-                  'verb-conjugation-ladder': 'Verb Ladder',
+                  'conjugation-duel': 'Conjugation Duel',
                   'word-scramble': 'Word Scramble',
                   'gem-collector': 'Gem Collector',
                   'hangman': 'Hangman',

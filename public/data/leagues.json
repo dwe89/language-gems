@@ -1,0 +1,160 @@
+{
+  "leagues": [
+    {
+      "id": "bronze",
+      "name": "Bronze Arena",
+      "description": "The proving grounds for beginners. Master regular verbs to advance.",
+      "minLevel": 1,
+      "maxLevel": 10,
+      "background": "bronze-colosseum.jpg",
+      "theme": {
+        "primary": "#CD7F32",
+        "secondary": "#8B4513",
+        "gradient": "from-amber-700 to-orange-800"
+      },
+      "verbTypes": ["regular"],
+      "tenses": ["present"],
+      "opponents": [
+        {
+          "id": "bronze_warrior",
+          "name": "Bronze Warrior",
+          "sprite": "bronze_warrior.png",
+          "health": 100,
+          "difficulty": 1,
+          "weapons": ["sword"],
+          "description": "A novice fighter learning the basics of combat."
+        },
+        {
+          "id": "training_dummy",
+          "name": "Training Dummy",
+          "sprite": "training-dummy.png",
+          "health": 80,
+          "difficulty": 1,
+          "weapons": ["sword"],
+          "description": "Perfect for practicing your conjugation skills."
+        }
+      ],
+      "promotionRequirement": {
+        "winsNeeded": 10,
+        "accuracyRequired": 70
+      }
+    },
+    {
+      "id": "silver",
+      "name": "Silver Castle",
+      "description": "Medieval battlegrounds where stem-changing verbs test your skills.",
+      "minLevel": 11,
+      "maxLevel": 25,
+      "background": "silver-castle.jpg",
+      "theme": {
+        "primary": "#C0C0C0",
+        "secondary": "#808080",
+        "gradient": "from-slate-400 to-slate-600"
+      },
+      "verbTypes": ["regular", "stemChanging"],
+      "tenses": ["present", "preterite"],
+      "opponents": [
+        {
+          "id": "castle_knight",
+          "name": "Castle Knight",
+          "sprite": "castle_knight.png",
+          "health": 150,
+          "difficulty": 2,
+          "weapons": ["sword", "shield"],
+          "description": "A seasoned knight with knowledge of changing verb patterns."
+        },
+        {
+          "id": "royal_guard",
+          "name": "Royal Guard",
+          "sprite": "royal_guard.png",
+          "health": 180,
+          "difficulty": 2,
+          "weapons": ["spear", "shield"],
+          "description": "Elite protector who demands perfect preterite forms."
+        }
+      ],
+      "promotionRequirement": {
+        "winsNeeded": 15,
+        "accuracyRequired": 75
+      }
+    },
+    {
+      "id": "gold",
+      "name": "Golden Temple",
+      "description": "A mystical sanctuary where irregular verbs challenge the worthy.",
+      "minLevel": 26,
+      "maxLevel": 50,
+      "background": "gold-temple.jpg",
+      "theme": {
+        "primary": "#FFD700",
+        "secondary": "#DAA520",
+        "gradient": "from-yellow-400 to-yellow-600"
+      },
+      "verbTypes": ["regular", "stemChanging", "irregular"],
+      "tenses": ["present", "preterite", "imperfect"],
+      "opponents": [
+        {
+          "id": "temple_guardian",
+          "name": "Temple Guardian",
+          "sprite": "temple_guardian.png",
+          "health": 200,
+          "difficulty": 3,
+          "weapons": ["magic_staff"],
+          "description": "Ancient protector who speaks in irregular patterns."
+        },
+        {
+          "id": "mystic_sage",
+          "name": "Mystic Sage",
+          "sprite": "mystic_sage.png",
+          "health": 250,
+          "difficulty": 3,
+          "weapons": ["magic_staff", "spell_book"],
+          "description": "Wise master of all verb transformations."
+        }
+      ],
+      "promotionRequirement": {
+        "winsNeeded": 20,
+        "accuracyRequired": 80
+      }
+    },
+    {
+      "id": "diamond",
+      "name": "Diamond Nexus",
+      "description": "The ultimate arena where only masters dare to tread.",
+      "minLevel": 51,
+      "maxLevel": 100,
+      "background": "diamond-nexus.jpg",
+      "theme": {
+        "primary": "#B9F2FF",
+        "secondary": "#4169E1",
+        "gradient": "from-cyan-300 to-blue-500"
+      },
+      "verbTypes": ["regular", "stemChanging", "irregular", "reflexive"],
+      "tenses": ["present", "preterite", "imperfect", "future", "conditional"],
+      "opponents": [
+        {
+          "id": "nexus_champion",
+          "name": "Nexus Champion",
+          "sprite": "nexus-champion.png",
+          "health": 300,
+          "difficulty": 4,
+          "weapons": ["energy_blade", "force_shield"],
+          "description": "The ultimate challenger with mastery over all verb forms."
+        },
+        {
+          "id": "grammar_overlord",
+          "name": "Grammar Overlord",
+          "sprite": "grammar-overlord.png",
+          "health": 400,
+          "difficulty": 5,
+          "weapons": ["cosmic_staff", "reality_gem"],
+          "description": "Legendary being who commands the very essence of language."
+        }
+      ],
+      "promotionRequirement": {
+        "winsNeeded": 30,
+        "accuracyRequired": 90
+      }
+    }
+  ]
+}

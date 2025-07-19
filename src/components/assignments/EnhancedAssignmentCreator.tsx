@@ -317,7 +317,7 @@ export default function EnhancedAssignmentCreator({
       });
 
       const needsSentences = gameConfig.selectedGames.some(gameId => {
-        const sentenceGames = ['speed-builder', 'sentence-towers', 'sentence-builder', 'verb-conjugation-ladder'];
+        const sentenceGames = ['speed-builder', 'sentence-towers', 'sentence-builder', 'conjugation-duel'];
         return sentenceGames.includes(gameId);
       });
 

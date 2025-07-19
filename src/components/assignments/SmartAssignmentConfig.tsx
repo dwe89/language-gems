@@ -23,7 +23,7 @@ const GAME_TYPES: Record<string, Game> = {
   'speed-builder': { id: 'speed-builder', name: 'Speed Builder', type: 'sentence' },
   'sentence-towers': { id: 'sentence-towers', name: 'Sentence Towers', type: 'sentence' },
   'sentence-builder': { id: 'sentence-builder', name: 'Sentence Builder', type: 'sentence' },
-  'verb-conjugation-ladder': { id: 'verb-conjugation-ladder', name: 'Verb Conjugation Ladder', type: 'sentence' },
+  'conjugation-duel': { id: 'conjugation-duel', name: 'Conjugation Duel', type: 'sentence' },
 };
 
 interface VocabularyConfig {

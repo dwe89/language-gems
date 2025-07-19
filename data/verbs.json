@@ -1,0 +1,292 @@
+{
+  "spanish": {
+    "regular": {
+      "ar": [
+        {
+          "infinitive": "hablar",
+          "english": "to speak",
+          "difficulty": 1,
+          "conjugations": {
+            "present": {
+              "yo": "hablo",
+              "tú": "hablas",
+              "él": "habla",
+              "nosotros": "hablamos",
+              "vosotros": "habláis",
+              "ellos": "hablan"
+            },
+            "preterite": {
+              "yo": "hablé",
+              "tú": "hablaste",
+              "él": "habló",
+              "nosotros": "hablamos",
+              "vosotros": "hablasteis",
+              "ellos": "hablaron"
+            }
+          }
+        },
+        {
+          "infinitive": "caminar",
+          "english": "to walk",
+          "difficulty": 1,
+          "conjugations": {
+            "present": {
+              "yo": "camino",
+              "tú": "caminas",
+              "él": "camina",
+              "nosotros": "caminamos",
+              "vosotros": "camináis",
+              "ellos": "caminan"
+            },
+            "preterite": {
+              "yo": "caminé",
+              "tú": "caminaste",
+              "él": "caminó",
+              "nosotros": "caminamos",
+              "vosotros": "caminasteis",
+              "ellos": "caminaron"
+            }
+          }
+        },
+        {
+          "infinitive": "estudiar",
+          "english": "to study",
+          "difficulty": 1,
+          "conjugations": {
+            "present": {
+              "yo": "estudio",
+              "tú": "estudias",
+              "él": "estudia",
+              "nosotros": "estudiamos",
+              "vosotros": "estudiáis",
+              "ellos": "estudian"
+            },
+            "preterite": {
+              "yo": "estudié",
+              "tú": "estudiaste",
+              "él": "estudió",
+              "nosotros": "estudiamos",
+              "vosotros": "estudiasteis",
+              "ellos": "estudiaron"
+            }
+          }
+        }
+      ],
+      "er": [
+        {
+          "infinitive": "comer",
+          "english": "to eat",
+          "difficulty": 1,
+          "conjugations": {
+            "present": {
+              "yo": "como",
+              "tú": "comes",
+              "él": "come",
+              "nosotros": "comemos",
+              "vosotros": "coméis",
+              "ellos": "comen"
+            },
+            "preterite": {
+              "yo": "comí",
+              "tú": "comiste",
+              "él": "comió",
+              "nosotros": "comimos",
+              "vosotros": "comisteis",
+              "ellos": "comieron"
+            }
+          }
+        },
+        {
+          "infinitive": "aprender",
+          "english": "to learn",
+          "difficulty": 1,
+          "conjugations": {
+            "present": {
+              "yo": "aprendo",
+              "tú": "aprendes",
+              "él": "aprende",
+              "nosotros": "aprendemos",
+              "vosotros": "aprendéis",
+              "ellos": "aprenden"
+            },
+            "preterite": {
+              "yo": "aprendí",
+              "tú": "aprendiste",
+              "él": "aprendió",
+              "nosotros": "aprendimos",
+              "vosotros": "aprendisteis",
+              "ellos": "aprendieron"
+            }
+          }
+        }
+      ],
+      "ir": [
+        {
+          "infinitive": "vivir",
+          "english": "to live",
+          "difficulty": 1,
+          "conjugations": {
+            "present": {
+              "yo": "vivo",
+              "tú": "vives",
+              "él": "vive",
+              "nosotros": "vivimos",
+              "vosotros": "vivís",
+              "ellos": "viven"
+            },
+            "preterite": {
+              "yo": "viví",
+              "tú": "viviste",
+              "él": "vivió",
+              "nosotros": "vivimos",
+              "vosotros": "vivisteis",
+              "ellos": "vivieron"
+            }
+          }
+        },
+        {
+          "infinitive": "escribir",
+          "english": "to write",
+          "difficulty": 1,
+          "conjugations": {
+            "present": {
+              "yo": "escribo",
+              "tú": "escribes",
+              "él": "escribe",
+              "nosotros": "escribimos",
+              "vosotros": "escribís",
+              "ellos": "escriben"
+            },
+            "preterite": {
+              "yo": "escribí",
+              "tú": "escribiste",
+              "él": "escribió",
+              "nosotros": "escribimos",
+              "vosotros": "escribisteis",
+              "ellos": "escribieron"
+            }
+          }
+        }
+      ]
+    },
+    "irregular": [
+      {
+        "infinitive": "ser",
+        "english": "to be",
+        "difficulty": 3,
+        "conjugations": {
+          "present": {
+            "yo": "soy",
+            "tú": "eres",
+            "él": "es",
+            "nosotros": "somos",
+            "vosotros": "sois",
+            "ellos": "son"
+          },
+          "preterite": {
+            "yo": "fui",
+            "tú": "fuiste",
+            "él": "fue",
+            "nosotros": "fuimos",
+            "vosotros": "fuisteis",
+            "ellos": "fueron"
+          }
+        }
+      },
+      {
+        "infinitive": "tener",
+        "english": "to have",
+        "difficulty": 3,
+        "conjugations": {
+          "present": {
+            "yo": "tengo",
+            "tú": "tienes",
+            "él": "tiene",
+            "nosotros": "tenemos",
+            "vosotros": "tenéis",
+            "ellos": "tienen"
+          },
+          "preterite": {
+            "yo": "tuve",
+            "tú": "tuviste",
+            "él": "tuvo",
+            "nosotros": "tuvimos",
+            "vosotros": "tuvisteis",
+            "ellos": "tuvieron"
+          }
+        }
+      },
+      {
+        "infinitive": "hacer",
+        "english": "to do/make",
+        "difficulty": 3,
+        "conjugations": {
+          "present": {
+            "yo": "hago",
+            "tú": "haces",
+            "él": "hace",
+            "nosotros": "hacemos",
+            "vosotros": "hacéis",
+            "ellos": "hacen"
+          },
+          "preterite": {
+            "yo": "hice",
+            "tú": "hiciste",
+            "él": "hizo",
+            "nosotros": "hicimos",
+            "vosotros": "hicisteis",
+            "ellos": "hicieron"
+          }
+        }
+      }
+    ],
+    "stemChanging": [
+      {
+        "infinitive": "pensar",
+        "english": "to think",
+        "difficulty": 2,
+        "conjugations": {
+          "present": {
+            "yo": "pienso",
+            "tú": "piensas",
+            "él": "piensa",
+            "nosotros": "pensamos",
+            "vosotros": "pensáis",
+            "ellos": "piensan"
+          },
+          "preterite": {
+            "yo": "pensé",
+            "tú": "pensaste",
+            "él": "pensó",
+            "nosotros": "pensamos",
+            "vosotros": "pensasteis",
+            "ellos": "pensaron"
+          }
+        }
+      },
+      {
+        "infinitive": "volver",
+        "english": "to return",
+        "difficulty": 2,
+        "conjugations": {
+          "present": {
+            "yo": "vuelvo",
+            "tú": "vuelves",
+            "él": "vuelve",
+            "nosotros": "volvemos",
+            "vosotros": "volvéis",
+            "ellos": "vuelven"
+          },
+          "preterite": {
+            "yo": "volví",
+            "tú": "volviste",
+            "él": "volvió",
+            "nosotros": "volvimos",
+            "vosotros": "volvisteis",
+            "ellos": "volvieron"
+          }
+        }
+      }
+    ]
+  }
+}

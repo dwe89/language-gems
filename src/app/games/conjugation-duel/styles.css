@@ -1,0 +1,140 @@
+/* Conjugation Duel Battle Styles */
+
+.conjugation-duel-game {
+  /* Custom scrollbar for battle log */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+  }
+  
+  .scrollbar-thumb-white\/30::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .scrollbar-thumb-white\/30::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+  }
+  
+  .scrollbar-thumb-white\/30::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+  }
+  
+  .scrollbar-thumb-white\/30::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+  }
+}
+
+/* League card animations */
+.league-card-hover {
+  transform: translateY(-5px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 
+              0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Battle arena background patterns */
+.arena-pattern {
+  background-image: 
+    radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0);
+  background-size: 20px 20px;
+}
+
+/* Health bar animations */
+.health-bar-critical {
+  animation: pulse-red 0.8s infinite;
+}
+
+@keyframes pulse-red {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Character damage flash */
+.damage-flash {
+  animation: damage-flash 0.3s ease-out;
+}
+
+@keyframes damage-flash {
+  0% {
+    background-color: rgba(239, 68, 68, 0);
+  }
+  50% {
+    background-color: rgba(239, 68, 68, 0.8);
+  }
+  100% {
+    background-color: rgba(239, 68, 68, 0);
+  }
+}
+
+/* League theme gradients */
+.bronze-gradient {
+  background: linear-gradient(135deg, #cd7f32, #8b4513);
+}
+
+.silver-gradient {
+  background: linear-gradient(135deg, #c0c0c0, #808080);
+}
+
+.gold-gradient {
+  background: linear-gradient(135deg, #ffd700, #daa520);
+}
+
+.diamond-gradient {
+  background: linear-gradient(135deg, #b9f2ff, #4169e1);
+}
+
+/* Battle log message animations */
+.battle-log-message {
+  animation: slide-in-left 0.3s ease-out;
+}
+
+@keyframes slide-in-left {
+  from {
+    transform: translateX(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Loading spinner */
+.loading-spinner {
+  animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive improvements */
+@media (max-width: 768px) {
+  .conjugation-duel-game {
+    /* Ensure touch-friendly buttons on mobile */
+    .battle-option {
+      min-height: 48px;
+      font-size: 16px; /* Prevent zoom on iOS */
+    }
+    
+    /* Adjust character sprites for mobile */
+    .character-sprite {
+      width: 80px;
+      height: 100px;
+    }
+    
+    /* Stack battle UI vertically on small screens */
+    .battle-layout {
+      flex-direction: column;
+    }
+  }
+}

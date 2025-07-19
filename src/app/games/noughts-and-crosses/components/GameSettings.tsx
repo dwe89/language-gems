@@ -1,56 +1,72 @@
 'use client';
 
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import ThemeSelector from './ThemeSelector';
+import { useAudio } from '../hooks/useAudio';
 
 type GameSettingsProps = {
   onStartGame: (settings: { 
     difficulty: string; 
     category: string; 
     language: string;
+    theme: string;
     playerMark: string;
     computerMark: string;
   }) => void;
 };
 
-const DIFFICULTIES = ['beginner', 'intermediate', 'advanced'];
-const CATEGORIES = ['animals', 'food', 'colors', 'custom'];
-const LANGUAGES = ['english', 'spanish', 'french', 'german', 'italian'];
-const EMOJI_OPTIONS = [
-  { player: 'X', computer: 'O' },
-  { player: '❌', computer: '⭕' },
-  { player: '🦊', computer: '🐻' },
-  { player: '🌞', computer: '🌙' },
-  { player: '🔥', computer: '❄️' },
-  { player: '🌴', computer: '🌵' },
-  { player: 'custom', computer: 'custom' }
+const CATEGORIES = [
+  { id: 'animals', name: 'Animals', emoji: '🐾', description: 'Pets, wildlife & creatures' },
+  { id: 'food', name: 'Food & Drinks', emoji: '🍎', description: 'Meals, snacks & beverages' },
+  { id: 'colors', name: 'Colors', emoji: '🎨', description: 'Colors & shades' },
+  { id: 'numbers', name: 'Numbers', emoji: '🔢', description: 'Basic counting & math' },
+  { id: 'family', name: 'Family', emoji: '👨‍👩‍👧‍👦', description: 'Family members & relations' },
+  { id: 'body', name: 'Body Parts', emoji: '👋', description: 'Body parts & anatomy' },
+  { id: 'clothes', name: 'Clothing', emoji: '👕', description: 'Clothes & accessories' },
+  { id: 'house', name: 'House & Home', emoji: '🏠', description: 'Rooms, furniture & items' },
+  { id: 'school', name: 'School', emoji: '📚', description: 'Education & learning' },
+  { id: 'sports', name: 'Sports', emoji: '⚽', description: 'Games, sports & activities' },
+  { id: 'weather', name: 'Weather', emoji: '🌤️', description: 'Weather & seasons' },
+  { id: 'transport', name: 'Transportation', emoji: '🚗', description: 'Vehicles & travel' },
+  { id: 'emotions', name: 'Emotions', emoji: '😊', description: 'Feelings & moods' },
+  { id: 'time', name: 'Time', emoji: '⏰', description: 'Days, months & time' },
+  { id: 'nature', name: 'Nature', emoji: '🌳', description: 'Plants, landscapes & outdoors' },
+  { id: 'technology', name: 'Technology', emoji: '💻', description: 'Computers, phones & gadgets' },
+  { id: 'music', name: 'Music', emoji: '🎵', description: 'Instruments & musical terms' },
+  { id: 'travel', name: 'Travel', emoji: '✈️', description: 'Places, countries & tourism' }
+];
+
+const LANGUAGES = [
+  { id: 'spanish', name: 'Spanish', emoji: '🇪🇸', native: 'Español' },
+  { id: 'french', name: 'French', emoji: '🇫🇷', native: 'Français' },
+  { id: 'german', name: 'German', emoji: '🇩🇪', native: 'Deutsch' }
 ];
 
 export default function GameSettings({ onStartGame }: GameSettingsProps) {
-  const [difficulty, setDifficulty] = useState(DIFFICULTIES[0]);
+  // Audio state
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const { playSFX } = useAudio(soundEnabled);
+  
+  // Set default values to first items in arrays
   const [category, setCategory] = useState(CATEGORIES[0]);
   const [language, setLanguage] = useState(LANGUAGES[0]);
-  const [emojiOption, setEmojiOption] = useState(0);
-  const [customPlayerMark, setCustomPlayerMark] = useState('');
-  const [customComputerMark, setCustomComputerMark] = useState('');
+  const [theme, setTheme] = useState('default');
+  
+  // Modal states
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [showLanguageModal, setShowLanguageModal] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    let playerMark = EMOJI_OPTIONS[emojiOption].player;
-    let computerMark = EMOJI_OPTIONS[emojiOption].computer;
-    
-    if (emojiOption === EMOJI_OPTIONS.length - 1) {
-      playerMark = customPlayerMark || 'X';
-      computerMark = customComputerMark || 'O';
-    }
-    
     onStartGame({ 
-      difficulty, 
-      category, 
-      language,
-      playerMark,
-      computerMark
+      difficulty: 'intermediate', // Default difficulty 
+      category: category.id, 
+      language: language.id,
+      theme,
+      playerMark: 'X', // Default to X
+      computerMark: 'O' // Default to O
     });
   };
 
@@ -58,127 +74,201 @@ export default function GameSettings({ onStartGame }: GameSettingsProps) {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="w-full max-w-md mx-auto bg-white p-8 rounded-xl shadow-lg text-gray-700"
-    >
-      <h2 className="text-2xl font-bold text-center mb-6 text-indigo-700">Game Settings</h2>
-      
-      <form onSubmit={handleSubmit} className="text-gray-700">
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Difficulty</label>
-          <div className="grid grid-cols-3 gap-3">
-            {DIFFICULTIES.map((level) => (
-              <div 
-                key={level}
-                onClick={() => setDifficulty(level)}
-                className={`
-                  cursor-pointer text-center p-3 rounded-lg border-2 transition
-                  ${difficulty === level 
-                    ? 'bg-indigo-100 border-indigo-500 text-indigo-700' 
-                    : 'bg-white border-gray-200 hover:bg-gray-50'}
-                `}
-              >
-                <div className="font-medium capitalize">{level}</div>
-              </div>
-            ))}
-          </div>
+      className="w-full max-w-7xl mx-auto bg-white/10 backdrop-blur-md border border-white/20 p-8 rounded-3xl shadow-2xl text-white"
+    >      
+      <form onSubmit={handleSubmit} className="text-white">
+        {/* Theme Selector - Full Width */}
+        <div className="mb-8">
+          <ThemeSelector selectedTheme={theme} onThemeChange={(newTheme) => {
+            playSFX('button-click');
+            setTheme(newTheme);
+          }} />
         </div>
         
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {CATEGORIES.map((item) => (
-              <div 
-                key={item}
-                onClick={() => setCategory(item)}
-                className={`
-                  cursor-pointer text-center p-3 rounded-lg border-2 transition
-                  ${category === item 
-                    ? 'bg-indigo-100 border-indigo-500 text-indigo-700' 
-                    : 'bg-white border-gray-200 hover:bg-gray-50'}
-                `}
-              >
-                <div className="font-medium capitalize">{item}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-        
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Language</label>
-          <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
-            {LANGUAGES.map((lang) => (
-              <div 
-                key={lang}
-                onClick={() => setLanguage(lang)}
-                className={`
-                  cursor-pointer text-center p-2 rounded-lg border-2 transition
-                  ${language === lang 
-                    ? 'bg-indigo-100 border-indigo-500 text-indigo-700' 
-                    : 'bg-white border-gray-200 hover:bg-gray-50'}
-                `}
-              >
-                <div className="font-medium capitalize">{lang}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-        
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Game Markers</label>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mb-3">
-            {EMOJI_OPTIONS.map((option, index) => (
-              <div 
-                key={index}
-                onClick={() => setEmojiOption(index)}
-                className={`
-                  cursor-pointer text-center p-3 rounded-lg border-2 transition
-                  ${emojiOption === index 
-                    ? 'bg-indigo-100 border-indigo-500 text-indigo-700' 
-                    : 'bg-white border-gray-200 hover:bg-gray-50'}
-                `}
-              >
-                <div className="font-medium">
-                  {option.player === 'custom' ? 'Custom' : `${option.player} vs ${option.computer}`}
-                </div>
-              </div>
-            ))}
+        {/* Settings Grid - Modal-based Selection */}
+        <div className="grid lg:grid-cols-2 gap-8 mb-8">
+          
+          {/* Category - Modal Selector */}
+          <div>
+            <label className="block text-lg font-medium text-white mb-4">Category</label>
+            <div 
+              onClick={() => {
+                playSFX('button-click');
+                setShowCategoryModal(true);
+              }}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  playSFX('button-click');
+                  setShowCategoryModal(true);
+                }
+              }}
+              className="cursor-pointer text-center p-6 rounded-xl border-2 transition-all transform hover:scale-105 bg-white/10 border-white/40 hover:bg-white/15 hover:border-white/60 min-h-[100px] flex flex-col justify-center"
+            >
+              <div className="text-4xl mb-2">{category.emoji}</div>
+              <div className="font-medium text-xl">{category.name}</div>
+              <div className="text-sm mt-1 opacity-75">{category.description}</div>
+              <div className="text-xs mt-2 opacity-50">Click to change</div>
+            </div>
           </div>
           
-          {emojiOption === EMOJI_OPTIONS.length - 1 && (
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Your Mark</label>
-                <input
-                  type="text"
-                  value={customPlayerMark}
-                  onChange={(e) => setCustomPlayerMark(e.target.value)}
-                  maxLength={2}
-                  placeholder="X"
-                  className="w-full p-2 border border-gray-300 rounded-md text-gray-700"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Computer Mark</label>
-                <input
-                  type="text"
-                  value={customComputerMark}
-                  onChange={(e) => setCustomComputerMark(e.target.value)}
-                  maxLength={2}
-                  placeholder="O"
-                  className="w-full p-2 border border-gray-300 rounded-md text-gray-700"
-                />
-              </div>
+          {/* Language - Modal Selector */}
+          <div>
+            <label className="block text-lg font-medium text-white mb-4">Language</label>
+            <div 
+              onClick={() => {
+                playSFX('button-click');
+                setShowLanguageModal(true);
+              }}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  playSFX('button-click');
+                  setShowLanguageModal(true);
+                }
+              }}
+              className="cursor-pointer text-center p-6 rounded-xl border-2 transition-all transform hover:scale-105 bg-white/10 border-white/40 hover:bg-white/15 hover:border-white/60 min-h-[100px] flex flex-col justify-center"
+            >
+              <div className="text-4xl mb-2">{language.emoji}</div>
+              <div className="font-medium text-xl">{language.name}</div>
+              <div className="text-sm mt-1 opacity-75">{language.native}</div>
+              <div className="text-xs mt-2 opacity-50">Click to change</div>
             </div>
-          )}
+          </div>
+          
         </div>
         
-        <button 
-          type="submit"
-          className="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg text-center transition-colors"
-        >
-          Start Game
-        </button>
+        {/* Start Button */}
+        <div className="text-center">
+          <button 
+            type="submit"
+            onClick={() => playSFX('button-click')}
+            className="px-12 py-4 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold rounded-full text-xl transition-all shadow-xl hover:shadow-2xl transform hover:scale-105 hover:y-1"
+          >
+            🚀 Start Adventure
+          </button>
+        </div>
       </form>
+
+      {/* Category Selection Modal */}
+      <AnimatePresence>
+        {showCategoryModal && (
+          <motion.div
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowCategoryModal(false)}
+          >
+            <motion.div
+              className="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-3xl shadow-2xl text-white max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+              initial={{ scale: 0.8, y: 30 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.8, y: 30 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 className="text-3xl font-bold text-center mb-8">Choose Learning Category</h2>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
+                {CATEGORIES.map((item) => (
+                  <motion.div 
+                    key={item.id}
+                    onClick={() => {
+                      playSFX('button-click');
+                      setCategory(item);
+                      setShowCategoryModal(false);
+                    }}
+                    className={`
+                      cursor-pointer text-center p-4 rounded-xl border-2 transition-all
+                      ${category.id === item.id 
+                        ? 'bg-white/25 border-white/60 text-white shadow-lg ring-2 ring-white/40' 
+                        : 'bg-white/5 border-white/20 hover:bg-white/15 hover:border-white/40'}
+                    `}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <div className="text-3xl mb-2">{item.emoji}</div>
+                    <div className="font-medium text-sm">{item.name}</div>
+                    <div className="text-xs mt-1 opacity-75">{item.description}</div>
+                  </motion.div>
+                ))}
+              </div>
+              <div className="text-center">
+                <button 
+                  type="button"
+                  onClick={() => {
+                    playSFX('button-click');
+                    setShowCategoryModal(false);
+                  }}
+                  className="px-6 py-2 bg-white/20 hover:bg-white/30 text-white rounded-full transition-all"
+                >
+                  Close
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Language Selection Modal */}
+      <AnimatePresence>
+        {showLanguageModal && (
+          <motion.div
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowLanguageModal(false)}
+          >
+            <motion.div
+              className="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-3xl shadow-2xl text-white max-w-2xl w-full"
+              initial={{ scale: 0.8, y: 30 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.8, y: 30 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 className="text-3xl font-bold text-center mb-8">Choose Language</h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                {LANGUAGES.map((lang) => (
+                  <motion.div 
+                    key={lang.id}
+                    onClick={() => {
+                      playSFX('button-click');
+                      setLanguage(lang);
+                      setShowLanguageModal(false);
+                    }}
+                    className={`
+                      cursor-pointer text-center p-6 rounded-xl border-2 transition-all
+                      ${language.id === lang.id 
+                        ? 'bg-white/25 border-white/60 text-white shadow-lg ring-2 ring-white/40' 
+                        : 'bg-white/5 border-white/20 hover:bg-white/15 hover:border-white/40'}
+                    `}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <div className="text-4xl mb-3">{lang.emoji}</div>
+                    <div className="font-medium text-lg">{lang.name}</div>
+                    <div className="text-sm mt-1 opacity-75">{lang.native}</div>
+                  </motion.div>
+                ))}
+              </div>
+              <div className="text-center">
+                <button 
+                  type="button"
+                  onClick={() => {
+                    playSFX('button-click');
+                    setShowLanguageModal(false);
+                  }}
+                  className="px-6 py-2 bg-white/20 hover:bg-white/30 text-white rounded-full transition-all"
+                >
+                  Close
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
-} 
+}

@@ -99,14 +99,14 @@ const AVAILABLE_GAMES = [
     path: '/games/memory-game'
   },
   { 
-    id: 'verb-conjugation-ladder', 
-    name: 'Verb Conjugation Ladder', 
-    description: 'Climb the ladder by mastering verb conjugations step by step',
-    icon: <Layers className="text-blue-500" size={20} />,
+    id: 'conjugation-duel', 
+    name: 'Conjugation Duel', 
+    description: 'Epic verb conjugation battles in different arenas and leagues',
+    icon: <Layers className="text-red-500" size={20} />,
     category: 'grammar',
     difficulty: 'intermediate',
-    timeToComplete: '8-15 min',
-    path: '/games/verb-conjugation-ladder'
+    timeToComplete: '10-20 min',
+    path: '/games/conjugation-duel'
   },
   { 
     id: 'word-guesser', 

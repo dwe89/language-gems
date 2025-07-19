@@ -1,6 +1,7 @@
 import './globals.css'
 import type { Metadata } from 'next'
 import { Inter, Cinzel, Pirata_One } from 'next/font/google'
+import { Analytics } from '@vercel/analytics/next'
 import ClientLayout from './components/ClientLayout'
 import { Suspense } from 'react'
 import { AuthProvider } from '../components/auth/AuthProvider'
@@ -48,6 +49,7 @@ export default function RootLayout({
             </CartProvider>
           </AuthProvider>
         </SupabaseProvider>
+        <Analytics />
       </body>
     </html>
   )

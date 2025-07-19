@@ -191,7 +191,7 @@ const games = [
     title: 'Speed Builder 🏗️',
     description: 'Drag and drop words to build sentences before time runs out',
     category: ['new', 'vocabulary', 'grammar'],
-    imageSrc: '/images/games/placeholder.jpg',
+    imageSrc: '/images/games/speed-builder.jpg',
     icon: <Building2 className="text-indigo-500" size={20} />,
     popular: true,
     languages: ['English', 'Spanish', 'French', 'German'],
@@ -202,7 +202,7 @@ const games = [
     title: 'Word Blast 🚀',
     description: 'Launch rockets by selecting the correct word translations',
     category: ['new', 'vocabulary'],
-    imageSrc: '/images/games/placeholder.jpg',
+    imageSrc: '/images/games/word-blast.jpg',
     icon: <Rocket className="text-orange-500" size={20} />,
     popular: false,
     languages: ['English', 'Spanish', 'French'],
@@ -213,7 +213,7 @@ const games = [
     title: 'Sentence Towers 🏰',
     description: 'Build towers by answering vocabulary questions correctly',
     category: ['vocabulary', 'grammar'],
-    imageSrc: '/images/games/placeholder.jpg',
+    imageSrc: '/images/games/sentence-towers.jpg',
     icon: <Castle className="text-amber-500" size={20} />,
     popular: false,
     languages: ['English', 'Spanish', 'Japanese'],
@@ -257,7 +257,7 @@ const games = [
     title: 'Hangman',
     description: 'Classic word guessing game to practice vocabulary',
     category: ['popular', 'vocabulary'],
-    imageSrc: '/images/games/placeholder.jpg',
+    imageSrc: '/images/games/hangman.jpg',
     icon: <Puzzle className="text-cyan-500" size={20} />,
     popular: true,
     languages: ['English', 'Spanish', 'French', 'German', 'Italian', 'Japanese'],
@@ -268,7 +268,7 @@ const games = [
     title: 'Word Scramble',
     description: 'Unscramble letters to form words',
     category: ['vocabulary'],
-    imageSrc: '/images/games/placeholder.jpg',
+    imageSrc: '/images/games/word-scramble.jpg',
     icon: <TagIcon className="text-blue-500" size={20} />,
     popular: true,
     languages: ['English', 'Spanish', 'French'],
@@ -279,7 +279,7 @@ const games = [
     title: 'Memory Match',
     description: 'Match word pairs in this classic memory game',
     category: ['vocabulary'],
-    imageSrc: '/images/games/placeholder.jpg',
+    imageSrc: '/images/games/memory-match.jpg',
     icon: <Gamepad2 className="text-green-500" size={20} />,
     popular: false,
     languages: ['English', 'Spanish', 'French', 'German'],
@@ -378,7 +378,7 @@ export default function GamesPage() {
           id: 'memory-game',
           name: 'Memory Game',
           description: 'Match pairs of cards to build vocabulary and memory skills.',
-          thumbnail: '/images/games/memory-game.jpg',
+          thumbnail: '/images/games/memory-match.jpg',
           category: 'vocabulary',
           popular: false,
           languages: ['English', 'Spanish', 'French', 'German'],
@@ -395,14 +395,14 @@ export default function GamesPage() {
           path: '/games/noughts-and-crosses'
         },
         {
-          id: 'verb-conjugation-ladder',
-          name: 'Verb Conjugation Ladder',
-          description: 'Practice verb conjugations in a fun, ladder-climbing game.',
-          thumbnail: '/images/games/verb-conjugation-ladder.jpg',
+          id: 'conjugation-duel',
+          name: 'Conjugation Duel',
+          description: 'Epic verb conjugation battles in different arenas and leagues.',
+          thumbnail: '/images/games/conjugation-duel.jpg',
           category: 'grammar',
-          popular: false,
-          languages: ['English', 'Spanish', 'French', 'German'],
-          path: '/games/verb-conjugation-ladder'
+          popular: true,
+          languages: ['Spanish'],
+          path: '/games/conjugation-duel'
         },
         {
           id: 'sentence-builder',
@@ -556,11 +556,27 @@ export default function GamesPage() {
                 key={game.id}
                 className="bg-white rounded-xl overflow-hidden border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 hover:border-indigo-300"
               >
-                <div className="h-40 bg-gradient-to-br from-indigo-400 via-purple-500 to-pink-500 flex items-center justify-center relative">
-                  {/* Game icon/image area */}
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <Gamepad2 className="h-16 w-16 text-white/80" />
-                  </div>
+                <div className="h-40 relative overflow-hidden">
+                  {/* Game thumbnail */}
+                  <Image
+                    src={game.thumbnail}
+                    alt={game.name}
+                    fill
+                    className="object-cover"
+                    onError={(e) => {
+                      // Fallback to gradient background if image fails
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                      const parent = target.parentElement;
+                      if (parent) {
+                        parent.className = "h-40 bg-gradient-to-br from-indigo-400 via-purple-500 to-pink-500 flex items-center justify-center relative";
+                        const fallback = document.createElement('div');
+                        fallback.className = "absolute inset-0 flex items-center justify-center";
+                        fallback.innerHTML = `<svg class="h-16 w-16 text-white/80" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>`;
+                        parent.appendChild(fallback);
+                      }
+                    }}
+                  />
                   <div className="absolute top-2 left-2 bg-orange-500 text-white text-xs px-2 py-1 rounded-full font-bold">
                     BETA
                   </div>

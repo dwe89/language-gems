@@ -24,13 +24,16 @@
     "@tiptap/extension-text-align": "^3.0.3",
     "@tiptap/react": "^3.0.3",
     "@tiptap/starter-kit": "^3.0.3",
+    "@types/howler": "^2.2.12",
     "@types/pdfkit": "^0.17.0",
     "@types/puppeteer": "^5.4.7",
+    "@vercel/analytics": "^1.5.0",
     "canvas-confetti": "^1.9.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "framer-motion": "^12.23.6",
     "gsap": "^3.13.0",
+    "howler": "^2.2.4",
     "jspdf": "^3.0.1",
     "jspdf-autotable": "^5.0.2",
     "lottie-react": "^2.4.1",
@@ -49,7 +52,8 @@
     "reading-time": "^1.5.0",
     "recharts": "^3.1.0",
     "stripe": "^14.15.0",
-    "tailwind-merge": "^3.3.1"
+    "tailwind-merge": "^3.3.1",
+    "zustand": "^5.0.6"
   },
   "devDependencies": {
     "@types/node": "^20",

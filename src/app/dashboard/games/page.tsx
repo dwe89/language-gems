@@ -286,11 +286,11 @@ export default function TeacherGamesPage() {
     },
     {
       id: '8',
-      name: 'Verb Conjugation Ladder',
-      description: 'Climb the ladder by conjugating verbs',
+      name: 'Conjugation Duel',
+      description: 'Epic verb conjugation battles in arenas',
       mode: 'Student Only',
       difficulty: 3,
-      path: '/games/verb-conjugation-ladder'
+      path: '/games/conjugation-duel'
     },
     {
       id: '9',

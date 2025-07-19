@@ -120,15 +120,15 @@ const AVAILABLE_GAMES: GameOption[] = [
     type: 'sentence'
   },
   {
-    id: 'verb-conjugation-ladder',
-    name: 'Verb Ladder',
-    description: 'Climb the ladder by correctly conjugating verbs at each level',
+    id: 'conjugation-duel',
+    name: 'Conjugation Duel',
+    description: 'Epic verb conjugation battles in different arenas and leagues',
     icon: <Layers className="h-5 w-5" />,
-    color: 'from-teal-500 to-green-500',
+    color: 'from-red-500 to-orange-500',
     category: 'grammar',
     difficulty: 'intermediate',
-    estimatedTime: '7-12 min',
-    features: ['Progressive difficulty', 'Verb mastery', 'Level progression'],
+    estimatedTime: '10-20 min',
+    features: ['Battle system', 'League progression', 'Real-time combat'],
     type: 'sentence'
   },
   {
