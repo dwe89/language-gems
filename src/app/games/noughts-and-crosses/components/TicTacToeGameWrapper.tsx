@@ -68,6 +68,8 @@ export default function TicTacToeGameWrapper(props: TicTacToeGameWrapperProps) {
       const mappedLanguage = mapLanguage(props.settings.language);
       const mappedCategory = mapCategory(props.settings.category);
 
+      console.log('Loading vocabulary:', { mappedLanguage, mappedCategory });
+
       // Load vocabulary for the specified language and category
       let vocabulary: CentralizedVocabularyWord[] = [];
 
@@ -79,19 +81,43 @@ export default function TicTacToeGameWrapper(props: TicTacToeGameWrapperProps) {
           limit: 20, // TicTacToe doesn't need many words
           randomize: true
         });
+
+        console.log('Vocabulary loaded via service:', vocabulary.length);
       } catch (error) {
-        console.warn(`Failed to load vocabulary for ${mappedLanguage}/${mappedCategory}, trying fallback`);
+        console.warn(`Failed to load vocabulary via service, trying direct query`, error);
+        
+        // Fallback: direct Supabase query
+        const { data, error: directError } = await supabase
+          .from('centralized_vocabulary')
+          .select('*')
+          .eq('language', mappedLanguage)
+          .eq('category', mappedCategory)
+          .not('audio_url', 'is', null)
+          .limit(20);
+          
+        if (directError) {
+          console.error('Direct query failed:', directError);
+        } else {
+          vocabulary = data || [];
+          console.log('Vocabulary loaded via direct query:', vocabulary.length);
+        }
       }
 
       // Fallback to Spanish animals if no vocabulary found
       if (vocabulary.length === 0) {
-        vocabulary = await vocabularyService.getVocabulary({
-          language: 'es',
-          category: 'animals',
-          hasAudio: true,
-          limit: 20,
-          randomize: true
-        });
+        console.log('No vocabulary found, trying Spanish animals fallback');
+        const { data, error: fallbackError } = await supabase
+          .from('centralized_vocabulary')
+          .select('*')
+          .eq('language', 'es')
+          .eq('category', 'animals')
+          .not('audio_url', 'is', null)
+          .limit(20);
+          
+        if (!fallbackError && data) {
+          vocabulary = data;
+          console.log('Fallback vocabulary loaded:', vocabulary.length);
+        }
       }
 
       setVocabularyWords(vocabulary);

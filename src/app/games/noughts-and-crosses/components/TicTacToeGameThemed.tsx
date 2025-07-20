@@ -587,7 +587,7 @@ export default function TicTacToeGame({ settings, onBackToMenu, onGameEnd, vocab
     const options = [randomWord.translation, ...wrongOptions].sort(() => 0.5 - Math.random());
     const correctIndex = options.indexOf(randomWord.translation);
     
-    return {
+    const question = {
       word: randomWord.word,
       translation: randomWord.translation,
       options: options,
@@ -597,6 +597,8 @@ export default function TicTacToeGame({ settings, onBackToMenu, onGameEnd, vocab
       playAudio: (randomWord as any).playAudio, // Include playAudio function if available
       vocabularyWord: randomWord // Include full vocabulary word for audio playback
     };
+    
+    return question;
   };
 
   const checkWinner = (squares: CellContent[]) => {

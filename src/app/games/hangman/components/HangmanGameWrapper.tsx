@@ -114,18 +114,35 @@ export default function HangmanGameWrapper(props: HangmanGameWrapperProps) {
           randomize: true
         });
       } catch (error) {
-        console.warn(`Failed to load vocabulary for ${mappedLanguage}/${mappedCategory}, trying fallback`);
+        console.warn(`Failed to load vocabulary via service, trying direct query`);
+        
+        // Fallback: direct Supabase query
+        const { data, error: directError } = await supabase
+          .from('centralized_vocabulary')
+          .select('*')
+          .eq('language', mappedLanguage)
+          .eq('category', mappedCategory)
+          .not('audio_url', 'is', null)
+          .limit(100);
+          
+        if (!directError && data) {
+          vocabulary = data;
+        }
       }
 
       // Fallback to Spanish animals if no vocabulary found
       if (vocabulary.length === 0) {
-        vocabulary = await vocabularyService.getVocabulary({
-          language: 'es',
-          category: 'animals',
-          hasAudio: true,
-          limit: 50,
-          randomize: true
-        });
+        const { data, error: fallbackError } = await supabase
+          .from('centralized_vocabulary')
+          .select('*')
+          .eq('language', 'es')
+          .eq('category', 'animals')
+          .not('audio_url', 'is', null)
+          .limit(50);
+          
+        if (!fallbackError && data) {
+          vocabulary = data;
+        }
       }
 
       // Organize vocabulary by difficulty
