@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { IoChevronBackOutline, IoExpandOutline, IoContractOutline } from 'react-icons/io5';
-import HangmanGame from './components/HangmanGame';
+import HangmanGameWrapper from './components/HangmanGameWrapper';
 import GameSettings from './components/GameSettings';
 
 export default function HangmanPage() {
@@ -196,7 +196,7 @@ export default function HangmanPage() {
               exit={{ opacity: 0, scale: 0.9 }}
               className={`${isFullscreen ? 'flex-grow w-full h-full' : ''}`}
             >
-              <HangmanGame 
+              <HangmanGameWrapper 
                 settings={settings} 
                 onBackToMenu={handleBackToMenu} 
                 onGameEnd={handleGameEnd}

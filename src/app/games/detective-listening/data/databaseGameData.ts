@@ -123,7 +123,8 @@ export async function generateGameData(
       category: caseTypeId, // Case type ID maps directly to category
       limit: evidenceCount,
       randomize: true,
-      difficulty_level: 'beginner'
+      difficulty_level: 'beginner',
+      hasAudio: true // Only get words with audio URLs for Detective Listening
     });
 
     // If we don't have enough words for this specific category, get more from the same language
@@ -134,7 +135,8 @@ export async function generateGameData(
         limit: evidenceCount - vocabularyWords.length,
         randomize: true,
         excludeIds: vocabularyWords.map((w: CentralizedVocabularyWord) => w.id),
-        difficulty_level: 'beginner'
+        difficulty_level: 'beginner',
+        hasAudio: true // Only get words with audio URLs for Detective Listening
       });
       finalWords = [...vocabularyWords, ...additionalWords];
     }

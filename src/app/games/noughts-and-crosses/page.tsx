@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { ThemeProvider } from './components/ThemeProvider';
 import GameSettings from './components/GameSettings';
-import TicTacToeGameThemed from './components/TicTacToeGameThemed';
+import TicTacToeGameWrapper from './components/TicTacToeGameWrapper';
 import { useAudio } from './hooks/useAudio';
 
 export default function NoughtsAndCrossesPage() {
@@ -217,7 +217,7 @@ export default function NoughtsAndCrossesPage() {
                 exit={{ opacity: 0 }}
                 className="w-full h-screen"
               >
-                <TicTacToeGameThemed 
+                <TicTacToeGameWrapper 
                   settings={gameSettings}
                   onBackToMenu={backToMenu}
                   onGameEnd={handleGameEnd}

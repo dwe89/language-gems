@@ -417,6 +417,19 @@ export default function MemoryGameMain({ language, topic, difficulty, onBackToSe
         setCanFlip(true);
         setMatches(matches + 1);
 
+        // Play audio for the vocabulary word if available
+        // Try to play audio for the Spanish term (assuming it's available)
+        const spanishTerm = firstCard.value;
+        const audioUrl = (firstCard as any).audio_url;
+        if (audioUrl) {
+          setTimeout(() => {
+            const audio = new Audio(audioUrl);
+            audio.play().catch(error => {
+              console.warn('Failed to play vocabulary audio:', error);
+            });
+          }, 500); // Delay to let the correct sound play first
+        }
+
         // Track vocabulary progress for matched pair
         if (isAssignmentMode && firstCard.vocabularyId) {
           const now = new Date();

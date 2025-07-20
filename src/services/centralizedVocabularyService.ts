@@ -138,7 +138,8 @@ export class CentralizedVocabularyService {
       category: 'animals', // Good for audio recognition
       limit: count,
       randomize: true,
-      difficulty_level: 'beginner'
+      difficulty_level: 'beginner',
+      hasAudio: true // Detective Listening requires audio
     });
   }
 

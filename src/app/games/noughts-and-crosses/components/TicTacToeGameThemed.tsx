@@ -28,6 +28,13 @@ interface TicTacToeGameProps {
   };
   onBackToMenu: () => void;
   onGameEnd: (result: { outcome: 'win' | 'loss' | 'tie'; wordsLearned: number; perfectGame?: boolean }) => void;
+  vocabularyWords?: Array<{
+    word: string;
+    translation: string;
+    difficulty: string;
+    audio_url?: string;
+    playAudio?: () => void;
+  }>;
 }
 
 // Simple vocabulary for the game
@@ -499,15 +506,10 @@ const VOCABULARY = {
   }
 };
 
-const generateWrongOptions = (correctTranslation: string, category: string, language: string) => {
-  const categoryData = VOCABULARY[category as keyof typeof VOCABULARY];
-  if (!categoryData) return [];
+const generateWrongOptions = (correctTranslation: string, vocabulary: any[]) => {
+  if (!vocabulary || vocabulary.length === 0) return [];
   
-  const languageData = categoryData[language as keyof typeof categoryData];
-  if (!languageData) return [];
-  
-  const categoryWords = languageData;
-  const otherTranslations = categoryWords
+  const otherTranslations = vocabulary
     .filter((item: any) => item.translation !== correctTranslation)
     .map((item: any) => item.translation);
   
@@ -516,7 +518,7 @@ const generateWrongOptions = (correctTranslation: string, category: string, lang
   return shuffled.slice(0, 3);
 };
 
-export default function TicTacToeGame({ settings, onBackToMenu, onGameEnd }: TicTacToeGameProps) {
+export default function TicTacToeGame({ settings, onBackToMenu, onGameEnd, vocabularyWords }: TicTacToeGameProps) {
   const { themeClasses } = useTheme();
   
   // Audio state
@@ -563,6 +565,11 @@ export default function TicTacToeGame({ settings, onBackToMenu, onGameEnd }: Tic
 
   // Get vocabulary for current settings
   const getVocabulary = () => {
+    // Use vocabularyWords prop if available, otherwise fallback to static VOCABULARY
+    if (vocabularyWords && vocabularyWords.length > 0) {
+      return vocabularyWords;
+    }
+    
     const categoryData = VOCABULARY[settings.category as keyof typeof VOCABULARY];
     if (!categoryData) return [];
     const languageData = categoryData[settings.language as keyof typeof categoryData];
@@ -574,7 +581,7 @@ export default function TicTacToeGame({ settings, onBackToMenu, onGameEnd }: Tic
     if (vocabulary.length === 0) return null;
     
     const randomWord = vocabulary[Math.floor(Math.random() * vocabulary.length)];
-    const wrongOptions = generateWrongOptions(randomWord.translation, settings.category, settings.language);
+    const wrongOptions = generateWrongOptions(randomWord.translation, vocabulary);
     
     // Create 4 options: 1 correct + 3 wrong, then shuffle
     const options = [randomWord.translation, ...wrongOptions].sort(() => 0.5 - Math.random());
@@ -585,7 +592,10 @@ export default function TicTacToeGame({ settings, onBackToMenu, onGameEnd }: Tic
       translation: randomWord.translation,
       options: options,
       correctIndex: correctIndex,
-      language: settings.language
+      language: settings.language,
+      audio_url: (randomWord as any).audio_url, // Include audio URL if available
+      playAudio: (randomWord as any).playAudio, // Include playAudio function if available
+      vocabularyWord: randomWord // Include full vocabulary word for audio playback
     };
   };
 
@@ -642,6 +652,21 @@ export default function TicTacToeGame({ settings, onBackToMenu, onGameEnd }: Tic
       playSFX('correct-answer');
       setWordsLearned(prev => prev + 1);
       setCorrectAnswers(prev => prev + 1);
+      
+      // Play audio for the vocabulary word
+      if (currentQuestion.playAudio) {
+        setTimeout(() => {
+          currentQuestion.playAudio();
+        }, 300); // Delay slightly to let the correct sound effect play first
+      } else if (currentQuestion.audio_url) {
+        setTimeout(() => {
+          const audio = new Audio(currentQuestion.audio_url);
+          audio.play().catch(error => {
+            console.warn('Failed to play vocabulary audio:', error);
+          });
+        }, 300);
+      }
+      
       makeMove(pendingMove);
     } else {
       // Play wrong answer sound

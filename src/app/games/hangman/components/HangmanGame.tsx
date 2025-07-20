@@ -14,6 +14,8 @@ import SoundEffects from './SoundEffects';
 import TempleGuardianModal from './TempleGuardianModal';
 import TokyoNightsModal from './TokyoNightsModal';
 import SpaceExplorerModal from './SpaceExplorerModal';
+import { CentralizedVocabularyService, CentralizedVocabularyWord } from 'gems/services/centralizedVocabularyService';
+import { createClient } from '@supabase/supabase-js';
 
 interface HangmanGameProps {
   settings: {
@@ -22,6 +24,7 @@ interface HangmanGameProps {
     language: string;
     theme: string;
     customWords?: string[];
+    playAudio?: (word: string) => void;
   };
   onBackToMenu: () => void;
   onGameEnd?: (result: 'win' | 'lose') => void;
@@ -390,6 +393,13 @@ function GameContent({ settings, onBackToMenu, onGameEnd, isFullscreen }: Hangma
       setGameStatus('won');
       setSoundEffectTriggers(prev => ({...prev, gameWon: true}));
       
+      // Play audio for the completed word
+      if (settings.playAudio) {
+        setTimeout(() => {
+          settings.playAudio!(word);
+        }, 500); // Delay slightly to let the confetti start
+      }
+      
       // Stop timer
       if (timerInterval) clearInterval(timerInterval);
       
@@ -442,6 +452,13 @@ function GameContent({ settings, onBackToMenu, onGameEnd, isFullscreen }: Hangma
         setGameStatus('won');
         const newScore = calculateScore();
         setScore(newScore);
+        
+        // Play audio for the completed word
+        if (settings.playAudio) {
+          setTimeout(() => {
+            settings.playAudio!(word);
+          }, 500); // Delay slightly to let the win sound effects play first
+        }
         
         // Add the newScore to totalScore
         const currentTotal = parseInt(localStorage.getItem('hangmanTotalScore') || '0', 10);

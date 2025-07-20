@@ -11,6 +11,7 @@
     "generate-audio": "tsx scripts/generateAudio.ts",
     "generate-audio:test": "tsx scripts/generateAudio.ts --test",
     "generate-audio:dry-run": "tsx scripts/generateAudio.ts --dry-run",
+    "generate-vocabulary-audio": "node scripts/generate-vocabulary-audio.js",
     "manage-audio": "tsx scripts/manageAudio.ts",
     "test-audio-quality": "tsx scripts/testAudioQuality.ts",
     "test-polly-credentials": "tsx scripts/testPollyCredentials.ts",
