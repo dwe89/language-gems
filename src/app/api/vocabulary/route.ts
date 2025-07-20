@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '../../../../lib/supabase-server';
+import { createClient } from 'gems/lib/supabase-server';
 import { 
   CentralizedVocabularyService, 
   CentralizedVocabularyWord, 
   VocabularyQuery as CentralizedQuery 
-} from '../../../services/centralizedVocabularyService';
+} from 'gems/services/centralizedVocabularyService';
 
 // Legacy interface for backwards compatibility
 export interface VocabularyWord {

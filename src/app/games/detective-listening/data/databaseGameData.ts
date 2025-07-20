@@ -1,6 +1,6 @@
 import { GameData, CaseType, Language, Evidence, VocabularyItem, CaseData } from '../types';
-import { createClient } from '../../../../../lib/supabase-server';
-import { CentralizedVocabularyService, CentralizedVocabularyWord } from '../../../../services/centralizedVocabularyService';
+import { createClient } from 'gems/lib/supabase-server';
+import { CentralizedVocabularyService, CentralizedVocabularyWord } from 'gems/services/centralizedVocabularyService';
 import { supabaseClient } from '../utils/audioUtils';
 
 // Case types that map to vocabulary categories
@@ -133,7 +133,7 @@ export async function generateGameData(
         language: languageId,
         limit: evidenceCount - vocabularyWords.length,
         randomize: true,
-        excludeIds: vocabularyWords.map(w => w.id),
+        excludeIds: vocabularyWords.map((w: CentralizedVocabularyWord) => w.id),
         difficulty_level: 'beginner'
       });
       finalWords = [...vocabularyWords, ...additionalWords];
