@@ -7,20 +7,20 @@ import { ThemeType } from '../types';
 
 // Define our sounds
 const SOUNDS = {
-  drag: '/sounds/drag.mp3',
-  drop: '/sounds/drop.mp3',
-  correct: '/sounds/correct.mp3',
-  incorrect: '/sounds/incorrect.mp3',
-  powerup: '/sounds/powerup.mp3',
-  levelComplete: '/sounds/level-complete.mp3',
-  gameOver: '/sounds/game-over.mp3',
-  ui: '/sounds/ui-click.mp3',
+  drag: '/games/verb-quest/sounds/click.mp3',
+  drop: '/games/verb-quest/sounds/click.mp3',
+  correct: '/games/sentence-towers/sounds/correctanswer.mp3',
+  incorrect: '/audio/sfx/wrong-answer.mp3',
+  powerup: '/audio/sfx/button-click.mp3',
+  levelComplete: '/audio/sfx/victory.mp3',
+  gameOver: '/audio/sfx/defeat.mp3',
+  ui: '/games/verb-quest/sounds/click.mp3',
   bgMusic: {
-    default: '/sounds/bg-music-default.mp3',
-    cyber: '/sounds/bg-music-cyber.mp3',
-    medieval: '/sounds/bg-music-medieval.mp3',
-    pirate: '/sounds/bg-music-pirate.mp3',
-    space: '/sounds/bg-music-space.mp3',
+    default: '/audio/sentence-sprint.mp3',
+    cyber: '/audio/themes/tokyo-nights-ambient.mp3',
+    medieval: '/audio/themes/classic-ambient.mp3',
+    pirate: '/audio/themes/pirate-adventure-ambient.mp3',
+    space: '/audio/themes/space-explorer-ambient.mp3',
   }
 };
 

@@ -1,0 +1,188 @@
+/* Detective Listening Game Custom Styles */
+
+/* Radio static animation */
+@keyframes radioStatic {
+  0% { opacity: 0.3; }
+  50% { opacity: 0.8; }
+  100% { opacity: 0.3; }
+}
+
+.radio-static {
+  animation: radioStatic 0.5s infinite;
+}
+
+/* Evidence card hover effects */
+.evidence-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.evidence-card:hover {
+  transform: translateY(-4px) rotateY(5deg);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+/* Case file animations */
+.case-file {
+  transform-style: preserve-3d;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.case-file:hover {
+  transform: rotateY(10deg) rotateX(5deg) translateZ(20px);
+}
+
+/* Radio frequency dial */
+.frequency-dial {
+  background: radial-gradient(circle, #1f2937 0%, #111827 100%);
+  border: 3px solid #374151;
+  position: relative;
+}
+
+.frequency-dial::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 4px;
+  height: 30px;
+  background: #ef4444;
+  transform: translate(-50%, -50%) rotate(var(--dial-rotation, 0deg));
+  border-radius: 2px;
+  box-shadow: 0 0 10px #ef4444;
+}
+
+/* Detective badge glow */
+.detective-badge {
+  position: relative;
+}
+
+.detective-badge::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  background: linear-gradient(45deg, #f59e0b, #d97706, #92400e, #f59e0b);
+  border-radius: inherit;
+  opacity: 0.7;
+  filter: blur(8px);
+  z-index: -1;
+  animation: badgeGlow 3s ease-in-out infinite;
+}
+
+@keyframes badgeGlow {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+
+/* Cork board texture */
+.cork-board {
+  background-image: 
+    radial-gradient(circle at 20% 20%, #d4a574 2px, transparent 2px),
+    radial-gradient(circle at 80% 80%, #c49660 1px, transparent 1px),
+    radial-gradient(circle at 40% 60%, #b8864d 1px, transparent 1px);
+  background-size: 30px 30px, 25px 25px, 35px 35px;
+}
+
+/* Evidence progress dots */
+.evidence-dot {
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.evidence-dot.completed::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-weight: bold;
+  font-size: 0.75rem;
+}
+
+/* Radio wave animation */
+@keyframes radioWave {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+.radio-wave {
+  animation: radioWave 2s infinite;
+}
+
+/* Perspective utilities */
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+
+/* Custom scrollbar for evidence list */
+.evidence-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.evidence-scroll::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 3px;
+}
+
+.evidence-scroll::-webkit-scrollbar-thumb {
+  background: rgba(245, 158, 11, 0.5);
+  border-radius: 3px;
+}
+
+.evidence-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(245, 158, 11, 0.7);
+}
+
+/* Ambient particle effects */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+.floating-particle {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Case solved stamp effect */
+.solved-stamp {
+  transform: rotate(-12deg);
+  animation: stampAppear 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+@keyframes stampAppear {
+  0% {
+    transform: rotate(-12deg) scale(0);
+    opacity: 0;
+  }
+  100% {
+    transform: rotate(-12deg) scale(1);
+    opacity: 1;
+  }
+}
+
+/* Loading spinner for audio */
+.audio-loading {
+  border: 2px solid rgba(59, 130, 246, 0.3);
+  border-top: 2px solid #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}

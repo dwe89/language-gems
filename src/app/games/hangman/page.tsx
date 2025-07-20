@@ -26,7 +26,6 @@ export default function HangmanPage() {
     bestStreak: 0,
   });
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [setupStage, setSetupStage] = useState<'language' | 'category' | 'difficulty'>('language');
 
   // Load stats from localStorage
   useEffect(() => {
@@ -67,31 +66,6 @@ export default function HangmanPage() {
     }
   };
 
-  const handleLanguageSelect = (language: string) => {
-    setSettings(prev => ({ ...prev, language }));
-    setSetupStage('category');
-  };
-
-  const handleCategorySelect = (category: string, customWords?: string[]) => {
-    if (category === 'custom' && !customWords) {
-      // Don't proceed until custom words are provided
-      return;
-    }
-    
-    const newSettings = { ...settings, category };
-    if (customWords) {
-      newSettings.customWords = customWords;
-    }
-    
-    setSettings(newSettings);
-    setSetupStage('difficulty');
-  };
-
-  const handleDifficultySelect = (difficulty: string, theme: string) => {
-    setSettings(prev => ({ ...prev, difficulty, theme }));
-    startGame();
-  };
-
   const handleStartGame = (settings: {
     difficulty: string;
     category: string;
@@ -109,7 +83,6 @@ export default function HangmanPage() {
 
   const handleBackToMenu = () => {
     setGameStarted(false);
-    setSetupStage('language');
   };
 
   const handleGameEnd = (result: 'win' | 'lose') => {
@@ -187,10 +160,6 @@ export default function HangmanPage() {
               <div className={`max-w-3xl mx-auto ${isFullscreen ? 'w-full' : ''}`}>
                 <GameSettings 
                   onStartGame={handleStartGame}
-                  setupStage={setupStage}
-                  onLanguageSelect={handleLanguageSelect}
-                  onCategorySelect={handleCategorySelect}
-                  onDifficultySelect={handleDifficultySelect}
                 />
                 
                 {/* Game Stats Display */}

@@ -1,6 +1,7 @@
 -- Insert some sample games
 INSERT INTO public.games (name, description, thumbnail_url, difficulty, max_players, estimated_time, theme_color, is_new, is_featured)
 VALUES 
+('VocabMaster', 'Master vocabulary with intelligent spaced repetition - like Quizlet/Memrise', '/games/vocab-master.jpg', 2, 1, '10-20 min', 'text-indigo-500', true, true),
 ('Word Clicker', 'Click the button as many times as you can in 10 seconds!', '/games/vocab-match.jpg', 1, 1, '10 sec', 'text-blue-500', true, false),
 ('Vocabulary Match', 'Match the words with their meanings as quickly as possible', '/games/vocab-match.jpg', 2, 1, '5 min', 'text-green-500', false, true),
 ('Grammar Quest', 'Test your grammar knowledge in this adventure game', '/games/grammar-quest.jpg', 3, 1, '10 min', 'text-purple-500', false, false),

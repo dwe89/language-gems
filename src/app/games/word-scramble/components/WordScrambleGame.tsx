@@ -1,103 +1,295 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import FullscreenToggle from '../../../components/FullscreenToggle';
+import confetti from 'canvas-confetti';
+import Link from 'next/link';
 
-// Word lists for each category
-const WORD_LISTS = {
-  fruits: {
-    spanish: [
-      { word: "manzana", hint: "Red fruit" },
-      { word: "plátano", hint: "Yellow curved fruit" },
-      { word: "naranja", hint: "Orange citrus" },
-      { word: "piña", hint: "Tropical spiky fruit" },
-      { word: "uva", hint: "Small purple fruit" },
-      { word: "mango", hint: "Sweet tropical fruit" },
-      { word: "pera", hint: "Green teardrop fruit" },
-      { word: "fresa", hint: "Red berry" }
-    ],
-    english: [
-      { word: "apple", hint: "Red fruit" },
-      { word: "banana", hint: "Yellow curved fruit" },
-      { word: "orange", hint: "Orange citrus" },
-      { word: "pineapple", hint: "Tropical spiky fruit" },
-      { word: "grape", hint: "Small purple fruit" },
-      { word: "mango", hint: "Sweet tropical fruit" },
-      { word: "pear", hint: "Green teardrop fruit" },
-      { word: "strawberry", hint: "Red berry" }
-    ]
-  },
-  animals: {
-    spanish: [
-      { word: "perro", hint: "Man's best friend" },
-      { word: "gato", hint: "Independent pet" },
-      { word: "león", hint: "King of jungle" },
-      { word: "tigre", hint: "Striped big cat" },
-      { word: "oso", hint: "Large forest animal" },
-      { word: "mono", hint: "Playful primate" },
-      { word: "pájaro", hint: "Flying creature" },
-      { word: "pez", hint: "Lives in water" }
-    ],
-    english: [
-      { word: "dog", hint: "Man's best friend" },
-      { word: "cat", hint: "Independent pet" },
-      { word: "lion", hint: "King of jungle" },
-      { word: "tiger", hint: "Striped big cat" },
-      { word: "bear", hint: "Large forest animal" },
-      { word: "monkey", hint: "Playful primate" },
-      { word: "bird", hint: "Flying creature" },
-      { word: "fish", hint: "Lives in water" }
-    ]
-  },
-  colors: {
-    spanish: [
-      { word: "rojo", hint: "Color of fire" },
-      { word: "azul", hint: "Color of sky" },
-      { word: "verde", hint: "Color of grass" },
-      { word: "amarillo", hint: "Color of sun" },
-      { word: "negro", hint: "Darkest color" },
-      { word: "blanco", hint: "Color of snow" },
-      { word: "morado", hint: "Color of royalty" },
-      { word: "gris", hint: "Color of clouds" }
-    ],
-    english: [
-      { word: "red", hint: "Color of fire" },
-      { word: "blue", hint: "Color of sky" },
-      { word: "green", hint: "Color of grass" },
-      { word: "yellow", hint: "Color of sun" },
-      { word: "black", hint: "Darkest color" },
-      { word: "white", hint: "Color of snow" },
-      { word: "purple", hint: "Color of royalty" },
-      { word: "gray", hint: "Color of clouds" }
-    ]
-  }
-};
+// Game Modes
+type GameMode = 'classic' | 'blitz' | 'marathon' | 'timed_attack' | 'word_storm' | 'zen';
 
-// Game difficulty settings
-const DIFFICULTY_SETTINGS = {
-  beginner: {
-    timeLimit: 90,
-    maxGuesses: 5,
-    maxHints: 3
-  },
-  intermediate: {
-    timeLimit: 60,
-    maxGuesses: 3,
-    maxHints: 2
-  },
-  advanced: {
-    timeLimit: 45,
-    maxGuesses: 2,
-    maxHints: 1
-  }
-};
+// Power-ups
+type PowerUp = 'shuffle_letters' | 'reveal_vowels' | 'show_length' | 'freeze_time' | 'double_points' | 'word_hints';
 
-type GameSettings = {
-  difficulty: string;
+// Game Difficulties
+type Difficulty = 'easy' | 'medium' | 'hard' | 'expert';
+
+interface GameSettings {
+  difficulty: Difficulty;
   category: string;
   language: string;
+  gameMode: GameMode;
+}
+
+interface Achievement {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  unlocked: boolean;
+  progress?: number;
+  maxProgress?: number;
+}
+
+interface GameStats {
+  score: number;
+  streak: number;
+  multiplier: number;
+  wordsCompleted: number;
+  perfectWords: number;
+  powerUps: PowerUp[];
+  achievements: Achievement[];
+  timeBonus: number;
+  consecutiveCorrect: number;
+  letterAccuracy: number;
+  avgSolveTime: number;
+}
+
+// Enhanced word database with categories, difficulties, and themes
+const ENHANCED_WORD_DATABASE = {
+  animals: {
+    english: [
+      { word: 'elephant', hint: 'Large gray mammal with trunk', difficulty: 0.7, theme: 'safari', points: 80 },
+      { word: 'butterfly', hint: 'Colorful flying insect', difficulty: 0.8, theme: 'insects', points: 90 },
+      { word: 'penguin', hint: 'Black and white bird from Antarctica', difficulty: 0.6, theme: 'birds', points: 70 },
+      { word: 'octopus', hint: 'Eight-armed sea creature', difficulty: 0.8, theme: 'ocean', points: 80 },
+      { word: 'kangaroo', hint: 'Hopping Australian animal', difficulty: 0.9, theme: 'marsupials', points: 90 },
+      { word: 'dolphin', hint: 'Intelligent marine mammal', difficulty: 0.7, theme: 'ocean', points: 70 },
+      { word: 'tiger', hint: 'Orange striped big cat', difficulty: 0.5, theme: 'cats', points: 50 },
+      { word: 'giraffe', hint: 'Tallest land animal', difficulty: 0.7, theme: 'safari', points: 70 }
+    ],
+    spanish: [
+      { word: 'elefante', hint: 'Mamífero grande y gris con trompa', difficulty: 0.7, theme: 'safari', points: 80 },
+      { word: 'mariposa', hint: 'Insecto colorido que vuela', difficulty: 0.8, theme: 'insects', points: 90 },
+      { word: 'pingüino', hint: 'Ave blanca y negra de la Antártida', difficulty: 0.8, theme: 'birds', points: 80 },
+      { word: 'pulpo', hint: 'Criatura marina de ocho brazos', difficulty: 0.6, theme: 'ocean', points: 60 },
+      { word: 'canguro', hint: 'Animal australiano que salta', difficulty: 0.8, theme: 'marsupials', points: 80 },
+      { word: 'delfín', hint: 'Mamífero marino inteligente', difficulty: 0.7, theme: 'ocean', points: 70 },
+      { word: 'tigre', hint: 'Felino grande con rayas naranjas', difficulty: 0.6, theme: 'cats', points: 60 },
+      { word: 'jirafa', hint: 'Animal terrestre más alto', difficulty: 0.7, theme: 'safari', points: 70 }
+    ]
+  },
+  space: {
+    english: [
+      { word: 'galaxy', hint: 'Collection of billions of stars', difficulty: 0.7, theme: 'cosmos', points: 70 },
+      { word: 'asteroid', hint: 'Rocky object orbiting the sun', difficulty: 0.8, theme: 'objects', points: 80 },
+      { word: 'nebula', hint: 'Colorful cloud of gas in space', difficulty: 0.9, theme: 'phenomena', points: 90 },
+      { word: 'satellite', hint: 'Object orbiting a planet', difficulty: 0.8, theme: 'technology', points: 80 },
+      { word: 'comet', hint: 'Icy body with a tail', difficulty: 0.6, theme: 'objects', points: 60 },
+      { word: 'planet', hint: 'Large body orbiting a star', difficulty: 0.5, theme: 'bodies', points: 50 },
+      { word: 'meteor', hint: 'Shooting star', difficulty: 0.7, theme: 'phenomena', points: 70 },
+      { word: 'universe', hint: 'Everything that exists', difficulty: 0.8, theme: 'cosmos', points: 80 }
+    ]
+  },
+  technology: {
+    english: [
+      { word: 'algorithm', hint: 'Step-by-step problem-solving process', difficulty: 0.9, theme: 'programming', points: 100 },
+      { word: 'database', hint: 'Organized collection of information', difficulty: 0.8, theme: 'data', points: 80 },
+      { word: 'internet', hint: 'Global network of computers', difficulty: 0.7, theme: 'network', points: 70 },
+      { word: 'software', hint: 'Computer programs and applications', difficulty: 0.7, theme: 'programming', points: 70 },
+      { word: 'artificial', hint: 'Man-made intelligence', difficulty: 0.9, theme: 'ai', points: 90 },
+      { word: 'quantum', hint: 'Smallest unit of energy', difficulty: 1.0, theme: 'physics', points: 110 },
+      { word: 'blockchain', hint: 'Distributed ledger technology', difficulty: 1.0, theme: 'crypto', points: 120 },
+      { word: 'cybersecurity', hint: 'Protection from digital attacks', difficulty: 1.0, theme: 'security', points: 130 }
+    ]
+  }
 };
+
+// Achievement definitions
+const ACHIEVEMENTS: Achievement[] = [
+  { id: 'first_word', title: 'First Steps', description: 'Solve your first word', icon: '🎯', unlocked: false },
+  { id: 'speed_demon', title: 'Lightning Fast', description: 'Solve a word in under 3 seconds', icon: '⚡', unlocked: false },
+  { id: 'perfect_streak', title: 'Perfect Run', description: 'Get 10 words correct in a row', icon: '🔥', unlocked: false },
+  { id: 'power_master', title: 'Power User', description: 'Use every power-up type', icon: '💎', unlocked: false },
+  { id: 'word_wizard', title: 'Word Wizard', description: 'Solve 100 words total', icon: '🧙‍♂️', unlocked: false },
+  { id: 'time_master', title: 'Time Master', description: 'Survive 5 minutes in marathon mode', icon: '⏰', unlocked: false },
+  { id: 'combo_king', title: 'Combo Master', description: 'Achieve 5x score multiplier', icon: '👑', unlocked: false }
+];
+
+// Power-up definitions
+const POWER_UPS = {
+  shuffle_letters: { name: 'Shuffle', icon: '🔄', description: 'Shuffle scrambled letters', cost: 20 },
+  reveal_vowels: { name: 'Vowels', icon: '🅰️', description: 'Highlight all vowels', cost: 30 },
+  show_length: { name: 'Length', icon: '📏', description: 'Show word length', cost: 25 },
+  freeze_time: { name: 'Freeze', icon: '❄️', description: 'Pause timer for 10 seconds', cost: 50 },
+  double_points: { name: 'Double', icon: '2️⃣', description: 'Double points for next word', cost: 40 },
+  word_hints: { name: 'Hint', icon: '💡', description: 'Show word category hint', cost: 35 }
+};
+
+// Enhanced letter component with animations
+const AnimatedLetter = React.memo(({ 
+  letter, 
+  index, 
+  isVowelRevealed,
+  onClick,
+  isSelected,
+  canMove = true
+}: {
+  letter: string;
+  index: number;
+  isVowelRevealed?: boolean;
+  onClick?: (index: number) => void;
+  isSelected?: boolean;
+  canMove?: boolean;
+}) => {
+  const isVowel = 'aeiouAEIOU'.includes(letter);
+  
+  return (
+    <motion.button
+      onClick={() => onClick?.(index)}
+      className={`
+        relative inline-block mx-1 px-3 py-2 text-2xl font-bold rounded-lg shadow-lg cursor-pointer
+        ${isSelected ? 'bg-purple-500 text-white scale-110' : 'bg-white text-gray-800 hover:bg-gray-100'}
+        ${isVowelRevealed && isVowel ? 'bg-yellow-300 text-black ring-4 ring-yellow-500' : ''}
+        ${!canMove ? 'cursor-not-allowed opacity-50' : ''}
+      `}
+      variants={{
+        initial: { scale: 0, rotate: -180, opacity: 0 },
+        animate: { scale: 1, rotate: 0, opacity: 1 },
+        selected: { scale: 1.1, backgroundColor: '#8B5CF6' },
+        bounce: { 
+          scale: [1, 1.2, 1], 
+          transition: { duration: 0.3 }
+        }
+      }}
+      initial="initial"
+      animate={isSelected ? 'selected' : 'animate'}
+      transition={{ delay: index * 0.1 }}
+      whileHover={canMove ? { scale: 1.05 } : {}}
+      whileTap={canMove ? { scale: 0.95 } : {}}
+    >
+      {letter.toUpperCase()}
+      {isVowelRevealed && isVowel && (
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-500 rounded-full"
+        />
+      )}
+    </motion.button>
+  );
+});
+
+AnimatedLetter.displayName = 'AnimatedLetter';
+
+// Sound system
+class SoundManager {
+  private sounds: { [key: string]: HTMLAudioElement } = {};
+
+  constructor() {
+    this.loadSounds();
+  }
+
+  private loadSounds() {
+    const soundFiles = {
+      correct: '/sounds/correct.mp3',
+      wrong: '/sounds/wrong.mp3',
+      powerup: '/sounds/powerup.mp3',
+      complete: '/sounds/perfect.mp3',
+      tick: '/sounds/tick.mp3',
+      select: '/sounds/select.mp3',
+      shuffle: '/sounds/select.mp3'
+    };
+
+    Object.entries(soundFiles).forEach(([key, path]) => {
+      this.sounds[key] = new Audio(path);
+      this.sounds[key].volume = 0.4;
+    });
+  }
+
+  play(sound: string) {
+    if (this.sounds[sound]) {
+      this.sounds[sound].currentTime = 0;
+      this.sounds[sound].play().catch(() => {});
+    }
+  }
+}
+
+// Particle system
+const createParticleEffect = (type: 'success' | 'perfect' | 'powerup' | 'streak') => {
+  const configs = {
+    success: {
+      particleCount: 50,
+      spread: 60,
+      origin: { y: 0.8 },
+      colors: ['#10B981', '#34D399', '#6EE7B7']
+    },
+    perfect: {
+      particleCount: 100,
+      spread: 90,
+      origin: { y: 0.6 },
+      colors: ['#F59E0B', '#FBBF24', '#FCD34D']
+    },
+    powerup: {
+      particleCount: 30,
+      spread: 45,
+      origin: { y: 0.7 },
+      colors: ['#8B5CF6', '#A78BFA', '#C4B5FD']
+    },
+    streak: {
+      particleCount: 80,
+      spread: 70,
+      origin: { y: 0.5 },
+      colors: ['#EF4444', '#F87171', '#FCA5A5']
+    }
+  };
+
+  confetti(configs[type]);
+};
+
+// Game mode configurations
+const GAME_MODE_CONFIGS = {
+  classic: {
+    timeLimit: 120,
+    wordLimit: 20,
+    description: 'Classic word scramble with time limit',
+    icon: '📝'
+  },
+  blitz: {
+    timeLimit: 60,
+    wordLimit: 15,
+    description: 'Fast-paced word solving',
+    icon: '⚡'
+  },
+  marathon: {
+    timeLimit: 300,
+    wordLimit: 50,
+    description: 'Long endurance challenge',
+    icon: '🏃'
+  },
+  timed_attack: {
+    timeLimit: 30,
+    wordLimit: 10,
+    description: 'Quick burst challenges',
+    icon: '💥'
+  },
+  word_storm: {
+    timeLimit: 90,
+    wordLimit: 25,
+    description: 'Rapid word changes',
+    icon: '🌪️'
+  },
+  zen: {
+    timeLimit: 0,
+    wordLimit: 0,
+    description: 'Relaxed, no pressure',
+    icon: '🧘'
+  }
+};
+
+// Difficulty settings
+const DIFFICULTY_CONFIGS = {
+  easy: { multiplier: 1, maxHints: 3, shuffleCount: 2, extraTime: 30 },
+  medium: { multiplier: 1.5, maxHints: 2, shuffleCount: 3, extraTime: 15 },
+  hard: { multiplier: 2, maxHints: 1, shuffleCount: 4, extraTime: 0 },
+  expert: { multiplier: 3, maxHints: 0, shuffleCount: 5, extraTime: -15 }
+};
+
+interface WordScrambleGameProps {
+  settings: GameSettings;
+  onBackToMenu: () => void;
+  onGameEnd: (result: { won: boolean; score: number; stats: GameStats }) => void;
+}
 
 type WordScrambleGameProps = {
   settings: GameSettings;

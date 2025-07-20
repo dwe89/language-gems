@@ -1,133 +1,380 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import Link from 'next/link';
-import GameSettings from './components/GameSettings';
-import WordScrambleGame from './components/WordScrambleGame';
+import WordScrambleGameEnhanced from './components/WordScrambleGameEnhanced';
+import GameSettingsEnhanced from './components/GameSettingsEnhanced';
+
+// Game configuration types
+type GameMode = 'classic' | 'blitz' | 'marathon' | 'timed_attack' | 'word_storm' | 'zen';
+type Difficulty = 'easy' | 'medium' | 'hard' | 'expert';
+
+interface GameSettings {
+  difficulty: Difficulty;
+  category: string;
+  language: string;
+  gameMode: GameMode;
+}
+
+interface GameStats {
+  score: number;
+  streak: number;
+  multiplier: number;
+  wordsCompleted: number;
+  perfectWords: number;
+  powerUps: any[];
+  achievements: any[];
+  timeBonus: number;
+  consecutiveCorrect: number;
+  letterAccuracy: number;
+  avgSolveTime: number;
+}
+
+interface GameResult {
+  won: boolean;
+  score: number;
+  stats: GameStats;
+}
+
+const GAME_MODES = [
+  { 
+    id: 'classic' as GameMode, 
+    name: 'Classic', 
+    description: 'Standard word scramble with time limit',
+    icon: '📝',
+    color: 'from-blue-500 to-blue-600'
+  },
+  { 
+    id: 'blitz' as GameMode, 
+    name: 'Speed Blitz', 
+    description: 'Fast-paced rapid-fire word solving',
+    icon: '⚡',
+    color: 'from-yellow-500 to-orange-500'
+  },
+  { 
+    id: 'marathon' as GameMode, 
+    name: 'Marathon', 
+    description: 'Long endurance challenge',
+    icon: '🏃',
+    color: 'from-green-500 to-green-600'
+  },
+  { 
+    id: 'timed_attack' as GameMode, 
+    name: 'Timed Attack', 
+    description: 'Quick burst challenges',
+    icon: '💥',
+    color: 'from-red-500 to-red-600'
+  },
+  { 
+    id: 'word_storm' as GameMode, 
+    name: 'Word Storm', 
+    description: 'Rapid changing word challenges',
+    icon: '🌪️',
+    color: 'from-purple-500 to-purple-600'
+  },
+  { 
+    id: 'zen' as GameMode, 
+    name: 'Zen Mode', 
+    description: 'Relaxed, no time pressure',
+    icon: '🧘',
+    color: 'from-teal-500 to-cyan-500'
+  }
+];
 
 export default function WordScramblePage() {
-  const [gameStarted, setGameStarted] = useState(false);
-  const [gameSettings, setGameSettings] = useState({
-    difficulty: 'beginner',
-    category: 'fruits',
-    language: 'spanish'
+  const [gameState, setGameState] = useState<'menu' | 'settings' | 'playing' | 'results'>('menu');
+  const [gameSettings, setGameSettings] = useState<GameSettings>({
+    difficulty: 'medium',
+    category: 'animals',
+    language: 'english',
+    gameMode: 'classic'
   });
-  const [gameStats, setGameStats] = useState({
-    gamesPlayed: 0,
-    gamesWon: 0,
-    highScore: 0,
-    totalScore: 0,
-    bestStreak: 0
-  });
-  
-  useEffect(() => {
-    // Load game stats from local storage
-    if (typeof window !== 'undefined') {
-      const savedStats = localStorage.getItem('wordScrambleGameStats');
-      if (savedStats) {
-        setGameStats(JSON.parse(savedStats));
-      }
-    }
-  }, []);
+  const [gameResult, setGameResult] = useState<GameResult | null>(null);
+  const [isGameStarting, setIsGameStarting] = useState(false);
 
-  const updateGameStats = (result: { won: boolean, score: number, streak?: number }) => {
-    const newStats = { ...gameStats };
-    newStats.gamesPlayed++;
-    
-    if (result.won) {
-      newStats.gamesWon++;
-      newStats.totalScore += result.score;
-      
-      if (result.score > newStats.highScore) {
-        newStats.highScore = result.score;
-      }
-      
-      if (result.streak && result.streak > newStats.bestStreak) {
-        newStats.bestStreak = result.streak;
-      }
-    }
-
-    setGameStats(newStats);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('wordScrambleGameStats', JSON.stringify(newStats));
-    }
+  const handleGameStart = (settings: GameSettings) => {
+    setGameSettings(settings);
+    setIsGameStarting(true);
+    setTimeout(() => {
+      setGameState('playing');
+      setIsGameStarting(false);
+    }, 1500);
   };
 
-  const handleStartGame = (settings: typeof gameSettings) => {
-    setGameSettings(settings);
-    setGameStarted(true);
+  const handleGameEnd = (result: GameResult) => {
+    setGameResult(result);
+    setGameState('results');
   };
 
   const handleBackToMenu = () => {
-    setGameStarted(false);
+    setGameState('menu');
+    setGameResult(null);
   };
 
-  return (
-    <div className="max-w-4xl mx-auto py-8 px-4">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-4xl font-bold text-green-600">Word Scramble</h1>
-        <Link 
-          href="/games" 
-          className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-full transition-colors"
+  if (isGameStarting) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center">
+        <motion.div
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className="text-center text-white"
         >
-          Back to Games
-        </Link>
-      </div>
-      
-      <AnimatePresence mode="wait">
-        {!gameStarted ? (
           <motion.div
-            key="settings"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3 }}
+            animate={{ rotate: 360 }}
+            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+            className="text-8xl mb-4"
           >
-            <div className="bg-gradient-to-br from-blue-50 to-green-50 shadow-lg rounded-lg p-6 mb-8">
-              <h2 className="text-2xl font-semibold mb-4 text-gray-800">Game Statistics</h2>
-              <div className="grid grid-cols-3 md:grid-cols-5 gap-4 text-center">
-                <div>
-                  <p className="text-3xl font-bold text-green-600">{gameStats.gamesPlayed}</p>
-                  <p className="text-gray-600">Games Played</p>
-                </div>
-                <div>
-                  <p className="text-3xl font-bold text-green-600">{gameStats.gamesWon}</p>
-                  <p className="text-gray-600">Games Won</p>
-                </div>
-                <div>
-                  <p className="text-3xl font-bold text-yellow-600">{Math.round((gameStats.gamesWon / (gameStats.gamesPlayed || 1)) * 100)}%</p>
-                  <p className="text-gray-600">Win Rate</p>
-                </div>
-                <div>
-                  <p className="text-3xl font-bold text-purple-600">{gameStats.highScore}</p>
-                  <p className="text-gray-600">High Score</p>
-                </div>
-                <div>
-                  <p className="text-3xl font-bold text-blue-600">{gameStats.bestStreak}</p>
-                  <p className="text-gray-600">Best Streak</p>
-                </div>
+            {GAME_MODES.find(mode => mode.id === gameSettings.gameMode)?.icon}
+          </motion.div>
+          <h2 className="text-4xl font-bold mb-2">Get Ready!</h2>
+          <p className="text-xl text-white/80">
+            Starting {GAME_MODES.find(mode => mode.id === gameSettings.gameMode)?.name}...
+          </p>
+        </motion.div>
+      </div>
+    );
+  }
+
+  if (gameState === 'playing') {
+    return (
+      <WordScrambleGameEnhanced
+        settings={gameSettings}
+        onBackToMenu={handleBackToMenu}
+        onGameEnd={handleGameEnd}
+      />
+    );
+  }
+
+  if (gameState === 'settings') {
+    return (
+      <GameSettingsEnhanced
+        onStart={handleGameStart}
+        onBack={handleBackToMenu}
+      />
+    );
+  }
+
+  if (gameState === 'results' && gameResult) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center p-4">
+        <motion.div
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className="bg-white/10 backdrop-blur-lg rounded-3xl p-8 text-center text-white max-w-2xl w-full shadow-2xl border border-white/20"
+        >
+          <div className="text-8xl mb-6">
+            {gameResult.won ? '🏆' : '💫'}
+          </div>
+          <h2 className="text-4xl font-bold mb-6 bg-gradient-to-r from-yellow-300 to-orange-300 bg-clip-text text-transparent">
+            {gameResult.won ? 'Incredible Performance!' : 'Great Effort!'}
+          </h2>
+          
+          {/* Enhanced Results Display */}
+          <div className="grid grid-cols-2 gap-4 mb-8">
+            <div className="bg-gradient-to-br from-blue-500/20 to-blue-600/20 rounded-lg p-4 border border-blue-400/30">
+              <div className="text-3xl font-bold text-yellow-300">{gameResult.score.toLocaleString()}</div>
+              <div className="text-sm text-white/80">Final Score</div>
+            </div>
+            <div className="bg-gradient-to-br from-green-500/20 to-green-600/20 rounded-lg p-4 border border-green-400/30">
+              <div className="text-3xl font-bold">{gameResult.stats.wordsCompleted}</div>
+              <div className="text-sm text-white/80">Words Solved</div>
+            </div>
+            <div className="bg-gradient-to-br from-purple-500/20 to-purple-600/20 rounded-lg p-4 border border-purple-400/30">
+              <div className="text-3xl font-bold">{gameResult.stats.perfectWords}</div>
+              <div className="text-sm text-white/80">Perfect Words</div>
+            </div>
+            <div className="bg-gradient-to-br from-orange-500/20 to-orange-600/20 rounded-lg p-4 border border-orange-400/30">
+              <div className="text-3xl font-bold">{gameResult.stats.streak}</div>
+              <div className="text-sm text-white/80">Best Streak</div>
+            </div>
+          </div>
+
+          {/* Performance Summary */}
+          <div className="bg-black/20 rounded-lg p-4 mb-6 border border-white/10">
+            <h3 className="text-xl font-bold mb-3">Performance Summary</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+              <div className="flex justify-between">
+                <span>Average Solve Time:</span>
+                <span className="font-semibold">{Math.floor(gameResult.stats.avgSolveTime * 10) / 10}s</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Max Multiplier:</span>
+                <span className="font-semibold">{gameResult.stats.multiplier}x</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Time Bonus:</span>
+                <span className="font-semibold">+{gameResult.stats.timeBonus}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Letter Accuracy:</span>
+                <span className="font-semibold">{Math.floor(gameResult.stats.letterAccuracy)}%</span>
               </div>
             </div>
-            
-            <GameSettings onStartGame={handleStartGame} />
-          </motion.div>
-        ) : (
-          <motion.div
-            key="game"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3 }}
+          </div>
+
+          {/* Achievements */}
+          {gameResult.stats.achievements.some(a => a.unlocked) && (
+            <div className="mb-6">
+              <h3 className="text-xl font-bold mb-3">🏆 Achievements</h3>
+              <div className="flex flex-wrap justify-center gap-2">
+                {gameResult.stats.achievements.filter(a => a.unlocked).map((achievement) => (
+                  <div
+                    key={achievement.id}
+                    className="bg-gradient-to-r from-yellow-400/20 to-orange-500/20 rounded-lg px-3 py-2 border border-yellow-400/30"
+                  >
+                    <span className="text-lg mr-2">{achievement.icon}</span>
+                    <span className="text-sm font-semibold">{achievement.title}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          <div className="flex flex-wrap gap-4 justify-center">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setGameState('settings')}
+              className="px-8 py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 rounded-xl font-semibold transition-all shadow-lg"
+            >
+              🎮 Play Again
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={handleBackToMenu}
+              className="px-8 py-3 bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 rounded-xl font-semibold transition-all shadow-lg"
+            >
+              🏠 Main Menu
+            </motion.button>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
+
+  // Main Menu
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Background Effects */}
+      <div className="absolute inset-0 bg-[url('/pattern.svg')] opacity-10"></div>
+      <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-transparent via-blue-500/5 to-purple-500/10"></div>
+      
+      <motion.div
+        initial={{ scale: 0, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        className="relative z-10 text-center max-w-4xl w-full"
+      >
+        {/* Header */}
+        <motion.div
+          initial={{ y: -50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.2 }}
+          className="mb-12"
+        >
+          <h1 className="text-6xl md:text-8xl font-bold text-white mb-4 bg-gradient-to-r from-blue-300 via-purple-300 to-pink-300 bg-clip-text text-transparent">
+            Epic Word
+          </h1>
+          <h2 className="text-4xl md:text-6xl font-bold text-white mb-6 bg-gradient-to-r from-yellow-300 to-orange-300 bg-clip-text text-transparent">
+            Scramble
+          </h2>
+          <p className="text-xl text-white/80 max-w-2xl mx-auto">
+            Experience the ultimate word scrambling adventure with multiple game modes, power-ups, and achievements!
+          </p>
+        </motion.div>
+
+        {/* Game Mode Preview */}
+        <motion.div
+          initial={{ y: 50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.4 }}
+          className="mb-12"
+        >
+          <h3 className="text-2xl font-bold text-white mb-6">🎮 Choose Your Adventure</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {GAME_MODES.map((mode, index) => (
+              <motion.div
+                key={mode.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6 + index * 0.1 }}
+                className={`bg-gradient-to-br ${mode.color}/20 backdrop-blur-sm rounded-xl p-6 border border-white/20 text-white hover:scale-105 transition-transform`}
+              >
+                <div className="text-4xl mb-3">{mode.icon}</div>
+                <h4 className="text-xl font-bold mb-2">{mode.name}</h4>
+                <p className="text-sm text-white/80">{mode.description}</p>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* Features */}
+        <motion.div
+          initial={{ y: 50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.8 }}
+          className="mb-12"
+        >
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="text-center">
+              <div className="text-4xl mb-3">⚡</div>
+              <h4 className="text-lg font-bold text-white mb-2">Power-ups</h4>
+              <p className="text-sm text-white/70">Use strategic power-ups to boost your performance</p>
+            </div>
+            <div className="text-center">
+              <div className="text-4xl mb-3">🏆</div>
+              <h4 className="text-lg font-bold text-white mb-2">Achievements</h4>
+              <p className="text-sm text-white/70">Unlock rewards as you master the game</p>
+            </div>
+            <div className="text-center">
+              <div className="text-4xl mb-3">🔥</div>
+              <h4 className="text-lg font-bold text-white mb-2">Streaks & Combos</h4>
+              <p className="text-sm text-white/70">Chain correct answers for massive score multipliers</p>
+            </div>
+            <div className="text-center">
+              <div className="text-4xl mb-3">🎯</div>
+              <h4 className="text-lg font-bold text-white mb-2">Multiple Categories</h4>
+              <p className="text-sm text-white/70">Animals, space, technology, and more!</p>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Action Buttons */}
+        <motion.div
+          initial={{ y: 50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 1 }}
+          className="flex flex-col md:flex-row gap-6 justify-center"
+        >
+          <motion.button
+            whileHover={{ scale: 1.05, boxShadow: '0 20px 40px rgba(0,0,0,0.3)' }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setGameState('settings')}
+            className="px-12 py-4 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white text-xl font-bold rounded-2xl shadow-2xl transition-all transform"
           >
-            <WordScrambleGame 
-              settings={gameSettings} 
-              onBackToMenu={handleBackToMenu}
-              onGameEnd={updateGameStats}
-            />
-          </motion.div>
-        )}
-      </AnimatePresence>
+            🚀 Start Game
+          </motion.button>
+          
+          <motion.button
+            whileHover={{ scale: 1.05, boxShadow: '0 20px 40px rgba(0,0,0,0.3)' }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => handleGameStart({...gameSettings, gameMode: 'classic'})}
+            className="px-12 py-4 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white text-xl font-bold rounded-2xl shadow-2xl transition-all"
+          >
+            ⚡ Quick Play
+          </motion.button>
+        </motion.div>
+
+        {/* Footer */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.2 }}
+          className="mt-12 text-center text-white/60 text-sm"
+        >
+          <p>Test your vocabulary skills • Challenge your mind • Have epic fun!</p>
+        </motion.div>
+      </motion.div>
     </div>
   );
-} 
+}

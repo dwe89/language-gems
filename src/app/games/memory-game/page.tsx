@@ -3,9 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useAuth } from '../../../components/auth/AuthProvider';
-import LanguageTopicSelector from './components/LanguageTopicSelector';
+import GameSettings from './components/GameSettings';
 import MemoryGameMain from './components/MemoryGameMain';
-import CustomWordsModal from './components/CustomWordsModal';
 import { WordPair } from './components/CustomWordsModal';
 import './styles.css';
 
@@ -68,7 +67,6 @@ export default function MemoryGamePage() {
     difficulty: ''
   });
   const [customWords, setCustomWords] = useState<WordPair[]>([]);
-  const [showCustomModal, setShowCustomModal] = useState(false);
   const [assignmentData, setAssignmentData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>('');
@@ -126,22 +124,23 @@ export default function MemoryGamePage() {
     }
   }, [assignmentId]);
 
-  const handleStartGame = (language: string, topic: string, difficulty: string) => {
+  const handleStartGame = (settings: { 
+    language: string; 
+    topic: string; 
+    difficulty: string;
+    theme: string;
+    customWords?: WordPair[];
+  }) => {
     setGameOptions({
-      language,
-      topic,
-      difficulty
+      language: settings.language,
+      topic: settings.topic,
+      difficulty: settings.difficulty
     });
 
-    if (topic.toLowerCase() === 'custom') {
-      setShowCustomModal(true);
-    } else {
-      setStage('game');
+    if (settings.customWords) {
+      setCustomWords(settings.customWords);
     }
-  };
 
-  const handleCustomWordsStart = (wordPairs: WordPair[]) => {
-    setCustomWords(wordPairs);
     setStage('game');
   };
 
@@ -216,7 +215,9 @@ export default function MemoryGamePage() {
       ) : (
         // Free Play Mode - show selector or game
         stage === 'selector' ? (
-          <LanguageTopicSelector onStartGame={handleStartGame} />
+          <div className="min-h-screen bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center p-4">
+            <GameSettings onStartGame={handleStartGame} />
+          </div>
         ) : (
           <MemoryGameMain
             language={gameOptions.language}
@@ -228,12 +229,6 @@ export default function MemoryGamePage() {
           />
         )
       )}
-
-      <CustomWordsModal
-        isOpen={showCustomModal}
-        onClose={() => setShowCustomModal(false)}
-        onStartGame={handleCustomWordsStart}
-      />
     </div>
   );
 } 

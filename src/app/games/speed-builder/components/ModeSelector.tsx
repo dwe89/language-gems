@@ -79,22 +79,22 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
         )}
         
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-          <div className="bg-white p-3 rounded-lg">
-            <span className="font-semibold text-gray-600">Tier:</span>
-            <p className="text-gray-900">{assignmentData.curriculum.tier}</p>
+          <div className="bg-white/10 backdrop-blur-sm p-3 rounded-lg border border-white/20">
+            <span className="font-semibold text-white/80">Tier:</span>
+            <p className="text-white">{assignmentData.curriculum.tier}</p>
           </div>
-          <div className="bg-white p-3 rounded-lg">
-            <span className="font-semibold text-gray-600">Theme:</span>
-            <p className="text-gray-900">{assignmentData.curriculum.theme}</p>
+          <div className="bg-white/10 backdrop-blur-sm p-3 rounded-lg border border-white/20">
+            <span className="font-semibold text-white/80">Theme:</span>
+            <p className="text-white">{assignmentData.curriculum.theme}</p>
           </div>
-          <div className="bg-white p-3 rounded-lg">
-            <span className="font-semibold text-gray-600">Topic:</span>
-            <p className="text-gray-900">{assignmentData.curriculum.topic}</p>
+          <div className="bg-white/10 backdrop-blur-sm p-3 rounded-lg border border-white/20">
+            <span className="font-semibold text-white/80">Topic:</span>
+            <p className="text-white">{assignmentData.curriculum.topic}</p>
           </div>
           {assignmentData.curriculum.grammarFocus && (
-            <div className="bg-white p-3 rounded-lg">
-              <span className="font-semibold text-gray-600">Grammar:</span>
-              <p className="text-gray-900">{assignmentData.curriculum.grammarFocus.replace('-', ' ')}</p>
+            <div className="bg-white/10 backdrop-blur-sm p-3 rounded-lg border border-white/20">
+              <span className="font-semibold text-white/80">Grammar:</span>
+              <p className="text-white">{assignmentData.curriculum.grammarFocus.replace('-', ' ')}</p>
             </div>
           )}
         </div>
@@ -157,7 +157,7 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
               </div>
               <motion.button
                 onClick={() => setShowFilters(!showFilters)}
-                className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg border-2 border-green-200 hover:border-green-300 transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-lg border-2 border-green-200/50 hover:border-green-300/70 transition-colors text-white"
                 whileHover={{ scale: 1.02 }}
               >
                 <Filter className="h-4 w-4" />
@@ -176,7 +176,7 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
                     className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
                       freePlayConfig.selectedTier === tier
                         ? 'bg-green-500 text-white'
-                        : 'bg-white border-2 border-gray-200 hover:border-green-300'
+                        : 'bg-white/10 border-2 border-white/20 hover:border-green-300/70 text-white backdrop-blur-sm'
                     }`}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}

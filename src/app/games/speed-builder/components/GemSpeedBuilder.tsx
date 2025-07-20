@@ -24,7 +24,8 @@ import {
   Sparkles,
   Gem,
   Crown,
-  Plus
+  Plus,
+  ArrowLeft
 } from 'lucide-react';
 import Link from 'next/link';
 import { createBrowserClient } from '../../../../lib/supabase-client';
@@ -32,6 +33,10 @@ import { useSearchParams } from 'next/navigation';
 import confetti from 'canvas-confetti';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
+import { SoundProvider, useSound, SoundControls } from './SoundManager';
+import { DifficultySelector } from './DifficultySelector';
+import { ThemeSelector } from './ThemeSelector';
+import { ThemeType, DifficultyLevel } from '../types';
 
 // Types
 interface WordItem {
@@ -99,7 +104,7 @@ const gemColors = {
   ruby: 'from-red-400 to-red-600',
   sapphire: 'from-blue-400 to-blue-600',
   emerald: 'from-green-400 to-green-600',
-  diamond: 'from-gray-200 to-white',
+  diamond: 'from-cyan-400 to-indigo-600',
   amethyst: 'from-purple-400 to-purple-600',
   topaz: 'from-yellow-400 to-yellow-600'
 };
@@ -108,7 +113,7 @@ const gemGlow = {
   ruby: 'drop-shadow-[0_0_15px_rgba(239,68,68,0.7)]',
   sapphire: 'drop-shadow-[0_0_15px_rgba(59,130,246,0.7)]',
   emerald: 'drop-shadow-[0_0_15px_rgba(34,197,94,0.7)]',
-  diamond: 'drop-shadow-[0_0_15px_rgba(255,255,255,0.9)]',
+  diamond: 'drop-shadow-[0_0_15px_rgba(6,182,212,0.7)]',
   amethyst: 'drop-shadow-[0_0_15px_rgba(147,51,234,0.7)]',
   topaz: 'drop-shadow-[0_0_15px_rgba(234,179,8,0.7)]'
 };
@@ -137,12 +142,24 @@ const GemDraggableWord: React.FC<{
     }),
   }));
 
+  const handleClick = () => {
+    // Don't trigger click if we're in the middle of dragging
+    if (!isDragging) {
+      // Small delay to ensure drag state is properly settled
+      setTimeout(() => {
+        if (!isDragging) {
+          onWordClick?.(word);
+        }
+      }, 50);
+    }
+  };
+
   const gemType = word.gemType || (['ruby', 'sapphire', 'emerald', 'amethyst', 'topaz'][word.index % 5] as 'ruby' | 'sapphire' | 'emerald' | 'amethyst' | 'topaz');
 
   return (
     <motion.div
       ref={drag as any}
-      onClick={() => onWordClick?.(word)}
+      onClick={handleClick}
       initial={{ scale: 0, y: 20 }}
       animate={{ 
         scale: 1, 
@@ -162,14 +179,15 @@ const GemDraggableWord: React.FC<{
       }}
       className={`
         relative cursor-pointer select-none
-        px-6 py-4 rounded-2xl border-2 border-white/30
+        px-4 py-3 sm:px-6 sm:py-4 rounded-xl sm:rounded-2xl border-2 border-white/30
         bg-gradient-to-br ${gemColors[gemType]}
         transform transition-all duration-200
         shadow-lg hover:shadow-xl
         backdrop-blur-sm
         ${isDragging ? 'opacity-50 scale-95' : ''}
-        text-white font-bold text-lg
-        min-w-[120px] text-center
+        text-white font-bold text-base sm:text-lg
+        min-w-[90px] sm:min-w-[120px] text-center
+        touch-manipulation
       `}
       style={{ opacity: isDragging ? 0.5 : 1 }}
     >
@@ -255,13 +273,14 @@ const GemDropTarget: React.FC<{
       }}
       transition={{ type: "spring", stiffness: 300, damping: 25 }}
       className={`
-        relative min-h-[80px] min-w-[140px] 
-        border-3 border-dashed rounded-2xl
+        relative min-h-[60px] sm:min-h-[80px] min-w-[100px] sm:min-w-[140px] 
+        border-3 border-dashed rounded-xl sm:rounded-2xl
         bg-white/5 backdrop-blur-sm
         flex items-center justify-center
         transition-all duration-300
         ${isOver ? 'bg-white/20 shadow-lg' : ''}
         ${word ? 'cursor-pointer hover:bg-white/10' : 'cursor-default'}
+        touch-manipulation
       `}
     >
       {/* Background effect - only show after sentence completion */}
@@ -337,7 +356,7 @@ const GemDropTarget: React.FC<{
             </div>
           ) : (
             <div className="text-white/60 font-medium text-base">
-              Drop gem here
+              Drop word here
             </div>
           )}
           
@@ -485,11 +504,8 @@ class SoundSystem {
   }
 }
 
-// Initialize sound system
-const soundSystem = new SoundSystem();
-
-// Main Enhanced Gem Speed Builder Component
-export const GemSpeedBuilder: React.FC<{
+// Internal component that uses the sound hook
+const GemSpeedBuilderInternal: React.FC<{
   assignmentId?: string;
   mode?: 'assignment' | 'freeplay';
   theme?: string;
@@ -498,6 +514,9 @@ export const GemSpeedBuilder: React.FC<{
   vocabularyList?: any[];
   onGameComplete?: (stats: GameStats) => void;
 }> = ({ assignmentId, mode = 'freeplay', theme, topic, tier, vocabularyList, onGameComplete }) => {
+  // Sound system
+  const { playSound } = useSound();
+  
   // State
   const [gameState, setGameState] = useState<'ready' | 'playing' | 'paused' | 'completed'>('ready');
   const [currentSentence, setCurrentSentence] = useState<SentenceData | null>(null);
@@ -530,6 +549,9 @@ export const GemSpeedBuilder: React.FC<{
   const [hintWordIndex, setHintWordIndex] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showSentenceResult, setShowSentenceResult] = useState(false);
+  const [difficulty, setDifficulty] = useState<DifficultyLevel>('medium');
+  const [currentTheme, setCurrentTheme] = useState<ThemeType>('default');
+  const [showSettings, setShowSettings] = useState(false);
 
   
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -863,7 +885,8 @@ export const GemSpeedBuilder: React.FC<{
       setSessionId(`demo-${Date.now()}`);
     }
 
-    soundSystem.play('game-start');
+    playSound('ui');
+    playSound('bgMusic');
     setGameState('playing');
     setTimeLeft(120);
   };
@@ -894,7 +917,7 @@ export const GemSpeedBuilder: React.FC<{
         }
         return prevPlaced;
       });
-      soundSystem.play('drop');
+      playSound('drop');
       return;
     }
 
@@ -950,7 +973,7 @@ export const GemSpeedBuilder: React.FC<{
     });
 
     // Play sound
-    soundSystem.play('drop');
+    playSound('drop');
 
     // Check if sentence is complete - we'll do this in a useEffect to ensure state is updated
   };
@@ -969,7 +992,7 @@ export const GemSpeedBuilder: React.FC<{
 
     if (isCorrect) {
       // Sentence is correct - celebrate and move to next
-      soundSystem.play('sentence-complete');
+      playSound('correct');
       createGemCollectionEffect(wordsArray.length);
       
       // Update stats
@@ -992,8 +1015,8 @@ export const GemSpeedBuilder: React.FC<{
       
       // Show celebration effect
       setTimeout(() => {
-        if (typeof window !== 'undefined' && window.confetti) {
-          window.confetti({
+        if (typeof window !== 'undefined') {
+          confetti({
             particleCount: 50,
             spread: 60,
             origin: { y: 0.8 }
@@ -1009,7 +1032,7 @@ export const GemSpeedBuilder: React.FC<{
 
     } else {
       // Sentence has errors - give option to fix
-      soundSystem.play('word-wrong');
+      playSound('incorrect');
       
       // After 3 seconds, give option to correct or move wrong words back
       setTimeout(() => {
@@ -1089,7 +1112,7 @@ export const GemSpeedBuilder: React.FC<{
         p.id === powerUpId ? { ...p, active: false, cooldown: 0 } : p
       ));
     }, 10000);
-    soundSystem.play('power-up');
+    playSound('powerup');
   };
 
   const endGame = async () => {
@@ -1131,7 +1154,7 @@ export const GemSpeedBuilder: React.FC<{
       spread: 100,
       origin: { y: 0.6 }
     });
-    soundSystem.play('level-complete');
+    playSound('levelComplete');
     
     // Call onGameComplete callback if provided
     if (onGameComplete) {
@@ -1149,7 +1172,7 @@ export const GemSpeedBuilder: React.FC<{
         >
           💎
         </motion.div>
-        <span className="ml-4 text-2xl text-white font-bold">Loading Gem Magic...</span>
+        <span className="ml-4 text-2xl text-white font-bold">Loading Sprint...</span>
       </div>
     );
   }
@@ -1186,9 +1209,14 @@ export const GemSpeedBuilder: React.FC<{
         {/* Compact Header with integrated stats */}
         <div className="relative z-20 p-4 flex-shrink-0">
           <div className="flex justify-between items-center mb-3">
-            <Link href="/games" className="text-white/80 hover:text-white transition-colors">
-              <Home className="w-6 h-6" />
-            </Link>
+            {/* Left side - Back button and sound controls */}
+            <div className="flex items-center gap-3">
+              <Link href="/games" className="flex items-center gap-2 text-white/80 hover:text-white transition-colors px-3 py-2 rounded-lg hover:bg-white/10">
+                <ArrowLeft className="w-5 h-5" />
+                <span className="font-medium">Back</span>
+              </Link>
+              <SoundControls />
+            </div>
             
             {/* Integrated Stats & Gem Counter */}
             {gameState === 'playing' && (
@@ -1261,7 +1289,7 @@ export const GemSpeedBuilder: React.FC<{
             <motion.div
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              className="flex-1 flex flex-col items-center justify-center text-center"
+              className="flex-1 flex flex-col items-center justify-center text-center px-4"
             >
               <motion.div
                 animate={{ rotate: [0, 10, -10, 0] }}
@@ -1271,20 +1299,77 @@ export const GemSpeedBuilder: React.FC<{
                 💎
               </motion.div>
               <h1 className="text-4xl font-bold text-white mb-3">
-                Gem Speed Builder
+                Sentence Sprint
               </h1>
               <p className="text-lg text-white/80 mb-6 max-w-lg">
-                Arrange magical gem-words to form perfect sentences!
+                Race against time to build perfect sentences!
               </p>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={startGame}
-                className="px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-bold text-lg shadow-xl hover:shadow-purple-500/50 transition-all duration-300 border border-white/20"
-              >
-                <Play className="inline w-5 h-5 mr-2" />
-                Start Gem Quest
-              </motion.button>
+              
+              {/* Settings Panel */}
+              {showSettings ? (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20 mb-6 w-full max-w-md"
+                >
+                  <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                    <Settings className="w-5 h-5" />
+                    Game Settings
+                  </h3>
+                  
+                  <div className="space-y-4">
+                    <DifficultySelector 
+                      currentDifficulty={difficulty}
+                      onSelectDifficulty={setDifficulty}
+                      playSound={playSound}
+                    />
+                    
+                    <ThemeSelector 
+                      currentTheme={currentTheme}
+                      onSelectTheme={setCurrentTheme}
+                      playSound={playSound}
+                    />
+                  </div>
+                  
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => setShowSettings(false)}
+                    className="mt-4 w-full px-4 py-2 bg-white/20 text-white rounded-lg font-medium hover:bg-white/30 transition-colors"
+                  >
+                    Done
+                  </motion.button>
+                </motion.div>
+              ) : (
+                <div className="flex flex-col sm:flex-row gap-4 mb-4">
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={startGame}
+                    className="px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-bold text-lg shadow-xl hover:shadow-purple-500/50 transition-all duration-300 border border-white/20 flex items-center gap-2"
+                  >
+                    <Play className="w-5 h-5" />
+                    Start Sprint
+                  </motion.button>
+                  
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setShowSettings(true)}
+                    className="px-6 py-3 bg-white/10 backdrop-blur-sm text-white rounded-xl font-bold hover:bg-white/20 transition-all duration-300 border border-white/20 flex items-center gap-2"
+                  >
+                    <Settings className="w-5 h-5" />
+                    Settings
+                  </motion.button>
+                </div>
+              )}
+              
+              {!showSettings && (
+                <div className="text-sm text-white/60 flex flex-wrap justify-center gap-4">
+                  <span>Difficulty: <span className="text-white font-medium">{difficulty}</span></span>
+                  <span>Theme: <span className="text-white font-medium">{currentTheme}</span></span>
+                </div>
+              )}
             </motion.div>
           )}
 
@@ -1297,7 +1382,7 @@ export const GemSpeedBuilder: React.FC<{
                 className="bg-white/10 backdrop-blur-lg rounded-xl p-4 border border-white/20 text-center flex-shrink-0"
               >
                 <h2 className="text-xl font-bold text-white mb-2">
-                  🪄 Create: <span className="text-yellow-300">"{currentSentence.originalText}"</span>
+                  🏃‍♂️ Build: <span className="text-yellow-300">"{currentSentence.originalText}"</span>
                 </h2>
                 {currentSentence.curriculum && (
                   <div className="flex flex-wrap justify-center gap-2 text-xs">
@@ -1319,9 +1404,9 @@ export const GemSpeedBuilder: React.FC<{
                 className="bg-white/5 backdrop-blur-lg rounded-xl p-4 flex-shrink-0"
               >
                 <h3 className="text-base font-bold text-center mb-3 text-white">
-                  ✨ Place gems in order:
+                  ✨ Place words in order:
                 </h3>
-                <div className="flex flex-wrap justify-center gap-3">
+                <div className="flex flex-wrap justify-center gap-2 sm:gap-3">
                   {placedWords.map((word, index) => (
                     <GemDropTarget
                       key={index}
@@ -1344,9 +1429,9 @@ export const GemSpeedBuilder: React.FC<{
                 className="bg-white/5 backdrop-blur-lg rounded-xl p-4 flex-1 min-h-0"
               >
                 <h3 className="text-base font-bold text-center mb-3 text-white">
-                  💎 Available Words:
+                  � Available Words:
                 </h3>
-                <div className="flex flex-wrap justify-center gap-3 h-full items-start content-start overflow-y-auto">
+                <div className="flex flex-wrap justify-center gap-2 sm:gap-3 h-full items-start content-start overflow-y-auto px-2 sm:px-0">
                   {shuffledWords
                     .filter(word => !placedWords.some(placed => placed?.id === word.id))
                     .map(word => (
@@ -1355,6 +1440,7 @@ export const GemSpeedBuilder: React.FC<{
                         word={word}
                         isGlowing={hintWordIndex !== null && word.index === hintWordIndex}
                         onWordClick={(clickedWord) => {
+                          // Find the next empty slot (left to right)
                           const nextEmptyIndex = placedWords.findIndex(w => w === null);
                           if (nextEmptyIndex !== -1) {
                             handleWordDrop(clickedWord, nextEmptyIndex);
@@ -1384,7 +1470,7 @@ export const GemSpeedBuilder: React.FC<{
               </motion.div>
               
               <h2 className="text-2xl font-bold text-white mb-4">
-                🎉 Gem Master!
+                � Sprint Champion!
               </h2>
               
               <div className="grid grid-cols-2 gap-4 mb-6">
@@ -1450,5 +1536,22 @@ export const GemSpeedBuilder: React.FC<{
         </div>
       </div>
     </DndProvider>
+  );
+};
+
+// Main wrapper component with SoundProvider
+export const GemSpeedBuilder: React.FC<{
+  assignmentId?: string;
+  mode?: 'assignment' | 'freeplay';
+  theme?: string;
+  topic?: string;
+  tier?: string;
+  vocabularyList?: any[];
+  onGameComplete?: (stats: GameStats) => void;
+}> = (props) => {
+  return (
+    <SoundProvider initialTheme="default">
+      <GemSpeedBuilderInternal {...props} />
+    </SoundProvider>
   );
 }; 

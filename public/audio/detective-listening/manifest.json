@@ -1,0 +1,1004 @@
+{
+  "generated": "2025-07-20T14:56:57.541Z",
+  "totalFiles": 15,
+  "byLanguage": {
+    "spanish": 15
+  },
+  "byCase": {
+    "animals": 15
+  },
+  "files": [
+    {
+      "filename": "es_animals_perro.mp3",
+      "path": "public/audio/detective-listening/es_animals_perro.mp3",
+      "exists": true,
+      "language": "spanish",
+      "caseType": "animals",
+      "word": "perro",
+      "size": 3805,
+      "created": "2025-07-20T14:56:47.651Z"
+    },
+    {
+      "filename": "es_animals_gato.mp3",
+      "path": "public/audio/detective-listening/es_animals_gato.mp3",
+      "exists": true,
+      "language": "spanish",
+      "caseType": "animals",
+      "word": "gato",
+      "size": 4276,
+      "created": "2025-07-20T14:56:47.833Z"
+    },
+    {
+      "filename": "es_animals_pajaro.mp3",
+      "path": "public/audio/detective-listening/es_animals_pajaro.mp3",
+      "exists": true,
+      "language": "spanish",
+      "caseType": "animals",
+      "word": "pájaro",
+      "size": 4276,
+      "created": "2025-07-20T14:56:48.017Z"
+    },
+    {
+      "filename": "es_animals_pez.mp3",
+      "path": "public/audio/detective-listening/es_animals_pez.mp3",
+      "exists": true,
+      "language": "spanish",
+      "caseType": "animals",
+      "word": "pez",
+      "size": 3335,
+      "created": "2025-07-20T14:56:48.200Z"
+    },
+    {
+      "filename": "es_animals_caballo.mp3",
+      "path": "public/audio/detective-listening/es_animals_caballo.mp3",
+      "exists": true,
+      "language": "spanish",
+      "caseType": "animals",
+      "word": "caballo",
+      "size": 4589,
+      "created": "2025-07-20T14:56:48.388Z"
+    },
+    {
+      "filename": "es_animals_vaca.mp3",
+      "path": "public/audio/detective-listening/es_animals_vaca.mp3",
+      "exists": true,
+      "language": "spanish",
+      "caseType": "animals",
+      "word": "vaca",
+      "size": 4119,
+      "created": "2025-07-20T14:56:48.570Z"
+    },
+    {
+      "filename": "es_animals_cerdo.mp3",
+      "path": "public/audio/detective-listening/es_animals_cerdo.mp3",
+      "exists": true,
+      "language": "spanish",
+      "caseType": "animals",
+      "word": "cerdo",
+      "size": 4276,
+      "created": "2025-07-20T14:56:48.753Z"
+    },
+    {
+      "filename": "es_animals_oveja.mp3",
+      "path": "public/audio/detective-listening/es_animals_oveja.mp3",
+      "exists": true,
+      "language": "spanish",
+      "caseType": "animals",
+      "word": "oveja",
+      "size": 4276,
+      "created": "2025-07-20T14:56:48.959Z"
+    },
+    {
+      "filename": "es_animals_conejo.mp3",
+      "path": "public/audio/detective-listening/es_animals_conejo.mp3",
+      "exists": true,
+      "language": "spanish",
+      "caseType": "animals",
+      "word": "conejo",
+      "size": 4589,
+      "created": "2025-07-20T14:56:49.147Z"
+    },
+    {
+      "filename": "es_animals_raton.mp3",
+      "path": "public/audio/detective-listening/es_animals_raton.mp3",
+      "exists": true,
+      "language": "spanish",
+      "caseType": "animals",
+      "word": "ratón",
+      "size": 4746,
+      "created": "2025-07-20T14:56:49.341Z"
+    },
+    {
+      "filename": "es_animals_elefante.mp3",
+      "path": "public/audio/detective-listening/es_animals_elefante.mp3",
+      "exists": true,
+      "language": "spanish",
+      "caseType": "animals",
+      "word": "elefante",
+      "size": 5373,
+      "created": "2025-07-20T14:56:49.536Z"
+    },
+    {
+      "filename": "es_animals_leon.mp3",
+      "path": "public/audio/detective-listening/es_animals_leon.mp3",
+      "exists": true,
+      "language": "spanish",
+      "caseType": "animals",
+      "word": "león",
+      "size": 4432,
+      "created": "2025-07-20T14:56:49.723Z"
+    },
+    {
+      "filename": "es_animals_tigre.mp3",
+      "path": "public/audio/detective-listening/es_animals_tigre.mp3",
+      "exists": true,
+      "language": "spanish",
+      "caseType": "animals",
+      "word": "tigre",
+      "size": 3962,
+      "created": "2025-07-20T14:56:49.907Z"
+    },
+    {
+      "filename": "es_animals_oso.mp3",
+      "path": "public/audio/detective-listening/es_animals_oso.mp3",
+      "exists": true,
+      "language": "spanish",
+      "caseType": "animals",
+      "word": "oso",
+      "size": 3962,
+      "created": "2025-07-20T14:56:50.089Z"
+    },
+    {
+      "filename": "es_animals_lobo.mp3",
+      "path": "public/audio/detective-listening/es_animals_lobo.mp3",
+      "exists": true,
+      "language": "spanish",
+      "caseType": "animals",
+      "word": "lobo",
+      "size": 3962,
+      "created": "2025-07-20T14:56:50.269Z"
+    }
+  ],
+  "missing": [
+    {
+      "filename": "fr_animals_chien.mp3",
+      "path": "public/audio/detective-listening/fr_animals_chien.mp3",
+      "exists": false,
+      "language": "french",
+      "caseType": "animals",
+      "word": "chien"
+    },
+    {
+      "filename": "fr_animals_chat.mp3",
+      "path": "public/audio/detective-listening/fr_animals_chat.mp3",
+      "exists": false,
+      "language": "french",
+      "caseType": "animals",
+      "word": "chat"
+    },
+    {
+      "filename": "fr_animals_oiseau.mp3",
+      "path": "public/audio/detective-listening/fr_animals_oiseau.mp3",
+      "exists": false,
+      "language": "french",
+      "caseType": "animals",
+      "word": "oiseau"
+    },
+    {
+      "filename": "fr_animals_poisson.mp3",
+      "path": "public/audio/detective-listening/fr_animals_poisson.mp3",
+      "exists": false,
+      "language": "french",
+      "caseType": "animals",
+      "word": "poisson"
+    },
+    {
+      "filename": "fr_animals_cheval.mp3",
+      "path": "public/audio/detective-listening/fr_animals_cheval.mp3",
+      "exists": false,
+      "language": "french",
+      "caseType": "animals",
+      "word": "cheval"
+    },
+    {
+      "filename": "fr_animals_vache.mp3",
+      "path": "public/audio/detective-listening/fr_animals_vache.mp3",
+      "exists": false,
+      "language": "french",
+      "caseType": "animals",
+      "word": "vache"
+    },
+    {
+      "filename": "fr_animals_cochon.mp3",
+      "path": "public/audio/detective-listening/fr_animals_cochon.mp3",
+      "exists": false,
+      "language": "french",
+      "caseType": "animals",
+      "word": "cochon"
+    },
+    {
+      "filename": "fr_animals_mouton.mp3",
+      "path": "public/audio/detective-listening/fr_animals_mouton.mp3",
+      "exists": false,
+      "language": "french",
+      "caseType": "animals",
+      "word": "mouton"
+    },
+    {
+      "filename": "fr_animals_lapin.mp3",
+      "path": "public/audio/detective-listening/fr_animals_lapin.mp3",
+      "exists": false,
+      "language": "french",
+      "caseType": "animals",
+      "word": "lapin"
+    },
+    {
+      "filename": "fr_animals_souris.mp3",
+      "path": "public/audio/detective-listening/fr_animals_souris.mp3",
+      "exists": false,
+      "language": "french",
+      "caseType": "animals",
+      "word": "souris"
+    },
+    {
+      "filename": "fr_animals_elephant.mp3",
+      "path": "public/audio/detective-listening/fr_animals_elephant.mp3",
+      "exists": false,
+      "language": "french",
+      "caseType": "animals",
+      "word": "éléphant"
+    },
+    {
+      "filename": "fr_animals_lion.mp3",
+      "path": "public/audio/detective-listening/fr_animals_lion.mp3",
+      "exists": false,
+      "language": "french",
+      "caseType": "animals",
+      "word": "lion"
+    },
+    {
+      "filename": "fr_animals_tigre.mp3",
+      "path": "public/audio/detective-listening/fr_animals_tigre.mp3",
+      "exists": false,
+      "language": "french",
+      "caseType": "animals",
+      "word": "tigre"
+    },
+    {
+      "filename": "fr_animals_ours.mp3",
+      "path": "public/audio/detective-listening/fr_animals_ours.mp3",
+      "exists": false,
+      "language": "french",
+      "caseType": "animals",
+      "word": "ours"
+    },
+    {
+      "filename": "fr_animals_loup.mp3",
+      "path": "public/audio/detective-listening/fr_animals_loup.mp3",
+      "exists": false,
+      "language": "french",
+      "caseType": "animals",
+      "word": "loup"
+    },
+    {
+      "filename": "de_animals_hund.mp3",
+      "path": "public/audio/detective-listening/de_animals_hund.mp3",
+      "exists": false,
+      "language": "german",
+      "caseType": "animals",
+      "word": "Hund"
+    },
+    {
+      "filename": "de_animals_katze.mp3",
+      "path": "public/audio/detective-listening/de_animals_katze.mp3",
+      "exists": false,
+      "language": "german",
+      "caseType": "animals",
+      "word": "Katze"
+    },
+    {
+      "filename": "de_animals_vogel.mp3",
+      "path": "public/audio/detective-listening/de_animals_vogel.mp3",
+      "exists": false,
+      "language": "german",
+      "caseType": "animals",
+      "word": "Vogel"
+    },
+    {
+      "filename": "de_animals_fisch.mp3",
+      "path": "public/audio/detective-listening/de_animals_fisch.mp3",
+      "exists": false,
+      "language": "german",
+      "caseType": "animals",
+      "word": "Fisch"
+    },
+    {
+      "filename": "de_animals_pferd.mp3",
+      "path": "public/audio/detective-listening/de_animals_pferd.mp3",
+      "exists": false,
+      "language": "german",
+      "caseType": "animals",
+      "word": "Pferd"
+    },
+    {
+      "filename": "de_animals_kuh.mp3",
+      "path": "public/audio/detective-listening/de_animals_kuh.mp3",
+      "exists": false,
+      "language": "german",
+      "caseType": "animals",
+      "word": "Kuh"
+    },
+    {
+      "filename": "de_animals_schwein.mp3",
+      "path": "public/audio/detective-listening/de_animals_schwein.mp3",
+      "exists": false,
+      "language": "german",
+      "caseType": "animals",
+      "word": "Schwein"
+    },
+    {
+      "filename": "de_animals_schaf.mp3",
+      "path": "public/audio/detective-listening/de_animals_schaf.mp3",
+      "exists": false,
+      "language": "german",
+      "caseType": "animals",
+      "word": "Schaf"
+    },
+    {
+      "filename": "de_animals_hase.mp3",
+      "path": "public/audio/detective-listening/de_animals_hase.mp3",
+      "exists": false,
+      "language": "german",
+      "caseType": "animals",
+      "word": "Hase"
+    },
+    {
+      "filename": "de_animals_maus.mp3",
+      "path": "public/audio/detective-listening/de_animals_maus.mp3",
+      "exists": false,
+      "language": "german",
+      "caseType": "animals",
+      "word": "Maus"
+    },
+    {
+      "filename": "de_animals_elefant.mp3",
+      "path": "public/audio/detective-listening/de_animals_elefant.mp3",
+      "exists": false,
+      "language": "german",
+      "caseType": "animals",
+      "word": "Elefant"
+    },
+    {
+      "filename": "de_animals_lowe.mp3",
+      "path": "public/audio/detective-listening/de_animals_lowe.mp3",
+      "exists": false,
+      "language": "german",
+      "caseType": "animals",
+      "word": "Löwe"
+    },
+    {
+      "filename": "de_animals_tiger.mp3",
+      "path": "public/audio/detective-listening/de_animals_tiger.mp3",
+      "exists": false,
+      "language": "german",
+      "caseType": "animals",
+      "word": "Tiger"
+    },
+    {
+      "filename": "de_animals_bar.mp3",
+      "path": "public/audio/detective-listening/de_animals_bar.mp3",
+      "exists": false,
+      "language": "german",
+      "caseType": "animals",
+      "word": "Bär"
+    },
+    {
+      "filename": "de_animals_wolf.mp3",
+      "path": "public/audio/detective-listening/de_animals_wolf.mp3",
+      "exists": false,
+      "language": "german",
+      "caseType": "animals",
+      "word": "Wolf"
+    },
+    {
+      "filename": "es_food_manzana.mp3",
+      "path": "public/audio/detective-listening/es_food_manzana.mp3",
+      "exists": false,
+      "language": "spanish",
+      "caseType": "food",
+      "word": "manzana"
+    },
+    {
+      "filename": "es_food_naranja.mp3",
+      "path": "public/audio/detective-listening/es_food_naranja.mp3",
+      "exists": false,
+      "language": "spanish",
+      "caseType": "food",
+      "word": "naranja"
+    },
+    {
+      "filename": "es_food_platano.mp3",
+      "path": "public/audio/detective-listening/es_food_platano.mp3",
+      "exists": false,
+      "language": "spanish",
+      "caseType": "food",
+      "word": "plátano"
+    },
+    {
+      "filename": "es_food_pan.mp3",
+      "path": "public/audio/detective-listening/es_food_pan.mp3",
+      "exists": false,
+      "language": "spanish",
+      "caseType": "food",
+      "word": "pan"
+    },
+    {
+      "filename": "es_food_leche.mp3",
+      "path": "public/audio/detective-listening/es_food_leche.mp3",
+      "exists": false,
+      "language": "spanish",
+      "caseType": "food",
+      "word": "leche"
+    },
+    {
+      "filename": "fr_food_pomme.mp3",
+      "path": "public/audio/detective-listening/fr_food_pomme.mp3",
+      "exists": false,
+      "language": "french",
+      "caseType": "food",
+      "word": "pomme"
+    },
+    {
+      "filename": "fr_food_orange.mp3",
+      "path": "public/audio/detective-listening/fr_food_orange.mp3",
+      "exists": false,
+      "language": "french",
+      "caseType": "food",
+      "word": "orange"
+    },
+    {
+      "filename": "fr_food_banane.mp3",
+      "path": "public/audio/detective-listening/fr_food_banane.mp3",
+      "exists": false,
+      "language": "french",
+      "caseType": "food",
+      "word": "banane"
+    },
+    {
+      "filename": "fr_food_pain.mp3",
+      "path": "public/audio/detective-listening/fr_food_pain.mp3",
+      "exists": false,
+      "language": "french",
+      "caseType": "food",
+      "word": "pain"
+    },
+    {
+      "filename": "fr_food_lait.mp3",
+      "path": "public/audio/detective-listening/fr_food_lait.mp3",
+      "exists": false,
+      "language": "french",
+      "caseType": "food",
+      "word": "lait"
+    },
+    {
+      "filename": "de_food_apfel.mp3",
+      "path": "public/audio/detective-listening/de_food_apfel.mp3",
+      "exists": false,
+      "language": "german",
+      "caseType": "food",
+      "word": "Apfel"
+    },
+    {
+      "filename": "de_food_orange.mp3",
+      "path": "public/audio/detective-listening/de_food_orange.mp3",
+      "exists": false,
+      "language": "german",
+      "caseType": "food",
+      "word": "Orange"
+    },
+    {
+      "filename": "de_food_banane.mp3",
+      "path": "public/audio/detective-listening/de_food_banane.mp3",
+      "exists": false,
+      "language": "german",
+      "caseType": "food",
+      "word": "Banane"
+    },
+    {
+      "filename": "de_food_brot.mp3",
+      "path": "public/audio/detective-listening/de_food_brot.mp3",
+      "exists": false,
+      "language": "german",
+      "caseType": "food",
+      "word": "Brot"
+    },
+    {
+      "filename": "de_food_milch.mp3",
+      "path": "public/audio/detective-listening/de_food_milch.mp3",
+      "exists": false,
+      "language": "german",
+      "caseType": "food",
+      "word": "Milch"
+    },
+    {
+      "filename": "es_family_padre.mp3",
+      "path": "public/audio/detective-listening/es_family_padre.mp3",
+      "exists": false,
+      "language": "spanish",
+      "caseType": "family",
+      "word": "padre"
+    },
+    {
+      "filename": "es_family_madre.mp3",
+      "path": "public/audio/detective-listening/es_family_madre.mp3",
+      "exists": false,
+      "language": "spanish",
+      "caseType": "family",
+      "word": "madre"
+    },
+    {
+      "filename": "es_family_hermano.mp3",
+      "path": "public/audio/detective-listening/es_family_hermano.mp3",
+      "exists": false,
+      "language": "spanish",
+      "caseType": "family",
+      "word": "hermano"
+    },
+    {
+      "filename": "es_family_hermana.mp3",
+      "path": "public/audio/detective-listening/es_family_hermana.mp3",
+      "exists": false,
+      "language": "spanish",
+      "caseType": "family",
+      "word": "hermana"
+    },
+    {
+      "filename": "es_family_abuelo.mp3",
+      "path": "public/audio/detective-listening/es_family_abuelo.mp3",
+      "exists": false,
+      "language": "spanish",
+      "caseType": "family",
+      "word": "abuelo"
+    },
+    {
+      "filename": "es_family_abuela.mp3",
+      "path": "public/audio/detective-listening/es_family_abuela.mp3",
+      "exists": false,
+      "language": "spanish",
+      "caseType": "family",
+      "word": "abuela"
+    },
+    {
+      "filename": "es_family_tio.mp3",
+      "path": "public/audio/detective-listening/es_family_tio.mp3",
+      "exists": false,
+      "language": "spanish",
+      "caseType": "family",
+      "word": "tío"
+    },
+    {
+      "filename": "es_family_tia.mp3",
+      "path": "public/audio/detective-listening/es_family_tia.mp3",
+      "exists": false,
+      "language": "spanish",
+      "caseType": "family",
+      "word": "tía"
+    },
+    {
+      "filename": "es_family_primo.mp3",
+      "path": "public/audio/detective-listening/es_family_primo.mp3",
+      "exists": false,
+      "language": "spanish",
+      "caseType": "family",
+      "word": "primo"
+    },
+    {
+      "filename": "es_family_hijo.mp3",
+      "path": "public/audio/detective-listening/es_family_hijo.mp3",
+      "exists": false,
+      "language": "spanish",
+      "caseType": "family",
+      "word": "hijo"
+    },
+    {
+      "filename": "fr_family_pere.mp3",
+      "path": "public/audio/detective-listening/fr_family_pere.mp3",
+      "exists": false,
+      "language": "french",
+      "caseType": "family",
+      "word": "père"
+    },
+    {
+      "filename": "fr_family_mere.mp3",
+      "path": "public/audio/detective-listening/fr_family_mere.mp3",
+      "exists": false,
+      "language": "french",
+      "caseType": "family",
+      "word": "mère"
+    },
+    {
+      "filename": "fr_family_frere.mp3",
+      "path": "public/audio/detective-listening/fr_family_frere.mp3",
+      "exists": false,
+      "language": "french",
+      "caseType": "family",
+      "word": "frère"
+    },
+    {
+      "filename": "fr_family_soeur.mp3",
+      "path": "public/audio/detective-listening/fr_family_soeur.mp3",
+      "exists": false,
+      "language": "french",
+      "caseType": "family",
+      "word": "sœur"
+    },
+    {
+      "filename": "fr_family_grandpere.mp3",
+      "path": "public/audio/detective-listening/fr_family_grandpere.mp3",
+      "exists": false,
+      "language": "french",
+      "caseType": "family",
+      "word": "grand-père"
+    },
+    {
+      "filename": "fr_family_grandmere.mp3",
+      "path": "public/audio/detective-listening/fr_family_grandmere.mp3",
+      "exists": false,
+      "language": "french",
+      "caseType": "family",
+      "word": "grand-mère"
+    },
+    {
+      "filename": "fr_family_oncle.mp3",
+      "path": "public/audio/detective-listening/fr_family_oncle.mp3",
+      "exists": false,
+      "language": "french",
+      "caseType": "family",
+      "word": "oncle"
+    },
+    {
+      "filename": "fr_family_tante.mp3",
+      "path": "public/audio/detective-listening/fr_family_tante.mp3",
+      "exists": false,
+      "language": "french",
+      "caseType": "family",
+      "word": "tante"
+    },
+    {
+      "filename": "fr_family_cousin.mp3",
+      "path": "public/audio/detective-listening/fr_family_cousin.mp3",
+      "exists": false,
+      "language": "french",
+      "caseType": "family",
+      "word": "cousin"
+    },
+    {
+      "filename": "fr_family_fils.mp3",
+      "path": "public/audio/detective-listening/fr_family_fils.mp3",
+      "exists": false,
+      "language": "french",
+      "caseType": "family",
+      "word": "fils"
+    },
+    {
+      "filename": "de_family_vater.mp3",
+      "path": "public/audio/detective-listening/de_family_vater.mp3",
+      "exists": false,
+      "language": "german",
+      "caseType": "family",
+      "word": "Vater"
+    },
+    {
+      "filename": "de_family_mutter.mp3",
+      "path": "public/audio/detective-listening/de_family_mutter.mp3",
+      "exists": false,
+      "language": "german",
+      "caseType": "family",
+      "word": "Mutter"
+    },
+    {
+      "filename": "de_family_bruder.mp3",
+      "path": "public/audio/detective-listening/de_family_bruder.mp3",
+      "exists": false,
+      "language": "german",
+      "caseType": "family",
+      "word": "Bruder"
+    },
+    {
+      "filename": "de_family_schwester.mp3",
+      "path": "public/audio/detective-listening/de_family_schwester.mp3",
+      "exists": false,
+      "language": "german",
+      "caseType": "family",
+      "word": "Schwester"
+    },
+    {
+      "filename": "de_family_grossvater.mp3",
+      "path": "public/audio/detective-listening/de_family_grossvater.mp3",
+      "exists": false,
+      "language": "german",
+      "caseType": "family",
+      "word": "Großvater"
+    },
+    {
+      "filename": "de_family_grossmutter.mp3",
+      "path": "public/audio/detective-listening/de_family_grossmutter.mp3",
+      "exists": false,
+      "language": "german",
+      "caseType": "family",
+      "word": "Großmutter"
+    },
+    {
+      "filename": "de_family_onkel.mp3",
+      "path": "public/audio/detective-listening/de_family_onkel.mp3",
+      "exists": false,
+      "language": "german",
+      "caseType": "family",
+      "word": "Onkel"
+    },
+    {
+      "filename": "de_family_tante.mp3",
+      "path": "public/audio/detective-listening/de_family_tante.mp3",
+      "exists": false,
+      "language": "german",
+      "caseType": "family",
+      "word": "Tante"
+    },
+    {
+      "filename": "de_family_cousin.mp3",
+      "path": "public/audio/detective-listening/de_family_cousin.mp3",
+      "exists": false,
+      "language": "german",
+      "caseType": "family",
+      "word": "Cousin"
+    },
+    {
+      "filename": "de_family_sohn.mp3",
+      "path": "public/audio/detective-listening/de_family_sohn.mp3",
+      "exists": false,
+      "language": "german",
+      "caseType": "family",
+      "word": "Sohn"
+    },
+    {
+      "filename": "es_colors_rojo.mp3",
+      "path": "public/audio/detective-listening/es_colors_rojo.mp3",
+      "exists": false,
+      "language": "spanish",
+      "caseType": "colors",
+      "word": "rojo"
+    },
+    {
+      "filename": "es_colors_azul.mp3",
+      "path": "public/audio/detective-listening/es_colors_azul.mp3",
+      "exists": false,
+      "language": "spanish",
+      "caseType": "colors",
+      "word": "azul"
+    },
+    {
+      "filename": "es_colors_verde.mp3",
+      "path": "public/audio/detective-listening/es_colors_verde.mp3",
+      "exists": false,
+      "language": "spanish",
+      "caseType": "colors",
+      "word": "verde"
+    },
+    {
+      "filename": "es_colors_amarillo.mp3",
+      "path": "public/audio/detective-listening/es_colors_amarillo.mp3",
+      "exists": false,
+      "language": "spanish",
+      "caseType": "colors",
+      "word": "amarillo"
+    },
+    {
+      "filename": "es_colors_negro.mp3",
+      "path": "public/audio/detective-listening/es_colors_negro.mp3",
+      "exists": false,
+      "language": "spanish",
+      "caseType": "colors",
+      "word": "negro"
+    },
+    {
+      "filename": "es_colors_blanco.mp3",
+      "path": "public/audio/detective-listening/es_colors_blanco.mp3",
+      "exists": false,
+      "language": "spanish",
+      "caseType": "colors",
+      "word": "blanco"
+    },
+    {
+      "filename": "es_colors_morado.mp3",
+      "path": "public/audio/detective-listening/es_colors_morado.mp3",
+      "exists": false,
+      "language": "spanish",
+      "caseType": "colors",
+      "word": "morado"
+    },
+    {
+      "filename": "es_colors_rosa.mp3",
+      "path": "public/audio/detective-listening/es_colors_rosa.mp3",
+      "exists": false,
+      "language": "spanish",
+      "caseType": "colors",
+      "word": "rosa"
+    },
+    {
+      "filename": "es_colors_naranja.mp3",
+      "path": "public/audio/detective-listening/es_colors_naranja.mp3",
+      "exists": false,
+      "language": "spanish",
+      "caseType": "colors",
+      "word": "naranja"
+    },
+    {
+      "filename": "es_colors_gris.mp3",
+      "path": "public/audio/detective-listening/es_colors_gris.mp3",
+      "exists": false,
+      "language": "spanish",
+      "caseType": "colors",
+      "word": "gris"
+    },
+    {
+      "filename": "fr_colors_rouge.mp3",
+      "path": "public/audio/detective-listening/fr_colors_rouge.mp3",
+      "exists": false,
+      "language": "french",
+      "caseType": "colors",
+      "word": "rouge"
+    },
+    {
+      "filename": "fr_colors_bleu.mp3",
+      "path": "public/audio/detective-listening/fr_colors_bleu.mp3",
+      "exists": false,
+      "language": "french",
+      "caseType": "colors",
+      "word": "bleu"
+    },
+    {
+      "filename": "fr_colors_vert.mp3",
+      "path": "public/audio/detective-listening/fr_colors_vert.mp3",
+      "exists": false,
+      "language": "french",
+      "caseType": "colors",
+      "word": "vert"
+    },
+    {
+      "filename": "fr_colors_jaune.mp3",
+      "path": "public/audio/detective-listening/fr_colors_jaune.mp3",
+      "exists": false,
+      "language": "french",
+      "caseType": "colors",
+      "word": "jaune"
+    },
+    {
+      "filename": "fr_colors_noir.mp3",
+      "path": "public/audio/detective-listening/fr_colors_noir.mp3",
+      "exists": false,
+      "language": "french",
+      "caseType": "colors",
+      "word": "noir"
+    },
+    {
+      "filename": "fr_colors_blanc.mp3",
+      "path": "public/audio/detective-listening/fr_colors_blanc.mp3",
+      "exists": false,
+      "language": "french",
+      "caseType": "colors",
+      "word": "blanc"
+    },
+    {
+      "filename": "fr_colors_violet.mp3",
+      "path": "public/audio/detective-listening/fr_colors_violet.mp3",
+      "exists": false,
+      "language": "french",
+      "caseType": "colors",
+      "word": "violet"
+    },
+    {
+      "filename": "fr_colors_rose.mp3",
+      "path": "public/audio/detective-listening/fr_colors_rose.mp3",
+      "exists": false,
+      "language": "french",
+      "caseType": "colors",
+      "word": "rose"
+    },
+    {
+      "filename": "fr_colors_orange.mp3",
+      "path": "public/audio/detective-listening/fr_colors_orange.mp3",
+      "exists": false,
+      "language": "french",
+      "caseType": "colors",
+      "word": "orange"
+    },
+    {
+      "filename": "fr_colors_gris.mp3",
+      "path": "public/audio/detective-listening/fr_colors_gris.mp3",
+      "exists": false,
+      "language": "french",
+      "caseType": "colors",
+      "word": "gris"
+    },
+    {
+      "filename": "de_colors_rot.mp3",
+      "path": "public/audio/detective-listening/de_colors_rot.mp3",
+      "exists": false,
+      "language": "german",
+      "caseType": "colors",
+      "word": "rot"
+    },
+    {
+      "filename": "de_colors_blau.mp3",
+      "path": "public/audio/detective-listening/de_colors_blau.mp3",
+      "exists": false,
+      "language": "german",
+      "caseType": "colors",
+      "word": "blau"
+    },
+    {
+      "filename": "de_colors_grun.mp3",
+      "path": "public/audio/detective-listening/de_colors_grun.mp3",
+      "exists": false,
+      "language": "german",
+      "caseType": "colors",
+      "word": "grün"
+    },
+    {
+      "filename": "de_colors_gelb.mp3",
+      "path": "public/audio/detective-listening/de_colors_gelb.mp3",
+      "exists": false,
+      "language": "german",
+      "caseType": "colors",
+      "word": "gelb"
+    },
+    {
+      "filename": "de_colors_schwarz.mp3",
+      "path": "public/audio/detective-listening/de_colors_schwarz.mp3",
+      "exists": false,
+      "language": "german",
+      "caseType": "colors",
+      "word": "schwarz"
+    },
+    {
+      "filename": "de_colors_weiss.mp3",
+      "path": "public/audio/detective-listening/de_colors_weiss.mp3",
+      "exists": false,
+      "language": "german",
+      "caseType": "colors",
+      "word": "weiß"
+    },
+    {
+      "filename": "de_colors_lila.mp3",
+      "path": "public/audio/detective-listening/de_colors_lila.mp3",
+      "exists": false,
+      "language": "german",
+      "caseType": "colors",
+      "word": "lila"
+    },
+    {
+      "filename": "de_colors_rosa.mp3",
+      "path": "public/audio/detective-listening/de_colors_rosa.mp3",
+      "exists": false,
+      "language": "german",
+      "caseType": "colors",
+      "word": "rosa"
+    },
+    {
+      "filename": "de_colors_orange.mp3",
+      "path": "public/audio/detective-listening/de_colors_orange.mp3",
+      "exists": false,
+      "language": "german",
+      "caseType": "colors",
+      "word": "orange"
+    },
+    {
+      "filename": "de_colors_grau.mp3",
+      "path": "public/audio/detective-listening/de_colors_grau.mp3",
+      "exists": false,
+      "language": "german",
+      "caseType": "colors",
+      "word": "grau"
+    }
+  ]
+}

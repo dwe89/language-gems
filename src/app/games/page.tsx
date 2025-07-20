@@ -104,7 +104,7 @@ const LoginRequiredGate = () => {
                   <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
                     <Building2 className="h-5 w-5 text-purple-600" />
                   </div>
-                  <h3 className="font-bold text-lg">Speed Builder</h3>
+                  <h3 className="font-bold text-lg">Sentence Sprint</h3>
                 </div>
                 <p className="text-gray-600 text-sm mb-4">Drag and drop words to build perfect sentences before time runs out!</p>
                 <div className="flex items-center justify-between text-xs text-gray-500">
@@ -188,7 +188,7 @@ const gameCategories = [
 const games = [
   {
     id: 'speed-builder',
-    title: 'Speed Builder 🏗️',
+    title: 'Sentence Sprint',
     description: 'Drag and drop words to build sentences before time runs out',
     category: ['new', 'vocabulary', 'grammar'],
     imageSrc: '/images/games/speed-builder.jpg',
@@ -336,7 +336,7 @@ export default function GamesPage() {
         },
         {
           id: 'speed-builder',
-          name: 'Speed Builder',
+          name: 'Sentence Sprint',
           description: 'Drag and drop words to build sentences correctly before time runs out.',
           thumbnail: '/images/games/speed-builder.jpg',
           category: 'vocabulary',
@@ -405,16 +405,6 @@ export default function GamesPage() {
           path: '/games/conjugation-duel'
         },
         {
-          id: 'sentence-builder',
-          name: 'Sentence Builder',
-          description: 'Put words in the correct order to form grammatically correct sentences.',
-          thumbnail: '/images/games/sentence-builder.jpg',
-          category: 'grammar',
-          popular: false,
-          languages: ['English', 'Spanish', 'French', 'German'],
-          path: '/games/sentence-builder'
-        },
-        {
           id: 'word-association',
           name: 'Word Association',
           description: 'Connect related words to build vocabulary networks and associations.',
@@ -443,6 +433,16 @@ export default function GamesPage() {
           popular: true,
           languages: ['English', 'Spanish', 'French', 'German', 'Italian', 'Portuguese', 'Russian', 'Japanese', 'Mandarin', 'Arabic'],
           path: '/games/word-guesser'
+        },
+        {
+          id: 'detective-listening',
+          name: 'Detective Listening Game',
+          description: 'Solve cases by identifying evidence through listening to words in Spanish, French, or German and finding their English translations.',
+          thumbnail: '/images/games/detective-listening.jpg',
+          category: 'listening',
+          popular: true,
+          languages: ['Spanish', 'French', 'German'],
+          path: '/games/detective-listening'
         }
       ];
 

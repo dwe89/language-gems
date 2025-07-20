@@ -5,663 +5,966 @@ import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import Link from 'next/link';
 
+// Game Modes
+type GameMode = 'classic' | 'speed' | 'chain' | 'memory' | 'battle' | 'survival';
+
+// Power-ups
+type PowerUp = 'freeze_time' | 'reveal_hint' | 'double_points' | 'skip_round' | 'word_magnet';
+
 interface WordAssociationGameProps {
   difficulty: string;
   category: string;
   language: string;
+  gameMode: GameMode;
   customWords?: string;
   onBackToMenu: () => void;
   onGameComplete: (score: number) => void;
 }
 
-// Word pairs by category with related and unrelated words
-// In a real app, this would be much more extensive and possibly fetched from an API
-const WORD_ASSOCIATIONS = {
+interface Achievement {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  unlocked: boolean;
+  progress?: number;
+  maxProgress?: number;
+}
+
+interface GameStats {
+  score: number;
+  streak: number;
+  multiplier: number;
+  combo: number;
+  powerUps: PowerUp[];
+  achievements: Achievement[];
+  timeBonus: number;
+  perfectRounds: number;
+}
+
+// Enhanced word database with semantic relationships and difficulty ratings
+const ENHANCED_WORD_ASSOCIATIONS = {
   general: {
     english: [
       {
-        prompt: 'water',
-        related: ['ocean', 'river', 'lake', 'swim', 'liquid', 'drink'],
-        unrelated: ['fire', 'desert', 'computer', 'book', 'telephone', 'pizza']
-      },
-      {
-        prompt: 'book',
-        related: ['read', 'library', 'author', 'page', 'story', 'novel'],
-        unrelated: ['swim', 'drive', 'mountain', 'dinner', 'cloud', 'dance']
-      },
-      {
-        prompt: 'car',
-        related: ['drive', 'road', 'wheel', 'vehicle', 'journey', 'travel'],
-        unrelated: ['swim', 'flower', 'pencil', 'rainbow', 'bread', 'melody']
-      },
-      {
-        prompt: 'house',
-        related: ['home', 'roof', 'door', 'room', 'family', 'building'],
-        unrelated: ['ocean', 'sky', 'pencil', 'banana', 'concert', 'dolphin']
-      },
-      {
-        prompt: 'food',
-        related: ['eat', 'cook', 'restaurant', 'kitchen', 'meal', 'hungry'],
-        unrelated: ['telephone', 'mountain', 'bicycle', 'pencil', 'radio', 'planet']
-      }
-    ],
-    spanish: [
-      {
-        prompt: 'agua',
-        related: ['océano', 'río', 'lago', 'nadar', 'líquido', 'beber'],
-        unrelated: ['fuego', 'desierto', 'computadora', 'libro', 'teléfono', 'pizza']
-      },
-      {
-        prompt: 'libro',
-        related: ['leer', 'biblioteca', 'autor', 'página', 'historia', 'novela'],
-        unrelated: ['nadar', 'conducir', 'montaña', 'cena', 'nube', 'bailar']
-      },
-      {
-        prompt: 'coche',
-        related: ['conducir', 'carretera', 'rueda', 'vehículo', 'viaje', 'viajar'],
-        unrelated: ['nadar', 'flor', 'lápiz', 'arcoíris', 'pan', 'melodía']
-      },
-      {
-        prompt: 'casa',
-        related: ['hogar', 'techo', 'puerta', 'habitación', 'familia', 'edificio'],
-        unrelated: ['océano', 'cielo', 'lápiz', 'plátano', 'concierto', 'delfín']
-      },
-      {
-        prompt: 'comida',
-        related: ['comer', 'cocinar', 'restaurante', 'cocina', 'comida', 'hambriento'],
-        unrelated: ['teléfono', 'montaña', 'bicicleta', 'lápiz', 'radio', 'planeta']
-      }
-    ],
-    french: [
-      {
-        prompt: 'eau',
-        related: ['océan', 'rivière', 'lac', 'nager', 'liquide', 'boire'],
-        unrelated: ['feu', 'désert', 'ordinateur', 'livre', 'téléphone', 'pizza']
-      },
-      {
-        prompt: 'livre',
-        related: ['lire', 'bibliothèque', 'auteur', 'page', 'histoire', 'roman'],
-        unrelated: ['nager', 'conduire', 'montagne', 'dîner', 'nuage', 'danser']
-      },
-      {
-        prompt: 'voiture',
-        related: ['conduire', 'route', 'roue', 'véhicule', 'voyage', 'voyager'],
-        unrelated: ['nager', 'fleur', 'crayon', 'arc-en-ciel', 'pain', 'mélodie']
-      },
-      {
-        prompt: 'maison',
-        related: ['foyer', 'toit', 'porte', 'pièce', 'famille', 'bâtiment'],
-        unrelated: ['océan', 'ciel', 'crayon', 'banane', 'concert', 'dauphin']
-      },
-      {
-        prompt: 'nourriture',
-        related: ['manger', 'cuisiner', 'restaurant', 'cuisine', 'repas', 'faim'],
-        unrelated: ['téléphone', 'montagne', 'bicyclette', 'crayon', 'radio', 'planète']
-      }
-    ]
-  },
-  academic: {
-    english: [
-      {
-        prompt: 'research',
-        related: ['study', 'investigate', 'discover', 'science', 'analysis', 'data'],
-        unrelated: ['dance', 'beach', 'cake', 'mountain', 'song', 'soccer']
-      },
-      {
-        prompt: 'university',
-        related: ['college', 'professor', 'student', 'degree', 'campus', 'education'],
-        unrelated: ['kitchen', 'garden', 'movie', 'airplane', 'dinosaur', 'recipe']
-      },
-      {
-        prompt: 'thesis',
-        related: ['dissertation', 'research', 'academic', 'professor', 'argument', 'study'],
-        unrelated: ['beach', 'concert', 'garden', 'bicycle', 'pizza', 'movie']
-      },
-      {
-        prompt: 'mathematics',
-        related: ['numbers', 'algebra', 'geometry', 'calculation', 'equation', 'statistics'],
-        unrelated: ['poetry', 'hiking', 'garden', 'recipe', 'soccer', 'dance']
-      },
-      {
-        prompt: 'literature',
-        related: ['book', 'novel', 'author', 'poetry', 'reading', 'character'],
-        unrelated: ['chemistry', 'basketball', 'computer', 'bicycle', 'planet', 'mountain']
-      }
-    ]
-  },
-  business: {
-    english: [
-      {
-        prompt: 'marketing',
-        related: ['advertisement', 'promotion', 'brand', 'customer', 'sales', 'strategy'],
-        unrelated: ['flower', 'mountain', 'bicycle', 'poem', 'painting', 'astronaut']
-      },
-      {
-        prompt: 'finance',
-        related: ['money', 'investment', 'budget', 'banking', 'profit', 'account'],
-        unrelated: ['bicycle', 'poetry', 'garden', 'painting', 'astronomy', 'recipe']
-      },
-      {
-        prompt: 'meeting',
-        related: ['conference', 'discussion', 'agenda', 'presentation', 'collaboration', 'schedule'],
-        unrelated: ['swimming', 'poetry', 'dinosaur', 'gardening', 'astronomy', 'cooking']
-      },
-      {
-        prompt: 'management',
-        related: ['leadership', 'organization', 'planning', 'strategy', 'supervision', 'administration'],
-        unrelated: ['swimming', 'recipe', 'dinosaur', 'poetry', 'gardening', 'planet']
-      },
-      {
-        prompt: 'startup',
-        related: ['entrepreneur', 'innovation', 'venture', 'business', 'funding', 'growth'],
-        unrelated: ['dinosaur', 'poetry', 'swimming', 'recipe', 'astronomy', 'gardening']
-      }
-    ]
-  },
-  technology: {
-    english: [
-      {
-        prompt: 'computer',
-        related: ['software', 'hardware', 'programming', 'digital', 'internet', 'technology'],
-        unrelated: ['garden', 'cooking', 'poetry', 'painting', 'swimming', 'forest']
-      },
-      {
-        prompt: 'algorithm',
-        related: ['programming', 'code', 'software', 'calculation', 'process', 'logic'],
-        unrelated: ['poetry', 'cooking', 'garden', 'beach', 'painting', 'dinosaur']
-      },
-      {
-        prompt: 'database',
-        related: ['storage', 'information', 'data', 'server', 'query', 'record'],
-        unrelated: ['poetry', 'cooking', 'garden', 'swimming', 'dinosaur', 'painting']
-      },
-      {
-        prompt: 'cloud',
-        related: ['storage', 'server', 'computing', 'online', 'network', 'service'],
-        unrelated: ['kitchen', 'garden', 'poetry', 'dinosaur', 'recipe', 'basketball']
-      },
-      {
-        prompt: 'interface',
-        related: ['design', 'user', 'interaction', 'display', 'control', 'navigate'],
-        unrelated: ['recipe', 'poetry', 'swimming', 'dinosaur', 'cooking', 'garden']
-      }
-    ]
-  },
-  nature: {
-    english: [
-      {
-        prompt: 'forest',
-        related: ['trees', 'woods', 'plants', 'wildlife', 'ecosystem', 'vegetation'],
-        unrelated: ['computer', 'calculator', 'business', 'factory', 'office', 'smartphone']
-      },
-      {
-        prompt: 'mountain',
-        related: ['peak', 'climb', 'range', 'valley', 'hiking', 'altitude'],
-        unrelated: ['computer', 'office', 'factory', 'smartphone', 'business', 'algorithm']
-      },
-      {
         prompt: 'ocean',
-        related: ['sea', 'water', 'wave', 'beach', 'marine', 'tide'],
-        unrelated: ['desert', 'computer', 'factory', 'office', 'algorithm', 'smartphone']
+        related: {
+          strong: ['water', 'waves', 'sea', 'blue'],
+          medium: ['fish', 'salt', 'deep', 'swim'],
+          weak: ['vacation', 'boat', 'beach', 'horizon']
+        },
+        unrelated: ['desert', 'mountain', 'computer', 'library', 'pizza', 'telephone', 'bicycle', 'rainbow'],
+        difficulty: 0.6,
+        themes: ['nature', 'water', 'environment']
       },
       {
-        prompt: 'climate',
-        related: ['weather', 'temperature', 'environment', 'atmosphere', 'conditions', 'seasonal'],
-        unrelated: ['computer', 'office', 'algorithm', 'smartphone', 'database', 'calculator']
+        prompt: 'fire',
+        related: {
+          strong: ['flame', 'heat', 'burn', 'red'],
+          medium: ['smoke', 'ash', 'warm', 'light'],
+          weak: ['camping', 'candle', 'dragon', 'energy']
+        },
+        unrelated: ['ice', 'ocean', 'book', 'telephone', 'bicycle', 'flower', 'cloud', 'music'],
+        difficulty: 0.5,
+        themes: ['elements', 'energy', 'danger']
       },
       {
-        prompt: 'wildlife',
-        related: ['animals', 'habitat', 'ecosystem', 'species', 'conservation', 'biodiversity'],
-        unrelated: ['computer', 'office', 'calculator', 'factory', 'algorithm', 'smartphone']
+        prompt: 'music',
+        related: {
+          strong: ['sound', 'song', 'rhythm', 'melody'],
+          medium: ['dance', 'beat', 'harmony', 'instrument'],
+          weak: ['concert', 'radio', 'emotion', 'art']
+        },
+        unrelated: ['silence', 'book', 'computer', 'food', 'car', 'mountain', 'telephone', 'bicycle'],
+        difficulty: 0.7,
+        themes: ['art', 'sound', 'entertainment']
+      },
+      {
+        prompt: 'dream',
+        related: {
+          strong: ['sleep', 'night', 'mind', 'fantasy'],
+          medium: ['imagination', 'subconscious', 'vision', 'hope'],
+          weak: ['pillow', 'story', 'future', 'wish']
+        },
+        unrelated: ['reality', 'computer', 'food', 'bicycle', 'telephone', 'mountain', 'ocean', 'fire'],
+        difficulty: 0.8,
+        themes: ['psychology', 'abstract', 'mind']
+      },
+      {
+        prompt: 'time',
+        related: {
+          strong: ['clock', 'hour', 'minute', 'second'],
+          medium: ['past', 'future', 'present', 'duration'],
+          weak: ['history', 'age', 'schedule', 'deadline']
+        },
+        unrelated: ['space', 'color', 'taste', 'texture', 'weight', 'temperature', 'sound', 'smell'],
+        difficulty: 0.9,
+        themes: ['abstract', 'physics', 'concept']
       }
     ]
+  },
+  // Add more categories...
+};
+
+// Achievement definitions
+const ACHIEVEMENTS: Achievement[] = [
+  {
+    id: 'first_perfect',
+    title: 'Perfect Vision',
+    description: 'Get a perfect score on your first round',
+    icon: '🎯',
+    unlocked: false
+  },
+  {
+    id: 'speed_demon',
+    title: 'Speed Demon',
+    description: 'Complete a round in under 5 seconds',
+    icon: '⚡',
+    unlocked: false
+  },
+  {
+    id: 'chain_master',
+    title: 'Chain Master',
+    description: 'Create a 10-word association chain',
+    icon: '🔗',
+    unlocked: false
+  },
+  {
+    id: 'combo_king',
+    title: 'Combo King',
+    description: 'Achieve a 5x combo multiplier',
+    icon: '👑',
+    unlocked: false
+  },
+  {
+    id: 'power_user',
+    title: 'Power User',
+    description: 'Use all power-ups in a single game',
+    icon: '💎',
+    unlocked: false
+  }
+];
+
+// Power-up effects
+const POWER_UPS = {
+  freeze_time: {
+    name: 'Time Freeze',
+    icon: '❄️',
+    description: 'Freezes the timer for 10 seconds',
+    cost: 50
+  },
+  reveal_hint: {
+    name: 'Word Hint',
+    icon: '💡',
+    description: 'Reveals one correct association',
+    cost: 30
+  },
+  double_points: {
+    name: 'Double Points',
+    icon: '2️⃣',
+    description: 'Double points for next round',
+    cost: 75
+  },
+  skip_round: {
+    name: 'Skip Round',
+    icon: '⏭️',
+    description: 'Skip to the next round',
+    cost: 100
+  },
+  word_magnet: {
+    name: 'Word Magnet',
+    icon: '🧲',
+    description: 'Attracts correct words visually',
+    cost: 40
   }
 };
 
-// Add utility function for array shuffling
-const shuffleArray = <T,>(array: T[]): T[] => {
-  const shuffled = [...array];
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-  return shuffled;
+// Particle effects system
+const createParticleEffect = (type: 'success' | 'combo' | 'perfect' | 'powerup', element?: HTMLElement) => {
+  const particleConfigs = {
+    success: {
+      particleCount: 100,
+      spread: 70,
+      origin: { y: 0.6 },
+      colors: ['#10B981', '#34D399', '#6EE7B7']
+    },
+    combo: {
+      particleCount: 150,
+      spread: 90,
+      origin: { y: 0.5 },
+      colors: ['#8B5CF6', '#A78BFA', '#C4B5FD'],
+      shapes: ['star']
+    },
+    perfect: {
+      particleCount: 200,
+      spread: 120,
+      origin: { y: 0.4 },
+      colors: ['#F59E0B', '#FBBF24', '#FCD34D'],
+      gravity: 0.5,
+      drift: 1
+    },
+    powerup: {
+      particleCount: 80,
+      spread: 60,
+      origin: { y: 0.7 },
+      colors: ['#EF4444', '#F87171', '#FCA5A5'],
+      scalar: 1.2
+    }
+  };
+
+  const config = particleConfigs[type];
+  confetti(config);
 };
 
-// Add memoized word option component
-const WordOption = React.memo(({ 
+// Sound system
+class SoundManager {
+  private sounds: { [key: string]: HTMLAudioElement } = {};
+
+  constructor() {
+    this.loadSounds();
+  }
+
+  private loadSounds() {
+    const soundFiles = {
+      select: '/sounds/select.mp3',
+      correct: '/sounds/correct.mp3',
+      wrong: '/sounds/wrong.mp3',
+      combo: '/sounds/combo.mp3',
+      powerup: '/sounds/powerup.mp3',
+      perfect: '/sounds/perfect.mp3',
+      tick: '/sounds/tick.mp3'
+    };
+
+    Object.entries(soundFiles).forEach(([key, path]) => {
+      this.sounds[key] = new Audio(path);
+      this.sounds[key].volume = 0.3;
+    });
+  }
+
+  play(sound: string) {
+    if (this.sounds[sound]) {
+      this.sounds[sound].currentTime = 0;
+      this.sounds[sound].play().catch(() => {
+        // Ignore audio play errors
+      });
+    }
+  }
+}
+
+// Enhanced word option component with advanced animations
+const EnhancedWordOption = React.memo(({ 
   word, 
   isSelected, 
-  onSelect 
+  isCorrect,
+  isRevealed,
+  strength,
+  onSelect,
+  disabled,
+  magnetEffect 
 }: { 
   word: string; 
-  isSelected: boolean; 
+  isSelected: boolean;
+  isCorrect?: boolean;
+  isRevealed?: boolean;
+  strength?: 'strong' | 'medium' | 'weak';
   onSelect: (word: string) => void;
+  disabled?: boolean;
+  magnetEffect?: boolean;
 }) => {
+  const variants = {
+    initial: { scale: 0.9, opacity: 0, y: 20 },
+    animate: { scale: 1, opacity: 1, y: 0 },
+    selected: { scale: 1.05, boxShadow: '0 0 20px rgba(139, 92, 246, 0.5)' },
+    correct: { scale: 1.1, backgroundColor: '#10B981', color: 'white' },
+    incorrect: { scale: 0.95, backgroundColor: '#EF4444', color: 'white' },
+    magnet: { scale: 1.1, boxShadow: '0 0 30px rgba(249, 115, 22, 0.8)' }
+  };
+
   return (
     <motion.button
-      onClick={() => onSelect(word)}
-      className={`word-option ${isSelected ? 'selected' : ''}`}
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
+      onClick={() => !disabled && onSelect(word)}
+      className={`
+        relative word-option p-4 rounded-xl font-medium transition-all duration-300
+        ${isSelected ? 'bg-purple-500 text-white' : 'bg-white text-gray-700 hover:bg-purple-50'}
+        ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:shadow-lg'}
+        ${isRevealed && isCorrect ? 'bg-green-500 text-white' : ''}
+        ${isRevealed && !isCorrect ? 'bg-red-500 text-white' : ''}
+        ${strength === 'strong' ? 'border-2 border-green-400' : ''}
+        ${strength === 'medium' ? 'border-2 border-yellow-400' : ''}
+        ${strength === 'weak' ? 'border-2 border-orange-400' : ''}
+      `}
+      variants={variants}
+      initial="initial"
+      animate={
+        magnetEffect ? 'magnet' :
+        isRevealed && isCorrect ? 'correct' :
+        isRevealed && !isCorrect ? 'incorrect' :
+        isSelected ? 'selected' : 'animate'
+      }
+      whileHover={!disabled ? { scale: 1.05 } : {}}
+      whileTap={!disabled ? { scale: 0.95 } : {}}
     >
       {word}
+      {isRevealed && isCorrect && (
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          className="absolute -top-2 -right-2 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-white text-xs"
+        >
+          ✓
+        </motion.div>
+      )}
     </motion.button>
   );
 });
 
-WordOption.displayName = 'WordOption';
-
+EnhancedWordOption.displayName = 'EnhancedWordOption';
 export default function WordAssociationGame({ 
   difficulty, 
   category, 
-  language, 
+  language,
+  gameMode = 'classic', 
   customWords,
   onBackToMenu, 
   onGameComplete 
 }: WordAssociationGameProps) {
+  // Enhanced game state
   const [currentRound, setCurrentRound] = useState(0);
-  const [score, setScore] = useState(0);
+  const [gameStats, setGameStats] = useState<GameStats>({
+    score: 0,
+    streak: 0,
+    multiplier: 1,
+    combo: 0,
+    powerUps: [],
+    achievements: [...ACHIEVEMENTS],
+    timeBonus: 0,
+    perfectRounds: 0
+  });
   const [promptWord, setPromptWord] = useState('');
   const [options, setOptions] = useState<string[]>([]);
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
-  const [gamePhase, setGamePhase] = useState<'playing' | 'feedback' | 'complete'>('playing');
+  const [correctWords, setCorrectWords] = useState<{ word: string; strength: 'strong' | 'medium' | 'weak' }[]>([]);
+  const [gamePhase, setGamePhase] = useState<'playing' | 'feedback' | 'complete' | 'powerup'>('playing');
   const [timeLeft, setTimeLeft] = useState(0);
   const [timer, setTimer] = useState<NodeJS.Timeout | null>(null);
-  const [correctRelatedWords, setCorrectRelatedWords] = useState<string[]>([]);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const gameContainerRef = useRef<HTMLDivElement>(null);
-
-  const MAX_ROUNDS = 10;
-  const ROUND_TIME = 30; // seconds per round
-
-  // Number of related words to find based on difficulty
-  const RELATED_WORDS_COUNT = {
-    easy: 2,
-    medium: 3,
-    hard: 4
-  };
+  const [activePowerUp, setActivePowerUp] = useState<PowerUp | null>(null);
+  const [showHint, setShowHint] = useState(false);
+  const [magnetEffect, setMagnetEffect] = useState(false);
+  const [frozenTime, setFrozenTime] = useState(false);
+  const [chainWords, setChainWords] = useState<string[]>([]);
   
-  useEffect(() => {
-    // Initialize game
-    resetRound();
-    
-    return () => {
-      if (timer) clearInterval(timer);
-    };
-  }, []);
+  const gameContainerRef = useRef<HTMLDivElement>(null);
+  const soundManager = useRef(new SoundManager());
 
-  // Function to toggle fullscreen
-  const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      if (gameContainerRef.current && gameContainerRef.current.requestFullscreen) {
-        gameContainerRef.current.requestFullscreen()
-          .then(() => setIsFullscreen(true))
-          .catch(err => console.error(err));
-      }
-    } else {
-      if (document.exitFullscreen) {
-        document.exitFullscreen()
-          .then(() => setIsFullscreen(false))
-          .catch(err => console.error(err));
-      }
-    }
+  const MAX_ROUNDS = gameMode === 'survival' ? 999 : 15;
+  const BASE_TIME = gameMode === 'speed' ? 15 : gameMode === 'survival' ? 45 : 30;
+
+  // Dynamic difficulty scaling
+  const getDifficultyMultiplier = () => {
+    const baseMultipliers = { easy: 0.8, medium: 1.0, hard: 1.3 };
+    const streakBonus = Math.min(gameStats.streak * 0.1, 0.5);
+    return baseMultipliers[difficulty as keyof typeof baseMultipliers] + streakBonus;
   };
 
-  // Function to handle the fullscreen change event
-  useEffect(() => {
-    const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
-    };
+  // Enhanced word selection logic
+  const getPromptAndOptions = useCallback(() => {
+    const wordSets = ENHANCED_WORD_ASSOCIATIONS.general.english;
+    const randomWord = wordSets[Math.floor(Math.random() * wordSets.length)];
+    
+    // Adjust difficulty based on game progression
+    const difficultyMultiplier = getDifficultyMultiplier();
+    const filteredWords = wordSets.filter(w => w.difficulty <= difficultyMultiplier);
+    
+    const selectedWord = filteredWords.length > 0 
+      ? filteredWords[Math.floor(Math.random() * filteredWords.length)]
+      : randomWord;
+    
+    return selectedWord;
+  }, [difficulty, gameStats.streak]);
 
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
+  // Timer system with freeze capability
+  useEffect(() => {
+    if (gamePhase === 'playing' && timeLeft > 0 && !frozenTime) {
+      const newTimer = setTimeout(() => {
+        setTimeLeft(prev => {
+          if (prev <= 1) {
+            endRound();
+            return 0;
+          }
+          
+          // Warning sound at 5 seconds
+          if (prev === 6) {
+            soundManager.current.play('tick');
+          }
+          
+          return prev - 1;
+        });
+      }, 1000);
+      
+      setTimer(newTimer);
+    }
+    
     return () => {
-      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      if (timer) clearTimeout(timer);
+    };
+  }, [timeLeft, gamePhase, frozenTime]);
+
+  // Initialize game
+  useEffect(() => {
+    resetRound();
+    return () => {
+      if (timer) clearTimeout(timer);
     };
   }, []);
-
-  const getPromptAndOptions = useCallback(() => {
-    let wordData;
-    
-    if (category === 'custom' && customWords) {
-      // Handle custom words
-      const customWordsList = customWords.split(',').map(word => word.trim());
-      if (customWordsList.length < 5) {
-        // Not enough custom words, fallback to general category
-        wordData = WORD_ASSOCIATIONS.general[language as keyof typeof WORD_ASSOCIATIONS.general] || 
-                   WORD_ASSOCIATIONS.general.english;
-      } else {
-        // Create a random prompt from custom words
-        const randomIndex = Math.floor(Math.random() * customWordsList.length);
-        const prompt = customWordsList[randomIndex];
-        
-        // Create related and unrelated words from the remaining words
-        const remainingWords = customWordsList.filter((_, index) => index !== randomIndex);
-        
-        return {
-          prompt,
-          related: remainingWords.slice(0, 6), // Use first 6 remaining words as related
-          unrelated: remainingWords.slice(6)    // Use the rest as unrelated
-        };
-      }
-    } else {
-      // Use predefined word associations
-      const categoryData = WORD_ASSOCIATIONS[category as keyof typeof WORD_ASSOCIATIONS] || 
-                           WORD_ASSOCIATIONS.general;
-      
-      wordData = categoryData[language as keyof typeof categoryData] || 
-                 categoryData.english;
-    }
-    
-    if (!wordData || wordData.length === 0) {
-      // Fallback to general English if no data for selected category/language
-      wordData = WORD_ASSOCIATIONS.general.english;
-    }
-    
-    // Pick a random prompt
-    const randomIndex = Math.floor(Math.random() * wordData.length);
-    return wordData[randomIndex];
-  }, [category, language, customWords]);
 
   const resetRound = useCallback(() => {
-    const { prompt, related, unrelated } = getPromptAndOptions();
+    const wordData = getPromptAndOptions();
     
-    setPromptWord(prompt);
-    setCorrectRelatedWords(related);
+    setPromptWord(wordData.prompt);
     setSelectedOptions([]);
     setGamePhase('playing');
-    setTimeLeft(ROUND_TIME);
+    setTimeLeft(BASE_TIME);
+    setShowHint(false);
+    setMagnetEffect(false);
     
-    // Select related words based on difficulty
-    const relatedWords = [...related]
-      .sort(() => Math.random() - 0.5)
-      .slice(0, RELATED_WORDS_COUNT[difficulty as keyof typeof RELATED_WORDS_COUNT]);
+    // Create word options with strength ratings
+    const strongWords = Object.entries(wordData.related.strong).map(([word]) => ({ word, strength: 'strong' as const }));
+    const mediumWords = Object.entries(wordData.related.medium).map(([word]) => ({ word, strength: 'medium' as const }));
+    const weakWords = Object.entries(wordData.related.weak).map(([word]) => ({ word, strength: 'weak' as const }));
     
-    // Select unrelated words to fill the options
-    const unrelatedWords = [...unrelated]
-      .sort(() => Math.random() - 0.5)
-      .slice(0, 8 - RELATED_WORDS_COUNT[difficulty as keyof typeof RELATED_WORDS_COUNT]);
+    const correctWordsList = [...strongWords, ...mediumWords, ...weakWords];
+    setCorrectWords(correctWordsList);
     
-    // Combine and shuffle
-    const allOptions = [...relatedWords, ...unrelatedWords].sort(() => Math.random() - 0.5);
+    // Select words based on difficulty and game mode
+    const numCorrect = gameMode === 'speed' ? 3 : gameMode === 'chain' ? 4 : difficulty === 'easy' ? 2 : difficulty === 'medium' ? 3 : 4;
+    const selectedCorrect = correctWordsList.slice(0, numCorrect);
+    
+    // Add unrelated words
+    const unrelatedWords = wordData.unrelated.slice(0, 8 - numCorrect);
+    
+    const allOptions = [
+      ...selectedCorrect.map(w => w.word),
+      ...unrelatedWords
+    ].sort(() => Math.random() - 0.5);
     
     setOptions(allOptions);
-  }, [difficulty, getPromptAndOptions]);
+  }, [gameMode, difficulty, BASE_TIME, getPromptAndOptions]);
 
-  // Memoize word selection handler
+  // Enhanced word selection
   const handleWordSelect = useCallback((word: string) => {
     if (gamePhase !== 'playing') return;
+    
+    soundManager.current.play('select');
     
     setSelectedOptions(prev => {
       if (prev.includes(word)) {
         return prev.filter(w => w !== word);
       }
-      if (prev.length < RELATED_WORDS_COUNT[difficulty as keyof typeof RELATED_WORDS_COUNT]) {
+      
+      const maxSelections = gameMode === 'speed' ? 3 : gameMode === 'chain' ? 4 : difficulty === 'easy' ? 2 : difficulty === 'medium' ? 3 : 4;
+      
+      if (prev.length < maxSelections) {
         return [...prev, word];
       }
       return prev;
     });
-  }, [gamePhase, difficulty]);
+  }, [gamePhase, difficulty, gameMode]);
 
-  // Memoize word options
-  const wordOptions = useMemo(() => {
-    if (!promptWord) return [];
-    return shuffleArray([...options.filter(word => correctRelatedWords.includes(word)), ...selectedOptions.filter(word => !correctRelatedWords.includes(word))]);
-  }, [promptWord, options, correctRelatedWords, selectedOptions]);
-
-  // Memoize game progress calculation
-  const gameProgress = useMemo(() => {
-    return (currentRound / MAX_ROUNDS) * 100;
-  }, [currentRound]);
-
-  const submitAnswers = () => {
-    if (gamePhase === 'playing' && selectedOptions.length < RELATED_WORDS_COUNT[difficulty as keyof typeof RELATED_WORDS_COUNT]) return;
+  // Power-up system
+  const usePowerUp = useCallback((powerUp: PowerUp) => {
+    if (!gameStats.powerUps.includes(powerUp) || activePowerUp) return;
     
-    endRound();
-  };
-
-  const endRound = () => {
-    setGamePhase('feedback');
+    soundManager.current.play('powerup');
+    setActivePowerUp(powerUp);
     
-    // Calculate correct answers
-    const correctlySelected = selectedOptions.filter(option => correctRelatedWords.includes(option));
-    const correctCount = correctlySelected.length;
-    
-    // Determine result
-    let result: 'correct' | 'partial' | 'incorrect';
-    
-    if (correctCount === RELATED_WORDS_COUNT[difficulty as keyof typeof RELATED_WORDS_COUNT]) {
-      result = 'correct';
-      setScore(prev => prev + 10);
-      
-      // Play success sound
-      const audio = new Audio('/sounds/correct.mp3');
-      audio.volume = 0.3;
-      audio.play();
-      
-      // Trigger confetti for correct answers
-      const count = 200;
-      const defaults = {
-        origin: { y: 0.7 },
-        zIndex: 5
-      };
-      
-      function fire(particleRatio: number, opts: any) {
-        confetti({
-          ...defaults,
-          ...opts,
-          particleCount: Math.floor(count * particleRatio)
-        });
-      }
-      
-      fire(0.25, {
-        spread: 26,
-        startVelocity: 55,
-      });
-      
-      fire(0.2, {
-        spread: 60,
-      });
-      
-      fire(0.35, {
-        spread: 100,
-        decay: 0.91,
-        scalar: 0.8
-      });
-      
-      fire(0.1, {
-        spread: 120,
-        startVelocity: 25,
-        decay: 0.92,
-        scalar: 1.2
-      });
-      
-      fire(0.1, {
-        spread: 120,
-        startVelocity: 45,
-      });
-    } else if (correctCount > 0) {
-      result = 'partial';
-      setScore(prev => prev + (correctCount * 2));
-      
-      // Play partial sound
-      const audio = new Audio('/sounds/partial.mp3');
-      audio.volume = 0.3;
-      audio.play();
-    } else {
-      result = 'incorrect';
-      
-      // Play incorrect sound
-      const audio = new Audio('/sounds/wrong.mp3');
-      audio.volume = 0.3;
-      audio.play();
+    switch (powerUp) {
+      case 'freeze_time':
+        setFrozenTime(true);
+        setTimeout(() => setFrozenTime(false), 10000);
+        break;
+      case 'reveal_hint':
+        setShowHint(true);
+        break;
+      case 'double_points':
+        setGameStats(prev => ({ ...prev, multiplier: prev.multiplier * 2 }));
+        break;
+      case 'word_magnet':
+        setMagnetEffect(true);
+        setTimeout(() => setMagnetEffect(false), 5000);
+        break;
+      case 'skip_round':
+        nextRound();
+        break;
     }
     
-    // Update game state
-    setCorrectRelatedWords(correctRelatedWords);
+    // Remove used power-up
+    setGameStats(prev => ({
+      ...prev,
+      powerUps: prev.powerUps.filter(p => p !== powerUp)
+    }));
     
-    // After 3 seconds, move to the next round
-    setTimeout(() => {
-      setCurrentRound(prev => prev + 1);
-      if (currentRound < MAX_ROUNDS - 1) {
-        resetRound();
-      } else {
-        endGame();
+    setTimeout(() => setActivePowerUp(null), 2000);
+  }, [gameStats.powerUps, activePowerUp]);
+
+  // Enhanced scoring system
+  const calculateScore = (correctCount: number, timeBonus: number, isChain: boolean = false) => {
+    const baseScore = correctCount * 10;
+    const multiplierBonus = baseScore * (gameStats.multiplier - 1);
+    const streakBonus = gameStats.streak * 5;
+    const chainBonus = isChain ? correctCount * 20 : 0;
+    
+    return Math.round(baseScore + multiplierBonus + timeBonus + streakBonus + chainBonus);
+  };
+
+  // Enhanced round completion
+  const endRound = useCallback(() => {
+    setGamePhase('feedback');
+    
+    const correctlySelected = selectedOptions.filter(word => 
+      correctWords.some(cw => cw.word === word)
+    );
+    
+    const timeBonus = Math.max(0, timeLeft * 2);
+    const isPerfect = correctlySelected.length === correctWords.length && selectedOptions.length === correctWords.length;
+    const isChain = gameMode === 'chain' && correctlySelected.length >= 3;
+    
+    const roundScore = calculateScore(correctlySelected.length, timeBonus, isChain);
+    
+    // Update game stats
+    setGameStats(prev => ({
+      ...prev,
+      score: prev.score + roundScore,
+      streak: correctlySelected.length > 0 ? prev.streak + 1 : 0,
+      combo: isPerfect ? prev.combo + 1 : 0,
+      perfectRounds: isPerfect ? prev.perfectRounds + 1 : prev.perfectRounds,
+      timeBonus: prev.timeBonus + timeBonus
+    }));
+
+    // Chain mode logic
+    if (gameMode === 'chain' && correctlySelected.length > 0) {
+      setChainWords(prev => [...prev, ...correctlySelected]);
+    }
+
+    // Play appropriate sound and effects
+    if (isPerfect) {
+      soundManager.current.play('perfect');
+      createParticleEffect('perfect');
+    } else if (correctlySelected.length > 0) {
+      soundManager.current.play('correct');
+      createParticleEffect('success');
+      
+      if (gameStats.combo > 2) {
+        soundManager.current.play('combo');
+        createParticleEffect('combo');
       }
+    } else {
+      soundManager.current.play('wrong');
+    }
+
+    // Award power-ups based on performance
+    if (isPerfect && Math.random() < 0.3) {
+      const availablePowerUps = Object.keys(POWER_UPS) as PowerUp[];
+      const randomPowerUp = availablePowerUps[Math.floor(Math.random() * availablePowerUps.length)];
+      setGameStats(prev => ({
+        ...prev,
+        powerUps: [...prev.powerUps, randomPowerUp]
+      }));
+      createParticleEffect('powerup');
+    }
+
+    // Continue to next round
+    setTimeout(() => {
+      nextRound();
     }, 3000);
+  }, [selectedOptions, correctWords, timeLeft, gameMode, gameStats.combo, calculateScore]);
+
+  const nextRound = () => {
+    if (currentRound >= MAX_ROUNDS - 1 || (gameMode === 'survival' && gameStats.streak === 0 && currentRound > 5)) {
+      endGame();
+    } else {
+      setCurrentRound(prev => prev + 1);
+      resetRound();
+    }
   };
 
   const endGame = () => {
     setGamePhase('complete');
-    onGameComplete(score);
+    onGameComplete(gameStats.score);
     
-    // Play victory sound
-    const audio = new Audio('/sounds/victory.mp3');
-    audio.volume = 0.4;
-    audio.play();
+    soundManager.current.play('perfect');
+    
+    // Massive celebration for high scores
+    if (gameStats.score > 500) {
+      setTimeout(() => createParticleEffect('perfect'), 0);
+      setTimeout(() => createParticleEffect('combo'), 500);
+      setTimeout(() => createParticleEffect('success'), 1000);
+    }
   };
 
   const playAgain = () => {
     setCurrentRound(0);
-    setScore(0);
+    setGameStats({
+      score: 0,
+      streak: 0,
+      multiplier: 1,
+      combo: 0,
+      powerUps: [],
+      achievements: [...ACHIEVEMENTS],
+      timeBonus: 0,
+      perfectRounds: 0
+    });
+    setChainWords([]);
     resetRound();
   };
 
+  // Toggle fullscreen
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      gameContainerRef.current?.requestFullscreen?.();
+      setIsFullscreen(true);
+    } else {
+      document.exitFullscreen?.();
+      setIsFullscreen(false);
+    }
+  };
+
   return (
-    <div ref={gameContainerRef} className="w-full bg-white rounded-xl shadow-lg p-4 md:p-6 pb-8 text-gray-700 relative">
-      <div className="flex justify-between items-center mb-4">
-        <Link href="#" onClick={onBackToMenu} className="text-purple-600 hover:text-purple-800 transition-colors">
-          ← Back to Settings
-        </Link>
-        
-        <button
-          onClick={toggleFullscreen}
-          className="p-2 text-purple-600 hover:text-purple-800 transition-colors"
-          aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
-        >
-          {isFullscreen ? (
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M5 4a1 1 0 0 0-1 1v4a1 1 0 0 1-2 0V5a3 3 0 0 1 3-3h4a1 1 0 0 1 0 2H5zm10 10a1 1 0 0 0 1-1v-4a1 1 0 1 1 2 0v1.586l2.293-2.293a1 1 0 1 1 1.414 1.414L15.414 15H14a1 1 0 1 1 0-2h4a1 1 0 0 1 1 1v4zM5 14a1 1 0 0 0 1 1h4a1 1 0 1 1 0 2H6a3 3 0 0 1-3-3v-4a1 1 0 1 1 2 0v4zm10-10a1 1 0 0 0-1-1H10a1 1 0 1 1 0-2h4a3 3 0 0 1 3 3v4a1 1 0 1 1-2 0V4z" clipRule="evenodd" />
-            </svg>
-          ) : (
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M3 4a1 1 0 0 1 1-1h4a1 1 0 0 1 0 2H6.414l2.293 2.293a1 1 0 1 1-1.414 1.414L5 6.414V8a1 1 0 0 1-2 0V4zm13 0a1 1 0 0 1 1 1v4a1 1 0 1 1-2 0V6.414l-2.293 2.293a1 1 0 1 1-1.414-1.414L13.586 5H12a1 1 0 1 1 0-2h4zm-13 13a1 1 0 0 1-1-1v-4a1 1 0 1 1 2 0v1.586l2.293-2.293a1 1 0 1 1 1.414 1.414L5.414 15H8a1 1 0 1 1 0 2H4zm13-1a1 1 0 0 1-1 1h-4a1 1 0 1 1 0-2h1.586l-2.293-2.293a1 1 0 1 1 1.414-1.414L15.586 13H14a1 1 0 1 1 0-2h4a1 1 0 0 1 1 1v4z" clipRule="evenodd" />
-            </svg>
-          )}
-        </button>
-      </div>
-      
-      <div className="grid grid-cols-3 gap-4 bg-gray-100 p-2 rounded-lg mb-8 text-sm md:text-base">
-        <div className="bg-white p-2 rounded shadow">
-          <span className="text-gray-500">Round:</span> {currentRound}/{MAX_ROUNDS}
-        </div>
-        <div className="bg-white p-2 rounded shadow">
-          <span className="text-gray-500">Score:</span> {score}
-        </div>
-        <div className="bg-white p-2 rounded shadow">
-          <span className="text-gray-500">Time:</span> {timeLeft}s
-        </div>
-      </div>
-      
-      {gamePhase === 'playing' && (
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold text-center mb-4">
-            Find {RELATED_WORDS_COUNT[difficulty as keyof typeof RELATED_WORDS_COUNT]} words related to:
-          </h2>
-          <div className="text-4xl font-bold text-center text-purple-600 mb-6">
-            {promptWord}
-          </div>
-          <p className="text-center text-gray-500 mb-4">
-            Select {RELATED_WORDS_COUNT[difficulty as keyof typeof RELATED_WORDS_COUNT]} words that are most closely associated with the prompt word.
-          </p>
-          
-          <div className="word-options-grid">
-            {wordOptions.map((word: string) => (
-              <WordOption
-                key={word}
-                word={word}
-                isSelected={selectedOptions.includes(word)}
-                onSelect={handleWordSelect}
-              />
-            ))}
-          </div>
-          
-          <div className="flex justify-center mt-8">
-            <button 
-              onClick={submitAnswers}
-              disabled={selectedOptions.length < RELATED_WORDS_COUNT[difficulty as keyof typeof RELATED_WORDS_COUNT]}
-              className={`
-                py-2 px-6 rounded-full font-medium transition-colors
-                ${selectedOptions.length >= RELATED_WORDS_COUNT[difficulty as keyof typeof RELATED_WORDS_COUNT]
-                  ? 'bg-purple-600 hover:bg-purple-700 text-white' 
-                  : 'bg-gray-300 cursor-not-allowed text-gray-500'}
-              `}
-            >
-              Submit Answers
-            </button>
-          </div>
-        </div>
-      )}
-      
-      {gamePhase === 'feedback' && (
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="feedback-container"
-        >
-          <p>
-            {selectedOptions.length > 0
-              ? selectedOptions.length === RELATED_WORDS_COUNT[difficulty as keyof typeof RELATED_WORDS_COUNT]
-                ? 'You found all the correct associations!'
-                : `You found ${selectedOptions.filter(option => correctRelatedWords.includes(option)).length} correct associations out of ${RELATED_WORDS_COUNT[difficulty as keyof typeof RELATED_WORDS_COUNT]}.`
-              : 'None of your selections were correct associations.'}
-          </p>
-          <div className="mt-2">
-            <p className="font-medium">The correct associations were:</p>
-            <p className="italic">{correctRelatedWords.join(', ')}</p>
-          </div>
-        </motion.div>
-      )}
-      
-      {gamePhase === 'complete' && (
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="text-center p-8 bg-purple-50 rounded-lg"
-        >
-          <h2 className="text-3xl font-bold text-purple-700 mb-3">Game Complete!</h2>
-          <p className="text-xl mb-6">Your final score: <span className="font-bold text-purple-700">{score}</span> points</p>
-          
-          <div className="mb-8">
-            <h3 className="font-medium text-lg mb-2">Performance Summary</h3>
-            <div className="inline-block bg-white rounded-lg shadow p-4">
-              <div className="text-3xl font-bold text-purple-600">{Math.round((score / (MAX_ROUNDS * 10)) * 100)}%</div>
-              <div className="text-gray-500">Accuracy</div>
-            </div>
-          </div>
-          
-          <div className="flex justify-center gap-4">
-            <button
-              onClick={playAgain}
-              className="bg-purple-600 hover:bg-purple-700 text-white font-medium py-3 px-6 rounded-lg transition-colors"
-            >
-              Play Again
-            </button>
-            <button
-              onClick={onBackToMenu}
-              className="bg-gray-300 hover:bg-gray-400 px-6 py-3 rounded-lg transition-colors"
-            >
-              Back to Menu
-            </button>
-          </div>
-        </motion.div>
-      )}
-      
-      <div className="progress-bar">
-        <div 
-          className="progress-fill"
-          style={{ width: `${gameProgress}%` }}
+    <div ref={gameContainerRef} className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white relative overflow-hidden">
+      {/* Animated background */}
+      <div className="absolute inset-0 opacity-20">
+        <motion.div
+          className="absolute top-10 left-10 w-32 h-32 bg-purple-500 rounded-full blur-xl"
+          animate={{ x: [0, 100, 0], y: [0, 50, 0] }}
+          transition={{ duration: 20, repeat: Infinity }}
         />
+        <motion.div
+          className="absolute bottom-20 right-20 w-48 h-48 bg-blue-500 rounded-full blur-xl"
+          animate={{ x: [0, -80, 0], y: [0, -60, 0] }}
+          transition={{ duration: 25, repeat: Infinity }}
+        />
+      </div>
+
+      <div className="relative z-10 container mx-auto px-4 py-6">
+        {/* Header */}
+        <div className="flex justify-between items-center mb-6">
+          <Link href="#" onClick={onBackToMenu} className="flex items-center text-white/80 hover:text-white transition-colors">
+            <span className="mr-2">←</span> Back to Menu
+          </Link>
+          
+          <div className="flex items-center gap-4">
+            <div className="text-sm font-medium bg-white/10 px-3 py-1 rounded-full">
+              {gameMode.charAt(0).toUpperCase() + gameMode.slice(1)} Mode
+            </div>
+            <button
+              onClick={toggleFullscreen}
+              className="p-2 text-white/80 hover:text-white transition-colors"
+            >
+              {isFullscreen ? '⤋' : '⤢'}
+            </button>
+          </div>
+        </div>
+
+        {/* Enhanced HUD */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <motion.div 
+            className="bg-white/10 backdrop-blur-sm rounded-xl p-4"
+            whileHover={{ scale: 1.05 }}
+          >
+            <div className="text-sm opacity-80">Score</div>
+            <div className="text-2xl font-bold text-yellow-400">{gameStats.score.toLocaleString()}</div>
+          </motion.div>
+          
+          <motion.div 
+            className="bg-white/10 backdrop-blur-sm rounded-xl p-4"
+            whileHover={{ scale: 1.05 }}
+          >
+            <div className="text-sm opacity-80">Streak</div>
+            <div className="text-2xl font-bold text-green-400">{gameStats.streak}</div>
+          </motion.div>
+          
+          <motion.div 
+            className="bg-white/10 backdrop-blur-sm rounded-xl p-4"
+            whileHover={{ scale: 1.05 }}
+          >
+            <div className="text-sm opacity-80">Multiplier</div>
+            <div className="text-2xl font-bold text-purple-400">{gameStats.multiplier}x</div>
+          </motion.div>
+          
+          <motion.div 
+            className="bg-white/10 backdrop-blur-sm rounded-xl p-4"
+            whileHover={{ scale: 1.05 }}
+          >
+            <div className="text-sm opacity-80">Time</div>
+            <div className={`text-2xl font-bold ${timeLeft <= 5 ? 'text-red-400 animate-pulse' : 'text-blue-400'}`}>
+              {frozenTime ? '❄️' : timeLeft}s
+            </div>
+          </motion.div>
+        </div>
+
+        {/* Power-ups Bar */}
+        {gameStats.powerUps.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex justify-center mb-6"
+          >
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
+              <div className="text-sm opacity-80 mb-2 text-center">Power-ups</div>
+              <div className="flex gap-2">
+                {gameStats.powerUps.map((powerUp, index) => (
+                  <motion.button
+                    key={`${powerUp}-${index}`}
+                    onClick={() => usePowerUp(powerUp)}
+                    className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center text-xl hover:scale-110 transition-transform"
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
+                    disabled={activePowerUp !== null}
+                  >
+                    {POWER_UPS[powerUp].icon}
+                  </motion.button>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Game Content */}
+        <AnimatePresence mode="wait">
+          {gamePhase === 'playing' && (
+            <motion.div
+              key="playing"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 1.1 }}
+              className="text-center"
+            >
+              {/* Chain Mode - Show chain */}
+              {gameMode === 'chain' && chainWords.length > 0 && (
+                <div className="mb-6">
+                  <div className="text-sm opacity-80 mb-2">Word Chain:</div>
+                  <div className="flex justify-center items-center gap-2 flex-wrap">
+                    {chainWords.map((word, index) => (
+                      <React.Fragment key={word}>
+                        <span className="bg-white/20 px-3 py-1 rounded-full text-sm">{word}</span>
+                        {index < chainWords.length - 1 && <span className="text-purple-400">→</span>}
+                      </React.Fragment>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <h2 className="text-3xl md:text-4xl font-bold mb-2">
+                Find words related to:
+              </h2>
+              
+              <motion.div 
+                className="text-6xl md:text-8xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-pink-500 to-purple-600 mb-8"
+                animate={{ scale: [1, 1.05, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
+                {promptWord}
+              </motion.div>
+
+              {/* Word Options Grid */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto mb-8">
+                {options.map((word, index) => {
+                  const correctWord = correctWords.find(cw => cw.word === word);
+                  const isCorrect = !!correctWord;
+                  const shouldShowHint = showHint && isCorrect;
+                  const shouldMagnet = magnetEffect && isCorrect;
+                  
+                  return (
+                    <motion.div
+                      key={word}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                    >
+                      <EnhancedWordOption
+                        word={word}
+                        isSelected={selectedOptions.includes(word)}
+                        isCorrect={isCorrect}
+                        isRevealed={shouldShowHint}
+                        strength={correctWord?.strength}
+                        onSelect={handleWordSelect}
+                        disabled={gamePhase !== 'playing'}
+                        magnetEffect={shouldMagnet}
+                      />
+                    </motion.div>
+                  );
+                })}
+              </div>
+
+              {/* Submit Button */}
+              <motion.button
+                onClick={endRound}
+                disabled={selectedOptions.length === 0}
+                className={`
+                  px-8 py-4 rounded-xl font-bold text-xl transition-all duration-300
+                  ${selectedOptions.length > 0 
+                    ? 'bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-400 hover:to-blue-400 shadow-lg hover:shadow-xl' 
+                    : 'bg-gray-600 cursor-not-allowed opacity-50'}
+                `}
+                whileHover={selectedOptions.length > 0 ? { scale: 1.05 } : {}}
+                whileTap={selectedOptions.length > 0 ? { scale: 0.95 } : {}}
+              >
+                Submit Answers {selectedOptions.length > 0 && `(${selectedOptions.length})`}
+              </motion.button>
+            </motion.div>
+          )}
+
+          {gamePhase === 'feedback' && (
+            <motion.div
+              key="feedback"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 1.1 }}
+              className="text-center max-w-2xl mx-auto"
+            >
+              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8">
+                <h3 className="text-3xl font-bold mb-4">Round Complete!</h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                  <div className="bg-white/10 rounded-xl p-4">
+                    <div className="text-sm opacity-80">Correct</div>
+                    <div className="text-2xl font-bold text-green-400">
+                      {selectedOptions.filter(word => correctWords.some(cw => cw.word === word)).length}
+                    </div>
+                  </div>
+                  <div className="bg-white/10 rounded-xl p-4">
+                    <div className="text-sm opacity-80">Time Bonus</div>
+                    <div className="text-2xl font-bold text-blue-400">+{Math.max(0, timeLeft * 2)}</div>
+                  </div>
+                  <div className="bg-white/10 rounded-xl p-4">
+                    <div className="text-sm opacity-80">Round Score</div>
+                    <div className="text-2xl font-bold text-yellow-400">
+                      {calculateScore(
+                        selectedOptions.filter(word => correctWords.some(cw => cw.word === word)).length,
+                        Math.max(0, timeLeft * 2)
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="text-left">
+                  <p className="text-lg mb-2">Correct associations:</p>
+                  <div className="flex flex-wrap gap-2 justify-center">
+                    {correctWords.map(({ word, strength }) => (
+                      <span
+                        key={word}
+                        className={`px-3 py-1 rounded-full text-sm ${
+                          strength === 'strong' ? 'bg-green-500' :
+                          strength === 'medium' ? 'bg-yellow-500' : 'bg-orange-500'
+                        }`}
+                      >
+                        {word}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {gamePhase === 'complete' && (
+            <motion.div
+              key="complete"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="text-center max-w-2xl mx-auto"
+            >
+              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8">
+                <h2 className="text-4xl font-bold mb-6">Game Complete! 🎉</h2>
+                
+                <div className="text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-pink-500 mb-6">
+                  {gameStats.score.toLocaleString()}
+                </div>
+                
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                  <div className="bg-white/10 rounded-xl p-4">
+                    <div className="text-sm opacity-80">Best Streak</div>
+                    <div className="text-xl font-bold text-green-400">{gameStats.streak}</div>
+                  </div>
+                  <div className="bg-white/10 rounded-xl p-4">
+                    <div className="text-sm opacity-80">Perfect Rounds</div>
+                    <div className="text-xl font-bold text-purple-400">{gameStats.perfectRounds}</div>
+                  </div>
+                  <div className="bg-white/10 rounded-xl p-4">
+                    <div className="text-sm opacity-80">Time Bonus</div>
+                    <div className="text-xl font-bold text-blue-400">{gameStats.timeBonus}</div>
+                  </div>
+                  <div className="bg-white/10 rounded-xl p-4">
+                    <div className="text-sm opacity-80">Accuracy</div>
+                    <div className="text-xl font-bold text-yellow-400">
+                      {Math.round((gameStats.score / (MAX_ROUNDS * 100)) * 100)}%
+                    </div>
+                  </div>
+                </div>
+
+                {/* Chain Mode Summary */}
+                {gameMode === 'chain' && chainWords.length > 0 && (
+                  <div className="mb-8">
+                    <h3 className="text-xl font-bold mb-3">Your Word Chain:</h3>
+                    <div className="flex justify-center items-center gap-2 flex-wrap">
+                      {chainWords.map((word, index) => (
+                        <React.Fragment key={`${word}-${index}`}>
+                          <span className="bg-gradient-to-r from-purple-500 to-pink-500 px-3 py-1 rounded-full text-sm font-medium">
+                            {word}
+                          </span>
+                          {index < chainWords.length - 1 && <span className="text-purple-400">→</span>}
+                        </React.Fragment>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex justify-center gap-4">
+                  <motion.button
+                    onClick={playAgain}
+                    className="bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-400 hover:to-blue-400 px-8 py-3 rounded-xl font-bold transition-all duration-300"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    Play Again
+                  </motion.button>
+                  <motion.button
+                    onClick={onBackToMenu}
+                    className="bg-white/20 hover:bg-white/30 px-8 py-3 rounded-xl font-bold transition-all duration-300"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    Back to Menu
+                  </motion.button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Progress Bar */}
+        <div className="fixed bottom-0 left-0 right-0 h-2 bg-black/20">
+          <motion.div
+            className="h-full bg-gradient-to-r from-purple-500 to-pink-500"
+            style={{ width: `${(currentRound / MAX_ROUNDS) * 100}%` }}
+            layoutId="progress"
+          />
+        </div>
+
+        {/* Active Power-up Indicator */}
+        <AnimatePresence>
+          {activePowerUp && (
+            <motion.div
+              initial={{ scale: 0, rotate: -180 }}
+              animate={{ scale: 1, rotate: 0 }}
+              exit={{ scale: 0, rotate: 180 }}
+              className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full p-8 z-50"
+            >
+              <div className="text-6xl">{POWER_UPS[activePowerUp].icon}</div>
+              <div className="text-xl font-bold text-center mt-2">{POWER_UPS[activePowerUp].name}</div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );

@@ -18,6 +18,7 @@ export default function WordAssociationPage() {
     difficulty: '',
     category: '',
     language: '',
+    gameMode: 'classic',
   });
   const [stats, setStats] = useState<GameStats>({
     gamesPlayed: 0,
@@ -48,7 +49,7 @@ export default function WordAssociationPage() {
     }
   };
 
-  const startGame = (settings: { difficulty: string; category: string; language: string }) => {
+  const startGame = (settings: { difficulty: string; category: string; language: string; gameMode: string }) => {
     setGameSettings(settings);
     setGameStarted(true);
   };
@@ -127,6 +128,7 @@ export default function WordAssociationPage() {
               difficulty={gameSettings.difficulty}
               category={gameSettings.category}
               language={gameSettings.language}
+              gameMode={gameSettings.gameMode as any}
               onBackToMenu={backToMenu}
               onGameComplete={updateStats}
             />

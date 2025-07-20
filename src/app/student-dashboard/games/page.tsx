@@ -180,7 +180,7 @@ export default function GamesPage() {
     },
     {
       id: '6',
-      title: 'Speed Builder',
+      title: 'Sentence Sprint',
       description: 'Drag and drop words to build sentences correctly before time runs out.',
       thumbnail: '/images/games/speed-builder.jpg',
       playTime: '5-10 min',

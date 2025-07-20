@@ -1,82 +1,201 @@
-/* Word options animations */
-@keyframes pulse-option {
+/* Enhanced Word Association Game Styles */
+
+/* Word option button styles */
+.word-option {
+  background-color: white;
+  color: #1f2937;
+  padding: 1.5rem 1rem;
+  border-radius: 0.75rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  border: 2px solid transparent;
+  min-height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.word-option:hover {
+  border-color: #a78bfa;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  transform: scale(1.05);
+}
+
+.word-option.selected {
+  background: linear-gradient(to right, #8b5cf6, #3b82f6);
+  color: white;
+  border-color: #8b5cf6;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  transform: scale(1.05);
+}
+
+/* Word options grid */
+.word-options-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  max-width: 64rem;
+  margin: 0 auto;
+}
+
+@media (min-width: 768px) {
+  .word-options-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* Progress bar */
+.progress-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 0.5rem;
+  background-color: rgba(0, 0, 0, 0.2);
+  z-index: 20;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(to right, #8b5cf6, #ec4899);
+  transition: all 0.5s ease;
+}
+
+/* Feedback container */
+.feedback-container {
+  background-color: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px);
+  border-radius: 1rem;
+  padding: 2rem;
+  text-align: center;
+  max-width: 32rem;
+  margin: 0 auto;
+}
+
+/* Particle animations */
+@keyframes particle-float {
   0% {
-    transform: scale(1);
+    transform: translateY(0px) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-100px) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+.particle {
+  animation: particle-float 3s ease-out infinite;
+}
+
+/* Glowing text effect */
+@keyframes glow {
+  0% {
+    text-shadow: 0 0 5px rgba(139, 92, 246, 0.5);
   }
   50% {
-    transform: scale(1.03);
+    text-shadow: 0 0 20px rgba(139, 92, 246, 0.8), 0 0 30px rgba(139, 92, 246, 0.6);
   }
   100% {
-    transform: scale(1);
+    text-shadow: 0 0 5px rgba(139, 92, 246, 0.5);
   }
 }
 
-.pulse-option {
-  animation: pulse-option 1.5s ease infinite;
+.glow-text {
+  animation: glow 2s ease-in-out infinite alternate;
 }
 
-/* Correct selection pulse */
-@keyframes pulse-correct {
+/* Pulse animations for different states */
+@keyframes pulse-success {
   0% {
-    box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.6);
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
   }
   70% {
-    box-shadow: 0 0 0 10px rgba(74, 222, 128, 0);
+    box-shadow: 0 0 0 15px rgba(34, 197, 94, 0);
   }
   100% {
-    box-shadow: 0 0 0 0 rgba(74, 222, 128, 0);
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
   }
 }
 
-.pulse-correct {
-  animation: pulse-correct 1.5s ease infinite;
+@keyframes pulse-error {
+  0% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 15px rgba(239, 68, 68, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+  }
 }
 
-/* Incorrect selection shake */
-@keyframes shake {
-  0% { transform: translateX(0); }
-  10% { transform: translateX(-5px); }
-  20% { transform: translateX(5px); }
-  30% { transform: translateX(-5px); }
-  40% { transform: translateX(5px); }
-  50% { transform: translateX(-5px); }
-  60% { transform: translateX(5px); }
-  70% { transform: translateX(-5px); }
-  80% { transform: translateX(5px); }
-  90% { transform: translateX(-5px); }
-  100% { transform: translateX(0); }
-}
-
-.shake {
-  animation: shake 0.8s ease-in-out;
-}
-
-/* Time running out pulse */
 @keyframes pulse-warning {
   0% {
-    box-shadow: 0 0 0 0 rgba(252, 165, 165, 0.7);
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7);
   }
   70% {
-    box-shadow: 0 0 0 10px rgba(252, 165, 165, 0);
+    box-shadow: 0 0 0 15px rgba(245, 158, 11, 0);
   }
   100% {
-    box-shadow: 0 0 0 0 rgba(252, 165, 165, 0);
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
   }
+}
+
+.pulse-success {
+  animation: pulse-success 1.5s ease infinite;
+}
+
+.pulse-error {
+  animation: pulse-error 1s ease infinite;
 }
 
 .pulse-warning {
   animation: pulse-warning 1s ease infinite;
 }
 
-/* Prompt word emphasis */
-@keyframes emphasis {
+/* Shake animation for incorrect selections */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+  20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+.shake {
+  animation: shake 0.6s ease-in-out;
+}
+
+/* Float animation for prompt words */
+@keyframes float {
   0% {
-    transform: scale(1);
-    opacity: 1;
+    transform: translateY(0px);
   }
   50% {
-    transform: scale(1.1);
-    opacity: 0.8;
+    transform: translateY(-10px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+.float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Bounce animation for power-ups */
+@keyframes bounce-in {
+  0% {
+    transform: scale(0.3) rotate(-180deg);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.05) rotate(0deg);
+  }
+  70% {
+    transform: scale(0.9);
   }
   100% {
     transform: scale(1);
@@ -84,15 +203,45 @@
   }
 }
 
-.emphasis {
-  animation: emphasis 2s ease infinite;
+.bounce-in {
+  animation: bounce-in 0.6s ease-out forwards;
 }
 
-/* Fade in for options */
+/* Gradient text animation */
+@keyframes gradient-x {
+  0%, 100% {
+    background-size: 200% 200%;
+    background-position: left center;
+  }
+  50% {
+    background-size: 200% 200%;
+    background-position: right center;
+  }
+}
+
+.gradient-animate {
+  animation: gradient-x 3s ease infinite;
+}
+
+/* Staggered fade in animations */
+.stagger-fade-in {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.stagger-fade-in:nth-child(1) { animation: fadeIn 0.6s ease forwards 0.1s; }
+.stagger-fade-in:nth-child(2) { animation: fadeIn 0.6s ease forwards 0.2s; }
+.stagger-fade-in:nth-child(3) { animation: fadeIn 0.6s ease forwards 0.3s; }
+.stagger-fade-in:nth-child(4) { animation: fadeIn 0.6s ease forwards 0.4s; }
+.stagger-fade-in:nth-child(5) { animation: fadeIn 0.6s ease forwards 0.5s; }
+.stagger-fade-in:nth-child(6) { animation: fadeIn 0.6s ease forwards 0.6s; }
+.stagger-fade-in:nth-child(7) { animation: fadeIn 0.6s ease forwards 0.7s; }
+.stagger-fade-in:nth-child(8) { animation: fadeIn 0.6s ease forwards 0.8s; }
+
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(20px);
   }
   to {
     opacity: 1;
@@ -100,20 +249,131 @@
   }
 }
 
-.fade-in {
-  animation: fadeIn 0.5s ease forwards;
+/* Magnetic effect for word magnet power-up */
+@keyframes magnetic-pull {
+  0% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+  50% {
+    transform: scale(1.1);
+    filter: brightness(1.2) drop-shadow(0 0 10px rgba(249, 115, 22, 0.8));
+  }
+  100% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
 }
 
-/* Staggered fade in for options */
-.stagger-fade-in {
-  opacity: 0;
+.magnetic {
+  animation: magnetic-pull 1s ease-in-out infinite;
 }
 
-.stagger-fade-in:nth-child(1) { animation: fadeIn 0.5s ease forwards 0.1s; }
-.stagger-fade-in:nth-child(2) { animation: fadeIn 0.5s ease forwards 0.2s; }
-.stagger-fade-in:nth-child(3) { animation: fadeIn 0.5s ease forwards 0.3s; }
-.stagger-fade-in:nth-child(4) { animation: fadeIn 0.5s ease forwards 0.4s; }
-.stagger-fade-in:nth-child(5) { animation: fadeIn 0.5s ease forwards 0.5s; }
-.stagger-fade-in:nth-child(6) { animation: fadeIn 0.5s ease forwards 0.6s; }
-.stagger-fade-in:nth-child(7) { animation: fadeIn 0.5s ease forwards 0.7s; }
-.stagger-fade-in:nth-child(8) { animation: fadeIn 0.5s ease forwards 0.8s; } 
+/* Combo multiplier effect */
+@keyframes combo-flash {
+  0% {
+    background: linear-gradient(45deg, #8B5CF6, #EC4899);
+    transform: scale(1);
+  }
+  50% {
+    background: linear-gradient(45deg, #F59E0B, #EF4444);
+    transform: scale(1.1);
+  }
+  100% {
+    background: linear-gradient(45deg, #8B5CF6, #EC4899);
+    transform: scale(1);
+  }
+}
+
+.combo-flash {
+  animation: combo-flash 0.5s ease-in-out;
+}
+
+/* Power-up collection animation */
+@keyframes collect-powerup {
+  0% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.5) rotate(180deg);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(0) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+.collect-powerup {
+  animation: collect-powerup 0.8s ease-in-out forwards;
+}
+
+/* Game mode specific styles */
+.speed-mode {
+  border-left: 4px solid #facc15;
+}
+
+.chain-mode {
+  border-left: 4px solid #60a5fa;
+}
+
+.survival-mode {
+  border-left: 4px solid #f87171;
+}
+
+.battle-mode {
+  border-left: 4px solid #a78bfa;
+}
+
+/* Achievement notification */
+@keyframes achievement-popup {
+  0% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  10% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  90% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+.achievement-popup {
+  animation: achievement-popup 4s ease-in-out forwards;
+}
+
+/* Loading spinner for dynamic content */
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-spinner {
+  animation: spin 1s linear infinite;
+}
+
+/* Enhanced mobile responsiveness */
+@media (max-width: 640px) {
+  .word-option {
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    min-height: 60px;
+  }
+  
+  .word-options-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+  }
+} 

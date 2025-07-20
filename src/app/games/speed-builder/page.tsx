@@ -326,7 +326,7 @@ const LanguageSelectionPage: React.FC<{
           </Link>
           <div className="text-center">
             <h1 className="text-4xl font-bold text-white mb-2">
-              Speed Builder
+              Sentence Sprint
             </h1>
             <p className="text-blue-200">Choose your language and curriculum level</p>
           </div>
