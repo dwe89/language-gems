@@ -5,6 +5,10 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { IoChevronBackOutline, IoExpandOutline, IoContractOutline } from 'react-icons/io5';
+import { BookOpen } from 'lucide-react';
+import CategorySelector from '../../../components/games/CategorySelector';
+import { useVocabularyByCategory } from '../../../hooks/useVocabulary';
+import { KS3_SPANISH_CATEGORIES, getCategoryById } from '../../../utils/categories';
 import HangmanGameWrapper from './components/HangmanGameWrapper';
 import GameSettings from './components/GameSettings';
 
@@ -26,6 +30,22 @@ export default function HangmanPage() {
     bestStreak: 0,
   });
   const [isFullscreen, setIsFullscreen] = useState(false);
+  
+  // Category selection state
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [selectedSubcategory, setSelectedSubcategory] = useState<string>('');
+  const [showCategorySelector, setShowCategorySelector] = useState(false);
+  
+  // Use category-based vocabulary when categories are selected
+  const { 
+    vocabulary: categoryVocabulary, 
+    loading: categoryLoading, 
+    error: categoryError 
+  } = useVocabularyByCategory({
+    language: 'spanish',
+    categoryId: selectedCategory || undefined,
+    subcategoryId: selectedSubcategory || undefined
+  });
 
   // Load stats from localStorage
   useEffect(() => {
@@ -158,6 +178,58 @@ export default function HangmanPage() {
               className={`${isFullscreen ? 'flex-grow flex items-center justify-center' : ''}`}
             >
               <div className={`max-w-3xl mx-auto ${isFullscreen ? 'w-full' : ''}`}>
+                {/* Category Selection */}
+                <div className="mb-6 bg-white rounded-lg shadow-md p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-gray-800">Choose Topics</h3>
+                    <button
+                      onClick={() => setShowCategorySelector(true)}
+                      className="flex items-center space-x-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+                    >
+                      <BookOpen className="h-4 w-4" />
+                      <span>Select Topics</span>
+                    </button>
+                  </div>
+                  
+                  {selectedCategory && selectedCategory !== '' && (
+                    <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <div className="flex items-center space-x-2">
+                          <span className="text-sm font-medium text-purple-800">
+                            {getCategoryById(selectedCategory)?.name || selectedCategory}
+                          </span>
+                          {selectedSubcategory && selectedSubcategory !== '' && (
+                            <>
+                              <span className="text-purple-600">→</span>
+                              <span className="text-sm text-purple-700">{selectedSubcategory}</span>
+                            </>
+                          )}
+                        </div>
+                        <div className="text-xs text-purple-600 bg-purple-200 px-2 py-1 rounded-full">
+                          {categoryLoading ? 'Loading...' : `${categoryVocabulary?.length || 0} words`}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setSelectedCategory('');
+                          setSelectedSubcategory('');
+                        }}
+                        className="text-purple-600 hover:text-purple-800 p-1"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  )}
+                  
+                  {(!selectedCategory || selectedCategory === '') && (
+                    <div className="text-center py-4 text-gray-500">
+                      <BookOpen className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+                      <p>Select topics to practice specific vocabulary</p>
+                      <p className="text-sm">or continue with default categories</p>
+                    </div>
+                  )}
+                </div>
+
                 <GameSettings 
                   onStartGame={handleStartGame}
                 />
@@ -197,7 +269,10 @@ export default function HangmanPage() {
               className={`${isFullscreen ? 'flex-grow w-full h-full' : ''}`}
             >
               <HangmanGameWrapper 
-                settings={settings} 
+                settings={{
+                  ...settings,
+                  categoryVocabulary: selectedCategory && selectedCategory !== '' ? categoryVocabulary : undefined
+                }} 
                 onBackToMenu={handleBackToMenu} 
                 onGameEnd={handleGameEnd}
                 isFullscreen={isFullscreen}
@@ -205,6 +280,18 @@ export default function HangmanPage() {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Category Selection Modal */}
+        {showCategorySelector && (
+          <CategorySelector 
+            onCategorySelect={(categoryId, subcategoryId) => {
+              setSelectedCategory(categoryId);
+              setSelectedSubcategory(subcategoryId || '');
+              setShowCategorySelector(false);
+            }}
+            selectedLanguage="es"
+          />
+        )}
       </div>
     </div>
   );

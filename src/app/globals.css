@@ -325,7 +325,7 @@ body {
   }
 }
 
-/* Custom animations for Gem Collector game */
+/* Custom animations for VocabMaster game */
 @keyframes float {
   0%, 100% { transform: translateY(0px); }
   50% { transform: translateY(-20px); }

@@ -13,12 +13,16 @@ import {
   Award,
   Settings,
   Home,
-  Gem
+  Gem,
+  BookOpen
 } from 'lucide-react';
 import { createBrowserClient } from '@supabase/ssr';
 import { useSearchParams } from 'next/navigation';
 import confetti from 'canvas-confetti';
 import { motion, AnimatePresence } from 'framer-motion';
+import CategorySelector from '../../../components/games/CategorySelector';
+import { useVocabularyByCategory } from '../../../hooks/useVocabulary';
+import { KS3_SPANISH_CATEGORIES, getCategoryById } from '../../../utils/categories';
 import { 
   WordItem, 
   PowerUp, 
@@ -404,10 +408,51 @@ export default function GemWordBlastGame() {
     }
   });
   
+  // Category selection state
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [selectedSubcategory, setSelectedSubcategory] = useState<string>('');
+  const [showCategorySelector, setShowCategorySelector] = useState(false);
+  
+  // Use category-based vocabulary when categories are selected
+  const { 
+    vocabulary: categoryVocabulary, 
+    loading: categoryLoading, 
+    error: categoryError 
+  } = useVocabularyByCategory({
+    language: 'spanish',
+    categoryId: selectedCategory || undefined,
+    subcategoryId: selectedSubcategory || undefined
+  });
+  
   const [timeLeft, setTimeLeft] = useState(gameSettings.timeLimit);
   const [lives, setLives] = useState(3);
   const [assignmentId, setAssignmentId] = useState<string | null>(null);
   const [isPaused, setIsPaused] = useState(false);
+
+  // Generate challenges from vocabulary
+  const generateVocabularyChallenge = (vocabulary: any[]) => {
+    if (!vocabulary || vocabulary.length === 0) return null;
+    
+    // Select 3-5 random words for this challenge
+    const shuffled = [...vocabulary].sort(() => 0.5 - Math.random());
+    const selectedWords = shuffled.slice(0, Math.min(4, vocabulary.length));
+    
+    return {
+      english: `Collect the Spanish words: ${selectedWords.map(w => w.translation).join(', ')}`,
+      spanish: selectedWords.map(w => w.word).join(' '),
+      words: selectedWords.map(w => w.word.toLowerCase())
+    };
+  };
+
+  // Update currentChallenge when vocabulary changes
+  useEffect(() => {
+    if (selectedCategory && selectedCategory !== '' && categoryVocabulary && categoryVocabulary.length > 0) {
+      const newChallenge = generateVocabularyChallenge(categoryVocabulary);
+      if (newChallenge) {
+        setCurrentChallenge(newChallenge);
+      }
+    }
+  }, [selectedCategory, selectedSubcategory, categoryVocabulary]);
   const [isClient, setIsClient] = useState(false);
   const [backgroundParticles, setBackgroundParticles] = useState<Array<{
     id: number;
@@ -654,8 +699,59 @@ export default function GemWordBlastGame() {
           </div>
         </header>
 
+        {/* Category Selection */}
+        {gameState === 'ready' && (
+          <div className="absolute top-20 left-0 right-0 z-10 bg-slate-800/90 backdrop-blur-sm border-b border-slate-700/50">
+            <div className="max-w-7xl mx-auto px-6 py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <h3 className="text-lg font-semibold text-white">Choose Topics</h3>
+                  {selectedCategory && selectedCategory !== '' && (
+                    <div className="flex items-center space-x-3 px-3 py-1 bg-orange-500/20 rounded-lg border border-orange-500/30">
+                      <span className="text-sm font-medium text-orange-200">
+                        {getCategoryById(selectedCategory)?.name || selectedCategory}
+                      </span>
+                      {selectedSubcategory && selectedSubcategory !== '' && (
+                        <>
+                          <span className="text-orange-400">→</span>
+                          <span className="text-sm text-orange-300">{selectedSubcategory}</span>
+                        </>
+                      )}
+                      <div className="text-xs text-orange-300 bg-orange-500/20 px-2 py-0.5 rounded-full">
+                        {categoryLoading ? 'Loading...' : `${categoryVocabulary?.length || 0} words`}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="flex items-center space-x-3">
+                  <button
+                    onClick={() => setShowCategorySelector(true)}
+                    className="flex items-center space-x-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors"
+                  >
+                    <BookOpen className="h-4 w-4" />
+                    <span>Select Topics</span>
+                  </button>
+                  
+                  {selectedCategory && selectedCategory !== '' && (
+                    <button
+                      onClick={() => {
+                        setSelectedCategory('');
+                        setSelectedSubcategory('');
+                      }}
+                      className="px-3 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg transition-colors text-sm"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Main Game Area */}
-        <div className="pt-20 h-screen">
+        <div className={`h-screen ${gameState === 'ready' ? 'pt-32' : 'pt-20'}`}>
           {gameState === 'ready' && (
             <div className="flex items-center justify-center min-h-[calc(100vh-5rem)]">
               <motion.div

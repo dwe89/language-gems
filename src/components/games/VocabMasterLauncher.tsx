@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   BookOpen, Target, Brain, Clock, Trophy,
-  BarChart3, Calendar, Zap, Settings, Home
+  BarChart3, Calendar, Zap, Settings, Home, Volume2, FileText
 } from 'lucide-react';
 import { useAuth } from '../auth/AuthProvider';
 import { useSupabase } from '../supabase/SupabaseProvider';
@@ -63,29 +63,47 @@ const LEARNING_MODES: LearningMode[] = [
   {
     id: 'learn_new',
     name: 'Learn New Words',
-    description: 'Discover and learn new vocabulary with spaced repetition',
+    description: 'Discover and learn new vocabulary with context and examples',
     icon: <BookOpen className="h-6 w-6" />,
     color: 'blue',
-    features: ['Introduction to new words', 'Audio pronunciation', 'Example sentences', 'Spaced repetition'],
+    features: ['New vocabulary introduction', 'Audio pronunciation', 'Context exercises', 'Example sentences'],
     estimatedTime: '10-15 min',
   },
   {
     id: 'review_weak',
     name: 'Review Weak Words',
-    description: 'Focus on words you struggle with most',
+    description: 'Focus on words you struggle with using varied exercises',
     icon: <Target className="h-6 w-6" />,
     color: 'orange',
-    features: ['Adaptive difficulty', 'Personalized review', 'Weakness targeting'],
+    features: ['Adaptive difficulty', 'Multiple exercise types', 'Listening practice', 'Context exercises'],
     estimatedTime: '5-10 min',
   },
   {
     id: 'spaced_repetition',
-    name: 'Spaced Review',
-    description: 'Review words at optimal intervals for long-term retention',
+    name: 'Smart Review',
+    description: 'AI-powered review with listening and context exercises',
     icon: <Brain className="h-6 w-6" />,
     color: 'purple',
-    features: ['Science-based intervals', 'Long-term retention', 'Automated scheduling'],
+    features: ['Spaced repetition algorithm', 'Audio exercises', 'Fill-in-the-blank', 'Context practice'],
     estimatedTime: '5-20 min',
+  },
+  {
+    id: 'listening_practice',
+    name: 'Listening Practice',
+    description: 'Focus on audio comprehension and pronunciation',
+    icon: <Volume2 className="h-6 w-6" />,
+    color: 'green',
+    features: ['Audio-first learning', 'Pronunciation practice', 'Listening comprehension', 'Replay options'],
+    estimatedTime: '10-15 min',
+  },
+  {
+    id: 'context_practice',
+    name: 'Context & Sentences',
+    description: 'Learn words through real sentence examples and context',
+    icon: <FileText className="h-6 w-6" />,
+    color: 'indigo',
+    features: ['Real sentence contexts', 'Fill-in-the-blank exercises', 'Usage examples', 'Grammar integration'],
+    estimatedTime: '8-12 min',
   },
   {
     id: 'speed_review',
@@ -93,7 +111,7 @@ const LEARNING_MODES: LearningMode[] = [
     description: 'Quick-fire review to improve recall speed',
     icon: <Zap className="h-6 w-6" />,
     color: 'yellow',
-    features: ['Timed challenges', 'Speed improvement', 'Reaction time training'],
+    features: ['Timed challenges', 'Speed improvement', 'Reaction time training', 'Rapid recall'],
     estimatedTime: '3-5 min',
   }
 ];

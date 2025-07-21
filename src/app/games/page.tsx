@@ -325,14 +325,14 @@ export default function GamesPage() {
           path: '/games/language-garden'
         },
         {
-          id: 'gem-collector',
-          name: 'Gem Collector',
-          description: 'Move up and down to collect the correct translation gems while avoiding wrong ones! A fast-paced language learning adventure.',
-          thumbnail: '/images/games/gem-collector.jpg',
+          id: 'vocab-master',
+          name: 'VocabMaster',
+          description: 'Master vocabulary with intelligent spaced repetition, listening exercises, and context-based learning.',
+          thumbnail: '/images/games/vocab-master.jpg',
           category: 'vocabulary',
           popular: true,
           languages: ['English', 'Spanish', 'French', 'German', 'Italian', 'Portuguese'],
-          path: '/games/gem-collector'
+          path: '/games/vocab-master'
         },
         {
           id: 'speed-builder',

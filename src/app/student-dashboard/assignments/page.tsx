@@ -120,7 +120,7 @@ const AssignmentCard = ({
         </Link>
         {assignment.status !== 'completed' && (
           <Link
-            href={assignment.type === 'gem-collector' ? '/games/gem-collector' : '/student-dashboard/games'}
+            href={assignment.type === 'vocab-master' ? '/games/vocab-master' : '/student-dashboard/games'}
             className="bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-4 rounded-lg transition-colors text-sm font-medium"
           >
             Free Play

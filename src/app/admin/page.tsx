@@ -12,7 +12,9 @@ import {
   Eye,
   FileText,
   ShoppingCart,
-  Calendar
+  Calendar,
+  Database,
+  Volume2
 } from 'lucide-react';
 
 interface DashboardStats {
@@ -113,6 +115,13 @@ export default function AdminDashboardPage() {
       color: 'bg-gradient-to-r from-purple-500 to-orange-500 hover:from-purple-600 hover:to-orange-600',
     },
     {
+      title: 'Vocabulary Management',
+      description: 'Manage your centralized vocabulary database and audio files',
+      href: '/admin/vocabulary',
+      icon: Database,
+      color: 'bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600',
+    },
+    {
       title: 'Add New Product',
       description: 'Upload a new educational PDF and create a product',
       href: '/admin/new',
@@ -130,10 +139,10 @@ export default function AdminDashboardPage() {
 
   const upcomingFeatures = [
     {
-      title: 'Order Management',
-      description: 'Track and manage customer orders',
-      icon: FileText,
-      status: 'Coming Soon',
+      title: 'Bulk Audio Generation',
+      description: 'Generate audio files for vocabulary in bulk',
+      icon: Volume2,
+      status: 'Available',
     },
     {
       title: 'Analytics Dashboard',

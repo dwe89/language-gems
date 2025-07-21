@@ -49,14 +49,14 @@ const AVAILABLE_GAMES = [
     path: '/games/speed-builder'
   },
   { 
-    id: 'gem-collector', 
-    name: 'Gem Collector', 
-    description: 'Collect translation gems while avoiding wrong answers in this fast-paced adventure',
+    id: 'vocab-master', 
+    name: 'VocabMaster', 
+    description: 'Master vocabulary with intelligent spaced repetition and adaptive learning exercises',
     icon: <Star className="text-purple-500" size={20} />,
     category: 'vocabulary',
-    difficulty: 'beginner',
-    timeToComplete: '3-8 min',
-    path: '/games/gem-collector'
+    difficulty: 'intermediate',
+    timeToComplete: '5-15 min',
+    path: '/games/vocab-master'
   },
   { 
     id: 'translation-tycoon', 
@@ -467,7 +467,7 @@ export default function NewAssignmentPage() {
 
         if (activity.id === 'vocabulary-mining') {
           gameConfig = miningSettings;
-        } else if (activity.id === 'gem-collector') {
+        } else if (activity.id === 'vocab-master') {
           const form = e.target as HTMLFormElement;
           const formData = new FormData(form);
 
@@ -894,7 +894,7 @@ export default function NewAssignmentPage() {
             </div>
 
             {/* Gem Collector Settings */}
-            {selectedActivities.some(activity => activity.id === 'gem-collector') && (
+            {selectedActivities.some(activity => activity.id === 'vocab-master') && (
               <div className="bg-white rounded-xl shadow-lg p-6 border border-purple-100">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                   <Star className="mr-2 text-purple-600" size={20} />

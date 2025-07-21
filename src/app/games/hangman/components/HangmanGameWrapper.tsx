@@ -12,6 +12,7 @@ interface HangmanGameWrapperProps {
     language: string;
     theme: string;
     customWords?: string[];
+    categoryVocabulary?: any[]; // From the category selection system
   };
   onBackToMenu: () => void;
   onGameEnd?: (result: 'win' | 'lose') => void;
@@ -91,13 +92,71 @@ export default function HangmanGameWrapper(props: HangmanGameWrapperProps) {
 
   useEffect(() => {
     loadVocabulary();
-  }, [props.settings.language, props.settings.category]);
+  }, [props.settings.language, props.settings.category, props.settings.categoryVocabulary]);
 
   const loadVocabulary = async () => {
     try {
       setIsLoading(true);
       setError(null);
 
+      // Check if we have category vocabulary from the category selector
+      if (props.settings.categoryVocabulary && props.settings.categoryVocabulary.length > 0) {
+        console.log('Using category-selected vocabulary:', props.settings.categoryVocabulary.length, 'words');
+        
+        // Transform category vocabulary to the expected format
+        const transformedVocabulary = props.settings.categoryVocabulary.map(item => ({
+          id: item.id,
+          word: item.word,
+          translation: item.translation,
+          language: item.language || 'spanish',
+          category: item.category || 'general',
+          subcategory: item.subcategory,
+          part_of_speech: item.part_of_speech,
+          difficulty_level: item.difficulty_level || 'beginner',
+          audio_url: item.audio_url,
+          example_sentence: item.example_sentence,
+          example_translation: item.example_translation
+        }));
+
+        // Organize by difficulty
+        const organizedVocabulary: VocabularyPool = {};
+        const language = props.settings.language === 'spanish' ? 'es' : props.settings.language;
+        const category = 'selected_topics';
+
+        organizedVocabulary[language] = {
+          [category]: {
+            beginner: transformedVocabulary.filter(w => 
+              !w.difficulty_level || w.difficulty_level === 'beginner' || w.word.length <= 6
+            ),
+            intermediate: transformedVocabulary.filter(w => 
+              w.difficulty_level === 'intermediate' || (w.word.length > 6 && w.word.length <= 10)
+            ),
+            advanced: transformedVocabulary.filter(w => 
+              w.difficulty_level === 'advanced' || w.word.length > 10
+            )
+          }
+        };
+
+        // Ensure we have words in each difficulty level by redistributing if needed
+        if (organizedVocabulary[language][category].beginner.length === 0) {
+          organizedVocabulary[language][category].beginner = transformedVocabulary.slice(0, Math.ceil(transformedVocabulary.length / 3));
+        }
+        if (organizedVocabulary[language][category].intermediate.length === 0) {
+          organizedVocabulary[language][category].intermediate = transformedVocabulary.slice(
+            Math.ceil(transformedVocabulary.length / 3), 
+            Math.ceil(transformedVocabulary.length * 2 / 3)
+          );
+        }
+        if (organizedVocabulary[language][category].advanced.length === 0) {
+          organizedVocabulary[language][category].advanced = transformedVocabulary.slice(Math.ceil(transformedVocabulary.length * 2 / 3));
+        }
+
+        setVocabularyPool(organizedVocabulary);
+        setIsLoading(false);
+        return;
+      }
+
+      // Original vocabulary loading logic when no category is selected
       const vocabularyService = new CentralizedVocabularyService(supabase);
       const mappedLanguage = mapLanguage(props.settings.language);
       const mappedCategory = mapCategory(props.settings.category);

@@ -36,8 +36,8 @@ interface GameOption {
 
 const AVAILABLE_GAMES: GameOption[] = [
   {
-    id: 'gem-collector',
-    name: 'Gem Collector',
+    id: 'vocab-master',
+    name: 'VocabMaster',
     description: 'Collect translation gems while avoiding wrong answers in this fast-paced adventure',
     icon: <Star className="h-5 w-5" />,
     color: 'from-purple-500 to-blue-500',
@@ -45,18 +45,6 @@ const AVAILABLE_GAMES: GameOption[] = [
     difficulty: 'beginner',
     estimatedTime: '3-8 min',
     features: ['Power-ups', 'Real-time scoring', 'Lives system'],
-    type: 'vocabulary'
-  },
-  {
-    id: 'memory-game',
-    name: 'Memory Match',
-    description: 'Match vocabulary pairs in this memory-building card game',
-    icon: <Brain className="h-5 w-5" />,
-    color: 'from-pink-500 to-rose-500',
-    category: 'vocabulary',
-    difficulty: 'beginner',
-    estimatedTime: '5-10 min',
-    features: ['Memory training', 'Progressive difficulty', 'Visual learning'],
     type: 'vocabulary'
   },
   {
@@ -69,30 +57,6 @@ const AVAILABLE_GAMES: GameOption[] = [
     difficulty: 'intermediate',
     estimatedTime: '8-15 min',
     features: ['Strategy gameplay', 'Economic simulation', 'Progress tracking'],
-    type: 'vocabulary'
-  },
-  {
-    id: 'hangman',
-    name: 'Hangman',
-    description: 'Guess the word letter by letter before running out of chances',
-    icon: <Type className="h-5 w-5" />,
-    color: 'from-red-500 to-pink-500',
-    category: 'vocabulary',
-    difficulty: 'beginner',
-    estimatedTime: '3-7 min',
-    features: ['Classic gameplay', 'Letter hints', 'Multiple chances'],
-    type: 'vocabulary'
-  },
-  {
-    id: 'word-scramble',
-    name: 'Word Scramble',
-    description: 'Unscramble letters to form the correct translation',
-    icon: <Shuffle className="h-5 w-5" />,
-    color: 'from-blue-500 to-cyan-500',
-    category: 'vocabulary',
-    difficulty: 'intermediate',
-    estimatedTime: '4-8 min',
-    features: ['Letter manipulation', 'Hint system', 'Time bonuses'],
     type: 'vocabulary'
   },
   {
@@ -141,18 +105,6 @@ const AVAILABLE_GAMES: GameOption[] = [
     difficulty: 'beginner',
     estimatedTime: '5-12 min',
     features: ['Action gameplay', 'Visual effects', 'Score multipliers'],
-    type: 'vocabulary'
-  },
-  {
-    id: 'noughts-and-crosses',
-    name: 'Tic-Tac-Toe',
-    description: 'Win at tic-tac-toe by answering vocabulary questions correctly',
-    icon: <Target className="h-5 w-5" />,
-    color: 'from-gray-500 to-slate-500',
-    category: 'vocabulary',
-    difficulty: 'beginner',
-    estimatedTime: '3-6 min',
-    features: ['Classic game', 'Quick rounds', 'Strategic thinking'],
     type: 'vocabulary'
   }
 ];

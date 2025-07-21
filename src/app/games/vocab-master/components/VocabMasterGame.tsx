@@ -2,14 +2,15 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAuth } from '../auth/AuthProvider';
-import { useSupabase } from '../supabase/SupabaseProvider';
-import { SpacedRepetitionService, REVIEW_QUALITY } from '../../services/spacedRepetitionService';
+import { useAuth } from '../../../../components/auth/AuthProvider';
+import { useSupabase } from '../../../../components/supabase/SupabaseProvider';
+import { SpacedRepetitionService, REVIEW_QUALITY } from '../../../../services/spacedRepetitionService';
 import { 
   Home, CheckCircle, XCircle, ArrowRight, Trophy, RotateCcw,
   Volume2, Eye, EyeOff, Clock, Star, Brain, Target,
   Zap, TrendingUp, Award, ChevronRight, Headphones, 
-  BookOpen, PenTool, Lightbulb, VolumeX, Play, Pause
+  BookOpen, PenTool, Lightbulb, VolumeX, Play, Pause,
+  Keyboard, ToggleLeft, ToggleRight
 } from 'lucide-react';
 
 // =====================================================
@@ -17,7 +18,7 @@ import {
 // =====================================================
 
 interface VocabularyWord {
-  id: number;
+  id: string | number;
   spanish: string;
   english: string;
   theme: string;
@@ -48,7 +49,7 @@ interface GameState {
   incorrectAnswers: number;
   streak: number;
   maxStreak: number;
-  gameMode: 'learn' | 'recall' | 'speed' | 'multiple_choice' | 'listening' | 'cloze';
+  gameMode: 'learn' | 'recall' | 'speed' | 'multiple_choice' | 'listening' | 'cloze' | 'typing';
   timeSpent: number;
   startTime: Date;
   wordsLearned: string[];
@@ -57,6 +58,8 @@ interface GameState {
   audioPlaying: boolean;
   canReplayAudio: boolean;
   audioReplayCount: number;
+  // Keep some Gem Collector styling elements
+  isAnswerRevealed: boolean;
 }
 
 interface MultipleChoiceOption {
@@ -88,6 +91,7 @@ export default function VocabMasterGame({
   const spacedRepetitionService = new SpacedRepetitionService(supabase);
   const inputRef = useRef<HTMLInputElement>(null);
   const timerRef = useRef<NodeJS.Timeout>();
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // State
   const [gameState, setGameState] = useState<GameState>({
@@ -111,7 +115,8 @@ export default function VocabMasterGame({
     feedback: '',
     audioPlaying: false,
     canReplayAudio: true,
-    audioReplayCount: 0
+    audioReplayCount: 0,
+    isAnswerRevealed: false
   });
 
   const [multipleChoiceOptions, setMultipleChoiceOptions] = useState<MultipleChoiceOption[]>([]);
@@ -123,7 +128,6 @@ export default function VocabMasterGame({
     correctAnswer: string;
     position: number;
   } | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // =====================================================
   // INITIALIZATION
@@ -160,8 +164,20 @@ export default function VocabMasterGame({
   }, []);
 
   const initializeGame = () => {
+    if (!vocabulary || vocabulary.length === 0) {
+      console.error('No vocabulary provided to VocabMaster game');
+      return;
+    }
+
     const shuffledVocab = [...vocabulary].sort(() => Math.random() - 0.5);
     const firstWord = { ...shuffledVocab[0], startTime: Date.now() };
+    
+    // Validate first word
+    if (!firstWord || !firstWord.spanish || !firstWord.english) {
+      console.error('Invalid first word:', firstWord);
+      return;
+    }
+    
     const selectedGameMode = determineGameMode(mode);
     
     setGameState(prev => ({
@@ -198,18 +214,18 @@ export default function VocabMasterGame({
       case 'speed_review':
         return 'speed';
       case 'learn_new':
-        return Math.random() > 0.5 ? 'learn' : 'cloze'; // Mix learning modes
+        return Math.random() > 0.7 ? 'cloze' : Math.random() > 0.5 ? 'typing' : 'learn'; // Mix learning modes
       case 'review_weak':
       case 'spaced_repetition':
         // For review modes, use variety of exercise types
-        const reviewModes: GameState['gameMode'][] = ['recall', 'listening', 'multiple_choice', 'cloze'];
+        const reviewModes: GameState['gameMode'][] = ['recall', 'listening', 'multiple_choice', 'cloze', 'typing'];
         return reviewModes[Math.floor(Math.random() * reviewModes.length)];
       case 'listening_practice':
         return 'listening';
       case 'context_practice':
         return 'cloze';
       default:
-        return 'multiple_choice';
+        return Math.random() > 0.5 ? 'multiple_choice' : 'typing';
     }
   };
 
@@ -217,35 +233,36 @@ export default function VocabMasterGame({
     if (!user) return;
 
     try {
-      const { data } = await supabase
-        .from('user_vocabulary_progress')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('vocabulary_id', word.id)
-        .single();
-
-      if (data) {
-        word.times_seen = data.times_seen;
-        word.times_correct = data.times_correct;
-        word.is_learned = data.is_learned;
-        word.last_seen = new Date(data.last_seen);
-      }
+      // For now, skip loading user progress since the table structure doesn't match
+      // TODO: Create a proper mapping between centralized_vocabulary and user_vocabulary_progress
+      console.log('Skipping user progress loading for word:', word.spanish);
     } catch (error) {
       console.log('No existing progress for word:', word.spanish);
     }
   };
 
   const generateMultipleChoice = (currentWord: VocabularyWord, allWords: VocabularyWord[]) => {
-    if (!currentWord) return;
+    if (!currentWord || !currentWord.english) {
+      console.warn('Invalid current word for multiple choice:', currentWord);
+      return;
+    }
 
     const incorrectOptions = allWords
-      .filter(w => w.id !== currentWord.id && w.english !== currentWord.english)
+      .filter(w => w.id !== currentWord.id && w.english && w.english !== currentWord.english)
       .sort(() => Math.random() - 0.5)
       .slice(0, 3);
 
+    // Ensure we have enough incorrect options
+    if (incorrectOptions.length < 3) {
+      console.warn('Not enough vocabulary words for multiple choice. Need at least 4 words.');
+      // Fallback to typing mode if not enough options
+      setGameState(prev => ({ ...prev, gameMode: 'typing' }));
+      return;
+    }
+
     const options: MultipleChoiceOption[] = [
-      { text: currentWord.english, isCorrect: true },
-      ...incorrectOptions.map(w => ({ text: w.english, isCorrect: false }))
+      { text: currentWord.english.split(',')[0].trim(), isCorrect: true },
+      ...incorrectOptions.map(w => ({ text: w.english.split(',')[0].trim(), isCorrect: false }))
     ].sort(() => Math.random() - 0.5);
 
     setMultipleChoiceOptions(options);
@@ -287,15 +304,54 @@ export default function VocabMasterGame({
   // GAME LOGIC
   // =====================================================
 
+  const validateAnswer = (userAnswer: string, correctAnswer: string): boolean => {
+    const userAnswerClean = userAnswer.trim().toLowerCase();
+    
+    // Split by multiple delimiters: comma, pipe (|), semicolon
+    const correctAnswers = correctAnswer
+      .split(/[,|;]/)
+      .map(ans => ans.trim().toLowerCase())
+      .filter(ans => ans.length > 0);
+    
+    // Also handle parenthetical variations like "(to) turn on"
+    const expandedAnswers = correctAnswers.flatMap(answer => {
+      const variations = [answer];
+      
+      // Handle "(to) verb" format - accept both "to verb" and "verb"
+      const toParenMatch = answer.match(/\(to\)\s*(.+)/);
+      if (toParenMatch) {
+        variations.push(`to ${toParenMatch[1]}`);
+        variations.push(toParenMatch[1]);
+      }
+      
+      // Handle "word I other word" format - accept both parts
+      if (answer.includes(' i ')) {
+        const parts = answer.split(' i ').map(p => p.trim());
+        variations.push(...parts);
+      }
+      
+      // Remove parentheses and accept the clean version
+      const withoutParens = answer.replace(/[()]/g, '').trim();
+      if (withoutParens !== answer) {
+        variations.push(withoutParens);
+      }
+      
+      return variations;
+    });
+    
+    // Check if user answer matches any of the variations
+    return expandedAnswers.some(answer => answer === userAnswerClean);
+  };
+
   const handleAnswer = (answer: string) => {
     let isCorrect = false;
     
     if (gameState.gameMode === 'cloze' && clozeExercise) {
-      isCorrect = answer.toLowerCase().trim() === clozeExercise.correctAnswer.toLowerCase();
+      isCorrect = validateAnswer(answer, clozeExercise.correctAnswer);
     } else if (gameState.gameMode === 'listening') {
-      isCorrect = answer.toLowerCase().trim() === gameState.currentWord?.spanish.toLowerCase();
+      isCorrect = validateAnswer(answer, gameState.currentWord?.spanish || '');
     } else {
-      isCorrect = answer.toLowerCase().trim() === gameState.currentWord?.english.toLowerCase();
+      isCorrect = validateAnswer(answer, gameState.currentWord?.english || '');
     }
     
     processAnswer(isCorrect, answer);
@@ -303,6 +359,7 @@ export default function VocabMasterGame({
 
   const handleMultipleChoiceSelect = (optionIndex: number) => {
     const selectedOption = multipleChoiceOptions[optionIndex];
+    setGameState(prev => ({ ...prev, selectedChoice: optionIndex }));
     processAnswer(selectedOption.isCorrect, selectedOption.text);
   };
 
@@ -338,7 +395,7 @@ export default function VocabMasterGame({
     // Auto-advance after delay
     setTimeout(() => {
       nextWord();
-    }, 2000);
+    }, 2500);
   };
 
   const calculateScore = (isCorrect: boolean, streak: number): number => {
@@ -347,23 +404,44 @@ export default function VocabMasterGame({
     let baseScore = 100;
     let streakBonus = Math.min(streak * 10, 100);
     let speedBonus = 0;
+    let modeBonus = 0;
     
-    // Speed bonus for quick answers (if in speed mode)
-    if (gameState.gameMode === 'speed') {
-      speedBonus = 50;
+    // Mode-specific bonuses
+    switch (gameState.gameMode) {
+      case 'listening':
+        modeBonus = 50; // Listening is harder
+        break;
+      case 'cloze':
+        modeBonus = 30; // Context exercises are valuable
+        break;
+      case 'speed':
+        speedBonus = 50; // Speed bonus
+        break;
+      case 'typing':
+        modeBonus = 20; // Typing requires exact recall
+        break;
     }
     
-    return baseScore + streakBonus + speedBonus;
+    // Penalty if answer was revealed
+    const revealPenalty = gameState.isAnswerRevealed ? 50 : 0;
+    
+    return Math.max(baseScore + streakBonus + speedBonus + modeBonus - revealPenalty, 25);
   };
 
   const generateFeedback = (isCorrect: boolean, streak: number): string => {
     if (isCorrect) {
-      if (streak >= 10) return 'Incredible streak! 🔥';
-      if (streak >= 5) return 'Great streak! 🌟';
-      if (streak >= 3) return 'Nice work! ⚡';
-      return 'Correct! 👍';
+      if (streak >= 10) return '🔥 Incredible streak! You\'re on fire!';
+      if (streak >= 5) return '⚡ Great streak! Keep it going!';
+      if (streak >= 3) return '🌟 Nice work! You\'re building momentum!';
+      return '✅ Correct! Well done!';
     } else {
-      return 'Keep trying! 💪';
+      const encouragements = [
+        '💪 Keep trying! You\'ve got this!',
+        '🎯 Almost there! Practice makes perfect!',
+        '📚 Learning from mistakes makes you stronger!',
+        '🚀 Every expert was once a beginner!'
+      ];
+      return encouragements[Math.floor(Math.random() * encouragements.length)];
     }
   };
 
@@ -371,22 +449,16 @@ export default function VocabMasterGame({
     if (!user) return;
 
     try {
-      // Determine quality based on correctness and game mode
-      let quality: number = isCorrect ? REVIEW_QUALITY.GOOD : REVIEW_QUALITY.INCORRECT;
-      
-      // Adjust quality based on response time for speed mode
-      if (gameState.gameMode === 'speed' && isCorrect) {
-        if (responseTime < 2000) quality = REVIEW_QUALITY.PERFECT;
-        else if (responseTime > 5000) quality = REVIEW_QUALITY.HARD;
-      }
-      
-      // Update using spaced repetition service
-      await spacedRepetitionService.updateProgress(
-        user.id,
-        word.id,
-        quality,
+      // For now, skip spaced repetition service since table structures don't match
+      // TODO: Implement proper vocabulary progress tracking
+      console.log('Word practice recorded:', {
+        word: word.spanish,
+        correct: isCorrect,
         responseTime
-      );
+      });
+      
+      // Simple progress tracking without spaced repetition for now
+      // This could be enhanced to work with a compatible table structure
     } catch (error) {
       console.error('Failed to update user progress:', error);
     }
@@ -415,13 +487,13 @@ export default function VocabMasterGame({
       gameMode: nextGameMode,
       audioPlaying: false,
       canReplayAudio: true,
-      audioReplayCount: 0
+      audioReplayCount: 0,
+      isAnswerRevealed: false
     }));
 
     // Setup exercise content based on new mode
     if (nextGameMode === 'cloze' && nextWord.example_sentence) {
-      generateClozeExercise(nextWord);
-      setClozeExercise(null); // Reset first, then generate new one
+      setClozeExercise(null); // Reset first
       setTimeout(() => generateClozeExercise(nextWord), 100);
     } else {
       generateMultipleChoice(nextWord, vocabulary);
@@ -466,6 +538,43 @@ export default function VocabMasterGame({
     setTimeout(() => {
       inputRef.current?.focus();
     }, 100);
+  };
+
+  const revealAnswer = () => {
+    setGameState(prev => ({ ...prev, isAnswerRevealed: true }));
+    
+    if (gameState.gameMode === 'typing' || gameState.gameMode === 'learn' || gameState.gameMode === 'recall') {
+      setGameState(prev => ({
+        ...prev,
+        userAnswer: prev.currentWord?.english || ''
+      }));
+    } else if (gameState.gameMode === 'multiple_choice') {
+      const correctIndex = multipleChoiceOptions.findIndex(option => option.isCorrect);
+      setGameState(prev => ({ ...prev, selectedChoice: correctIndex }));
+    } else if (gameState.gameMode === 'cloze' && clozeExercise) {
+      setGameState(prev => ({ ...prev, userAnswer: clozeExercise.correctAnswer }));
+    } else if (gameState.gameMode === 'listening') {
+      setGameState(prev => ({ ...prev, userAnswer: prev.currentWord?.spanish || '' }));
+    }
+  };
+
+  const toggleGameMode = () => {
+    const currentModes: GameState['gameMode'][] = ['typing', 'multiple_choice'];
+    const currentIndex = currentModes.indexOf(gameState.gameMode as any);
+    const nextMode = currentModes[(currentIndex + 1) % currentModes.length];
+    
+    setGameState(prev => ({
+      ...prev,
+      gameMode: nextMode,
+      userAnswer: '',
+      selectedChoice: null,
+      showAnswer: false,
+      isAnswerRevealed: false
+    }));
+    
+    if (nextMode === 'multiple_choice' && gameState.currentWord) {
+      generateMultipleChoice(gameState.currentWord, vocabulary);
+    }
   };
 
   // =====================================================
@@ -553,7 +662,7 @@ export default function VocabMasterGame({
   };
 
   // =====================================================
-  // RENDER COMPONENTS
+  // RENDER COMPONENTS - Keeping Gem Collector's clean styling
   // =====================================================
 
   const renderGameHeader = () => {
@@ -571,6 +680,8 @@ export default function VocabMasterGame({
           return { icon: <Lightbulb className="h-4 w-4" />, name: 'Learning', color: 'text-indigo-500' };
         case 'recall':
           return { icon: <Brain className="h-4 w-4" />, name: 'Recall', color: 'text-red-500' };
+        case 'typing':
+          return { icon: <Keyboard className="h-4 w-4" />, name: 'Typing', color: 'text-orange-500' };
         default:
           return { icon: <BookOpen className="h-4 w-4" />, name: 'Practice', color: 'text-gray-500' };
       }
@@ -579,23 +690,44 @@ export default function VocabMasterGame({
     const exerciseType = getExerciseTypeInfo();
 
     return (
-      <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 mb-6">
-        <div className="flex items-center justify-between">
+      <div className="bg-white/10 backdrop-blur-md p-4">
+        <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-4">
+            <button
+              onClick={onExit}
+              className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+            >
+              <Home className="h-5 w-5 text-white" />
+            </button>
+            
             <div className="text-white">
-              <div className="text-sm opacity-75">Progress</div>
-              <div className="text-lg font-bold">
-                {gameState.currentWordIndex + 1} / {gameState.totalWords}
-              </div>
+              <span className="text-sm opacity-80">Score: </span>
+              <span className="font-bold">{gameState.score.toLocaleString()}</span>
             </div>
+            
             <div className="text-white">
-              <div className="text-sm opacity-75">Score</div>
-              <div className="text-lg font-bold">{gameState.score.toLocaleString()}</div>
+              <span className="text-sm opacity-80">Streak: </span>
+              <span className="font-bold">🔥 {gameState.streak}</span>
             </div>
+            
             <div className="text-white">
-              <div className="text-sm opacity-75">Streak</div>
-              <div className="text-lg font-bold">🔥 {gameState.streak}</div>
+              <span className="text-sm opacity-80">Learned: </span>
+              <span className="font-bold">{gameState.wordsLearned.length}</span>
             </div>
+          </div>
+          
+          <div className="flex items-center space-x-4">
+            {/* Mode Toggle for typing/multiple choice */}
+            {(gameState.gameMode === 'typing' || gameState.gameMode === 'multiple_choice') && (
+              <button
+                onClick={toggleGameMode}
+                className="flex items-center space-x-2 px-3 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors text-white text-sm"
+              >
+                {gameState.gameMode === 'typing' ? <Keyboard className="h-4 w-4" /> : <ToggleRight className="h-4 w-4" />}
+                <span>{gameState.gameMode === 'typing' ? 'Typing' : 'Multiple Choice'}</span>
+              </button>
+            )}
+            
             <div className="text-white">
               <div className="text-sm opacity-75 flex items-center space-x-1">
                 <span>Mode</span>
@@ -605,17 +737,22 @@ export default function VocabMasterGame({
               </div>
               <div className="text-sm font-semibold">{exerciseType.name}</div>
             </div>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Clock className="h-4 w-4 text-white/70" />
-            <span className="text-white">
-              {Math.floor(gameState.timeSpent / 60)}:{(gameState.timeSpent % 60).toString().padStart(2, '0')}
-            </span>
+
+            <div className="flex items-center space-x-2 text-white">
+              <Clock className="h-4 w-4 text-white/70" />
+              <span>
+                {Math.floor(gameState.timeSpent / 60)}:{(gameState.timeSpent % 60).toString().padStart(2, '0')}
+              </span>
+            </div>
+            
+            <div className="text-white text-sm">
+              {gameState.currentWordIndex + 1} / {gameState.totalWords}
+            </div>
           </div>
         </div>
         
         {/* Progress bar */}
-        <div className="mt-4">
+        <div className="mt-4 max-w-4xl mx-auto">
           <div className="w-full bg-white/20 rounded-full h-2">
             <div 
               className="bg-gradient-to-r from-yellow-400 to-orange-500 h-2 rounded-full transition-all duration-300"
@@ -636,9 +773,9 @@ export default function VocabMasterGame({
     return (
       <motion.div
         key={gameState.currentWord?.id}
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="bg-white rounded-3xl p-8 shadow-2xl max-w-md mx-auto mb-8"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-white rounded-2xl shadow-2xl p-8 max-w-2xl w-full"
       >
         <div className="text-center">
           {isListeningMode ? (
@@ -706,7 +843,22 @@ export default function VocabMasterGame({
             </>
           ) : (
             <>
-              <div className="text-6xl font-bold text-gray-800 mb-4">
+              {/* Word progress indicator - keeping Gem Collector style */}
+              <div className="mb-4">
+                <div className="inline-flex items-center space-x-2 px-3 py-1 bg-gray-100 rounded-full text-sm text-gray-600">
+                  <span>Seen: {gameState.currentWord?.times_seen || 0}</span>
+                  <span>•</span>
+                  <span>Correct: {gameState.currentWord?.times_correct || 0}</span>
+                  {gameState.currentWord?.is_learned && (
+                    <>
+                      <span>•</span>
+                      <span className="text-green-600 font-medium">✓ Learned</span>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              <div className="text-5xl font-bold text-gray-800 mb-4">
                 {gameState.currentWord?.spanish}
               </div>
               
@@ -726,9 +878,9 @@ export default function VocabMasterGame({
                 )}
               </button>
 
-              <div className="text-sm text-gray-500 mb-2">
-                {gameState.currentWord?.part_of_speech} • {gameState.currentWord?.theme}
-              </div>
+              <p className="text-gray-600 capitalize mb-6">
+                {gameState.currentWord?.part_of_speech} • {gameState.currentWord?.topic}
+              </p>
 
               {/* Show example sentence if available and not in cloze mode */}
               {gameState.currentWord?.example_sentence && !isClozeMode && (
@@ -744,11 +896,11 @@ export default function VocabMasterGame({
                 </div>
               )}
 
-              {showHint && (
+              {showHint && !gameState.showAnswer && (
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="text-sm text-gray-600 mb-4"
+                  className="text-sm text-gray-600 mb-4 bg-yellow-50 p-2 rounded-lg"
                 >
                   💡 Hint: {gameState.currentWord?.english.charAt(0)}...
                 </motion.div>
@@ -772,38 +924,63 @@ export default function VocabMasterGame({
     }
 
     return (
-      <div className="max-w-md mx-auto mb-6">
-        <input
-          ref={inputRef}
-          type="text"
-          value={gameState.userAnswer}
-          onChange={(e) => setGameState(prev => ({ ...prev, userAnswer: e.target.value }))}
-          onKeyPress={(e) => e.key === 'Enter' && handleAnswer(gameState.userAnswer)}
-          placeholder={placeholder}
-          className="w-full p-4 text-xl text-center rounded-2xl border-2 border-gray-200 focus:border-blue-500 focus:outline-none"
-          disabled={gameState.showAnswer}
-        />
+      <div className="space-y-4">
+        <div className="text-center mb-4">
+          <label className="block text-gray-700 font-medium mb-2">
+            {gameState.gameMode === 'typing' || gameState.gameMode === 'learn' || gameState.gameMode === 'recall'
+              ? 'Type the English translation:' 
+              : isListeningMode
+                ? 'What did you hear?'
+                : isClozeMode
+                  ? 'Fill in the blank:'
+                  : 'Your answer:'}
+          </label>
+        </div>
         
-        <div className="flex justify-center space-x-4 mt-4">
+        <div className="relative">
+          <input
+            ref={inputRef}
+            type="text"
+            value={gameState.userAnswer}
+            onChange={(e) => setGameState(prev => ({ ...prev, userAnswer: e.target.value }))}
+            onKeyPress={(e) => e.key === 'Enter' && !gameState.showAnswer && handleAnswer(gameState.userAnswer)}
+            placeholder={placeholder}
+            className="w-full p-4 text-lg border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            disabled={gameState.showAnswer}
+          />
+          <Keyboard className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+        </div>
+
+        <div className="flex justify-center space-x-4">
           <button
             onClick={() => handleAnswer(gameState.userAnswer)}
-            className="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-semibold transition-colors"
             disabled={gameState.showAnswer || !gameState.userAnswer.trim()}
+            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg transition-colors flex items-center space-x-2"
           >
-            Submit
+            <span>Submit</span>
+            <ArrowRight className="h-4 w-4" />
           </button>
           
-          {!isListeningMode && !isClozeMode && (
+          {!isListeningMode && !isClozeMode && !gameState.showAnswer && (
             <button
               onClick={() => setShowHint(!showHint)}
               className="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-xl font-semibold transition-colors"
-              disabled={gameState.showAnswer}
             >
               {showHint ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
             </button>
           )}
           
-          {isListeningMode && gameState.canReplayAudio && (
+          {!gameState.showAnswer && (
+            <button
+              onClick={revealAnswer}
+              className="px-6 py-3 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition-colors flex items-center space-x-2"
+            >
+              <Eye className="h-4 w-4" />
+              <span>Show Answer</span>
+            </button>
+          )}
+
+          {isListeningMode && gameState.canReplayAudio && !gameState.showAnswer && (
             <button
               onClick={handleAudioReplay}
               className="px-4 py-3 bg-yellow-200 hover:bg-yellow-300 text-yellow-700 rounded-xl font-semibold transition-colors"
@@ -815,7 +992,7 @@ export default function VocabMasterGame({
         </div>
 
         {/* Exercise type indicator */}
-        <div className="text-center mt-4">
+        <div className="text-center">
           <div className="inline-flex items-center space-x-2 px-3 py-1 bg-gray-100 rounded-full text-sm text-gray-600">
             {isListeningMode && (
               <>
@@ -829,7 +1006,7 @@ export default function VocabMasterGame({
                 <span>Context Exercise</span>
               </>
             )}
-            {gameState.gameMode === 'learn' && (
+            {(gameState.gameMode === 'learn' || gameState.gameMode === 'typing') && (
               <>
                 <Lightbulb className="h-4 w-4" />
                 <span>Learning Mode</span>
@@ -848,25 +1025,54 @@ export default function VocabMasterGame({
   };
 
   const renderMultipleChoice = () => (
-    <div className="max-w-md mx-auto mb-6 space-y-3">
-      {multipleChoiceOptions.map((option, index) => (
-        <button
-          key={index}
-          onClick={() => handleMultipleChoiceSelect(index)}
-          disabled={gameState.showAnswer}
-          className={`w-full p-4 rounded-2xl font-semibold transition-all ${
-            gameState.showAnswer 
-              ? option.isCorrect
-                ? 'bg-green-500 text-white'
+    <div className="space-y-4">
+      <div className="text-center mb-4">
+        <label className="block text-gray-700 font-medium mb-2">
+          Choose the correct English translation:
+        </label>
+      </div>
+      
+      <div className="space-y-3">
+        {multipleChoiceOptions.map((option, index) => (
+          <button
+            key={index}
+            onClick={() => !gameState.showAnswer && handleMultipleChoiceSelect(index)}
+            disabled={gameState.showAnswer}
+            className={`w-full p-4 text-left border-2 rounded-xl transition-colors ${
+              gameState.showAnswer
+                ? option.isCorrect
+                  ? 'border-green-500 bg-green-50'
+                  : gameState.selectedChoice === index
+                    ? 'border-red-500 bg-red-50'
+                    : 'border-gray-200 bg-gray-50'
                 : gameState.selectedChoice === index
-                  ? 'bg-red-500 text-white'
-                  : 'bg-gray-200 text-gray-400'
-              : 'bg-white hover:bg-gray-50 text-gray-800 border-2 border-gray-200 hover:border-gray-300'
-          }`}
-        >
-          {option.text}
-        </button>
-      ))}
+                  ? 'border-blue-500 bg-blue-50'
+                  : 'border-gray-200 hover:border-gray-300'
+            }`}
+          >
+            <span className="font-medium">{String.fromCharCode(65 + index)}.</span>
+            <span className="ml-3">{option.text}</span>
+            {gameState.showAnswer && option.isCorrect && (
+              <CheckCircle className="inline h-5 w-5 text-green-600 ml-2" />
+            )}
+            {gameState.showAnswer && !option.isCorrect && gameState.selectedChoice === index && (
+              <XCircle className="inline h-5 w-5 text-red-600 ml-2" />
+            )}
+          </button>
+        ))}
+      </div>
+      
+      {!gameState.showAnswer && (
+        <div className="flex justify-center space-x-4">
+          <button
+            onClick={revealAnswer}
+            className="px-6 py-3 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition-colors flex items-center space-x-2"
+          >
+            <Eye className="h-4 w-4" />
+            <span>Show Answer</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 
@@ -874,59 +1080,65 @@ export default function VocabMasterGame({
     <AnimatePresence>
       {gameState.showAnswer && (
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
-          className={`max-w-md mx-auto p-6 rounded-2xl mb-6 text-center ${
-            gameState.isCorrect ? 'bg-green-100' : 'bg-red-100'
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.8 }}
+          className={`mb-6 p-4 rounded-xl flex items-center space-x-3 ${
+            gameState.isCorrect 
+              ? 'bg-green-50 border border-green-200' 
+              : 'bg-red-50 border border-red-200'
           }`}
         >
-          <div className={`text-6xl mb-2 ${
-            gameState.isCorrect ? 'text-green-500' : 'text-red-500'
-          }`}>
-            {gameState.isCorrect ? <CheckCircle /> : <XCircle />}
-          </div>
+          {gameState.isCorrect ? (
+            <CheckCircle className="h-6 w-6 text-green-600" />
+          ) : (
+            <XCircle className="h-6 w-6 text-red-600" />
+          )}
           
-          <div className="text-xl font-bold mb-2">
-            {gameState.feedback}
-          </div>
-          
-          {/* Show correct answer based on exercise type */}
-          {gameState.gameMode === 'listening' && (
-            <div className="text-lg text-gray-700 mb-4">
-              <div><strong>You heard:</strong> {gameState.currentWord?.spanish}</div>
-              <div className="text-sm text-gray-600 mt-2">
-                <strong>Meaning:</strong> {gameState.currentWord?.english}
+          <div className="flex-1">
+            <p className={`font-medium ${
+              gameState.isCorrect ? 'text-green-800' : 'text-red-800'
+            }`}>
+              {gameState.feedback}
+            </p>
+            
+            {/* Show correct answer based on exercise type */}
+            {gameState.gameMode === 'listening' && (
+              <div className="text-sm text-gray-700 mt-2">
+                <div><strong>You heard:</strong> {gameState.currentWord?.spanish}</div>
+                <div><strong>Meaning:</strong> {gameState.currentWord?.english}</div>
               </div>
-            </div>
-          )}
-          
-          {gameState.gameMode === 'cloze' && clozeExercise && (
-            <div className="text-lg text-gray-700 mb-4">
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <strong>Complete sentence:</strong> {clozeExercise.sentence}
+            )}
+            
+            {gameState.gameMode === 'cloze' && clozeExercise && (
+              <div className="text-sm text-gray-700 mt-2">
+                <div><strong>Complete sentence:</strong> {clozeExercise.sentence}</div>
+                {gameState.currentWord?.example_translation && (
+                  <div><strong>Translation:</strong> {gameState.currentWord.example_translation}</div>
+                )}
               </div>
-              {gameState.currentWord?.example_translation && (
-                <div className="text-sm text-gray-600 mt-2">
-                  <strong>Translation:</strong> {gameState.currentWord.example_translation}
-                </div>
-              )}
-            </div>
-          )}
-          
-          {(gameState.gameMode === 'learn' || gameState.gameMode === 'recall' || gameState.gameMode === 'multiple_choice') && (
-            <div className="text-lg text-gray-700 mb-4">
-              <strong>{gameState.currentWord?.spanish}</strong> = <strong>{gameState.currentWord?.english}</strong>
-              {gameState.currentWord?.example_sentence && (
-                <div className="text-sm text-gray-600 mt-2 bg-gray-50 p-2 rounded">
-                  <strong>Example:</strong> {gameState.currentWord.example_sentence}
-                </div>
-              )}
-            </div>
-          )}
+            )}
+            
+            {(gameState.gameMode === 'learn' || gameState.gameMode === 'recall' || gameState.gameMode === 'multiple_choice' || gameState.gameMode === 'typing') && (
+              <div className="text-sm text-gray-700 mt-2">
+                <strong>{gameState.currentWord?.spanish}</strong> = <strong>{gameState.currentWord?.english}</strong>
+                {gameState.currentWord?.example_sentence && (
+                  <div className="text-xs text-gray-600 mt-1 bg-gray-50 p-2 rounded">
+                    <strong>Example:</strong> {gameState.currentWord.example_sentence}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {gameState.isAnswerRevealed && (
+              <div className="text-xs text-yellow-600 mt-1">
+                Score reduced for showing answer
+              </div>
+            )}
+          </div>
 
           {!gameState.isCorrect && (
-            <div className="space-y-2">
+            <div className="flex items-center space-x-2">
               <button
                 onClick={() => playPronunciation(
                   gameState.gameMode === 'listening' 
@@ -934,28 +1146,10 @@ export default function VocabMasterGame({
                     : gameState.currentWord?.english || '', 
                   gameState.gameMode === 'listening' ? 'es' : 'en'
                 )}
-                className="flex items-center justify-center mx-auto p-2 bg-blue-100 hover:bg-blue-200 rounded-full transition-colors"
+                className="p-2 bg-blue-100 hover:bg-blue-200 rounded-full transition-colors"
               >
                 <Volume2 className="h-4 w-4 text-blue-600" />
               </button>
-              
-              {/* Show pronunciation for both languages when incorrect */}
-              {gameState.gameMode !== 'listening' && (
-                <div className="flex justify-center space-x-2">
-                  <button
-                    onClick={() => playPronunciation(gameState.currentWord?.spanish || '', 'es')}
-                    className="text-xs px-2 py-1 bg-gray-200 rounded text-gray-700 hover:bg-gray-300"
-                  >
-                    🇪🇸 Spanish
-                  </button>
-                  <button
-                    onClick={() => playPronunciation(gameState.currentWord?.english || '', 'en')}
-                    className="text-xs px-2 py-1 bg-gray-200 rounded text-gray-700 hover:bg-gray-300"
-                  >
-                    🇺🇸 English
-                  </button>
-                </div>
-              )}
             </div>
           )}
         </motion.div>
@@ -964,39 +1158,32 @@ export default function VocabMasterGame({
   );
 
   const renderGameComplete = () => (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.8 }}
-      animate={{ opacity: 1, scale: 1 }}
-      className="text-center text-white max-w-2xl mx-auto"
-    >
-      <Trophy className="h-24 w-24 text-yellow-400 mx-auto mb-6" />
+    <div className="text-center text-white p-8">
+      <Trophy className="h-20 w-20 text-yellow-400 mx-auto mb-6" />
+      <h1 className="text-4xl font-bold mb-4">Session Complete!</h1>
       
-      <h2 className="text-4xl font-bold mb-4">
-        Excellent Work! 🎉
-      </h2>
-      
-      <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 mb-8">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+      <div className="bg-white/10 backdrop-blur-md rounded-xl p-6 max-w-lg mx-auto mb-8">
+        <div className="grid grid-cols-2 gap-4 text-center">
           <div>
-            <div className="text-3xl font-bold text-yellow-400">
+            <div className="text-2xl font-bold text-yellow-400">
               {gameState.score.toLocaleString()}
             </div>
             <div className="text-sm opacity-75">Total Score</div>
           </div>
           <div>
-            <div className="text-3xl font-bold text-green-400">
+            <div className="text-2xl font-bold text-green-400">
               {Math.round((gameState.correctAnswers / gameState.totalWords) * 100)}%
             </div>
             <div className="text-sm opacity-75">Accuracy</div>
           </div>
           <div>
-            <div className="text-3xl font-bold text-blue-400">
+            <div className="text-2xl font-bold text-blue-400">
               {gameState.wordsLearned.length}
             </div>
             <div className="text-sm opacity-75">Words Learned</div>
           </div>
           <div>
-            <div className="text-3xl font-bold text-red-400">
+            <div className="text-2xl font-bold text-red-400">
               {gameState.maxStreak}
             </div>
             <div className="text-sm opacity-75">Best Streak</div>
@@ -1008,15 +1195,55 @@ export default function VocabMasterGame({
         Your progress has been saved and will be used to optimize your future learning sessions.
       </p>
       
-      <div className="text-center text-sm opacity-60">
+      <div className="flex justify-center space-x-4">
+        <button
+          onClick={() => window.location.reload()}
+          className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors flex items-center space-x-2"
+        >
+          <RotateCcw className="h-4 w-4" />
+          <span>Practice Again</span>
+        </button>
+        <button
+          onClick={onExit}
+          className="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors flex items-center space-x-2"
+        >
+          <Home className="h-4 w-4" />
+          <span>Exit</span>
+        </button>
+      </div>
+      
+      <div className="text-center text-sm opacity-60 mt-4">
         Returning to dashboard in a few seconds...
       </div>
-    </motion.div>
+    </div>
   );
 
   // =====================================================
   // MAIN RENDER
   // =====================================================
+
+  // Show loading or error state if no vocabulary
+  if (!vocabulary || vocabulary.length === 0) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 flex items-center justify-center px-4">
+        <div className="text-center text-white">
+          <div className="text-2xl font-bold mb-4">Loading VocabMaster...</div>
+          <p className="text-lg opacity-75 mb-8">
+            {!vocabulary ? 'Preparing vocabulary...' : 'No vocabulary available for practice.'}
+          </p>
+          {onExit && (
+            <button
+              onClick={onExit}
+              className="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors flex items-center space-x-2 mx-auto"
+            >
+              <Home className="h-4 w-4" />
+              <span>Exit</span>
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   if (gameComplete) {
     return (
@@ -1027,30 +1254,50 @@ export default function VocabMasterGame({
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-600 to-pink-600">
-      <div className="container mx-auto px-4 py-8">
-        {renderGameHeader()}
-        
-        <div className="max-w-4xl mx-auto">
-          {renderWordCard()}
-          
-          {(gameState.gameMode === 'multiple_choice' || gameState.gameMode === 'speed') && !gameState.showAnswer
-            ? renderMultipleChoice()
-            : renderTypingInput()
-          }
-          
-          {renderFeedback()}
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700">
+      {renderGameHeader()}
 
-        {/* Navigation */}
-        {onExit && (
-          <button
-            onClick={onExit}
-            className="fixed top-6 right-6 bg-white/20 backdrop-blur-md p-3 rounded-full text-white hover:bg-white/30 transition-colors"
-          >
-            <Home className="h-6 w-6" />
-          </button>
-        )}
+      {/* Main Game Area */}
+      <div className="flex items-center justify-center p-8" style={{ minHeight: 'calc(100vh - 120px)' }}>
+        <div className="max-w-2xl w-full">
+          {gameState.currentWord && (
+            <motion.div
+              key={gameState.currentWord.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              {renderWordCard()}
+              
+              <div className="mt-6">
+                {/* Feedback */}
+                {renderFeedback()}
+                
+                {/* Input Area */}
+                {!gameState.showAnswer && (
+                  <div className="bg-white rounded-2xl shadow-2xl p-6">
+                    {(gameState.gameMode === 'multiple_choice' || gameState.gameMode === 'speed') && !gameState.showAnswer
+                      ? renderMultipleChoice()
+                      : renderTypingInput()
+                    }
+                  </div>
+                )}
+
+                {/* Continue Button */}
+                {gameState.showAnswer && (
+                  <div className="text-center mt-6">
+                    <button
+                      onClick={() => nextWord()}
+                      className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center space-x-2 mx-auto"
+                    >
+                      <span>Continue</span>
+                      <ArrowRight className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -9,7 +9,6 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../auth/AuthProvider';
 import { useSupabase } from '../supabase/SupabaseProvider';
-import EnhancedGemCollector from './EnhancedGemCollector';
 import SimpleVocabularySelector from '../vocabulary/SimpleVocabularySelector';
 
 // =====================================================
@@ -321,15 +320,11 @@ export default function GameLauncher({
     </div>
   );
 
-  const renderGame = () => (
-    <EnhancedGemCollector
-      mode={selectedGameMode as any}
-      assignmentId={assignmentId}
-      config={finalGameConfig}
-      onGameComplete={handleGameComplete}
-      onExit={handleGameExit}
-    />
-  );
+  const renderGame = () => {
+    // Redirect to VocabMaster page
+    window.location.href = '/games/vocab-master';
+    return null;
+  };
 
   // =====================================================
   // MAIN RENDER

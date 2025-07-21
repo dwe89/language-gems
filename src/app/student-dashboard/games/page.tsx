@@ -122,15 +122,15 @@ export default function GamesPage() {
   const placeholderGames: Game[] = [
     {
       id: '1',
-      title: 'Gem Collector',
-      description: 'Move up and down to collect the correct translation gems while avoiding wrong ones! A fast-paced language learning adventure.',
-      thumbnail: '/images/games/gem-collector.png',
-      playTime: '3-8 min',
+      title: 'VocabMaster',
+      description: 'Master vocabulary with intelligent spaced repetition, listening exercises, and context-based learning.',
+      thumbnail: '/images/games/vocab-master.png',
+      playTime: '5-15 min',
       gemColor: 'text-blue-500',
-      difficulty: 1,
+      difficulty: 2,
       players: 'Single Player',
       isFeatured: true,
-      path: '/games/gem-collector'
+      path: '/games/vocab-master'
     },
     {
       id: '2',

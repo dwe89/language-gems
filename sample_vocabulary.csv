@@ -1,0 +1,4 @@
+word,translation,language,category,subcategory,part_of_speech,difficulty_level,curriculum_level,example_sentence,example_translation,phonetic,gender,irregular_forms,synonyms,antonyms,tags,article,base_word
+"el gato","cat","es","animals","pets","noun","beginner","KS3,GCSE_Foundation","El gato está en la casa.","The cat is in the house.","/ˈɡa.to/","masculine","gatos (plural)","felino","perro","animals,pets,basic","el","gato"
+"el perro","dog","es","animals","pets","noun","beginner","KS3,GCSE_Foundation","El perro es muy amigable.","The dog is very friendly.","/ˈpe.ro/","masculine","perros (plural)","can","gato","animals,pets,basic","el","perro"
+"la mesa","table","es","furniture","household","noun","beginner","KS3,GCSE_Foundation","La mesa está en la cocina.","The table is in the kitchen.","/ˈme.sa/","feminine","mesas (plural)","","","furniture,home,basic","la","mesa"

@@ -12,17 +12,13 @@ interface Game {
 
 const GAME_TYPES: Record<string, Game> = {
   'word-match': { id: 'word-match', name: 'Word Match', type: 'vocabulary' },
-  'memory-game': { id: 'memory-game', name: 'Memory Match', type: 'vocabulary' },
-  'gem-collector': { id: 'gem-collector', name: 'Gem Collector', type: 'vocabulary' },
+  'vocab-master': { id: 'vocab-master', name: 'VocabMaster', type: 'vocabulary' },
   'translation-tycoon': { id: 'translation-tycoon', name: 'Translation Tycoon', type: 'vocabulary' },
   'word-blast': { id: 'word-blast', name: 'Word Blast', type: 'vocabulary' },
-  'hangman': { id: 'hangman', name: 'Hangman', type: 'vocabulary' },
   'word-guesser': { id: 'word-guesser', name: 'Word Guesser', type: 'vocabulary' },
   'word-association': { id: 'word-association', name: 'Word Association', type: 'vocabulary' },
-  'word-scramble': { id: 'word-scramble', name: 'Word Scramble', type: 'vocabulary' },
   'speed-builder': { id: 'speed-builder', name: 'Speed Builder', type: 'sentence' },
   'sentence-towers': { id: 'sentence-towers', name: 'Sentence Towers', type: 'sentence' },
-  'sentence-builder': { id: 'sentence-builder', name: 'Sentence Builder', type: 'sentence' },
   'conjugation-duel': { id: 'conjugation-duel', name: 'Conjugation Duel', type: 'sentence' },
 };
 

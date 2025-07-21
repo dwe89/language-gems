@@ -312,12 +312,12 @@ export default function EnhancedAssignmentCreator({
 
       // Validate content configuration
       const needsVocabulary = gameConfig.selectedGames.some(gameId => {
-        const vocabGames = ['gem-collector', 'memory-game', 'word-blast', 'translation-tycoon', 'word-guesser', 'hangman', 'word-scramble', 'word-association', 'gem-rush', 'vocabulary-mining'];
+        const vocabGames = ['vocab-master', 'word-blast', 'translation-tycoon', 'word-guesser', 'word-association', 'gem-rush', 'vocabulary-mining'];
         return vocabGames.includes(gameId);
       });
 
       const needsSentences = gameConfig.selectedGames.some(gameId => {
-        const sentenceGames = ['speed-builder', 'sentence-towers', 'sentence-builder', 'conjugation-duel'];
+        const sentenceGames = ['speed-builder', 'sentence-towers', 'conjugation-duel'];
         return sentenceGames.includes(gameId);
       });
 

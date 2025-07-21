@@ -32,6 +32,11 @@ import {
 import { GlassmorphismCard } from './components/GlassmorphismCard';
 import { useParticleSystem } from './components/ParticleSystem';
 
+// Category system imports
+import CategorySelector from '../../../components/games/CategorySelector';
+import { useVocabularyByCategory } from '../../../hooks/useVocabulary';
+import { KS3_SPANISH_CATEGORIES, getCategoryById, getSubcategoryOptions } from '../../../utils/categories';
+
 
 // =====================================================
 // ENHANCED TYPES WITH COMBINED FEATURES
@@ -39,10 +44,11 @@ import { useParticleSystem } from './components/ParticleSystem';
 
 interface VocabularyItem {
   id: string;
-  originalText: string;
-  translatedText: string;
+  originalText: string; // English text
+  translatedText: string; // Spanish text
   difficulty: "easy" | "medium" | "hard";
   category: string;
+  subcategory?: string;
   contextSentence?: string;
   audioUrl?: string;
   imageUrl?: string;
@@ -51,6 +57,12 @@ interface VocabularyItem {
   reviewCount: number;
   reviewInterval: number;
   easeFactor: number;
+  // Additional fields from our centralized vocabulary
+  part_of_speech?: string;
+  curriculum_level?: string;
+  phonetic?: string;
+  article?: string;
+  base_word?: string;
 }
 
 interface Plant {
@@ -145,93 +157,6 @@ const weatherTypes: Weather[] = [
   { type: 'rainbow', emoji: '🌈', effect: 'Magical growth enhancement', growthModifier: 1.5, duration: 120000 }
 ];
 
-const sampleVocabulary: Record<string, VocabularyItem[]> = {
-  'Spanish Basics': [
-    {
-      id: '1',
-      originalText: 'Hello',
-      translatedText: 'Hola',
-      difficulty: 'easy',
-      category: 'Spanish Basics',
-      contextSentence: 'Hola, ¿cómo estás?',
-      masteryLevel: 0,
-      lastReviewed: new Date(Date.now() - 86400000),
-      reviewCount: 0,
-      reviewInterval: 1,
-      easeFactor: 2.5
-    },
-    {
-      id: '2',
-      originalText: 'Thank you',
-      translatedText: 'Gracias',
-      difficulty: 'easy',
-      category: 'Spanish Basics',
-      contextSentence: 'Gracias por tu ayuda.',
-      masteryLevel: 1,
-      lastReviewed: new Date(Date.now() - 172800000),
-      reviewCount: 2,
-      reviewInterval: 2,
-      easeFactor: 2.6
-    },
-    {
-      id: '3',
-      originalText: 'Good morning',
-      translatedText: 'Buenos días',
-      difficulty: 'medium',
-      category: 'Spanish Basics',
-      contextSentence: 'Buenos días, señora García.',
-      masteryLevel: 0,
-      lastReviewed: new Date(Date.now() - 259200000),
-      reviewCount: 1,
-      reviewInterval: 1,
-      easeFactor: 2.5
-    }
-  ],
-  'French Essentials': [
-    {
-      id: '4',
-      originalText: 'Hello',
-      translatedText: 'Bonjour',
-      difficulty: 'easy',
-      category: 'French Essentials',
-      contextSentence: 'Bonjour, comment allez-vous?',
-      masteryLevel: 0,
-      lastReviewed: new Date(Date.now() - 86400000),
-      reviewCount: 0,
-      reviewInterval: 1,
-      easeFactor: 2.5
-    },
-    {
-      id: '5',
-      originalText: 'Please',
-      translatedText: 'S\'il vous plaît',
-      difficulty: 'medium',
-      category: 'French Essentials',
-      contextSentence: 'Un café, s\'il vous plaît.',
-      masteryLevel: 1,
-      lastReviewed: new Date(Date.now() - 172800000),
-      reviewCount: 3,
-      reviewInterval: 3,
-      easeFactor: 2.7
-    }
-  ],
-  'German Basics': [
-    {
-      id: '6',
-      originalText: 'Hello',
-      translatedText: 'Hallo',
-      difficulty: 'easy',
-      category: 'German Basics',
-      contextSentence: 'Hallo, wie geht es dir?',
-      masteryLevel: 0,
-      lastReviewed: new Date(Date.now() - 86400000),
-      reviewCount: 0,
-      reviewInterval: 1,
-      easeFactor: 2.5
-    }
-  ]
-};
-
 // =====================================================
 // MAIN ENHANCED COMPONENT
 // =====================================================
@@ -269,7 +194,7 @@ export default function EnhancedLanguageGarden() {
     totalCorrectAnswers: 0,
     streak: 0,
     highestStreak: 0,
-    gardenerClass: 'botanist',
+    gardenerClass: 'Novice',
     skills: {
       cultivation: 1,
       linguistics: 1,
@@ -277,13 +202,69 @@ export default function EnhancedLanguageGarden() {
       weatherMagic: 1,
       enchantment: 1
     },
-    skillPoints: 3,
-    unlockedAreas: ['basic_garden'],
+    skillPoints: 0,
+    unlockedAreas: ['garden'],
     achievements: new Set(),
     tools: ['basic_watering_can'],
     currentWeather: weatherTypes[0],
-    weatherEndsAt: new Date(Date.now() + 300000)
+    weatherEndsAt: new Date(Date.now() + (weatherTypes[0]?.duration || 300000))
   });
+
+  // Category Selection State
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [selectedSubcategory, setSelectedSubcategory] = useState<string>('');
+  const [showCategorySelector, setShowCategorySelector] = useState(false);
+  const [availableCategories, setAvailableCategories] = useState<string[]>([]);
+
+  // Dynamic vocabulary loading
+  const { vocabulary, loading: vocabLoading, error: vocabError } = useVocabularyByCategory({
+    language: 'es', // Spanish
+    categoryId: selectedCategory,
+    subcategoryId: selectedSubcategory,
+    difficultyLevel: 'beginner',
+    curriculumLevel: 'KS3'
+  });
+
+  // Convert our vocabulary format to game format
+  const gameVocabulary = useMemo(() => {
+    const converted: Record<string, VocabularyItem[]> = {};
+    
+    if (vocabulary.length > 0 && selectedCategory) {
+      const categoryName = selectedSubcategory ? 
+        `${getCategoryById(selectedCategory)?.name} - ${selectedSubcategory.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}` :
+        getCategoryById(selectedCategory)?.name || selectedCategory;
+
+      converted[categoryName] = vocabulary.map((item, index) => ({
+        id: item.id || `vocab-${index}`,
+        originalText: item.translation || '', // English (user sees this)
+        translatedText: item.word || '', // Spanish (user types this)
+        difficulty: (item.difficulty_level === 'intermediate' ? 'medium' : 
+                    item.difficulty_level === 'advanced' ? 'hard' : 'easy') as "easy" | "medium" | "hard",
+        category: categoryName,
+        subcategory: item.subcategory,
+        contextSentence: item.example_sentence,
+        audioUrl: item.audio_url,
+        masteryLevel: 0,
+        lastReviewed: new Date(Date.now() - 86400000),
+        reviewCount: 0,
+        reviewInterval: 1,
+        easeFactor: 2.5,
+        part_of_speech: item.part_of_speech,
+        curriculum_level: item.curriculum_level,
+        phonetic: item.phonetic,
+        article: item.article,
+        base_word: item.base_word
+      }));
+    }
+
+    return converted;
+  }, [vocabulary, selectedCategory, selectedSubcategory]);
+
+  // Initialize available categories on component mount
+  useEffect(() => {
+    const categoryIds = KS3_SPANISH_CATEGORIES.map(cat => cat.id);
+    setAvailableCategories(categoryIds);
+  }, []);
 
   // Enhanced Plant Positions with Responsive Layout
   const plantPositions = useMemo(() => [
@@ -317,9 +298,9 @@ export default function EnhancedLanguageGarden() {
     try {
       setLoading(true);
 
-      const words = sampleVocabulary[category];
+      const words = gameVocabulary[category];
       if (!words || words.length === 0) {
-        throw new Error(`No vocabulary found for category: ${category}`);
+        throw new Error(`No vocabulary found for category: ${category}. Please select a learning topic first.`);
       }
 
       const positionData = plantPositions[position - 1];
@@ -377,7 +358,7 @@ export default function EnhancedLanguageGarden() {
     } finally {
       setLoading(false);
     }
-  }, [plants, plantPositions, createParticles, setLoading, handleError, playerStats.gems]);
+  }, [plants, plantPositions, createParticles, setLoading, handleError, playerStats.gems, gameVocabulary]);
 
   // Start challenge with better word selection
   const startChallenge = useCallback((plant: Plant) => {
@@ -707,8 +688,9 @@ export default function EnhancedLanguageGarden() {
               plants={plants}
               plantPositions={plantPositions}
               onPlantClick={startChallenge}
-              onCreatePlant={() => setGameState(prev => ({ ...prev, mode: 'shop' }))}
+              onCreatePlant={() => setShowCategorySelector(true)}
               onHarvestPlant={harvestPlant}
+              categoriesCount={Object.keys(gameVocabulary).length}
             />
           )}
 
@@ -731,7 +713,7 @@ export default function EnhancedLanguageGarden() {
           {gameState.mode === 'shop' && (
             <ShopView
               playerStats={playerStats}
-              availableCategories={Object.keys(sampleVocabulary)}
+              availableCategories={Object.keys(gameVocabulary)}
               onCreatePlant={createPlant}
               onBackToGarden={() => setGameState(prev => ({ ...prev, mode: 'garden' }))}
             />
@@ -817,6 +799,85 @@ export default function EnhancedLanguageGarden() {
           )}
         </div>
       </main>
+
+      {/* Category Selection Modal */}
+      <AnimatePresence>
+        {showCategorySelector && (
+          <motion.div
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowCategorySelector(false)}
+          >
+            <motion.div
+              className="bg-white backdrop-blur-md border border-gray-200 p-6 rounded-3xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto"
+              initial={{ scale: 0.8, y: 30 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.8, y: 30 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-3xl font-bold text-gray-800">Choose Your Learning Topic</h2>
+                <button 
+                  onClick={() => setShowCategorySelector(false)}
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
+              
+              <CategorySelector 
+                onCategorySelect={(categoryId: string, subcategoryId: string | null) => {
+                  setSelectedCategory(categoryId);
+                  setSelectedSubcategory(subcategoryId || '');
+                  setShowCategorySelector(false);
+                  // Navigate to shop with selected category
+                  setGameState(prev => ({ ...prev, mode: 'shop' }));
+                }}
+                selectedLanguage="es"
+              />
+              
+              {selectedCategory && Object.keys(gameVocabulary).length > 0 && (
+                <div className="mt-6 p-4 bg-green-50 rounded-xl border border-green-200">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-semibold text-green-800">
+                        ✅ Ready to plant with {vocabulary.length} vocabulary words!
+                      </h3>
+                      <p className="text-sm text-green-600 mt-1">
+                        Words from: {Object.keys(gameVocabulary)[0]}
+                      </p>
+                    </div>
+                    <button 
+                      onClick={() => {
+                        setShowCategorySelector(false);
+                        setGameState(prev => ({ ...prev, mode: 'shop' }));
+                      }}
+                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                    >
+                      Plant Seeds
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {vocabLoading && (
+                <div className="mt-6 text-center text-gray-600">
+                  <div className="animate-spin w-6 h-6 border-2 border-green-500 border-t-transparent rounded-full mx-auto mb-2"></div>
+                  Loading vocabulary...
+                </div>
+              )}
+
+              {vocabError && (
+                <div className="mt-6 p-4 bg-red-50 rounded-xl border border-red-200">
+                  <p className="text-red-600">Error loading vocabulary: {vocabError}</p>
+                </div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -831,6 +892,7 @@ interface GardenViewProps {
   onPlantClick: (plant: Plant) => void;
   onCreatePlant: () => void;
   onHarvestPlant: (plant: Plant) => void;
+  categoriesCount?: number;
 }
 
 const GardenView: React.FC<GardenViewProps> = ({
@@ -838,7 +900,8 @@ const GardenView: React.FC<GardenViewProps> = ({
   plantPositions,
   onPlantClick,
   onCreatePlant,
-  onHarvestPlant
+  onHarvestPlant,
+  categoriesCount = 0
 }) => {
   return (
     <div className="relative w-full h-[70vh] rounded-3xl overflow-hidden border-4 border-white/20 shadow-2xl">
@@ -873,6 +936,7 @@ const GardenView: React.FC<GardenViewProps> = ({
                 position={position}
                 onClick={onCreatePlant}
                 accessible={position.accessible}
+                categoriesCount={categoriesCount}
               />
             )}
           </motion.div>
@@ -1044,7 +1108,8 @@ const EmptySpot: React.FC<{
   position: { id: number; x: string; y: string; name: string; accessible: boolean };
   onClick: () => void;
   accessible: boolean;
-}> = ({ position, onClick, accessible }) => {
+  categoriesCount?: number;
+}> = ({ position, onClick, accessible, categoriesCount = 0 }) => {
   return (
     <motion.div
       className={`relative group ${accessible ? 'cursor-pointer' : 'cursor-not-allowed'}`}
@@ -1089,7 +1154,7 @@ const EmptySpot: React.FC<{
           </div>
           <div className="text-xs text-white/80 mb-2">
             {accessible
-              ? `${Object.keys(sampleVocabulary).length} categories available`
+              ? `${categoriesCount} categories available`
               : `Unlock at level ${Math.ceil((position?.id || 1) / 2)}`
             }
           </div>

@@ -2,6 +2,10 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { BookOpen } from 'lucide-react';
+import CategorySelector from '../../../components/games/CategorySelector';
+import { useVocabularyByCategory } from '../../../hooks/useVocabulary';
+import { KS3_SPANISH_CATEGORIES, getCategoryById } from '../../../utils/categories';
 import WordScrambleGameEnhanced from './components/WordScrambleGameEnhanced';
 import GameSettingsEnhanced from './components/GameSettingsEnhanced';
 
@@ -91,6 +95,22 @@ export default function WordScramblePage() {
   });
   const [gameResult, setGameResult] = useState<GameResult | null>(null);
   const [isGameStarting, setIsGameStarting] = useState(false);
+  
+  // Category selection state
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [selectedSubcategory, setSelectedSubcategory] = useState<string>('');
+  const [showCategorySelector, setShowCategorySelector] = useState(false);
+  
+  // Use category-based vocabulary when categories are selected
+  const { 
+    vocabulary: categoryVocabulary, 
+    loading: categoryLoading, 
+    error: categoryError 
+  } = useVocabularyByCategory({
+    language: 'spanish',
+    categoryId: selectedCategory || undefined,
+    subcategoryId: selectedSubcategory || undefined
+  });
 
   const handleGameStart = (settings: GameSettings) => {
     setGameSettings(settings);
