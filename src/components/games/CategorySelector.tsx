@@ -10,7 +10,7 @@ interface CategorySelectorProps {
   selectedLanguage?: string;
 }
 
-// Create a universal category structure that works for multiple languages
+// Create a universal category structure that uses ONLY the exact standard categories
 const UNIVERSAL_CATEGORIES: Category[] = [
   {
     id: 'basics_core_language',
@@ -18,18 +18,14 @@ const UNIVERSAL_CATEGORIES: Category[] = [
     displayName: 'Basics & Core Language',
     icon: '📝',
     subcategories: [
-      { id: 'colours', name: 'colours', displayName: 'Colors', categoryId: 'basics_core_language' },
-      { id: 'Colours', name: 'Colours', displayName: 'Colours', categoryId: 'basics_core_language' },
-      { id: 'colors', name: 'colors', displayName: 'Colors', categoryId: 'basics_core_language' },
-      { id: 'common_phrases', name: 'common_phrases', displayName: 'Common Phrases', categoryId: 'basics_core_language' },
-      { id: 'Common Phrases', name: 'Common Phrases', displayName: 'Common Phrases', categoryId: 'basics_core_language' },
-      { id: 'numbers', name: 'numbers', displayName: 'Numbers', categoryId: 'basics_core_language' },
-      { id: 'Numbers 1-20', name: 'Numbers 1-20', displayName: 'Numbers 1-20', categoryId: 'basics_core_language' },
       { id: 'greetings_introductions', name: 'greetings_introductions', displayName: 'Greetings & Introductions', categoryId: 'basics_core_language' },
-      { id: 'greetings', name: 'greetings', displayName: 'Greetings', categoryId: 'basics_core_language' },
-      { id: 'dates_time', name: 'dates_time', displayName: 'Dates & Time', categoryId: 'basics_core_language' },
-      { id: 'days_months', name: 'days_months', displayName: 'Days & Months', categoryId: 'basics_core_language' },
-      { id: 'opinions', name: 'opinions', displayName: 'Opinions', categoryId: 'basics_core_language' }
+      { id: 'common_phrases', name: 'common_phrases', displayName: 'Common Phrases', categoryId: 'basics_core_language' },
+      { id: 'opinions', name: 'opinions', displayName: 'Opinions', categoryId: 'basics_core_language' },
+      { id: 'numbers_1_30', name: 'numbers_1_30', displayName: 'Numbers 1-30', categoryId: 'basics_core_language' },
+      { id: 'numbers_40_100', name: 'numbers_40_100', displayName: 'Numbers 40-100', categoryId: 'basics_core_language' },
+      { id: 'colours', name: 'colours', displayName: 'Colours', categoryId: 'basics_core_language' },
+      { id: 'days', name: 'days', displayName: 'Days', categoryId: 'basics_core_language' },
+      { id: 'months', name: 'months', displayName: 'Months', categoryId: 'basics_core_language' }
     ]
   },
   {
@@ -38,17 +34,50 @@ const UNIVERSAL_CATEGORIES: Category[] = [
     displayName: 'Identity & Personal Life', 
     icon: '👤',
     subcategories: [
-      { id: 'family_friends', name: 'family_friends', displayName: 'Family & Friends', categoryId: 'identity_personal_life' },
-      { id: 'Family & Friends', name: 'Family & Friends', displayName: 'Family & Friends', categoryId: 'identity_personal_life' },
-      { id: 'family', name: 'family', displayName: 'Family', categoryId: 'identity_personal_life' },
-      { id: 'family_relationships', name: 'family_relationships', displayName: 'Family Relationships', categoryId: 'identity_personal_life' },
       { id: 'personal_information', name: 'personal_information', displayName: 'Personal Information', categoryId: 'identity_personal_life' },
-      { id: 'Personal Information', name: 'Personal Information', displayName: 'Personal Information', categoryId: 'identity_personal_life' },
-      { id: 'personal_description', name: 'personal_description', displayName: 'Personal Description', categoryId: 'identity_personal_life' },
+      { id: 'family_friends', name: 'family_friends', displayName: 'Family & Friends', categoryId: 'identity_personal_life' },
       { id: 'physical_personality_descriptions', name: 'physical_personality_descriptions', displayName: 'Physical & Personality Descriptions', categoryId: 'identity_personal_life' },
-      { id: 'Physical & Personality Descriptions', name: 'Physical & Personality Descriptions', displayName: 'Physical & Personality Descriptions', categoryId: 'identity_personal_life' },
-      { id: 'pets', name: 'pets', displayName: 'Pets', categoryId: 'identity_personal_life' },
-      { id: 'relationships', name: 'relationships', displayName: 'Relationships', categoryId: 'identity_personal_life' }
+      { id: 'pets', name: 'pets', displayName: 'Pets', categoryId: 'identity_personal_life' }
+    ]
+  },
+  {
+    id: 'home_local_area', 
+    name: 'home_local_area',
+    displayName: 'Home & Local Area',
+    icon: '🏠',
+    subcategories: [
+      { id: 'house_rooms_furniture', name: 'house_rooms_furniture', displayName: 'House, Rooms & Furniture', categoryId: 'home_local_area' },
+      { id: 'household_items_chores', name: 'household_items_chores', displayName: 'Household Items & Chores', categoryId: 'home_local_area' },
+      { id: 'types_of_housing', name: 'types_of_housing', displayName: 'Types of Housing', categoryId: 'home_local_area' },
+      { id: 'local_area_places_town', name: 'local_area_places_town', displayName: 'Local Area & Places in Town', categoryId: 'home_local_area' },
+      { id: 'shops_services', name: 'shops_services', displayName: 'Shops & Services', categoryId: 'home_local_area' },
+      { id: 'directions_prepositions', name: 'directions_prepositions', displayName: 'Directions & Prepositions', categoryId: 'home_local_area' }
+    ]
+  },
+  {
+    id: 'school_jobs_future',
+    name: 'school_jobs_future',
+    displayName: 'School, Jobs & Future',
+    icon: '�',
+    subcategories: [
+      { id: 'school_subjects', name: 'school_subjects', displayName: 'School Subjects', categoryId: 'school_jobs_future' },
+      { id: 'school_rules', name: 'school_rules', displayName: 'School Rules', categoryId: 'school_jobs_future' },
+      { id: 'classroom_objects', name: 'classroom_objects', displayName: 'Classroom Objects', categoryId: 'school_jobs_future' },
+      { id: 'daily_routine_school', name: 'daily_routine_school', displayName: 'Daily Routine at School', categoryId: 'school_jobs_future' },
+      { id: 'professions_jobs', name: 'professions_jobs', displayName: 'Professions & Jobs', categoryId: 'school_jobs_future' },
+      { id: 'future_ambitions', name: 'future_ambitions', displayName: 'Future Ambitions', categoryId: 'school_jobs_future' },
+      { id: 'qualities_for_jobs', name: 'qualities_for_jobs', displayName: 'Qualities for Jobs', categoryId: 'school_jobs_future' }
+    ]
+  },
+  {
+    id: 'free_time_leisure',
+    name: 'free_time_leisure',
+    displayName: 'Free Time & Leisure',
+    icon: '🎮',
+    subcategories: [
+      { id: 'hobbies_interests', name: 'hobbies_interests', displayName: 'Hobbies & Interests', categoryId: 'free_time_leisure' },
+      { id: 'sports', name: 'sports', displayName: 'Sports', categoryId: 'free_time_leisure' },
+      { id: 'social_activities', name: 'social_activities', displayName: 'Social Activities', categoryId: 'free_time_leisure' }
     ]
   },
   {
@@ -57,60 +86,10 @@ const UNIVERSAL_CATEGORIES: Category[] = [
     displayName: 'Food & Drink',
     icon: '🍽️',
     subcategories: [
-      { id: 'food_drink_vocabulary', name: 'food_drink_vocabulary', displayName: 'Food & Drink Vocabulary', categoryId: 'food_drink' },
-      { id: 'Food & Drink Vocabulary', name: 'Food & Drink Vocabulary', displayName: 'Food & Drink Vocabulary', categoryId: 'food_drink' },
-      { id: 'food', name: 'food', displayName: 'Food', categoryId: 'food_drink' },
-      { id: 'food_basics', name: 'food_basics', displayName: 'Food Basics', categoryId: 'food_drink' },
-      { id: 'beverages', name: 'beverages', displayName: 'Beverages', categoryId: 'food_drink' },
-      { id: 'fruits_vegetables', name: 'fruits_vegetables', displayName: 'Fruits & Vegetables', categoryId: 'food_drink' },
       { id: 'meals', name: 'meals', displayName: 'Meals', categoryId: 'food_drink' },
-      { id: 'cooking_ingredients', name: 'cooking_ingredients', displayName: 'Cooking & Ingredients', categoryId: 'food_drink' },
-      { id: 'dining_out', name: 'dining_out', displayName: 'Dining Out', categoryId: 'food_drink' },
-      { id: 'eating_expressions', name: 'eating_expressions', displayName: 'Eating Expressions', categoryId: 'food_drink' },
-      { id: 'shopping_for_food', name: 'shopping_for_food', displayName: 'Shopping for Food', categoryId: 'food_drink' },
-      { id: 'ordering_cafes_restaurants', name: 'ordering_cafes_restaurants', displayName: 'Ordering at Cafes & Restaurants', categoryId: 'food_drink' }
-    ]
-  },
-  {
-    id: 'animals',
-    name: 'animals',
-    displayName: 'Animals',
-    icon: '🐾',
-    subcategories: []
-  },
-  {
-    id: 'nature_environment',
-    name: 'nature_environment',
-    displayName: 'Nature & Environment',
-    icon: '🌿',
-    subcategories: [
-      { id: 'Animals', name: 'Animals', displayName: 'Animals', categoryId: 'nature_environment' },
-      { id: 'plants', name: 'plants', displayName: 'Plants', categoryId: 'nature_environment' },
-      { id: 'environmental_problems', name: 'environmental_problems', displayName: 'Environmental Problems', categoryId: 'nature_environment' }
-    ]
-  },
-  {
-    id: 'school_jobs_future',
-    name: 'school_jobs_future',
-    displayName: 'School, Jobs & Future',
-    icon: '🎓',
-    subcategories: [
-      { id: 'school_subjects', name: 'school_subjects', displayName: 'School Subjects', categoryId: 'school_jobs_future' },
-      { id: 'School Subjects', name: 'School Subjects', displayName: 'School Subjects', categoryId: 'school_jobs_future' },
-      { id: 'education', name: 'education', displayName: 'Education', categoryId: 'school_jobs_future' },
-      { id: 'school_activities', name: 'school_activities', displayName: 'School Activities', categoryId: 'school_jobs_future' },
-      { id: 'school_equipment', name: 'school_equipment', displayName: 'School Equipment', categoryId: 'school_jobs_future' },
-      { id: 'jobs_career', name: 'jobs_career', displayName: 'Jobs & Career', categoryId: 'school_jobs_future' },
-      { id: 'Professions & Jobs', name: 'Professions & Jobs', displayName: 'Professions & Jobs', categoryId: 'school_jobs_future' },
-      { id: 'professions_jobs', name: 'professions_jobs', displayName: 'Professions & Jobs', categoryId: 'school_jobs_future' },
-      { id: 'Classroom Objects', name: 'Classroom Objects', displayName: 'Classroom Objects', categoryId: 'school_jobs_future' },
-      { id: 'classroom_objects', name: 'classroom_objects', displayName: 'Classroom Objects', categoryId: 'school_jobs_future' },
-      { id: 'Daily Routine at School', name: 'Daily Routine at School', displayName: 'Daily Routine at School', categoryId: 'school_jobs_future' },
-      { id: 'daily_routine_school', name: 'daily_routine_school', displayName: 'Daily Routine at School', categoryId: 'school_jobs_future' },
-      { id: 'Future Aspirations', name: 'Future Aspirations', displayName: 'Future Aspirations', categoryId: 'school_jobs_future' },
-      { id: 'future_ambitions', name: 'future_ambitions', displayName: 'Future Ambitions', categoryId: 'school_jobs_future' },
-      { id: 'qualities_for_jobs', name: 'qualities_for_jobs', displayName: 'Qualities for Jobs', categoryId: 'school_jobs_future' },
-      { id: 'school_rules', name: 'school_rules', displayName: 'School Rules', categoryId: 'school_jobs_future' }
+      { id: 'food_drink_vocabulary', name: 'food_drink_vocabulary', displayName: 'Food & Drink Vocabulary', categoryId: 'food_drink' },
+      { id: 'ordering_cafes_restaurants', name: 'ordering_cafes_restaurants', displayName: 'Ordering at Cafes & Restaurants', categoryId: 'food_drink' },
+      { id: 'shopping_for_food', name: 'shopping_for_food', displayName: 'Shopping for Food', categoryId: 'food_drink' }
     ]
   },
   {
@@ -120,53 +99,72 @@ const UNIVERSAL_CATEGORIES: Category[] = [
     icon: '👕',
     subcategories: [
       { id: 'clothes_accessories', name: 'clothes_accessories', displayName: 'Clothes & Accessories', categoryId: 'clothes_shopping' },
-      { id: 'Clothes & Accessories', name: 'Clothes & Accessories', displayName: 'Clothes & Accessories', categoryId: 'clothes_shopping' },
-      { id: 'clothing', name: 'clothing', displayName: 'Clothing', categoryId: 'clothes_shopping' },
-      { id: 'Shopping Phrases & Prices', name: 'Shopping Phrases & Prices', displayName: 'Shopping Phrases & Prices', categoryId: 'clothes_shopping' }
+      { id: 'shopping_phrases_prices', name: 'shopping_phrases_prices', displayName: 'Shopping Phrases & Prices', categoryId: 'clothes_shopping' }
     ]
   },
   {
-    id: 'colors',
-    name: 'colors',
-    displayName: 'Colors',
-    icon: '🎨',
-    subcategories: []
-  },
-  {
-    id: 'transport',
-    name: 'transport',
-    displayName: 'Transport',
-    icon: '🚗',
-    subcategories: []
-  },
-  {
-    id: 'weather',
-    name: 'weather',
-    displayName: 'Weather',
-    icon: '🌤️',
-    subcategories: []
-  },
-  {
-    id: 'household',
-    name: 'household',
-    displayName: 'Household',
-    icon: '🏠',
-    subcategories: []
-  },
-  {
-    id: 'home_local_area', 
-    name: 'home_local_area',
-    displayName: 'Home & Local Area',
-    icon: '�',
+    id: 'technology_media',
+    name: 'technology_media',
+    displayName: 'Technology & Media',
+    icon: '📱',
     subcategories: [
-      { id: 'house_rooms_furniture', name: 'house_rooms_furniture', displayName: 'House, Rooms & Furniture', categoryId: 'home_local_area' },
-      { id: 'House, Rooms & Furniture', name: 'House, Rooms & Furniture', displayName: 'House, Rooms & Furniture', categoryId: 'home_local_area' },
-      { id: 'household_items_chores', name: 'household_items_chores', displayName: 'Household Items & Chores', categoryId: 'home_local_area' },
-      { id: 'local_area_places_town', name: 'local_area_places_town', displayName: 'Local Area & Places in Town', categoryId: 'home_local_area' },
-      { id: 'Local Area & Places in Town', name: 'Local Area & Places in Town', displayName: 'Local Area & Places in Town', categoryId: 'home_local_area' },
-      { id: 'directions_prepositions', name: 'directions_prepositions', displayName: 'Directions & Prepositions', categoryId: 'home_local_area' },
-      { id: 'shops_services', name: 'shops_services', displayName: 'Shops & Services', categoryId: 'home_local_area' },
-      { id: 'types_of_housing', name: 'types_of_housing', displayName: 'Types of Housing', categoryId: 'home_local_area' }
+      { id: 'mobile_phones_social_media', name: 'mobile_phones_social_media', displayName: 'Mobile Phones & Social Media', categoryId: 'technology_media' },
+      { id: 'internet_digital_devices', name: 'internet_digital_devices', displayName: 'Internet & Digital Devices', categoryId: 'technology_media' },
+      { id: 'tv', name: 'tv', displayName: 'TV', categoryId: 'technology_media' },
+      { id: 'film', name: 'film', displayName: 'Film', categoryId: 'technology_media' },
+      { id: 'music', name: 'music', displayName: 'Music', categoryId: 'technology_media' }
+    ]
+  },
+  {
+    id: 'health_lifestyle',
+    name: 'health_lifestyle',
+    displayName: 'Health & Lifestyle',
+    icon: '🏥',
+    subcategories: [
+      { id: 'parts_of_body', name: 'parts_of_body', displayName: 'Parts of Body', categoryId: 'health_lifestyle' },
+      { id: 'illnesses_symptoms', name: 'illnesses_symptoms', displayName: 'Illnesses & Symptoms', categoryId: 'health_lifestyle' },
+      { id: 'at_the_doctors', name: 'at_the_doctors', displayName: 'At the Doctors', categoryId: 'health_lifestyle' },
+      { id: 'healthy_living', name: 'healthy_living', displayName: 'Healthy Living', categoryId: 'health_lifestyle' }
+    ]
+  },
+  {
+    id: 'holidays_travel_culture',
+    name: 'holidays_travel_culture',
+    displayName: 'Holidays, Travel & Culture',
+    icon: '✈️',
+    subcategories: [
+      { id: 'countries', name: 'countries', displayName: 'Countries', categoryId: 'holidays_travel_culture' },
+      { id: 'nationalities', name: 'nationalities', displayName: 'Nationalities', categoryId: 'holidays_travel_culture' },
+      { id: 'transport', name: 'transport', displayName: 'Transport', categoryId: 'holidays_travel_culture' },
+      { id: 'travel_phrases', name: 'travel_phrases', displayName: 'Travel Phrases', categoryId: 'holidays_travel_culture' },
+      { id: 'accommodation', name: 'accommodation', displayName: 'Accommodation', categoryId: 'holidays_travel_culture' },
+      { id: 'holiday_activities', name: 'holiday_activities', displayName: 'Holiday Activities', categoryId: 'holidays_travel_culture' },
+      { id: 'weather_seasons', name: 'weather_seasons', displayName: 'Weather & Seasons', categoryId: 'holidays_travel_culture' },
+      { id: 'spanish_speaking_countries_traditions', name: 'spanish_speaking_countries_traditions', displayName: 'Spanish Speaking Countries & Traditions', categoryId: 'holidays_travel_culture' },
+      { id: 'festivals_celebrations', name: 'festivals_celebrations', displayName: 'Festivals & Celebrations', categoryId: 'holidays_travel_culture' }
+    ]
+  },
+  {
+    id: 'nature_environment',
+    name: 'nature_environment',
+    displayName: 'Nature & Environment',
+    icon: '🌿',
+    subcategories: [
+      { id: 'animals', name: 'animals', displayName: 'Animals', categoryId: 'nature_environment' },
+      { id: 'plants', name: 'plants', displayName: 'Plants', categoryId: 'nature_environment' },
+      { id: 'environmental_problems', name: 'environmental_problems', displayName: 'Environmental Problems', categoryId: 'nature_environment' }
+    ]
+  },
+  {
+    id: 'social_global_issues',
+    name: 'social_global_issues',
+    displayName: 'Social & Global Issues',
+    icon: '🌍',
+    subcategories: [
+      { id: 'social_issues', name: 'social_issues', displayName: 'Social Issues', categoryId: 'social_global_issues' },
+      { id: 'human_rights', name: 'human_rights', displayName: 'Human Rights', categoryId: 'social_global_issues' },
+      { id: 'global_problems_solutions', name: 'global_problems_solutions', displayName: 'Global Problems & Solutions', categoryId: 'social_global_issues' },
+      { id: 'current_affairs_world_events', name: 'current_affairs_world_events', displayName: 'Current Affairs & World Events', categoryId: 'social_global_issues' }
     ]
   }
 ];

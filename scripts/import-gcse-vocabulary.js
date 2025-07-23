@@ -12,6 +12,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { parse } = require('csv-parse/sync');
 
 // Load environment variables first
 require('dotenv').config({ path: '.env.local' });
@@ -31,45 +32,44 @@ if (!supabaseUrl || !supabaseServiceKey) {
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 /**
- * Parse CSV content into array of objects
+ * Parse CSV content into array of objects using proper CSV parser
  */
 function parseCSV(csvContent) {
-  const lines = csvContent.trim().split('\n');
-  const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
-  
-  const data = [];
-  for (let i = 1; i < lines.length; i++) {
-    const line = lines[i];
-    if (!line.trim()) continue;
+  try {
+    // Remove BOM if present
+    const cleanContent = csvContent.replace(/^\uFEFF/, '');
     
-    // Handle CSV parsing with potential commas in quoted fields
-    const values = [];
-    let current = '';
-    let inQuotes = false;
-    
-    for (let j = 0; j < line.length; j++) {
-      const char = line[j];
-      if (char === '"') {
-        inQuotes = !inQuotes;
-      } else if (char === ',' && !inQuotes) {
-        values.push(current.trim().replace(/"/g, ''));
-        current = '';
-      } else {
-        current += char;
+    // Parse CSV with proper handling of quotes, commas, and special characters
+    const records = parse(cleanContent, {
+      columns: true, // Use first row as column headers
+      skip_empty_lines: true,
+      trim: true,
+      quote: '"',
+      delimiter: ',',
+      escape: '"',
+      relax_column_count: true, // Allow inconsistent column counts
+      cast: (value, { column }) => {
+        // Clean up values
+        if (typeof value === 'string') {
+          return value.trim();
+        }
+        return value;
       }
-    }
-    values.push(current.trim().replace(/"/g, ''));
+    });
     
-    if (values.length >= 3) {
-      const row = {};
-      headers.forEach((header, index) => {
-        row[header] = values[index] || '';
-      });
-      data.push(row);
+    console.log(`📋 Parsed ${records.length} records from CSV`);
+    
+    // Log column headers for debugging
+    if (records.length > 0) {
+      console.log('📝 Column headers found:', Object.keys(records[0]));
     }
+    
+    return records;
+    
+  } catch (error) {
+    console.error('❌ CSV parsing error:', error.message);
+    throw new Error(`Failed to parse CSV: ${error.message}`);
   }
-  
-  return data;
 }
 
 /**
@@ -84,15 +84,28 @@ async function importVocabularyItems(vocabularyData) {
   
   for (const [index, item] of vocabularyData.entries()) {
     try {
-      // Map CSV columns to expected parameters
+      // Map CSV columns to expected parameters with better debugging
       const theme = item['Theme'] || item['theme'] || '';
       const topic = item['Topic'] || item['topic'] || '';
       const partOfSpeech = item['Part_of_Speech'] || item['Part of Speech'] || item['part_of_speech'] || '';
-      const spanishTerm = item['Headword_Spanish'] || item['Headword Spanish'] || item['headword_spanish'] || '';
-      const englishTranslation = item['English_Equivalent'] || item['English Equivalent'] || item['english_equivalent'] || '';
+      const spanishTerm = item['Headword_Spanish'] || item['Headword Spanish'] || item['headword_spanish'] || item['word'] || '';
+      const englishTranslation = item['English_Equivalent'] || item['English Equivalent'] || item['english_equivalent'] || item['translation'] || '';
+      
+      // Debug logging for first few items
+      if (index < 3) {
+        console.log(`\n🔍 Row ${index + 1} mapping:`);
+        console.log(`  Spanish: "${spanishTerm}" (from: ${Object.keys(item).find(k => item[k] === spanishTerm)})`);
+        console.log(`  English: "${englishTranslation}" (from: ${Object.keys(item).find(k => item[k] === englishTranslation)})`);
+        console.log(`  Theme: "${theme}"`);
+        console.log(`  Topic: "${topic}"`);
+        console.log(`  Part of Speech: "${partOfSpeech}"`);
+        console.log(`  All fields:`, Object.keys(item));
+      }
       
       if (!spanishTerm || !englishTranslation) {
         console.warn(`⚠️  Skipping row ${index + 2}: Missing Spanish term or English translation`);
+        console.warn(`    Available fields:`, Object.keys(item));
+        console.warn(`    Row data:`, item);
         continue;
       }
       
@@ -169,10 +182,38 @@ async function main() {
     if (vocabularyData.length > 0) {
       console.log('\n🔍 Preview of data:');
       console.log('Headers:', Object.keys(vocabularyData[0]));
-      console.log('First item:', vocabularyData[0]);
+      
+      // Show first item with field mapping
+      console.log('\n📋 First item field mapping:');
+      const firstItem = vocabularyData[0];
+      Object.keys(firstItem).forEach(key => {
+        const value = firstItem[key];
+        if (value && value.length > 0) {
+          console.log(`  ${key}: "${value.substring(0, 50)}${value.length > 50 ? '...' : ''}"`);
+        }
+      });
+      
+      // Check for potential issues
+      console.log('\n🔍 Checking for potential issues:');
+      const headers = Object.keys(firstItem);
+      
+      // Check if word/spanish term is in the expected place
+      const wordFields = headers.filter(h => h.toLowerCase().includes('word') || h.toLowerCase().includes('spanish') || h.toLowerCase().includes('headword'));
+      console.log(`  Word/Spanish fields found: ${wordFields.join(', ')}`);
+      
+      // Check if translation is in the expected place
+      const translationFields = headers.filter(h => h.toLowerCase().includes('translation') || h.toLowerCase().includes('english') || h.toLowerCase().includes('equivalent'));
+      console.log(`  Translation/English fields found: ${translationFields.join(', ')}`);
+      
+      // Check for suspicious shifts (tags in word column, etc.)
+      const firstWord = firstItem[wordFields[0]] || firstItem['word'] || '';
+      if (firstWord.includes(';') || firstWord.includes('greeting') || firstWord.includes('polite')) {
+        console.log('  ⚠️  WARNING: First word contains tags/metadata - possible column shift detected!');
+        console.log(`     First word value: "${firstWord}"`);
+      }
       
       if (vocabularyData.length > 1) {
-        console.log('Second item:', vocabularyData[1]);
+        console.log('\nSecond item:', vocabularyData[1]);
       }
       
       // Ask for confirmation

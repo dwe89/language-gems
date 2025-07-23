@@ -1,0 +1,169 @@
+word,translation,language,category,subcategory,part_of_speech,curriculum_level,example_sentence,example_translation,gender,article,base_word
+quedarme en casa,to stay at home,ES,free_time_leisure,hobbies_interests,verb,Me quedo en casa,I stay at home,,quedarme en casa,,
+ver la tele,to watch TV,ES,free_time_leisure,hobbies_interests,verb,Me gusta ver la tele,I like watching TV,,ver la tele,,
+ver películas,to watch films,ES,free_time_leisure,hobbies_interests,verb,Veo películas,I watch films,,ver películas,,
+leer libros,to read books,ES,free_time_leisure,hobbies_interests,verb,Me gusta leer libros,I like reading books,,leer libros,,
+leer revistas,to read magazines,ES,free_time_leisure,hobbies_interests,verb,Me gusta leer revistas,I like reading magazines,,leer revistas,,
+leer cómics,to read comics,ES,free_time_leisure,hobbies_interests,verb,Me gusta leer cómics,I like reading comics,,leer cómics,,
+jugar en la consola de videojuegos,to play on the games console,ES,free_time_leisure,hobbies_interests,verb,Juego en la consola,I play on the games console,,jugar en la consola de videojuegos,,
+escuchar música,to listen to music,ES,free_time_leisure,hobbies_interests,verb,Escucho música,I listen to music,,escuchar música,,
+dibujar,to draw,ES,free_time_leisure,hobbies_interests,verb,Dibujo,I draw,,dibujar,,
+bailar,to dance,ES,free_time_leisure,hobbies_interests,verb,Bailo,I dance,,bailar,,
+chatear con amigos,to chat with friends,ES,free_time_leisure,hobbies_interests,verb,Chateo con amigos,I chat with friends,,chatear con amigos,,
+me quedo en casa,I stay at home,ES,free_time_leisure,hobbies_interests_1st_person,verb,Me quedo en casa,I stay at home,,me quedo en casa,,
+veo la tele,I watch TV,ES,free_time_leisure,hobbies_interests_1st_person,verb,Veo la tele,I watch TV,,veo la tele,,
+veo películas,I watch films,ES,free_time_leisure,hobbies_interests_1st_person,verb,Veo películas,I watch films,,veo películas,,
+leo libros,I read books,ES,free_time_leisure,hobbies_interests_1st_person,verb,Leo libros,I read books,,leo libros,,
+leo revistas,I read magazines,ES,free_time_leisure,hobbies_interests_1st_person,verb,Leo revistas,I read magazines,,leo revistas,,
+leo cómics,I read comics,ES,free_time_leisure,hobbies_interests_1st_person,verb,Leo cómics,I read comics,,leo cómics,,
+juego en la consola de videojuegos,I play on the games console,ES,free_time_leisure,hobbies_interests_1st_person,verb,Juego en la consola,I play on the games console,,juego en la consola de videojuegos,,
+escucho música,I listen to music,ES,free_time_leisure,hobbies_interests_1st_person,verb,Escucho música,I listen to music,,escucho música,,
+dibujo,I draw,ES,free_time_leisure,hobbies_interests_1st_person,verb,Dibujo,I draw,,dibujo,,
+bailo,I dance,ES,free_time_leisure,hobbies_interests_1st_person,verb,Bailo,I dance,,bailo,,
+chateo con amigos,I chat with friends,ES,free_time_leisure,hobbies_interests_1st_person,verb,Chateo con amigos,I chat with friends,,chateo con amigos,,
+el baloncesto,basketball,ES,free_time_leisure,sports_ball_games,noun,Me gusta el baloncesto,I like basketball,m,el baloncesto,,
+juego al baloncesto,I play basketball,ES,free_time_leisure,sports_ball_games,verb,Juego al baloncesto,I play basketball,,juego al baloncesto,,
+el rugby,rugby,ES,free_time_leisure,sports_ball_games,noun,Me gusta el rugby,I like rugby,m,el rugby,,
+juego al rugby,I play rugby,ES,free_time_leisure,sports_ball_games,verb,Juego al rugby,I play rugby,,juego al rugby,,
+el críquet,cricket,ES,free_time_leisure,sports_ball_games,noun,Me gusta el críquet,I like cricket,m,el críquet,,
+juego al críquet,I play cricket,ES,free_time_leisure,sports_ball_games,verb,Juego al críquet,I play cricket,,juego al críquet,,
+el fútbol,football/soccer,ES,free_time_leisure,sports_ball_games,noun,Me gusta el fútbol,I like football,m,el fútbol,,
+juego al fútbol,I play football,ES,free_time_leisure,sports_ball_games,verb,Juego al fútbol,I play football,,juego al fútbol,,
+el tenis,tennis,ES,free_time_leisure,sports_ball_games,noun,Me gusta el tenis,I like tennis,m,el tenis,,
+juego al tenis,I play tennis,ES,free_time_leisure,sports_ball_games,verb,Juego al tenis,I play tennis,,juego al tenis,,
+el alpinismo,mountaineering,ES,free_time_leisure,sports_outdoor,noun,Me gusta el alpinismo,I like mountaineering,m,el alpinismo,,
+Hago alpinismo,I do mountaineering,ES,free_time_leisure,sports_outdoor,verb,Hago alpinismo,I do mountaineering,,Hago alpinismo,,
+el atletismo,athletics,ES,free_time_leisure,sports_outdoor,noun,Me gusta el atletismo,I like athletics,m,el atletismo,,
+Hago atletismo,I do athletics,ES,free_time_leisure,sports_outdoor,verb,Hago atletismo,I do athletics,,Hago atletismo,,
+el ciclismo,cycling,ES,free_time_leisure,sports_outdoor,noun,Me gusta el ciclismo,I like cycling,m,el ciclismo,,
+Hago ciclismo,I do cycling,ES,free_time_leisure,sports_outdoor,verb,Hago ciclismo,I do cycling,,Hago ciclismo,,
+el esquí,skiing,ES,free_time_leisure,sports_outdoor,noun,Me gusta el esquí,I like skiing,m,el esquí,,
+Hago esquí,I do skiing,ES,free_time_leisure,sports_outdoor,verb,Hago esquí,I do skiing,,Hago esquí,,
+la equitación,horse riding,ES,free_time_leisure,sports_outdoor,noun,Me gusta la equitación,I like horse riding,f,la equitación,,
+Hago equitación,I do horse riding,ES,free_time_leisure,sports_outdoor,verb,Hago equitación,I do horse riding,,Hago equitación,,
+la pesca,fishing,ES,free_time_leisure,sports_outdoor,noun,Me gusta la pesca,I like fishing,f,la pesca,,
+Hago pesca,I do fishing,ES,free_time_leisure,sports_outdoor,verb,Hago pesca,I do fishing,,Hago pesca,,
+la natación,swimming,ES,free_time_leisure,sports_indoor,noun,Me gusta la natación,I like swimming,f,la natación,,
+Hago natación,I do swimming,ES,free_time_leisure,sports_indoor,verb,Hago natación,I do swimming,,Hago natación,,
+la gimnasia,gymnastics,ES,free_time_leisure,sports_indoor,noun,Me gusta la gimnasia,I like gymnastics,f,la gimnasia,,
+Hago gimnasia,I do gymnastics,ES,free_time_leisure,sports_indoor,verb,Hago gimnasia,I do gymnastics,,Hago gimnasia,,
+el boxeo,boxing,ES,free_time_leisure,sports_indoor,noun,Me gusta el boxeo,I like boxing,m,el boxeo,,
+Hago boxeo,I do boxing,ES,free_time_leisure,sports_indoor,verb,Hago boxeo,I do boxing,,Hago boxeo,,
+el patinaje,skating,ES,free_time_leisure,sports_indoor,noun,Me gusta el patinaje,I like skating,m,el patinaje,,
+Hago patinaje,I do skating,ES,free_time_leisure,sports_indoor,verb,Hago patinaje,I do skating,,Hago patinaje,,
+el ping-pong,table tennis,ES,free_time_leisure,sports_indoor,noun,Me gusta el ping-pong,I like table tennis,m,el ping-pong,,
+Juego al ping-pong,I play table tennis,ES,free_time_leisure,sports_indoor,verb,Juego al ping-pong,I play table tennis,,Juego al ping-pong,,
+salir con amigos,to go out with friends,ES,free_time_leisure,hobbies_interests,verb,Salgo con amigos,I go out with friends,,salir con amigos,,
+ir de compras,to go shopping,ES,free_time_leisure,hobbies_interests,verb,Voy de compras,I go shopping,,ir de compras,,
+rester à la maison,to stay at home,FR,free_time_leisure,hobbies_interests,verb,Je reste à la maison,I stay at home,,rester à la maison,,
+regarder la télé,to watch TV,FR,free_time_leisure,hobbies_interests,verb,J'aime regarder la télé,I like watching TV,,regarder la télé,,
+regarder des films,to watch films,FR,free_time_leisure,hobbies_interests,verb,Je regarde des films,I watch films,,regarder des films,,
+lire des livres,to read books,FR,free_time_leisure,hobbies_interests,verb,J'aime lire des livres,I like reading books,,lire des livres,,
+lire des magazines,to read magazines,FR,free_time_leisure,hobbies_interests,verb,J'aime lire des magazines,I like reading magazines,,lire des magazines,,
+lire des bandes dessinées,to read comics,FR,free_time_leisure,hobbies_interests,verb,J'aime lire des bandes dessinées,I like reading comics,,lire des bandes dessinées,,
+jouer à la console de jeux vidéo,to play on the games console,FR,free_time_leisure,hobbies_interests,verb,Je joue à la console,I play on the games console,,jouer à la console de jeux vidéo,,
+écouter de la musique,to listen to music,FR,free_time_leisure,hobbies_interests,verb,J'écoute de la musique,I listen to music,,écouter de la musique,,
+dessiner,to draw,FR,free_time_leisure,hobbies_interests,verb,Je dessine,I draw,,dessiner,,
+danser,to dance,FR,free_time_leisure,hobbies_interests,verb,Je danse,I dance,,danser,,
+chatter avec des amis,to chat with friends,FR,free_time_leisure,hobbies_interests,verb,Je chatte avec des amis,I chat with friends,,chatter avec des amis,,
+je reste à la maison,I stay at home,FR,free_time_leisure,hobbies_interests_1st_person,verb,Je reste à la maison,I stay at home,,je reste à la maison,,
+je regarde la télé,I watch TV,FR,free_time_leisure,hobbies_interests_1st_person,verb,Je regarde la télé,I watch TV,,je regarde la télé,,
+je regarde des films,I watch films,FR,free_time_leisure,hobbies_interests_1st_person,verb,Je regarde des films,I watch films,,je regarde des films,,
+je lis des livres,I read books,FR,free_time_leisure,hobbies_interests_1st_person,verb,Je lis des livres,I read books,,je lis des livres,,
+je lis des magazines,I read magazines,FR,free_time_leisure,hobbies_interests_1st_person,verb,Je lis des magazines,I read magazines,,je lis des magazines,,
+je lis des bandes dessinées,I read comics,FR,free_time_leisure,hobbies_interests_1st_person,verb,Je lis des bandes dessinées,I read comics,,je lis des bandes dessinées,,
+je joue à la console de jeux vidéo,I play on the games console,FR,free_time_leisure,hobbies_interests_1st_person,verb,Je joue à la console,I play on the games console,,je joue à la console de jeux vidéo,,
+j'écoute de la musique,I listen to music,FR,free_time_leisure,hobbies_interests_1st_person,verb,J'écoute de la musique,I listen to music,,j'écoute de la musique,,
+je dessine,I draw,FR,free_time_leisure,hobbies_interests_1st_person,verb,Je dessine,I draw,,je dessine,,
+je danse,I dance,FR,free_time_leisure,hobbies_interests_1st_person,verb,Je danse,I dance,,je danse,,
+je chatte avec des amis,I chat with friends,FR,free_time_leisure,hobbies_interests_1st_person,verb,Je chatte avec des amis,I chat with friends,,je chatte avec des amis,,
+le basket-ball,basketball,FR,free_time_leisure,sports_ball_games,noun,KS3,J'aime le basket-ball,I like basketball,m,,le basket-ball
+je joue au basket-ball,I play basketball,FR,free_time_leisure,sports_ball_games,verb,KS3,Je joue au basket-ball,I play basketball,,,je joue au basket-ball
+le rugby,rugby,FR,free_time_leisure,sports_ball_games,noun,KS3,J'aime le rugby,I like rugby,m,,le rugby
+je joue au rugby,I play rugby,FR,free_time_leisure,sports_ball_games,verb,KS3,Je joue au rugby,I play rugby,,,je joue au rugby
+le cricket,cricket,FR,free_time_leisure,sports_ball_games,noun,KS3,J'aime le cricket,I like cricket,m,,le cricket
+je joue au cricket,I play cricket,FR,free_time_leisure,sports_ball_games,verb,KS3,Je joue au cricket,I play cricket,,,je joue au cricket
+le football,football/soccer,FR,free_time_leisure,sports_ball_games,noun,KS3,J'aime le football,I like football,m,,le football
+je joue au football,I play football,FR,free_time_leisure,sports_ball_games,verb,KS3,Je joue au football,I play football,,,je joue au football
+le tennis,tennis,FR,free_time_leisure,sports_ball_games,noun,KS3,J'aime le tennis,I like tennis,m,,le tennis
+je joue au tennis,I play tennis,FR,free_time_leisure,sports_ball_games,verb,KS3,Je joue au tennis,I play tennis,,,je joue au tennis
+l'alpinisme,mountaineering,FR,free_time_leisure,sports_outdoor,noun,KS3,J'aime l'alpinisme,I like mountaineering,m,,l'alpinisme
+je fais de l'alpinisme,I do mountaineering,FR,free_time_leisure,sports_outdoor,verb,KS3,Je fais de l'alpinisme,I do mountaineering,,,je fais de l'alpinisme
+l'athlétisme,athletics,FR,free_time_leisure,sports_outdoor,noun,KS3,J'aime l'athlétisme,I like athletics,m,,l'athlétisme
+je fais de l'athlétisme,I do athletics,FR,free_time_leisure,sports_outdoor,verb,KS3,Je fais de l'athlétisme,I do athletics,,,je fais de l'athlétisme
+le cyclisme,cycling,FR,free_time_leisure,sports_outdoor,noun,KS3,J'aime le cyclisme,I like cycling,m,,le cyclisme
+je fais du cyclisme,I do cycling,FR,free_time_leisure,sports_outdoor,verb,KS3,Je fais du cyclisme,I do cycling,,,je fais du cyclisme
+le ski,skiing,FR,free_time_leisure,sports_outdoor,noun,KS3,J'aime le ski,I like skiing,m,,le ski
+je fais du ski,I do skiing,FR,free_time_leisure,sports_outdoor,verb,KS3,Je fais du ski,I do skiing,,,je fais du ski
+l'équitation,horse riding,FR,free_time_leisure,sports_outdoor,noun,KS3,J'aime l'équitation,I like horse riding,f,,l'équitation
+je fais de l'équitation,I do horse riding,FR,free_time_leisure,sports_outdoor,verb,KS3,Je fais de l'équitation,I do horse riding,,,je fais de l'équitation
+la pêche,fishing,FR,free_time_leisure,sports_outdoor,noun,KS3,J'aime la pêche,I like fishing,f,,la pêche
+je fais de la pêche,I do fishing,FR,free_time_leisure,sports_outdoor,verb,KS3,Je fais de la pêche,I do fishing,,,je fais de la pêche
+la natation,swimming,FR,free_time_leisure,sports_indoor,noun,KS3,J'aime la natation,I like swimming,f,,la natation
+je fais de la natation,I do swimming,FR,free_time_leisure,sports_indoor,verb,KS3,Je fais de la natation,I do swimming,,,je fais de la natation
+la gymnastique,gymnastics,FR,free_time_leisure,sports_indoor,noun,KS3,J'aime la gymnastique,I like gymnastics,f,,la gymnastique
+je fais de la gymnastique,I do gymnastics,FR,free_time_leisure,sports_indoor,verb,KS3,Je fais de la gymnastique,I do gymnastics,,,je fais de la gymnastique
+la boxe,boxing,FR,free_time_leisure,sports_indoor,noun,KS3,J'aime la boxe,I like boxing,f,,la boxe
+je fais de la boxe,I do boxing,FR,free_time_leisure,sports_indoor,verb,KS3,Je fais de la boxe,I do boxing,,,je fais de la boxe
+le patinage,skating,FR,free_time_leisure,sports_indoor,noun,KS3,J'aime le patinage,I like skating,m,,le patinage
+je fais du patinage,I do skating,FR,free_time_leisure,sports_indoor,verb,KS3,Je fais du patinage,I do skating,,,je fais du patinage
+le ping-pong,table tennis,FR,free_time_leisure,sports_indoor,noun,KS3,J'aime le ping-pong,I like table tennis,m,,le ping-pong
+je joue au ping-pong,I play table tennis,FR,free_time_leisure,sports_indoor,verb,KS3,Je joue au ping-pong,I play table tennis,,,je joue au ping-pong
+sortir avec des amis,to go out with friends,FR,free_time_leisure,hobbies_interests,verb,KS3,Je sors avec des amis,I go out with friends,,,sortir avec des amis
+faire du shopping,to go shopping,FR,free_time_leisure,hobbies_interests,verb,KS3,Je fais du shopping,I go shopping,,,faire du shopping
+zu Hause bleiben,to stay at home,DE,free_time_leisure,hobbies_interests,verb,KS3,Ich bleibe zu Hause,I stay at home,,,zu Hause bleiben
+fernsehen,to watch TV,DE,free_time_leisure,hobbies_interests,verb,KS3,Ich sehe gern fern,I like watching TV,,,fernsehen
+Filme schauen,to watch films,DE,free_time_leisure,hobbies_interests,verb,KS3,Ich schaue Filme,I watch films,,,Filme schauen
+Bücher lesen,to read books,DE,free_time_leisure,hobbies_interests,verb,KS3,Ich lese gern Bücher,I like reading books,,,Bücher lesen
+Zeitschriften lesen,to read magazines,DE,free_time_leisure,hobbies_interests,verb,KS3,Ich lese gern Zeitschriften,I like reading magazines,,,Zeitschriften lesen
+Comics lesen,to read comics,DE,free_time_leisure,hobbies_interests,verb,KS3,Ich lese gern Comics,I like reading comics,,,Comics lesen
+an der Spielkonsole spielen,to play on the games console,DE,free_time_leisure,hobbies_interests,verb,KS3,Ich spiele an der Konsole,I play on the games console,,,an der Spielkonsole spielen
+Musik hören,to listen to music,DE,free_time_leisure,hobbies_interests,verb,KS3,Ich höre Musik,I listen to music,,,Musik hören
+zeichnen,to draw,DE,free_time_leisure,hobbies_interests,verb,KS3,Ich zeichne,I draw,,,zeichnen
+tanzen,to dance,DE,free_time_leisure,hobbies_interests,verb,KS3,Ich tanze,I dance,,,tanzen
+mit Freunden chatten,to chat with friends,DE,free_time_leisure,hobbies_interests,verb,KS3,Ich chatte mit Freunden,I chat with friends,,,mit Freunden chatten
+ich bleibe zu Hause,I stay at home,DE,free_time_leisure,hobbies_interests_1st_person,verb,KS3,Ich bleibe zu Hause,I stay at home,,,ich bleibe zu Hause
+ich sehe fern,I watch TV,DE,free_time_leisure,hobbies_interests_1st_person,verb,KS3,Ich sehe fern,I watch TV,,,ich sehe fern
+ich schaue Filme,I watch films,DE,free_time_leisure,hobbies_interests_1st_person,verb,KS3,Ich schaue Filme,I watch films,,,ich schaue Filme
+ich lese Bücher,I read books,DE,free_time_leisure,hobbies_interests_1st_person,verb,KS3,Ich lese Bücher,I read books,,,ich lese Bücher
+ich lese Zeitschriften,I read magazines,DE,free_time_leisure,hobbies_interests_1st_person,verb,KS3,Ich lese Zeitschriften,I read magazines,,,ich lese Zeitschriften
+ich lese Comics,I read comics,DE,free_time_leisure,hobbies_interests_1st_person,verb,KS3,Ich lese Comics,I read comics,,,ich lese Comics
+ich spiele an der Spielkonsole,I play on the games console,DE,free_time_leisure,hobbies_interests_1st_person,verb,KS3,Ich spiele an der Konsole,I play on the games console,,,ich spiele an der Spielkonsole
+ich höre Musik,I listen to music,DE,free_time_leisure,hobbies_interests_1st_person,verb,KS3,Ich höre Musik,I listen to music,,,ich höre Musik
+ich zeichne,I draw,DE,free_time_leisure,hobbies_interests_1st_person,verb,KS3,Ich zeichne,I draw,,,ich zeichne
+ich tanze,I dance,DE,free_time_leisure,hobbies_interests_1st_person,verb,KS3,Ich tanze,I dance,,,ich tanze
+ich chatte mit Freunden,I chat with friends,DE,free_time_leisure,hobbies_interests_1st_person,verb,KS3,Ich chatte mit Freunden,I chat with friends,,,ich chatte mit Freunden
+der Basketball,basketball,DE,free_time_leisure,sports_ball_games,noun,KS3,Ich mag Basketball,I like basketball,m,,der Basketball
+ich spiele Basketball,I play basketball,DE,free_time_leisure,sports_ball_games,verb,KS3,Ich spiele Basketball,I play basketball,,,ich spiele Basketball
+das Rugby,rugby,DE,free_time_leisure,sports_ball_games,noun,KS3,Ich mag Rugby,I like rugby,n,,das Rugby
+ich spiele Rugby,I play rugby,DE,free_time_leisure,sports_ball_games,verb,KS3,Ich spiele Rugby,I play rugby,,,ich spiele Rugby
+das Cricket,cricket,DE,free_time_leisure,sports_ball_games,noun,KS3,Ich mag Cricket,I like cricket,n,,das Cricket
+ich spiele Cricket,I play cricket,DE,free_time_leisure,sports_ball_games,verb,KS3,Ich spiele Cricket,I play cricket,,,ich spiele Cricket
+der Fußball,football/soccer,DE,free_time_leisure,sports_ball_games,noun,KS3,Ich mag Fußball,I like football,m,,der Fußball
+ich spiele Fußball,I play football,DE,free_time_leisure,sports_ball_games,verb,KS3,Ich spiele Fußball,I play football,,,ich spiele Fußball
+das Tennis,tennis,DE,free_time_leisure,sports_ball_games,noun,KS3,Ich mag Tennis,I like tennis,n,,das Tennis
+ich spiele Tennis,I play tennis,DE,free_time_leisure,sports_ball_games,verb,KS3,Ich spiele Tennis,I play tennis,,,ich spiele Tennis
+das Bergsteigen,mountaineering,DE,free_time_leisure,sports_outdoor,noun,KS3,Ich mag Bergsteigen,I like mountaineering,n,,das Bergsteigen
+ich mache Bergsteigen,I do mountaineering,DE,free_time_leisure,sports_outdoor,verb,KS3,Ich mache Bergsteigen,I do mountaineering,,,ich mache Bergsteigen
+die Leichtathletik,athletics,DE,free_time_leisure,sports_outdoor,noun,KS3,Ich mag Leichtathletik,I like athletics,f,,die Leichtathletik
+ich mache Leichtathletik,I do athletics,DE,free_time_leisure,sports_outdoor,verb,KS3,Ich mache Leichtathletik,I do athletics,,,ich mache Leichtathletik
+das Radfahren,cycling,DE,free_time_leisure,sports_outdoor,noun,KS3,Ich mag Radfahren,I like cycling,n,,das Radfahren
+ich fahre Rad,I do cycling,DE,free_time_leisure,sports_outdoor,verb,KS3,Ich fahre Rad,I do cycling,,,ich fahre Rad
+das Skifahren,skiing,DE,free_time_leisure,sports_outdoor,noun,KS3,Ich mag Skifahren,I like skiing,n,,das Skifahren
+ich fahre Ski,I do skiing,DE,free_time_leisure,sports_outdoor,verb,KS3,Ich fahre Ski,I do skiing,,,ich fahre Ski
+das Reiten,horse riding,DE,free_time_leisure,sports_outdoor,noun,KS3,Ich mag Reiten,I like horse riding,n,,das Reiten
+ich reite,I do horse riding,DE,free_time_leisure,sports_outdoor,verb,KS3,Ich reite,I do horse riding,,,ich reite
+das Angeln,fishing,DE,free_time_leisure,sports_outdoor,noun,KS3,Ich mag Angeln,I like fishing,n,,das Angeln
+ich angle,I do fishing,DE,free_time_leisure,sports_outdoor,verb,KS3,Ich angle,I do fishing,,,ich angle
+das Schwimmen,swimming,DE,free_time_leisure,sports_indoor,noun,KS3,Ich mag Schwimmen,I like swimming,n,,das Schwimmen
+ich schwimme,I do swimming,DE,free_time_leisure,sports_indoor,verb,KS3,Ich schwimme,I do swimming,,,ich schwimme
+das Turnen,gymnastics,DE,free_time_leisure,sports_indoor,noun,KS3,Ich mag Turnen,I like gymnastics,n,,das Turnen
+ich turne,I do gymnastics,DE,free_time_leisure,sports_indoor,verb,KS3,Ich turne,I do gymnastics,,,ich turne
+das Boxen,boxing,DE,free_time_leisure,sports_indoor,noun,KS3,Ich mag Boxen,I like boxing,n,,das Boxen
+ich boxe,I do boxing,DE,free_time_leisure,sports_indoor,verb,KS3,Ich boxe,I do boxing,,,ich boxe
+das Schlittschuhlaufen,skating,DE,free_time_leisure,sports_indoor,noun,KS3,Ich mag Schlittschuhlaufen,I like skating,n,,das Schlittschuhlaufen
+ich laufe Schlittschuh,I do skating,DE,free_time_leisure,sports_indoor,verb,KS3,Ich laufe Schlittschuh,I do skating,,,ich laufe Schlittschuh
+das Tischtennis,table tennis,DE,free_time_leisure,sports_indoor,noun,KS3,Ich mag Tischtennis,I like table tennis,n,,das Tischtennis
+ich spiele Tischtennis,I play table tennis,DE,free_time_leisure,sports_indoor,verb,KS3,Ich spiele Tischtennis,I play table tennis,,,ich spiele Tischtennis
+mit Freunden ausgehen,to go out with friends,DE,free_time_leisure,hobbies_interests,verb,KS3,Ich gehe mit Freunden aus,I go out with friends,,,mit Freunden ausgehen
+einkaufen gehen,to go shopping,DE,free_time_leisure,hobbies_interests,verb,KS3,Ich gehe einkaufen,I go shopping,,,einkaufen gehen

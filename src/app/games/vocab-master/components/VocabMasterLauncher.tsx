@@ -13,7 +13,7 @@ import {
 import VocabMasterGame from './VocabMasterGame';
 
 // Category system imports
-import CategorySelector from '../../../../components/games/CategorySelector';
+import ModernCategorySelector from '../../../../components/games/ModernCategorySelector';
 import { useVocabularyByCategory } from '../../../../hooks/useVocabulary';
 
 // Helper function to get category display name
@@ -21,16 +21,18 @@ const getCategoryById = (id: string) => {
   const categoryMap: Record<string, { displayName: string }> = {
     'basics_core_language': { displayName: 'Basics & Core Language' },
     'identity_personal_life': { displayName: 'Identity & Personal Life' },
-    'food_drink': { displayName: 'Food & Drink' },
-    'nature_environment': { displayName: 'Nature & Environment' },
-    'school_jobs_future': { displayName: 'School, Jobs & Future' },
-    'clothes_shopping': { displayName: 'Clothes & Shopping' },
     'home_local_area': { displayName: 'Home & Local Area' },
-    'holidays_travel_culture': { displayName: 'Holidays, Travel & Culture' },
-    'health_lifestyle': { displayName: 'Health & Lifestyle' },
+    'school_jobs_future': { displayName: 'School, Jobs & Future' },
     'free_time_leisure': { displayName: 'Free Time & Leisure' },
+    'food_drink': { displayName: 'Food & Drink' },
+    'clothes_shopping': { displayName: 'Clothes & Shopping' },
     'technology_media': { displayName: 'Technology & Media' },
-    'social_global_issues': { displayName: 'Social & Global Issues' }
+    'health_lifestyle': { displayName: 'Health & Lifestyle' },
+    'holidays_travel_culture': { displayName: 'Holidays, Travel & Culture' },
+    'nature_environment': { displayName: 'Nature & Environment' },
+    'social_global_issues': { displayName: 'Social & Global Issues' },
+    'general_concepts': { displayName: 'General Concepts' },
+    'daily_life': { displayName: 'Daily Life' }
   };
   return categoryMap[id] || { displayName: id };
 };
@@ -160,13 +162,15 @@ export default function VocabMasterLauncher() {
     { code: 'de', name: 'German', flag: '🇩🇪' }
   ]);
 
-  // Dynamic vocabulary loading based on category selection
-  const { vocabulary: categoryVocabulary, loading: vocabLoading, error: vocabError } = useVocabularyByCategory({
+  // Use category-based vocabulary hook
+  const {
+    vocabulary: filteredVocabulary,
+    loading: categoryLoading,
+    error: categoryError
+  } = useVocabularyByCategory({
     language: selectedLanguage,
-    categoryId: selectedCategory,
-    subcategoryId: selectedSubcategory,
-    difficultyLevel: 'beginner',
-    curriculumLevel: 'KS3'
+    categoryId: selectedCategory || undefined,
+    subcategoryId: selectedSubcategory || undefined
   });
 
   // Load vocabulary and user stats on component mount
@@ -175,18 +179,7 @@ export default function VocabMasterLauncher() {
     loadUserStats();
   }, [user, selectedLanguage]);
 
-  // Use category-based vocabulary when categories are selected
-  const { 
-    vocabulary: filteredVocabulary, 
-    loading: categoryLoading, 
-    error: categoryError 
-  } = useVocabularyByCategory({
-    language: selectedLanguage,
-    categoryId: selectedCategory || undefined,
-    subcategoryId: selectedSubcategory || undefined
-  });
-
-  // Reload vocabulary when categories change or when component mounts
+  // Reload vocabulary when categories change or when hook data is ready
   useEffect(() => {
     loadVocabulary();
   }, [selectedLanguage, selectedCategory, selectedSubcategory, filteredVocabulary]);
@@ -194,8 +187,10 @@ export default function VocabMasterLauncher() {
   const loadVocabulary = async () => {
     setIsLoadingVocabulary(true);
     try {
-      // Use category-filtered vocabulary if categories are selected
-      if ((selectedCategory && selectedCategory !== '') && filteredVocabulary) {
+      // Check if we have a category selected
+      const hasCategory = selectedCategory && selectedCategory !== '';
+
+      if (hasCategory && filteredVocabulary) {
         if (filteredVocabulary.length > 0) {
           // Transform the category vocabulary data to match the expected interface
           const transformedVocabulary: VocabularyWord[] = filteredVocabulary
@@ -226,11 +221,13 @@ export default function VocabMasterLauncher() {
         }
       } else {
         // Load all vocabulary for selected language if no categories selected
+        // Set a high limit to ensure we get all vocabulary (Supabase defaults to 1000)
         const { data: vocabularyData, error } = await supabase
           .from('centralized_vocabulary')
           .select('*')
           .eq('language', selectedLanguage)
-          .order('created_at');
+          .order('created_at')
+          .limit(10000); // Set high limit to get all vocabulary
 
         if (error) {
           console.error('Error loading vocabulary for', selectedLanguage, ':', error);
@@ -651,9 +648,9 @@ export default function VocabMasterLauncher() {
             <div className="flex items-center space-x-2">
               <div className={`w-3 h-3 rounded-full ${isLoadingVocabulary ? 'bg-yellow-400 animate-pulse' : vocabulary.length > 0 ? 'bg-green-400' : 'bg-red-400'}`}></div>
               <span className="text-sm font-medium text-blue-800">
-                {isLoadingVocabulary || categoryLoading ? 
-                  'Loading vocabulary...' : 
-                  `${vocabulary.length} words available`
+                {isLoadingVocabulary || categoryLoading ?
+                  'Loading vocabulary...' :
+                  vocabulary.length > 0 ? 'Vocabulary ready' : 'No vocabulary found'
                 }
               </span>
             </div>
@@ -931,13 +928,14 @@ export default function VocabMasterLauncher() {
                   </button>
                 </div>
                 
-                <CategorySelector 
-                  onCategorySelect={(categoryId, subcategoryId) => {
+                <ModernCategorySelector 
+                  onCategorySelect={(categoryId: string, subcategoryId: string | null) => {
                     setSelectedCategory(categoryId);
                     setSelectedSubcategory(subcategoryId || '');
                     setShowCategorySelector(false);
                   }}
                   selectedLanguage={selectedLanguage}
+                  gameName="Vocab Master"
                 />
               </motion.div>
             </motion.div>

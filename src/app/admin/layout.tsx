@@ -137,6 +137,14 @@ export default function AdminLayout({
                   <Plus className="w-4 h-4" />
                   <span>Add Product</span>
                 </Link>
+
+                <Link 
+                  href="/admin/vocabulary" 
+                  className="flex items-center space-x-2 text-slate-700 hover:text-indigo-600 font-medium transition-colors"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Vocabulary</span>
+                </Link>
               </div>
             </div>
           </div>

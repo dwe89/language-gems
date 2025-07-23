@@ -176,16 +176,8 @@ type Game = {
   path: string;
 };
 
-const gameCategories = [
-  { id: 'all', name: 'All Games' },
-  { id: 'popular', name: 'Popular' },
-  { id: 'new', name: 'New' },
-  { id: 'vocabulary', name: 'Vocabulary' },
-  { id: 'grammar', name: 'Grammar' },
-  { id: 'verbs', name: 'Verbs' },
-];
-
-const games = [
+// Game data is now loaded dynamically in the component
+const staticGames = [
   {
     id: 'speed-builder',
     title: 'Sentence Sprint',
@@ -301,7 +293,6 @@ const games = [
 
 export default function GamesPage() {
   const { user, isLoading } = useAuth();
-  const [activeCategory, setActiveCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [games, setGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
@@ -473,16 +464,18 @@ export default function GamesPage() {
     );
   }
 
-  const filteredGames = filter === 'all'
-    ? games
-    : games.filter(game => game.category === filter);
+  // Combined filtering logic for both category filter and search query
+  const filteredGames = games.filter(game => {
+    // Apply category filter
+    const matchesCategory = filter === 'all' || game.category.includes(filter);
 
-  // Filter games based on active category and search query
-  const filteredGamesByCategory = games.filter(game =>
-    (activeCategory === 'all' || (activeCategory === 'popular' && game.popular) || game.category.includes(activeCategory)) &&
-    (game.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      game.description.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+    // Apply search query filter
+    const matchesSearch = searchQuery === '' ||
+      game.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      game.description.toLowerCase().includes(searchQuery.toLowerCase());
+
+    return matchesCategory && matchesSearch;
+  });
 
   return (
     <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 min-h-screen">
@@ -551,7 +544,7 @@ export default function GamesPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredGamesByCategory.map((game) => (
+            {filteredGames.map((game) => (
               <div
                 key={game.id}
                 className="bg-white rounded-xl overflow-hidden border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 hover:border-indigo-300"

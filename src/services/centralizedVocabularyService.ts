@@ -90,8 +90,11 @@ export class CentralizedVocabularyService {
       // Apply pagination
       if (query.limit) {
         supabaseQuery = supabaseQuery.limit(query.limit);
+      } else {
+        // Set a high default limit to avoid Supabase's 1000 row default limit
+        supabaseQuery = supabaseQuery.limit(10000);
       }
-      
+
       if (query.offset) {
         supabaseQuery = supabaseQuery.range(query.offset, query.offset + (query.limit || 20) - 1);
       }

@@ -23,10 +23,8 @@ export const KS3_SPANISH_CATEGORIES: Category[] = [
       { id: 'greetings_introductions', name: 'greetings_introductions', displayName: 'Greetings & Introductions', categoryId: 'basics_core_language' },
       { id: 'common_phrases', name: 'common_phrases', displayName: 'Common Phrases', categoryId: 'basics_core_language' },
       { id: 'opinions', name: 'opinions', displayName: 'Opinions', categoryId: 'basics_core_language' },
-      { id: 'numbers_1_20', name: 'numbers_1_20', displayName: 'Numbers 1-20', categoryId: 'basics_core_language' },
-      { id: 'numbers_1_50', name: 'numbers_1_50', displayName: 'Numbers 1-50', categoryId: 'basics_core_language' },
-      { id: 'numbers_1_100', name: 'numbers_1_100', displayName: 'Numbers 1-100', categoryId: 'basics_core_language' },
-      { id: 'dates_time', name: 'dates_time', displayName: 'Dates & Time', categoryId: 'basics_core_language' },
+      { id: 'numbers_1_30', name: 'numbers_1_30', displayName: 'Numbers 1-30', categoryId: 'basics_core_language' },
+      { id: 'numbers_40_100', name: 'numbers_40_100', displayName: 'Numbers 40-100', categoryId: 'basics_core_language' },
       { id: 'colours', name: 'colours', displayName: 'Colours', categoryId: 'basics_core_language' },
       { id: 'days', name: 'days', displayName: 'Days', categoryId: 'basics_core_language' },
       { id: 'months', name: 'months', displayName: 'Months', categoryId: 'basics_core_language' }

@@ -121,7 +121,9 @@ export default function VocabMasterGame({
 
   const [multipleChoiceOptions, setMultipleChoiceOptions] = useState<MultipleChoiceOption[]>([]);
   const [showHint, setShowHint] = useState(false);
+  const [showTranslation, setShowTranslation] = useState(false);
   const [gameComplete, setGameComplete] = useState(false);
+  const [accentWarning, setAccentWarning] = useState(false);
   const [clozeExercise, setClozeExercise] = useState<{
     sentence: string;
     blankedSentence: string;
@@ -157,9 +159,7 @@ export default function VocabMasterGame({
         audioRef.current.pause();
         audioRef.current.src = '';
       }
-      if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-      }
+      // No need to cancel speechSynthesis since we're not using it
     };
   }, []);
 
@@ -201,11 +201,14 @@ export default function VocabMasterGame({
       generateMultipleChoice(firstWord, shuffledVocab);
     }
     
-    // Auto-play audio for listening mode
+    // Auto-play audio for listening mode and learn mode
     if (selectedGameMode === 'listening') {
-      setTimeout(() => playPronunciation(firstWord.spanish || '', 'es'), 1000);
+      setTimeout(() => playPronunciation(firstWord.spanish || '', 'es', firstWord), 1000);
+    } else if (selectedGameMode === 'learn') {
+      setTimeout(() => playPronunciation(firstWord.spanish || '', 'es', firstWord), 1000);
     }
     
+    setShowTranslation(false);
     focusInput();
   };
 
@@ -304,57 +307,216 @@ export default function VocabMasterGame({
   // GAME LOGIC
   // =====================================================
 
-  const validateAnswer = (userAnswer: string, correctAnswer: string): boolean => {
-    const userAnswerClean = userAnswer.trim().toLowerCase();
-    
-    // Split by multiple delimiters: comma, pipe (|), semicolon
+  const validateAnswer = (userAnswer: string, correctAnswer: string): { isCorrect: boolean; missingAccents: boolean } => {
+    // Remove punctuation for comparison, especially important for audio mode
+    const removePunctuation = (text: string) => {
+      return text.replace(/[¿¡?!.,;:()""''«»\-]/g, '').trim().toLowerCase();
+    };
+
+    // Remove accents for comparison but track if accents were missing
+    const removeAccents = (text: string) => {
+      return text
+        .replace(/[áàäâ]/g, 'a')
+        .replace(/[éèëê]/g, 'e')
+        .replace(/[íìïî]/g, 'i')
+        .replace(/[óòöô]/g, 'o')
+        .replace(/[úùüû]/g, 'u')
+        .replace(/[ñ]/g, 'n')
+        .replace(/[ç]/g, 'c');
+    };
+
+    const userAnswerClean = removePunctuation(userAnswer);
+    const correctAnswerClean = removePunctuation(correctAnswer);
+
+    // Check if user answer is missing accents
+    const userAnswerNoAccents = removeAccents(userAnswerClean);
+    const correctAnswerNoAccents = removeAccents(correctAnswerClean);
+    const missingAccents = userAnswerClean !== userAnswerNoAccents && userAnswerNoAccents === correctAnswerNoAccents;
+
+    // Split by multiple delimiters: comma, pipe (|), semicolon, forward slash, "and", "or"
     const correctAnswers = correctAnswer
-      .split(/[,|;]/)
-      .map(ans => ans.trim().toLowerCase())
+      .split(/[,|;\/]|\band\b|\bor\b/)
+      .map(ans => removePunctuation(ans))
       .filter(ans => ans.length > 0);
-    
-    // Also handle parenthetical variations like "(to) turn on"
+
+    // Also handle parenthetical variations and gender indicators
     const expandedAnswers = correctAnswers.flatMap(answer => {
       const variations = [answer];
-      
+
+      // Also add the original answer without punctuation removal for exact matching
+      const originalAnswer = removePunctuation(answer);
+      if (originalAnswer !== answer) {
+        variations.push(originalAnswer);
+      }
+
       // Handle "(to) verb" format - accept both "to verb" and "verb"
       const toParenMatch = answer.match(/\(to\)\s*(.+)/);
       if (toParenMatch) {
         variations.push(`to ${toParenMatch[1]}`);
         variations.push(toParenMatch[1]);
       }
-      
+
       // Handle "word I other word" format - accept both parts
       if (answer.includes(' i ')) {
         const parts = answer.split(' i ').map(p => p.trim());
         variations.push(...parts);
       }
-      
-      // Remove parentheses and accept the clean version
-      const withoutParens = answer.replace(/[()]/g, '').trim();
-      if (withoutParens !== answer) {
+
+      // Remove parentheses and accept the clean version (handles gender indicators like "(male)", "(female)", "(m/f)")
+      const withoutParens = answer.replace(/\([^)]*\)/g, '').trim();
+      if (withoutParens !== answer && withoutParens.length > 0) {
         variations.push(withoutParens);
       }
-      
-      return variations;
+
+      // Handle gender indicators in Spanish words like "compañero/a" -> "compañero"
+      const withoutGenderSuffix = answer.replace(/\/[ao]\b/g, '').trim();
+      if (withoutGenderSuffix !== answer && withoutGenderSuffix.length > 0) {
+        variations.push(withoutGenderSuffix);
+      }
+
+      // Handle "El/La" patterns like "El compañero/a de clase" -> "compañero de clase"
+      const withoutArticleAndGender = answer
+        .replace(/^(el|la)\s+/i, '') // Remove article
+        .replace(/\/[ao]\b/g, '') // Remove gender suffix
+        .trim();
+      if (withoutArticleAndGender !== answer && withoutArticleAndGender.length > 0) {
+        variations.push(withoutArticleAndGender);
+      }
+
+      // Handle "=" format like "el camping = camping/campsite"
+      if (answer.includes('=')) {
+        const parts = answer.split('=').map(p => p.trim());
+        // Add both sides of the equation
+        variations.push(...parts);
+
+        // Also handle the right side if it contains multiple options
+        const rightSide = parts[1];
+        if (rightSide && rightSide.includes('/')) {
+          const rightOptions = rightSide.split('/').map(p => p.trim());
+          variations.push(...rightOptions);
+        }
+      }
+
+      // Handle "/" format for multiple options like "camping/campsite"
+      if (answer.includes('/')) {
+        const parts = answer.split('/').map(p => p.trim());
+        variations.push(...parts);
+      }
+
+      // Handle Spanish numbers - convert written numbers to digits
+      const numberMap: Record<string, string> = {
+        'uno': '1', 'dos': '2', 'tres': '3', 'cuatro': '4', 'cinco': '5',
+        'seis': '6', 'siete': '7', 'ocho': '8', 'nueve': '9', 'diez': '10',
+        'once': '11', 'doce': '12', 'trece': '13', 'catorce': '14', 'quince': '15',
+        'dieciséis': '16', 'diecisiete': '17', 'dieciocho': '18', 'diecinueve': '19',
+        'veinte': '20', 'veintiuno': '21', 'veintidós': '22', 'veintitrés': '23',
+        'veinticuatro': '24', 'veinticinco': '25', 'veintiséis': '26', 'veintisiete': '27',
+        'veintiocho': '28', 'veintinueve': '29', 'treinta': '30', 'cuarenta': '40',
+        'cincuenta': '50', 'sesenta': '60', 'setenta': '70', 'ochenta': '80', 'noventa': '90',
+        'cien': '100', 'ciento': '100'
+      };
+
+      // Create reverse map for digit to Spanish word conversion
+      const reverseNumberMap: Record<string, string[]> = {};
+      Object.entries(numberMap).forEach(([spanish, digit]) => {
+        if (!reverseNumberMap[digit]) {
+          reverseNumberMap[digit] = [];
+        }
+        reverseNumberMap[digit].push(spanish);
+      });
+
+      // Handle compound numbers like "cuarenta y dos" = "42"
+      const compoundNumberMatch = answer.match(/^(treinta|cuarenta|cincuenta|sesenta|setenta|ochenta|noventa)\s+y\s+(uno|dos|tres|cuatro|cinco|seis|siete|ocho|nueve)$/);
+      if (compoundNumberMatch) {
+        const tens = numberMap[compoundNumberMatch[1]] || '0';
+        const ones = numberMap[compoundNumberMatch[2]] || '0';
+        const numericValue = (parseInt(tens) + parseInt(ones)).toString();
+        variations.push(numericValue);
+      }
+
+      // Handle simple number words to digits
+      if (numberMap[answer]) {
+        variations.push(numberMap[answer]);
+      }
+
+      // Handle digits to Spanish words (reverse lookup)
+      if (/^\d+$/.test(answer) && reverseNumberMap[answer]) {
+        variations.push(...reverseNumberMap[answer]);
+      }
+
+      return variations.filter(v => v.length > 0);
     });
-    
-    // Check if user answer matches any of the variations
-    return expandedAnswers.some(answer => answer === userAnswerClean);
+
+    // Check if user answer matches any of the variations (exact match)
+    let isMatch = expandedAnswers.some(answer => answer === userAnswerClean);
+    let hasAccentIssue = false;
+
+    // If no exact match, try without accents
+    if (!isMatch) {
+      const expandedAnswersNoAccents = expandedAnswers.map(answer => removeAccents(answer));
+      isMatch = expandedAnswersNoAccents.some(answer => answer === userAnswerNoAccents);
+      hasAccentIssue = isMatch && userAnswerClean !== userAnswerNoAccents;
+    }
+
+    // Additional check: if user entered a number, check if any correct answer is a Spanish number
+    if (!isMatch && /^\d+$/.test(userAnswerClean)) {
+      const userNumber = parseInt(userAnswerClean);
+
+      // Create the same number map for consistency
+      const numberMap: Record<string, string> = {
+        'uno': '1', 'dos': '2', 'tres': '3', 'cuatro': '4', 'cinco': '5',
+        'seis': '6', 'siete': '7', 'ocho': '8', 'nueve': '9', 'diez': '10',
+        'once': '11', 'doce': '12', 'trece': '13', 'catorce': '14', 'quince': '15',
+        'dieciséis': '16', 'diecisiete': '17', 'dieciocho': '18', 'diecinueve': '19',
+        'veinte': '20', 'veintiuno': '21', 'veintidós': '22', 'veintitrés': '23',
+        'veinticuatro': '24', 'veinticinco': '25', 'veintiséis': '26', 'veintisiete': '27',
+        'veintiocho': '28', 'veintinueve': '29', 'treinta': '30', 'cuarenta': '40',
+        'cincuenta': '50', 'sesenta': '60', 'setenta': '70', 'ochenta': '80', 'noventa': '90',
+        'cien': '100', 'ciento': '100'
+      };
+
+      // Check if any correct answer is a Spanish number that matches the user's digit
+      for (const correctAns of correctAnswers) {
+        // Check simple number words
+        if (numberMap[correctAns] === userAnswerClean) {
+          return { isCorrect: true, missingAccents: false };
+        }
+
+        // Check compound numbers like "cuarenta y dos" = "42"
+        const compoundMatch = correctAns.match(/^(treinta|cuarenta|cincuenta|sesenta|setenta|ochenta|noventa)\s+y\s+(uno|dos|tres|cuatro|cinco|seis|siete|ocho|nueve)$/);
+        if (compoundMatch) {
+          const tens = parseInt(numberMap[compoundMatch[1]] || '0');
+          const ones = parseInt(numberMap[compoundMatch[2]] || '0');
+          const compoundValue = tens + ones;
+
+          if (compoundValue === userNumber) {
+            return { isCorrect: true, missingAccents: false };
+          }
+        }
+      }
+    }
+
+    return { isCorrect: isMatch, missingAccents: hasAccentIssue };
   };
 
   const handleAnswer = (answer: string) => {
-    let isCorrect = false;
-    
+    let validationResult = { isCorrect: false, missingAccents: false };
+
     if (gameState.gameMode === 'cloze' && clozeExercise) {
-      isCorrect = validateAnswer(answer, clozeExercise.correctAnswer);
+      validationResult = validateAnswer(answer, clozeExercise.correctAnswer);
     } else if (gameState.gameMode === 'listening') {
-      isCorrect = validateAnswer(answer, gameState.currentWord?.spanish || '');
+      validationResult = validateAnswer(answer, gameState.currentWord?.spanish || '');
     } else {
-      isCorrect = validateAnswer(answer, gameState.currentWord?.english || '');
+      validationResult = validateAnswer(answer, gameState.currentWord?.english || '');
     }
-    
-    processAnswer(isCorrect, answer);
+
+    // Show accent warning if needed
+    if (validationResult.missingAccents) {
+      setAccentWarning(true);
+      setTimeout(() => setAccentWarning(false), 3000); // Hide after 3 seconds
+    }
+
+    processAnswer(validationResult.isCorrect, answer);
   };
 
   const handleMultipleChoiceSelect = (optionIndex: number) => {
@@ -390,6 +552,13 @@ export default function VocabMasterGame({
     // Update user progress in database
     if (user && gameState.currentWord) {
       await updateUserProgress(gameState.currentWord, isCorrect, responseTime);
+    }
+
+    // Play audio when answer is correct
+    if (isCorrect && gameState.currentWord) {
+      setTimeout(() => {
+        playPronunciation(gameState.currentWord?.spanish || '', 'es');
+      }, 500);
     }
 
     // Auto-advance after delay
@@ -501,11 +670,14 @@ export default function VocabMasterGame({
     }
     
     setShowHint(false);
+    setShowTranslation(false);
     focusInput();
 
-    // Auto-play audio for listening mode
+    // Auto-play audio for listening mode and learn mode
     if (nextGameMode === 'listening') {
-      setTimeout(() => playPronunciation(nextWord.spanish || '', 'es'), 1000);
+      setTimeout(() => playPronunciation(nextWord.spanish || '', 'es', nextWord), 1000);
+    } else if (nextGameMode === 'learn') {
+      setTimeout(() => playPronunciation(nextWord.spanish || '', 'es', nextWord), 1000);
     }
 
     if (mode === 'spaced_repetition' || mode === 'review_weak') {
@@ -581,57 +753,55 @@ export default function VocabMasterGame({
   // AUDIO FEATURES - Enhanced with Amazon Polly Support
   // =====================================================
 
-  const playPronunciation = async (text: string, language: 'es' | 'en' = 'es') => {
+  // Clean text for TTS to avoid issues like "barra a" for "/a"
+  const cleanTextForTTS = (text: string): string => {
+    return text
+      .replace(/\/a\b/g, '') // Remove "/a" gender indicators
+      .replace(/\/o\b/g, '') // Remove "/o" gender indicators
+      .replace(/\(m\/f\)/g, '') // Remove "(m/f)" indicators
+      .replace(/\(male\)/g, '') // Remove "(male)" indicators
+      .replace(/\(female\)/g, '') // Remove "(female)" indicators
+      .replace(/\s+/g, ' ') // Clean up extra spaces
+      .trim();
+  };
+
+  const playPronunciation = async (text: string, language: 'es' | 'en' = 'es', word?: VocabularyWord) => {
     if (gameState.audioPlaying) return;
-    
-    // Try to use pre-generated audio first (from Amazon Polly)
-    const audioUrl = gameState.currentWord?.audio_url;
-    
+
+    // Clean the text for TTS
+    const cleanText = cleanTextForTTS(text);
+
+    // Only use Amazon Polly audio - no fallback to Web Speech API to avoid robotic voice
+    // Use the provided word or fall back to current word
+    const targetWord = word || gameState.currentWord;
+    const audioUrl = targetWord?.audio_url;
+
     if (audioUrl && language === 'es') {
       try {
         setGameState(prev => ({ ...prev, audioPlaying: true }));
-        
+
         if (!audioRef.current) {
           audioRef.current = new Audio();
         }
-        
+
         audioRef.current.src = audioUrl;
         audioRef.current.onended = () => {
           setGameState(prev => ({ ...prev, audioPlaying: false }));
         };
         audioRef.current.onerror = () => {
+          console.warn('Failed to play Amazon Polly audio for:', text);
           setGameState(prev => ({ ...prev, audioPlaying: false }));
-          // Fallback to Web Speech API
-          fallbackToWebSpeech(text, language);
+          // No fallback - only use Amazon Polly to maintain audio quality
         };
-        
+
         await audioRef.current.play();
         return;
       } catch (error) {
         console.warn('Failed to play pre-generated audio:', error);
         setGameState(prev => ({ ...prev, audioPlaying: false }));
       }
-    }
-    
-    // Fallback to Web Speech API
-    fallbackToWebSpeech(text, language);
-  };
-
-  const fallbackToWebSpeech = (text: string, language: 'es' | 'en') => {
-    if ('speechSynthesis' in window) {
-      setGameState(prev => ({ ...prev, audioPlaying: true }));
-      
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = language === 'es' ? 'es-ES' : 'en-US';
-      utterance.rate = 0.8;
-      utterance.onend = () => {
-        setGameState(prev => ({ ...prev, audioPlaying: false }));
-      };
-      utterance.onerror = () => {
-        setGameState(prev => ({ ...prev, audioPlaying: false }));
-      };
-      
-      window.speechSynthesis.speak(utterance);
+    } else {
+      console.warn('No Amazon Polly audio available for:', text);
     }
   };
 
@@ -653,11 +823,7 @@ export default function VocabMasterGame({
     if (audioRef.current && !audioRef.current.paused) {
       audioRef.current.pause();
     }
-    
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-    }
-    
+
     setGameState(prev => ({ ...prev, audioPlaying: false }));
   };
 
@@ -861,12 +1027,12 @@ export default function VocabMasterGame({
               <div className="text-5xl font-bold text-gray-800 mb-4">
                 {gameState.currentWord?.spanish}
               </div>
-              
+
               <button
                 onClick={() => playPronunciation(gameState.currentWord?.spanish || '')}
                 disabled={gameState.audioPlaying}
                 className={`flex items-center justify-center mx-auto mb-4 p-2 rounded-full transition-colors ${
-                  gameState.audioPlaying 
+                  gameState.audioPlaying
                     ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
                     : 'bg-blue-100 hover:bg-blue-200 text-blue-600'
                 }`}
@@ -877,6 +1043,8 @@ export default function VocabMasterGame({
                   <Volume2 className="h-5 w-5" />
                 )}
               </button>
+
+
 
               <p className="text-gray-600 capitalize mb-6">
                 {gameState.currentWord?.part_of_speech} • {gameState.currentWord?.topic}
@@ -889,8 +1057,27 @@ export default function VocabMasterGame({
                     <strong>Example:</strong> {gameState.currentWord.example_sentence}
                   </div>
                   {gameState.currentWord.example_translation && (
-                    <div className="text-sm text-blue-600 mt-1">
-                      {gameState.currentWord.example_translation}
+                    <div className="text-center mt-3">
+                      {showTranslation ? (
+                        <div className="text-sm text-blue-600 bg-green-50 p-2 rounded">
+                          <strong>Translation:</strong> {gameState.currentWord.example_translation}
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            setShowTranslation(true);
+                            // Deduct points for using translation hint
+                            setGameState(prev => ({
+                              ...prev,
+                              score: Math.max(0, prev.score - 1)
+                            }));
+                          }}
+                          className="flex items-center justify-center gap-2 mx-auto px-3 py-1 text-blue-600 hover:text-blue-800 hover:bg-blue-100 transition-colors rounded text-sm border border-blue-200 hover:border-blue-300"
+                        >
+                          <Eye className="w-3 h-3" />
+                          Click to reveal translation
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
@@ -949,6 +1136,45 @@ export default function VocabMasterGame({
             disabled={gameState.showAnswer}
           />
           <Keyboard className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+        </div>
+
+        {/* Accent Warning */}
+        {accentWarning && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-center">
+            <p className="text-yellow-800 text-sm">
+              ⚠️ Be careful with the accents! Your answer was correct but missing accent marks.
+            </p>
+          </div>
+        )}
+
+        {/* Accent Helper Buttons */}
+        <div className="text-center">
+          <p className="text-sm text-gray-600 mb-2">Quick accent buttons:</p>
+          <div className="flex justify-center space-x-2 flex-wrap">
+            {['á', 'é', 'í', 'ó', 'ú', 'ñ', '¿', '¡'].map((accent) => (
+              <button
+                key={accent}
+                onClick={() => {
+                  const input = inputRef.current;
+                  if (input) {
+                    const start = input.selectionStart || 0;
+                    const end = input.selectionEnd || 0;
+                    const newValue = gameState.userAnswer.slice(0, start) + accent + gameState.userAnswer.slice(end);
+                    setGameState(prev => ({ ...prev, userAnswer: newValue }));
+                    // Set cursor position after the inserted character
+                    setTimeout(() => {
+                      input.focus();
+                      input.setSelectionRange(start + 1, start + 1);
+                    }, 0);
+                  }
+                }}
+                className="px-2 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm transition-colors"
+                disabled={gameState.showAnswer}
+              >
+                {accent}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="flex justify-center space-x-4">

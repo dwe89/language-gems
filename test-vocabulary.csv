@@ -1,0 +1,13 @@
+word,translation,language,category,subcategory,part_of_speech,difficulty_level,curriculum_level,example_sentence,example_translation,phonetic,gender,irregular_forms,synonyms,antonyms,tags,article,base_word
+hola,hello,es,greetings,basic,interjection,beginner,KS3,Hola María,Hello María,/ˈola/,,,,,,
+adiós,goodbye,es,greetings,basic,interjection,beginner,KS3,Adiós amigo,Goodbye friend,/aˈðjos/,,,,,,
+bonjour,hello,fr,greetings,basic,interjection,beginner,KS3,Bonjour Marie,Hello Marie,/bonˈʒuʁ/,,,,,,
+au revoir,goodbye,fr,greetings,basic,interjection,beginner,KS3,Au revoir mon ami,Goodbye my friend,/o ʁəˈvwaʁ/,,,,,,
+hallo,hello,de,greetings,basic,interjection,beginner,KS3,Hallo Maria,Hello Maria,/ˈhalo/,,,,,,
+auf wiedersehen,goodbye,de,greetings,basic,interjection,beginner,KS3,Auf Wiedersehen mein Freund,Goodbye my friend,/aʊf ˈviːdɐˌzeːən/,,,,,,
+casa,house,es,home,rooms,noun,beginner,KS3,Mi casa es grande,My house is big,/ˈkasa/,feminine,,hogar,,,la,
+maison,house,fr,home,rooms,noun,beginner,KS3,Ma maison est grande,My house is big,/mɛˈzɔ̃/,feminine,,demeure,,,la,
+haus,house,de,home,rooms,noun,beginner,KS3,Mein Haus ist groß,My house is big,/haʊs/,neuter,,gebäude,,,das,
+perro,dog,es,animals,pets,noun,beginner,KS3,El perro es amigable,The dog is friendly,/ˈpero/,masculine,,can,gato,,,el,
+chien,dog,fr,animals,pets,noun,beginner,KS3,Le chien est amical,The dog is friendly,/ʃjɛ̃/,masculine,,canin,chat,,,le,
+hund,dog,de,animals,pets,noun,beginner,KS3,Der Hund ist freundlich,The dog is friendly,/hʊnt/,masculine,,canine,katze,,,der,

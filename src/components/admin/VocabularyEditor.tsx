@@ -19,19 +19,15 @@ interface VocabularyItem {
   category: string;
   subcategory?: string;
   part_of_speech?: string;
-  difficulty_level?: string;
   curriculum_level?: string;
-  tags?: string[];
-  frequency_rank?: number;
   example_sentence?: string;
   example_translation?: string;
-  phonetic?: string;
   gender?: string;
-  irregular_forms?: string;
-  synonyms?: string;
-  antonyms?: string;
   audio_url?: string;
   has_audio: boolean;
+  article?: string;
+  base_word?: string;
+  display_word?: string;
 }
 
 interface VocabularyEditorProps {
@@ -47,18 +43,14 @@ export default function VocabularyEditor({ vocabulary, onSave, onCancel }: Vocab
     language: vocabulary.language,
     category: vocabulary.category,
     subcategory: vocabulary.subcategory || '',
+    article: vocabulary.article || '',
+    base_word: vocabulary.base_word || '',
+    display_word: vocabulary.display_word || '',
     part_of_speech: vocabulary.part_of_speech || 'noun',
-    difficulty_level: vocabulary.difficulty_level || 'beginner',
     curriculum_level: vocabulary.curriculum_level || '',
     example_sentence: vocabulary.example_sentence || '',
     example_translation: vocabulary.example_translation || '',
-    phonetic: vocabulary.phonetic || '',
-    gender: vocabulary.gender || '',
-    irregular_forms: vocabulary.irregular_forms || '',
-    synonyms: vocabulary.synonyms || '',
-    antonyms: vocabulary.antonyms || '',
-    tags: vocabulary.tags ? vocabulary.tags.join(', ') : '',
-    frequency_rank: vocabulary.frequency_rank || ''
+    gender: vocabulary.gender || ''
   });
 
   const [saving, setSaving] = useState(false);
@@ -131,18 +123,14 @@ export default function VocabularyEditor({ vocabulary, onSave, onCancel }: Vocab
         language: formData.language,
         category: formData.category,
         subcategory: formData.subcategory || null,
+        article: formData.article || null,
+        base_word: formData.base_word || null,
+        // Remove display_word from updates since it's a generated column
         part_of_speech: formData.part_of_speech || null,
-        difficulty_level: formData.difficulty_level || 'beginner',
         curriculum_level: formData.curriculum_level || null,
         example_sentence: formData.example_sentence || null,
         example_translation: formData.example_translation || null,
-        phonetic: formData.phonetic || null,
         gender: formData.gender || null,
-        irregular_forms: formData.irregular_forms || null,
-        synonyms: formData.synonyms || null,
-        antonyms: formData.antonyms || null,
-        tags: formData.tags ? formData.tags.split(',').map(t => t.trim()).filter(t => t) : [],
-        frequency_rank: formData.frequency_rank ? parseInt(formData.frequency_rank as string) : null,
         updated_at: new Date().toISOString()
       };
 
@@ -276,6 +264,45 @@ export default function VocabularyEditor({ vocabulary, onSave, onCancel }: Vocab
 
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">
+              Article <span className="text-xs text-slate-500">(e.g., le, la, der, die, das)</span>
+            </label>
+            <input
+              type="text"
+              value={formData.article}
+              onChange={(e) => handleInputChange('article', e.target.value)}
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
+              placeholder="Enter grammatical article"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Base Word <span className="text-xs text-slate-500">(word without article, used for audio)</span>
+            </label>
+            <input
+              type="text"
+              value={formData.base_word}
+              onChange={(e) => handleInputChange('base_word', e.target.value)}
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
+              placeholder="Enter base word without article"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Display Word <span className="text-xs text-slate-500">(full word as shown to users)</span>
+            </label>
+            <input
+              type="text"
+              value={formData.display_word}
+              onChange={(e) => handleInputChange('display_word', e.target.value)}
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
+              placeholder="Enter complete display word"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
               Part of Speech
             </label>
             <select
@@ -296,21 +323,6 @@ export default function VocabularyEditor({ vocabulary, onSave, onCancel }: Vocab
         {/* Additional Information */}
         <div className="space-y-4">
           <h4 className="text-md font-medium text-slate-900">Additional Information</h4>
-          
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              Difficulty Level
-            </label>
-            <select
-              value={formData.difficulty_level}
-              onChange={(e) => handleInputChange('difficulty_level', e.target.value)}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
-            >
-              <option value="beginner">Beginner</option>
-              <option value="intermediate">Intermediate</option>
-              <option value="advanced">Advanced</option>
-            </select>
-          </div>
 
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">
@@ -327,19 +339,6 @@ export default function VocabularyEditor({ vocabulary, onSave, onCancel }: Vocab
 
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">
-              Phonetic
-            </label>
-            <input
-              type="text"
-              value={formData.phonetic}
-              onChange={(e) => handleInputChange('phonetic', e.target.value)}
-              placeholder="e.g., /bon.ˈʒuʁ/"
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
               Gender
             </label>
             <input
@@ -347,32 +346,6 @@ export default function VocabularyEditor({ vocabulary, onSave, onCancel }: Vocab
               value={formData.gender}
               onChange={(e) => handleInputChange('gender', e.target.value)}
               placeholder="e.g., masculine, feminine"
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              Frequency Rank
-            </label>
-            <input
-              type="number"
-              value={formData.frequency_rank}
-              onChange={(e) => handleInputChange('frequency_rank', e.target.value)}
-              placeholder="1-1000"
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              Tags
-            </label>
-            <input
-              type="text"
-              value={formData.tags}
-              onChange={(e) => handleInputChange('tags', e.target.value)}
-              placeholder="Comma-separated tags"
               className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
             />
           </div>
@@ -402,49 +375,6 @@ export default function VocabularyEditor({ vocabulary, onSave, onCancel }: Vocab
               value={formData.example_translation}
               onChange={(e) => handleInputChange('example_translation', e.target.value)}
               rows={3}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Related Words Section */}
-      <div className="mt-6">
-        <h4 className="text-md font-medium text-slate-900 mb-4">Related Words</h4>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              Irregular Forms
-            </label>
-            <input
-              type="text"
-              value={formData.irregular_forms}
-              onChange={(e) => handleInputChange('irregular_forms', e.target.value)}
-              placeholder="e.g., plural, past tense"
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              Synonyms
-            </label>
-            <input
-              type="text"
-              value={formData.synonyms}
-              onChange={(e) => handleInputChange('synonyms', e.target.value)}
-              placeholder="Similar words"
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              Antonyms
-            </label>
-            <input
-              type="text"
-              value={formData.antonyms}
-              onChange={(e) => handleInputChange('antonyms', e.target.value)}
-              placeholder="Opposite words"
               className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
             />
           </div>

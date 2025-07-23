@@ -73,7 +73,7 @@ export function useVocabularyByCategory({
           query = query.or(`curriculum_level.ilike.%${curriculumLevel}%,curriculum_level.is.null`);
         }
 
-        const { data, error: fetchError } = await query.limit(100);
+        const { data, error: fetchError } = await query.limit(10000);
 
         if (fetchError) {
           console.error('Database query error:', fetchError);
