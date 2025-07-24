@@ -3,6 +3,7 @@
 import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
+import { useAudio } from '../hooks/useAudio';
 
 interface SpaceExplorerModalProps {
   isOpen: boolean;
@@ -10,6 +11,8 @@ interface SpaceExplorerModalProps {
 }
 
 export default function SpaceExplorerModal({ isOpen, onClose }: SpaceExplorerModalProps) {
+  const { playSFX } = useAudio(true);
+
   // Prevent scrolling when the modal is open
   useEffect(() => {
     if (isOpen) {
@@ -62,69 +65,31 @@ export default function SpaceExplorerModal({ isOpen, onClose }: SpaceExplorerMod
           
           {/* Intro text */}
           <p className="text-slate-300 mb-4 text-sm leading-relaxed">
-            <span className="text-cyan-300">[CAPTAIN'S LOG]</span> You've embarked on a critical mission to decrypt an alien language sequence while your oxygen supply is limited. Your spacewalk has taken you from your ship – and with each mistake, you drift further away.
+            <span className="text-cyan-300">[MISSION BRIEFING]</span> You're on a spacewalk to decode an alien sequence. Each wrong guess depletes your oxygen and drifts you further from the ship.
           </p>
-          
+
           {/* Challenge explanation */}
           <div className="mb-6">
-            <h3 className="text-cyan-300 font-bold mb-2 text-sm">MISSION PARAMETERS:</h3>
-            <ul className="text-slate-300 space-y-2 list-disc pl-5 text-sm">
-              <li>Decode each letter of the alien sequence correctly</li>
-              <li>Each correct letter maintains your ship's tether connection</li>
-              <li>Each wrong guess depletes oxygen and increases space drift</li>
+            <h3 className="text-cyan-300 font-bold mb-2 text-sm">MISSION OBJECTIVE:</h3>
+            <ul className="text-slate-300 space-y-1 list-disc pl-5 text-sm">
+              <li>Decode the alien word correctly</li>
+              <li>Survive 6 mistakes or lose oxygen connection</li>
+              <li>Watch your oxygen levels and distance from ship</li>
             </ul>
           </div>
-          
-          {/* Warning */}
-          <div className="mb-6">
-            <h3 className="text-amber-400 font-bold mb-2 text-sm">CRITICAL WARNING:</h3>
-            <p className="text-slate-300 text-sm">
-              Your EVA suit's oxygen system is directly linked to your ship. After 6 mistakes, 
-              you'll drift too far and your oxygen supply will be completely cut off.
-            </p>
-          </div>
-          
-          {/* Oxygen System Effects */}
-          <div className="mb-6">
-            <h3 className="text-cyan-300 font-bold mb-2 text-sm">OXYGEN DEPLETION SEQUENCE:</h3>
-            <ul className="text-slate-300 space-y-1 list-disc pl-5 text-xs">
-              <li>First mistake: Oxygen level drops to 83% - Minor tether strain</li>
-              <li>Second mistake: Oxygen level drops to 66% - Ship communications faltering</li>
-              <li>Third mistake: Oxygen level drops to 50% - WARNING: Halfway to critical levels</li>
-              <li>Fourth mistake: Oxygen level drops to 33% - Suit systems compromised</li>
-              <li>Fifth mistake: Oxygen level drops to 16% - EMERGENCY: Reserve systems activated</li>
-              <li>Final mistake: Oxygen level reaches 0% - Tether disconnected, mission failure</li>
-            </ul>
-          </div>
-          
-          {/* Ship Systems Box */}
-          <div className="p-3 bg-slate-900/70 border border-blue-500 rounded mb-6 text-xs">
-            <p className="text-slate-400 mb-2">SHIP MONITORING SYSTEMS:</p>
-            <div className="flex flex-col gap-1">
-              <div>
-                <span className="text-cyan-300">LIFE SUPPORT (O₂)</span>
-                <span className="text-slate-400"> - Your remaining oxygen supply</span>
-              </div>
-              <div>
-                <span className="text-green-400">MISSION PROGRESS</span>
-                <span className="text-slate-400"> - Distance to mission completion</span>
-              </div>
-              <div>
-                <span className="text-indigo-400">ASTRONAUT POSITION</span>
-                <span className="text-slate-400"> - Watch as you drift further from the ship</span>
-              </div>
-            </div>
-          </div>
-          
+
           {/* Closing question */}
-          <p className="text-indigo-300 font-bold text-center mb-6">
+          <p className="text-indigo-300 font-bold text-center mb-6 text-sm">
             Can you decode the alien language before your oxygen runs out?
           </p>
           
           {/* Begin button */}
-          <button 
+          <button
             className="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-500 hover:to-indigo-600 text-cyan-100 rounded-lg font-bold transition-all border border-blue-500/50"
-            onClick={onClose}
+            onClick={() => {
+              playSFX('button-click');
+              onClose();
+            }}
           >
             INITIATE MISSION
           </button>

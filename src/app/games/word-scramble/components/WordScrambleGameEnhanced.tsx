@@ -284,13 +284,22 @@ const createParticleEffect = (type: 'success' | 'perfect' | 'powerup' | 'streak'
   confetti(configs[type]);
 };
 
+interface GameVocabularyWord {
+  id: string;
+  word: string;
+  translation: string;
+  category?: string;
+  subcategory?: string;
+}
+
 interface WordScrambleGameProps {
   settings: GameSettings;
   onBackToMenu: () => void;
   onGameEnd: (result: { won: boolean; score: number; stats: GameStats }) => void;
+  categoryVocabulary?: GameVocabularyWord[];
 }
 
-export default function WordScrambleGameEnhanced({ settings, onBackToMenu, onGameEnd }: WordScrambleGameProps) {
+export default function WordScrambleGameEnhanced({ settings, onBackToMenu, onGameEnd, categoryVocabulary }: WordScrambleGameProps) {
   // Game state
   const [currentWordData, setCurrentWordData] = useState<any>(null);
   const [scrambledLetters, setScrambledLetters] = useState<string[]>([]);
@@ -329,12 +338,24 @@ export default function WordScrambleGameEnhanced({ settings, onBackToMenu, onGam
 
   // Get current word list
   const currentWordList = useMemo(() => {
+    // Use category vocabulary if available
+    if (categoryVocabulary && categoryVocabulary.length > 0) {
+      return categoryVocabulary.map(item => ({
+        word: item.word,
+        hint: `Translation: ${item.translation}`,
+        difficulty: 0.6,
+        theme: item.category || 'general',
+        points: Math.max(30, item.word.length * 10)
+      }));
+    }
+
+    // Fallback to hardcoded database
     const categoryData = ENHANCED_WORD_DATABASE[settings.category as keyof typeof ENHANCED_WORD_DATABASE];
     if (!categoryData) return ENHANCED_WORD_DATABASE.animals.english;
-    
+
     const languageData = categoryData[settings.language as keyof typeof categoryData];
     return languageData || categoryData.english || ENHANCED_WORD_DATABASE.animals.english;
-  }, [settings.category, settings.language]);
+  }, [settings.category, settings.language, categoryVocabulary]);
 
   // Scramble word function
   const scrambleWord = useCallback((word: string): string[] => {

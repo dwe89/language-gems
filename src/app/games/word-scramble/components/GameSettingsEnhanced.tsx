@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import VocabularyCategorySelector from '../../../../components/games/shared/VocabularyCategorySelector';
 
 type GameMode = 'classic' | 'blitz' | 'marathon' | 'timed_attack' | 'word_storm' | 'zen';
 type Difficulty = 'easy' | 'medium' | 'hard' | 'expert';
@@ -9,6 +10,7 @@ type Difficulty = 'easy' | 'medium' | 'hard' | 'expert';
 interface GameSettings {
   difficulty: Difficulty;
   category: string;
+  subcategory: string;
   language: string;
   gameMode: GameMode;
 }
@@ -16,6 +18,10 @@ interface GameSettings {
 type GameSettingsProps = {
   onStart: (settings: GameSettings) => void;
   onBack: () => void;
+  selectedCategory?: string;
+  selectedSubcategory?: string;
+  onCategoryChange?: (category: string) => void;
+  onSubcategoryChange?: (subcategory: string) => void;
 };
 
 const GAME_MODES = [
@@ -121,11 +127,19 @@ const LANGUAGES = [
   { id: 'spanish', name: 'Spanish', flag: '🇪🇸', description: 'Romance language' }
 ];
 
-export default function GameSettingsEnhanced({ onStart, onBack }: GameSettingsProps) {
+export default function GameSettingsEnhanced({
+  onStart,
+  onBack,
+  selectedCategory = '',
+  selectedSubcategory = '',
+  onCategoryChange = () => {},
+  onSubcategoryChange = () => {}
+}: GameSettingsProps) {
   const [settings, setSettings] = useState<GameSettings>({
     difficulty: 'medium',
-    category: 'animals',
-    language: 'english',
+    category: selectedCategory,
+    subcategory: selectedSubcategory,
+    language: 'spanish',
     gameMode: 'classic'
   });
 
@@ -272,24 +286,23 @@ export default function GameSettingsEnhanced({ onStart, onBack }: GameSettingsPr
               {selectedTab === 'category' && (
                 <div>
                   <h2 className="text-2xl font-bold text-white mb-6 text-center">Choose Word Category</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {CATEGORIES.map((category) => (
-                      <motion.button
-                        key={category.id}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={() => setSettings({ ...settings, category: category.id })}
-                        className={`p-8 rounded-xl text-center transition-all border-2 ${
-                          settings.category === category.id
-                            ? 'bg-gradient-to-br from-purple-500/30 to-pink-500/30 border-white shadow-2xl'
-                            : 'bg-white/10 border-white/20 hover:bg-white/20'
-                        }`}
-                      >
-                        <div className="text-6xl mb-4">{category.emoji}</div>
-                        <h3 className="text-2xl font-bold text-white mb-2">{category.name}</h3>
-                        <p className="text-white/70">{category.description}</p>
-                      </motion.button>
-                    ))}
+                  <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
+                    <VocabularyCategorySelector
+                      selectedLanguage="es"
+                      selectedCategory={selectedCategory}
+                      selectedSubcategory={selectedSubcategory}
+                      onLanguageChange={() => {}} // Language controlled by parent
+                      onCategoryChange={(category) => {
+                        onCategoryChange(category);
+                        setSettings({ ...settings, category });
+                      }}
+                      onSubcategoryChange={(subcategory) => {
+                        onSubcategoryChange(subcategory);
+                        setSettings({ ...settings, subcategory });
+                      }}
+                      showLanguageSelector={false}
+                      className="text-white"
+                    />
                   </div>
                 </div>
               )}

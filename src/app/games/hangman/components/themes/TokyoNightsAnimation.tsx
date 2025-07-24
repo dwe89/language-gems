@@ -65,22 +65,23 @@ export default function TokyoNightsAnimation({
   };
   
   return (
-    <div className="relative w-full h-80 md:h-96 lg:h-[30rem] mb-4 overflow-hidden rounded-xl">
+    <div className="relative w-full h-96 md:h-[28rem] lg:h-[36rem] mb-4 overflow-hidden rounded-xl">
       {/* Fixed background color fallback */}
       <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-indigo-950 to-purple-950"></div>
       
-      {/* Video background */}
-      <div className="absolute inset-0 overflow-hidden">
-        <video 
-          className="absolute inset-0 w-full h-full object-cover"
-          autoPlay
-          muted
-          loop
-          playsInline
-        >
-          <source src="/games/hangman/images/tokyo-nights/tokyo-nights-bg.mp4" type="video/mp4" />
-        </video>
-      </div>
+{/* Video background */}
+<div className="absolute inset-0 overflow-hidden">
+  <video
+    className="absolute inset-0 w-full h-full object-cover scale-110 md:scale-100 translate-y-16 md:translate-y-8"
+    autoPlay
+    muted
+    loop
+    playsInline
+  >
+    <source src="/games/hangman/images/tokyo-nights/tokyo-nights-bg.mp4" type="video/mp4" />
+  </video>
+</div>
+
       
       {/* Glitch effect overlay when a mistake is made */}
       <AnimatePresence>
@@ -187,45 +188,45 @@ export default function TokyoNightsAnimation({
       )}
       
       {/* Terminal information overlay */}
-      <div className="absolute top-6 left-6 w-72 h-56 bg-black bg-opacity-70 rounded-lg p-3 border border-cyan-500 font-mono text-xs">
-        <div className="text-cyan-400 mb-2">{"> SYSTEM STATUS"}</div>
-        
-        <div className="flex flex-col gap-2 mb-3">
+      <div className="hidden sm:block absolute bottom-4 md:bottom-32 left-2 md:left-6 w-64 md:w-72 h-48 md:h-56 bg-black bg-opacity-70 rounded-lg p-2 md:p-3 border border-cyan-500 font-mono text-xs">
+        <div className="text-cyan-400 mb-2 text-[10px] md:text-xs">{"> SYSTEM STATUS"}</div>
+
+        <div className="flex flex-col gap-1 md:gap-2 mb-2 md:mb-3">
           <div>
-            <div className="text-green-400 mb-1">SECURITY DEFENSE</div>
-            <div className="h-2 bg-slate-950 rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-gradient-to-r from-green-500 to-cyan-400 transition-all duration-300" 
+            <div className="text-green-400 mb-1 text-[8px] md:text-[10px]">SECURITY DEFENSE</div>
+            <div className="h-1.5 md:h-2 bg-slate-950 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-green-500 to-cyan-400 transition-all duration-300"
                 style={{ width: `${securityDefense}%` }}
               ></div>
             </div>
-            <div className="flex justify-between text-slate-300 mt-1">
+            <div className="flex justify-between text-slate-300 mt-1 text-[7px] md:text-[8px]">
               <span>{securityDefense}%</span>
               <span className={mistakeRatio > 0.7 ? 'text-red-400 animate-pulse' : ''}>
                 {mistakeRatio > 0.7 ? 'CRITICAL' : mistakeRatio > 0.4 ? 'ALERT' : 'STABLE'}
               </span>
             </div>
           </div>
-          
+
           <div>
-            <div className="text-blue-400 mb-1">SYSTEM STABILITY</div>
-            <div className="h-2 bg-slate-950 rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-gradient-to-r from-blue-600 to-indigo-500 transition-all duration-300" 
+            <div className="text-blue-400 mb-1 text-[8px] md:text-[10px]">SYSTEM STABILITY</div>
+            <div className="h-1.5 md:h-2 bg-slate-950 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-blue-600 to-indigo-500 transition-all duration-300"
                 style={{ width: `${systemStability}%` }}
               ></div>
             </div>
           </div>
-          
+
           <div>
-            <div className="text-red-400 mb-1">HACK PROGRESS</div>
-            <div className="h-2 bg-slate-950 rounded-full overflow-hidden">
-              <div 
+            <div className="text-red-400 mb-1 text-[8px] md:text-[10px]">HACK PROGRESS</div>
+            <div className="h-1.5 md:h-2 bg-slate-950 rounded-full overflow-hidden">
+              <div
                 className={`h-full transition-all duration-300 ${mistakeRatio > 0.7 ? 'animate-pulse' : ''}`}
-                style={{ 
+                style={{
                   width: `${hackProgress}%`,
-                  background: mistakeRatio > 0.7 
-                    ? 'linear-gradient(to right, #ef4444, #f97316)' 
+                  background: mistakeRatio > 0.7
+                    ? 'linear-gradient(to right, #ef4444, #f97316)'
                     : 'linear-gradient(to right, #dc2626, #ea580c)'
                 }}
               ></div>
@@ -233,32 +234,32 @@ export default function TokyoNightsAnimation({
           </div>
         </div>
         
-        <div className="text-yellow-400 mb-1">{"> TERMINAL"}</div>
-        <div className="text-slate-300 h-20 overflow-hidden bg-black/50 p-1 rounded">
+        <div className="text-yellow-400 mb-1 text-[10px] md:text-xs">{"> TERMINAL"}</div>
+        <div className="text-slate-300 h-16 md:h-20 overflow-hidden bg-black/50 p-1 rounded">
           {terminalMessages.map((msg, i) => (
-            <div key={i} className="text-[9px] opacity-90 mb-1">
+            <div key={i} className="text-[8px] md:text-[9px] opacity-90 mb-1">
               [{new Date().toLocaleTimeString()}] <span className={i === terminalMessages.length - 1 ? 'text-red-400' : 'text-green-400'}>{msg}</span>
             </div>
           ))}
           {!terminalMessages.length && (
-            <div className="text-[9px] opacity-90 mb-1">
+            <div className="text-[8px] md:text-[9px] opacity-90 mb-1">
               SYSTEM RUNNING...
             </div>
           )}
-          <div className="text-green-400 inline-block">$</div>
-          <div className="inline-block ml-1 animate-pulse">_</div>
+          <div className="text-green-400 inline-block text-[8px] md:text-[9px]">$</div>
+          <div className="inline-block ml-1 animate-pulse text-[8px] md:text-[9px]">_</div>
         </div>
       </div>
       
       {/* Warning message */}
-      <div className="absolute top-6 right-6 w-56 h-28 bg-black bg-opacity-70 rounded-lg p-2 border border-pink-500 font-mono text-xs">
-        <div className="text-pink-400 mb-1">{"> WARNING"}</div>
-        <div className="text-slate-300 text-[10px] opacity-90">
+      <div className="hidden sm:block absolute bottom-4 md:bottom-32 right-2 md:right-6 w-48 md:w-56 h-24 md:h-28 bg-black bg-opacity-70 rounded-lg p-2 border border-pink-500 font-mono text-xs">
+        <div className="text-pink-400 mb-1 text-[9px] md:text-xs">{"> WARNING"}</div>
+        <div className="text-slate-300 text-[8px] md:text-[10px] opacity-90">
           Unauthorized access detected. Facial recognition scan failed. Neural firewall compromised. Continue password attempts at your own risk.
         </div>
-        
+
         {mistakeRatio > 0.5 && (
-          <div className="mt-2 text-red-400 text-[10px] font-bold animate-pulse">
+          <div className="mt-2 text-red-400 text-[8px] md:text-[10px] font-bold animate-pulse">
             SECURITY COUNTERMEASURES ACTIVE
           </div>
         )}
@@ -266,8 +267,8 @@ export default function TokyoNightsAnimation({
       
       {/* Countdown to lockdown - appears at high mistake levels */}
       {mistakeRatio > 0.7 && (
-        <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-black/70 border border-red-500 rounded px-3 py-1 font-mono text-xs">
-          <motion.div 
+        <div className="absolute top-6 left-1/2 transform -translate-x-1/2 bg-black/70 border border-red-500 rounded px-3 py-1 font-mono text-xs z-50">
+          <motion.div
             className="text-red-500 font-bold"
             animate={{ opacity: [1, 0.5, 1] }}
             transition={{ duration: 1, repeat: Infinity }}
@@ -279,8 +280,8 @@ export default function TokyoNightsAnimation({
       
       {/* Alert messages */}
       {mistakeRatio > 0.8 && (
-        <motion.div 
-          className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-red-500 font-bold text-lg font-mono"
+        <motion.div
+          className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-red-500 font-bold text-6xl font-mono z-50"
           animate={{ opacity: [1, 0.3, 1] }}
           transition={{ duration: 0.5, repeat: Infinity }}
         >

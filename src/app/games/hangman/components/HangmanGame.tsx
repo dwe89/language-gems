@@ -14,8 +14,20 @@ import SoundEffects from './SoundEffects';
 import TempleGuardianModal from './TempleGuardianModal';
 import TokyoNightsModal from './TokyoNightsModal';
 import SpaceExplorerModal from './SpaceExplorerModal';
+import PirateAdventureModal from './PirateAdventureModal';
 import { CentralizedVocabularyService, CentralizedVocabularyWord } from 'gems/services/centralizedVocabularyService';
 import { createClient } from '@supabase/supabase-js';
+import { useAudio } from '../hooks/useAudio';
+
+interface VocabularyItem {
+  id: string;
+  word: string;
+  translation: string;
+  category?: string;
+  subcategory?: string;
+  difficulty_level?: string;
+  audio_url?: string;
+}
 
 interface HangmanGameProps {
   settings: {
@@ -26,6 +38,7 @@ interface HangmanGameProps {
     customWords?: string[];
     playAudio?: (word: string) => void;
   };
+  vocabulary?: VocabularyItem[];
   onBackToMenu: () => void;
   onGameEnd?: (result: 'win' | 'lose') => void;
   isFullscreen?: boolean;
@@ -91,12 +104,12 @@ const WORD_LISTS = {
   animals: {
     beginner: ['gato', 'perro', 'pez', 'vaca', 'pato'],
     intermediate: ['elefante', 'cocodrilo', 'mariposa', 'murciélago', 'jirafa'],
-    advanced: ['ornitorrinco', 'rinoceronte', 'hipopótamo', 'chimpancé', 'armadillo']
+    advanced: ['ornitorrinco', 'rinoceronte', 'hipopótamo', 'león marino', 'oso pardo']
   },
   food: {
     beginner: ['pan', 'café', 'leche', 'miel', 'arroz'],
-    intermediate: ['tortilla', 'ensalada', 'pescado', 'chocolate', 'naranja'],
-    advanced: ['espaguetis', 'guacamole', 'champiñones', 'berenjena', 'calabacín']
+    intermediate: ['tortilla', 'ensalada', 'pescado', 'chocolate', 'piña'],
+    advanced: ['espaguetis', 'guacamole', 'champiñones', 'café con leche', 'té verde']
   },
   countries: {
     beginner: ['españa', 'francia', 'china', 'japón', 'italia'],
@@ -113,12 +126,12 @@ const WORD_LISTS = {
   household: {
     beginner: ['mesa', 'silla', 'cama', 'sofá', 'puerta'],
     intermediate: ['ventana', 'cocina', 'nevera', 'lámpara', 'espejo'],
-    advanced: ['lavadora', 'microondas', 'aspiradora', 'calefacción', 'cortina']
+    advanced: ['lavadora', 'microondas', 'aspiradora', 'calefacción', 'aire acondicionado']
   },
   rooms: {
     beginner: ['salón', 'cocina', 'baño', 'dormitorio', 'comedor'],
     intermediate: ['despacho', 'garaje', 'terraza', 'jardín', 'sótano'],
-    advanced: ['vestíbulo', 'lavandería', 'biblioteca', 'gimnasio', 'trastero']
+    advanced: ['cuarto de baño', 'sala de estar', 'habitación principal', 'oficina en casa', 'cuarto de invitados']
   },
   foods: {
     beginner: ['pan', 'queso', 'huevo', 'pollo', 'pasta'],
@@ -259,7 +272,7 @@ type ExtendedThemeContextType = {
   };
 };
 
-function GameContent({ settings, onBackToMenu, onGameEnd, isFullscreen }: HangmanGameProps) {
+function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isFullscreen }: HangmanGameProps) {
   const { themeId, themeClasses } = useTheme() as ExtendedThemeContextType;
   const [themeClassesState, setThemeClassesState] = useState(themeClasses);
   const [word, setWord] = useState('');
@@ -286,6 +299,9 @@ function GameContent({ settings, onBackToMenu, onGameEnd, isFullscreen }: Hangma
   });
   
   const [soundEnabled, setSoundEnabled] = useState(true);
+
+  // Audio hook for sound effects
+  const { playSFX } = useAudio(soundEnabled);
   const [musicEnabled, setMusicEnabled] = useState(false);
   const backgroundMusicRef = useRef<HTMLAudioElement | null>(null);
 
@@ -295,20 +311,42 @@ function GameContent({ settings, onBackToMenu, onGameEnd, isFullscreen }: Hangma
   const [showTempleGuardianModal, setShowTempleGuardianModal] = useState(false);
   const [showTokyoNightsModal, setShowTokyoNightsModal] = useState(false);
   const [showSpaceExplorerModal, setShowSpaceExplorerModal] = useState(false);
+  const [showPirateAdventureModal, setShowPirateAdventureModal] = useState(false);
+
+  // Helper functions for exact letter matching (no accent normalization)
+  const isLetterGuessed = (letter: string, guessedLetters: string[]): boolean => {
+    const lowerLetter = letter.toLowerCase();
+    return guessedLetters.includes(lowerLetter);
+  };
+
+  const doesWordContainLetter = (word: string, letter: string): boolean => {
+    const lowerWord = word.toLowerCase();
+    const lowerLetter = letter.toLowerCase();
+    return lowerWord.includes(lowerLetter);
+  };
 
   // Initialize game
   useEffect(() => {
     const getRandomWord = () => {
       // Check if we're using custom words
-      if (settings.category === 'custom' && settings.customWords && settings.customWords.length > 0) {
+      if (settings.customWords && settings.customWords.length > 0) {
         const randomIndex = Math.floor(Math.random() * settings.customWords.length);
         return settings.customWords[randomIndex];
       }
-      
+
+      // Use vocabulary from category selector if available
+      if (vocabulary && vocabulary.length > 0) {
+        console.log('Using vocabulary from category selector:', vocabulary.length, 'words');
+        const randomIndex = Math.floor(Math.random() * vocabulary.length);
+        const selectedItem = vocabulary[randomIndex];
+        // Use the word in the target language
+        return selectedItem.word || 'fallback';
+      }
+
       try {
-        // Get language-specific word lists
+        // Fallback to hardcoded word lists
         const languageWordLists = LANGUAGE_WORD_LISTS[settings.language] || LANGUAGE_WORD_LISTS.english || {};
-        
+
         // First try to get the category from the selected language
         const categoryWords = languageWordLists[settings.category as keyof typeof WORD_LISTS];
         
@@ -362,7 +400,9 @@ function GameContent({ settings, onBackToMenu, onGameEnd, isFullscreen }: Hangma
     
     const newWord = getRandomWord().toLowerCase();
     setWord(newWord);
-    setWordLetters([...new Set(newWord.split(''))]);
+    // Get unique letters excluding spaces and normalize for comparison
+    const uniqueLetters = [...new Set(newWord.split('').filter((char: string) => char !== ' '))] as string[];
+    setWordLetters(uniqueLetters);
     setGuessedLetters([]);
     setWrongGuesses(0);
     setGameStatus('playing');
@@ -386,7 +426,7 @@ function GameContent({ settings, onBackToMenu, onGameEnd, isFullscreen }: Hangma
     
     // Check if all letters in the word have been guessed
     const hasWon = wordLetters.every(letter => 
-      letter === ' ' || letter === '-' || guessedLetters.includes(letter)
+      letter === ' ' || letter === '-' || isLetterGuessed(letter, guessedLetters)
     );
     
     if (hasWon) {
@@ -425,15 +465,16 @@ function GameContent({ settings, onBackToMenu, onGameEnd, isFullscreen }: Hangma
   }, [guessedLetters, wordLetters, wrongGuesses, gameStatus, timerInterval, onGameEnd]);
   
   const handleLetterGuess = (letter: string) => {
-    if (gameStatus !== 'playing' || guessedLetters.includes(letter.toLowerCase())) {
+    const lowerLetter = letter.toLowerCase();
+    
+    if (gameStatus !== 'playing' || guessedLetters.includes(lowerLetter)) {
       return;
     }
     
-    const lowerLetter = letter.toLowerCase();
     const newGuessedLetters = [...guessedLetters, lowerLetter];
     setGuessedLetters(newGuessedLetters);
     
-    if (word.includes(lowerLetter)) {
+    if (doesWordContainLetter(word, lowerLetter)) {
       // Correct guess
       setSoundEffectTriggers(prev => ({...prev, correctLetter: true}));
       setTimeout(() => setSoundEffectTriggers(prev => ({...prev, correctLetter: false})), 10);
@@ -443,8 +484,8 @@ function GameContent({ settings, onBackToMenu, onGameEnd, isFullscreen }: Hangma
         setCorrectLetterCounter(prev => prev + 1);
       }
       
-      // Check if the player has won
-      const isWin = wordLetters.every(letter => newGuessedLetters.includes(letter));
+      // Check if the player has won - check if all non-space letters are guessed
+      const isWin = wordLetters.every(letter => isLetterGuessed(letter, newGuessedLetters));
       if (isWin) {
         setSoundEffectTriggers(prev => ({...prev, gameWon: true}));
         setTimeout(() => setSoundEffectTriggers(prev => ({...prev, gameWon: false})), 10);
@@ -522,15 +563,24 @@ function GameContent({ settings, onBackToMenu, onGameEnd, isFullscreen }: Hangma
     
     const getRandomWord = () => {
       // Check if we're using custom words
-      if (settings.category === 'custom' && settings.customWords && settings.customWords.length > 0) {
+      if (settings.customWords && settings.customWords.length > 0) {
         const randomIndex = Math.floor(Math.random() * settings.customWords.length);
         return settings.customWords[randomIndex];
       }
-      
+
+      // Use vocabulary from category selector if available
+      if (vocabulary && vocabulary.length > 0) {
+        console.log('Restart: Using vocabulary from category selector:', vocabulary.length, 'words');
+        const randomIndex = Math.floor(Math.random() * vocabulary.length);
+        const selectedItem = vocabulary[randomIndex];
+        // Use the word in the target language
+        return selectedItem.word || 'fallback';
+      }
+
       try {
-        // Get language-specific word lists
+        // Fallback to hardcoded word lists
         const languageWordLists = LANGUAGE_WORD_LISTS[settings.language] || LANGUAGE_WORD_LISTS.english || {};
-        
+
         // First try to get the category from the selected language
         const categoryWords = languageWordLists[settings.category as keyof typeof WORD_LISTS];
         
@@ -584,7 +634,7 @@ function GameContent({ settings, onBackToMenu, onGameEnd, isFullscreen }: Hangma
     
     const newWord = getRandomWord().toLowerCase();
     setWord(newWord);
-    setWordLetters([...new Set(newWord.split(''))]);
+    setWordLetters([...new Set(newWord.split('').filter((char: string) => char !== ' '))] as string[]);
     
     // Restart the timer
     if (timerInterval) clearInterval(timerInterval);
@@ -642,36 +692,85 @@ function GameContent({ settings, onBackToMenu, onGameEnd, isFullscreen }: Hangma
     return <PirateAdventureAnimation mistakes={wrongGuesses} maxMistakes={MAX_ATTEMPTS} />;
   };
   
+
+
   const renderKeyboard = () => {
-    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+    // Two-row layout with accented letters based on language
+    const getKeyboardLayout = () => {
+      const baseAlphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+      let accentedLetters: string[] = [];
+
+      // Add accented letters based on language
+      switch (settings.language) {
+        case 'spanish':
+          accentedLetters = ['Á', 'É', 'Í', 'Ó', 'Ú', 'Ñ'];
+          break;
+        case 'french':
+          accentedLetters = ['É', 'È', 'Ê', 'À', 'Ç'];
+          break;
+        case 'german':
+          accentedLetters = ['Ä', 'Ö', 'Ü', 'ß'];
+          break;
+        case 'portuguese':
+          accentedLetters = ['Á', 'É', 'Í', 'Ó', 'Ú', 'Ã', 'Ç'];
+          break;
+        default:
+          accentedLetters = [];
+      }
+
+      const allLetters = [...baseAlphabet, ...accentedLetters];
+
+      // Split into two rows
+      const midPoint = Math.ceil(allLetters.length / 2);
+      return {
+        row1: allLetters.slice(0, midPoint),
+        row2: allLetters.slice(midPoint)
+      };
+    };
     
-    return (
-      <div className="flex flex-wrap justify-center gap-1 mt-6">
-        {alphabet.map((letter) => {
-          const isUsed = guessedLetters.includes(letter.toLowerCase());
-          const isCorrect = isUsed && word.includes(letter.toLowerCase());
-          const isWrong = isUsed && !word.includes(letter.toLowerCase());
-          
-          let buttonClass = "w-10 h-12 text-lg font-semibold rounded-lg";
+    const { row1, row2 } = getKeyboardLayout();
+    
+    const renderRow = (letters: string[]) => (
+      <div className="flex flex-wrap justify-center gap-1 md:gap-3">
+        {letters.map((letter) => {
+          const lowerLetter = letter.toLowerCase();
+          const isUsed = guessedLetters.includes(lowerLetter);
+          const isCorrect = isUsed && doesWordContainLetter(word, lowerLetter);
+          const isWrong = isUsed && !doesWordContainLetter(word, lowerLetter);
+
+          let buttonClass = "w-10 h-10 md:w-16 md:h-16 text-lg md:text-2xl font-bold rounded-xl transition-all duration-200 transform hover:scale-105 active:scale-95";
           
           if (isCorrect) {
             // Apply theme-specific styles for correct letters
-            buttonClass += ` ${themeClassesState.accent} text-white`;
+            if (themeId === 'tokyo') {
+              buttonClass += ` ${themeClassesState.accent} text-white shadow-lg shadow-pink-500/50 ring-2 ring-pink-400/50`;
+            } else if (themeId === 'space') {
+              buttonClass += ` ${themeClassesState.accent} text-white shadow-lg shadow-purple-500/50 ring-2 ring-purple-400/50`;
+            } else if (themeId === 'temple') {
+              buttonClass += ` ${themeClassesState.accent} text-white shadow-lg shadow-orange-500/50 ring-2 ring-orange-400/50`;
+            } else if (themeId === 'pirate') {
+              buttonClass += ` ${themeClassesState.accent} text-white shadow-lg shadow-amber-500/50 ring-2 ring-amber-400/50`;
+            } else {
+              buttonClass += ` ${themeClassesState.accent} text-white shadow-lg`;
+            }
           } else if (isWrong) {
             // Apply styles for wrong letters
-            buttonClass += " bg-red-600 text-white";
+            buttonClass += " bg-red-600 text-white shadow-lg";
           } else if (!isUsed) {
             // Apply styles for unused letters
-            buttonClass += " bg-violet-500 hover:bg-violet-600 text-white";
+            buttonClass += " bg-white/90 hover:bg-white text-gray-800 shadow-md border border-white/50 backdrop-blur-sm";
           } else {
             // Fallback style
-            buttonClass += " bg-gray-300 text-gray-500";
+            buttonClass += " bg-gray-400 text-gray-600 shadow-sm";
           }
           
           return (
             <button
               key={letter}
-              onClick={() => handleLetterGuess(letter)}
+              onClick={() => {
+                playSFX('button-click');
+                handleLetterGuess(letter);
+              }}
               disabled={isUsed || gameStatus !== 'playing'}
               className={buttonClass}
             >
@@ -681,29 +780,75 @@ function GameContent({ settings, onBackToMenu, onGameEnd, isFullscreen }: Hangma
         })}
       </div>
     );
-  };
-  
-  const renderWord = () => {
+    
     return (
-      <div className="flex justify-center space-x-2 my-6">
-        {word.split('').map((letter, index) => (
-          <div key={index} className="text-center">
-            <div className={`w-10 h-14 flex items-center justify-center rounded-lg ${
-              guessedLetters.includes(letter) 
-                ? themeClassesState.accent + ' text-white'
-                : 'bg-gray-800 bg-opacity-50'
-            }`}>
-              <span className="text-2xl font-bold">
-                {guessedLetters.includes(letter) ? letter.toUpperCase() : ''}
-              </span>
-            </div>
-            <div className="w-10 h-1 mt-1 bg-white bg-opacity-30 rounded"></div>
-          </div>
-        ))}
+      <div className="space-y-2 md:space-y-6 mt-2 md:mt-4">
+        {renderRow(row1)}
+        {renderRow(row2)}
       </div>
     );
   };
   
+  const renderWord = () => {
+    return (
+      <div className="flex justify-center flex-wrap gap-2 md:gap-4">
+        {word.split('').map((letter, index) => {
+            if (letter === ' ') {
+              // Render a space character
+              return (
+                <div key={index} className="w-4 md:w-6 flex items-end justify-center">
+                  <div className="w-4 h-4 md:w-6 md:h-6"></div>
+                </div>
+              );
+            }
+
+            const isRevealed = isLetterGuessed(letter, guessedLetters);
+
+            // Enhanced theme-specific glow effects for word squares
+            let squareClass = 'w-10 h-12 md:w-14 md:h-16 flex items-center justify-center rounded-xl transition-all duration-300 backdrop-blur-sm';
+
+            if (isRevealed) {
+              // Theme-specific styling for revealed letters
+              if (themeId === 'tokyo') {
+                squareClass += ' bg-pink-600/90 text-white shadow-2xl shadow-pink-500/60 ring-2 ring-pink-400/70 glow-pink';
+              } else if (themeId === 'space') {
+                squareClass += ' bg-purple-600/90 text-white shadow-2xl shadow-purple-500/60 ring-2 ring-purple-400/70 glow-purple';
+              } else if (themeId === 'temple') {
+                squareClass += ' bg-orange-600/90 text-white shadow-2xl shadow-orange-500/60 ring-2 ring-orange-400/70 glow-orange';
+              } else if (themeId === 'pirate') {
+                squareClass += ' bg-amber-600/90 text-white shadow-2xl shadow-amber-500/60 ring-2 ring-amber-400/70 glow-amber';
+              } else {
+                squareClass += ' bg-blue-600/90 text-white shadow-2xl shadow-blue-500/60 ring-2 ring-blue-400/70';
+              }
+            } else {
+              // Unrevealed letter styling with subtle theme hints
+              if (themeId === 'tokyo') {
+                squareClass += ' bg-white/70 border-2 border-pink-300/50 shadow-lg shadow-pink-500/20';
+              } else if (themeId === 'space') {
+                squareClass += ' bg-white/70 border-2 border-purple-300/50 shadow-lg shadow-purple-500/20';
+              } else if (themeId === 'temple') {
+                squareClass += ' bg-white/70 border-2 border-orange-300/50 shadow-lg shadow-orange-500/20';
+              } else if (themeId === 'pirate') {
+                squareClass += ' bg-white/70 border-2 border-amber-300/50 shadow-lg shadow-amber-500/20';
+              } else {
+                squareClass += ' bg-white/70 border-2 border-blue-300/50 shadow-lg shadow-blue-500/20';
+              }
+            }
+
+            return (
+              <div key={index} className="text-center">
+                <div className={squareClass}>
+                  <span className="text-lg md:text-2xl font-bold">
+                    {isRevealed ? letter.toUpperCase() : ''}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+    );
+  };
+
   // Customize text based on theme
   useEffect(() => {
     if (themeId === 'tokyo') {
@@ -754,7 +899,7 @@ function GameContent({ settings, onBackToMenu, onGameEnd, isFullscreen }: Hangma
       
       // Set the music based on theme
       if (themeId === 'default') {
-        backgroundMusicRef.current.src = '/games/hangman/sounds/background.mp3';
+        backgroundMusicRef.current.src = '/games/hangman/sounds/songs/background.mp3';
       } else if (themeId === 'tokyo') {
         backgroundMusicRef.current.src = '/games/hangman/sounds/songs/tokyonights.mp3';
       } else if (themeId === 'temple') {
@@ -771,7 +916,7 @@ function GameContent({ settings, onBackToMenu, onGameEnd, isFullscreen }: Hangma
       // Try to autoplay (may be rejected by browser)
       backgroundMusicRef.current.play().then(() => {
         setMusicEnabled(true);
-      }).catch(e => {
+      }).catch(() => {
         console.log("Autoplay prevented. Music will play on first user interaction.");
         // Will play on first user interaction
       });
@@ -851,10 +996,36 @@ function GameContent({ settings, onBackToMenu, onGameEnd, isFullscreen }: Hangma
         sessionStorage.setItem('has-seen-space-explorer-modal', 'true');
       }
     }
+
+    // Show Pirate Adventure modal when theme is pirate
+    if (settings.theme === 'pirate') {
+      // Check if it's the first time showing this modal in this session
+      const hasSeenModal = sessionStorage.getItem('has-seen-pirate-adventure-modal');
+      if (!hasSeenModal) {
+        setShowPirateAdventureModal(true);
+        sessionStorage.setItem('has-seen-pirate-adventure-modal', 'true');
+      }
+    }
   }, [settings.theme]);
 
   return (
-    <div className={`relative ${themeClassesState.background} ${themeClassesState.text} p-6 rounded-xl shadow-lg ${isFullscreen ? 'h-full flex flex-col' : ''}`}>
+    <div className={`relative ${themeClassesState.background} ${themeClassesState.text} ${isFullscreen ? 'w-full h-screen flex flex-col overflow-hidden' : 'w-full h-screen flex flex-col'}`}>
+      {/* Custom CSS for glow effects */}
+      <style jsx>{`
+        .glow-pink {
+          box-shadow: 0 0 20px rgba(236, 72, 153, 0.6), 0 0 40px rgba(236, 72, 153, 0.4), 0 0 60px rgba(236, 72, 153, 0.2);
+        }
+        .glow-purple {
+          box-shadow: 0 0 20px rgba(147, 51, 234, 0.6), 0 0 40px rgba(147, 51, 234, 0.4), 0 0 60px rgba(147, 51, 234, 0.2);
+        }
+        .glow-orange {
+          box-shadow: 0 0 20px rgba(234, 88, 12, 0.6), 0 0 40px rgba(234, 88, 12, 0.4), 0 0 60px rgba(234, 88, 12, 0.2);
+        }
+        .glow-amber {
+          box-shadow: 0 0 20px rgba(245, 158, 11, 0.6), 0 0 40px rgba(245, 158, 11, 0.4), 0 0 60px rgba(245, 158, 11, 0.2);
+        }
+      `}</style>
+
       {/* Sound effects component */}
       <SoundEffects
         theme={settings.theme}
@@ -865,72 +1036,81 @@ function GameContent({ settings, onBackToMenu, onGameEnd, isFullscreen }: Hangma
         onHint={soundEffectTriggers.hintUsed}
         muted={!soundEnabled}
       />
-      
-      {/* Top navigation and info bar */}
-      <div className="flex justify-between items-center mb-4">
+
+      {/* Background video/animation fills entire screen */}
+      <div className="absolute inset-0">
+        {renderThematicAnimation()}
+      </div>
+
+      {/* Top navigation and info bar - overlaid on background */}
+      <div className="relative z-20 flex justify-between items-center p-3 md:p-4 bg-black/30 backdrop-blur-sm">
         {!isFullscreen && (
-          <button 
+          <button
             onClick={onBackToMenu}
-            className="px-3 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white flex items-center"
+            className="px-3 py-2 md:px-4 md:py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white flex items-center text-sm md:text-base"
           >
-            Back to Menu
+            <span className="md:hidden">←</span>
+            <span className="hidden md:inline">Back to Menu</span>
           </button>
         )}
-        
-        {/* Game info in a single line */}
-        <div className="flex-1 flex items-center justify-center gap-4">
-          <div className="text-sm font-medium">
+
+        {/* Game info - responsive layout */}
+        <div className="flex-1 flex flex-col md:flex-row items-center justify-center gap-1 md:gap-4 mx-2 md:mx-4">
+          <div className="text-xs md:text-sm font-medium text-center">
             {settings.category.charAt(0).toUpperCase() + settings.category.slice(1)} - {settings.difficulty.charAt(0).toUpperCase() + settings.difficulty.slice(1)}
           </div>
-          
-          <div className="text-sm opacity-75">
+
+          <div className="text-xs md:text-sm opacity-75">
             {formatTime(timer)}
           </div>
-          
-          <div className="text-sm">
-            <span className="opacity-75">
-              {themeClassesState.dangerText}:
-            </span> {MAX_ATTEMPTS - wrongGuesses}/{MAX_ATTEMPTS}
-          </div>
         </div>
-        
+
         {/* Control buttons */}
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-1 md:space-x-2">
           {/* Sound toggle button */}
           <button
-            onClick={toggleSound}
-            className="p-2 rounded-full bg-gray-700 hover:bg-gray-600 text-white"
+            onClick={() => {
+              playSFX('button-click');
+              toggleSound();
+            }}
+            className="p-1.5 md:p-2 rounded-full bg-gray-700 hover:bg-gray-600 text-white text-sm md:text-base"
             title={soundEnabled ? "Mute sound effects" : "Unmute sound effects"}
           >
             {soundEnabled ? "🔊" : "🔇"}
           </button>
-          
+
           {/* Music toggle button */}
           <button
-            onClick={toggleMusic}
-            className="p-2 rounded-full bg-gray-700 hover:bg-gray-600 text-white"
+            onClick={() => {
+              playSFX('button-click');
+              toggleMusic();
+            }}
+            className="p-1.5 md:p-2 rounded-full bg-gray-700 hover:bg-gray-600 text-white"
             title={musicEnabled ? "Mute music" : "Play music"}
           >
-            {musicEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
+            {musicEnabled ? <Volume2 size={14} className="md:w-4 md:h-4" /> : <VolumeX size={14} className="md:w-4 md:h-4" />}
           </button>
-          
+
           {/* Hint button */}
-          <button 
-            onClick={handleHint}
+          <button
+            onClick={() => {
+              playSFX('button-click');
+              handleHint();
+            }}
             disabled={hints <= 0 || gameStatus !== 'playing'}
             className={`
-              relative flex items-center gap-1 px-3 py-1 rounded-lg
-              ${hints > 0 && gameStatus === 'playing' 
+              relative flex items-center gap-1 px-2 md:px-3 py-1 rounded-lg
+              ${hints > 0 && gameStatus === 'playing'
                 ? `${themeClassesState.button}`
                 : 'bg-gray-400 opacity-50'
               }
-              text-white text-sm font-medium
+              text-white text-xs md:text-sm font-medium
             `}
           >
-            <Zap size={16} />
-            Hint
-            <span className="ml-1">({hints})</span>
-            
+            <Zap size={14} className="md:w-4 md:h-4" />
+            <span className="hidden md:inline">Hint</span>
+            <span className="md:ml-1">({hints})</span>
+
             {showPowerupEffect && (
               <motion.div
                 initial={{ scale: 0, opacity: 0 }}
@@ -942,28 +1122,54 @@ function GameContent({ settings, onBackToMenu, onGameEnd, isFullscreen }: Hangma
           </button>
         </div>
       </div>
-      
-      {/* Progress bar */}
-      <div className="w-full h-3 bg-gray-700 rounded-full overflow-hidden mb-6">
-        <div 
-          className="h-full rounded-full transition-all duration-500" 
-          style={{ 
-            width: `${100 - (wrongGuesses / MAX_ATTEMPTS * 100)}%`,
-            backgroundColor: wrongGuesses > 4 ? 'red' : wrongGuesses > 2 ? 'orange' : 'green',
-          }}
-        ></div>
+
+      {/* Progress bar - overlaid on background */}
+      <div className="relative z-20 px-3 md:px-4 pb-3 md:pb-4">
+        <div className="w-full h-2 md:h-3 bg-gray-700/50 rounded-full overflow-hidden backdrop-blur-sm">
+          <div
+            className="h-full rounded-full transition-all duration-500"
+            style={{
+              width: `${100 - (wrongGuesses / MAX_ATTEMPTS * 100)}%`,
+              backgroundColor: wrongGuesses > 4 ? 'red' : wrongGuesses > 2 ? 'orange' : 'green',
+            }}
+          ></div>
+        </div>
       </div>
-      
-      {renderThematicAnimation()}
-      
-      <div className={`${isFullscreen ? 'flex-grow flex flex-col justify-center' : ''}`}>
-        {gameStatus === 'playing' ? (
-          <div className={`transition-all duration-300 ${animation === 'wrong' ? 'scale-105' : animation === 'correct' ? 'scale-95' : ''}`}>
-            {renderWord()}
-            {renderKeyboard()}
+
+      {/* Main game content area - positioned to avoid covering top UI */}
+      <div className="relative z-10 flex-1 flex flex-col pt-16 pb-4">
+        {/* Spacer to push content down */}
+        <div className="flex-1"></div>
+
+        {/* Lives remaining display */}
+        {gameStatus === 'playing' && (
+          <div className="text-center pb-2 md:pb-4">
+            <div className="text-sm md:text-lg font-medium">
+              <span className="opacity-75">
+                {themeId === 'tokyo' ? 'Password Attempts' :
+                 themeId === 'temple' ? 'Escape Chances' :
+                 themeId === 'space' ? 'Oxygen Level' :
+                 'Lives Remaining'}:
+              </span> {MAX_ATTEMPTS - wrongGuesses}/{MAX_ATTEMPTS}
+            </div>
           </div>
-        ) : (
-          <div className="text-center my-8">
+        )}
+
+        {/* Word display positioned much lower */}
+        {gameStatus === 'playing' && (
+          <div className="px-2 md:px-4 pb-4 md:pb-8">
+            {renderWord()}
+          </div>
+        )}
+
+        {/* Keyboard area positioned at bottom with more space for larger letters */}
+        <div className="px-2 md:px-4 pb-4 md:pb-8">
+          {gameStatus === 'playing' ? (
+            <div className={`transition-all duration-300 ${animation === 'wrong' ? 'scale-105' : animation === 'correct' ? 'scale-95' : ''}`}>
+              {renderKeyboard()}
+            </div>
+          ) : (
+          <div className="text-center">
             <h2 className="text-2xl md:text-3xl font-bold mb-4">
               {gameStatus === 'won' 
                 ? (themeClassesState.winMessage) 
@@ -984,14 +1190,20 @@ function GameContent({ settings, onBackToMenu, onGameEnd, isFullscreen }: Hangma
             
             <div className="flex justify-center gap-4 mt-6">
               <button
-                onClick={resetGame}
+                onClick={() => {
+                  playSFX('button-click');
+                  resetGame();
+                }}
                 className={`${themeClassesState.button} py-3 px-6 rounded-lg font-bold text-white`}
               >
                 Play Again
               </button>
-              
+
               <button
-                onClick={onBackToMenu}
+                onClick={() => {
+                  playSFX('button-click');
+                  onBackToMenu();
+                }}
                 className="bg-gray-700 hover:bg-gray-600 py-3 px-6 rounded-lg font-bold text-white"
               >
                 Back to Menu
@@ -999,6 +1211,7 @@ function GameContent({ settings, onBackToMenu, onGameEnd, isFullscreen }: Hangma
             </div>
           </div>
         )}
+        </div>
       </div>
       
       {/* Theme-specific Modals */}
@@ -1012,9 +1225,14 @@ function GameContent({ settings, onBackToMenu, onGameEnd, isFullscreen }: Hangma
         onClose={() => setShowTokyoNightsModal(false)} 
       />
       
-      <SpaceExplorerModal 
-        isOpen={showSpaceExplorerModal} 
-        onClose={() => setShowSpaceExplorerModal(false)} 
+      <SpaceExplorerModal
+        isOpen={showSpaceExplorerModal}
+        onClose={() => setShowSpaceExplorerModal(false)}
+      />
+
+      <PirateAdventureModal
+        isOpen={showPirateAdventureModal}
+        onClose={() => setShowPirateAdventureModal(false)}
       />
     </div>
   );

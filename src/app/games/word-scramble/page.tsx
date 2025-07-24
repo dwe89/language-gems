@@ -3,8 +3,8 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BookOpen } from 'lucide-react';
-import CategorySelector from '../../../components/games/CategorySelector';
-import { useVocabularyByCategory } from '../../../hooks/useVocabulary';
+import VocabularyCategorySelector from '../../../components/games/shared/VocabularyCategorySelector';
+import { useGameVocabulary, transformVocabularyForGame } from '../../../hooks/useGameVocabulary';
 import { KS3_SPANISH_CATEGORIES, getCategoryById } from '../../../utils/categories';
 import WordScrambleGameEnhanced from './components/WordScrambleGameEnhanced';
 import GameSettingsEnhanced from './components/GameSettingsEnhanced';
@@ -102,14 +102,16 @@ export default function WordScramblePage() {
   const [showCategorySelector, setShowCategorySelector] = useState(false);
   
   // Use category-based vocabulary when categories are selected
-  const { 
-    vocabulary: categoryVocabulary, 
-    loading: categoryLoading, 
-    error: categoryError 
-  } = useVocabularyByCategory({
-    language: 'spanish',
+  const {
+    vocabulary: categoryVocabulary,
+    loading: categoryLoading,
+    error: categoryError
+  } = useGameVocabulary({
+    language: 'es',
     categoryId: selectedCategory || undefined,
-    subcategoryId: selectedSubcategory || undefined
+    subcategoryId: selectedSubcategory || undefined,
+    limit: 100,
+    randomize: true
   });
 
   const handleGameStart = (settings: GameSettings) => {
@@ -161,6 +163,7 @@ export default function WordScramblePage() {
         settings={gameSettings}
         onBackToMenu={handleBackToMenu}
         onGameEnd={handleGameEnd}
+        categoryVocabulary={categoryVocabulary}
       />
     );
   }
@@ -170,6 +173,10 @@ export default function WordScramblePage() {
       <GameSettingsEnhanced
         onStart={handleGameStart}
         onBack={handleBackToMenu}
+        selectedCategory={selectedCategory}
+        selectedSubcategory={selectedSubcategory}
+        onCategoryChange={setSelectedCategory}
+        onSubcategoryChange={setSelectedSubcategory}
       />
     );
   }

@@ -36,14 +36,33 @@ export function useVocabularyByCategory({
   difficultyLevel = 'beginner',
   curriculumLevel = 'KS3'
 }: UseVocabularyFiltersParams) {
+  console.log('🔥🔥🔥 VOCABULARY HOOK CALLED 🔥🔥🔥', {
+    language,
+    categoryId,
+    subcategoryId,
+    difficultyLevel,
+    curriculumLevel
+  });
+
   const [vocabulary, setVocabulary] = useState<VocabularyItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!language) return;
+    if (!language) {
+      console.log('useVocabularyByCategory: No language provided');
+      return;
+    }
 
     const fetchVocabulary = async () => {
+      console.log('useVocabularyByCategory: Starting fetch with params:', {
+        language,
+        categoryId,
+        subcategoryId,
+        difficultyLevel,
+        curriculumLevel
+      });
+
       setLoading(true);
       setError(null);
 
@@ -55,32 +74,44 @@ export function useVocabularyByCategory({
 
         // Add category filter if specified
         if (categoryId) {
+          console.log('Adding category filter:', categoryId);
           query = query.eq('category', categoryId);
         }
 
-        // Add subcategory filter if specified  
+        // Add subcategory filter if specified
         if (subcategoryId) {
+          console.log('Adding subcategory filter:', subcategoryId);
           query = query.eq('subcategory', subcategoryId);
         }
+        // Note: If no subcategory is specified, we get all items from the category
 
-        // Add difficulty filter if specified and not 'beginner' (since many entries might not have this field)
-        if (difficultyLevel && difficultyLevel !== 'beginner') {
-          query = query.eq('difficulty_level', difficultyLevel);
-        }
+        // Note: difficulty_level column doesn't exist in database, skipping difficulty filter
+        // if (difficultyLevel && difficultyLevel !== 'beginner') {
+        //   query = query.eq('difficulty_level', difficultyLevel);
+        // }
 
         // Add curriculum level filter if specified (use ilike for partial matches)
-        if (curriculumLevel) {
+        // Note: Skip curriculum level filtering for now as database uses different format (A1, A2) vs KS3
+        if (curriculumLevel && curriculumLevel !== 'KS3') {
           query = query.or(`curriculum_level.ilike.%${curriculumLevel}%,curriculum_level.is.null`);
         }
+
+        console.log('🔍 About to execute query with filters:', {
+          language,
+          categoryId,
+          subcategoryId,
+          curriculumLevel,
+          difficultyLevel
+        });
 
         const { data, error: fetchError } = await query.limit(10000);
 
         if (fetchError) {
-          console.error('Database query error:', fetchError);
+          console.error('❌ Database query error:', fetchError);
           throw fetchError;
         }
 
-        console.log('Fetched vocabulary:', data?.length || 0, 'items for language:', language, 'category:', categoryId, 'subcategory:', subcategoryId);
+        console.log('✅ Fetched vocabulary:', data?.length || 0, 'items for language:', language, 'category:', categoryId, 'subcategory:', subcategoryId);
         
         setVocabulary(data || []);
       } catch (err) {

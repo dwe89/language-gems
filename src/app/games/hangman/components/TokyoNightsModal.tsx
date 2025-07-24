@@ -3,6 +3,7 @@
 import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
+import { useAudio } from '../hooks/useAudio';
 
 interface TokyoNightsModalProps {
   isOpen: boolean;
@@ -10,6 +11,8 @@ interface TokyoNightsModalProps {
 }
 
 export default function TokyoNightsModal({ isOpen, onClose }: TokyoNightsModalProps) {
+  const { playSFX } = useAudio(true);
+
   // Prevent scrolling when the modal is open
   useEffect(() => {
     if (isOpen) {
@@ -66,9 +69,12 @@ export default function TokyoNightsModal({ isOpen, onClose }: TokyoNightsModalPr
           </ul>
           <p className="text-cyan-400 text-xs text-center mb-3">Can you crack the code?</p>
           {/* Begin button */}
-          <button 
+          <button
             className="w-full py-2 bg-gradient-to-r from-cyan-600 to-cyan-700 hover:from-cyan-500 hover:to-cyan-600 text-cyan-100 rounded font-bold transition-all border border-cyan-500/50 text-xs"
-            onClick={onClose}
+            onClick={() => {
+              playSFX('button-click');
+              onClose();
+            }}
           >
             <span className="mr-1">{'>'}</span>
             INITIATE

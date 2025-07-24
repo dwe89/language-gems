@@ -5,8 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { THEMES, LANGUAGES, TOPICS, DIFFICULTIES } from '../data/gameConstants';
 import { WordPair } from './CustomWordsModal';
 import CustomWordsModal from './CustomWordsModal';
-import CategorySelector from '../../../../components/games/CategorySelector';
-import { useVocabularyByCategory } from '../../../../hooks/useVocabulary';
+import VocabularyCategorySelector from '../../../../components/games/shared/VocabularyCategorySelector';
+import { useGameVocabulary } from '../../../../hooks/useGameVocabulary';
 
 type GameSettingsProps = {
   onStartGame: (settings: { 
@@ -80,12 +80,14 @@ export default function GameSettings({ onStartGame }: GameSettingsProps) {
   const [customWords, setCustomWords] = useState<WordPair[]>([]);
 
   // Fetch vocabulary based on category selection
-  const { vocabulary, loading: vocabLoading, error: vocabError } = useVocabularyByCategory({
+  const { vocabulary, loading: vocabLoading, error: vocabError } = useGameVocabulary({
     language: language.id === 'spanish' ? 'es' : 'en',
     categoryId: selectedCategory,
     subcategoryId: selectedSubcategory,
     difficultyLevel: 'beginner',
-    curriculumLevel: 'KS3'
+    curriculumLevel: 'KS3',
+    limit: 50,
+    randomize: true
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -124,11 +126,7 @@ export default function GameSettings({ onStartGame }: GameSettingsProps) {
     });
   };
 
-  const handleCategorySelect = (categoryId: string, subcategoryId: string | null) => {
-    setSelectedCategory(categoryId);
-    setSelectedSubcategory(subcategoryId || '');
-    setShowCategoryModal(false);
-  };
+
 
   return (
     <div className="w-full max-w-6xl mx-auto bg-white/90 backdrop-blur-md border border-white/20 p-8 rounded-3xl shadow-2xl">      
@@ -305,9 +303,14 @@ export default function GameSettings({ onStartGame }: GameSettingsProps) {
                 </button>
               </div>
               
-              <CategorySelector 
-                onCategorySelect={handleCategorySelect}
-                selectedLanguage="es"
+              <VocabularyCategorySelector
+                selectedLanguage={language.id === 'spanish' ? 'es' : 'en'}
+                selectedCategory={selectedCategory}
+                selectedSubcategory={selectedSubcategory}
+                onLanguageChange={() => {}} // Language is controlled by parent
+                onCategoryChange={setSelectedCategory}
+                onSubcategoryChange={setSelectedSubcategory}
+                showLanguageSelector={false}
               />
               
               {selectedCategory && vocabulary.length > 0 && (

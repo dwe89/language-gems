@@ -31,64 +31,64 @@ export default function SoundEffects({
     
     const soundEffects: Record<string, HTMLAudioElement | null> = {};
     
-    // Common sounds
-    soundEffects.correct = new Audio('/games/hangman/sounds/common/correct.mp3');
-    soundEffects.wrong = new Audio('/games/hangman/sounds/common/wrong.mp3');
-    soundEffects.win = new Audio('/games/hangman/sounds/common/win.mp3');
-    soundEffects.lose = new Audio('/games/hangman/sounds/common/lose.mp3');
-    soundEffects.hint = new Audio('/games/hangman/sounds/common/hint.mp3');
+    // Common sounds - using existing audio files
+    soundEffects.correct = new Audio('/audio/sfx/correct-answer.mp3');
+    soundEffects.wrong = new Audio('/audio/sfx/wrong-answer.mp3');
+    soundEffects.win = new Audio('/audio/sfx/victory.mp3');
+    soundEffects.lose = new Audio('/audio/sfx/defeat.mp3');
+    soundEffects.hint = new Audio('/audio/sfx/button-click.mp3');
     
     // Theme-specific sounds
     if (theme === 'default') {
       // Classic hangman background music
-      soundEffects.backgroundMusic = new Audio('/games/hangman/sounds/background.mp3');
+      soundEffects.backgroundMusic = new Audio('/audio/themes/classic-ambient.mp3');
       if (soundEffects.backgroundMusic) {
         soundEffects.backgroundMusic.loop = true;
         soundEffects.backgroundMusic.volume = 0.3;
       }
     }
     else if (theme === 'space') {
-      soundEffects.asteroidHit = new Audio('/games/hangman/sounds/space/asteroid-hit.mp3');
-      soundEffects.alarm = new Audio('/games/hangman/sounds/space/alarm.mp3');
-      soundEffects.spacePing = new Audio('/games/hangman/sounds/space/space-ping.mp3');
-    } 
-    else if (theme === 'underwater') {
-      soundEffects.bubble = new Audio('/games/hangman/sounds/underwater/bubble.mp3');
-      soundEffects.splash = new Audio('/games/hangman/sounds/underwater/splash.mp3');
-      soundEffects.sonar = new Audio('/games/hangman/sounds/underwater/sonar.mp3');
+      soundEffects.asteroidHit = new Audio('/audio/sfx/space-docking.mp3');
+      soundEffects.alarm = new Audio('/audio/sfx/wrong-answer.mp3');
+      soundEffects.spacePing = new Audio('/audio/sfx/space-docking.mp3');
+      soundEffects.backgroundMusic = new Audio('/audio/themes/space-explorer-ambient.mp3');
+      if (soundEffects.backgroundMusic) {
+        soundEffects.backgroundMusic.loop = true;
+        soundEffects.backgroundMusic.volume = 0.3;
+      }
+    }
+    else if (theme === 'tokyo') {
+      soundEffects.hack = new Audio('/audio/sfx/tokyo-hack.mp3');
+      soundEffects.backgroundMusic = new Audio('/audio/themes/tokyo-nights-ambient.mp3');
+      if (soundEffects.backgroundMusic) {
+        soundEffects.backgroundMusic.loop = true;
+        soundEffects.backgroundMusic.volume = 0.3;
+      }
+    }
+    else if (theme === 'pirate') {
+      soundEffects.treasure = new Audio('/audio/sfx/pirate-treasure.mp3');
+      soundEffects.backgroundMusic = new Audio('/audio/themes/pirate-adventure-ambient.mp3');
+      if (soundEffects.backgroundMusic) {
+        soundEffects.backgroundMusic.loop = true;
+        soundEffects.backgroundMusic.volume = 0.3;
+      }
     }
     else if (theme === 'temple') {
       // Lava Temple specific sounds
-      soundEffects.lavaWave = new Audio('/games/hangman/sounds/lava-temple/lava-wave.mp3');
-      soundEffects.wrongGuess = new Audio('/games/hangman/sounds/lava-temple/wrong-guess.mp3');
-      soundEffects.glyphCorrect = new Audio('/games/hangman/sounds/lava-temple/glyph-correct.mp3');
-      
-      // Stone sliding sounds for puzzle elements
-      soundEffects.stoneSlide1 = new Audio('/games/hangman/sounds/lava-temple/stone-slide-1.mp3');
-      soundEffects.stoneSlide2 = new Audio('/games/hangman/sounds/lava-temple/stone-slide-2.mp3');
-      soundEffects.stoneSlide3 = new Audio('/games/hangman/sounds/lava-temple/stone-slide-3.mp3');
-      
-      // Lava bubble sounds
-      soundEffects.lavaBubble1 = new Audio('/games/hangman/sounds/lava-temple/lava-bubble-1.mp3');
-      soundEffects.lavaBubble2 = new Audio('/games/hangman/sounds/lava-temple/lava-bubble-2.mp3');
-      
-      // Door unlock sound
-      soundEffects.doorUnlock = new Audio('/games/hangman/sounds/lava-temple/door-unlock.mp3');
-      
-      // Trap activation sounds
-      soundEffects.trapActivate = new Audio('/games/hangman/sounds/lava-temple/trap-activate.mp3');
-      
+      soundEffects.templePower = new Audio('/audio/sfx/temple-power.mp3');
+      soundEffects.wrongGuess = new Audio('/audio/sfx/wrong-answer.mp3');
+      soundEffects.glyphCorrect = new Audio('/audio/sfx/correct-answer.mp3');
+      soundEffects.backgroundMusic = new Audio('/audio/themes/lava-temple-ambient.mp3');
+
+      if (soundEffects.backgroundMusic) {
+        soundEffects.backgroundMusic.loop = true;
+        soundEffects.backgroundMusic.volume = 0.3;
+      }
+
       // Adjust volumes for lava temple sounds
-      soundEffects.lavaWave.volume = 0.7;
+      soundEffects.templePower.volume = 0.7;
       soundEffects.wrongGuess.volume = 0.8;
       soundEffects.glyphCorrect.volume = 0.7;
-      soundEffects.stoneSlide1.volume = 0.6;
-      soundEffects.stoneSlide2.volume = 0.6;
-      soundEffects.stoneSlide3.volume = 0.6;
-      soundEffects.lavaBubble1.volume = 0.5;
-      soundEffects.lavaBubble2.volume = 0.5;
-      soundEffects.doorUnlock.volume = 0.8;
-      soundEffects.trapActivate.volume = 0.7;
     }
     
     // Set volume for common sounds

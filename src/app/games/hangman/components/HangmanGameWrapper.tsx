@@ -1,8 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { CentralizedVocabularyService, CentralizedVocabularyWord } from 'gems/services/centralizedVocabularyService';
-import { createClient } from '@supabase/supabase-js';
+import { useGameVocabulary, transformVocabularyForGame } from '../../../../hooks/useGameVocabulary';
 import HangmanGame from './HangmanGame';
 
 interface HangmanGameWrapperProps {
@@ -12,6 +11,7 @@ interface HangmanGameWrapperProps {
     language: string;
     theme: string;
     customWords?: string[];
+    subcategory?: string; // Add subcategory to the interface
     categoryVocabulary?: any[]; // From the category selection system
   };
   onBackToMenu: () => void;
@@ -19,66 +19,100 @@ interface HangmanGameWrapperProps {
   isFullscreen?: boolean;
 }
 
+interface GameVocabularyWord {
+  id: string;
+  word: string;
+  translation: string;
+  category?: string;
+  subcategory?: string;
+  difficulty_level?: string;
+}
+
 interface VocabularyPool {
   [language: string]: {
     [category: string]: {
-      [difficulty: string]: CentralizedVocabularyWord[]
+      [difficulty: string]: GameVocabularyWord[]
     }
   }
 }
 
-// Create Supabase client
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Map language codes
+const mapLanguage = (language: string): string => {
+  const languageMap: Record<string, string> = {
+    'spanish': 'es',
+    'french': 'fr',
+    'english': 'en',
+    'german': 'de'
+  };
+  return languageMap[language] || 'es';
+};
+
+// Map category names to match our vocabulary database
+const mapCategory = (category: string): string => {
+  const categoryMap: Record<string, string> = {
+    'animals': 'animals',
+    'food': 'food_drink',
+    'food_drink': 'food_drink', // Add direct mapping for food_drink
+    'family': 'family_relationships',
+    'colors': 'colors',
+    'numbers': 'basics_core_language',
+    'basics_core_language': 'basics_core_language', // Add direct mapping
+    'household': 'home_local_area_environment',
+    'transport': 'travel_transport',
+    'sports': 'free_time_leisure',
+    'body': 'health_body_lifestyle',
+    'school': 'school_jobs_future',
+    'nature': 'weather_nature',
+    'technology': 'technology_media',
+    // Add more direct mappings for KS3 categories
+    'identity_personal_life': 'identity_personal_life',
+    'home_local_area': 'home_local_area',
+    'school_jobs_future': 'school_jobs_future',
+    'clothes_shopping': 'clothes_shopping',
+    'holidays_travel_culture': 'holidays_travel_culture',
+    'nature_environment': 'nature_environment'
+  };
+  return categoryMap[category] || category; // Return the category as-is if no mapping found
+};
 
 export default function HangmanGameWrapper(props: HangmanGameWrapperProps) {
+  console.log('🚀🚀🚀 HANGMAN GAME WRAPPER CALLED 🚀🚀🚀');
   const [vocabularyPool, setVocabularyPool] = useState<VocabularyPool>({});
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  // Map category names to match our vocabulary database
-  const mapCategory = (category: string): string => {
-    const categoryMap: Record<string, string> = {
-      'animals': 'animals',
-      'food': 'food', 
-      'family': 'family',
-      'colors': 'colors',
-      'numbers': 'numbers',
-      'household': 'household',
-      'transport': 'transport',
-      'weather': 'weather',
-      'clothing': 'clothing',
-      'school': 'school', // For professions, etc.
-      'physicaltraits': 'school', // Map to school as general category
-      'personality': 'school',
-      'professions': 'school',
-      'countries': 'school',
-      'sports': 'school',
-      'rooms': 'household', // Map rooms to household
-      'foods': 'food', // Alternative food spelling
-      'bodyparts': 'school', // Map to school as general category
-      'verbs': 'school',
-      'adjectives': 'school',
-      'days': 'school',
-      'months': 'school',
-      'greetings': 'school',
-      'phrases': 'school',
-      'places': 'school'
-    };
-    return categoryMap[category] || 'animals'; // Default fallback
-  };
+  // Use the unified vocabulary hook - always use category/subcategory for filtering
+  const { vocabulary, loading: isLoading, error } = useGameVocabulary({
+    language: mapLanguage(props.settings.language),
+    categoryId: mapCategory(props.settings.category),
+    subcategoryId: props.settings.subcategory,
+    limit: 100,
+    randomize: true,
+    hasAudio: true
+  });
 
-  // Map language codes
-  const mapLanguage = (language: string): string => {
-    const languageMap: Record<string, string> = {
-      'spanish': 'es',
-      'french': 'fr', 
-      'english': 'en', // We'll fallback to Spanish if English not available
-      'german': 'de'
-    };
-    return languageMap[language] || 'es';
-  };
+  console.log('🎯 HangmanGameWrapper - Settings received:', {
+    category: props.settings.category,
+    subcategory: props.settings.subcategory,
+    language: props.settings.language,
+    categoryVocabulary: props.settings.categoryVocabulary?.length || 0
+  });
+  console.log('🎯 HangmanGameWrapper - Category mapping:', {
+    originalCategory: props.settings.category,
+    mappedCategory: mapCategory(props.settings.category)
+  });
+  console.log('🎯 HangmanGameWrapper - useGameVocabulary params:', {
+    language: mapLanguage(props.settings.language),
+    categoryId: props.settings.categoryVocabulary && props.settings.categoryVocabulary.length > 0
+      ? undefined
+      : mapCategory(props.settings.category),
+    subcategoryId: props.settings.categoryVocabulary && props.settings.categoryVocabulary.length > 0
+      ? undefined
+      : props.settings.subcategory
+  });
+  console.log('🎯 HangmanGameWrapper - vocabulary from hook:', vocabulary?.length || 0, 'words');
+
+
+
+
 
   // Map difficulty levels  
   const mapDifficulty = (difficulty: string): string => {
@@ -90,10 +124,55 @@ export default function HangmanGameWrapper(props: HangmanGameWrapperProps) {
     return difficultyMap[difficulty] || 'beginner';
   };
 
+  // Process vocabulary from the hook
   useEffect(() => {
-    loadVocabulary();
-  }, [props.settings.language, props.settings.category, props.settings.categoryVocabulary]);
+    if (!vocabulary || vocabulary.length === 0) return;
 
+    console.log('Processing vocabulary from hook:', vocabulary.length, 'words');
+
+    // Transform vocabulary to the expected format
+    const transformedVocabulary: GameVocabularyWord[] = vocabulary.map(item => ({
+      id: item.id,
+      word: item.word,
+      translation: item.translation,
+      category: item.category || 'general',
+      subcategory: item.subcategory || '',
+      difficulty_level: item.difficulty_level || 'beginner'
+    }));
+
+    // Organize by difficulty
+    const organizedVocabulary: VocabularyPool = {};
+    const language = mapLanguage(props.settings.language);
+    const category = mapCategory(props.settings.category);
+
+    organizedVocabulary[language] = {
+      [category]: {
+        beginner: transformedVocabulary.filter(w =>
+          !w.difficulty_level || w.difficulty_level === 'beginner' || w.word.length <= 6
+        ),
+        intermediate: transformedVocabulary.filter(w =>
+          w.difficulty_level === 'intermediate' || (w.word.length > 6 && w.word.length <= 10)
+        ),
+        advanced: transformedVocabulary.filter(w =>
+          w.difficulty_level === 'advanced' || w.word.length > 10
+        )
+      }
+    };
+
+    // Ensure each difficulty has at least some words by redistributing if needed
+    const difficulties = ['beginner', 'intermediate', 'advanced'];
+    difficulties.forEach(diff => {
+      if (organizedVocabulary[language][category][diff].length === 0) {
+        // Copy from beginner as fallback
+        organizedVocabulary[language][category][diff] =
+          [...organizedVocabulary[language][category]['beginner']];
+      }
+    });
+
+    setVocabularyPool(organizedVocabulary);
+  }, [vocabulary, props.settings.language, props.settings.category]);
+
+  // Legacy function - now handled by useGameVocabulary hook
   const loadVocabulary = async () => {
     try {
       setIsLoading(true);
@@ -316,11 +395,33 @@ export default function HangmanGameWrapper(props: HangmanGameWrapperProps) {
     );
   }
 
-  // Create enhanced settings with vocabulary access
+  // Transform vocabulary to the format expected by HangmanGame
+  let gameVocabulary = vocabulary?.map(item => ({
+    id: item.id,
+    word: item.word,
+    translation: item.translation,
+    category: item.category,
+    subcategory: item.subcategory,
+    difficulty_level: item.difficulty_level
+  })) || [];
+
+  // If no vocabulary is returned, provide some fallback words for testing
+  if (gameVocabulary.length === 0) {
+    console.log('🎯 HangmanGameWrapper - No vocabulary from hook, using fallback words');
+    gameVocabulary = [
+      { id: '1', word: 'casa', translation: 'house', category: props.settings.category, subcategory: props.settings.subcategory, difficulty_level: 'beginner' },
+      { id: '2', word: 'gato', translation: 'cat', category: props.settings.category, subcategory: props.settings.subcategory, difficulty_level: 'beginner' },
+      { id: '3', word: 'agua', translation: 'water', category: props.settings.category, subcategory: props.settings.subcategory, difficulty_level: 'beginner' },
+      { id: '4', word: 'sol', translation: 'sun', category: props.settings.category, subcategory: props.settings.subcategory, difficulty_level: 'beginner' },
+      { id: '5', word: 'libro', translation: 'book', category: props.settings.category, subcategory: props.settings.subcategory, difficulty_level: 'beginner' }
+    ];
+  }
+
+  console.log('🎯 HangmanGameWrapper - Passing vocabulary to game:', gameVocabulary.length, 'words');
+
+  // Enhanced settings - keep original category, don't force to 'custom'
   const enhancedSettings = {
     ...props.settings,
-    customWords: getVocabularyForGame(),
-    category: 'custom', // Force use of custom words which are now from database
     // Add audio function for the game to use
     playAudio: (word: string) => {
       const audioUrl = getAudioForWord(word);
@@ -337,6 +438,7 @@ export default function HangmanGameWrapper(props: HangmanGameWrapperProps) {
     <HangmanGame
       {...props}
       settings={enhancedSettings}
+      vocabulary={gameVocabulary}
     />
   );
 }

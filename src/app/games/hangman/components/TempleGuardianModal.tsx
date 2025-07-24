@@ -3,6 +3,7 @@
 import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
+import { useAudio } from '../hooks/useAudio';
 
 interface TempleGuardianModalProps {
   isOpen: boolean;
@@ -10,6 +11,8 @@ interface TempleGuardianModalProps {
 }
 
 export default function TempleGuardianModal({ isOpen, onClose }: TempleGuardianModalProps) {
+  const { playSFX } = useAudio(true);
+
   // Prevent scrolling when the modal is open
   useEffect(() => {
     if (isOpen) {
@@ -95,9 +98,12 @@ export default function TempleGuardianModal({ isOpen, onClose }: TempleGuardianM
           </p>
           
           {/* Begin button */}
-          <button 
+          <button
             className="w-full py-3 bg-amber-600 hover:bg-amber-500 text-amber-100 rounded-lg font-bold transition-colors"
-            onClick={onClose}
+            onClick={() => {
+              playSFX('button-click');
+              onClose();
+            }}
           >
             BEGIN CHALLENGE
           </button>

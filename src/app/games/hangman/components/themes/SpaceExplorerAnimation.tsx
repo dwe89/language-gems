@@ -16,7 +16,6 @@ export default function SpaceExplorerAnimation({
   const [showOxygenAlert, setShowOxygenAlert] = useState(false);
   const [showWarningPopup, setShowWarningPopup] = useState(false);
   const [lastMistakeCount, setLastMistakeCount] = useState(0);
-  const [tetherHealth, setTetherHealth] = useState(100);
   
   // Calculate values based on mistakes
   const mistakeRatio = mistakes / maxMistakes;
@@ -30,9 +29,6 @@ export default function SpaceExplorerAnimation({
       y: 55 - (15 * mistakeRatio), // Moves slightly up as mistakes increase
       size: 90 - (40 * mistakeRatio), // Gets smaller as moves away
     });
-    
-    // Calculate tether health based on mistakes
-    setTetherHealth(Math.max(0, 100 - (mistakeRatio * 100)));
     
     // Show oxygen alert when a new mistake is made
     if (mistakes > lastMistakeCount) {
@@ -75,7 +71,7 @@ export default function SpaceExplorerAnimation({
   const oxygenStatus = getOxygenStatus();
   
   return (
-    <div className="relative w-full h-80 md:h-96 lg:h-[30rem] mb-4 overflow-hidden rounded-xl">
+    <div className="relative w-full h-96 md:h-[28rem] lg:h-[36rem] mb-4 overflow-hidden rounded-xl">
       {/* Fixed background color fallback */}
       <div className="absolute inset-0 bg-gradient-to-b from-indigo-950 via-black to-purple-950"></div>
       
@@ -92,46 +88,9 @@ export default function SpaceExplorerAnimation({
         </video>
       </div>
       
-      {/* Spaceship on the left side */}
-      <div className="absolute left-8 top-1/2 transform -translate-y-1/2 w-24 h-24">
-        <div className="relative w-full h-full">
-          {/* Simple spaceship made with CSS */}
-          <div className="absolute top-1/2 left-0 transform -translate-y-1/2 w-20 h-10 bg-slate-700 rounded-l-full rounded-r-lg border border-slate-500"></div>
-          <div className="absolute top-1/4 left-6 transform -translate-y-1/2 w-8 h-8 bg-slate-600 rounded-full border border-slate-500"></div>
-          
-          {/* Ship window */}
-          <div className="absolute top-1/2 left-10 transform -translate-y-1/2 w-6 h-6 bg-cyan-300 rounded-full border border-slate-400"></div>
-          
-          {/* Ship thrusters */}
-          <motion.div 
-            className="absolute top-1/3 left-0 transform -translate-y-1/2 w-3 h-2 bg-blue-500 rounded-l-full"
-            animate={{ opacity: [0.5, 1, 0.5] }}
-            transition={{ duration: 1, repeat: Infinity }}
-          ></motion.div>
-          <motion.div 
-            className="absolute top-2/3 left-0 transform -translate-y-1/2 w-3 h-2 bg-blue-500 rounded-l-full"
-            animate={{ opacity: [0.7, 1, 0.7] }}
-            transition={{ duration: 0.8, repeat: Infinity }}
-          ></motion.div>
-        </div>
-      </div>
+
       
-      {/* Tether line connecting ship to astronaut */}
-      <svg 
-        className="absolute inset-0 w-full h-full pointer-events-none" 
-        style={{ zIndex: 3 }}
-      >
-        <line 
-          x1="8%" 
-          y1="50%" 
-          x2={`${astronautPosition.x}%`} 
-          y2={`${astronautPosition.y}%`} 
-          stroke={tetherHealth <= 20 ? "red" : tetherHealth <= 50 ? "yellow" : "cyan"}
-          strokeWidth="2"
-          strokeDasharray={tetherHealth <= 50 ? "5,5" : "0"}
-          className={tetherHealth <= 20 ? "animate-pulse" : ""}
-        />
-      </svg>
+
       
       {/* Astronaut floating in space - moves away with each mistake */}
       <div 
@@ -169,7 +128,7 @@ export default function SpaceExplorerAnimation({
       </div>
       
       {/* Status overlay with ship information */}
-      <div className="absolute top-6 left-6 w-64 h-44 bg-slate-900 bg-opacity-80 rounded-lg p-3 border border-blue-500">
+      <div className="absolute bottom-32 left-6 w-64 h-44 bg-slate-900 bg-opacity-80 rounded-lg p-3 border border-blue-500">
         <div className="text-cyan-100 text-sm font-bold mb-2">SHIP SYSTEMS</div>
         
         <div className="flex flex-col gap-2">
@@ -199,22 +158,7 @@ export default function SpaceExplorerAnimation({
             </div>
           </div>
           
-          <div>
-            <div className="text-cyan-200 text-xs mb-1">TETHER INTEGRITY</div>
-            <div className="h-2 bg-slate-950 rounded-full overflow-hidden">
-              <div 
-                className={`h-full transition-all duration-300 ${tetherHealth <= 20 ? 'animate-pulse' : ''}`}
-                style={{ 
-                  width: `${tetherHealth}%`,
-                  background: tetherHealth <= 20 
-                    ? 'linear-gradient(to right, #ef4444, #f97316)' 
-                    : tetherHealth <= 50 
-                      ? 'linear-gradient(to right, #f59e0b, #fbbf24)' 
-                      : 'linear-gradient(to right, #2dd4bf, #22d3ee)'
-                }}
-              ></div>
-            </div>
-          </div>
+
           
           <div>
             <div className="text-cyan-200 text-xs mb-1">MISSION PROGRESS</div>
@@ -229,7 +173,7 @@ export default function SpaceExplorerAnimation({
       </div>
 
       {/* Mission status */}
-      <div className="absolute top-6 right-6 w-48 h-36 bg-slate-900 bg-opacity-80 rounded-lg p-2 border border-blue-500">
+      <div className="absolute bottom-32 right-6 w-48 h-36 bg-slate-900 bg-opacity-80 rounded-lg p-2 border border-blue-500">
         <div className="text-cyan-100 text-xs">
           <div className="mb-1">MISSION CONTROL:</div>
           <div className="text-[10px] italic opacity-90">
@@ -310,8 +254,8 @@ export default function SpaceExplorerAnimation({
       
       {/* Alert messages */}
       {mistakeRatio > 0.8 && (
-        <motion.div 
-          className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-red-500 font-bold text-lg"
+        <motion.div
+          className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-red-500 font-bold text-6xl z-50"
           animate={{ opacity: [1, 0.5, 1] }}
           transition={{ duration: 0.5, repeat: Infinity }}
         >

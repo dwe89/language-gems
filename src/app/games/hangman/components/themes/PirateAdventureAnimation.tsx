@@ -16,13 +16,39 @@ export default function PirateAdventureAnimation({
   const shipIntegrity = Math.max(0, 100 - (mistakeRatio * 100)).toFixed(0);
   
   return (
-    <div className="relative w-full h-80 md:h-96 lg:h-[30rem] mb-4 overflow-hidden rounded-xl">
+    <div className="relative w-full h-96 md:h-[28rem] lg:h-[36rem] mb-4 overflow-hidden rounded-xl">
+      {/* CSS animations for floating boats */}
+      <style jsx>{`
+        @keyframes float {
+          0%, 100% { transform: translateY(0px) rotate(0deg); }
+          25% { transform: translateY(-8px) rotate(1deg); }
+          50% { transform: translateY(-4px) rotate(0deg); }
+          75% { transform: translateY(-12px) rotate(-1deg); }
+        }
+
+        @keyframes floatSlow {
+          0%, 100% { transform: translateY(0px) rotate(0deg); }
+          25% { transform: translateY(-6px) rotate(-0.5deg); }
+          50% { transform: translateY(-10px) rotate(0deg); }
+          75% { transform: translateY(-4px) rotate(0.5deg); }
+        }
+
+        .float-animation {
+          animation: float 4s ease-in-out infinite;
+        }
+
+        .float-slow-animation {
+          animation: floatSlow 5s ease-in-out infinite;
+          animation-delay: 1s;
+        }
+      `}</style>
+
       {/* Fixed background color fallback */}
       <div className="absolute inset-0 bg-blue-900"></div>
-      
+
       {/* Video background */}
       <div className="absolute inset-0 overflow-hidden">
-        <video 
+        <video
           className="absolute inset-0 w-full h-full object-cover"
           autoPlay
           muted
@@ -33,38 +59,38 @@ export default function PirateAdventureAnimation({
         </video>
       </div>
       
-      {/* Player ship - bigger size */}
-      <div 
-        className="absolute left-[10%] bottom-[20%]"
-        style={{ 
+      {/* Player ship - bigger size with floating animation */}
+      <div
+        className="absolute left-[10%] bottom-[20%] float-animation"
+        style={{
           width: '350px',
           height: '280px'
         }}
       >
-        <img 
-          src="/games/hangman/images/pirate-adventure/pirate-ship.png" 
+        <img
+          src="/games/hangman/images/pirate-adventure/pirate-ship.png"
           alt="Pirate Ship"
           className="w-full h-full object-contain"
         />
       </div>
-      
-      {/* Enemy ship - bigger size */}
-      <div 
-        className="absolute right-[10%] bottom-[20%]"
-        style={{ 
+
+      {/* Enemy ship - bigger size with floating animation */}
+      <div
+        className="absolute right-[10%] bottom-[20%] float-slow-animation"
+        style={{
           width: '350px',
           height: '280px'
         }}
       >
-        <img 
-          src="/games/hangman/images/pirate-adventure/enemy-pirate-ship.png" 
+        <img
+          src="/games/hangman/images/pirate-adventure/enemy-pirate-ship.png"
           alt="Enemy Pirate Ship"
           className="w-full h-full object-contain"
         />
       </div>
       
       {/* Ship integrity indicator bar */}
-      <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 w-full max-w-md px-4">
+      <div className="absolute top-6 left-1/2 transform -translate-x-1/2 w-full max-w-md px-4">
         <div className="text-white text-sm font-bold mb-1 text-center">Ship Integrity: {shipIntegrity}%</div>
         <div className="h-2 bg-slate-800 bg-opacity-30 rounded-full overflow-hidden">
           <div 
