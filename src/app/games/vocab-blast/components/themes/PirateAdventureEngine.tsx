@@ -12,6 +12,7 @@ interface PirateAdventureEngineProps {
   isPaused: boolean;
   gameActive: boolean;
   difficulty: string;
+  playSFX: (sound: string) => void;
 }
 
 interface PirateShip {
@@ -27,6 +28,7 @@ interface PirateShip {
   direction: 'left' | 'right';
   targetY: number;
   firing: boolean;
+  spawnTime: number;
 }
 
 interface CannonBall {
@@ -45,7 +47,8 @@ export default function PirateAdventureEngine({
   onIncorrectAnswer,
   isPaused,
   gameActive,
-  difficulty
+  difficulty,
+  playSFX
 }: PirateAdventureEngineProps) {
   const [pirateShips, setPirateShips] = useState<PirateShip[]>([]);
   const [cannonBalls, setCannonBalls] = useState<any[]>([]);
@@ -101,13 +104,29 @@ export default function PirateAdventureEngine({
     const shuffledOptions = allOptions.sort(() => 0.5 - Math.random());
 
     const screenWidth = typeof window !== 'undefined' ? window.innerWidth : 1200;
+    const screenHeight = typeof window !== 'undefined' ? window.innerHeight : 800;
 
-    const newShips: PirateShip[] = shuffledOptions.map((translation, index) => {
+    // Create ships with collision detection
+    const newShips: PirateShip[] = [];
+    const waterLevel = screenHeight * 0.4; // Water starts at 60% down the screen
+
+    shuffledOptions.forEach((translation, index) => {
       const direction = Math.random() > 0.5 ? 'left' : 'right';
       const startX = direction === 'left' ? -200 : screenWidth + 200;
-      const targetY = 150 + (index * 120) + Math.random() * 50; // Staggered heights
 
-      return {
+      // Find non-overlapping Y position
+      let targetY = waterLevel + Math.random() * 200;
+      let attempts = 0;
+
+      while (
+        attempts < 30 &&
+        newShips.some(ship => Math.abs(targetY - ship.targetY) < 100)
+      ) {
+        targetY = waterLevel + Math.random() * 200;
+        attempts++;
+      }
+
+      newShips.push({
         id: `ship-${currentWord.id}-${index}-${Date.now()}`,
         translation,
         isCorrect: translation === currentWord.translation,
@@ -119,8 +138,9 @@ export default function PirateAdventureEngine({
         size: Math.random() * 0.3 + 0.8,
         direction,
         targetY,
-        firing: false
-      };
+        firing: false,
+        spawnTime: Date.now()
+      });
     });
 
     setPirateShips(checkCollisions(newShips));
@@ -129,8 +149,6 @@ export default function PirateAdventureEngine({
   // Update ship positions with side-to-side movement
   const updateShips = () => {
     if (isPaused || !gameActive) return;
-
-    const screenWidth = typeof window !== 'undefined' ? window.innerWidth : 1200;
 
     setPirateShips(prev =>
       prev.map(ship => {
@@ -149,8 +167,16 @@ export default function PirateAdventureEngine({
           sailsUp: Math.random() > 0.98 ? !ship.sailsUp : ship.sailsUp
         };
       }).filter(ship => {
-        // Remove ships that have moved off screen
-        return ship.x > -300 && ship.x < screenWidth + 300;
+        // Remove ships only after 10 seconds timeout
+        const timeElapsed = Date.now() - ship.spawnTime;
+        if (timeElapsed > 10000) {
+          // Trigger wrong answer for timeout
+          if (ship.isCorrect) {
+            setTimeout(() => onIncorrectAnswer(), 0);
+          }
+          return false;
+        }
+        return true;
       })
     );
   };
@@ -164,6 +190,9 @@ export default function PirateAdventureEngine({
 
     // Create cannon ball effect
     createCannonBall(ship.x, ship.y);
+
+    // Play cannon fire sound immediately
+    playSFX('cannon-fire');
 
     // Delay the result to show firing animation
     setTimeout(() => {
@@ -404,8 +433,20 @@ export default function PirateAdventureEngine({
 
       {/* Player Cannon (bottom center) */}
       <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2">
-        <div className="text-6xl">🏴‍☠️</div>
-        <div className="text-center text-amber-200 font-bold text-sm mt-2">Your Ship</div>
+        <div className="relative">
+          {/* Cannon Base */}
+          <div className="w-16 h-8 bg-gradient-to-b from-gray-700 to-gray-900 rounded-b-full border-2 border-gray-600 shadow-2xl"></div>
+
+          {/* Cannon Barrel */}
+          <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-4 w-3 h-8 bg-gradient-to-t from-gray-800 to-gray-600 rounded-t-lg border border-gray-500 shadow-lg"></div>
+
+          {/* Cannon Wheels */}
+          <div className="absolute -bottom-2 left-1 w-4 h-4 bg-amber-800 rounded-full border-2 border-amber-600"></div>
+          <div className="absolute -bottom-2 right-1 w-4 h-4 bg-amber-800 rounded-full border-2 border-amber-600"></div>
+
+          {/* Cannon Details */}
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-gray-500 rounded-full"></div>
+        </div>
       </div>
     </div>
   );

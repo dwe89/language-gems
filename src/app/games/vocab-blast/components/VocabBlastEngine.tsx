@@ -17,6 +17,7 @@ interface VocabBlastEngineProps {
   isPaused: boolean;
   gameActive: boolean;
   difficulty: string;
+  playSFX: (sound: string) => void;
 }
 
 interface VocabObject {
@@ -39,7 +40,8 @@ export default function VocabBlastEngine({
   onIncorrectAnswer,
   isPaused,
   gameActive,
-  difficulty
+  difficulty,
+  playSFX
 }: VocabBlastEngineProps) {
 
   // Route to theme-specific engines
@@ -50,7 +52,8 @@ export default function VocabBlastEngine({
     onIncorrectAnswer,
     isPaused,
     gameActive,
-    difficulty
+    difficulty,
+    playSFX
   };
 
   switch (theme) {

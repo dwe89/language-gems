@@ -174,7 +174,6 @@ export default function SoundEffects({
     return () => {
       if (typeof window !== 'undefined') {
         delete (window as any).playHangmanSound;
-        delete (window as any).playCanonFire;
       }
     };
   }, [loaded, sounds, muted]);

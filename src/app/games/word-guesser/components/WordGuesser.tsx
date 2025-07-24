@@ -135,7 +135,7 @@ export default function WordGuesser({ settings, onBackToMenu, onGameEnd }: WordG
   const { vocabulary, loading: vocabularyLoading } = useVocabularyByCategory({
     language: mapLanguageForVocab(settings.language),
     categoryId: settings.selectedCategory,
-    subcategoryId: settings.selectedSubcategory,
+    subcategoryId: settings.selectedSubcategory || undefined,
     difficultyLevel: settings.difficulty,
     curriculumLevel: 'KS3'
   });
@@ -687,6 +687,7 @@ export default function WordGuesser({ settings, onBackToMenu, onGameEnd }: WordG
       )}
 
       <div className="relative z-10 flex-1 flex flex-col items-center justify-center p-4">
+        <div className="space-y-6">
           {/* Main game grid */}
           <div className={`p-6 rounded-xl ${themeClasses.grid}`}>
             {renderGrid()}
@@ -700,4 +701,4 @@ export default function WordGuesser({ settings, onBackToMenu, onGameEnd }: WordG
       </div>
     </div>
   );
-} 
+}

@@ -27,6 +27,7 @@ interface SpaceComet {
   rotation: number;
   velocityX: number;
   velocityY: number;
+  spawnTime: number;
 }
 
 export default function SpaceExplorerEngine({
@@ -78,27 +79,41 @@ export default function SpaceExplorerEngine({
     const screenWidth = typeof window !== 'undefined' ? window.innerWidth : 1200;
     const screenHeight = typeof window !== 'undefined' ? window.innerHeight : 800;
 
-    const newComets: SpaceComet[] = shuffledOptions.map((translation, index) => {
+    // Create comets with collision detection
+    const newComets: SpaceComet[] = [];
+
+    shuffledOptions.forEach((translation, index) => {
       // Random diagonal angles (45-135 degrees and 225-315 degrees)
       const angle = Math.random() > 0.5
         ? (Math.PI / 4) + (Math.random() * Math.PI / 2)  // 45-135 degrees
         : (5 * Math.PI / 4) + (Math.random() * Math.PI / 2); // 225-315 degrees
 
-      const speed = 1 + Math.random() * 1; // Slower speed for longer visibility
+      const speed = 2.5 + Math.random() * 1.5; // Faster speed as requested
       const velocityX = Math.cos(angle) * speed;
       const velocityY = Math.sin(angle) * speed;
 
-      // Start from random edge
+      // Find non-overlapping starting position
       let startX, startY;
-      if (Math.random() > 0.5) {
-        startX = Math.random() > 0.5 ? -100 : screenWidth + 100;
-        startY = Math.random() * screenHeight;
-      } else {
-        startX = Math.random() * screenWidth;
-        startY = Math.random() > 0.5 ? -100 : screenHeight + 100;
-      }
+      let attempts = 0;
 
-      return {
+      do {
+        if (Math.random() > 0.5) {
+          startX = Math.random() > 0.5 ? -100 : screenWidth + 100;
+          startY = Math.random() * screenHeight;
+        } else {
+          startX = Math.random() * screenWidth;
+          startY = Math.random() > 0.5 ? -100 : screenHeight + 100;
+        }
+        attempts++;
+      } while (
+        attempts < 30 &&
+        newComets.some(comet => {
+          const distance = Math.sqrt(Math.pow(startX - comet.x, 2) + Math.pow(startY - comet.y, 2));
+          return distance < 150; // Minimum distance between comets
+        })
+      );
+
+      newComets.push({
         id: `comet-${currentWord.id}-${index}-${Date.now()}`,
         translation,
         isCorrect: translation === currentWord.translation,
@@ -110,8 +125,9 @@ export default function SpaceExplorerEngine({
         size: Math.random() * 0.3 + 0.8,
         rotation: Math.random() * 360,
         velocityX,
-        velocityY
-      };
+        velocityY,
+        spawnTime: Date.now()
+      });
     });
 
     setSpaceComets(newComets);
@@ -131,9 +147,16 @@ export default function SpaceExplorerEngine({
         y: comet.y + comet.velocityY,
         glowIntensity: Math.sin(Date.now() * 0.01 + comet.x * 0.01) * 0.3 + 0.7
       })).filter(comet => {
-        // Remove comets that have moved off screen
-        return comet.x > -200 && comet.x < screenWidth + 200 &&
-               comet.y > -200 && comet.y < screenHeight + 200;
+        // Remove comets only after 10 seconds timeout
+        const timeElapsed = Date.now() - comet.spawnTime;
+        if (timeElapsed > 10000) {
+          // Trigger wrong answer for timeout
+          if (comet.isCorrect) {
+            setTimeout(() => onIncorrectAnswer(), 0);
+          }
+          return false;
+        }
+        return true;
       })
     );
   };
@@ -309,8 +332,11 @@ export default function SpaceExplorerEngine({
                   />
                 </div>
 
-                {/* Vocabulary Text */}
-                <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 bg-gray-900/90 text-white px-3 py-1 rounded-lg border border-blue-400 font-bold text-sm shadow-lg backdrop-blur-sm">
+                {/* Vocabulary Text - Counter-rotated to stay upright */}
+                <div
+                  className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 bg-gray-900/90 text-white px-3 py-1 rounded-lg border border-blue-400 font-bold text-sm shadow-lg backdrop-blur-sm"
+                  style={{ transform: `translateX(-50%) rotate(-${comet.rotation}deg)` }}
+                >
                   {comet.translation}
                 </div>
               </div>

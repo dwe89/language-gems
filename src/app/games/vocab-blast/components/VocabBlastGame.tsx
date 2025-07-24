@@ -332,6 +332,7 @@ export default function VocabBlastGame({
         isPaused={isPaused}
         gameActive={gameActive}
         difficulty={settings.difficulty}
+        playSFX={playSFX}
       />
 
       {/* Pause Overlay */}

@@ -25,6 +25,7 @@ interface TempleTablet {
   crackLevel: number;
   lavaProximity: number;
   size: number;
+  spawnTime: number;
 }
 
 export default function LavaTempleEngine({
@@ -66,18 +67,40 @@ export default function LavaTempleEngine({
 
     const screenWidth = typeof window !== 'undefined' ? window.innerWidth : 1200;
 
-    const newTablets: TempleTablet[] = shuffledOptions.map((translation, index) => ({
-      id: `tablet-${currentWord.id}-${index}-${Date.now()}`,
-      translation,
-      isCorrect: translation === currentWord.translation,
-      x: Math.random() * (screenWidth - 200) + 100,
-      y: -100,
-      speed: 0.8 + Math.random() * 0.6, // Slower speed for longer visibility
-      stoneType: stoneTypes[Math.floor(Math.random() * stoneTypes.length)],
-      crackLevel: Math.random() * 0.3,
-      lavaProximity: 0,
-      size: Math.random() * 0.3 + 0.8
-    }));
+    // Create tablets with collision detection
+    const newTablets: TempleTablet[] = [];
+
+    shuffledOptions.forEach((translation, index) => {
+      let position = { x: 0, y: -100 - (index * 150) }; // Stagger vertically
+      let attempts = 0;
+
+      // Find non-overlapping position
+      do {
+        position.x = Math.random() * (screenWidth - 200) + 100;
+        attempts++;
+      } while (
+        attempts < 50 &&
+        newTablets.some(tablet => {
+          const distance = Math.sqrt(Math.pow(position.x - tablet.x, 2) + Math.pow(position.y - tablet.y, 2));
+          const minDistance = 120; // Minimum distance between tablets
+          return distance < minDistance;
+        })
+      );
+
+      newTablets.push({
+        id: `tablet-${currentWord.id}-${index}-${Date.now()}`,
+        translation,
+        isCorrect: translation === currentWord.translation,
+        x: position.x,
+        y: position.y,
+        speed: 0.8 + Math.random() * 0.6,
+        stoneType: stoneTypes[Math.floor(Math.random() * stoneTypes.length)],
+        crackLevel: Math.random() * 0.3,
+        lavaProximity: 0,
+        size: Math.random() * 0.3 + 0.8,
+        spawnTime: Date.now()
+      });
+    });
 
     setTempleTablets(newTablets);
   };
@@ -102,7 +125,18 @@ export default function LavaTempleEngine({
           lavaProximity,
           crackLevel: Math.min(tablet.crackLevel + (lavaProximity * 0.01), 1)
         };
-      }).filter(tablet => tablet.y < screenHeight + 100)
+      }).filter(tablet => {
+        // Remove tablets only after 10 seconds timeout
+        const timeElapsed = Date.now() - tablet.spawnTime;
+        if (timeElapsed > 10000) {
+          // Trigger wrong answer for timeout
+          if (tablet.isCorrect) {
+            setTimeout(() => onIncorrectAnswer(), 0);
+          }
+          return false;
+        }
+        return true;
+      })
     );
   };
 

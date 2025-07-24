@@ -26,6 +26,7 @@ interface DataPacket {
   size: number;
   direction: 'left' | 'right';
   targetY: number;
+  spawnTime: number;
 }
 
 export default function TokyoNightsEngine({
@@ -64,12 +65,26 @@ export default function TokyoNightsEngine({
 
     const screenWidth = typeof window !== 'undefined' ? window.innerWidth : 1200;
 
-    const newPackets: DataPacket[] = shuffledOptions.map((translation, index) => {
+    // Create packets with collision detection
+    const newPackets: DataPacket[] = [];
+
+    shuffledOptions.forEach((translation, index) => {
       const direction = Math.random() > 0.5 ? 'left' : 'right';
       const startX = direction === 'left' ? -200 : screenWidth + 200;
-      const targetY = 120 + (index * 100) + Math.random() * 40;
 
-      return {
+      // Find non-overlapping Y position
+      let targetY = 120 + Math.random() * 300;
+      let attempts = 0;
+
+      while (
+        attempts < 30 &&
+        newPackets.some(packet => Math.abs(targetY - packet.targetY) < 80)
+      ) {
+        targetY = 120 + Math.random() * 300;
+        attempts++;
+      }
+
+      newPackets.push({
         id: `packet-${currentWord.id}-${index}-${Date.now()}`,
         translation,
         isCorrect: translation === currentWord.translation,
@@ -80,8 +95,9 @@ export default function TokyoNightsEngine({
         hackProgress: 0,
         size: Math.random() * 0.3 + 0.8,
         direction,
-        targetY
-      };
+        targetY,
+        spawnTime: Date.now()
+      });
     });
 
     setDataPackets(newPackets);
@@ -111,8 +127,16 @@ export default function TokyoNightsEngine({
           hackProgress: packet.hackProgress + 0.01
         };
       }).filter(packet => {
-        // Remove packets that have moved off screen
-        return packet.x > -300 && packet.x < screenWidth + 300;
+        // Remove packets only after 10 seconds timeout
+        const timeElapsed = Date.now() - packet.spawnTime;
+        if (timeElapsed > 10000) {
+          // Trigger wrong answer for timeout
+          if (packet.isCorrect) {
+            setTimeout(() => onIncorrectAnswer(), 0);
+          }
+          return false;
+        }
+        return true;
       })
     );
   };
