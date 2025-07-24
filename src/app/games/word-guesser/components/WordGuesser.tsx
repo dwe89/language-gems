@@ -4,9 +4,14 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { WordGuesserSettings, LetterState, GuessRow } from '../types';
 import { motion } from 'framer-motion';
 import { X, RotateCcw, HelpCircle } from 'lucide-react';
+import { useVocabularyByCategory } from '../../../../hooks/useVocabulary';
 
 interface WordGuesserProps {
-  settings: WordGuesserSettings;
+  settings: WordGuesserSettings & {
+    selectedCategory: string;
+    selectedSubcategory: string | null;
+    theme: string;
+  };
   onBackToMenu: () => void;
   onGameEnd?: (result: 'win' | 'lose') => void;
 }
@@ -114,12 +119,30 @@ export default function WordGuesser({ settings, onBackToMenu, onGameEnd }: WordG
   const [revealedHint, setRevealedHint] = useState('');
   const [hintsUsed, setHintsUsed] = useState(0);
   const [score, setScore] = useState(0);
-  const [theme, setTheme] = useState<'default' | 'dark' | 'forest'>('forest');
   const [fallingLeaves, setFallingLeaves] = useState<{id: number, left: string, delay: number}[]>([]);
+
+  // Map language for vocabulary loading
+  const mapLanguageForVocab = (lang: string) => {
+    const mapping: Record<string, string> = {
+      'spanish': 'es',
+      'french': 'fr',
+      'german': 'de'
+    };
+    return mapping[lang] || 'es';
+  };
+
+  // Load vocabulary using the category system
+  const { vocabulary, loading: vocabularyLoading } = useVocabularyByCategory({
+    language: mapLanguageForVocab(settings.language),
+    categoryId: settings.selectedCategory,
+    subcategoryId: settings.selectedSubcategory,
+    difficultyLevel: settings.difficulty,
+    curriculumLevel: 'KS3'
+  });
   
-  // Initialize falling leaves for forest theme
+  // Initialize theme effects
   useEffect(() => {
-    if (theme === 'forest') {
+    if (settings.theme === 'forest') {
       const leaves = [];
       for (let i = 0; i < 15; i++) {
         leaves.push({
@@ -130,7 +153,7 @@ export default function WordGuesser({ settings, onBackToMenu, onGameEnd }: WordG
       }
       setFallingLeaves(leaves);
     }
-  }, [theme]);
+  }, [settings.theme]);
   
   // Language-specific special characters
   const specialCharacters: Record<string, string[]> = {
@@ -187,15 +210,32 @@ export default function WordGuesser({ settings, onBackToMenu, onGameEnd }: WordG
   
   // Initialize the game with a random word
   const initializeGame = useCallback(() => {
-    // Pick a random word based on language, category, and difficulty
-    const language = settings.language in WORD_LISTS ? settings.language : 'english';
-    const category = settings.category in WORD_LISTS[language] ? settings.category : 'animals';
-    const difficulty = settings.difficulty in WORD_LISTS[language][category] ? settings.difficulty : 'beginner';
-    
-    const words = WORD_LISTS[language][category][difficulty];
-    const randomWord = words[Math.floor(Math.random() * words.length)].toUpperCase();
-    
-    setTargetWord(randomWord);
+    if (vocabulary && vocabulary.length > 0) {
+      // Filter words by difficulty (word length)
+      let filteredWords = vocabulary;
+
+      if (settings.difficulty === 'beginner') {
+        filteredWords = vocabulary.filter(item => item.word.length >= 3 && item.word.length <= 4);
+      } else if (settings.difficulty === 'intermediate') {
+        filteredWords = vocabulary.filter(item => item.word.length >= 5 && item.word.length <= 6);
+      } else if (settings.difficulty === 'advanced') {
+        filteredWords = vocabulary.filter(item => item.word.length >= 7);
+      }
+
+      // Fallback to all words if no words match the difficulty
+      if (filteredWords.length === 0) {
+        filteredWords = vocabulary;
+      }
+
+      const randomWord = filteredWords[Math.floor(Math.random() * filteredWords.length)];
+      setTargetWord(randomWord.word.toUpperCase());
+      setRevealedHint(randomWord.translation || '');
+    } else {
+      // Fallback word if no vocabulary is loaded
+      setTargetWord('WORD');
+      setRevealedHint('A sequence of letters');
+    }
+
     setCurrentGuess('');
     setGuesses([]);
     setGuessStates([]);
@@ -204,8 +244,7 @@ export default function WordGuesser({ settings, onBackToMenu, onGameEnd }: WordG
     setHintsUsed(0);
     setScore(0);
     setShowHint(false);
-    setRevealedHint('');
-  }, [settings]);
+  }, [vocabulary, settings.difficulty]);
   
   // Initialize the game on settings change
   useEffect(() => {
@@ -395,12 +434,53 @@ export default function WordGuesser({ settings, onBackToMenu, onGameEnd }: WordG
     initializeGame();
   };
   
-  // Cycle through themes
-  const cycleTheme = () => {
-    if (theme === 'default') setTheme('dark');
-    else if (theme === 'dark') setTheme('forest');
-    else setTheme('default');
+  // Get theme classes
+  const getThemeClasses = () => {
+    switch (settings.theme) {
+      case 'tokyo':
+        return {
+          container: 'bg-gradient-to-br from-slate-900 via-blue-900 to-slate-950',
+          text: 'text-cyan-50',
+          accent: 'bg-pink-600',
+          button: 'bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700',
+          grid: 'bg-slate-800/50 backdrop-blur-sm border border-cyan-500/30',
+          cell: 'bg-slate-700/50 border border-cyan-500/20 text-cyan-50',
+          keyboard: 'bg-slate-800/50 backdrop-blur-sm'
+        };
+      case 'neon':
+        return {
+          container: 'bg-black',
+          text: 'text-green-400',
+          accent: 'bg-green-500',
+          button: 'bg-gradient-to-r from-green-500 to-cyan-500 hover:from-green-600 hover:to-cyan-600',
+          grid: 'bg-gray-900/80 backdrop-blur-sm border border-green-500/50',
+          cell: 'bg-gray-800/50 border border-green-500/30 text-green-400',
+          keyboard: 'bg-gray-900/80 backdrop-blur-sm'
+        };
+      case 'space':
+        return {
+          container: 'bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-950',
+          text: 'text-purple-50',
+          accent: 'bg-purple-600',
+          button: 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700',
+          grid: 'bg-purple-800/30 backdrop-blur-sm border border-purple-500/30',
+          cell: 'bg-purple-700/30 border border-purple-500/20 text-purple-50',
+          keyboard: 'bg-purple-800/30 backdrop-blur-sm'
+        };
+      default: // forest
+        return {
+          container: 'bg-gradient-to-br from-green-800 via-green-700 to-emerald-800',
+          text: 'text-green-50',
+          accent: 'bg-green-600',
+          button: 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700',
+          grid: 'bg-green-800/30 backdrop-blur-sm border border-green-500/30',
+          cell: 'bg-green-700/30 border border-green-500/20 text-green-50',
+          keyboard: 'bg-green-800/30 backdrop-blur-sm'
+        };
+    }
   };
+
+  const themeClasses = getThemeClasses();
   
   // Render the guess grid
   const renderGrid = () => {
@@ -427,52 +507,93 @@ export default function WordGuesser({ settings, onBackToMenu, onGameEnd }: WordG
         
         const hintLetter = isHintLetter ? targetWord[j] : letter;
         
+        const getCellClasses = () => {
+          let classes = `w-12 h-12 border-2 rounded flex items-center justify-center font-bold text-lg transition-all duration-300 ${themeClasses.cell}`;
+
+          if (isRevealed) {
+            if (state === 'correct') {
+              classes += ` ${themeClasses.accent} text-white`;
+            } else if (state === 'present') {
+              classes += ' bg-yellow-500 text-white border-yellow-500';
+            } else if (state === 'absent') {
+              classes += ' bg-gray-500 text-white border-gray-500';
+            }
+          } else if (isFilled) {
+            classes += ' border-opacity-60';
+          }
+
+          if (isHintLetter) {
+            classes += ` ${themeClasses.accent} text-white`;
+          }
+
+          return classes;
+        };
+
         row.push(
-          <div
+          <motion.div
             key={`cell-${i}-${j}`}
-            className={`letter-box ${isFilled ? 'filled' : ''} ${
-              isRevealed ? state : ''
-            } ${isHintLetter ? 'correct' : ''} ${
-              isRevealed ? `flip flip-delay-${Math.min(j, 5)}` : ''
-            }`}
+            className={getCellClasses()}
+            initial={isRevealed ? { rotateY: 0 } : false}
+            animate={isRevealed ? { rotateY: [0, 90, 0] } : false}
+            transition={{ duration: 0.6, delay: j * 0.1 }}
           >
             {isHintLetter ? hintLetter : letter}
-          </div>
+          </motion.div>
         );
       }
       
       rows.push(
-        <div 
-          key={`row-${i}`} 
-          className={`guess-row ${isCurrentRow && isShaking ? 'shake' : ''}`}
+        <motion.div
+          key={`row-${i}`}
+          className={`grid gap-2 ${isCurrentRow && isShaking ? 'animate-pulse' : ''}`}
           style={gridStyle}
+          animate={isCurrentRow && isShaking ? { x: [-5, 5, -5, 5, 0] } : {}}
+          transition={{ duration: 0.5 }}
         >
           {row}
-        </div>
+        </motion.div>
       );
     }
-    
-    return <div className="guesses-grid">{rows}</div>;
+
+    return <div className="space-y-2">{rows}</div>;
   };
   
   // Render keyboard
   const renderKeyboard = () => {
     const layout = getKeyboardLayout();
-    
+
     return (
-      <div className="keyboard">
+      <div className="space-y-2">
         {layout.map((row, rowIndex) => (
-          <div key={`keyboard-row-${rowIndex}`} className="keyboard-row">
+          <div key={`keyboard-row-${rowIndex}`} className="flex justify-center gap-1">
             {row.map((key) => {
-              let buttonClass = "key";
-              
+              const getKeyClasses = () => {
+                let classes = `px-3 py-2 rounded font-bold text-sm transition-all duration-200 ${themeClasses.cell}`;
+
+                if (key === 'ENTER' || key === 'BACKSPACE') {
+                  classes += ' px-4';
+                }
+
+                const keyState = keyStates[key.toLowerCase()];
+                if (keyState === 'correct') {
+                  classes += ` ${themeClasses.accent} text-white`;
+                } else if (keyState === 'present') {
+                  classes += ' bg-yellow-500 text-white';
+                } else if (keyState === 'absent') {
+                  classes += ' bg-gray-500 text-white opacity-50';
+                } else {
+                  classes += ' hover:opacity-80';
+                }
+
+                return classes;
+              };
+
               // Check for special keys
               if (key === 'ENTER') {
-                buttonClass += " large";
                 return (
                   <button
                     key={`key-${key}`}
-                    className={buttonClass}
+                    className={getKeyClasses()}
                     onClick={() => handleKeyPress(key)}
                   >
                     <span className="hidden sm:inline">ENTER</span>
@@ -480,29 +601,23 @@ export default function WordGuesser({ settings, onBackToMenu, onGameEnd }: WordG
                   </button>
                 );
               }
-              
+
               if (key === 'BACKSPACE') {
-                buttonClass += " large";
                 return (
                   <button
                     key={`key-${key}`}
-                    className={buttonClass}
+                    className={getKeyClasses()}
                     onClick={() => handleKeyPress(key)}
                   >
                     ⌫
                   </button>
                 );
               }
-              
-              // Apply state styling for regular keys
-              if (keyStates[key]) {
-                buttonClass += ` ${keyStates[key]}`;
-              }
-              
+
               return (
                 <button
                   key={`key-${key}`}
-                  className={buttonClass}
+                  className={getKeyClasses()}
                   onClick={() => handleKeyPress(key)}
                 >
                   {key}
@@ -516,8 +631,9 @@ export default function WordGuesser({ settings, onBackToMenu, onGameEnd }: WordG
   };
   
   return (
-    <div className={`word-guesser-container theme-${theme}`}>
-      {theme === 'forest' && (
+    <div className={`min-h-screen ${themeClasses.container} ${themeClasses.text} relative overflow-hidden`}>
+      {/* Theme-specific background effects */}
+      {settings.theme === 'forest' && (
         <>
           <div className="forest-background"></div>
           <div className="forest-overlay"></div>
@@ -525,9 +641,9 @@ export default function WordGuesser({ settings, onBackToMenu, onGameEnd }: WordG
           <div className="leaves-bottom"></div>
           <div className="sunbeam"></div>
           {fallingLeaves.map(leaf => (
-            <div 
-              key={leaf.id} 
-              className="falling-leaf" 
+            <div
+              key={leaf.id}
+              className="falling-leaf"
               style={{
                 left: leaf.left,
                 animationDelay: `${leaf.delay}s`
@@ -536,100 +652,117 @@ export default function WordGuesser({ settings, onBackToMenu, onGameEnd }: WordG
           ))}
         </>
       )}
-      
-      <div className="game-header">
-        <div className="flex items-center gap-3">
-          <button
-            className="p-2 rounded-full bg-gray-200 hover:bg-gray-300 transition-colors text-gray-800"
-            onClick={onBackToMenu}
-            title="Back to menu"
-          >
-            <X className="h-5 w-5" />
-          </button>
-          
-          <div className="game-info-bar">
-            <div className="font-medium">{settings.language} • {settings.category} • {settings.difficulty}</div>
-            <div className="flex items-center gap-2">
-              <HelpCircle className="h-4 w-4" /> {2 - hintsUsed}/{2}
-            </div>
-            <div className="flex items-center gap-2">
-              <span>{guesses.length}/{settings.maxAttempts}</span>
-            </div>
-          </div>
-        </div>
-        
-        <div className="flex gap-2">
-          {hintsUsed < 2 && gameStatus === 'playing' && (
-            <button
-              className="p-2 rounded-full bg-yellow-500 hover:bg-yellow-400 transition-colors text-white"
-              onClick={handleHint}
-              title="Get a hint"
-            >
-              <HelpCircle className="h-5 w-5" />
-            </button>
-          )}
-          
-          <button 
-            className="p-2 rounded-full bg-teal-600 hover:bg-teal-500 transition-colors text-white"
-            onClick={cycleTheme}
-            title="Change theme"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="4"></circle>
-              <path d="M12 2v2"></path>
-              <path d="M12 20v2"></path>
-              <path d="m4.93 4.93 1.41 1.41"></path>
-              <path d="m17.66 17.66 1.41 1.41"></path>
-              <path d="M2 12h2"></path>
-              <path d="M20 12h2"></path>
-              <path d="m6.34 17.66-1.41 1.41"></path>
-              <path d="m19.07 4.93-1.41 1.41"></path>
-            </svg>
-          </button>
-          
-          <button 
-            className="p-2 rounded-full bg-indigo-600 hover:bg-indigo-500 transition-colors text-white"
-            onClick={handleNewGame}
-            title="New game"
-          >
-            <RotateCcw className="h-5 w-5" />
-          </button>
-        </div>
-      </div>
-      
-      {/* Game status message */}
-      {gameStatus !== 'playing' && (
-        <div className={`game-message ${gameStatus === 'won' ? 'message-success' : 'message-error'}`}>
-          {gameStatus === 'won' ? (
-            <>
-              <p>Congratulations! You guessed the word!</p>
-              <p className="text-sm mt-1">Score: {score} points</p>
-            </>
-          ) : (
-            <p>The word was: {targetWord}</p>
-          )}
-        </div>
+
+      {settings.theme === 'tokyo' && (
+        <>
+          <div className="absolute inset-0 bg-gradient-to-br from-pink-500/10 via-purple-500/10 to-cyan-500/10"></div>
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,_rgba(236,72,153,0.1)_0%,_transparent_50%)]"></div>
+        </>
+      )}
+
+      {settings.theme === 'neon' && (
+        <>
+          <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 via-cyan-500/5 to-green-500/5"></div>
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_70%,_rgba(34,197,94,0.1)_0%,_transparent_50%)]"></div>
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_30%,_rgba(6,182,212,0.1)_0%,_transparent_50%)]"></div>
+        </>
+      )}
+
+      {settings.theme === 'space' && (
+        <>
+          <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-indigo-500/10 to-blue-500/10"></div>
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_80%,_rgba(147,51,234,0.1)_0%,_transparent_50%)]"></div>
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,_rgba(79,70,229,0.1)_0%,_transparent_50%)]"></div>
+        </>
       )}
       
-      <div className="game-content-wrapper">
-        <div className="game-content">
-          {/* Main game grid */}
-          {renderGrid()}
-        </div>
-        
-        <div className="keyboard-container">
-          {/* Keyboard */}
-          {renderKeyboard()}
+      <div className={`relative z-10 p-4 ${themeClasses.keyboard} border-b border-white/10`}>
+        <div className="flex items-center justify-between max-w-4xl mx-auto">
+          <div className="flex items-center gap-3">
+            <button
+              className={`p-2 rounded-full ${themeClasses.button} transition-colors`}
+              onClick={onBackToMenu}
+              title="Back to menu"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            <div className="flex items-center gap-4 text-sm">
+              <div className="font-medium">{settings.language} • {settings.difficulty}</div>
+              <div className="flex items-center gap-2">
+                <HelpCircle className="h-4 w-4" /> {2 - hintsUsed}/{2}
+              </div>
+              <div className="flex items-center gap-2">
+                <span>{guesses.length}/{settings.maxAttempts}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex gap-2">
+            {hintsUsed < 2 && gameStatus === 'playing' && (
+              <button
+                className={`p-2 rounded-full ${themeClasses.accent} hover:opacity-80 transition-opacity text-white`}
+                onClick={handleHint}
+                title="Get a hint"
+              >
+                <HelpCircle className="h-5 w-5" />
+              </button>
+            )}
+
+            <button
+              className={`p-2 rounded-full ${themeClasses.button} transition-colors`}
+              onClick={handleNewGame}
+              title="New game"
+            >
+              <RotateCcw className="h-5 w-5" />
+            </button>
+          </div>
         </div>
       </div>
-      
-      {/* Game info footer (visible only on mobile) */}
-      <div className="game-footer">
-        <div className="flex items-center gap-2">
-          <HelpCircle className="h-4 w-4" /> Hints: {2 - hintsUsed}/{2}
-        </div>
-        <div className="flex items-center gap-2">
-          <RotateCcw className="h-4 w-4" /> Attempts: {guesses.length}/{settings.maxAttempts}
+
+      {/* Game status message */}
+      {gameStatus !== 'playing' && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className={`relative z-10 mx-auto max-w-md p-6 m-4 rounded-xl ${themeClasses.grid} text-center`}
+        >
+          {gameStatus === 'won' ? (
+            <>
+              <p className="text-xl font-bold mb-2">Congratulations! 🎉</p>
+              <p className="text-sm opacity-75">Score: {score} points</p>
+            </>
+          ) : (
+            <>
+              <p className="text-xl font-bold mb-2">Game Over</p>
+              <p className="text-sm opacity-75">The word was: <span className="font-bold">{targetWord}</span></p>
+            </>
+          )}
+        </motion.div>
+      )}
+
+      {/* Hint display */}
+      {showHint && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className={`relative z-10 mx-auto max-w-md p-4 m-4 rounded-xl ${themeClasses.grid} text-center`}
+        >
+          <p className="text-sm opacity-75 mb-1">Hint:</p>
+          <p className="font-medium">{revealedHint}</p>
+        </motion.div>
+      )}
+
+      <div className="relative z-10 flex-1 flex flex-col items-center justify-center p-4">
+          {/* Main game grid */}
+          <div className={`p-6 rounded-xl ${themeClasses.grid}`}>
+            {renderGrid()}
+          </div>
+
+          {/* Keyboard */}
+          <div className={`p-4 rounded-xl ${themeClasses.keyboard}`}>
+            {renderKeyboard()}
+          </div>
         </div>
       </div>
     </div>

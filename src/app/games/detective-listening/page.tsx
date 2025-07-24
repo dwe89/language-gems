@@ -66,7 +66,7 @@ export default function DetectiveListeningPage() {
                   Choose your case and radio frequency to begin solving mysteries through language!
                 </p>
                 <button
-                  onClick={() => startGame({ caseType: 'animals', language: 'spanish', difficulty: 'normal' })}
+                  onClick={() => startGame({ caseType: 'basics_core_language', language: 'spanish', difficulty: 'normal' })}
                   className="bg-amber-600 hover:bg-amber-700 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all transform hover:scale-105 shadow-lg"
                 >
                   Start Investigation

@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
+import { motion } from 'framer-motion';
 import { useAuth } from '../../../components/auth/AuthProvider';
 import GameSettings from './components/GameSettings';
 import MemoryGameMain from './components/MemoryGameMain';
@@ -215,8 +217,40 @@ export default function MemoryGamePage() {
       ) : (
         // Free Play Mode - show selector or game
         stage === 'selector' ? (
-          <div className="min-h-screen bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center p-4">
-            <GameSettings onStartGame={handleStartGame} />
+          <div className="min-h-screen bg-gradient-to-br from-purple-400 via-pink-500 to-red-500">
+            {/* Header */}
+            <motion.div
+              className="flex justify-between items-center p-6 bg-black/20 backdrop-blur-sm"
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <Link href="/games" className="text-white hover:text-white/80 transition-colors">
+                <motion.div
+                  className="flex items-center gap-2 bg-white/20 backdrop-blur-sm hover:bg-white/30 px-6 py-3 rounded-full transition-all border border-white/30"
+                  whileHover={{ scale: 1.05, x: -4 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <span className="text-xl">←</span>
+                  <span className="font-medium">Back to Games</span>
+                </motion.div>
+              </Link>
+
+              <motion.h1
+                className="text-3xl md:text-4xl font-bold text-white text-center"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.2 }}
+              >
+                🧠 Memory Match
+              </motion.h1>
+
+              <div className="w-32"></div> {/* Spacer for centering */}
+            </motion.div>
+
+            {/* Main Content */}
+            <div className="flex items-center justify-center p-6">
+              <GameSettings onStartGame={handleStartGame} />
+            </div>
           </div>
         ) : (
           <MemoryGameMain

@@ -3,9 +3,8 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BookOpen } from 'lucide-react';
-import VocabularyCategorySelector from '../../../components/games/shared/VocabularyCategorySelector';
 import { useGameVocabulary, transformVocabularyForGame } from '../../../hooks/useGameVocabulary';
-import { KS3_SPANISH_CATEGORIES, getCategoryById } from '../../../utils/categories';
+import { VOCABULARY_CATEGORIES } from '../../../components/games/ModernCategorySelector';
 import WordScrambleGameEnhanced from './components/WordScrambleGameEnhanced';
 import GameSettingsEnhanced from './components/GameSettingsEnhanced';
 
@@ -16,6 +15,7 @@ type Difficulty = 'easy' | 'medium' | 'hard' | 'expert';
 interface GameSettings {
   difficulty: Difficulty;
   category: string;
+  subcategory: string | null;
   language: string;
   gameMode: GameMode;
 }
@@ -89,25 +89,36 @@ export default function WordScramblePage() {
   const [gameState, setGameState] = useState<'menu' | 'settings' | 'playing' | 'results'>('menu');
   const [gameSettings, setGameSettings] = useState<GameSettings>({
     difficulty: 'medium',
-    category: 'animals',
-    language: 'english',
+    category: 'basics_core_language',
+    subcategory: null,
+    language: 'spanish',
     gameMode: 'classic'
   });
   const [gameResult, setGameResult] = useState<GameResult | null>(null);
   const [isGameStarting, setIsGameStarting] = useState(false);
   
   // Category selection state
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
-  const [selectedSubcategory, setSelectedSubcategory] = useState<string>('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('basics_core_language');
+  const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
   const [showCategorySelector, setShowCategorySelector] = useState(false);
   
+  // Map language for vocabulary loading
+  const mapLanguageForVocab = (lang: string) => {
+    const mapping: Record<string, string> = {
+      'spanish': 'es',
+      'french': 'fr',
+      'german': 'de'
+    };
+    return mapping[lang] || 'es';
+  };
+
   // Use category-based vocabulary when categories are selected
   const {
     vocabulary: categoryVocabulary,
     loading: categoryLoading,
     error: categoryError
   } = useGameVocabulary({
-    language: 'es',
+    language: mapLanguageForVocab(gameSettings.language),
     categoryId: selectedCategory || undefined,
     subcategoryId: selectedSubcategory || undefined,
     limit: 100,
@@ -385,7 +396,7 @@ export default function WordScramblePage() {
           <motion.button
             whileHover={{ scale: 1.05, boxShadow: '0 20px 40px rgba(0,0,0,0.3)' }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => handleGameStart({...gameSettings, gameMode: 'classic'})}
+            onClick={() => handleGameStart({...gameSettings, gameMode: 'classic', subcategory: selectedSubcategory})}
             className="px-12 py-4 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white text-xl font-bold rounded-2xl shadow-2xl transition-all"
           >
             ⚡ Quick Play

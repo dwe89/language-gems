@@ -7,6 +7,8 @@ import {
   Volume2, VolumeX, Pause, Play, RotateCcw, Maximize, Minimize
 } from 'lucide-react';
 import { useSounds } from './hooks/useSounds';
+import { useGameVocabulary } from '../../../hooks/useGameVocabulary';
+import { VOCABULARY_CATEGORIES } from '../../../components/games/ModernCategorySelector';
 
 // Enhanced Types
 interface TowerBlock {
@@ -62,17 +64,7 @@ interface GameSettings {
   animationSpeed: number;
 }
 
-// Enhanced vocabulary with difficulty levels
-const enhancedVocabulary = [
-  { id: '1', word: 'hello', translation: 'hola', difficulty: 1 },
-  { id: '2', word: 'goodbye', translation: 'adiós', difficulty: 1 },
-  { id: '3', word: 'thank you', translation: 'gracias', difficulty: 2 },
-  { id: '4', word: 'please', translation: 'por favor', difficulty: 2 },
-  { id: '5', word: 'beautiful', translation: 'hermoso', difficulty: 3 },
-  { id: '6', word: 'understand', translation: 'entender', difficulty: 3 },
-  { id: '7', word: 'important', translation: 'importante', difficulty: 4 },
-  { id: '8', word: 'restaurant', translation: 'restaurante', difficulty: 4 },
-];
+// Vocabulary is now loaded dynamically from the category system
 
 // Enhanced Particle System Component
 const ParticleSystem = ({ effects }: { effects: ParticleEffect[] }) => {
@@ -295,6 +287,28 @@ const DynamicBackground = ({
 };
 
 export default function ImprovedSentenceTowers() {
+  // Category/Subcategory selection state
+  const [selectedCategory, setSelectedCategory] = useState<string>('basics_core_language');
+  const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [gameLanguage, setGameLanguage] = useState<string>('es'); // Spanish by default
+
+  // Typing mode state
+  const [isTypingMode, setIsTypingMode] = useState(false);
+  const [typedAnswer, setTypedAnswer] = useState('');
+  const [showTypingInput, setShowTypingInput] = useState(false);
+
+  // Load vocabulary using the modern category system
+  const { vocabulary: gameVocabulary, loading: vocabularyLoading } = useGameVocabulary({
+    language: gameLanguage,
+    categoryId: selectedCategory,
+    subcategoryId: selectedSubcategory,
+    limit: 100,
+    randomize: true,
+    difficultyLevel: 'beginner',
+    curriculumLevel: 'KS3'
+  });
+
   // Enhanced game state
   const [gameState, setGameState] = useState<GameState>({
     status: 'ready',
@@ -309,7 +323,7 @@ export default function ImprovedSentenceTowers() {
     multiplier: 1,
     timeLeft: 120,
     wordsCompleted: 0,
-    totalWords: enhancedVocabulary.length
+    totalWords: 0 // Will be updated when vocabulary loads
   });
 
   const [settings, setSettings] = useState<GameSettings>({
@@ -328,7 +342,30 @@ export default function ImprovedSentenceTowers() {
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [feedbackVisible, setFeedbackVisible] = useState<'correct' | 'incorrect' | null>(null);
   const [particleEffects, setParticleEffects] = useState<ParticleEffect[]>([]);
-  const [vocabulary, setVocabulary] = useState(enhancedVocabulary.map(word => ({ ...word, correct: false })));
+  // Transform loaded vocabulary to game format
+  const [vocabulary, setVocabulary] = useState<any[]>([]);
+
+  // Update vocabulary when gameVocabulary changes
+  useEffect(() => {
+    if (gameVocabulary && gameVocabulary.length > 0) {
+      const transformedVocabulary = gameVocabulary.map((word, index) => ({
+        id: word.id || `word-${index}`,
+        word: word.word,
+        translation: word.translation,
+        difficulty: word.difficulty_level === 'beginner' ? 1 :
+                   word.difficulty_level === 'intermediate' ? 3 :
+                   word.difficulty_level === 'advanced' ? 5 : 2,
+        correct: false
+      }));
+      setVocabulary(transformedVocabulary);
+
+      // Update total words count
+      setGameState(prev => ({
+        ...prev,
+        totalWords: transformedVocabulary.length
+      }));
+    }
+  }, [gameVocabulary]);
   const [showSettings, setShowSettings] = useState(false);
   const [craneLifting, setCraneLifting] = useState(false);
   const [craneWord, setCraneWord] = useState('');
@@ -395,15 +432,74 @@ export default function ImprovedSentenceTowers() {
     };
   }, [gameState.status]);
 
+  // Improved distractor selection algorithm
+  const selectBestDistractors = (targetWord: any, candidates: any[], count: number) => {
+    if (candidates.length === 0) return [];
+
+    // Score each candidate based on multiple factors
+    const scoredCandidates = candidates.map(candidate => {
+      let score = 0;
+
+      // Factor 1: Similar difficulty level (prefer words with similar difficulty)
+      const difficultyDiff = Math.abs(candidate.difficulty - targetWord.difficulty);
+      score += (5 - difficultyDiff) * 2; // Higher score for similar difficulty
+
+      // Factor 2: Different word length (avoid obvious length-based answers)
+      const lengthDiff = Math.abs(candidate.word.length - targetWord.word.length);
+      if (lengthDiff > 0) score += 3; // Bonus for different lengths
+
+      // Factor 3: Different translation length (avoid obvious translation length patterns)
+      const translationLengthDiff = Math.abs(candidate.translation.length - targetWord.translation.length);
+      if (translationLengthDiff > 2) score += 2;
+
+      // Factor 4: Avoid words that start with the same letter (too obvious)
+      if (candidate.word[0].toLowerCase() !== targetWord.word[0].toLowerCase()) {
+        score += 1;
+      }
+
+      // Factor 5: Avoid translations that start with the same letter
+      if (candidate.translation[0].toLowerCase() !== targetWord.translation[0].toLowerCase()) {
+        score += 1;
+      }
+
+      // Add some randomness to prevent predictable patterns
+      score += Math.random() * 2;
+
+      return { ...candidate, score };
+    });
+
+    // Sort by score (highest first) and take the best candidates
+    const bestCandidates = scoredCandidates
+      .sort((a, b) => b.score - a.score)
+      .slice(0, count);
+
+    // Shuffle the selected candidates to avoid position-based patterns
+    return bestCandidates.sort(() => Math.random() - 0.5);
+  };
+
   // Enhanced word generation with difficulty scaling
   const generateWordOptions = useCallback(() => {
+    // Don't generate options if vocabulary is loading or empty
+    if (vocabularyLoading || vocabulary.length === 0) {
+      return;
+    }
+
     const unusedWords = vocabulary.filter(word => !word.correct);
-    
+
     // If we've used all words, reset the vocabulary to continue playing
     if (unusedWords.length === 0) {
-      setVocabulary(enhancedVocabulary.map(word => ({ ...word, correct: false })));
+      const resetVocabulary = gameVocabulary.map((word, index) => ({
+        id: word.id || `word-${index}`,
+        word: word.word,
+        translation: word.translation,
+        difficulty: word.difficulty_level === 'beginner' ? 1 :
+                   word.difficulty_level === 'intermediate' ? 3 :
+                   word.difficulty_level === 'advanced' ? 5 : 2,
+        correct: false
+      }));
+      setVocabulary(resetVocabulary);
       // Use the reset vocabulary for this round
-      const resetWords = enhancedVocabulary;
+      const resetWords = resetVocabulary;
       const shuffled = [...resetWords].sort(() => Math.random() - 0.5);
       const targetWord = shuffled[0];
       
@@ -445,7 +541,15 @@ export default function ImprovedSentenceTowers() {
     const targetWords = availableWords.length >= 4 ? availableWords : unusedWords;
     if (targetWords.length < 4) {
       // If still not enough, use the full vocabulary
-      const fullVocab = enhancedVocabulary;
+      const fullVocab = gameVocabulary.map((word, index) => ({
+        id: word.id || `word-${index}`,
+        word: word.word,
+        translation: word.translation,
+        difficulty: word.difficulty_level === 'beginner' ? 1 :
+                   word.difficulty_level === 'intermediate' ? 3 :
+                   word.difficulty_level === 'advanced' ? 5 : 2,
+        correct: false
+      }));
       const shuffled = [...fullVocab].sort(() => Math.random() - 0.5);
       const targetWord = shuffled[0];
       
@@ -460,7 +564,8 @@ export default function ImprovedSentenceTowers() {
       // Record question start time for speed bonuses
       setQuestionStartTime(Date.now());
       
-      const incorrectOptions = shuffled.slice(1, 4);
+      // Improved distractor selection
+      const incorrectOptions = selectBestDistractors(targetWord, shuffled.slice(1), 3);
       const allOptions = [targetWord, ...incorrectOptions].sort(() => Math.random() - 0.5);
       
       setWordOptions(allOptions.map(word => ({
@@ -487,22 +592,27 @@ export default function ImprovedSentenceTowers() {
     // Record question start time for speed bonuses
     setQuestionStartTime(Date.now());
     
-    // Always ensure 4 options by selecting 3 incorrect ones
+    // Always ensure 4 options by selecting 3 incorrect ones with improved logic
     const remainingWords = shuffled.slice(1);
-    const incorrectOptions = remainingWords.slice(0, 3);
-    
+    const incorrectOptions = selectBestDistractors(targetWord, remainingWords, 3);
+
     // If we don't have enough incorrect options from filtered words, add from all words
-    while (incorrectOptions.length < 3) {
-      const additionalOptions = enhancedVocabulary.filter(word => 
-        word.id !== targetWord.id && 
+    if (incorrectOptions.length < 3) {
+      const fullVocab = gameVocabulary.map((word, index) => ({
+        id: word.id || `word-${index}`,
+        word: word.word,
+        translation: word.translation,
+        difficulty: word.difficulty_level === 'beginner' ? 1 :
+                   word.difficulty_level === 'intermediate' ? 3 :
+                   word.difficulty_level === 'advanced' ? 5 : 2,
+        correct: false
+      }));
+      const additionalCandidates = fullVocab.filter(word =>
+        word.id !== targetWord.id &&
         !incorrectOptions.some(opt => opt.id === word.id)
       );
-      if (additionalOptions.length > 0) {
-        const randomOption = additionalOptions[Math.floor(Math.random() * additionalOptions.length)];
-        incorrectOptions.push({ ...randomOption, correct: false });
-      } else {
-        break;
-      }
+      const additionalDistractors = selectBestDistractors(targetWord, additionalCandidates, 3 - incorrectOptions.length);
+      incorrectOptions.push(...additionalDistractors);
     }
     
     const allOptions = [targetWord, ...incorrectOptions].sort(() => Math.random() - 0.5);
@@ -517,12 +627,12 @@ export default function ImprovedSentenceTowers() {
   }, [vocabulary, gameState.currentLevel, gameState.accuracy]);
 
   // Enhanced correct answer handling
-  const handleCorrectAnswer = useCallback((option: WordOption) => {
+  const handleCorrectAnswer = useCallback((option: WordOption, isTypingMode = false) => {
     // Play correct answer sound
     sounds.playCorrectAnswer();
-    
-    setVocabulary(prev => 
-      prev.map(word => 
+
+    setVocabulary(prev =>
+      prev.map(word =>
         word.id === option.id ? { ...word, correct: true } : word
       )
     );
@@ -535,7 +645,8 @@ export default function ImprovedSentenceTowers() {
     const basePoints = 10 + (option.difficulty * 5);
     const streakBonus = Math.floor(gameState.streak / 3) * 5;
     const levelBonus = gameState.currentLevel * 2;
-    const totalPoints = Math.floor((basePoints + streakBonus + levelBonus + speedBonus) * gameState.multiplier);
+    const typingBonus = isTypingMode ? basePoints : 0; // Double points for typing mode
+    const totalPoints = Math.floor((basePoints + streakBonus + levelBonus + speedBonus + typingBonus) * gameState.multiplier);
 
     const newBlock: TowerBlock = {
       id: `block-${Date.now()}`,
@@ -557,6 +668,11 @@ export default function ImprovedSentenceTowers() {
     // Show speed bonus effect if applicable
     if (speedBonus > 0) {
       addParticleEffect('timebonus', { x: window.innerWidth / 2, y: window.innerHeight / 3 }, speedBonus);
+    }
+
+    // Show typing bonus effect if applicable
+    if (isTypingMode) {
+      addParticleEffect('combo', { x: window.innerWidth / 2, y: window.innerHeight / 4 }, 2);
     }
     
     setTimeout(() => {
@@ -652,6 +768,38 @@ export default function ImprovedSentenceTowers() {
     }, option.isCorrect ? 3000 : 1500);
   }, [gameState.status, selectedOption, handleCorrectAnswer, handleIncorrectAnswer, generateWordOptions]);
 
+  // Handle typed answer in typing mode
+  const handleTypedAnswer = useCallback(() => {
+    if (!currentTargetWord || !typedAnswer.trim() || selectedOption) return;
+
+    const userAnswer = typedAnswer.trim().toLowerCase();
+    const correctAnswer = currentTargetWord.translation.toLowerCase();
+
+    // Check if the answer is correct (allow for minor variations)
+    const isCorrect = userAnswer === correctAnswer ||
+                     correctAnswer.includes(userAnswer) ||
+                     userAnswer.includes(correctAnswer);
+
+    setSelectedOption(currentTargetWord.id);
+    setFeedbackVisible(isCorrect ? 'correct' : 'incorrect');
+
+    if (isCorrect) {
+      // Double points for typing mode
+      const doublePointsOption = { ...currentTargetWord, isCorrect: true };
+      handleCorrectAnswer(doublePointsOption, true); // Pass true for double points
+    } else {
+      handleIncorrectAnswer();
+    }
+
+    // Reset typing input and generate new options
+    setTimeout(() => {
+      setTypedAnswer('');
+      setSelectedOption(null);
+      setFeedbackVisible(null);
+      generateWordOptions();
+    }, isCorrect ? 3000 : 1500);
+  }, [currentTargetWord, typedAnswer, selectedOption, handleCorrectAnswer, handleIncorrectAnswer, generateWordOptions]);
+
   // Utility functions
   const getBlockType = (difficulty: number): TowerBlock['type'] => {
     if (difficulty >= 4) return 'challenge';
@@ -695,12 +843,23 @@ export default function ImprovedSentenceTowers() {
       multiplier: 1,
       timeLeft: settings.timeLimit,
       wordsCompleted: 0,
-      totalWords: enhancedVocabulary.length
+      totalWords: gameVocabulary.length
     });
     setTowerBlocks([]);
     setFallingBlocks([]);
     setParticleEffects([]);
-    setVocabulary(enhancedVocabulary.map(word => ({ ...word, correct: false })));
+
+    // Reset vocabulary to unused state
+    const resetVocabulary = gameVocabulary.map((word, index) => ({
+      id: word.id || `word-${index}`,
+      word: word.word,
+      translation: word.translation,
+      difficulty: word.difficulty_level === 'beginner' ? 1 :
+                 word.difficulty_level === 'intermediate' ? 3 :
+                 word.difficulty_level === 'advanced' ? 5 : 2,
+      correct: false
+    }));
+    setVocabulary(resetVocabulary);
     generateWordOptions();
     
     // Start background music
@@ -813,7 +972,7 @@ export default function ImprovedSentenceTowers() {
           
           <div>
             <h1 className="text-2xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-yellow-500">
-              Sentence Towers
+              Word Towers
             </h1>
           </div>
         </div>
@@ -926,9 +1085,7 @@ export default function ImprovedSentenceTowers() {
               <div className="text-2xl font-bold text-white">
                 {currentTargetWord.word}
               </div>
-              <div className="text-xs text-orange-200 mt-1">
-                Difficulty: {currentTargetWord.difficulty}/5
-              </div>
+
             </div>
           </motion.div>
         )}
@@ -1072,16 +1229,16 @@ export default function ImprovedSentenceTowers() {
                     type: "spring", 
                     stiffness: 100 
                   }}
-                  className={`w-48 h-16 rounded-lg border-4 shadow-2xl backdrop-blur-md relative overflow-hidden ${getBlockStyle(block.type, block.isShaking)}`}
+                  className={`w-80 h-20 rounded-lg border-4 shadow-2xl backdrop-blur-md relative overflow-hidden ${getBlockStyle(block.type, block.isShaking)}`}
                   style={{ zIndex: VISIBLE_BLOCKS - index }}
                 >
                 {/* Block content */}
-                <div className="absolute inset-0 flex items-center justify-between p-3">
-                  <div className="flex-1">
-                    <div className="text-white font-bold text-lg">{block.word}</div>
-                    <div className="text-white/80 text-sm">{block.translation}</div>
+                <div className="absolute inset-0 flex items-center justify-between p-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-white font-bold text-xl truncate">{block.word}</div>
+                    <div className="text-white/80 text-base truncate">{block.translation}</div>
                   </div>
-                  <div className="text-right">
+                  <div className="text-right ml-4 flex-shrink-0">
                     <div className="text-white/60 text-xs uppercase font-semibold">
                       {block.type}
                     </div>
@@ -1124,52 +1281,88 @@ export default function ImprovedSentenceTowers() {
       {/* Word Options */}
       {gameState.status === 'playing' && wordOptions.length > 0 && (
         <div className="relative z-20 px-4 mb-4">
-          <motion.div
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex flex-wrap justify-center gap-3"
-          >
-            {wordOptions.map((option, index) => (
-              <motion.button
-                key={option.id}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: index * 0.1 }}
-                onClick={() => handleSelectOption(option)}
-                disabled={selectedOption !== null}
-                className={`
-                  relative px-4 py-3 rounded-2xl border-4 backdrop-blur-md shadow-2xl transition-all duration-300 min-w-[120px] group
-                  ${selectedOption === option.id 
-                    ? option.isCorrect 
-                      ? 'bg-green-500/30 border-green-400 scale-110' 
-                      : 'bg-red-500/30 border-red-400 scale-110'
-                    : 'bg-white/20 border-white/30 hover:bg-white/30 hover:border-white/50 hover:scale-105'
-                  }
-                  ${selectedOption && selectedOption !== option.id ? 'opacity-50' : ''}
-                `}
-              >
-                <div className="text-center">
-                  <div className="text-white font-bold text-base md:text-lg group-hover:scale-110 transition-transform">
-                    {option.translation}
-                  </div>
-                  {settings.showHints && (
-                    <div className="text-white/60 text-xs mt-1">
-                      Difficulty: {option.difficulty}/5
+          {!isTypingMode ? (
+            // Multiple Choice Mode
+            <motion.div
+              initial={{ opacity: 0, y: 50 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex flex-wrap justify-center gap-3"
+            >
+              {wordOptions.map((option, index) => (
+                <motion.button
+                  key={option.id}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: index * 0.1 }}
+                  onClick={() => handleSelectOption(option)}
+                  disabled={selectedOption !== null}
+                  className={`
+                    relative px-4 py-3 rounded-2xl border-4 backdrop-blur-md shadow-2xl transition-all duration-300 min-w-[120px] group
+                    ${selectedOption === option.id
+                      ? option.isCorrect
+                        ? 'bg-green-500/30 border-green-400 scale-110'
+                        : 'bg-red-500/30 border-red-400 scale-110'
+                      : 'bg-white/20 border-white/30 hover:bg-white/30 hover:border-white/50 hover:scale-105'
+                    }
+                    ${selectedOption && selectedOption !== option.id ? 'opacity-50' : ''}
+                  `}
+                >
+                  <div className="text-center">
+                    <div className="text-white font-bold text-base md:text-lg group-hover:scale-110 transition-transform">
+                      {option.translation}
                     </div>
+                  </div>
+
+                  {/* Selection feedback */}
+                  {selectedOption === option.id && (
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      className="absolute inset-0 rounded-2xl bg-white/20 border-4 border-white/50"
+                    />
                   )}
+                </motion.button>
+              ))}
+            </motion.div>
+          ) : (
+            // Typing Mode
+            <motion.div
+              initial={{ opacity: 0, y: 50 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="max-w-md mx-auto"
+            >
+              <div className="bg-white/10 backdrop-blur-md rounded-2xl border-4 border-white/30 p-6">
+                <div className="text-center mb-4">
+                  <div className="text-yellow-400 text-sm font-bold mb-2">⚡ TYPING MODE - DOUBLE POINTS!</div>
+                  <div className="text-white/80 text-sm">Type the translation for:</div>
+                  <div className="text-white font-bold text-xl mt-2">{currentTargetWord?.word}</div>
                 </div>
-                
-                {/* Selection feedback */}
-                {selectedOption === option.id && (
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    className="absolute inset-0 rounded-2xl bg-white/20 border-4 border-white/50"
-                  />
-                )}
-              </motion.button>
-            ))}
-          </motion.div>
+
+                <input
+                  type="text"
+                  value={typedAnswer}
+                  onChange={(e) => setTypedAnswer(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' && typedAnswer.trim()) {
+                      handleTypedAnswer();
+                    }
+                  }}
+                  placeholder="Type your answer..."
+                  className="w-full bg-white/20 text-white placeholder-white/50 rounded-xl p-4 border-2 border-white/30 focus:border-white/50 focus:outline-none text-lg text-center"
+                  disabled={selectedOption !== null}
+                  autoFocus
+                />
+
+                <button
+                  onClick={handleTypedAnswer}
+                  disabled={!typedAnswer.trim() || selectedOption !== null}
+                  className="w-full mt-4 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-400 hover:to-purple-400 disabled:from-gray-500 disabled:to-gray-600 disabled:cursor-not-allowed text-white font-bold py-3 px-6 rounded-xl transition-all duration-300"
+                >
+                  Submit Answer
+                </button>
+              </div>
+            </motion.div>
+          )}
           
           {/* Feedback display */}
           <AnimatePresence>
@@ -1212,7 +1405,7 @@ export default function ImprovedSentenceTowers() {
             >
               <div className="mb-8">
                 <h2 className="text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-yellow-500 mb-4">
-                  Sentence Towers
+                  Word Towers
                 </h2>
                 <p className="text-white/80 text-lg leading-relaxed">
                   Build the tallest tower possible! Answer translation questions correctly to add blocks. 
@@ -1234,10 +1427,32 @@ export default function ImprovedSentenceTowers() {
                   <span className="font-semibold">Build as high as possible!</span>
                 </div>
               </div>
-              
+
+              {/* Category Selection */}
+              <div className="mb-6">
+                <button
+                  onClick={() => setShowCategoryModal(true)}
+                  className="w-full p-4 rounded-xl border-2 border-white/30 hover:border-white/50 transition-all bg-white/10 hover:bg-white/15 text-white"
+                >
+                  <div className="text-2xl mb-2">📚</div>
+                  <h3 className="text-lg font-bold mb-1">
+                    {selectedSubcategory ?
+                      VOCABULARY_CATEGORIES.find(cat => cat.id === selectedCategory)?.subcategories.find(sub => sub.id === selectedSubcategory)?.displayName :
+                      VOCABULARY_CATEGORIES.find(cat => cat.id === selectedCategory)?.displayName || 'Select Category'
+                    }
+                  </h3>
+                  <p className="text-white/70 text-sm">
+                    {vocabularyLoading ? 'Loading vocabulary...' :
+                     gameVocabulary.length > 0 ? `${gameVocabulary.length} words available` :
+                     'Choose vocabulary topic'}
+                  </p>
+                </button>
+              </div>
+
               <button
                 onClick={startGame}
-                className="w-full bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-400 hover:to-yellow-400 text-white font-bold py-4 px-8 rounded-2xl text-xl transition-all duration-300 hover:scale-105 shadow-2xl"
+                disabled={vocabularyLoading || gameVocabulary.length === 0}
+                className="w-full bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-400 hover:to-yellow-400 disabled:from-gray-500 disabled:to-gray-600 disabled:cursor-not-allowed text-white font-bold py-4 px-8 rounded-2xl text-xl transition-all duration-300 hover:scale-105 shadow-2xl"
               >
                 Start Building! 🏗️
               </button>
@@ -1426,10 +1641,23 @@ export default function ImprovedSentenceTowers() {
                     <input
                       type="checkbox"
                       checked={settings.soundEnabled}
-                      onChange={(e) => setSettings(prev => ({ 
-                        ...prev, 
-                        soundEnabled: e.target.checked 
+                      onChange={(e) => setSettings(prev => ({
+                        ...prev,
+                        soundEnabled: e.target.checked
                       }))}
+                      className="w-5 h-5 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
+                    />
+                  </label>
+
+                  <label className="flex items-center justify-between">
+                    <div>
+                      <span className="text-white/80 text-sm font-semibold">Typing Mode</span>
+                      <div className="text-white/60 text-xs">Double points for typing answers</div>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={isTypingMode}
+                      onChange={(e) => setIsTypingMode(e.target.checked)}
                       className="w-5 h-5 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
                     />
                   </label>
@@ -1439,6 +1667,66 @@ export default function ImprovedSentenceTowers() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Category Selection Modal */}
+      {showCategoryModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl max-w-6xl w-full max-h-[80vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-2xl font-bold text-white">Select Vocabulary Category</h3>
+                <button
+                  onClick={() => setShowCategoryModal(false)}
+                  className="p-2 hover:bg-white/10 rounded-full transition-colors text-white"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {VOCABULARY_CATEGORIES.map((category) => (
+                  <div key={category.id} className="space-y-2">
+                    <button
+                      onClick={() => {
+                        if (category.subcategories.length === 0) {
+                          setSelectedCategory(category.id);
+                          setSelectedSubcategory(null);
+                          setShowCategoryModal(false);
+                        }
+                      }}
+                      className="w-full p-4 text-left rounded-lg border border-white/20 hover:bg-white/10 transition-colors text-white"
+                    >
+                      <h4 className="font-bold">{category.displayName}</h4>
+                      {category.subcategories.length > 0 && (
+                        <p className="text-sm text-white/70">{category.subcategories.length} topics</p>
+                      )}
+                    </button>
+
+                    {category.subcategories.length > 0 && (
+                      <div className="ml-4 space-y-1">
+                        {category.subcategories.map((subcategory) => (
+                          <button
+                            key={subcategory.id}
+                            onClick={() => {
+                              setSelectedCategory(category.id);
+                              setSelectedSubcategory(subcategory.id);
+                              setShowCategoryModal(false);
+                            }}
+                            className="w-full p-2 text-left text-sm rounded border border-white/10 hover:bg-white/10 transition-colors text-white/90"
+                          >
+                            {subcategory.displayName}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       </motion.div>
     </div>
   );

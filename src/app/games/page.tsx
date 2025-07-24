@@ -202,7 +202,7 @@ const staticGames = [
   },
   {
     id: 'sentence-towers',
-    title: 'Sentence Towers 🏰',
+    title: 'Word Towers 🏰',
     description: 'Build towers by answering vocabulary questions correctly',
     category: ['vocabulary', 'grammar'],
     imageSrc: '/images/games/sentence-towers.jpg',
@@ -306,16 +306,6 @@ export default function GamesPage() {
       // Real games that are implemented in the codebase
       const actualGames: Game[] = [
         {
-          id: 'language-garden',
-          name: 'Language Garden',
-          description: 'Plant vocabulary seeds and watch them grow into beautiful plants as you learn! Water your plants by answering questions correctly.',
-          thumbnail: '/images/games/language-garden.jpg',
-          category: 'vocabulary',
-          popular: true,
-          languages: ['English', 'Spanish', 'French', 'German', 'Italian', 'Portuguese'],
-          path: '/games/language-garden'
-        },
-        {
           id: 'vocab-master',
           name: 'VocabMaster',
           description: 'Master vocabulary with intelligent spaced repetition, listening exercises, and context-based learning.',
@@ -347,7 +337,7 @@ export default function GamesPage() {
         },
         {
           id: 'sentence-towers',
-          name: 'Sentence Towers',
+          name: 'Word Towers',
           description: 'Build towers by matching words to translations. Wrong answers make towers fall!',
           thumbnail: '/images/games/sentence-towers.jpg',
           category: 'vocabulary',
@@ -394,16 +384,6 @@ export default function GamesPage() {
           popular: true,
           languages: ['Spanish'],
           path: '/games/conjugation-duel'
-        },
-        {
-          id: 'word-association',
-          name: 'Word Association',
-          description: 'Connect related words to build vocabulary networks and associations.',
-          thumbnail: '/images/games/word-association.jpg',
-          category: 'vocabulary',
-          popular: false,
-          languages: ['English', 'Spanish', 'French', 'German'],
-          path: '/games/word-association'
         },
         {
           id: 'word-scramble',

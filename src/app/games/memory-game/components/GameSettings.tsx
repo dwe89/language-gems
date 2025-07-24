@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { THEMES, LANGUAGES, TOPICS, DIFFICULTIES } from '../data/gameConstants';
 import { WordPair } from './CustomWordsModal';
 import CustomWordsModal from './CustomWordsModal';
-import VocabularyCategorySelector from '../../../../components/games/shared/VocabularyCategorySelector';
+import ModernCategoryModal from './ModernCategoryModal';
 import { useGameVocabulary } from '../../../../hooks/useGameVocabulary';
 
 type GameSettingsProps = {
@@ -129,21 +129,25 @@ export default function GameSettings({ onStartGame }: GameSettingsProps) {
 
 
   return (
-    <div className="w-full max-w-6xl mx-auto bg-white/90 backdrop-blur-md border border-white/20 p-8 rounded-3xl shadow-2xl">      
+    <motion.div
+      className="w-full max-w-7xl mx-auto bg-white/10 backdrop-blur-md border border-white/20 p-8 rounded-3xl shadow-2xl text-white"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
       <form onSubmit={handleSubmit}>
-        {/* Game Title */}
+        {/* Game Description */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">🧠 Memory Match</h1>
-          <p className="text-gray-600">Test your memory and learn vocabulary!</p>
+          <p className="text-white/80 text-lg">Test your memory and learn vocabulary!</p>
         </div>
         
         {/* Settings Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          
+
           {/* Category Selector */}
           <div>
-            <label className="block text-lg font-medium text-gray-800 mb-3">Topic</label>
-            <div 
+            <label className="block text-lg font-medium text-white mb-4">Topic</label>
+            <motion.div
               onClick={() => setShowCategoryModal(true)}
               role="button"
               tabIndex={0}
@@ -152,30 +156,30 @@ export default function GameSettings({ onStartGame }: GameSettingsProps) {
                   setShowCategoryModal(true);
                 }
               }}
-              className="cursor-pointer text-center p-4 rounded-xl border-2 transition-all transform hover:scale-105 bg-white border-gray-300 hover:bg-gray-50 hover:border-blue-400 min-h-[120px] flex flex-col justify-center"
+              className="cursor-pointer text-center p-6 rounded-xl border-2 transition-all bg-white/10 border-white/40 hover:bg-white/15 hover:border-white/60 min-h-[100px] flex flex-col justify-center"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
             >
-              <div className="text-3xl mb-2">
-                {selectedCategory ? '📚' : '🎯'}
-              </div>
-              <div className="font-medium text-lg text-gray-800">
-                {selectedSubcategory ? selectedSubcategory.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) : 
-                 selectedCategory ? selectedCategory.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) : 
+              <div className="text-4xl mb-2">📚</div>
+              <div className="font-medium text-xl">
+                {selectedSubcategory ? selectedSubcategory.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) :
+                 selectedCategory ? selectedCategory.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) :
                  'Choose Topic'}
               </div>
-              <div className="text-sm mt-1 text-gray-600">
-                {selectedCategory ? `${vocabulary.length} words available` : 'KS3 Spanish Topics'}
+              <div className="text-sm mt-1 opacity-75">
+                {selectedCategory ? `${vocabulary.length} words available` : 'Vocabulary topics'}
               </div>
-              <div className="text-xs mt-2 text-blue-500">Click to change</div>
+              <div className="text-xs mt-2 opacity-50">Click to change</div>
               {vocabLoading && (
-                <div className="text-xs mt-1 text-blue-500">Loading vocabulary...</div>
+                <div className="text-xs mt-1 opacity-75">Loading vocabulary...</div>
               )}
-            </div>
+            </motion.div>
           </div>
           
           {/* Language Selector */}
           <div>
-            <label className="block text-lg font-medium text-gray-800 mb-3">Language</label>
-            <div 
+            <label className="block text-lg font-medium text-white mb-4">Language</label>
+            <motion.div
               onClick={() => setShowLanguageModal(true)}
               role="button"
               tabIndex={0}
@@ -184,19 +188,21 @@ export default function GameSettings({ onStartGame }: GameSettingsProps) {
                   setShowLanguageModal(true);
                 }
               }}
-              className="cursor-pointer text-center p-4 rounded-xl border-2 transition-all transform hover:scale-105 bg-white border-gray-300 hover:bg-gray-50 hover:border-blue-400 min-h-[120px] flex flex-col justify-center"
+              className="cursor-pointer text-center p-6 rounded-xl border-2 transition-all bg-white/10 border-white/40 hover:bg-white/15 hover:border-white/60 min-h-[100px] flex flex-col justify-center"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
             >
-              <div className="text-3xl mb-2">{language.emoji}</div>
-              <div className="font-medium text-lg text-gray-800">{language.name}</div>
-              <div className="text-sm mt-1 text-gray-600">{language.native}</div>
-              <div className="text-xs mt-2 text-blue-500">Click to change</div>
-            </div>
+              <div className="text-4xl mb-2">{language.emoji}</div>
+              <div className="font-medium text-xl">{language.name}</div>
+              <div className="text-sm mt-1 opacity-75">{language.native}</div>
+              <div className="text-xs mt-2 opacity-50">Click to change</div>
+            </motion.div>
           </div>
           
           {/* Difficulty Selector */}
           <div>
-            <label className="block text-lg font-medium text-gray-800 mb-3">Difficulty</label>
-            <div 
+            <label className="block text-lg font-medium text-white mb-4">Difficulty</label>
+            <motion.div
               onClick={() => setShowDifficultyModal(true)}
               role="button"
               tabIndex={0}
@@ -205,19 +211,21 @@ export default function GameSettings({ onStartGame }: GameSettingsProps) {
                   setShowDifficultyModal(true);
                 }
               }}
-              className="cursor-pointer text-center p-4 rounded-xl border-2 transition-all transform hover:scale-105 bg-white border-gray-300 hover:bg-gray-50 hover:border-blue-400 min-h-[120px] flex flex-col justify-center"
+              className="cursor-pointer text-center p-6 rounded-xl border-2 transition-all bg-white/10 border-white/40 hover:bg-white/15 hover:border-white/60 min-h-[100px] flex flex-col justify-center"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
             >
-              <div className="text-3xl mb-2">{difficulty.emoji}</div>
-              <div className="font-medium text-lg text-gray-800">{difficulty.name}</div>
-              <div className="text-sm mt-1 text-gray-600">{difficulty.description}</div>
-              <div className="text-xs mt-2 text-blue-500">Click to change</div>
-            </div>
+              <div className="text-4xl mb-2">{difficulty.emoji}</div>
+              <div className="font-medium text-xl">{difficulty.name}</div>
+              <div className="text-sm mt-1 opacity-75">{difficulty.description}</div>
+              <div className="text-xs mt-2 opacity-50">Click to change</div>
+            </motion.div>
           </div>
           
           {/* Theme Selector */}
           <div>
-            <label className="block text-lg font-medium text-gray-800 mb-3">Theme</label>
-            <div 
+            <label className="block text-lg font-medium text-white mb-4">Theme</label>
+            <motion.div
               onClick={() => setShowThemeModal(true)}
               role="button"
               tabIndex={0}
@@ -226,117 +234,79 @@ export default function GameSettings({ onStartGame }: GameSettingsProps) {
                   setShowThemeModal(true);
                 }
               }}
-              className="cursor-pointer text-center p-4 rounded-xl border-2 transition-all transform hover:scale-105 bg-white border-gray-300 hover:bg-gray-50 hover:border-blue-400 min-h-[120px] flex flex-col justify-center"
+              className="cursor-pointer text-center p-6 rounded-xl border-2 transition-all bg-white/10 border-white/40 hover:bg-white/15 hover:border-white/60 min-h-[100px] flex flex-col justify-center"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
             >
-              <div className="text-3xl mb-2">{theme.emoji}</div>
-              <div className="font-medium text-lg text-gray-800">{theme.name}</div>
-              <div className="text-sm mt-1 text-gray-600">{theme.description}</div>
-              <div className="text-xs mt-2 text-blue-500">Click to change</div>
-            </div>
+              <div className="text-4xl mb-2">{theme.emoji}</div>
+              <div className="font-medium text-xl">{theme.name}</div>
+              <div className="text-sm mt-1 opacity-75">{theme.description}</div>
+              <div className="text-xs mt-2 opacity-50">Click to change</div>
+            </motion.div>
           </div>
           
         </div>
         
         {/* Vocabulary Status */}
         {selectedCategory && (
-          <div className="mb-6 p-4 bg-blue-50 rounded-xl border border-blue-200">
+          <motion.div
+            className="mb-6 p-4 bg-white/5 rounded-xl border border-white/20"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
             <div className="text-center">
-              <h3 className="font-semibold text-blue-800 mb-2">
+              <h3 className="font-semibold text-white mb-2">
                 📚 Ready to Practice: {selectedSubcategory ? selectedSubcategory.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) : selectedCategory.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
               </h3>
-              <p className="text-sm text-blue-600">
-                {vocabLoading ? 'Loading vocabulary...' : 
+              <p className="text-sm text-white/80">
+                {vocabLoading ? 'Loading vocabulary...' :
                  vocabError ? 'Error loading vocabulary' :
                  `${vocabulary.length} vocabulary words available`}
               </p>
               {vocabulary.length > 0 && (
-                <p className="text-xs text-blue-500 mt-1">
+                <p className="text-xs text-white/60 mt-1">
                   Game will use up to {difficulty.pairs} word pairs
                 </p>
               )}
             </div>
-          </div>
+          </motion.div>
         )}
-        
+
         {/* Start Button */}
         <div className="text-center">
-          <button 
+          <motion.button
             type="submit"
             disabled={!selectedCategory || vocabulary.length === 0 || vocabLoading}
-            className="px-12 py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed text-white font-bold rounded-full text-xl transition-all shadow-xl hover:shadow-2xl transform hover:scale-105 disabled:transform-none"
+            className="px-12 py-4 bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed text-white font-bold rounded-full text-xl transition-all shadow-xl hover:shadow-2xl"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
           >
             {!selectedCategory ? '📚 Choose a Topic First' :
              vocabLoading ? '⏳ Loading...' :
              vocabulary.length === 0 ? '❌ No Vocabulary Available' :
              '🚀 Start Memory Game'}
-          </button>
+          </motion.button>
           {!selectedCategory && (
-            <p className="text-sm text-gray-500 mt-2">Select a learning topic to begin</p>
+            <p className="text-sm text-white/60 mt-2">Select a learning topic to begin</p>
           )}
         </div>
       </form>
 
-      {/* Category Selection Modal */}
-      <AnimatePresence>
-        {showCategoryModal && (
-          <motion.div
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setShowCategoryModal(false)}
-          >
-            <motion.div
-              className="bg-white backdrop-blur-md border border-gray-200 p-6 rounded-3xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto"
-              initial={{ scale: 0.8, y: 30 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.8, y: 30 }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-3xl font-bold text-gray-800">Choose Learning Topic</h2>
-                <button 
-                  onClick={() => setShowCategoryModal(false)}
-                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                >
-                  ✕
-                </button>
-              </div>
-              
-              <VocabularyCategorySelector
-                selectedLanguage={language.id === 'spanish' ? 'es' : 'en'}
-                selectedCategory={selectedCategory}
-                selectedSubcategory={selectedSubcategory}
-                onLanguageChange={() => {}} // Language is controlled by parent
-                onCategoryChange={setSelectedCategory}
-                onSubcategoryChange={setSelectedSubcategory}
-                showLanguageSelector={false}
-              />
-              
-              {selectedCategory && vocabulary.length > 0 && (
-                <div className="mt-6 p-4 bg-green-50 rounded-xl border border-green-200">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="font-semibold text-green-800">
-                        ✅ Ready to play with {vocabulary.length} vocabulary words!
-                      </h3>
-                      <p className="text-sm text-green-600 mt-1">
-                        Words from: {selectedSubcategory ? selectedSubcategory.replace('_', ' ') : selectedCategory.replace('_', ' ')}
-                      </p>
-                    </div>
-                    <button 
-                      onClick={() => setShowCategoryModal(false)}
-                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                    >
-                      Use These Words
-                    </button>
-                  </div>
-                </div>
-              )}
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Modern Category Selection Modal */}
+      <ModernCategoryModal
+        isOpen={showCategoryModal}
+        onClose={() => setShowCategoryModal(false)}
+        onCategorySelect={(categoryId: string, subcategoryId?: string) => {
+          setSelectedCategory(categoryId);
+          if (subcategoryId) {
+            setSelectedSubcategory(subcategoryId);
+          } else {
+            setSelectedSubcategory('');
+          }
+        }}
+        selectedCategory={selectedCategory}
+        selectedSubcategory={selectedSubcategory}
+      />
 
       {/* Language Selection Modal */}
       <AnimatePresence>
@@ -506,6 +476,6 @@ export default function GameSettings({ onStartGame }: GameSettingsProps) {
         onClose={() => setShowCustomModal(false)}
         onStartGame={handleCustomWordsStart}
       />
-    </div>
+    </motion.div>
   );
 }

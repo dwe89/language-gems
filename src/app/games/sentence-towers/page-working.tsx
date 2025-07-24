@@ -315,7 +315,7 @@ export default function SentenceTowersGame() {
         
         <div className="text-center">
           <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-yellow-500">
-            Sentence Towers
+            Word Towers
           </h1>
         </div>
 

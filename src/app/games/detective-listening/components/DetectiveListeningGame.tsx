@@ -21,6 +21,7 @@ interface DetectiveListeningGameProps {
 export default function DetectiveListeningGame({ settings, onBackToMenu }: DetectiveListeningGameProps) {
   const [currentScreen, setCurrentScreen] = useState<GameScreen>('case-selection');
   const [selectedCase, setSelectedCase] = useState('');
+  const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
   const [selectedLanguage, setSelectedLanguage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -31,10 +32,11 @@ export default function DetectiveListeningGame({ settings, onBackToMenu }: Detec
     evidenceCollected: []
   });
 
-  const handleCaseSelection = (caseType: string) => {
+  const handleCaseSelection = (categoryId: string, subcategoryId: string | null) => {
     try {
       setError(null);
-      setSelectedCase(caseType);
+      setSelectedCase(categoryId);
+      setSelectedSubcategory(subcategoryId);
       setCurrentScreen('frequency-selection');
     } catch (err) {
       setError('Failed to select case. Please try again.');
@@ -65,6 +67,8 @@ export default function DetectiveListeningGame({ settings, onBackToMenu }: Detec
 
   const handleNewCase = () => {
     setCurrentScreen('case-selection');
+    setSelectedCase('');
+    setSelectedSubcategory(null);
     setGameProgress({
       currentEvidence: 0,
       totalEvidence: 10,
@@ -149,8 +153,9 @@ export default function DetectiveListeningGame({ settings, onBackToMenu }: Detec
             exit={{ opacity: 0, scale: 0.9 }}
             className="w-full h-full"
           >
-            <DetectiveRoom 
+            <DetectiveRoom
               caseType={selectedCase}
+              subcategory={selectedSubcategory}
               language={selectedLanguage}
               onGameComplete={handleGameComplete}
               onBack={() => setCurrentScreen('frequency-selection')}

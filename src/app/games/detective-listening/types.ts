@@ -21,6 +21,7 @@ export interface Evidence {
   answered: boolean;
   isCorrect?: boolean;
   attempts: number;
+  word?: string; // The original word in the target language
 }
 
 export interface GameProgress {

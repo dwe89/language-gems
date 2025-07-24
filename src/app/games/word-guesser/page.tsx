@@ -15,7 +15,11 @@ const FOREST_BG_URL = '/images/forest-bg.jpg';
 
 export default function WordGuesserPage() {
   const router = useRouter();
-  const [settings, setSettings] = useState<WordGuesserSettings | null>(null);
+  const [settings, setSettings] = useState<(WordGuesserSettings & {
+    selectedCategory: string;
+    selectedSubcategory: string | null;
+    theme: string;
+  }) | null>(null);
   const [gameStarted, setGameStarted] = useState(false);
   const [gameStats, setGameStats] = useState<GameStats>({
     gamesPlayed: 0,
@@ -95,7 +99,11 @@ export default function WordGuesserPage() {
   };
 
   // Handle start game with selected settings
-  const handleStartGame = (selectedSettings: WordGuesserSettings) => {
+  const handleStartGame = (selectedSettings: WordGuesserSettings & {
+    selectedCategory: string;
+    selectedSubcategory: string | null;
+    theme: string;
+  }) => {
     setSettings(selectedSettings);
     setGameStarted(true);
   };
@@ -129,9 +137,22 @@ export default function WordGuesserPage() {
     }
   };
 
+  // Get theme-based styling
+  const getContainerClasses = () => {
+    if (settings?.theme === 'tokyo') {
+      return 'min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-950';
+    } else if (settings?.theme === 'neon') {
+      return 'min-h-screen bg-black';
+    } else if (settings?.theme === 'space') {
+      return 'min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-950';
+    } else {
+      return `min-h-screen ${forestTheme ? '' : 'bg-gradient-to-b from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900'}`;
+    }
+  };
+
   return (
-    <div className={`min-h-screen ${forestTheme ? '' : 'bg-gradient-to-b from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900'} ${isFullscreen ? 'fullscreen-active' : ''}`}>
-      {forestTheme && (
+    <div className={`${getContainerClasses()} ${isFullscreen ? 'fullscreen-active' : ''}`}>
+      {(forestTheme || settings?.theme === 'forest') && (
         <>
           <div className="forest-background"></div>
           <div className="forest-overlay"></div>

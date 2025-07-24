@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import VocabularyCategorySelector from '../../../../components/games/shared/VocabularyCategorySelector';
+import { VOCABULARY_CATEGORIES } from '../../../../components/games/ModernCategorySelector';
 
 type GameMode = 'classic' | 'blitz' | 'marathon' | 'timed_attack' | 'word_storm' | 'zen';
 type Difficulty = 'easy' | 'medium' | 'hard' | 'expert';
@@ -10,7 +10,7 @@ type Difficulty = 'easy' | 'medium' | 'hard' | 'expert';
 interface GameSettings {
   difficulty: Difficulty;
   category: string;
-  subcategory: string;
+  subcategory: string | null;
   language: string;
   gameMode: GameMode;
 }
@@ -19,9 +19,9 @@ type GameSettingsProps = {
   onStart: (settings: GameSettings) => void;
   onBack: () => void;
   selectedCategory?: string;
-  selectedSubcategory?: string;
+  selectedSubcategory?: string | null;
   onCategoryChange?: (category: string) => void;
-  onSubcategoryChange?: (subcategory: string) => void;
+  onSubcategoryChange?: (subcategory: string | null) => void;
 };
 
 const GAME_MODES = [
@@ -130,8 +130,8 @@ const LANGUAGES = [
 export default function GameSettingsEnhanced({
   onStart,
   onBack,
-  selectedCategory = '',
-  selectedSubcategory = '',
+  selectedCategory = 'basics_core_language',
+  selectedSubcategory = null,
   onCategoryChange = () => {},
   onSubcategoryChange = () => {}
 }: GameSettingsProps) {
@@ -144,9 +144,30 @@ export default function GameSettingsEnhanced({
   });
 
   const [selectedTab, setSelectedTab] = useState<'mode' | 'difficulty' | 'category' | 'language'>('mode');
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [categoryView, setCategoryView] = useState<'categories' | 'subcategories'>('categories');
+  const [selectedCategoryForModal, setSelectedCategoryForModal] = useState<any>(null);
 
   const handleStart = () => {
     onStart(settings);
+  };
+
+  // Category selection handlers
+  const handleCategoryChange = (categoryId: string) => {
+    setSettings({ ...settings, category: categoryId });
+    onCategoryChange(categoryId);
+  };
+
+  const handleSubcategoryChange = (subcategoryId: string | null) => {
+    setSettings({ ...settings, subcategory: subcategoryId });
+    onSubcategoryChange(subcategoryId);
+  };
+
+  // Get category display name
+  const getCategoryDisplayName = () => {
+    const category = VOCABULARY_CATEGORIES.find(cat => cat.id === settings.category);
+    const subcategory = category?.subcategories.find(sub => sub.id === settings.subcategory);
+    return subcategory ? `${category?.displayName} - ${subcategory.displayName}` : category?.displayName || 'Select Category';
   };
 
   return (
@@ -287,22 +308,18 @@ export default function GameSettingsEnhanced({
                 <div>
                   <h2 className="text-2xl font-bold text-white mb-6 text-center">Choose Word Category</h2>
                   <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
-                    <VocabularyCategorySelector
-                      selectedLanguage="es"
-                      selectedCategory={selectedCategory}
-                      selectedSubcategory={selectedSubcategory}
-                      onLanguageChange={() => {}} // Language controlled by parent
-                      onCategoryChange={(category) => {
-                        onCategoryChange(category);
-                        setSettings({ ...settings, category });
+                    <button
+                      onClick={() => {
+                        setCategoryView('categories');
+                        setSelectedCategoryForModal(null);
+                        setShowCategoryModal(true);
                       }}
-                      onSubcategoryChange={(subcategory) => {
-                        onSubcategoryChange(subcategory);
-                        setSettings({ ...settings, subcategory });
-                      }}
-                      showLanguageSelector={false}
-                      className="text-white"
-                    />
+                      className="w-full p-6 rounded-xl border-2 border-white/20 hover:border-white/40 transition-all bg-white/5 hover:bg-white/10 text-white"
+                    >
+                      <div className="text-2xl mb-2">📚</div>
+                      <h3 className="text-xl font-bold mb-2">{getCategoryDisplayName()}</h3>
+                      <p className="text-white/70 text-sm">Click to change category</p>
+                    </button>
                   </div>
                 </div>
               )}
@@ -383,6 +400,95 @@ export default function GameSettingsEnhanced({
           </div>
         </div>
       </div>
+
+      {/* Category Selection Modal */}
+      {showCategoryModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-6xl w-full max-h-[80vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-2xl font-bold text-gray-800">
+                  {categoryView === 'categories' ? 'Select Category' : `${selectedCategoryForModal?.displayName} Topics`}
+                </h3>
+                <div className="flex items-center space-x-2">
+                  {categoryView === 'subcategories' && (
+                    <button
+                      onClick={() => setCategoryView('categories')}
+                      className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors text-gray-700"
+                    >
+                      ← Back
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setShowCategoryModal(false)}
+                    className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-500"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+
+              {categoryView === 'categories' ? (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
+                  {VOCABULARY_CATEGORIES.map((item) => (
+                    <motion.div
+                      key={item.id}
+                      onClick={() => {
+                        if (item.subcategories.length > 0) {
+                          setSelectedCategoryForModal(item);
+                          setCategoryView('subcategories');
+                        } else {
+                          handleCategoryChange(item.id);
+                          handleSubcategoryChange(null);
+                          setShowCategoryModal(false);
+                        }
+                      }}
+                      className={`
+                        cursor-pointer text-center p-4 rounded-xl border-2 transition-all
+                        ${settings.category === item.id
+                          ? 'bg-blue-50 border-blue-500 text-blue-700 shadow-lg'
+                          : 'bg-white border-gray-200 hover:bg-gray-50 hover:border-gray-300'}
+                      `}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <div className="text-3xl mb-2">{item.icon}</div>
+                      <div className="font-medium text-sm">{item.displayName}</div>
+                      {item.subcategories.length > 0 && (
+                        <div className="text-xs text-gray-500 mt-1">{item.subcategories.length} topics</div>
+                      )}
+                    </motion.div>
+                  ))}
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
+                  {selectedCategoryForModal?.subcategories.map((item: any) => (
+                    <motion.div
+                      key={item.id}
+                      onClick={() => {
+                        handleCategoryChange(selectedCategoryForModal.id);
+                        handleSubcategoryChange(item.id);
+                        setShowCategoryModal(false);
+                      }}
+                      className={`
+                        cursor-pointer text-center p-4 rounded-xl border-2 transition-all
+                        ${settings.subcategory === item.id
+                          ? 'bg-blue-50 border-blue-500 text-blue-700 shadow-lg'
+                          : 'bg-white border-gray-200 hover:bg-gray-50 hover:border-gray-300'}
+                      `}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <div className="text-2xl mb-2">📖</div>
+                      <div className="font-medium text-sm">{item.displayName}</div>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

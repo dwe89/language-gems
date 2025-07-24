@@ -3,18 +3,20 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Play, RotateCcw, Volume2, CheckCircle, XCircle, FileText } from 'lucide-react';
-import { getCaseTypeById, getLanguageById, getRandomEvidence } from '../data/gameData';
+import { useVocabularyByCategory } from '../../../../hooks/useVocabulary';
+import { VOCABULARY_CATEGORIES } from '../../../../components/games/ModernCategorySelector';
 import { useAudioManager } from '../hooks/useAudioManager';
 import { Evidence } from '../types';
 
 interface DetectiveRoomProps {
   caseType: string;
+  subcategory: string | null;
   language: string;
   onGameComplete: (results: any) => void;
   onBack: () => void;
 }
 
-export default function DetectiveRoom({ caseType, language, onGameComplete, onBack }: DetectiveRoomProps) {
+export default function DetectiveRoom({ caseType, subcategory, language, onGameComplete, onBack }: DetectiveRoomProps) {
   const [currentEvidenceIndex, setCurrentEvidenceIndex] = useState(0);
   const [evidenceList, setEvidenceList] = useState<Evidence[]>([]);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
@@ -26,24 +28,69 @@ export default function DetectiveRoom({ caseType, language, onGameComplete, onBa
     evidenceCollected: [] as Evidence[]
   });
 
-  const { playEvidence, isPlaying } = useAudioManager();
-  const caseInfo = getCaseTypeById(caseType);
-  const languageInfo = getLanguageById(language);
+  // Map language for vocabulary loading
+  const mapLanguageForVocab = (lang: string) => {
+    const mapping: Record<string, string> = {
+      'spanish': 'es',
+      'french': 'fr',
+      'german': 'de'
+    };
+    return mapping[lang] || 'es';
+  };
 
-  // Initialize evidence list
+  // Load vocabulary using the category system
+  const { vocabulary, loading: vocabularyLoading } = useVocabularyByCategory({
+    language: mapLanguageForVocab(language),
+    categoryId: caseType,
+    subcategoryId: subcategory,
+    difficultyLevel: 'beginner',
+    curriculumLevel: 'KS3'
+  });
+
+  const { playEvidence, isPlaying } = useAudioManager();
+
+  // Get category info for display
+  const categoryInfo = VOCABULARY_CATEGORIES.find(cat => cat.id === caseType);
+  const subcategoryInfo = categoryInfo?.subcategories.find(sub => sub.id === subcategory);
+
+  // Initialize evidence list from vocabulary
   useEffect(() => {
-    const vocabularyData = getRandomEvidence(caseType, language, 10);
-    const evidence: Evidence[] = vocabularyData.map((item, index) => ({
-      id: `evidence-${index}`,
-      audio: item.audio,
-      correct: item.correct,
-      options: [item.correct, ...item.distractors].sort(() => Math.random() - 0.5),
-      answered: false,
-      attempts: 0
-    }));
-    
-    setEvidenceList(evidence);
-  }, [caseType, language]);
+    if (vocabulary && vocabulary.length > 0) {
+      // Create distractors from other vocabulary items
+      const createDistractors = (correctTranslation: string, allVocab: any[]) => {
+        const otherTranslations = allVocab
+          .filter(item => item.translation !== correctTranslation)
+          .map(item => item.translation)
+          .slice(0, 3); // Take up to 3 distractors
+
+        // If we don't have enough distractors, add some generic ones
+        const genericDistractors = ['option A', 'option B', 'option C'];
+        while (otherTranslations.length < 2) {
+          const generic = genericDistractors[otherTranslations.length];
+          if (!otherTranslations.includes(generic)) {
+            otherTranslations.push(generic);
+          }
+        }
+
+        return otherTranslations.slice(0, 2); // Return 2 distractors
+      };
+
+      const evidence: Evidence[] = vocabulary.slice(0, 10).map((item, index) => {
+        const distractors = createDistractors(item.translation, vocabulary);
+        return {
+          id: `evidence-${index}`,
+          audio: `detective_${item.word}.mp3`, // This would need to be generated or mapped
+          correct: item.translation,
+          options: [item.translation, ...distractors].sort(() => Math.random() - 0.5),
+          answered: false,
+          attempts: 0,
+          word: item.word
+        };
+      });
+
+      setEvidenceList(evidence);
+    }
+  }, [vocabulary]);
 
   const currentEvidence = evidenceList[currentEvidenceIndex];
 
@@ -176,10 +223,10 @@ export default function DetectiveRoom({ caseType, language, onGameComplete, onBa
                 </div>
                 <div>
                   <h1 className="text-2xl font-bold text-amber-100">
-                    {caseInfo?.name}
+                    {categoryInfo?.displayName} {subcategoryInfo ? `- ${subcategoryInfo.displayName}` : ''} Case
                   </h1>
                   <p className="text-amber-200">
-                    {languageInfo?.name} • Evidence {currentEvidenceIndex + 1} of {evidenceList.length}
+                    {language.charAt(0).toUpperCase() + language.slice(1)} • Evidence {currentEvidenceIndex + 1} of {evidenceList.length}
                   </p>
                 </div>
               </div>
