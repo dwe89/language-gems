@@ -560,74 +560,7 @@ export default function WordGuesser({ settings, onBackToMenu, onGameEnd }: WordG
   
   // Render keyboard
   const renderKeyboard = () => {
-    const layout = getKeyboardLayout();
-
-    return (
-      <div className="space-y-2">
-        {layout.map((row, rowIndex) => (
-          <div key={`keyboard-row-${rowIndex}`} className="flex justify-center gap-1">
-            {row.map((key) => {
-              const getKeyClasses = () => {
-                let classes = `px-3 py-2 rounded font-bold text-sm transition-all duration-200 ${themeClasses.cell}`;
-
-                if (key === 'ENTER' || key === 'BACKSPACE') {
-                  classes += ' px-4';
-                }
-
-                const keyState = keyStates[key.toLowerCase()];
-                if (keyState === 'correct') {
-                  classes += ` ${themeClasses.accent} text-white`;
-                } else if (keyState === 'present') {
-                  classes += ' bg-yellow-500 text-white';
-                } else if (keyState === 'absent') {
-                  classes += ' bg-gray-500 text-white opacity-50';
-                } else {
-                  classes += ' hover:opacity-80';
-                }
-
-                return classes;
-              };
-
-              // Check for special keys
-              if (key === 'ENTER') {
-                return (
-                  <button
-                    key={`key-${key}`}
-                    className={getKeyClasses()}
-                    onClick={() => handleKeyPress(key)}
-                  >
-                    <span className="hidden sm:inline">ENTER</span>
-                    <span className="sm:hidden">↵</span>
-                  </button>
-                );
-              }
-
-              if (key === 'BACKSPACE') {
-                return (
-                  <button
-                    key={`key-${key}`}
-                    className={getKeyClasses()}
-                    onClick={() => handleKeyPress(key)}
-                  >
-                    ⌫
-                  </button>
-                );
-              }
-
-              return (
-                <button
-                  key={`key-${key}`}
-                  className={getKeyClasses()}
-                  onClick={() => handleKeyPress(key)}
-                >
-                  {key}
-                </button>
-              );
-            })}
-          </div>
-        ))}
-      </div>
-    );
+    return <div>Keyboard placeholder</div>;
   };
   
   return (

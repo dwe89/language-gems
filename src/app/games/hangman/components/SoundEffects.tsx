@@ -37,6 +37,7 @@ export default function SoundEffects({
     soundEffects.win = new Audio('/audio/sfx/victory.mp3');
     soundEffects.lose = new Audio('/audio/sfx/defeat.mp3');
     soundEffects.hint = new Audio('/audio/sfx/button-click.mp3');
+    soundEffects.canonFire = new Audio('/audio/sfx/canon-fire.mp3');
     
     // Theme-specific sounds
     if (theme === 'default') {
@@ -67,6 +68,7 @@ export default function SoundEffects({
     }
     else if (theme === 'pirate') {
       soundEffects.treasure = new Audio('/audio/sfx/pirate-treasure.mp3');
+      soundEffects.canonFire = new Audio('/audio/sfx/canon-fire.mp3');
       soundEffects.backgroundMusic = new Audio('/audio/themes/pirate-adventure-ambient.mp3');
       if (soundEffects.backgroundMusic) {
         soundEffects.backgroundMusic.loop = true;
@@ -161,11 +163,18 @@ export default function SoundEffects({
           sound.play().catch(err => console.error("Could not play sound:", err));
         }
       };
+      (window as any).playCanonFire = () => {
+        const sound = sounds.canonFire;
+        if (sound) {
+          sound.currentTime = 0;
+          sound.play().catch(err => console.error("Could not play canon fire sound:", err));
+        }
+      };
     }
-    
     return () => {
       if (typeof window !== 'undefined') {
         delete (window as any).playHangmanSound;
+        delete (window as any).playCanonFire;
       }
     };
   }, [loaded, sounds, muted]);

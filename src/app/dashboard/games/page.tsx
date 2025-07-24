@@ -256,12 +256,12 @@ export default function TeacherGamesPage() {
     },
     {
       id: '3',
-      name: 'Word Blast',
-      description: 'Fast-paced vocabulary recall game',
+      name: 'Vocab Blast',
+      description: 'Click-to-pop vocabulary game with themed modes',
       mode: 'Student Only',
       difficulty: 1,
       isNew: true,
-      path: '/games/word-blast'
+      path: '/games/vocab-blast'
     },
     {
       id: '4',

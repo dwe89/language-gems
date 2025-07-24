@@ -190,15 +190,15 @@ const staticGames = [
     path: '/games/speed-builder'
   },
   {
-    id: 'word-blast',
-    title: 'Word Blast 🚀',
-    description: 'Launch rockets by selecting the correct word translations',
+    id: 'vocab-blast',
+    title: 'Vocab Blast 💎',
+    description: 'Click-to-pop vocabulary game with 4 themed modes',
     category: ['new', 'vocabulary'],
-    imageSrc: '/images/games/word-blast.jpg',
+    imageSrc: '/images/games/vocab-blast.jpg',
     icon: <Rocket className="text-orange-500" size={20} />,
-    popular: false,
-    languages: ['English', 'Spanish', 'French'],
-    path: '/games/word-blast',
+    popular: true,
+    languages: ['Spanish', 'French', 'German', 'Italian', 'Portuguese'],
+    path: '/games/vocab-blast',
   },
   {
     id: 'sentence-towers',
@@ -414,6 +414,16 @@ export default function GamesPage() {
           popular: true,
           languages: ['Spanish', 'French', 'German'],
           path: '/games/detective-listening'
+        },
+        {
+          id: 'vocab-blast',
+          name: 'Vocab Blast',
+          description: 'Click-to-pop vocabulary translation game with 4 themed modes: Neon Hack, Cannon Clash, Comet Catch, and Rising Lava Quiz.',
+          thumbnail: '/images/games/vocab-blast.jpg',
+          category: 'vocabulary',
+          popular: true,
+          languages: ['Spanish', 'French', 'German', 'Italian', 'Portuguese'],
+          path: '/games/vocab-blast'
         }
       ];
 
