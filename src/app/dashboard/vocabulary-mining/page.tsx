@@ -9,21 +9,23 @@ import {
   ClassAnalytics,
   VocabularyAchievement 
 } from '../../../types/vocabulary-mining';
-import { 
-  Pickaxe, 
-  Users, 
-  TrendingUp, 
-  TrendingDown, 
-  Target, 
-  Clock, 
+import {
+  Pickaxe,
+  Users,
+  TrendingUp,
+  TrendingDown,
+  Target,
+  Clock,
   Award,
   BarChart3,
+  Zap,
   Download,
   Filter,
   RefreshCw,
   AlertTriangle,
   CheckCircle,
-  Star
+  Star,
+  Eye
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -100,27 +102,68 @@ export default function TeacherVocabularyMiningPage() {
 
       if (classesError) throw classesError;
 
-      // Process classes data
+      // Process classes data with real-time analytics
       const processedClasses: ClassData[] = await Promise.all(
         (classesData || []).map(async (cls) => {
-          // Get class analytics
-          const { data: analytics } = await supabase
-            .from('vocabulary_class_analytics')
-            .select('*')
-            .eq('class_id', cls.id)
-            .order('analytics_date', { ascending: false })
-            .limit(1)
-            .single();
+          const studentCount = cls.class_enrollments?.[0]?.count || 0;
+
+          // Get real student data for this class
+          const { data: enrollments } = await supabase
+            .from('class_enrollments')
+            .select('student_id')
+            .eq('class_id', cls.id);
+
+          const studentIds = enrollments?.map(e => e.student_id) || [];
+
+          // Calculate real analytics from vocabulary_gem_collection
+          let averageMastery = 0;
+          let totalGems = 0;
+          let activeStudents = 0;
+
+          if (studentIds.length > 0) {
+            // Get gem collection data for all students in this class
+            const { data: gemData } = await supabase
+              .from('vocabulary_gem_collection')
+              .select('student_id, mastery_level, last_encountered_at, vocabulary_item_id')
+              .in('student_id', studentIds);
+
+            console.log(`Class ${cls.name} gem data:`, gemData?.length || 0, 'gems');
+
+            if (gemData && gemData.length > 0) {
+              // Calculate average mastery level as percentage (mastery_level is 0-3, convert to 0-100%)
+              const totalMastery = gemData.reduce((sum, gem) => sum + (gem.mastery_level || 0), 0);
+              averageMastery = (totalMastery / gemData.length) * (100 / 3); // Convert 0-3 scale to 0-100%
+
+              // Count total gems collected by all students
+              totalGems = gemData.length;
+
+              console.log(`Class ${cls.name} calculated stats:`, {
+                totalGems,
+                averageMastery: Math.round(averageMastery),
+                activeStudents
+              });
+
+              // Count active students (practiced in last 7 days)
+              const oneWeekAgo = new Date();
+              oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+              const activeStudentIds = new Set(
+                gemData
+                  .filter(gem => gem.last_encountered_at && new Date(gem.last_encountered_at) > oneWeekAgo)
+                  .map(gem => gem.student_id)
+              );
+              activeStudents = activeStudentIds.size;
+            }
+          }
 
           return {
             id: cls.id,
             name: cls.name,
-            studentCount: cls.class_enrollments?.length || 0,
-            averageMastery: analytics?.class_average_mastery || 0,
-            totalGems: analytics?.total_vocabulary_items || 0,
-            activeStudents: analytics?.active_students || 0,
-            weakTopics: analytics?.weak_topics || [],
-            strongTopics: analytics?.strong_topics || []
+            studentCount,
+            averageMastery: Math.round(averageMastery * 100) / 100,
+            totalGems,
+            activeStudents,
+            weakTopics: [], // Will be calculated separately if needed
+            strongTopics: [] // Will be calculated separately if needed
           };
         })
       );
@@ -163,35 +206,162 @@ export default function TeacherVocabularyMiningPage() {
   };
 
   const loadClassStudentProgress = async (classId: string) => {
-    // Get students in the class
-    const { data: enrollments, error: enrollmentsError } = await supabase
-      .from('class_enrollments')
-      .select(`
-        student_id,
-        user_profiles!inner(display_name, email)
-      `)
-      .eq('class_id', classId)
-      .eq('status', 'active');
+    if (!supabase) return;
 
-    if (enrollmentsError) throw enrollmentsError;
+    try {
+      console.log('=== Loading class student progress ===');
+      console.log('Class ID:', classId);
+      setLoading(true);
 
-    // Get progress for each student
+      // Get students in the class
+      const { data: enrollments, error: enrollmentsError } = await supabase
+        .from('class_enrollments')
+        .select('student_id')
+        .eq('class_id', classId);
+
+      if (enrollmentsError) throw enrollmentsError;
+      console.log('Enrollments found:', enrollments?.length || 0);
+
+    // Get user profiles for these students
+    const studentIds = enrollments?.map(e => e.student_id) || [];
+    const { data: userProfiles } = await supabase
+      .from('user_profiles')
+      .select('user_id, display_name, email')
+      .in('user_id', studentIds);
+
+    // Create a map for quick lookup
+    const profileMap = new Map();
+    userProfiles?.forEach(profile => {
+      profileMap.set(profile.user_id, profile);
+    });
+
+    // Get progress for each student using real database queries
     const studentProgressData: StudentProgress[] = await Promise.all(
       (enrollments || []).map(async (enrollment) => {
-        const summary = await miningService.getStudentProgressSummary(enrollment.student_id);
-        
+        const studentId = enrollment.student_id;
+
+        // Get gem collection data for this student
+        const { data: gemData, error: gemError } = await supabase
+          .from('vocabulary_gem_collection')
+          .select('mastery_level, correct_encounters, total_encounters, current_streak, last_encountered_at')
+          .eq('student_id', studentId);
+
+        console.log(`Student ${studentId} gem query result:`, {
+          gemCount: gemData?.length || 0,
+          error: gemError,
+          sampleData: gemData?.slice(0, 2)
+        });
+
+        // Calculate statistics
+        const totalGems = gemData?.length || 0;
+        const masteredGems = gemData?.filter(gem => gem.mastery_level >= 3).length || 0; // Epic/Legendary
+        const streaks = gemData?.map(gem => gem.current_streak || 0) || [];
+        const currentStreak = streaks.length > 0 ? Math.max(...streaks) : 0;
+
+        // Calculate average accuracy
+        const totalCorrect = gemData?.reduce((sum, gem) => sum + (gem.correct_encounters || 0), 0) || 0;
+        const totalAttempts = gemData?.reduce((sum, gem) => sum + (gem.total_encounters || 0), 0) || 0;
+        const averageAccuracy = totalAttempts > 0 ? Math.round((totalCorrect / totalAttempts) * 100) : 0;
+
+        // Find last active date
+        const lastActiveDates = gemData?.map(gem => gem.last_encountered_at).filter(Boolean) || [];
+        const lastActive = lastActiveDates.length > 0 ? new Date(Math.max(...lastActiveDates.map(d => new Date(d).getTime()))) : null;
+
+        const profile = profileMap.get(studentId);
         return {
-          id: enrollment.student_id,
-          name: enrollment.user_profiles.display_name || 'Unknown',
-          email: enrollment.user_profiles.email || '',
-          totalGems: summary.totalGems,
-          masteredGems: summary.masteredGems,
-          currentStreak: summary.currentStreak,
-          averageAccuracy: summary.averageAccuracy,
-          lastActive: null, // Would need to track this separately
-          weakTopics: summary.topicPerformance
-            .filter(topic => topic.masteryPercentage < 70)
-            .map(topic => topic.topicName)
+          id: studentId,
+          name: profile?.display_name || 'Unknown',
+          email: profile?.email || '',
+          totalGems,
+          masteredGems,
+          currentStreak,
+          averageAccuracy,
+          lastActive,
+          weakTopics: [] // Could be calculated from vocabulary categories if needed
+        };
+      })
+    );
+
+      setStudentProgress(studentProgressData);
+      console.log('Student progress loaded:', studentProgressData.length);
+    } catch (error) {
+      console.error('Error loading class student progress:', error);
+      setStudentProgress([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadAllStudentProgress = async () => {
+    // Get all students across all teacher's classes
+    const allClassIds = classes.map(cls => cls.id);
+
+    if (allClassIds.length === 0) {
+      setStudentProgress([]);
+      return;
+    }
+
+    const { data: enrollments } = await supabase
+      .from('class_enrollments')
+      .select('student_id')
+      .in('class_id', allClassIds);
+
+    // Remove duplicates (students in multiple classes)
+    const uniqueStudents = enrollments?.reduce((acc, enrollment) => {
+      if (!acc.find(s => s.student_id === enrollment.student_id)) {
+        acc.push(enrollment);
+      }
+      return acc;
+    }, [] as typeof enrollments) || [];
+
+    // Get user profiles for these students
+    const allStudentIds = uniqueStudents.map(s => s.student_id);
+    const { data: allUserProfiles } = await supabase
+      .from('user_profiles')
+      .select('user_id, display_name, email')
+      .in('user_id', allStudentIds);
+
+    // Create a map for quick lookup
+    const allProfileMap = new Map();
+    allUserProfiles?.forEach(profile => {
+      allProfileMap.set(profile.user_id, profile);
+    });
+
+    // Get progress for each unique student
+    const studentProgressData: StudentProgress[] = await Promise.all(
+      uniqueStudents.map(async (enrollment) => {
+        const studentId = enrollment.student_id;
+
+        // Get gem collection data for this student
+        const { data: gemData } = await supabase
+          .from('vocabulary_gem_collection')
+          .select('mastery_level, correct_encounters, total_encounters, current_streak, last_encountered_at')
+          .eq('student_id', studentId);
+
+        // Calculate statistics
+        const totalGems = gemData?.length || 0;
+        const masteredGems = gemData?.filter(gem => gem.mastery_level >= 3).length || 0;
+        const streaks = gemData?.map(gem => gem.current_streak || 0) || [];
+        const currentStreak = streaks.length > 0 ? Math.max(...streaks) : 0;
+
+        const totalCorrect = gemData?.reduce((sum, gem) => sum + (gem.correct_encounters || 0), 0) || 0;
+        const totalAttempts = gemData?.reduce((sum, gem) => sum + (gem.total_encounters || 0), 0) || 0;
+        const averageAccuracy = totalAttempts > 0 ? Math.round((totalCorrect / totalAttempts) * 100) : 0;
+
+        const lastActiveDates = gemData?.map(gem => gem.last_encountered_at).filter(Boolean) || [];
+        const lastActive = lastActiveDates.length > 0 ? new Date(Math.max(...lastActiveDates.map(d => new Date(d).getTime()))) : null;
+
+        const profile = allProfileMap.get(studentId);
+        return {
+          id: studentId,
+          name: profile?.display_name || 'Unknown',
+          email: profile?.email || '',
+          totalGems,
+          masteredGems,
+          currentStreak,
+          averageAccuracy,
+          lastActive,
+          weakTopics: []
         };
       })
     );
@@ -199,9 +369,17 @@ export default function TeacherVocabularyMiningPage() {
     setStudentProgress(studentProgressData);
   };
 
-  const loadAllStudentProgress = async () => {
-    // For "all classes" view, we'll show a summary
-    setStudentProgress([]);
+  const handleClassClick = (classId: string) => {
+    // Set the selected class and load its data
+    setSelectedClass(classId);
+
+    // Scroll to student progress section if it exists
+    setTimeout(() => {
+      const studentSection = document.getElementById('student-progress-section');
+      if (studentSection) {
+        studentSection.scrollIntoView({ behavior: 'smooth' });
+      }
+    }, 100);
   };
 
   if (loading) {
@@ -374,13 +552,27 @@ export default function TeacherVocabularyMiningPage() {
           <div className="lg:col-span-2 space-y-6">
             {/* Classes Overview */}
             <div className="bg-white rounded-lg shadow-sm border p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Classes Overview</h3>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">Classes Overview</h3>
+                <p className="text-sm text-gray-500">Click a class to view student details</p>
+              </div>
               <div className="space-y-4">
                 {classes.map((cls) => (
-                  <div key={cls.id} className="border rounded-lg p-4 hover:bg-gray-50">
+                  <div
+                    key={cls.id}
+                    className={`border rounded-lg p-4 cursor-pointer transition-all duration-200 hover:shadow-md ${
+                      selectedClass === cls.id
+                        ? 'bg-indigo-50 border-indigo-500 shadow-md'
+                        : 'hover:bg-gray-50 hover:border-indigo-300'
+                    }`}
+                    onClick={() => handleClassClick(cls.id)}
+                  >
                     <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-medium text-gray-900">{cls.name}</h4>
-                      <span className="text-sm text-gray-500">{cls.studentCount} students</span>
+                      <h4 className="font-medium text-gray-900 hover:text-indigo-600">{cls.name}</h4>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm text-gray-500">{cls.studentCount} students</span>
+                        <Eye className="w-4 h-4 text-gray-400" />
+                      </div>
                     </div>
                     
                     <div className="grid grid-cols-3 gap-4 text-sm">
@@ -412,7 +604,7 @@ export default function TeacherVocabularyMiningPage() {
 
             {/* Student Progress */}
             {selectedClass !== 'all' && studentProgress.length > 0 && (
-              <div className="bg-white rounded-lg shadow-sm border p-6">
+              <div id="student-progress-section" className="bg-white rounded-lg shadow-sm border p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Student Progress</h3>
                 <div className="overflow-x-auto">
                   <table className="w-full">

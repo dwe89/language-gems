@@ -615,19 +615,57 @@ export default function VocabMasterGame({
   };
 
   const updateUserProgress = async (word: VocabularyWord, isCorrect: boolean, responseTime: number = 0) => {
-    if (!user) return;
+    if (!user || !supabase) return;
 
     try {
-      // For now, skip spaced repetition service since table structures don't match
-      // TODO: Implement proper vocabulary progress tracking
       console.log('Word practice recorded:', {
         word: word.spanish,
         correct: isCorrect,
         responseTime
       });
-      
-      // Simple progress tracking without spaced repetition for now
-      // This could be enhanced to work with a compatible table structure
+
+      // Record in spaced repetition service
+      const quality = isCorrect ? REVIEW_QUALITY.PERFECT : REVIEW_QUALITY.INCORRECT;
+      await spacedRepetitionService.updateProgress(user.id, Number(word.id), quality, responseTime);
+
+      // Update user vocabulary progress
+      const { data: existingProgress } = await supabase
+        .from('user_vocabulary_progress')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('vocabulary_id', word.id)
+        .single();
+
+      if (existingProgress) {
+        // Update existing progress
+        await supabase
+          .from('user_vocabulary_progress')
+          .update({
+            times_seen: existingProgress.times_seen + 1,
+            times_correct: isCorrect ? existingProgress.times_correct + 1 : existingProgress.times_correct,
+            last_seen: new Date().toISOString(),
+            accuracy_rate: (isCorrect ? existingProgress.times_correct + 1 : existingProgress.times_correct) / (existingProgress.times_seen + 1),
+            is_learned: ((isCorrect ? existingProgress.times_correct + 1 : existingProgress.times_correct) / (existingProgress.times_seen + 1)) >= 0.8,
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', user.id)
+          .eq('vocabulary_id', word.id);
+      } else {
+        // Create new progress record
+        await supabase
+          .from('user_vocabulary_progress')
+          .insert({
+            user_id: user.id,
+            vocabulary_id: word.id,
+            times_seen: 1,
+            times_correct: isCorrect ? 1 : 0,
+            last_seen: new Date().toISOString(),
+            accuracy_rate: isCorrect ? 1.0 : 0.0,
+            is_learned: isCorrect,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+      }
     } catch (error) {
       console.error('Failed to update user progress:', error);
     }

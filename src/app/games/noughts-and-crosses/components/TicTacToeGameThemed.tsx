@@ -27,7 +27,14 @@ interface TicTacToeGameProps {
     computerMark: string;
   };
   onBackToMenu: () => void;
-  onGameEnd: (result: { outcome: 'win' | 'loss' | 'tie'; wordsLearned: number; perfectGame?: boolean }) => void;
+  onGameEnd: (result: {
+    outcome: 'win' | 'loss' | 'tie';
+    wordsLearned: number;
+    perfectGame?: boolean;
+    correctAnswers?: number;
+    totalQuestions?: number;
+    timeSpent?: number;
+  }) => void;
   vocabularyWords?: Array<{
     word: string;
     translation: string;
@@ -35,6 +42,8 @@ interface TicTacToeGameProps {
     audio_url?: string;
     playAudio?: () => void;
   }>;
+  gameSessionId?: string | null;
+  isAssignmentMode?: boolean;
 }
 
 // Simple vocabulary for the game
@@ -518,7 +527,14 @@ const generateWrongOptions = (correctTranslation: string, vocabulary: any[]) => 
   return shuffled.slice(0, 3);
 };
 
-export default function TicTacToeGame({ settings, onBackToMenu, onGameEnd, vocabularyWords }: TicTacToeGameProps) {
+export default function TicTacToeGame({
+  settings,
+  onBackToMenu,
+  onGameEnd,
+  vocabularyWords,
+  gameSessionId,
+  isAssignmentMode
+}: TicTacToeGameProps) {
   const { themeClasses } = useTheme();
   
   // Audio state
@@ -535,7 +551,16 @@ export default function TicTacToeGame({ settings, onBackToMenu, onGameEnd, vocab
   const [currentQuestion, setCurrentQuestion] = useState<any>(null);
   const [wordsLearned, setWordsLearned] = useState(0);
   const [correctAnswers, setCorrectAnswers] = useState(0);
+  const [totalQuestions, setTotalQuestions] = useState(0);
+  const [gameStartTime, setGameStartTime] = useState<Date | null>(null);
   const [storyDismissed, setStoryDismissed] = useState(false);
+
+  // Start timer when story is dismissed
+  useEffect(() => {
+    if (storyDismissed && !gameStartTime) {
+      setGameStartTime(new Date());
+    }
+  }, [storyDismissed, gameStartTime]);
 
   // Audio effects - Start background music when story is dismissed
   useEffect(() => {
@@ -559,6 +584,8 @@ export default function TicTacToeGame({ settings, onBackToMenu, onGameEnd, vocab
     setCurrentQuestion(null);
     setWordsLearned(0);
     setCorrectAnswers(0);
+    setTotalQuestions(0);
+    setGameStartTime(new Date()); // Reset timer
     // Keep storyDismissed as true to prevent modal from showing again
     // setStoryDismissed(false);
   };
@@ -639,6 +666,7 @@ export default function TicTacToeGame({ settings, onBackToMenu, onGameEnd, vocab
     
     setCurrentQuestion(question);
     setPendingMove(index);
+    setTotalQuestions(prev => prev + 1);
     setShowVocabQuestion(true);
   };
 
@@ -679,6 +707,7 @@ export default function TicTacToeGame({ settings, onBackToMenu, onGameEnd, vocab
         // Give player another chance on beginner
         const newQuestion = generateVocabularyQuestion();
         setCurrentQuestion(newQuestion);
+        setTotalQuestions(prev => prev + 1);
         setShowVocabQuestion(true);
         return;
       } else {
@@ -847,13 +876,18 @@ export default function TicTacToeGame({ settings, onBackToMenu, onGameEnd, vocab
       }
     }
     
-    // Call parent callback with results
+    // Call parent callback with enhanced results
     setTimeout(() => {
       const perfectGame = correctAnswers === wordsLearned && wordsLearned >= 3;
+      const timeSpent = gameStartTime ? Math.floor((new Date().getTime() - gameStartTime.getTime()) / 1000) : 0;
+
       onGameEnd({
         outcome: gameWinner === 'X' ? 'win' : gameWinner === 'tie' ? 'tie' : 'loss',
         wordsLearned,
-        perfectGame
+        perfectGame,
+        correctAnswers,
+        totalQuestions,
+        timeSpent
       });
     }, 2000);
   };

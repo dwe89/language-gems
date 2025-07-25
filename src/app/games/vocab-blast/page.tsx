@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Home, Settings, Play } from 'lucide-react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useAuth } from '../../../components/auth/AuthProvider';
 import VocabBlastGameWrapper from './components/VocabBlastGameWrapper';
 import VocabBlastSettings from './components/VocabBlastSettings';
 import { ThemeProvider } from '../noughts-and-crosses/components/ThemeProvider';
@@ -23,35 +24,67 @@ export interface VocabBlastGameSettings {
 }
 
 export default function VocabBlastPage() {
-  const [gameState, setGameState] = useState<GameState>('menu');
+  const { user, isLoading } = useAuth();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Get URL parameters for assignment mode
+  const assignmentId = searchParams?.get('assignment');
+  const language = searchParams?.get('language') || 'spanish';
+  const difficulty = searchParams?.get('difficulty') || 'intermediate';
+  const category = searchParams?.get('category') || '';
+  const theme = searchParams?.get('theme') || 'default';
+
+  // Initialize all hooks first (before any conditional returns)
+  const [gameState, setGameState] = useState<GameState>(assignmentId ? 'playing' : 'menu');
   const [gameSettings, setGameSettings] = useState<VocabBlastGameSettings>({
-    difficulty: 'intermediate',
-    category: '',
-    language: 'spanish',
-    theme: 'default',
+    difficulty: assignmentId ? difficulty : 'intermediate',
+    category: assignmentId ? category : '',
+    language: assignmentId ? language : 'spanish',
+    theme: assignmentId ? theme : 'default',
     timeLimit: 60,
     mode: 'categories'
   });
 
   const [soundEnabled] = useState(true);
   const { playSFX } = useAudio(soundEnabled);
-  const searchParams = useSearchParams();
 
-  // Handle URL parameters
+  // Handle URL parameters (skip if in assignment mode)
   useEffect(() => {
-    const theme = searchParams.get('theme');
-    const language = searchParams.get('language');
-    const category = searchParams.get('category');
-    
-    if (theme || language || category) {
-      setGameSettings(prev => ({
-        ...prev,
-        ...(theme && { theme }),
-        ...(language && { language }),
-        ...(category && { category })
-      }));
+    if (!assignmentId && searchParams) {
+      const themeParam = searchParams.get('theme');
+      const languageParam = searchParams.get('language');
+      const categoryParam = searchParams.get('category');
+
+      if (themeParam || languageParam || categoryParam) {
+        setGameSettings(prev => ({
+          ...prev,
+          ...(themeParam && { theme: themeParam }),
+          ...(languageParam && { language: languageParam }),
+          ...(categoryParam && { category: categoryParam })
+        }));
+      }
     }
-  }, [searchParams]);
+  }, [searchParams, assignmentId]);
+
+  // Conditional logic after all hooks are initialized
+  // Redirect to login if not authenticated
+  if (!isLoading && !user) {
+    router.push('/auth/login');
+    return null;
+  }
+
+  // Show loading while authenticating
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-600 via-pink-600 to-red-700 flex items-center justify-center">
+        <div className="text-center text-white">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-white mx-auto mb-4"></div>
+          <p className="text-xl">Loading Vocab Blast...</p>
+        </div>
+      </div>
+    );
+  }
 
   const startGame = (settings: VocabBlastGameSettings) => {
     playSFX('button-click');
@@ -184,6 +217,9 @@ export default function VocabBlastPage() {
               settings={gameSettings}
               onBackToMenu={backToMenu}
               onGameEnd={handleGameEnd}
+              assignmentId={assignmentId}
+              userId={user?.id}
+              isAssignmentMode={!!assignmentId}
             />
           )}
 

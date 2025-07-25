@@ -167,23 +167,23 @@ export default function ProgressPage() {
 
         const classIds = enrollments?.map(e => e.class_id) || [];
 
-        // Get assignment game sessions (this tracks progress for vocabulary assignments)
-        const { data: gameSessionsData, error: gameSessionsError } = await supabase
-          .from('assignment_game_sessions')
+        // Get assignment progress (this tracks progress for assignments)
+        const { data: assignmentProgressData, error: progressError } = await supabase
+          .from('enhanced_assignment_progress')
           .select(`
-            *,
-            assignment:assignments(
-              id,
-              title,
-              type,
-              due_date,
-              class_id
-            )
+            assignment_id,
+            status,
+            best_score,
+            best_accuracy,
+            completed_at,
+            attempts_count,
+            total_time_spent
           `)
           .eq('student_id', user.id);
 
-        if (gameSessionsError) {
-          throw gameSessionsError;
+        if (progressError) {
+          console.error('Error fetching assignment progress:', progressError);
+          // Continue without progress data rather than failing completely
         }
 
         // Also get all assignments for the student's classes to show unstarted assignments
@@ -196,41 +196,32 @@ export default function ProgressPage() {
           throw assignmentsError;
         }
 
-        // Transform game sessions data to match expected assignment progress format
-        const completedProgress = gameSessionsData?.map(session => ({
-          id: session.id,
-          assignment_id: session.assignment_id,
-          student_id: session.student_id,
-          status: (session.completed_at ? 'completed' : 'in_progress') as 'not_started' | 'in_progress' | 'completed',
-          score: session.score || 0,
-          accuracy: parseFloat(session.accuracy) || 0,
-          attempts: 1, // Game sessions represent single attempts
-          time_spent: session.time_spent_seconds || 0,
-          completed_at: session.completed_at,
-          updated_at: session.updated_at,
-          assignment: session.assignment
-        })) || [];
+        // Create a map of assignment progress for quick lookup
+        const progressMap = new Map();
+        assignmentProgressData?.forEach(progress => {
+          progressMap.set(progress.assignment_id, progress);
+        });
 
-        // Create progress entries for assignments that haven't been started
-        const startedAssignmentIds = new Set(completedProgress.map(p => p.assignment_id));
-        const notStartedProgress = allAssignments?.filter(assignment => 
-          !startedAssignmentIds.has(assignment.id)
-        ).map(assignment => ({
-          id: `not-started-${assignment.id}`,
-          assignment_id: assignment.id,
-          student_id: user.id,
-          status: 'not_started' as 'not_started' | 'in_progress' | 'completed',
-          score: 0,
-          accuracy: 0,
-          attempts: 0,
-          time_spent: 0,
-          completed_at: null,
-          updated_at: new Date().toISOString(),
-          assignment: assignment
-        })) || [];
+        // Transform assignment progress data to match expected format
+        const completedProgress = allAssignments?.map(assignment => {
+          const progress = progressMap.get(assignment.id);
+          return {
+            id: progress ? `progress-${assignment.id}` : `not-started-${assignment.id}`,
+            assignment_id: assignment.id,
+            student_id: user.id,
+            status: progress?.status || 'not_started' as 'not_started' | 'in_progress' | 'completed',
+            score: progress?.best_score || 0,
+            accuracy: progress?.best_accuracy || 0,
+            attempts: progress?.attempts_count || 0,
+            time_spent: progress?.total_time_spent || 0,
+            completed_at: progress?.completed_at,
+            updated_at: new Date().toISOString(),
+            assignment: assignment
+          };
+        }) || [];
 
-        // Combine all progress data
-        const filteredProgress = [...completedProgress, ...notStartedProgress];
+        // All progress data is now in completedProgress (including not-started assignments)
+        const filteredProgress = completedProgress;
 
         setAssignmentProgress(filteredProgress);
       } catch (err) {

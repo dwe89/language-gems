@@ -3,6 +3,8 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BookOpen } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useAuth } from '../../../components/auth/AuthProvider';
 import { useGameVocabulary, transformVocabularyForGame } from '../../../hooks/useGameVocabulary';
 import { VOCABULARY_CATEGORIES } from '../../../components/games/ModernCategorySelector';
 import WordScrambleGameEnhanced from './components/WordScrambleGameEnhanced';
@@ -86,12 +88,40 @@ const GAME_MODES = [
 ];
 
 export default function WordScramblePage() {
-  const [gameState, setGameState] = useState<'menu' | 'settings' | 'playing' | 'results'>('menu');
+  const { user, isLoading } = useAuth();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Get URL parameters for assignment mode
+  const assignmentId = searchParams?.get('assignment');
+  const language = searchParams?.get('language') || 'spanish';
+  const difficulty = searchParams?.get('difficulty') || 'medium';
+  const category = searchParams?.get('category') || 'basics_core_language';
+
+  // Redirect to login if not authenticated
+  if (!isLoading && !user) {
+    router.push('/auth/login');
+    return null;
+  }
+
+  // Show loading while authenticating
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-600 via-blue-600 to-indigo-700 flex items-center justify-center">
+        <div className="text-center text-white">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-white mx-auto mb-4"></div>
+          <p className="text-xl">Loading Word Scramble...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const [gameState, setGameState] = useState<'menu' | 'settings' | 'playing' | 'results'>(assignmentId ? 'playing' : 'menu');
   const [gameSettings, setGameSettings] = useState<GameSettings>({
-    difficulty: 'medium',
-    category: 'basics_core_language',
+    difficulty: assignmentId ? (difficulty as Difficulty) : 'medium',
+    category: assignmentId ? category : 'basics_core_language',
     subcategory: null,
-    language: 'spanish',
+    language: assignmentId ? language : 'spanish',
     gameMode: 'classic'
   });
   const [gameResult, setGameResult] = useState<GameResult | null>(null);
@@ -175,6 +205,9 @@ export default function WordScramblePage() {
         onBackToMenu={handleBackToMenu}
         onGameEnd={handleGameEnd}
         categoryVocabulary={categoryVocabulary}
+        assignmentId={assignmentId}
+        userId={user?.id}
+        isAssignmentMode={!!assignmentId}
       />
     );
   }

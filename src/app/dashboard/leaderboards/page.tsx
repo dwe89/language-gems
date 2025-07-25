@@ -8,11 +8,14 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../../components/auth/AuthProvider';
 import { supabaseBrowser } from '../../../components/auth/AuthProvider';
 import Link from 'next/link';
-import { 
+import {
   Trophy, Medal, Award, Star, Target, TrendingUp, Users, ChevronRight, Filter,
-  Crown, Zap, Calendar, User, BarChart3, ChevronDown, ChevronUp, Search
+  Crown, Zap, Calendar, User, BarChart3, ChevronDown, ChevronUp, Search, Gamepad2
 } from 'lucide-react';
 import type { Database } from '../../../lib/database.types';
+import CrossGameLeaderboard from '../../../components/leaderboards/CrossGameLeaderboard';
+import { CompetitionService } from '../../../services/competitionService';
+import DashboardHeader from '../../../components/dashboard/DashboardHeader';
 
 type Student = {
   id: string;
@@ -54,7 +57,7 @@ export default function LeaderboardsPage() {
   const [students, setStudents] = useState<Student[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
   const [selectedClass, setSelectedClass] = useState('all');
-  const [view, setView] = useState<'students' | 'classes'>('students');
+  const [view, setView] = useState<'students' | 'classes' | 'cross-game'>('cross-game');
   const [searchQuery, setSearchQuery] = useState('');
 
   // Fetch real data from database
@@ -67,7 +70,7 @@ export default function LeaderboardsPage() {
         const { data: classesData, error: classesError } = await supabaseBrowser
           .from('classes')
           .select('*')
-          .eq('created_by', user.id);
+          .eq('teacher_id', user.id);
 
         if (classesError) {
           console.error('Error fetching classes:', classesError);
@@ -129,7 +132,7 @@ export default function LeaderboardsPage() {
           return {
             id: cls.id,
             name: cls.name,
-            level: cls.level || 'Beginner',
+            level: '', // Remove level display
             totalPoints: 0, // No points tracking yet
             studentCount: classStudents.length,
             topStudent: classStudents.length > 0 ? classStudents[0].name : 'No students',
@@ -171,18 +174,11 @@ export default function LeaderboardsPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50/30 to-purple-50/30 p-6">
       <div className="max-w-7xl mx-auto">
-        {/* Page Header */}
-        <header className="mb-8">
-          <div className="flex items-center space-x-3 mb-4">
-            <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center">
-              <Trophy className="h-5 w-5 text-white" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">Leaderboards & Rankings</h1>
-              <p className="text-slate-600">Track competition and motivate your students with achievements</p>
-            </div>
-          </div>
-        </header>
+        <DashboardHeader
+          title="Leaderboards & Rankings"
+          description="Track competition and motivate your students with achievements"
+          icon={<Trophy className="h-5 w-5 text-white" />}
+        />
 
         {/* Controls Panel */}
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-200/60 shadow-lg p-6 mb-8">
@@ -219,6 +215,17 @@ export default function LeaderboardsPage() {
             <div className="flex items-center gap-3">
               <div className="bg-slate-100/80 rounded-xl p-1 flex">
                 <button
+                  onClick={() => setView('cross-game')}
+                  className={`px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${
+                    view === 'cross-game'
+                      ? 'bg-white text-indigo-600 shadow-sm'
+                      : 'text-slate-600 hover:text-slate-800'
+                  }`}
+                >
+                  <Gamepad2 className="h-4 w-4 mr-2 inline" />
+                  Cross-Game
+                </button>
+                <button
                   onClick={() => setView('students')}
                   className={`px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${
                     view === 'students'
@@ -246,7 +253,13 @@ export default function LeaderboardsPage() {
         </div>
 
         {/* Content */}
-        {view === 'students' ? (
+        {view === 'cross-game' ? (
+          <CrossGameLeaderboard
+            classId={selectedClass !== 'all' ? selectedClass : undefined}
+            limit={50}
+            showFilters={true}
+          />
+        ) : view === 'students' ? (
           <StudentLeaderboard students={filteredStudents} />
         ) : (
           <ClassLeaderboard classes={classes} />
@@ -466,7 +479,7 @@ function ClassLeaderboard({ classes }: { classes: Class[] }) {
                   {index === 0 ? <Crown className="h-5 w-5" /> : index + 1}
                 </div>
               </div>
-              <p className="text-white/80 text-sm">Level: {cls.level}</p>
+
               
               {isTopThree && (
                 <div className="absolute top-4 right-4 opacity-20">

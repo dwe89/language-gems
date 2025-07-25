@@ -4,7 +4,7 @@
 export const dynamic = 'force-dynamic';
 export const fetchCache = 'force-no-store';
 
-import React, { useState, useEffect, use } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../../../components/auth/AuthProvider';
 import { supabaseBrowser } from '../../../../../components/auth/AuthProvider';
 import Link from 'next/link';
@@ -35,9 +35,9 @@ type ClassData = {
   teacher_id: string;
 };
 
-export default function EditClassPage({ params }: { params: Promise<{ classId: string }> }) {
-  // Properly use React.use() to access params
-  const { classId } = use(params);
+export default function EditClassPage({ params }: { params: { classId: string } }) {
+  // Access params directly
+  const { classId } = params;
   
   const { user } = useAuth();
   const router = useRouter();

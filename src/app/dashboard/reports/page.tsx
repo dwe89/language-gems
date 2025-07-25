@@ -80,7 +80,7 @@ export default function ReportsPage() {
       try {
         setLoading(true);
         
-        // Fetch assignments - use created_by instead of teacher_id
+        // Fetch assignments - use created_by for assignments table
         const { data: assignmentsData, error: assignmentsError } = await supabaseBrowser
           .from('assignments')
           .select('id')
@@ -90,15 +90,15 @@ export default function ReportsPage() {
           console.error('Error fetching assignments:', assignmentsError);
         }
 
-        // Fetch students and classes - use created_by instead of teacher_id
+        // Fetch students and classes - use teacher_id for classes table
         const { data: studentsData, error: studentsError } = await supabaseBrowser
           .from('class_enrollments')
           .select(`
             student_id,
-            classes!inner(id, name, created_by),
+            classes!inner(id, name, teacher_id),
             user_profiles!inner(display_name)
           `)
-          .eq('classes.created_by', user.id);
+          .eq('classes.teacher_id', user.id);
 
         if (studentsError) {
           console.error('Error fetching students:', studentsError);

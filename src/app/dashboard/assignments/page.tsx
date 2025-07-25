@@ -7,19 +7,20 @@ export const fetchCache = 'force-no-store';
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../../components/auth/AuthProvider';
 import Link from 'next/link';
-import { 
+import {
   Search, FileText, Edit, Trash2, Plus, Filter, Calendar, Clock,
   BookOpen, CheckCircle, XCircle, Users, BookmarkIcon, BarChart3
 } from 'lucide-react';
 import { supabaseBrowser } from '../../../components/auth/AuthProvider';
 import { AssignmentCard } from '../../../components/classes/AssignmentCard';
+import DashboardHeader from '../../../components/dashboard/DashboardHeader';
 
 export default function AssignmentsPage() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [assignments, setAssignments] = useState<any[]>([]);
   const [classes, setClasses] = useState<any[]>([]);
-  const [filter, setFilter] = useState('all');
+  const [filter, setFilter] = useState('active');
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -139,18 +140,11 @@ export default function AssignmentsPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50/30 to-purple-50/30 p-6">
       <div className="max-w-7xl mx-auto">
-        {/* Page Header */}
-        <header className="mb-8">
-          <div className="flex items-center space-x-3 mb-4">
-            <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center">
-              <FileText className="h-5 w-5 text-white" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">Assignments</h1>
-              <p className="text-slate-600">Create and manage assignments for your classes</p>
-            </div>
-          </div>
-        </header>
+        <DashboardHeader
+          title="Assignments"
+          description="Create and manage assignments for your classes"
+          icon={<FileText className="h-5 w-5 text-white" />}
+        />
 
         {/* Controls Panel */}
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-200/60 shadow-lg p-6 mb-8">

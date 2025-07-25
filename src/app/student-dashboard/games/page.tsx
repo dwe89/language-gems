@@ -122,15 +122,15 @@ export default function GamesPage() {
   const placeholderGames: Game[] = [
     {
       id: '1',
-      title: 'VocabMaster',
-      description: 'Master vocabulary with intelligent spaced repetition, listening exercises, and context-based learning.',
-      thumbnail: '/images/games/vocab-master.png',
+      title: 'Vocabulary Mining',
+      description: 'Mine rare vocabulary gems through intelligent spaced repetition, listening exercises, and adaptive learning.',
+      thumbnail: '/images/games/vocabulary-mining.png',
       playTime: '5-15 min',
-      gemColor: 'text-blue-500',
+      gemColor: 'text-yellow-500',
       difficulty: 2,
       players: 'Single Player',
       isFeatured: true,
-      path: '/games/vocab-master'
+      path: '/games/vocabulary-mining'
     },
     {
       id: '2',

@@ -85,20 +85,35 @@ export default function TeacherControlsPage() {
       setClasses(classesData || []);
 
       // Load students
-      const { data: studentsData, error: studentsError } = await supabase
-        .from('class_memberships')
-        .select(`
-          student_id,
-          users!inner(id, email, full_name)
-        `)
+      const { data: enrollmentsData, error: studentsError } = await supabase
+        .from('class_enrollments')
+        .select('student_id, class_id')
         .in('class_id', (classesData || []).map(c => c.id));
 
       if (studentsError) throw studentsError;
       
-      const processedStudents = (studentsData || []).map(membership => ({
-        id: membership.users.id,
-        name: membership.users.full_name || membership.users.email,
-        email: membership.users.email
+      // Get user profiles for these students
+      const studentIds = enrollmentsData?.map(e => e.student_id) || [];
+      let userProfiles: any[] = [];
+      
+      if (studentIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('user_profiles')
+          .select('user_id, display_name, email')
+          .in('user_id', studentIds);
+        userProfiles = profiles || [];
+      }
+
+      // Create a map for quick lookup
+      const profileMap = new Map();
+      userProfiles.forEach(profile => {
+        profileMap.set(profile.user_id, profile);
+      });
+      
+      const processedStudents = (enrollmentsData || []).map(enrollment => ({
+        id: enrollment.student_id,
+        name: profileMap.get(enrollment.student_id)?.display_name || 'Unknown',
+        email: profileMap.get(enrollment.student_id)?.email || ''
       }));
       
       setStudents(processedStudents);

@@ -13,7 +13,27 @@ interface VocabBlastGameProps {
   settings: VocabBlastGameSettings;
   vocabulary: GameVocabularyWord[];
   onBackToMenu: () => void;
-  onGameEnd: (result: { outcome: 'win' | 'loss' | 'timeout'; score: number; wordsLearned: number }) => void;
+  onGameEnd: (result: {
+    outcome: 'win' | 'loss' | 'timeout';
+    score: number;
+    wordsLearned: number;
+    correctAnswers: number;
+    incorrectAnswers: number;
+    totalAttempts: number;
+    accuracy: number;
+    timeSpent: number;
+    detailedStats: {
+      wordAttempts: Array<{
+        word: string;
+        translation: string;
+        isCorrect: boolean;
+        responseTime: number;
+        timestamp: number;
+      }>;
+    };
+  }) => void;
+  gameSessionId?: string | null;
+  isAssignmentMode?: boolean;
 }
 
 export interface VocabItem {
@@ -36,13 +56,26 @@ export interface GameStats {
   timeLeft: number;
   lives: number;
   totalAttempts: number;
+  correctAnswers: number;
+  incorrectAnswers: number;
+  startTime: number;
 }
 
-export default function VocabBlastGame({ 
-  settings, 
-  vocabulary, 
-  onBackToMenu, 
-  onGameEnd 
+interface WordAttempt {
+  word: string;
+  translation: string;
+  isCorrect: boolean;
+  responseTime: number;
+  timestamp: number;
+}
+
+export default function VocabBlastGame({
+  settings,
+  vocabulary,
+  onBackToMenu,
+  onGameEnd,
+  gameSessionId,
+  isAssignmentMode
 }: VocabBlastGameProps) {
   const { themeClasses } = useTheme();
   const [soundEnabled, setSoundEnabled] = useState(true);
@@ -52,6 +85,7 @@ export default function VocabBlastGame({
   const [gameActive, setGameActive] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [currentWord, setCurrentWord] = useState<GameVocabularyWord | null>(null);
+  const [currentWordStartTime, setCurrentWordStartTime] = useState<number>(0);
   const [gameStats, setGameStats] = useState<GameStats>({
     score: 0,
     combo: 0,
@@ -60,8 +94,14 @@ export default function VocabBlastGame({
     accuracy: 0,
     timeLeft: settings.timeLimit,
     lives: 3,
-    totalAttempts: 0
+    totalAttempts: 0,
+    correctAnswers: 0,
+    incorrectAnswers: 0,
+    startTime: Date.now()
   });
+
+  // Detailed analytics tracking
+  const [wordAttempts, setWordAttempts] = useState<WordAttempt[]>([]);
 
   // Vocabulary management
   const [usedWords, setUsedWords] = useState<Set<string>>(new Set());
@@ -102,7 +142,8 @@ export default function VocabBlastGame({
       setGameStats(prev => {
         const newTimeLeft = prev.timeLeft - 1;
         if (newTimeLeft <= 0) {
-          endGame('timeout');
+          // Use setTimeout to avoid calling endGame during render
+          setTimeout(() => endGame('timeout'), 0);
           return { ...prev, timeLeft: 0 };
         }
         return { ...prev, timeLeft: newTimeLeft };
@@ -125,7 +166,7 @@ export default function VocabBlastGame({
 
   const selectNextWord = () => {
     const unused = availableWords.filter(word => !usedWords.has(word.id));
-    
+
     if (unused.length === 0) {
       // Reset if we've used all words
       setUsedWords(new Set());
@@ -134,15 +175,29 @@ export default function VocabBlastGame({
       const nextWord = unused[Math.floor(Math.random() * unused.length)];
       setCurrentWord(nextWord);
     }
+    setCurrentWordStartTime(Date.now());
   };
 
   const handleCorrectAnswer = (word: GameVocabularyWord) => {
     playSFX('correct-answer');
     playThemeSFX(settings.theme);
 
+    const responseTime = Date.now() - currentWordStartTime;
+
+    // Track detailed word attempt
+    const attempt: WordAttempt = {
+      word: word.spanish || word.word,
+      translation: word.english || word.translation,
+      isCorrect: true,
+      responseTime,
+      timestamp: Date.now()
+    };
+    setWordAttempts(prev => [...prev, attempt]);
+
     setGameStats(prev => {
       const newWordsLearned = prev.wordsLearned + 1;
       const newTotalAttempts = prev.totalAttempts + 1;
+      const newCorrectAnswers = prev.correctAnswers + 1;
 
       return {
         ...prev,
@@ -151,7 +206,8 @@ export default function VocabBlastGame({
         maxCombo: Math.max(prev.maxCombo, prev.combo + 1),
         wordsLearned: newWordsLearned,
         totalAttempts: newTotalAttempts,
-        accuracy: (newWordsLearned / newTotalAttempts) * 100
+        correctAnswers: newCorrectAnswers,
+        accuracy: (newCorrectAnswers / newTotalAttempts) * 100
       };
     });
 
@@ -162,9 +218,24 @@ export default function VocabBlastGame({
   const handleIncorrectAnswer = () => {
     playSFX('wrong-answer');
 
+    const responseTime = Date.now() - currentWordStartTime;
+
+    // Track detailed word attempt for incorrect answer
+    if (currentWord) {
+      const attempt: WordAttempt = {
+        word: currentWord.spanish || currentWord.word,
+        translation: currentWord.english || currentWord.translation,
+        isCorrect: false,
+        responseTime,
+        timestamp: Date.now()
+      };
+      setWordAttempts(prev => [...prev, attempt]);
+    }
+
     setGameStats(prev => {
       const newLives = prev.lives - 1;
       const newTotalAttempts = prev.totalAttempts + 1;
+      const newIncorrectAnswers = prev.incorrectAnswers + 1;
 
       // Check if game should end due to no lives
       if (newLives <= 0) {
@@ -176,7 +247,8 @@ export default function VocabBlastGame({
         combo: 0,
         lives: newLives,
         totalAttempts: newTotalAttempts,
-        accuracy: prev.wordsLearned > 0 ? (prev.wordsLearned / newTotalAttempts) * 100 : 0
+        incorrectAnswers: newIncorrectAnswers,
+        accuracy: prev.correctAnswers > 0 ? (prev.correctAnswers / newTotalAttempts) * 100 : 0
       };
     });
 
@@ -205,11 +277,21 @@ export default function VocabBlastGame({
       clearInterval(timerRef.current);
     }
     stopBackgroundMusic();
-    
+
+    const timeSpent = Math.round((Date.now() - gameStats.startTime) / 1000);
+
     onGameEnd({
       outcome,
       score: gameStats.score,
-      wordsLearned: gameStats.wordsLearned
+      wordsLearned: gameStats.wordsLearned,
+      correctAnswers: gameStats.correctAnswers,
+      incorrectAnswers: gameStats.incorrectAnswers,
+      totalAttempts: gameStats.totalAttempts,
+      accuracy: gameStats.accuracy,
+      timeSpent,
+      detailedStats: {
+        wordAttempts
+      }
     });
   };
 
@@ -298,17 +380,19 @@ export default function VocabBlastGame({
         </div>
 
         {/* Current Word Display */}
-        <div className="absolute top-20 left-1/2 transform -translate-x-1/2 pointer-events-auto">
-          <motion.div
-            key={currentWord.id}
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-black/70 backdrop-blur-sm text-white px-8 py-4 rounded-xl text-center border border-white/20"
-          >
-            <div className="text-sm text-slate-300 mb-1">Translate:</div>
-            <div className="text-3xl font-bold">{currentWord.word}</div>
-          </motion.div>
-        </div>
+        {currentWord && (
+          <div className="absolute top-20 left-1/2 transform -translate-x-1/2 pointer-events-auto">
+            <motion.div
+              key={currentWord.id}
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-black/70 backdrop-blur-sm text-white px-8 py-4 rounded-xl text-center border border-white/20"
+            >
+              <div className="text-sm text-slate-300 mb-1">Translate:</div>
+              <div className="text-3xl font-bold">{currentWord.word}</div>
+            </motion.div>
+          </div>
+        )}
 
         {/* Game Stats */}
         <div className="absolute bottom-4 left-4 text-white pointer-events-auto">
@@ -323,17 +407,19 @@ export default function VocabBlastGame({
       </div>
 
       {/* Game Engine */}
-      <VocabBlastEngine
-        theme={settings.theme}
-        currentWord={currentWord}
-        vocabulary={availableWords}
-        onCorrectAnswer={handleCorrectAnswer}
-        onIncorrectAnswer={handleIncorrectAnswer}
-        isPaused={isPaused}
-        gameActive={gameActive}
-        difficulty={settings.difficulty}
-        playSFX={playSFX}
-      />
+      {currentWord && (
+        <VocabBlastEngine
+          theme={settings.theme}
+          currentWord={currentWord}
+          vocabulary={availableWords}
+          onCorrectAnswer={handleCorrectAnswer}
+          onIncorrectAnswer={handleIncorrectAnswer}
+          isPaused={isPaused}
+          gameActive={gameActive}
+          difficulty={settings.difficulty}
+          playSFX={playSFX}
+        />
+      )}
 
       {/* Pause Overlay */}
       <AnimatePresence>

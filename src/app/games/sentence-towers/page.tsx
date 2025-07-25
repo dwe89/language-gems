@@ -9,6 +9,9 @@ import {
 import { useSounds } from './hooks/useSounds';
 import { useGameVocabulary } from '../../../hooks/useGameVocabulary';
 import { VOCABULARY_CATEGORIES } from '../../../components/games/ModernCategorySelector';
+import { useAuth } from '../../../components/auth/AuthProvider';
+import { useSupabase } from '../../../components/supabase/SupabaseProvider';
+import { EnhancedGameService } from '../../../services/enhancedGameService';
 
 // Enhanced Types
 interface TowerBlock {
@@ -287,6 +290,18 @@ const DynamicBackground = ({
 };
 
 export default function ImprovedSentenceTowers() {
+  // Authentication and services
+  const { user } = useAuth();
+  const { supabase } = useSupabase();
+  const [enhancedGameService, setEnhancedGameService] = useState<EnhancedGameService | null>(null);
+
+  // Initialize Enhanced Game Service
+  useEffect(() => {
+    if (supabase) {
+      setEnhancedGameService(new EnhancedGameService(supabase));
+    }
+  }, [supabase]);
+
   // Category/Subcategory selection state
   const [selectedCategory, setSelectedCategory] = useState<string>('basics_core_language');
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
@@ -431,6 +446,65 @@ export default function ImprovedSentenceTowers() {
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, [gameState.status]);
+
+  // Save game session when game ends
+  const saveGameSession = useCallback(async () => {
+    if (!user || !enhancedGameService || !supabase) return;
+
+    try {
+      const sessionData = {
+        student_id: user.id,
+        game_type: 'sentence-towers',
+        session_mode: 'free_play' as const,
+        started_at: new Date(Date.now() - (settings.timeLimit - gameState.timeLeft) * 1000),
+        ended_at: new Date(),
+        duration_seconds: settings.timeLimit - gameState.timeLeft,
+        final_score: gameState.score,
+        max_score_possible: gameState.totalWords * 100, // Assuming max 100 points per word
+        accuracy_percentage: Math.round(gameState.accuracy * 100),
+        completion_percentage: Math.round((gameState.wordsCompleted / gameState.totalWords) * 100),
+        level_reached: gameState.currentLevel,
+        lives_used: 0,
+        power_ups_used: [],
+        achievements_earned: [],
+        words_attempted: gameState.blocksPlaced + gameState.blocksFallen,
+        words_correct: gameState.blocksPlaced,
+        unique_words_practiced: gameState.wordsCompleted,
+        average_response_time_ms: 0,
+        pause_count: 0,
+        hint_requests: 0,
+        retry_attempts: 0,
+        session_data: {
+          difficulty: settings.difficulty,
+          tower_falling_enabled: settings.towerFalling,
+          max_height: gameState.maxHeight,
+          blocks_fallen: gameState.blocksFallen,
+          max_streak: gameState.streak,
+          multiplier_achieved: gameState.multiplier,
+          time_limit: settings.timeLimit,
+          typing_mode: isTypingMode,
+          language: gameLanguage,
+          category: selectedCategory,
+          subcategory: selectedSubcategory
+        },
+        device_info: {}
+      };
+
+      // Start and immediately end the session with the service
+      const sessionId = await enhancedGameService.startGameSession(sessionData);
+      await enhancedGameService.endGameSession(sessionId, sessionData);
+      console.log('Sentence Towers game session saved successfully');
+    } catch (error) {
+      console.error('Error saving Sentence Towers game session:', error);
+    }
+  }, [user, enhancedGameService, supabase, gameState, settings, isTypingMode, gameLanguage, selectedCategory, selectedSubcategory]);
+
+  // Watch for game end and save session
+  useEffect(() => {
+    if (gameState.status === 'failed' && gameState.blocksPlaced > 0) {
+      saveGameSession();
+    }
+  }, [gameState.status, gameState.blocksPlaced, saveGameSession]);
 
   // Improved distractor selection algorithm
   const selectBestDistractors = (targetWord: any, candidates: any[], count: number) => {

@@ -6,6 +6,7 @@ import { useAuth } from '../../../components/auth/AuthProvider';
 import { Plus, Users, BookOpen, School, MoreVertical, Filter, Search, Trash2, Edit } from 'lucide-react';
 import { supabaseBrowser } from '../../../components/auth/AuthProvider';
 import type { Database } from '../../../lib/database.types';
+import DashboardHeader from '../../../components/dashboard/DashboardHeader';
 
 // Add export config to skip static generation
 export const dynamic = 'force-dynamic';
@@ -30,13 +31,11 @@ export default function ClassesPage() {
   const [newClass, setNewClass] = useState({
     name: '',
     description: '',
-    level: 'beginner',
     year_group: ''
   });
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [levelFilter, setLevelFilter] = useState('all');
   
   useEffect(() => {
     // Set a maximum loading timeout to prevent infinite loading
@@ -188,7 +187,7 @@ export default function ClassesPage() {
       const newClassData = {
         name: newClass.name,
         description: newClass.description || null,
-        level: newClass.level,
+        level: 'beginner', // Default level
         year_group: newClass.year_group,
         teacher_id: user.id,
         created_at: new Date().toISOString()
@@ -211,7 +210,7 @@ export default function ClassesPage() {
         }]);
         
         // Reset form and close modal
-        setNewClass({ name: '', description: '', level: 'beginner', year_group: '' });
+        setNewClass({ name: '', description: '', year_group: '' });
         setShowCreateModal(false);
       }
     } catch (error: any) {
@@ -224,18 +223,63 @@ export default function ClassesPage() {
 
   
   const handleDeleteClass = async (classId: string) => {
-    if (!confirm('Are you sure you want to delete this class? This cannot be undone.')) {
+    if (!confirm('Are you sure you want to delete this class? This will also delete all related assignments, enrollments, and announcements. This cannot be undone.')) {
       return;
     }
-    
+
     try {
+      // Delete related records first to avoid foreign key constraint violations
+
+      // 1. Delete class enrollments
+      await supabaseBrowser
+        .from('class_enrollments')
+        .delete()
+        .eq('class_id', classId);
+
+      // 2. Delete assignments
+      await supabaseBrowser
+        .from('assignments')
+        .delete()
+        .eq('class_id', classId);
+
+      // 3. Delete announcements
+      await supabaseBrowser
+        .from('announcements')
+        .delete()
+        .eq('class_id', classId);
+
+      // 4. Delete class vocabulary assignments
+      await supabaseBrowser
+        .from('class_vocabulary_assignments')
+        .delete()
+        .eq('class_id', classId);
+
+      // 5. Delete competitions
+      await supabaseBrowser
+        .from('competitions')
+        .delete()
+        .eq('class_id', classId);
+
+      // 6. Delete leaderboard snapshots
+      await supabaseBrowser
+        .from('leaderboard_snapshots')
+        .delete()
+        .eq('class_id', classId);
+
+      // 7. Delete student ranking history
+      await supabaseBrowser
+        .from('student_ranking_history')
+        .delete()
+        .eq('class_id', classId);
+
+      // 8. Finally delete the class itself
       const { error } = await supabaseBrowser
         .from('classes')
         .delete()
         .eq('id', classId);
-        
+
       if (error) throw error;
-      
+
       // Remove from state
       setClasses(classes.filter(c => c.id !== classId));
     } catch (error) {
@@ -262,21 +306,13 @@ export default function ClassesPage() {
     );
   }
 
-  const getLevelBadgeColor = (level: string) => {
-    switch (level) {
-      case 'beginner': return 'bg-emerald-100 text-emerald-700 border border-emerald-200';
-      case 'intermediate': return 'bg-amber-100 text-amber-700 border border-amber-200';
-      case 'advanced': return 'bg-rose-100 text-rose-700 border border-rose-200';
-      default: return 'bg-slate-100 text-slate-700 border border-slate-200';
-    }
-  };
+
 
   // Filter and sort classes
   const filteredClasses = classes.filter(classItem => {
     const matchesSearch = classItem.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       classItem.description?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesLevel = levelFilter === 'all' || classItem.level === levelFilter;
-    return matchesSearch && matchesLevel;
+    return matchesSearch;
   });
 
   // ClassCard Component
@@ -293,9 +329,6 @@ export default function ClassesPage() {
               <p className="text-sm text-slate-500">Year {classData.year_group}</p>
             </div>
           </div>
-          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getLevelBadgeColor(classData.level)}`}>
-            {classData.level.charAt(0).toUpperCase() + classData.level.slice(1)}
-          </span>
         </div>
         
         {classData.description && (
@@ -336,18 +369,11 @@ export default function ClassesPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50/30 to-purple-50/30 p-6">
       <div className="max-w-7xl mx-auto">
-        {/* Page Header */}
-        <header className="mb-8">
-          <div className="flex items-center space-x-3 mb-4">
-            <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center">
-              <BookOpen className="h-5 w-5 text-white" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">My Classes</h1>
-              <p className="text-slate-600">Manage your classes and track student progress</p>
-            </div>
-          </div>
-        </header>
+        <DashboardHeader
+          title="My Classes"
+          description="Manage your classes and track student progress"
+          icon={<BookOpen className="h-5 w-5 text-white" />}
+        />
 
         {/* Error Message */}
         {error && (
@@ -372,19 +398,7 @@ export default function ClassesPage() {
                 <Search className="absolute left-4 top-3.5 text-slate-400" size={18} />
               </div>
               
-              <div className="relative">
-                <select
-                  className="pl-4 pr-10 py-3 border border-slate-300/60 rounded-xl bg-white/80 appearance-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 shadow-sm font-medium text-slate-700"
-                  value={levelFilter}
-                  onChange={(e) => setLevelFilter(e.target.value)}
-                >
-                  <option value="all">All Levels</option>
-                  <option value="beginner">Beginner</option>
-                  <option value="intermediate">Intermediate</option>
-                  <option value="advanced">Advanced</option>
-                </select>
-                <Filter className="absolute right-3 top-3.5 text-slate-400 pointer-events-none" size={16} />
-              </div>
+
             </div>
             
             {/* Create Class Button */}
@@ -423,8 +437,8 @@ export default function ClassesPage() {
                 </div>
                 <h3 className="text-xl font-bold text-slate-900 mb-3">No classes found</h3>
                 <p className="text-slate-600 mb-8 leading-relaxed">
-                  {searchQuery || levelFilter !== 'all' 
-                    ? 'Try adjusting your search or filter to find classes.' 
+                  {searchQuery
+                    ? 'Try adjusting your search to find classes.'
                     : 'Get started by creating your first class for your students.'}
                 </p>
                 <button
@@ -487,22 +501,7 @@ export default function ClassesPage() {
                     />
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-2">
-                        Level *
-                      </label>
-                      <select
-                        required
-                        className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
-                        value={newClass.level}
-                        onChange={(e) => setNewClass({ ...newClass, level: e.target.value })}
-                      >
-                        <option value="beginner">Beginner</option>
-                        <option value="intermediate">Intermediate</option>
-                        <option value="advanced">Advanced</option>
-                      </select>
-                    </div>
+                  <div className="grid grid-cols-1 gap-4">
                     
                     <div>
                       <label className="block text-sm font-semibold text-slate-700 mb-2">

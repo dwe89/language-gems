@@ -3,6 +3,8 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
+import { createClient } from '@supabase/supabase-js';
+import { EnhancedGameService } from 'gems/services/enhancedGameService';
 
 // Game Modes
 type GameMode = 'classic' | 'blitz' | 'marathon' | 'timed_attack' | 'word_storm' | 'zen';
@@ -297,9 +299,20 @@ interface WordScrambleGameProps {
   onBackToMenu: () => void;
   onGameEnd: (result: { won: boolean; score: number; stats: GameStats }) => void;
   categoryVocabulary?: GameVocabularyWord[];
+  assignmentId?: string | null;
+  userId?: string;
+  isAssignmentMode?: boolean;
 }
 
-export default function WordScrambleGameEnhanced({ settings, onBackToMenu, onGameEnd, categoryVocabulary }: WordScrambleGameProps) {
+export default function WordScrambleGameEnhanced({
+  settings,
+  onBackToMenu,
+  onGameEnd,
+  categoryVocabulary,
+  assignmentId,
+  userId,
+  isAssignmentMode
+}: WordScrambleGameProps) {
   // Game state
   const [currentWordData, setCurrentWordData] = useState<any>(null);
   const [scrambledLetters, setScrambledLetters] = useState<string[]>([]);
@@ -332,9 +345,54 @@ export default function WordScrambleGameEnhanced({ settings, onBackToMenu, onGam
   const [comboCount, setComboCount] = useState(0);
   const [showAchievement, setShowAchievement] = useState<Achievement | null>(null);
 
+  // Enhanced game service integration
+  const [gameService, setGameService] = useState<EnhancedGameService | null>(null);
+  const [gameSessionId, setGameSessionId] = useState<string | null>(null);
+
   // Refs
   const gameContainerRef = useRef<HTMLDivElement>(null);
   const soundManager = useRef<SoundManager>(new SoundManager());
+
+  // Initialize game service
+  useEffect(() => {
+    if (userId) {
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+      const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+      const supabase = createClient(supabaseUrl, supabaseAnonKey);
+      const service = new EnhancedGameService(supabase);
+      setGameService(service);
+    }
+  }, [userId]);
+
+  // Start game session when game service is ready
+  useEffect(() => {
+    if (gameService && userId && !gameSessionId) {
+      startGameSession();
+    }
+  }, [gameService, userId, gameSessionId]);
+
+  const startGameSession = async () => {
+    if (!gameService || !userId) return;
+
+    try {
+      const sessionId = await gameService.startGameSession({
+        student_id: userId,
+        assignment_id: assignmentId || undefined,
+        game_type: 'word-scramble',
+        session_mode: isAssignmentMode ? 'assignment' : 'free_play',
+        max_score_possible: 1000, // Adjust based on game mode
+        session_data: {
+          settings,
+          gameMode: settings.gameMode,
+          difficulty: settings.difficulty
+        }
+      });
+      setGameSessionId(sessionId);
+      console.log('Word scramble game session started:', sessionId);
+    } catch (error) {
+      console.error('Failed to start word scramble game session:', error);
+    }
+  };
 
   // Get current word list
   const currentWordList = useMemo(() => {
@@ -373,6 +431,40 @@ export default function WordScrambleGameEnhanced({ settings, onBackToMenu, onGam
     return letters;
   }, [settings.difficulty]);
 
+  // Enhanced game completion handler
+  const handleEnhancedGameEnd = async (result: { won: boolean; score: number; stats: GameStats }) => {
+    // End game session if it exists
+    if (gameService && gameSessionId && userId) {
+      try {
+        const accuracy = result.stats.wordsCompleted > 0 ?
+          (result.stats.perfectWords / result.stats.wordsCompleted) * 100 : 0;
+
+        await gameService.endGameSession(gameSessionId, {
+          student_id: userId,
+          final_score: result.score,
+          accuracy_percentage: accuracy,
+          completion_percentage: 100,
+          words_attempted: result.stats.wordsCompleted,
+          words_correct: result.stats.perfectWords,
+          unique_words_practiced: result.stats.wordsCompleted,
+          duration_seconds: Math.floor((Date.now() - wordStartTime) / 1000),
+          session_data: {
+            gameMode: settings.gameMode,
+            difficulty: settings.difficulty,
+            finalStats: result.stats
+          }
+        });
+
+        console.log('Word scramble game session ended successfully');
+      } catch (error) {
+        console.error('Failed to end word scramble game session:', error);
+      }
+    }
+
+    // Call the original game end handler
+    onGameEnd(result);
+  };
+
   // Initialize new word
   const initializeNewWord = useCallback(() => {
     if (!currentWordList || currentWordList.length === 0) return;
@@ -409,6 +501,17 @@ export default function WordScrambleGameEnhanced({ settings, onBackToMenu, onGam
 
     return () => clearInterval(timer);
   }, [gameState, timeRemaining, freezeTimeRemaining, settings.gameMode]);
+
+  // Handle game failure
+  useEffect(() => {
+    if (gameState === 'failed') {
+      handleEnhancedGameEnd({
+        won: false,
+        score: gameStats.score,
+        stats: gameStats
+      });
+    }
+  }, [gameState, gameStats]);
 
   // Initialize game
   useEffect(() => {
@@ -587,7 +690,7 @@ export default function WordScrambleGameEnhanced({ settings, onBackToMenu, onGam
       } else {
         setTimeout(() => {
           setGameState('completed');
-          onGameEnd({
+          handleEnhancedGameEnd({
             won: true,
             score: gameStats.score,
             stats: gameStats

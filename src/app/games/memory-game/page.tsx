@@ -189,6 +189,7 @@ export default function MemoryGamePage() {
             isAssignmentMode={true}
             assignmentTitle={assignmentData.assignment.title}
             assignmentId={assignmentId}
+            userId={user?.id}
           />
         ) : error ? (
           // Error loading assignment
@@ -260,6 +261,7 @@ export default function MemoryGamePage() {
             onBackToSettings={handleBackToSettings}
             customWords={customWords.length > 0 ? customWords : undefined}
             isAssignmentMode={false}
+            userId={user?.id}
           />
         )
       )}

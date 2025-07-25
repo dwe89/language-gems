@@ -1,7 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { EnhancedGameService } from '../../../../services/enhancedGameService';
 import { useGameVocabulary, transformVocabularyForGame } from '../../../../hooks/useGameVocabulary';
+import { supabaseBrowser } from '../../../../components/auth/AuthProvider';
 import HangmanGame from './HangmanGame';
 
 interface HangmanGameWrapperProps {
@@ -17,6 +19,9 @@ interface HangmanGameWrapperProps {
   onBackToMenu: () => void;
   onGameEnd?: (result: 'win' | 'lose') => void;
   isFullscreen?: boolean;
+  assignmentId?: string | null;
+  userId?: string;
+  isAssignmentMode?: boolean;
 }
 
 interface GameVocabularyWord {
@@ -78,6 +83,24 @@ const mapCategory = (category: string): string => {
 export default function HangmanGameWrapper(props: HangmanGameWrapperProps) {
   console.log('🚀🚀🚀 HANGMAN GAME WRAPPER CALLED 🚀🚀🚀');
   const [vocabularyPool, setVocabularyPool] = useState<VocabularyPool>({});
+
+  // Enhanced game service integration
+  const [gameService, setGameService] = useState<EnhancedGameService | null>(null);
+  const [gameSessionId, setGameSessionId] = useState<string | null>(null);
+  const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
+  const [sessionStats, setSessionStats] = useState({
+    totalWordsAttempted: 0,
+    totalWordsCorrect: 0,
+    totalScore: 0
+  });
+
+  // Initialize game service
+  useEffect(() => {
+    if (props.userId) {
+      const service = new EnhancedGameService(supabaseBrowser);
+      setGameService(service);
+    }
+  }, [props.userId]);
 
   // Use the unified vocabulary hook - always use category/subcategory for filtering
   const { vocabulary, loading: isLoading, error } = useGameVocabulary({
@@ -171,6 +194,44 @@ export default function HangmanGameWrapper(props: HangmanGameWrapperProps) {
 
     setVocabularyPool(organizedVocabulary);
   }, [vocabulary, props.settings.language, props.settings.category]);
+
+  // Start game session when vocabulary is loaded
+  useEffect(() => {
+    if (gameService && props.userId && Object.keys(vocabularyPool).length > 0 && !gameSessionId) {
+      startGameSession();
+    }
+  }, [gameService, props.userId, vocabularyPool, gameSessionId]);
+
+  // End session when component unmounts (user leaves the game)
+  useEffect(() => {
+    return () => {
+      endGameSession();
+    };
+  }, []);
+
+  const startGameSession = async () => {
+    if (!gameService || !props.userId) return;
+
+    try {
+      const startTime = new Date();
+      const sessionId = await gameService.startGameSession({
+        student_id: props.userId,
+        assignment_id: props.assignmentId || undefined,
+        game_type: 'hangman',
+        session_mode: props.isAssignmentMode ? 'assignment' : 'free_play',
+        max_score_possible: 100,
+        session_data: {
+          settings: props.settings,
+          vocabularyCount: vocabulary?.length || 0
+        }
+      });
+      setGameSessionId(sessionId);
+      setSessionStartTime(startTime);
+      console.log('Hangman game session started:', sessionId);
+    } catch (error) {
+      console.error('Failed to start hangman game session:', error);
+    }
+  };
 
   // Legacy function - now handled by useGameVocabulary hook
   const loadVocabulary = async () => {
@@ -419,6 +480,61 @@ export default function HangmanGameWrapper(props: HangmanGameWrapperProps) {
 
   console.log('🎯 HangmanGameWrapper - Passing vocabulary to game:', gameVocabulary.length, 'words');
 
+  // Enhanced game completion handler for individual words
+  const handleEnhancedGameEnd = async (result: 'win' | 'lose', gameStats?: {
+    wordsCompleted?: number;
+    totalWords?: number;
+    correctGuesses?: number;
+    totalGuesses?: number;
+    timeSpent?: number;
+  }) => {
+    // Update session stats for this word
+    setSessionStats(prev => ({
+      totalWordsAttempted: prev.totalWordsAttempted + 1,
+      totalWordsCorrect: prev.totalWordsCorrect + (result === 'win' ? 1 : 0),
+      totalScore: prev.totalScore + (result === 'win' ? 100 : 0)
+    }));
+
+    // Don't end the session here - let it continue for multiple words
+    // The session will be ended when the user leaves the game
+
+    // Call the original game end handler
+    if (props.onGameEnd) {
+      props.onGameEnd(result);
+    }
+  };
+
+  // End the session when the user leaves the game
+  const endGameSession = async () => {
+    if (gameService && gameSessionId && props.userId && sessionStartTime) {
+      try {
+        const sessionDuration = Math.floor((Date.now() - sessionStartTime.getTime()) / 1000);
+        const accuracy = sessionStats.totalWordsAttempted > 0
+          ? (sessionStats.totalWordsCorrect / sessionStats.totalWordsAttempted) * 100
+          : 0;
+
+        await gameService.endGameSession(gameSessionId, {
+          student_id: props.userId,
+          final_score: sessionStats.totalScore,
+          accuracy_percentage: accuracy,
+          completion_percentage: 100,
+          words_attempted: sessionStats.totalWordsAttempted,
+          words_correct: sessionStats.totalWordsCorrect,
+          unique_words_practiced: sessionStats.totalWordsCorrect,
+          duration_seconds: sessionDuration,
+          session_data: {
+            sessionStats,
+            totalSessionTime: sessionDuration
+          }
+        });
+
+        console.log('Hangman game session ended successfully');
+      } catch (error) {
+        console.error('Failed to end hangman game session:', error);
+      }
+    }
+  };
+
   // Enhanced settings - keep original category, don't force to 'custom'
   const enhancedSettings = {
     ...props.settings,
@@ -439,6 +555,9 @@ export default function HangmanGameWrapper(props: HangmanGameWrapperProps) {
       {...props}
       settings={enhancedSettings}
       vocabulary={gameVocabulary}
+      onGameEnd={handleEnhancedGameEnd}
+      gameSessionId={gameSessionId}
+      isAssignmentMode={props.isAssignmentMode}
     />
   );
 }

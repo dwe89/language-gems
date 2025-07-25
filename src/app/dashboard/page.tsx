@@ -254,13 +254,13 @@ function TeacherDashboard({ username = 'Ms. Carter' }: { username?: string }) {
           />
 
           <DashboardCard
-            title="Vocabulary Mining Analytics"
-            description="Track student gem collection and vocabulary mastery"
-            icon={<Pickaxe className="h-7 w-7 text-yellow-600" />}
-            buttonText="View Mining Analytics"
-            buttonColor="bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700"
-            imageSrc="/mining-illustration.svg"
-            href="/dashboard/vocabulary-mining"
+            title="Cross-Game Analytics"
+            description="Track student performance across all vocabulary games and activities"
+            icon={<BarChart2 className="h-7 w-7 text-blue-600" />}
+            buttonText="View Game Analytics"
+            buttonColor="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"
+            imageSrc="/analytics-illustration.svg"
+            href="/dashboard/analytics/cross-game"
           />
 
           <DashboardCard
@@ -284,13 +284,13 @@ function TeacherDashboard({ username = 'Ms. Carter' }: { username?: string }) {
           />
 
           <DashboardCard
-            title="Gem Collector Analytics"
-            description="Track sentence translation game performance and progress"
-            icon={<span className="text-2xl">💎</span>}
-            buttonText="View Game Analytics"
-            buttonColor="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700"
-            imageSrc="/gem-collector-illustration.svg"
-            href="/dashboard/analytics/gem-collector"
+            title="Vocabulary Mining Analytics"
+            description="Track student vocabulary collection and mastery progress"
+            icon={<Pickaxe className="h-7 w-7 text-yellow-600" />}
+            buttonText="View Mining Analytics"
+            buttonColor="bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700"
+            imageSrc="/mining-illustration.svg"
+            href="/dashboard/vocabulary-mining"
           />
         </div>
       </section>

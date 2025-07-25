@@ -1,5 +1,15 @@
 {
   "mcpServers": {
+    "language-gems": {
+      "command": "node",
+      "args": [
+        "./mcp-server/dist/index.js"
+      ],
+      "env": {
+        "SUPABASE_URL": "https://xetsvpfunazwkontdpdh.supabase.co",
+        "SUPABASE_SERVICE_ROLE_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhldHN2cGZ1bmF6d2tvbnRkcGRoIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTczOTgyMzAwMiwiZXhwIjoyMDU1Mzk5MDAyfQ.Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8"
+      }
+    },
     "supabase": {
       "command": "npx",
       "args": [

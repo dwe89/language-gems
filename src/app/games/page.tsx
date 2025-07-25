@@ -306,14 +306,14 @@ export default function GamesPage() {
       // Real games that are implemented in the codebase
       const actualGames: Game[] = [
         {
-          id: 'vocab-master',
-          name: 'VocabMaster',
-          description: 'Master vocabulary with intelligent spaced repetition, listening exercises, and context-based learning.',
-          thumbnail: '/images/games/vocab-master.jpg',
+          id: 'vocabulary-mining',
+          name: 'Vocabulary Mining',
+          description: 'Mine rare vocabulary gems through intelligent spaced repetition, listening exercises, and adaptive learning.',
+          thumbnail: '/images/games/vocabulary-mining.jpg',
           category: 'vocabulary',
           popular: true,
           languages: ['English', 'Spanish', 'French', 'German', 'Italian', 'Portuguese'],
-          path: '/games/vocab-master'
+          path: '/games/vocabulary-mining'
         },
         {
           id: 'speed-builder',

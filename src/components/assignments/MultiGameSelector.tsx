@@ -36,15 +36,15 @@ interface GameOption {
 
 const AVAILABLE_GAMES: GameOption[] = [
   {
-    id: 'vocab-master',
-    name: 'VocabMaster',
-    description: 'Collect translation gems while avoiding wrong answers in this fast-paced adventure',
+    id: 'vocabulary-mining',
+    name: 'Vocabulary Mining',
+    description: 'Mine rare vocabulary gems through intelligent spaced repetition and adaptive learning',
     icon: <Star className="h-5 w-5" />,
-    color: 'from-purple-500 to-blue-500',
+    color: 'from-yellow-500 to-orange-500',
     category: 'vocabulary',
     difficulty: 'beginner',
     estimatedTime: '3-8 min',
-    features: ['Power-ups', 'Real-time scoring', 'Lives system'],
+    features: ['Gem collection', 'Spaced repetition', 'Adaptive difficulty'],
     type: 'vocabulary'
   },
   {

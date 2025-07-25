@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { UserCircle2, User, Calendar, Key, RefreshCw, Trash2, Eye, EyeOff, Copy, CheckCircle } from 'lucide-react';
+import { UserCircle2, User, Calendar, Key, RefreshCw, Trash2, Eye, EyeOff, Copy, CheckCircle, Clock } from 'lucide-react';
 import { Card, CardContent } from "../ui/card";
 import { Button } from "../ui/button";
 import { SimpleDropdown } from "../ui/simple-dropdown";
@@ -22,6 +22,7 @@ type StudentProps = {
     username: string;
     progress: number;
     joined_date: string;
+    last_active: string;
   };
   classId: string;
   onStudentDeleted: (studentId: string) => void;
@@ -46,18 +47,18 @@ export function StudentCard({ student, classId, onStudentDeleted }: StudentProps
     });
   };
   
-  const getActivityStatus = (joinedDate: string) => {
+  const getActivityStatus = (lastActiveDate: string) => {
     const now = new Date();
-    const joined = new Date(joinedDate);
-    const diffInDays = Math.floor((now.getTime() - joined.getTime()) / (1000 * 60 * 60 * 24));
-    
+    const lastActive = new Date(lastActiveDate);
+    const diffInDays = Math.floor((now.getTime() - lastActive.getTime()) / (1000 * 60 * 60 * 24));
+
     if (diffInDays < 2) return { status: 'Active', color: 'text-green-400' };
     if (diffInDays < 7) return { status: 'Recent', color: 'text-teal-400' };
     if (diffInDays < 14) return { status: 'Away', color: 'text-yellow-400' };
     return { status: 'Inactive', color: 'text-red-400' };
   };
-  
-  const activityStatus = getActivityStatus(student.joined_date);
+
+  const activityStatus = getActivityStatus(student.last_active);
   
   const fetchStudentPassword = async () => {
     setLoading(true);
@@ -239,18 +240,24 @@ export function StudentCard({ student, classId, onStudentDeleted }: StudentProps
                 ></div>
               </div>
               
-              <div className="flex items-center justify-between pt-3 border-t border-slate-100">
-                <div className="flex items-center text-slate-500 text-sm">
-                  <Calendar className="h-4 w-4 mr-2" />
-                  <span>Joined {formatDate(student.joined_date)}</span>
+              <div className="pt-3 border-t border-slate-100 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center text-slate-500 text-sm">
+                    <Calendar className="h-4 w-4 mr-2" />
+                    <span>Joined {formatDate(student.joined_date)}</span>
+                  </div>
+                  <div className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-bold shadow-sm ${
+                    activityStatus.status === 'Active' ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' :
+                    activityStatus.status === 'Recent' ? 'bg-teal-100 text-teal-700 border border-teal-200' :
+                    activityStatus.status === 'Away' ? 'bg-amber-100 text-amber-700 border border-amber-200' :
+                    'bg-red-100 text-red-700 border border-red-200'
+                  }`}>
+                    {activityStatus.status}
+                  </div>
                 </div>
-                <div className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-bold shadow-sm ${
-                  activityStatus.status === 'Active' ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' :
-                  activityStatus.status === 'Recent' ? 'bg-teal-100 text-teal-700 border border-teal-200' :
-                  activityStatus.status === 'Away' ? 'bg-amber-100 text-amber-700 border border-amber-200' :
-                  'bg-red-100 text-red-700 border border-red-200'
-                }`}>
-                  {activityStatus.status}
+                <div className="flex items-center text-slate-500 text-xs">
+                  <Clock className="h-3 w-3 mr-2" />
+                  <span>Last active: {formatDate(student.last_active)}</span>
                 </div>
               </div>
             </div>

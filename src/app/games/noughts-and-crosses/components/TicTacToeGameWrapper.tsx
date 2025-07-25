@@ -1,14 +1,16 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { CentralizedVocabularyService, CentralizedVocabularyWord } from 'gems/services/centralizedVocabularyService';
-import { createClient } from '@supabase/supabase-js';
+import { EnhancedGameService } from '../../../../services/enhancedGameService';
+import { useGameVocabulary } from '../../../../hooks/useGameVocabulary';
+import { supabaseBrowser } from '../../../../components/auth/AuthProvider';
 import TicTacToeGameThemed from './TicTacToeGameThemed';
 
 interface TicTacToeGameWrapperProps {
   settings: {
     difficulty: string;
     category: string;
+    subcategory?: string;
     language: string;
     theme: string;
     playerMark: string;
@@ -16,117 +18,85 @@ interface TicTacToeGameWrapperProps {
   };
   onBackToMenu: () => void;
   onGameEnd: (result: { outcome: 'win' | 'loss' | 'tie'; wordsLearned: number; perfectGame?: boolean }) => void;
+  assignmentId?: string | null;
+  userId?: string;
 }
 
-// Create Supabase client
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
 export default function TicTacToeGameWrapper(props: TicTacToeGameWrapperProps) {
-  const [vocabularyWords, setVocabularyWords] = useState<CentralizedVocabularyWord[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  // Map category names to match our vocabulary database
-  const mapCategory = (category: string): string => {
-    const categoryMap: Record<string, string> = {
-      'animals': 'animals',
-      'food': 'food',
-      'colors': 'colors',
-      'numbers': 'numbers',
-      'family': 'family',
-      'household': 'household',
-      'transport': 'transport',
-      'weather': 'weather',
-      'clothing': 'clothing'
-    };
-    return categoryMap[category] || 'animals'; // Default fallback
-  };
+  const [gameSessionId, setGameSessionId] = useState<string | null>(null);
+  const [gameService, setGameService] = useState<EnhancedGameService | null>(null);
+  const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
+  const [sessionStats, setSessionStats] = useState({
+    totalGamesPlayed: 0,
+    totalGamesWon: 0,
+    totalWordsLearned: 0,
+    totalCorrectAnswers: 0,
+    totalQuestions: 0
+  });
 
   // Map language codes
   const mapLanguage = (language: string): string => {
     const languageMap: Record<string, string> = {
       'spanish': 'es',
       'french': 'fr',
-      'english': 'en', // We'll fallback to Spanish if English not available
+      'english': 'en',
       'german': 'de'
     };
     return languageMap[language] || 'es';
   };
 
+  // Use modern vocabulary hook
+  const { vocabulary: vocabularyWords, loading: isLoading, error } = useGameVocabulary({
+    language: mapLanguage(props.settings.language),
+    categoryId: props.settings.category,
+    subcategoryId: props.settings.subcategory,
+    limit: 50,
+    randomize: true
+  });
+
+  // Initialize game service
   useEffect(() => {
-    loadVocabulary();
-  }, [props.settings.language, props.settings.category, props.settings.difficulty]);
+    if (props.userId) {
+      const service = new EnhancedGameService(supabaseBrowser);
+      setGameService(service);
+    }
+  }, [props.userId]);
 
-  const loadVocabulary = async () => {
+  // Start game session when vocabulary is loaded
+  useEffect(() => {
+    if (gameService && props.userId && vocabularyWords.length > 0 && !gameSessionId) {
+      startGameSession();
+    }
+  }, [gameService, props.userId, vocabularyWords, gameSessionId]);
+
+  // End session when component unmounts (user leaves the game)
+  useEffect(() => {
+    return () => {
+      endGameSession();
+    };
+  }, []);
+
+  const startGameSession = async () => {
+    if (!gameService || !props.userId) return;
+
     try {
-      setIsLoading(true);
-      setError(null);
-
-      const vocabularyService = new CentralizedVocabularyService(supabase);
-      const mappedLanguage = mapLanguage(props.settings.language);
-      const mappedCategory = mapCategory(props.settings.category);
-
-      console.log('Loading vocabulary:', { mappedLanguage, mappedCategory });
-
-      // Load vocabulary for the specified language and category
-      let vocabulary: CentralizedVocabularyWord[] = [];
-
-      try {
-        vocabulary = await vocabularyService.getVocabulary({
-          language: mappedLanguage,
-          category: mappedCategory,
-          hasAudio: true, // Prefer words with audio
-          limit: 20, // TicTacToe doesn't need many words
-          randomize: true
-        });
-
-        console.log('Vocabulary loaded via service:', vocabulary.length);
-      } catch (error) {
-        console.warn(`Failed to load vocabulary via service, trying direct query`, error);
-        
-        // Fallback: direct Supabase query
-        const { data, error: directError } = await supabase
-          .from('centralized_vocabulary')
-          .select('*')
-          .eq('language', mappedLanguage)
-          .eq('category', mappedCategory)
-          .not('audio_url', 'is', null)
-          .limit(20);
-          
-        if (directError) {
-          console.error('Direct query failed:', directError);
-        } else {
-          vocabulary = data || [];
-          console.log('Vocabulary loaded via direct query:', vocabulary.length);
+      const startTime = new Date();
+      const sessionId = await gameService.startGameSession({
+        student_id: props.userId,
+        assignment_id: props.assignmentId || undefined,
+        game_type: 'noughts-and-crosses',
+        session_mode: props.assignmentId ? 'assignment' : 'free_play',
+        max_score_possible: 100, // Base score for winning
+        session_data: {
+          settings: props.settings,
+          vocabularyCount: vocabularyWords.length
         }
-      }
-
-      // Fallback to Spanish animals if no vocabulary found
-      if (vocabulary.length === 0) {
-        console.log('No vocabulary found, trying Spanish animals fallback');
-        const { data, error: fallbackError } = await supabase
-          .from('centralized_vocabulary')
-          .select('*')
-          .eq('language', 'es')
-          .eq('category', 'animals')
-          .not('audio_url', 'is', null)
-          .limit(20);
-          
-        if (!fallbackError && data) {
-          vocabulary = data;
-          console.log('Fallback vocabulary loaded:', vocabulary.length);
-        }
-      }
-
-      setVocabularyWords(vocabulary);
-      setIsLoading(false);
-
+      });
+      setGameSessionId(sessionId);
+      setSessionStartTime(startTime);
+      console.log('Game session started:', sessionId);
     } catch (error) {
-      console.error('Error loading vocabulary:', error);
-      setError('Failed to load vocabulary. Using fallback words.');
-      setIsLoading(false);
+      console.error('Failed to start game session:', error);
     }
   };
 
@@ -149,6 +119,67 @@ export default function TicTacToeGameWrapper(props: TicTacToeGameWrapperProps) {
     }));
 
     return formatted;
+  };
+
+  // Enhanced game completion handler for individual rounds
+  const handleEnhancedGameEnd = async (result: {
+    outcome: 'win' | 'loss' | 'tie';
+    wordsLearned: number;
+    perfectGame?: boolean;
+    correctAnswers?: number;
+    totalQuestions?: number;
+    timeSpent?: number;
+  }) => {
+    // Update session stats for this round
+    setSessionStats(prev => ({
+      totalGamesPlayed: prev.totalGamesPlayed + 1,
+      totalGamesWon: prev.totalGamesWon + (result.outcome === 'win' ? 1 : 0),
+      totalWordsLearned: prev.totalWordsLearned + result.wordsLearned,
+      totalCorrectAnswers: prev.totalCorrectAnswers + (result.correctAnswers || 0),
+      totalQuestions: prev.totalQuestions + (result.totalQuestions || 0)
+    }));
+
+    // Don't end the session here - let it continue for multiple rounds
+    // The session will be ended when the user leaves the game
+
+    // Call the original game end handler
+    props.onGameEnd(result);
+  };
+
+  // End the session when the user leaves the game
+  const endGameSession = async () => {
+    if (gameService && gameSessionId && props.userId && sessionStartTime) {
+      try {
+        const sessionDuration = Math.floor((Date.now() - sessionStartTime.getTime()) / 1000);
+        const accuracy = sessionStats.totalQuestions > 0
+          ? (sessionStats.totalCorrectAnswers / sessionStats.totalQuestions) * 100
+          : 0;
+        const winRate = sessionStats.totalGamesPlayed > 0
+          ? (sessionStats.totalGamesWon / sessionStats.totalGamesPlayed) * 100
+          : 0;
+
+        await gameService.endGameSession(gameSessionId, {
+          student_id: props.userId,
+          final_score: Math.round(winRate),
+          accuracy_percentage: accuracy,
+          completion_percentage: 100,
+          words_attempted: sessionStats.totalQuestions,
+          words_correct: sessionStats.totalCorrectAnswers,
+          unique_words_practiced: sessionStats.totalWordsLearned,
+          duration_seconds: sessionDuration,
+          session_data: {
+            sessionStats,
+            totalSessionTime: sessionDuration,
+            gamesPlayed: sessionStats.totalGamesPlayed,
+            winRate
+          }
+        });
+
+        console.log('Noughts and crosses game session ended successfully');
+      } catch (error) {
+        console.error('Failed to end noughts and crosses game session:', error);
+      }
+    }
   };
 
   if (isLoading) {
@@ -191,6 +222,9 @@ export default function TicTacToeGameWrapper(props: TicTacToeGameWrapperProps) {
     <TicTacToeGameThemed
       {...props}
       vocabularyWords={getFormattedVocabulary()}
+      onGameEnd={handleEnhancedGameEnd}
+      gameSessionId={gameSessionId}
+      isAssignmentMode={!!props.assignmentId}
     />
   );
 }

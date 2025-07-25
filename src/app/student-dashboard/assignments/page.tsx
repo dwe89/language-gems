@@ -7,19 +7,56 @@ import { useAuth } from '../../../components/auth/AuthProvider';
 import { supabaseBrowser } from '../../../components/auth/AuthProvider';
 import { logError } from '../../../lib/utils';
 
+// Map game types to actual game directory paths
+const mapGameTypeToPath = (gameType: string | null): string => {
+  if (!gameType) return 'memory-game';
+
+  const gameTypeMap: Record<string, string> = {
+    // Direct mappings for existing games
+    'memory-game': 'memory-game',
+    'vocab-blast': 'vocab-blast',
+    'hangman': 'hangman',
+    'noughts-and-crosses': 'noughts-and-crosses',
+    'speed-builder': 'speed-builder',
+    'vocabulary-mining': 'vocabulary-mining',
+
+    // Legacy mappings for potential mismatches
+    'quiz': 'memory-game', // Fallback for quiz to memory game
+    'word-blast': 'vocab-blast', // Map word-blast to vocab-blast
+    'tic-tac-toe': 'noughts-and-crosses', // Alternative name
+    'tictactoe': 'noughts-and-crosses', // Alternative name
+    'gem-collector': 'vocabulary-mining', // Map gem collector to vocabulary mining
+    'translation-tycoon': 'speed-builder', // Map to closest equivalent
+    'conjugation-duel': 'hangman', // Map to closest equivalent
+    'word-scramble': 'hangman', // Map to closest equivalent
+    'word-guesser': 'hangman', // Map to closest equivalent
+    'sentence-towers': 'speed-builder', // Map to closest equivalent
+    'sentence-builder': 'speed-builder', // Map to closest equivalent
+    'word-association': 'memory-game', // Map to closest equivalent
+  };
+
+  return gameTypeMap[gameType] || 'memory-game'; // Default fallback
+};
+
 type Assignment = {
   id: string;
   title: string;
   description?: string;
   dueDate: string;
   status: 'completed' | 'in-progress' | 'not-started';
-  progress?: number;
   gemType: 'purple' | 'blue' | 'yellow' | 'green' | 'red';
   gameCount?: number;
   activities?: string[];
   className?: string;
   points?: number;
   type?: string; // Game type like "memory-game", "speed-builder", etc.
+  progress?: {
+    bestScore: number;
+    bestAccuracy: number;
+    completedAt: string | null;
+    attemptsCount: number;
+    totalTimeSpent: number;
+  } | null;
 };
 
 // Assignment Card Component
@@ -93,26 +130,45 @@ const AssignmentCard = ({
         )}
       </div>
       
-      {assignment.status === 'in-progress' && assignment.progress !== undefined && (
-        <div className="mb-4">
-          <div className="flex justify-between text-xs text-gray-500 mb-1">
-            <span>Progress: {assignment.progress}%</span>
-            <span>{Math.round((assignment.progress / 100) * (assignment.gameCount || 1))} / {assignment.gameCount || 1} activities</span>
-          </div>
-          <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-            <div 
-              className="h-full bg-blue-500 rounded-full transition-all duration-300" 
-              style={{ width: `${assignment.progress}%` }}
-            ></div>
-          </div>
+      {assignment.progress && (
+        <div className="mb-4 space-y-2">
+          {assignment.status === 'completed' && (
+            <div className="text-xs text-green-600 bg-green-50 p-2 rounded">
+              <div className="flex justify-between">
+                <span>Best Score: {Math.round(assignment.progress.bestScore)}%</span>
+                <span>Accuracy: {Math.round(assignment.progress.bestAccuracy)}%</span>
+              </div>
+              <div className="flex justify-between mt-1">
+                <span>Attempts: {assignment.progress.attemptsCount}</span>
+                <span>Time: {Math.round(assignment.progress.totalTimeSpent / 60)}min</span>
+              </div>
+              {assignment.progress.completedAt && (
+                <div className="text-xs text-green-500 mt-1">
+                  Completed: {new Date(assignment.progress.completedAt).toLocaleDateString()}
+                </div>
+              )}
+            </div>
+          )}
+
+          {assignment.status === 'in-progress' && (
+            <div className="text-xs text-blue-600 bg-blue-50 p-2 rounded">
+              <div className="flex justify-between">
+                <span>Current Score: {Math.round(assignment.progress.bestScore)}%</span>
+                <span>Attempts: {assignment.progress.attemptsCount}</span>
+              </div>
+              <div className="text-xs text-blue-500 mt-1">
+                Time spent: {Math.round(assignment.progress.totalTimeSpent / 60)} minutes
+              </div>
+            </div>
+          )}
         </div>
       )}
       
       <div className="flex space-x-2">
         <Link
-          href={assignment.gameCount && assignment.gameCount > 1 
-            ? `/student-dashboard/assignments/${assignment.id}` 
-            : `/games/${assignment.type || 'memory-game'}?assignment=${assignment.id}`}
+          href={assignment.gameCount && assignment.gameCount > 1
+            ? `/student-dashboard/assignments/${assignment.id}`
+            : `/games/${mapGameTypeToPath(assignment.type)}?assignment=${assignment.id}`}
           className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg transition-colors font-medium flex items-center justify-center"
         >
           {assignment.status === 'completed' ? 'Review Assignment' : 'Continue Assignment'}
@@ -120,7 +176,7 @@ const AssignmentCard = ({
         </Link>
         {assignment.status !== 'completed' && (
           <Link
-            href={assignment.type === 'vocab-master' ? '/games/vocab-master' : '/student-dashboard/games'}
+            href={assignment.type === 'vocabulary-mining' ? '/games/vocabulary-mining' : '/student-dashboard/games'}
             className="bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-4 rounded-lg transition-colors text-sm font-medium"
           >
             Free Play
@@ -186,10 +242,29 @@ export default function AssignmentsPage() {
           .in('class_id', classIds)
           .order('created_at', { ascending: false });
 
+        // Fetch assignment progress for the current student
+        const { data: assignmentProgress, error: progressError } = await supabase
+          .from('enhanced_assignment_progress')
+          .select(`
+            assignment_id,
+            status,
+            best_score,
+            best_accuracy,
+            completed_at,
+            attempts_count,
+            total_time_spent
+          `)
+          .eq('student_id', user.id);
+
         if (assignmentError) {
           logError('Error fetching assignments:', assignmentError);
           setError('Failed to load assignments');
           return;
+        }
+
+        if (progressError) {
+          logError('Error fetching assignment progress:', progressError);
+          // Continue without progress data rather than failing completely
         }
 
         // Skip class names for now to avoid permission issues
@@ -197,9 +272,16 @@ export default function AssignmentsPage() {
         const classNameMap = new Map();
 
         console.log('Fetched assignments:', assignments);
+        console.log('Fetched assignment progress:', assignmentProgress);
+
+        // Create a map of assignment progress for quick lookup
+        const progressMap = new Map();
+        assignmentProgress?.forEach(progress => {
+          progressMap.set(progress.assignment_id, progress);
+        });
 
         // Transform assignments to match our type
-        const transformedAssignments: Assignment[] = (assignments || []).map((assignment: any, index) => {
+        const processedAssignments: Assignment[] = (assignments || []).map((assignment: any, index) => {
           const isMultiGame = assignment.game_config?.multiGame && assignment.game_config?.selectedGames?.length > 1;
           const gameCount = isMultiGame ? assignment.game_config.selectedGames.length : 1;
           const gameNames = isMultiGame 
@@ -223,25 +305,42 @@ export default function AssignmentsPage() {
               })
             : [assignment.game_type || 'Game'];
 
+          // Get progress data for this assignment
+          const progress = progressMap.get(assignment.id);
+          const status = progress?.status || 'not-started';
+
           return {
             id: assignment.id,
             title: assignment.title,
             description: assignment.description,
             dueDate: assignment.due_date ? new Date(assignment.due_date).toLocaleDateString() : 'No due date',
-            status: 'not-started' as const, // TODO: Get actual status from student progress
+            status: status as 'not-started' | 'in-progress' | 'completed',
             gemType: ['purple', 'blue', 'yellow', 'green', 'red'][index % 5] as any,
             gameCount: gameCount,
             activities: gameNames,
             className: classNameMap.get(assignment.class_id) || 'Your Class',
             points: assignment.points,
-            type: assignment.game_type
+            type: assignment.game_type,
+            progress: progress ? {
+              bestScore: progress.best_score,
+              bestAccuracy: progress.best_accuracy,
+              completedAt: progress.completed_at,
+              attemptsCount: progress.attempts_count,
+              totalTimeSpent: progress.total_time_spent
+            } : null
           };
         });
 
-        // For now, treat all as current assignments
-        // TODO: Separate based on actual completion status
-        setCurrentAssignments(transformedAssignments);
-        setCompletedAssignments([]);
+        // Separate assignments based on completion status
+        const currentAssignments = processedAssignments.filter(assignment =>
+          assignment.status === 'not-started' || assignment.status === 'in-progress'
+        );
+        const completedAssignments = processedAssignments.filter(assignment =>
+          assignment.status === 'completed'
+        );
+
+        setCurrentAssignments(currentAssignments);
+        setCompletedAssignments(completedAssignments);
 
       } catch (err) {
         logError('Error in fetchAssignments:', err);

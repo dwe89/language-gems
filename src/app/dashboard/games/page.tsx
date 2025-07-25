@@ -140,7 +140,7 @@ const GameCard = ({ game }: { game: Game }) => {
   const getGameIcon = (gameName: string) => {
     // Simple mapping of game names to emoji icons
     const iconMap: { [key: string]: string } = {
-      'VocabMaster': '🧠',
+      'Vocabulary Mining': '⛏️',
       'Translation Tycoon': '💼',
       'Memory Game': '🧠',
       'Word Blast': '🚀',
@@ -228,14 +228,14 @@ export default function TeacherGamesPage() {
   // Game data with proper mode classifications
   const gameData: Game[] = [
     {
-      id: 'vocab-master',
-      name: 'VocabMaster',
-      description: 'Master vocabulary with intelligent spaced repetition - like Quizlet/Memrise',
+      id: 'vocabulary-mining',
+      name: 'Vocabulary Mining',
+      description: 'Mine rare vocabulary gems through intelligent spaced repetition and adaptive learning',
       mode: 'Student Only',
       difficulty: 2,
       isNew: true,
       isFeatured: true,
-      path: '/games/vocab-master'
+      path: '/games/vocabulary-mining'
     },
     {
       id: '1',
@@ -719,7 +719,7 @@ function ModernActionButtons({ game }: { game: Game }) {
 // Helper function for game icons
 function getGameIcon(gameName: string): string {
   const iconMap: { [key: string]: string } = {
-    'VocabMaster': '🧠',
+    'Vocabulary Mining': '⛏️',
     'Translation Tycoon': '💼',
     'Memory Game': '🧠',
     'Word Blast': '🚀',

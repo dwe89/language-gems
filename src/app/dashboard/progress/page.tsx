@@ -7,19 +7,20 @@ export const fetchCache = 'force-no-store';
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../../components/auth/AuthProvider';
 import Link from 'next/link';
-import { 
-  Search, Filter, BarChart2, ArrowUp, ArrowDown, 
+import {
+  Search, Filter, BarChart2, ArrowUp, ArrowDown,
   Users, User, ChevronRight, Calendar, Clock, Award,
   BookOpen, CheckCircle, Star, TrendingUp, AlertCircle
 } from 'lucide-react';
 import { supabaseBrowser } from '../../../components/auth/AuthProvider';
 import type { Database } from '../../../lib/database.types';
+import DashboardHeader from '../../../components/dashboard/DashboardHeader';
 
 // Type definitions
 type Class = {
   id: string;
   name: string;
-  created_by: string;
+  teacher_id: string;
 };
 
 type Enrollment = {
@@ -70,7 +71,7 @@ export default function ProgressPage() {
         const { data: classesData, error: classesError } = await supabase
           .from('classes')
           .select('*')
-          .eq('created_by', user.id);
+          .eq('teacher_id', user.id);
 
         if (classesError) {
           console.error('Error fetching classes:', classesError);
@@ -228,18 +229,11 @@ export default function ProgressPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50/30 to-purple-50/30 p-6">
       <div className="max-w-7xl mx-auto">
-        {/* Page Header */}
-        <header className="mb-8">
-          <div className="flex items-center space-x-3 mb-4">
-            <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center">
-              <BarChart2 className="h-5 w-5 text-white" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">Student Progress</h1>
-              <p className="text-slate-600">Monitor your students' learning journey and achievements</p>
-            </div>
-          </div>
-        </header>
+        <DashboardHeader
+          title="Student Progress"
+          description="Monitor your students' learning journey and achievements"
+          icon={<BarChart2 className="h-5 w-5 text-white" />}
+        />
 
         {/* Error Display */}
         {error && (
@@ -578,11 +572,12 @@ function ClassProgressView({
                     <span>{classStudents.length} students enrolled</span>
                   </div>
                 </div>
-                <button 
+                <Link
+                  href={`/dashboard/classes/${cls.id}`}
                   className="text-indigo-600 hover:text-indigo-900 flex items-center font-semibold text-sm transition-colors group-hover:text-purple-600"
                 >
                   View Details <ChevronRight size={16} className="ml-1 group-hover:translate-x-1 transition-transform" />
-                </button>
+                </Link>
               </div>
             </div>
           </div>

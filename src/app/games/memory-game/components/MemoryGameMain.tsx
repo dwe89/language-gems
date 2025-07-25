@@ -2,6 +2,9 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { createClient } from '@supabase/supabase-js';
+import { EnhancedGameService } from 'gems/services/enhancedGameService';
+import { useAuth } from '../../../../components/auth/AuthProvider';
 import { WordPair } from './CustomWordsModal';
 import CustomWordsModal from './CustomWordsModal';
 import { VOCABULARY } from '../data/vocabulary';
@@ -18,9 +21,21 @@ interface MemoryGameMainProps {
   isAssignmentMode?: boolean;
   assignmentTitle?: string;
   assignmentId?: string;
+  userId?: string;
 }
 
-export default function MemoryGameMain({ language, topic, difficulty, onBackToSettings, customWords, isAssignmentMode = false, assignmentTitle, assignmentId }: MemoryGameMainProps) {
+export default function MemoryGameMain({
+  language,
+  topic,
+  difficulty,
+  onBackToSettings,
+  customWords,
+  isAssignmentMode = false,
+  assignmentTitle,
+  assignmentId,
+  userId
+}: MemoryGameMainProps) {
+  const { user } = useAuth();
   // Game state
   const [cards, setCards] = useState<Card[]>([]);
   const [matches, setMatches] = useState(0);
@@ -62,6 +77,53 @@ export default function MemoryGameMain({ language, topic, difficulty, onBackToSe
     wasCorrect: boolean;
     firstAttemptTime?: Date;
   }>>(new Map());
+
+  // Enhanced game service integration
+  const [gameService, setGameService] = useState<EnhancedGameService | null>(null);
+  const [gameSessionId, setGameSessionId] = useState<string | null>(null);
+
+  // Initialize Supabase client and game service
+  useEffect(() => {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+    if (userId || user?.id) {
+      const service = new EnhancedGameService(supabase);
+      setGameService(service);
+    }
+  }, [userId, user?.id]);
+
+  // Start game session when game service is ready and game starts
+  useEffect(() => {
+    if (gameService && (userId || user?.id) && startTime && !gameSessionId) {
+      startGameSession();
+    }
+  }, [gameService, userId, user?.id, startTime, gameSessionId]);
+
+  const startGameSession = async () => {
+    if (!gameService || !(userId || user?.id)) return;
+
+    try {
+      const sessionId = await gameService.startGameSession({
+        student_id: userId || user!.id,
+        assignment_id: assignmentId || undefined,
+        game_type: 'memory-game',
+        session_mode: isAssignmentMode ? 'assignment' : 'free_play',
+        max_score_possible: 100,
+        session_data: {
+          language: currentLanguage,
+          topic: currentTopic,
+          difficulty: currentDifficulty,
+          customWordsCount: currentCustomWords.length
+        }
+      });
+      setGameSessionId(sessionId);
+      console.log('Memory game session started:', sessionId);
+    } catch (error) {
+      console.error('Failed to start memory game session:', error);
+    }
+  };
   
   // Initialize game
   useEffect(() => {
@@ -182,6 +244,34 @@ export default function MemoryGameMain({ language, topic, difficulty, onBackToSe
   const saveAssignmentProgress = async (timeSpent: number, totalMatches: number, totalAttempts: number) => {
     console.log('saveAssignmentProgress called:', { isAssignmentMode, assignmentId, timeSpent, totalMatches, totalAttempts });
     console.log('vocabularyProgress:', vocabularyProgress);
+
+    // End enhanced game session
+    if (gameService && gameSessionId && (userId || user?.id)) {
+      try {
+        const accuracy = totalAttempts > 0 ? (totalMatches / totalAttempts) * 100 : 0;
+        const finalScore = Math.round(accuracy);
+
+        await gameService.endGameSession(gameSessionId, {
+          student_id: userId || user!.id,
+          final_score: finalScore,
+          accuracy_percentage: accuracy,
+          completion_percentage: 100,
+          words_attempted: totalAttempts,
+          words_correct: totalMatches,
+          unique_words_practiced: vocabularyProgress.size,
+          duration_seconds: timeSpent,
+          session_data: {
+            matches: totalMatches,
+            attempts: totalAttempts,
+            gameType: 'memory-game'
+          }
+        });
+
+        console.log('Enhanced game session ended successfully');
+      } catch (error) {
+        console.error('Failed to end enhanced game session:', error);
+      }
+    }
 
     if (!isAssignmentMode || !assignmentId) {
       console.log('Not saving progress - not in assignment mode or no assignment ID');

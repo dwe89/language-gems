@@ -7,12 +7,16 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../components/auth/AuthProvider';
 import { useSupabase } from '../../../components/supabase/SupabaseProvider';
 import Link from 'next/link';
-import { 
-  Plus, PlusCircle, Search, Filter, Edit, Trash2, 
+import {
+  Plus, PlusCircle, Search, Filter, Edit, Trash2,
   Download, Upload, BookOpen, Users, Clock, Save, X,
   ChevronDown, Eye, BarChart2, ListFilter, Calendar,
-  Globe, Lock, ArrowRight
+  Globe, Lock, ArrowRight, MessageSquare, FileText,
+  Sparkles, Template, Copy, Star
 } from 'lucide-react';
+import { EnhancedVocabularyService, EnhancedVocabularyList } from '../../../services/enhancedVocabularyService';
+import EnhancedVocabularyCreator from '../../../components/vocabulary/EnhancedVocabularyCreator';
+import DashboardHeader from '../../../components/dashboard/DashboardHeader';
 
 // Define types for our data
 type WordPair = {
@@ -47,32 +51,74 @@ export default function TeacherVocabularyDashboard() {
   const { supabase } = useSupabase();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
+
+  // Enhanced vocabulary state
+  const [enhancedLists, setEnhancedLists] = useState<EnhancedVocabularyList[]>([]);
+  const [vocabularyService, setVocabularyService] = useState<EnhancedVocabularyService | null>(null);
+  const [showEnhancedCreator, setShowEnhancedCreator] = useState(false);
+  const [editingList, setEditingList] = useState<EnhancedVocabularyList | null>(null);
+
+  // Legacy vocabulary state (for backward compatibility)
   const [vocabularyLists, setVocabularyLists] = useState<WordList[]>([]);
   const [filteredLists, setFilteredLists] = useState<WordList[]>([]);
+
+  // Filter and search state
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTheme, setSelectedTheme] = useState('all');
   const [selectedDifficulty, setSelectedDifficulty] = useState('all');
   const [selectedLanguage, setSelectedLanguage] = useState('all');
+  const [selectedContentType, setSelectedContentType] = useState('all');
+  const [showLegacyLists, setShowLegacyLists] = useState(false);
+
+  // UI state
   const [themes, setThemes] = useState<string[]>([]);
   const [assignments, setAssignments] = useState<any[]>([]);
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
   const [selectedList, setSelectedList] = useState<WordList | null>(null);
   const [editMode, setEditMode] = useState(false);
+
+  // Statistics
   const [stats, setStats] = useState({
     totalLists: 0,
     totalAssignments: 0,
     totalItems: 0,
+    enhancedLists: 0,
+    legacyLists: 0,
     themeBreakdown: [] as Array<{theme: string, listCount: number, itemCount: number}>
   });
 
+  // Initialize enhanced vocabulary service
+  useEffect(() => {
+    if (supabase) {
+      const service = new EnhancedVocabularyService(supabase);
+      setVocabularyService(service);
+    }
+  }, [supabase]);
+
+  // Fetch enhanced vocabulary lists
+  const fetchEnhancedVocabularyLists = async () => {
+    if (!vocabularyService || !user) return;
+
+    try {
+      const lists = await vocabularyService.getVocabularyLists({
+        teacher_id: user.id
+      });
+      setEnhancedLists(lists);
+    } catch (error) {
+      console.error('Error fetching enhanced vocabulary lists:', error);
+    }
+  };
+
   // Fetch vocabulary lists
   useEffect(() => {
-    if (!user) return;
+    if (!user || !vocabularyService) return;
 
     const fetchVocabularyData = async () => {
       setLoading(true);
-      
+
       try {
+        // Fetch enhanced vocabulary lists
+        await fetchEnhancedVocabularyLists();
         // Fetch vocabulary lists created by the current teacher
         const { data: listsData, error: listsError } = await supabase
           .from('vocabulary_assignment_lists')
@@ -312,7 +358,64 @@ export default function TeacherVocabularyDashboard() {
       setError('Failed to save changes. Please try again.');
     }
   };
-  
+
+  // Enhanced vocabulary handlers
+  const handleCreateEnhancedList = async (listData: any) => {
+    if (!vocabularyService || !user) return;
+
+    try {
+      const { items, ...listInfo } = listData;
+      const newList = await vocabularyService.createVocabularyList(
+        {
+          ...listInfo,
+          teacher_id: user.id
+        },
+        items
+      );
+
+      setEnhancedLists(prev => [newList, ...prev]);
+      setShowEnhancedCreator(false);
+      await fetchEnhancedVocabularyLists(); // Refresh the list
+    } catch (error) {
+      console.error('Error creating enhanced vocabulary list:', error);
+      throw error;
+    }
+  };
+
+  const handleEditEnhancedList = async (listData: any) => {
+    if (!vocabularyService || !editingList) return;
+
+    try {
+      const { items, ...listInfo } = listData;
+      await vocabularyService.updateVocabularyList(
+        editingList.id,
+        listInfo,
+        items
+      );
+
+      setEditingList(null);
+      setShowEnhancedCreator(false);
+      await fetchEnhancedVocabularyLists(); // Refresh the list
+    } catch (error) {
+      console.error('Error updating enhanced vocabulary list:', error);
+      throw error;
+    }
+  };
+
+  const handleDeleteEnhancedList = async (listId: string) => {
+    if (!vocabularyService) return;
+
+    if (window.confirm('Are you sure you want to delete this vocabulary list? This action cannot be undone.')) {
+      try {
+        await vocabularyService.deleteVocabularyList(listId);
+        setEnhancedLists(prev => prev.filter(list => list.id !== listId));
+      } catch (error) {
+        console.error('Error deleting enhanced vocabulary list:', error);
+        setError('Failed to delete vocabulary list');
+      }
+    }
+  };
+
   // Format date
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -334,19 +437,48 @@ export default function TeacherVocabularyDashboard() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900">
       <div className="container mx-auto px-6 py-12">
+        <div className="mb-4">
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center text-slate-300 hover:text-white transition-colors text-sm font-medium"
+          >
+            <ArrowRight className="h-4 w-4 mr-2 rotate-180" />
+            Return to Dashboard
+          </Link>
+        </div>
+
         {/* Header Section */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12">
           <div className="mb-6 md:mb-0">
             <h1 className="text-4xl font-bold text-white mb-3">Vocabulary Management</h1>
             <p className="text-xl text-slate-300">Create and manage your vocabulary collections</p>
+            <div className="flex items-center gap-4 mt-3">
+              <div className="flex items-center gap-2 text-sm text-slate-400">
+                <Sparkles className="h-4 w-4 text-yellow-400" />
+                <span>Enhanced lists: {enhancedLists.length}</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-slate-400">
+                <BookOpen className="h-4 w-4 text-blue-400" />
+                <span>Legacy lists: {vocabularyLists.length}</span>
+              </div>
+            </div>
           </div>
-          <Link 
-            href="/dashboard/vocabulary/create" 
-            className="flex items-center px-6 py-3 bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
-          >
-            <Plus className="h-5 w-5 mr-2" />
-            Create New List
-          </Link>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setShowEnhancedCreator(true)}
+              className="flex items-center px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
+            >
+              <Sparkles className="h-5 w-5 mr-2" />
+              Create Enhanced List
+            </button>
+            <Link
+              href="/dashboard/vocabulary/create"
+              className="flex items-center px-6 py-3 bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
+            >
+              <Plus className="h-5 w-5 mr-2" />
+              Create Legacy List
+            </Link>
+          </div>
         </div>
 
         {/* Error Display */}
@@ -517,7 +649,134 @@ export default function TeacherVocabularyDashboard() {
             </div>
           </div>
         </div>
-        
+
+        {/* Enhanced Vocabulary Lists Section */}
+        {enhancedLists.length > 0 && (
+          <div className="mb-12">
+            <div className="flex items-center gap-3 mb-6">
+              <Sparkles className="h-6 w-6 text-yellow-400" />
+              <h2 className="text-2xl font-bold text-white">Enhanced Vocabulary Lists</h2>
+              <span className="px-3 py-1 bg-yellow-400/20 text-yellow-400 rounded-full text-sm font-medium">
+                New System
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {enhancedLists.map((list) => (
+                <div key={list.id} className="bg-white/10 backdrop-blur-md p-6 rounded-xl border border-white/20 hover:border-purple-400/50 transition-all duration-200 hover:shadow-xl hover:shadow-purple-500/10">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex-1">
+                      <h3 className="text-xl font-semibold text-white mb-2">{list.name}</h3>
+                      <p className="text-slate-300 text-sm mb-3 line-clamp-2">{list.description}</p>
+
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className={`px-2 py-1 text-xs rounded-full ${
+                          list.content_type === 'words' ? 'bg-blue-100 text-blue-800' :
+                          list.content_type === 'sentences' ? 'bg-green-100 text-green-800' :
+                          'bg-purple-100 text-purple-800'
+                        }`}>
+                          {list.content_type === 'words' ? (
+                            <><BookOpen className="h-3 w-3 inline mr-1" />Words</>
+                          ) : list.content_type === 'sentences' ? (
+                            <><MessageSquare className="h-3 w-3 inline mr-1" />Sentences</>
+                          ) : (
+                            <><FileText className="h-3 w-3 inline mr-1" />Mixed</>
+                          )}
+                        </span>
+                        <span className={`px-2 py-1 text-xs rounded-full ${
+                          list.difficulty_level === 'beginner' ? 'bg-green-100 text-green-800' :
+                          list.difficulty_level === 'intermediate' ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-red-100 text-red-800'
+                        }`}>
+                          {list.difficulty_level}
+                        </span>
+                        {list.is_public && (
+                          <span className="px-2 py-1 text-xs rounded-full bg-cyan-100 text-cyan-800">
+                            <Globe className="h-3 w-3 inline mr-1" />Public
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-4 text-sm text-slate-400">
+                        <span className="flex items-center gap-1">
+                          <BookOpen className="h-4 w-4" />
+                          {list.word_count} items
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Calendar className="h-4 w-4" />
+                          {formatDate(list.created_at)}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-2 ml-4">
+                      <button
+                        onClick={() => {
+                          setEditingList(list);
+                          setShowEnhancedCreator(true);
+                        }}
+                        className="p-2 text-slate-400 hover:text-white hover:bg-white/10 rounded-lg transition-all"
+                        title="Edit list"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteEnhancedList(list.id)}
+                        className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
+                        title="Delete list"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-4 border-t border-white/10">
+                    <span className="text-sm text-slate-400">
+                      {list.language.charAt(0).toUpperCase() + list.language.slice(1)}
+                    </span>
+                    <div className="flex gap-2">
+                      <Link
+                        href={`/dashboard/assignments/create?vocabulary_list=${list.id}&enhanced=true`}
+                        className="flex items-center gap-1 px-3 py-1 bg-purple-600/20 text-purple-400 rounded-lg hover:bg-purple-600/30 transition-all text-sm"
+                      >
+                        <Plus className="h-3 w-3" />
+                        Assign
+                      </Link>
+                      <button className="flex items-center gap-1 px-3 py-1 bg-cyan-600/20 text-cyan-400 rounded-lg hover:bg-cyan-600/30 transition-all text-sm">
+                        <Eye className="h-3 w-3" />
+                        View
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Legacy Vocabulary Lists Section */}
+        {vocabularyLists.length > 0 && (
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <BookOpen className="h-6 w-6 text-blue-400" />
+                <h2 className="text-2xl font-bold text-white">Legacy Vocabulary Lists</h2>
+                <span className="px-3 py-1 bg-blue-400/20 text-blue-400 rounded-full text-sm font-medium">
+                  Legacy System
+                </span>
+              </div>
+              <button
+                onClick={() => setShowLegacyLists(!showLegacyLists)}
+                className="flex items-center gap-2 px-3 py-2 text-slate-400 hover:text-white transition-colors"
+              >
+                {showLegacyLists ? 'Hide' : 'Show'} Legacy Lists
+                <ChevronDown className={`h-4 w-4 transition-transform ${showLegacyLists ? 'rotate-180' : ''}`} />
+              </button>
+            </div>
+
+            {showLegacyLists && (
+              <>
+
         {/* Content Grid/Table View */}
         {viewMode === 'grid' ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
@@ -737,7 +996,11 @@ export default function TeacherVocabularyDashboard() {
             </div>
           </div>
         )}
-        
+              </>
+            )}
+          </div>
+        )}
+
         {/* Selected word list view */}
         {selectedList && (
           <div className="bg-white/10 backdrop-blur-md p-8 rounded-xl border border-white/20 shadow-2xl mb-8">
@@ -936,6 +1199,23 @@ export default function TeacherVocabularyDashboard() {
             </div>
           )}
         </div>
+
+        {/* Enhanced Vocabulary Creator Modal */}
+        {showEnhancedCreator && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl max-w-6xl w-full max-h-[90vh] overflow-hidden">
+              <EnhancedVocabularyCreator
+                onSave={editingList ? handleEditEnhancedList : handleCreateEnhancedList}
+                onCancel={() => {
+                  setShowEnhancedCreator(false);
+                  setEditingList(null);
+                }}
+                initialData={editingList || undefined}
+                mode={editingList ? 'edit' : 'create'}
+              />
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

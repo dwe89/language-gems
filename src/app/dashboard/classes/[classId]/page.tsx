@@ -40,6 +40,7 @@ type Student = {
   username: string;
   progress: number;
   joined_date: string;
+  last_active: string;
 };
 
 type WordList = {
@@ -58,9 +59,8 @@ type ClassParams = {
   };
 };
 
-export default function ClassDetailPage({ params }: { params: Promise<{ classId: string }> }) {
-  // Properly use React.use() to access params
-  const { classId } = use(params);
+export default function ClassDetailPage({ params }: { params: { classId: string } }) {
+  const { classId } = params;
   
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -129,16 +129,65 @@ export default function ClassDetailPage({ params }: { params: Promise<{ classId:
             userProfiles.forEach(profile => {
               profileMap.set(profile.user_id, profile);
             });
-            
+
+            // Fetch last activity data for each student
+            const lastActivityPromises = studentIds.map(async (studentId) => {
+              // Get last activity from multiple sources
+              const [gameSessionResult, vocabResult] = await Promise.all([
+                // Last game session
+                supabase
+                  .from('enhanced_game_sessions')
+                  .select('ended_at')
+                  .eq('student_id', studentId)
+                  .not('ended_at', 'is', null)
+                  .order('ended_at', { ascending: false })
+                  .limit(1)
+                  .single(),
+                // Last vocabulary practice
+                supabase
+                  .from('vocabulary_gem_collection')
+                  .select('last_encountered_at')
+                  .eq('student_id', studentId)
+                  .not('last_encountered_at', 'is', null)
+                  .order('last_encountered_at', { ascending: false })
+                  .limit(1)
+                  .single()
+              ]);
+
+              // Find the most recent activity
+              const activities = [];
+              if (gameSessionResult.data?.ended_at) {
+                activities.push(new Date(gameSessionResult.data.ended_at));
+              }
+              if (vocabResult.data?.last_encountered_at) {
+                activities.push(new Date(vocabResult.data.last_encountered_at));
+              }
+
+              const lastActivity = activities.length > 0
+                ? new Date(Math.max(...activities.map(d => d.getTime())))
+                : null;
+
+              return { studentId, lastActivity };
+            });
+
+            const lastActivityData = await Promise.all(lastActivityPromises);
+            const activityMap = new Map();
+            lastActivityData.forEach(({ studentId, lastActivity }) => {
+              activityMap.set(studentId, lastActivity);
+            });
+
             // Transform to match our Student type
             const formattedStudents: Student[] = enrollments.map(enrollment => {
               const profile = profileMap.get(enrollment.student_id);
+              const lastActivity = activityMap.get(enrollment.student_id);
+
               return {
                 id: enrollment.student_id,
                 name: profile?.display_name || 'Unknown',
                 username: profile?.username || '',
                 progress: 0, // TODO: Calculate real progress from assignments/vocabulary
                 joined_date: enrollment.enrolled_at,
+                last_active: lastActivity ? lastActivity.toISOString() : enrollment.enrolled_at,
               };
             });
             
@@ -333,14 +382,6 @@ export default function ClassDetailPage({ params }: { params: Promise<{ classId:
                 )}
                 
                 <div className="flex flex-wrap items-center gap-3">
-                  <span className={`inline-flex items-center px-4 py-2 rounded-xl text-sm font-semibold backdrop-blur-sm border ${
-                    classData.level === 'beginner' ? 'bg-emerald-500/20 text-emerald-100 border-emerald-400/30' :
-                    classData.level === 'intermediate' ? 'bg-amber-500/20 text-amber-100 border-amber-400/30' :
-                    'bg-red-500/20 text-red-100 border-red-400/30'
-                  }`}>
-                    <Book className="h-4 w-4 mr-2" />
-                    {classData.level.charAt(0).toUpperCase() + classData.level.slice(1)}
-                  </span>
                   
                   <span className="inline-flex items-center px-4 py-2 rounded-xl bg-white/20 text-white text-sm font-semibold backdrop-blur-sm border border-white/30">
                     <Users className="h-4 w-4 mr-2" />

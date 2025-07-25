@@ -4,6 +4,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { WordGuesserSettings, LetterState, GuessRow } from '../types';
 import { motion } from 'framer-motion';
 import { X, RotateCcw, HelpCircle } from 'lucide-react';
+import { createClient } from '@supabase/supabase-js';
+import { EnhancedGameService } from 'gems/services/enhancedGameService';
 import { useVocabularyByCategory } from '../../../../hooks/useVocabulary';
 
 interface WordGuesserProps {
@@ -14,6 +16,9 @@ interface WordGuesserProps {
   };
   onBackToMenu: () => void;
   onGameEnd?: (result: 'win' | 'lose') => void;
+  assignmentId?: string | null;
+  userId?: string;
+  isAssignmentMode?: boolean;
 }
 
 // Word lists for different languages and categories - this would be expanded in a real app
@@ -106,7 +111,14 @@ Object.keys(WORD_LISTS).forEach(language => {
   }
 });
 
-export default function WordGuesser({ settings, onBackToMenu, onGameEnd }: WordGuesserProps) {
+export default function WordGuesser({
+  settings,
+  onBackToMenu,
+  onGameEnd,
+  assignmentId,
+  userId,
+  isAssignmentMode
+}: WordGuesserProps) {
   // Game state
   const [targetWord, setTargetWord] = useState<string>('');
   const [currentGuess, setCurrentGuess] = useState<string>('');
@@ -120,6 +132,22 @@ export default function WordGuesser({ settings, onBackToMenu, onGameEnd }: WordG
   const [hintsUsed, setHintsUsed] = useState(0);
   const [score, setScore] = useState(0);
   const [fallingLeaves, setFallingLeaves] = useState<{id: number, left: string, delay: number}[]>([]);
+
+  // Enhanced game service integration
+  const [gameService, setGameService] = useState<EnhancedGameService | null>(null);
+  const [gameSessionId, setGameSessionId] = useState<string | null>(null);
+  const [gameStartTime, setGameStartTime] = useState<Date | null>(null);
+
+  // Initialize game service
+  useEffect(() => {
+    if (userId) {
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+      const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+      const supabase = createClient(supabaseUrl, supabaseAnonKey);
+      const service = new EnhancedGameService(supabase);
+      setGameService(service);
+    }
+  }, [userId]);
 
   // Map language for vocabulary loading
   const mapLanguageForVocab = (lang: string) => {
@@ -250,7 +278,74 @@ export default function WordGuesser({ settings, onBackToMenu, onGameEnd }: WordG
   useEffect(() => {
     initializeGame();
   }, [initializeGame]);
-  
+
+  // Start game session when game service is ready and game starts
+  useEffect(() => {
+    if (gameService && userId && targetWord && !gameSessionId) {
+      startGameSession();
+    }
+  }, [gameService, userId, targetWord, gameSessionId]);
+
+  const startGameSession = async () => {
+    if (!gameService || !userId) return;
+
+    try {
+      const sessionId = await gameService.startGameSession({
+        student_id: userId,
+        assignment_id: assignmentId || undefined,
+        game_type: 'word-guesser',
+        session_mode: isAssignmentMode ? 'assignment' : 'free_play',
+        max_score_possible: 100,
+        session_data: {
+          settings,
+          targetWord: targetWord.length, // Don't store the actual word
+          difficulty: settings.difficulty
+        }
+      });
+      setGameSessionId(sessionId);
+      setGameStartTime(new Date());
+      console.log('Word guesser game session started:', sessionId);
+    } catch (error) {
+      console.error('Failed to start word guesser game session:', error);
+    }
+  };
+
+  // Enhanced game completion handler
+  const handleEnhancedGameEnd = async (result: 'win' | 'lose') => {
+    // End game session if it exists
+    if (gameService && gameSessionId && userId) {
+      try {
+        const timeSpent = gameStartTime ? Math.floor((new Date().getTime() - gameStartTime.getTime()) / 1000) : 0;
+        const accuracy = guesses.length > 0 ? (result === 'win' ? 100 : 0) : 0;
+        const finalScore = result === 'win' ? score : 0;
+
+        await gameService.endGameSession(gameSessionId, {
+          student_id: userId,
+          final_score: finalScore,
+          accuracy_percentage: accuracy,
+          completion_percentage: 100,
+          words_attempted: 1,
+          words_correct: result === 'win' ? 1 : 0,
+          unique_words_practiced: 1,
+          duration_seconds: timeSpent,
+          session_data: {
+            result,
+            guessCount: guesses.length,
+            hintsUsed,
+            targetWordLength: targetWord.length
+          }
+        });
+
+        console.log('Word guesser game session ended successfully');
+      } catch (error) {
+        console.error('Failed to end word guesser game session:', error);
+      }
+    }
+
+    // Call the original game end handler
+    if (onGameEnd) onGameEnd(result);
+  };
+
   // Handle user input
   const handleKeyPress = useCallback((key: string) => {
     if (gameStatus !== 'playing') return;
@@ -323,11 +418,11 @@ export default function WordGuesser({ settings, onBackToMenu, onGameEnd }: WordG
         // Win
         setGameStatus('won');
         calculateScore(newGuesses.length);
-        if (onGameEnd) onGameEnd('win');
+        handleEnhancedGameEnd('win');
       } else if (newGuesses.length >= settings.maxAttempts) {
         // Loss
         setGameStatus('lost');
-        if (onGameEnd) onGameEnd('lose');
+        handleEnhancedGameEnd('lose');
       }
       
       // Reset current guess

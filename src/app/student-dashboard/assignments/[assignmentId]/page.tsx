@@ -7,6 +7,37 @@ import Link from 'next/link';
 import { useAuth } from '../../../../components/auth/AuthProvider';
 import { supabaseBrowser } from '../../../../components/auth/AuthProvider';
 
+// Map game types to actual game directory paths
+const mapGameTypeToPath = (gameType: string | null): string => {
+  if (!gameType) return 'memory-game';
+
+  const gameTypeMap: Record<string, string> = {
+    // Direct mappings for existing games
+    'memory-game': 'memory-game',
+    'vocab-blast': 'vocab-blast',
+    'hangman': 'hangman',
+    'noughts-and-crosses': 'noughts-and-crosses',
+    'speed-builder': 'speed-builder',
+    'vocabulary-mining': 'vocabulary-mining',
+
+    // Legacy mappings for potential mismatches
+    'quiz': 'memory-game', // Fallback for quiz to memory game
+    'word-blast': 'vocab-blast', // Map word-blast to vocab-blast
+    'tic-tac-toe': 'noughts-and-crosses', // Alternative name
+    'tictactoe': 'noughts-and-crosses', // Alternative name
+    'gem-collector': 'vocabulary-mining', // Map gem collector to vocabulary mining
+    'translation-tycoon': 'speed-builder', // Map to closest equivalent
+    'conjugation-duel': 'hangman', // Map to closest equivalent
+    'word-scramble': 'hangman', // Map to closest equivalent
+    'word-guesser': 'hangman', // Map to closest equivalent
+    'sentence-towers': 'speed-builder', // Map to closest equivalent
+    'sentence-builder': 'speed-builder', // Map to closest equivalent
+    'word-association': 'memory-game', // Map to closest equivalent
+  };
+
+  return gameTypeMap[gameType] || 'memory-game'; // Default fallback
+};
+
 export default function StudentAssignmentDetailPage() {
   const { user } = useAuth();
   const params = useParams();
@@ -123,7 +154,7 @@ export default function StudentAssignmentDetailPage() {
   }, [user, assignmentId]);
 
   const handlePlayGame = (gameId: string) => {
-    router.push(`/games/${gameId}?assignment=${assignmentId}`);
+    router.push(`/games/${mapGameTypeToPath(gameId)}?assignment=${assignmentId}`);
   };
 
   if (loading) {

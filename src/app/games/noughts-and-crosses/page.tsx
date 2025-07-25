@@ -4,27 +4,95 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useAuth } from '../../../components/auth/AuthProvider';
 import { ThemeProvider } from './components/ThemeProvider';
 import GameSettings from './components/GameSettings';
 import TicTacToeGameWrapper from './components/TicTacToeGameWrapper';
 import { useAudio } from './hooks/useAudio';
+import { useVocabularyByCategory } from '../../../hooks/useVocabulary';
 
 export default function NoughtsAndCrossesPage() {
+  const { user, isLoading } = useAuth();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [soundEnabled] = useState(true);
   const { playSFX } = useAudio(soundEnabled);
-  
+
+  // Get URL parameters for assignment mode
+  const assignmentId = searchParams?.get('assignment');
+  const language = searchParams?.get('language') || 'spanish';
+  const difficulty = searchParams?.get('difficulty') || 'beginner';
+  const category = searchParams?.get('category') || 'animals';
+  const theme = searchParams?.get('theme') || 'default';
+
+  // Initialize all hooks first (before any conditional returns)
   const [gameStarted, setGameStarted] = useState(false);
-  const [showIntro, setShowIntro] = useState(true);
+  const [showIntro, setShowIntro] = useState(!assignmentId); // Skip intro for assignments
   const [gameSettings, setGameSettings] = useState({
-    difficulty: 'beginner',
-    category: 'animals',
-    language: 'spanish',
-    theme: 'default',
+    difficulty: assignmentId ? difficulty : 'beginner',
+    category: assignmentId ? category : 'basics_core_language', // Use modern category ID
+    language: assignmentId ? language : 'spanish',
+    theme: assignmentId ? theme : 'default',
     playerMark: 'X',
     computerMark: 'O'
   });
 
-  const startGame = (settings: { 
+  // Category selection state
+  const [selectedCategory, setSelectedCategory] = useState<string>('basics_core_language');
+  const [selectedSubcategory, setSelectedSubcategory] = useState<string>('');
+  const [selectedLanguage, setSelectedLanguage] = useState<string>('spanish');
+
+  // Map language for vocabulary loading
+  const mapLanguageForVocab = (lang: string) => {
+    const mapping: Record<string, string> = {
+      'spanish': 'es',
+      'french': 'fr',
+      'german': 'de',
+      'italian': 'it',
+      'english': 'en',
+      'portuguese': 'pt'
+    };
+    return mapping[lang] || 'es';
+  };
+
+  // Use category-based vocabulary when categories are selected
+  const {
+    vocabulary: categoryVocabulary,
+    loading: vocabularyLoading
+  } = useVocabularyByCategory({
+    language: mapLanguageForVocab(selectedLanguage),
+    categoryId: selectedCategory || undefined,
+    subcategoryId: selectedSubcategory || undefined
+  });
+
+  // Auto-start game if in assignment mode
+  React.useEffect(() => {
+    if (assignmentId && !gameStarted) {
+      setGameStarted(true);
+    }
+  }, [assignmentId, gameStarted]);
+
+  // Conditional logic after all hooks are initialized
+  // Redirect to login if not authenticated
+  if (!isLoading && !user) {
+    router.push('/auth/login');
+    return null;
+  }
+
+  // Show loading while authenticating
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-400 via-pink-500 to-red-500 flex items-center justify-center">
+        <div className="text-center text-white">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-white mx-auto mb-4"></div>
+          <p className="text-xl">Loading Vocabulary Tic-Tac-Toe...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const startGame = (settings: {
     difficulty: string; 
     category: string; 
     language: string;
@@ -45,9 +113,15 @@ export default function NoughtsAndCrossesPage() {
     setShowIntro(false);
   };
 
-  const handleGameEnd = (result: { outcome: 'win' | 'loss' | 'tie'; wordsLearned: number }) => {
-    // Don't automatically return to intro - let player choose to play again or exit
+  const handleGameEnd = (result: { outcome: 'win' | 'loss' | 'tie'; wordsLearned: number; perfectGame?: boolean }) => {
     console.log('Game ended:', result);
+
+    // If in assignment mode, redirect back to assignments
+    if (assignmentId) {
+      setTimeout(() => {
+        router.push('/student-dashboard/assignments');
+      }, 3000);
+    }
   };
 
   return (
@@ -217,10 +291,15 @@ export default function NoughtsAndCrossesPage() {
                 exit={{ opacity: 0 }}
                 className="w-full h-screen"
               >
-                <TicTacToeGameWrapper 
-                  settings={gameSettings}
+                <TicTacToeGameWrapper
+                  settings={{
+                    ...gameSettings,
+                    subcategory: selectedSubcategory
+                  }}
                   onBackToMenu={backToMenu}
                   onGameEnd={handleGameEnd}
+                  assignmentId={assignmentId}
+                  userId={user?.id}
                 />
               </motion.div>
             )}

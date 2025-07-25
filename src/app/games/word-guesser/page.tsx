@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { IoChevronBackOutline, IoExpandOutline, IoContractOutline } from 'react-icons/io5';
+import { useAuth } from '../../../components/auth/AuthProvider';
 import WordGuesser from './components/WordGuesser';
 import GameSettings from './components/GameSettings';
 import { WordGuesserSettings, GameStats } from './types';
@@ -14,13 +15,47 @@ import './word-guesser.css';
 const FOREST_BG_URL = '/images/forest-bg.jpg';
 
 export default function WordGuesserPage() {
+  const { user, isLoading } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Get URL parameters for assignment mode
+  const assignmentId = searchParams?.get('assignment');
+  const language = searchParams?.get('language') || 'spanish';
+  const difficulty = searchParams?.get('difficulty') || 'medium';
+  const category = searchParams?.get('category') || 'animals';
+
+  // Redirect to login if not authenticated
+  if (!isLoading && !user) {
+    router.push('/auth/login');
+    return null;
+  }
+
+  // Show loading while authenticating
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-600 via-emerald-600 to-teal-700 flex items-center justify-center">
+        <div className="text-center text-white">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-white mx-auto mb-4"></div>
+          <p className="text-xl">Loading Word Guesser...</p>
+        </div>
+      </div>
+    );
+  }
+
   const [settings, setSettings] = useState<(WordGuesserSettings & {
     selectedCategory: string;
     selectedSubcategory: string | null;
     theme: string;
-  }) | null>(null);
-  const [gameStarted, setGameStarted] = useState(false);
+  }) | null>(assignmentId ? {
+    difficulty: difficulty as any,
+    category: category,
+    language: language,
+    selectedCategory: category,
+    selectedSubcategory: null,
+    theme: 'forest'
+  } : null);
+  const [gameStarted, setGameStarted] = useState(!!assignmentId); // Auto-start for assignments
   const [gameStats, setGameStats] = useState<GameStats>({
     gamesPlayed: 0,
     gamesWon: 0,
@@ -257,10 +292,13 @@ export default function WordGuesserPage() {
                 exit={{ opacity: 0, scale: 0.9 }}
                 className={`${isFullscreen ? 'flex-grow w-full h-full flex items-center justify-center' : `${forestTheme ? 'bg-white/75 backdrop-blur-sm' : 'bg-white dark:bg-slate-700'} rounded-xl p-4 shadow-lg`} relative z-10`}
               >
-                <WordGuesser 
-                  settings={settings} 
-                  onBackToMenu={handleBackToMenu} 
+                <WordGuesser
+                  settings={settings}
+                  onBackToMenu={handleBackToMenu}
                   onGameEnd={handleGameEnd}
+                  assignmentId={assignmentId}
+                  userId={user?.id}
+                  isAssignmentMode={!!assignmentId}
                 />
               </motion.div>
             )

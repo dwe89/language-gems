@@ -1,14 +1,29 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { EnhancedGameService } from '../../../../services/enhancedGameService';
 import { useGameVocabulary, GameVocabularyWord } from '../../../../hooks/useGameVocabulary';
+import { supabaseBrowser } from '../../../../components/auth/AuthProvider';
 import { VocabBlastGameSettings } from '../page';
 import VocabBlastGame from './VocabBlastGame';
 
 interface VocabBlastGameWrapperProps {
   settings: VocabBlastGameSettings;
   onBackToMenu: () => void;
-  onGameEnd: (result: { outcome: 'win' | 'loss' | 'timeout'; score: number; wordsLearned: number }) => void;
+  onGameEnd: (result: {
+    outcome: 'win' | 'loss' | 'timeout';
+    score: number;
+    wordsLearned: number;
+    correctAnswers?: number;
+    incorrectAnswers?: number;
+    totalAttempts?: number;
+    accuracy?: number;
+    timeSpent?: number;
+    detailedStats?: any;
+  }) => void;
+  assignmentId?: string | null;
+  userId?: string;
+  isAssignmentMode?: boolean;
 }
 
 // Language mapping function
@@ -48,6 +63,18 @@ export default function VocabBlastGameWrapper(props: VocabBlastGameWrapperProps)
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Enhanced game service integration
+  const [gameService, setGameService] = useState<EnhancedGameService | null>(null);
+  const [gameSessionId, setGameSessionId] = useState<string | null>(null);
+
+  // Initialize game service
+  useEffect(() => {
+    if (props.userId) {
+      const service = new EnhancedGameService(supabaseBrowser);
+      setGameService(service);
+    }
+  }, [props.userId]);
+
   // Use the unified vocabulary hook
   const { vocabulary, loading: vocabularyLoading, error: vocabularyError } = useGameVocabulary({
     language: mapLanguage(props.settings.language),
@@ -84,12 +111,94 @@ export default function VocabBlastGameWrapper(props: VocabBlastGameWrapperProps)
     }
   }, [vocabulary, vocabularyLoading]);
 
+  // Start game session when vocabulary is loaded
+  useEffect(() => {
+    if (gameService && props.userId && gameVocabulary.length > 0 && !gameSessionId) {
+      startGameSession();
+    }
+  }, [gameService, props.userId, gameVocabulary, gameSessionId]);
+
+  const startGameSession = async () => {
+    if (!gameService || !props.userId) return;
+
+    try {
+      const sessionId = await gameService.startGameSession({
+        student_id: props.userId,
+        assignment_id: props.assignmentId || undefined,
+        game_type: 'vocab-blast',
+        session_mode: props.isAssignmentMode ? 'assignment' : 'free_play',
+        max_score_possible: 1000, // Adjust based on game settings
+        session_data: {
+          settings: props.settings,
+          vocabularyCount: gameVocabulary.length,
+          timeLimit: props.settings.timeLimit
+        }
+      });
+      setGameSessionId(sessionId);
+      console.log('Vocab blast game session started:', sessionId);
+    } catch (error) {
+      console.error('Failed to start vocab blast game session:', error);
+    }
+  };
+
   useEffect(() => {
     if (vocabularyError) {
       setError(vocabularyError);
       setIsLoading(false);
     }
   }, [vocabularyError]);
+
+  // Enhanced game completion handler
+  const handleEnhancedGameEnd = async (result: {
+    outcome: 'win' | 'loss' | 'timeout';
+    score: number;
+    wordsLearned: number;
+    correctAnswers?: number;
+    incorrectAnswers?: number;
+    totalAttempts?: number;
+    accuracy?: number;
+    timeSpent?: number;
+    detailedStats?: any;
+  }) => {
+    // End game session if it exists
+    if (gameService && gameSessionId && props.userId) {
+      try {
+        const accuracy = result.accuracy || (result.wordsLearned > 0 ? (result.wordsLearned / (result.totalAttempts || gameVocabulary.length)) * 100 : 0);
+        const finalScore = result.score;
+        const actualTimeSpent = result.timeSpent || props.settings.timeLimit;
+
+        await gameService.endGameSession(gameSessionId, {
+          student_id: props.userId,
+          final_score: finalScore,
+          accuracy_percentage: accuracy,
+          completion_percentage: 100,
+          words_attempted: result.totalAttempts || gameVocabulary.length,
+          words_correct: result.correctAnswers || result.wordsLearned,
+          unique_words_practiced: result.wordsLearned,
+          duration_seconds: actualTimeSpent,
+          session_data: {
+            outcome: result.outcome,
+            finalScore: result.score,
+            wordsLearned: result.wordsLearned,
+            correctAnswers: result.correctAnswers || 0,
+            incorrectAnswers: result.incorrectAnswers || 0,
+            totalAttempts: result.totalAttempts || 0,
+            accuracy: accuracy,
+            timeSpent: actualTimeSpent,
+            gameMode: 'vocab-blast',
+            detailedStats: result.detailedStats
+          }
+        });
+
+        console.log('Vocab blast game session ended successfully with detailed analytics');
+      } catch (error) {
+        console.error('Failed to end vocab blast game session:', error);
+      }
+    }
+
+    // Call the original game end handler
+    props.onGameEnd(result);
+  };
 
   useEffect(() => {
     setIsLoading(vocabularyLoading);
@@ -163,7 +272,9 @@ export default function VocabBlastGameWrapper(props: VocabBlastGameWrapperProps)
       settings={props.settings}
       vocabulary={gameVocabulary}
       onBackToMenu={props.onBackToMenu}
-      onGameEnd={props.onGameEnd}
+      onGameEnd={handleEnhancedGameEnd}
+      gameSessionId={gameSessionId}
+      isAssignmentMode={props.isAssignmentMode}
     />
   );
 }

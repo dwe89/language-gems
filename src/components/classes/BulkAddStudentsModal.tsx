@@ -17,6 +17,7 @@ import {
 import { Label } from "../ui/label";
 import { Loader2, Copy, CheckCircle } from "lucide-react";
 import { Alert, AlertDescription } from "../ui/alert";
+import { useAuth } from "../auth/AuthProvider";
 
 type Student = {
   name: string;
@@ -38,6 +39,7 @@ export function BulkAddStudentsModal({
   classId,
   onStudentsAdded
 }: BulkAddStudentsModalProps) {
+  const { user } = useAuth();
   const [bulkStudentData, setBulkStudentData] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -48,23 +50,38 @@ export function BulkAddStudentsModal({
     setIsLoading(true);
     setError('');
     setAddedStudents([]);
-    
+
     try {
       if (!bulkStudentData.trim()) {
         setError('Please enter at least one student name');
         setIsLoading(false);
         return;
       }
-      
+
       const students = bulkStudentData
         .split('\n')
         .filter(line => line.trim())
         .map(line => {
           return { name: line.trim() };
         });
-      
-      console.log('Sending student data:', { students, classId });
-      
+
+      // Get teacher's school initials from their profile or use default
+      let schoolInitials = "LG"; // Default fallback
+
+      try {
+        const response = await fetch('/api/user/profile');
+        if (response.ok) {
+          const profileData = await response.json();
+          if (profileData.school_initials) {
+            schoolInitials = profileData.school_initials;
+          }
+        }
+      } catch (profileError) {
+        console.log('Could not fetch profile, using default school initials');
+      }
+
+      console.log('Sending student data:', { students, classId, schoolInitials });
+
       const response = await fetch('/api/students/bulk', {
         method: 'POST',
         headers: {
@@ -73,6 +90,7 @@ export function BulkAddStudentsModal({
         body: JSON.stringify({
           students,
           classId,
+          schoolInitials, // Now included in the request
         }),
       });
       

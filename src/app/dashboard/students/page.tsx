@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useAuth, supabaseBrowser } from '../../../components/auth/AuthProvider';
 import Link from 'next/link';
-import { Search, UserPlus, Filter, Mail, ArrowUpDown, BookOpen, UserCheck, UserX, Download } from 'lucide-react';
+import { Search, UserPlus, Filter, Mail, ArrowUpDown, BookOpen, UserCheck, UserX, Download, ArrowLeft } from 'lucide-react';
+import DashboardHeader from '../../../components/dashboard/DashboardHeader';
 
 // Define types for our data
 type Student = {
@@ -217,6 +218,16 @@ export default function StudentsPage() {
   
   return (
     <div>
+      <div className="mb-4">
+        <Link
+          href="/dashboard"
+          className="inline-flex items-center text-slate-300 hover:text-white transition-colors text-sm font-medium"
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Return to Dashboard
+        </Link>
+      </div>
+
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-white mb-2">Students</h1>
         <p className="text-gray-300">Manage and track progress of your students across all classes</p>

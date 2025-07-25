@@ -11,7 +11,7 @@ import {
   RefreshCw, CheckCircle, Headphones, Mic, Volume2, MessageSquare,
   PenTool, FileEdit, Feather, Award, Plus, X, Eye, Trash2,
   Zap, Brain, Target, Gamepad2, Timer, Star, Settings,
-  Shuffle, Grid3X3, Type, Layers, Smile, Pickaxe, Gem
+  Shuffle, Grid3X3, Type, Layers, Smile, Pickaxe, Gem, Map
 } from 'lucide-react';
 import { supabaseBrowser } from '../../../../components/auth/AuthProvider';
 
@@ -28,16 +28,7 @@ const AVAILABLE_GAMES = [
     path: '/student-dashboard/vocabulary-mining/practice',
     featured: true // Mark as featured for highlighting
   },
-  {
-    id: 'gem-rush',
-    name: 'Gem Rush',
-    description: 'Race against time to collect vocabulary gems in this fast-paced challenge',
-    icon: <Gem className="text-purple-500" size={20} />,
-    category: 'vocabulary',
-    difficulty: 'intermediate',
-    timeToComplete: '5-10 min',
-    path: '/games/gem-rush'
-  },
+
   {
     id: 'speed-builder',
     name: 'Speed Builder',
@@ -48,26 +39,7 @@ const AVAILABLE_GAMES = [
     timeToComplete: '5-10 min',
     path: '/games/speed-builder'
   },
-  { 
-    id: 'vocab-master', 
-    name: 'VocabMaster', 
-    description: 'Master vocabulary with intelligent spaced repetition and adaptive learning exercises',
-    icon: <Star className="text-purple-500" size={20} />,
-    category: 'vocabulary',
-    difficulty: 'intermediate',
-    timeToComplete: '5-15 min',
-    path: '/games/vocab-master'
-  },
-  { 
-    id: 'translation-tycoon', 
-    name: 'Translation Tycoon', 
-    description: 'Build your translation business empire by earning coins from correct translations',
-    icon: <DollarSign className="text-emerald-500" size={20} />,
-    category: 'vocabulary',
-    difficulty: 'intermediate',
-    timeToComplete: '8-15 min',
-    path: '/games/translation-tycoon'
-  },
+
   { 
     id: 'word-blast', 
     name: 'Word Blast', 
@@ -148,9 +120,9 @@ const AVAILABLE_GAMES = [
     timeToComplete: '5-10 min',
     path: '/games/sentence-builder'
   },
-  { 
-    id: 'word-association', 
-    name: 'Word Association', 
+  {
+    id: 'word-association',
+    name: 'Word Association',
     description: 'Connect related words and build vocabulary through associations',
     icon: <RefreshCw className="text-teal-500" size={20} />,
     category: 'vocabulary',
@@ -158,15 +130,45 @@ const AVAILABLE_GAMES = [
     timeToComplete: '4-9 min',
     path: '/games/word-association'
   },
-  { 
-    id: 'word-scramble', 
-    name: 'Word Scramble', 
-    description: 'Unscramble letters to form correct vocabulary words',
-    icon: <Shuffle className="text-lime-500" size={20} />,
+  {
+    id: 'word-scramble',
+    name: 'Word Scramble',
+    description: 'Unscramble letters to form vocabulary words',
+    icon: <Shuffle className="text-violet-500" size={20} />,
     category: 'vocabulary',
     difficulty: 'beginner',
-    timeToComplete: '3-7 min',
+    timeToComplete: '4-8 min',
     path: '/games/word-scramble'
+  },
+  {
+    id: 'detective-listening',
+    name: 'Detective Listening',
+    description: 'Solve cases by listening to radio transmissions and identifying evidence',
+    icon: <Headphones className="text-amber-600" size={20} />,
+    category: 'listening',
+    difficulty: 'intermediate',
+    timeToComplete: '8-15 min',
+    path: '/games/detective-listening'
+  },
+  {
+    id: 'vocab-blast',
+    name: 'Vocab Blast',
+    description: 'Fast-paced vocabulary action with themed adventures',
+    icon: <Zap className="text-yellow-500" size={20} />,
+    category: 'vocabulary',
+    difficulty: 'intermediate',
+    timeToComplete: '5-12 min',
+    path: '/games/vocab-blast'
+  },
+  {
+    id: 'verb-quest',
+    name: 'Verb Quest',
+    description: 'Adventure through different worlds mastering verb conjugations',
+    icon: <Map className="text-emerald-600" size={20} />,
+    category: 'grammar',
+    difficulty: 'advanced',
+    timeToComplete: '15-25 min',
+    path: '/games/verb-quest'
   }
 ];
 
@@ -225,15 +227,14 @@ export default function NewAssignmentPage() {
     assigned_to: '',
     due_date: '',
     status: 'active',
-    points: 10,
     time_limit: 30
   });
 
   // Vocabulary assignment state
   const [vocabularySelection, setVocabularySelection] = useState({
-    type: 'theme_based' as 'theme_based' | 'topic_based' | 'custom_list',
-    theme: '',
-    topic: '',
+    type: 'category_based' as 'category_based' | 'subcategory_based' | 'custom_list',
+    category: '',
+    subcategory: '',
     customListId: '',
     wordCount: 10
   });
@@ -259,8 +260,79 @@ export default function NewAssignmentPage() {
   const [dataFetched, setDataFetched] = useState(false);
   const [vocabularyPreview, setVocabularyPreview] = useState<any[]>([]);
   const [previewLoading, setPreviewLoading] = useState(false);
-  const [availableThemes, setAvailableThemes] = useState<string[]>([]);
-  const [availableTopics, setAvailableTopics] = useState<string[]>([]);
+  const [availableCategories, setAvailableCategories] = useState<string[]>([]);
+  const [availableSubcategories, setAvailableSubcategories] = useState<Record<string, string[]>>({});
+  const [customWordlists, setCustomWordlists] = useState<any[]>([]);
+
+  // Standard vocabulary categories from centralized database
+  const standardCategories = {
+    'basics_core_language': [
+      'greetings_introductions',
+      'common_phrases',
+      'opinions',
+      'numbers_1_20',
+      'numbers_1_50',
+      'numbers_1_100',
+      'colours',
+      'days',
+      'months'
+    ],
+    'identity_personal_life': [
+      'personal_information',
+      'family_friends',
+      'physical_personality_descriptions',
+      'pets'
+    ],
+    'home_local_area': [
+      'house_rooms_furniture',
+      'household_items_chores',
+      'types_of_housing',
+      'local_area_places_town',
+      'shops_services',
+      'directions_prepositions'
+    ],
+    'school_jobs_future': [
+      'school_subjects',
+      'school_rules',
+      'classroom_objects',
+      'daily_routine_school',
+      'professions_jobs',
+      'future_ambitions',
+      'qualities_for_jobs'
+    ],
+    'free_time_entertainment': [
+      'hobbies_interests',
+      'sports',
+      'music_instruments',
+      'tv_films_books',
+      'social_activities',
+      'technology_social_media'
+    ],
+    'travel_holidays': [
+      'countries',
+      'holiday_activities',
+      'transport',
+      'accommodation',
+      'weather_seasons',
+      'tourist_attractions'
+    ],
+    'health_lifestyle': [
+      'body_parts',
+      'health_illness',
+      'food_drink_vocabulary',
+      'healthy_unhealthy_lifestyle',
+      'exercise_fitness',
+      'medical_emergencies'
+    ],
+    'shopping_money': [
+      'clothes_accessories',
+      'shopping_phrases_prices',
+      'money_currency',
+      'shops_services',
+      'online_shopping',
+      'consumer_rights'
+    ]
+  };
 
   // Memory Game grid configurations
   const MEMORY_GAME_GRIDS = [
@@ -317,30 +389,38 @@ export default function NewAssignmentPage() {
         setVocabularyLists(vocabularyListsData || []);
       }
 
-      // Fetch available themes
-      const { data: themesData, error: themesError } = await supabase
-        .from('vocabulary')
-        .select('theme')
-        .not('theme', 'is', null);
+      // Load categories from centralized vocabulary database
+      const { data: categoriesData, error: categoriesError } = await supabase
+        .from('centralized_vocabulary')
+        .select('category, subcategory')
+        .not('category', 'is', null)
+        .not('subcategory', 'is', null);
 
-      if (themesError) {
-        console.error('Error fetching themes:', themesError);
+      if (categoriesError) {
+        console.error('Error fetching categories:', categoriesError);
+        // Fallback to standard categories
+        setAvailableCategories(Object.keys(standardCategories));
+        setAvailableSubcategories(standardCategories);
       } else {
-        const uniqueThemes = [...new Set(themesData?.map(item => item.theme) || [])];
-        setAvailableThemes(uniqueThemes.sort());
-      }
+        // Process the data to get unique categories and their subcategories
+        const categoryMap: Record<string, Set<string>> = {};
 
-      // Fetch available topics
-      const { data: topicsData, error: topicsError } = await supabase
-        .from('vocabulary')
-        .select('topic')
-        .not('topic', 'is', null);
+        categoriesData?.forEach(item => {
+          if (!categoryMap[item.category]) {
+            categoryMap[item.category] = new Set();
+          }
+          categoryMap[item.category].add(item.subcategory);
+        });
 
-      if (topicsError) {
-        console.error('Error fetching topics:', topicsError);
-      } else {
-        const uniqueTopics = [...new Set(topicsData?.map(item => item.topic) || [])];
-        setAvailableTopics(uniqueTopics.sort());
+        const categories = Object.keys(categoryMap).sort();
+        const subcategoriesMap: Record<string, string[]> = {};
+
+        Object.entries(categoryMap).forEach(([category, subcatSet]) => {
+          subcategoriesMap[category] = Array.from(subcatSet).sort();
+        });
+
+        setAvailableCategories(categories);
+        setAvailableSubcategories(subcategoriesMap);
       }
 
     } catch (err) {
@@ -365,15 +445,27 @@ export default function NewAssignmentPage() {
   // Separate effect for handling URL parameters (only run once)
   useEffect(() => {
     const gameParam = searchParams?.get('game');
-    if (gameParam === '2') { // Memory Game
-      const memoryGame = AVAILABLE_GAMES.find(g => g.id === 'memory-game');
-      if (memoryGame) {
-        setSelectedActivities([memoryGame]);
-      }
-    } else if (gameParam === '3') { // Speed Builder
-      const speedBuilder = AVAILABLE_GAMES.find(g => g.id === 'speed-builder');
-      if (speedBuilder) {
-        setSelectedActivities([speedBuilder]);
+    if (gameParam) {
+      // Map game IDs from dashboard/games to assignment creation game IDs
+      const gameIdMap: Record<string, string> = {
+        '1': 'translation-tycoon', // Translation Tycoon (doesn't exist in AVAILABLE_GAMES)
+        '2': 'memory-game',        // Memory Game
+        '3': 'vocab-blast',        // Vocab Blast
+        '4': 'hangman',           // Hangman
+        '5': 'speed-builder',     // Speed Builder
+        '6': 'sentence-towers',   // Sentence Tower
+        '7': 'noughts-and-crosses', // Noughts and Crosses
+        '8': 'conjugation-duel',  // Verb Conjugation Ladder
+        '9': 'word-association',  // Word Association
+        '10': 'word-scramble',    // Word Scramble
+        'vocab-master': 'vocabulary-mining' // Vocabulary Mining (legacy mapping)
+      };
+
+      const mappedGameId = gameIdMap[gameParam] || gameParam;
+      const selectedGame = AVAILABLE_GAMES.find(g => g.id === mappedGameId);
+
+      if (selectedGame) {
+        setSelectedActivities([selectedGame]);
       }
     }
   }, [searchParams]); // Include searchParams as dependency
@@ -385,7 +477,13 @@ export default function NewAssignmentPage() {
 
   const handleVocabularyChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setVocabularySelection(prev => ({ ...prev, [name]: value }));
+
+    // If changing category, clear subcategory
+    if (name === 'category') {
+      setVocabularySelection(prev => ({ ...prev, [name]: value, subcategory: '' }));
+    } else {
+      setVocabularySelection(prev => ({ ...prev, [name]: value }));
+    }
 
     // Clear preview when selection changes
     setVocabularyPreview([]);
@@ -467,18 +565,6 @@ export default function NewAssignmentPage() {
 
         if (activity.id === 'vocabulary-mining') {
           gameConfig = miningSettings;
-        } else if (activity.id === 'vocab-master') {
-          const form = e.target as HTMLFormElement;
-          const formData = new FormData(form);
-
-          gameConfig = {
-            language: formData.get('gemCollectorLanguage') || 'spanish',
-            difficulty: formData.get('gemCollectorDifficulty') || 'beginner',
-            sentenceCount: parseInt(formData.get('gemCollectorSentenceCount') as string) || 10,
-            livesCount: parseInt(formData.get('gemCollectorLives') as string) || 3,
-            speedBoostEnabled: formData.get('gemCollectorSpeedBoost') === 'on',
-            timeLimit: formData.time_limit * 60 // Convert minutes to seconds
-          };
         }
 
         const assignmentData = {
@@ -490,7 +576,6 @@ export default function NewAssignmentPage() {
           classId: formData.assigned_to,
           dueDate: formData.due_date,
           timeLimit: formData.time_limit,
-          points: formData.points,
           vocabularySelection: vocabularySelection,
           gameConfig: Object.keys(gameConfig).length > 0 ? gameConfig : undefined,
           miningSettings: activity.id === 'vocabulary-mining' ? miningSettings : undefined
@@ -658,21 +743,7 @@ export default function NewAssignmentPage() {
                   />
                 </div>
                 
-                <div>
-                  <label htmlFor="points" className="block text-sm font-medium text-gray-700 mb-2">
-                    Points
-                  </label>
-                  <input
-                    type="number"
-                    id="points"
-                    name="points"
-                    value={formData.points}
-                    onChange={handleChange}
-                    min="1"
-                    max="100"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-                  />
-                </div>
+
               </div>
             </div>
 
@@ -695,8 +766,8 @@ export default function NewAssignmentPage() {
                     onChange={handleVocabularyChange}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
                   >
-                    <option value="theme_based">Theme-based Selection</option>
-                    <option value="topic_based">Topic-based Selection</option>
+                    <option value="category_based">Category-based Selection</option>
+                    <option value="subcategory_based">Subcategory-based Selection</option>
                     <option value="custom_list">Custom Vocabulary List</option>
                   </select>
                   
@@ -714,44 +785,72 @@ export default function NewAssignmentPage() {
                   )}
                 </div>
 
-                {vocabularySelection.type === 'theme_based' && (
+                {vocabularySelection.type === 'category_based' && (
                   <div>
-                    <label htmlFor="theme" className="block text-sm font-medium text-gray-700 mb-2">
-                      Theme
+                    <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
+                      Category
                     </label>
                     <select
-                      id="theme"
-                      name="theme"
-                      value={vocabularySelection.theme}
+                      id="category"
+                      name="category"
+                      value={vocabularySelection.category}
                       onChange={handleVocabularyChange}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
                     >
-                      <option value="">Select a theme</option>
-                      {availableThemes.map(theme => (
-                        <option key={theme} value={theme}>{theme}</option>
+                      <option value="">Select a category</option>
+                      {availableCategories.map(category => (
+                        <option key={category} value={category}>
+                          {category.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                        </option>
                       ))}
                     </select>
                   </div>
                 )}
 
-                {vocabularySelection.type === 'topic_based' && (
-                  <div>
-                    <label htmlFor="topic" className="block text-sm font-medium text-gray-700 mb-2">
-                      Topic
-                    </label>
-                    <select
-                      id="topic"
-                      name="topic"
-                      value={vocabularySelection.topic}
-                      onChange={handleVocabularyChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-                    >
-                      <option value="">Select a topic</option>
-                      {availableTopics.map(topic => (
-                        <option key={topic} value={topic}>{topic}</option>
-                      ))}
-                    </select>
-                  </div>
+                {vocabularySelection.type === 'subcategory_based' && (
+                  <>
+                    <div>
+                      <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
+                        Category
+                      </label>
+                      <select
+                        id="category"
+                        name="category"
+                        value={vocabularySelection.category}
+                        onChange={handleVocabularyChange}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                      >
+                        <option value="">Select a category</option>
+                        {availableCategories.map(category => (
+                          <option key={category} value={category}>
+                            {category.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {vocabularySelection.category && (
+                      <div>
+                        <label htmlFor="subcategory" className="block text-sm font-medium text-gray-700 mb-2">
+                          Subcategory
+                        </label>
+                        <select
+                          id="subcategory"
+                          name="subcategory"
+                          value={vocabularySelection.subcategory}
+                          onChange={handleVocabularyChange}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                        >
+                          <option value="">Select a subcategory</option>
+                          {(availableSubcategories[vocabularySelection.category] || []).map(subcategory => (
+                            <option key={subcategory} value={subcategory}>
+                              {subcategory.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                  </>
                 )}
 
                 {vocabularySelection.type === 'custom_list' && (
@@ -810,13 +909,13 @@ export default function NewAssignmentPage() {
                     onChange={handleVocabularyChange}
                     min="5"
                     max={
-                      (vocabularySelection.type === 'theme_based' || vocabularySelection.type === 'topic_based') 
-                        ? "20" 
+                      (vocabularySelection.type === 'category_based' || vocabularySelection.type === 'subcategory_based')
+                        ? "20"
                         : "50"
                     }
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
                   />
-                  {(vocabularySelection.type === 'theme_based' || vocabularySelection.type === 'topic_based') && vocabularySelection.wordCount > 20 && (
+                  {(vocabularySelection.type === 'category_based' || vocabularySelection.type === 'subcategory_based') && vocabularySelection.wordCount > 20 && (
                     <p className="mt-1 text-sm text-amber-600">
                       Word count will be limited to 20 for optimal gameplay experience.
                     </p>
@@ -893,94 +992,7 @@ export default function NewAssignmentPage() {
               </div>
             </div>
 
-            {/* Gem Collector Settings */}
-            {selectedActivities.some(activity => activity.id === 'vocab-master') && (
-              <div className="bg-white rounded-xl shadow-lg p-6 border border-purple-100">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                  <Star className="mr-2 text-purple-600" size={20} />
-                  Gem Collector Game Settings
-                </h3>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Target Language
-                    </label>
-                    <select
-                      name="gemCollectorLanguage"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                      defaultValue="spanish"
-                    >
-                      <option value="spanish">Spanish</option>
-                      <option value="french">French</option>
-                      <option value="german">German</option>
-                      <option value="italian">Italian</option>
-                      <option value="portuguese">Portuguese</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Difficulty Level
-                    </label>
-                    <select
-                      name="gemCollectorDifficulty"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                      defaultValue="beginner"
-                    >
-                      <option value="beginner">Beginner</option>
-                      <option value="intermediate">Intermediate</option>
-                      <option value="advanced">Advanced</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Number of Sentences
-                    </label>
-                    <select
-                      name="gemCollectorSentenceCount"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                      defaultValue="10"
-                    >
-                      <option value="5">5 sentences (Quick)</option>
-                      <option value="10">10 sentences (Standard)</option>
-                      <option value="15">15 sentences (Extended)</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Lives Count
-                    </label>
-                    <select
-                      name="gemCollectorLives"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                      defaultValue="3"
-                    >
-                      <option value="1">1 life (Hard)</option>
-                      <option value="3">3 lives (Standard)</option>
-                      <option value="5">5 lives (Easy)</option>
-                    </select>
-                  </div>
-
-                  <div className="md:col-span-2">
-                    <div className="flex items-center">
-                      <input
-                        type="checkbox"
-                        name="gemCollectorSpeedBoost"
-                        id="gemCollectorSpeedBoost"
-                        defaultChecked={true}
-                        className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
-                      />
-                      <label htmlFor="gemCollectorSpeedBoost" className="ml-2 block text-sm text-gray-700">
-                        Enable speed boost feature (right arrow key)
-                      </label>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
 
             {/* Vocabulary Mining Settings */}
             {selectedActivities.some(activity => activity.id === 'vocabulary-mining') && (

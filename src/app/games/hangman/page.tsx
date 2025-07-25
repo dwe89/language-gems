@@ -4,19 +4,32 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { IoChevronBackOutline, IoExpandOutline, IoContractOutline } from 'react-icons/io5';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useAuth } from '../../../components/auth/AuthProvider';
 import { useVocabularyByCategory } from '../../../hooks/useVocabulary';
 import HangmanGameWrapper from './components/HangmanGameWrapper';
 import GameSettings from './components/GameSettings';
 
 export default function HangmanPage() {
+  const { user, isLoading } = useAuth();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Get URL parameters for assignment mode
+  const assignmentId = searchParams?.get('assignment');
+  const language = searchParams?.get('language') || 'spanish';
+  const difficulty = searchParams?.get('difficulty') || 'beginner';
+  const category = searchParams?.get('category') || 'animals';
+
+  // Initialize all hooks first (before any conditional returns)
   const [settings, setSettings] = useState({
-    difficulty: 'beginner',
-    category: 'animals',
-    language: 'spanish',
+    difficulty: assignmentId ? difficulty : 'beginner',
+    category: assignmentId ? category : 'animals',
+    language: assignmentId ? language : 'spanish',
     theme: 'default',
     customWords: [] as string[],
   });
-  const [gameStarted, setGameStarted] = useState(false);
+  const [gameStarted, setGameStarted] = useState(!!assignmentId); // Auto-start for assignments
   const [gameStats, setGameStats] = useState({
     gamesPlayed: 0,
     gamesWon: 0,
@@ -90,6 +103,25 @@ export default function HangmanPage() {
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
     };
   }, []);
+
+  // Conditional logic after all hooks are initialized
+  // Redirect to login if not authenticated
+  if (!isLoading && !user) {
+    router.push('/auth/login');
+    return null;
+  }
+
+  // Show loading while authenticating
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-600 via-blue-600 to-indigo-700 flex items-center justify-center">
+        <div className="text-center text-white">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-white mx-auto mb-4"></div>
+          <p className="text-xl">Loading Hangman Game...</p>
+        </div>
+      </div>
+    );
+  }
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -247,6 +279,9 @@ export default function HangmanPage() {
               onBackToMenu={handleBackToMenu}
               onGameEnd={handleGameEnd}
               isFullscreen={isFullscreen}
+              assignmentId={assignmentId}
+              userId={user?.id}
+              isAssignmentMode={!!assignmentId}
             />
           </motion.div>
         )}
