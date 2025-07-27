@@ -1003,7 +1003,15 @@
               "vous": "parliez",
               "ils": "parlaient"
             },
-            "futur": {
+            "futur_proche": {
+              "je": "vais parler",
+              "tu": "vas parler",
+              "il": "va parler",
+              "nous": "allons parler",
+              "vous": "allez parler",
+              "ils": "vont parler"
+            },
+            "futur_simple": {
               "je": "parlerai",
               "tu": "parleras",
               "il": "parlera",
@@ -1018,6 +1026,38 @@
               "nous": "parlerions",
               "vous": "parleriez",
               "ils": "parleraient"
+            },
+            "passe_compose_avoir": {
+              "je": "ai parlé",
+              "tu": "as parlé",
+              "il": "a parlé",
+              "nous": "avons parlé",
+              "vous": "avez parlé",
+              "ils": "ont parlé"
+            },
+            "plus_que_parfait": {
+              "je": "avais parlé",
+              "tu": "avais parlé",
+              "il": "avait parlé",
+              "nous": "avions parlé",
+              "vous": "aviez parlé",
+              "ils": "avaient parlé"
+            },
+            "futur_anterieur": {
+              "je": "aurai parlé",
+              "tu": "auras parlé",
+              "il": "aura parlé",
+              "nous": "aurons parlé",
+              "vous": "aurez parlé",
+              "ils": "auront parlé"
+            },
+            "conditionnel_passe": {
+              "je": "aurais parlé",
+              "tu": "aurais parlé",
+              "il": "aurait parlé",
+              "nous": "aurions parlé",
+              "vous": "auriez parlé",
+              "ils": "auraient parlé"
             },
             "subjonctif_présent": {
               "je": "parle",
@@ -1329,6 +1369,131 @@
           }
         }
       }
+    ],
+    "dr_mrs_vandertramp": [
+      {
+        "infinitive": "aller",
+        "english": "to go",
+        "difficulty": 2,
+        "conjugations": {
+          "present": {
+            "je": "vais",
+            "tu": "vas",
+            "il": "va",
+            "nous": "allons",
+            "vous": "allez",
+            "ils": "vont"
+          },
+          "passe_compose_etre": {
+            "je": "suis allé(e)",
+            "tu": "es allé(e)",
+            "il": "est allé",
+            "nous": "sommes allé(e)s",
+            "vous": "êtes allé(e)(s)",
+            "ils": "sont allés"
+          },
+          "imparfait": {
+            "je": "allais",
+            "tu": "allais",
+            "il": "allait",
+            "nous": "allions",
+            "vous": "alliez",
+            "ils": "allaient"
+          },
+          "futur_simple": {
+            "je": "irai",
+            "tu": "iras",
+            "il": "ira",
+            "nous": "irons",
+            "vous": "irez",
+            "ils": "iront"
+          }
+        }
+      },
+      {
+        "infinitive": "venir",
+        "english": "to come",
+        "difficulty": 2,
+        "conjugations": {
+          "present": {
+            "je": "viens",
+            "tu": "viens",
+            "il": "vient",
+            "nous": "venons",
+            "vous": "venez",
+            "ils": "viennent"
+          },
+          "passe_compose_etre": {
+            "je": "suis venu(e)",
+            "tu": "es venu(e)",
+            "il": "est venu",
+            "nous": "sommes venu(e)s",
+            "vous": "êtes venu(e)(s)",
+            "ils": "sont venus"
+          },
+          "imparfait": {
+            "je": "venais",
+            "tu": "venais",
+            "il": "venait",
+            "nous": "venions",
+            "vous": "veniez",
+            "ils": "venaient"
+          }
+        }
+      },
+      {
+        "infinitive": "partir",
+        "english": "to leave",
+        "difficulty": 2,
+        "conjugations": {
+          "present": {
+            "je": "pars",
+            "tu": "pars",
+            "il": "part",
+            "nous": "partons",
+            "vous": "partez",
+            "ils": "partent"
+          },
+          "passe_compose_etre": {
+            "je": "suis parti(e)",
+            "tu": "es parti(e)",
+            "il": "est parti",
+            "nous": "sommes parti(e)s",
+            "vous": "êtes parti(e)(s)",
+            "ils": "sont partis"
+          }
+        }
+      }
+    ],
+    "reflexive": [
+      {
+        "infinitive": "se laver",
+        "english": "to wash oneself",
+        "difficulty": 3,
+        "conjugations": {
+          "reflexive_present": {
+            "je": "me lave",
+            "tu": "te laves",
+            "il": "se lave",
+            "nous": "nous lavons",
+            "vous": "vous lavez",
+            "ils": "se lavent"
+          },
+          "reflexive_passe": {
+            "je": "me suis lavé(e)",
+            "tu": "t'es lavé(e)",
+            "il": "s'est lavé",
+            "nous": "nous sommes lavé(e)s",
+            "vous": "vous êtes lavé(e)(s)",
+            "ils": "se sont lavés"
+          },
+          "imperatif": {
+            "tu": "lave-toi",
+            "nous": "lavons-nous",
+            "vous": "lavez-vous"
+          }
+        }
+      }
     ]
   },
   "german": {
@@ -1363,7 +1528,7 @@
               "ihr": "habt gemacht",
               "sie": "haben gemacht"
             },
-            "future": {
+            "future_basic": {
               "ich": "werde machen",
               "du": "wirst machen",
               "er": "wird machen",
@@ -1371,13 +1536,43 @@
               "ihr": "werdet machen",
               "sie": "werden machen"
             },
-            "conditional": {
+            "futur_i": {
+              "ich": "werde machen",
+              "du": "wirst machen",
+              "er": "wird machen",
+              "wir": "werden machen",
+              "ihr": "werdet machen",
+              "sie": "werden machen"
+            },
+            "konjunktiv_ii": {
               "ich": "würde machen",
               "du": "würdest machen",
               "er": "würde machen",
               "wir": "würden machen",
               "ihr": "würdet machen",
               "sie": "würden machen"
+            },
+            "perfekt_haben": {
+              "ich": "habe gemacht",
+              "du": "hast gemacht",
+              "er": "hat gemacht",
+              "wir": "haben gemacht",
+              "ihr": "habt gemacht",
+              "sie": "haben gemacht"
+            },
+            "prateritum": {
+              "ich": "machte",
+              "du": "machtest",
+              "er": "machte",
+              "wir": "machten",
+              "ihr": "machtet",
+              "sie": "machten"
+            },
+            "imperativ": {
+              "du": "mach",
+              "ihr": "macht",
+              "Sie": "machen Sie",
+              "wir": "machen wir"
             }
           }
         },
@@ -1655,6 +1850,124 @@
             "wir": "sind geworden",
             "ihr": "seid geworden",
             "sie": "sind geworden"
+          }
+        }
+      }
+    ],
+    "separable": [
+      {
+        "infinitive": "anrufen",
+        "english": "to call",
+        "difficulty": 2,
+        "conjugations": {
+          "present": {
+            "ich": "rufe an",
+            "du": "rufst an",
+            "er": "ruft an",
+            "wir": "rufen an",
+            "ihr": "ruft an",
+            "sie": "rufen an"
+          },
+          "perfekt_haben": {
+            "ich": "habe angerufen",
+            "du": "hast angerufen",
+            "er": "hat angerufen",
+            "wir": "haben angerufen",
+            "ihr": "habt angerufen",
+            "sie": "haben angerufen"
+          },
+          "imperativ": {
+            "du": "ruf an",
+            "ihr": "ruft an",
+            "Sie": "rufen Sie an",
+            "wir": "rufen wir an"
+          }
+        }
+      },
+      {
+        "infinitive": "aufstehen",
+        "english": "to get up",
+        "difficulty": 2,
+        "conjugations": {
+          "present": {
+            "ich": "stehe auf",
+            "du": "stehst auf",
+            "er": "steht auf",
+            "wir": "stehen auf",
+            "ihr": "steht auf",
+            "sie": "stehen auf"
+          },
+          "perfekt_sein": {
+            "ich": "bin aufgestanden",
+            "du": "bist aufgestanden",
+            "er": "ist aufgestanden",
+            "wir": "sind aufgestanden",
+            "ihr": "seid aufgestanden",
+            "sie": "sind aufgestanden"
+          }
+        }
+      }
+    ],
+    "modal": [
+      {
+        "infinitive": "können",
+        "english": "can/to be able to",
+        "difficulty": 2,
+        "conjugations": {
+          "present": {
+            "ich": "kann",
+            "du": "kannst",
+            "er": "kann",
+            "wir": "können",
+            "ihr": "könnt",
+            "sie": "können"
+          },
+          "prateritum": {
+            "ich": "konnte",
+            "du": "konntest",
+            "er": "konnte",
+            "wir": "konnten",
+            "ihr": "konntet",
+            "sie": "konnten"
+          },
+          "konjunktiv_ii": {
+            "ich": "könnte",
+            "du": "könntest",
+            "er": "könnte",
+            "wir": "könnten",
+            "ihr": "könntet",
+            "sie": "könnten"
+          }
+        }
+      },
+      {
+        "infinitive": "müssen",
+        "english": "must/to have to",
+        "difficulty": 2,
+        "conjugations": {
+          "present": {
+            "ich": "muss",
+            "du": "musst",
+            "er": "muss",
+            "wir": "müssen",
+            "ihr": "müsst",
+            "sie": "müssen"
+          },
+          "prateritum": {
+            "ich": "musste",
+            "du": "musstest",
+            "er": "musste",
+            "wir": "mussten",
+            "ihr": "musstet",
+            "sie": "mussten"
+          },
+          "konjunktiv_ii": {
+            "ich": "müsste",
+            "du": "müsstest",
+            "er": "müsste",
+            "wir": "müssten",
+            "ihr": "müsstet",
+            "sie": "müssten"
           }
         }
       }

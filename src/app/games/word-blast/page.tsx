@@ -480,7 +480,6 @@ export default function GemWordBlastGame() {
   }>>([]);
   
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const searchParams = useSearchParams();
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!

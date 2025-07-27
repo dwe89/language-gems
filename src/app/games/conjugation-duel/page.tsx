@@ -46,10 +46,11 @@ export default function ConjugationDuelPage() {
 
     const loadGameData = async () => {
       try {
-        // Load leagues
+        // Load leagues for selected language
         const leaguesResponse = await fetch('/data/leagues.json');
         const leaguesData = await leaguesResponse.json();
-        loadLeagues(leaguesData.leagues);
+        const languageLeagues = leaguesData[selectedLanguage] || leaguesData.spanish || [];
+        loadLeagues(languageLeagues);
 
         // Load verbs for selected language
         const verbsResponse = await fetch('/data/verbs.json');
@@ -199,7 +200,7 @@ export default function ConjugationDuelPage() {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
           >
-            <BattleArena onBattleEnd={handleBattleEnd} />
+            <BattleArena onBattleEnd={handleBattleEnd} language={selectedLanguage} />
           </motion.div>
         )}
 

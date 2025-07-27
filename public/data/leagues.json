@@ -384,5 +384,777 @@
         "accuracyRequired": 92
       }
     }
+  ],
+  "french": [
+    {
+      "id": "bronze_arena",
+      "name": "🥉 Bronze Arena: The Proving Grounds",
+      "description": "Master core regular verbs in present tense and futur proche. Build your conjugation foundation here.",
+      "minLevel": 1,
+      "maxLevel": 12,
+      "background": "bronze-colosseum.jpg",
+      "theme": {
+        "primary": "#CD7F32",
+        "secondary": "#8B4513",
+        "gradient": "from-amber-700 to-orange-800"
+      },
+      "verbTypes": ["regular"],
+      "tenses": ["present", "futur_proche"],
+      "opponents": [
+        {
+          "id": "forest_sprite",
+          "name": "Forest Sprite",
+          "sprite": "forest_sprite.png",
+          "health": 80,
+          "difficulty": 1,
+          "weapons": ["nature_wand"],
+          "description": "A gentle creature perfect for learning basic -er verb conjugations."
+        },
+        {
+          "id": "village_guard",
+          "name": "Village Guard",
+          "sprite": "village_guard.png",
+          "health": 100,
+          "difficulty": 1,
+          "weapons": ["wooden_sword"],
+          "description": "A friendly guard that tests your -ir and -re verb knowledge."
+        },
+        {
+          "id": "apprentice_mage",
+          "name": "Apprentice Mage",
+          "sprite": "apprentice_mage.png",
+          "health": 120,
+          "difficulty": 2,
+          "weapons": ["magic_staff"],
+          "description": "Perfect for practicing futur proche (aller + infinitive) constructions."
+        }
+      ],
+      "promotionRequirement": {
+        "winsNeeded": 12,
+        "accuracyRequired": 70
+      }
+    },
+    {
+      "id": "silver_castle",
+      "name": "🥈 Silver Castle: The Irregular Initiation",
+      "description": "Face essential irregular verbs in present tense. Master être, avoir, faire, and other fundamentals.",
+      "minLevel": 13,
+      "maxLevel": 25,
+      "background": "silver-castle.jpg",
+      "theme": {
+        "primary": "#C0C0C0",
+        "secondary": "#808080",
+        "gradient": "from-slate-400 to-slate-600"
+      },
+      "verbTypes": ["regular", "irregular"],
+      "tenses": ["present"],
+      "opponents": [
+        {
+          "id": "castle_sentinel",
+          "name": "Castle Sentinel",
+          "sprite": "castle_sentinel.png",
+          "health": 140,
+          "difficulty": 2,
+          "weapons": ["silver_blade"],
+          "description": "Guardian of être, avoir, and faire conjugations."
+        },
+        {
+          "id": "court_wizard",
+          "name": "Court Wizard",
+          "sprite": "court_wizard.png",
+          "health": 160,
+          "difficulty": 2,
+          "weapons": ["enchanted_staff"],
+          "description": "Challenges you with aller, venir, dire, and prendre."
+        },
+        {
+          "id": "royal_champion",
+          "name": "Royal Champion",
+          "sprite": "royal_champion.png",
+          "health": 200,
+          "difficulty": 3,
+          "weapons": ["royal_sword"],
+          "description": "Commands all present tense irregularities with authority."
+        }
+      ],
+      "promotionRequirement": {
+        "winsNeeded": 13,
+        "accuracyRequired": 75
+      }
+    },
+    {
+      "id": "iron_keep",
+      "name": "🛡️ Iron Keep: The Past Imperfect",
+      "description": "Master the Imparfait for habitual past actions and introduce Passé Composé with avoir.",
+      "minLevel": 26,
+      "maxLevel": 37,
+      "background": "iron-keep.jpg",
+      "theme": {
+        "primary": "#708090",
+        "secondary": "#2F4F4F",
+        "gradient": "from-slate-500 to-slate-700"
+      },
+      "verbTypes": ["regular", "irregular"],
+      "tenses": ["imparfait", "passe_compose_avoir"],
+      "opponents": [
+        {
+          "id": "memory_keeper",
+          "name": "Memory Keeper",
+          "sprite": "memory_keeper.png",
+          "health": 180,
+          "difficulty": 3,
+          "weapons": ["time_blade"],
+          "description": "Guards memories of habitual past actions in imparfait."
+        },
+        {
+          "id": "past_guardian",
+          "name": "Past Guardian",
+          "sprite": "past_guardian.png",
+          "health": 220,
+          "difficulty": 3,
+          "weapons": ["ancient_staff"],
+          "description": "Protects the secrets of completed actions with avoir."
+        },
+        {
+          "id": "iron_warden",
+          "name": "Iron Warden",
+          "sprite": "iron_warden.png",
+          "health": 260,
+          "difficulty": 4,
+          "weapons": ["iron_mace"],
+          "description": "Master of distinguishing between imparfait and passé composé."
+        }
+      ],
+      "promotionRequirement": {
+        "winsNeeded": 12,
+        "accuracyRequired": 78
+      }
+    },
+    {
+      "id": "golden_temple",
+      "name": "⚔️ Golden Temple: The Preterite Challenge",
+      "description": "Conquer Passé Composé with être and master irregular past participles. Learn Future & Conditional.",
+      "minLevel": 38,
+      "maxLevel": 50,
+      "background": "golden-temple.jpg",
+      "theme": {
+        "primary": "#FFD700",
+        "secondary": "#DAA520",
+        "gradient": "from-yellow-400 to-yellow-600"
+      },
+      "verbTypes": ["regular", "irregular", "dr_mrs_vandertramp"],
+      "tenses": ["passe_compose_etre", "futur_simple", "conditionnel"],
+      "opponents": [
+        {
+          "id": "movement_master",
+          "name": "Movement Master",
+          "sprite": "movement_master.png",
+          "health": 240,
+          "difficulty": 4,
+          "weapons": ["motion_blade"],
+          "description": "Master of DR. & MRS. VANDERTRAMP verbs with être."
+        },
+        {
+          "id": "future_seer",
+          "name": "Future Seer",
+          "sprite": "future_seer.png",
+          "health": 280,
+          "difficulty": 4,
+          "weapons": ["crystal_orb"],
+          "description": "Sees all future actions and conditional possibilities."
+        },
+        {
+          "id": "temple_sage",
+          "name": "Temple Sage",
+          "sprite": "temple_sage.png",
+          "health": 320,
+          "difficulty": 5,
+          "weapons": ["golden_staff"],
+          "description": "Ancient guardian of irregular past participles and agreement."
+        }
+      ],
+      "promotionRequirement": {
+        "winsNeeded": 13,
+        "accuracyRequired": 80
+      }
+    },
+    {
+      "id": "royal_academy",
+      "name": "👑 Royal Academy: The Command Center",
+      "description": "Master all forms of Impératif (commands) and reflexive/pronominal verbs.",
+      "minLevel": 51,
+      "maxLevel": 62,
+      "background": "royal-academy.jpg",
+      "theme": {
+        "primary": "#800080",
+        "secondary": "#4B0082",
+        "gradient": "from-purple-600 to-indigo-700"
+      },
+      "verbTypes": ["regular", "irregular", "reflexive"],
+      "tenses": ["imperatif", "reflexive_present", "reflexive_passe"],
+      "opponents": [
+        {
+          "id": "drill_sergeant",
+          "name": "Drill Sergeant",
+          "sprite": "drill_sergeant.png",
+          "health": 280,
+          "difficulty": 4,
+          "weapons": ["command_baton"],
+          "description": "Issues orders in tu, nous, and vous imperative forms."
+        },
+        {
+          "id": "mirror_knight",
+          "name": "Mirror Knight",
+          "sprite": "mirror_knight.png",
+          "health": 300,
+          "difficulty": 5,
+          "weapons": ["reflective_shield"],
+          "description": "Reflects actions back with reflexive pronouns and agreement."
+        },
+        {
+          "id": "academy_master",
+          "name": "Academy Master",
+          "sprite": "academy_master.png",
+          "health": 350,
+          "difficulty": 5,
+          "weapons": ["wisdom_staff"],
+          "description": "Master educator of commands and pronominal constructions."
+        }
+      ],
+      "promotionRequirement": {
+        "winsNeeded": 12,
+        "accuracyRequired": 82
+      }
+    },
+    {
+      "id": "crystal_spire",
+      "name": "✨ Crystal Spire: The Perfect Path",
+      "description": "Master all compound (perfect) tenses using avoir and être auxiliaries.",
+      "minLevel": 63,
+      "maxLevel": 75,
+      "background": "crystal-spire.jpg",
+      "theme": {
+        "primary": "#E0E0E0",
+        "secondary": "#B0C4DE",
+        "gradient": "from-slate-300 to-blue-300"
+      },
+      "verbTypes": ["regular", "irregular", "reflexive"],
+      "tenses": ["plus_que_parfait", "futur_anterieur", "conditionnel_passe"],
+      "opponents": [
+        {
+          "id": "time_guardian",
+          "name": "Time Guardian",
+          "sprite": "time_guardian.png",
+          "health": 320,
+          "difficulty": 5,
+          "weapons": ["temporal_blade"],
+          "description": "Protects the secrets of plus-que-parfait (j'avais parlé)."
+        },
+        {
+          "id": "crystal_sage",
+          "name": "Crystal Sage",
+          "sprite": "crystal_sage.png",
+          "health": 360,
+          "difficulty": 5,
+          "weapons": ["time_crystal"],
+          "description": "Master of futur antérieur and conditional perfect."
+        },
+        {
+          "id": "perfect_master",
+          "name": "Perfect Master",
+          "sprite": "perfect_master.png",
+          "health": 400,
+          "difficulty": 6,
+          "weapons": ["perfection_staff"],
+          "description": "Supreme commander of all perfect tense constructions."
+        }
+      ],
+      "promotionRequirement": {
+        "winsNeeded": 13,
+        "accuracyRequired": 85
+      }
+    },
+    {
+      "id": "subjunctive_summit",
+      "name": "🏛️ Subjunctive Summit: The Realm of Nuance",
+      "description": "Deep dive into Present Subjunctive for expressing doubt, emotion, and opinion.",
+      "minLevel": 76,
+      "maxLevel": 88,
+      "background": "subjunctive-summit.jpg",
+      "theme": {
+        "primary": "#8A2BE2",
+        "secondary": "#4B0082",
+        "gradient": "from-violet-600 to-purple-800"
+      },
+      "verbTypes": ["regular", "irregular", "reflexive"],
+      "tenses": ["subjonctif_present"],
+      "opponents": [
+        {
+          "id": "doubt_wraith",
+          "name": "Doubt Wraith",
+          "sprite": "doubt_wraith.png",
+          "health": 360,
+          "difficulty": 6,
+          "weapons": ["uncertainty_blade"],
+          "description": "Embodies doubt and opinion, triggering present subjunctive."
+        },
+        {
+          "id": "emotion_spirit",
+          "name": "Emotion Spirit",
+          "sprite": "emotion_spirit.png",
+          "health": 380,
+          "difficulty": 6,
+          "weapons": ["feeling_staff"],
+          "description": "Channels emotions and wishes that require subjunctive mood."
+        },
+        {
+          "id": "subjunctive_lord",
+          "name": "Subjunctive Lord",
+          "sprite": "subjunctive_lord.png",
+          "health": 450,
+          "difficulty": 7,
+          "weapons": ["mood_scepter"],
+          "description": "Master of present subjunctive and D.O.P.E. V.A.N. W.I.S.H. triggers."
+        }
+      ],
+      "promotionRequirement": {
+        "winsNeeded": 13,
+        "accuracyRequired": 88
+      }
+    },
+    {
+      "id": "diamond_nexus",
+      "name": "💎 Diamond Nexus: The Grand Master Arena",
+      "description": "Ultimate mastery of all tenses, moods, and advanced constructions. The final challenge.",
+      "minLevel": 89,
+      "maxLevel": 100,
+      "background": "diamond-nexus.jpg",
+      "theme": {
+        "primary": "#B9F2FF",
+        "secondary": "#4169E1",
+        "gradient": "from-cyan-300 to-blue-500"
+      },
+      "verbTypes": ["regular", "irregular", "reflexive"],
+      "tenses": ["all_tenses", "subjonctif_passe", "passive_voice", "complex_constructions"],
+      "opponents": [
+        {
+          "id": "grammar_titan",
+          "name": "Grammar Titan",
+          "sprite": "grammar_titan.png",
+          "health": 450,
+          "difficulty": 7,
+          "weapons": ["titan_blade"],
+          "description": "Colossal being that tests subjunctive perfect and complex constructions."
+        },
+        {
+          "id": "language_deity",
+          "name": "Language Deity",
+          "sprite": "language_deity.png",
+          "health": 500,
+          "difficulty": 8,
+          "weapons": ["divine_staff"],
+          "description": "Divine entity commanding passive voice and conditional clauses."
+        },
+        {
+          "id": "conjugation_master",
+          "name": "Conjugation Master",
+          "sprite": "conjugation_master.png",
+          "health": 600,
+          "difficulty": 10,
+          "weapons": ["master_scepter", "reality_gem"],
+          "description": "The ultimate master of all French conjugations and verb forms."
+        }
+      ],
+      "promotionRequirement": {
+        "winsNeeded": 12,
+        "accuracyRequired": 92
+      }
+    }
+  ],
+  "german": [
+    {
+      "id": "bronze_arena",
+      "name": "🥉 Bronze Arena: The Proving Grounds",
+      "description": "Master core regular (weak) verbs in present tense and basic future with werden.",
+      "minLevel": 1,
+      "maxLevel": 12,
+      "background": "bronze-colosseum.jpg",
+      "theme": {
+        "primary": "#CD7F32",
+        "secondary": "#8B4513",
+        "gradient": "from-amber-700 to-orange-800"
+      },
+      "verbTypes": ["weak"],
+      "tenses": ["present", "future_basic"],
+      "opponents": [
+        {
+          "id": "forest_kobold",
+          "name": "Forest Kobold",
+          "sprite": "forest_kobold.png",
+          "health": 80,
+          "difficulty": 1,
+          "weapons": ["wooden_club"],
+          "description": "A small creature perfect for learning basic weak verb conjugations."
+        },
+        {
+          "id": "village_apprentice",
+          "name": "Village Apprentice",
+          "sprite": "village_apprentice.png",
+          "health": 100,
+          "difficulty": 1,
+          "weapons": ["practice_sword"],
+          "description": "A young warrior that tests your machen, lernen, and spielen knowledge."
+        },
+        {
+          "id": "guild_novice",
+          "name": "Guild Novice",
+          "sprite": "guild_novice.png",
+          "health": 120,
+          "difficulty": 2,
+          "weapons": ["apprentice_staff"],
+          "description": "Perfect for practicing basic future with werden constructions."
+        }
+      ],
+      "promotionRequirement": {
+        "winsNeeded": 12,
+        "accuracyRequired": 70
+      }
+    },
+    {
+      "id": "silver_castle",
+      "name": "🥈 Silver Castle: The Irregular Initiation",
+      "description": "Face essential irregular (strong) verbs and master sein, haben, werden in present tense.",
+      "minLevel": 13,
+      "maxLevel": 25,
+      "background": "silver-castle.jpg",
+      "theme": {
+        "primary": "#C0C0C0",
+        "secondary": "#808080",
+        "gradient": "from-slate-400 to-slate-600"
+      },
+      "verbTypes": ["weak", "strong", "irregular"],
+      "tenses": ["present"],
+      "opponents": [
+        {
+          "id": "castle_guard",
+          "name": "Castle Guard",
+          "sprite": "castle_guard.png",
+          "health": 140,
+          "difficulty": 2,
+          "weapons": ["steel_sword"],
+          "description": "Guardian of strong verbs with vowel changes (sprechen, essen, fahren)."
+        },
+        {
+          "id": "court_scholar",
+          "name": "Court Scholar",
+          "sprite": "court_scholar.png",
+          "health": 160,
+          "difficulty": 2,
+          "weapons": ["knowledge_tome"],
+          "description": "Challenges you with sein, haben, and werden irregularities."
+        },
+        {
+          "id": "castle_commander",
+          "name": "Castle Commander",
+          "sprite": "castle_commander.png",
+          "health": 200,
+          "difficulty": 3,
+          "weapons": ["command_blade"],
+          "description": "Commands all present tense strong and irregular verbs."
+        }
+      ],
+      "promotionRequirement": {
+        "winsNeeded": 13,
+        "accuracyRequired": 75
+      }
+    },
+    {
+      "id": "iron_keep",
+      "name": "🛡️ Iron Keep: The Past Imperfect",
+      "description": "Master separable prefix verbs and introduce modal verbs in present tense.",
+      "minLevel": 26,
+      "maxLevel": 37,
+      "background": "iron-keep.jpg",
+      "theme": {
+        "primary": "#708090",
+        "secondary": "#2F4F4F",
+        "gradient": "from-slate-500 to-slate-700"
+      },
+      "verbTypes": ["weak", "strong", "separable", "modal"],
+      "tenses": ["present"],
+      "opponents": [
+        {
+          "id": "prefix_warrior",
+          "name": "Prefix Warrior",
+          "sprite": "prefix_warrior.png",
+          "health": 180,
+          "difficulty": 3,
+          "weapons": ["splitting_axe"],
+          "description": "Master of separable verbs like anrufen, aufstehen, mitkommen."
+        },
+        {
+          "id": "modal_guardian",
+          "name": "Modal Guardian",
+          "sprite": "modal_guardian.png",
+          "health": 220,
+          "difficulty": 3,
+          "weapons": ["possibility_staff"],
+          "description": "Guards the secrets of können, müssen, wollen, sollen, dürfen."
+        },
+        {
+          "id": "iron_captain",
+          "name": "Iron Captain",
+          "sprite": "iron_captain.png",
+          "health": 260,
+          "difficulty": 4,
+          "weapons": ["iron_hammer"],
+          "description": "Master of complex verb structures and modal usage."
+        }
+      ],
+      "promotionRequirement": {
+        "winsNeeded": 12,
+        "accuracyRequired": 78
+      }
+    },
+    {
+      "id": "golden_temple",
+      "name": "⚔️ Golden Temple: The Preterite Challenge",
+      "description": "Conquer the Perfekt (present perfect) with haben and sein auxiliaries.",
+      "minLevel": 38,
+      "maxLevel": 50,
+      "background": "golden-temple.jpg",
+      "theme": {
+        "primary": "#FFD700",
+        "secondary": "#DAA520",
+        "gradient": "from-yellow-400 to-yellow-600"
+      },
+      "verbTypes": ["weak", "strong", "separable", "modal"],
+      "tenses": ["perfekt_haben", "perfekt_sein"],
+      "opponents": [
+        {
+          "id": "past_keeper",
+          "name": "Past Keeper",
+          "sprite": "past_keeper.png",
+          "health": 240,
+          "difficulty": 4,
+          "weapons": ["memory_blade"],
+          "description": "Master of past participles and haben auxiliary usage."
+        },
+        {
+          "id": "motion_master",
+          "name": "Motion Master",
+          "sprite": "motion_master.png",
+          "health": 280,
+          "difficulty": 4,
+          "weapons": ["movement_staff"],
+          "description": "Commands verbs of motion and change with sein auxiliary."
+        },
+        {
+          "id": "perfect_sage",
+          "name": "Perfect Sage",
+          "sprite": "perfect_sage.png",
+          "health": 320,
+          "difficulty": 5,
+          "weapons": ["golden_rod"],
+          "description": "Ancient guardian of perfect tense and auxiliary selection."
+        }
+      ],
+      "promotionRequirement": {
+        "winsNeeded": 13,
+        "accuracyRequired": 80
+      }
+    },
+    {
+      "id": "royal_academy",
+      "name": "👑 Royal Academy: The Command Center",
+      "description": "Master all forms of Imperativ (commands) and introduce Präteritum (simple past).",
+      "minLevel": 51,
+      "maxLevel": 62,
+      "background": "royal-academy.jpg",
+      "theme": {
+        "primary": "#800080",
+        "secondary": "#4B0082",
+        "gradient": "from-purple-600 to-indigo-700"
+      },
+      "verbTypes": ["weak", "strong", "separable", "modal"],
+      "tenses": ["imperativ", "prateritum"],
+      "opponents": [
+        {
+          "id": "command_officer",
+          "name": "Command Officer",
+          "sprite": "command_officer.png",
+          "health": 280,
+          "difficulty": 4,
+          "weapons": ["order_sword"],
+          "description": "Issues orders in du, ihr, Sie, and wir imperative forms."
+        },
+        {
+          "id": "history_keeper",
+          "name": "History Keeper",
+          "sprite": "history_keeper.png",
+          "health": 300,
+          "difficulty": 5,
+          "weapons": ["ancient_tome"],
+          "description": "Guards the formal past tense forms of sein, haben, and modals."
+        },
+        {
+          "id": "academy_general",
+          "name": "Academy General",
+          "sprite": "academy_general.png",
+          "health": 350,
+          "difficulty": 5,
+          "weapons": ["authority_staff"],
+          "description": "Master educator of commands and written past forms."
+        }
+      ],
+      "promotionRequirement": {
+        "winsNeeded": 12,
+        "accuracyRequired": 82
+      }
+    },
+    {
+      "id": "crystal_spire",
+      "name": "✨ Crystal Spire: The Perfect Path",
+      "description": "Master Futur I (simple future) and Konjunktiv II (conditional mood).",
+      "minLevel": 63,
+      "maxLevel": 75,
+      "background": "crystal-spire.jpg",
+      "theme": {
+        "primary": "#E0E0E0",
+        "secondary": "#B0C4DE",
+        "gradient": "from-slate-300 to-blue-300"
+      },
+      "verbTypes": ["weak", "strong", "separable", "modal"],
+      "tenses": ["futur_i", "konjunktiv_ii"],
+      "opponents": [
+        {
+          "id": "future_oracle",
+          "name": "Future Oracle",
+          "sprite": "future_oracle.png",
+          "health": 320,
+          "difficulty": 5,
+          "weapons": ["prophecy_crystal"],
+          "description": "Protects the secrets of werden + infinitive constructions."
+        },
+        {
+          "id": "conditional_sage",
+          "name": "Conditional Sage",
+          "sprite": "conditional_sage.png",
+          "health": 360,
+          "difficulty": 5,
+          "weapons": ["possibility_orb"],
+          "description": "Master of würden + infinitive and irregular conditionals."
+        },
+        {
+          "id": "crystal_emperor",
+          "name": "Crystal Emperor",
+          "sprite": "crystal_emperor.png",
+          "health": 400,
+          "difficulty": 6,
+          "weapons": ["crystal_scepter"],
+          "description": "Supreme commander of future and conditional constructions."
+        }
+      ],
+      "promotionRequirement": {
+        "winsNeeded": 13,
+        "accuracyRequired": 85
+      }
+    },
+    {
+      "id": "subjunctive_summit",
+      "name": "🏛️ Subjunctive Summit: The Realm of Nuance",
+      "description": "Deep dive into Konjunktiv I (indirect speech) and Plusquamperfekt (past perfect).",
+      "minLevel": 76,
+      "maxLevel": 88,
+      "background": "subjunctive-summit.jpg",
+      "theme": {
+        "primary": "#8A2BE2",
+        "secondary": "#4B0082",
+        "gradient": "from-violet-600 to-purple-800"
+      },
+      "verbTypes": ["weak", "strong", "separable", "modal"],
+      "tenses": ["konjunktiv_i", "plusquamperfekt"],
+      "opponents": [
+        {
+          "id": "speech_phantom",
+          "name": "Speech Phantom",
+          "sprite": "speech_phantom.png",
+          "health": 360,
+          "difficulty": 6,
+          "weapons": ["indirect_blade"],
+          "description": "Embodies reported speech and Konjunktiv I forms."
+        },
+        {
+          "id": "past_spirit",
+          "name": "Past Spirit",
+          "sprite": "past_spirit.png",
+          "health": 380,
+          "difficulty": 6,
+          "weapons": ["temporal_staff"],
+          "description": "Channels past perfect actions with hatte/war + participle."
+        },
+        {
+          "id": "subjunctive_emperor",
+          "name": "Subjunctive Emperor",
+          "sprite": "subjunctive_emperor.png",
+          "health": 450,
+          "difficulty": 7,
+          "weapons": ["mood_crown"],
+          "description": "Master of indirect speech and complex past constructions."
+        }
+      ],
+      "promotionRequirement": {
+        "winsNeeded": 13,
+        "accuracyRequired": 88
+      }
+    },
+    {
+      "id": "diamond_nexus",
+      "name": "💎 Diamond Nexus: The Grand Master Arena",
+      "description": "Ultimate mastery of all tenses, moods, and advanced constructions. The final challenge.",
+      "minLevel": 89,
+      "maxLevel": 100,
+      "background": "diamond-nexus.jpg",
+      "theme": {
+        "primary": "#B9F2FF",
+        "secondary": "#4169E1",
+        "gradient": "from-cyan-300 to-blue-500"
+      },
+      "verbTypes": ["weak", "strong", "separable", "modal"],
+      "tenses": ["all_tenses", "konjunktiv_perfekt", "passive_voice", "complex_constructions"],
+      "opponents": [
+        {
+          "id": "grammar_titan",
+          "name": "Grammar Titan",
+          "sprite": "grammar_titan.png",
+          "health": 450,
+          "difficulty": 7,
+          "weapons": ["titan_blade"],
+          "description": "Colossal being that tests conditional perfect and complex constructions."
+        },
+        {
+          "id": "language_deity",
+          "name": "Language Deity",
+          "sprite": "language_deity.png",
+          "health": 500,
+          "difficulty": 8,
+          "weapons": ["divine_staff"],
+          "description": "Divine entity commanding passive voice and future perfect."
+        },
+        {
+          "id": "conjugation_master",
+          "name": "Conjugation Master",
+          "sprite": "conjugation_master.png",
+          "health": 600,
+          "difficulty": 10,
+          "weapons": ["master_scepter", "reality_gem"],
+          "description": "The ultimate master of all German conjugations and verb forms."
+        }
+      ],
+      "promotionRequirement": {
+        "winsNeeded": 12,
+        "accuracyRequired": 92
+      }
+    }
   ]
 }

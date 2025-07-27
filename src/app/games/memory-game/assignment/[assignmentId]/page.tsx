@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import MemoryGameAssignmentWrapper from '../../components/MemoryGameAssignmentWrapper';
+import MemoryGameAssignmentWrapper from '../../components/MemoryAssignmentWrapper';
 
 interface MemoryGameAssignmentPageProps {
   params: {

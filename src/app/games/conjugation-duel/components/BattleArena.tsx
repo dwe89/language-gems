@@ -10,9 +10,10 @@ import CharacterSprite from './CharacterSprite';
 
 interface BattleArenaProps {
   onBattleEnd: () => void;
+  language?: string;
 }
 
-export default function BattleArena({ onBattleEnd }: BattleArenaProps) {
+export default function BattleArena({ onBattleEnd, language = 'spanish' }: BattleArenaProps) {
   const { 
     battleState, 
     playerStats,
@@ -20,7 +21,7 @@ export default function BattleArena({ onBattleEnd }: BattleArenaProps) {
     setBattleState 
   } = useGameStore();
   
-  const { timeLeft, isAnswering, submitAnswer } = useBattle();
+  const { timeLeft, isAnswering, submitAnswer } = useBattle(language);
   const { playSound, playMusic, stopMusic } = useBattleAudio();
   
   const battleLogRef = useRef<HTMLDivElement>(null);

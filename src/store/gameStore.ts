@@ -123,7 +123,7 @@ const initialPlayerStats: PlayerStats = {
   experience: 0,
   totalWins: 0,
   totalLosses: 0,
-  currentLeague: 'bronze',
+  currentLeague: 'bronze_arena',
   accuracy: 0,
   longestWinStreak: 0,
   currentWinStreak: 0,

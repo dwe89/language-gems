@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import NoughtsAndCrossesAssignmentWrapper from '../../components/NoughtsAndCrossesAssignmentWrapper';
+import NoughtsAndCrossesAssignmentWrapper from '../../components/NoughtsAssignmentWrapper';
 import { useAuth } from '../../../../../components/auth/AuthProvider';
 
 export default function NoughtsAndCrossesAssignmentPage() {
