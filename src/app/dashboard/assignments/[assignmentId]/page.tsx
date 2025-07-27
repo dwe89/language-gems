@@ -10,7 +10,9 @@ interface Assignment {
   title: string;
   description?: string;
   game_type: string;
+  type?: string; // Legacy field
   game_config: any;
+  config?: any; // Legacy field
   due_date?: string;
   points: number;
   status: string;
@@ -37,23 +39,33 @@ export default function AssignmentDetailsPage() {
 
   const fetchAssignment = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      console.log('Fetching assignment with ID:', assignmentId);
       
-      const response = await fetch(`/api/assignments/${assignmentId}`, {
-        headers: {
-          'Authorization': `Bearer ${session?.access_token}`
-        }
-      });
+      // Use Supabase client directly with a simpler query first
+      const { data: assignment, error } = await supabase
+        .from('assignments')
+        .select(`
+          *,
+          classes!inner(name)
+        `)
+        .eq('id', assignmentId)
+        .single();
 
-      if (response.ok) {
-        const data = await response.json();
-        setAssignment(data.assignment);
-      } else {
+      if (error) {
+        console.error('Assignment fetch error:', error);
         setError('Failed to load assignment details');
+      } else if (assignment) {
+        console.log('Assignment loaded successfully:', assignment);
+        console.log('Assignment game_type:', assignment.game_type);
+        console.log('Assignment game_config:', assignment.game_config);
+        setAssignment(assignment);
+      } else {
+        console.log('No assignment data returned');
+        setError('Assignment not found');
       }
     } catch (err) {
-      setError('Error loading assignment');
       console.error('Assignment fetch error:', err);
+      setError('Error loading assignment');
     } finally {
       setLoading(false);
     }
@@ -61,9 +73,56 @@ export default function AssignmentDetailsPage() {
 
   const handlePlayGame = () => {
     if (assignment) {
-      // Navigate to the game with assignment parameters
-      const gameUrl = `/games/${assignment.game_type === 'speed-builder' ? 'speed-builder' : assignment.game_type}?assignment=${assignmentId}&mode=assignment`;
-      router.push(gameUrl);
+      console.log('Starting game for assignment:', assignment);
+      
+      // Check if this is a multi-game assignment
+      const isMultiGame = assignment.game_config?.multiGame || assignment.config?.multiGame;
+      console.log('Is multi-game assignment:', isMultiGame);
+
+      if (isMultiGame) {
+        // For multi-game assignments, redirect to student assignment view with teacher preview mode
+        const url = `/student-dashboard/assignments/${assignmentId}?preview=true`;
+        console.log('Redirecting to multi-game view:', url);
+        router.push(url);
+      } else {
+        // For single game assignments, navigate directly to the game with preview mode
+        const gameType = assignment.game_type || assignment.type;
+        console.log('Game type determined:', gameType);
+        
+        if (gameType && gameType !== 'undefined') {
+          // Map game types to actual game paths
+          const gamePathMap: Record<string, string> = {
+            'memory-game': 'memory-game',
+            'vocab-blast': 'vocab-blast',
+            'word-blast': 'vocab-blast', // Legacy mapping
+            'hangman': 'hangman',
+            'noughts-and-crosses': 'noughts-and-crosses',
+            'speed-builder': 'speed-builder',
+            'vocabulary-mining': 'vocabulary-mining',
+            'gem-collector': 'vocabulary-mining', // Legacy mapping
+            'translation-tycoon': 'speed-builder', // Legacy mapping
+            'conjugation-duel': 'conjugation-duel',
+            'detective-listening': 'detective-listening',
+            'verb-quest': 'verb-quest',
+            'word-scramble': 'hangman', // Legacy mapping
+            'word-guesser': 'hangman', // Legacy mapping
+            'sentence-towers': 'sentence-towers',
+            'sentence-builder': 'speed-builder', // Legacy mapping
+
+          };
+          
+          const gamePath = gamePathMap[gameType] || 'memory-game';
+          const gameUrl = `/games/${gamePath}?assignment=${assignmentId}&mode=assignment&preview=true`;
+          console.log('Redirecting to single game:', gameUrl);
+          router.push(gameUrl);
+        } else {
+          console.error('Game type is undefined for assignment:', assignment);
+          alert(`Unable to determine game type for this assignment. Game type found: ${gameType}`);
+        }
+      }
+    } else {
+      console.error('No assignment data available');
+      alert('Assignment data not loaded yet. Please try again.');
     }
   };
 
@@ -156,7 +215,19 @@ export default function AssignmentDetailsPage() {
                   <BookOpen className="w-5 h-5 text-blue-400" />
                   <span className="text-white font-semibold">Game Type</span>
                 </div>
-                <p className="text-blue-200 capitalize">{assignment.game_type?.replace('-', ' ') || 'Unknown'}</p>
+                <p className="text-blue-200 capitalize">
+                  {(() => {
+                    const isMultiGame = assignment.game_config?.multiGame || assignment.config?.multiGame;
+                    const selectedGames = assignment.game_config?.selectedGames || assignment.config?.selectedGames;
+
+                    if (isMultiGame && selectedGames?.length > 1) {
+                      return `Multi-Game (${selectedGames.length} games)`;
+                    } else {
+                      const gameType = assignment.game_type || assignment.type;
+                      return gameType?.replace('-', ' ') || 'Unknown';
+                    }
+                  })()}
+                </p>
               </div>
 
               <div className="bg-white/5 rounded-xl p-4 border border-white/10">

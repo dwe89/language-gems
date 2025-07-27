@@ -33,6 +33,7 @@ interface HangmanGameProps {
   settings: {
     difficulty: string;
     category: string;
+    subcategory?: string;
     language: string;
     theme: string;
     customWords?: string[];
@@ -42,6 +43,7 @@ interface HangmanGameProps {
   onBackToMenu: () => void;
   onGameEnd?: (result: 'win' | 'lose') => void;
   isFullscreen?: boolean;
+  isAssignmentMode?: boolean;
 }
 
 // Mock word lists based on categories and difficulties
@@ -272,7 +274,7 @@ type ExtendedThemeContextType = {
   };
 };
 
-function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isFullscreen }: HangmanGameProps) {
+function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isFullscreen, isAssignmentMode }: HangmanGameProps) {
   const { themeId, themeClasses } = useTheme() as ExtendedThemeContextType;
   const [themeClassesState, setThemeClassesState] = useState(themeClasses);
   const [word, setWord] = useState('');
@@ -1056,9 +1058,11 @@ function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isFullscre
 
         {/* Game info - responsive layout */}
         <div className="flex-1 flex flex-col md:flex-row items-center justify-center gap-1 md:gap-4 mx-2 md:mx-4">
-          <div className="text-xs md:text-sm font-medium text-center">
-            {settings.category.charAt(0).toUpperCase() + settings.category.slice(1)} - {settings.difficulty.charAt(0).toUpperCase() + settings.difficulty.slice(1)}
-          </div>
+          {!isAssignmentMode && (
+            <div className="text-xs md:text-sm font-medium text-center">
+              {settings.category.charAt(0).toUpperCase() + settings.category.slice(1)} - {settings.difficulty.charAt(0).toUpperCase() + settings.difficulty.slice(1)}
+            </div>
+          )}
 
           <div className="text-xs md:text-sm opacity-75">
             {formatTime(timer)}

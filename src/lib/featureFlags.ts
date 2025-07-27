@@ -80,6 +80,13 @@ export const getNavigationItems = (isAuthenticated: boolean = false, userEmail?:
       comingSoonPath: '/coming-soon/games'
     },
     {
+      name: 'Explore',
+      path: '/explore',
+      enabled: true,
+      comingSoon: false,
+      comingSoonPath: null
+    },
+    {
       name: 'Resources',
       path: '/resources',
       enabled: true,

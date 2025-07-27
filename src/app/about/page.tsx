@@ -214,21 +214,6 @@ export default function AboutPage() {
               </Link>
             </div>
 
-            {/* Featured Testimonial */}
-            <div className="bg-white rounded-2xl p-8 shadow-xl border border-indigo-100">
-              <div className="flex justify-center mb-4">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="h-5 w-5 text-yellow-400 fill-current" />
-                ))}
-              </div>
-              <blockquote className="text-lg text-slate-700 italic mb-4">
-                "Daniel's passion for language education shines through in every aspect of LanguageGems. 
-                The platform has transformed how my students engage with language learning."
-              </blockquote>
-              <cite className="text-slate-600 font-medium">
-                — Sarah M., Secondary School Teacher
-              </cite>
-            </div>
           </div>
         </div>
       </section>

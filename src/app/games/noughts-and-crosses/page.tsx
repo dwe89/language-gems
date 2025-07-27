@@ -11,6 +11,7 @@ import GameSettings from './components/GameSettings';
 import TicTacToeGameWrapper from './components/TicTacToeGameWrapper';
 import { useAudio } from './hooks/useAudio';
 import { useVocabularyByCategory } from '../../../hooks/useVocabulary';
+import NoughtsAndCrossesAssignmentWrapper from './components/NoughtsAssignmentWrapper';
 
 export default function NoughtsAndCrossesPage() {
   const { user, isLoading } = useAuth();
@@ -19,8 +20,16 @@ export default function NoughtsAndCrossesPage() {
   const [soundEnabled] = useState(true);
   const { playSFX } = useAudio(soundEnabled);
 
-  // Get URL parameters for assignment mode
+  // Check for assignment mode
   const assignmentId = searchParams?.get('assignment');
+  const mode = searchParams?.get('mode');
+
+  // If assignment mode, render assignment wrapper
+  if (assignmentId && mode === 'assignment') {
+    return <NoughtsAndCrossesAssignmentWrapper assignmentId={assignmentId} />;
+  }
+
+  // Get URL parameters for legacy assignment mode (fallback)
   const language = searchParams?.get('language') || 'spanish';
   const difficulty = searchParams?.get('difficulty') || 'beginner';
   const category = searchParams?.get('category') || 'animals';

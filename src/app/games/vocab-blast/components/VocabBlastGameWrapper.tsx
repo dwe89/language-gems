@@ -24,6 +24,7 @@ interface VocabBlastGameWrapperProps {
   assignmentId?: string | null;
   userId?: string;
   isAssignmentMode?: boolean;
+  categoryVocabulary?: any[]; // Assignment vocabulary
 }
 
 // Language mapping function
@@ -90,6 +91,27 @@ export default function VocabBlastGameWrapper(props: VocabBlastGameWrapperProps)
   const [gameVocabulary, setGameVocabulary] = useState<GameVocabularyWord[]>([]);
 
   useEffect(() => {
+    // Use assignment vocabulary if available (assignment mode)
+    if (props.categoryVocabulary && props.categoryVocabulary.length > 0) {
+      console.log('VocabBlast: Using assignment vocabulary:', props.categoryVocabulary.length, 'words');
+
+      // Transform assignment vocabulary to game format
+      const transformedVocabulary = props.categoryVocabulary.map((item: any) => ({
+        id: item.id,
+        word: item.word,
+        translation: item.translation,
+        category: item.category,
+        subcategory: item.subcategory,
+        part_of_speech: item.part_of_speech,
+        language: item.language
+      }));
+
+      setGameVocabulary(transformedVocabulary);
+      setIsLoading(false);
+      return;
+    }
+
+    // Otherwise use regular vocabulary loading
     console.log('VocabBlast: Vocabulary loaded:', vocabulary.length, 'words');
     console.log('VocabBlast: Settings:', {
       language: props.settings.language,
@@ -109,7 +131,7 @@ export default function VocabBlastGameWrapper(props: VocabBlastGameWrapperProps)
       console.log('VocabBlast: No vocabulary found, vocabulary loading:', vocabularyLoading);
       setIsLoading(false);
     }
-  }, [vocabulary, vocabularyLoading]);
+  }, [vocabulary, vocabularyLoading, props.categoryVocabulary]);
 
   // Start game session when vocabulary is loaded
   useEffect(() => {

@@ -11,8 +11,10 @@ import {
 import { useAuth } from '../auth/AuthProvider';
 import { supabaseBrowser } from '../auth/AuthProvider';
 import { EnhancedAssignmentService, AssignmentCreationData } from '../../services/enhancedAssignmentService';
+import { UnifiedAssignmentService } from '../../services/UnifiedAssignmentService';
 import MultiGameSelector from './MultiGameSelector';
 import SmartAssignmentConfig from './SmartAssignmentConfig';
+import ModernCategorySelector from '../games/ModernCategorySelector';
 
 // =====================================================
 // TYPES AND INTERFACES
@@ -27,7 +29,12 @@ interface AssignmentStep {
 }
 
 interface VocabularyConfig {
-  source: 'theme' | 'topic' | 'custom' | 'create' | '';
+  source: 'category' | 'theme' | 'topic' | 'custom' | 'create' | '';
+  language?: string;
+  categories?: string[]; // Support multiple categories
+  subcategories?: string[]; // Support multiple subcategories
+  category?: string; // Keep for backward compatibility
+  subcategory?: string; // Keep for backward compatibility
   theme?: string;
   topic?: string;
   customListId?: string;
@@ -47,10 +54,20 @@ interface SentenceConfig {
   grammarFocus?: string;
 }
 
+interface GrammarConfig {
+  language: 'spanish' | 'french' | 'german';
+  verbTypes: ('regular' | 'irregular' | 'stem-changing')[];
+  tenses: ('present' | 'preterite' | 'imperfect' | 'future' | 'conditional' | 'subjunctive')[];
+  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  verbCount?: number;
+  focusAreas?: ('conjugation' | 'recognition' | 'translation')[];
+}
+
 interface GameConfiguration {
   selectedGames: string[];
   vocabularyConfig: VocabularyConfig;
   sentenceConfig: SentenceConfig;
+  grammarConfig: GrammarConfig;
   difficulty: string;
   timeLimit: number;
   maxAttempts: number;
@@ -81,6 +98,7 @@ export default function EnhancedAssignmentCreator({
   
   // Services
   const [assignmentService] = useState(() => new EnhancedAssignmentService(supabaseBrowser));
+  const [unifiedAssignmentService] = useState(() => new UnifiedAssignmentService(supabaseBrowser));
   
   // State
   const [currentStep, setCurrentStep] = useState(0);
@@ -95,6 +113,7 @@ export default function EnhancedAssignmentCreator({
     feedback_enabled: true,
     hints_allowed: true,
     power_ups_enabled: true,
+    curriculum_level: 'KS3',
     config: {}
   });
 
@@ -106,12 +125,20 @@ export default function EnhancedAssignmentCreator({
     vocabularyConfig: {
       source: '',
       wordCount: 10,
-      difficulty: 'intermediate'
+      difficulty: 'intermediate',
+      curriculumLevel: 'KS3'
     },
     sentenceConfig: {
       source: '',
       sentenceCount: 10,
       difficulty: 'intermediate'
+    },
+    grammarConfig: {
+      language: 'spanish',
+      verbTypes: ['regular'],
+      tenses: ['present'],
+      difficulty: 'beginner',
+      verbCount: 10
     },
     difficulty: 'intermediate',
     timeLimit: 15,
@@ -147,7 +174,7 @@ export default function EnhancedAssignmentCreator({
       title: 'Configure Content',
       description: 'Set up vocabulary and sentence content',
       icon: <Gem className="h-5 w-5" />,
-      completed: (gameConfig.vocabularyConfig.source !== '' || gameConfig.sentenceConfig.source !== '') && gameConfig.selectedGames.length > 0
+      completed: (gameConfig.vocabularyConfig.source !== '' || gameConfig.sentenceConfig.source !== '' || (gameConfig.grammarConfig.verbTypes.length > 0 && gameConfig.grammarConfig.tenses.length > 0)) && gameConfig.selectedGames.length > 0
     },
     {
       id: 'settings',
@@ -199,24 +226,27 @@ export default function EnhancedAssignmentCreator({
 
   useEffect(() => {
     // Update assignment data when game config changes
-    setAssignmentData(prev => ({
-      ...prev,
-      game_type: gameConfig.selectedGames[0] || '', // Primary game for compatibility
-      time_limit: gameConfig.timeLimit,
-      max_attempts: gameConfig.maxAttempts,
-      auto_grade: gameConfig.autoGrade,
-      feedback_enabled: gameConfig.feedbackEnabled,
-      hints_allowed: gameConfig.hintsAllowed,
-      power_ups_enabled: gameConfig.powerUpsEnabled,
-      config: {
-        ...prev.config,
-        selectedGames: gameConfig.selectedGames,
-        vocabularyConfig: gameConfig.vocabularyConfig,
-        sentenceConfig: gameConfig.sentenceConfig,
-        difficulty: gameConfig.difficulty
-      }
-    }));
-  }, [gameConfig]);
+    // Only update if there are actual changes to prevent unnecessary re-renders
+    if (gameConfig.selectedGames.length > 0) {
+      setAssignmentData(prev => ({
+        ...prev,
+        game_type: gameConfig.selectedGames[0] || '', // Primary game for compatibility
+        time_limit: gameConfig.timeLimit,
+        max_attempts: gameConfig.maxAttempts,
+        auto_grade: gameConfig.autoGrade,
+        feedback_enabled: gameConfig.feedbackEnabled,
+        hints_allowed: gameConfig.hintsAllowed,
+        power_ups_enabled: gameConfig.powerUpsEnabled,
+        config: {
+          ...prev.config,
+          selectedGames: gameConfig.selectedGames,
+          vocabularyConfig: gameConfig.vocabularyConfig,
+          sentenceConfig: gameConfig.sentenceConfig,
+          difficulty: gameConfig.difficulty
+        }
+      }));
+    }
+  }, [gameConfig.selectedGames, gameConfig.timeLimit, gameConfig.maxAttempts, gameConfig.autoGrade, gameConfig.feedbackEnabled, gameConfig.hintsAllowed, gameConfig.powerUpsEnabled, gameConfig.vocabularyConfig, gameConfig.sentenceConfig, gameConfig.difficulty]);
 
   // =====================================================
   // DATA LOADING
@@ -297,6 +327,13 @@ export default function EnhancedAssignmentCreator({
     }));
   };
 
+  const handleGrammarConfigChange = (grammarConfig: GrammarConfig) => {
+    setGameConfig(prev => ({
+      ...prev,
+      grammarConfig
+    }));
+  };
+
   const handleCreateAssignment = async () => {
     try {
       setLoading(true);
@@ -312,13 +349,18 @@ export default function EnhancedAssignmentCreator({
 
       // Validate content configuration
       const needsVocabulary = gameConfig.selectedGames.some(gameId => {
-        const vocabGames = ['vocab-master', 'word-blast', 'translation-tycoon', 'word-guesser', 'word-association', 'gem-rush', 'vocabulary-mining'];
+        const vocabGames = ['vocabulary-mining', 'memory-game', 'hangman', 'word-blast', 'noughts-and-crosses', 'word-scramble', 'vocab-blast', 'detective-listening'];
         return vocabGames.includes(gameId);
       });
 
       const needsSentences = gameConfig.selectedGames.some(gameId => {
-        const sentenceGames = ['speed-builder', 'sentence-towers', 'conjugation-duel'];
+        const sentenceGames = ['speed-builder', 'sentence-towers', 'sentence-builder'];
         return sentenceGames.includes(gameId);
+      });
+
+      const needsGrammar = gameConfig.selectedGames.some(gameId => {
+        const grammarGames = ['conjugation-duel', 'verb-quest'];
+        return grammarGames.includes(gameId);
       });
 
       if (needsVocabulary && !gameConfig.vocabularyConfig.source) {
@@ -329,20 +371,24 @@ export default function EnhancedAssignmentCreator({
         throw new Error('Please configure sentence content for the selected games');
       }
 
+      if (needsGrammar && (!gameConfig.grammarConfig.verbTypes.length || !gameConfig.grammarConfig.tenses.length)) {
+        throw new Error('Please configure grammar content for the selected games');
+      }
+
       if (selectedClasses.length === 0) {
         throw new Error('Please select at least one class');
       }
 
       const createdAssignments = [];
-      
-      // Create assignment for each selected class
+
+      // Create ONE assignment per class (not per game)
       for (const selectedClassId of selectedClasses) {
         const assignmentForClass = {
           ...assignmentData,
-          game_type: gameConfig.selectedGames[0] || 'multi-game', // Primary game for compatibility
+          game_type: 'multi-game', // Multi-game assignment
           class_id: selectedClassId,
           config: {
-            selectedGames: gameConfig.selectedGames,
+            selectedGames: gameConfig.selectedGames, // All selected games
             vocabularyConfig: gameConfig.vocabularyConfig,
             sentenceConfig: gameConfig.sentenceConfig,
             difficulty: gameConfig.difficulty,
@@ -361,7 +407,14 @@ export default function EnhancedAssignmentCreator({
       }
 
       if (onAssignmentCreated) {
-        onAssignmentCreated(createdAssignments[0]); // Return the first created assignment ID
+        // Add a small delay to prevent DOM manipulation race conditions
+        setTimeout(() => {
+          try {
+            onAssignmentCreated(createdAssignments[0]); // Return the first created assignment ID
+          } catch (callbackError) {
+            console.error('Error in onAssignmentCreated callback:', callbackError);
+          }
+        }, 150); // Increased delay
       }
     } catch (error) {
       console.error('Failed to create assignment:', error);
@@ -462,6 +515,54 @@ export default function EnhancedAssignmentCreator({
           )}
         </div>
 
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Curriculum Level *
+          </label>
+          <div className="flex bg-gray-100 rounded-lg p-1">
+            <button
+              type="button"
+              onClick={() => {
+                setAssignmentData(prev => ({ ...prev, curriculum_level: 'KS3' }));
+                setGameConfig(prev => ({
+                  ...prev,
+                  vocabularyConfig: { ...prev.vocabularyConfig, curriculumLevel: 'KS3' }
+                }));
+              }}
+              className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                assignmentData.curriculum_level === 'KS3'
+                  ? 'bg-blue-500 text-white shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              KS3 (Year 7-9)
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setAssignmentData(prev => ({ ...prev, curriculum_level: 'KS4' }));
+                setGameConfig(prev => ({
+                  ...prev,
+                  vocabularyConfig: { ...prev.vocabularyConfig, curriculumLevel: 'KS4' }
+                }));
+              }}
+              className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                assignmentData.curriculum_level === 'KS4'
+                  ? 'bg-blue-500 text-white shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              KS4 (GCSE)
+            </button>
+          </div>
+          <p className="text-sm text-gray-500 mt-1">
+            {assignmentData.curriculum_level === 'KS3'
+              ? 'Foundation level vocabulary and topics for Years 7-9'
+              : 'Advanced GCSE-level vocabulary and exam topics'
+            }
+          </p>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -538,7 +639,7 @@ export default function EnhancedAssignmentCreator({
       <MultiGameSelector
         selectedGames={gameConfig.selectedGames}
         onSelectionChange={handleGameSelectionChange}
-        maxSelections={5}
+        maxSelections={15}
       />
     </div>
   );
@@ -557,8 +658,10 @@ export default function EnhancedAssignmentCreator({
         selectedGames={gameConfig.selectedGames}
         vocabularyConfig={gameConfig.vocabularyConfig}
         sentenceConfig={gameConfig.sentenceConfig}
+        grammarConfig={gameConfig.grammarConfig}
         onVocabularyChange={handleVocabularyConfigChange}
         onSentenceChange={handleSentenceConfigChange}
+        onGrammarChange={handleGrammarConfigChange}
       />
     </div>
   );
@@ -828,11 +931,18 @@ export default function EnhancedAssignmentCreator({
       <div className="bg-white rounded-xl shadow-lg p-8 mb-8">
         <AnimatePresence mode="wait">
           <motion.div
-            key={currentStep}
+            key={`step-${currentStep}-${steps[currentStep]?.id}`}
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.3 }}
+            transition={{ duration: 0.2 }}
+            onAnimationComplete={() => {
+              // Ensure DOM is stable after animation
+              setTimeout(() => {
+                // Force a small reflow to prevent DOM issues
+                document.body.offsetHeight;
+              }, 10);
+            }}
           >
             {renderStepContent()}
           </motion.div>

@@ -6,6 +6,7 @@ import { Home, Settings, Play } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../../../components/auth/AuthProvider';
 import VocabBlastGameWrapper from './components/VocabBlastGameWrapper';
+import VocabBlastAssignmentWrapper from './components/VocabBlastAssignmentWrapper';
 import VocabBlastSettings from './components/VocabBlastSettings';
 import { ThemeProvider } from '../noughts-and-crosses/components/ThemeProvider';
 import { useAudio } from '../noughts-and-crosses/hooks/useAudio';
@@ -213,14 +214,27 @@ export default function VocabBlastPage() {
           )}
 
           {gameState === 'playing' && (
-            <VocabBlastGameWrapper
-              settings={gameSettings}
-              onBackToMenu={backToMenu}
-              onGameEnd={handleGameEnd}
-              assignmentId={assignmentId}
-              userId={user?.id}
-              isAssignmentMode={!!assignmentId}
-            />
+            assignmentId ? (
+              <VocabBlastAssignmentWrapper
+                assignmentId={assignmentId}
+                studentId={user?.id || ''}
+                onAssignmentComplete={(progress) => {
+                  console.log('Vocab Blast assignment completed:', progress);
+                  setGameState('completed');
+                }}
+                onBackToAssignments={() => router.push('/student-dashboard/assignments')}
+                onBackToMenu={backToMenu}
+              />
+            ) : (
+              <VocabBlastGameWrapper
+                settings={gameSettings}
+                onBackToMenu={backToMenu}
+                onGameEnd={handleGameEnd}
+                assignmentId={assignmentId}
+                userId={user?.id}
+                isAssignmentMode={!!assignmentId}
+              />
+            )
           )}
 
           {gameState === 'completed' && (

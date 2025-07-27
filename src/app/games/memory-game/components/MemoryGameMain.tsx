@@ -10,6 +10,7 @@ import CustomWordsModal from './CustomWordsModal';
 import { VOCABULARY } from '../data/vocabulary';
 import { FALLBACK_VOCABULARY } from '../data/fallbackVocabulary';
 import { THEMES, LANGUAGES, TOPICS, DIFFICULTIES, Card } from '../data/gameConstants';
+import { useGameVocabulary, GameVocabularyWord } from '../../../../hooks/useGameVocabulary';
 import './styles.css';
 
 interface MemoryGameMainProps {
@@ -22,6 +23,9 @@ interface MemoryGameMainProps {
   assignmentTitle?: string;
   assignmentId?: string;
   userId?: string;
+  vocabulary?: GameVocabularyWord[];
+  subcategory?: string;
+  curriculumLevel?: 'KS3' | 'KS4';
 }
 
 export default function MemoryGameMain({
@@ -33,7 +37,10 @@ export default function MemoryGameMain({
   isAssignmentMode = false,
   assignmentTitle,
   assignmentId,
-  userId
+  userId,
+  vocabulary: providedVocabulary,
+  subcategory,
+  curriculumLevel = 'KS3'
 }: MemoryGameMainProps) {
   const { user } = useAuth();
   // Game state
@@ -64,6 +71,13 @@ export default function MemoryGameMain({
   // Add state for custom words
   const [currentCustomWords, setCurrentCustomWords] = useState<WordPair[]>(customWords || []);
 
+  // Update custom words when prop changes (for assignment mode)
+  useEffect(() => {
+    if (customWords && customWords.length > 0) {
+      setCurrentCustomWords(customWords);
+    }
+  }, [customWords]);
+
   // Add timer state for tracking time spent
   const [startTime, setStartTime] = useState<Date | null>(null);
   const [gameTime, setGameTime] = useState(0);
@@ -82,8 +96,24 @@ export default function MemoryGameMain({
   const [gameService, setGameService] = useState<EnhancedGameService | null>(null);
   const [gameSessionId, setGameSessionId] = useState<string | null>(null);
 
-  // Initialize Supabase client and game service
+  // Modern vocabulary integration - only use for non-assignment mode
+  const { vocabulary: gameVocabulary, loading: vocabularyLoading } = useGameVocabulary({
+    language: language === 'spanish' ? 'es' : language === 'french' ? 'fr' : 'en',
+    categoryId: isAssignmentMode ? undefined : topic, // Don't fetch vocabulary in assignment mode
+    subcategoryId: isAssignmentMode ? undefined : subcategory,
+    limit: 50,
+    randomize: true,
+    curriculumLevel: curriculumLevel,
+    enabled: !isAssignmentMode // Disable vocabulary fetching in assignment mode
+  });
+
+  // Initialize Supabase client and game service (skip in assignment mode)
   useEffect(() => {
+    if (isAssignmentMode) {
+      console.log('Assignment mode: Skipping EnhancedGameService initialization');
+      return;
+    }
+
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
     const supabase = createClient(supabaseUrl, supabaseAnonKey);
@@ -92,7 +122,7 @@ export default function MemoryGameMain({
       const service = new EnhancedGameService(supabase);
       setGameService(service);
     }
-  }, [userId, user?.id]);
+  }, [userId, user?.id, isAssignmentMode]);
 
   // Start game session when game service is ready and game starts
   useEffect(() => {
@@ -103,6 +133,12 @@ export default function MemoryGameMain({
 
   const startGameSession = async () => {
     if (!gameService || !(userId || user?.id)) return;
+
+    // Skip session creation in assignment mode to avoid RLS issues
+    if (isAssignmentMode) {
+      console.log('Assignment mode: Skipping game session creation');
+      return;
+    }
 
     try {
       const sessionId = await gameService.startGameSession({
@@ -351,38 +387,72 @@ export default function MemoryGameMain({
       
       totalPairs = wordPairs.length;
     } else {
-      // Use predefined vocabulary based on difficulty
-      if (VOCABULARY[currentTopic] && VOCABULARY[currentTopic][currentLanguage]) {
-        const vocabList = VOCABULARY[currentTopic][currentLanguage];
-        
-        // Determine number of pairs based on difficulty
-        switch (currentDifficulty) {
-          case 'easy-1':
-            totalPairs = 3;
-            break;
-          case 'easy-2':
-            totalPairs = 4;
-            break;
-          case 'medium-1':
-            totalPairs = 5;
-            break;
-          case 'medium-2':
-            totalPairs = 6;
-            break;
-          case 'hard-2':
-            totalPairs = 8;
-            break;
-          case 'expert':
-            totalPairs = 10;
-            break;
-          default:
-            totalPairs = 6; // Default to medium
-            break;
-        }
-        
-        // Get words up to the required number of pairs
+      // Determine number of pairs based on difficulty
+      switch (currentDifficulty) {
+        case 'easy-1':
+          totalPairs = 3;
+          break;
+        case 'easy-2':
+          totalPairs = 4;
+          break;
+        case 'medium-1':
+          totalPairs = 5;
+          break;
+        case 'medium-2':
+          totalPairs = 6;
+          break;
+        case 'hard-2':
+          totalPairs = 8;
+          break;
+        case 'expert':
+          totalPairs = 10;
+          break;
+        default:
+          totalPairs = 6; // Default to medium
+          break;
+      }
+
+      // Priority 1: Use provided vocabulary (for assignment mode)
+      if (providedVocabulary && providedVocabulary.length > 0) {
+        const vocabList = providedVocabulary.map(item => ({
+          term: item.word,
+          translation: item.translation,
+          isImage: false,
+          id: item.id,
+          vocabulary_id: item.id,
+          audio_url: item.audio_url
+        }));
         wordPairs = vocabList.slice(0, totalPairs);
-        
+
+        // If not enough pairs, duplicate some
+        while (wordPairs.length < totalPairs) {
+          const remaining = totalPairs - wordPairs.length;
+          wordPairs = [...wordPairs, ...vocabList.slice(0, Math.min(remaining, vocabList.length))];
+        }
+      }
+      // Priority 2: Use modern vocabulary system
+      else if (gameVocabulary && gameVocabulary.length > 0) {
+        const vocabList = gameVocabulary.map(item => ({
+          term: item.word,
+          translation: item.translation,
+          isImage: false,
+          id: item.id,
+          vocabulary_id: item.id,
+          audio_url: item.audio_url
+        }));
+        wordPairs = vocabList.slice(0, totalPairs);
+
+        // If not enough pairs, duplicate some
+        while (wordPairs.length < totalPairs) {
+          const remaining = totalPairs - wordPairs.length;
+          wordPairs = [...wordPairs, ...vocabList.slice(0, Math.min(remaining, vocabList.length))];
+        }
+      }
+      // Priority 3: Use legacy vocabulary system
+      else if (VOCABULARY[currentTopic] && VOCABULARY[currentTopic][currentLanguage]) {
+        const vocabList = VOCABULARY[currentTopic][currentLanguage];
+        wordPairs = vocabList.slice(0, totalPairs);
+
         // If not enough pairs, duplicate some
         while (wordPairs.length < totalPairs) {
           const remaining = totalPairs - wordPairs.length;

@@ -1,11 +1,11 @@
 {
   "leagues": [
     {
-      "id": "bronze",
-      "name": "Bronze Arena",
-      "description": "The proving grounds for beginners. Master regular verbs to advance.",
+      "id": "bronze_arena",
+      "name": "🥉 Bronze Arena: The Proving Grounds",
+      "description": "Master core regular verbs in present tense and near future. Build your conjugation foundation here.",
       "minLevel": 1,
-      "maxLevel": 10,
+      "maxLevel": 12,
       "background": "bronze-colosseum.jpg",
       "theme": {
         "primary": "#CD7F32",
@@ -13,37 +13,46 @@
         "gradient": "from-amber-700 to-orange-800"
       },
       "verbTypes": ["regular"],
-      "tenses": ["present"],
+      "tenses": ["present", "near_future"],
       "opponents": [
         {
-          "id": "bronze_warrior",
-          "name": "Bronze Warrior",
-          "sprite": "bronze_warrior.png",
+          "id": "moss_goblin",
+          "name": "Moss Goblin",
+          "sprite": "moss_goblin.png",
+          "health": 80,
+          "difficulty": 1,
+          "weapons": ["wooden_club"],
+          "description": "A small forest creature perfect for learning basic -ar verb conjugations."
+        },
+        {
+          "id": "leaf_sprite",
+          "name": "Leaf Sprite",
+          "sprite": "leaf_sprite.png",
           "health": 100,
           "difficulty": 1,
-          "weapons": ["sword"],
-          "description": "A novice fighter learning the basics of combat."
+          "weapons": ["nature_magic"],
+          "description": "A playful spirit that tests your -er and -ir verb knowledge."
         },
         {
           "id": "training_dummy",
           "name": "Training Dummy",
-          "sprite": "training-dummy.png",
-          "health": 80,
-          "difficulty": 1,
-          "weapons": ["sword"],
-          "description": "Perfect for practicing your conjugation skills."
+          "sprite": "training_dummy.png",
+          "health": 120,
+          "difficulty": 2,
+          "weapons": ["practice_sword"],
+          "description": "Perfect for practicing near future (ir + a + infinitive) constructions."
         }
       ],
       "promotionRequirement": {
-        "winsNeeded": 10,
+        "winsNeeded": 12,
         "accuracyRequired": 70
       }
     },
     {
-      "id": "silver",
-      "name": "Silver Castle",
-      "description": "Medieval battlegrounds where stem-changing verbs test your skills.",
-      "minLevel": 11,
+      "id": "silver_castle",
+      "name": "🥈 Silver Castle: The Irregular Initiation",
+      "description": "Face stem-changing verbs and 'go' verbs in present tense. Master the first major irregularities.",
+      "minLevel": 13,
       "maxLevel": 25,
       "background": "silver-castle.jpg",
       "theme": {
@@ -51,77 +60,287 @@
         "secondary": "#808080",
         "gradient": "from-slate-400 to-slate-600"
       },
-      "verbTypes": ["regular", "stemChanging"],
-      "tenses": ["present", "preterite"],
+      "verbTypes": ["regular", "stemChanging", "go_verbs"],
+      "tenses": ["present"],
       "opponents": [
         {
-          "id": "castle_knight",
-          "name": "Castle Knight",
-          "sprite": "castle_knight.png",
-          "health": 150,
+          "id": "stem_guardian",
+          "name": "Stem Guardian",
+          "sprite": "stem_guardian.png",
+          "health": 140,
           "difficulty": 2,
-          "weapons": ["sword", "shield"],
-          "description": "A seasoned knight with knowledge of changing verb patterns."
+          "weapons": ["changing_blade"],
+          "description": "Master of e→ie, o→ue, and e→i stem changes in present tense."
         },
         {
-          "id": "royal_guard",
-          "name": "Royal Guard",
-          "sprite": "royal_guard.png",
-          "health": 180,
+          "id": "irregular_knight",
+          "name": "Irregular Knight",
+          "sprite": "irregular_knight.png",
+          "health": 160,
           "difficulty": 2,
-          "weapons": ["spear", "shield"],
-          "description": "Elite protector who demands perfect preterite forms."
+          "weapons": ["go_sword"],
+          "description": "Challenges you with tener, venir, poner, and other 'go' verbs."
+        },
+        {
+          "id": "castle_lord",
+          "name": "Castle Lord",
+          "sprite": "castle_lord.png",
+          "health": 200,
+          "difficulty": 3,
+          "weapons": ["royal_scepter"],
+          "description": "Commands all present tense irregularities with authority."
         }
       ],
       "promotionRequirement": {
-        "winsNeeded": 15,
+        "winsNeeded": 13,
         "accuracyRequired": 75
       }
     },
     {
-      "id": "gold",
-      "name": "Golden Temple",
-      "description": "A mystical sanctuary where irregular verbs challenge the worthy.",
+      "id": "iron_keep",
+      "name": "🛡️ Iron Keep: The Past Imperfect",
+      "description": "Master the Imperfect tense for habitual past actions and introduce basic Preterite forms.",
       "minLevel": 26,
+      "maxLevel": 37,
+      "background": "iron-keep.jpg",
+      "theme": {
+        "primary": "#708090",
+        "secondary": "#2F4F4F",
+        "gradient": "from-slate-500 to-slate-700"
+      },
+      "verbTypes": ["regular", "stemChanging", "go_verbs"],
+      "tenses": ["imperfect", "preterite_regular"],
+      "opponents": [
+        {
+          "id": "past_wraith",
+          "name": "Past Wraith",
+          "sprite": "past_wraith.png",
+          "health": 180,
+          "difficulty": 3,
+          "weapons": ["memory_blade"],
+          "description": "Haunts with memories of habitual past actions in imperfect tense."
+        },
+        {
+          "id": "time_keeper",
+          "name": "Time Keeper",
+          "sprite": "time_keeper.png",
+          "health": 220,
+          "difficulty": 3,
+          "weapons": ["temporal_staff"],
+          "description": "Guards the secrets of completed past actions in preterite."
+        },
+        {
+          "id": "iron_lord",
+          "name": "Iron Lord",
+          "sprite": "iron_lord.png",
+          "health": 260,
+          "difficulty": 4,
+          "weapons": ["iron_hammer"],
+          "description": "Master of distinguishing between imperfect and preterite usage."
+        }
+      ],
+      "promotionRequirement": {
+        "winsNeeded": 12,
+        "accuracyRequired": 78
+      }
+    },
+    {
+      "id": "golden_temple",
+      "name": "⚔️ Golden Temple: The Preterite Challenge",
+      "description": "Conquer irregular preterite verbs and master Future & Conditional tenses.",
+      "minLevel": 38,
       "maxLevel": 50,
-      "background": "gold-temple.jpg",
+      "background": "golden-temple.jpg",
       "theme": {
         "primary": "#FFD700",
         "secondary": "#DAA520",
         "gradient": "from-yellow-400 to-yellow-600"
       },
-      "verbTypes": ["regular", "stemChanging", "irregular"],
-      "tenses": ["present", "preterite", "imperfect"],
+      "verbTypes": ["regular", "stemChanging", "go_verbs", "irregular"],
+      "tenses": ["preterite_irregular", "future", "conditional"],
       "opponents": [
         {
-          "id": "temple_guardian",
-          "name": "Temple Guardian",
-          "sprite": "temple_guardian.png",
-          "health": 200,
-          "difficulty": 3,
-          "weapons": ["magic_staff"],
-          "description": "Ancient protector who speaks in irregular patterns."
+          "id": "preterite_demon",
+          "name": "Preterite Demon",
+          "sprite": "preterite_demon.png",
+          "health": 240,
+          "difficulty": 4,
+          "weapons": ["irregular_blade"],
+          "description": "Master of ser, ir, hacer, tener and other irregular preterite forms."
         },
         {
-          "id": "mystic_sage",
-          "name": "Mystic Sage",
-          "sprite": "mystic_sage.png",
-          "health": 250,
-          "difficulty": 3,
-          "weapons": ["magic_staff", "spell_book"],
-          "description": "Wise master of all verb transformations."
+          "id": "future_oracle",
+          "name": "Future Oracle",
+          "sprite": "future_oracle.png",
+          "health": 280,
+          "difficulty": 4,
+          "weapons": ["prophecy_staff"],
+          "description": "Sees all future actions and conditional possibilities."
+        },
+        {
+          "id": "temple_master",
+          "name": "Temple Master",
+          "sprite": "temple_master.png",
+          "health": 320,
+          "difficulty": 5,
+          "weapons": ["golden_scepter"],
+          "description": "Ancient guardian who commands past, present, and future."
         }
       ],
       "promotionRequirement": {
-        "winsNeeded": 20,
+        "winsNeeded": 13,
         "accuracyRequired": 80
       }
     },
     {
-      "id": "diamond",
-      "name": "Diamond Nexus",
-      "description": "The ultimate arena where only masters dare to tread.",
+      "id": "royal_academy",
+      "name": "👑 Royal Academy: The Command Center",
+      "description": "Master all forms of commands (imperative) and reflexive verbs. Learn verbs like 'gustar'.",
       "minLevel": 51,
+      "maxLevel": 62,
+      "background": "royal-academy.jpg",
+      "theme": {
+        "primary": "#800080",
+        "secondary": "#4B0082",
+        "gradient": "from-purple-600 to-indigo-700"
+      },
+      "verbTypes": ["regular", "stemChanging", "go_verbs", "irregular", "reflexive", "gustar_like"],
+      "tenses": ["imperative", "reflexive_present", "reflexive_past"],
+      "opponents": [
+        {
+          "id": "command_captain",
+          "name": "Command Captain",
+          "sprite": "command_captain.png",
+          "health": 280,
+          "difficulty": 4,
+          "weapons": ["command_sword"],
+          "description": "Issues orders in tú, usted, and ustedes command forms."
+        },
+        {
+          "id": "reflexive_mirror",
+          "name": "Reflexive Mirror",
+          "sprite": "reflexive_mirror.png",
+          "health": 300,
+          "difficulty": 5,
+          "weapons": ["mirror_shield"],
+          "description": "Reflects actions back with reflexive pronouns and verbs."
+        },
+        {
+          "id": "royal_instructor",
+          "name": "Royal Instructor",
+          "sprite": "royal_instructor.png",
+          "health": 350,
+          "difficulty": 5,
+          "weapons": ["teaching_staff"],
+          "description": "Master educator of commands, reflexives, and gustar constructions."
+        }
+      ],
+      "promotionRequirement": {
+        "winsNeeded": 12,
+        "accuracyRequired": 82
+      }
+    },
+    {
+      "id": "crystal_spire",
+      "name": "✨ Crystal Spire: The Perfect Path",
+      "description": "Master all compound (perfect) tenses using haber + past participle.",
+      "minLevel": 63,
+      "maxLevel": 75,
+      "background": "crystal-spire.jpg",
+      "theme": {
+        "primary": "#E0E0E0",
+        "secondary": "#B0C4DE",
+        "gradient": "from-slate-300 to-blue-300"
+      },
+      "verbTypes": ["regular", "stemChanging", "go_verbs", "irregular", "reflexive"],
+      "tenses": ["present_perfect", "past_perfect", "future_perfect", "conditional_perfect"],
+      "opponents": [
+        {
+          "id": "perfect_guardian",
+          "name": "Perfect Guardian",
+          "sprite": "perfect_guardian.png",
+          "health": 320,
+          "difficulty": 5,
+          "weapons": ["crystal_blade"],
+          "description": "Protects the secrets of present perfect (he hablado, has comido)."
+        },
+        {
+          "id": "temporal_sage",
+          "name": "Temporal Sage",
+          "sprite": "temporal_sage.png",
+          "health": 360,
+          "difficulty": 5,
+          "weapons": ["time_crystal"],
+          "description": "Master of past perfect (había hablado) and future perfect."
+        },
+        {
+          "id": "crystal_overlord",
+          "name": "Crystal Overlord",
+          "sprite": "crystal_overlord.png",
+          "health": 400,
+          "difficulty": 6,
+          "weapons": ["perfect_staff"],
+          "description": "Supreme commander of all perfect tense constructions."
+        }
+      ],
+      "promotionRequirement": {
+        "winsNeeded": 13,
+        "accuracyRequired": 85
+      }
+    },
+    {
+      "id": "subjunctive_summit",
+      "name": "🏛️ Subjunctive Summit: The Realm of Nuance",
+      "description": "Deep dive into Present and Imperfect Subjunctive for expressing doubt, emotion, and opinion.",
+      "minLevel": 76,
+      "maxLevel": 88,
+      "background": "subjunctive-summit.jpg",
+      "theme": {
+        "primary": "#8A2BE2",
+        "secondary": "#4B0082",
+        "gradient": "from-violet-600 to-purple-800"
+      },
+      "verbTypes": ["regular", "stemChanging", "go_verbs", "irregular", "reflexive"],
+      "tenses": ["present_subjunctive", "imperfect_subjunctive"],
+      "opponents": [
+        {
+          "id": "doubt_phantom",
+          "name": "Doubt Phantom",
+          "sprite": "doubt_phantom.png",
+          "health": 360,
+          "difficulty": 6,
+          "weapons": ["uncertainty_blade"],
+          "description": "Embodies doubt and denial, triggering present subjunctive."
+        },
+        {
+          "id": "emotion_spirit",
+          "name": "Emotion Spirit",
+          "sprite": "emotion_spirit.png",
+          "health": 380,
+          "difficulty": 6,
+          "weapons": ["feeling_staff"],
+          "description": "Channels emotions and wishes that require subjunctive mood."
+        },
+        {
+          "id": "subjunctive_lord",
+          "name": "Subjunctive Lord",
+          "sprite": "subjunctive_lord.png",
+          "health": 450,
+          "difficulty": 7,
+          "weapons": ["mood_scepter"],
+          "description": "Master of both present and imperfect subjunctive forms."
+        }
+      ],
+      "promotionRequirement": {
+        "winsNeeded": 13,
+        "accuracyRequired": 88
+      }
+    },
+    {
+      "id": "diamond_nexus",
+      "name": "💎 Diamond Nexus: The Grand Master Arena",
+      "description": "Ultimate mastery of all tenses, moods, and advanced constructions. The final challenge.",
+      "minLevel": 89,
       "maxLevel": 100,
       "background": "diamond-nexus.jpg",
       "theme": {
@@ -129,31 +348,40 @@
         "secondary": "#4169E1",
         "gradient": "from-cyan-300 to-blue-500"
       },
-      "verbTypes": ["regular", "stemChanging", "irregular", "reflexive"],
-      "tenses": ["present", "preterite", "imperfect", "future", "conditional"],
+      "verbTypes": ["regular", "stemChanging", "go_verbs", "irregular", "reflexive", "gustar_like"],
+      "tenses": ["all_tenses", "subjunctive_perfect", "passive_voice", "conditional_clauses"],
       "opponents": [
         {
-          "id": "nexus_champion",
-          "name": "Nexus Champion",
-          "sprite": "nexus-champion.png",
-          "health": 300,
-          "difficulty": 4,
-          "weapons": ["energy_blade", "force_shield"],
-          "description": "The ultimate challenger with mastery over all verb forms."
+          "id": "grammar_titan",
+          "name": "Grammar Titan",
+          "sprite": "grammar_titan.png",
+          "health": 450,
+          "difficulty": 7,
+          "weapons": ["titan_blade"],
+          "description": "Colossal being that tests perfect subjunctive and complex constructions."
         },
         {
-          "id": "grammar_overlord",
-          "name": "Grammar Overlord",
-          "sprite": "grammar-overlord.png",
-          "health": 400,
-          "difficulty": 5,
-          "weapons": ["cosmic_staff", "reality_gem"],
-          "description": "Legendary being who commands the very essence of language."
+          "id": "language_deity",
+          "name": "Language Deity",
+          "sprite": "language_deity.png",
+          "health": 500,
+          "difficulty": 8,
+          "weapons": ["divine_staff"],
+          "description": "Divine entity commanding passive voice and conditional clauses."
+        },
+        {
+          "id": "conjugation_master",
+          "name": "Conjugation Master",
+          "sprite": "conjugation_master.png",
+          "health": 600,
+          "difficulty": 10,
+          "weapons": ["master_scepter", "reality_gem"],
+          "description": "The ultimate master of all Spanish conjugations and verb forms."
         }
       ],
       "promotionRequirement": {
-        "winsNeeded": 30,
-        "accuracyRequired": 90
+        "winsNeeded": 12,
+        "accuracyRequired": 92
       }
     }
   ]

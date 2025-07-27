@@ -132,7 +132,7 @@ export default function MainNavigation() {
                   href="/auth/login"
                   className="py-2 px-4 text-white hover:text-yellow-200 transition-colors"
                 >
-                  Creator Login
+                  Login
                 </Link>
                 <Link
                   href="/auth/signup"
@@ -224,7 +224,7 @@ export default function MainNavigation() {
                     className="block text-white hover:text-yellow-200 transition-colors"
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    Creator Login
+                    Login
                   </Link>
                 )}
               </li>

@@ -41,22 +41,52 @@ export const useBattle = () => {
   const getRandomVerb = useCallback((): Verb | null => {
     if (!verbs || !leagues.length) return null;
 
+    // Check if verbs has the expected structure
+    if (!verbs.spanish) {
+      console.error('Verbs data structure is invalid:', verbs);
+      return null;
+    }
+
     const currentLeague = leagues.find(l => l.id === playerStats.currentLeague);
     if (!currentLeague) return null;
 
     const { verbTypes } = currentLeague;
     const availableVerbs: Verb[] = [];
 
-    // Collect verbs from all allowed types
+    // Collect verbs from all allowed types based on new structure
     verbTypes.forEach(type => {
       if (type === 'regular') {
+        // Handle regular verbs with ar, er, ir endings
         ['ar', 'er', 'ir'].forEach(ending => {
-          if (verbs.spanish.regular[ending]) {
+          if (verbs.spanish?.regular?.[ending] && Array.isArray(verbs.spanish.regular[ending])) {
             availableVerbs.push(...verbs.spanish.regular[ending]);
           }
         });
-      } else if (verbs.spanish[type]) {
-        availableVerbs.push(...verbs.spanish[type]);
+      } else if (type === 'stemChanging') {
+        // Handle stem-changing verbs
+        if (verbs.spanish?.stemChanging && Array.isArray(verbs.spanish.stemChanging)) {
+          availableVerbs.push(...verbs.spanish.stemChanging);
+        }
+      } else if (type === 'go_verbs') {
+        // Handle "go" verbs (irregular yo form)
+        if (verbs.spanish?.go_verbs && Array.isArray(verbs.spanish.go_verbs)) {
+          availableVerbs.push(...verbs.spanish.go_verbs);
+        }
+      } else if (type === 'irregular') {
+        // Handle irregular verbs
+        if (verbs.spanish?.irregular && Array.isArray(verbs.spanish.irregular)) {
+          availableVerbs.push(...verbs.spanish.irregular);
+        }
+      } else if (type === 'reflexive') {
+        // Handle reflexive verbs
+        if (verbs.spanish?.reflexive && Array.isArray(verbs.spanish.reflexive)) {
+          availableVerbs.push(...verbs.spanish.reflexive);
+        }
+      } else if (type === 'gustar_like') {
+        // Handle gustar-like verbs
+        if (verbs.spanish?.gustar_like && Array.isArray(verbs.spanish.gustar_like)) {
+          availableVerbs.push(...verbs.spanish.gustar_like);
+        }
       }
     });
 
@@ -76,7 +106,38 @@ export const useBattle = () => {
     if (!currentLeague) return 'present';
 
     const { tenses } = currentLeague;
-    return tenses[Math.floor(Math.random() * tenses.length)];
+    let availableTenses = [...tenses];
+
+    // Map arena-specific tense names to actual tense names in verb data
+    const tenseMapping: { [key: string]: string[] } = {
+      'near_future': ['near_future'],
+      'preterite_regular': ['preterite'],
+      'preterite_irregular': ['preterite'],
+      'present_perfect': ['present_perfect'],
+      'past_perfect': ['past_perfect'],
+      'future_perfect': ['future_perfect'],
+      'conditional_perfect': ['conditional_perfect'],
+      'present_subjunctive': ['present_subjunctive'],
+      'imperfect_subjunctive': ['imperfect_subjunctive'],
+      'reflexive_present': ['present'],
+      'reflexive_past': ['preterite'],
+      'all_tenses': ['present', 'preterite', 'imperfect', 'future', 'conditional', 'present_perfect', 'present_subjunctive'],
+      'subjunctive_perfect': ['present_perfect', 'past_perfect'],
+      'passive_voice': ['present', 'preterite'],
+      'conditional_clauses': ['conditional', 'imperfect_subjunctive']
+    };
+
+    // Expand mapped tenses
+    const expandedTenses: string[] = [];
+    availableTenses.forEach(tense => {
+      if (tenseMapping[tense]) {
+        expandedTenses.push(...tenseMapping[tense]);
+      } else {
+        expandedTenses.push(tense);
+      }
+    });
+
+    return expandedTenses[Math.floor(Math.random() * expandedTenses.length)];
   }, [leagues, playerStats.currentLeague]);
 
   // Generate wrong answers for multiple choice
@@ -114,27 +175,66 @@ export const useBattle = () => {
 
   // Generate new battle question
   const generateQuestion = useCallback((): BattleQuestion | null => {
-    const verb = getRandomVerb();
-    if (!verb) return null;
+    let attempts = 0;
+    const maxAttempts = 10;
 
-    const pronoun = getRandomPronoun();
-    const tense = getRandomTense();
+    while (attempts < maxAttempts) {
+      const verb = getRandomVerb();
+      if (!verb) return null;
 
-    if (!verb.conjugations[tense] || !verb.conjugations[tense][pronoun]) {
-      return null;
+      const pronoun = getRandomPronoun();
+      const tense = getRandomTense();
+
+      // Check if verb has the required tense and pronoun
+      if (!verb.conjugations[tense]) {
+        attempts++;
+        continue;
+      }
+
+      // Handle special cases for reflexive and gustar-like verbs
+      let correctAnswer: string;
+
+      if (verb.infinitive.endsWith('se')) {
+        // Reflexive verb - use reflexive pronouns
+        const reflexivePronouns = ['me', 'te', 'se', 'nos', 'os', 'se'];
+        const reflexivePronoun = reflexivePronouns[Math.floor(Math.random() * reflexivePronouns.length)];
+        if (!verb.conjugations[tense][pronoun]) {
+          attempts++;
+          continue;
+        }
+        correctAnswer = verb.conjugations[tense][pronoun];
+      } else if (verb.infinitive === 'gustar') {
+        // Gustar-like verb - use special structure
+        const gustarKeys = Object.keys(verb.conjugations[tense] || {});
+        if (gustarKeys.length === 0) {
+          attempts++;
+          continue;
+        }
+        const randomKey = gustarKeys[Math.floor(Math.random() * gustarKeys.length)];
+        correctAnswer = verb.conjugations[tense][randomKey];
+      } else {
+        // Regular verb conjugation
+        if (!verb.conjugations[tense][pronoun]) {
+          attempts++;
+          continue;
+        }
+        correctAnswer = verb.conjugations[tense][pronoun];
+      }
+
+      const wrongAnswers = generateWrongAnswers(correctAnswer, verb, tense);
+      const options = [correctAnswer, ...wrongAnswers].sort(() => Math.random() - 0.5);
+
+      return {
+        verb,
+        pronoun,
+        tense,
+        correctAnswer,
+        options,
+      };
     }
 
-    const correctAnswer = verb.conjugations[tense][pronoun];
-    const wrongAnswers = generateWrongAnswers(correctAnswer, verb, tense);
-    const options = [correctAnswer, ...wrongAnswers].sort(() => Math.random() - 0.5);
-
-    return {
-      verb,
-      pronoun,
-      tense,
-      correctAnswer,
-      options,
-    };
+    // Fallback - return null if no valid question could be generated
+    return null;
   }, [getRandomVerb, getRandomPronoun, getRandomTense, generateWrongAnswers]);
 
   // Handle answer submission

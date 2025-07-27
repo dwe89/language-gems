@@ -19,7 +19,7 @@ import { supabaseBrowser } from '../../../../components/auth/AuthProvider';
 const AVAILABLE_GAMES = [
   {
     id: 'vocabulary-mining',
-    name: '🔥 Vocabulary Mining Pro',
+    name: '🔥 Vocabulary Mining',
     description: '✨ Advanced vocabulary learning with spaced repetition, voice recognition, multiple modes (Learn/Match/Voice), and adaptive difficulty. Like Memrise + Quizlet combined!',
     icon: <Pickaxe className="text-yellow-500" size={20} />,
     category: 'vocabulary',
@@ -227,12 +227,14 @@ export default function NewAssignmentPage() {
     assigned_to: '',
     due_date: '',
     status: 'active',
-    time_limit: 30
+    time_limit: 30,
+    curriculum_level: 'KS3'
   });
 
   // Vocabulary assignment state
   const [vocabularySelection, setVocabularySelection] = useState({
     type: 'category_based' as 'category_based' | 'subcategory_based' | 'custom_list',
+    language: 'es',
     category: '',
     subcategory: '',
     customListId: '',
@@ -251,7 +253,6 @@ export default function NewAssignmentPage() {
     spacedRepetition: true,
     difficultyAdaptive: true,
     topicFocus: [] as string[],
-    gemTypes: ['common', 'uncommon', 'rare'] as string[],
     dailyGoal: 5,
     streakTarget: 3
   });
@@ -389,12 +390,31 @@ export default function NewAssignmentPage() {
         setVocabularyLists(vocabularyListsData || []);
       }
 
-      // Load categories from centralized vocabulary database
-      const { data: categoriesData, error: categoriesError } = await supabase
+      // Load categories from centralized vocabulary database filtered by curriculum level and language
+      console.log('Loading categories with filters:', {
+        curriculum_level: formData.curriculum_level,
+        language: vocabularySelection.language
+      });
+
+      let query = supabase
         .from('centralized_vocabulary')
         .select('category, subcategory')
         .not('category', 'is', null)
         .not('subcategory', 'is', null);
+
+      // Filter by curriculum level if selected
+      if (formData.curriculum_level) {
+        query = query.eq('curriculum_level', formData.curriculum_level);
+      }
+
+      // Filter by language
+      if (vocabularySelection.language) {
+        query = query.eq('language', vocabularySelection.language);
+      }
+
+      const { data: categoriesData, error: categoriesError } = await query;
+
+      console.log('Categories query result:', { categoriesData, categoriesError });
 
       if (categoriesError) {
         console.error('Error fetching categories:', categoriesError);
@@ -432,15 +452,15 @@ export default function NewAssignmentPage() {
     }
   }, [user]);
 
-  // Effect for data fetching - only run once when user is available
+  // Effect for data fetching - run when user is available, curriculum level, or language changes
   useEffect(() => {
-    if (user && !dataFetched) {
+    if (user && (!dataFetched || formData.curriculum_level || vocabularySelection.language)) {
       fetchData();
     } else if (!user) {
       setLoading(false);
       setError('Please log in to create assignments');
     }
-  }, [user, dataFetched, fetchData]);
+  }, [user, dataFetched, fetchData, formData.curriculum_level, vocabularySelection.language]);
 
   // Separate effect for handling URL parameters (only run once)
   useEffect(() => {
@@ -505,7 +525,10 @@ export default function NewAssignmentPage() {
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(vocabularySelection)
+        body: JSON.stringify({
+          ...vocabularySelection,
+          language: vocabularySelection.language || 'es' // Ensure language is included
+        })
       });
 
       const result = await response.json();
@@ -545,69 +568,91 @@ export default function NewAssignmentPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) return;
+    console.log('=== ASSIGNMENT CREATION STARTED ===');
+    console.log('Form data:', formData);
+    console.log('Selected activities:', selectedActivities);
+    console.log('Vocabulary selection:', vocabularySelection);
+    console.log('Mining settings:', miningSettings);
+    console.log('User:', user);
+
+    if (!user) {
+      console.error('No user found');
+      return;
+    }
 
     if (selectedActivities.length === 0) {
+      console.error('No activities selected');
       setError('Please select at least one activity for the assignment');
       return;
     }
 
     try {
+      console.log('Starting assignment creation process...');
       setSubmitting(true);
       setError('');
       setSuccess('');
 
-      const results = [];
-      
-      for (const activity of selectedActivities) {
-        // Prepare game-specific configuration
-        let gameConfig = {};
-
-        if (activity.id === 'vocabulary-mining') {
-          gameConfig = miningSettings;
+      // Create a single multi-game assignment instead of multiple assignments
+      const assignmentData = {
+        title: formData.title || 'Multi-Game Assignment',
+        description: formData.description,
+        gameType: 'multi-game',
+        selectedGames: selectedActivities.map(activity => activity.id),
+        classId: formData.assigned_to,
+        dueDate: formData.due_date,
+        timeLimit: formData.time_limit,
+        curriculumLevel: formData.curriculum_level,
+        vocabularySelection: vocabularySelection,
+        gameConfig: {
+          miningSettings: selectedActivities.some(a => a.id === 'vocabulary-mining') ? miningSettings : undefined
         }
+      };
 
-        const assignmentData = {
-          title: selectedActivities.length === 1
-            ? formData.title || activity.name
-            : `${formData.title || 'Assignment'}: ${activity.name}`,
-          description: formData.description,
-          gameType: activity.id,
-          classId: formData.assigned_to,
-          dueDate: formData.due_date,
-          timeLimit: formData.time_limit,
-          vocabularySelection: vocabularySelection,
-          gameConfig: Object.keys(gameConfig).length > 0 ? gameConfig : undefined,
-          miningSettings: activity.id === 'vocabulary-mining' ? miningSettings : undefined
-        };
+      console.log('Assignment data prepared:', assignmentData);
+      console.log('Making API call to /api/assignments/create...');
 
-        const response = await fetch('/api/assignments/create', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(assignmentData)
-        });
+      const response = await fetch('/api/assignments/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(assignmentData)
+      });
 
-        const result = await response.json();
-        
-        if (!response.ok) {
-          throw new Error(result.error || 'Failed to create assignment');
-        }
-        
-        results.push(result);
+      console.log('API response status:', response.status);
+      console.log('API response headers:', Object.fromEntries(response.headers.entries()));
+
+      const result = await response.json();
+      console.log('API response data:', result);
+
+      if (!response.ok) {
+        console.error('API call failed:', result);
+        throw new Error(result.error || 'Failed to create assignment');
       }
 
-      setSuccess(`Successfully created ${results.length} assignment${results.length > 1 ? 's' : ''}!`);
-      
+      setSuccess(`Successfully created assignment with ${selectedActivities.length} game${selectedActivities.length > 1 ? 's' : ''}!`);
+
+      // Use a more reliable navigation approach to avoid DOM manipulation conflicts
       setTimeout(() => {
-        router.push('/dashboard/assignments');
-      }, 2000);
+        try {
+          router.push('/dashboard/assignments');
+        } catch (navError) {
+          console.error('Navigation error:', navError);
+          // Fallback: use window.location if router fails
+          window.location.href = '/dashboard/assignments';
+        }
+      }, 1500);
 
     } catch (err) {
-      console.error('Error creating assignment:', err);
+      console.error('=== ASSIGNMENT CREATION ERROR ===');
+      console.error('Error details:', err);
+      console.error('Error stack:', err instanceof Error ? err.stack : 'No stack trace');
+      console.error('Form data at error:', formData);
+      console.error('Vocabulary selection at error:', vocabularySelection);
+      console.error('Selected activities at error:', selectedActivities);
       setError(err instanceof Error ? err.message : 'Failed to create assignment');
     } finally {
+      console.log('Assignment creation process completed');
       setSubmitting(false);
     }
   };
@@ -661,8 +706,19 @@ export default function NewAssignmentPage() {
           )}
           
           {success && (
-            <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg text-green-700">
-              {success}
+            <div className="mb-6 p-6 bg-green-50 border-2 border-green-200 rounded-xl text-green-800 shadow-lg">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <svg className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <h3 className="text-lg font-semibold text-green-800">Assignment Created Successfully!</h3>
+                  <p className="text-green-700 mt-1">{success}</p>
+                  <p className="text-green-600 text-sm mt-2">Redirecting to assignments page...</p>
+                </div>
+              </div>
             </div>
           )}
 
@@ -742,7 +798,26 @@ export default function NewAssignmentPage() {
                     required
                   />
                 </div>
-                
+
+                <div>
+                  <label htmlFor="curriculum_level" className="block text-sm font-medium text-gray-700 mb-2">
+                    Curriculum Level *
+                  </label>
+                  <select
+                    id="curriculum_level"
+                    name="curriculum_level"
+                    value={formData.curriculum_level || 'KS3'}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                    required
+                  >
+                    <option value="KS3">KS3 (Years 7-9)</option>
+                    <option value="KS4">KS4 (GCSE)</option>
+                  </select>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Select the appropriate curriculum level for vocabulary filtering
+                  </p>
+                </div>
 
               </div>
             </div>
@@ -754,7 +829,25 @@ export default function NewAssignmentPage() {
                 Vocabulary Assignment
               </h2>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                  <label htmlFor="language" className="block text-sm font-medium text-gray-700 mb-2">
+                    Language
+                  </label>
+                  <select
+                    id="language"
+                    name="language"
+                    value={vocabularySelection.language}
+                    onChange={handleVocabularyChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                  >
+                    <option value="es">Spanish</option>
+                    <option value="fr">French</option>
+                    <option value="de">German</option>
+                    <option value="it">Italian</option>
+                  </select>
+                </div>
+
                 <div>
                   <label htmlFor="vocabularyType" className="block text-sm font-medium text-gray-700 mb-2">
                     Vocabulary Selection Method
@@ -1000,11 +1093,8 @@ export default function NewAssignmentPage() {
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold text-gray-900 flex items-center">
                     <Pickaxe className="mr-2 text-yellow-600" size={20} />
-                    🔥 Vocabulary Mining Pro Settings
+                    🔥 Vocabulary Mining Settings
                   </h3>
-                  <div className="bg-yellow-400 text-yellow-900 px-3 py-1 rounded-full text-sm font-semibold">
-                    ✨ Premium Features
-                  </div>
                 </div>
                 
                 <div className="bg-white/70 rounded-lg p-4 mb-6">
@@ -1123,42 +1213,7 @@ export default function NewAssignmentPage() {
                   </div>
                 </div>
 
-                {/* Gem Types Selection */}
-                <div className="mt-6 pt-6 border-t border-gray-200">
-                  <h4 className="font-medium text-gray-900 mb-3">Gem Types to Include</h4>
-                  <div className="flex flex-wrap gap-3">
-                    {[
-                      { type: 'common', color: '#94a3b8', name: 'Common' },
-                      { type: 'uncommon', color: '#22c55e', name: 'Uncommon' },
-                      { type: 'rare', color: '#3b82f6', name: 'Rare' },
-                      { type: 'epic', color: '#a855f7', name: 'Epic' },
-                      { type: 'legendary', color: '#f59e0b', name: 'Legendary' }
-                    ].map(gem => (
-                      <label key={gem.type} className="flex items-center">
-                        <input
-                          type="checkbox"
-                          checked={miningSettings.gemTypes.includes(gem.type)}
-                          onChange={(e) => {
-                            const checked = e.target.checked;
-                            setMiningSettings(prev => ({
-                              ...prev,
-                              gemTypes: checked
-                                ? [...prev.gemTypes, gem.type]
-                                : prev.gemTypes.filter(t => t !== gem.type)
-                            }));
-                          }}
-                          className="rounded border-gray-300 text-yellow-600 focus:ring-yellow-500"
-                        />
-                        <span
-                          className="ml-2 px-3 py-1 rounded-full text-sm font-medium text-white"
-                          style={{ backgroundColor: gem.color }}
-                        >
-                          {gem.name}
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
+
               </div>
             )}
 

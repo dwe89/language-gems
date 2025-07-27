@@ -120,13 +120,15 @@ export async function POST(request: Request) {
         }
         
         const password = await supabase.rpc('generate_student_password');
-        if (password.error) {
-          errors.push({ name, error: 'Failed to generate password' });
+        if (password.error || !password.data) {
+          errors.push({ name, error: `Failed to generate password: ${password.error?.message || 'No password returned'}` });
           continue;
         }
         
-        // Create unique email
-        const email = `${firstName.toLowerCase()}.${lastName.toLowerCase().replace(/\s+/g, '')}@student.languagegems.com`;
+        // Create unique email with timestamp to avoid duplicates
+        const baseEmail = `${firstName.toLowerCase()}.${lastName.toLowerCase().replace(/\s+/g, '')}`;
+        const uniqueId = Date.now() + Math.floor(Math.random() * 1000); // timestamp + random number
+        const email = `${baseEmail}.${uniqueId}@student.languagegems.com`;
         
         // Create auth user
         const { data: authUser, error: authError } = await adminClient.auth.admin.createUser({
@@ -145,33 +147,21 @@ export async function POST(request: Request) {
           continue;
         }
         
-        // Check if user profile already exists
-        const { data: existingProfile } = await adminClient
+        // Update the user profile with student-specific information
+        // The handle_new_user trigger already created a basic profile, so we need to update it
+        const { error: profileError } = await adminClient
           .from('user_profiles')
-          .select('user_id')
-          .eq('user_id', authUser.user.id)
-          .single();
-
-        // Create user profile only if it doesn't exist
-        let profileError = null;
-        if (!existingProfile) {
-          const result = await adminClient
-            .from('user_profiles')
-            .insert({
-              user_id: authUser.user.id,
-              email,
-              role: 'student',
-              display_name: displayName,
-              username: username.data,
-              teacher_id: user.id,
-              initial_password: password.data,
-              school_initials: schoolInitials
-            });
-          profileError = result.error;
-        }
+          .update({
+            username: username.data,
+            teacher_id: user.id,
+            initial_password: password.data,
+            school_initials: schoolInitials
+          })
+          .eq('user_id', authUser.user.id);
         
         if (profileError) {
-          errors.push({ name, error: profileError.message });
+          console.error('Profile update error for', name, ':', profileError);
+          errors.push({ name, error: `Profile update failed: ${profileError.message}` });
           continue;
         }
         

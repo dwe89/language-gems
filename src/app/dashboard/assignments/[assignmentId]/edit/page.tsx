@@ -145,10 +145,17 @@ export default function EditAssignmentPage() {
       }
 
       setSuccess('Assignment updated successfully!');
-      
+
+      // Use a more reliable navigation approach to avoid DOM manipulation conflicts
       setTimeout(() => {
-        router.push('/dashboard/assignments');
-      }, 2000);
+        try {
+          router.push('/dashboard/assignments');
+        } catch (navError) {
+          console.error('Navigation error:', navError);
+          // Fallback: use window.location if router fails
+          window.location.href = '/dashboard/assignments';
+        }
+      }, 1500);
 
     } catch (err) {
       console.error('Error updating assignment:', err);
@@ -266,8 +273,19 @@ export default function EditAssignmentPage() {
           )}
           
           {success && (
-            <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg text-green-700">
-              {success}
+            <div className="mb-6 p-6 bg-green-50 border-2 border-green-200 rounded-xl text-green-800 shadow-lg">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <svg className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <h3 className="text-lg font-semibold text-green-800">Assignment Updated Successfully!</h3>
+                  <p className="text-green-700 mt-1">{success}</p>
+                  <p className="text-green-600 text-sm mt-2">Redirecting to assignments page...</p>
+                </div>
+              </div>
             </div>
           )}
 

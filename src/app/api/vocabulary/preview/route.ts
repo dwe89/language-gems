@@ -2,10 +2,13 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 
-type VocabularySelectionType = 'theme_based' | 'topic_based' | 'custom_list' | 'difficulty_based';
+type VocabularySelectionType = 'category_based' | 'subcategory_based' | 'theme_based' | 'topic_based' | 'custom_list' | 'difficulty_based';
 
 interface VocabularyPreviewRequest {
   type: VocabularySelectionType;
+  language?: string;
+  category?: string;
+  subcategory?: string;
   theme?: string;
   topic?: string;
   customListId?: string;
@@ -48,23 +51,43 @@ export async function POST(request: NextRequest) {
     const body: VocabularyPreviewRequest = await request.json();
 
     let query = supabase
-      .from('vocabulary')
-      .select('id, spanish, english, theme, topic, part_of_speech');
+      .from('centralized_vocabulary')
+      .select('id, word, translation, category, subcategory, theme_name, part_of_speech');
+
+    // Filter by language if specified
+    if (body.language) {
+      query = query.eq('language', body.language);
+    }
 
     // Apply filters based on selection type
     switch (body.type) {
-      case 'theme_based':
-        if (body.theme) {
-          query = query.eq('theme', body.theme);
+      case 'category_based':
+        if (body.category) {
+          query = query.eq('category', body.category);
         }
         break;
-        
+
+      case 'subcategory_based':
+        if (body.category) {
+          query = query.eq('category', body.category);
+          if (body.subcategory) {
+            query = query.eq('subcategory', body.subcategory);
+          }
+        }
+        break;
+
+      case 'theme_based':
+        if (body.theme) {
+          query = query.eq('theme_name', body.theme);
+        }
+        break;
+
       case 'topic_based':
         if (body.topic) {
           query = query.eq('topic', body.topic);
         }
         break;
-        
+
       case 'custom_list':
         if (body.customListId) {
           // For custom lists, we'd need to join with the custom wordlists table
@@ -72,7 +95,7 @@ export async function POST(request: NextRequest) {
           query = query.limit(body.wordCount || 10);
         }
         break;
-        
+
       default:
         // Default to a general selection
         break;
@@ -92,9 +115,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Format vocabulary to match expected frontend format
+    const formattedVocabulary = vocabulary?.map(item => ({
+      id: item.id,
+      spanish: item.word,
+      english: item.translation,
+      theme: item.theme_name || item.category,
+      topic: item.subcategory,
+      part_of_speech: item.part_of_speech
+    })) || [];
+
     return NextResponse.json({
-      vocabulary: vocabulary || [],
-      count: vocabulary?.length || 0,
+      vocabulary: formattedVocabulary,
+      count: formattedVocabulary.length,
       criteria: body
     });
 

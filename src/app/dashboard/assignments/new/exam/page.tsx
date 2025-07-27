@@ -113,8 +113,13 @@ export default function NewExamAssignmentPage() {
     // Here you would normally save the assignment to the database
     console.log('Submitting exam assignment:', formData);
     
-    // Navigate back to assignments page
-    router.push('/dashboard/assignments');
+    // Navigate back to assignments page with error handling
+    try {
+      router.push('/dashboard/assignments');
+    } catch (navError) {
+      console.error('Navigation error:', navError);
+      window.location.href = '/dashboard/assignments';
+    }
   };
   
   return (

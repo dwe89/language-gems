@@ -182,9 +182,55 @@ export class EnhancedAssignmentService {
   // =====================================================
 
   async createEnhancedAssignment(
-    teacherId: string, 
+    teacherId: string,
     assignmentData: AssignmentCreationData
   ): Promise<string> {
+    let vocabularyListId = assignmentData.vocabulary_list_id;
+    let vocabularySelectionType = 'custom_list';
+    let vocabularyCriteria = {};
+    let vocabularyCount = 10;
+
+    // Extract vocabulary configuration from game config
+    const vocabularyConfig = assignmentData.config?.vocabularyConfig;
+
+    if (vocabularyConfig && vocabularyConfig.source && vocabularyConfig.source !== 'custom' && vocabularyConfig.source !== '') {
+      // Create vocabulary list based on configuration
+      try {
+        const vocabularySelection = this.transformVocabularyConfig(vocabularyConfig);
+        vocabularySelectionType = vocabularySelection.type;
+        vocabularyCriteria = vocabularySelection;
+        vocabularyCount = vocabularyConfig.wordCount || 10;
+
+        // Create vocabulary assignment list
+        const { data: newVocabList, error: vocabListError } = await this.supabase
+          .from('vocabulary_assignment_lists')
+          .insert([{
+            name: `${assignmentData.title} - Vocabulary List`,
+            description: `Auto-generated vocabulary list for ${assignmentData.title}`,
+            teacher_id: teacherId,
+            theme: vocabularyConfig.theme || null,
+            topic: vocabularyConfig.topic || null,
+            difficulty_level: vocabularyConfig.difficulty || 'intermediate',
+            word_count: vocabularyCount,
+            vocabulary_items: [],
+            is_public: false
+          }])
+          .select()
+          .single();
+
+        if (vocabListError) {
+          console.error('Vocabulary list creation error:', vocabListError);
+        } else {
+          vocabularyListId = newVocabList.id;
+
+          // Populate vocabulary list
+          await this.populateVocabularyList(vocabularyListId, vocabularySelection);
+        }
+      } catch (error) {
+        console.error('Error creating vocabulary list:', error);
+      }
+    }
+
     // Create the assignment
     const { data: assignment, error: assignmentError } = await this.supabase
       .from('assignments')
@@ -194,7 +240,10 @@ export class EnhancedAssignmentService {
         game_type: assignmentData.game_type,
         class_id: assignmentData.class_id,
         due_date: assignmentData.due_date ? new Date(assignmentData.due_date).toISOString() : null,
-        vocabulary_assignment_list_id: assignmentData.vocabulary_list_id,
+        vocabulary_assignment_list_id: vocabularyListId,
+        vocabulary_selection_type: vocabularySelectionType,
+        vocabulary_criteria: vocabularyCriteria,
+        vocabulary_count: vocabularyCount,
         created_by: teacherId,
         game_config: assignmentData.config,
         max_attempts: assignmentData.max_attempts,
@@ -219,6 +268,169 @@ export class EnhancedAssignmentService {
     await this.initializeStudentProgress(assignment.id, assignmentData.class_id);
 
     return assignment.id;
+  }
+
+  // =====================================================
+  // VOCABULARY CONFIGURATION HELPERS
+  // =====================================================
+
+  private transformVocabularyConfig(vocabularyConfig: any): any {
+    // Transform the vocabulary config from Smart Assignment Creator format
+    // to the format expected by the assignment creation API
+
+    console.log('Transforming vocabulary config:', vocabularyConfig);
+
+    // Check if we have a subcategory (most common case)
+    if (vocabularyConfig.subcategory && vocabularyConfig.subcategory !== '') {
+      // Map subcategory to its parent category
+      const category = this.mapSubcategoryToCategory(vocabularyConfig.subcategory);
+
+      return {
+        type: 'subcategory_based',
+        category: category,
+        subcategory: vocabularyConfig.subcategory,
+        language: vocabularyConfig.language || 'es',
+        wordCount: vocabularyConfig.wordCount || 10
+      };
+    } else if (vocabularyConfig.source === 'category' && vocabularyConfig.category && vocabularyConfig.category !== '') {
+      return {
+        type: 'category_based',
+        category: vocabularyConfig.category,
+        language: vocabularyConfig.language || 'es',
+        wordCount: vocabularyConfig.wordCount || 10
+      };
+    } else if (vocabularyConfig.source === 'theme') {
+      return {
+        type: 'theme_based',
+        theme: vocabularyConfig.theme,
+        language: vocabularyConfig.language || 'es',
+        wordCount: vocabularyConfig.wordCount || 10
+      };
+    } else if (vocabularyConfig.source === 'topic') {
+      return {
+        type: 'topic_based',
+        topic: vocabularyConfig.topic,
+        language: vocabularyConfig.language || 'es',
+        wordCount: vocabularyConfig.wordCount || 10
+      };
+    }
+
+    // Default fallback
+    return {
+      type: 'category_based',
+      category: 'basics_core_language',
+      language: vocabularyConfig.language || 'es',
+      wordCount: vocabularyConfig.wordCount || 10
+    };
+  }
+
+  private mapSubcategoryToCategory(subcategory: string): string {
+    // Map subcategories to their parent categories
+    const subcategoryMap: { [key: string]: string } = {
+      // basics_core_language
+      'colours': 'basics_core_language',
+      'numbers_1_30': 'basics_core_language',
+      'numbers_40_100': 'basics_core_language',
+      'days_of_week': 'basics_core_language',
+      'months': 'basics_core_language',
+      'common_adverbs': 'basics_core_language',
+      'pronouns': 'basics_core_language',
+      'question_words': 'basics_core_language',
+
+      // identity_personal_life
+      'family_friends': 'identity_personal_life',
+      'physical_description': 'identity_personal_life',
+      'personality_character': 'identity_personal_life',
+      'relationships': 'identity_personal_life',
+
+      // home_local_area
+      'house_rooms': 'home_local_area',
+      'furniture_household': 'home_local_area',
+      'places_in_town': 'home_local_area',
+      'directions': 'home_local_area',
+
+      // Add more mappings as needed...
+    };
+
+    return subcategoryMap[subcategory] || 'basics_core_language';
+  }
+
+  private async populateVocabularyList(listId: string, criteria: any): Promise<void> {
+    try {
+      // Use centralized_vocabulary table with modern schema
+      let query = this.supabase
+        .from('centralized_vocabulary')
+        .select('id, word, translation, category, subcategory, part_of_speech, language');
+
+      // Apply language filter first (most important)
+      if (criteria.language) {
+        query = query.eq('language', criteria.language);
+      }
+
+      // Apply filters based on criteria type
+      switch (criteria.type) {
+        case 'category_based':
+          if (criteria.category) {
+            query = query.eq('category', criteria.category);
+          }
+          break;
+        case 'subcategory_based':
+          if (criteria.category) {
+            query = query.eq('category', criteria.category);
+          }
+          if (criteria.subcategory) {
+            query = query.eq('subcategory', criteria.subcategory);
+          }
+          break;
+        case 'theme_based':
+          if (criteria.theme) {
+            query = query.eq('category', criteria.theme);
+          }
+          break;
+        case 'topic_based':
+          if (criteria.topic) {
+            query = query.eq('subcategory', criteria.topic);
+          }
+          break;
+      }
+
+      // Execute the query
+      const { data: allVocabulary, error: vocabularyError } = await query;
+
+      if (vocabularyError) {
+        console.error('Vocabulary fetch error:', vocabularyError);
+        return;
+      }
+
+      if (!allVocabulary || allVocabulary.length === 0) {
+        console.warn('No vocabulary found for criteria:', criteria);
+        return;
+      }
+
+      // Select random words up to the requested count
+      const wordCount = Math.min(criteria.wordCount || 10, allVocabulary.length);
+      const shuffled = allVocabulary.sort(() => 0.5 - Math.random());
+      const selectedWords = shuffled.slice(0, wordCount);
+
+      // Insert vocabulary items into the assignment list
+      const vocabularyItems = selectedWords.map((word: any, index: number) => ({
+        assignment_list_id: listId,
+        centralized_vocabulary_id: word.id,
+        order_position: index
+      }));
+
+      const { error: insertError } = await this.supabase
+        .from('vocabulary_assignment_items')
+        .insert(vocabularyItems);
+
+      if (insertError) {
+        console.error('Vocabulary items insertion error:', insertError);
+      } else {
+        console.log(`Successfully populated vocabulary list with ${selectedWords.length} items`);
+      }
+    } catch (error) {
+      console.error('Error populating vocabulary list:', error);
+    }
   }
 
   private async initializeAssignmentAnalytics(assignmentId: string): Promise<void> {

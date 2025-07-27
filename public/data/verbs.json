@@ -22,29 +22,93 @@
               "nosotros": "hablamos",
               "vosotros": "hablasteis",
               "ellos": "hablaron"
-            }
-          }
-        },
-        {
-          "infinitive": "caminar",
-          "english": "to walk",
-          "difficulty": 1,
-          "conjugations": {
-            "present": {
-              "yo": "camino",
-              "tú": "caminas",
-              "él": "camina",
-              "nosotros": "caminamos",
-              "vosotros": "camináis",
-              "ellos": "caminan"
             },
-            "preterite": {
-              "yo": "caminé",
-              "tú": "caminaste",
-              "él": "caminó",
-              "nosotros": "caminamos",
-              "vosotros": "caminasteis",
-              "ellos": "caminaron"
+            "imperfect": {
+              "yo": "hablaba",
+              "tú": "hablabas",
+              "él": "hablaba",
+              "nosotros": "hablábamos",
+              "vosotros": "hablabais",
+              "ellos": "hablaban"
+            },
+            "future": {
+              "yo": "hablaré",
+              "tú": "hablarás",
+              "él": "hablará",
+              "nosotros": "hablaremos",
+              "vosotros": "hablaréis",
+              "ellos": "hablarán"
+            },
+            "conditional": {
+              "yo": "hablaría",
+              "tú": "hablarías",
+              "él": "hablaría",
+              "nosotros": "hablaríamos",
+              "vosotros": "hablaríais",
+              "ellos": "hablarían"
+            },
+            "near_future": {
+              "yo": "voy a hablar",
+              "tú": "vas a hablar",
+              "él": "va a hablar",
+              "nosotros": "vamos a hablar",
+              "vosotros": "vais a hablar",
+              "ellos": "van a hablar"
+            },
+            "present_perfect": {
+              "yo": "he hablado",
+              "tú": "has hablado",
+              "él": "ha hablado",
+              "nosotros": "hemos hablado",
+              "vosotros": "habéis hablado",
+              "ellos": "han hablado"
+            },
+            "past_perfect": {
+              "yo": "había hablado",
+              "tú": "habías hablado",
+              "él": "había hablado",
+              "nosotros": "habíamos hablado",
+              "vosotros": "habíais hablado",
+              "ellos": "habían hablado"
+            },
+            "future_perfect": {
+              "yo": "habré hablado",
+              "tú": "habrás hablado",
+              "él": "habrá hablado",
+              "nosotros": "habremos hablado",
+              "vosotros": "habréis hablado",
+              "ellos": "habrán hablado"
+            },
+            "conditional_perfect": {
+              "yo": "habría hablado",
+              "tú": "habrías hablado",
+              "él": "habría hablado",
+              "nosotros": "habríamos hablado",
+              "vosotros": "habríais hablado",
+              "ellos": "habrían hablado"
+            },
+            "present_subjunctive": {
+              "yo": "hable",
+              "tú": "hables",
+              "él": "hable",
+              "nosotros": "hablemos",
+              "vosotros": "habléis",
+              "ellos": "hablen"
+            },
+            "imperfect_subjunctive": {
+              "yo": "hablara",
+              "tú": "hablaras",
+              "él": "hablara",
+              "nosotros": "habláramos",
+              "vosotros": "hablarais",
+              "ellos": "hablaran"
+            },
+            "imperative": {
+              "tú": "habla",
+              "usted": "hable",
+              "nosotros": "hablemos",
+              "vosotros": "hablad",
+              "ustedes": "hablen"
             }
           }
         },
@@ -68,6 +132,148 @@
               "nosotros": "estudiamos",
               "vosotros": "estudiasteis",
               "ellos": "estudiaron"
+            },
+            "imperfect": {
+              "yo": "estudiaba",
+              "tú": "estudiabas",
+              "él": "estudiaba",
+              "nosotros": "estudiábamos",
+              "vosotros": "estudiabais",
+              "ellos": "estudiaban"
+            },
+            "future": {
+              "yo": "estudiaré",
+              "tú": "estudiarás",
+              "él": "estudiará",
+              "nosotros": "estudiaremos",
+              "vosotros": "estudiaréis",
+              "ellos": "estudiarán"
+            },
+            "conditional": {
+              "yo": "estudiaría",
+              "tú": "estudiarías",
+              "él": "estudiaría",
+              "nosotros": "estudiaríamos",
+              "vosotros": "estudiaríais",
+              "ellos": "estudiarían"
+            },
+            "near_future": {
+              "yo": "voy a estudiar",
+              "tú": "vas a estudiar",
+              "él": "va a estudiar",
+              "nosotros": "vamos a estudiar",
+              "vosotros": "vais a estudiar",
+              "ellos": "van a estudiar"
+            },
+            "present_perfect": {
+              "yo": "he estudiado",
+              "tú": "has estudiado",
+              "él": "ha estudiado",
+              "nosotros": "hemos estudiado",
+              "vosotros": "habéis estudiado",
+              "ellos": "han estudiado"
+            },
+            "past_perfect": {
+              "yo": "había estudiado",
+              "tú": "habías estudiado",
+              "él": "había estudiado",
+              "nosotros": "habíamos estudiado",
+              "vosotros": "habíais estudiado",
+              "ellos": "habían estudiado"
+            },
+            "future_perfect": {
+              "yo": "habré estudiado",
+              "tú": "habrás estudiado",
+              "él": "habrá estudiado",
+              "nosotros": "habremos estudiado",
+              "vosotros": "habréis estudiado",
+              "ellos": "habrán estudiado"
+            },
+            "conditional_perfect": {
+              "yo": "habría estudiado",
+              "tú": "habrías estudiado",
+              "él": "habría estudiado",
+              "nosotros": "habríamos estudiado",
+              "vosotros": "habríais estudiado",
+              "ellos": "habrían estudiado"
+            },
+            "present_subjunctive": {
+              "yo": "estudie",
+              "tú": "estudies",
+              "él": "estudie",
+              "nosotros": "estudiemos",
+              "vosotros": "estudiéis",
+              "ellos": "estudien"
+            },
+            "imperfect_subjunctive": {
+              "yo": "estudiara",
+              "tú": "estudiaras",
+              "él": "estudiara",
+              "nosotros": "estudiáramos",
+              "vosotros": "estudiarais",
+              "ellos": "estudiaran"
+            },
+            "imperative": {
+              "tú": "estudia",
+              "usted": "estudie",
+              "nosotros": "estudiemos",
+              "vosotros": "estudiad",
+              "ustedes": "estudien"
+            }
+          }
+        },
+        {
+          "infinitive": "trabajar",
+          "english": "to work",
+          "difficulty": 1,
+          "conjugations": {
+            "present": {
+              "yo": "trabajo",
+              "tú": "trabajas",
+              "él": "trabaja",
+              "nosotros": "trabajamos",
+              "vosotros": "trabajáis",
+              "ellos": "trabajan"
+            },
+            "preterite": {
+              "yo": "trabajé",
+              "tú": "trabajaste",
+              "él": "trabajó",
+              "nosotros": "trabajamos",
+              "vosotros": "trabajasteis",
+              "ellos": "trabajaron"
+            },
+            "imperfect": {
+              "yo": "trabajaba",
+              "tú": "trabajabas",
+              "él": "trabajaba",
+              "nosotros": "trabajábamos",
+              "vosotros": "trabajabais",
+              "ellos": "trabajaban"
+            },
+            "future": {
+              "yo": "trabajaré",
+              "tú": "trabajarás",
+              "él": "trabajará",
+              "nosotros": "trabajaremos",
+              "vosotros": "trabajaréis",
+              "ellos": "trabajarán"
+            },
+            "conditional": {
+              "yo": "trabajaría",
+              "tú": "trabajarías",
+              "él": "trabajaría",
+              "nosotros": "trabajaríamos",
+              "vosotros": "trabajaríais",
+              "ellos": "trabajarían"
+            },
+            "near_future": {
+              "yo": "voy a trabajar",
+              "tú": "vas a trabajar",
+              "él": "va a trabajar",
+              "nosotros": "vamos a trabajar",
+              "vosotros": "vais a trabajar",
+              "ellos": "van a trabajar"
             }
           }
         }
@@ -93,6 +299,69 @@
               "nosotros": "comimos",
               "vosotros": "comisteis",
               "ellos": "comieron"
+            },
+            "imperfect": {
+              "yo": "comía",
+              "tú": "comías",
+              "él": "comía",
+              "nosotros": "comíamos",
+              "vosotros": "comíais",
+              "ellos": "comían"
+            },
+            "future": {
+              "yo": "comeré",
+              "tú": "comerás",
+              "él": "comerá",
+              "nosotros": "comeremos",
+              "vosotros": "comeréis",
+              "ellos": "comerán"
+            },
+            "conditional": {
+              "yo": "comería",
+              "tú": "comerías",
+              "él": "comería",
+              "nosotros": "comeríamos",
+              "vosotros": "comeríais",
+              "ellos": "comerían"
+            },
+            "near_future": {
+              "yo": "voy a comer",
+              "tú": "vas a comer",
+              "él": "va a comer",
+              "nosotros": "vamos a comer",
+              "vosotros": "vais a comer",
+              "ellos": "van a comer"
+            },
+            "present_perfect": {
+              "yo": "he comido",
+              "tú": "has comido",
+              "él": "ha comido",
+              "nosotros": "hemos comido",
+              "vosotros": "habéis comido",
+              "ellos": "han comido"
+            },
+            "present_subjunctive": {
+              "yo": "coma",
+              "tú": "comas",
+              "él": "coma",
+              "nosotros": "comamos",
+              "vosotros": "comáis",
+              "ellos": "coman"
+            },
+            "imperfect_subjunctive": {
+              "yo": "comiera",
+              "tú": "comieras",
+              "él": "comiera",
+              "nosotros": "comiéramos",
+              "vosotros": "comierais",
+              "ellos": "comieran"
+            },
+            "imperative": {
+              "tú": "come",
+              "usted": "coma",
+              "nosotros": "comamos",
+              "vosotros": "comed",
+              "ustedes": "coman"
             }
           }
         },
@@ -116,6 +385,38 @@
               "nosotros": "aprendimos",
               "vosotros": "aprendisteis",
               "ellos": "aprendieron"
+            },
+            "imperfect": {
+              "yo": "aprendía",
+              "tú": "aprendías",
+              "él": "aprendía",
+              "nosotros": "aprendíamos",
+              "vosotros": "aprendíais",
+              "ellos": "aprendían"
+            },
+            "future": {
+              "yo": "aprenderé",
+              "tú": "aprenderás",
+              "él": "aprenderá",
+              "nosotros": "aprenderemos",
+              "vosotros": "aprenderéis",
+              "ellos": "aprenderán"
+            },
+            "conditional": {
+              "yo": "aprendería",
+              "tú": "aprenderías",
+              "él": "aprendería",
+              "nosotros": "aprenderíamos",
+              "vosotros": "aprenderíais",
+              "ellos": "aprenderían"
+            },
+            "near_future": {
+              "yo": "voy a aprender",
+              "tú": "vas a aprender",
+              "él": "va a aprender",
+              "nosotros": "vamos a aprender",
+              "vosotros": "vais a aprender",
+              "ellos": "van a aprender"
             }
           }
         }
@@ -141,34 +442,290 @@
               "nosotros": "vivimos",
               "vosotros": "vivisteis",
               "ellos": "vivieron"
-            }
-          }
-        },
-        {
-          "infinitive": "escribir",
-          "english": "to write",
-          "difficulty": 1,
-          "conjugations": {
-            "present": {
-              "yo": "escribo",
-              "tú": "escribes",
-              "él": "escribe",
-              "nosotros": "escribimos",
-              "vosotros": "escribís",
-              "ellos": "escriben"
             },
-            "preterite": {
-              "yo": "escribí",
-              "tú": "escribiste",
-              "él": "escribió",
-              "nosotros": "escribimos",
-              "vosotros": "escribisteis",
-              "ellos": "escribieron"
+            "imperfect": {
+              "yo": "vivía",
+              "tú": "vivías",
+              "él": "vivía",
+              "nosotros": "vivíamos",
+              "vosotros": "vivíais",
+              "ellos": "vivían"
+            },
+            "future": {
+              "yo": "viviré",
+              "tú": "vivirás",
+              "él": "vivirá",
+              "nosotros": "viviremos",
+              "vosotros": "viviréis",
+              "ellos": "vivirán"
+            },
+            "conditional": {
+              "yo": "viviría",
+              "tú": "vivirías",
+              "él": "viviría",
+              "nosotros": "viviríamos",
+              "vosotros": "viviríais",
+              "ellos": "vivirían"
+            },
+            "near_future": {
+              "yo": "voy a vivir",
+              "tú": "vas a vivir",
+              "él": "va a vivir",
+              "nosotros": "vamos a vivir",
+              "vosotros": "vais a vivir",
+              "ellos": "van a vivir"
             }
           }
         }
       ]
     },
+    "stemChanging": [
+      {
+        "infinitive": "pensar",
+        "english": "to think",
+        "difficulty": 2,
+        "stemChange": "e→ie",
+        "conjugations": {
+          "present": {
+            "yo": "pienso",
+            "tú": "piensas",
+            "él": "piensa",
+            "nosotros": "pensamos",
+            "vosotros": "pensáis",
+            "ellos": "piensan"
+          },
+          "preterite": {
+            "yo": "pensé",
+            "tú": "pensaste",
+            "él": "pensó",
+            "nosotros": "pensamos",
+            "vosotros": "pensasteis",
+            "ellos": "pensaron"
+          },
+          "imperfect": {
+            "yo": "pensaba",
+            "tú": "pensabas",
+            "él": "pensaba",
+            "nosotros": "pensábamos",
+            "vosotros": "pensabais",
+            "ellos": "pensaban"
+          },
+          "present_subjunctive": {
+            "yo": "piense",
+            "tú": "pienses",
+            "él": "piense",
+            "nosotros": "pensemos",
+            "vosotros": "penséis",
+            "ellos": "piensen"
+          },
+          "imperative": {
+            "tú": "piensa",
+            "usted": "piense",
+            "nosotros": "pensemos",
+            "vosotros": "pensad",
+            "ustedes": "piensen"
+          }
+        }
+      },
+      {
+        "infinitive": "volver",
+        "english": "to return",
+        "difficulty": 2,
+        "stemChange": "o→ue",
+        "conjugations": {
+          "present": {
+            "yo": "vuelvo",
+            "tú": "vuelves",
+            "él": "vuelve",
+            "nosotros": "volvemos",
+            "vosotros": "volvéis",
+            "ellos": "vuelven"
+          },
+          "preterite": {
+            "yo": "volví",
+            "tú": "volviste",
+            "él": "volvió",
+            "nosotros": "volvimos",
+            "vosotros": "volvisteis",
+            "ellos": "volvieron"
+          },
+          "present_subjunctive": {
+            "yo": "vuelva",
+            "tú": "vuelvas",
+            "él": "vuelva",
+            "nosotros": "volvamos",
+            "vosotros": "volváis",
+            "ellos": "vuelvan"
+          }
+        }
+      },
+      {
+        "infinitive": "pedir",
+        "english": "to ask for",
+        "difficulty": 2,
+        "stemChange": "e→i",
+        "conjugations": {
+          "present": {
+            "yo": "pido",
+            "tú": "pides",
+            "él": "pide",
+            "nosotros": "pedimos",
+            "vosotros": "pedís",
+            "ellos": "piden"
+          },
+          "preterite": {
+            "yo": "pedí",
+            "tú": "pediste",
+            "él": "pidió",
+            "nosotros": "pedimos",
+            "vosotros": "pedisteis",
+            "ellos": "pidieron"
+          },
+          "present_subjunctive": {
+            "yo": "pida",
+            "tú": "pidas",
+            "él": "pida",
+            "nosotros": "pidamos",
+            "vosotros": "pidáis",
+            "ellos": "pidan"
+          }
+        }
+      }
+    ],
+    "go_verbs": [
+      {
+        "infinitive": "tener",
+        "english": "to have",
+        "difficulty": 2,
+        "conjugations": {
+          "present": {
+            "yo": "tengo",
+            "tú": "tienes",
+            "él": "tiene",
+            "nosotros": "tenemos",
+            "vosotros": "tenéis",
+            "ellos": "tienen"
+          },
+          "preterite": {
+            "yo": "tuve",
+            "tú": "tuviste",
+            "él": "tuvo",
+            "nosotros": "tuvimos",
+            "vosotros": "tuvisteis",
+            "ellos": "tuvieron"
+          },
+          "future": {
+            "yo": "tendré",
+            "tú": "tendrás",
+            "él": "tendrá",
+            "nosotros": "tendremos",
+            "vosotros": "tendréis",
+            "ellos": "tendrán"
+          },
+          "conditional": {
+            "yo": "tendría",
+            "tú": "tendrías",
+            "él": "tendría",
+            "nosotros": "tendríamos",
+            "vosotros": "tendríais",
+            "ellos": "tendrían"
+          },
+          "present_subjunctive": {
+            "yo": "tenga",
+            "tú": "tengas",
+            "él": "tenga",
+            "nosotros": "tengamos",
+            "vosotros": "tengáis",
+            "ellos": "tengan"
+          },
+          "imperative": {
+            "tú": "ten",
+            "usted": "tenga",
+            "nosotros": "tengamos",
+            "vosotros": "tened",
+            "ustedes": "tengan"
+          }
+        }
+      },
+      {
+        "infinitive": "venir",
+        "english": "to come",
+        "difficulty": 2,
+        "conjugations": {
+          "present": {
+            "yo": "vengo",
+            "tú": "vienes",
+            "él": "viene",
+            "nosotros": "venimos",
+            "vosotros": "venís",
+            "ellos": "vienen"
+          },
+          "preterite": {
+            "yo": "vine",
+            "tú": "viniste",
+            "él": "vino",
+            "nosotros": "vinimos",
+            "vosotros": "vinisteis",
+            "ellos": "vinieron"
+          },
+          "future": {
+            "yo": "vendré",
+            "tú": "vendrás",
+            "él": "vendrá",
+            "nosotros": "vendremos",
+            "vosotros": "vendréis",
+            "ellos": "vendrán"
+          },
+          "conditional": {
+            "yo": "vendría",
+            "tú": "vendrías",
+            "él": "vendría",
+            "nosotros": "vendríamos",
+            "vosotros": "vendríais",
+            "ellos": "vendrían"
+          }
+        }
+      },
+      {
+        "infinitive": "poner",
+        "english": "to put",
+        "difficulty": 2,
+        "conjugations": {
+          "present": {
+            "yo": "pongo",
+            "tú": "pones",
+            "él": "pone",
+            "nosotros": "ponemos",
+            "vosotros": "ponéis",
+            "ellos": "ponen"
+          },
+          "preterite": {
+            "yo": "puse",
+            "tú": "pusiste",
+            "él": "puso",
+            "nosotros": "pusimos",
+            "vosotros": "pusisteis",
+            "ellos": "pusieron"
+          },
+          "future": {
+            "yo": "pondré",
+            "tú": "pondrás",
+            "él": "pondrá",
+            "nosotros": "pondremos",
+            "vosotros": "pondréis",
+            "ellos": "pondrán"
+          },
+          "conditional": {
+            "yo": "pondría",
+            "tú": "pondrías",
+            "él": "pondría",
+            "nosotros": "pondríamos",
+            "vosotros": "pondríais",
+            "ellos": "pondrían"
+          }
+        }
+      }
+    ],
     "irregular": [
       {
         "infinitive": "ser",
@@ -190,29 +747,92 @@
             "nosotros": "fuimos",
             "vosotros": "fuisteis",
             "ellos": "fueron"
+          },
+          "imperfect": {
+            "yo": "era",
+            "tú": "eras",
+            "él": "era",
+            "nosotros": "éramos",
+            "vosotros": "erais",
+            "ellos": "eran"
+          },
+          "future": {
+            "yo": "seré",
+            "tú": "serás",
+            "él": "será",
+            "nosotros": "seremos",
+            "vosotros": "seréis",
+            "ellos": "serán"
+          },
+          "conditional": {
+            "yo": "sería",
+            "tú": "serías",
+            "él": "sería",
+            "nosotros": "seríamos",
+            "vosotros": "seríais",
+            "ellos": "serían"
+          },
+          "present_subjunctive": {
+            "yo": "sea",
+            "tú": "seas",
+            "él": "sea",
+            "nosotros": "seamos",
+            "vosotros": "seáis",
+            "ellos": "sean"
+          },
+          "imperfect_subjunctive": {
+            "yo": "fuera",
+            "tú": "fueras",
+            "él": "fuera",
+            "nosotros": "fuéramos",
+            "vosotros": "fuerais",
+            "ellos": "fueran"
+          },
+          "imperative": {
+            "tú": "sé",
+            "usted": "sea",
+            "nosotros": "seamos",
+            "vosotros": "sed",
+            "ustedes": "sean"
           }
         }
       },
       {
-        "infinitive": "tener",
-        "english": "to have",
+        "infinitive": "estar",
+        "english": "to be",
         "difficulty": 3,
         "conjugations": {
           "present": {
-            "yo": "tengo",
-            "tú": "tienes",
-            "él": "tiene",
-            "nosotros": "tenemos",
-            "vosotros": "tenéis",
-            "ellos": "tienen"
+            "yo": "estoy",
+            "tú": "estás",
+            "él": "está",
+            "nosotros": "estamos",
+            "vosotros": "estáis",
+            "ellos": "están"
           },
           "preterite": {
-            "yo": "tuve",
-            "tú": "tuviste",
-            "él": "tuvo",
-            "nosotros": "tuvimos",
-            "vosotros": "tuvisteis",
-            "ellos": "tuvieron"
+            "yo": "estuve",
+            "tú": "estuviste",
+            "él": "estuvo",
+            "nosotros": "estuvimos",
+            "vosotros": "estuvisteis",
+            "ellos": "estuvieron"
+          },
+          "imperfect": {
+            "yo": "estaba",
+            "tú": "estabas",
+            "él": "estaba",
+            "nosotros": "estábamos",
+            "vosotros": "estabais",
+            "ellos": "estaban"
+          },
+          "present_subjunctive": {
+            "yo": "esté",
+            "tú": "estés",
+            "él": "esté",
+            "nosotros": "estemos",
+            "vosotros": "estéis",
+            "ellos": "estén"
           }
         }
       },
@@ -236,54 +856,805 @@
             "nosotros": "hicimos",
             "vosotros": "hicisteis",
             "ellos": "hicieron"
-          }
-        }
-      }
-    ],
-    "stemChanging": [
-      {
-        "infinitive": "pensar",
-        "english": "to think",
-        "difficulty": 2,
-        "conjugations": {
-          "present": {
-            "yo": "pienso",
-            "tú": "piensas",
-            "él": "piensa",
-            "nosotros": "pensamos",
-            "vosotros": "pensáis",
-            "ellos": "piensan"
           },
-          "preterite": {
-            "yo": "pensé",
-            "tú": "pensaste",
-            "él": "pensó",
-            "nosotros": "pensamos",
-            "vosotros": "pensasteis",
-            "ellos": "pensaron"
+          "future": {
+            "yo": "haré",
+            "tú": "harás",
+            "él": "hará",
+            "nosotros": "haremos",
+            "vosotros": "haréis",
+            "ellos": "harán"
+          },
+          "conditional": {
+            "yo": "haría",
+            "tú": "harías",
+            "él": "haría",
+            "nosotros": "haríamos",
+            "vosotros": "haríais",
+            "ellos": "harían"
           }
         }
       },
       {
-        "infinitive": "volver",
-        "english": "to return",
-        "difficulty": 2,
+        "infinitive": "ir",
+        "english": "to go",
+        "difficulty": 3,
         "conjugations": {
           "present": {
-            "yo": "vuelvo",
-            "tú": "vuelves",
-            "él": "vuelve",
-            "nosotros": "volvemos",
-            "vosotros": "volvéis",
-            "ellos": "vuelven"
+            "yo": "voy",
+            "tú": "vas",
+            "él": "va",
+            "nosotros": "vamos",
+            "vosotros": "vais",
+            "ellos": "van"
           },
           "preterite": {
-            "yo": "volví",
-            "tú": "volviste",
-            "él": "volvió",
-            "nosotros": "volvimos",
-            "vosotros": "volvisteis",
-            "ellos": "volvieron"
+            "yo": "fui",
+            "tú": "fuiste",
+            "él": "fue",
+            "nosotros": "fuimos",
+            "vosotros": "fuisteis",
+            "ellos": "fueron"
+          },
+          "imperfect": {
+            "yo": "iba",
+            "tú": "ibas",
+            "él": "iba",
+            "nosotros": "íbamos",
+            "vosotros": "ibais",
+            "ellos": "iban"
+          },
+          "present_subjunctive": {
+            "yo": "vaya",
+            "tú": "vayas",
+            "él": "vaya",
+            "nosotros": "vayamos",
+            "vosotros": "vayáis",
+            "ellos": "vayan"
+          }
+        }
+      }
+    ],
+    "reflexive": [
+      {
+        "infinitive": "lavarse",
+        "english": "to wash oneself",
+        "difficulty": 3,
+        "conjugations": {
+          "present": {
+            "yo": "me lavo",
+            "tú": "te lavas",
+            "él": "se lava",
+            "nosotros": "nos lavamos",
+            "vosotros": "os laváis",
+            "ellos": "se lavan"
+          },
+          "preterite": {
+            "yo": "me lavé",
+            "tú": "te lavaste",
+            "él": "se lavó",
+            "nosotros": "nos lavamos",
+            "vosotros": "os lavasteis",
+            "ellos": "se lavaron"
+          },
+          "imperative": {
+            "tú": "lávate",
+            "usted": "lávese",
+            "nosotros": "lavémonos",
+            "vosotros": "lavaos",
+            "ustedes": "lávense"
+          }
+        }
+      }
+    ],
+    "gustar_like": [
+      {
+        "infinitive": "gustar",
+        "english": "to like",
+        "difficulty": 3,
+        "conjugations": {
+          "present": {
+            "me_gusta": "me gusta",
+            "me_gustan": "me gustan",
+            "te_gusta": "te gusta",
+            "te_gustan": "te gustan",
+            "le_gusta": "le gusta",
+            "le_gustan": "le gustan",
+            "nos_gusta": "nos gusta",
+            "nos_gustan": "nos gustan",
+            "os_gusta": "os gusta",
+            "os_gustan": "os gustan",
+            "les_gusta": "les gusta",
+            "les_gustan": "les gustan"
+          }
+        }
+      }
+    ]
+  },
+  "french": {
+    "regular": {
+      "er": [
+        {
+          "infinitive": "parler",
+          "english": "to speak",
+          "difficulty": 1,
+          "conjugations": {
+            "present": {
+              "je": "parle",
+              "tu": "parles",
+              "il": "parle",
+              "nous": "parlons",
+              "vous": "parlez",
+              "ils": "parlent"
+            },
+            "passé_composé": {
+              "je": "ai parlé",
+              "tu": "as parlé",
+              "il": "a parlé",
+              "nous": "avons parlé",
+              "vous": "avez parlé",
+              "ils": "ont parlé"
+            },
+            "imparfait": {
+              "je": "parlais",
+              "tu": "parlais",
+              "il": "parlait",
+              "nous": "parlions",
+              "vous": "parliez",
+              "ils": "parlaient"
+            },
+            "futur": {
+              "je": "parlerai",
+              "tu": "parleras",
+              "il": "parlera",
+              "nous": "parlerons",
+              "vous": "parlerez",
+              "ils": "parleront"
+            },
+            "conditionnel": {
+              "je": "parlerais",
+              "tu": "parlerais",
+              "il": "parlerait",
+              "nous": "parlerions",
+              "vous": "parleriez",
+              "ils": "parleraient"
+            },
+            "subjonctif_présent": {
+              "je": "parle",
+              "tu": "parles",
+              "il": "parle",
+              "nous": "parlions",
+              "vous": "parliez",
+              "ils": "parlent"
+            },
+            "impératif": {
+              "tu": "parle",
+              "nous": "parlons",
+              "vous": "parlez"
+            }
+          }
+        },
+        {
+          "infinitive": "manger",
+          "english": "to eat",
+          "difficulty": 1,
+          "conjugations": {
+            "present": {
+              "je": "mange",
+              "tu": "manges",
+              "il": "mange",
+              "nous": "mangeons",
+              "vous": "mangez",
+              "ils": "mangent"
+            },
+            "passé_composé": {
+              "je": "ai mangé",
+              "tu": "as mangé",
+              "il": "a mangé",
+              "nous": "avons mangé",
+              "vous": "avez mangé",
+              "ils": "ont mangé"
+            },
+            "imparfait": {
+              "je": "mangeais",
+              "tu": "mangeais",
+              "il": "mangeait",
+              "nous": "mangions",
+              "vous": "mangiez",
+              "ils": "mangeaient"
+            },
+            "futur": {
+              "je": "mangerai",
+              "tu": "mangeras",
+              "il": "mangera",
+              "nous": "mangerons",
+              "vous": "mangerez",
+              "ils": "mangeront"
+            },
+            "conditionnel": {
+              "je": "mangerais",
+              "tu": "mangerais",
+              "il": "mangerait",
+              "nous": "mangerions",
+              "vous": "mangeriez",
+              "ils": "mangeraient"
+            }
+          }
+        },
+        {
+          "infinitive": "étudier",
+          "english": "to study",
+          "difficulty": 1,
+          "conjugations": {
+            "present": {
+              "je": "étudie",
+              "tu": "étudies",
+              "il": "étudie",
+              "nous": "étudions",
+              "vous": "étudiez",
+              "ils": "étudient"
+            },
+            "passé_composé": {
+              "je": "ai étudié",
+              "tu": "as étudié",
+              "il": "a étudié",
+              "nous": "avons étudié",
+              "vous": "avez étudié",
+              "ils": "ont étudié"
+            },
+            "imparfait": {
+              "je": "étudiais",
+              "tu": "étudiais",
+              "il": "étudiait",
+              "nous": "étudiions",
+              "vous": "étudiiez",
+              "ils": "étudiaient"
+            }
+          }
+        },
+        {
+          "infinitive": "travailler",
+          "english": "to work",
+          "difficulty": 1,
+          "conjugations": {
+            "present": {
+              "je": "travaille",
+              "tu": "travailles",
+              "il": "travaille",
+              "nous": "travaillons",
+              "vous": "travaillez",
+              "ils": "travaillent"
+            },
+            "passé_composé": {
+              "je": "ai travaillé",
+              "tu": "as travaillé",
+              "il": "a travaillé",
+              "nous": "avons travaillé",
+              "vous": "avez travaillé",
+              "ils": "ont travaillé"
+            }
+          }
+        }
+      ],
+      "ir": [
+        {
+          "infinitive": "finir",
+          "english": "to finish",
+          "difficulty": 1,
+          "conjugations": {
+            "present": {
+              "je": "finis",
+              "tu": "finis",
+              "il": "finit",
+              "nous": "finissons",
+              "vous": "finissez",
+              "ils": "finissent"
+            },
+            "passé_composé": {
+              "je": "ai fini",
+              "tu": "as fini",
+              "il": "a fini",
+              "nous": "avons fini",
+              "vous": "avez fini",
+              "ils": "ont fini"
+            },
+            "imparfait": {
+              "je": "finissais",
+              "tu": "finissais",
+              "il": "finissait",
+              "nous": "finissions",
+              "vous": "finissiez",
+              "ils": "finissaient"
+            },
+            "futur": {
+              "je": "finirai",
+              "tu": "finiras",
+              "il": "finira",
+              "nous": "finirons",
+              "vous": "finirez",
+              "ils": "finiront"
+            }
+          }
+        },
+        {
+          "infinitive": "choisir",
+          "english": "to choose",
+          "difficulty": 1,
+          "conjugations": {
+            "present": {
+              "je": "choisis",
+              "tu": "choisis",
+              "il": "choisit",
+              "nous": "choisissons",
+              "vous": "choisissez",
+              "ils": "choisissent"
+            },
+            "passé_composé": {
+              "je": "ai choisi",
+              "tu": "as choisi",
+              "il": "a choisi",
+              "nous": "avons choisi",
+              "vous": "avez choisi",
+              "ils": "ont choisi"
+            }
+          }
+        }
+      ],
+      "re": [
+        {
+          "infinitive": "vendre",
+          "english": "to sell",
+          "difficulty": 1,
+          "conjugations": {
+            "present": {
+              "je": "vends",
+              "tu": "vends",
+              "il": "vend",
+              "nous": "vendons",
+              "vous": "vendez",
+              "ils": "vendent"
+            },
+            "passé_composé": {
+              "je": "ai vendu",
+              "tu": "as vendu",
+              "il": "a vendu",
+              "nous": "avons vendu",
+              "vous": "avez vendu",
+              "ils": "ont vendu"
+            },
+            "imparfait": {
+              "je": "vendais",
+              "tu": "vendais",
+              "il": "vendait",
+              "nous": "vendions",
+              "vous": "vendiez",
+              "ils": "vendaient"
+            }
+          }
+        }
+      ]
+    },
+    "irregular": [
+      {
+        "infinitive": "être",
+        "english": "to be",
+        "difficulty": 3,
+        "conjugations": {
+          "present": {
+            "je": "suis",
+            "tu": "es",
+            "il": "est",
+            "nous": "sommes",
+            "vous": "êtes",
+            "ils": "sont"
+          },
+          "passé_composé": {
+            "je": "ai été",
+            "tu": "as été",
+            "il": "a été",
+            "nous": "avons été",
+            "vous": "avez été",
+            "ils": "ont été"
+          },
+          "imparfait": {
+            "je": "étais",
+            "tu": "étais",
+            "il": "était",
+            "nous": "étions",
+            "vous": "étiez",
+            "ils": "étaient"
+          },
+          "futur": {
+            "je": "serai",
+            "tu": "seras",
+            "il": "sera",
+            "nous": "serons",
+            "vous": "serez",
+            "ils": "seront"
+          },
+          "conditionnel": {
+            "je": "serais",
+            "tu": "serais",
+            "il": "serait",
+            "nous": "serions",
+            "vous": "seriez",
+            "ils": "seraient"
+          },
+          "subjonctif_présent": {
+            "je": "sois",
+            "tu": "sois",
+            "il": "soit",
+            "nous": "soyons",
+            "vous": "soyez",
+            "ils": "soient"
+          }
+        }
+      },
+      {
+        "infinitive": "avoir",
+        "english": "to have",
+        "difficulty": 3,
+        "conjugations": {
+          "present": {
+            "je": "ai",
+            "tu": "as",
+            "il": "a",
+            "nous": "avons",
+            "vous": "avez",
+            "ils": "ont"
+          },
+          "passé_composé": {
+            "je": "ai eu",
+            "tu": "as eu",
+            "il": "a eu",
+            "nous": "avons eu",
+            "vous": "avez eu",
+            "ils": "ont eu"
+          },
+          "imparfait": {
+            "je": "avais",
+            "tu": "avais",
+            "il": "avait",
+            "nous": "avions",
+            "vous": "aviez",
+            "ils": "avaient"
+          },
+          "futur": {
+            "je": "aurai",
+            "tu": "auras",
+            "il": "aura",
+            "nous": "aurons",
+            "vous": "aurez",
+            "ils": "auront"
+          }
+        }
+      }
+    ]
+  },
+  "german": {
+    "regular": {
+      "weak": [
+        {
+          "infinitive": "machen",
+          "english": "to make/do",
+          "difficulty": 1,
+          "conjugations": {
+            "present": {
+              "ich": "mache",
+              "du": "machst",
+              "er": "macht",
+              "wir": "machen",
+              "ihr": "macht",
+              "sie": "machen"
+            },
+            "past": {
+              "ich": "machte",
+              "du": "machtest",
+              "er": "machte",
+              "wir": "machten",
+              "ihr": "machtet",
+              "sie": "machten"
+            },
+            "perfect": {
+              "ich": "habe gemacht",
+              "du": "hast gemacht",
+              "er": "hat gemacht",
+              "wir": "haben gemacht",
+              "ihr": "habt gemacht",
+              "sie": "haben gemacht"
+            },
+            "future": {
+              "ich": "werde machen",
+              "du": "wirst machen",
+              "er": "wird machen",
+              "wir": "werden machen",
+              "ihr": "werdet machen",
+              "sie": "werden machen"
+            },
+            "conditional": {
+              "ich": "würde machen",
+              "du": "würdest machen",
+              "er": "würde machen",
+              "wir": "würden machen",
+              "ihr": "würdet machen",
+              "sie": "würden machen"
+            }
+          }
+        },
+        {
+          "infinitive": "arbeiten",
+          "english": "to work",
+          "difficulty": 1,
+          "conjugations": {
+            "present": {
+              "ich": "arbeite",
+              "du": "arbeitest",
+              "er": "arbeitet",
+              "wir": "arbeiten",
+              "ihr": "arbeitet",
+              "sie": "arbeiten"
+            },
+            "past": {
+              "ich": "arbeitete",
+              "du": "arbeitetest",
+              "er": "arbeitete",
+              "wir": "arbeiteten",
+              "ihr": "arbeitetet",
+              "sie": "arbeiteten"
+            },
+            "perfect": {
+              "ich": "habe gearbeitet",
+              "du": "hast gearbeitet",
+              "er": "hat gearbeitet",
+              "wir": "haben gearbeitet",
+              "ihr": "habt gearbeitet",
+              "sie": "haben gearbeitet"
+            }
+          }
+        },
+        {
+          "infinitive": "lernen",
+          "english": "to learn",
+          "difficulty": 1,
+          "conjugations": {
+            "present": {
+              "ich": "lerne",
+              "du": "lernst",
+              "er": "lernt",
+              "wir": "lernen",
+              "ihr": "lernt",
+              "sie": "lernen"
+            },
+            "past": {
+              "ich": "lernte",
+              "du": "lerntest",
+              "er": "lernte",
+              "wir": "lernten",
+              "ihr": "lerntet",
+              "sie": "lernten"
+            },
+            "perfect": {
+              "ich": "habe gelernt",
+              "du": "hast gelernt",
+              "er": "hat gelernt",
+              "wir": "haben gelernt",
+              "ihr": "habt gelernt",
+              "sie": "haben gelernt"
+            }
+          }
+        },
+        {
+          "infinitive": "kaufen",
+          "english": "to buy",
+          "difficulty": 1,
+          "conjugations": {
+            "present": {
+              "ich": "kaufe",
+              "du": "kaufst",
+              "er": "kauft",
+              "wir": "kaufen",
+              "ihr": "kauft",
+              "sie": "kaufen"
+            },
+            "past": {
+              "ich": "kaufte",
+              "du": "kauftest",
+              "er": "kaufte",
+              "wir": "kauften",
+              "ihr": "kauftet",
+              "sie": "kauften"
+            },
+            "perfect": {
+              "ich": "habe gekauft",
+              "du": "hast gekauft",
+              "er": "hat gekauft",
+              "wir": "haben gekauft",
+              "ihr": "habt gekauft",
+              "sie": "haben gekauft"
+            }
+          }
+        }
+      ],
+      "strong": [
+        {
+          "infinitive": "sprechen",
+          "english": "to speak",
+          "difficulty": 2,
+          "conjugations": {
+            "present": {
+              "ich": "spreche",
+              "du": "sprichst",
+              "er": "spricht",
+              "wir": "sprechen",
+              "ihr": "sprecht",
+              "sie": "sprechen"
+            },
+            "past": {
+              "ich": "sprach",
+              "du": "sprachst",
+              "er": "sprach",
+              "wir": "sprachen",
+              "ihr": "spracht",
+              "sie": "sprachen"
+            },
+            "perfect": {
+              "ich": "habe gesprochen",
+              "du": "hast gesprochen",
+              "er": "hat gesprochen",
+              "wir": "haben gesprochen",
+              "ihr": "habt gesprochen",
+              "sie": "haben gesprochen"
+            }
+          }
+        },
+        {
+          "infinitive": "gehen",
+          "english": "to go",
+          "difficulty": 2,
+          "conjugations": {
+            "present": {
+              "ich": "gehe",
+              "du": "gehst",
+              "er": "geht",
+              "wir": "gehen",
+              "ihr": "geht",
+              "sie": "gehen"
+            },
+            "past": {
+              "ich": "ging",
+              "du": "gingst",
+              "er": "ging",
+              "wir": "gingen",
+              "ihr": "gingt",
+              "sie": "gingen"
+            },
+            "perfect": {
+              "ich": "bin gegangen",
+              "du": "bist gegangen",
+              "er": "ist gegangen",
+              "wir": "sind gegangen",
+              "ihr": "seid gegangen",
+              "sie": "sind gegangen"
+            }
+          }
+        }
+      ]
+    },
+    "irregular": [
+      {
+        "infinitive": "sein",
+        "english": "to be",
+        "difficulty": 3,
+        "conjugations": {
+          "present": {
+            "ich": "bin",
+            "du": "bist",
+            "er": "ist",
+            "wir": "sind",
+            "ihr": "seid",
+            "sie": "sind"
+          },
+          "past": {
+            "ich": "war",
+            "du": "warst",
+            "er": "war",
+            "wir": "waren",
+            "ihr": "wart",
+            "sie": "waren"
+          },
+          "perfect": {
+            "ich": "bin gewesen",
+            "du": "bist gewesen",
+            "er": "ist gewesen",
+            "wir": "sind gewesen",
+            "ihr": "seid gewesen",
+            "sie": "sind gewesen"
+          },
+          "future": {
+            "ich": "werde sein",
+            "du": "wirst sein",
+            "er": "wird sein",
+            "wir": "werden sein",
+            "ihr": "werdet sein",
+            "sie": "werden sein"
+          },
+          "subjunctive_present": {
+            "ich": "sei",
+            "du": "seist",
+            "er": "sei",
+            "wir": "seien",
+            "ihr": "seiet",
+            "sie": "seien"
+          }
+        }
+      },
+      {
+        "infinitive": "haben",
+        "english": "to have",
+        "difficulty": 3,
+        "conjugations": {
+          "present": {
+            "ich": "habe",
+            "du": "hast",
+            "er": "hat",
+            "wir": "haben",
+            "ihr": "habt",
+            "sie": "haben"
+          },
+          "past": {
+            "ich": "hatte",
+            "du": "hattest",
+            "er": "hatte",
+            "wir": "hatten",
+            "ihr": "hattet",
+            "sie": "hatten"
+          },
+          "perfect": {
+            "ich": "habe gehabt",
+            "du": "hast gehabt",
+            "er": "hat gehabt",
+            "wir": "haben gehabt",
+            "ihr": "habt gehabt",
+            "sie": "haben gehabt"
+          },
+          "future": {
+            "ich": "werde haben",
+            "du": "wirst haben",
+            "er": "wird haben",
+            "wir": "werden haben",
+            "ihr": "werdet haben",
+            "sie": "werden haben"
+          }
+        }
+      },
+      {
+        "infinitive": "werden",
+        "english": "to become",
+        "difficulty": 3,
+        "conjugations": {
+          "present": {
+            "ich": "werde",
+            "du": "wirst",
+            "er": "wird",
+            "wir": "werden",
+            "ihr": "werdet",
+            "sie": "werden"
+          },
+          "past": {
+            "ich": "wurde",
+            "du": "wurdest",
+            "er": "wurde",
+            "wir": "wurden",
+            "ihr": "wurdet",
+            "sie": "wurden"
+          },
+          "perfect": {
+            "ich": "bin geworden",
+            "du": "bist geworden",
+            "er": "ist geworden",
+            "wir": "sind geworden",
+            "ihr": "seid geworden",
+            "sie": "sind geworden"
           }
         }
       }

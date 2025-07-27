@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import { createClient } from '@supabase/supabase-js';
 import { EnhancedGameService } from 'gems/services/enhancedGameService';
+import { useGameVocabulary, GameVocabularyWord } from '../../../../hooks/useGameVocabulary';
 
 // Game Modes
 type GameMode = 'classic' | 'blitz' | 'marathon' | 'timed_attack' | 'word_storm' | 'zen';
@@ -20,6 +21,17 @@ interface GameSettings {
   category: string;
   language: string;
   gameMode: GameMode;
+  subcategory?: string;
+  curriculumLevel?: 'KS3' | 'KS4';
+}
+
+interface WordScrambleGameEnhancedProps {
+  settings: GameSettings;
+  onGameEnd: (result: any) => void;
+  onBackToMenu: () => void;
+  vocabulary?: GameVocabularyWord[];
+  isAssignmentMode?: boolean;
+  assignmentId?: string;
 }
 
 interface Achievement {
@@ -349,6 +361,16 @@ export default function WordScrambleGameEnhanced({
   const [gameService, setGameService] = useState<EnhancedGameService | null>(null);
   const [gameSessionId, setGameSessionId] = useState<string | null>(null);
 
+  // Modern vocabulary integration
+  const { vocabulary: gameVocabulary, loading: vocabularyLoading } = useGameVocabulary({
+    language: settings.language === 'spanish' ? 'es' : settings.language === 'french' ? 'fr' : 'en',
+    categoryId: settings.category,
+    subcategoryId: settings.subcategory,
+    limit: 100,
+    randomize: true,
+    curriculumLevel: settings.curriculumLevel || 'KS3'
+  });
+
   // Refs
   const gameContainerRef = useRef<HTMLDivElement>(null);
   const soundManager = useRef<SoundManager>(new SoundManager());
@@ -396,7 +418,7 @@ export default function WordScrambleGameEnhanced({
 
   // Get current word list
   const currentWordList = useMemo(() => {
-    // Use category vocabulary if available
+    // Priority 1: Use provided category vocabulary (for assignment mode)
     if (categoryVocabulary && categoryVocabulary.length > 0) {
       return categoryVocabulary.map(item => ({
         word: item.word,
@@ -407,13 +429,24 @@ export default function WordScrambleGameEnhanced({
       }));
     }
 
-    // Fallback to hardcoded database
+    // Priority 2: Use modern vocabulary system
+    if (gameVocabulary && gameVocabulary.length > 0) {
+      return gameVocabulary.map(item => ({
+        word: item.word,
+        hint: `Translation: ${item.translation}`,
+        difficulty: 0.6,
+        theme: item.category || 'general',
+        points: Math.max(30, item.word.length * 10)
+      }));
+    }
+
+    // Priority 3: Fallback to hardcoded database
     const categoryData = ENHANCED_WORD_DATABASE[settings.category as keyof typeof ENHANCED_WORD_DATABASE];
     if (!categoryData) return ENHANCED_WORD_DATABASE.animals.english;
 
     const languageData = categoryData[settings.language as keyof typeof categoryData];
     return languageData || categoryData.english || ENHANCED_WORD_DATABASE.animals.english;
-  }, [settings.category, settings.language, categoryVocabulary]);
+  }, [settings.category, settings.language, categoryVocabulary, gameVocabulary]);
 
   // Scramble word function
   const scrambleWord = useCallback((word: string): string[] => {

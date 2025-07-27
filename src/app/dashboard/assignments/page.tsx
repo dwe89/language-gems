@@ -217,7 +217,7 @@ export default function AssignmentsPage() {
                     ? 'Try adjusting your search or filter to find assignments.' 
                     : 'Get started by creating your first assignment for your students.'}
                 </p>
-                <Link href="/dashboard/assignments/new">
+                <Link href="/dashboard/assignments/new/enhanced">
                   <button className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl">
                     <Plus className="h-4 w-4 mr-2 inline" />
                     Create Your First Assignment
@@ -238,8 +238,8 @@ export default function AssignmentsPage() {
             />
             <div className="fixed top-32 right-8 w-80 bg-white rounded-xl shadow-2xl border border-slate-200 z-[99999]">
               <div className="py-2">
-                <Link 
-                  href="/dashboard/assignments/new/enhanced" 
+                <Link
+                  href="/dashboard/assignments/new/enhanced"
                   className="block px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition-colors font-medium border-b border-slate-100"
                   onClick={() => setDropdownOpen(false)}
                 >
@@ -247,23 +247,16 @@ export default function AssignmentsPage() {
                     <span className="text-lg mr-3">🚀</span>
                     <div>
                       <div className="font-semibold text-indigo-600">Smart Multi-Game Assignment</div>
-                      <div className="text-xs text-slate-500">New! Dynamic content configuration</div>
+                      <div className="text-xs text-slate-500">Recommended! All 15 games, KS3/KS4 support</div>
                     </div>
                   </div>
                 </Link>
-                <Link 
-                  href="/dashboard/assignments/new" 
+                <Link
+                  href="/dashboard/assignments/new"
                   className="block px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition-colors font-medium"
                   onClick={() => setDropdownOpen(false)}
                 >
                   📝 Standard Assignment
-                </Link>
-                <Link 
-                  href="/dashboard/assignments/new/exam" 
-                  className="block px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition-colors font-medium"
-                  onClick={() => setDropdownOpen(false)}
-                >
-                  🎯 Exam Assignment
                 </Link>
               </div>
             </div>

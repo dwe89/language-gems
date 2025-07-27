@@ -10,9 +10,12 @@ interface CustomWordsModalProps {
 }
 
 export interface WordPair {
+  id?: string;
   term: string;
   translation: string;
   type: 'word' | 'image';
+  category?: string;
+  subcategory?: string;
 }
 
 export default function CustomWordsModal({ isOpen, onClose, onStartGame }: CustomWordsModalProps) {

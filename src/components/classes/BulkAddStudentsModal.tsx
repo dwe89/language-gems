@@ -258,9 +258,7 @@ export function BulkAddStudentsModal({
                   Enter one student per line
                 </Label>
                 <p className="text-sm text-gray-300 mb-2">
-                  Just enter student names (e.g., "John Smith"). Usernames like "JohnS" will be created automatically.
-                  Students with the same name pattern (like "John Smith" and "John Sanders") will get unique usernames
-                  (JohnS, JohnS1, etc).
+                  Just enter student names (e.g., "John Smith")
                 </p>
                 <Textarea
                   id="bulkStudents"

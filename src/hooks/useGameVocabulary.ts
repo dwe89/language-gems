@@ -14,7 +14,6 @@ export interface GameVocabularyWord {
   example_sentence?: string;
   example_translation?: string;
   audio_url?: string;
-  difficulty_level?: string;
   curriculum_level?: string;
 }
 
@@ -27,6 +26,7 @@ interface UseGameVocabularyProps {
   hasAudio?: boolean;
   difficultyLevel?: string;
   curriculumLevel?: string;
+  enabled?: boolean; // Allow disabling the hook
 }
 
 interface UseGameVocabularyReturn {
@@ -49,7 +49,8 @@ export function useGameVocabulary({
   randomize = true,
   hasAudio = false,
   difficultyLevel,
-  curriculumLevel
+  curriculumLevel,
+  enabled = true
 }: UseGameVocabularyProps): UseGameVocabularyReturn {
   const [vocabulary, setVocabulary] = useState<GameVocabularyWord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -70,6 +71,13 @@ export function useGameVocabulary({
   });
 
   const loadVocabulary = async () => {
+    if (!enabled) {
+      setLoading(false);
+      setVocabulary([]);
+      setTotalCount(0);
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -89,7 +97,6 @@ export function useGameVocabulary({
             example_sentence: item.example_sentence,
             example_translation: item.example_translation,
             audio_url: item.audio_url,
-            difficulty_level: item.difficulty_level,
             curriculum_level: item.curriculum_level
           }));
 
@@ -120,9 +127,8 @@ export function useGameVocabulary({
         query = query.not('audio_url', 'is', null);
       }
 
-      if (difficultyLevel && difficultyLevel !== 'beginner') {
-        query = query.eq('difficulty_level', difficultyLevel);
-      }
+      // Note: difficulty_level column doesn't exist in centralized_vocabulary
+      // Difficulty filtering is handled by curriculum_level instead
 
       if (curriculumLevel) {
         query = query.or(`curriculum_level.ilike.%${curriculumLevel}%,curriculum_level.is.null`);
@@ -149,7 +155,6 @@ export function useGameVocabulary({
             example_sentence: item.example_sentence,
             example_translation: item.example_translation,
             audio_url: item.audio_url,
-            difficulty_level: item.difficulty_level,
             curriculum_level: item.curriculum_level
           }));
 
@@ -173,7 +178,6 @@ export function useGameVocabulary({
             example_sentence: item.example_sentence,
             example_translation: item.example_translation,
             audio_url: item.audio_url,
-            difficulty_level: item.difficulty_level,
             curriculum_level: item.curriculum_level
           }));
 
@@ -206,7 +210,6 @@ export function useGameVocabulary({
             example_sentence: item.example_sentence,
             example_translation: item.example_translation,
             audio_url: item.audio_url,
-            difficulty_level: item.difficulty_level,
             curriculum_level: item.curriculum_level
           }));
           
@@ -224,7 +227,7 @@ export function useGameVocabulary({
   // Load vocabulary when parameters change
   useEffect(() => {
     loadVocabulary();
-  }, [language, categoryId, subcategoryId, limit, randomize, hasAudio, difficultyLevel, curriculumLevel]);
+  }, [language, categoryId, subcategoryId, limit, randomize, hasAudio, difficultyLevel, curriculumLevel, enabled]);
 
   // Handle category hook updates
   useEffect(() => {
@@ -276,7 +279,7 @@ export function transformVocabularyForGame(
       return vocabulary.map(word => ({
         word: word.word,
         translation: word.translation,
-        difficulty: word.difficulty_level || 'beginner'
+        difficulty: word.curriculum_level || 'beginner'
       }));
       
     case 'association':

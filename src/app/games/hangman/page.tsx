@@ -8,6 +8,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../../../components/auth/AuthProvider';
 import { useVocabularyByCategory } from '../../../hooks/useVocabulary';
 import HangmanGameWrapper from './components/HangmanGameWrapper';
+import HangmanAssignmentWrapper from './components/HangmanAssignmentWrapper';
 import GameSettings from './components/GameSettings';
 
 export default function HangmanPage() {
@@ -17,9 +18,15 @@ export default function HangmanPage() {
 
   // Get URL parameters for assignment mode
   const assignmentId = searchParams?.get('assignment');
+  const mode = searchParams?.get('mode');
   const language = searchParams?.get('language') || 'spanish';
   const difficulty = searchParams?.get('difficulty') || 'beginner';
   const category = searchParams?.get('category') || 'animals';
+
+  // If assignment mode, render assignment wrapper
+  if (assignmentId && mode === 'assignment') {
+    return <HangmanAssignmentWrapper assignmentId={assignmentId} />;
+  }
 
   // Initialize all hooks first (before any conditional returns)
   const [settings, setSettings] = useState({

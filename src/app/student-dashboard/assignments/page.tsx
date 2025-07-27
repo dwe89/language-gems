@@ -1,24 +1,69 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Component } from 'react';
 import { Hexagon, Clock, CheckCircle, BookOpen, Gamepad2, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '../../../components/auth/AuthProvider';
 import { supabaseBrowser } from '../../../components/auth/AuthProvider';
 import { logError } from '../../../lib/utils';
 
-// Map game types to actual game directory paths
+// Simple Error Boundary Component
+class AssignmentErrorBoundary extends Component<
+  { children: React.ReactNode },
+  { hasError: boolean; error?: Error }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    logError('Assignment page error:', { error, errorInfo });
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="space-y-8">
+          <div>
+            <h1 className="text-3xl font-bold text-white">📚 Assignments</h1>
+            <p className="text-indigo-100 mt-2">Something went wrong loading assignments</p>
+          </div>
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+            <p>An unexpected error occurred. Please refresh the page or try again later.</p>
+            <button 
+              onClick={() => window.location.reload()}
+              className="mt-2 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+            >
+              Refresh Page
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
+// Map game types to actual game directory paths with assignment support
 const mapGameTypeToPath = (gameType: string | null): string => {
   if (!gameType) return 'memory-game';
 
   const gameTypeMap: Record<string, string> = {
-    // Direct mappings for existing games
+    // Direct mappings for existing games with assignment support
     'memory-game': 'memory-game',
+    'word-scramble': 'word-scramble',
     'vocab-blast': 'vocab-blast',
     'hangman': 'hangman',
     'noughts-and-crosses': 'noughts-and-crosses',
     'speed-builder': 'speed-builder',
     'vocabulary-mining': 'vocabulary-mining',
+    'word-guesser': 'word-guesser',
 
     // Legacy mappings for potential mismatches
     'quiz': 'memory-game', // Fallback for quiz to memory game
@@ -28,14 +73,25 @@ const mapGameTypeToPath = (gameType: string | null): string => {
     'gem-collector': 'vocabulary-mining', // Map gem collector to vocabulary mining
     'translation-tycoon': 'speed-builder', // Map to closest equivalent
     'conjugation-duel': 'hangman', // Map to closest equivalent
-    'word-scramble': 'hangman', // Map to closest equivalent
-    'word-guesser': 'hangman', // Map to closest equivalent
     'sentence-towers': 'speed-builder', // Map to closest equivalent
     'sentence-builder': 'speed-builder', // Map to closest equivalent
     'word-association': 'memory-game', // Map to closest equivalent
   };
 
   return gameTypeMap[gameType] || 'memory-game'; // Default fallback
+};
+
+// Check if game supports assignment mode
+const supportsAssignmentMode = (gameType: string | null): boolean => {
+  const supportedGames = [
+    'memory-game',
+    'word-scramble',
+    'hangman',
+    'vocab-blast',
+    'word-guesser',
+    'noughts-and-crosses'
+  ];
+  return gameType ? supportedGames.includes(gameType) : false;
 };
 
 type Assignment = {
@@ -50,12 +106,16 @@ type Assignment = {
   className?: string;
   points?: number;
   type?: string; // Game type like "memory-game", "speed-builder", etc.
+  curriculum_level?: 'KS3' | 'KS4'; // Curriculum level support
+  vocabulary_count?: number; // Number of vocabulary items
   progress?: {
     bestScore: number;
     bestAccuracy: number;
     completedAt: string | null;
     attemptsCount: number;
     totalTimeSpent: number;
+    completedGames: number;
+    totalGames: number;
   } | null;
 };
 
@@ -102,11 +162,24 @@ const AssignmentCard = ({
             <Clock className="h-4 w-4 mr-1" />
             <span>Due: {assignment.dueDate}</span>
           </div>
-          {assignment.points && (
-            <div className="flex items-center text-sm text-indigo-600 mt-1">
-              <span>Points: {assignment.points}</span>
-            </div>
-          )}
+          <div className="flex items-center gap-4 text-sm mt-1">
+            {assignment.points && (
+              <div className="text-indigo-600">
+                <span>Points: {assignment.points}</span>
+              </div>
+            )}
+            {assignment.curriculum_level && (
+              <div className="text-purple-600">
+                <span>{assignment.curriculum_level}</span>
+              </div>
+            )}
+            {assignment.vocabulary_count && (
+              <div className="text-green-600">
+                <BookOpen className="h-3 w-3 inline mr-1" />
+                <span>{assignment.vocabulary_count} words</span>
+              </div>
+            )}
+          </div>
           {assignment.gameCount && (
             <div className="flex items-center text-sm text-indigo-600 mt-1">
               <Gamepad2 className="h-4 w-4 mr-1" />
@@ -166,9 +239,13 @@ const AssignmentCard = ({
       
       <div className="flex space-x-2">
         <Link
-          href={assignment.gameCount && assignment.gameCount > 1
-            ? `/student-dashboard/assignments/${assignment.id}`
-            : `/games/${mapGameTypeToPath(assignment.type)}?assignment=${assignment.id}`}
+          href={
+            assignment.gameCount && assignment.gameCount > 1
+              ? `/student-dashboard/assignments/${assignment.id}`
+              : supportsAssignmentMode(assignment.type || null)
+                ? `/games/${mapGameTypeToPath(assignment.type || null)}/assignment/${assignment.id}`
+                : `/games/${mapGameTypeToPath(assignment.type || null)}?assignment=${assignment.id}`
+          }
           className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg transition-colors font-medium flex items-center justify-center"
         >
           {assignment.status === 'completed' ? 'Review Assignment' : 'Continue Assignment'}
@@ -187,7 +264,7 @@ const AssignmentCard = ({
   );
 };
 
-export default function AssignmentsPage() {
+function AssignmentsPageContent() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [currentAssignments, setCurrentAssignments] = useState<Assignment[]>([]);
@@ -197,9 +274,14 @@ export default function AssignmentsPage() {
   useEffect(() => {
     if (!user) return;
 
+    let isMounted = true; // Flag to prevent state updates if component unmounts
+
     const fetchAssignments = async () => {
       try {
+        if (!isMounted) return;
         setLoading(true);
+        setError(''); // Clear any previous errors
+        
         const supabase = supabaseBrowser;
 
         // Get student's class enrollments
@@ -210,16 +292,21 @@ export default function AssignmentsPage() {
 
         if (enrollmentError) {
           logError('Error fetching enrollments:', enrollmentError);
-          setError('Failed to load class data');
+          if (isMounted) {
+            setError('Failed to load class data');
+            setLoading(false);
+          }
           return;
         }
 
         // Handle case where student has no enrollments
         if (!enrollments || enrollments.length === 0) {
           console.log('Student has no class enrollments');
-          setCurrentAssignments([]);
-          setCompletedAssignments([]);
-          setLoading(false);
+          if (isMounted) {
+            setCurrentAssignments([]);
+            setCompletedAssignments([]);
+            setLoading(false);
+          }
           return;
         }
 
@@ -237,20 +324,32 @@ export default function AssignmentsPage() {
             status,
             game_type,
             game_config,
-            class_id
+            class_id,
+            curriculum_level,
+            vocabulary_count
           `)
           .in('class_id', classIds)
           .order('created_at', { ascending: false });
 
-        // Fetch assignment progress for the current student
+        // Fetch assignment progress using the new game-based completion system
         const { data: assignmentProgress, error: progressError } = await supabase
-          .from('enhanced_assignment_progress')
+          .from('assignment_completion_status')
           .select(`
             assignment_id,
             status,
+            completed_games,
+            total_games,
+            last_completed_at
+          `)
+          .eq('student_id', user.id);
+
+        // Also fetch enhanced assignment progress for additional details
+        const { data: enhancedProgress, error: enhancedProgressError } = await supabase
+          .from('enhanced_assignment_progress')
+          .select(`
+            assignment_id,
             best_score,
             best_accuracy,
-            completed_at,
             attempts_count,
             total_time_spent
           `)
@@ -258,7 +357,10 @@ export default function AssignmentsPage() {
 
         if (assignmentError) {
           logError('Error fetching assignments:', assignmentError);
-          setError('Failed to load assignments');
+          if (isMounted) {
+            setError('Failed to load assignments');
+            setLoading(false);
+          }
           return;
         }
 
@@ -267,17 +369,28 @@ export default function AssignmentsPage() {
           // Continue without progress data rather than failing completely
         }
 
+        if (enhancedProgressError) {
+          logError('Error fetching enhanced assignment progress:', enhancedProgressError);
+          // Continue without enhanced progress data
+        }
+
         // Skip class names for now to avoid permission issues
         // TODO: Get class names through a different approach or API endpoint
         const classNameMap = new Map();
 
         console.log('Fetched assignments:', assignments);
         console.log('Fetched assignment progress:', assignmentProgress);
+        console.log('Fetched enhanced progress:', enhancedProgress);
 
-        // Create a map of assignment progress for quick lookup
+        // Create maps for quick lookup
         const progressMap = new Map();
         assignmentProgress?.forEach(progress => {
           progressMap.set(progress.assignment_id, progress);
+        });
+
+        const enhancedProgressMap = new Map();
+        enhancedProgress?.forEach(progress => {
+          enhancedProgressMap.set(progress.assignment_id, progress);
         });
 
         // Transform assignments to match our type
@@ -307,7 +420,17 @@ export default function AssignmentsPage() {
 
           // Get progress data for this assignment
           const progress = progressMap.get(assignment.id);
-          const status = progress?.status || 'not-started';
+          const enhancedProgressData = enhancedProgressMap.get(assignment.id);
+
+          // Determine status based on game completion
+          let status: 'not-started' | 'in-progress' | 'completed' = 'not-started';
+          if (progress) {
+            if (progress.status === 'completed') {
+              status = 'completed';
+            } else if (progress.completed_games > 0) {
+              status = 'in-progress';
+            }
+          }
 
           return {
             id: assignment.id,
@@ -321,12 +444,16 @@ export default function AssignmentsPage() {
             className: classNameMap.get(assignment.class_id) || 'Your Class',
             points: assignment.points,
             type: assignment.game_type,
-            progress: progress ? {
-              bestScore: progress.best_score,
-              bestAccuracy: progress.best_accuracy,
-              completedAt: progress.completed_at,
-              attemptsCount: progress.attempts_count,
-              totalTimeSpent: progress.total_time_spent
+            curriculum_level: assignment.curriculum_level as 'KS3' | 'KS4',
+            vocabulary_count: assignment.vocabulary_count,
+            progress: progress || enhancedProgressData ? {
+              bestScore: enhancedProgressData?.best_score || 0,
+              bestAccuracy: enhancedProgressData?.best_accuracy || 0,
+              completedAt: progress?.last_completed_at || null,
+              attemptsCount: enhancedProgressData?.attempts_count || 0,
+              totalTimeSpent: enhancedProgressData?.total_time_spent || 0,
+              completedGames: progress?.completed_games || 0,
+              totalGames: progress?.total_games || gameCount
             } : null
           };
         });
@@ -339,18 +466,29 @@ export default function AssignmentsPage() {
           assignment.status === 'completed'
         );
 
-        setCurrentAssignments(currentAssignments);
-        setCompletedAssignments(completedAssignments);
+        if (isMounted) {
+          setCurrentAssignments(currentAssignments);
+          setCompletedAssignments(completedAssignments);
+        }
 
       } catch (err) {
         logError('Error in fetchAssignments:', err);
-        setError('Failed to load assignments');
+        if (isMounted) {
+          setError('Failed to load assignments');
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchAssignments();
+
+    // Cleanup function to prevent state updates if component unmounts
+    return () => {
+      isMounted = false;
+    };
   }, [user]);
 
   if (loading) {
@@ -485,5 +623,14 @@ export default function AssignmentsPage() {
         )}
       </div>
     </div>
+  );
+}
+
+// Wrapped component with error boundary
+export default function AssignmentsPage() {
+  return (
+    <AssignmentErrorBoundary>
+      <AssignmentsPageContent />
+    </AssignmentErrorBoundary>
   );
 } 

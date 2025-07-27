@@ -64,7 +64,7 @@ export async function POST(
     const { data: assignment, error: assignmentError } = await supabase
       .from('assignments')
       .select('id, class_id, created_by, vocabulary_assignment_list_id, type')
-      .eq('id', parseInt(assignmentId))
+      .eq('id', assignmentId)
       .single();
 
     if (assignmentError || !assignment) {
@@ -93,24 +93,35 @@ export async function POST(
     if (body.gameSession) {
       const gameSessionData = {
         student_id: user.id,
-        assignment_id: parseInt(assignmentId),
-        game_type: assignment.type || 'memory-game',
+        assignment_id: assignmentId,
+        game_type: assignment.type || 'vocabulary-mining',
+        session_mode: 'assignment',
         session_data: body.gameSession.sessionData,
-        score: body.score || 0,
-        accuracy: body.accuracy || 0,
-        time_spent_seconds: body.timeSpent || 0,
         vocabulary_practiced: body.gameSession.vocabularyPracticed,
-        completed_at: body.status === 'completed' ? new Date().toISOString() : null
+        score: body.score || 0,
+        max_score: body.score || 0,
+        accuracy_percentage: body.accuracy || 0,
+        words_attempted: body.gameSession.wordsAttempted || 0,
+        words_correct: body.gameSession.wordsCorrect || 0,
+        time_spent_seconds: body.timeSpent || 0,
+        status: body.status || 'completed',
+        ended_at: body.status === 'completed' ? new Date().toISOString() : null
       };
 
       const { data: gameSession, error: sessionError } = await supabase
-        .from('assignment_game_sessions')
+        .from('game_sessions')
         .insert(gameSessionData)
         .select()
         .single();
 
       if (sessionError) {
-        console.error('Error creating game session:', sessionError);
+        console.error('Error creating game session:', {
+          error: sessionError,
+          message: sessionError.message,
+          details: sessionError.details,
+          hint: sessionError.hint,
+          code: sessionError.code
+        });
         return NextResponse.json(
           { error: 'Failed to create game session', details: sessionError.message },
           { status: 500 }
@@ -121,7 +132,7 @@ export async function POST(
       if (body.vocabularyProgress && body.vocabularyProgress.length > 0) {
         const vocabularyUpdates = body.vocabularyProgress.map(vocab => ({
           student_id: user.id,
-          assignment_id: parseInt(assignmentId),
+          assignment_id: assignmentId,
           vocabulary_id: vocab.vocabularyId,
           attempts: vocab.attempts,
           correct_attempts: vocab.correctAttempts,
@@ -200,7 +211,7 @@ export async function GET(
     const { data: assignment, error: assignmentError } = await supabase
       .from('assignments')
       .select('id, class_id, created_by, vocabulary_assignment_list_id')
-      .eq('id', parseInt(assignmentId))
+      .eq('id', assignmentId)
       .single();
 
     if (assignmentError || !assignment) {
@@ -238,16 +249,16 @@ export async function GET(
 
     // Get game sessions for this assignment
     const { data: gameSessions, error: sessionsError } = await supabase
-      .from('assignment_game_sessions')
+      .from('game_sessions')
       .select('*')
-      .eq('assignment_id', parseInt(assignmentId))
+      .eq('assignment_id', assignmentId)
       .order('created_at', { ascending: false });
 
     // Get vocabulary progress for this assignment
     const { data: vocabularyProgress, error: vocabError } = await supabase
       .from('student_vocabulary_assignment_progress')
       .select('*')
-      .eq('assignment_id', parseInt(assignmentId));
+      .eq('assignment_id', assignmentId);
 
     return NextResponse.json({
       success: true,

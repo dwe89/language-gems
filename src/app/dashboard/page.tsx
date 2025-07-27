@@ -223,15 +223,16 @@ function TeacherDashboard({ username = 'Ms. Carter' }: { username?: string }) {
             href="/dashboard/classes"
           />
           
-          <DashboardCard 
-            title="Create & Assign Tasks"
-            description="Set vocabulary games, grammar exercises, or exam prep"
-            icon={<PenTool className="h-7 w-7 text-orange-600" />}
-            buttonText="New Assignment"
-            buttonColor="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"
-            imageSrc="/assignments-illustration.svg"
-            href="/dashboard/assignments/new"
-          />
+<DashboardCard
+  title="Assignments"
+  description="Manage, create, and track all your student assignments."
+  icon={<PenTool className="h-7 w-7 text-orange-600" />}
+  buttonText="View Assignments"
+  buttonColor="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"
+  imageSrc="/assignments-illustration.svg"
+  href="/dashboard/assignments"
+/>
+
           
           <DashboardCard 
             title="Track Student Progress"

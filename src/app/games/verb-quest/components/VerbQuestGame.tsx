@@ -12,13 +12,24 @@ import CharacterStatsDisplay from './CharacterStatsDisplay';
 interface VerbQuestGameProps {
   character: Character;
   questSystem: QuestSystem;
-  onBackToMenu: () => void;
-  soundEnabled: boolean;
+  onBackToMenu?: () => void;
+  soundEnabled?: boolean;
+  onGameComplete?: (results: any) => void;
+  assignmentMode?: boolean;
+  assignmentConfig?: any;
 }
 
 type GameState = 'worldmap' | 'battle' | 'intro' | 'menu';
 
-export default function VerbQuestGame({ character, questSystem, onBackToMenu, soundEnabled }: VerbQuestGameProps) {
+export default function VerbQuestGame({
+  character,
+  questSystem,
+  onBackToMenu,
+  soundEnabled = true,
+  onGameComplete,
+  assignmentMode = false,
+  assignmentConfig
+}: VerbQuestGameProps) {
   const [gameState, setGameState] = useState<GameState>('worldmap');
   const [currentBattle, setCurrentBattle] = useState<any>(null);
   const [showIntro, setShowIntro] = useState(character.stats.level === 1 && character.stats.experience === 0);

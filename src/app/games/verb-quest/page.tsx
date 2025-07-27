@@ -4,12 +4,24 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { IoChevronBackOutline, IoVolumeHighOutline, IoVolumeMuteOutline, IoSettingsOutline } from 'react-icons/io5';
+import { useSearchParams } from 'next/navigation';
 import VerbQuestGame from './components/VerbQuestGame';
 import CharacterCreation from './components/CharacterCreation';
+import VerbQuestAssignmentWrapper from './components/VerbQuestAssignmentWrapper';
 import { Character } from './components/Character';
 import { QuestSystem } from './components/QuestSystem';
 
 export default function VerbQuestPage() {
+  // Check for assignment mode
+  const searchParams = useSearchParams();
+  const assignmentId = searchParams?.get('assignment');
+  const mode = searchParams?.get('mode');
+
+  // If assignment mode, render assignment wrapper
+  if (assignmentId && mode === 'assignment') {
+    return <VerbQuestAssignmentWrapper assignmentId={assignmentId} />;
+  }
+
   const [gameState, setGameState] = useState<'menu' | 'character-creation' | 'playing'>('menu');
   const [character, setCharacter] = useState<Character | null>(null);
   const [questSystem, setQuestSystem] = useState<QuestSystem | null>(null);

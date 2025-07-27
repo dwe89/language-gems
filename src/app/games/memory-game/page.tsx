@@ -8,6 +8,7 @@ import { useAuth } from '../../../components/auth/AuthProvider';
 import GameSettings from './components/GameSettings';
 import MemoryGameMain from './components/MemoryGameMain';
 import { WordPair } from './components/CustomWordsModal';
+import MemoryGameAssignmentWrapper from './components/MemoryAssignmentWrapper';
 import './styles.css';
 
 // Smart vocabulary rotation function
@@ -61,7 +62,13 @@ export default function MemoryGamePage() {
   const { user } = useAuth();
   const searchParams = useSearchParams();
   const assignmentId = searchParams?.get('assignment');
-  
+  const mode = searchParams?.get('mode');
+
+  // If assignment mode, render assignment wrapper
+  if (assignmentId && mode === 'assignment') {
+    return <MemoryGameAssignmentWrapper assignmentId={assignmentId} />;
+  }
+
   const [stage, setStage] = useState<'selector' | 'game'>('selector');
   const [gameOptions, setGameOptions] = useState({
     language: '',
@@ -69,66 +76,12 @@ export default function MemoryGamePage() {
     difficulty: ''
   });
   const [customWords, setCustomWords] = useState<WordPair[]>([]);
-  const [assignmentData, setAssignmentData] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string>('');
 
-  // Load assignment data if assignment ID is provided
-  useEffect(() => {
-    if (assignmentId) {
-      setLoading(true);
-      setError('');
 
-      fetch(`/api/assignments/${assignmentId}/vocabulary`)
-        .then(res => {
-          if (!res.ok) {
-            throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-          }
-          return res.json();
-        })
-        .then(data => {
-          if (data.vocabulary && data.vocabulary.length > 0) {
-            // Limit vocabulary to maximum 10 items for playability
-            const maxVocabulary = 10;
-            let vocabularyToUse = data.vocabulary;
 
-            if (data.vocabulary.length > maxVocabulary) {
-              console.warn(`Assignment has ${data.vocabulary.length} vocabulary items. Limiting to ${maxVocabulary} for better gameplay.`);
-              // Smart vocabulary rotation: prioritize unused words
-              vocabularyToUse = selectVocabularyWithRotation(data.vocabulary, maxVocabulary, assignmentId);
-            }
-            
-            const wordPairs = vocabularyToUse.map((vocab: any) => ({
-              id: vocab.vocabulary_id || vocab.id,
-              term: vocab.spanish,  // Spanish word as the term
-              translation: vocab.english,  // English as the translation
-              type: 'word' as const,
-              theme: vocab.theme,
-              topic: vocab.topic
-            }));
-            setAssignmentData({
-              ...data,
-              vocabulary: vocabularyToUse
-            });
-            setCustomWords(wordPairs);
-            setStage('game');
-          } else {
-            setError('No vocabulary found for this assignment.');
-          }
-        })
-        .catch(error => {
-          console.error('Error loading assignment:', error);
-          setError(`Failed to load assignment: ${error.message}`);
-        })
-        .finally(() => {
-          setLoading(false);
-        });
-    }
-  }, [assignmentId]);
-
-  const handleStartGame = (settings: { 
-    language: string; 
-    topic: string; 
+  const handleStartGame = (settings: {
+    language: string;
+    topic: string;
     difficulty: string;
     theme: string;
     customWords?: WordPair[];
@@ -177,47 +130,8 @@ export default function MemoryGamePage() {
 
   return (
     <div className="memory-game-container">
-      {assignmentId ? (
-        // Assignment Mode - either loading or playing
-        assignmentData ? (
-          <MemoryGameMain
-            language="Spanish"
-            topic="Assignment"
-            difficulty="medium"
-            onBackToSettings={handleBackToSettings}
-            customWords={customWords}
-            isAssignmentMode={true}
-            assignmentTitle={assignmentData.assignment.title}
-            assignmentId={assignmentId}
-            userId={user?.id}
-          />
-        ) : error ? (
-          // Error loading assignment
-          <div className="flex items-center justify-center min-h-screen">
-            <div className="text-center">
-              <div className="text-red-500 text-6xl mb-4">⚠️</div>
-              <h2 className="text-xl font-semibold text-gray-800 mb-2">Assignment Error</h2>
-              <p className="text-gray-600 mb-4">{error}</p>
-              <button
-                onClick={() => window.history.back()}
-                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-              >
-                Go Back
-              </button>
-            </div>
-          </div>
-        ) : (
-          // Loading assignment data - don't show selector
-          <div className="flex items-center justify-center min-h-screen">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto mb-4"></div>
-              <p className="text-gray-600">Loading assignment...</p>
-            </div>
-          </div>
-        )
-      ) : (
-        // Free Play Mode - show selector or game
-        stage === 'selector' ? (
+      {/* Assignment mode is handled by MemoryGameAssignmentWrapper */}
+      {stage === 'selector' ? (
           <div className="min-h-screen bg-gradient-to-br from-purple-400 via-pink-500 to-red-500">
             {/* Header */}
             <motion.div
@@ -264,7 +178,7 @@ export default function MemoryGamePage() {
             userId={user?.id}
           />
         )
-      )}
+      } {/* REMOVED the extra ')' here */}
     </div>
   );
-} 
+}

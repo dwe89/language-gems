@@ -55,7 +55,11 @@ export async function GET(
         class_id,
         vocabulary_assignment_list_id,
         created_by,
-        vocabulary_criteria
+        vocabulary_criteria,
+        game_config,
+        game_type,
+        due_date,
+        description
       `)
       .eq('id', assignmentId)
       .single();
@@ -69,7 +73,15 @@ export async function GET(
 
     const isTeacher = assignment.created_by === user.id;
 
-    // Get students in the class - using manual join since foreign key relationship may not be defined
+    console.log('Assignment API Debug:', {
+      assignmentId,
+      userId: user.id,
+      assignmentCreatedBy: assignment.created_by,
+      isTeacher,
+      classId: assignment.class_id
+    });
+
+    // Get students in the class for both teachers and students
     const { data: enrollments, error: enrollmentsError } = await supabase
       .from('class_enrollments')
       .select('student_id')
@@ -98,103 +110,176 @@ export async function GET(
       );
     }
 
-    // Check if user is a student in the class
-    let isStudent = false;
-    if (!isTeacher) {
+    // If teacher, allow access immediately
+    if (isTeacher) {
+      console.log('Teacher access granted');
+    } else {
+      // Check if user is a student in the class
       const student = students?.find((student: any) => student.user_id === user.id);
-      isStudent = !!student;
+      const isStudent = !!student;
+
+      console.log('Student access check:', {
+        userId: user.id,
+        studentIds,
+        isStudent,
+        foundStudent: student
+      });
+
+      if (!isStudent) {
+        return NextResponse.json(
+          { error: 'Access denied - not enrolled in class' },
+          { status: 403 }
+        );
+      }
     }
 
-    if (!isTeacher && !isStudent) {
-      return NextResponse.json(
-        { error: 'Access denied' },
-        { status: 403 }
-      );
+    // Handle different assignment types
+    let vocabularyItems: any[] = [];
+
+    // Check if this is an Enhanced Assignment Creator assignment (has game_config field)
+    if (assignment.game_config && typeof assignment.game_config === 'object') {
+      const config = assignment.game_config as any;
+
+      // Handle Enhanced Assignment Creator vocabulary configuration
+      if (config.vocabularyConfig) {
+        const vocabConfig = config.vocabularyConfig;
+
+        // Build query based on vocabulary source
+        let query = supabase.from('centralized_vocabulary').select('*');
+
+        // Filter by language if specified
+        if (vocabConfig.language) {
+          query = query.eq('language', vocabConfig.language);
+        }
+
+        if (vocabConfig.source === 'category' && vocabConfig.category) {
+          query = query.eq('category', vocabConfig.category);
+          if (vocabConfig.subcategory) {
+            query = query.eq('subcategory', vocabConfig.subcategory);
+          }
+        } else if (vocabConfig.source === 'theme' && vocabConfig.theme) {
+          query = query.eq('theme_name', vocabConfig.theme);
+        } else if (vocabConfig.source === 'topic' && vocabConfig.topic) {
+          query = query.eq('topic', vocabConfig.topic);
+        }
+
+        // Apply word count limit
+        const wordCount = vocabConfig.wordCount || 20;
+        query = query.limit(wordCount);
+
+        const { data: vocabularyData, error: vocabError } = await query;
+
+        if (vocabError) {
+          console.error('Error fetching centralized vocabulary:', vocabError);
+          return NextResponse.json(
+            { error: 'Failed to fetch vocabulary' },
+            { status: 500 }
+          );
+        }
+
+        // Format vocabulary for memory game
+        vocabularyItems = vocabularyData?.map((vocab: any, index: number) => ({
+          id: vocab.id,
+          spanish: vocab.word,
+          english: vocab.translation,
+          theme: vocab.theme_name || vocab.category,
+          topic: vocab.subcategory || vocab.topic,
+          part_of_speech: vocab.part_of_speech,
+          order_position: index + 1
+        })) || [];
+      }
+    } else if (assignment.vocabulary_assignment_list_id) {
+      // Handle legacy vocabulary assignment list format
+      // (existing code for vocabulary_assignment_list_id)
     }
 
-    // Get the vocabulary list for this assignment
-    if (!assignment.vocabulary_assignment_list_id) {
+    // If no vocabulary found yet, return empty
+    if (vocabularyItems.length === 0 && !assignment.vocabulary_assignment_list_id) {
       return NextResponse.json({
         assignment: {
           id: assignment.id,
           title: assignment.title,
           type: assignment.type,
-          config: assignment.vocabulary_criteria || {}
+          config: assignment.config || assignment.vocabulary_criteria || {}
         },
         vocabulary: []
       });
     }
 
-    // Fetch the fixed vocabulary list for this assignment - using manual join
-    // First get the vocabulary assignment items
-    const { data: assignmentItems, error: itemsError } = await supabase
-      .from('vocabulary_assignment_items')
-      .select('vocabulary_id, order_position')
-      .eq('assignment_list_id', assignment.vocabulary_assignment_list_id)
-      .order('order_position');
+    // Handle legacy vocabulary assignment list format (only if not already loaded)
+    if (assignment.vocabulary_assignment_list_id && vocabularyItems.length === 0) {
+      // Fetch the fixed vocabulary list for this assignment - using manual join
+      // First get the vocabulary assignment items
+      const { data: assignmentItems, error: itemsError } = await supabase
+        .from('vocabulary_assignment_items')
+        .select('vocabulary_id, order_position')
+        .eq('assignment_list_id', assignment.vocabulary_assignment_list_id)
+        .order('order_position');
 
-    if (itemsError) {
-      console.error('Error fetching assignment items:', itemsError);
-      return NextResponse.json(
-        { error: 'Failed to fetch assignment vocabulary items' },
-        { status: 500 }
-      );
-    }
-
-    // Then get the vocabulary details for those items
-    let vocabularyItems: any[] = [];
-    if (assignmentItems && assignmentItems.length > 0) {
-      const vocabularyIds = assignmentItems.map(item => item.vocabulary_id);
-
-      const { data: vocabularyData, error: vocabError } = await supabase
-        .from('vocabulary')
-        .select('id, spanish, english, theme, topic, part_of_speech')
-        .in('id', vocabularyIds);
-
-      if (vocabError) {
-        console.error('Error fetching vocabulary:', vocabError);
+      if (itemsError) {
+        console.error('Error fetching assignment items:', itemsError);
         return NextResponse.json(
-          { error: 'Failed to fetch vocabulary details' },
+          { error: 'Failed to fetch assignment vocabulary items' },
           { status: 500 }
         );
       }
 
-      // Combine the data with order positions
-      vocabularyItems = assignmentItems.map(item => {
-        const vocab = vocabularyData?.find(v => v.id === item.vocabulary_id);
-        return {
-          vocabulary_id: item.vocabulary_id,
-          order_position: item.order_position,
-          vocabulary: vocab
-        };
-      }).filter(item => item.vocabulary); // Remove items where vocabulary wasn't found
+      // Then get the vocabulary details for those items
+      if (assignmentItems && assignmentItems.length > 0) {
+        const vocabularyIds = assignmentItems.map(item => item.vocabulary_id);
+
+        const { data: vocabularyData, error: vocabError } = await supabase
+          .from('vocabulary')
+          .select('id, spanish, english, theme, topic, part_of_speech')
+          .in('id', vocabularyIds);
+
+        if (vocabError) {
+          console.error('Error fetching vocabulary:', vocabError);
+          return NextResponse.json(
+            { error: 'Failed to fetch vocabulary details' },
+            { status: 500 }
+          );
+        }
+
+        // Combine the data with order positions
+        const legacyVocabItems = assignmentItems.map(item => {
+          const vocab = vocabularyData?.find(v => v.id === item.vocabulary_id);
+          return {
+            vocabulary_id: item.vocabulary_id,
+            order_position: item.order_position,
+            vocabulary: vocab
+          };
+        }).filter(item => item.vocabulary); // Remove items where vocabulary wasn't found
+
+        // Format legacy vocabulary for consistency
+        vocabularyItems = legacyVocabItems.map((item: any) => ({
+          id: item.vocabulary.id,
+          spanish: item.vocabulary.spanish,
+          english: item.vocabulary.english,
+          theme: item.vocabulary.theme,
+          topic: item.vocabulary.topic,
+          part_of_speech: item.vocabulary.part_of_speech,
+          order_position: item.order_position
+        }));
+      }
     }
 
-    // Error handling is now done within the vocabulary fetching logic above
-
-    // Format the vocabulary data
-    const vocabulary: VocabularyItem[] = vocabularyItems?.map((item: any) => ({
-      id: item.vocabulary.id,
-      spanish: item.vocabulary.spanish,
-      english: item.vocabulary.english,
-      theme: item.vocabulary.theme,
-      topic: item.vocabulary.topic,
-      part_of_speech: item.vocabulary.part_of_speech,
-      order_position: item.order_position
-    })) || [];
+    // vocabularyItems is already formatted correctly from above logic
+    const vocabulary: VocabularyItem[] = vocabularyItems;
 
     return NextResponse.json({
       assignment: {
         id: assignment.id,
         title: assignment.title,
         type: assignment.type,
-        config: assignment.vocabulary_criteria || {}
+        game_type: assignment.game_type,
+        config: assignment.config || assignment.vocabulary_criteria || {}
       },
       vocabulary,
-      students: students?.map((student: any) => ({
+      students: (students || []).map((student: any) => ({
         id: student.user_id,
         displayName: student.display_name
-      })) || []
+      }))
     });
 
   } catch (error) {

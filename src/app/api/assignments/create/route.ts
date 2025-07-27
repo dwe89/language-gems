@@ -3,29 +3,34 @@ import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 import type { Database } from '../../../../lib/database.types';
 
-type VocabularySelectionType = 'theme_based' | 'topic_based' | 'custom_list' | 'difficulty_based';
+type VocabularySelectionType = 'category_based' | 'subcategory_based' | 'theme_based' | 'topic_based' | 'custom_list' | 'difficulty_based';
 
 interface CreateAssignmentRequest {
   // Basic assignment info
   title: string;
   description?: string;
   gameType: string;
+  selectedGames?: string[]; // For multi-game assignments
   classId: string;
   dueDate?: string;
   timeLimit?: number;
   points?: number;
   instructions?: string;
-  
+  curriculumLevel?: string;
+
   // Vocabulary selection
   vocabularySelection: {
     type: VocabularySelectionType;
+    language?: string;
+    category?: string;
+    subcategory?: string;
     theme?: string;
     topic?: string;
     customListId?: string;
     difficulty?: string;
     wordCount?: number;
   };
-  
+
   // Game configuration
   gameConfig?: Record<string, any>;
 }
@@ -127,27 +132,47 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Create the assignment - temporarily without game_config to test schema issue
+    // Create the assignment with new structure
     console.log('Attempting to create assignment with data:', {
       title: body.title,
       game_type: body.gameType,
       teacher_id: user.id
     });
-    
+
+    const assignmentConfig = {
+      selectedGames: body.selectedGames || [body.gameType],
+      vocabularyConfig: {
+        source: body.vocabularySelection.type,
+        category: body.vocabularySelection.category,
+        subcategory: body.vocabularySelection.subcategory,
+        theme: body.vocabularySelection.theme,
+        topic: body.vocabularySelection.topic,
+        customListId: body.vocabularySelection.customListId,
+        wordCount: body.vocabularySelection.wordCount || 20,
+        difficulty: body.vocabularySelection.difficulty
+      },
+      gameConfig: gameConfig,
+      multiGame: body.selectedGames && body.selectedGames.length > 1
+    };
+
     const { data: assignment, error: assignmentError } = await supabase
       .from('assignments')
       .insert({
         title: body.title,
         description: body.description,
         type: body.gameType, // Use 'type' not 'game_type'
+        game_type: body.gameType, // Also set game_type for compatibility
         class_id: body.classId,
         due_date: body.dueDate,
         points: body.points || 10,
-        vocabulary_assignment_list_id: vocabularyListId, // This column exists!
+        vocabulary_assignment_list_id: vocabularyListId, // Keep for legacy compatibility
+        vocabulary_selection_type: body.vocabularySelection.type, // Set the correct vocabulary selection type
+        vocabulary_count: body.vocabularySelection.wordCount || 10,
+        curriculum_level: body.curriculumLevel || 'KS3',
         created_by: user.id, // Use 'created_by' not 'teacher_id'
         status: 'active',
-        // Store game config in vocabulary_criteria for now since game_config doesn't exist
-        vocabulary_criteria: gameConfig
+        game_config: assignmentConfig, // Store full config in game_config field
+        vocabulary_criteria: body.vocabularySelection // Store vocabulary selection criteria
       })
       .select()
       .single();
@@ -165,13 +190,15 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
+      assignmentId: assignment.id,
       assignment: {
         id: assignment.id,
         title: assignment.title,
-        type: assignment.game_type,
+        type: assignment.type,
+        game_type: assignment.game_type,
         status: assignment.status,
         vocabularyListId,
-        gameConfig
+        config: assignmentConfig
       }
     });
 
@@ -190,29 +217,83 @@ async function populateVocabularyList(
   criteria: CreateAssignmentRequest['vocabularySelection']
 ) {
   try {
+    // Use the vocabulary table (integer IDs) instead of centralized_vocabulary (UUID IDs)
+    // Use centralized_vocabulary table with modern schema
     let query = supabase
-      .from('vocabulary')
-      .select('id, spanish, english, theme, topic, part_of_speech');
+      .from('centralized_vocabulary')
+      .select('id, word, translation, category, subcategory, part_of_speech, language');
 
-    // Apply filters based on selection criteria
-    if (criteria.theme) {
-      query = query.eq('theme', criteria.theme);
-    }
-    
-    if (criteria.topic) {
-      query = query.eq('topic', criteria.topic);
-    }
-    
-    if (criteria.difficulty) {
-      query = query.eq('difficulty', criteria.difficulty);
+    // Apply language filter first (most important)
+    if (criteria.language) {
+      query = query.eq('language', criteria.language);
     }
 
-    // First get all matching vocabulary to enable random selection
-    const { data: allVocabulary, error: vocabularyError } = await query;
+    // Apply filters based on criteria type using centralized_vocabulary schema
+    switch (criteria.type) {
+      case 'category_based':
+        if (criteria.category) {
+          query = query.eq('category', criteria.category);
+        }
+        break;
+      case 'subcategory_based':
+        if (criteria.category) {
+          query = query.eq('category', criteria.category);
+        }
+        if (criteria.subcategory) {
+          query = query.eq('subcategory', criteria.subcategory);
+        }
+        break;
+      case 'theme_based':
+        if (criteria.theme) {
+          query = query.eq('category', criteria.theme);
+        }
+        break;
+      case 'topic_based':
+        if (criteria.topic) {
+          query = query.eq('subcategory', criteria.topic);
+        }
+        break;
+      default:
+        // No specific filters, get general vocabulary
+        break;
+    }
+
+    console.log('Vocabulary query criteria:', {
+      type: criteria.type,
+      category: criteria.category,
+      subcategory: criteria.subcategory,
+      theme: criteria.theme,
+      topic: criteria.topic,
+      language: criteria.language,
+      mappedQuery: 'Using centralized_vocabulary table with category/subcategory'
+    });
+
+    // Execute the query to get all matching vocabulary
+    let { data: allVocabulary, error: vocabularyError } = await query;
+
+    console.log('Query executed, vocabulary error:', vocabularyError);
+    console.log('Found vocabulary items:', allVocabulary?.length || 0);
 
     if (vocabularyError) {
       console.error('Vocabulary fetch error:', vocabularyError);
-      return;
+      
+      // If the specific query fails, try a more general approach
+      console.log('Attempting fallback vocabulary query...');
+      const { data: fallbackVocabulary, error: fallbackError } = await supabase
+        .from('centralized_vocabulary')
+        .select('id, word, translation, category, subcategory, part_of_speech, language')
+        .eq('language', criteria.language || 'es') // At least filter by language
+        .not('word', 'is', null)
+        .not('translation', 'is', null)
+        .limit(Math.max(criteria.wordCount || 10, 20)); // Get at least the requested amount
+
+      if (fallbackError) {
+        console.error('Fallback vocabulary query also failed:', fallbackError);
+        return;
+      }
+
+      allVocabulary = fallbackVocabulary;
+      console.log('Using fallback vocabulary, count:', allVocabulary?.length || 0);
     }
 
     if (allVocabulary && allVocabulary.length > 0) {
@@ -228,16 +309,23 @@ async function populateVocabularyList(
       // Insert vocabulary items into the assignment list
       const vocabularyItems = selectedWords.map((word: any, index: number) => ({
         assignment_list_id: listId,
-        vocabulary_id: word.id,
-        order_position: index
+        centralized_vocabulary_id: word.id,
+        order_position: index + 1, // Start from 1, not 0
+        is_required: true,
+        created_at: new Date().toISOString()
       }));
 
-      const { error: insertError } = await supabase
+      console.log('Inserting vocabulary items:', vocabularyItems.length, 'items');
+      const { data: insertedItems, error: insertError } = await supabase
         .from('vocabulary_assignment_items')
-        .insert(vocabularyItems);
+        .insert(vocabularyItems)
+        .select();
 
       if (insertError) {
         console.error('Vocabulary items insertion error:', insertError);
+        throw new Error(`Failed to insert vocabulary items: ${insertError.message}`);
+      } else {
+        console.log('Successfully inserted vocabulary items:', insertedItems?.length || 0);
       }
     }
   } catch (error) {
@@ -253,7 +341,9 @@ async function createVocabularyList(
   try {
     let vocabularyListId: string | null = null;
 
-    if (body.vocabularySelection && body.vocabularySelection.type !== 'custom_list') {
+    if (body.vocabularySelection &&
+        body.vocabularySelection.type !== 'custom_list' &&
+        ['category_based', 'subcategory_based', 'theme_based', 'topic_based'].includes(body.vocabularySelection.type)) {
       // Create a new vocabulary assignment list
       const { data: newVocabList, error: vocabListError } = await supabase
         .from('vocabulary_assignment_lists')

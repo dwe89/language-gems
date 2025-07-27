@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from './AuthProvider';
+import SchoolCodeSelector from './SchoolCodeSelector';
 
 // This is a placeholder for the actual authentication logic that would be implemented with Supabase
 interface AuthFormProps {
@@ -16,6 +17,8 @@ export default function AuthForm({ mode }: AuthFormProps) {
   const [password, setPassword] = useState('');
   const [schoolCode, setSchoolCode] = useState('');
   const [name, setName] = useState('');
+  const [schoolName, setSchoolName] = useState('');
+  const [selectedSchoolCode, setSelectedSchoolCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isStudentLogin, setIsStudentLogin] = useState(false);
@@ -85,7 +88,10 @@ export default function AuthForm({ mode }: AuthFormProps) {
           }
           
           console.log('Student login successful, navigating to student dashboard');
-          router.push('/student-dashboard');
+          // Use setTimeout to avoid DOM manipulation conflicts
+          setTimeout(() => {
+            router.push('/student-dashboard');
+          }, 100);
         } else {
           // Use the signIn method from auth context for teachers/admins
           const { error: signInError } = await signIn(finalEmailOrUsername, password);
@@ -95,7 +101,10 @@ export default function AuthForm({ mode }: AuthFormProps) {
           }
           
           console.log('Login successful, navigating to account page');
-          router.push('/account');
+          // Use setTimeout to avoid DOM manipulation conflicts
+          setTimeout(() => {
+            router.push('/account');
+          }, 100);
         }
       } else {
         // For signup - use the API route
@@ -108,7 +117,9 @@ export default function AuthForm({ mode }: AuthFormProps) {
             email: finalEmailOrUsername,
             password,
             name,
-            role: 'student'
+            schoolName,
+            schoolCode: selectedSchoolCode,
+            role: 'teacher'
           }),
         });
         
@@ -126,7 +137,10 @@ export default function AuthForm({ mode }: AuthFormProps) {
         }
         
         // Use the redirect URL from the response
-        router.push(data.redirectUrl);
+        // Use setTimeout to avoid DOM manipulation conflicts
+        setTimeout(() => {
+          router.push(data.redirectUrl);
+        }, 100);
       }
     } catch (err) {
       console.error('Authentication error:', err);
@@ -147,7 +161,9 @@ export default function AuthForm({ mode }: AuthFormProps) {
       }
       
       console.log('Teacher login successful, navigating to account page');
-      router.push('/account');
+      setTimeout(() => {
+        router.push('/account');
+      }, 100);
     } catch (err) {
       console.error('Teacher login error:', err);
       setError('Failed to login as teacher. Check if this account exists in Supabase.');
@@ -167,7 +183,9 @@ export default function AuthForm({ mode }: AuthFormProps) {
       }
       
       console.log('Student login successful, navigating to account page');
-      router.push('/account');
+      setTimeout(() => {
+        router.push('/account');
+      }, 100);
     } catch (err) {
       console.error('Student login error:', err);
       setError('Failed to login as student. Check if this account exists in Supabase.');
@@ -179,7 +197,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
   return (
     <div className="w-full max-w-md p-6 rounded-lg bg-indigo-900/30 backdrop-blur-sm">
       <h2 className="text-2xl font-bold mb-6 text-white text-center">
-        {mode === 'login' ? 'Log In to Your Account' : 'Create an Account'}
+        {mode === 'login' ? 'Log In to Your Account' : 'Create a teacher account'}
       </h2>
 
       {error && (
@@ -190,20 +208,48 @@ export default function AuthForm({ mode }: AuthFormProps) {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {mode === 'signup' && (
-          <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-200 mb-1">
-              Full Name
-            </label>
-            <input
-              id="name"
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full p-3 bg-indigo-800/50 border border-indigo-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"
-              placeholder="Enter your full name"
-              required
-            />
-          </div>
+          <>
+            <div>
+              <label htmlFor="name" className="block text-sm font-medium text-gray-200 mb-1">
+                Full Name
+              </label>
+              <input
+                id="name"
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full p-3 bg-indigo-800/50 border border-indigo-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                placeholder="Enter your full name"
+                required
+              />
+            </div>
+            <div>
+              <label htmlFor="schoolName" className="block text-sm font-medium text-gray-200 mb-1">
+                School Name
+              </label>
+              <input
+                id="schoolName"
+                type="text"
+                value={schoolName}
+                onChange={(e) => setSchoolName(e.target.value)}
+                className="w-full p-3 bg-indigo-800/50 border border-indigo-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                placeholder="e.g., Language Gems Academy"
+                required
+              />
+              <p className="text-xs text-gray-400 mt-1">
+                This will generate your school code automatically
+              </p>
+            </div>
+
+            {/* School Code Selector */}
+            {schoolName.trim() && (
+              <SchoolCodeSelector
+                schoolName={schoolName}
+                onCodeSelect={setSelectedSchoolCode}
+                selectedCode={selectedSchoolCode}
+              />
+            )}
+          </>
         )}
 
         {mode === 'login' && (
@@ -221,7 +267,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
                     : 'bg-indigo-800/50 text-gray-300 hover:bg-indigo-700/50'
                 }`}
               >
-                Teacher/Admin
+                Teacher
               </button>
               <button
                 type="button"
@@ -335,27 +381,6 @@ export default function AuthForm({ mode }: AuthFormProps) {
             </Link>
           </>
         )}
-      </div>
-
-      {/* Test Accounts Section for Development */}
-      <div className="mt-8 pt-6 border-t border-indigo-700">
-        <p className="text-sm text-center text-gray-400 mb-4">Development Testing</p>
-        <div className="flex justify-center space-x-4">
-          <button 
-            onClick={loginAsTeacher}
-            disabled={loading}
-            className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md text-sm"
-          >
-            Test as Teacher
-          </button>
-          <button 
-            onClick={loginAsStudent}
-            disabled={loading}
-            className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md text-sm"
-          >
-            Test as Student
-          </button>
-        </div>
       </div>
     </div>
   );

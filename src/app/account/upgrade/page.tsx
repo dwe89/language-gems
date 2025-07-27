@@ -67,7 +67,7 @@ export default function UpgradePage() {
       icon: BookOpen,
       title: 'Vocabulary Mining',
       description: 'AI-powered vocabulary extraction from texts and automatic list generation',
-      preview: '/images/features/vocabulary-mining.png'
+      preview: '/images/games/gem-collector.jpg'
     }
   ];
 

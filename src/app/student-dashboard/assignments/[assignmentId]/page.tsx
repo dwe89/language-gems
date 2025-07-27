@@ -19,6 +19,7 @@ const mapGameTypeToPath = (gameType: string | null): string => {
     'noughts-and-crosses': 'noughts-and-crosses',
     'speed-builder': 'speed-builder',
     'vocabulary-mining': 'vocabulary-mining',
+    'detective-listening': 'detective-listening',
 
     // Legacy mappings for potential mismatches
     'quiz': 'memory-game', // Fallback for quiz to memory game
@@ -27,10 +28,10 @@ const mapGameTypeToPath = (gameType: string | null): string => {
     'tictactoe': 'noughts-and-crosses', // Alternative name
     'gem-collector': 'vocabulary-mining', // Map gem collector to vocabulary mining
     'translation-tycoon': 'speed-builder', // Map to closest equivalent
-    'conjugation-duel': 'hangman', // Map to closest equivalent
-    'word-scramble': 'hangman', // Map to closest equivalent
+    'conjugation-duel': 'conjugation-duel',
+    'word-scramble': 'word-scramble',
     'word-guesser': 'hangman', // Map to closest equivalent
-    'sentence-towers': 'speed-builder', // Map to closest equivalent
+    'sentence-towers': 'sentence-towers',
     'sentence-builder': 'speed-builder', // Map to closest equivalent
     'word-association': 'memory-game', // Map to closest equivalent
   };
@@ -47,6 +48,15 @@ export default function StudentAssignmentDetailPage() {
   const [loading, setLoading] = useState(true);
   const [assignment, setAssignment] = useState<any>(null);
   const [error, setError] = useState<string>('');
+  
+  // Check if this is a preview mode (teacher viewing the assignment)
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
+  
+  useEffect(() => {
+    // Check if preview mode is enabled from URL params
+    const urlParams = new URLSearchParams(window.location.search);
+    setIsPreviewMode(urlParams.get('preview') === 'true');
+  }, []);
 
   useEffect(() => {
     if (!user || !assignmentId) return;
@@ -81,10 +91,29 @@ export default function StudentAssignmentDetailPage() {
           return;
         }
 
+        // Get game completion status for this student
+        const { data: gameProgress, error: gameProgressError } = await supabase
+          .from('assignment_game_progress')
+          .select('game_id, status, score, time_spent')
+          .eq('assignment_id', assignmentId)
+          .eq('student_id', user.id);
+
+        if (gameProgressError) {
+          console.error('Error fetching game progress:', gameProgressError);
+          // Continue without progress data
+        }
+
+        // Create a map for quick lookup of game completion status
+        const gameProgressMap = new Map();
+        gameProgress?.forEach(progress => {
+          gameProgressMap.set(progress.game_id, progress);
+        });
+
         // Check if this is a multi-game assignment
         const isMultiGame = assignmentData.game_config?.multiGame && assignmentData.game_config?.selectedGames?.length > 1;
         
         const gameNameMap: Record<string, { name: string; description: string }> = {
+          'vocabulary-mining': { name: 'Vocabulary Mining', description: 'Mine vocabulary gems to build your collection' },
           'memory-game': { name: 'Memory Match', description: 'Match vocabulary pairs to improve recall' },
           'word-blast': { name: 'Word Blast', description: 'Fast-paced rocket shooting with translations' },
           'speed-builder': { name: 'Speed Builder', description: 'Build sentences quickly and accurately' },
@@ -105,25 +134,27 @@ export default function StudentAssignmentDetailPage() {
           // Multi-game assignment
           games = assignmentData.game_config.selectedGames.map((gameId: string) => {
             const gameInfo = gameNameMap[gameId] || { name: gameId, description: 'Language learning game' };
+            const progress = gameProgressMap.get(gameId);
             return {
               id: gameId,
               name: gameInfo.name,
               description: gameInfo.description,
-              completed: false, // TODO: Get actual completion status
-              score: undefined,
-              timeSpent: undefined
+              completed: progress?.status === 'completed',
+              score: progress?.score || undefined,
+              timeSpent: progress?.time_spent || undefined
             };
           });
         } else {
           // Single game assignment
           const gameInfo = gameNameMap[assignmentData.game_type] || { name: assignmentData.game_type, description: 'Language learning game' };
+          const progress = gameProgressMap.get(assignmentData.game_type);
           games = [{
             id: assignmentData.game_type,
             name: gameInfo.name,
             description: gameInfo.description,
-            completed: false, // TODO: Get actual completion status
-            score: undefined,
-            timeSpent: undefined
+            completed: progress?.status === 'completed',
+            score: progress?.score || undefined,
+            timeSpent: progress?.time_spent || undefined
           }];
         }
 
@@ -154,7 +185,8 @@ export default function StudentAssignmentDetailPage() {
   }, [user, assignmentId]);
 
   const handlePlayGame = (gameId: string) => {
-    router.push(`/games/${mapGameTypeToPath(gameId)}?assignment=${assignmentId}`);
+    const previewParam = isPreviewMode ? '&preview=true' : '';
+    router.push(`/games/${mapGameTypeToPath(gameId)}?assignment=${assignmentId}&mode=assignment${previewParam}`);
   };
 
   if (loading) {
@@ -188,13 +220,35 @@ export default function StudentAssignmentDetailPage() {
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <Link
-          href="/student-dashboard/assignments"
-          className="inline-flex items-center text-white hover:text-indigo-200 mb-4"
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Assignments
-        </Link>
+        {isPreviewMode ? (
+          <Link
+            href="/dashboard/assignments"
+            className="inline-flex items-center text-white hover:text-indigo-200 mb-4"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Teacher Dashboard
+          </Link>
+        ) : (
+          <Link
+            href="/student-dashboard/assignments"
+            className="inline-flex items-center text-white hover:text-indigo-200 mb-4"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Assignments
+          </Link>
+        )}
+        
+        {isPreviewMode && (
+          <div className="bg-yellow-100 border border-yellow-400 text-yellow-800 px-4 py-3 rounded-lg mb-4">
+            <div className="flex items-center">
+              <div className="w-5 h-5 text-yellow-600 mr-2">ℹ️</div>
+              <div>
+                <p className="font-medium">Teacher Preview Mode</p>
+                <p className="text-sm">You are viewing this assignment as your students would see it.</p>
+              </div>
+            </div>
+          </div>
+        )}
         
         <div className="bg-white rounded-xl p-6 shadow-lg">
           <div className="flex items-start justify-between mb-4">

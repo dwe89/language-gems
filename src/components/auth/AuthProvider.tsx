@@ -125,18 +125,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       let hasSubscription = false;
-      if (role === 'admin') {
-        // Admins always have subscription access
+      if (role === 'admin' || role === 'teacher') {
+        // Admins and teachers always have subscription access
         hasSubscription = true;
       } else {
-        // Check subscriptions table for others
-        const { data: subData } = await supabaseBrowser
-          .from('subscriptions')
-          .select('status')
-          .eq('user_id', currentUser.id)
-          .eq('status', 'active')
-          .single();
-        hasSubscription = !!subData;
+        // For now, give all students subscription access
+        // TODO: Implement proper subscription system when needed
+        hasSubscription = true;
       }
       
       const result = { role, hasSubscription };

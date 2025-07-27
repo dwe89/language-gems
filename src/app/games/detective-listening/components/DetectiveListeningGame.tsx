@@ -6,8 +6,16 @@ import CaseSelection from './CaseSelection';
 import RadioFrequencySelection from './RadioFrequencySelection';
 import DetectiveRoom from './DetectiveRoom';
 import CaseSolved from './CaseSolved';
+import { StandardVocabularyItem, AssignmentData, GameProgress } from '../../../../components/games/templates/GameAssignmentWrapper';
 
 type GameScreen = 'case-selection' | 'frequency-selection' | 'detective-room' | 'case-solved';
+
+interface AssignmentMode {
+  assignment: AssignmentData;
+  vocabulary: StandardVocabularyItem[];
+  onProgressUpdate: (progress: Partial<GameProgress>) => void;
+  onGameComplete: (finalProgress: GameProgress) => void;
+}
 
 interface DetectiveListeningGameProps {
   settings: {
@@ -16,13 +24,17 @@ interface DetectiveListeningGameProps {
     difficulty: string;
   };
   onBackToMenu: () => void;
+  assignmentMode?: AssignmentMode;
 }
 
-export default function DetectiveListeningGame({ settings, onBackToMenu }: DetectiveListeningGameProps) {
-  const [currentScreen, setCurrentScreen] = useState<GameScreen>('case-selection');
-  const [selectedCase, setSelectedCase] = useState('');
+export default function DetectiveListeningGame({ settings, onBackToMenu, assignmentMode }: DetectiveListeningGameProps) {
+  // If assignment mode, skip case selection and go straight to detective room
+  const [currentScreen, setCurrentScreen] = useState<GameScreen>(
+    assignmentMode ? 'detective-room' : 'case-selection'
+  );
+  const [selectedCase, setSelectedCase] = useState(assignmentMode ? 'assignment' : '');
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
-  const [selectedLanguage, setSelectedLanguage] = useState('');
+  const [selectedLanguage, setSelectedLanguage] = useState(assignmentMode ? settings.language : '');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [gameProgress, setGameProgress] = useState({
@@ -158,7 +170,8 @@ export default function DetectiveListeningGame({ settings, onBackToMenu }: Detec
               subcategory={selectedSubcategory}
               language={selectedLanguage}
               onGameComplete={handleGameComplete}
-              onBack={() => setCurrentScreen('frequency-selection')}
+              onBack={assignmentMode ? onBackToMenu : () => setCurrentScreen('frequency-selection')}
+              assignmentMode={assignmentMode}
             />
           </motion.div>
         )}

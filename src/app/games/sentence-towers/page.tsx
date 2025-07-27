@@ -2,16 +2,18 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  ArrowLeft, Flame, Clock, Trophy, Star, Settings, 
+import {
+  ArrowLeft, Flame, Clock, Trophy, Star, Settings,
   Volume2, VolumeX, Pause, Play, RotateCcw, Maximize, Minimize
 } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
 import { useSounds } from './hooks/useSounds';
 import { useGameVocabulary } from '../../../hooks/useGameVocabulary';
 import { VOCABULARY_CATEGORIES } from '../../../components/games/ModernCategorySelector';
 import { useAuth } from '../../../components/auth/AuthProvider';
 import { useSupabase } from '../../../components/supabase/SupabaseProvider';
 import { EnhancedGameService } from '../../../services/enhancedGameService';
+import SentenceTowersAssignmentWrapper from './components/SentenceTowersAssignmentWrapper';
 
 // Enhanced Types
 interface TowerBlock {
@@ -290,6 +292,16 @@ const DynamicBackground = ({
 };
 
 export default function ImprovedSentenceTowers() {
+  // Check for assignment mode
+  const searchParams = useSearchParams();
+  const assignmentId = searchParams?.get('assignment');
+  const mode = searchParams?.get('mode');
+
+  // If assignment mode, render assignment wrapper
+  if (assignmentId && mode === 'assignment') {
+    return <SentenceTowersAssignmentWrapper assignmentId={assignmentId} />;
+  }
+
   // Authentication and services
   const { user } = useAuth();
   const { supabase } = useSupabase();

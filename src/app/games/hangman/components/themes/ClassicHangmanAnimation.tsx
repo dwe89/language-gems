@@ -122,14 +122,6 @@ export default function ClassicHangmanAnimation({ mistakes, maxMistakes }: Class
           style={{ maxWidth: '100%', height: 'auto' }}
         />
       </div>
-      <div className="text-center">
-        <p className="text-sm text-gray-600 font-medium">
-          Classic Hangman
-        </p>
-        <p className="text-xs text-gray-500">
-          {mistakes}/{maxMistakes} mistakes
-        </p>
-      </div>
     </div>
   );
 }

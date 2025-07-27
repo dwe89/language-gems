@@ -4,7 +4,7 @@ import { cookies } from 'next/headers';
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, password, name, role = 'student' } = await request.json();
+    const { email, password, name, schoolName, schoolCode: providedSchoolCode, role = 'teacher' } = await request.json();
 
     const cookieStore = await cookies();
     const supabase = createServerClient(
@@ -28,11 +28,34 @@ export async function POST(request: NextRequest) {
     // Get the origin for redirect URL
     const origin = request.headers.get('origin') || process.env.NEXT_PUBLIC_BASE_URL || 'https://www.languagegems.com';
 
-    // Determine user role based on environment
-    // In production: don't assign roles on signup (assign during premium subscription)
-    // In development: assign student role for testing purposes
-    const isProduction = process.env.NODE_ENV === 'production';
-    const userRole = isProduction ? null : 'student';  // No role assignment in production
+    // Handle school code creation
+    let schoolInitials = null;
+    let schoolCode = providedSchoolCode;
+
+    if (schoolName && schoolCode) {
+      // Generate school initials from the school name (first letters approach)
+      const words = schoolName.toLowerCase()
+        .replace(/[^a-z0-9 ]/g, '')
+        .split(' ')
+        .filter(word => !['the', 'school', 'college', 'academy', 'high', 'community', 'of', 'and'].includes(word));
+
+      schoolInitials = words.length > 1
+        ? words.slice(0, 4).map(w => w[0]).join('').toUpperCase()
+        : words[0]?.substring(0, 4).toUpperCase() || 'SCH';
+
+      // Create school_codes entry
+      await supabase
+        .from('school_codes')
+        .insert({
+          code: schoolCode,
+          school_name: schoolName,
+          school_initials: schoolInitials,
+          is_active: true
+        });
+    }
+
+    // Teachers are the default role for signup
+    const userRole = role || 'teacher';
 
     // Sign up the user
     const { data, error } = await supabase.auth.signUp({
@@ -41,7 +64,8 @@ export async function POST(request: NextRequest) {
       options: {
         data: {
           name,
-          role: userRole  // Only assign role in development
+          role: userRole,
+          school_name: schoolName
         },
         emailRedirectTo: `${origin}/api/auth/callback`
       }
@@ -52,21 +76,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
-    // Create user profile
+    // Update user profile (handle_new_user trigger already created basic profile)
     if (data.user) {
       const { error: profileError } = await supabase
         .from('user_profiles')
-        .insert({
-          user_id: data.user.id,
-          email: data.user.email || email,
-          role: userRole,  // Only assign role in development
-          display_name: name,
-          subscription_type: 'free'
-        });
+        .update({
+          subscription_type: 'free',
+          school_initials: schoolInitials
+        })
+        .eq('user_id', data.user.id);
 
       if (profileError) {
-        console.error('Profile creation error:', profileError);
-        // Don't fail the signup if profile creation fails
+        console.error('Profile update error:', profileError);
+        // Don't fail the signup if profile update fails
       }
     }
 
@@ -74,13 +96,12 @@ export async function POST(request: NextRequest) {
     const response = {
       success: true,
       needsEmailVerification: !!data.user && !data.session,
-      // In production, redirect to blog/shop since no role is assigned
-      // In development, redirect based on role
-      redirectUrl: isProduction ? '/blog' : (userRole === 'student' ? '/student-dashboard' : '/account')
+      redirectUrl: userRole === 'teacher' ? '/account' : '/student-dashboard',
+      schoolCode: schoolCode
     };
 
     if (data.session) {
-      response.redirectUrl = isProduction ? '/blog' : (userRole === 'student' ? '/student-dashboard' : '/account');
+      response.redirectUrl = userRole === 'teacher' ? '/account' : '/student-dashboard';
     }
 
     return NextResponse.json(response);

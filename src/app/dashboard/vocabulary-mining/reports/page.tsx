@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useAuth, supabaseBrowser } from '../../../../components/auth/AuthProvider';
+import { useAuth } from '../../../../components/auth/AuthProvider';
+import { useSupabase } from '../../../../components/supabase/SupabaseProvider';
 import { VocabularyMiningService } from '../../../../services/vocabulary-mining';
 import {
   BarChart3,
@@ -61,7 +62,8 @@ interface AnalyticsData {
 
 export default function AdvancedAnalyticsPage() {
   const { user } = useAuth();
-  const [miningService] = useState(() => new VocabularyMiningService(supabaseBrowser));
+  const { supabase } = useSupabase();
+  const [miningService] = useState(() => new VocabularyMiningService(supabase));
   
   const [loading, setLoading] = useState(true);
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
@@ -568,9 +570,32 @@ export default function AdvancedAnalyticsPage() {
                 </div>
               </div>
             </div>
-          </div>
-              </>
-            )}
+          </>
+        )}
+
+        {/* Trends */}
+        {selectedReport === 'trends' && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-lg shadow-sm border p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Learning Trends</h3>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Mastery Trend */}
+                <div>
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">Mastery Over Time</h4>
+                  <div className="h-40 bg-gray-50 rounded-lg flex items-center justify-center">
+                    <span className="text-gray-500">Mastery trend chart would go here</span>
+                  </div>
+                </div>
+                
+                {/* Activity Trend */}
+                <div>
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">Activity Over Time</h4>
+                  <div className="h-40 bg-gray-50 rounded-lg flex items-center justify-center">
+                    <span className="text-gray-500">Activity trend chart would go here</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 

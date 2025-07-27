@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, ArrowLeft, Search, Filter, X, CheckCircle } from 'lucide-react';
+import { getCategoriesByCurriculum, type CurriculumLevel } from './KS4CategorySystem';
 
 // Define the comprehensive category structure with all your new categories
 export interface Category {
@@ -248,6 +249,7 @@ interface ModernCategorySelectorProps {
   gameName?: string;
   showAllCategories?: boolean;
   maxSelections?: number;
+  curriculumLevel?: 'KS3' | 'KS4';
 }
 
 export default function ModernCategorySelector({
@@ -255,15 +257,20 @@ export default function ModernCategorySelector({
   selectedLanguage = 'es',
   gameName = 'Game',
   showAllCategories = false,
-  maxSelections = 1
+  maxSelections = 1,
+  curriculumLevel = 'KS3'
 }: ModernCategorySelectorProps) {
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSubcategories, setSelectedSubcategories] = useState<Set<string>>(new Set());
   const [view, setView] = useState<'categories' | 'subcategories'>('categories');
+  const [currentCurriculumLevel, setCurrentCurriculumLevel] = useState<CurriculumLevel>(curriculumLevel as CurriculumLevel);
+
+  // Get categories based on curriculum level
+  const currentCategories = getCategoriesByCurriculum(currentCurriculumLevel);
 
   // Filter categories based on search
-  const filteredCategories = VOCABULARY_CATEGORIES.filter(category =>
+  const filteredCategories = currentCategories.filter(category =>
     category.displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     category.subcategories.some(sub => 
       sub.displayName.toLowerCase().includes(searchTerm.toLowerCase())
@@ -311,9 +318,44 @@ export default function ModernCategorySelector({
         <h1 className="text-4xl font-bold text-gray-900 mb-2">
           Choose Your Topic for {gameName}
         </h1>
-        <p className="text-lg text-gray-600">
+        <p className="text-lg text-gray-600 mb-4">
           Select a category and topic to start learning vocabulary
         </p>
+
+        {/* Curriculum Level Selector */}
+        <div className="flex justify-center items-center gap-2 mb-4">
+          <span className="text-sm font-medium text-gray-700">Curriculum Level:</span>
+          <div className="flex bg-gray-100 rounded-lg p-1">
+            <button
+              onClick={() => {
+                setCurrentCurriculumLevel('KS3');
+                setSelectedCategory(null);
+                setView('categories');
+              }}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                currentCurriculumLevel === 'KS3'
+                  ? 'bg-blue-500 text-white shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              KS3 (Year 7-9)
+            </button>
+            <button
+              onClick={() => {
+                setCurrentCurriculumLevel('KS4');
+                setSelectedCategory(null);
+                setView('categories');
+              }}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                currentCurriculumLevel === 'KS4'
+                  ? 'bg-blue-500 text-white shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              KS4 (GCSE)
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Search Bar */}

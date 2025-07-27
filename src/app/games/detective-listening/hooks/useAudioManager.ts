@@ -44,47 +44,16 @@ export const useAudioManager = (): AudioManager & {
     };
   }, [volume]);
 
-  const playEvidence = useCallback(async (audioFile: string): Promise<void> => {
-    if (!audioRef.current) return;
-
-    try {
-      // Stop current audio if playing
-      if (isPlaying) {
-        audioRef.current.pause();
-        audioRef.current.currentTime = 0;
-      }
-
-      // Get Supabase Storage URL for the audio file
-      const audioUrl = getAudioUrl(audioFile);
-      console.log(`🎵 Loading audio from Supabase: ${audioUrl}`);
-      
-      audioRef.current.src = audioUrl;
-
-      // Add error handling for missing files
-      audioRef.current.onerror = () => {
-        console.warn(`Audio file not found in Supabase Storage: ${audioFile}`);
-        // Try fallback: generate audio on-demand or use placeholder
-        handleAudioFallback(audioFile);
-      };
-
-      // Play the audio
-      await audioRef.current.play();
-    } catch (error) {
-      console.warn('Failed to play audio:', error);
-      setIsPlaying(false);
-      handleAudioFallback(audioFile);
-    }
-  }, [isPlaying]);
-
-  const handleAudioFallback = useCallback(async (audioFile: string) => {
+  const handleAudioFallback = useCallback(async (audioFile: string, fallbackText?: string) => {
     try {
       // Option 1: Try to generate audio on-demand
       console.log(`Attempting to generate missing audio: ${audioFile}`);
 
       // Option 2: Use text-to-speech as fallback
       if ('speechSynthesis' in window) {
-        const text = extractTextFromFilename(audioFile);
+        const text = fallbackText || extractTextFromFilename(audioFile);
         const language = extractLanguageFromFilename(audioFile);
+        console.log(`Using TTS fallback for: "${text}" in language: ${language}`);
         await playTextToSpeech(text, language);
       } else {
         // Option 3: Show visual feedback only
@@ -98,12 +67,22 @@ export const useAudioManager = (): AudioManager & {
   }, []);
 
   const extractTextFromFilename = (filename: string): string => {
-    // Extract word from filename like "es_animals_perro.mp3"
+    // Handle different filename formats
     const parts = filename.split('_');
+
     if (parts.length >= 3) {
+      // Format: "es_animals_perro.mp3"
       return parts[2].replace('.mp3', '');
+    } else if (parts.length === 2 && parts[0] === 'detective') {
+      // Format: "detective_word.mp3"
+      return parts[1].replace('.mp3', '');
+    } else if (filename.includes('detective_')) {
+      // Format: "detective_word.mp3" - extract everything after detective_
+      return filename.replace('detective_', '').replace('.mp3', '');
     }
-    return 'word';
+
+    // Fallback: try to extract any word from filename
+    return filename.replace('.mp3', '').replace(/^.*_/, '') || 'word';
   };
 
   const extractLanguageFromFilename = (filename: string): string => {
@@ -163,6 +142,46 @@ export const useAudioManager = (): AudioManager & {
     }
   }, []);
 
+  const playEvidence = useCallback(async (audioFile: string, fallbackText?: string): Promise<void> => {
+    if (!audioRef.current) return;
+
+    try {
+      // Stop current audio if playing
+      if (isPlaying) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
+
+      // Check if audioFile is already a full URL or just a filename
+      let audioUrl: string;
+      if (audioFile.startsWith('http')) {
+        // It's already a full URL from centralized_vocabulary
+        audioUrl = audioFile;
+        console.log(`🎵 Loading audio from centralized vocabulary: ${audioUrl}`);
+      } else {
+        // It's a filename, use the Supabase Storage path
+        audioUrl = getAudioUrl(audioFile);
+        console.log(`🎵 Loading audio from Supabase Storage: ${audioUrl}`);
+      }
+
+      audioRef.current.src = audioUrl;
+
+      // Add error handling for missing files
+      audioRef.current.onerror = () => {
+        console.warn(`Audio file not found in Supabase Storage: ${audioFile}`);
+        // Try fallback: generate audio on-demand or use placeholder
+        handleAudioFallback(audioFile, fallbackText);
+      };
+
+      // Play the audio
+      await audioRef.current.play();
+    } catch (error) {
+      console.warn('Failed to play audio:', error);
+      setIsPlaying(false);
+      handleAudioFallback(audioFile, fallbackText);
+    }
+  }, [isPlaying, handleAudioFallback]);
+
   // Preload audio files for better performance
   const preloadAudio = useCallback(async (audioFiles: string[]): Promise<void> => {
     const promises = audioFiles.map(async (filename) => {
@@ -216,7 +235,7 @@ export const useAudioManager = (): AudioManager & {
   }, []);
 
   // Enhanced playEvidence that uses cache
-  const playEvidenceFromCache = useCallback(async (audioFile: string): Promise<void> => {
+  const playEvidenceFromCache = useCallback(async (audioFile: string, fallbackText?: string): Promise<void> => {
     try {
       // Try to get from cache first
       const cachedAudio = audioCache.current.get(audioFile);
@@ -233,11 +252,11 @@ export const useAudioManager = (): AudioManager & {
         await audioRef.current.play();
       } else {
         // Fall back to regular loading
-        await playEvidence(audioFile);
+        await playEvidence(audioFile, fallbackText);
       }
     } catch (error) {
       console.warn('Failed to play cached audio:', error);
-      await playEvidence(audioFile);
+      await playEvidence(audioFile, fallbackText);
     }
   }, [isPlaying, playEvidence]);
 

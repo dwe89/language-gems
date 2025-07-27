@@ -25,19 +25,40 @@ export interface VocabularyQuery {
   excludeIds?: string[];
   randomize?: boolean;
   hasAudio?: boolean;
+  // Enhanced for unified assignment system
+  curriculumLevel?: 'KS3' | 'KS4';
+  tier?: 'foundation' | 'higher' | 'both';
+  examBoard?: string;
+  themeName?: string;
+  unitName?: string;
+  isRequired?: boolean;
+  subcategory?: string;
 }
 
 /**
  * Enhanced centralized vocabulary service for all Language Gems games
  * Works with the new centralized_vocabulary table supporting multiple languages
+ * Includes performance optimizations and caching
  */
 export class CentralizedVocabularyService {
+  private cache = new Map<string, { data: CentralizedVocabularyWord[]; timestamp: number }>();
+  private readonly CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
   constructor(private supabase: SupabaseClient) {}
 
   /**
-   * Get vocabulary words based on query parameters
+   * Get vocabulary words based on query parameters with caching
    */
   async getVocabulary(query: VocabularyQuery = {}): Promise<CentralizedVocabularyWord[]> {
+    // Create cache key from query parameters
+    const cacheKey = JSON.stringify(query);
+    const cached = this.cache.get(cacheKey);
+
+    // Return cached data if still valid
+    if (cached && Date.now() - cached.timestamp < this.CACHE_DURATION) {
+      return cached.data;
+    }
+
     try {
       let supabaseQuery = this.supabase
         .from('centralized_vocabulary')
@@ -66,6 +87,35 @@ export class CentralizedVocabularyService {
         } else {
           supabaseQuery = supabaseQuery.is('audio_url', null);
         }
+      }
+
+      // Enhanced filters for unified assignment system
+      if (query.curriculumLevel) {
+        supabaseQuery = supabaseQuery.eq('curriculum_level', query.curriculumLevel);
+      }
+
+      if (query.tier) {
+        supabaseQuery = supabaseQuery.or(`tier.eq.${query.tier},tier.eq.both`);
+      }
+
+      if (query.examBoard) {
+        supabaseQuery = supabaseQuery.eq('exam_board_code', query.examBoard);
+      }
+
+      if (query.themeName) {
+        supabaseQuery = supabaseQuery.eq('theme_name', query.themeName);
+      }
+
+      if (query.unitName) {
+        supabaseQuery = supabaseQuery.eq('unit_name', query.unitName);
+      }
+
+      if (query.subcategory) {
+        supabaseQuery = supabaseQuery.eq('subcategory', query.subcategory);
+      }
+
+      if (query.isRequired !== undefined) {
+        supabaseQuery = supabaseQuery.eq('is_required', query.isRequired);
       }
       
       if (query.search) {
@@ -107,11 +157,18 @@ export class CentralizedVocabularyService {
       }
 
       // If randomize was requested and we have data, shuffle it
-      if (query.randomize && data) {
-        return this.shuffleArray([...data]);
+      let result = data || [];
+      if (query.randomize && result.length > 0) {
+        result = this.shuffleArray([...result]);
       }
 
-      return data || [];
+      // Cache the result
+      this.cache.set(cacheKey, {
+        data: result,
+        timestamp: Date.now()
+      });
+
+      return result;
     } catch (error) {
       console.error('Error fetching centralized vocabulary:', error);
       throw error;

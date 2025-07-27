@@ -395,16 +395,7 @@ export default function GamesPage() {
           languages: ['English', 'Spanish', 'French'],
           path: '/games/word-scramble'
         },
-        {
-          id: 'word-guesser',
-          name: 'Word Guesser',
-          description: 'Guess the word in limited attempts, with color hints revealing letter positions.',
-          thumbnail: '/images/games/word-guesser.jpg',
-          category: 'vocabulary',
-          popular: true,
-          languages: ['English', 'Spanish', 'French', 'German', 'Italian', 'Portuguese', 'Russian', 'Japanese', 'Mandarin', 'Arabic'],
-          path: '/games/word-guesser'
-        },
+
         {
           id: 'detective-listening',
           name: 'Detective Listening Game',

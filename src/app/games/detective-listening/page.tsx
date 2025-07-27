@@ -4,9 +4,21 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
 import DetectiveListeningGame from './components/DetectiveListeningGame';
+import DetectiveListeningAssignmentWrapper from './components/DetectiveListeningAssignmentWrapper';
 
 export default function DetectiveListeningPage() {
+  // Check for assignment mode
+  const searchParams = useSearchParams();
+  const assignmentId = searchParams?.get('assignment');
+  const mode = searchParams?.get('mode');
+
+  // If assignment mode, render assignment wrapper
+  if (assignmentId && mode === 'assignment') {
+    return <DetectiveListeningAssignmentWrapper assignmentId={assignmentId} />;
+  }
+
   const [gameStarted, setGameStarted] = useState(false);
   const [gameSettings, setGameSettings] = useState({
     caseType: '',

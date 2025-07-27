@@ -64,12 +64,25 @@ export default function EnhancedAssignmentPage() {
   }, [user, supabase, selectedClassId]);
 
   const handleAssignmentCreated = (assignmentId: string) => {
-    // Redirect to assignment details or assignments list
-    router.push('/dashboard/assignments');
+    // Redirect to assignment details or assignments list with error handling
+    setTimeout(() => {
+      try {
+        router.push('/dashboard/assignments');
+      } catch (navError) {
+        console.error('Navigation error:', navError);
+        // Fallback: use window.location if router fails
+        window.location.href = '/dashboard/assignments';
+      }
+    }, 100);
   };
 
   const handleCancel = () => {
-    router.push('/dashboard/assignments');
+    try {
+      router.push('/dashboard/assignments');
+    } catch (navError) {
+      console.error('Navigation error:', navError);
+      window.location.href = '/dashboard/assignments';
+    }
   };
 
   if (loading) {

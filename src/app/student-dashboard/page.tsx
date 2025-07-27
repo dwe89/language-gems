@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { useAuth } from '../../components/auth/AuthProvider';
 import { supabaseBrowser } from '../../components/auth/AuthProvider';
 import {
-  BookOpen, BarChart2, Edit, Award, Hexagon, Trophy, Loader2, Pickaxe
+  BookOpen, BarChart2, Edit, Award, Hexagon, Trophy, Loader2
 } from 'lucide-react';
 import type { Database } from '../../lib/database.types';
 
@@ -287,13 +287,6 @@ export default function StudentDashboard() {
           href="/student-dashboard/assignments"
           gemColor="text-purple-500"
           buttonColor="bg-purple-600"
-        />
-        <DashboardCard
-          title="Vocabulary Mining"
-          icon={<Pickaxe />}
-          href="/student-dashboard/vocabulary-mining"
-          gemColor="text-yellow-500"
-          buttonColor="bg-yellow-500"
         />
         <DashboardCard
           title="Games"

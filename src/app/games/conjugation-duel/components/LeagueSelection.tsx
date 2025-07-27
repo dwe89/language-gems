@@ -2,17 +2,24 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
+import { ArrowLeft, Globe } from 'lucide-react';
 import { useGameStore } from '../../../../store/gameStore';
 
 interface LeagueSelectionProps {
   onLeagueSelect: (leagueId: string) => void;
+  onBackToLanguages?: () => void;
+  selectedLanguage?: string;
 }
 
-export default function LeagueSelection({ onLeagueSelect }: LeagueSelectionProps) {
+export default function LeagueSelection({
+  onLeagueSelect,
+  onBackToLanguages,
+  selectedLanguage = 'spanish'
+}: LeagueSelectionProps) {
   const { leagues, playerStats } = useGameStore();
 
   const isLeagueUnlocked = (league: any) => {
-    return playerStats.level >= league.minLevel;
+    return true; // All leagues are now available
   };
 
   const getLeagueStatusText = (league: any) => {
@@ -28,6 +35,19 @@ export default function LeagueSelection({ onLeagueSelect }: LeagueSelectionProps
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 p-8">
       <div className="max-w-6xl mx-auto">
+        {/* Back Button */}
+        {onBackToLanguages && (
+          <motion.button
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            onClick={onBackToLanguages}
+            className="flex items-center text-white/80 hover:text-white mb-6 transition-colors"
+          >
+            <ArrowLeft className="mr-2" size={20} />
+            Back to Language Selection
+          </motion.button>
+        )}
+
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -30 }}
@@ -37,6 +57,12 @@ export default function LeagueSelection({ onLeagueSelect }: LeagueSelectionProps
           <h1 className="text-5xl font-bold text-white mb-4">
             ⚔️ Conjugation Duel ⚔️
           </h1>
+          <div className="flex items-center justify-center mb-4">
+            <Globe className="text-blue-400 mr-2" size={24} />
+            <span className="text-xl text-blue-400 font-semibold capitalize">
+              {selectedLanguage} Conjugations
+            </span>
+          </div>
           <p className="text-xl text-gray-300 mb-2">
             Choose Your Battle Arena
           </p>

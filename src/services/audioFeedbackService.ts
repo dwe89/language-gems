@@ -29,6 +29,9 @@ export class AudioFeedbackService {
   }
 
   private preloadAudio() {
+    // Only preload audio in the browser (not during SSR)
+    if (typeof window === 'undefined') return;
+
     // Preload gem sounds
     Object.entries(this.audioFiles.gems).forEach(([key, path]) => {
       const audio = new Audio(path);
@@ -55,6 +58,9 @@ export class AudioFeedbackService {
   }
 
   private async playAudio(key: string, volume: number = 0.7): Promise<void> {
+    // Only play audio in the browser
+    if (typeof window === 'undefined') return;
+
     try {
       const audio = this.audioCache.get(key);
       if (!audio) {

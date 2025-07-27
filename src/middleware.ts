@@ -165,25 +165,9 @@ export async function middleware(req: NextRequest) {
       const isAdmin = userRole === 'admin';
       
       if (!isPreviewPage && !isAdmin) {
-        // Check if user has active subscription
-        try {
-          const { data: subscription } = await supabase
-            .from('subscriptions')
-            .select('status')
-            .eq('user_id', user?.id)
-            .eq('status', 'active')
-            .single();
-
-          // If no active subscription, redirect to preview
-          if (!subscription) {
-            const redirectUrl = new URL('/dashboard/preview', req.url);
-            return NextResponse.redirect(redirectUrl);
-          }
-        } catch (error) {
-          // If there's an error checking subscription, redirect to preview
-          const redirectUrl = new URL('/dashboard/preview', req.url);
-          return NextResponse.redirect(redirectUrl);
-        }
+        // For now, allow all teachers access
+        // TODO: Implement proper subscription system when needed
+        console.log('Teacher dashboard access granted');
       }
     }
 
@@ -202,33 +186,23 @@ export async function middleware(req: NextRequest) {
       const isAdmin = userRole === 'admin';
       
       if (!isPreviewPage && userRole === 'student' && !isAdmin) {
-        // Check if user has active subscription
-        try {
-          const { data: subscription } = await supabase
-            .from('subscriptions')
-            .select('status')
-            .eq('user_id', user?.id)
-            .eq('status', 'active')
-            .single();
-
-          // If no active subscription, redirect to preview
-          if (!subscription) {
-            const redirectUrl = new URL('/student-dashboard/preview', req.url);
-            return NextResponse.redirect(redirectUrl);
-          }
-        } catch (error) {
-          // If there's an error checking subscription, redirect to preview
-          const redirectUrl = new URL('/student-dashboard/preview', req.url);
-          return NextResponse.redirect(redirectUrl);
-        }
+        // For now, allow all students access
+        // TODO: Implement proper subscription system when needed
+        console.log('Student dashboard access granted');
       }
     }
 
     // Check if teacher/admin trying to access student routes
     if (session && (path === '/student-dashboard' || path.startsWith('/student-dashboard/'))) {
       if (userRole === 'teacher' || userRole === 'admin') {
-        const redirectUrl = new URL('/dashboard', req.url);
-        return NextResponse.redirect(redirectUrl);
+        // Allow teachers to access student dashboard in preview mode
+        const url = new URL(req.url);
+        const isPreviewMode = url.searchParams.get('preview') === 'true';
+
+        if (!isPreviewMode) {
+          const redirectUrl = new URL('/dashboard', req.url);
+          return NextResponse.redirect(redirectUrl);
+        }
       }
     }
 

@@ -102,14 +102,15 @@ export default function HangmanGameWrapper(props: HangmanGameWrapperProps) {
     }
   }, [props.userId]);
 
-  // Use the unified vocabulary hook - always use category/subcategory for filtering
+  // Use the unified vocabulary hook - disable if we have assignment vocabulary
   const { vocabulary, loading: isLoading, error } = useGameVocabulary({
     language: mapLanguage(props.settings.language),
     categoryId: mapCategory(props.settings.category),
     subcategoryId: props.settings.subcategory,
     limit: 100,
     randomize: true,
-    hasAudio: true
+    hasAudio: true,
+    enabled: !props.settings.categoryVocabulary || props.settings.categoryVocabulary.length === 0
   });
 
   console.log('🎯 HangmanGameWrapper - Settings received:', {
@@ -147,8 +148,13 @@ export default function HangmanGameWrapper(props: HangmanGameWrapperProps) {
     return difficultyMap[difficulty] || 'beginner';
   };
 
-  // Process vocabulary from the hook
+  // Process vocabulary from the hook (only if no assignment vocabulary)
   useEffect(() => {
+    // Skip if we have assignment vocabulary
+    if (props.settings.categoryVocabulary && props.settings.categoryVocabulary.length > 0) {
+      return;
+    }
+
     if (!vocabulary || vocabulary.length === 0) return;
 
     console.log('Processing vocabulary from hook:', vocabulary.length, 'words');
@@ -193,7 +199,7 @@ export default function HangmanGameWrapper(props: HangmanGameWrapperProps) {
     });
 
     setVocabularyPool(organizedVocabulary);
-  }, [vocabulary, props.settings.language, props.settings.category]);
+  }, [vocabulary, props.settings.language, props.settings.category, props.settings.categoryVocabulary]);
 
   // Start game session when vocabulary is loaded
   useEffect(() => {
@@ -202,12 +208,36 @@ export default function HangmanGameWrapper(props: HangmanGameWrapperProps) {
     }
   }, [gameService, props.userId, vocabularyPool, gameSessionId]);
 
+  // End the session when the user leaves the game
+  const endGameSession = async () => {
+    if (gameService && gameSessionId && props.userId && sessionStartTime) {
+      try {
+        const sessionDuration = Math.floor((Date.now() - sessionStartTime.getTime()) / 1000);
+
+        await gameService.endGameSession({
+          session_id: gameSessionId,
+          student_id: props.userId,
+          assignment_id: props.assignmentId || undefined,
+          session_duration: sessionDuration,
+          total_score: score,
+          total_correct: correctAnswers,
+          total_incorrect: incorrectAnswers,
+          completion_status: 'completed'
+        });
+
+        console.log('Game session ended successfully');
+      } catch (error) {
+        console.error('Error ending game session:', error);
+      }
+    }
+  };
+
   // End session when component unmounts (user leaves the game)
   useEffect(() => {
     return () => {
       endGameSession();
     };
-  }, []);
+  }, [endGameSession]);
 
   const startGameSession = async () => {
     if (!gameService || !props.userId) return;
@@ -504,36 +534,7 @@ export default function HangmanGameWrapper(props: HangmanGameWrapperProps) {
     }
   };
 
-  // End the session when the user leaves the game
-  const endGameSession = async () => {
-    if (gameService && gameSessionId && props.userId && sessionStartTime) {
-      try {
-        const sessionDuration = Math.floor((Date.now() - sessionStartTime.getTime()) / 1000);
-        const accuracy = sessionStats.totalWordsAttempted > 0
-          ? (sessionStats.totalWordsCorrect / sessionStats.totalWordsAttempted) * 100
-          : 0;
 
-        await gameService.endGameSession(gameSessionId, {
-          student_id: props.userId,
-          final_score: sessionStats.totalScore,
-          accuracy_percentage: accuracy,
-          completion_percentage: 100,
-          words_attempted: sessionStats.totalWordsAttempted,
-          words_correct: sessionStats.totalWordsCorrect,
-          unique_words_practiced: sessionStats.totalWordsCorrect,
-          duration_seconds: sessionDuration,
-          session_data: {
-            sessionStats,
-            totalSessionTime: sessionDuration
-          }
-        });
-
-        console.log('Hangman game session ended successfully');
-      } catch (error) {
-        console.error('Failed to end hangman game session:', error);
-      }
-    }
-  };
 
   // Enhanced settings - keep original category, don't force to 'custom'
   const enhancedSettings = {

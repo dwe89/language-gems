@@ -7,6 +7,14 @@ import { useVocabularyByCategory } from '../../../../hooks/useVocabulary';
 import { VOCABULARY_CATEGORIES } from '../../../../components/games/ModernCategorySelector';
 import { useAudioManager } from '../hooks/useAudioManager';
 import { Evidence } from '../types';
+import { StandardVocabularyItem, AssignmentData, GameProgress, calculateStandardScore } from '../../../../components/games/templates/GameAssignmentWrapper';
+
+interface AssignmentMode {
+  assignment: AssignmentData;
+  vocabulary: StandardVocabularyItem[];
+  onProgressUpdate: (progress: Partial<GameProgress>) => void;
+  onGameComplete: (finalProgress: GameProgress) => void;
+}
 
 interface DetectiveRoomProps {
   caseType: string;
@@ -14,9 +22,10 @@ interface DetectiveRoomProps {
   language: string;
   onGameComplete: (results: any) => void;
   onBack: () => void;
+  assignmentMode?: AssignmentMode;
 }
 
-export default function DetectiveRoom({ caseType, subcategory, language, onGameComplete, onBack }: DetectiveRoomProps) {
+export default function DetectiveRoom({ caseType, subcategory, language, onGameComplete, onBack, assignmentMode }: DetectiveRoomProps) {
   const [currentEvidenceIndex, setCurrentEvidenceIndex] = useState(0);
   const [evidenceList, setEvidenceList] = useState<Evidence[]>([]);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
@@ -38,14 +47,17 @@ export default function DetectiveRoom({ caseType, subcategory, language, onGameC
     return mapping[lang] || 'es';
   };
 
-  // Load vocabulary using the category system
-  const { vocabulary, loading: vocabularyLoading } = useVocabularyByCategory({
+  // Load vocabulary using the category system (only if not in assignment mode)
+  const { vocabulary: categoryVocabulary, loading: vocabularyLoading } = useVocabularyByCategory({
     language: mapLanguageForVocab(language),
     categoryId: caseType,
     subcategoryId: subcategory,
     difficultyLevel: 'beginner',
     curriculumLevel: 'KS3'
   });
+
+  // Use assignment vocabulary if available, otherwise use category vocabulary
+  const vocabulary = assignmentMode ? assignmentMode.vocabulary : categoryVocabulary;
 
   const { playEvidence, isPlaying } = useAudioManager();
 
@@ -79,7 +91,7 @@ export default function DetectiveRoom({ caseType, subcategory, language, onGameC
         const distractors = createDistractors(item.translation, vocabulary);
         return {
           id: `evidence-${index}`,
-          audio: `detective_${item.word}.mp3`, // This would need to be generated or mapped
+          audio: item.audio_url || `detective_${item.word}.mp3`, // Use actual audio URL if available
           correct: item.translation,
           options: [item.translation, ...distractors].sort(() => Math.random() - 0.5),
           answered: false,
@@ -96,7 +108,8 @@ export default function DetectiveRoom({ caseType, subcategory, language, onGameC
 
   const handlePlayEvidence = async () => {
     if (currentEvidence && replayCount < 2) {
-      await playEvidence(currentEvidence.audio);
+      // Pass the actual word as fallback text for TTS
+      await playEvidence(currentEvidence.audio, currentEvidence.word);
       if (!isPlaying) {
         setReplayCount(prev => prev + 1);
       }
@@ -123,12 +136,39 @@ export default function DetectiveRoom({ caseType, subcategory, language, onGameC
     setEvidenceList(newEvidenceList);
 
     // Update progress
+    const newCorrectAnswers = gameProgress.correctAnswers + (isCorrect ? 1 : 0);
+    const wordsCompleted = currentEvidenceIndex + 1;
+
     if (isCorrect) {
       setGameProgress(prev => ({
         ...prev,
-        correctAnswers: prev.correctAnswers + 1,
+        correctAnswers: newCorrectAnswers,
         evidenceCollected: [...prev.evidenceCollected, updatedEvidence]
       }));
+    }
+
+    // Update assignment progress if in assignment mode
+    if (assignmentMode) {
+      const { score, accuracy, maxScore } = calculateStandardScore(
+        newCorrectAnswers,
+        wordsCompleted,
+        Date.now(),
+        120
+      );
+
+      assignmentMode.onProgressUpdate({
+        wordsCompleted,
+        totalWords: evidenceList.length,
+        score,
+        maxScore,
+        accuracy,
+        sessionData: {
+          totalCases: wordsCompleted,
+          perfectCases: newCorrectAnswers,
+          totalAttempts: wordsCompleted,
+          averageResponseTime: 0
+        }
+      });
     }
 
     // Auto-advance after feedback
@@ -140,11 +180,44 @@ export default function DetectiveRoom({ caseType, subcategory, language, onGameC
         setReplayCount(0);
       } else {
         // Game complete
-        onGameComplete({
-          correctAnswers: gameProgress.correctAnswers + (isCorrect ? 1 : 0),
-          totalEvidence: evidenceList.length,
-          evidenceCollected: [...gameProgress.evidenceCollected, updatedEvidence]
-        });
+        const finalCorrectAnswers = gameProgress.correctAnswers + (isCorrect ? 1 : 0);
+        const totalWords = evidenceList.length;
+
+        if (assignmentMode) {
+          // Assignment mode completion
+          const { score, accuracy, maxScore } = calculateStandardScore(
+            finalCorrectAnswers,
+            totalWords,
+            Date.now(),
+            120 // Base points for detective work
+          );
+
+          assignmentMode.onGameComplete({
+            assignmentId: assignmentMode.assignment.id,
+            gameId: 'detective-listening',
+            studentId: '', // Will be set by wrapper
+            wordsCompleted: totalWords,
+            totalWords,
+            score,
+            maxScore,
+            accuracy,
+            timeSpent: 0, // Will be calculated by wrapper
+            completedAt: new Date(),
+            sessionData: {
+              totalCases: totalWords,
+              perfectCases: finalCorrectAnswers,
+              totalAttempts: totalWords,
+              averageResponseTime: 0
+            }
+          });
+        } else {
+          // Regular game completion
+          onGameComplete({
+            correctAnswers: finalCorrectAnswers,
+            totalEvidence: totalWords,
+            evidenceCollected: [...gameProgress.evidenceCollected, updatedEvidence]
+          });
+        }
       }
     }, 2000);
   };

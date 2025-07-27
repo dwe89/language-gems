@@ -17,8 +17,10 @@ import {
   BookOpen
 } from 'lucide-react';
 import { createBrowserClient } from '@supabase/ssr';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { useAuth } from '../../../components/auth/AuthProvider';
 import confetti from 'canvas-confetti';
+import WordBlastAssignmentWrapper from './components/WordBlastAssignmentWrapper';
 import { motion, AnimatePresence } from 'framer-motion';
 import CategorySelector from '../../../components/games/CategorySelector';
 import { useVocabularyByCategory } from '../../../hooks/useVocabulary';
@@ -376,6 +378,23 @@ const InteractiveGemGame: React.FC<InteractiveGemGameProps> = ({
 };
 
 export default function GemWordBlastGame() {
+  const { user, isLoading } = useAuth();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Check for assignment mode
+  const assignmentId = searchParams?.get('assignment');
+  const mode = searchParams?.get('mode');
+
+  // If in assignment mode, use the assignment wrapper
+  if (assignmentId && mode === 'assignment') {
+    return (
+      <WordBlastAssignmentWrapper
+        assignmentId={assignmentId}
+      />
+    );
+  }
+
   const [gameState, setGameState] = useState<GameState>('ready');
   const [gameSettings, setGameSettings] = useState<GameSettings>({
     timeLimit: 60,
@@ -426,7 +445,6 @@ export default function GemWordBlastGame() {
   
   const [timeLeft, setTimeLeft] = useState(gameSettings.timeLimit);
   const [lives, setLives] = useState(3);
-  const [assignmentId, setAssignmentId] = useState<string | null>(null);
   const [isPaused, setIsPaused] = useState(false);
 
   // Generate challenges from vocabulary
@@ -485,13 +503,8 @@ export default function GemWordBlastGame() {
   
   // Initialize game
   useEffect(() => {
-    const assignmentIdParam = searchParams?.get('assignment');
-    if (assignmentIdParam) {
-      setAssignmentId(assignmentIdParam);
-    }
-    
     setCurrentChallenge(translationChallenges[Math.floor(Math.random() * translationChallenges.length)]);
-    
+
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };

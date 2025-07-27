@@ -1,12 +1,50 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '../../components/auth/AuthProvider';
-import { User, ShoppingBag, Settings, CreditCard, Crown, ArrowRight } from 'lucide-react';
+import { supabaseBrowser } from '../../components/auth/AuthProvider';
+import { User, ShoppingBag, Settings, CreditCard, Crown, ArrowRight, School } from 'lucide-react';
 
 export default function AccountPage() {
   const { user, isLoading, userRole, hasSubscription, isAdmin, isTeacher } = useAuth();
+  const [schoolInfo, setSchoolInfo] = useState<{schoolCode: string, schoolInitials: string} | null>(null);
+
+  // Load school information for teachers
+  useEffect(() => {
+    async function loadSchoolInfo() {
+      if (!user || !isTeacher) return;
+
+      try {
+        // Get teacher's school initials from their profile
+        const { data: profile, error: profileError } = await supabaseBrowser
+          .from('user_profiles')
+          .select('school_initials')
+          .eq('user_id', user.id)
+          .single();
+
+        if (profileError || !profile?.school_initials) return;
+
+        // Get school code from school_codes table
+        const { data: schoolData, error: schoolError } = await supabaseBrowser
+          .from('school_codes')
+          .select('code, school_initials')
+          .eq('school_initials', profile.school_initials)
+          .single();
+
+        if (!schoolError && schoolData) {
+          setSchoolInfo({
+            schoolCode: schoolData.code,
+            schoolInitials: schoolData.school_initials
+          });
+        }
+      } catch (error) {
+        console.error('Error loading school info:', error);
+      }
+    }
+
+    loadSchoolInfo();
+  }, [user, isTeacher]);
 
   // Show loading state while auth is initializing
   if (isLoading) {
@@ -89,6 +127,12 @@ export default function AccountPage() {
                   <span className="px-2 py-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs rounded-full flex items-center">
                     <Crown className="h-3 w-3 mr-1" />
                     Premium
+                  </span>
+                )}
+                {schoolInfo && isTeacher && (
+                  <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full flex items-center">
+                    <School className="h-3 w-3 mr-1" />
+                    School Code: {schoolInfo.schoolCode}
                   </span>
                 )}
               </div>

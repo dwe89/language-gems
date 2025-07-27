@@ -1,12 +1,7 @@
-import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '../../../../lib/supabase-server';
 
 export const dynamic = 'force-dynamic';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
 
 export async function GET(
   request: NextRequest,
@@ -15,17 +10,13 @@ export async function GET(
   try {
     const { assignmentId } = await params;
 
-    // Get the authenticated user
-    const authHeader = request.headers.get('authorization');
-    const sessionToken = authHeader?.replace('Bearer ', '');
-    
-    let user = null;
-    if (sessionToken) {
-      const { data: { user: authUser } } = await supabase.auth.getUser(sessionToken);
-      user = authUser;
-    }
+    // Create Supabase client with proper cookie-based authentication
+    const supabase = await createClient();
 
-    if (!user) {
+    // Verify authentication
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      console.error('Authentication error:', authError);
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -37,7 +28,9 @@ export async function GET(
         title,
         description,
         type,
+        game_type,
         vocabulary_criteria,
+        game_config,
         due_date,
         points,
         status,
@@ -60,10 +53,14 @@ export async function GET(
     // Check if user has access to this assignment
     // Either as a teacher (owns the assignment) or as a student (in the class)
     if (assignment.created_by === user.id) {
-      // Teacher access - return full details
+      // Teacher access - return full details with proper game_type
       return NextResponse.json({
         success: true,
-        assignment,
+        assignment: {
+          ...assignment,
+          game_type: assignment.game_type || assignment.type, // Ensure game_type is set
+          game_config: assignment.config || assignment.vocabulary_criteria // Use config if available
+        },
         access_level: 'teacher'
       });
     } else {

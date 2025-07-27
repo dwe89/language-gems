@@ -8,6 +8,7 @@ import { useAuth } from '../../../components/auth/AuthProvider';
 import { useGameVocabulary, transformVocabularyForGame } from '../../../hooks/useGameVocabulary';
 import { VOCABULARY_CATEGORIES } from '../../../components/games/ModernCategorySelector';
 import WordScrambleGameEnhanced from './components/WordScrambleGameEnhanced';
+import WordScrambleAssignmentWrapper from './components/WordScrambleAssignmentWrapper';
 import GameSettingsEnhanced from './components/GameSettingsEnhanced';
 
 // Game configuration types
@@ -43,44 +44,44 @@ interface GameResult {
 }
 
 const GAME_MODES = [
-  { 
-    id: 'classic' as GameMode, 
-    name: 'Classic', 
+  {
+    id: 'classic' as GameMode,
+    name: 'Classic',
     description: 'Standard word scramble with time limit',
     icon: '📝',
     color: 'from-blue-500 to-blue-600'
   },
-  { 
-    id: 'blitz' as GameMode, 
-    name: 'Speed Blitz', 
+  {
+    id: 'blitz' as GameMode,
+    name: 'Speed Blitz',
     description: 'Fast-paced rapid-fire word solving',
     icon: '⚡',
     color: 'from-yellow-500 to-orange-500'
   },
-  { 
-    id: 'marathon' as GameMode, 
-    name: 'Marathon', 
+  {
+    id: 'marathon' as GameMode,
+    name: 'Marathon',
     description: 'Long endurance challenge',
     icon: '🏃',
     color: 'from-green-500 to-green-600'
   },
-  { 
-    id: 'timed_attack' as GameMode, 
-    name: 'Timed Attack', 
+  {
+    id: 'timed_attack' as GameMode,
+    name: 'Timed Attack',
     description: 'Quick burst challenges',
     icon: '💥',
     color: 'from-red-500 to-red-600'
   },
-  { 
-    id: 'word_storm' as GameMode, 
-    name: 'Word Storm', 
+  {
+    id: 'word_storm' as GameMode,
+    name: 'Word Storm',
     description: 'Rapid changing word challenges',
     icon: '🌪️',
     color: 'from-purple-500 to-purple-600'
   },
-  { 
-    id: 'zen' as GameMode, 
-    name: 'Zen Mode', 
+  {
+    id: 'zen' as GameMode,
+    name: 'Zen Mode',
     description: 'Relaxed, no time pressure',
     icon: '🧘',
     color: 'from-teal-500 to-cyan-500'
@@ -94,44 +95,26 @@ export default function WordScramblePage() {
 
   // Get URL parameters for assignment mode
   const assignmentId = searchParams?.get('assignment');
-  const language = searchParams?.get('language') || 'spanish';
-  const difficulty = searchParams?.get('difficulty') || 'medium';
-  const category = searchParams?.get('category') || 'basics_core_language';
-
-  // Redirect to login if not authenticated
-  if (!isLoading && !user) {
-    router.push('/auth/login');
-    return null;
-  }
-
-  // Show loading while authenticating
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-600 via-blue-600 to-indigo-700 flex items-center justify-center">
-        <div className="text-center text-white">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-white mx-auto mb-4"></div>
-          <p className="text-xl">Loading Word Scramble...</p>
-        </div>
-      </div>
-    );
-  }
+  const languageParam = searchParams?.get('language') || 'spanish'; // Renamed to avoid conflict
+  const difficultyParam = searchParams?.get('difficulty') || 'medium'; // Renamed to avoid conflict
+  const categoryParam = searchParams?.get('category') || 'basics_core_language'; // Renamed to avoid conflict
 
   const [gameState, setGameState] = useState<'menu' | 'settings' | 'playing' | 'results'>(assignmentId ? 'playing' : 'menu');
   const [gameSettings, setGameSettings] = useState<GameSettings>({
-    difficulty: assignmentId ? (difficulty as Difficulty) : 'medium',
-    category: assignmentId ? category : 'basics_core_language',
+    difficulty: assignmentId ? (difficultyParam as Difficulty) : 'medium',
+    category: assignmentId ? categoryParam : 'basics_core_language',
     subcategory: null,
-    language: assignmentId ? language : 'spanish',
+    language: assignmentId ? languageParam : 'spanish',
     gameMode: 'classic'
   });
   const [gameResult, setGameResult] = useState<GameResult | null>(null);
   const [isGameStarting, setIsGameStarting] = useState(false);
-  
+
   // Category selection state
   const [selectedCategory, setSelectedCategory] = useState<string>('basics_core_language');
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
-  const [showCategorySelector, setShowCategorySelector] = useState(false);
-  
+  const [showCategorySelector, setShowCategorySelector] = useState(false); // This state is declared but not used in the provided code.
+
   // Map language for vocabulary loading
   const mapLanguageForVocab = (lang: string) => {
     const mapping: Record<string, string> = {
@@ -154,6 +137,25 @@ export default function WordScramblePage() {
     limit: 100,
     randomize: true
   });
+
+  // Now, place conditional returns AFTER all hooks are called
+  // Show loading while authenticating
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-600 via-blue-600 to-indigo-700 flex items-center justify-center">
+        <div className="text-center text-white">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-white mx-auto mb-4"></div>
+          <p className="text-xl">Loading Word Scramble...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Redirect to login if not authenticated
+  if (!user) {
+    router.push('/auth/login');
+    return null; // Return null immediately after redirecting
+  }
 
   const handleGameStart = (settings: GameSettings) => {
     setGameSettings(settings);
@@ -199,14 +201,25 @@ export default function WordScramblePage() {
   }
 
   if (gameState === 'playing') {
-    return (
+    return assignmentId ? (
+      <WordScrambleAssignmentWrapper
+        assignmentId={assignmentId}
+        studentId={user?.id || ''} // user is guaranteed to exist here due to early return
+        onAssignmentComplete={(progress) => {
+          console.log('Word Scramble assignment completed:', progress);
+          setGameState('results');
+        }}
+        onBackToAssignments={() => router.push('/student-dashboard/assignments')}
+        onBackToMenu={handleBackToMenu}
+      />
+    ) : (
       <WordScrambleGameEnhanced
         settings={gameSettings}
         onBackToMenu={handleBackToMenu}
         onGameEnd={handleGameEnd}
         categoryVocabulary={categoryVocabulary}
         assignmentId={assignmentId}
-        userId={user?.id}
+        userId={user?.id} // user is guaranteed to exist here
         isAssignmentMode={!!assignmentId}
       />
     );
@@ -239,7 +252,7 @@ export default function WordScramblePage() {
           <h2 className="text-4xl font-bold mb-6 bg-gradient-to-r from-yellow-300 to-orange-300 bg-clip-text text-transparent">
             {gameResult.won ? 'Incredible Performance!' : 'Great Effort!'}
           </h2>
-          
+
           {/* Enhanced Results Display */}
           <div className="grid grid-cols-2 gap-4 mb-8">
             <div className="bg-gradient-to-br from-blue-500/20 to-blue-600/20 rounded-lg p-4 border border-blue-400/30">
@@ -300,7 +313,7 @@ export default function WordScramblePage() {
               </div>
             </div>
           )}
-          
+
           <div className="flex flex-wrap gap-4 justify-center">
             <motion.button
               whileHover={{ scale: 1.05 }}
@@ -330,7 +343,7 @@ export default function WordScramblePage() {
       {/* Background Effects */}
       <div className="absolute inset-0 bg-[url('/pattern.svg')] opacity-10"></div>
       <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-transparent via-blue-500/5 to-purple-500/10"></div>
-      
+
       <motion.div
         initial={{ scale: 0, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
@@ -425,7 +438,7 @@ export default function WordScramblePage() {
           >
             🚀 Start Game
           </motion.button>
-          
+
           <motion.button
             whileHover={{ scale: 1.05, boxShadow: '0 20px 40px rgba(0,0,0,0.3)' }}
             whileTap={{ scale: 0.95 }}

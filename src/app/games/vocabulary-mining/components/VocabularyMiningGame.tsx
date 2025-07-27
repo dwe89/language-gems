@@ -170,6 +170,10 @@ export default function VocabularyMiningGame({
   const timerRef = useRef<NodeJS.Timeout>();
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
+  // Check if we're in assignment mode
+  const isAssignmentMode = config?.assignmentMode === true;
+  const assignmentTitle = config?.assignmentTitle || '';
+
   // Initialize Enhanced Game Service for leaderboard updates
   const [enhancedGameService, setEnhancedGameService] = useState<EnhancedGameService | null>(null);
 
@@ -461,8 +465,12 @@ export default function VocabularyMiningGame({
           xpRequired = calculateXPForLevel(level);
         }
 
-        setCurrentLevel(level - 1); // Adjust because we went one level too far
-        setXpToNextLevel(calculateXPForLevel(level - 1) - calculatedXP);
+        const actualLevel = level - 1; // Adjust because we went one level too far
+        setCurrentLevel(actualLevel);
+
+        // Calculate XP needed for NEXT level (not current level)
+        const xpForNextLevel = calculateXPForLevel(actualLevel + 1);
+        setXpToNextLevel(xpForNextLevel - calculatedXP);
       }
     } catch (error) {
       console.error('Error loading user progress:', error);
@@ -1230,7 +1238,7 @@ export default function VocabularyMiningGame({
             onClick={onExit}
             className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white py-3 px-6 rounded-xl font-semibold transition-all duration-200"
           >
-            Return to Mining Hub
+            {isAssignmentMode ? 'Back to Assignments' : 'Return to Mining Hub'}
           </button>
         </motion.div>
       </div>
@@ -1257,10 +1265,16 @@ export default function VocabularyMiningGame({
             className="flex items-center text-white hover:text-gray-300 transition-colors"
           >
             <Home className="h-5 w-5 mr-2" />
-            Exit Mining
+            {isAssignmentMode ? 'Back to Assignments' : 'Exit Mining'}
           </button>
 
           <div className="flex items-center space-x-6 text-white">
+            {isAssignmentMode && assignmentTitle && (
+              <div className="flex items-center">
+                <BookOpen className="h-5 w-5 mr-2 text-green-400" />
+                <span className="font-semibold">{assignmentTitle}</span>
+              </div>
+            )}
             <div className="flex items-center">
               <GemIcon type={gameState.currentGemType} size="small" animated={true} className="mr-2" />
               <span>{gameState.gemsCollected} Gems</span>
@@ -1304,7 +1318,7 @@ export default function VocabularyMiningGame({
             <div
               className="bg-gradient-to-r from-yellow-400 to-orange-500 h-1.5 rounded-full transition-all duration-500"
               style={{
-                width: `${Math.max(0, Math.min(100, ((calculateXPForLevel(currentLevel) - xpToNextLevel) / calculateXPForLevel(currentLevel)) * 100))}%`
+                width: `${Math.max(0, Math.min(100, ((calculateXPForLevel(currentLevel + 1) - xpToNextLevel) / calculateXPForLevel(currentLevel + 1)) * 100))}%`
               }}
             />
           </div>
@@ -1527,6 +1541,7 @@ export default function VocabularyMiningGame({
                       score: gameState.score,
                       correctAnswers: gameState.correctAnswers,
                       incorrectAnswers: gameState.incorrectAnswers,
+                      totalWords: vocabulary.length,
                       timeSpent: gameState.timeSpent,
                       gemsCollected: gameState.gemsCollected,
                       maxStreak: gameState.maxStreak
