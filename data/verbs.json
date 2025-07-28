@@ -288,5 +288,230 @@
         }
       }
     ]
+  },
+  "french": {
+    "regular": {
+      "er": [
+        {
+          "infinitive": "parler",
+          "english": "to speak",
+          "difficulty": 1,
+          "conjugations": {
+            "present": {
+              "je": "parle",
+              "tu": "parles",
+              "il": "parle",
+              "nous": "parlons",
+              "vous": "parlez",
+              "ils": "parlent"
+            },
+            "passé_composé": {
+              "je": "ai parlé",
+              "tu": "as parlé",
+              "il": "a parlé",
+              "nous": "avons parlé",
+              "vous": "avez parlé",
+              "ils": "ont parlé"
+            }
+          }
+        },
+        {
+          "infinitive": "manger",
+          "english": "to eat",
+          "difficulty": 1,
+          "conjugations": {
+            "present": {
+              "je": "mange",
+              "tu": "manges",
+              "il": "mange",
+              "nous": "mangeons",
+              "vous": "mangez",
+              "ils": "mangent"
+            },
+            "passé_composé": {
+              "je": "ai mangé",
+              "tu": "as mangé",
+              "il": "a mangé",
+              "nous": "avons mangé",
+              "vous": "avez mangé",
+              "ils": "ont mangé"
+            }
+          }
+        }
+      ],
+      "ir": [
+        {
+          "infinitive": "finir",
+          "english": "to finish",
+          "difficulty": 1,
+          "conjugations": {
+            "present": {
+              "je": "finis",
+              "tu": "finis",
+              "il": "finit",
+              "nous": "finissons",
+              "vous": "finissez",
+              "ils": "finissent"
+            },
+            "passé_composé": {
+              "je": "ai fini",
+              "tu": "as fini",
+              "il": "a fini",
+              "nous": "avons fini",
+              "vous": "avez fini",
+              "ils": "ont fini"
+            }
+          }
+        }
+      ]
+    },
+    "irregular": [
+      {
+        "infinitive": "être",
+        "english": "to be",
+        "difficulty": 3,
+        "conjugations": {
+          "present": {
+            "je": "suis",
+            "tu": "es",
+            "il": "est",
+            "nous": "sommes",
+            "vous": "êtes",
+            "ils": "sont"
+          },
+          "passé_composé": {
+            "je": "ai été",
+            "tu": "as été",
+            "il": "a été",
+            "nous": "avons été",
+            "vous": "avez été",
+            "ils": "ont été"
+          }
+        }
+      },
+      {
+        "infinitive": "avoir",
+        "english": "to have",
+        "difficulty": 3,
+        "conjugations": {
+          "present": {
+            "je": "ai",
+            "tu": "as",
+            "il": "a",
+            "nous": "avons",
+            "vous": "avez",
+            "ils": "ont"
+          },
+          "passé_composé": {
+            "je": "ai eu",
+            "tu": "as eu",
+            "il": "a eu",
+            "nous": "avons eu",
+            "vous": "avez eu",
+            "ils": "ont eu"
+          }
+        }
+      }
+    ]
+  },
+  "german": {
+    "regular": {
+      "weak": [
+        {
+          "infinitive": "machen",
+          "english": "to make/do",
+          "difficulty": 1,
+          "conjugations": {
+            "present": {
+              "ich": "mache",
+              "du": "machst",
+              "er": "macht",
+              "wir": "machen",
+              "ihr": "macht",
+              "sie": "machen"
+            },
+            "perfect": {
+              "ich": "habe gemacht",
+              "du": "hast gemacht",
+              "er": "hat gemacht",
+              "wir": "haben gemacht",
+              "ihr": "habt gemacht",
+              "sie": "haben gemacht"
+            }
+          }
+        },
+        {
+          "infinitive": "spielen",
+          "english": "to play",
+          "difficulty": 1,
+          "conjugations": {
+            "present": {
+              "ich": "spiele",
+              "du": "spielst",
+              "er": "spielt",
+              "wir": "spielen",
+              "ihr": "spielt",
+              "sie": "spielen"
+            },
+            "perfect": {
+              "ich": "habe gespielt",
+              "du": "hast gespielt",
+              "er": "hat gespielt",
+              "wir": "haben gespielt",
+              "ihr": "habt gespielt",
+              "sie": "haben gespielt"
+            }
+          }
+        }
+      ]
+    },
+    "irregular": [
+      {
+        "infinitive": "sein",
+        "english": "to be",
+        "difficulty": 3,
+        "conjugations": {
+          "present": {
+            "ich": "bin",
+            "du": "bist",
+            "er": "ist",
+            "wir": "sind",
+            "ihr": "seid",
+            "sie": "sind"
+          },
+          "perfect": {
+            "ich": "bin gewesen",
+            "du": "bist gewesen",
+            "er": "ist gewesen",
+            "wir": "sind gewesen",
+            "ihr": "seid gewesen",
+            "sie": "sind gewesen"
+          }
+        }
+      },
+      {
+        "infinitive": "haben",
+        "english": "to have",
+        "difficulty": 3,
+        "conjugations": {
+          "present": {
+            "ich": "habe",
+            "du": "hast",
+            "er": "hat",
+            "wir": "haben",
+            "ihr": "habt",
+            "sie": "haben"
+          },
+          "perfect": {
+            "ich": "habe gehabt",
+            "du": "hast gehabt",
+            "er": "hat gehabt",
+            "wir": "haben gehabt",
+            "ihr": "habt gehabt",
+            "sie": "haben gehabt"
+          }
+        }
+      }
+    ]
   }
 }

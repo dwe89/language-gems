@@ -114,7 +114,7 @@ interface GameStore {
   checkLevelUp: () => boolean;
   
   // Data loading
-  loadLeagues: (leagues: League[]) => void;
+  loadLeagues: (leagues: League[], language?: string) => void;
   loadVerbs: (verbs: any) => void;
 }
 
@@ -123,7 +123,7 @@ const initialPlayerStats: PlayerStats = {
   experience: 0,
   totalWins: 0,
   totalLosses: 0,
-  currentLeague: 'bronze_arena',
+  currentLeague: 'bronze',
   accuracy: 0,
   longestWinStreak: 0,
   currentWinStreak: 0,
@@ -271,7 +271,16 @@ export const useGameStore = create<GameStore>()(
       },
 
       // Data loading
-      loadLeagues: (leagues) => set({ leagues }),
+      loadLeagues: (leagues, language = 'spanish') => {
+        // If leagues is an object with language keys, extract the specific language
+        if (leagues && typeof leagues === 'object' && !Array.isArray(leagues)) {
+          const languageLeagues = (leagues as any)[language] || (leagues as any).spanish || [];
+          set({ leagues: languageLeagues });
+        } else {
+          // If it's already an array, use it directly
+          set({ leagues: leagues || [] });
+        }
+      },
       loadVerbs: (verbs) => set({ verbs }),
     }),
     {

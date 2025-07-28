@@ -91,23 +91,18 @@ export default function StudentAssignmentDetailPage() {
           return;
         }
 
-        // Get game completion status for this student
-        const { data: gameProgress, error: gameProgressError } = await supabase
-          .from('assignment_game_progress')
-          .select('game_id, status, score, time_spent')
+        // Get assignment completion status for this student
+        const { data: assignmentProgress, error: progressError } = await supabase
+          .from('assignment_progress')
+          .select('status, score, accuracy, time_spent, completed_at')
           .eq('assignment_id', assignmentId)
-          .eq('student_id', user.id);
+          .eq('student_id', user.id)
+          .single();
 
-        if (gameProgressError) {
-          console.error('Error fetching game progress:', gameProgressError);
+        if (progressError && progressError.code !== 'PGRST116') {
+          console.error('Error fetching assignment progress:', progressError);
           // Continue without progress data
         }
-
-        // Create a map for quick lookup of game completion status
-        const gameProgressMap = new Map();
-        gameProgress?.forEach(progress => {
-          gameProgressMap.set(progress.game_id, progress);
-        });
 
         // Check if this is a multi-game assignment
         const isMultiGame = assignmentData.game_config?.multiGame && assignmentData.game_config?.selectedGames?.length > 1;
@@ -115,7 +110,9 @@ export default function StudentAssignmentDetailPage() {
         const gameNameMap: Record<string, { name: string; description: string }> = {
           'vocabulary-mining': { name: 'Vocabulary Mining', description: 'Mine vocabulary gems to build your collection' },
           'memory-game': { name: 'Memory Match', description: 'Match vocabulary pairs to improve recall' },
-          'word-blast': { name: 'Word Blast', description: 'Fast-paced rocket shooting with translations' },
+          'memory-match': { name: 'Memory Match', description: 'Match vocabulary pairs to improve recall' },
+          'word-blast': { name: 'Word Blast', description: 'Fast-paced sentence building with falling words' },
+          'vocab-blast': { name: 'Vocab Blast', description: 'Click vocabulary objects in themed environments' },
           'speed-builder': { name: 'Speed Builder', description: 'Build sentences quickly and accurately' },
           'translation-tycoon': { name: 'Translation Tycoon', description: 'Build your business empire with vocabulary' },
           'conjugation-duel': { name: 'Conjugation Duel', description: 'Epic verb battles in different arenas' },
@@ -134,27 +131,28 @@ export default function StudentAssignmentDetailPage() {
           // Multi-game assignment
           games = assignmentData.game_config.selectedGames.map((gameId: string) => {
             const gameInfo = gameNameMap[gameId] || { name: gameId, description: 'Language learning game' };
-            const progress = gameProgressMap.get(gameId);
+            // Use assignment progress for all games in multi-game assignments
+            const isCompleted = assignmentProgress?.status === 'completed';
             return {
               id: gameId,
               name: gameInfo.name,
               description: gameInfo.description,
-              completed: progress?.status === 'completed',
-              score: progress?.score || undefined,
-              timeSpent: progress?.time_spent || undefined
+              completed: isCompleted,
+              score: assignmentProgress?.score || 0,
+              timeSpent: assignmentProgress?.time_spent || 0
             };
           });
         } else {
           // Single game assignment
           const gameInfo = gameNameMap[assignmentData.game_type] || { name: assignmentData.game_type, description: 'Language learning game' };
-          const progress = gameProgressMap.get(assignmentData.game_type);
+          const isCompleted = assignmentProgress?.status === 'completed';
           games = [{
             id: assignmentData.game_type,
             name: gameInfo.name,
             description: gameInfo.description,
-            completed: progress?.status === 'completed',
-            score: progress?.score || undefined,
-            timeSpent: progress?.time_spent || undefined
+            completed: isCompleted,
+            score: assignmentProgress?.score || 0,
+            timeSpent: assignmentProgress?.time_spent || 0
           }];
         }
 

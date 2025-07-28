@@ -52,15 +52,19 @@ interface StudentPerformance {
 
 const GAME_NAMES: Record<string, string> = {
   'noughts-and-crosses': 'Vocabulary Tic-Tac-Toe',
-  'memory-game': 'Memory Game',
+  'memory-game': 'Memory Match',
+  'memory-match': 'Memory Match',
   'hangman': 'Hangman',
   'word-scramble': 'Word Scramble',
   'word-guesser': 'Word Guesser',
   'vocab-blast': 'Vocab Blast',
+  'word-blast': 'Word Blast',
   'vocab-master': 'VocabMaster',
+  'vocabulary-mining': 'Vocabulary Mining',
   'detective-listening': 'Detective Listening',
   'speed-builder': 'Speed Builder',
-  'sentence-towers': 'Sentence Towers'
+  'sentence-towers': 'Sentence Towers',
+  'conjugation-duel': 'Conjugation Duel'
 };
 
 export default function CrossGameAnalyticsPage() {

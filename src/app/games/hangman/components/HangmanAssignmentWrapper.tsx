@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../../components/auth/AuthProvider';
 import GameAssignmentWrapper, {
   GameProgress,
-  calculateStandardScore
+  calculateStandardScore,
+  recordAssignmentProgress
 } from '../../../../components/games/templates/GameAssignmentWrapper';
 import HangmanGameWrapper from './HangmanGameWrapper';
 
@@ -165,7 +166,7 @@ export default function HangmanAssignmentWrapper({
 
               // If this was the last word, complete the assignment
               if (vocabulary.length === 1) {
-                onGameComplete({
+                const progressData: GameProgress = {
                   assignmentId: assignment.id,
                   gameId: 'hangman',
                   studentId: user.id,
@@ -177,6 +178,19 @@ export default function HangmanAssignmentWrapper({
                   timeSpent: 0,
                   completedAt: new Date(),
                   sessionData: { result }
+                };
+
+                // Record progress using unified function
+                recordAssignmentProgress(
+                  assignment.id,
+                  'hangman',
+                  user.id,
+                  progressData
+                ).then(() => {
+                  onGameComplete(progressData);
+                }).catch(error => {
+                  console.error('Failed to record progress:', error);
+                  onGameComplete(progressData); // Still complete even if recording fails
                 });
               }
             }}

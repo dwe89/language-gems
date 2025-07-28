@@ -49,8 +49,7 @@ export default function ConjugationDuelPage() {
         // Load leagues for selected language
         const leaguesResponse = await fetch('/data/leagues.json');
         const leaguesData = await leaguesResponse.json();
-        const languageLeagues = leaguesData[selectedLanguage] || leaguesData.spanish || [];
-        loadLeagues(languageLeagues);
+        loadLeagues(leaguesData, selectedLanguage);
 
         // Load verbs for selected language
         const verbsResponse = await fetch('/data/verbs.json');

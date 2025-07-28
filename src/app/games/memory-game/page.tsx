@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
@@ -64,11 +64,7 @@ export default function MemoryGamePage() {
   const assignmentId = searchParams?.get('assignment');
   const mode = searchParams?.get('mode');
 
-  // If assignment mode, render assignment wrapper
-  if (assignmentId && mode === 'assignment') {
-    return <MemoryGameAssignmentWrapper assignmentId={assignmentId} />;
-  }
-
+  // Always initialize hooks to prevent "more hooks" error
   const [stage, setStage] = useState<'selector' | 'game'>('selector');
   const [gameOptions, setGameOptions] = useState({
     language: '',
@@ -76,6 +72,11 @@ export default function MemoryGamePage() {
     difficulty: ''
   });
   const [customWords, setCustomWords] = useState<WordPair[]>([]);
+
+  // If assignment mode, render assignment wrapper
+  if (assignmentId && mode === 'assignment') {
+    return <MemoryGameAssignmentWrapper assignmentId={assignmentId} />;
+  }
 
 
 
@@ -110,21 +111,7 @@ export default function MemoryGamePage() {
     setCustomWords([]);
   };
 
-  const handleGameProgress = async (progressData: any) => {
-    if (assignmentId) {
-      try {
-        await fetch(`/api/assignments/${assignmentId}/progress`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(progressData),
-        });
-      } catch (error) {
-        console.error('Error updating progress:', error);
-      }
-    }
-  };
+
 
 
 

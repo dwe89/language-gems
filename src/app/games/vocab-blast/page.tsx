@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Home, Settings, Play } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useAuth } from '../../../components/auth/AuthProvider';
+import { useUnifiedAuth } from '../../../hooks/useUnifiedAuth';
 import VocabBlastGameWrapper from './components/VocabBlastGameWrapper';
 import VocabBlastAssignmentWrapper from './components/VocabBlastAssignmentWrapper';
 import VocabBlastSettings from './components/VocabBlastSettings';
@@ -25,7 +25,7 @@ export interface VocabBlastGameSettings {
 }
 
 export default function VocabBlastPage() {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, isDemo } = useUnifiedAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -69,8 +69,8 @@ export default function VocabBlastPage() {
   }, [searchParams, assignmentId]);
 
   // Conditional logic after all hooks are initialized
-  // Redirect to login if not authenticated
-  if (!isLoading && !user) {
+  // Only redirect to login if not in demo mode and not authenticated
+  if (!isLoading && !user && !isDemo) {
     router.push('/auth/login');
     return null;
   }

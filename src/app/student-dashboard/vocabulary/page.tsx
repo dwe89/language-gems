@@ -48,33 +48,27 @@ export default function VocabularyDashboard() {
       setLoading(true);
       
       try {
-        // Query that joins vocabulary_items with student progress
+        // Query vocabulary practice data from the centralized table
         const { data: progressData, error } = await supabase
-          .from('student_vocabulary_progress')
+          .from('student_vocabulary_practice')
           .select(`
             id,
-            proficiency_level,
-            correct_answers,
-            incorrect_answers,
-            last_practiced,
-            next_review,
-            vocabulary_item_id,
-            vocabulary_items(
+            vocabulary_id,
+            mastery_level,
+            correct_count,
+            incorrect_count,
+            last_practiced_at,
+            next_review_at,
+            centralized_vocabulary!inner(
               id,
-              term,
+              word,
               translation,
-              example_sentence,
-              example_translation,
-              image_url,
-              audio_url,
-              list_id,
-              vocabulary_lists(
-                id,
-                name,
-                theme_id,
-                topic_id,
-                difficulty
-              )
+              example_sentence_original,
+              example_sentence_translation,
+              category,
+              subcategory,
+              difficulty_level,
+              language
             )
           `)
           .eq('student_id', user.id);
@@ -87,24 +81,24 @@ export default function VocabularyDashboard() {
         // Process and set vocabulary items
         const processedItems = progressData.map(item => ({
           progressId: item.id,
-          vocabularyItemId: item.vocabulary_item_id,
-          term: item.vocabulary_items.term,
-          translation: item.vocabulary_items.translation,
-          exampleSentence: item.vocabulary_items.example_sentence,
-          exampleTranslation: item.vocabulary_items.example_translation,
-          imageUrl: item.vocabulary_items.image_url,
-          audioUrl: item.vocabulary_items.audio_url,
-          proficiencyLevel: item.proficiency_level,
-          correctAnswers: item.correct_answers,
-          incorrectAnswers: item.incorrect_answers,
-          lastPracticed: item.last_practiced,
-          nextReview: item.next_review,
-          listId: item.vocabulary_items.list_id,
-          listName: item.vocabulary_items.vocabulary_lists?.name,
-          themeId: item.vocabulary_items.vocabulary_lists?.theme_id,
-          topicId: item.vocabulary_items.vocabulary_lists?.topic_id,
-          accuracy: item.correct_answers + item.incorrect_answers > 0 
-            ? Math.round((item.correct_answers / (item.correct_answers + item.incorrect_answers)) * 100) 
+          vocabularyItemId: item.vocabulary_id,
+          term: item.centralized_vocabulary.word,
+          translation: item.centralized_vocabulary.translation,
+          exampleSentence: item.centralized_vocabulary.example_sentence_original || '',
+          exampleTranslation: item.centralized_vocabulary.example_sentence_translation || '',
+          imageUrl: undefined, // Not available in centralized vocabulary
+          audioUrl: undefined, // Not available in centralized vocabulary
+          proficiencyLevel: item.mastery_level,
+          correctAnswers: item.correct_count,
+          incorrectAnswers: item.incorrect_count,
+          lastPracticed: item.last_practiced_at,
+          nextReview: item.next_review_at,
+          listId: item.centralized_vocabulary.category,
+          listName: item.centralized_vocabulary.category,
+          themeId: item.centralized_vocabulary.category,
+          topicId: item.centralized_vocabulary.subcategory,
+          accuracy: item.correct_count + item.incorrect_count > 0
+            ? Math.round((item.correct_count / (item.correct_count + item.incorrect_count)) * 100)
             : 0
         }));
         

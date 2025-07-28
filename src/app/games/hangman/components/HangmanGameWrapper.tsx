@@ -487,18 +487,35 @@ export default function HangmanGameWrapper(props: HangmanGameWrapperProps) {
   }
 
   // Transform vocabulary to the format expected by HangmanGame
-  let gameVocabulary = vocabulary?.map(item => ({
-    id: item.id,
-    word: item.word,
-    translation: item.translation,
-    category: item.category,
-    subcategory: item.subcategory,
-    difficulty_level: item.difficulty_level
-  })) || [];
+  let gameVocabulary: GameVocabularyWord[] = [];
 
-  // If no vocabulary is returned, provide some fallback words for testing
-  if (gameVocabulary.length === 0) {
-    console.log('🎯 HangmanGameWrapper - No vocabulary from hook, using fallback words');
+  // Priority 1: Use assignment vocabulary if provided
+  if (props.settings.categoryVocabulary && props.settings.categoryVocabulary.length > 0) {
+    console.log('🎯 HangmanGameWrapper - Using assignment vocabulary:', props.settings.categoryVocabulary.length, 'words');
+    gameVocabulary = props.settings.categoryVocabulary.map(item => ({
+      id: item.id || Math.random().toString(),
+      word: item.word,
+      translation: item.translation || item.english || '',
+      category: item.category || props.settings.category,
+      subcategory: item.subcategory || props.settings.subcategory,
+      difficulty_level: item.difficulty_level || 'beginner'
+    }));
+  }
+  // Priority 2: Use vocabulary from hook
+  else if (vocabulary && vocabulary.length > 0) {
+    console.log('🎯 HangmanGameWrapper - Using vocabulary from hook:', vocabulary.length, 'words');
+    gameVocabulary = vocabulary.map(item => ({
+      id: item.id,
+      word: item.word,
+      translation: item.translation,
+      category: item.category,
+      subcategory: item.subcategory,
+      difficulty_level: item.difficulty_level
+    }));
+  }
+  // Priority 3: Fallback words for testing
+  else {
+    console.log('🎯 HangmanGameWrapper - No vocabulary available, using fallback words');
     gameVocabulary = [
       { id: '1', word: 'casa', translation: 'house', category: props.settings.category, subcategory: props.settings.subcategory, difficulty_level: 'beginner' },
       { id: '2', word: 'gato', translation: 'cat', category: props.settings.category, subcategory: props.settings.subcategory, difficulty_level: 'beginner' },

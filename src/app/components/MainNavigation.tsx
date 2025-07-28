@@ -100,7 +100,7 @@ export default function MainNavigation() {
                   )}
                   {item.name === 'Games' && !item.comingSoon && (
                     <span className="absolute -top-2 -right-2 text-xs bg-orange-500 text-white px-1 py-0.5 rounded-full font-bold">
-                      BETA
+                      DEMO
                     </span>
                   )}
                 </Link>
@@ -191,7 +191,7 @@ export default function MainNavigation() {
                       )}
                       {item.name === 'Games' && !item.comingSoon && (
                         <span className="ml-2 text-xs bg-orange-500 text-white px-2 py-1 rounded-full font-bold">
-                          BETA
+                          DEMO
                         </span>
                       )}
                     </Link>

@@ -8,6 +8,7 @@ import TeacherNavigation from '../../components/TeacherNavigation';
 import { supabaseBrowser } from '../../components/auth/AuthProvider';
 import { Crown, Lock, Zap } from 'lucide-react';
 import Link from 'next/link';
+import Head from 'next/head';
 
 export default function DashboardLayout({
   children,
@@ -79,25 +80,31 @@ export default function DashboardLayout({
   };
 
   return (
-    <TeacherNavigation>
-      <UpgradeBanner />
-      {!hasSubscription && !isLoading && (
-        <div className="bg-slate-100 border-b border-slate-200">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
-            <div className="flex items-center text-sm text-slate-600">
-              <Lock className="h-4 w-4 mr-2" />
-              <span>Some features are locked. </span>
-              <Link 
-                href="/account/upgrade" 
-                className="text-purple-600 hover:text-purple-700 font-medium ml-1"
-              >
-                Upgrade to unlock full access →
-              </Link>
+    <>
+      <Head>
+        <meta name="robots" content="noindex, nofollow" />
+        <meta name="googlebot" content="noindex, nofollow" />
+      </Head>
+      <TeacherNavigation>
+        <UpgradeBanner />
+        {!hasSubscription && !isLoading && (
+          <div className="bg-slate-100 border-b border-slate-200">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
+              <div className="flex items-center text-sm text-slate-600">
+                <Lock className="h-4 w-4 mr-2" />
+                <span>Some features are locked. </span>
+                <Link
+                  href="/account/upgrade"
+                  className="text-purple-600 hover:text-purple-700 font-medium ml-1"
+                >
+                  Upgrade to unlock full access →
+                </Link>
+              </div>
             </div>
           </div>
-        </div>
-      )}
-      {children}
-    </TeacherNavigation>
+        )}
+        {children}
+      </TeacherNavigation>
+    </>
   );
 }

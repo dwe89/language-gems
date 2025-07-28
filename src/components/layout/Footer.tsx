@@ -77,6 +77,9 @@ export default function Footer() {
             <Link href="/cookies" className="text-gray-400 hover:text-white text-sm">
               Cookie Policy
             </Link>
+            <Link href="/legal/disclaimer" className="text-gray-400 hover:text-white text-sm">
+              Disclaimer
+            </Link>
           </div>
         </div>
       </div>

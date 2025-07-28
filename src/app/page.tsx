@@ -3,10 +3,31 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import Footer from '../components/layout/Footer';
+import SEOWrapper from '../components/seo/SEOWrapper';
+import { getFAQSchema } from '../lib/seo/structuredData';
 
 export default function Home() {
+  // FAQ data for structured data
+  const faqs = [
+    {
+      question: "What makes Language Gems different from other language learning platforms?",
+      answer: "Language Gems is specifically designed for UK GCSE requirements with curriculum-aligned vocabulary, comprehensive teacher analytics, and gamified learning experiences that engage students while providing measurable results."
+    },
+    {
+      question: "Which languages does Language Gems support?",
+      answer: "We currently support Spanish, French, German, and Italian, with comprehensive GCSE-level vocabulary and grammar content for each language."
+    },
+    {
+      question: "How does the pricing work for schools?",
+      answer: "We offer transparent annual pricing starting from £399 for basic access, with our comprehensive school plan at £699/year including unlimited teachers and students with no hidden costs."
+    }
+  ];
+
+  const faqStructuredData = getFAQSchema(faqs);
+
   return (
-    <div className="flex min-h-screen flex-col">
+    <SEOWrapper structuredData={faqStructuredData}>
+      <div className="flex min-h-screen flex-col">
       <main className="flex-grow">
       {/* Hero Section */}
       <div className="w-full relative min-h-[90vh] flex items-center justify-center overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
@@ -70,7 +91,7 @@ export default function Home() {
                 <div className="relative bg-white rounded-3xl p-8 shadow-2xl">
                   <Image
                     src="/images/homepage/hero.png"
-                    alt="Language Learning Platform"
+                    alt="Students using Language Gems interactive GCSE language learning games on tablets and computers"
                     width={500}
                     height={400}
                     priority
@@ -248,6 +269,7 @@ export default function Home() {
       </main>
       
       <Footer />
-    </div>
+      </div>
+    </SEOWrapper>
   );
 }

@@ -1,11 +1,11 @@
 "use client";
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useAuth } from '../../../components/auth/AuthProvider';
+import { useUnifiedAuth } from '../../../hooks/useUnifiedAuth';
 import GameLauncher from '../../../components/games/GameLauncher';
 
 export default function GemCollectorGame() {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, isDemo } = useUnifiedAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -16,8 +16,8 @@ export default function GemCollectorGame() {
   const theme = searchParams?.get('theme');
   const topic = searchParams?.get('topic');
 
-  // Redirect to login if not authenticated
-  if (!isLoading && !user) {
+  // Only redirect to login if not in demo mode and not authenticated
+  if (!isLoading && !user && !isDemo) {
     router.push('/auth/login');
     return null;
   }

@@ -246,8 +246,8 @@ export default function AssignmentsPage() {
                   <div className="flex items-center">
                     <span className="text-lg mr-3">🚀</span>
                     <div>
-                      <div className="font-semibold text-indigo-600">Smart Multi-Game Assignment</div>
-                      <div className="text-xs text-slate-500">Recommended! All 15 games, KS3/KS4 support</div>
+                      <div className="font-semibold text-indigo-600">Smart Integrated Assignment</div>
+                      <div className="text-xs text-slate-500">Combines all 15 interactive games with targeted reading, listening, writing, and exam-style assessment tasks.</div>
                     </div>
                   </div>
                 </Link>

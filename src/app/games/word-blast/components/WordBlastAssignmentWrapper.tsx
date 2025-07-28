@@ -57,34 +57,46 @@ export default function WordBlastAssignmentWrapper({
           category: 'noun'
         }));
 
-        // For now, return a simple message indicating the game needs integration
-        // The word-blast game would need to be modified to accept assignment vocabulary
+        // Import the actual Word Blast game component
+        const WordBlastGame = React.lazy(() => import('../GemWordBlastGame'));
+
         return (
-          <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 flex items-center justify-center">
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-8 text-center text-white">
-              <h2 className="text-2xl font-bold mb-4">Word Blast Assignment Mode</h2>
-              <p className="mb-4">Assignment vocabulary loaded: {vocabulary.length} words</p>
-              <p className="text-sm opacity-75">
-                This game needs to be integrated with the assignment system.
-                <br />
-                Vocabulary: {vocabulary.slice(0, 3).map(v => v.word).join(', ')}...
-              </p>
-              <div className="mt-6 space-x-4">
-                <button
-                  onClick={handleBackToAssignments}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
-                >
-                  Back to Assignments
-                </button>
-                <button
-                  onClick={handleBackToMenu}
-                  className="px-4 py-2 bg-gray-600 hover:bg-gray-700 rounded-lg transition-colors"
-                >
-                  Back to Game Menu
-                </button>
+          <React.Suspense fallback={
+            <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 flex items-center justify-center">
+              <div className="text-white text-center">
+                <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-white mx-auto mb-4"></div>
+                <p>Loading Word Blast...</p>
               </div>
             </div>
-          </div>
+          }>
+            <WordBlastGame
+              assignmentMode={true}
+              assignmentVocabulary={gameVocabulary}
+              onGameComplete={(result) => {
+                const { score, accuracy, maxScore } = calculateStandardScore(
+                  result.correctAnswers || 0,
+                  result.totalAttempts || 1,
+                  Date.now(),
+                  100
+                );
+
+                onGameComplete({
+                  assignmentId: assignment.id,
+                  gameId: 'word-blast',
+                  studentId: user.id,
+                  wordsCompleted: result.correctAnswers || 0,
+                  totalWords: vocabulary.length,
+                  score,
+                  maxScore,
+                  accuracy,
+                  timeSpent: result.timeSpent || 0,
+                  completedAt: new Date(),
+                  sessionData: result
+                });
+              }}
+              onBackToMenu={handleBackToMenu}
+            />
+          </React.Suspense>
         );
       }}
     </GameAssignmentWrapper>

@@ -86,8 +86,8 @@ export const useBattle = (language: string = 'spanish') => {
         }
       } else if (language === 'french') {
         if (type === 'regular') {
-          // Handle regular French verbs with er, ir, re endings
-          ['er', 'ir', 're'].forEach(ending => {
+          // Handle regular French verbs with er, ir endings
+          ['er', 'ir'].forEach(ending => {
             if (verbs.french?.regular?.[ending] && Array.isArray(verbs.french.regular[ending])) {
               availableVerbs.push(...verbs.french.regular[ending]);
             }
@@ -96,23 +96,11 @@ export const useBattle = (language: string = 'spanish') => {
           if (verbs.french?.irregular && Array.isArray(verbs.french.irregular)) {
             availableVerbs.push(...verbs.french.irregular);
           }
-        } else if (type === 'dr_mrs_vandertramp') {
-          if (verbs.french?.dr_mrs_vandertramp && Array.isArray(verbs.french.dr_mrs_vandertramp)) {
-            availableVerbs.push(...verbs.french.dr_mrs_vandertramp);
-          }
-        } else if (type === 'reflexive') {
-          if (verbs.french?.reflexive && Array.isArray(verbs.french.reflexive)) {
-            availableVerbs.push(...verbs.french.reflexive);
-          }
         }
       } else if (language === 'german') {
-        if (type === 'weak') {
+        if (type === 'regular') {
           if (verbs.german?.regular?.weak && Array.isArray(verbs.german.regular.weak)) {
             availableVerbs.push(...verbs.german.regular.weak);
-          }
-        } else if (type === 'strong') {
-          if (verbs.german?.regular?.strong && Array.isArray(verbs.german.regular.strong)) {
-            availableVerbs.push(...verbs.german.regular.strong);
           }
         } else if (type === 'irregular') {
           if (verbs.german?.irregular && Array.isArray(verbs.german.irregular)) {

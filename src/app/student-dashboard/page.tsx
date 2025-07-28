@@ -140,13 +140,15 @@ export default function StudentDashboard() {
           
         setAssignments(assignmentsData || []);
         
-        // Get assignment progress from student_vocabulary_assignment_progress instead of assignment_progress
+        // Get assignment progress from the main assignment progress table
         const { data: assignmentProgress, error: progressError } = await supabase
-          .from('student_vocabulary_assignment_progress')
+          .from('assignment_progress')
           .select(`
             assignment_id,
-            mastery_level,
-            last_attempted_at
+            status,
+            score,
+            accuracy,
+            completed_at
           `)
           .eq('student_id', user.id);
 
@@ -164,28 +166,26 @@ export default function StudentDashboard() {
           .in('id', uniqueAssignmentIds)
           .in('class_id', classIds); // Filter by student's enrolled classes
 
-        // Calculate progress statistics from vocabulary progress data
+        // Calculate progress statistics from assignment progress data
         const progressStats = {
-          completed: assignmentProgress?.filter(p => p.mastery_level >= 3).length || 0, // mastery_level 3+ = mastered
-          in_progress: assignmentProgress?.filter(p => p.mastery_level > 0 && p.mastery_level < 3).length || 0,
+          completed: assignmentProgress?.filter(p => p.status === 'completed').length || 0,
+          in_progress: assignmentProgress?.filter(p => p.status === 'in_progress').length || 0,
           total: uniqueAssignmentIds.length || 0
         };
 
         // Create assignment summary with progress
         const assignmentSummary = uniqueAssignmentIds.map(assignmentId => {
           const assignment = assignmentDetails?.find(a => a.id === assignmentId);
-          const progressItems = assignmentProgress?.filter(p => p.assignment_id === assignmentId) || [];
-          const averageMastery = progressItems.length > 0 
-            ? progressItems.reduce((sum, p) => sum + p.mastery_level, 0) / progressItems.length 
-            : 0;
-          
+          const progress = assignmentProgress?.find(p => p.assignment_id === assignmentId);
+
           return {
             id: assignmentId,
             title: assignment?.title || 'Untitled Assignment',
             type: assignment?.type || 'unknown',
             due_date: assignment?.due_date,
-            status: averageMastery >= 3 ? 'completed' : averageMastery > 0 ? 'in_progress' : 'not_started',
-            progress: Math.min(100, Math.round((averageMastery / 4) * 100))
+            status: progress?.status || 'not_started',
+            progress: progress?.status === 'completed' ? 100 :
+                     progress?.status === 'in_progress' ? Math.round((progress.score || 0)) : 0
           };
         });
 

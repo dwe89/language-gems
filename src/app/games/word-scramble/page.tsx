@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BookOpen } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useAuth } from '../../../components/auth/AuthProvider';
+import { useUnifiedAuth } from '../../../hooks/useUnifiedAuth';
 import { useGameVocabulary, transformVocabularyForGame } from '../../../hooks/useGameVocabulary';
 import { VOCABULARY_CATEGORIES } from '../../../components/games/ModernCategorySelector';
 import WordScrambleGameEnhanced from './components/WordScrambleGameEnhanced';
@@ -89,7 +89,7 @@ const GAME_MODES = [
 ];
 
 export default function WordScramblePage() {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, isDemo } = useUnifiedAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -151,8 +151,8 @@ export default function WordScramblePage() {
     );
   }
 
-  // Redirect to login if not authenticated
-  if (!user) {
+  // Only redirect to login if not in demo mode and not authenticated
+  if (!user && !isDemo) {
     router.push('/auth/login');
     return null; // Return null immediately after redirecting
   }

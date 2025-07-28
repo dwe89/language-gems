@@ -1,5 +1,5 @@
 {
-  "leagues": [
+  "spanish": [
     {
       "id": "bronze",
       "name": "Bronze Arena",
@@ -154,6 +154,130 @@
       "promotionRequirement": {
         "winsNeeded": 30,
         "accuracyRequired": 90
+      }
+    }
+  ],
+  "french": [
+    {
+      "id": "bronze",
+      "name": "Bronze Arena",
+      "description": "The proving grounds for beginners. Master regular verbs to advance.",
+      "minLevel": 1,
+      "maxLevel": 10,
+      "background": "bronze-colosseum.jpg",
+      "theme": {
+        "primary": "#CD7F32",
+        "secondary": "#8B4513",
+        "gradient": "from-amber-700 to-orange-800"
+      },
+      "verbTypes": ["regular"],
+      "tenses": ["present"],
+      "opponents": [
+        {
+          "id": "bronze_warrior",
+          "name": "Bronze Warrior",
+          "sprite": "bronze_warrior.png",
+          "health": 100,
+          "difficulty": 1,
+          "weapons": ["sword"],
+          "description": "A novice fighter learning the basics of combat."
+        }
+      ],
+      "promotionRequirement": {
+        "winsNeeded": 10,
+        "accuracyRequired": 70
+      }
+    },
+    {
+      "id": "silver",
+      "name": "Silver Castle",
+      "description": "Medieval battlegrounds where irregular verbs test your skills.",
+      "minLevel": 11,
+      "maxLevel": 25,
+      "background": "silver-castle.jpg",
+      "theme": {
+        "primary": "#C0C0C0",
+        "secondary": "#808080",
+        "gradient": "from-slate-400 to-slate-600"
+      },
+      "verbTypes": ["regular", "irregular"],
+      "tenses": ["present", "passé_composé"],
+      "opponents": [
+        {
+          "id": "castle_knight",
+          "name": "Castle Knight",
+          "sprite": "castle_knight.png",
+          "health": 150,
+          "difficulty": 2,
+          "weapons": ["sword", "shield"],
+          "description": "A seasoned knight with knowledge of irregular verb patterns."
+        }
+      ],
+      "promotionRequirement": {
+        "winsNeeded": 15,
+        "accuracyRequired": 75
+      }
+    }
+  ],
+  "german": [
+    {
+      "id": "bronze",
+      "name": "Bronze Arena",
+      "description": "The proving grounds for beginners. Master regular verbs to advance.",
+      "minLevel": 1,
+      "maxLevel": 10,
+      "background": "bronze-colosseum.jpg",
+      "theme": {
+        "primary": "#CD7F32",
+        "secondary": "#8B4513",
+        "gradient": "from-amber-700 to-orange-800"
+      },
+      "verbTypes": ["regular"],
+      "tenses": ["present"],
+      "opponents": [
+        {
+          "id": "bronze_warrior",
+          "name": "Bronze Warrior",
+          "sprite": "bronze_warrior.png",
+          "health": 100,
+          "difficulty": 1,
+          "weapons": ["sword"],
+          "description": "A novice fighter learning the basics of combat."
+        }
+      ],
+      "promotionRequirement": {
+        "winsNeeded": 10,
+        "accuracyRequired": 70
+      }
+    },
+    {
+      "id": "silver",
+      "name": "Silver Castle",
+      "description": "Medieval battlegrounds where irregular verbs test your skills.",
+      "minLevel": 11,
+      "maxLevel": 25,
+      "background": "silver-castle.jpg",
+      "theme": {
+        "primary": "#C0C0C0",
+        "secondary": "#808080",
+        "gradient": "from-slate-400 to-slate-600"
+      },
+      "verbTypes": ["regular", "irregular"],
+      "tenses": ["present", "perfect"],
+      "opponents": [
+        {
+          "id": "castle_knight",
+          "name": "Castle Knight",
+          "sprite": "castle_knight.png",
+          "health": 150,
+          "difficulty": 2,
+          "weapons": ["sword", "shield"],
+          "description": "A seasoned knight with knowledge of irregular verb patterns."
+        }
+      ],
+      "promotionRequirement": {
+        "winsNeeded": 15,
+        "accuracyRequired": 75
       }
     }
   ]

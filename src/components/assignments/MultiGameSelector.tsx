@@ -31,8 +31,8 @@ interface GameOption {
   description: string;
   icon: React.ReactNode;
   color: string;
-  category: 'vocabulary' | 'grammar' | 'mixed';
-  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  category: 'vocabulary' | 'grammar' | 'mixed' | 'listening';
+  difficulty: 'beginner' | 'intermediate' | 'advanced' | 'adaptive';
   estimatedTime: string;
   features: string[];
   type: 'vocabulary' | 'sentence' | 'mixed';

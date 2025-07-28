@@ -1,6 +1,6 @@
 // Feature flags configuration based on environment
 // In development: all features work
-// In production: Blog, Shop, and Games (BETA) are enabled, others show "Coming Soon"
+// In production: Blog, Shop, and Games (DEMO) are enabled, others show "Coming Soon"
 // Admin override: specific admin email can access all features even in production
 
 export interface FeatureFlags {
@@ -10,6 +10,7 @@ export interface FeatureFlags {
   blog: boolean;
   shop: boolean;
   auth: boolean;
+  assessments: boolean;
 }
 
 // Check if we're in development environment
@@ -37,6 +38,7 @@ export const getFeatureFlags = (userEmail?: string | null): FeatureFlags => {
       games: true,
       customLessons: true,
       progressTracking: true,
+      assessments: true,
     };
   }
   
@@ -46,11 +48,12 @@ export const getFeatureFlags = (userEmail?: string | null): FeatureFlags => {
     blog: true,
     shop: true,
     auth: true,
-    
+
     // Development vs Production feature flags
-    games: true, // Now enabled in production with BETA status
+    games: true, // Now enabled in production with DEMO status
     customLessons: isDevelopment,
     progressTracking: isDevelopment,
+    assessments: true, // Enable assessments for all users
   };
 };
 
@@ -78,6 +81,13 @@ export const getNavigationItems = (isAuthenticated: boolean = false, userEmail?:
       enabled: flags.games,
       comingSoon: !flags.games,
       comingSoonPath: '/coming-soon/games'
+    },
+    {
+      name: 'Assessments',
+      path: '/assessments',
+      enabled: flags.assessments,
+      comingSoon: !flags.assessments,
+      comingSoonPath: '/coming-soon/assessments'
     },
     {
       name: 'Explore',

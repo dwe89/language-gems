@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useAuth } from '../../../components/auth/AuthProvider';
+import { useUnifiedAuth } from '../../../hooks/useUnifiedAuth';
 import { ThemeProvider } from './components/ThemeProvider';
 import GameSettings from './components/GameSettings';
 import TicTacToeGameWrapper from './components/TicTacToeGameWrapper';
@@ -14,7 +14,7 @@ import { useVocabularyByCategory } from '../../../hooks/useVocabulary';
 import NoughtsAndCrossesAssignmentWrapper from './components/NoughtsAssignmentWrapper';
 
 export default function NoughtsAndCrossesPage() {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, isDemo } = useUnifiedAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [soundEnabled] = useState(true);
@@ -83,8 +83,8 @@ export default function NoughtsAndCrossesPage() {
   }, [assignmentId, gameStarted]);
 
   // Conditional logic after all hooks are initialized
-  // Redirect to login if not authenticated
-  if (!isLoading && !user) {
+  // Only redirect to login if not in demo mode and not authenticated
+  if (!isLoading && !user && !isDemo) {
     router.push('/auth/login');
     return null;
   }

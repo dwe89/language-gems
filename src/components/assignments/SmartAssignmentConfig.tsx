@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useMemo } from 'react';
-import { BookOpen, FileText, Lightbulb, Upload, Plus, Eye } from 'lucide-react';
-import ModernCategorySelector from '../games/ModernCategorySelector';
+import { BookOpen, FileText, Lightbulb, Upload } from 'lucide-react';
+import DatabaseCategorySelector from './DatabaseCategorySelector';
 
 // Game type definitions
 interface Game {
@@ -37,6 +37,7 @@ const GAME_TYPES: Record<string, Game> = {
 interface VocabularyConfig {
   source: 'category' | 'theme' | 'topic' | 'custom' | 'create' | '';
   language?: string;
+  curriculumLevel?: 'KS3' | 'KS4';
   categories?: string[]; // Changed to support multiple categories
   subcategories?: string[]; // Changed to support multiple subcategories
   category?: string; // Keep for backward compatibility
@@ -254,8 +255,9 @@ function VocabularyConfigSection({ config, onChange }: {
       </div>
 
       {config.source === 'category' && (
-        <MultiCategorySelector
+        <DatabaseCategorySelector
           language={config.language || 'es'}
+          curriculumLevel={config.curriculumLevel}
           selectedCategories={config.categories || []}
           selectedSubcategories={config.subcategories || []}
           onChange={(categories, subcategories) => {
@@ -606,151 +608,7 @@ function InlineSentenceCreator({ onSave }: { onSave: (set: any) => void }) {
   );
 }
 
-// Multi-Category Selector Component
-function MultiCategorySelector({
-  language,
-  selectedCategories,
-  selectedSubcategories,
-  onChange
-}: {
-  language: string;
-  selectedCategories: string[];
-  selectedSubcategories: string[];
-  onChange: (categories: string[], subcategories: string[]) => void;
-}) {
-  const [availableCategories, setAvailableCategories] = React.useState<{[key: string]: string[]}>({});
-  const [loading, setLoading] = React.useState(true);
 
-  // Load categories and subcategories from database
-  React.useEffect(() => {
-    const loadCategories = async () => {
-      try {
-        setLoading(true);
-        // This would need to be implemented to fetch from the database
-        // For now, using static data
-        const mockCategories = {
-          'basics_core_language': ['greetings_introductions', 'numbers_1_30', 'colours', 'days', 'months'],
-          'family_relationships': ['family_members', 'relationships', 'descriptions'],
-          'school_education': ['subjects', 'classroom', 'school_life', 'stationery'],
-          'food_drink': ['meals', 'fruits', 'vegetables', 'drinks'],
-          'home_daily_life': ['house', 'furniture', 'daily_routines', 'chores']
-        };
-        setAvailableCategories(mockCategories);
-      } catch (error) {
-        console.error('Error loading categories:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadCategories();
-  }, [language]);
-
-  const toggleCategory = (categoryId: string) => {
-    const newCategories = selectedCategories.includes(categoryId)
-      ? selectedCategories.filter(id => id !== categoryId)
-      : [...selectedCategories, categoryId];
-
-    // Remove subcategories that belong to deselected categories
-    const newSubcategories = selectedSubcategories.filter(subId => {
-      return newCategories.some(catId => availableCategories[catId]?.includes(subId));
-    });
-
-    onChange(newCategories, newSubcategories);
-  };
-
-  const toggleSubcategory = (subcategoryId: string) => {
-    const newSubcategories = selectedSubcategories.includes(subcategoryId)
-      ? selectedSubcategories.filter(id => id !== subcategoryId)
-      : [...selectedSubcategories, subcategoryId];
-
-    onChange(selectedCategories, newSubcategories);
-  };
-
-  if (loading) {
-    return <div className="text-center py-4">Loading categories...</div>;
-  }
-
-  return (
-    <div className="space-y-6">
-      <div>
-        <h4 className="font-medium text-gray-900 mb-3">Selected Categories & Subcategories</h4>
-        {(selectedCategories.length > 0 || selectedSubcategories.length > 0) ? (
-          <div className="flex flex-wrap gap-2 mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            {selectedCategories.map(categoryId => (
-              <span key={categoryId} className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                📁 {categoryId.replace(/_/g, ' ')}
-                <button
-                  onClick={() => toggleCategory(categoryId)}
-                  className="ml-2 text-blue-600 hover:text-blue-800"
-                >
-                  ×
-                </button>
-              </span>
-            ))}
-            {selectedSubcategories.map(subcategoryId => (
-              <span key={subcategoryId} className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                📄 {subcategoryId.replace(/_/g, ' ')}
-                <button
-                  onClick={() => toggleSubcategory(subcategoryId)}
-                  className="ml-2 text-green-600 hover:text-green-800"
-                >
-                  ×
-                </button>
-              </span>
-            ))}
-          </div>
-        ) : (
-          <div className="text-gray-500 text-sm mb-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
-            No categories or subcategories selected. Choose from the options below.
-          </div>
-        )}
-      </div>
-
-      <div>
-        <h4 className="font-medium text-gray-900 mb-3">Available Categories</h4>
-        <div className="space-y-4">
-          {Object.entries(availableCategories).map(([categoryId, subcategories]) => (
-            <div key={categoryId} className="border border-gray-200 rounded-lg p-4">
-              <div className="flex items-center justify-between mb-3">
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={selectedCategories.includes(categoryId)}
-                    onChange={() => toggleCategory(categoryId)}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span className="ml-2 font-medium text-gray-900">
-                    📁 {categoryId.replace(/_/g, ' ')}
-                  </span>
-                </label>
-                <span className="text-sm text-gray-500">
-                  {subcategories.length} subcategories
-                </span>
-              </div>
-
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 ml-6">
-                {subcategories.map(subcategoryId => (
-                  <label key={subcategoryId} className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={selectedSubcategories.includes(subcategoryId)}
-                      onChange={() => toggleSubcategory(subcategoryId)}
-                      className="rounded border-gray-300 text-green-600 focus:ring-green-500"
-                    />
-                    <span className="ml-2 text-sm text-gray-700">
-                      📄 {subcategoryId.replace(/_/g, ' ')}
-                    </span>
-                  </label>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
 
 // Grammar Configuration Section Component
 interface GrammarConfigSectionProps {

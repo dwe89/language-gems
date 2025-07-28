@@ -143,6 +143,15 @@ export async function middleware(req: NextRequest) {
     '/games',
   ];
 
+  // Demo mode routes - allow unrestricted access to games without authentication
+  const demoRoutes = [
+    '/games/',
+    '/vocabulary-games',
+  ];
+
+  // Check if this is a demo route (games in demo mode)
+  const isDemoRoute = demoRoutes.some(route => path.startsWith(route));
+
   // Check if this is a public route
   const isPublicRoute = publicRoutes.some(route => 
     path === route || (route.endsWith('*') && path.startsWith(route.slice(0, -1)))
@@ -274,7 +283,8 @@ export async function middleware(req: NextRequest) {
   const protectedPaths = ['/dashboard', '/student-dashboard', '/profile', '/exercises', '/languages/learn', '/themes/explore', '/learn', '/account', '/cart'];
   const isProtectedRoute = protectedPaths.some(route => path.startsWith(route));
 
-  if (isProtectedRoute && !session) {
+  // Allow demo routes to bypass authentication
+  if (isProtectedRoute && !session && !isDemoRoute) {
     const redirectUrl = req.nextUrl.clone();
     redirectUrl.pathname = '/auth/login';
     redirectUrl.searchParams.set('redirectTo', req.nextUrl.pathname);

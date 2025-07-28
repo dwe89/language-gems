@@ -93,8 +93,9 @@ export default function AssignmentDetailsPage() {
           // Map game types to actual game paths
           const gamePathMap: Record<string, string> = {
             'memory-game': 'memory-game',
+            'memory-match': 'memory-game', // Standardize to memory-game
             'vocab-blast': 'vocab-blast',
-            'word-blast': 'vocab-blast', // Legacy mapping
+            'word-blast': 'word-blast', // Keep separate - different games
             'hangman': 'hangman',
             'noughts-and-crosses': 'noughts-and-crosses',
             'speed-builder': 'speed-builder',
@@ -104,8 +105,8 @@ export default function AssignmentDetailsPage() {
             'conjugation-duel': 'conjugation-duel',
             'detective-listening': 'detective-listening',
             'verb-quest': 'verb-quest',
-            'word-scramble': 'hangman', // Legacy mapping
-            'word-guesser': 'hangman', // Legacy mapping
+            'word-scramble': 'word-scramble',
+            'word-guesser': 'word-scramble', // Word guesser uses word scramble logic
             'sentence-towers': 'sentence-towers',
             'sentence-builder': 'speed-builder', // Legacy mapping
 

@@ -72,6 +72,7 @@ export interface AssignmentCreationData {
   feedback_enabled: boolean;
   hints_allowed: boolean;
   power_ups_enabled: boolean;
+  curriculum_level?: 'KS3' | 'KS4';
 }
 
 export interface ClassPerformanceMetrics {

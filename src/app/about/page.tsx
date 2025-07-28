@@ -1,5 +1,24 @@
 import Link from 'next/link';
+import { Metadata } from 'next';
 import { GraduationCap, Award, Users, BookOpen, MessageCircle, Star, Shield, Target, Heart, Lightbulb, Globe, CheckCircle } from 'lucide-react';
+import SEOWrapper from '../../components/seo/SEOWrapper';
+import { generateMetadata } from '../../components/seo/SEOWrapper';
+
+export const metadata: Metadata = generateMetadata({
+  title: 'About Daniel Etienne - MFL Teacher & Language Gems Founder',
+  description: 'Meet Daniel Etienne, experienced MFL teacher with 7+ years in education and founder of Language Gems. Discover his passion for innovative language learning and student success.',
+  keywords: [
+    'Daniel Etienne',
+    'MFL teacher',
+    'Language Gems founder',
+    'language learning expert',
+    'GCSE language teacher',
+    'educational technology',
+    'modern foreign languages',
+    'language education specialist'
+  ],
+  canonical: '/about',
+});
 
 export default function AboutPage() {
   const achievements = [
@@ -48,8 +67,14 @@ export default function AboutPage() {
     }
   ];
 
+  const breadcrumbs = [
+    { name: 'Home', url: '/' },
+    { name: 'About', url: '/about' }
+  ];
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <SEOWrapper breadcrumbs={breadcrumbs}>
+      <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
       <section className="relative py-20 px-4 overflow-hidden bg-gradient-to-br from-indigo-900 via-purple-900 to-slate-900">
         <div className="absolute inset-0 z-0">
@@ -249,6 +274,7 @@ export default function AboutPage() {
           </div>
         </div>
       </section>
-    </div>
+      </div>
+    </SEOWrapper>
   );
-} 
+}

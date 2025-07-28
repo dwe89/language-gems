@@ -5,6 +5,7 @@ import { Session, User } from '@supabase/supabase-js';
 import { createBrowserClient } from '@supabase/ssr';
 import { useRouter } from 'next/navigation';
 import type { Database } from '../../lib/database.types';
+import { DemoAuthProvider } from './DemoAuthProvider';
 
 interface AuthContextType {
   user: User | null;
@@ -370,7 +371,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider value={{ user, session, isLoading, signIn, signOut, refreshSession, userRole, hasSubscription, isAdmin, isTeacher, isStudent }}>
-      {children}
+      <DemoAuthProvider realUser={user} isLoading={isLoading}>
+        {children}
+      </DemoAuthProvider>
     </AuthContext.Provider>
   );
 }

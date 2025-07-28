@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { Metadata } from 'next';
 import Footer from '../../../components/layout/Footer'; // Assuming Footer path is correct
+import SEOWrapper from '../../../components/seo/SEOWrapper';
+import { getPricingSchema, getFAQSchema } from '../../../lib/seo/structuredData';
 
 export const metadata: Metadata = {
   title: 'Pricing Plans for UK Schools | LanguageGems',
@@ -159,8 +161,21 @@ const faqs = [
 ];
 
 export default function SchoolsPricingPage() {
+  // Generate structured data for pricing
+  const pricingStructuredData = getPricingSchema(pricingPlans);
+  const faqStructuredData = getFAQSchema(faqs);
+  const breadcrumbs = [
+    { name: 'Home', url: '/' },
+    { name: 'Schools', url: '/schools' },
+    { name: 'Pricing', url: '/schools/pricing' }
+  ];
+
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-br from-indigo-950 via-purple-950 to-blue-950">
+    <SEOWrapper
+      structuredData={[pricingStructuredData, faqStructuredData]}
+      breadcrumbs={breadcrumbs}
+    >
+      <div className="flex flex-col min-h-screen bg-gradient-to-br from-indigo-950 via-purple-950 to-blue-950">
       <main className="flex-grow">
         <div className="container mx-auto px-4 py-16">
           {/* Hero Section */}
@@ -477,6 +492,7 @@ export default function SchoolsPricingPage() {
       </main>
 
       <Footer />
-    </div>
+      </div>
+    </SEOWrapper>
   );
 }

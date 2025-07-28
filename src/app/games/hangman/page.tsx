@@ -5,14 +5,14 @@ import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { IoChevronBackOutline, IoExpandOutline, IoContractOutline } from 'react-icons/io5';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useAuth } from '../../../components/auth/AuthProvider';
+import { useUnifiedAuth } from '../../../hooks/useUnifiedAuth';
 import { useVocabularyByCategory } from '../../../hooks/useVocabulary';
 import HangmanGameWrapper from './components/HangmanGameWrapper';
 import HangmanAssignmentWrapper from './components/HangmanAssignmentWrapper';
 import GameSettings from './components/GameSettings';
 
 export default function HangmanPage() {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, isDemo } = useUnifiedAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -112,8 +112,8 @@ export default function HangmanPage() {
   }, []);
 
   // Conditional logic after all hooks are initialized
-  // Redirect to login if not authenticated
-  if (!isLoading && !user) {
+  // Only redirect to login if not in demo mode and not authenticated
+  if (!isLoading && !user && !isDemo) {
     router.push('/auth/login');
     return null;
   }

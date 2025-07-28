@@ -13,8 +13,8 @@ import {
 import VocabularyMiningGame from './VocabularyMiningGame';
 
 // Category system imports
-import ModernCategorySelector from '../../../../components/games/ModernCategorySelector';
-import { useVocabularyByCategory } from '../../../../hooks/useVocabulary';
+import DemoAwareCategorySelector from '../../../../components/games/DemoAwareCategorySelector';
+import { useDemoGameVocabulary } from '../../../../hooks/useDemoGameVocabulary';
 
 // Helper function to get category display name
 const getCategoryById = (id: string) => {
@@ -181,16 +181,20 @@ export default function VocabularyMiningLauncher() {
     { code: 'de', name: 'German', flag: '🇩🇪' }
   ]);
 
-  // Use the vocabulary hook with correct parameters
+  // Use the demo-aware vocabulary hook with correct parameters
   const {
     vocabulary: categoryVocabulary,
     loading: vocabularyLoading,
     error: vocabularyError,
-    refetch: refetchVocabulary
-  } = useVocabularyByCategory({
+    refetch: refetchVocabulary,
+    isDemoRestricted,
+    demoMessage
+  } = useDemoGameVocabulary({
     language: selectedLanguage,
     categoryId: selectedCategory || undefined,
-    subcategoryId: selectedSubcategory || undefined
+    subcategoryId: selectedSubcategory || undefined,
+    limit: 100,
+    randomize: true
   });
 
   useEffect(() => {
@@ -202,7 +206,7 @@ export default function VocabularyMiningLauncher() {
 
   useEffect(() => {
     if (categoryVocabulary && categoryVocabulary.length > 0) {
-      // Transform the category vocabulary data to match the expected interface
+      // Transform the demo-aware vocabulary data to match the expected interface
       const transformedVocabulary: VocabularyWord[] = categoryVocabulary
         .filter(item => item.word && item.translation)
         .map(item => ({
@@ -590,7 +594,7 @@ export default function VocabularyMiningLauncher() {
     }, 1000);
   };
 
-  const handleCategorySelect = (category: string, subcategory?: string) => {
+  const handleCategorySelect = (category: string, subcategory: string | null) => {
     setSelectedCategory(category);
     setSelectedSubcategory(subcategory || '');
     setShowCategorySelector(false);
@@ -599,7 +603,7 @@ export default function VocabularyMiningLauncher() {
     setSettings(prev => ({
       ...prev,
       category,
-      subcategory
+      subcategory: subcategory || undefined
     }));
   };
 
@@ -632,9 +636,9 @@ export default function VocabularyMiningLauncher() {
               </button>
             </div>
 
-            <ModernCategorySelector
+            <DemoAwareCategorySelector
               onCategorySelect={handleCategorySelect}
-              showAllOption={true}
+              gameName="Vocabulary Mining"
             />
           </div>
         </div>

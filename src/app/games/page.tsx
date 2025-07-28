@@ -5,6 +5,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Gamepad2, Search, Filter, ChevronDown, Building2, Rocket, Castle, DollarSign, CircleOff, DoorOpen, Puzzle, TagIcon, Lock, Trophy, Target, BarChart3, Play, BookOpen, Users, Star, Flower } from 'lucide-react';
 import { useAuth } from '../../components/auth/AuthProvider';
+import { useDemoAuth } from '../../components/auth/DemoAuthProvider';
+import DemoBanner from '../../components/demo/DemoBanner';
 
 // Login Required Component
 const LoginRequiredGate = () => {
@@ -84,7 +86,7 @@ const LoginRequiredGate = () => {
 
               <div className="bg-white rounded-xl p-6 shadow-lg relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-bl from-green-500 to-transparent opacity-20 rounded-bl-full"></div>
-                <div className="absolute top-2 right-2 bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full font-bold">BETA</div>
+                <div className="absolute top-2 right-2 bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full font-bold">DEMO</div>
                 <div className="flex items-center mb-4">
                   <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mr-3">
                     <Flower className="h-5 w-5 text-green-600" />
@@ -293,6 +295,7 @@ const staticGames = [
 
 export default function GamesPage() {
   const { user, isLoading } = useAuth();
+  const { isDemo } = useDemoAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [games, setGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
@@ -465,12 +468,23 @@ export default function GamesPage() {
           <div className="flex items-center mb-2">
             <Gamepad2 className="h-6 w-6 text-indigo-600 mr-2" />
             <h1 className="text-3xl font-bold text-gray-900">Language Learning Games</h1>
-            <span className="ml-3 bg-orange-500 text-white text-sm px-3 py-1 rounded-full font-bold">BETA</span>
+            <span className="ml-3 bg-orange-500 text-white text-sm px-3 py-1 rounded-full font-bold">DEMO</span>
           </div>
           <p className="text-gray-600 max-w-2xl">
             🎮 Engage with interactive games designed to make language learning fun and effective.
             All games are available to teachers and students with an active account.
           </p>
+
+          {/* Demo Banner */}
+          {isDemo && (
+            <div className="mt-6 max-w-4xl mx-auto">
+              <DemoBanner
+                message="Demo Mode: Try our games with basic vocabulary. Sign up to unlock all categories, languages, and features!"
+                showStats={true}
+                variant="full"
+              />
+            </div>
+          )}
 
           {user && (
             <div className="mt-4 p-4 bg-gradient-to-r from-blue-100 to-indigo-100 rounded-xl border border-blue-200">
@@ -552,7 +566,7 @@ export default function GamesPage() {
                     }}
                   />
                   <div className="absolute top-2 left-2 bg-orange-500 text-white text-xs px-2 py-1 rounded-full font-bold">
-                    BETA
+                    DEMO
                   </div>
                   <div className="absolute top-2 right-2 bg-white/20 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-full">
                     {game.category}

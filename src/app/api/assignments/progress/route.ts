@@ -76,13 +76,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Update or create assignment progress
+    // Update or create assignment progress in the main table
     const progressData = {
       assignment_id: assignmentId,
       student_id: user.id,
       status: completed ? 'completed' : 'in_progress',
       score: score,
-      accuracy: score, // For memory game, score is accuracy
+      accuracy: accuracy || score, // Use provided accuracy or fallback to score
       attempts: metadata?.attempts || 1,
       time_spent: timeSpent,
       updated_at: new Date().toISOString(),
@@ -96,12 +96,41 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (progressError) {
-      console.error('Error updating progress:', progressError);
+      console.error('Error updating assignment progress:', progressError);
       return NextResponse.json(
-        { error: 'Failed to update progress' },
+        { error: 'Failed to update assignment progress' },
         { status: 500 }
       );
     }
+
+    // Also update game-specific progress if gameId is provided
+    if (gameId) {
+      const gameProgressData = {
+        assignment_id: assignmentId,
+        student_id: user.id,
+        game_id: gameId,
+        status: completed ? 'completed' : 'in_progress',
+        score: score,
+        accuracy: accuracy || score,
+        time_spent: timeSpent,
+        words_completed: wordsCompleted || 0,
+        total_words: totalWords || 0,
+        session_data: sessionData || {},
+        updated_at: new Date().toISOString(),
+        ...(completed && { completed_at: new Date().toISOString() })
+      };
+
+      const { error: gameProgressError } = await supabase
+        .from('assignment_game_progress')
+        .upsert([gameProgressData]);
+
+      if (gameProgressError) {
+        console.error('Error updating game progress:', gameProgressError);
+        // Don't fail the request, just log the error
+      }
+    }
+
+
 
     // Create game session record
     if (metadata) {

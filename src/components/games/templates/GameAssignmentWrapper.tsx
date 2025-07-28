@@ -484,3 +484,46 @@ export const calculateStandardScore = (
 
   return { score, accuracy, maxScore };
 };
+
+// Unified progress recording function
+export const recordAssignmentProgress = async (
+  assignmentId: string,
+  gameId: string,
+  studentId: string,
+  progressData: GameProgress
+): Promise<{ success: boolean; error?: string }> => {
+  try {
+    const response = await fetch('/api/assignments/progress', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        assignmentId,
+        gameId,
+        studentId,
+        status: progressData.completedAt ? 'completed' : 'in_progress',
+        score: progressData.score,
+        accuracy: progressData.accuracy,
+        timeSpent: progressData.timeSpent,
+        wordsCompleted: progressData.wordsCompleted || 0,
+        totalWords: progressData.totalWords || 0,
+        sessionData: progressData.sessionData || {},
+        completedAt: progressData.completedAt
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to record progress');
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error recording assignment progress:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
+  }
+};

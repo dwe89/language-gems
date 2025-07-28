@@ -24,9 +24,6 @@ const LanguageSelectionPage: React.FC<{
     { code: 'spanish', name: 'Spanish', flag: '🇪🇸', description: 'Learn Spanish vocabulary and grammar' },
     { code: 'french', name: 'French', flag: '🇫🇷', description: 'Master French language skills' },
     { code: 'german', name: 'German', flag: '🇩🇪', description: 'Build German language proficiency' },
-    { code: 'italian', name: 'Italian', flag: '🇮🇹', description: 'Discover Italian language beauty' },
-    { code: 'portuguese', name: 'Portuguese', flag: '🇵🇹', description: 'Explore Portuguese language' },
-    { code: 'mandarin', name: 'Mandarin', flag: '🇨🇳', description: 'Learn Mandarin Chinese' }
   ];
 
   // Curriculum types
