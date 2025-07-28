@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { User } from '@supabase/supabase-js';
 
 interface DemoUser extends Partial<User> {
@@ -29,15 +30,11 @@ interface DemoAuthProviderProps {
 }
 
 export function DemoAuthProvider({ children, realUser, isLoading }: DemoAuthProviderProps) {
-  const [isDemoRoute, setIsDemoRoute] = useState(false);
+  const pathname = usePathname();
 
-  useEffect(() => {
-    // Check if current route is a demo route
-    const path = window.location.pathname;
-    const demoRoutes = ['/games/', '/vocabulary-games'];
-    const isDemo = demoRoutes.some(route => path.startsWith(route));
-    setIsDemoRoute(isDemo);
-  }, []);
+  // Check if current route is a demo route
+  const demoRoutes = ['/games', '/vocabulary-games'];
+  const isDemoRoute = demoRoutes.some(route => pathname === route || pathname.startsWith(route + '/'));
 
   // Create demo user when on demo routes and no real user
   const createDemoUser = (): DemoUser => ({
@@ -65,22 +62,24 @@ export function DemoAuthProvider({ children, realUser, isLoading }: DemoAuthProv
     if (realUser?.email === 'danieletienne89@gmail.com') {
       return realUser;
     }
-    
+
     // If we have a real user, use it
     if (realUser) {
       return realUser;
     }
-    
-    // If on demo route and no real user, provide demo user
-    if (isDemoRoute && !isLoading) {
+
+    // If on demo route and no real user, provide demo user (regardless of loading state)
+    if (isDemoRoute && !realUser) {
       return createDemoUser();
     }
-    
+
     return null;
   })();
 
   const isDemo = effectiveUser?.isDemoUser === true;
   const isAdmin = realUser?.email === 'danieletienne89@gmail.com';
+
+
 
   const contextValue: DemoAuthContextType = {
     user: effectiveUser,

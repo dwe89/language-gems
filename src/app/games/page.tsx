@@ -301,6 +301,8 @@ export default function GamesPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
 
+
+
   useEffect(() => {
     // This would be replaced with an actual API call in production
     const fetchGames = async () => {
@@ -431,8 +433,8 @@ export default function GamesPage() {
     fetchGames();
   }, []);
 
-  // If user is not authenticated, show login gate
-  if (!isLoading && !user) {
+  // If user is not authenticated and not in demo mode, show login gate
+  if (!isLoading && !user && !isDemo) {
     return <LoginRequiredGate />;
   }
 
