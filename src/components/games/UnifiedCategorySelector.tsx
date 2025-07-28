@@ -2,23 +2,43 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  ArrowLeft, 
-  ArrowRight, 
-  BookOpen, 
-  Globe, 
-  GraduationCap, 
+import ReactCountryFlag from 'react-country-flag';
+import {
+  ArrowLeft,
+  ArrowRight,
+  BookOpen,
+  Globe,
+  GraduationCap,
   Target,
   Play,
   Lock,
-  Sparkles
+  Sparkles,
+  Clock,
+  Award,
+  Star,
+  Users,
+  Home,
+  School,
+  Gamepad2,
+  Utensils,
+  Shirt,
+  Laptop,
+  Heart, // Assuming this is for Health & Lifestyle, if not already used
+  Plane,
+  Leaf,
+  Earth, // Used for Social & Global Issues
+  Lightbulb,
+  Calendar, // Could be used for Dates & Time categories if icons were in those
+  Clipboard, // For Basics & Core Language
+  User, // For Identity & Personal Life
+  Stethoscope // For Health & Lifestyle
 } from 'lucide-react';
 import { useDemoAuth } from '../auth/DemoAuthProvider';
 
 // Types
 export interface UnifiedSelectionConfig {
   language: string;
-  curriculumLevel: 'KS3' | 'KS4';
+  curriculumLevel: 'KS2' | 'KS3' | 'KS4' | 'KS5';
   categoryId: string;
   subcategoryId?: string;
   customMode?: boolean;
@@ -33,31 +53,52 @@ export interface UnifiedCategorySelectorProps {
   title?: string;
 }
 
-// Complete language options - supporting ALL languages used across games
+// Language options with country flags
 const AVAILABLE_LANGUAGES = [
-  { code: 'en', name: 'English', flag: '🇬🇧', description: 'Learn English vocabulary and grammar' },
-  { code: 'es', name: 'Spanish', flag: '🇪🇸', description: 'Learn Spanish vocabulary and grammar' },
-  { code: 'fr', name: 'French', flag: '🇫🇷', description: 'Master French language skills' },
-  { code: 'de', name: 'German', flag: '🇩🇪', description: 'Build German language proficiency' },
-  { code: 'it', name: 'Italian', flag: '🇮🇹', description: 'Learn Italian language and culture' },
-  { code: 'pt', name: 'Portuguese', flag: '🇵🇹', description: 'Master Portuguese language skills' },
-  { code: 'zh', name: 'Chinese', flag: '🇨🇳', description: 'Learn Chinese characters and pronunciation' },
-  { code: 'ja', name: 'Japanese', flag: '🇯🇵', description: 'Master Japanese hiragana, katakana, and kanji' },
-  { code: 'ko', name: 'Korean', flag: '🇰🇷', description: 'Learn Korean hangul and grammar' },
-  { code: 'ar', name: 'Arabic', flag: '🇸🇦', description: 'Learn Arabic script and vocabulary' },
-  { code: 'ru', name: 'Russian', flag: '🇷🇺', description: 'Master Russian Cyrillic and grammar' },
+  {
+    code: 'es',
+    name: 'Spanish',
+    icon: <ReactCountryFlag countryCode="ES" svg style={{ width: '2rem', height: '2rem' }} className="rounded-full shadow-lg" />,
+    description: 'Learn Spanish vocabulary',
+    color: 'from-red-500 to-yellow-500'
+  },
+  {
+    code: 'fr',
+    name: 'French',
+    icon: <ReactCountryFlag countryCode="FR" svg style={{ width: '2rem', height: '2rem' }} className="rounded-full shadow-lg" />,
+    description: 'Master French language skills',
+    color: 'from-blue-500 to-red-500'
+  },
+  {
+    code: 'de',
+    name: 'German',
+    icon: <ReactCountryFlag countryCode="DE" svg style={{ width: '2rem', height: '2rem' }} className="rounded-full shadow-lg" />,
+    description: 'Build German language proficiency',
+    color: 'from-gray-800 to-red-600'
+  },
 ];
 
 // Curriculum levels
 const CURRICULUM_LEVELS = [
+  {
+    code: 'KS2' as const,
+    name: 'KS2',
+    displayName: 'Key Stage 2',
+    description: 'Coming Soon - Primary language introduction',
+    ageRange: 'Ages 7-11',
+    icon: <BookOpen className="h-8 w-8" />, // This is already correctly rendering JSX
+    color: 'from-green-500 to-emerald-600',
+    comingSoon: true
+  },
   {
     code: 'KS3' as const,
     name: 'KS3',
     displayName: 'Key Stage 3',
     description: 'Foundation language skills and basic vocabulary',
     ageRange: 'Ages 11-14',
-    icon: '📚',
-    color: 'from-blue-500 to-indigo-600'
+    icon: <School className="h-8 w-8" />, // This is already correctly rendering JSX
+    color: 'from-blue-500 to-indigo-600',
+    comingSoon: false
   },
   {
     code: 'KS4' as const,
@@ -65,111 +106,58 @@ const CURRICULUM_LEVELS = [
     displayName: 'Key Stage 4 (GCSE)',
     description: 'GCSE-level curriculum with foundation and higher tiers',
     ageRange: 'Ages 14-16',
-    icon: '🎓',
-    color: 'from-purple-500 to-pink-600'
+    icon: <GraduationCap className="h-8 w-8" />, // This is already correctly rendering JSX
+    color: 'from-purple-500 to-pink-600',
+    comingSoon: false
+  },
+  {
+    code: 'KS5' as const,
+    name: 'KS5 (A-Level)',
+    displayName: 'Key Stage 5 (A-Level)',
+    description: 'Coming Soon - Advanced language proficiency',
+    ageRange: 'Ages 16-18',
+    icon: <Award className="h-8 w-8" />, // This is already correctly rendering JSX
+    color: 'from-red-500 to-orange-600',
+    comingSoon: true
   }
 ];
 
-// Categories with enhanced styling
-const VOCABULARY_CATEGORIES = [
-  {
-    id: 'basics_core_language',
-    name: 'Basics & Core Language',
-    icon: '📝',
-    color: 'from-blue-500 to-indigo-600',
-    description: 'Essential vocabulary and common phrases',
-    subcategories: [
-      { id: 'greetings_introductions', name: 'Greetings & Introductions' },
-      { id: 'common_phrases', name: 'Common Phrases' },
-      { id: 'opinions', name: 'Opinions' },
-      { id: 'numbers_1_30', name: 'Numbers 1-30' },
-      { id: 'numbers_40_100', name: 'Numbers 40-100' },
-    ]
-  },
-  {
-    id: 'identity_personal_life',
-    name: 'Identity & Personal Life',
-    icon: '👤',
-    color: 'from-purple-500 to-pink-600',
-    description: 'Personal information and relationships',
-    subcategories: [
-      { id: 'personal_information', name: 'Personal Information' },
-      { id: 'family_friends', name: 'Family & Friends' },
-      { id: 'physical_personality', name: 'Physical & Personality' },
-    ]
-  },
-  {
-    id: 'home_local_area',
-    name: 'Home & Local Area',
-    icon: '🏠',
-    color: 'from-green-500 to-teal-600',
-    description: 'Home environment and local community',
-    subcategories: [
-      { id: 'house_rooms', name: 'House & Rooms' },
-      { id: 'furniture', name: 'Furniture' },
-      { id: 'household_items', name: 'Household Items' },
-    ]
-  },
-  {
-    id: 'school_jobs_future',
-    name: 'School, Jobs & Future',
-    icon: '🎓',
-    color: 'from-orange-500 to-red-600',
-    description: 'Education, careers and future plans',
-    subcategories: [
-      { id: 'school_subjects', name: 'School Subjects' },
-      { id: 'school_rules', name: 'School Rules' },
-      { id: 'classroom_objects', name: 'Classroom Objects' },
-    ]
-  },
-  {
-    id: 'free_time_leisure',
-    name: 'Free Time & Leisure',
-    icon: '🎮',
-    color: 'from-cyan-500 to-blue-600',
-    description: 'Hobbies, sports and entertainment',
-    subcategories: [
-      { id: 'hobbies_interests', name: 'Hobbies & Interests' },
-      { id: 'sports', name: 'Sports' },
-      { id: 'social_activities', name: 'Social Activities' },
-    ]
-  },
-  {
-    id: 'food_drink',
-    name: 'Food & Drink',
-    icon: '🍽️',
-    color: 'from-yellow-500 to-orange-600',
-    description: 'Meals, ingredients and dining',
-    subcategories: [
-      { id: 'meals', name: 'Meals' },
-      { id: 'food_drink_items', name: 'Food & Drink Items' },
-      { id: 'ordering_restaurant', name: 'Ordering at Restaurant' },
-    ]
-  },
-  {
-    id: 'clothes_shopping',
-    name: 'Clothes & Shopping',
-    icon: '👕',
-    color: 'from-pink-500 to-purple-600',
-    description: 'Fashion, clothing and shopping',
-    subcategories: [
-      { id: 'clothes_accessories', name: 'Clothes & Accessories' },
-      { id: 'shopping_phrases', name: 'Shopping Phrases' },
-    ]
-  },
-  {
-    id: 'technology_media',
-    name: 'Technology & Media',
-    icon: '💻',
-    color: 'from-indigo-500 to-purple-600',
-    description: 'Digital technology and media',
-    subcategories: [
-      { id: 'mobile_phones', name: 'Mobile Phones' },
-      { id: 'internet_digital', name: 'Internet & Digital' },
-      { id: 'tv', name: 'TV' },
-    ]
-  }
-];
+// Define the comprehensive category structure
+// NOTE: I've moved the Category interface here and updated it.
+// This is crucial because KS3_CATEGORIES from ModernCategorySelector.ts
+// now uses React.ElementType for its icons.
+export interface Category {
+  id: string;
+  name: string;
+  displayName: string;
+  icon: React.ElementType; // Changed from string to React.ElementType
+  color: string;
+  subcategories: Subcategory[];
+}
+
+export interface Subcategory {
+  id: string;
+  name: string;
+  displayName: string;
+  categoryId: string;
+}
+
+// Import complete category systems
+// These should ideally match the updated Category interface type.
+// If ModernCategorySelector.ts also uses the old string for icon,
+// you'll need to update that file with Lucide icons (as previously discussed)
+// and its Category interface.
+import { VOCABULARY_CATEGORIES as KS3_CATEGORIES } from './ModernCategorySelector';
+import { KS4_VOCABULARY_CATEGORIES as KS4_CATEGORIES } from './KS4CategorySystem';
+
+
+// Get categories based on curriculum level
+const getCategoriesByCurriculum = (level: 'KS2' | 'KS3' | 'KS4' | 'KS5') => {
+  if (level === 'KS4') return KS4_CATEGORIES;
+  if (level === 'KS3') return KS3_CATEGORIES;
+  // For KS2 and KS5 (coming soon), return empty array for now
+  return [];
+};
 
 export default function UnifiedCategorySelector({
   onSelectionComplete,
@@ -182,17 +170,20 @@ export default function UnifiedCategorySelector({
   const { isDemo } = useDemoAuth();
   const [step, setStep] = useState<'language' | 'curriculum' | 'category' | 'subcategory'>('language');
   const [selectedLanguage, setSelectedLanguage] = useState<string>('');
-  const [selectedCurriculumLevel, setSelectedCurriculumLevel] = useState<'KS3' | 'KS4'>('KS3');
+  const [selectedCurriculumLevel, setSelectedCurriculumLevel] = useState<'KS2' | 'KS3' | 'KS4' | 'KS5'>('KS3');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedSubcategory, setSelectedSubcategory] = useState<string>('');
 
   // Filter languages based on supported languages
-  const availableLanguages = AVAILABLE_LANGUAGES.filter(lang => 
+  const availableLanguages = AVAILABLE_LANGUAGES.filter(lang =>
     supportedLanguages.includes(lang.code)
   );
 
+  // Get categories for current curriculum level
+  const currentCategories = getCategoriesByCurriculum(selectedCurriculumLevel);
+
   // Get current category data
-  const currentCategory = VOCABULARY_CATEGORIES.find(cat => cat.id === selectedCategory);
+  const currentCategory = currentCategories.find(cat => cat.id === selectedCategory);
 
   // Demo restrictions - only allow first category to be fully unlocked
   const isDemoRestricted = (categoryId: string) => {
@@ -205,7 +196,14 @@ export default function UnifiedCategorySelector({
     setStep('curriculum');
   };
 
-  const handleCurriculumSelect = (level: 'KS3' | 'KS4') => {
+  const handleCurriculumSelect = (level: 'KS2' | 'KS3' | 'KS4' | 'KS5') => {
+    // Check if this is a coming soon level
+    const selectedLevel = CURRICULUM_LEVELS.find(l => l.code === level);
+    if (selectedLevel?.comingSoon) {
+      alert('This curriculum level is coming soon! Please select KS3 or KS4 for now.');
+      return;
+    }
+
     setSelectedCurriculumLevel(level);
     setStep('category');
   };
@@ -214,10 +212,10 @@ export default function UnifiedCategorySelector({
     if (isDemoRestricted(categoryId)) {
       return; // Don't allow selection of restricted categories
     }
-    
+
     setSelectedCategory(categoryId);
-    const category = VOCABULARY_CATEGORIES.find(cat => cat.id === categoryId);
-    
+    const category = currentCategories.find(cat => cat.id === categoryId);
+
     if (category && category.subcategories.length > 0) {
       setStep('subcategory');
     } else {
@@ -242,6 +240,8 @@ export default function UnifiedCategorySelector({
   };
 
   const handleCustomMode = () => {
+    // For custom mode, we'll skip the vocabulary loading step
+    // and let the game handle custom vocabulary input
     onSelectionComplete({
       language: selectedLanguage,
       curriculumLevel: selectedCurriculumLevel,
@@ -258,7 +258,7 @@ export default function UnifiedCategorySelector({
         break;
       case 'category':
         setStep('curriculum');
-        setSelectedCurriculumLevel('KS3');
+        setSelectedCurriculumLevel('KS3'); // Default back to KS3
         break;
       case 'subcategory':
         setStep('category');
@@ -293,7 +293,7 @@ export default function UnifiedCategorySelector({
                 </p>
               </div>
             </div>
-            
+
             {isDemo && (
               <div className="bg-yellow-500/20 border border-yellow-500/30 rounded-lg px-4 py-2">
                 <span className="text-yellow-200 text-sm font-medium">DEMO MODE</span>
@@ -307,14 +307,14 @@ export default function UnifiedCategorySelector({
               {['language', 'curriculum', 'category', 'subcategory'].map((stepName, index) => {
                 const isActive = step === stepName;
                 const isCompleted = ['language', 'curriculum', 'category', 'subcategory'].indexOf(step) > index;
-                
+
                 return (
                   <React.Fragment key={stepName}>
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
-                      isActive 
-                        ? 'bg-white text-purple-900' 
-                        : isCompleted 
-                          ? 'bg-green-500 text-white' 
+                      isActive
+                        ? 'bg-white text-purple-900'
+                        : isCompleted
+                          ? 'bg-green-500 text-white'
                           : 'bg-white/20 text-white/60'
                     }`}>
                       {isCompleted ? '✓' : index + 1}
@@ -338,7 +338,7 @@ export default function UnifiedCategorySelector({
                 onSelect={handleLanguageSelect}
               />
             )}
-            
+
             {step === 'curriculum' && (
               <CurriculumSelection
                 levels={CURRICULUM_LEVELS}
@@ -346,16 +346,16 @@ export default function UnifiedCategorySelector({
                 selectedLanguage={selectedLanguage}
               />
             )}
-            
+
             {step === 'category' && (
               <CategorySelection
-                categories={VOCABULARY_CATEGORIES}
+                categories={currentCategories}
                 onSelect={handleCategorySelect}
                 onCustomMode={showCustomMode ? handleCustomMode : undefined}
                 isDemoRestricted={isDemoRestricted}
               />
             )}
-            
+
             {step === 'subcategory' && currentCategory && (
               <SubcategorySelection
                 category={currentCategory}
@@ -382,7 +382,11 @@ const LanguageSelection: React.FC<{
     className="space-y-6"
   >
     <div className="text-center mb-8">
-      <Globe className="h-12 w-12 text-white mx-auto mb-4" />
+      <div className="flex justify-center space-x-2 mb-4">
+        <ReactCountryFlag countryCode="ES" svg style={{ width: '1.5rem', height: '1.5rem' }} className="rounded-sm" />
+        <ReactCountryFlag countryCode="FR" svg style={{ width: '1.5rem', height: '1.5rem' }} className="rounded-sm" />
+        <ReactCountryFlag countryCode="DE" svg style={{ width: '1.5rem', height: '1.5rem' }} className="rounded-sm" />
+      </div>
       <h2 className="text-2xl font-bold text-white mb-2">Choose Your Language</h2>
       <p className="text-white/80">Select the language you want to practice</p>
     </div>
@@ -396,7 +400,12 @@ const LanguageSelection: React.FC<{
           whileTap={{ scale: 0.98 }}
           className="bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 hover:border-white/40 rounded-2xl p-6 text-center transition-all duration-300 group"
         >
-          <div className="text-4xl mb-4">{language.flag}</div>
+          {/* Country flag with enhanced styling */}
+          <div className="mb-4 flex justify-center">
+            <div className="p-2 bg-white/10 rounded-full backdrop-blur-sm border border-white/20">
+              {language.icon}
+            </div>
+          </div>
           <h3 className="text-xl font-bold text-white mb-2">{language.name}</h3>
           <p className="text-white/70 text-sm">{language.description}</p>
           <div className="mt-4 flex items-center justify-center text-white/60 group-hover:text-white/80 transition-colors">
@@ -412,7 +421,7 @@ const LanguageSelection: React.FC<{
 // Curriculum Selection Component
 const CurriculumSelection: React.FC<{
   levels: typeof CURRICULUM_LEVELS;
-  onSelect: (level: 'KS3' | 'KS4') => void;
+  onSelect: (level: 'KS2' | 'KS3' | 'KS4' | 'KS5') => void;
   selectedLanguage: string;
 }> = ({ levels, onSelect, selectedLanguage }) => {
   const language = AVAILABLE_LANGUAGES.find(l => l.code === selectedLanguage);
@@ -426,10 +435,9 @@ const CurriculumSelection: React.FC<{
       className="space-y-6"
     >
       <div className="text-center mb-8">
-        <GraduationCap className="h-12 w-12 text-white mx-auto mb-4" />
         <h2 className="text-2xl font-bold text-white mb-2">Choose Your Curriculum Level</h2>
         <p className="text-white/80">
-          Learning {language?.flag} {language?.name} - Select your educational level
+          Learning {language?.name} - Select your educational level
         </p>
       </div>
 
@@ -438,21 +446,38 @@ const CurriculumSelection: React.FC<{
           <motion.button
             key={level.code}
             onClick={() => onSelect(level.code)}
-            whileHover={{ scale: 1.02, y: -4 }}
-            whileTap={{ scale: 0.98 }}
-            className={`bg-gradient-to-br ${level.color} rounded-2xl p-6 text-white shadow-lg hover:shadow-xl transition-all duration-300 group relative overflow-hidden`}
+            whileHover={!level.comingSoon ? { scale: 1.02, y: -4 } : {}}
+            whileTap={!level.comingSoon ? { scale: 0.98 } : {}}
+            disabled={level.comingSoon}
+            className={`bg-gradient-to-br ${level.color} rounded-2xl p-6 text-white shadow-lg transition-all duration-300 group relative overflow-hidden ${
+              level.comingSoon
+                ? 'opacity-60 cursor-not-allowed'
+                : 'hover:shadow-xl cursor-pointer'
+            }`}
           >
             <div className="relative z-10">
-              <div className="text-4xl mb-4">{level.icon}</div>
+              <div className="flex items-center justify-center mb-4">
+                {/* This was already correct as level.icon already holds JSX */}
+                {level.icon}
+                {level.comingSoon && (
+                  <Lock className="h-5 w-5 ml-2 text-white/80" />
+                )}
+              </div>
               <h3 className="text-xl font-bold mb-2">{level.name}</h3>
               <p className="text-white/90 text-sm mb-2">{level.description}</p>
               <p className="text-white/70 text-xs">{level.ageRange}</p>
               <div className="mt-4 flex items-center justify-center text-white/80 group-hover:text-white transition-colors">
-                <span className="text-sm font-medium">Select Level</span>
-                <ArrowRight className="h-4 w-4 ml-2" />
+                <span className="text-sm font-medium">
+                  {level.comingSoon ? 'Coming Soon' : 'Select Level'}
+                </span>
+                {!level.comingSoon && (
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                )}
               </div>
             </div>
-            <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            {!level.comingSoon && (
+              <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            )}
           </motion.button>
         ))}
       </div>
@@ -462,7 +487,9 @@ const CurriculumSelection: React.FC<{
 
 // Category Selection Component
 const CategorySelection: React.FC<{
-  categories: typeof VOCABULARY_CATEGORIES;
+  // Ensure this type matches the actual categories being passed (KS3_CATEGORIES/KS4_CATEGORIES)
+  // and that their 'icon' property is React.ElementType
+  categories: Category[]; // Using the updated Category interface defined above
   onSelect: (categoryId: string) => void;
   onCustomMode?: () => void;
   isDemoRestricted: (categoryId: string) => boolean;
@@ -483,6 +510,7 @@ const CategorySelection: React.FC<{
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
       {categories.map((category, index) => {
         const isRestricted = isDemoRestricted(category.id);
+        const IconComponent = category.icon; // Get the component reference
 
         return (
           <motion.div
@@ -505,13 +533,16 @@ const CategorySelection: React.FC<{
             >
               <div className="relative z-10">
                 <div className="flex items-center justify-between mb-4">
-                  <div className="text-3xl">{category.icon}</div>
+                  {/* FIX IS HERE: Render the component directly */}
+                  <IconComponent className="h-8 w-8" />
                   {isRestricted && (
                     <Lock className="h-5 w-5 text-white/80" />
                   )}
                 </div>
-                <h3 className="text-lg font-bold mb-2 text-left">{category.name}</h3>
-                <p className="text-white/90 text-sm text-left mb-3">{category.description}</p>
+                <h3 className="text-lg font-bold mb-2 text-left">{category.displayName}</h3>
+                <p className="text-white/90 text-sm text-left mb-3">
+                  {category.subcategories.length} topics available
+                </p>
                 <div className="flex items-center justify-between">
                   <span className="text-white/70 text-xs">
                     {category.subcategories.length} topics
@@ -548,7 +579,8 @@ const CategorySelection: React.FC<{
           className="bg-gradient-to-br from-gray-600 to-gray-800 rounded-2xl p-6 text-white shadow-lg hover:shadow-xl transition-all duration-300 group relative overflow-hidden"
         >
           <div className="relative z-10">
-            <div className="text-3xl mb-4">✏️</div>
+            {/* FIX IS HERE: Render the Sparkles icon for custom mode */}
+            <Sparkles className="h-8 w-8 text-white mb-4" />
             <h3 className="text-lg font-bold mb-2 text-left">Custom Vocabulary</h3>
             <p className="text-white/90 text-sm text-left mb-3">
               Create your own vocabulary list
@@ -567,46 +599,52 @@ const CategorySelection: React.FC<{
 
 // Subcategory Selection Component
 const SubcategorySelection: React.FC<{
-  category: typeof VOCABULARY_CATEGORIES[0];
+  // Ensure this type matches the actual category being passed
+  category: Category; // Using the updated Category interface defined above
   onSelect: (subcategoryId: string) => void;
-}> = ({ category, onSelect }) => (
-  <motion.div
-    key="subcategory"
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    exit={{ opacity: 0, y: -20 }}
-    className="space-y-6"
-  >
-    <div className="text-center mb-8">
-      <Target className="h-12 w-12 text-white mx-auto mb-4" />
-      <h2 className="text-2xl font-bold text-white mb-2">Choose Specific Topic</h2>
-      <p className="text-white/80">
-        Select from <span className="font-semibold">{category.name}</span> topics
-      </p>
-    </div>
+}> = ({ category, onSelect }) => {
+  const IconComponent = category.icon; // Get the component reference
 
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-4xl mx-auto">
-      {category.subcategories.map((subcategory, index) => (
-        <motion.button
-          key={subcategory.id}
-          onClick={() => onSelect(subcategory.id)}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: index * 0.1 }}
-          whileHover={{ scale: 1.02, y: -4 }}
-          whileTap={{ scale: 0.98 }}
-          className={`bg-gradient-to-br ${category.color} rounded-2xl p-6 text-white shadow-lg hover:shadow-xl transition-all duration-300 group relative overflow-hidden`}
-        >
-          <div className="relative z-10">
-            <div className="text-2xl mb-4">{category.icon}</div>
-            <h3 className="text-lg font-bold mb-2 text-left">{subcategory.name}</h3>
-            <div className="flex items-center justify-end mt-4">
-              <Play className="h-5 w-5 text-white/80 group-hover:text-white transition-colors" />
+  return (
+    <motion.div
+      key="subcategory"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      className="space-y-6"
+    >
+      <div className="text-center mb-8">
+        <Target className="h-12 w-12 text-white mx-auto mb-4" />
+        <h2 className="text-2xl font-bold text-white mb-2">Choose Specific Topic</h2>
+        <p className="text-white/80">
+          Select from <span className="font-semibold">{category.name}</span> topics
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-4xl mx-auto">
+        {category.subcategories.map((subcategory, index) => (
+          <motion.button
+            key={subcategory.id}
+            onClick={() => onSelect(subcategory.id)}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.1 }}
+            whileHover={{ scale: 1.02, y: -4 }}
+            whileTap={{ scale: 0.98 }}
+            className={`bg-gradient-to-br ${category.color} rounded-2xl p-6 text-white shadow-lg hover:shadow-xl transition-all duration-300 group relative overflow-hidden`}
+          >
+            <div className="relative z-10">
+              {/* FIX IS HERE: Render the component directly */}
+              <IconComponent className="h-8 w-8 text-white mb-4" />
+              <h3 className="text-lg font-bold mb-2 text-left">{subcategory.displayName}</h3>
+              <div className="flex items-center justify-end mt-4">
+                <Play className="h-5 w-5 text-white/80 group-hover:text-white transition-colors" />
+              </div>
             </div>
-          </div>
-          <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-        </motion.button>
-      ))}
-    </div>
-  </motion.div>
-);
+            <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          </motion.button>
+        ))}
+      </div>
+    </motion.div>
+  );
+};

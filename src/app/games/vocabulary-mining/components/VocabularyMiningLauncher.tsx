@@ -132,7 +132,22 @@ const LEARNING_MODES = [
   }
 ];
 
-export default function VocabularyMiningLauncher() {
+interface VocabularyMiningLauncherProps {
+  preselectedConfig?: {
+    language: string;
+    curriculumLevel: string;
+    category: string;
+    subcategory?: string;
+  };
+  onBackToMenu?: () => void;
+  streamlinedMode?: boolean; // Hide category selector when true
+}
+
+export default function VocabularyMiningLauncher({
+  preselectedConfig,
+  onBackToMenu,
+  streamlinedMode = false
+}: VocabularyMiningLauncherProps = {}) {
   const { user } = useAuth();
   const { supabase } = useSupabase();
   const [gameSession, setGameSession] = useState<GameSession | null>(null);
@@ -162,10 +177,10 @@ export default function VocabularyMiningLauncher() {
     currentAccuracy: 0
   });
   const [loading, setLoading] = useState(true);
-  const [showCategorySelector, setShowCategorySelector] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
-  const [selectedSubcategory, setSelectedSubcategory] = useState<string>('');
-  const [selectedLanguage, setSelectedLanguage] = useState<string>('es'); // Spanish by default
+  const [showCategorySelector, setShowCategorySelector] = useState(!preselectedConfig && !streamlinedMode);
+  const [selectedCategory, setSelectedCategory] = useState<string>(preselectedConfig?.category || '');
+  const [selectedSubcategory, setSelectedSubcategory] = useState<string>(preselectedConfig?.subcategory || '');
+  const [selectedLanguage, setSelectedLanguage] = useState<string>(preselectedConfig?.language || 'es');
   const [showLanguageModal, setShowLanguageModal] = useState(false);
   const [settings, setSettings] = useState<GameSettings>({
     wordsPerSession: 10,
@@ -647,264 +662,264 @@ export default function VocabularyMiningLauncher() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-6xl mx-auto">
-          {/* Header */}
-          <div className="text-center mb-12">
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 overflow-hidden">
+      <div className="container mx-auto px-3 py-2">
+        <div className="max-w-7xl mx-auto h-screen flex flex-col">
+          {/* Ultra Compact Header */}
+          <div className="flex items-center justify-between mb-3">
+            {onBackToMenu && (
+              <button
+                onClick={onBackToMenu}
+                className="flex items-center gap-1 px-2 py-1 bg-white/10 hover:bg-white/20 rounded text-white transition-colors text-sm"
+              >
+                <ArrowRight className="h-3 w-3 rotate-180" />
+                Back
+              </button>
+            )}
             <motion.div
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mb-6"
+              className="text-center flex-1"
             >
-              <h1 className="text-5xl font-bold text-white mb-4">
+              <h1 className="text-2xl font-bold text-white">
                 ⛏️ Vocabulary Mining
               </h1>
-              <p className="text-xl text-blue-200">
-                Discover rare vocabulary gems through intelligent spaced repetition
-              </p>
             </motion.div>
-
-            {/* User Stats */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8"
-            >
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
-                <div className="text-2xl font-bold text-white">{userStats.wordsLearned}</div>
-                <div className="text-sm text-blue-200">Words Learned</div>
-              </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
-                <div className="text-2xl font-bold text-white">{userStats.totalWords}</div>
-                <div className="text-sm text-blue-200">Total Words</div>
-              </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
-                <div className="text-2xl font-bold text-white">{userStats.currentStreak}</div>
-                <div className="text-sm text-blue-200">Day Streak</div>
-              </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
-                <div className="text-2xl font-bold text-white">
-                  {Math.round((userStats.weeklyProgress / userStats.weeklyGoal) * 100)}%
-                </div>
-                <div className="text-sm text-blue-200">Weekly Goal</div>
-              </div>
-            </motion.div>
-
-            {/* Gem Collection Progress */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.25 }}
-              className="bg-white/10 backdrop-blur-sm rounded-xl p-6 mb-8 border border-white/20"
-            >
-              <h3 className="text-white text-lg font-semibold mb-4 flex items-center">
-                <span className="text-2xl mr-2">💎</span>
-                Gem Collection Progress
-              </h3>
-              <div className="grid grid-cols-5 gap-3">
-                {[
-                  { type: 'common', name: 'Common', color: 'bg-blue-500', count: gemStats.common },
-                  { type: 'uncommon', name: 'Uncommon', color: 'bg-green-500', count: gemStats.uncommon },
-                  { type: 'rare', name: 'Rare', color: 'bg-purple-500', count: gemStats.rare },
-                  { type: 'epic', name: 'Epic', color: 'bg-pink-500', count: gemStats.epic },
-                  { type: 'legendary', name: 'Legendary', color: 'bg-yellow-500', count: gemStats.legendary }
-                ].map((gem) => (
-                  <div key={gem.type} className="text-center">
-                    <div className={`w-8 h-8 ${gem.color} rounded-full mx-auto mb-2 flex items-center justify-center text-white font-bold text-sm`}>
-                      {gem.count}
-                    </div>
-                    <div className="text-white text-xs">{gem.name}</div>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-
-            {/* Daily Goals */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="bg-white/10 backdrop-blur-sm rounded-xl p-6 mb-8 border border-white/20"
-            >
-              <h3 className="text-white text-lg font-semibold mb-4 flex items-center">
-                <span className="text-2xl mr-2">🎯</span>
-                Daily Goals
-              </h3>
-              <div className="space-y-3">
-                <div>
-                  <div className="flex justify-between text-white text-sm mb-1">
-                    <span>Words Practiced</span>
-                    <span>{dailyGoals.wordsPracticed} / {dailyGoals.targetWords}</span>
-                  </div>
-                  <div className="w-full bg-white/20 rounded-full h-2">
-                    <div
-                      className="bg-green-500 h-2 rounded-full"
-                      style={{ width: `${Math.min((dailyGoals.wordsPracticed / dailyGoals.targetWords) * 100, 100)}%` }}
-                    ></div>
-                  </div>
-                </div>
-                <div>
-                  <div className="flex justify-between text-white text-sm mb-1">
-                    <span>Practice Time</span>
-                    <span>{dailyGoals.minutesPracticed} / {dailyGoals.targetMinutes} min</span>
-                  </div>
-                  <div className="w-full bg-white/20 rounded-full h-2">
-                    <div
-                      className="bg-blue-500 h-2 rounded-full"
-                      style={{ width: `${Math.min((dailyGoals.minutesPracticed / dailyGoals.targetMinutes) * 100, 100)}%` }}
-                    ></div>
-                  </div>
-                </div>
-                <div>
-                  <div className="flex justify-between text-white text-sm mb-1">
-                    <span>Accuracy Goal</span>
-                    <span>{dailyGoals.currentAccuracy}% / {dailyGoals.targetAccuracy}%</span>
-                  </div>
-                  <div className="w-full bg-white/20 rounded-full h-2">
-                    <div
-                      className="bg-yellow-500 h-2 rounded-full"
-                      style={{ width: `${Math.min((dailyGoals.currentAccuracy / dailyGoals.targetAccuracy) * 100, 100)}%` }}
-                    ></div>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Language and Category Selection */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="mb-8 space-y-4"
-            >
-              {/* Language Selection */}
-              <div className="flex justify-center">
-                <button
-                  onClick={() => setShowLanguageModal(true)}
-                  className="bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl flex items-center space-x-2"
-                >
-                  <span className="text-xl">
-                    {availableLanguages.find(lang => lang.code === selectedLanguage)?.flag}
-                  </span>
-                  <span>
-                    {availableLanguages.find(lang => lang.code === selectedLanguage)?.name}
-                  </span>
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-              </div>
-
-              {/* Category Selection */}
-              <div className="flex justify-center">
-                <button
-                  onClick={() => setShowCategorySelector(true)}
-                  className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl flex items-center space-x-2"
-                >
-                  <BookOpen className="h-5 w-5" />
-                  <span>
-                    {selectedCategory
-                      ? `${getCategoryById(selectedCategory).displayName}${selectedSubcategory ? ` - ${selectedSubcategory}` : ''}`
-                      : 'Select Vocabulary Category'
-                    }
-                  </span>
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-              </div>
-            </motion.div>
+            <div className="w-12"></div> {/* Spacer for centering */}
           </div>
 
-          {/* Learning Modes Grid */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8"
-          >
-            {LEARNING_MODES.map((mode, index) => (
+          {/* Selected Category Indicator (Streamlined Mode) */}
+          {streamlinedMode && preselectedConfig && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-center mb-4"
+            >
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-lg border border-white/20">
+                <span className="text-white/80 text-sm">Selected Category:</span>
+                <span className="text-white font-semibold text-sm">
+                  {getCategoryById(preselectedConfig.category).displayName}
+                  {preselectedConfig.subcategory && ` • ${preselectedConfig.subcategory}`}
+                </span>
+                <span className="text-white/60 text-xs">
+                  ({preselectedConfig.language.toUpperCase()})
+                </span>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Dashboard Layout - Two Columns */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 mb-3 flex-1">
+            
+            {/* Left Column - Stats & Progress */}
+            <div className="lg:col-span-2 space-y-3">
+              
+              {/* Compact Stats Row */}
               <motion.div
-                key={mode.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 * index }}
-                className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20 hover:bg-white/20 transition-all duration-200 cursor-pointer group"
-                onClick={() => startGameSession(mode.id)}
+                transition={{ delay: 0.1 }}
+                className="bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/20"
               >
-                <div className={`w-12 h-12 rounded-xl ${mode.color} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
-                  {mode.icon}
-                </div>
-                <h3 className="text-xl font-semibold text-white mb-2">{mode.name}</h3>
-                <p className="text-blue-200 text-sm mb-4">{mode.description}</p>
-                <div className="flex items-center text-blue-300 text-sm">
-                  <Play className="h-4 w-4 mr-2" />
-                  Start Mining
+                <div className="grid grid-cols-4 gap-4">
+                  <div className="text-center">
+                    <div className="text-xl font-bold text-white">{userStats.wordsLearned}</div>
+                    <div className="text-xs text-blue-200">Words Learned</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-xl font-bold text-white">{userStats.currentStreak}</div>
+                    <div className="text-xs text-blue-200">Day Streak</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-xl font-bold text-white">
+                      {Math.round((userStats.weeklyProgress / userStats.weeklyGoal) * 100)}%
+                    </div>
+                    <div className="text-xs text-blue-200">Weekly Goal</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-xl font-bold text-white">{dailyGoals.currentAccuracy}%</div>
+                    <div className="text-xs text-blue-200">Accuracy</div>
+                  </div>
                 </div>
               </motion.div>
-            ))}
-          </motion.div>
 
-          {/* Settings Panel */}
+              {/* Combined Progress Section */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/20"
+              >
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  
+                  {/* Gem Collection - Horizontal Layout */}
+                  <div>
+                    <h3 className="text-white text-sm font-semibold mb-3 flex items-center">
+                      <span className="text-lg mr-2">💎</span>
+                      Gem Collection
+                    </h3>
+                    <div className="flex items-center justify-between">
+                      {[
+                        { type: 'common', name: 'C', color: 'bg-blue-500', count: gemStats.common },
+                        { type: 'uncommon', name: 'U', color: 'bg-green-500', count: gemStats.uncommon },
+                        { type: 'rare', name: 'R', color: 'bg-purple-500', count: gemStats.rare },
+                        { type: 'epic', name: 'E', color: 'bg-pink-500', count: gemStats.epic },
+                        { type: 'legendary', name: 'L', color: 'bg-yellow-500', count: gemStats.legendary }
+                      ].map((gem) => (
+                        <div key={gem.type} className="text-center">
+                          <div className={`w-6 h-6 ${gem.color} rounded-full flex items-center justify-center text-white font-bold text-xs mb-1`}>
+                            {gem.count}
+                          </div>
+                          <div className="text-white text-xs">{gem.name}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Daily Goals - Compact */}
+                  <div>
+                    <h3 className="text-white text-sm font-semibold mb-3 flex items-center">
+                      <span className="text-lg mr-2">🎯</span>
+                      Daily Goals
+                    </h3>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-white">Words: {dailyGoals.wordsPracticed}/{dailyGoals.targetWords}</span>
+                        <div className="w-16 bg-white/20 rounded-full h-1.5">
+                          <div
+                            className="bg-green-500 h-1.5 rounded-full"
+                            style={{ width: `${Math.min((dailyGoals.wordsPracticed / dailyGoals.targetWords) * 100, 100)}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-white">Time: {dailyGoals.minutesPracticed}/{dailyGoals.targetMinutes}m</span>
+                        <div className="w-16 bg-white/20 rounded-full h-1.5">
+                          <div
+                            className="bg-blue-500 h-1.5 rounded-full"
+                            style={{ width: `${Math.min((dailyGoals.minutesPracticed / dailyGoals.targetMinutes) * 100, 100)}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+
+            {/* Right Column - Quick Actions */}
+            <div className="space-y-3">
+              
+              {/* Language Selection - Compact */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/20"
+              >
+                <h3 className="text-white text-sm font-semibold mb-3">Language</h3>
+                <button
+                  onClick={() => setShowLanguageModal(true)}
+                  className="w-full bg-white/10 hover:bg-white/20 text-white px-3 py-2 rounded-lg font-medium transition-all duration-200 flex items-center justify-center space-x-2"
+                >
+                  <span className="text-lg">
+                    {availableLanguages.find(lang => lang.code === selectedLanguage)?.flag}
+                  </span>
+                  <span className="text-sm">
+                    {availableLanguages.find(lang => lang.code === selectedLanguage)?.name}
+                  </span>
+                </button>
+              </motion.div>
+
+              {/* Category Selection - Compact */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.35 }}
+                className="bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/20"
+              >
+                <h3 className="text-white text-sm font-semibold mb-3">Category</h3>
+                <button
+                  onClick={() => setShowCategorySelector(true)}
+                  className="w-full bg-white/10 hover:bg-white/20 text-white px-3 py-2 rounded-lg font-medium transition-all duration-200 flex items-center justify-between"
+                >
+                  <span className="text-sm truncate">
+                    {selectedCategory ? getCategoryById(selectedCategory).displayName : 'All Categories'}
+                  </span>
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </motion.div>
+
+              {/* Settings - Compact */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+                className="bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/20"
+              >
+                <h3 className="text-white text-sm font-semibold mb-3">Settings</h3>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-white text-xs">Words per session</span>
+                    <select
+                      value={settings.wordsPerSession}
+                      onChange={(e) => setSettings(prev => ({ ...prev, wordsPerSession: parseInt(e.target.value) }))}
+                      className="bg-white/10 text-white text-xs px-2 py-1 rounded border border-white/20"
+                    >
+                      <option value={5}>5</option>
+                      <option value={10}>10</option>
+                      <option value={15}>15</option>
+                      <option value={20}>20</option>
+                    </select>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-white text-xs">Audio</span>
+                    <button
+                      onClick={() => setSettings(prev => ({ ...prev, enableAudio: !prev.enableAudio }))}
+                      className={`w-8 h-4 rounded-full transition-colors ${settings.enableAudio ? 'bg-green-500' : 'bg-gray-500'}`}
+                    >
+                      <div className={`w-3 h-3 bg-white rounded-full transition-transform ${settings.enableAudio ? 'translate-x-4' : 'translate-x-0.5'}`}></div>
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          </div>
+
+          {/* Ultra Compact Learning Modes */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6 }}
-            className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20"
+            transition={{ delay: 0.5 }}
+            className="bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/20 flex-1"
           >
-            <h3 className="text-xl font-semibold text-white mb-4 flex items-center">
-              <Settings className="h-5 w-5 mr-2" />
-              Mining Settings
+            <h3 className="text-white text-sm font-semibold mb-2 flex items-center">
+              <span className="text-lg mr-2">🎮</span>
+              Learning Modes
             </h3>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-blue-200 mb-2">
-                  Words per Session
-                </label>
-                <select
-                  value={settings.wordsPerSession}
-                  onChange={(e) => setSettings(prev => ({ ...prev, wordsPerSession: parseInt(e.target.value) }))}
-                  className="w-full bg-white/20 border border-white/30 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-2 h-full">
+              {LEARNING_MODES.map((mode, index) => (
+                <motion.button
+                  key={mode.id}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.05 * index }}
+                  className="bg-white/10 hover:bg-white/20 rounded-lg p-2 border border-white/20 transition-all duration-200 cursor-pointer group text-left h-fit"
+                  onClick={() => startGameSession(mode.id)}
                 >
-                  <option value={5}>5 words</option>
-                  <option value={10}>10 words</option>
-                  <option value={15}>15 words</option>
-                  <option value={20}>20 words</option>
-                  <option value={25}>25 words</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-blue-200 mb-2">
-                  Difficulty Level
-                </label>
-                <select
-                  value={settings.difficulty}
-                  onChange={(e) => setSettings(prev => ({ ...prev, difficulty: e.target.value as 'beginner' | 'intermediate' | 'advanced' }))}
-                  className="w-full bg-white/20 border border-white/30 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="beginner">Beginner</option>
-                  <option value="intermediate">Intermediate</option>
-                  <option value="advanced">Advanced</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-blue-200 mb-2">
-                  Audio Enabled
-                </label>
-                <button
-                  onClick={() => setSettings(prev => ({ ...prev, enableAudio: !prev.enableAudio }))}
-                  className={`w-full px-3 py-2 rounded-lg font-medium transition-colors ${
-                    settings.enableAudio
-                      ? 'bg-green-500 hover:bg-green-600 text-white'
-                      : 'bg-gray-500 hover:bg-gray-600 text-white'
-                  }`}
-                >
-                  {settings.enableAudio ? 'Enabled' : 'Disabled'}
-                </button>
-              </div>
+                  <div className={`w-6 h-6 rounded ${mode.color} flex items-center justify-center mb-1 group-hover:scale-110 transition-transform`}>
+                    <div className="scale-50">
+                      {mode.icon}
+                    </div>
+                  </div>
+                  <h4 className="text-white text-xs font-medium mb-0.5 leading-tight">{mode.name}</h4>
+                  <p className="text-blue-200 text-xs leading-tight opacity-80">{mode.description}</p>
+                </motion.button>
+              ))}
             </div>
           </motion.div>
+
+
         </div>
       </div>
 

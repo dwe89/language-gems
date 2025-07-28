@@ -32,12 +32,15 @@ export class AudioFeedbackService {
     // Only preload audio in the browser (not during SSR)
     if (typeof window === 'undefined') return;
 
+    console.log('🎵 AudioFeedbackService: Preloading audio files...');
+
     // Preload gem sounds
     Object.entries(this.audioFiles.gems).forEach(([key, path]) => {
       const audio = new Audio(path);
       audio.preload = 'auto';
       audio.loop = false; // Ensure no looping
       this.audioCache.set(`gem-${key}`, audio);
+      console.log(`💎 Preloaded gem sound: ${key} -> ${path}`);
     });
 
     // Preload achievement sounds
@@ -46,6 +49,7 @@ export class AudioFeedbackService {
       audio.preload = 'auto';
       audio.loop = false; // Ensure no looping
       this.audioCache.set(`achievement-${key}`, audio);
+      console.log(`🏆 Preloaded achievement sound: ${key} -> ${path}`);
     });
 
     // Preload feedback sounds
@@ -54,17 +58,24 @@ export class AudioFeedbackService {
       audio.preload = 'auto';
       audio.loop = false; // Ensure no looping
       this.audioCache.set(`feedback-${key}`, audio);
+      console.log(`🔊 Preloaded feedback sound: ${key} -> ${path}`);
     });
+
+    console.log('✅ AudioFeedbackService: Audio preloading complete!');
+    console.log('📋 Cached audio keys:', Array.from(this.audioCache.keys()));
   }
 
   private async playAudio(key: string, volume: number = 0.7): Promise<void> {
     // Only play audio in the browser
     if (typeof window === 'undefined') return;
 
+    console.log(`🎵 AudioFeedbackService: Attempting to play audio: ${key}`);
+
     try {
       const audio = this.audioCache.get(key);
       if (!audio) {
-        console.warn(`Audio not found: ${key}`);
+        console.warn(`🚫 Audio not found in cache: ${key}`);
+        console.log('Available audio keys:', Array.from(this.audioCache.keys()));
         return;
       }
 
@@ -73,9 +84,11 @@ export class AudioFeedbackService {
       audioClone.volume = volume;
       audioClone.loop = false; // Explicitly prevent looping
 
+      console.log(`🔊 Playing audio: ${key} at volume ${volume}`);
       await audioClone.play();
+      console.log(`✅ Successfully played audio: ${key}`);
     } catch (error) {
-      console.error(`Error playing audio ${key}:`, error);
+      console.error(`❌ Error playing audio ${key}:`, error);
     }
   }
 

@@ -112,7 +112,7 @@ export default function UnifiedNoughtsAndCrossesPage() {
     return (
       <UnifiedGameLauncher
         gameName="Vocabulary Tic-Tac-Toe"
-        gameDescription="Answer vocabulary questions correctly"
+        gameDescription="Answer vocabulary questions correctly to claim squares and get three in a row"
         supportedLanguages={['es', 'fr', 'de']}
         showCustomMode={true}
         minVocabularyRequired={1} // Can work with minimal vocabulary

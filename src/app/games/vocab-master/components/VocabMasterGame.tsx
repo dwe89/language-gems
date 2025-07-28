@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../../../components/auth/AuthProvider';
+import { useUnifiedAuth } from '../../../../hooks/useUnifiedAuth';
 import { useSupabase } from '../../../../components/supabase/SupabaseProvider';
 import { SpacedRepetitionService, REVIEW_QUALITY } from '../../../../services/spacedRepetitionService';
 import { 
@@ -87,6 +88,7 @@ export default function VocabMasterGame({
   onExit
 }: Props) {
   const { user } = useAuth();
+  const { user: unifiedUser, isDemo } = useUnifiedAuth();
   const { supabase } = useSupabase();
   const spacedRepetitionService = new SpacedRepetitionService(supabase);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -233,7 +235,7 @@ export default function VocabMasterGame({
   };
 
   const loadUserProgress = async (word: VocabularyWord) => {
-    if (!user) return;
+    if (!user || isDemo) return;
 
     try {
       // For now, skip loading user progress since the table structure doesn't match
@@ -549,8 +551,8 @@ export default function VocabMasterGame({
       feedback: generateFeedback(isCorrect, newStreak)
     }));
 
-    // Update user progress in database
-    if (user && gameState.currentWord) {
+    // Update user progress in database (only for authenticated users)
+    if (user && !isDemo && gameState.currentWord) {
       await updateUserProgress(gameState.currentWord, isCorrect, responseTime);
     }
 
@@ -615,7 +617,7 @@ export default function VocabMasterGame({
   };
 
   const updateUserProgress = async (word: VocabularyWord, isCorrect: boolean, responseTime: number = 0) => {
-    if (!user || !supabase) return;
+    if (!user || !supabase || isDemo) return;
 
     try {
       console.log('Word practice recorded:', {

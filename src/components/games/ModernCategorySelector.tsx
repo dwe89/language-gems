@@ -2,7 +2,29 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, ArrowLeft, Search, Filter, X, CheckCircle } from 'lucide-react';
+import {
+  ArrowRight,
+  ArrowLeft,
+  Search,
+  Filter,
+  X,
+  CheckCircle,
+  Book,         // For KS3
+  GraduationCap, // For KS4, School, Jobs & Future
+  Clipboard,    // For Basics & Core Language
+  User,         // For Identity & Personal Life
+  Home,         // For Home & Local Area
+  Gamepad,      // For Free Time & Leisure
+  Utensils,     // For Food & Drink
+  Shirt,        // For Clothes & Shopping
+  Laptop,       // For Technology & Media
+  Stethoscope,  // For Health & Lifestyle (replacing 🏥)
+  Plane,        // For Holidays, Travel & Culture (replacing ✈️)
+  Leaf,         // For Nature & Environment (replacing 🌿)
+  Globe,        // For Social & Global Issues (replacing 🌍)
+  Lightbulb,    // For General Concepts (replacing 💡)
+  Clock,        // For Daily Life (replacing 🕐)
+} from 'lucide-react';
 import { getCategoriesByCurriculum, type CurriculumLevel } from './KS4CategorySystem';
 
 // Define the comprehensive category structure with all your new categories
@@ -10,7 +32,8 @@ export interface Category {
   id: string;
   name: string;
   displayName: string;
-  icon: string;
+  // Change icon type from string to React.ElementType for Lucide components
+  icon: React.ElementType;
   color: string;
   subcategories: Subcategory[];
 }
@@ -22,13 +45,37 @@ export interface Subcategory {
   categoryId: string;
 }
 
+// Curriculum levels - Assuming these are from your previous component and will be used or are implicitly passed
+// If these are defined elsewhere (e.g., in a central config), you'd update them there.
+const CURRICULUM_LEVELS_CONFIG = [
+  {
+    code: 'KS3' as const,
+    name: 'KS3',
+    displayName: 'Key Stage 3',
+    description: 'Foundation language skills and basic vocabulary',
+    ageRange: 'Ages 11-14',
+    icon: Book, // Changed from 📚 to Lucide Book
+    color: 'from-blue-500 to-indigo-600'
+  },
+  {
+    code: 'KS4' as const,
+    name: 'KS4 (GCSE)',
+    displayName: 'Key Stage 4 (GCSE)',
+    description: 'GCSE-level curriculum with foundation and higher tiers',
+    ageRange: 'Ages 14-16',
+    icon: GraduationCap, // Changed from 🎓 to Lucide GraduationCap
+    color: 'from-purple-500 to-pink-600'
+  }
+];
+
+
 // Complete category system with all your specified categories and subcategories
 export const VOCABULARY_CATEGORIES: Category[] = [
   {
     id: 'basics_core_language',
     name: 'basics_core_language',
     displayName: 'Basics & Core Language',
-    icon: '📝',
+    icon: Clipboard, // Changed from '📝' to Lucide Clipboard
     color: 'from-blue-500 to-indigo-600',
     subcategories: [
       { id: 'greetings_introductions', name: 'greetings_introductions', displayName: 'Greetings & Introductions', categoryId: 'basics_core_language' },
@@ -63,7 +110,7 @@ export const VOCABULARY_CATEGORIES: Category[] = [
     id: 'identity_personal_life',
     name: 'identity_personal_life',
     displayName: 'Identity & Personal Life',
-    icon: '👤',
+    icon: User, // Changed from '👤' to Lucide User
     color: 'from-purple-500 to-pink-600',
     subcategories: [
       { id: 'personal_information', name: 'personal_information', displayName: 'Personal Information', categoryId: 'identity_personal_life' },
@@ -78,7 +125,7 @@ export const VOCABULARY_CATEGORIES: Category[] = [
     id: 'home_local_area',
     name: 'home_local_area',
     displayName: 'Home & Local Area',
-    icon: '🏠',
+    icon: Home, // Changed from '🏠' to Lucide Home
     color: 'from-green-500 to-teal-600',
     subcategories: [
       { id: 'house_rooms', name: 'house_rooms', displayName: 'House & Rooms', categoryId: 'home_local_area' },
@@ -94,7 +141,7 @@ export const VOCABULARY_CATEGORIES: Category[] = [
     id: 'school_jobs_future',
     name: 'school_jobs_future',
     displayName: 'School, Jobs & Future',
-    icon: '🎓',
+    icon: GraduationCap, // Changed from '🎓' to Lucide GraduationCap
     color: 'from-orange-500 to-red-600',
     subcategories: [
       { id: 'school_subjects', name: 'school_subjects', displayName: 'School Subjects', categoryId: 'school_jobs_future' },
@@ -111,7 +158,7 @@ export const VOCABULARY_CATEGORIES: Category[] = [
     id: 'free_time_leisure',
     name: 'free_time_leisure',
     displayName: 'Free Time & Leisure',
-    icon: '🎮',
+    icon: Gamepad, // Changed from '🎮' to Lucide Gamepad
     color: 'from-cyan-500 to-blue-600',
     subcategories: [
       { id: 'hobbies_interests', name: 'hobbies_interests', displayName: 'Hobbies & Interests', categoryId: 'free_time_leisure' },
@@ -123,7 +170,7 @@ export const VOCABULARY_CATEGORIES: Category[] = [
     id: 'food_drink',
     name: 'food_drink',
     displayName: 'Food & Drink',
-    icon: '🍽️',
+    icon: Utensils, // Changed from '🍽️' to Lucide Utensils
     color: 'from-yellow-500 to-orange-600',
     subcategories: [
       { id: 'meals', name: 'meals', displayName: 'Meals', categoryId: 'food_drink' },
@@ -136,7 +183,7 @@ export const VOCABULARY_CATEGORIES: Category[] = [
     id: 'clothes_shopping',
     name: 'clothes_shopping',
     displayName: 'Clothes & Shopping',
-    icon: '👕',
+    icon: Shirt, // Changed from '👕' to Lucide Shirt
     color: 'from-pink-500 to-purple-600',
     subcategories: [
       { id: 'clothes_accessories', name: 'clothes_accessories', displayName: 'Clothes & Accessories', categoryId: 'clothes_shopping' },
@@ -147,7 +194,7 @@ export const VOCABULARY_CATEGORIES: Category[] = [
     id: 'technology_media',
     name: 'technology_media',
     displayName: 'Technology & Media',
-    icon: '💻',
+    icon: Laptop, // Changed from '💻' to Lucide Laptop
     color: 'from-indigo-500 to-purple-600',
     subcategories: [
       { id: 'mobile_phones_social_media', name: 'mobile_phones_social_media', displayName: 'Mobile Phones & Social Media', categoryId: 'technology_media' },
@@ -162,7 +209,7 @@ export const VOCABULARY_CATEGORIES: Category[] = [
     id: 'health_lifestyle',
     name: 'health_lifestyle',
     displayName: 'Health & Lifestyle',
-    icon: '🏥',
+    icon: Stethoscope, // Changed from '🏥' to Lucide Stethoscope
     color: 'from-red-500 to-pink-600',
     subcategories: [
       { id: 'parts_of_body', name: 'parts_of_body', displayName: 'Parts of Body', categoryId: 'health_lifestyle' },
@@ -175,7 +222,7 @@ export const VOCABULARY_CATEGORIES: Category[] = [
     id: 'holidays_travel_culture',
     name: 'holidays_travel_culture',
     displayName: 'Holidays, Travel & Culture',
-    icon: '✈️',
+    icon: Plane, // Changed from '✈️' to Lucide Plane
     color: 'from-teal-500 to-green-600',
     subcategories: [
       { id: 'countries', name: 'countries', displayName: 'Countries', categoryId: 'holidays_travel_culture' },
@@ -194,7 +241,7 @@ export const VOCABULARY_CATEGORIES: Category[] = [
     id: 'nature_environment',
     name: 'nature_environment',
     displayName: 'Nature & Environment',
-    icon: '🌿',
+    icon: Leaf, // Changed from '🌿' to Lucide Leaf
     color: 'from-green-600 to-emerald-700',
     subcategories: [
       { id: 'farm_animals', name: 'farm_animals', displayName: 'Farm Animals', categoryId: 'nature_environment' },
@@ -211,7 +258,7 @@ export const VOCABULARY_CATEGORIES: Category[] = [
     id: 'social_global_issues',
     name: 'social_global_issues',
     displayName: 'Social & Global Issues',
-    icon: '🌍',
+    icon: Globe, // Changed from '🌍' to Lucide Globe (already imported for other uses)
     color: 'from-slate-600 to-gray-700',
     subcategories: [
       { id: 'social_issues', name: 'social_issues', displayName: 'Social Issues', categoryId: 'social_global_issues' },
@@ -224,7 +271,7 @@ export const VOCABULARY_CATEGORIES: Category[] = [
     id: 'general_concepts',
     name: 'general_concepts',
     displayName: 'General Concepts',
-    icon: '💡',
+    icon: Lightbulb, // Changed from '💡' to Lucide Lightbulb
     color: 'from-amber-500 to-yellow-600',
     subcategories: [
       { id: 'measurements_quantities', name: 'measurements_quantities', displayName: 'Measurements & Quantities', categoryId: 'general_concepts' },
@@ -235,7 +282,7 @@ export const VOCABULARY_CATEGORIES: Category[] = [
     id: 'daily_life',
     name: 'daily_life',
     displayName: 'Daily Life',
-    icon: '🕐',
+    icon: Clock, // Changed from '🕐' to Lucide Clock
     color: 'from-blue-600 to-indigo-700',
     subcategories: [
       { id: 'daily_routine', name: 'daily_routine', displayName: 'Daily Routine', categoryId: 'daily_life' }
@@ -267,12 +314,13 @@ export default function ModernCategorySelector({
   const [currentCurriculumLevel, setCurrentCurriculumLevel] = useState<CurriculumLevel>(curriculumLevel as CurriculumLevel);
 
   // Get categories based on curriculum level
+  // Note: getCategoriesByCurriculum is imported, ensure it correctly filters VOCABULARY_CATEGORIES
   const currentCategories = getCategoriesByCurriculum(currentCurriculumLevel);
 
   // Filter categories based on search
   const filteredCategories = currentCategories.filter(category =>
     category.displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    category.subcategories.some(sub => 
+    category.subcategories.some(sub =>
       sub.displayName.toLowerCase().includes(searchTerm.toLowerCase())
     )
   );
@@ -280,7 +328,7 @@ export default function ModernCategorySelector({
   const handleCategoryClick = (category: Category) => {
     setSelectedCategory(category);
     setView('subcategories');
-    
+
     // If category has no subcategories or showAllCategories is true, select the whole category
     if (category.subcategories.length === 0 || showAllCategories) {
       onCategorySelect(category.id, null);
@@ -323,37 +371,32 @@ export default function ModernCategorySelector({
         </p>
 
         {/* Curriculum Level Selector */}
+        {/* Assuming you want to replace these with Lucide icons too if they were emojis */}
+        {/* If getCategoriesByCurriculum needs CURRICULUM_LEVELS_CONFIG, ensure it's accessible */}
         <div className="flex justify-center items-center gap-2 mb-4">
           <span className="text-sm font-medium text-gray-700">Curriculum Level:</span>
           <div className="flex bg-gray-100 rounded-lg p-1">
-            <button
-              onClick={() => {
-                setCurrentCurriculumLevel('KS3');
-                setSelectedCategory(null);
-                setView('categories');
-              }}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
-                currentCurriculumLevel === 'KS3'
-                  ? 'bg-blue-500 text-white shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              KS3 (Year 7-9)
-            </button>
-            <button
-              onClick={() => {
-                setCurrentCurriculumLevel('KS4');
-                setSelectedCategory(null);
-                setView('categories');
-              }}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
-                currentCurriculumLevel === 'KS4'
-                  ? 'bg-blue-500 text-white shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              KS4 (GCSE)
-            </button>
+            {CURRICULUM_LEVELS_CONFIG.map(level => {
+              const IconComponent = level.icon; // Get the Lucide component
+              return (
+                <button
+                  key={level.code}
+                  onClick={() => {
+                    setCurrentCurriculumLevel(level.code);
+                    setSelectedCategory(null);
+                    setView('categories');
+                  }}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 flex items-center gap-2 ${
+                    currentCurriculumLevel === level.code
+                      ? 'bg-blue-500 text-white shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  <IconComponent className="h-4 w-4" /> {/* Render the Lucide icon */}
+                  {level.displayName}
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -389,56 +432,59 @@ export default function ModernCategorySelector({
           >
             {/* Categories Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {filteredCategories.map((category) => (
-                <motion.div
-                  key={category.id}
-                  whileHover={{ scale: 1.02, y: -4 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="group cursor-pointer"
-                  onClick={() => handleCategoryClick(category)}
-                >
-                  <div className={`bg-gradient-to-br ${category.color} p-6 rounded-2xl text-white shadow-lg hover:shadow-xl transition-all duration-300 relative overflow-hidden`}>
-                    {/* Background pattern */}
-                    <div className="absolute inset-0 opacity-10">
-                      <div className="absolute top-0 right-0 w-32 h-32 bg-white rounded-full transform translate-x-16 -translate-y-16"></div>
-                      <div className="absolute bottom-0 left-0 w-24 h-24 bg-white rounded-full transform -translate-x-12 translate-y-12"></div>
-                    </div>
-                    
-                    <div className="relative z-10">
-                      <div className="flex items-center justify-between mb-4">
-                        <span className="text-4xl">{category.icon}</span>
-                        <ArrowRight className="h-6 w-6 group-hover:translate-x-1 transition-transform duration-200" />
+              {filteredCategories.map((category) => {
+                const IconComponent = category.icon; // Get the Lucide component
+                return (
+                  <motion.div
+                    key={category.id}
+                    whileHover={{ scale: 1.02, y: -4 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="group cursor-pointer"
+                    onClick={() => handleCategoryClick(category)}
+                  >
+                    <div className={`bg-gradient-to-br ${category.color} p-6 rounded-2xl text-white shadow-lg hover:shadow-xl transition-all duration-300 relative overflow-hidden`}>
+                      {/* Background pattern */}
+                      <div className="absolute inset-0 opacity-10">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-white rounded-full transform translate-x-16 -translate-y-16"></div>
+                        <div className="absolute bottom-0 left-0 w-24 h-24 bg-white rounded-full transform -translate-x-12 translate-y-12"></div>
                       </div>
-                      
-                      <h3 className="text-xl font-bold mb-2">{category.displayName}</h3>
-                      
-                      <p className="text-sm opacity-90 mb-4">
-                        {category.subcategories.length} topics available
-                      </p>
-                      
-                      {/* Mini subcategory preview */}
-                      <div className="flex flex-wrap gap-1">
-                        {category.subcategories.slice(0, 3).map((sub) => (
-                          <span
-                            key={sub.id}
-                            className="text-xs bg-white bg-opacity-20 px-2 py-1 rounded-full"
-                          >
-                            {sub.displayName.length > 12 
-                              ? sub.displayName.substring(0, 12) + '...' 
-                              : sub.displayName
-                            }
-                          </span>
-                        ))}
-                        {category.subcategories.length > 3 && (
-                          <span className="text-xs bg-white bg-opacity-20 px-2 py-1 rounded-full">
-                            +{category.subcategories.length - 3}
-                          </span>
-                        )}
+
+                      <div className="relative z-10">
+                        <div className="flex items-center justify-between mb-4">
+                          <IconComponent className="h-10 w-10" /> {/* Render the Lucide icon */}
+                          <ArrowRight className="h-6 w-6 group-hover:translate-x-1 transition-transform duration-200" />
+                        </div>
+
+                        <h3 className="text-xl font-bold mb-2">{category.displayName}</h3>
+
+                        <p className="text-sm opacity-90 mb-4">
+                          {category.subcategories.length} topics available
+                        </p>
+
+                        {/* Mini subcategory preview */}
+                        <div className="flex flex-wrap gap-1">
+                          {category.subcategories.slice(0, 3).map((sub) => (
+                            <span
+                              key={sub.id}
+                              className="text-xs bg-white bg-opacity-20 px-2 py-1 rounded-full"
+                            >
+                              {sub.displayName.length > 12
+                                ? sub.displayName.substring(0, 12) + '...'
+                                : sub.displayName
+                              }
+                            </span>
+                          ))}
+                          {category.subcategories.length > 3 && (
+                            <span className="text-xs bg-white bg-opacity-20 px-2 py-1 rounded-full">
+                              +{category.subcategories.length - 3}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </motion.div>
-              ))}
+                  </motion.div>
+                );
+              })}
             </div>
           </motion.div>
         ) : (
@@ -458,11 +504,12 @@ export default function ModernCategorySelector({
                 <ArrowLeft className="h-5 w-5 mr-2" />
                 Back to Categories
               </button>
-              
+
               {selectedCategory && (
                 <div className={`bg-gradient-to-r ${selectedCategory.color} p-6 rounded-2xl text-white mb-6`}>
                   <div className="flex items-center">
-                    <span className="text-4xl mr-4">{selectedCategory.icon}</span>
+                    {/* Render the Lucide icon for the selected category */}
+                    <selectedCategory.icon className="h-12 w-12 mr-4" />
                     <div>
                       <h2 className="text-3xl font-bold">{selectedCategory.displayName}</h2>
                       <p className="text-lg opacity-90">Choose a specific topic to practice</p>

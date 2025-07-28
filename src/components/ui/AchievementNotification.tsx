@@ -20,9 +20,7 @@ const AchievementNotification: React.FC<AchievementNotificationProps> = ({
 
   useEffect(() => {
     if (show && achievement && !soundPlayedRef.current) {
-      // Play achievement sound based on rarity (only once)
-      const rarity = achievement.rarity === 'epic' ? 'rare' : achievement.rarity;
-      audioFeedbackService.playAchievementSound(rarity as 'common' | 'rare' | 'legendary');
+      // Sound is handled by the parent game component to avoid double-playing
       soundPlayedRef.current = true;
 
       // Auto-hide after 5 seconds

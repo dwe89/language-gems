@@ -69,7 +69,7 @@ export class EnhancedVocabularyService {
       supports_mixed: true,
       preferred_content_type: 'words',
       max_items: 50,
-      min_items: 9
+      min_items: 1
     },
     'memory-game': {
       game_type: 'memory-game',
@@ -78,7 +78,7 @@ export class EnhancedVocabularyService {
       supports_mixed: true,
       preferred_content_type: 'words',
       max_items: 20,
-      min_items: 8
+      min_items: 1
     },
     'hangman': {
       game_type: 'hangman',
@@ -87,7 +87,7 @@ export class EnhancedVocabularyService {
       supports_mixed: true,
       preferred_content_type: 'words',
       max_items: 100,
-      min_items: 10
+      min_items: 1
     },
     'word-scramble': {
       game_type: 'word-scramble',
@@ -96,7 +96,7 @@ export class EnhancedVocabularyService {
       supports_mixed: true,
       preferred_content_type: 'words',
       max_items: 50,
-      min_items: 10
+      min_items: 1
     },
     'word-guesser': {
       game_type: 'word-guesser',
@@ -105,7 +105,7 @@ export class EnhancedVocabularyService {
       supports_mixed: true,
       preferred_content_type: 'words',
       max_items: 100,
-      min_items: 10
+      min_items: 1
     },
     'vocab-blast': {
       game_type: 'vocab-blast',
@@ -114,7 +114,7 @@ export class EnhancedVocabularyService {
       supports_mixed: true,
       preferred_content_type: 'words',
       max_items: 100,
-      min_items: 20
+      min_items: 1
     },
     'speed-builder': {
       game_type: 'speed-builder',
@@ -123,7 +123,7 @@ export class EnhancedVocabularyService {
       supports_mixed: true,
       preferred_content_type: 'sentences',
       max_items: 50,
-      min_items: 10
+      min_items: 1
     },
     'sentence-towers': {
       game_type: 'sentence-towers',
@@ -132,7 +132,7 @@ export class EnhancedVocabularyService {
       supports_mixed: true,
       preferred_content_type: 'words',
       max_items: 100,
-      min_items: 20
+      min_items: 1
     },
     'detective-listening': {
       game_type: 'detective-listening',
@@ -141,7 +141,7 @@ export class EnhancedVocabularyService {
       supports_mixed: true,
       preferred_content_type: 'words',
       max_items: 30,
-      min_items: 10
+      min_items: 1
     },
     'vocabulary-mining': {
       game_type: 'vocabulary-mining',
@@ -150,7 +150,7 @@ export class EnhancedVocabularyService {
       supports_mixed: true,
       preferred_content_type: 'words',
       max_items: 200,
-      min_items: 20
+      min_items: 1
     }
   };
 

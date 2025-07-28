@@ -149,7 +149,7 @@ export default function UnifiedWordBlastGame() {
         gameDescription="Collect falling gems by typing the correct Spanish words"
         supportedLanguages={['es']} // Word Blast is Spanish-focused
         showCustomMode={true}
-        minVocabularyRequired={5}
+        minVocabularyRequired={1}
         onGameStart={handleGameStart}
         onBack={() => router.push('/games')}
         requiresAudio={false}

@@ -55,15 +55,23 @@ export function useUnifiedVocabulary({
 
   const fetchVocabulary = async () => {
     // Handle custom vocabulary mode
-    if (config?.customMode && customVocabulary) {
-      setVocabulary(customVocabulary);
-      setLoading(false);
-      setError(null);
-      return;
+    if (config?.customMode) {
+      if (customVocabulary && customVocabulary.length > 0) {
+        setVocabulary(customVocabulary);
+        setLoading(false);
+        setError(null);
+        return;
+      } else {
+        // Custom mode but no vocabulary provided - this is expected initially
+        setVocabulary([]);
+        setLoading(false);
+        setError(null);
+        return;
+      }
     }
 
     // Don't fetch if no config provided
-    if (!config || config.customMode) {
+    if (!config) {
       setVocabulary([]);
       setLoading(false);
       setError(null);
@@ -74,7 +82,7 @@ export function useUnifiedVocabulary({
     setError(null);
 
     try {
-      const supabase = supabaseBrowser();
+      const supabase = supabaseBrowser;
       
       // Build the query
       let query = supabase
@@ -85,27 +93,34 @@ export function useUnifiedVocabulary({
           translation,
           language,
           part_of_speech,
-          example_sentence_original,
-          example_sentence_translation,
-          theme_name,
+          example_sentence,
+          example_translation,
+          category,
+          subcategory,
           tier,
-          is_required
+          curriculum_level,
+          is_required,
+          audio_url
         `)
-        .eq('language', mapLanguageCode(config.language));
+        .in('language', mapLanguageCodes(config.language)); // Use helper to get all possible language codes
 
-      // Filter by curriculum level (tier)
+      // Filter by curriculum level
       if (config.curriculumLevel === 'KS3') {
-        query = query.in('tier', ['Foundation', 'Core']);
+        // For KS3, use curriculum_level or tier
+        query = query.or('curriculum_level.eq.KS3,tier.in.(Foundation,Core)');
       } else if (config.curriculumLevel === 'KS4') {
-        query = query.in('tier', ['Foundation', 'Higher', 'Core']);
+        // For KS4, use curriculum_level or tier
+        query = query.or('curriculum_level.eq.KS4,tier.in.(Foundation,Higher,Core)');
       }
 
-      // Filter by category (theme_name)
+      // Filter by category
       if (config.categoryId && config.categoryId !== 'custom') {
-        const themeName = mapCategoryToTheme(config.categoryId);
-        if (themeName) {
-          query = query.eq('theme_name', themeName);
-        }
+        query = query.eq('category', config.categoryId);
+      }
+
+      // Filter by subcategory if specified
+      if (config.subcategoryId) {
+        query = query.eq('subcategory', config.subcategoryId);
       }
 
       // Apply limit
@@ -132,13 +147,13 @@ export function useUnifiedVocabulary({
         word: item.word,
         translation: item.translation,
         language: item.language,
-        category: config.categoryId,
-        subcategory: config.subcategoryId,
+        category: item.category || config.categoryId, // Use database category or fallback to config
+        subcategory: item.subcategory || config.subcategoryId, // Use database subcategory or fallback to config
         part_of_speech: item.part_of_speech,
-        example_sentence_original: item.example_sentence_original,
-        example_sentence_translation: item.example_sentence_translation,
-        difficulty_level: item.tier?.toLowerCase(),
-        audio_url: undefined // Audio URLs would need to be generated separately
+        example_sentence_original: item.example_sentence,
+        example_sentence_translation: item.example_translation,
+        difficulty_level: item.tier?.toLowerCase() || item.curriculum_level?.toLowerCase(),
+        audio_url: item.audio_url // Use the actual audio URL from the database
       }));
 
       // Filter by subcategory if specified
@@ -200,35 +215,17 @@ export function useUnifiedVocabulary({
 }
 
 /**
- * Map language codes to database language values
+ * Get all possible language codes for a given language (handles variants)
  */
-function mapLanguageCode(languageCode: string): string {
-  const languageMap: Record<string, string> = {
-    'es': 'Spanish',
-    'fr': 'French',
-    'de': 'German',
-    'en': 'English'
+function mapLanguageCodes(languageCode: string): string[] {
+  const languageVariantsMap: Record<string, string[]> = {
+    'es': ['es', 'ES', 'spanish'], // Spanish has multiple variants in the database
+    'fr': ['fr', 'french'],
+    'de': ['de', 'german'], 
+    'en': ['en', 'english']
   };
   
-  return languageMap[languageCode] || languageCode;
-}
-
-/**
- * Map category IDs to theme names in the database
- */
-function mapCategoryToTheme(categoryId: string): string | null {
-  const categoryMap: Record<string, string> = {
-    'basics_core_language': 'Identity and culture',
-    'identity_personal_life': 'Identity and culture',
-    'home_local_area': 'Local area, holiday and travel',
-    'school_jobs_future': 'School',
-    'free_time_leisure': 'Free-time activities',
-    'food_drink': 'Food and eating out',
-    'clothes_shopping': 'Shopping',
-    'technology_media': 'Technology in everyday life'
-  };
-  
-  return categoryMap[categoryId] || null;
+  return languageVariantsMap[languageCode] || [languageCode];
 }
 
 /**

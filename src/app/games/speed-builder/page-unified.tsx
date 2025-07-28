@@ -7,7 +7,7 @@ import { GemSpeedBuilder } from './components/GemSpeedBuilder';
 import UnifiedGameLauncher from '../../../components/games/UnifiedGameLauncher';
 import { UnifiedSelectionConfig, UnifiedVocabularyItem } from '../../../hooks/useUnifiedVocabulary';
 
-export default function SpeedBuilderPage() {
+export default function UnifiedSpeedBuilderPage() {
   const { user } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -16,14 +16,23 @@ export default function SpeedBuilderPage() {
 
   // Game state management
   const [gameStarted, setGameStarted] = useState(false);
-  const [selectedConfig, setSelectedConfig] = useState<UnifiedSelectionConfig | null>(null);
+
+  // Game configuration from unified launcher
+  const [gameConfig, setGameConfig] = useState<{
+    config: UnifiedSelectionConfig;
+    vocabulary: UnifiedVocabularyItem[];
+  } | null>(null);
 
   // Handle game start from unified launcher
   const handleGameStart = (config: UnifiedSelectionConfig, vocabulary: UnifiedVocabularyItem[]) => {
-    setSelectedConfig(config);
+    setGameConfig({
+      config,
+      vocabulary
+    });
+    
     setGameStarted(true);
     
-    console.log('Speed Builder started with unified config:', {
+    console.log('Speed Builder started with:', {
       config,
       vocabularyCount: vocabulary.length
     });
@@ -32,7 +41,7 @@ export default function SpeedBuilderPage() {
   // Handle back to menu
   const handleBackToMenu = () => {
     setGameStarted(false);
-    setSelectedConfig(null);
+    setGameConfig(null);
   };
 
   // Show unified launcher if game not started
@@ -43,7 +52,7 @@ export default function SpeedBuilderPage() {
         gameDescription="Build sentences quickly by arranging words in the correct order"
         supportedLanguages={['es', 'fr', 'de']}
         showCustomMode={false} // Speed Builder uses sentence data, not vocabulary
-        minVocabularyRequired={0} // Uses sentence data
+        minVocabularyRequired={1}
         onGameStart={handleGameStart}
         onBack={() => router.push('/games')}
         supportsThemes={false}
@@ -57,40 +66,26 @@ export default function SpeedBuilderPage() {
             <p>• Complete sentences as quickly as possible</p>
             <p>• Earn points for speed and accuracy</p>
             <p>• Progress through increasingly complex sentences</p>
-            <p>• Use power-ups to boost your performance</p>
           </div>
         </div>
       </UnifiedGameLauncher>
     );
   }
 
-  // Show full GemSpeedBuilder with all original features
-  if (gameStarted && selectedConfig) {
+  // Show game if started and config is available
+  if (gameStarted && gameConfig) {
     // Convert unified config to legacy speed builder format
-    const legacyLanguage = selectedConfig.language === 'es' ? 'spanish' : 
-                          selectedConfig.language === 'fr' ? 'french' : 
-                          selectedConfig.language === 'de' ? 'german' : 'spanish';
+    const legacyLanguage = gameConfig.config.language === 'es' ? 'spanish' : 
+                          gameConfig.config.language === 'fr' ? 'french' : 
+                          gameConfig.config.language === 'de' ? 'german' : 'spanish';
 
-    const legacyCurriculumType = selectedConfig.curriculumLevel === 'KS4' ? 'gcse' : 'ks3';
-    const legacyTier = selectedConfig.curriculumLevel === 'KS4' ? 'foundation' : 'core';
-    const legacyTheme = selectedConfig.categoryId || 'general';
-    const legacyTopic = selectedConfig.subcategoryId || 'basic';
+    const legacyCurriculumType = gameConfig.config.curriculumLevel === 'KS4' ? 'gcse' : 'ks3';
+    const legacyTier = gameConfig.config.curriculumLevel === 'KS4' ? 'foundation' : 'core';
+    const legacyTheme = gameConfig.config.categoryId || 'general';
+    const legacyTopic = gameConfig.config.subcategoryId || 'basic';
 
     return (
       <div className="min-h-screen">
-        {/* Back button */}
-        <div className="absolute top-4 left-4 z-50">
-          <button
-            onClick={handleBackToMenu}
-            className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white transition-colors backdrop-blur-sm"
-          >
-            <svg className="h-5 w-5 rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-            Back to Games
-          </button>
-        </div>
-
         <GemSpeedBuilder
           language={legacyLanguage}
           curriculumType={legacyCurriculumType}

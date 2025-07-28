@@ -6,11 +6,10 @@ import {
   ArrowLeft, Flame, Clock, Trophy, Star, Settings,
   Volume2, VolumeX, Pause, Play, RotateCcw, Maximize, Minimize
 } from 'lucide-react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import UnifiedGameLauncher from '../../../components/games/UnifiedGameLauncher';
-import { UnifiedSelectionConfig, UnifiedVocabularyItem } from '../../../hooks/useUnifiedVocabulary';
+import { useSearchParams } from 'next/navigation';
 import { useSounds } from './hooks/useSounds';
-
+import { useGameVocabulary } from '../../../hooks/useGameVocabulary';
+import { VOCABULARY_CATEGORIES } from '../../../components/games/ModernCategorySelector';
 import { useAuth } from '../../../components/auth/AuthProvider';
 import { useSupabase } from '../../../components/supabase/SupabaseProvider';
 import { EnhancedGameService } from '../../../services/enhancedGameService';
@@ -292,8 +291,8 @@ const DynamicBackground = ({
   );
 };
 
-export default function SentenceTowersPage() {
-  const router = useRouter();
+export default function ImprovedSentenceTowers() {
+  // Check for assignment mode
   const searchParams = useSearchParams();
   const assignmentId = searchParams?.get('assignment');
   const mode = searchParams?.get('mode');
@@ -302,99 +301,6 @@ export default function SentenceTowersPage() {
   if (assignmentId && mode === 'assignment') {
     return <SentenceTowersAssignmentWrapper assignmentId={assignmentId} />;
   }
-
-  // Game state management for unified launcher
-  const [gameStarted, setGameStarted] = useState(false);
-  const [selectedConfig, setSelectedConfig] = useState<UnifiedSelectionConfig | null>(null);
-  const [vocabulary, setVocabulary] = useState<UnifiedVocabularyItem[]>([]);
-
-  // Handle game start from unified launcher
-  const handleGameStart = (config: UnifiedSelectionConfig, vocabularyItems: UnifiedVocabularyItem[]) => {
-    setSelectedConfig(config);
-    setVocabulary(vocabularyItems);
-    setGameStarted(true);
-    
-    console.log('Sentence Towers started with unified config:', {
-      config,
-      vocabularyCount: vocabularyItems.length
-    });
-  };
-
-  // Handle back to menu
-  const handleBackToMenu = () => {
-    setGameStarted(false);
-    setSelectedConfig(null);
-    setVocabulary([]);
-  };
-
-  // Show unified launcher if game not started
-  if (!gameStarted) {
-    return (
-      <UnifiedGameLauncher
-        gameName="Sentence Towers"
-        gameDescription="Build towers by stacking vocabulary blocks and creating sentences"
-        supportedLanguages={['es', 'fr', 'de']}
-        showCustomMode={true}
-        minVocabularyRequired={1}
-        onGameStart={handleGameStart}
-        onBack={() => router.push('/games')}
-        supportsThemes={false}
-        requiresAudio={false}
-      >
-        {/* Game-specific instructions */}
-        <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 mb-6 max-w-md mx-auto">
-          <h4 className="text-white font-semibold mb-3 text-center">How to Play</h4>
-          <div className="text-white/80 text-sm space-y-2">
-            <p>• Stack vocabulary blocks to build towers</p>
-            <p>• Answer questions correctly to place blocks</p>
-            <p>• Build higher towers for more points</p>
-            <p>• Don't let your tower fall!</p>
-            <p>• Use special blocks for bonus effects</p>
-          </div>
-        </div>
-      </UnifiedGameLauncher>
-    );
-  }
-
-  // Show game if started and config is available
-  if (gameStarted && selectedConfig && vocabulary.length > 0) {
-    // Convert unified vocabulary to game format
-    const gameVocabulary = vocabulary.map(item => ({
-      id: item.id,
-      word: item.word,
-      translation: item.translation,
-      language: item.language,
-      category: item.category,
-      subcategory: item.subcategory,
-      part_of_speech: item.part_of_speech,
-      example_sentence_original: item.example_sentence_original,
-      example_sentence_translation: item.example_sentence_translation,
-      difficulty_level: item.difficulty_level || 'beginner'
-    }));
-
-    return (
-      <ImprovedSentenceTowersGame
-        gameVocabulary={gameVocabulary}
-        onBackToMenu={handleBackToMenu}
-        config={selectedConfig}
-      />
-    );
-  }
-
-  // Fallback
-  return null;
-}
-
-// Extract the main game logic into a separate component
-function ImprovedSentenceTowersGame({
-  gameVocabulary,
-  onBackToMenu,
-  config
-}: {
-  gameVocabulary: any[];
-  onBackToMenu: () => void;
-  config: UnifiedSelectionConfig;
-}) {
 
   // Authentication and services
   const { user } = useAuth();
@@ -408,10 +314,27 @@ function ImprovedSentenceTowersGame({
     }
   }, [supabase]);
 
+  // Category/Subcategory selection state
+  const [selectedCategory, setSelectedCategory] = useState<string>('basics_core_language');
+  const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [gameLanguage, setGameLanguage] = useState<string>('es'); // Spanish by default
+
   // Typing mode state
   const [isTypingMode, setIsTypingMode] = useState(false);
   const [typedAnswer, setTypedAnswer] = useState('');
   const [showTypingInput, setShowTypingInput] = useState(false);
+
+  // Load vocabulary using the modern category system
+  const { vocabulary: gameVocabulary, loading: vocabularyLoading } = useGameVocabulary({
+    language: gameLanguage,
+    categoryId: selectedCategory,
+    subcategoryId: selectedSubcategory,
+    limit: 100,
+    randomize: true,
+    difficultyLevel: 'beginner',
+    curriculumLevel: 'KS3'
+  });
 
   // Enhanced game state
   const [gameState, setGameState] = useState<GameState>({
@@ -456,7 +379,9 @@ function ImprovedSentenceTowersGame({
         id: word.id || `word-${index}`,
         word: word.word,
         translation: word.translation,
-        difficulty: 2, // Default difficulty for unified vocabulary
+        difficulty: word.difficulty_level === 'beginner' ? 1 :
+                   word.difficulty_level === 'intermediate' ? 3 :
+                   word.difficulty_level === 'advanced' ? 5 : 2,
         correct: false
       }));
       setVocabulary(transformedVocabulary);
@@ -570,9 +495,9 @@ function ImprovedSentenceTowersGame({
           multiplier_achieved: gameState.multiplier,
           time_limit: settings.timeLimit,
           typing_mode: isTypingMode,
-          language: config.language,
-          category: config.categoryId,
-          subcategory: config.subcategoryId
+          language: gameLanguage,
+          category: selectedCategory,
+          subcategory: selectedSubcategory
         },
         device_info: {}
       };
@@ -584,7 +509,7 @@ function ImprovedSentenceTowersGame({
     } catch (error) {
       console.error('Error saving Sentence Towers game session:', error);
     }
-  }, [user, enhancedGameService, supabase, gameState, settings, isTypingMode, config]);
+  }, [user, enhancedGameService, supabase, gameState, settings, isTypingMode, gameLanguage, selectedCategory, selectedSubcategory]);
 
   // Watch for game end and save session
   useEffect(() => {
@@ -640,8 +565,8 @@ function ImprovedSentenceTowersGame({
 
   // Enhanced word generation with difficulty scaling
   const generateWordOptions = useCallback(() => {
-    // Don't generate options if vocabulary is empty
-    if (vocabulary.length === 0) {
+    // Don't generate options if vocabulary is loading or empty
+    if (vocabularyLoading || vocabulary.length === 0) {
       return;
     }
 
@@ -1589,24 +1514,30 @@ function ImprovedSentenceTowersGame({
                 </div>
               </div>
 
-              {/* Game Info */}
+              {/* Category Selection */}
               <div className="mb-6">
-                <div className="w-full p-4 rounded-xl border-2 border-white/30 bg-white/10 text-white">
+                <button
+                  onClick={() => setShowCategoryModal(true)}
+                  className="w-full p-4 rounded-xl border-2 border-white/30 hover:border-white/50 transition-all bg-white/10 hover:bg-white/15 text-white"
+                >
                   <div className="text-2xl mb-2">📚</div>
                   <h3 className="text-lg font-bold mb-1">
-                    {config.subcategoryId ?
-                      `${config.categoryId} - ${config.subcategoryId}` :
-                      config.categoryId}
+                    {selectedSubcategory ?
+                      VOCABULARY_CATEGORIES.find(cat => cat.id === selectedCategory)?.subcategories.find(sub => sub.id === selectedSubcategory)?.displayName :
+                      VOCABULARY_CATEGORIES.find(cat => cat.id === selectedCategory)?.displayName || 'Select Category'
+                    }
                   </h3>
                   <p className="text-white/70 text-sm">
-                    {gameVocabulary.length} words ready • Language: {config.language.toUpperCase()}
+                    {vocabularyLoading ? 'Loading vocabulary...' :
+                     gameVocabulary.length > 0 ? `${gameVocabulary.length} words available` :
+                     'Choose vocabulary topic'}
                   </p>
-                </div>
+                </button>
               </div>
 
               <button
                 onClick={startGame}
-                disabled={gameVocabulary.length === 0}
+                disabled={vocabularyLoading || gameVocabulary.length === 0}
                 className="w-full bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-400 hover:to-yellow-400 disabled:from-gray-500 disabled:to-gray-600 disabled:cursor-not-allowed text-white font-bold py-4 px-8 rounded-2xl text-xl transition-all duration-300 hover:scale-105 shadow-2xl"
               >
                 Start Building! 🏗️
@@ -1823,7 +1754,64 @@ function ImprovedSentenceTowersGame({
         )}
       </AnimatePresence>
 
+      {/* Category Selection Modal */}
+      {showCategoryModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl max-w-6xl w-full max-h-[80vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-2xl font-bold text-white">Select Vocabulary Category</h3>
+                <button
+                  onClick={() => setShowCategoryModal(false)}
+                  className="p-2 hover:bg-white/10 rounded-full transition-colors text-white"
+                >
+                  ✕
+                </button>
+              </div>
 
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {VOCABULARY_CATEGORIES.map((category) => (
+                  <div key={category.id} className="space-y-2">
+                    <button
+                      onClick={() => {
+                        if (category.subcategories.length === 0) {
+                          setSelectedCategory(category.id);
+                          setSelectedSubcategory(null);
+                          setShowCategoryModal(false);
+                        }
+                      }}
+                      className="w-full p-4 text-left rounded-lg border border-white/20 hover:bg-white/10 transition-colors text-white"
+                    >
+                      <h4 className="font-bold">{category.displayName}</h4>
+                      {category.subcategories.length > 0 && (
+                        <p className="text-sm text-white/70">{category.subcategories.length} topics</p>
+                      )}
+                    </button>
+
+                    {category.subcategories.length > 0 && (
+                      <div className="ml-4 space-y-1">
+                        {category.subcategories.map((subcategory) => (
+                          <button
+                            key={subcategory.id}
+                            onClick={() => {
+                              setSelectedCategory(category.id);
+                              setSelectedSubcategory(subcategory.id);
+                              setShowCategoryModal(false);
+                            }}
+                            className="w-full p-2 text-left text-sm rounded border border-white/10 hover:bg-white/10 transition-colors text-white/90"
+                          >
+                            {subcategory.displayName}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       </motion.div>
     </div>

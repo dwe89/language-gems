@@ -3,12 +3,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../../../components/auth/AuthProvider';
+import { useUnifiedAuth } from '../../../../hooks/useUnifiedAuth';
 import { useSupabase } from '../../../../components/supabase/SupabaseProvider';
 // Removed unused SpacedRepetitionService import - using direct database operations instead
-import { 
+import {
   Home, CheckCircle, XCircle, ArrowRight, Trophy, RotateCcw,
   Volume2, Eye, EyeOff, Clock, Star, Brain, Target,
-  Zap, TrendingUp, Award, ChevronRight, Headphones, 
+  Zap, TrendingUp, Award, ChevronRight, Headphones,
   BookOpen, PenTool, Lightbulb, VolumeX, Play, Pause,
   Keyboard, ToggleLeft, ToggleRight, Pickaxe, Gem, Sparkles, Diamond, Crown
 } from 'lucide-react';
@@ -79,6 +80,7 @@ interface GameState {
   isAnswerRevealed: boolean;
   gemsCollected: number;
   currentGemType: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
+  speedModeTimeLeft: number;
 }
 
 interface MultipleChoiceOption {
@@ -154,6 +156,174 @@ const GEM_TYPES = {
 };
 
 // =====================================================
+// INTEGRATED STATISTICS DASHBOARD COMPONENT
+// =====================================================
+
+interface IntegratedStatsDashboardProps {
+  userStats: {
+    wordsLearned: number;
+    totalWords: number;
+    currentStreak: number;
+    weeklyGoal: number;
+    weeklyProgress: number;
+  };
+  gemStats: {
+    common: number;
+    uncommon: number;
+    rare: number;
+    epic: number;
+    legendary: number;
+  };
+  dailyGoals: {
+    targetWords: number;
+    wordsPracticed: number;
+    targetMinutes: number;
+    minutesPracticed: number;
+    targetAccuracy: number;
+    currentAccuracy: number;
+  };
+  gameState: GameState;
+}
+
+const IntegratedStatsDashboard: React.FC<IntegratedStatsDashboardProps> = ({
+  userStats,
+  gemStats,
+  dailyGoals,
+  gameState
+}) => {
+  return (
+    <div className="bg-black/10 backdrop-blur-sm border-b border-white/5 p-3">
+      <div className="max-w-4xl mx-auto">
+        {/* Compact Stats Row */}
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-3 mb-3">
+          <div className="bg-white/5 backdrop-blur-sm rounded-lg p-2 text-center border border-white/10">
+            <div className="text-lg font-bold text-white">{userStats.wordsLearned}</div>
+            <div className="text-xs text-blue-200">Words Learned</div>
+          </div>
+          <div className="bg-white/5 backdrop-blur-sm rounded-lg p-2 text-center border border-white/10">
+            <div className="text-lg font-bold text-white">{userStats.currentStreak}</div>
+            <div className="text-xs text-blue-200">Day Streak</div>
+          </div>
+          <div className="bg-white/5 backdrop-blur-sm rounded-lg p-2 text-center border border-white/10">
+            <div className="text-lg font-bold text-white">{Math.round((userStats.weeklyProgress / userStats.weeklyGoal) * 100)}%</div>
+            <div className="text-xs text-blue-200">Weekly Goal</div>
+          </div>
+          <div className="bg-white/5 backdrop-blur-sm rounded-lg p-2 text-center border border-white/10">
+            <div className="text-lg font-bold text-white">{dailyGoals.wordsPracticed}/{dailyGoals.targetWords}</div>
+            <div className="text-xs text-blue-200">Daily Words</div>
+          </div>
+          <div className="bg-white/5 backdrop-blur-sm rounded-lg p-2 text-center border border-white/10">
+            <div className="text-lg font-bold text-white">{dailyGoals.minutesPracticed}/{dailyGoals.targetMinutes}</div>
+            <div className="text-xs text-blue-200">Daily Minutes</div>
+          </div>
+          <div className="bg-white/5 backdrop-blur-sm rounded-lg p-2 text-center border border-white/10">
+            <div className="text-lg font-bold text-white">{dailyGoals.currentAccuracy}%</div>
+            <div className="text-xs text-blue-200">Accuracy</div>
+          </div>
+        </div>
+
+        {/* Compact Gem Collection */}
+        <div className="bg-white/5 backdrop-blur-sm rounded-lg p-2 border border-white/10">
+          <div className="flex items-center justify-between">
+            <div className="text-white text-sm font-semibold flex items-center">
+              <span className="text-lg mr-2">💎</span>
+              Gem Collection
+            </div>
+            <div className="flex items-center space-x-2">
+              {[
+                { type: 'common', name: 'Common', color: 'bg-blue-500', count: gemStats.common },
+                { type: 'uncommon', name: 'Uncommon', color: 'bg-green-500', count: gemStats.uncommon },
+                { type: 'rare', name: 'Rare', color: 'bg-purple-500', count: gemStats.rare },
+                { type: 'epic', name: 'Epic', color: 'bg-pink-500', count: gemStats.epic },
+                { type: 'legendary', name: 'Legendary', color: 'bg-yellow-500', count: gemStats.legendary }
+              ].map((gem) => (
+                <div key={gem.type} className="flex items-center">
+                  <div className={`w-4 h-4 ${gem.color} rounded-full flex items-center justify-center text-white font-bold text-xs mr-1`}>
+                    {gem.count}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// =====================================================
+// DEMO MODE SIMULATION FUNCTIONS
+// =====================================================
+
+// Simulate gem type progression for demo users
+const simulateDemoGemType = (word: VocabularyWord, isCorrect: boolean): GemType => {
+  if (!isCorrect) return 'common';
+
+  // Simple simulation based on word ID hash for consistency
+  const wordHash = word.id.toString().split('').reduce((a, b) => {
+    a = ((a << 5) - a) + b.charCodeAt(0);
+    return a & a;
+  }, 0);
+
+  const randomValue = Math.abs(wordHash) % 100;
+
+  // Progressive gem type distribution for demo
+  if (randomValue < 40) return 'common';
+  if (randomValue < 65) return 'uncommon';
+  if (randomValue < 80) return 'rare';
+  if (randomValue < 92) return 'epic';
+  return 'legendary';
+};
+
+// Simulate achievements for demo users
+const simulateDemoAchievements = (correctAnswers: number, streak: number): Achievement[] => {
+  const achievements: Achievement[] = [];
+
+  // First word achievement
+  if (correctAnswers === 1) {
+    achievements.push({
+      id: 'demo_first_word',
+      name: 'First Success!',
+      description: 'Got your first word correct',
+      icon: '🎯',
+      rarity: 'common',
+      progress: 1,
+      maxProgress: 1,
+      unlocked: true
+    });
+  }
+
+  // Streak achievements
+  if (streak === 5) {
+    achievements.push({
+      id: 'demo_streak_5',
+      name: 'On Fire!',
+      description: 'Got 5 words correct in a row',
+      icon: '🔥',
+      rarity: 'uncommon',
+      progress: 5,
+      maxProgress: 5,
+      unlocked: true
+    });
+  }
+
+  if (streak === 10) {
+    achievements.push({
+      id: 'demo_streak_10',
+      name: 'Unstoppable!',
+      description: 'Got 10 words correct in a row',
+      icon: '⚡',
+      rarity: 'rare',
+      progress: 10,
+      maxProgress: 10,
+      unlocked: true
+    });
+  }
+
+  return achievements;
+};
+
+// =====================================================
 // MAIN COMPONENT
 // =====================================================
 
@@ -165,10 +335,15 @@ export default function VocabularyMiningGame({
   onExit
 }: Props) {
   const { user } = useAuth();
+  const { user: unifiedUser, isDemo } = useUnifiedAuth();
   const { supabase } = useSupabase();
   const inputRef = useRef<HTMLInputElement>(null);
   const timerRef = useRef<NodeJS.Timeout>();
+  const speedTimerRef = useRef<NodeJS.Timeout>();
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Audio system - enable by default, can be disabled via config
+  const [soundEnabled, setSoundEnabled] = useState(config?.enableAudio !== false);
 
   // Check if we're in assignment mode
   const isAssignmentMode = config?.assignmentMode === true;
@@ -208,7 +383,8 @@ export default function VocabularyMiningGame({
     audioReplayCount: 0,
     isAnswerRevealed: false,
     gemsCollected: 0,
-    currentGemType: 'common'
+    currentGemType: 'common',
+    speedModeTimeLeft: 10
   });
 
   const [multipleChoiceOptions, setMultipleChoiceOptions] = useState<MultipleChoiceOption[]>([]);
@@ -240,6 +416,32 @@ export default function VocabularyMiningGame({
     legendary: 0
   });
   const [wordsPracticed, setWordsPracticed] = useState(0);
+
+  // Integrated statistics state
+  const [userStats, setUserStats] = useState({
+    wordsLearned: 0,
+    totalWords: 0,
+    currentStreak: 0,
+    weeklyGoal: 50,
+    weeklyProgress: 0
+  });
+
+  const [gemStats, setGemStats] = useState({
+    common: 0,
+    uncommon: 0,
+    rare: 0,
+    epic: 0,
+    legendary: 0
+  });
+
+  const [dailyGoals, setDailyGoals] = useState({
+    targetWords: 20,
+    wordsPracticed: 0,
+    targetMinutes: 30,
+    minutesPracticed: 0,
+    targetAccuracy: 80,
+    currentAccuracy: 0
+  });
 
   // Level completion state
   const [showLevelComplete, setShowLevelComplete] = useState(false);
@@ -311,7 +513,8 @@ export default function VocabularyMiningGame({
 
   // Save game session data to enhanced_game_sessions table
   const saveGameSession = async () => {
-    if (!user || !supabase) return;
+    // Only save to database for authenticated users
+    if (!user || !supabase || isDemo) return;
 
     try {
       const totalQuestions = gameState.correctAnswers + gameState.incorrectAnswers;
@@ -394,7 +597,7 @@ export default function VocabularyMiningGame({
       if (existingGoals) {
         const updatedMinutes = (existingGoals.minutes_practiced || 0) + timeSpentMinutes;
         const updatedWords = (existingGoals.words_practiced || 0) + wordsPracticed;
-        
+
         await supabase
           .from('vocabulary_daily_goals')
           .update({
@@ -412,7 +615,7 @@ export default function VocabularyMiningGame({
   };
 
   // Retry helper function for database operations
-  const retryDatabaseOperation = async function<T>(
+  const retryDatabaseOperation = async function <T>(
     operation: () => Promise<T>,
     maxRetries: number = 3,
     delay: number = 1000
@@ -482,6 +685,165 @@ export default function VocabularyMiningGame({
     return Math.floor(100 * Math.pow(1.5, level - 1));
   };
 
+  // Load integrated statistics for the dashboard
+  const loadIntegratedStats = async () => {
+    if (!user || !supabase) return;
+
+    try {
+      // Get user's vocabulary progress from vocabulary_gem_collection
+      const { data: progressData, error: progressError } = await supabase
+        .from('vocabulary_gem_collection')
+        .select('*')
+        .eq('student_id', user.id);
+
+      if (progressError) {
+        console.error('Error loading user progress:', progressError);
+        return;
+      }
+
+      // Calculate stats from vocabulary_gem_collection
+      const wordsLearned = progressData?.filter(p => p.correct_encounters > 0).length || 0;
+      const totalWords = progressData?.length || 0;
+
+      // Calculate real daily streak from vocabulary_daily_goals
+      const { data: dailyGoalsData } = await supabase
+        .from('vocabulary_daily_goals')
+        .select('goal_date, goal_completed')
+        .eq('student_id', user.id)
+        .order('goal_date', { ascending: false })
+        .limit(30);
+
+      let currentStreak = 0;
+      if (dailyGoalsData && dailyGoalsData.length > 0) {
+        const today = new Date().toISOString().split('T')[0];
+        let checkDate = new Date(today);
+
+        for (const goal of dailyGoalsData) {
+          const goalDate = goal.goal_date;
+          const expectedDate = checkDate.toISOString().split('T')[0];
+
+          if (goalDate === expectedDate && goal.goal_completed) {
+            currentStreak++;
+            checkDate.setDate(checkDate.getDate() - 1);
+          } else {
+            break;
+          }
+        }
+      }
+
+      // Calculate weekly progress
+      const oneWeekAgo = new Date();
+      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
+      const { data: weeklySessionsData } = await supabase
+        .from('enhanced_game_sessions')
+        .select('words_practiced')
+        .eq('student_id', user.id)
+        .eq('game_type', 'vocabulary-mining')
+        .gte('created_at', oneWeekAgo.toISOString());
+
+      const weeklyProgress = weeklySessionsData?.reduce((total, session) =>
+        total + (session.words_practiced || 0), 0
+      ) || 0;
+
+      setUserStats({
+        wordsLearned,
+        totalWords,
+        currentStreak,
+        weeklyGoal: 50,
+        weeklyProgress
+      });
+
+      // Calculate gem statistics by mastery level
+      const gemCounts = {
+        common: 0,
+        uncommon: 0,
+        rare: 0,
+        epic: 0,
+        legendary: 0
+      };
+
+      progressData?.forEach(progress => {
+        const masteryLevel = progress.mastery_level || 0;
+        if (masteryLevel >= 4) {
+          gemCounts.legendary++;
+        } else if (masteryLevel >= 3) {
+          gemCounts.epic++;
+        } else if (masteryLevel >= 2) {
+          gemCounts.rare++;
+        } else if (masteryLevel >= 1) {
+          gemCounts.uncommon++;
+        } else {
+          gemCounts.common++;
+        }
+      });
+
+      setGemStats(gemCounts);
+
+      // Load today's daily goals
+      const today = new Date().toISOString().split('T')[0];
+      const { data: todayGoals } = await supabase
+        .from('vocabulary_daily_goals')
+        .select('*')
+        .eq('student_id', user.id)
+        .eq('goal_date', today)
+        .single();
+
+      if (todayGoals) {
+        // Calculate current accuracy from today's sessions
+        const { data: todaySessions } = await supabase
+          .from('enhanced_game_sessions')
+          .select('words_correct, words_attempted')
+          .eq('student_id', user.id)
+          .eq('game_type', 'vocabulary-mining')
+          .gte('created_at', today + 'T00:00:00.000Z')
+          .lt('created_at', today + 'T23:59:59.999Z');
+
+        const totalCorrect = todaySessions?.reduce((sum, session) => sum + (session.words_correct || 0), 0) || 0;
+        const totalAttempted = todaySessions?.reduce((sum, session) => sum + (session.words_attempted || 0), 0) || 0;
+        const currentAccuracy = totalAttempted > 0 ? Math.round((totalCorrect / totalAttempted) * 100) : 0;
+
+        setDailyGoals({
+          targetWords: todayGoals.target_words || 20,
+          wordsPracticed: todayGoals.words_practiced || 0,
+          targetMinutes: todayGoals.target_minutes || 30,
+          minutesPracticed: todayGoals.minutes_practiced || 0,
+          targetAccuracy: 80,
+          currentAccuracy
+        });
+      } else {
+        // Create today's goals if they don't exist
+        const { error: insertError } = await supabase
+          .from('vocabulary_daily_goals')
+          .insert({
+            student_id: user.id,
+            goal_date: today,
+            target_words: 20,
+            target_minutes: 30,
+            words_practiced: 0,
+            minutes_practiced: 0,
+            gems_collected: 0,
+            goal_completed: false,
+            streak_count: currentStreak
+          });
+
+        if (!insertError) {
+          setDailyGoals({
+            targetWords: 20,
+            wordsPracticed: 0,
+            targetMinutes: 30,
+            minutesPracticed: 0,
+            targetAccuracy: 80,
+            currentAccuracy: 0
+          });
+        }
+      }
+
+    } catch (error) {
+      console.error('Error loading integrated stats:', error);
+    }
+  };
+
   // Handle XP gain and level progression
   const addXP = (points: number) => {
     const newTotalXP = totalXP + points;
@@ -529,34 +891,69 @@ export default function VocabularyMiningGame({
 
   // Load user progress on component mount
   useEffect(() => {
-    if (user && supabase) {
-      // Ensure we have a valid session before loading progress
-      const initializeWithAuth = async () => {
-        try {
-          const { data: { session }, error } = await supabase.auth.getSession();
-          if (error) {
-            console.error('Session error:', error);
-            return;
-          }
+    if (unifiedUser && supabase) {
+      // For authenticated users, load real progress
+      if (user && !isDemo) {
+        const initializeWithAuth = async () => {
+          try {
+            const { data: { session }, error } = await supabase.auth.getSession();
+            if (error) {
+              console.error('Session error:', error);
+              return;
+            }
 
-          if (session) {
-            console.log('Valid session found, loading user progress');
-            
-            // Initialize achievement service with supabase and user ID
-            await achievementService.initialize(supabase, user.id);
-            
-            loadUserProgress();
-          } else {
-            console.warn('No valid session found');
-          }
-        } catch (error) {
-          console.error('Error checking session:', error);
-        }
-      };
+            if (session) {
+              console.log('Valid session found, loading user progress');
 
-      initializeWithAuth();
+              // Initialize achievement service with supabase and user ID
+              await achievementService.initialize(supabase, user.id);
+
+              loadUserProgress();
+              loadIntegratedStats();
+            } else {
+              console.warn('No valid session found');
+            }
+          } catch (error) {
+            console.error('Error checking session:', error);
+          }
+        };
+
+        initializeWithAuth();
+      } else if (isDemo) {
+        // For demo users, initialize with default values
+        console.log('Demo user detected, initializing with demo values');
+        setTotalXP(0);
+        setCurrentLevel(1);
+        setXpToNextLevel(100);
+
+        // Initialize demo stats
+        setUserStats({
+          wordsLearned: 0,
+          totalWords: vocabulary.length,
+          currentStreak: 0,
+          weeklyGoal: 50,
+          weeklyProgress: 0
+        });
+
+        setGemStats({
+          common: 0,
+          uncommon: 0,
+          rare: 0,
+          epic: 0,
+          legendary: 0
+        });
+
+        setDailyGoals({
+          targetWords: 20,
+          wordsPracticed: 0,
+          targetMinutes: 30,
+          minutesPracticed: 0,
+          targetAccuracy: 80,
+          currentAccuracy: 0
+        });
+      }
     }
-  }, [user, supabase]);
+  }, [unifiedUser, user, isDemo, supabase, vocabulary.length]);
 
   // Timer for tracking time spent
   useEffect(() => {
@@ -574,6 +971,31 @@ export default function VocabularyMiningGame({
     };
   }, []);
 
+  // Speed mode timer
+  useEffect(() => {
+    if (gameState.gameMode === 'speed' && !gameState.showAnswer) {
+      speedTimerRef.current = setInterval(() => {
+        setGameState(prev => {
+          if (prev.speedModeTimeLeft <= 1) {
+            // Time's up - mark as incorrect and move to next word
+            handleAnswer('', false);
+            return prev;
+          }
+          return {
+            ...prev,
+            speedModeTimeLeft: prev.speedModeTimeLeft - 1
+          };
+        });
+      }, 1000);
+    }
+
+    return () => {
+      if (speedTimerRef.current) {
+        clearInterval(speedTimerRef.current);
+      }
+    };
+  }, [gameState.gameMode, gameState.showAnswer, gameState.currentWordIndex]);
+
   const initializeGame = async () => {
     const firstWord = vocabulary[0];
     const gemType = await determineGemType(firstWord);
@@ -585,8 +1007,14 @@ export default function VocabularyMiningGame({
       currentGemType: gemType
     }));
 
-    if (mode === 'multiple_choice') {
+    // Initialize based on current game mode
+    if (gameState.gameMode === 'multiple_choice') {
       generateMultipleChoiceOptions(firstWord);
+    }
+
+    // Auto-play audio for listening mode
+    if (gameState.gameMode === 'listening' && firstWord.audio_url) {
+      setTimeout(() => playAudio(true), 500);
     }
   };
 
@@ -643,11 +1071,26 @@ export default function VocabularyMiningGame({
   const generateMultipleChoiceOptions = (word: VocabularyWord) => {
     // Handle different data structures - centralized_vocabulary uses 'translation' for English
     const correctAnswer = getWordProperty(word, 'english');
+    console.log('🎯 Generating multiple choice for:', word, 'Correct answer:', correctAnswer);
+    
+    if (!correctAnswer) {
+      console.error('No correct answer found for word:', word);
+      return;
+    }
+    
     const otherWords = vocabulary.filter(w => w.id !== word.id);
+    console.log('🎯 Available other words:', otherWords.length);
+    
+    if (otherWords.length < 3) {
+      console.warn('Not enough vocabulary for multiple choice options, need at least 4 words total');
+      return;
+    }
+    
     const wrongAnswers = otherWords
       .sort(() => Math.random() - 0.5)
       .slice(0, 3)
-      .map(w => getWordProperty(w, 'english'));
+      .map(w => getWordProperty(w, 'english'))
+      .filter(answer => answer && answer !== correctAnswer); // Filter out empty answers
 
     const allOptions = [correctAnswer, ...wrongAnswers]
       .sort(() => Math.random() - 0.5)
@@ -656,6 +1099,7 @@ export default function VocabularyMiningGame({
         isCorrect: text === correctAnswer
       }));
 
+    console.log('🎯 Generated multiple choice options:', allOptions);
     setMultipleChoiceOptions(allOptions);
   };
 
@@ -865,7 +1309,7 @@ export default function VocabularyMiningGame({
     const isCorrect = validationResult.isCorrect;
 
     const responseTime = Date.now() - gameState.startTime.getTime();
-    
+
     // Update game state
     setGameState(prev => ({
       ...prev,
@@ -875,35 +1319,43 @@ export default function VocabularyMiningGame({
       incorrectAnswers: isCorrect ? prev.incorrectAnswers : prev.incorrectAnswers + 1,
       streak: isCorrect ? prev.streak + 1 : 0,
       maxStreak: isCorrect ? Math.max(prev.maxStreak, prev.streak + 1) : prev.maxStreak,
-      score: isCorrect ? prev.score + GEM_TYPES[prev.currentGemType].points : prev.score,
+      score: isCorrect ? prev.score + (prev.gameMode === 'typing' ? GEM_TYPES[prev.currentGemType].points * 2 : GEM_TYPES[prev.currentGemType].points) : prev.score,
       gemsCollected: isCorrect ? prev.gemsCollected + 1 : prev.gemsCollected,
       feedback: isCorrect ? 'Correct! Gem collected!' : `Incorrect. The answer is: ${englishWord}`
     }));
 
     // Play audio feedback
-    if (gameState.currentWord?.audio_url && config?.enableAudio !== false) {
+    if (gameState.currentWord?.audio_url && soundEnabled) {
       setTimeout(() => {
         playAudio(true);
       }, 800); // Play audio after showing the answer
     }
 
     // Play sound effects for incorrect answers (correct answers play gem collection sounds)
-    if (config?.enableAudio !== false && !isCorrect) {
+    if (soundEnabled && !isCorrect) {
+      console.log('🎵 VocabularyMining: Playing error sound for incorrect answer');
       audioFeedbackService.playErrorSound();
     }
 
-    // Record progress and handle gem collection
-    if (user && gameState.currentWord) {
+    // Handle gem collection and audio feedback for all users (demo and authenticated)
+    if (unifiedUser && gameState.currentWord) {
       const previousGemType = gameState.currentGemType;
 
-      // Track words practiced for achievements
+      // Track words practiced for achievements (demo users get visual feedback but no database saves)
       setWordsPracticed(prev => prev + 1);
 
-      await recordWordPractice(gameState.currentWord, isCorrect, responseTime);
+      // Only record progress to database for authenticated users
+      if (user && !isDemo) {
+        await recordWordPractice(gameState.currentWord, isCorrect, responseTime);
+      }
 
       // Update gem type and show collection animation (for correct answers)
       if (isCorrect) {
-        const newGemType = await determineGemType(gameState.currentWord);
+        // For demo users, simulate gem progression without database lookup
+        const newGemType = user && !isDemo
+          ? await determineGemType(gameState.currentWord)
+          : simulateDemoGemType(gameState.currentWord, isCorrect);
+
         const upgraded = newGemType !== previousGemType;
 
         // Calculate points based on gem type
@@ -934,33 +1386,58 @@ export default function VocabularyMiningGame({
           [newGemType]: prev[newGemType] + 1
         }));
 
-        // Check for achievements
-        const newAchievements = await achievementService.checkAchievements({
-          gemsCollected: gameState.gemsCollected + 1,
-          gemsByType: {
-            ...gemsByType,
-            [newGemType]: gemsByType[newGemType] + 1
-          },
-          currentStreak: gameState.streak + 1,
-          maxStreak: Math.max(gameState.maxStreak, gameState.streak + 1),
-          currentLevel,
-          wordsPracticed: wordsPracticed + 1,
-          sessionAccuracy: gameState.correctAnswers / (gameState.correctAnswers + gameState.incorrectAnswers + 1)
-        });
+        // Check for achievements (demo users get visual feedback but no database saves)
+        let newAchievements: Achievement[] = [];
+        if (user && !isDemo) {
+          newAchievements = await achievementService.checkAchievements({
+            gemsCollected: gameState.gemsCollected + 1,
+            gemsByType: {
+              ...gemsByType,
+              [newGemType]: gemsByType[newGemType] + 1
+            },
+            currentStreak: gameState.streak + 1,
+            maxStreak: Math.max(gameState.maxStreak, gameState.streak + 1),
+            currentLevel,
+            wordsPracticed: wordsPracticed + 1,
+            sessionAccuracy: gameState.correctAnswers / (gameState.correctAnswers + gameState.incorrectAnswers + 1)
+          });
+        } else {
+          // Simulate achievements for demo users
+          newAchievements = simulateDemoAchievements(gameState.correctAnswers + 1, gameState.streak + 1);
+        }
 
         // Show achievement notification if any new achievements
         if (newAchievements.length > 0) {
           setCurrentAchievement(newAchievements[0]); // Show first achievement
           setShowAchievement(true);
+
+          // Play achievement sound for ALL users (demo and authenticated)
+          if (soundEnabled) {
+            const achievement = newAchievements[0];
+            const rarity = achievement.rarity === 'epic' ? 'rare' : achievement.rarity;
+            console.log(`🎵 VocabularyMining: Playing achievement sound for ${rarity} achievement: ${achievement.name}`);
+            audioFeedbackService.playAchievementSound(rarity as 'common' | 'rare' | 'legendary');
+          }
         }
 
-        // Play gem collection sound effects
-        if (config?.enableAudio !== false) {
+        // Play gem collection sound effects for ALL users (demo and authenticated)
+        if (soundEnabled) {
           // Always play the gem collection sound (this serves as both collection and upgrade feedback)
+          console.log(`🎵 VocabularyMining: Playing gem collection sound for ${newGemType} gem`);
           audioFeedbackService.playGemCollectionSound(newGemType);
+
+          // Play special victory sound for streak milestones
+          const newStreak = gameState.streak + 1;
+          if (newStreak > 0 && newStreak % 5 === 0) {
+            // Play special sound for streak milestones (5, 10, 15, etc.)
+            console.log(`🎵 VocabularyMining: Playing streak milestone sound for streak ${newStreak}`);
+            setTimeout(() => {
+              audioFeedbackService.playSuccessSound();
+            }, 500);
+          }
         }
 
-        // Show gem collection animation
+        // Show gem collection animation for ALL users
         setCollectedGemType(newGemType);
         setGemPoints(points);
         setGemUpgraded(upgraded);
@@ -1180,7 +1657,7 @@ export default function VocabularyMiningGame({
       setShowLevelComplete(true);
 
       // Play level complete sound
-      if (config?.enableAudio !== false) {
+      if (soundEnabled) {
         audioFeedbackService.playLevelCompleteSound();
       }
 
@@ -1202,16 +1679,22 @@ export default function VocabularyMiningGame({
       isCorrect: null,
       feedback: '',
       isAnswerRevealed: false,
-      currentGemType: gemType
+      currentGemType: gemType,
+      speedModeTimeLeft: prev.gameMode === 'speed' ? 10 : prev.speedModeTimeLeft
     }));
 
-    if (mode === 'multiple_choice') {
+    if (gameState.gameMode === 'multiple_choice') {
       generateMultipleChoiceOptions(nextWordData);
+    }
+
+    // Auto-play audio for listening mode
+    if (gameState.gameMode === 'listening' && nextWordData.audio_url) {
+      setTimeout(() => playAudio(true), 500);
     }
   };
 
   const playAudio = (autoPlay = false) => {
-    if (!gameState.currentWord?.audio_url) return;
+    if (!gameState.currentWord?.audio_url || !soundEnabled) return;
 
     // For manual clicks, check replay limit
     if (!autoPlay && gameState.audioReplayCount >= 2) return;
@@ -1240,13 +1723,13 @@ export default function VocabularyMiningGame({
 
   // Auto-play audio when word changes
   useEffect(() => {
-    if (gameState.currentWord?.audio_url && config?.enableAudio !== false) {
+    if (gameState.currentWord?.audio_url && soundEnabled) {
       // Small delay to ensure the word is displayed first
       setTimeout(() => {
         playAudio(true);
       }, 500);
     }
-  }, [gameState.currentWord?.id]);
+  }, [gameState.currentWord?.id, soundEnabled]);
 
   if (gameComplete) {
     return (
@@ -1298,209 +1781,527 @@ export default function VocabularyMiningGame({
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
+    <div className="h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 overflow-hidden">
       <audio ref={audioRef} onEnded={() => setGameState(prev => ({ ...prev, audioPlaying: false }))} />
 
-      {/* Header */}
+      {/* Improved Header - Clean but Functional */}
       <div className="bg-black/20 backdrop-blur-sm border-b border-white/10 p-4">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <button
-            onClick={onExit}
-            className="flex items-center text-white hover:text-gray-300 transition-colors"
-          >
-            <Home className="h-5 w-5 mr-2" />
-            {isAssignmentMode ? 'Back to Assignments' : 'Exit Mining'}
-          </button>
+        <div className="max-w-7xl mx-auto">
+          {/* Top Navigation Row */}
+          <div className="flex items-center justify-between mb-4">
+            <button
+              onClick={onExit}
+              className="flex items-center text-white hover:text-gray-300 transition-colors"
+            >
+              <Home className="h-5 w-5 mr-2" />
+              {isAssignmentMode ? 'Back to Assignments' : 'Exit Mining'}
+            </button>
 
-          <div className="flex items-center space-x-6 text-white">
-            {isAssignmentMode && assignmentTitle && (
-              <div className="flex items-center">
-                <BookOpen className="h-5 w-5 mr-2 text-green-400" />
-                <span className="font-semibold">{assignmentTitle}</span>
+            {/* Current Session Stats */}
+            <div className="flex items-center space-x-6 text-white">
+              {isAssignmentMode && assignmentTitle && (
+                <div className="flex items-center">
+                  <BookOpen className="h-5 w-5 mr-2 text-green-400" />
+                  <span className="font-semibold">{assignmentTitle}</span>
+                </div>
+              )}
+              
+              {/* Session Progress */}
+              <div className="flex items-center bg-white/10 backdrop-blur-sm rounded-full px-4 py-2 border border-white/20">
+                <span className="text-sm font-medium mr-2">Progress:</span>
+                <span className="font-bold">{gameState.currentWordIndex + 1} / {gameState.totalWords}</span>
               </div>
-            )}
-            <div className="flex items-center">
-              <GemIcon type={gameState.currentGemType} size="small" animated={true} className="mr-2" />
-              <span>{gameState.gemsCollected} Gems</span>
-            </div>
-            <div className="flex items-center">
-              <Star className="h-5 w-5 mr-2 text-yellow-400" />
-              <span>Level {currentLevel}</span>
-            </div>
-            <div className="flex items-center">
-              <Zap className="h-5 w-5 mr-2 text-blue-400" />
-              <span>{totalXP} XP</span>
-            </div>
-            <div className="flex items-center">
-              <Target className="h-5 w-5 mr-2" />
-              <span>{gameState.correctAnswers}/{gameState.correctAnswers + gameState.incorrectAnswers}</span>
-            </div>
-          </div>
-        </div>
-      </div>
 
-      {/* Progress Bar */}
-      <div className="bg-black/20 backdrop-blur-sm p-4">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex justify-between text-white text-sm mb-2">
-            <span>Progress</span>
-            <span>{gameState.currentWordIndex + 1} / {gameState.totalWords}</span>
-          </div>
-          <div className="w-full bg-white/20 rounded-full h-2 mb-3">
-            <div
-              className="bg-gradient-to-r from-emerald-500 to-teal-600 h-2 rounded-full transition-all duration-300"
-              style={{ width: `${((gameState.currentWordIndex + 1) / gameState.totalWords) * 100}%` }}
-            />
-          </div>
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center">
+                  <GemIcon type={gameState.currentGemType} size="small" animated={true} className="mr-1" />
+                  <span className="font-semibold">{gameState.gemsCollected}</span>
+                </div>
+                <div className="flex items-center">
+                  <Star className="h-4 w-4 mr-1 text-yellow-400" />
+                  <span>Lv.{currentLevel}</span>
+                </div>
+                <div className="flex items-center">
+                  <Zap className="h-4 w-4 mr-1 text-blue-400" />
+                  <span>{sessionXP} XP</span>
+                </div>
+              </div>
+            </div>
 
-          {/* XP Progress Bar */}
-          <div className="flex justify-between text-white text-xs mb-1">
-            <span>Level {currentLevel}</span>
-            <span>{xpToNextLevel} XP to next level</span>
-          </div>
-          <div className="w-full bg-white/20 rounded-full h-1.5">
-            <div
-              className="bg-gradient-to-r from-yellow-400 to-orange-500 h-1.5 rounded-full transition-all duration-500"
-              style={{
-                width: `${Math.max(0, Math.min(100, ((calculateXPForLevel(currentLevel + 1) - xpToNextLevel) / calculateXPForLevel(currentLevel + 1)) * 100))}%`
+            <button
+              onClick={() => {
+                const newSoundState = !soundEnabled;
+                console.log(`🎵 VocabularyMining: Sound toggled to ${newSoundState ? 'ON' : 'OFF'}`);
+                setSoundEnabled(newSoundState);
               }}
-            />
+              className="flex items-center text-white hover:text-gray-300 transition-colors p-2 rounded-lg hover:bg-white/10"
+              title={soundEnabled ? 'Disable Sound' : 'Enable Sound'}
+            >
+              {soundEnabled ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
+            </button>
+          </div>
+
+          {/* Learning Mode Selector - Larger and More Prominent */}
+          <div className="mb-6">
+            <div className="flex items-center justify-center space-x-2">
+              <span className="text-white text-lg font-medium mr-6">Mode:</span>
+              <div className="flex bg-white/10 rounded-xl p-2 space-x-2">
+                {[
+                  { mode: 'learn', icon: <Brain className="h-5 w-5" />, label: 'Learn', description: 'Standard learning mode' },
+                  { mode: 'speed', icon: <Zap className="h-5 w-5" />, label: 'Speed', description: 'Quick-fire practice' },
+                  { mode: 'multiple_choice', icon: <Target className="h-5 w-5" />, label: 'Multiple Choice', description: 'Choose the correct translation' },
+                  { mode: 'listening', icon: <Headphones className="h-5 w-5" />, label: 'Listening', description: 'Audio recognition practice' },
+                  { mode: 'typing', icon: <Keyboard className="h-5 w-5" />, label: 'Typing', description: 'Type for double points' }
+                ].map(({ mode, icon, label, description }) => (
+                  <button
+                    key={mode}
+                    onClick={() => {
+                      setGameState(prev => ({ ...prev, gameMode: mode as any }));
+                      if (mode === 'multiple_choice' && gameState.currentWord) {
+                        generateMultipleChoiceOptions(gameState.currentWord);
+                      }
+                    }}
+                    className={`flex items-center px-4 py-3 rounded-lg text-base font-medium transition-all duration-200 ${
+                      gameState.gameMode === mode
+                        ? 'bg-white text-purple-900 shadow-lg scale-105'
+                        : 'text-white hover:bg-white/20 hover:scale-105'
+                    }`}
+                    title={description}
+                  >
+                    {icon}
+                    <span className="ml-2">{label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Enhanced Stats Row with XP Chart */}
+          <div className="grid grid-cols-4 gap-4 mb-6">
+            {/* Gem Collection */}
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+              <div className="text-center mb-3">
+                <div className="text-white text-sm font-semibold flex items-center justify-center">
+                  <span className="text-lg mr-2">💎</span>
+                  Gems Collected
+                </div>
+              </div>
+              <div className="flex justify-center space-x-2">
+                {[
+                  { type: 'common', name: 'Common', color: 'bg-blue-500', count: gemStats.common },
+                  { type: 'uncommon', name: 'Uncommon', color: 'bg-green-500', count: gemStats.uncommon },
+                  { type: 'rare', name: 'Rare', color: 'bg-purple-500', count: gemStats.rare },
+                  { type: 'epic', name: 'Epic', color: 'bg-pink-500', count: gemStats.epic },
+                  { type: 'legendary', name: 'Legendary', color: 'bg-yellow-500', count: gemStats.legendary }
+                ].map((gem) => (
+                  <div key={gem.type} className="text-center">
+                    <div className={`w-6 h-6 ${gem.color} rounded-full flex items-center justify-center text-white font-bold text-xs mb-1`}>
+                      {gem.count}
+                    </div>
+                    <div className="text-white text-xs">{gem.name.charAt(0)}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Session Stats */}
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+              <div className="text-center mb-3">
+                <div className="text-white text-sm font-semibold">Session Stats</div>
+              </div>
+              <div className="space-y-1 text-xs">
+                <div className="flex justify-between text-white">
+                  <span>Correct:</span>
+                  <span className="font-bold">{gameState.correctAnswers}</span>
+                </div>
+                <div className="flex justify-between text-white">
+                  <span>Streak:</span>
+                  <span className="font-bold">{gameState.streak}</span>
+                </div>
+                <div className="flex justify-between text-white">
+                  <span>Accuracy:</span>
+                  <span className="font-bold">
+                    {gameState.correctAnswers + gameState.incorrectAnswers > 0 
+                      ? Math.round((gameState.correctAnswers / (gameState.correctAnswers + gameState.incorrectAnswers)) * 100)
+                      : 0}%
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* XP Progress Chart */}
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+              <div className="text-center mb-3">
+                <div className="text-white text-sm font-semibold">XP Progress</div>
+              </div>
+              <div className="text-center">
+                <div className="text-lg font-bold text-white mb-2">Level {currentLevel}</div>
+                <div className="w-full bg-white/20 rounded-full h-2 mb-2">
+                  <div
+                    className="bg-gradient-to-r from-yellow-400 to-orange-500 h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${Math.max(10, ((sessionXP) / 100) * 100)}%` }}
+                  />
+                </div>
+                <div className="text-xs text-yellow-200">+{sessionXP} XP this session</div>
+                <div className="text-xs text-blue-200 mt-1">{xpToNextLevel} XP to Level {currentLevel + 1}</div>
+              </div>
+            </div>
+
+            {/* Level Progress */}
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+              <div className="text-center mb-3">
+                <div className="text-white text-sm font-semibold">Mining Progress</div>
+              </div>
+              <div className="text-center">
+                <div className="text-lg font-bold text-white mb-2">{gameState.currentWordIndex + 1} / {gameState.totalWords}</div>
+                <div className="w-full bg-white/20 rounded-full h-2 mb-2">
+                  <div
+                    className="bg-gradient-to-r from-emerald-500 to-teal-600 h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${((gameState.currentWordIndex + 1) / gameState.totalWords) * 100}%` }}
+                  />
+                </div>
+                <div className="text-xs text-emerald-200">{Math.round(((gameState.currentWordIndex + 1) / gameState.totalWords) * 100)}% Complete</div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Main Game Area */}
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-2xl mx-auto">
-          {/* Current Gem Display */}
-          <motion.div
-            key={gameState.currentWordIndex}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-8"
-          >
-            <div className="flex justify-center mb-4">
-              <GemIcon
-                type={gameState.currentGemType}
-                size="xl"
-                animated={true}
+      {/* Main Game Area - Immersive Mining Experience */}
+      <div className="flex-1 relative overflow-hidden">
+        {/* Animated Background Elements */}
+        <div className="absolute inset-0">
+          {/* Floating Particles */}
+          <div className="absolute inset-0">
+            {[...Array(20)].map((_, i) => (
+              <motion.div
+                key={i}
+                className="absolute w-1 h-1 bg-white/20 rounded-full"
+                style={{
+                  left: `${Math.random() * 100}%`,
+                  top: `${Math.random() * 100}%`,
+                }}
+                animate={{
+                  y: [0, -50, 0],
+                  opacity: [0.2, 0.6, 0.2],
+                }}
+                transition={{
+                  duration: 3 + Math.random() * 2,
+                  repeat: Infinity,
+                  delay: Math.random() * 2,
+                }}
               />
-            </div>
-            <div className="text-white text-lg mb-2">
-              {GEM_TYPES[gameState.currentGemType].name}
-            </div>
-            <div className="text-blue-200 text-sm">
-              {GEM_TYPES[gameState.currentGemType].description}
-            </div>
-            <div className="text-yellow-300 text-sm font-semibold mt-1">
-              Worth {GEM_TYPES[gameState.currentGemType].points} XP
-            </div>
-          </motion.div>
+            ))}
+          </div>
+          
+          {/* Mining Cave Atmosphere */}
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/5 to-black/10 pointer-events-none" />
+          
+          {/* Depth Lines for Mine Effect */}
+          <div className="absolute inset-0 opacity-10">
+            <div className="absolute top-1/4 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white to-transparent" />
+            <div className="absolute top-1/2 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white to-transparent" />
+            <div className="absolute top-3/4 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white to-transparent" />
+          </div>
+        </div>
 
-          {/* Word Display */}
-          <motion.div
-            key={`word-${gameState.currentWordIndex}`}
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 border border-white/20 mb-6"
-          >
-            <div className="text-center">
-              <div className="text-4xl font-bold text-white mb-4">
-                {getWordProperty(gameState.currentWord, 'spanish')}
-              </div>
+        {/* Central Mining Chamber */}
+        <div className="relative z-10 flex items-center justify-center min-h-full p-8">
+          <div className="max-w-6xl w-full">
 
-              {gameState.currentWord.audio_url && (
-                <button
-                  onClick={() => playAudio(false)}
-                  disabled={!gameState.canReplayAudio}
-                  className={`mb-4 p-3 rounded-full transition-all ${
-                    gameState.canReplayAudio
-                      ? 'bg-blue-500 hover:bg-blue-600 text-white'
-                      : 'bg-gray-500 text-gray-300 cursor-not-allowed'
-                  }`}
+            {/* Main Mining Interface - Symmetrical Layout */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+              
+              {/* Left Side - Gem Discovery Zone */}
+              <div className="order-1">
+                <motion.div
+                  key={gameState.currentWordIndex}
+                  initial={{ opacity: 0, scale: 0.8, rotateY: -90 }}
+                  animate={{ opacity: 1, scale: 1, rotateY: 0 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                  className="relative"
                 >
-                  <Volume2 className="h-5 w-5" />
-                </button>
-              )}
-
-              {gameState.currentWord.part_of_speech && (
-                <div className="text-blue-200 text-sm mb-4">
-                  {gameState.currentWord.part_of_speech}
-                </div>
-              )}
-            </div>
-          </motion.div>
-
-          {/* Answer Input */}
-          {!gameState.showAnswer && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mb-6"
-            >
-              {mode === 'multiple_choice' ? (
-                <div className="space-y-3">
-                  {multipleChoiceOptions.map((option, index) => (
-                    <button
-                      key={index}
-                      onClick={() => handleAnswer(index.toString(), true)}
-                      className="w-full bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl p-4 text-white text-left transition-all duration-200"
-                    >
-                      {option.text}
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <input
-                    ref={inputRef}
-                    type="text"
-                    value={gameState.userAnswer}
-                    onChange={(e) => setGameState(prev => ({ ...prev, userAnswer: e.target.value }))}
-                    onKeyDown={(e) => e.key === 'Enter' && handleAnswer(gameState.userAnswer)}
-                    placeholder="Type the English translation..."
-                    className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    autoFocus
-                  />
-                  <button
-                    onClick={() => handleAnswer(gameState.userAnswer)}
-                    disabled={!gameState.userAnswer.trim()}
-                    className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 disabled:from-gray-500 disabled:to-gray-600 text-white py-3 px-6 rounded-xl font-semibold transition-all duration-200 disabled:cursor-not-allowed"
-                  >
-                    Mine This Gem
-                  </button>
-                </div>
-              )}
-            </motion.div>
-          )}
-
-          {/* Feedback */}
-          {gameState.showAnswer && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className={`text-center p-6 rounded-xl mb-6 ${
-                gameState.isCorrect
-                  ? 'bg-green-500/20 border border-green-500/30 text-green-100'
-                  : 'bg-red-500/20 border border-red-500/30 text-red-100'
-              }`}
-            >
-              <div className="text-2xl mb-2">
-                {gameState.isCorrect ? <CheckCircle className="h-8 w-8 mx-auto" /> : <XCircle className="h-8 w-8 mx-auto" />}
+                  {/* Gem Discovery Chamber */}
+                  <div className="relative bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-xl 
+                                rounded-3xl p-8 border-2 border-slate-600/30 shadow-2xl overflow-hidden">
+                    
+                    {/* Inner Glow Effect */}
+                    <div className={`absolute inset-0 bg-gradient-to-br opacity-10 rounded-3xl
+                      ${gameState.currentGemType === 'legendary' ? 'from-yellow-400 to-orange-500' :
+                        gameState.currentGemType === 'epic' ? 'from-pink-400 to-purple-500' :
+                        gameState.currentGemType === 'rare' ? 'from-purple-400 to-indigo-500' :
+                        gameState.currentGemType === 'uncommon' ? 'from-green-400 to-emerald-500' :
+                        'from-blue-400 to-cyan-500'}`} 
+                    />
+                    
+                    {/* Gem Spotlight */}
+                    <div className="text-center relative z-10">
+                      <motion.div
+                        animate={{
+                          scale: [1, 1.05, 1],
+                          filter: ["brightness(1)", "brightness(1.2)", "brightness(1)"]
+                        }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                        className="mb-6 flex justify-center"
+                      >
+                        <GemIcon
+                          type={gameState.currentGemType}
+                          size="xl"
+                          animated={true}
+                        />
+                      </motion.div>
+                      
+                      {/* Gem Information */}
+                      <div className="space-y-4">
+                        <h3 className="text-2xl font-bold text-white">
+                          {GEM_TYPES[gameState.currentGemType].name}
+                        </h3>
+                        <p className="text-slate-300 text-sm leading-relaxed">
+                          {GEM_TYPES[gameState.currentGemType].description}
+                        </p>
+                        
+                        {/* XP Value Badge */}
+                        <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-yellow-500/20 to-amber-500/20 
+                                      backdrop-blur-sm border border-yellow-500/30 rounded-full">
+                          <span className="text-yellow-300 font-bold">
+                            Worth {gameState.gameMode === 'typing' ? (
+                              <span className="flex items-center space-x-2">
+                                <span>{GEM_TYPES[gameState.currentGemType].points * 2} XP</span>
+                                <span className="text-xs bg-yellow-500 text-black px-2 py-1 rounded-full">2x BONUS</span>
+                              </span>
+                            ) : (
+                              <span>{GEM_TYPES[gameState.currentGemType].points} XP</span>
+                            )}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Mining Tool Indicator */}
+                    <div className="absolute bottom-4 right-4 text-3xl opacity-30">
+                      ⛏️
+                    </div>
+                  </div>
+                </motion.div>
               </div>
-              <div className="text-lg font-semibold mb-2">{gameState.feedback}</div>
-              {gameState.currentWord.example_sentence && (
-                <div className="text-sm opacity-80">
-                  <div className="mb-1">"{gameState.currentWord.example_sentence}"</div>
-                  {gameState.currentWord.example_translation && (
-                    <div>"{gameState.currentWord.example_translation}"</div>
-                  )}
-                </div>
-              )}
-            </motion.div>
-          )}
+
+              {/* Center - Word Challenge */}
+              <div className="order-2 flex justify-center">
+                <motion.div
+                  key={`word-${gameState.currentWordIndex}`}
+                  initial={{ opacity: 0, scale: 0.5 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 20, delay: 0.2 }}
+                  className="text-center w-full"
+                >
+                  {/* Word Display */}
+                  <div className="relative">
+                    {/* Word Container */}
+                    <div className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl rounded-2xl 
+                                  border-2 border-white/20 p-8 shadow-2xl min-h-[300px] flex flex-col justify-center">
+                      
+                      {gameState.gameMode === 'listening' ? (
+                        <div className="space-y-6">
+                          <div className="text-6xl mb-4">🎧</div>
+                          <h2 className="text-2xl font-bold text-white">Listen Carefully</h2>
+                          <button
+                            onClick={() => playAudio(false)}
+                            disabled={!gameState.canReplayAudio}
+                            className={`mx-auto p-4 rounded-full transition-all transform hover:scale-110 ${
+                              gameState.canReplayAudio
+                                ? 'bg-blue-500 hover:bg-blue-600 text-white shadow-lg'
+                                : 'bg-gray-500 text-gray-300 cursor-not-allowed'
+                            }`}
+                          >
+                            <Volume2 className="h-6 w-6" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="space-y-6">
+                          <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-tight">
+                            {getWordProperty(gameState.currentWord, 'spanish')}
+                          </h1>
+                          
+                          {gameState.currentWord.part_of_speech && (
+                            <div className="inline-block px-4 py-2 bg-blue-500/20 backdrop-blur-sm 
+                                          border border-blue-500/30 rounded-full text-blue-200 text-base">
+                              {gameState.currentWord.part_of_speech}
+                            </div>
+                          )}
+                          
+                          {/* Audio Button */}
+                          {gameState.currentWord.audio_url && (
+                            <div className="mt-6">
+                              <button
+                                onClick={() => playAudio(false)}
+                                disabled={!gameState.canReplayAudio}
+                                className={`p-4 rounded-full transition-all transform hover:scale-110 ${
+                                  gameState.canReplayAudio
+                                    ? 'bg-blue-500 hover:bg-blue-600 text-white shadow-lg'
+                                    : 'bg-gray-500 text-gray-300 cursor-not-allowed'
+                                }`}
+                              >
+                                <Volume2 className="h-6 w-6" />
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      
+                      {/* Speed Mode Timer */}
+                      {gameState.gameMode === 'speed' && !gameState.showAnswer && (
+                        <motion.div
+                          animate={{ scale: gameState.speedModeTimeLeft <= 3 ? [1, 1.1, 1] : 1 }}
+                          transition={{ duration: 0.5, repeat: gameState.speedModeTimeLeft <= 3 ? Infinity : 0 }}
+                          className={`absolute -top-4 -right-4 px-4 py-2 rounded-full font-bold text-lg
+                            ${gameState.speedModeTimeLeft <= 3 
+                              ? 'bg-red-500 text-white shadow-red-500/50' 
+                              : 'bg-yellow-500 text-black shadow-yellow-500/50'
+                            } shadow-lg`}
+                        >
+                          ⏱️ {gameState.speedModeTimeLeft}s
+                        </motion.div>
+                      )}
+                    </div>
+                  </div>
+                </motion.div>
+              </div>
+
+              {/* Right Side - Mining Interface */}
+              <div className="order-3">
+                {/* Answer Input */}
+                {!gameState.showAnswer && (
+                  <motion.div
+                    initial={{ opacity: 0, x: 50 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.4 }}
+                    className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl 
+                             rounded-3xl p-8 border-2 border-slate-600/30 shadow-2xl"
+                  >
+                    <div className="text-center mb-6">
+                      <h3 className="text-2xl font-bold text-white mb-2">🔍 Mine the Translation</h3>
+                      <p className="text-slate-300">Extract the English meaning</p>
+                    </div>
+
+                    {gameState.gameMode === 'multiple_choice' ? (
+                      <div className="space-y-3">
+                        {multipleChoiceOptions.map((option, index) => (
+                          <motion.button
+                            key={index}
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={() => handleAnswer(index.toString(), true)}
+                            className="w-full bg-gradient-to-r from-slate-700/60 to-slate-800/60 hover:from-slate-600/60 hover:to-slate-700/60 
+                                     border-2 border-slate-600/30 hover:border-slate-500/50 rounded-xl p-4 text-white text-left 
+                                     transition-all duration-200 backdrop-blur-sm"
+                          >
+                            <span className="font-medium">{option.text}</span>
+                          </motion.button>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="space-y-6">
+                        {gameState.gameMode === 'listening' && (
+                          <div className="text-center mb-4">
+                            <div className="text-blue-200 text-sm mb-3">🎧 Type what you heard</div>
+                          </div>
+                        )}
+                        
+                        <div className="relative">
+                          <input
+                            ref={inputRef}
+                            type="text"
+                            value={gameState.userAnswer}
+                            onChange={(e) => setGameState(prev => ({ ...prev, userAnswer: e.target.value }))}
+                            onKeyDown={(e) => e.key === 'Enter' && handleAnswer(gameState.userAnswer)}
+                            placeholder={gameState.gameMode === 'listening' ? "Type what you heard..." : "Type the English translation..."}
+                            className="w-full bg-slate-700/40 border-2 border-slate-600/30 focus:border-blue-500/50 
+                                     rounded-xl px-6 py-4 text-white text-lg placeholder-slate-400 
+                                     focus:ring-4 focus:ring-blue-500/20 focus:outline-none backdrop-blur-sm
+                                     transition-all duration-200"
+                            autoFocus
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5 rounded-xl pointer-events-none" />
+                        </div>
+                        
+                        <motion.button
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => handleAnswer(gameState.userAnswer)}
+                          disabled={!gameState.userAnswer.trim()}
+                          className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 
+                                   disabled:from-gray-600 disabled:to-gray-700 text-white font-bold py-4 px-8 rounded-xl 
+                                   transition-all duration-200 disabled:cursor-not-allowed shadow-lg text-lg
+                                   disabled:opacity-50 transform hover:shadow-emerald-500/25"
+                        >
+                          <span className="flex items-center justify-center space-x-2">
+                            <span>⛏️</span>
+                            <span>Mine This Gem</span>
+                            <span>💎</span>
+                          </span>
+                        </motion.button>
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+
+                {/* Feedback Display */}
+                {gameState.showAnswer && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                    className={`bg-gradient-to-br backdrop-blur-xl rounded-3xl p-8 border-2 shadow-2xl ${
+                      gameState.isCorrect
+                        ? 'from-emerald-500/20 to-green-500/20 border-emerald-500/40'
+                        : 'from-red-500/20 to-rose-500/20 border-red-500/40'
+                    }`}
+                  >
+                    <div className="text-center">
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ type: "spring", stiffness: 400, damping: 15, delay: 0.2 }}
+                        className="mb-4"
+                      >
+                        {gameState.isCorrect ? (
+                          <div className="text-6xl mb-2">🎉</div>
+                        ) : (
+                          <div className="text-6xl mb-2">💔</div>
+                        )}
+                      </motion.div>
+                      
+                      <h3 className={`text-2xl font-bold mb-3 ${
+                        gameState.isCorrect ? 'text-emerald-300' : 'text-red-300'
+                      }`}>
+                        {gameState.isCorrect ? 'Gem Mined Successfully!' : 'Mining Failed'}
+                      </h3>
+                      
+                      <p className="text-white text-lg mb-4 font-medium">
+                        {gameState.feedback}
+                      </p>
+                      
+                      {/* Example Sentence */}
+                      {gameState.currentWord.example_sentence && (
+                        <div className="mt-6 p-4 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20">
+                          <div className="text-sm text-slate-300 space-y-2">
+                            <div className="italic">"{gameState.currentWord.example_sentence}"</div>
+                            {gameState.currentWord.example_translation && (
+                              <div className="text-slate-400">"{gameState.currentWord.example_translation}"</div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
+
+
 
       {/* XP Gain Animation */}
       <AnimatePresence>

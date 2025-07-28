@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { createClient } from '@supabase/supabase-js';
 import { EnhancedGameService } from 'gems/services/enhancedGameService';
 import { useAuth } from '../../../../components/auth/AuthProvider';
+import { useUnifiedAuth } from '../../../../hooks/useUnifiedAuth';
 import { WordPair } from './CustomWordsModal';
 import CustomWordsModal from './CustomWordsModal';
 import { VOCABULARY } from '../data/vocabulary';
@@ -43,6 +44,7 @@ export default function MemoryGameMain({
   curriculumLevel = 'KS3'
 }: MemoryGameMainProps) {
   const { user } = useAuth();
+  const { user: unifiedUser, isDemo } = useUnifiedAuth();
   // Game state
   const [cards, setCards] = useState<Card[]>([]);
   const [matches, setMatches] = useState(0);
@@ -118,7 +120,7 @@ export default function MemoryGameMain({
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
     const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-    if (userId || user?.id) {
+    if ((userId || user?.id) && !isDemo) {
       const service = new EnhancedGameService(supabase);
       setGameService(service);
     }
@@ -126,13 +128,13 @@ export default function MemoryGameMain({
 
   // Start game session when game service is ready and game starts
   useEffect(() => {
-    if (gameService && (userId || user?.id) && startTime && !gameSessionId) {
+    if (gameService && (userId || user?.id) && !isDemo && startTime && !gameSessionId) {
       startGameSession();
     }
   }, [gameService, userId, user?.id, startTime, gameSessionId]);
 
   const startGameSession = async () => {
-    if (!gameService || !(userId || user?.id)) return;
+    if (!gameService || !(userId || user?.id) || isDemo) return;
 
     // Skip session creation in assignment mode to avoid RLS issues
     if (isAssignmentMode) {
@@ -282,7 +284,7 @@ export default function MemoryGameMain({
     console.log('vocabularyProgress:', vocabularyProgress);
 
     // End enhanced game session
-    if (gameService && gameSessionId && (userId || user?.id)) {
+    if (gameService && gameSessionId && (userId || user?.id) && !isDemo) {
       try {
         const accuracy = totalAttempts > 0 ? (totalMatches / totalAttempts) * 100 : 0;
         const finalScore = Math.round(accuracy);

@@ -1,128 +1,81 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import GameSettings from './components/GameSettings';
-import SentenceBuilderGame from './components/SentenceBuilderGame';
-import { ArrowLeft } from 'lucide-react';
-import Link from 'next/link';
+import React, { useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useAuth } from '../../../components/auth/AuthProvider';
+import UnifiedGameLauncher from '../../../components/games/UnifiedGameLauncher';
+import { UnifiedSelectionConfig, UnifiedVocabularyItem } from '../../../hooks/useUnifiedVocabulary';
 
-type GameStats = {
-  gamesPlayed: number;
-  highScore: number;
-  averageTime: number;
-  totalSentencesCompleted: number;
-};
+export default function UnifiedGemCollectorPage() {
+  const { user } = useAuth();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const assignmentId = searchParams?.get('assignment');
 
-export default function SentenceBuilderPage() {
+  // Game state management
   const [gameStarted, setGameStarted] = useState(false);
-  const [gameSettings, setGameSettings] = useState({
-    difficulty: 'beginner',
-    category: 'general',
-    language: 'english',
-  });
-  const [stats, setStats] = useState<GameStats>({
-    gamesPlayed: 0,
-    highScore: 0,
-    averageTime: 0,
-    totalSentencesCompleted: 0,
-  });
+  const [gameConfig, setGameConfig] = useState<{
+    config: UnifiedSelectionConfig;
+    vocabulary: UnifiedVocabularyItem[];
+  } | null>(null);
 
-  // Load stats from localStorage on component mount
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const savedStats = localStorage.getItem('sentenceBuilderStats');
-      if (savedStats) {
-        setStats(JSON.parse(savedStats));
-      }
-    }
-  }, []);
-
-  // Update stats
-  const updateStats = (gameResult: { score: number; time: number; sentencesCompleted: number }) => {
-    const newStats = {
-      gamesPlayed: stats.gamesPlayed + 1,
-      highScore: Math.max(stats.highScore, gameResult.score),
-      averageTime: stats.gamesPlayed === 0
-        ? gameResult.time
-        : (stats.averageTime * stats.gamesPlayed + gameResult.time) / (stats.gamesPlayed + 1),
-      totalSentencesCompleted: stats.totalSentencesCompleted + gameResult.sentencesCompleted,
-    };
-    
-    setStats(newStats);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('sentenceBuilderStats', JSON.stringify(newStats));
-    }
-  };
-
-  // Start game with settings
-  const startGame = (settings: typeof gameSettings) => {
-    setGameSettings(settings);
+  // Handle game start from unified launcher
+  const handleGameStart = (config: UnifiedSelectionConfig, vocabulary: UnifiedVocabularyItem[]) => {
+    setGameConfig({ config, vocabulary });
     setGameStarted(true);
+    console.log('Gem Collector started with:', { config, vocabularyCount: vocabulary.length });
   };
 
   // Handle back to menu
   const handleBackToMenu = () => {
     setGameStarted(false);
+    setGameConfig(null);
   };
 
-  return (
-    <div className="container mx-auto px-4 py-8 min-h-screen">
-      <div className="mb-6 flex items-center">
-        <Link href="/games" className="inline-flex items-center text-blue-500 hover:text-blue-700">
-          <ArrowLeft className="mr-2" size={20} />
-          <span>Back to Games</span>
-        </Link>
-      </div>
-      
-      <h1 className="text-3xl md:text-4xl font-bold text-center mb-10 text-indigo-700">
-        Sentence Builder
-      </h1>
-      
-      {!gameStarted ? (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="max-w-2xl mx-auto"
-        >
-          <div className="bg-white rounded-xl shadow-lg overflow-hidden p-6 mb-8">
-            <h2 className="text-2xl font-semibold mb-4 text-indigo-600">Game Stats</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="bg-indigo-50 p-4 rounded-lg text-center">
-                <p className="text-sm text-indigo-600 font-medium">Games Played</p>
-                <p className="text-2xl font-bold">{stats.gamesPlayed}</p>
-              </div>
-              <div className="bg-indigo-50 p-4 rounded-lg text-center">
-                <p className="text-sm text-indigo-600 font-medium">High Score</p>
-                <p className="text-2xl font-bold">{stats.highScore}</p>
-              </div>
-              <div className="bg-indigo-50 p-4 rounded-lg text-center">
-                <p className="text-sm text-indigo-600 font-medium">Avg. Time (s)</p>
-                <p className="text-2xl font-bold">{Math.round(stats.averageTime)}</p>
-              </div>
-              <div className="bg-indigo-50 p-4 rounded-lg text-center">
-                <p className="text-sm text-indigo-600 font-medium">Sentences Built</p>
-                <p className="text-2xl font-bold">{stats.totalSentencesCompleted}</p>
-              </div>
-            </div>
+  // Show unified launcher if game not started
+  if (!gameStarted) {
+    return (
+      <UnifiedGameLauncher
+        gameName="Gem Collector"
+        gameDescription="Collect gems by answering vocabulary questions correctly"
+        supportedLanguages={['es', 'fr', 'de']}
+        showCustomMode={true}
+        minVocabularyRequired={10}
+        onGameStart={handleGameStart}
+        onBack={() => router.push('/games')}
+        supportsThemes={false}
+        requiresAudio={false}
+      >
+        <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 mb-6 max-w-md mx-auto">
+          <h4 className="text-white font-semibold mb-3 text-center">How to Play</h4>
+          <div className="text-white/80 text-sm space-y-2">
+            <p>• Answer vocabulary questions to collect gems</p>
+            <p>• Different gem types give different points</p>
+            <p>• Build streaks for bonus gems</p>
+            <p>• Complete collections for achievements</p>
           </div>
-          
-          <GameSettings onStartGame={startGame} />
-        </motion.div>
-      ) : (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5 }}
-        >
-          <SentenceBuilderGame 
-            settings={gameSettings}
-            onBackToMenu={handleBackToMenu}
-            onGameComplete={updateStats}
-          />
-        </motion.div>
-      )}
-    </div>
-  );
-} 
+        </div>
+      </UnifiedGameLauncher>
+    );
+  }
+
+  // Placeholder game implementation
+  if (gameStarted && gameConfig) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-400 via-pink-500 to-red-500 flex items-center justify-center">
+        <div className="text-center text-white">
+          <h2 className="text-2xl font-bold mb-4">Gem Collector</h2>
+          <p className="mb-4">Game integration in progress...</p>
+          <button
+            onClick={handleBackToMenu}
+            className="bg-white/20 hover:bg-white/30 px-6 py-3 rounded-lg transition-colors"
+          >
+            Back to Selection
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return null;
+}

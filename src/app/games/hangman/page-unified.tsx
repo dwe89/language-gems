@@ -8,7 +8,7 @@ import HangmanAssignmentWrapper from './components/HangmanAssignmentWrapper';
 import UnifiedGameLauncher from '../../../components/games/UnifiedGameLauncher';
 import { UnifiedSelectionConfig, UnifiedVocabularyItem } from '../../../hooks/useUnifiedVocabulary';
 
-export default function HangmanPage() {
+export default function UnifiedHangmanPage() {
   const { user, isLoading, isDemo } = useUnifiedAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -40,48 +40,6 @@ export default function HangmanPage() {
     theme: string;
   } | null>(null);
 
-  // Transform vocabulary for hangman game
-  const transformVocabularyForHangman = (vocabulary: UnifiedVocabularyItem[]) => {
-    return vocabulary.map(item => ({
-      id: item.id,
-      word: item.word,
-      translation: item.translation,
-      language: item.language,
-      category: item.category,
-      subcategory: item.subcategory,
-      part_of_speech: item.part_of_speech,
-      example_sentence: item.example_sentence,
-      example_translation: item.example_translation,
-      difficulty_level: item.difficulty_level || 'beginner'
-    }));
-  };
-
-  // Handle game start from unified launcher
-  const handleGameStart = (config: UnifiedSelectionConfig, vocabulary: UnifiedVocabularyItem[], theme?: string) => {
-    const transformedVocabulary = transformVocabularyForHangman(vocabulary);
-
-    setGameConfig({
-      config,
-      vocabulary: transformedVocabulary,
-      theme: theme || 'default'
-    });
-
-    setGameStarted(true);
-
-    console.log('Hangman started with:', {
-      config,
-      vocabularyCount: vocabulary.length,
-      theme,
-      transformedCount: transformedVocabulary.length
-    });
-  };
-
-  // Handle back to menu
-  const handleBackToMenu = () => {
-    setGameStarted(false);
-    setGameConfig(null);
-  };
-
   // Load stats from localStorage
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -109,8 +67,7 @@ export default function HangmanPage() {
     };
   }, []);
 
-  // Conditional logic after all hooks are initialized
-  // Only redirect to login if not in demo mode and not authenticated
+  // Authentication check
   if (!isLoading && !user && !isDemo) {
     router.push('/auth/login');
     return null;
@@ -128,22 +85,52 @@ export default function HangmanPage() {
     );
   }
 
-  const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch((e) => {
-        console.error(`Error attempting to enable fullscreen: ${e.message}`);
-      });
-    } else {
-      if (document.exitFullscreen) {
-        document.exitFullscreen();
-      }
-    }
+  // Transform unified vocabulary to hangman format
+  const transformVocabularyForHangman = (vocabulary: UnifiedVocabularyItem[]) => {
+    return vocabulary.map(item => ({
+      id: item.id,
+      word: item.word,
+      translation: item.translation,
+      language: item.language,
+      category: item.category,
+      subcategory: item.subcategory,
+      part_of_speech: item.part_of_speech,
+      example_sentence_original: item.example_sentence_original,
+      example_sentence_translation: item.example_sentence_translation
+    }));
   };
 
+  // Handle game start from unified launcher
+  const handleGameStart = (config: UnifiedSelectionConfig, vocabulary: UnifiedVocabularyItem[], theme?: string) => {
+    const transformedVocabulary = transformVocabularyForHangman(vocabulary);
+    
+    setGameConfig({
+      config,
+      vocabulary: transformedVocabulary,
+      theme: theme || 'default'
+    });
+    
+    setGameStarted(true);
+    
+    console.log('Hangman started with:', {
+      config,
+      vocabularyCount: vocabulary.length,
+      theme,
+      transformedCount: transformedVocabulary.length
+    });
+  };
+
+  // Handle back to menu
+  const handleBackToMenu = () => {
+    setGameStarted(false);
+    setGameConfig(null);
+  };
+
+  // Handle game end
   const handleGameEnd = (result: 'win' | 'lose') => {
     const newStats = { ...gameStats };
     newStats.gamesPlayed += 1;
-
+    
     if (result === 'win') {
       newStats.gamesWon += 1;
       newStats.streak += 1;
@@ -154,9 +141,9 @@ export default function HangmanPage() {
       newStats.gamesLost += 1;
       newStats.streak = 0;
     }
-
+    
     setGameStats(newStats);
-
+    
     // Save to local storage
     if (typeof window !== 'undefined') {
       localStorage.setItem('hangmanStats', JSON.stringify(newStats));
@@ -191,14 +178,14 @@ export default function HangmanPage() {
               <div className="text-white/70 text-sm">Best Streak</div>
             </div>
             <div>
-              <div className="text-2xl font-bold text-white">{gameStats.gamesPlayed}</div>
-              <div className="text-white/70 text-sm">Total Games</div>
-            </div>
-            <div>
               <div className="text-2xl font-bold text-white">
                 {gameStats.gamesPlayed > 0 ? Math.round((gameStats.gamesWon / gameStats.gamesPlayed) * 100) : 0}%
               </div>
               <div className="text-white/70 text-sm">Win Rate</div>
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-white">{gameStats.streak}</div>
+              <div className="text-white/70 text-sm">Current Streak</div>
             </div>
           </div>
         </div>
@@ -208,20 +195,24 @@ export default function HangmanPage() {
 
   // Show game if started and config is available
   if (gameStarted && gameConfig) {
+    // Convert unified config to legacy hangman settings format
+    const legacySettings = {
+      difficulty: 'beginner', // Default difficulty
+      category: gameConfig.config.categoryId,
+      subcategory: gameConfig.config.subcategoryId,
+      language: gameConfig.config.language === 'es' ? 'spanish' : 
+                gameConfig.config.language === 'fr' ? 'french' : 
+                gameConfig.config.language === 'de' ? 'german' : 'spanish',
+      theme: gameConfig.theme,
+      customWords: gameConfig.config.customMode ? 
+        gameConfig.vocabulary.map(v => v.word) : [],
+      categoryVocabulary: gameConfig.vocabulary
+    };
+
     return (
       <div className="fixed inset-0 w-full h-full">
         <HangmanGameWrapper
-          settings={{
-            difficulty: gameConfig.config.curriculumLevel === 'KS4' ? 'hard' : 'medium',
-            category: gameConfig.config.categoryId,
-            subcategory: gameConfig.config.subcategoryId,
-            language: gameConfig.config.language === 'es' ? 'spanish' :
-                     gameConfig.config.language === 'fr' ? 'french' :
-                     gameConfig.config.language === 'de' ? 'german' : 'spanish',
-            theme: gameConfig.theme,
-            customWords: [],
-            categoryVocabulary: gameConfig.vocabulary
-          }}
+          settings={legacySettings}
           onBackToMenu={handleBackToMenu}
           onGameEnd={handleGameEnd}
           isFullscreen={isFullscreen}
@@ -235,4 +226,4 @@ export default function HangmanPage() {
 
   // Fallback
   return null;
-} 
+}

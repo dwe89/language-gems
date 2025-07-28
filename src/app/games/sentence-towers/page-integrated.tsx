@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../../../components/auth/AuthProvider';
 import SentenceTowersAssignmentWrapper from './components/SentenceTowersAssignmentWrapper';
-import { SentenceTowersMainGame } from './components/SentenceTowersMainGame';
+import SentenceTowersMainGame from './components/SentenceTowersMainGame';
 import UnifiedGameLauncher from '../../../components/games/UnifiedGameLauncher';
 import { UnifiedSelectionConfig, UnifiedVocabularyItem } from '../../../hooks/useUnifiedVocabulary';
 
@@ -52,7 +52,7 @@ export default function SentenceTowersPage() {
         gameDescription="Build towers by stacking vocabulary blocks"
         supportedLanguages={['es', 'fr', 'de']}
         showCustomMode={true}
-        minVocabularyRequired={1}
+        minVocabularyRequired={20}
         onGameStart={handleGameStart}
         onBack={() => router.push('/games')}
         supportsThemes={false}
@@ -104,8 +104,23 @@ export default function SentenceTowersPage() {
         </div>
 
         <SentenceTowersMainGame
+          vocabulary={transformedVocabulary}
+          language={selectedConfig.language === 'es' ? 'spanish' : 
+                   selectedConfig.language === 'fr' ? 'french' : 
+                   selectedConfig.language === 'de' ? 'german' : 'spanish'}
+          category={selectedConfig.categoryId}
+          subcategory={selectedConfig.subcategoryId}
           onBackToMenu={handleBackToMenu}
-          isFullscreen={false}
+          onGameEnd={(result) => {
+            console.log('Sentence Towers ended:', result);
+            if (assignmentId) {
+              setTimeout(() => {
+                router.push('/student-dashboard/assignments');
+              }, 3000);
+            }
+          }}
+          assignmentId={assignmentId}
+          userId={user?.id}
         />
       </div>
     );

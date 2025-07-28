@@ -4,11 +4,11 @@ import React, { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../../../components/auth/AuthProvider';
 import SentenceTowersAssignmentWrapper from './components/SentenceTowersAssignmentWrapper';
-import { SentenceTowersMainGame } from './components/SentenceTowersMainGame';
+import SentenceTowersMainGame from './components/SentenceTowersMainGame';
 import UnifiedGameLauncher from '../../../components/games/UnifiedGameLauncher';
 import { UnifiedSelectionConfig, UnifiedVocabularyItem } from '../../../hooks/useUnifiedVocabulary';
 
-export default function SentenceTowersPage() {
+export default function UnifiedSentenceTowersPage() {
   const { user } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -22,26 +22,32 @@ export default function SentenceTowersPage() {
 
   // Game state management
   const [gameStarted, setGameStarted] = useState(false);
-  const [selectedConfig, setSelectedConfig] = useState<UnifiedSelectionConfig | null>(null);
-  const [vocabulary, setVocabulary] = useState<UnifiedVocabularyItem[]>([]);
+
+  // Game configuration from unified launcher
+  const [gameConfig, setGameConfig] = useState<{
+    config: UnifiedSelectionConfig;
+    vocabulary: UnifiedVocabularyItem[];
+  } | null>(null);
 
   // Handle game start from unified launcher
-  const handleGameStart = (config: UnifiedSelectionConfig, vocabularyItems: UnifiedVocabularyItem[]) => {
-    setSelectedConfig(config);
-    setVocabulary(vocabularyItems);
+  const handleGameStart = (config: UnifiedSelectionConfig, vocabulary: UnifiedVocabularyItem[]) => {
+    setGameConfig({
+      config,
+      vocabulary
+    });
+    
     setGameStarted(true);
     
-    console.log('Sentence Towers started with unified config:', {
+    console.log('Sentence Towers started with:', {
       config,
-      vocabularyCount: vocabularyItems.length
+      vocabularyCount: vocabulary.length
     });
   };
 
   // Handle back to menu
   const handleBackToMenu = () => {
     setGameStarted(false);
-    setSelectedConfig(null);
-    setVocabulary([]);
+    setGameConfig(null);
   };
 
   // Show unified launcher if game not started
@@ -49,7 +55,7 @@ export default function SentenceTowersPage() {
     return (
       <UnifiedGameLauncher
         gameName="Sentence Towers"
-        gameDescription="Build towers by stacking vocabulary blocks"
+        gameDescription="Build towers by stacking vocabulary blocks and creating sentences"
         supportedLanguages={['es', 'fr', 'de']}
         showCustomMode={true}
         minVocabularyRequired={1}
@@ -66,7 +72,6 @@ export default function SentenceTowersPage() {
             <p>• Answer questions correctly to place blocks</p>
             <p>• Build higher towers for more points</p>
             <p>• Don't let your tower fall!</p>
-            <p>• Use special blocks for bonus effects</p>
           </div>
         </div>
       </UnifiedGameLauncher>
@@ -74,9 +79,9 @@ export default function SentenceTowersPage() {
   }
 
   // Show game if started and config is available
-  if (gameStarted && selectedConfig && vocabulary.length > 0) {
+  if (gameStarted && gameConfig) {
     // Convert unified vocabulary to sentence towers format
-    const transformedVocabulary = vocabulary.map(item => ({
+    const transformedVocabulary = gameConfig.vocabulary.map(item => ({
       id: item.id,
       word: item.word,
       translation: item.translation,
@@ -90,22 +95,24 @@ export default function SentenceTowersPage() {
 
     return (
       <div className="min-h-screen">
-        {/* Back button */}
-        <div className="absolute top-4 left-4 z-50">
-          <button
-            onClick={handleBackToMenu}
-            className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white transition-colors backdrop-blur-sm"
-          >
-            <svg className="h-5 w-5 rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-            Back to Games
-          </button>
-        </div>
-
         <SentenceTowersMainGame
+          vocabulary={transformedVocabulary}
+          language={gameConfig.config.language === 'es' ? 'spanish' : 
+                   gameConfig.config.language === 'fr' ? 'french' : 
+                   gameConfig.config.language === 'de' ? 'german' : 'spanish'}
+          category={gameConfig.config.categoryId}
+          subcategory={gameConfig.config.subcategoryId}
           onBackToMenu={handleBackToMenu}
-          isFullscreen={false}
+          onGameEnd={(result) => {
+            console.log('Sentence Towers ended:', result);
+            if (assignmentId) {
+              setTimeout(() => {
+                router.push('/student-dashboard/assignments');
+              }, 3000);
+            }
+          }}
+          assignmentId={assignmentId}
+          userId={user?.id}
         />
       </div>
     );

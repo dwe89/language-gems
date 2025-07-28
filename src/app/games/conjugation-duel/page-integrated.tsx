@@ -57,68 +57,32 @@ export default function ConjugationDuelPage() {
     setSelectedOpponent(null);
   };
 
-  // Show language selection if game not started
+  // Show unified launcher if game not started
   if (!gameStarted) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-600 via-pink-600 to-red-700 flex items-center justify-center">
-        <div className="bg-white/10 backdrop-blur-md rounded-3xl p-12 border-4 border-white/20 text-center max-w-2xl mx-4">
-          <h1 className="text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500 mb-4">
-            ⚔️ Conjugation Duel
-          </h1>
-          <p className="text-white/80 text-lg leading-relaxed mb-8">
-            Battle opponents by conjugating verbs correctly in fast-paced duels
-          </p>
-
-          {/* Game-specific instructions */}
-          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 mb-8">
-            <h4 className="text-white font-semibold mb-4 text-center">How to Play</h4>
-            <div className="text-white/80 text-sm space-y-2">
-              <p>• Choose your language and start dueling</p>
-              <p>• Conjugate verbs correctly to attack opponents</p>
-              <p>• Defeat opponents to advance through leagues</p>
-              <p>• Master all verb tenses to become champion</p>
-              <p>• Earn rewards and unlock new challenges</p>
-            </div>
-          </div>
-
-          {/* Language Selection */}
-          <div className="space-y-4">
-            <h3 className="text-white font-semibold text-xl mb-4">Choose Your Language</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {[
-                { code: 'es', name: 'Spanish', flag: '🇪🇸' },
-                { code: 'fr', name: 'French', flag: '🇫🇷' },
-                { code: 'de', name: 'German', flag: '🇩🇪' }
-              ].map((language) => (
-                <button
-                  key={language.code}
-                  onClick={() => {
-                    // Create a minimal config for language-only selection
-                    const config: UnifiedSelectionConfig = {
-                      language: language.code,
-                      curriculumLevel: 'KS3',
-                      categoryId: 'verbs', // Not used but required
-                      subcategoryId: undefined
-                    };
-                    handleGameStart(config, []); // Empty vocabulary array since we don't need it
-                  }}
-                  className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-6 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
-                >
-                  <div className="text-3xl mb-2">{language.flag}</div>
-                  <div>{language.name}</div>
-                </button>
-              ))}
-            </div>
-
-            <button
-              onClick={() => router.push('/games')}
-              className="mt-6 text-white/80 hover:text-white transition-colors text-sm underline"
-            >
-              Back to Games
-            </button>
+      <UnifiedGameLauncher
+        gameName="Conjugation Duel"
+        gameDescription="Battle opponents by conjugating verbs correctly in fast-paced duels"
+        supportedLanguages={['es', 'fr', 'de']}
+        showCustomMode={false} // Conjugation Duel uses verb conjugation data
+        minVocabularyRequired={0} // Uses verb data, not vocabulary
+        onGameStart={handleGameStart}
+        onBack={() => router.push('/games')}
+        supportsThemes={false}
+        requiresAudio={false}
+      >
+        {/* Game-specific instructions */}
+        <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 mb-6 max-w-md mx-auto">
+          <h4 className="text-white font-semibold mb-3 text-center">How to Play</h4>
+          <div className="text-white/80 text-sm space-y-2">
+            <p>• Choose your league and opponent</p>
+            <p>• Conjugate verbs correctly to attack</p>
+            <p>• Defeat opponents to advance leagues</p>
+            <p>• Master all verb tenses to become champion</p>
+            <p>• Earn rewards and unlock new challenges</p>
           </div>
         </div>
-      </div>
+      </UnifiedGameLauncher>
     );
   }
 

@@ -28,13 +28,14 @@ interface DetectiveListeningGameProps {
 }
 
 export default function DetectiveListeningGame({ settings, onBackToMenu, assignmentMode }: DetectiveListeningGameProps) {
-  // If assignment mode, skip case selection and go straight to detective room
+  // If assignment mode or settings are provided (from unified launcher), skip case selection and go straight to detective room
+  const hasPreselectedSettings = assignmentMode || (settings.caseType && settings.language);
   const [currentScreen, setCurrentScreen] = useState<GameScreen>(
-    assignmentMode ? 'detective-room' : 'case-selection'
+    hasPreselectedSettings ? 'detective-room' : 'case-selection'
   );
-  const [selectedCase, setSelectedCase] = useState(assignmentMode ? 'assignment' : '');
+  const [selectedCase, setSelectedCase] = useState(hasPreselectedSettings ? (assignmentMode ? 'assignment' : settings.caseType) : '');
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
-  const [selectedLanguage, setSelectedLanguage] = useState(assignmentMode ? settings.language : '');
+  const [selectedLanguage, setSelectedLanguage] = useState(hasPreselectedSettings ? settings.language : '');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [gameProgress, setGameProgress] = useState({

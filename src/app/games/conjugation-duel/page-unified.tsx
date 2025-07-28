@@ -3,12 +3,12 @@
 import React, { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../../../components/auth/AuthProvider';
-import DetectiveListeningGame from './components/DetectiveListeningGame';
-import DetectiveListeningAssignmentWrapper from './components/DetectiveListeningAssignmentWrapper';
+import ConjugationDuelAssignmentWrapper from './components/ConjugationDuelAssignmentWrapper';
+import BattleArena from './components/BattleArena';
 import UnifiedGameLauncher from '../../../components/games/UnifiedGameLauncher';
 import { UnifiedSelectionConfig, UnifiedVocabularyItem } from '../../../hooks/useUnifiedVocabulary';
 
-export default function UnifiedDetectiveListeningPage() {
+export default function UnifiedConjugationDuelPage() {
   const { user } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -17,7 +17,7 @@ export default function UnifiedDetectiveListeningPage() {
 
   // If assignment mode, render assignment wrapper
   if (assignmentId && mode === 'assignment') {
-    return <DetectiveListeningAssignmentWrapper assignmentId={assignmentId} />;
+    return <ConjugationDuelAssignmentWrapper assignmentId={assignmentId} />;
   }
 
   // Game state management
@@ -38,7 +38,7 @@ export default function UnifiedDetectiveListeningPage() {
     
     setGameStarted(true);
     
-    console.log('Detective Listening started with:', {
+    console.log('Conjugation Duel started with:', {
       config,
       vocabularyCount: vocabulary.length
     });
@@ -54,24 +54,24 @@ export default function UnifiedDetectiveListeningPage() {
   if (!gameStarted) {
     return (
       <UnifiedGameLauncher
-        gameName="Detective Listening"
-        gameDescription="Solve mysteries by listening to audio clues and answering questions"
+        gameName="Conjugation Duel"
+        gameDescription="Battle opponents by conjugating verbs correctly in fast-paced duels"
         supportedLanguages={['es', 'fr', 'de']}
-        showCustomMode={false} // Detective Listening uses pre-recorded audio content
-        minVocabularyRequired={0} // Uses audio content, not vocabulary
+        showCustomMode={false} // Conjugation Duel uses verb conjugation data
+        minVocabularyRequired={0} // Uses verb data, not vocabulary
         onGameStart={handleGameStart}
         onBack={() => router.push('/games')}
         supportsThemes={false}
-        requiresAudio={true}
+        requiresAudio={false}
       >
         {/* Game-specific instructions */}
         <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 mb-6 max-w-md mx-auto">
           <h4 className="text-white font-semibold mb-3 text-center">How to Play</h4>
           <div className="text-white/80 text-sm space-y-2">
-            <p>• Listen carefully to audio clues and testimonies</p>
-            <p>• Answer questions about what you heard</p>
-            <p>• Solve the mystery by gathering evidence</p>
-            <p>• Use headphones for the best experience</p>
+            <p>• Choose your league and opponent</p>
+            <p>• Conjugate verbs correctly to attack</p>
+            <p>• Defeat opponents to advance leagues</p>
+            <p>• Master all verb tenses to become champion</p>
           </div>
         </div>
       </UnifiedGameLauncher>
@@ -80,22 +80,20 @@ export default function UnifiedDetectiveListeningPage() {
 
   // Show game if started and config is available
   if (gameStarted && gameConfig) {
-    // Convert unified config to legacy detective listening format
-    const legacySettings = {
-      caseType: gameConfig.config.categoryId || 'general',
-      language: gameConfig.config.language === 'es' ? 'spanish' : 
-                gameConfig.config.language === 'fr' ? 'french' : 
-                gameConfig.config.language === 'de' ? 'german' : 'spanish',
-      difficulty: gameConfig.config.curriculumLevel === 'KS4' ? 'hard' : 'normal'
-    };
+    // Convert unified config to legacy conjugation duel format
+    const legacyLanguage = gameConfig.config.language === 'es' ? 'spanish' : 
+                          gameConfig.config.language === 'fr' ? 'french' : 
+                          gameConfig.config.language === 'de' ? 'german' : 'spanish';
 
     return (
       <div className="min-h-screen">
-        <DetectiveListeningGame
-          settings={legacySettings}
+        <BattleArena
+          language={legacyLanguage}
+          league="beginner" // Default league
+          opponent={{ name: "AI Challenger", difficulty: "medium" }} // Default opponent
           onBackToMenu={handleBackToMenu}
           onGameEnd={(result) => {
-            console.log('Detective Listening ended:', result);
+            console.log('Conjugation Duel ended:', result);
             if (assignmentId) {
               setTimeout(() => {
                 router.push('/student-dashboard/assignments');
