@@ -116,7 +116,7 @@ export default function DictationTestPage() {
                   </li>
                   <li className="flex items-start">
                     <span className="font-semibold mr-2">•</span>
-                    Each sentence will be played with three speed options
+One sentence will be played at normal speed, then section by section, and finally at normal speed again
                   </li>
                   <li className="flex items-start">
                     <span className="font-semibold mr-2">•</span>

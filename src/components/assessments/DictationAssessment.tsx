@@ -1,14 +1,14 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { useAuth } from '../auth/AuthProvider';
-import { 
-  Play, 
-  Pause, 
-  Volume2, 
-  VolumeX, 
-  Clock, 
-  CheckCircle, 
+import { useUnifiedAuth } from '../../hooks/useUnifiedAuth';
+import {
+  Play,
+  Pause,
+  Volume2,
+  VolumeX,
+  Clock,
+  CheckCircle,
   XCircle,
   ArrowRight,
   ArrowLeft,
@@ -27,14 +27,13 @@ interface DictationAssessmentProps {
 
 export default function DictationAssessment({
   language,
-  level,
   difficulty,
   identifier,
   onComplete,
   onQuestionComplete
 }: DictationAssessmentProps) {
   // State management
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useUnifiedAuth();
   const [questions, setQuestions] = useState<AQADictationQuestion[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [responses, setResponses] = useState<Record<string, AQADictationQuestionResponse>>({});
@@ -47,54 +46,68 @@ export default function DictationAssessment({
   const [timeRemaining, setTimeRemaining] = useState(0);
   const [isTimerActive, setIsTimerActive] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const mountedRef = useRef(true);
   
   // Audio state
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentAudioType, setCurrentAudioType] = useState<'normal' | 'very_slow' | null>(null);
   const [audioPlayCounts, setAudioPlayCounts] = useState<Record<string, { normal: number; very_slow: number }>>({});
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioLoadingRef = useRef(false);
   
   // Question state
   const [currentAnswer, setCurrentAnswer] = useState('');
   const [questionStartTime, setQuestionStartTime] = useState<number>(Date.now());
+  const [isCompleted, setIsCompleted] = useState(false);
+  const [finalResults, setFinalResults] = useState<any>(null);
 
   // Load assessment and questions
   useEffect(() => {
+    // Don't load if auth is still loading
+    if (authLoading) {
+      return;
+    }
+
     const loadAssessment = async () => {
-      if (!user) return;
-      
       try {
         setIsLoading(true);
-        
+
         // Get assessment definition
         const assessment = await assessmentService.getAssessmentByLevel(difficulty, language, identifier);
         if (!assessment) {
           console.error('Assessment not found');
           return;
         }
-        
+
         setAssessmentId(assessment.id);
-        
+
         // Get questions
         const assessmentQuestions = await assessmentService.getQuestionsForAssessment(assessment.id);
         setQuestions(assessmentQuestions);
-        
-        // Start assessment attempt
-        const newResultId = await assessmentService.startAssessment(user.id, assessment.id);
-        setResultId(newResultId);
-        
+
+        // Only start assessment attempt if user is logged in
+        if (user) {
+          try {
+            const newResultId = await assessmentService.startAssessment(user.id, assessment.id);
+            setResultId(newResultId);
+          } catch (error) {
+            console.warn('Could not start assessment tracking (continuing in practice mode):', error);
+            // Continue without result tracking for practice mode
+          }
+        }
+
         // Set timer
         const timeLimit = assessment.time_limit_minutes * 60; // Convert to seconds
         setTimeRemaining(timeLimit);
         setIsTimerActive(true);
-        
+
         // Initialize audio play counts
         const initialCounts: Record<string, { normal: number; very_slow: number }> = {};
         assessmentQuestions.forEach(q => {
           initialCounts[q.id] = { normal: 0, very_slow: 0 };
         });
         setAudioPlayCounts(initialCounts);
-        
+
       } catch (error) {
         console.error('Error loading dictation assessment:', error);
       } finally {
@@ -103,7 +116,7 @@ export default function DictationAssessment({
     };
 
     loadAssessment();
-  }, [user, difficulty, language, identifier, assessmentService]);
+  }, [user, authLoading, difficulty, language, identifier, assessmentService]);
 
   // Timer effect
   useEffect(() => {
@@ -111,7 +124,7 @@ export default function DictationAssessment({
       timerRef.current = setTimeout(() => {
         setTimeRemaining(prev => prev - 1);
       }, 1000);
-    } else if (timeRemaining === 0) {
+    } else if (isTimerActive && timeRemaining === 0) {
       handleSubmitAssessment();
     }
 
@@ -122,80 +135,167 @@ export default function DictationAssessment({
     };
   }, [timeRemaining, isTimerActive]);
 
+  // Initialize persistent audio element
+  useEffect(() => {
+    mountedRef.current = true;
+    
+    // Create a single persistent audio element
+    if (!audioRef.current) {
+      audioRef.current = new Audio();
+      audioRef.current.preload = 'none';
+    }
+    
+    return () => {
+      mountedRef.current = false;
+      audioLoadingRef.current = false;
+      
+      // Cleanup audio when component unmounts
+      try {
+        if (audioRef.current) {
+          audioRef.current.pause();
+          audioRef.current.onended = null;
+          audioRef.current.onerror = null;
+          audioRef.current.onloadstart = null;
+          audioRef.current.oncanplay = null;
+          audioRef.current.onloadeddata = null;
+          audioRef.current.src = '';
+          audioRef.current.load();
+          audioRef.current = null;
+        }
+      } catch (error) {
+        // Ignore cleanup errors during unmount
+        console.warn('Audio cleanup error (safe to ignore):', error);
+      }
+    };
+  }, []);
+
   // Audio management
   const playAudio = async (audioUrl: string, audioType: 'normal' | 'very_slow') => {
-    if (!audioUrl) return;
-    
+    if (!audioUrl || !audioRef.current || audioLoadingRef.current) return;
+
     try {
-      if (audioRef.current) {
+      audioLoadingRef.current = true;
+      
+      // Stop current audio if playing
+      if (isPlaying) {
         audioRef.current.pause();
+        audioRef.current.currentTime = 0;
       }
-      
-      const audio = new Audio(audioUrl);
-      audioRef.current = audio;
-      setCurrentAudioType(audioType);
-      setIsPlaying(true);
-      
-      // Update play count
+
+      // Clear all event handlers
+      audioRef.current.onended = null;
+      audioRef.current.onerror = null;
+      audioRef.current.onloadstart = null;
+      audioRef.current.oncanplay = null;
+      audioRef.current.onloadeddata = null;
+
+      // Update play count - capture current question ID at time of play
       const currentQuestion = questions[currentQuestionIndex];
-      if (currentQuestion) {
+      const questionId = currentQuestion?.id;
+      if (questionId && mountedRef.current) {
         setAudioPlayCounts(prev => ({
           ...prev,
-          [currentQuestion.id]: {
-            ...prev[currentQuestion.id],
-            [audioType]: prev[currentQuestion.id][audioType] + 1
+          [questionId]: {
+            ...prev[questionId],
+            [audioType]: (prev[questionId]?.[audioType] || 0) + 1
           }
         }));
       }
-      
-      audio.onended = () => {
-        setIsPlaying(false);
-        setCurrentAudioType(null);
+
+      // Set up event handlers
+      const handleAudioEnd = () => {
+        if (mountedRef.current) {
+          setIsPlaying(false);
+          setCurrentAudioType(null);
+          audioLoadingRef.current = false;
+        }
       };
-      
-      audio.onerror = () => {
-        setIsPlaying(false);
-        setCurrentAudioType(null);
-        console.error('Error playing audio');
+
+      const handleAudioError = (error: string | Event) => {
+        console.error('Error playing audio:', error);
+        if (mountedRef.current) {
+          setIsPlaying(false);
+          setCurrentAudioType(null);
+          audioLoadingRef.current = false;
+        }
       };
-      
-      await audio.play();
+
+      const handleCanPlay = () => {
+        if (mountedRef.current && audioRef.current && !isPlaying) {
+          audioRef.current.play().catch(handleAudioError);
+        }
+      };
+
+      // Set up event listeners
+      audioRef.current.onended = handleAudioEnd;
+      audioRef.current.onerror = handleAudioError;
+      audioRef.current.oncanplay = handleCanPlay;
+
+      // Update state before loading
+      if (mountedRef.current) {
+        setCurrentAudioType(audioType);
+        setIsPlaying(true);
+      }
+
+      // Load the new audio
+      audioRef.current.src = audioUrl;
+      audioRef.current.load();
+
     } catch (error) {
-      console.error('Error playing audio:', error);
-      setIsPlaying(false);
-      setCurrentAudioType(null);
+      console.error('Error setting up audio:', error);
+      if (mountedRef.current) {
+        setIsPlaying(false);
+        setCurrentAudioType(null);
+      }
+      audioLoadingRef.current = false;
     }
   };
 
   const stopAudio = () => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
+    try {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
+    } catch (error) {
+      // Ignore stop errors during rapid navigation
+      console.warn('Audio stop error (safe to ignore):', error);
     }
+
     setIsPlaying(false);
     setCurrentAudioType(null);
+    audioLoadingRef.current = false;
   };
 
   // Navigation
   const goToNextQuestion = () => {
+    if (!mountedRef.current) return;
+
+    stopAudio(); // Stop any playing audio before navigation
     saveCurrentResponse();
+
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(prev => prev + 1);
       setCurrentAnswer('');
       setQuestionStartTime(Date.now());
+    } else {
+      // This is the last question, submit the assessment
+      handleSubmitAssessment();
     }
   };
 
   const goToPreviousQuestion = () => {
+    if (!mountedRef.current || currentQuestionIndex <= 0) return;
+
+    stopAudio(); // Stop any playing audio before navigation
     saveCurrentResponse();
-    if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(prev => prev - 1);
-      // Load previous answer if exists
-      const prevQuestion = questions[currentQuestionIndex - 1];
-      const prevResponse = responses[prevQuestion.id];
-      setCurrentAnswer(prevResponse?.student_answer || '');
-      setQuestionStartTime(Date.now());
-    }
+
+    setCurrentQuestionIndex(prev => prev - 1);
+    // Load previous answer if exists
+    const prevQuestion = questions[currentQuestionIndex - 1];
+    const prevResponse = responses[prevQuestion.id];
+    setCurrentAnswer(prevResponse?.student_answer || '');
+    setQuestionStartTime(Date.now());
   };
 
   // Save current response
@@ -231,34 +331,73 @@ export default function DictationAssessment({
 
   // Submit assessment
   const handleSubmitAssessment = async () => {
-    if (!resultId || !assessmentId) return;
-    
+    // Save current response first
     saveCurrentResponse();
     setIsTimerActive(false);
-    
+
+    // Wait a moment for state to update
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    // Get all responses including the one we just saved
     const allResponses = Object.values(responses);
-    const totalTimeSeconds = questions.length > 0 ? 
-      (questions[0].assessment_id === assessmentId ? 
-        Math.floor((Date.now() - questionStartTime) / 1000) : 0) : 0;
-    
-    try {
-      await assessmentService.submitAssessment(
-        resultId,
-        allResponses,
-        totalTimeSeconds,
-        audioPlayCounts
-      );
-      
-      onComplete({
-        responses: allResponses,
-        totalScore: allResponses.reduce((sum, r) => sum + r.points_awarded, 0),
-        totalPossible: allResponses.reduce((sum, r) => sum + r.marks_possible, 0),
-        timeSpent: totalTimeSeconds,
-        audioPlayCounts
-      });
-    } catch (error) {
-      console.error('Error submitting dictation assessment:', error);
+
+    // Add current response if it's not already included
+    const currentQuestion = questions[currentQuestionIndex];
+    if (currentQuestion && !responses[currentQuestion.id]) {
+      const timeSpent = Math.floor((Date.now() - questionStartTime) / 1000);
+      const isCorrect = currentAnswer.trim().toLowerCase() === currentQuestion.sentence_text.trim().toLowerCase();
+
+      const currentResponse: AQADictationQuestionResponse = {
+        question_id: currentQuestion.id,
+        question_number: currentQuestion.question_number,
+        student_answer: currentAnswer.trim(),
+        correct_answer: currentQuestion.sentence_text,
+        is_correct: isCorrect,
+        points_awarded: isCorrect ? currentQuestion.marks : 0,
+        time_spent_seconds: timeSpent,
+        normal_audio_plays: audioPlayCounts[currentQuestion.id]?.normal || 0,
+        very_slow_audio_plays: audioPlayCounts[currentQuestion.id]?.very_slow || 0,
+        theme: currentQuestion.theme,
+        topic: currentQuestion.topic,
+        marks_possible: currentQuestion.marks
+      };
+
+      allResponses.push(currentResponse);
     }
+
+    const totalTimeSeconds = Math.floor((Date.now() - questionStartTime) / 1000);
+
+    // If we have a result ID (logged in user), submit to database
+    if (resultId && assessmentId) {
+      try {
+        await assessmentService.submitAssessment(
+          resultId,
+          allResponses,
+          totalTimeSeconds,
+          audioPlayCounts
+        );
+      } catch (error) {
+        console.error('Error submitting dictation assessment:', error);
+        // Continue anyway for practice mode
+      }
+    }
+
+    // Prepare final results
+    const results = {
+      responses: allResponses,
+      totalScore: allResponses.reduce((sum, r) => sum + r.points_awarded, 0),
+      totalPossible: allResponses.reduce((sum, r) => sum + r.marks_possible, 0),
+      timeSpent: totalTimeSeconds,
+      audioPlayCounts,
+      practiceMode: !resultId // Indicate if this was practice mode
+    };
+
+    // Set completion state to show results screen
+    setFinalResults(results);
+    setIsCompleted(true);
+
+    // Also call onComplete for parent component
+    onComplete(results);
   };
 
   // Format time display
@@ -268,7 +407,7 @@ export default function DictationAssessment({
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  if (isLoading) {
+  if (isLoading || authLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -292,8 +431,114 @@ export default function DictationAssessment({
     );
   }
 
+  // Show completion screen
+  if (isCompleted && finalResults) {
+    const percentage = finalResults.totalPossible > 0 ?
+      Math.round((finalResults.totalScore / finalResults.totalPossible) * 100) : 0;
+
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="bg-white rounded-lg shadow-lg p-8">
+            <div className="text-center mb-8">
+              <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">Assessment Complete!</h1>
+              <p className="text-gray-600">Well done! Here are your results:</p>
+            </div>
+
+            {/* Results Summary */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
+                <h3 className="text-lg font-semibold text-blue-900 mb-2">Score</h3>
+                <p className="text-3xl font-bold text-blue-600">
+                  {finalResults.totalScore}/{finalResults.totalPossible}
+                </p>
+                <p className="text-blue-700">{percentage}%</p>
+              </div>
+
+              <div className="bg-purple-50 border border-purple-200 rounded-lg p-6 text-center">
+                <h3 className="text-lg font-semibold text-purple-900 mb-2">Time Spent</h3>
+                <p className="text-3xl font-bold text-purple-600">
+                  {formatTime(finalResults.timeSpent)}
+                </p>
+              </div>
+
+              <div className="bg-green-50 border border-green-200 rounded-lg p-6 text-center">
+                <h3 className="text-lg font-semibold text-green-900 mb-2">Questions</h3>
+                <p className="text-3xl font-bold text-green-600">
+                  {finalResults.responses.length}
+                </p>
+                <p className="text-green-700">Completed</p>
+              </div>
+            </div>
+
+            {/* Question-by-Question Results */}
+            <div className="mb-8">
+              <h2 className="text-xl font-bold text-gray-900 mb-4">Question Results</h2>
+              <div className="space-y-4">
+                {finalResults.responses.map((response: AQADictationQuestionResponse, index: number) => (
+                  <div key={response.question_id} className={`border rounded-lg p-4 ${
+                    response.is_correct ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'
+                  }`}>
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="font-semibold">Question {index + 1}</h3>
+                      <div className="flex items-center">
+                        {response.is_correct ? (
+                          <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
+                        ) : (
+                          <XCircle className="h-5 w-5 text-red-500 mr-2" />
+                        )}
+                        <span className="font-semibold">
+                          {response.points_awarded}/{response.marks_possible} points
+                        </span>
+                      </div>
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      <p><strong>Your answer:</strong> "{response.student_answer}"</p>
+                      <p><strong>Correct answer:</strong> "{response.correct_answer}"</p>
+                      <p><strong>Audio plays:</strong> Normal: {response.normal_audio_plays}, Very slow: {response.very_slow_audio_plays}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex justify-center space-x-4">
+              <button
+                onClick={() => window.location.reload()}
+                className="px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors"
+              >
+                Try Again
+              </button>
+              <button
+                onClick={() => window.history.back()}
+                className="px-6 py-3 bg-gray-600 text-white rounded-lg font-semibold hover:bg-gray-700 transition-colors"
+              >
+                Back to Menu
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const currentQuestion = questions[currentQuestionIndex];
   const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
+
+  // Safety check for current question
+  if (!currentQuestion) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-green-600 mx-auto mb-4"></div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Loading Question...</h2>
+          <p className="text-gray-600">Preparing your dictation question</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50">
@@ -355,13 +600,18 @@ export default function DictationAssessment({
                 </span>
                 <button
                   onClick={() => currentQuestion.audio_url_normal && playAudio(currentQuestion.audio_url_normal, 'normal')}
-                  disabled={!currentQuestion.audio_url_normal || (isPlaying && currentAudioType === 'normal')}
-                  className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors disabled:opacity-50"
+                  disabled={!currentQuestion.audio_url_normal || isPlaying}
+                  className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isPlaying && currentAudioType === 'normal' ? (
                     <>
                       <Pause className="h-4 w-4 mr-2" />
                       Playing...
+                    </>
+                  ) : isPlaying ? (
+                    <>
+                      <Play className="h-4 w-4 mr-2 opacity-50" />
+                      Wait...
                     </>
                   ) : (
                     <>
@@ -384,13 +634,18 @@ export default function DictationAssessment({
                 </span>
                 <button
                   onClick={() => currentQuestion.audio_url_very_slow && playAudio(currentQuestion.audio_url_very_slow, 'very_slow')}
-                  disabled={!currentQuestion.audio_url_very_slow || (isPlaying && currentAudioType === 'very_slow')}
-                  className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50"
+                  disabled={!currentQuestion.audio_url_very_slow || isPlaying}
+                  className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isPlaying && currentAudioType === 'very_slow' ? (
                     <>
                       <Pause className="h-4 w-4 mr-2" />
                       Playing...
+                    </>
+                  ) : isPlaying ? (
+                    <>
+                      <Play className="h-4 w-4 mr-2 opacity-50" />
+                      Wait...
                     </>
                   ) : (
                     <>

@@ -27,7 +27,8 @@
     "test-polly-credentials": "tsx scripts/testPollyCredentials.ts",
     "test:watch": "vitest --watch",
     "populate-listening": "tsx scripts/populate-aqa-listening-assessments.ts",
-    "populate-reading-comprehension": "tsx scripts/populate-reading-comprehension.ts"
+    "populate-reading-comprehension": "tsx scripts/populate-reading-comprehension.ts",
+    "generate-dictation-papers": "tsx scripts/generate-dictation-papers.ts"
   },
   "dependencies": {
     "@aws-sdk/client-polly": "^3.848.0",
