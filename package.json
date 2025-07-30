@@ -8,6 +8,14 @@
     "start": "next start",
     "lint": "next lint",
     "test": "vitest",
+    "generate-listening-audio": "tsx scripts/generate-listening-audio.ts",
+    "test-tts-models": "tsx scripts/test-tts-models.ts",
+    "translate-listening-assessments": "tsx scripts/translate-listening-assessments.ts",
+    "update-question-options-to-english": "tsx scripts/update-question-options-to-english.ts",
+    "delete-french-german-audio": "tsx scripts/delete-french-german-audio.ts",
+    "convert-instructions-english": "tsx scripts/convert-instructions-to-english.ts",
+    "convert-question-data-english": "tsx scripts/convert-question-data-to-english.ts",
+    "generate-dictation-audio": "tsx scripts/generate-dictation-sentence-audio.ts",
     "generate-audio": "tsx scripts/generateAudio.ts",
     "test-gemini-tts": "node scripts/test-gemini-tts.js",
     "verify-gemini-setup": "node scripts/verify-gemini-setup.js",
@@ -17,7 +25,9 @@
     "manage-audio": "tsx scripts/manageAudio.ts",
     "test-audio-quality": "tsx scripts/testAudioQuality.ts",
     "test-polly-credentials": "tsx scripts/testPollyCredentials.ts",
-    "test:watch": "vitest --watch"
+    "test:watch": "vitest --watch",
+    "populate-listening": "tsx scripts/populate-aqa-listening-assessments.ts",
+    "populate-reading-comprehension": "tsx scripts/populate-reading-comprehension.ts"
   },
   "dependencies": {
     "@aws-sdk/client-polly": "^3.848.0",

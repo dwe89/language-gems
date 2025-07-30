@@ -47,6 +47,7 @@ const AUDIO_FILES: AudioFiles = {
 
 export const useAudio = (soundEnabled: boolean = true) => {
   const audioRefs = useRef<{ [key: string]: HTMLAudioElement }>({});
+  const wordAudioRef = useRef<HTMLAudioElement | null>(null);
 
   // Initialize audio files
   useEffect(() => {
@@ -120,23 +121,57 @@ export const useAudio = (soundEnabled: boolean = true) => {
     }
   }, [soundEnabled]);
 
-  // Play word pronunciation audio
-  const playWordAudio = useCallback((audioUrl: string) => {
-    if (!soundEnabled || !audioUrl || typeof window === 'undefined') return;
+  // Play word pronunciation audio with replay tracking
+  const playWordAudio = useCallback((audioUrl: string, canReplay: boolean = true) => {
+    if (!soundEnabled || !audioUrl || typeof window === 'undefined') return Promise.resolve();
 
-    try {
-      const audio = new Audio(audioUrl);
-      audio.volume = 0.8;
-      audio.play().catch(console.warn);
-    } catch (error) {
-      console.warn('Failed to play word audio:', error);
-    }
+    return new Promise<void>((resolve) => {
+      try {
+        // Use ref to maintain audio element for replay control
+        if (wordAudioRef.current) {
+          wordAudioRef.current.pause();
+          wordAudioRef.current.currentTime = 0;
+        }
+
+        wordAudioRef.current = new Audio(audioUrl);
+        wordAudioRef.current.volume = 0.8;
+
+        wordAudioRef.current.onended = () => resolve();
+        wordAudioRef.current.onerror = () => {
+          console.warn('Failed to load word audio:', audioUrl);
+          resolve();
+        };
+
+        if (canReplay) {
+          wordAudioRef.current.play().catch((error) => {
+            console.warn('Failed to play word audio:', error);
+            resolve();
+          });
+        } else {
+          console.warn('Audio replay limit reached');
+          resolve();
+        }
+      } catch (error) {
+        console.warn('Failed to play word audio:', error);
+        resolve();
+      }
+    });
   }, [soundEnabled]);
+
+  // Auto-play word audio for specific game modes
+  const autoPlayWordAudio = useCallback((audioUrl: string, gameMode: string) => {
+    const autoPlayModes = ['learn', 'listening', 'dictation'];
+    if (autoPlayModes.includes(gameMode)) {
+      return playWordAudio(audioUrl, true);
+    }
+    return Promise.resolve();
+  }, [playWordAudio]);
 
   return {
     playGemSound,
     playAchievementSound,
     playFeedbackSound,
-    playWordAudio
+    playWordAudio,
+    autoPlayWordAudio
   };
 };

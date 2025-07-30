@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Play,
   Pause,
@@ -12,15 +12,19 @@ import {
   ArrowRight,
   ArrowLeft,
   Headphones,
-  Info
+  Info,
+  Home
 } from 'lucide-react';
+import Link from 'next/link';
+import { AQAListeningAssessmentService, type AQAListeningAssessmentDefinition, type AQAListeningQuestionDefinition } from '../../services/aqaListeningAssessmentService';
 
 // Question Types for AQA Listening Assessment
 export interface AQAListeningQuestion {
   id: string;
-  type: 'letter-matching' | 'multiple-choice' | 'lifestyle-grid' | 'opinion-rating' | 'open-response' | 'activity-timing' | 'multi-part' | 'dictation';
+  question_type: 'letter-matching' | 'multiple-choice' | 'lifestyle-grid' | 'opinion-rating' | 'open-response' | 'activity-timing' | 'multi-part' | 'dictation';
   title: string;
   instructions: string;
+  questionNumber?: number; // Question number for proper audio introduction
   audioUrl?: string; // Optional - can be generated dynamically
   audioText?: string; // Text to convert to speech with Gemini TTS
   audioTranscript?: string; // For development/testing
@@ -32,12 +36,14 @@ export interface AQAListeningQuestion {
     speakers?: Array<{ name: string; voiceName: string }>;
     style?: string;
   };
+  sentenceAudioUrls?: Record<string, string>; // For dictation: individual sentence audio URLs
 }
 
 interface AQAListeningAssessmentProps {
   language: 'es' | 'fr' | 'de';
   level: 'KS3' | 'KS4';
   difficulty: 'foundation' | 'higher';
+  identifier: string; // paper-1, paper-2, etc.
   onComplete: (results: any) => void;
   onQuestionComplete?: (questionId: string, answer: any, timeSpent: number) => void;
 }
@@ -46,9 +52,19 @@ export default function AQAListeningAssessment({
   language,
   level,
   difficulty,
+  identifier,
   onComplete,
   onQuestionComplete
 }: AQAListeningAssessmentProps) {
+  // Database integration state
+  const [assessment, setAssessment] = useState<AQAListeningAssessmentDefinition | null>(null);
+  const [questions, setQuestions] = useState<AQAListeningQuestion[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  // assessmentService is initialized once and doesn't change
+  const [assessmentService] = useState(() => new AQAListeningAssessmentService());
+  const [assessmentId, setAssessmentId] = useState<string | null>(null);
+
+  // Assessment state
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [userAnswers, setUserAnswers] = useState<Record<string, any>>({});
   const [isPlaying, setIsPlaying] = useState(false);
@@ -60,12 +76,19 @@ export default function AQAListeningAssessment({
   const [isCompleted, setIsCompleted] = useState(false);
   const [isGeneratingAudio, setIsGeneratingAudio] = useState(false);
   const [generatedAudioUrls, setGeneratedAudioUrls] = useState<Record<string, string>>({});
+  const [volume, setVolume] = useState(0.8);
+  const [audioProgress, setAudioProgress] = useState(0);
+  const [isAudioLoaded, setIsAudioLoaded] = useState(false);
+
+  // Refs for audio element and timer interval
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Maximum plays allowed per question
   const MAX_PLAYS = 2;
 
-  // Generate audio using Gemini TTS
-  const generateAudioWithGemini = async (question: AQAListeningQuestion): Promise<string> => {
+  // Memoized function to generate audio using Gemini TTS API
+  const generateAudioWithGemini = useCallback(async (question: AQAListeningQuestion): Promise<string> => {
     if (!question.audioText) {
       throw new Error('No audio text provided for TTS generation');
     }
@@ -87,7 +110,8 @@ export default function AQAListeningAssessment({
           options: {
             includeInstructions: true,
             speakingSpeed: 'normal',
-            tone: 'neutral'
+            tone: 'neutral',
+            questionNumber: question.questionNumber
           }
         }),
       });
@@ -104,21 +128,21 @@ export default function AQAListeningAssessment({
     } finally {
       setIsGeneratingAudio(false);
     }
-  };
+  }, [language]); // Dependency: language ensures the correct TTS language is used
 
-  // Get or generate audio URL for current question
-  const getAudioUrl = async (question: AQAListeningQuestion): Promise<string> => {
-    // If audio URL is already provided, use it
+  // Memoized function to get or generate audio URL for current question
+  const getAudioUrl = useCallback(async (question: AQAListeningQuestion): Promise<string> => {
+    // If audio URL is already provided in the question definition, use it
     if (question.audioUrl) {
       return question.audioUrl;
     }
 
-    // Check if we already generated audio for this question
+    // Check if we already generated audio for this question in the current session
     if (generatedAudioUrls[question.id]) {
       return generatedAudioUrls[question.id];
     }
 
-    // Generate new audio using Gemini TTS
+    // If no pre-defined URL and no previously generated URL, generate new audio using Gemini TTS
     if (question.audioText) {
       const audioUrl = await generateAudioWithGemini(question);
       setGeneratedAudioUrls(prev => ({
@@ -128,294 +152,162 @@ export default function AQAListeningAssessment({
       return audioUrl;
     }
 
+    // If no audioUrl or audioText, throw an error
     throw new Error('No audio source available for this question');
-  };
-  
-  const audioRef = useRef<HTMLAudioElement>(null);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  }, [generatedAudioUrls, generateAudioWithGemini, setGeneratedAudioUrls]); // Dependencies: state and memoized function
 
-  // Generate questions based on difficulty level
-  const getQuestionsForLevel = (): AQAListeningQuestion[] => {
-    const baseQuestions: AQAListeningQuestion[] = [
-      {
-        id: 'q1',
-        type: 'letter-matching',
-        title: 'Weekend activities',
-        instructions: 'María is describing her weekend plans to a friend. What activity does she mention for each time? Write the correct letter in each box.',
-        audioUrl: '', // Audio files removed - placeholder for future implementation
-        data: {
-          options: [
-            { letter: 'A', text: 'Swimming at the pool' },
-            { letter: 'B', text: 'Visiting the museum' },
-            { letter: 'C', text: 'Playing tennis' },
-            { letter: 'D', text: 'Going to the market' },
-            { letter: 'E', text: 'Meeting friends for coffee' },
-            { letter: 'F', text: 'Studying at the library' }
-          ],
-          questions: [
-            { id: 'q1_1', label: 'Saturday morning', correctAnswer: 'A', marks: 1 },
-            { id: 'q1_2', label: 'Saturday afternoon', correctAnswer: 'C', marks: 1 },
-            { id: 'q1_3', label: 'Sunday morning', correctAnswer: 'D', marks: 1 },
-            { id: 'q1_4', label: 'Sunday evening', correctAnswer: 'E', marks: 1 }
-          ]
-        }
-      },
-      {
-        id: 'q2',
-        type: 'multiple-choice',
-        title: 'Holiday traditions',
-        instructions: 'Listen to Roberto talking about his family traditions. Write the correct letter in each box.',
-        audioUrl: '',
-        data: {
-          questions: [
-            {
-              id: 'q2_1',
-              question: "What does Roberto's family always do on New Year's Eve?",
-              options: [
-                { letter: 'A', text: 'Watch fireworks from the balcony' },
-                { letter: 'B', text: 'Have dinner at a restaurant' },
-                { letter: 'C', text: 'Visit their grandparents' }
-              ],
-              correctAnswer: 'C',
-              marks: 1
-            },
-            {
-              id: 'q2_2',
-              question: "What special food do they prepare for Christmas?",
-              options: [
-                { letter: 'A', text: 'Traditional paella' },
-                { letter: 'B', text: 'Homemade churros' },
-                { letter: 'C', text: 'Roasted lamb' }
-              ],
-              correctAnswer: 'A',
-              marks: 1
-            },
-            {
-              id: 'q2_3',
-              question: "Who usually organizes the family gatherings?",
-              options: [
-                { letter: 'A', text: 'His mother' },
-                { letter: 'B', text: 'His grandmother' },
-                { letter: 'C', text: 'His aunt' }
-              ],
-              correctAnswer: 'B',
-              marks: 1
-            },
-            {
-              id: 'q2_4',
-              question: "What time do they typically start celebrating?",
-              options: [
-                { letter: 'A', text: 'At 6 PM' },
-                { letter: 'B', text: 'At 8 PM' },
-                { letter: 'C', text: 'At 10 PM' }
-              ],
-              correctAnswer: 'B',
-              marks: 1
-            }
-          ]
-        }
-      },
-      {
-        id: 'q3',
-        type: 'lifestyle-grid',
-        title: 'Health and wellness radio show',
-        instructions: 'You are listening to a Spanish radio show about health. The callers are discussing their daily habits. Which aspect of each caller\'s routine is working well? Which aspect needs improvement?',
-        audioUrl: '',
-        data: {
-          options: [
-            { letter: 'A', text: 'Morning routine' },
-            { letter: 'B', text: 'Physical activity' },
-            { letter: 'C', text: 'Meal planning' },
-            { letter: 'D', text: 'Work-life balance' },
-            { letter: 'E', text: 'Relaxation time' },
-            { letter: 'F', text: 'Screen time management' }
-          ],
-          speakers: [
-            { id: 'caller1', name: 'Caller 1', good: 'A', needsImprovement: 'B', marks: 1 },
-            { id: 'caller2', name: 'Caller 2', good: 'C', needsImprovement: 'E', marks: 1 }
-          ]
-        }
-      },
-      {
-        id: 'q4',
-        type: 'opinion-rating',
-        title: 'Sports interview',
-        instructions: 'Listen to a Spanish footballer being interviewed about his career. What is his opinion of these aspects of professional football? Write P for positive, N for negative, P+N for positive and negative.',
-        audioUrl: '',
-        data: {
-          aspects: [
-            { id: 'training', label: 'Daily training schedule', correctAnswer: 'P+N', marks: 1 },
-            { id: 'travel', label: 'Traveling for matches', correctAnswer: 'N', marks: 1 },
-            { id: 'teammates', label: 'Team relationships', correctAnswer: 'P', marks: 1 },
-            { id: 'media', label: 'Media attention', correctAnswer: 'P+N', marks: 1 }
-          ]
-        }
-      },
-    {
-      id: 'q5',
-      type: 'open-response',
-      title: 'Young entrepreneur',
-      instructions: 'Listen to Ana talking about Diego, a young Spanish entrepreneur. Answer the questions in English.',
-      audioUrl: '',
-      data: {
-        questions: [
-          { id: 'q5_1', question: 'What type of business did he start?', correctAnswer: 'An eco-friendly clothing company' },
-          { id: 'q5_2', question: 'What was his main motivation?', correctAnswer: 'To help protect the environment' },
-          { id: 'q5_3', question: 'What does he find most difficult about running a business?', correctAnswer: 'Managing finances and cash flow' }
-        ]
-      }
-    },
-    {
-      id: 'q6',
-      type: 'activity-timing',
-      title: 'Exchange student experience',
-      instructions: 'Carmen is calling her parents from her exchange program in Madrid. She talks about different activities. Write the correct number of the activity that Carmen mentions. Write the correct letter for when it takes place.',
-      audioUrl: '',
-      data: {
-        activities: [
-          { number: 1, text: 'Museum visit with host family' },
-          { number: 2, text: 'Spanish cooking class' },
-          { number: 3, text: 'Flamenco dance workshop' },
-          { number: 4, text: 'Day trip to Toledo' }
-        ],
-        timeOptions: [
-          { letter: 'P', text: 'Past' },
-          { letter: 'N', text: 'Now' },
-          { letter: 'F', text: 'Future' }
-        ],
-        questions: [
-          { id: 'q6_1', correctActivity: 2, correctTime: 'P' },
-          { id: 'q6_2', correctActivity: 1, correctTime: 'N' },
-          { id: 'q6_3', correctActivity: 4, correctTime: 'F' }
-        ]
-      }
-    },
-    {
-      id: 'q7',
-      type: 'multi-part',
-      title: 'Planning a gap year',
-      instructions: 'Listen to Sofia discussing her gap year plans with her father. What do they say? Write the correct letter in each box. Answer both parts of the question.',
-      audioUrl: '',
-      data: {
-        parts: [
-          {
-            id: 'part1',
-            question: 'Sofia wants to improve her...',
-            options: [
-              { letter: 'A', text: 'language skills' },
-              { letter: 'B', text: 'work experience' },
-              { letter: 'C', text: 'confidence' }
-            ],
-            correctAnswer: 'A'
-          },
-          {
-            id: 'part2',
-            question: "Sofia's father thinks the most important thing is to...",
-            options: [
-              { letter: 'A', text: 'save money for university' },
-              { letter: 'B', text: 'stay safe while traveling' },
-              { letter: 'C', text: 'make new friends' }
-            ],
-            correctAnswer: 'B'
-          }
-        ]
-      }
-    },
-      {
-        id: 'q8',
-        type: 'dictation',
-        title: 'Dictation',
-        instructions: 'You will now hear 4 short sentences. Listen carefully and using your knowledge of Spanish sounds, write down in Spanish exactly what you hear for each sentence. You will hear each sentence three times: the first time as a full sentence, the second time in short sections and the third time again as a full sentence.',
-        audioUrl: '',
-        data: {
-          sentences: [
-            { id: 'sent1', correctAnswer: 'El clima en España es muy agradable', audioUrl: '', marks: 2 },
-            { id: 'sent2', correctAnswer: 'Mis padres trabajan en el centro de la ciudad', audioUrl: '', marks: 2 },
-            { id: 'sent3', correctAnswer: 'Los estudiantes practican deportes después de clase', audioUrl: '', marks: 2 },
-            { id: 'sent4', correctAnswer: 'Durante las vacaciones visitamos muchos lugares interesantes', audioUrl: '', marks: 2 }
-          ]
-        }
-      }
-    ];
+  // Effect to load assessment data from the database
+  useEffect(() => {
+    const loadAssessment = async () => {
+      try {
+        setIsLoading(true);
+        console.log('Loading assessment with params:', { difficulty, language, identifier });
+        const assessmentData = await assessmentService.getAssessmentByLevel(difficulty, language, identifier);
+        console.log('Assessment data received:', assessmentData);
 
-    // Add additional questions for Higher level to reach 50 marks
-    if (difficulty === 'higher') {
-      baseQuestions.push(
-        {
-          id: 'q9',
-          type: 'open-response',
-          title: 'Cultural exchange program',
-          instructions: 'Listen to Elena talking about her experience in a cultural exchange program. Answer the questions in English.',
-          audioUrl: '',
-          data: {
-            questions: [
-              { id: 'q9_1', question: 'What was the most challenging aspect of living with a host family?', correctAnswer: 'Adapting to different meal times and family routines', marks: 2 },
-              { id: 'q9_2', question: 'How did the experience change her perspective on Spanish culture?', correctAnswer: 'She realized Spanish families are more close-knit than she expected', marks: 2 },
-              { id: 'q9_3', question: 'What advice would she give to future exchange students?', correctAnswer: 'Be patient and open-minded about cultural differences', marks: 2 }
-            ]
-          }
-        },
-        {
-          id: 'q10',
-          type: 'multi-part',
-          title: 'Environmental awareness',
-          instructions: 'Listen to a discussion about environmental issues in Spanish schools. What do they say? Write the correct letter in each box. Answer both parts of the question.',
-          audioUrl: '',
-          data: {
-            parts: [
-              {
-                id: 'part1',
-                question: 'The main environmental problem mentioned is...',
-                options: [
-                  { letter: 'A', text: 'plastic waste in the cafeteria' },
-                  { letter: 'B', text: 'energy consumption in classrooms' },
-                  { letter: 'C', text: 'lack of recycling bins' }
-                ],
-                correctAnswer: 'A',
-                marks: 2
-              },
-              {
-                id: 'part2',
-                question: 'The proposed solution involves...',
-                options: [
-                  { letter: 'A', text: 'installing solar panels' },
-                  { letter: 'B', text: 'organizing student committees' },
-                  { letter: 'C', text: 'changing suppliers' }
-                ],
-                correctAnswer: 'B',
-                marks: 2
-              }
-            ]
-          }
+        if (!assessmentData) {
+          console.error('Assessment not found for level:', difficulty, 'language:', language, 'identifier:', identifier);
+          return;
         }
-      );
+
+        setAssessment(assessmentData);
+        setAssessmentId(assessmentData.id);
+
+        // Fetch questions for the loaded assessment
+        const questionsData = await assessmentService.getAssessmentQuestions(assessmentData.id);
+        console.log('Loaded questions data:', questionsData);
+
+        // Format raw question data into AQAListeningQuestion interface
+        const formattedQuestions: AQAListeningQuestion[] = questionsData.map(q => ({
+          id: q.id,
+          question_type: q.question_type as any, // Type assertion for question_type
+          title: q.title,
+          instructions: q.instructions,
+          questionNumber: q.question_number,
+          audioText: q.audio_text,
+          audioUrl: q.audio_url,
+          audioTranscript: q.audio_transcript,
+          data: q.question_data,
+          ttsConfig: q.tts_config || {},
+          sentenceAudioUrls: q.sentence_audio_urls || undefined
+        }));
+
+        setQuestions(formattedQuestions);
+      } catch (error) {
+        console.error('Error loading assessment:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadAssessment();
+  }, [difficulty, language, identifier, assessmentService]); // Dependencies: props and service instance
+
+  // Effect for the question timer
+  useEffect(() => {
+    // Only start timer if question has started and assessment is not completed
+    if (questionStartTime && !isCompleted) {
+      timerRef.current = setInterval(() => {
+        setTimeSpent(Math.floor((Date.now() - questionStartTime.getTime()) / 1000));
+      }, 1000);
+      return () => {
+        // Cleanup function: clear interval when component unmounts or dependencies change
+        if (timerRef.current) clearInterval(timerRef.current);
+      };
+    }
+  }, [questionStartTime, isCompleted]); // Dependencies: when to start/stop the timer
+
+  // Effect to initialize question timer and load audio for the current question
+  useEffect(() => {
+    // Ensure questions array is loaded and current question index is valid before proceeding
+    if (questions.length === 0 || currentQuestionIndex >= questions.length || !questions[currentQuestionIndex]) {
+      return; // Skip if data isn't ready or index is out of bounds
     }
 
-    return baseQuestions;
-  };
+    const questionToLoad = questions[currentQuestionIndex];
 
-  const questions = getQuestionsForLevel();
+    // Reset states for the new question
+    setQuestionStartTime(new Date());
+    setTimeSpent(0);
+    setPlayCount(0);
+    setIsAudioLoaded(false); // Audio needs to be reloaded for the new question
+    setAudioProgress(0); // Reset audio progress bar
+
+    // Pause and reset current audio if any
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+      setIsPlaying(false);
+    }
+
+    // Load audio for the current question using the memoized getAudioUrl function
+    if (questionToLoad.audioUrl || questionToLoad.audioText) {
+      getAudioUrl(questionToLoad).then(audioUrl => {
+        if (audioRef.current) {
+          audioRef.current.src = audioUrl;
+          audioRef.current.volume = volume;
+          audioRef.current.load(); // Load the new audio source
+        }
+      }).catch(error => {
+        console.error('Error loading audio:', error);
+        setIsAudioLoaded(false);
+      });
+    } else {
+        console.warn('No audio source (audioUrl or audioText) for current question:', questionToLoad.id);
+        setIsAudioLoaded(true); // If no audio is expected, consider it loaded
+    }
+  }, [currentQuestionIndex, questions, getAudioUrl, volume]); // Dependencies: current question changes, or audio related functions/states
+
+  // Show loading state if questions haven't loaded yet
+  if (isLoading || !questions || questions.length === 0) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Loading Assessment...</h2>
+          <p className="text-gray-600">Please wait while we prepare your listening assessment.</p>
+          {!isLoading && questions && questions.length === 0 && (
+            <p className="text-red-600 mt-2">No questions found for this assessment.</p>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Use database-loaded questions
   const currentQuestion = questions[currentQuestionIndex];
 
-  // Calculate total marks
+  // Additional safety check for current question
+  if (!currentQuestion) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Question Not Found</h2>
+          <p className="text-gray-600">Unable to load question {currentQuestionIndex + 1}.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Calculate total marks based on question types
   const calculateTotalMarks = () => {
     let total = 0;
     questions.forEach(question => {
-      if (question.type === 'letter-matching') {
+      if (question.question_type === 'letter-matching') {
         total += question.data.questions.length; // 1 mark per question
-      } else if (question.type === 'multiple-choice') {
+      } else if (question.question_type === 'multiple-choice') {
         total += question.data.questions.length; // 1 mark per question
-      } else if (question.type === 'lifestyle-grid') {
+      } else if (question.question_type === 'lifestyle-grid') {
         total += question.data.speakers.length * 2; // 2 marks per speaker (good + needs improvement)
-      } else if (question.type === 'opinion-rating') {
+      } else if (question.question_type === 'opinion-rating') {
         total += question.data.aspects.length; // 1 mark per aspect
-      } else if (question.type === 'open-response') {
+      } else if (question.question_type === 'open-response') {
         total += question.data.questions.reduce((sum: number, q: any) => sum + q.marks, 0);
-      } else if (question.type === 'activity-timing') {
+      } else if (question.question_type === 'activity-timing') {
         total += question.data.questions.length * 2; // 2 marks per question (activity + timing)
-      } else if (question.type === 'multi-part') {
+      } else if (question.question_type === 'multi-part') {
         total += question.data.parts.reduce((sum: number, part: any) => sum + part.marks, 0);
-      } else if (question.type === 'dictation') {
+      } else if (question.question_type === 'dictation') {
         total += question.data.sentences.length * 2; // 2 marks per sentence
       }
     });
@@ -423,26 +315,7 @@ export default function AQAListeningAssessment({
   };
 
   const totalMarks = calculateTotalMarks();
-  const expectedMarks = difficulty === 'foundation' ? 40 : 50;
-
-  // Timer effect
-  useEffect(() => {
-    if (questionStartTime && !isCompleted) {
-      timerRef.current = setInterval(() => {
-        setTimeSpent(Math.floor((Date.now() - questionStartTime.getTime()) / 1000));
-      }, 1000);
-      return () => {
-        if (timerRef.current) clearInterval(timerRef.current);
-      };
-    }
-  }, [questionStartTime, isCompleted]);
-
-  // Initialize question timer
-  useEffect(() => {
-    setQuestionStartTime(new Date());
-    setTimeSpent(0);
-    setPlayCount(0);
-  }, [currentQuestionIndex]);
+  const expectedMarks = difficulty === 'foundation' ? 40 : 50; // AQA specific expected marks
 
   // Audio event handlers
   const handlePlayPause = () => {
@@ -451,6 +324,8 @@ export default function AQAListeningAssessment({
         audioRef.current.pause();
       } else {
         audioRef.current.play();
+        // Increment play count only if it's the first play for the current question
+        // Subsequent plays via replay button will handle their own increment
         if (playCount === 0) {
           setPlayCount(1);
         }
@@ -466,21 +341,38 @@ export default function AQAListeningAssessment({
   const handleTimeUpdate = () => {
     if (audioRef.current) {
       setAudioCurrentTime(audioRef.current.currentTime);
+      const progress = audioDuration > 0 ? (audioRef.current.currentTime / audioDuration) * 100 : 0;
+      setAudioProgress(progress);
     }
   };
 
   const handleLoadedMetadata = () => {
     if (audioRef.current) {
       setAudioDuration(audioRef.current.duration);
+      setIsAudioLoaded(true);
+      audioRef.current.volume = volume; // Ensure volume is set on load
+    }
+  };
+
+  const handleVolumeChange = (newVolume: number) => {
+    setVolume(newVolume);
+    if (audioRef.current) {
+      audioRef.current.volume = newVolume;
+    }
+  };
+
+  const handleSeek = (seekTime: number) => {
+    if (audioRef.current && isAudioLoaded) {
+      audioRef.current.currentTime = seekTime;
     }
   };
 
   const handleReplay = () => {
     if (audioRef.current && playCount < MAX_PLAYS) {
-      audioRef.current.currentTime = 0;
-      setPlayCount(prev => prev + 1);
+      audioRef.current.currentTime = 0; // Reset audio to beginning
+      setPlayCount(prev => prev + 1); // Increment play count
       if (!isPlaying) {
-        audioRef.current.play();
+        audioRef.current.play(); // Play if not already playing
         setIsPlaying(true);
       }
     }
@@ -495,16 +387,16 @@ export default function AQAListeningAssessment({
   };
 
   const handleNext = () => {
-    // Record answer for current question
+    // Record answer for current question before moving to the next
     if (onQuestionComplete && questionStartTime) {
       const timeSpentOnQuestion = Math.floor((Date.now() - questionStartTime.getTime()) / 1000);
       onQuestionComplete(currentQuestion.id, userAnswers[currentQuestion.id], timeSpentOnQuestion);
     }
 
     if (currentQuestionIndex < questions.length - 1) {
-      setCurrentQuestionIndex(prev => prev + 1);
+      setCurrentQuestionIndex(prev => prev + 1); // Move to next question
     } else {
-      // Complete assessment
+      // If it's the last question, complete the assessment
       setIsCompleted(true);
       if (onComplete) {
         onComplete({
@@ -518,7 +410,7 @@ export default function AQAListeningAssessment({
 
   const handlePrevious = () => {
     if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(prev => prev - 1);
+      setCurrentQuestionIndex(prev => prev - 1); // Move to previous question
     }
   };
 
@@ -528,6 +420,7 @@ export default function AQAListeningAssessment({
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // Render assessment completion screen
   if (isCompleted) {
     return (
       <div className="max-w-4xl mx-auto p-6 text-center">
@@ -543,6 +436,16 @@ export default function AQAListeningAssessment({
     );
   }
 
+  // Language configuration for display
+  const languageConfig = {
+    es: { name: 'Spanish', flag: '🇪🇸' },
+    fr: { name: 'French', flag: '🇫🇷' },
+    de: { name: 'German', flag: '🇩🇪' }
+  };
+
+  const currentLanguage = languageConfig[language];
+  const paperNumber = identifier.replace('paper-', ''); // Extract paper number from identifier
+
   return (
     <div className="max-w-6xl mx-auto p-6">
       {/* Disclaimer Notice */}
@@ -554,31 +457,24 @@ export default function AQAListeningAssessment({
         </div>
       </div>
 
-      {/* Header */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-        <div className="flex items-center justify-between mb-4">
+      {/* Progress bar */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
+        <div className="flex items-center justify-between mb-3">
           <div className="flex items-center">
-            <Headphones className="h-8 w-8 text-purple-600 mr-3" />
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">AQA Listening Assessment</h1>
-              <p className="text-gray-600">Spanish • {level} • {difficulty.charAt(0).toUpperCase() + difficulty.slice(1)}</p>
-              <p className="text-sm text-gray-500">Total marks: {totalMarks} {totalMarks !== expectedMarks && <span className="text-amber-600">(Expected: {expectedMarks})</span>}</p>
-            </div>
-          </div>
-          <div className="flex items-center space-x-4 text-sm text-gray-600">
-            <div className="flex items-center">
-              <Clock className="h-4 w-4 mr-1" />
-              <span>{formatTime(timeSpent)}</span>
-            </div>
-            <div className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full">
-              Question {currentQuestionIndex + 1} of {questions.length}
+            <Headphones className="h-6 w-6 text-purple-600 mr-2" />
+            <div className="flex items-center space-x-4 text-sm text-gray-600">
+              <div className="flex items-center">
+                <Clock className="h-4 w-4 mr-1" />
+                <span>{formatTime(timeSpent)}</span>
+              </div>
+              <div className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full">
+                Question {currentQuestionIndex + 1} of {questions.length}
+              </div>
             </div>
           </div>
         </div>
-
-        {/* Progress bar */}
         <div className="w-full bg-gray-200 rounded-full h-2">
-          <div 
+          <div
             className="bg-purple-600 h-2 rounded-full transition-all duration-300"
             style={{ width: `${((currentQuestionIndex + 1) / questions.length) * 100}%` }}
           />
@@ -589,68 +485,129 @@ export default function AQAListeningAssessment({
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-gray-900">Audio Player</h3>
-          <div className="text-sm text-amber-600">
-            Audio files not available
+          <div className="flex items-center space-x-2">
+            {isGeneratingAudio && (
+              <div className="text-sm text-blue-600 flex items-center">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+                Generating audio...
+              </div>
+            )}
+            <div className="flex items-center space-x-4 text-sm">
+              <div className={`px-2 py-1 rounded-full ${
+                playCount >= MAX_PLAYS
+                  ? 'bg-red-100 text-red-800'
+                  : playCount > 0
+                  ? 'bg-yellow-100 text-yellow-800'
+                  : 'bg-green-100 text-green-800'
+              }`}>
+                Plays: {playCount}/{MAX_PLAYS}
+              </div>
+              {isAudioLoaded && (
+                <div className="text-green-600 flex items-center">
+                  <div className="w-2 h-2 bg-green-500 rounded-full mr-1"></div>
+                  Audio ready
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Audio Not Available Notice */}
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <Headphones className="h-5 w-5 text-amber-400" />
-            </div>
-            <div className="ml-3">
-              <p className="text-sm text-amber-800">
-                <strong>Audio files are not currently available.</strong> This is a demonstration of the assessment structure and question types.
-              </p>
+        {/* Audio Status Notice */}
+        {!currentQuestion?.audioUrl && !generatedAudioUrls[currentQuestion?.id] && !isGeneratingAudio && (
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <Headphones className="h-5 w-5 text-amber-400" />
+              </div>
+              <div className="ml-3">
+                <p className="text-sm text-amber-800">
+                  <strong>Audio not yet available.</strong> Click play to generate audio for this question.
+                </p>
+              </div>
             </div>
           </div>
-        </div>
-        
+        )}
+
         <audio
           ref={audioRef}
-          src={currentQuestion.audioUrl}
           onEnded={handleAudioEnded}
           onTimeUpdate={handleTimeUpdate}
           onLoadedMetadata={handleLoadedMetadata}
           preload="metadata"
         />
-        
+
         <div className="flex items-center space-x-4 mb-4">
           <button
-            disabled={true}
-            className="flex items-center justify-center w-12 h-12 rounded-full bg-gray-300 text-gray-500 cursor-not-allowed"
+            onClick={handlePlayPause}
+            disabled={playCount >= MAX_PLAYS || isGeneratingAudio || !isAudioLoaded}
+            className={`flex items-center justify-center w-12 h-12 rounded-full transition-colors ${
+              playCount >= MAX_PLAYS || isGeneratingAudio || !isAudioLoaded
+                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                : isPlaying
+                ? 'bg-red-600 text-white hover:bg-red-700'
+                : 'bg-purple-600 text-white hover:bg-purple-700'
+            }`}
           >
-            <Play className="h-6 w-6 ml-1" />
+            {isPlaying ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6 ml-1" />}
           </button>
 
           <button
-            disabled={true}
-            className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-300 text-gray-500 cursor-not-allowed"
+            onClick={handleReplay}
+            disabled={playCount >= MAX_PLAYS || isGeneratingAudio || !isAudioLoaded}
+            className={`flex items-center justify-center w-10 h-10 rounded-full transition-colors ${
+              playCount >= MAX_PLAYS || isGeneratingAudio || !isAudioLoaded
+                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                : 'bg-gray-600 text-white hover:bg-gray-700'
+            }`}
           >
             <RotateCcw className="h-5 w-5" />
           </button>
-          
+
           <div className="flex-1">
             <div className="flex items-center space-x-2 text-sm text-gray-600">
               <span>{formatTime(Math.floor(audioCurrentTime))}</span>
-              <div className="flex-1 bg-gray-200 rounded-full h-2">
-                <div 
+              <div
+                className="flex-1 bg-gray-200 rounded-full h-2 cursor-pointer"
+                onClick={(e) => {
+                  if (audioDuration > 0 && isAudioLoaded) {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const clickX = e.clientX - rect.left;
+                    const seekTime = (clickX / rect.width) * audioDuration;
+                    handleSeek(seekTime);
+                  }
+                }}
+              >
+                <div
                   className="bg-purple-600 h-2 rounded-full transition-all duration-100"
-                  style={{ width: `${audioDuration ? (audioCurrentTime / audioDuration) * 100 : 0}%` }}
+                  style={{ width: `${audioProgress}%` }}
                 />
               </div>
               <span>{formatTime(Math.floor(audioDuration))}</span>
             </div>
           </div>
-          
-          <Volume2 className="h-5 w-5 text-gray-600" />
+
+          {/* Volume Control */}
+          <div className="flex items-center space-x-2">
+            <Volume2 className="h-5 w-5 text-gray-600" />
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.1"
+              value={volume}
+              onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
+              className="w-16 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+              style={{
+                background: `linear-gradient(to right, #9333ea 0%, #9333ea ${volume * 100}%, #e5e7eb ${volume * 100}%, #e5e7eb 100%)`
+              }}
+            />
+            <span className="text-xs text-gray-500 w-8">{Math.round(volume * 100)}%</span>
+          </div>
         </div>
-        
+
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
           <p className="text-sm text-blue-800">
-            <strong>Note:</strong> This is a demonstration of the AQA listening assessment format. In a real assessment, you would listen to each audio clip a maximum of 2 times.
+            <strong>Note:</strong> You can listen to each audio clip a maximum of {MAX_PLAYS} times. 
           </p>
         </div>
       </div>
@@ -663,7 +620,7 @@ export default function AQAListeningAssessment({
         </div>
 
         {/* Render question based on type */}
-        {currentQuestion.type === 'letter-matching' && (
+        {currentQuestion.question_type === 'letter-matching' && (
           <LetterMatchingQuestion
             question={currentQuestion}
             userAnswer={userAnswers[currentQuestion.id]}
@@ -671,7 +628,7 @@ export default function AQAListeningAssessment({
           />
         )}
 
-        {currentQuestion.type === 'multiple-choice' && (
+        {currentQuestion.question_type === 'multiple-choice' && (
           <MultipleChoiceQuestion
             question={currentQuestion}
             userAnswer={userAnswers[currentQuestion.id]}
@@ -679,7 +636,7 @@ export default function AQAListeningAssessment({
           />
         )}
 
-        {currentQuestion.type === 'lifestyle-grid' && (
+        {currentQuestion.question_type === 'lifestyle-grid' && (
           <LifestyleGridQuestion
             question={currentQuestion}
             userAnswer={userAnswers[currentQuestion.id]}
@@ -687,7 +644,7 @@ export default function AQAListeningAssessment({
           />
         )}
 
-        {currentQuestion.type === 'opinion-rating' && (
+        {currentQuestion.question_type === 'opinion-rating' && (
           <OpinionRatingQuestion
             question={currentQuestion}
             userAnswer={userAnswers[currentQuestion.id]}
@@ -695,7 +652,7 @@ export default function AQAListeningAssessment({
           />
         )}
 
-        {currentQuestion.type === 'open-response' && (
+        {currentQuestion.question_type === 'open-response' && (
           <OpenResponseQuestion
             question={currentQuestion}
             userAnswer={userAnswers[currentQuestion.id]}
@@ -703,7 +660,7 @@ export default function AQAListeningAssessment({
           />
         )}
 
-        {currentQuestion.type === 'activity-timing' && (
+        {currentQuestion.question_type === 'activity-timing' && (
           <ActivityTimingQuestion
             question={currentQuestion}
             userAnswer={userAnswers[currentQuestion.id]}
@@ -711,7 +668,7 @@ export default function AQAListeningAssessment({
           />
         )}
 
-        {currentQuestion.type === 'multi-part' && (
+        {currentQuestion.question_type === 'multi-part' && (
           <MultiPartQuestion
             question={currentQuestion}
             userAnswer={userAnswers[currentQuestion.id]}
@@ -719,7 +676,7 @@ export default function AQAListeningAssessment({
           />
         )}
 
-        {currentQuestion.type === 'dictation' && (
+        {currentQuestion.question_type === 'dictation' && (
           <DictationQuestion
             question={currentQuestion}
             userAnswer={userAnswers[currentQuestion.id]}
@@ -729,7 +686,7 @@ export default function AQAListeningAssessment({
       </div>
 
       {/* Navigation */}
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center pb-6"> {/* Added padding-bottom */}
         <button
           onClick={handlePrevious}
           disabled={currentQuestionIndex === 0}
@@ -755,7 +712,7 @@ export default function AQAListeningAssessment({
   );
 }
 
-// Question Type Components
+// Question Type Components (No changes needed here as they are separate components)
 
 interface QuestionComponentProps {
   question: AQAListeningQuestion;
@@ -1103,7 +1060,7 @@ function MultiPartQuestion({ question, userAnswer, onAnswerChange }: QuestionCom
         {question.data.parts.map((part: any, index: number) => (
           <div key={part.id} className="border border-gray-200 rounded-lg p-4">
             <h5 className="font-medium text-gray-900 mb-4">
-              {index + 1}.{index + 1} {part.question}
+              {index + 1}. {part.question} {/* Corrected question numbering */}
             </h5>
 
             <div className="space-y-3">
@@ -1144,13 +1101,38 @@ function DictationQuestion({ question, userAnswer, onAnswerChange }: QuestionCom
     onAnswerChange(newAnswers);
   };
 
-  const playSentence = (sentenceIndex: number, stage: 'full' | 'sections' | 'full-again' = 'full') => {
+  const playSentence = async (sentenceIndex: number, stage: 'full' | 'sections' | 'full-again' = 'full') => {
     setCurrentSentence(sentenceIndex);
     setPlaybackStage(stage);
-    // In a real implementation, you would play different audio files or segments
-    // For now, we'll just simulate the playback
     setIsPlayingSentence(true);
-    setTimeout(() => setIsPlayingSentence(false), 3000); // Simulate audio duration
+
+    try {
+      const sentence = question.data.sentences[sentenceIndex];
+
+      // Check if we have individual sentence audio URLs
+      if (question.sentenceAudioUrls && question.sentenceAudioUrls[sentence.id]) {
+        const audioUrl = question.sentenceAudioUrls[sentence.id];
+        console.log(`Playing sentence audio: ${audioUrl}`);
+
+        // Create and play audio
+        const audio = new Audio(audioUrl);
+        audio.onended = () => setIsPlayingSentence(false);
+        audio.onerror = () => {
+          console.error('Error playing sentence audio');
+          setIsPlayingSentence(false);
+        };
+
+        await audio.play();
+      } else {
+        // Fallback: use main audio if individual sentence audio not available
+        console.log('Individual sentence audio not available, using fallback');
+        // Simulate audio duration for now
+        setTimeout(() => setIsPlayingSentence(false), 3000);
+      }
+    } catch (error) {
+      console.error('Error playing sentence audio:', error);
+      setIsPlayingSentence(false);
+    }
   };
 
   return (
@@ -1208,7 +1190,7 @@ function DictationQuestion({ question, userAnswer, onAnswerChange }: QuestionCom
               onChange={(e) => handleAnswerChange(sentence.id, e.target.value)}
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none font-mono"
               rows={2}
-              placeholder="Escribe lo que escuchas en español..."
+              placeholder="Write the sentence you hear in Spanish"
             />
           </div>
         ))}

@@ -50,32 +50,45 @@ export class SpacedRepetitionService {
     let repetition = previousData.repetition || 0;
     let easeFactor = previousData.easeFactor || 2.5;
 
-    // Update ease factor
+    // Update ease factor based on quality (0-5 scale)
+    // Quality 3+ is considered correct, below 3 is incorrect
     easeFactor = Math.max(
       1.3,
       easeFactor + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02))
     );
 
-    // Calculate new interval
+    // Calculate new interval based on SM-2 algorithm
     if (quality < 3) {
-      // Reset for poor performance
+      // Reset for poor performance (incorrect answer)
       repetition = 0;
-      interval = 1;
+      interval = 0; // Immediate review (will be set to minutes below)
     } else {
+      // Correct answer - increment repetition
       repetition += 1;
-      
+
       if (repetition === 1) {
-        interval = 1;
+        interval = 1; // First correct: 1 day
       } else if (repetition === 2) {
-        interval = 6;
+        interval = 6; // Second correct: 6 days
       } else {
+        // Subsequent reviews: multiply previous interval by ease factor
         interval = Math.round(interval * easeFactor);
       }
     }
 
     // Calculate next review date
     const nextReview = new Date();
-    nextReview.setDate(nextReview.getDate() + interval);
+
+    if (quality < 3) {
+      // For incorrect answers, schedule immediate review (10 minutes)
+      nextReview.setMinutes(nextReview.getMinutes() + 10);
+    } else if (repetition === 1 && interval === 1) {
+      // Special case: first correct answer gets 10 minutes, then 1 day
+      nextReview.setMinutes(nextReview.getMinutes() + 10);
+    } else {
+      // Normal scheduling based on calculated interval
+      nextReview.setDate(nextReview.getDate() + interval);
+    }
 
     return {
       vocabulary_id: previousData.vocabulary_id!,
@@ -87,6 +100,53 @@ export class SpacedRepetitionService {
       nextReview,
       lastReview: new Date()
     };
+  }
+
+  /**
+   * Convert boolean correct/incorrect to SM-2 quality scale (0-5)
+   * @param correct Whether the answer was correct
+   * @param responseTime Response time in milliseconds (optional)
+   * @param previousEaseFactor Previous ease factor for context
+   * @returns Quality score (0-5)
+   */
+  convertToQuality(
+    correct: boolean,
+    responseTime?: number,
+    previousEaseFactor?: number
+  ): number {
+    if (!correct) {
+      return 2; // Incorrect answer - will reset repetition
+    }
+
+    // For correct answers, determine quality based on response time and ease
+    if (!responseTime) {
+      return 4; // Default good quality for correct answers
+    }
+
+    // Quality based on response time (rough heuristic)
+    if (responseTime < 3000) { // Very fast (< 3 seconds)
+      return 5; // Perfect recall
+    } else if (responseTime < 8000) { // Fast (< 8 seconds)
+      return 4; // Good recall
+    } else if (responseTime < 15000) { // Moderate (< 15 seconds)
+      return 3; // Acceptable recall
+    } else {
+      return 3; // Slow but correct
+    }
+  }
+
+  /**
+   * Determine gem type based on mastery level and repetition count
+   * @param repetition Number of successful repetitions
+   * @param easeFactor Current ease factor
+   * @returns Gem type
+   */
+  determineGemType(repetition: number, easeFactor: number): string {
+    if (repetition >= 5 && easeFactor >= 2.5) return 'legendary';
+    if (repetition >= 4) return 'epic';
+    if (repetition >= 3) return 'rare';
+    if (repetition >= 2) return 'uncommon';
+    return 'common';
   }
 
   /**
@@ -192,15 +252,15 @@ export class SpacedRepetitionService {
    * Update user progress after a practice session
    * @param userId User ID
    * @param vocabularyId Vocabulary word ID
-   * @param quality Quality of the response (0-5)
+   * @param correct Whether the answer was correct
    * @param responseTime Response time in milliseconds
    */
   async updateProgress(
     userId: string,
     vocabularyId: number,
-    quality: number,
+    correct: boolean,
     responseTime: number = 0
-  ): Promise<void> {
+  ): Promise<{ gemType: string; upgraded: boolean; points: number }> {
     try {
       // Get existing progress
       const { data: existingData } = await this.supabase
@@ -210,17 +270,46 @@ export class SpacedRepetitionService {
         .eq('vocabulary_item_id', vocabularyId)
         .single();
 
-      // Calculate new spaced repetition data
-      const updatedData = this.calculateNextReview(
-        existingData || { 
-          vocabulary_id: vocabularyId, 
-          user_id: userId,
-          interval: 0,
-          repetition: 0,
-          easeFactor: 2.5
-        },
-        quality
+      // Convert boolean to quality score
+      const quality = this.convertToQuality(
+        correct,
+        responseTime,
+        existingData?.spaced_repetition_ease_factor
       );
+
+      // Calculate new spaced repetition data using existing database fields
+      const previousData = existingData ? {
+        vocabulary_id: vocabularyId,
+        user_id: userId,
+        interval: existingData.spaced_repetition_interval || 0,
+        repetition: existingData.correct_encounters || 0,
+        easeFactor: existingData.spaced_repetition_ease_factor || 2.5
+      } : {
+        vocabulary_id: vocabularyId,
+        user_id: userId,
+        interval: 0,
+        repetition: 0,
+        easeFactor: 2.5
+      };
+
+      const updatedData = this.calculateNextReview(previousData, quality);
+
+      // Calculate gem progression
+      const previousGemType = existingData ?
+        this.determineGemType(existingData.correct_encounters || 0, existingData.spaced_repetition_ease_factor || 2.5) :
+        'common';
+      const newGemType = this.determineGemType(updatedData.repetition, updatedData.easeFactor);
+      const upgraded = newGemType !== previousGemType;
+
+      // Calculate points based on gem type
+      const gemPoints = {
+        'common': 10,
+        'uncommon': 25,
+        'rare': 50,
+        'epic': 100,
+        'legendary': 200
+      };
+      const points = gemPoints[newGemType as keyof typeof gemPoints] || 10;
 
       // Determine mastery level
       const masteryLevel = this.calculateMasteryLevel(
@@ -261,6 +350,12 @@ export class SpacedRepetitionService {
           last_seen: new Date().toISOString(),
           is_learned: masteryLevel >= 3 // Consider learned at mastery level 3+
         });
+
+      return {
+        gemType: newGemType,
+        upgraded,
+        points
+      };
 
     } catch (error) {
       console.error('Error updating progress:', error);

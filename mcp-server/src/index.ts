@@ -341,6 +341,162 @@ const tools: Tool[] = [
       },
     },
   },
+  {
+    name: 'create_aqa_reading_assignment',
+    description: 'Create an AQA Reading Assessment assignment for students',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        title: { type: 'string', description: 'Assignment title' },
+        teacher_id: { type: 'string', description: 'Teacher UUID' },
+        class_id: { type: 'string', description: 'Class UUID (optional)' },
+        student_id: { type: 'string', description: 'Student UUID (for individual assignments)' },
+        assessment_level: { type: 'string', enum: ['foundation', 'higher'], description: 'Assessment difficulty level' },
+        due_date: { type: 'string', description: 'Due date (ISO string)' },
+        custom_time_limit: { type: 'number', description: 'Custom time limit in minutes (optional)' },
+        custom_instructions: { type: 'string', description: 'Custom instructions (optional)' },
+      },
+      required: ['title', 'teacher_id', 'assessment_level'],
+    },
+  },
+  {
+    name: 'get_aqa_reading_results',
+    description: 'Get AQA Reading Assessment results for analysis',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        teacher_id: { type: 'string', description: 'Teacher UUID' },
+        class_id: { type: 'string', description: 'Filter by class UUID (optional)' },
+        student_id: { type: 'string', description: 'Filter by student UUID (optional)' },
+        assessment_level: { type: 'string', enum: ['foundation', 'higher'], description: 'Filter by level (optional)' },
+        date_from: { type: 'string', description: 'Filter results from date (ISO string, optional)' },
+        date_to: { type: 'string', description: 'Filter results to date (ISO string, optional)' },
+      },
+      required: ['teacher_id'],
+    },
+  },
+  {
+    name: 'get_aqa_reading_analytics',
+    description: 'Get detailed analytics for AQA Reading Assessment performance',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        teacher_id: { type: 'string', description: 'Teacher UUID' },
+        class_id: { type: 'string', description: 'Class UUID (optional)' },
+        student_id: { type: 'string', description: 'Student UUID (optional)' },
+        assessment_level: { type: 'string', enum: ['foundation', 'higher'], description: 'Assessment level (optional)' },
+        group_by: { type: 'string', enum: ['question_type', 'theme', 'topic', 'student'], description: 'Group analytics by category' },
+      },
+      required: ['teacher_id', 'group_by'],
+    },
+  },
+  {
+    name: 'create_reading_comprehension_task',
+    description: 'Create a reading comprehension task with content and questions',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        title: { type: 'string', description: 'Task title' },
+        language: { type: 'string', enum: ['spanish', 'french', 'german'], description: 'Task language' },
+        curriculum_level: { type: 'string', enum: ['ks3', 'ks4'], description: 'Curriculum level' },
+        exam_board: { type: 'string', enum: ['aqa', 'edexcel'], description: 'Exam board (for KS4)' },
+        theme_topic: { type: 'string', description: 'AQA theme/topic (for AQA)' },
+        category: { type: 'string', description: 'Content category' },
+        subcategory: { type: 'string', description: 'Content subcategory' },
+        difficulty: { type: 'string', enum: ['foundation', 'intermediate', 'higher'], description: 'Difficulty level' },
+        content: { type: 'string', description: 'Reading text content' },
+        word_count: { type: 'number', description: 'Word count of the text' },
+        estimated_reading_time: { type: 'number', description: 'Estimated reading time in minutes' },
+        questions: {
+          type: 'array',
+          description: 'Comprehension questions',
+          items: {
+            type: 'object',
+            properties: {
+              question: { type: 'string', description: 'Question text' },
+              type: { type: 'string', enum: ['multiple-choice', 'true-false', 'short-answer', 'gap-fill'], description: 'Question type' },
+              options: { type: 'array', items: { type: 'string' }, description: 'Options for multiple choice' },
+              correct_answer: { type: ['string', 'array'], description: 'Correct answer(s)' },
+              points: { type: 'number', description: 'Points for this question' },
+              explanation: { type: 'string', description: 'Explanation for the answer' },
+            },
+            required: ['question', 'type', 'correct_answer', 'points'],
+          },
+        },
+        created_by: { type: 'string', description: 'Creator UUID' },
+      },
+      required: ['title', 'language', 'difficulty', 'content', 'questions', 'created_by'],
+    },
+  },
+  {
+    name: 'get_reading_comprehension_tasks',
+    description: 'Get reading comprehension tasks with filtering options',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        language: { type: 'string', enum: ['spanish', 'french', 'german'], description: 'Filter by language' },
+        curriculum_level: { type: 'string', enum: ['ks3', 'ks4'], description: 'Filter by curriculum level' },
+        exam_board: { type: 'string', enum: ['aqa', 'edexcel'], description: 'Filter by exam board' },
+        category: { type: 'string', description: 'Filter by category' },
+        subcategory: { type: 'string', description: 'Filter by subcategory' },
+        difficulty: { type: 'string', enum: ['foundation', 'intermediate', 'higher'], description: 'Filter by difficulty' },
+        theme_topic: { type: 'string', description: 'Filter by AQA theme/topic' },
+        limit: { type: 'number', description: 'Limit number of results' },
+        random: { type: 'boolean', description: 'Return random selection' },
+      },
+    },
+  },
+  {
+    name: 'save_reading_comprehension_result',
+    description: 'Save reading comprehension task results',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        task_id: { type: 'string', description: 'Task UUID' },
+        student_id: { type: 'string', description: 'Student UUID' },
+        assignment_id: { type: 'string', description: 'Assignment UUID (optional)' },
+        total_questions: { type: 'number', description: 'Total number of questions' },
+        correct_answers: { type: 'number', description: 'Number of correct answers' },
+        score_percentage: { type: 'number', description: 'Score as percentage' },
+        time_spent_seconds: { type: 'number', description: 'Time spent in seconds' },
+        passed: { type: 'boolean', description: 'Whether the task was passed' },
+        question_results: {
+          type: 'array',
+          description: 'Individual question results',
+          items: {
+            type: 'object',
+            properties: {
+              question_id: { type: 'string', description: 'Question identifier' },
+              user_answer: { type: ['string', 'array'], description: 'User\'s answer' },
+              correct_answer: { type: ['string', 'array'], description: 'Correct answer' },
+              is_correct: { type: 'boolean', description: 'Whether answer was correct' },
+              points_earned: { type: 'number', description: 'Points earned for this question' },
+              time_spent: { type: 'number', description: 'Time spent on this question' },
+            },
+            required: ['question_id', 'user_answer', 'correct_answer', 'is_correct', 'points_earned'],
+          },
+        },
+      },
+      required: ['task_id', 'student_id', 'total_questions', 'correct_answers', 'score_percentage', 'time_spent_seconds', 'passed', 'question_results'],
+    },
+  },
+  {
+    name: 'get_reading_comprehension_analytics',
+    description: 'Get analytics for reading comprehension performance',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        student_id: { type: 'string', description: 'Student UUID (optional)' },
+        class_id: { type: 'string', description: 'Class UUID (optional)' },
+        teacher_id: { type: 'string', description: 'Teacher UUID (optional)' },
+        language: { type: 'string', enum: ['spanish', 'french', 'german'], description: 'Filter by language' },
+        difficulty: { type: 'string', enum: ['foundation', 'intermediate', 'higher'], description: 'Filter by difficulty' },
+        date_from: { type: 'string', description: 'Filter from date (ISO string)' },
+        date_to: { type: 'string', description: 'Filter to date (ISO string)' },
+        group_by: { type: 'string', enum: ['student', 'difficulty', 'category', 'language'], description: 'Group results by' },
+      },
+    },
+  },
 ];
 
 // Create server instance
@@ -395,6 +551,20 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         return await handleCreateCompetition(args);
       case 'get_active_competitions':
         return await handleGetActiveCompetitions(args);
+      case 'create_aqa_reading_assignment':
+        return await handleCreateAQAReadingAssignment(args);
+      case 'get_aqa_reading_results':
+        return await handleGetAQAReadingResults(args);
+      case 'get_aqa_reading_analytics':
+        return await handleGetAQAReadingAnalytics(args);
+      case 'create_reading_comprehension_task':
+        return await handleCreateReadingComprehensionTask(args);
+      case 'get_reading_comprehension_tasks':
+        return await handleGetReadingComprehensionTasks(args);
+      case 'save_reading_comprehension_result':
+        return await handleSaveReadingComprehensionResult(args);
+      case 'get_reading_comprehension_analytics':
+        return await handleGetReadingComprehensionAnalytics(args);
       default:
         throw new Error(`Unknown tool: ${name}`);
     }
@@ -1083,6 +1253,782 @@ async function handleGetActiveCompetitions(args: any) {
       },
     ],
   };
+}
+
+async function handleCreateAQAReadingAssignment(args: any) {
+  const {
+    title,
+    teacher_id,
+    class_id,
+    student_id,
+    assessment_level,
+    due_date,
+    custom_time_limit,
+    custom_instructions
+  } = args;
+
+  // Get the assessment ID for the specified level
+  const { data: assessment, error: assessmentError } = await supabase
+    .from('aqa_reading_assessments')
+    .select('id')
+    .eq('level', assessment_level)
+    .eq('is_active', true)
+    .single();
+
+  if (assessmentError || !assessment) {
+    throw new Error(`No active AQA reading assessment found for level: ${assessment_level}`);
+  }
+
+  // Create the main assignment record
+  const { data: assignment, error: assignmentError } = await supabase
+    .from('assignments')
+    .insert({
+      title,
+      description: `AQA Reading Assessment - ${assessment_level.charAt(0).toUpperCase() + assessment_level.slice(1)}`,
+      teacher_id,
+      class_id,
+      game_type: 'aqa_reading_assessment',
+      due_date,
+      time_limit: custom_time_limit || (assessment_level === 'foundation' ? 45 : 60),
+    })
+    .select()
+    .single();
+
+  if (assignmentError) throw assignmentError;
+
+  // Create the AQA-specific assignment record
+  const { data: aqaAssignment, error: aqaError } = await supabase
+    .from('aqa_reading_assignments')
+    .insert({
+      assignment_id: assignment.id,
+      assessment_id: assessment.id,
+      teacher_id,
+      class_id,
+      student_id,
+      due_date,
+      custom_time_limit,
+      custom_instructions,
+    })
+    .select()
+    .single();
+
+  if (aqaError) throw aqaError;
+
+  // Create progress records for students
+  let studentIds = [];
+  if (student_id) {
+    studentIds = [student_id];
+  } else if (class_id) {
+    const { data: classStudents } = await supabase
+      .from('class_students')
+      .select('student_id')
+      .eq('class_id', class_id);
+    studentIds = classStudents?.map(cs => cs.student_id) || [];
+  }
+
+  if (studentIds.length > 0) {
+    const progressRecords = studentIds.map(sid => ({
+      assignment_id: assignment.id,
+      student_id: sid,
+      status: 'not_started',
+      score: 0,
+      accuracy: 0,
+      time_spent: 0,
+      completed: false,
+    }));
+
+    await supabase
+      .from('assignment_progress')
+      .insert(progressRecords);
+  }
+
+  return {
+    content: [
+      {
+        type: 'text',
+        text: JSON.stringify({
+          success: true,
+          assignment,
+          aqa_assignment: aqaAssignment,
+          students_assigned: studentIds.length
+        }, null, 2),
+      },
+    ],
+  };
+}
+
+async function handleGetAQAReadingResults(args: any) {
+  const { teacher_id, class_id, student_id, assessment_level, date_from, date_to } = args;
+
+  let query = supabase
+    .from('aqa_reading_results')
+    .select(`
+      *,
+      aqa_reading_assignments!inner(
+        teacher_id,
+        class_id,
+        aqa_reading_assessments(title, level)
+      ),
+      user_profiles!student_id(display_name, first_name, last_name)
+    `)
+    .eq('aqa_reading_assignments.teacher_id', teacher_id);
+
+  // Apply filters
+  if (class_id) {
+    query = query.eq('aqa_reading_assignments.class_id', class_id);
+  }
+  if (student_id) {
+    query = query.eq('student_id', student_id);
+  }
+  if (assessment_level) {
+    query = query.eq('aqa_reading_assignments.aqa_reading_assessments.level', assessment_level);
+  }
+  if (date_from) {
+    query = query.gte('submission_date', date_from);
+  }
+  if (date_to) {
+    query = query.lte('submission_date', date_to);
+  }
+
+  query = query.order('submission_date', { ascending: false });
+
+  const { data: results, error } = await query;
+  if (error) throw error;
+
+  return {
+    content: [
+      {
+        type: 'text',
+        text: JSON.stringify({ results }, null, 2),
+      },
+    ],
+  };
+}
+
+async function handleGetAQAReadingAnalytics(args: any) {
+  const { teacher_id, class_id, student_id, assessment_level, group_by } = args;
+
+  // Base query for getting results
+  let query = supabase
+    .from('aqa_reading_results')
+    .select(`
+      *,
+      aqa_reading_assignments!inner(
+        teacher_id,
+        class_id,
+        aqa_reading_assessments(title, level)
+      ),
+      user_profiles!student_id(display_name, first_name, last_name),
+      aqa_reading_question_responses(*)
+    `)
+    .eq('aqa_reading_assignments.teacher_id', teacher_id)
+    .eq('status', 'completed');
+
+  // Apply filters
+  if (class_id) {
+    query = query.eq('aqa_reading_assignments.class_id', class_id);
+  }
+  if (student_id) {
+    query = query.eq('student_id', student_id);
+  }
+  if (assessment_level) {
+    query = query.eq('aqa_reading_assignments.aqa_reading_assessments.level', assessment_level);
+  }
+
+  const { data: results, error } = await query;
+  if (error) throw error;
+
+  // Process analytics based on group_by parameter
+  let analytics: any = {};
+
+  switch (group_by) {
+    case 'question_type':
+      analytics = processAnalyticsByQuestionType(results);
+      break;
+    case 'theme':
+      analytics = processAnalyticsByTheme(results);
+      break;
+    case 'topic':
+      analytics = processAnalyticsByTopic(results);
+      break;
+    case 'student':
+      analytics = processAnalyticsByStudent(results);
+      break;
+    default:
+      throw new Error(`Invalid group_by parameter: ${group_by}`);
+  }
+
+  return {
+    content: [
+      {
+        type: 'text',
+        text: JSON.stringify({
+          analytics,
+          group_by,
+          total_results: results?.length || 0
+        }, null, 2),
+      },
+    ],
+  };
+}
+
+function processAnalyticsByQuestionType(results: any[]) {
+  const typeStats: any = {};
+
+  results?.forEach(result => {
+    Object.entries(result.performance_by_question_type || {}).forEach(([type, stats]: [string, any]) => {
+      if (!typeStats[type]) {
+        typeStats[type] = {
+          total_questions: 0,
+          total_correct: 0,
+          total_time: 0,
+          student_count: 0,
+          scores: []
+        };
+      }
+
+      typeStats[type].total_questions += stats.total || 0;
+      typeStats[type].total_correct += stats.correct || 0;
+      typeStats[type].total_time += stats.averageTimeSeconds * (stats.total || 0);
+      typeStats[type].student_count += 1;
+      typeStats[type].scores.push(stats.scorePercentage || 0);
+    });
+  });
+
+  // Calculate averages
+  Object.values(typeStats).forEach((stats: any) => {
+    stats.accuracy_percentage = stats.total_questions > 0
+      ? (stats.total_correct / stats.total_questions) * 100
+      : 0;
+    stats.average_time_seconds = stats.total_questions > 0
+      ? stats.total_time / stats.total_questions
+      : 0;
+    stats.average_score = stats.scores.length > 0
+      ? stats.scores.reduce((sum: number, score: number) => sum + score, 0) / stats.scores.length
+      : 0;
+  });
+
+  return typeStats;
+}
+
+function processAnalyticsByTheme(results: any[]) {
+  const themeStats: any = {};
+
+  results?.forEach(result => {
+    Object.entries(result.performance_by_theme || {}).forEach(([theme, stats]: [string, any]) => {
+      if (!themeStats[theme]) {
+        themeStats[theme] = {
+          total_questions: 0,
+          total_correct: 0,
+          total_time: 0,
+          student_count: 0,
+          scores: []
+        };
+      }
+
+      themeStats[theme].total_questions += stats.total || 0;
+      themeStats[theme].total_correct += stats.correct || 0;
+      themeStats[theme].total_time += stats.averageTimeSeconds * (stats.total || 0);
+      themeStats[theme].student_count += 1;
+      themeStats[theme].scores.push(stats.scorePercentage || 0);
+    });
+  });
+
+  // Calculate averages
+  Object.values(themeStats).forEach((stats: any) => {
+    stats.accuracy_percentage = stats.total_questions > 0
+      ? (stats.total_correct / stats.total_questions) * 100
+      : 0;
+    stats.average_time_seconds = stats.total_questions > 0
+      ? stats.total_time / stats.total_questions
+      : 0;
+    stats.average_score = stats.scores.length > 0
+      ? stats.scores.reduce((sum: number, score: number) => sum + score, 0) / stats.scores.length
+      : 0;
+  });
+
+  return themeStats;
+}
+
+function processAnalyticsByTopic(results: any[]) {
+  const topicStats: any = {};
+
+  results?.forEach(result => {
+    Object.entries(result.performance_by_topic || {}).forEach(([topic, stats]: [string, any]) => {
+      if (!topicStats[topic]) {
+        topicStats[topic] = {
+          total_questions: 0,
+          total_correct: 0,
+          total_time: 0,
+          student_count: 0,
+          scores: []
+        };
+      }
+
+      topicStats[topic].total_questions += stats.total || 0;
+      topicStats[topic].total_correct += stats.correct || 0;
+      topicStats[topic].total_time += stats.averageTimeSeconds * (stats.total || 0);
+      topicStats[topic].student_count += 1;
+      topicStats[topic].scores.push(stats.scorePercentage || 0);
+    });
+  });
+
+  // Calculate averages
+  Object.values(topicStats).forEach((stats: any) => {
+    stats.accuracy_percentage = stats.total_questions > 0
+      ? (stats.total_correct / stats.total_questions) * 100
+      : 0;
+    stats.average_time_seconds = stats.total_questions > 0
+      ? stats.total_time / stats.total_questions
+      : 0;
+    stats.average_score = stats.scores.length > 0
+      ? stats.scores.reduce((sum: number, score: number) => sum + score, 0) / stats.scores.length
+      : 0;
+  });
+
+  return topicStats;
+}
+
+function processAnalyticsByStudent(results: any[]) {
+  const studentStats: any = {};
+
+  results?.forEach(result => {
+    const studentId = result.student_id;
+    const studentName = result.user_profiles?.display_name ||
+                       `${result.user_profiles?.first_name || ''} ${result.user_profiles?.last_name || ''}`.trim() ||
+                       'Unknown Student';
+
+    if (!studentStats[studentId]) {
+      studentStats[studentId] = {
+        name: studentName,
+        attempts: 0,
+        total_score: 0,
+        total_time: 0,
+        best_score: 0,
+        latest_attempt: null,
+        question_type_performance: {},
+        theme_performance: {},
+        topic_performance: {}
+      };
+    }
+
+    const stats = studentStats[studentId];
+    stats.attempts += 1;
+    stats.total_score += result.percentage_score || 0;
+    stats.total_time += result.total_time_seconds || 0;
+    stats.best_score = Math.max(stats.best_score, result.percentage_score || 0);
+
+    if (!stats.latest_attempt || new Date(result.submission_date) > new Date(stats.latest_attempt)) {
+      stats.latest_attempt = result.submission_date;
+    }
+
+    // Merge performance data
+    stats.question_type_performance = { ...stats.question_type_performance, ...result.performance_by_question_type };
+    stats.theme_performance = { ...stats.theme_performance, ...result.performance_by_theme };
+    stats.topic_performance = { ...stats.topic_performance, ...result.performance_by_topic };
+  });
+
+  // Calculate averages
+  Object.values(studentStats).forEach((stats: any) => {
+    stats.average_score = stats.attempts > 0 ? stats.total_score / stats.attempts : 0;
+    stats.average_time_minutes = stats.attempts > 0 ? (stats.total_time / stats.attempts) / 60 : 0;
+  });
+
+  return studentStats;
+}
+
+// Reading Comprehension handlers
+async function handleCreateReadingComprehensionTask(args: any) {
+  const {
+    title,
+    language,
+    curriculum_level,
+    exam_board,
+    theme_topic,
+    category,
+    subcategory,
+    difficulty,
+    content,
+    word_count,
+    estimated_reading_time,
+    questions,
+    created_by
+  } = args;
+
+  // Create the reading task
+  const { data: task, error: taskError } = await supabase
+    .from('reading_comprehension_tasks')
+    .insert({
+      title,
+      language,
+      curriculum_level,
+      exam_board,
+      theme_topic,
+      category,
+      subcategory,
+      difficulty,
+      content,
+      word_count: word_count || content.split(' ').length,
+      estimated_reading_time: estimated_reading_time || Math.ceil(content.split(' ').length / 200),
+      created_by,
+      created_at: new Date().toISOString(),
+    })
+    .select()
+    .single();
+
+  if (taskError) throw taskError;
+
+  // Create questions
+  const questionsWithTaskId = questions.map((q: any, index: number) => ({
+    task_id: task.id,
+    question_number: index + 1,
+    question: q.question,
+    type: q.type,
+    options: q.options || null,
+    correct_answer: q.correct_answer,
+    points: q.points,
+    explanation: q.explanation || null,
+  }));
+
+  const { data: createdQuestions, error: questionsError } = await supabase
+    .from('reading_comprehension_questions')
+    .insert(questionsWithTaskId)
+    .select();
+
+  if (questionsError) throw questionsError;
+
+  return {
+    content: [
+      {
+        type: 'text',
+        text: JSON.stringify({ 
+          success: true, 
+          task: { ...task, questions: createdQuestions } 
+        }, null, 2),
+      },
+    ],
+  };
+}
+
+async function handleGetReadingComprehensionTasks(args: any) {
+  let query = supabase
+    .from('reading_comprehension_tasks')
+    .select(`
+      *,
+      reading_comprehension_questions(*)
+    `);
+
+  // Apply filters
+  if (args.language) query = query.eq('language', args.language);
+  if (args.curriculum_level) query = query.eq('curriculum_level', args.curriculum_level);
+  if (args.exam_board) query = query.eq('exam_board', args.exam_board);
+  if (args.category) query = query.eq('category', args.category);
+  if (args.subcategory) query = query.eq('subcategory', args.subcategory);
+  if (args.difficulty) query = query.eq('difficulty', args.difficulty);
+  if (args.theme_topic) query = query.eq('theme_topic', args.theme_topic);
+
+  // Order and limit
+  if (args.random) {
+    // For random selection, we'll order by a random function
+    query = query.order('created_at', { ascending: false });
+  } else {
+    query = query.order('created_at', { ascending: false });
+  }
+
+  if (args.limit) query = query.limit(args.limit);
+
+  const { data: tasks, error } = await query;
+  if (error) throw error;
+
+  // If random is requested and we have results, shuffle them
+  let finalTasks = tasks || [];
+  if (args.random && finalTasks.length > 0) {
+    finalTasks = finalTasks.sort(() => Math.random() - 0.5);
+    if (args.limit) {
+      finalTasks = finalTasks.slice(0, args.limit);
+    }
+  }
+
+  return {
+    content: [
+      {
+        type: 'text',
+        text: JSON.stringify({ tasks: finalTasks }, null, 2),
+      },
+    ],
+  };
+}
+
+async function handleSaveReadingComprehensionResult(args: any) {
+  const {
+    task_id,
+    student_id,
+    assignment_id,
+    total_questions,
+    correct_answers,
+    score_percentage,
+    time_spent_seconds,
+    passed,
+    question_results
+  } = args;
+
+  // Save the main result
+  const { data: result, error: resultError } = await supabase
+    .from('reading_comprehension_results')
+    .insert({
+      task_id,
+      student_id,
+      assignment_id,
+      total_questions,
+      correct_answers,
+      score_percentage,
+      time_spent_seconds,
+      passed,
+      completed_at: new Date().toISOString(),
+    })
+    .select()
+    .single();
+
+  if (resultError) throw resultError;
+
+  // Save individual question results
+  const questionResultsWithId = question_results.map((qr: any) => ({
+    result_id: result.id,
+    question_id: qr.question_id,
+    user_answer: qr.user_answer,
+    correct_answer: qr.correct_answer,
+    is_correct: qr.is_correct,
+    points_earned: qr.points_earned,
+    time_spent: qr.time_spent || 0,
+  }));
+
+  const { error: questionResultsError } = await supabase
+    .from('reading_comprehension_question_results')
+    .insert(questionResultsWithId);
+
+  if (questionResultsError) throw questionResultsError;
+
+  // Update assignment progress if this was part of an assignment
+  if (assignment_id) {
+    await supabase
+      .from('assignment_progress')
+      .upsert({
+        assignment_id,
+        student_id,
+        score: score_percentage,
+        accuracy: (correct_answers / total_questions) * 100,
+        time_spent: time_spent_seconds,
+        completed: true,
+        updated_at: new Date().toISOString(),
+      });
+  }
+
+  return {
+    content: [
+      {
+        type: 'text',
+        text: JSON.stringify({ success: true, result_id: result.id }, null, 2),
+      },
+    ],
+  };
+}
+
+async function handleGetReadingComprehensionAnalytics(args: any) {
+  const {
+    student_id,
+    class_id,
+    teacher_id,
+    language,
+    difficulty,
+    date_from,
+    date_to,
+    group_by = 'student'
+  } = args;
+
+  let query = supabase
+    .from('reading_comprehension_results')
+    .select(`
+      *,
+      reading_comprehension_tasks(*),
+      user_profiles!student_id(first_name, last_name)
+    `);
+
+  // Apply filters
+  if (student_id) query = query.eq('student_id', student_id);
+  if (language) query = query.eq('reading_comprehension_tasks.language', language);
+  if (difficulty) query = query.eq('reading_comprehension_tasks.difficulty', difficulty);
+  if (date_from) query = query.gte('completed_at', date_from);
+  if (date_to) query = query.lte('completed_at', date_to);
+
+  // Handle class filtering (requires join with student_classes)
+  if (class_id) {
+    const { data: classStudents } = await supabase
+      .from('student_classes')
+      .select('student_id')
+      .eq('class_id', class_id);
+    
+    if (classStudents) {
+      const studentIds = classStudents.map(cs => cs.student_id);
+      query = query.in('student_id', studentIds);
+    }
+  }
+
+  const { data: results, error } = await query;
+  if (error) throw error;
+
+  // Process analytics based on group_by parameter
+  let analytics: any = {};
+
+  switch (group_by) {
+    case 'student':
+      analytics = processStudentAnalytics(results || []);
+      break;
+    case 'difficulty':
+      analytics = processDifficultyAnalytics(results || []);
+      break;
+    case 'category':
+      analytics = processCategoryAnalytics(results || []);
+      break;
+    case 'language':
+      analytics = processLanguageAnalytics(results || []);
+      break;
+    default:
+      analytics = { error: 'Invalid group_by parameter' };
+  }
+
+  return {
+    content: [
+      {
+        type: 'text',
+        text: JSON.stringify({ analytics }, null, 2),
+      },
+    ],
+  };
+}
+
+// Helper functions for analytics processing
+function processStudentAnalytics(results: any[]) {
+  const studentStats = results.reduce((acc, result) => {
+    const studentId = result.student_id;
+    if (!acc[studentId]) {
+      acc[studentId] = {
+        student_name: `${result.user_profiles?.first_name || ''} ${result.user_profiles?.last_name || ''}`.trim(),
+        total_attempts: 0,
+        total_score: 0,
+        total_time: 0,
+        passed_count: 0,
+        average_score: 0,
+        pass_rate: 0,
+      };
+    }
+    
+    acc[studentId].total_attempts++;
+    acc[studentId].total_score += result.score_percentage;
+    acc[studentId].total_time += result.time_spent_seconds;
+    if (result.passed) acc[studentId].passed_count++;
+    
+    return acc;
+  }, {});
+
+  // Calculate averages
+  Object.keys(studentStats).forEach(studentId => {
+    const stats = studentStats[studentId];
+    stats.average_score = Math.round(stats.total_score / stats.total_attempts);
+    stats.pass_rate = Math.round((stats.passed_count / stats.total_attempts) * 100);
+    stats.average_time = Math.round(stats.total_time / stats.total_attempts);
+  });
+
+  return { by_student: studentStats };
+}
+
+function processDifficultyAnalytics(results: any[]) {
+  const difficultyStats = results.reduce((acc, result) => {
+    const difficulty = result.reading_comprehension_tasks?.difficulty || 'unknown';
+    if (!acc[difficulty]) {
+      acc[difficulty] = {
+        total_attempts: 0,
+        total_score: 0,
+        passed_count: 0,
+        average_score: 0,
+        pass_rate: 0,
+      };
+    }
+    
+    acc[difficulty].total_attempts++;
+    acc[difficulty].total_score += result.score_percentage;
+    if (result.passed) acc[difficulty].passed_count++;
+    
+    return acc;
+  }, {});
+
+  // Calculate averages
+  Object.keys(difficultyStats).forEach(difficulty => {
+    const stats = difficultyStats[difficulty];
+    stats.average_score = Math.round(stats.total_score / stats.total_attempts);
+    stats.pass_rate = Math.round((stats.passed_count / stats.total_attempts) * 100);
+  });
+
+  return { by_difficulty: difficultyStats };
+}
+
+function processCategoryAnalytics(results: any[]) {
+  const categoryStats = results.reduce((acc, result) => {
+    const category = result.reading_comprehension_tasks?.category || 'unknown';
+    if (!acc[category]) {
+      acc[category] = {
+        total_attempts: 0,
+        total_score: 0,
+        passed_count: 0,
+        average_score: 0,
+        pass_rate: 0,
+      };
+    }
+    
+    acc[category].total_attempts++;
+    acc[category].total_score += result.score_percentage;
+    if (result.passed) acc[category].passed_count++;
+    
+    return acc;
+  }, {});
+
+  // Calculate averages
+  Object.keys(categoryStats).forEach(category => {
+    const stats = categoryStats[category];
+    stats.average_score = Math.round(stats.total_score / stats.total_attempts);
+    stats.pass_rate = Math.round((stats.passed_count / stats.total_attempts) * 100);
+  });
+
+  return { by_category: categoryStats };
+}
+
+function processLanguageAnalytics(results: any[]) {
+  const languageStats = results.reduce((acc, result) => {
+    const language = result.reading_comprehension_tasks?.language || 'unknown';
+    if (!acc[language]) {
+      acc[language] = {
+        total_attempts: 0,
+        total_score: 0,
+        passed_count: 0,
+        average_score: 0,
+        pass_rate: 0,
+      };
+    }
+    
+    acc[language].total_attempts++;
+    acc[language].total_score += result.score_percentage;
+    if (result.passed) acc[language].passed_count++;
+    
+    return acc;
+  }, {});
+
+  // Calculate averages
+  Object.keys(languageStats).forEach(language => {
+    const stats = languageStats[language];
+    stats.average_score = Math.round(stats.total_score / stats.total_attempts);
+    stats.pass_rate = Math.round((stats.passed_count / stats.total_attempts) * 100);
+  });
+
+  return { by_language: languageStats };
 }
 
 // Start the server

@@ -41,6 +41,20 @@ export default function ExplorePage() {
               </div>
             </Link>
 
+            {/* Reading Assessments */}
+            <Link href="/assessments" className="group">
+              <div className="bg-gradient-to-br from-indigo-900/40 to-emerald-900/40 backdrop-blur-sm rounded-2xl p-8 border border-indigo-400/20 hover:border-emerald-400/40 transition-all duration-300 hover:scale-105 hover:shadow-2xl">
+                <div className="text-6xl mb-6 group-hover:scale-110 transition-transform duration-300">📊</div>
+                <h3 className="text-2xl font-bold mb-4 text-emerald-300">Exam style Assessments</h3>
+                <p className="text-gray-300 leading-relaxed mb-4">
+                  Gain detailed insights into student strengths and weaknesses with timed assessments across all GCSE themes and question types.
+                </p>
+                <div className="text-amber-400 font-medium group-hover:text-amber-300">
+                  Discover Assessment Insights →
+                </div>
+              </div>
+            </Link>
+
             {/* For Schools */}
             <Link href="/schools" className="group">
               <div className="bg-gradient-to-br from-indigo-900/40 to-cyan-900/40 backdrop-blur-sm rounded-2xl p-8 border border-indigo-400/20 hover:border-cyan-400/40 transition-all duration-300 hover:scale-105 hover:shadow-2xl">
@@ -88,7 +102,7 @@ export default function ExplorePage() {
               <div className="bg-gradient-to-br from-indigo-900/40 to-pink-900/40 backdrop-blur-sm rounded-2xl p-8 border border-indigo-400/20 hover:border-pink-400/40 transition-all duration-300 hover:scale-105 hover:shadow-2xl">
                 <div className="text-6xl mb-6 group-hover:scale-110 transition-transform duration-300">✍️</div>
                 <h3 className="text-2xl font-bold mb-4 text-pink-300">Blog & Insights</h3>
-                <p className="text-gray-300 leading-relaxed mb-4">
+                <p className className="text-gray-300 leading-relaxed mb-4">
                   Read the latest in language learning research, teaching tips, and educational technology.
                 </p>
                 <div className="text-purple-400 font-medium group-hover:text-purple-300">
@@ -112,40 +126,9 @@ export default function ExplorePage() {
             </Link>
           </div>
 
-          {/* Quick Stats */}
-          <div className="bg-gradient-to-r from-pink-900/50 to-purple-900/50 backdrop-blur-sm rounded-3xl p-12 mb-20 border border-pink-400/20">
-            <div className="text-center mb-12">
-              <h2 className="text-4xl font-bold text-white mb-4">
-                Trusted by Educators Worldwide
-              </h2>
-              <p className="text-xl text-gray-300">
-                Join thousands of teachers and students using LanguageGems
-              </p>
-            </div>
-            
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-              <div className="text-center">
-                <div className="text-4xl font-bold text-cyan-400 mb-2">1000+</div>
-                <div className="text-gray-300">Schools</div>
-              </div>
-              <div className="text-center">
-                <div className="text-4xl font-bold text-pink-400 mb-2">50k+</div>
-                <div className="text-gray-300">Students</div>
-              </div>
-              <div className="text-center">
-                <div className="text-4xl font-bold text-purple-400 mb-2">15+</div>
-                <div className="text-gray-300">Languages</div>
-              </div>
-              <div className="text-center">
-                <div className="text-4xl font-bold text-amber-400 mb-2">20+</div>
-                <div className="text-gray-300">Games</div>
-              </div>
-            </div>
-          </div>
-
           {/* CTA Section */}
           <div className="text-center">
-    <h2 className="text-4xl md:text-5xl font-bold mb-8 text-white">
+            <h2 className="text-4xl md:text-5xl font-bold mb-8 text-white">
               Ready to Get Started?
             </h2>
             <p className="text-xl text-gray-300 mb-10 max-w-3xl mx-auto">

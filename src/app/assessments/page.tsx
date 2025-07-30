@@ -6,16 +6,13 @@ import {
   BookOpen,
   FileText,
   GraduationCap,
-  Users,
   Clock,
   Award,
   ArrowRight,
   CheckCircle,
   Target,
-  Headphones,
   PenTool,
-  MessageSquare,
-  Info // Added Info icon for the disclaimer
+  Info
 } from 'lucide-react';
 
 const AssessmentCard = ({
@@ -45,10 +42,10 @@ const AssessmentCard = ({
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+    <div className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 flex flex-col"> {/* Added flex flex-col */}
       <div className={`h-2 bg-gradient-to-r ${colorClasses[color as keyof typeof colorClasses]}`}></div>
 
-      <div className="p-6">
+      <div className="p-6 flex flex-col flex-grow"> {/* Added flex flex-col flex-grow */}
         <div className="flex items-center mb-4">
           <div className={`p-3 rounded-lg bg-gradient-to-r ${colorClasses[color as keyof typeof colorClasses]} text-white mr-4`}>
             <Icon className="h-6 w-6" />
@@ -71,7 +68,7 @@ const AssessmentCard = ({
           </div>
         </div>
 
-        <div className="space-y-2 mb-6">
+        <div className="space-y-2 mb-6 flex-grow"> {/* Added flex-grow */}
           {features.map((feature, index) => (
             <div key={index} className="flex items-center text-sm text-gray-700">
               <CheckCircle className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
@@ -82,7 +79,7 @@ const AssessmentCard = ({
 
         <Link
           href={href}
-          className={`w-full flex items-center justify-center px-6 py-3 bg-gradient-to-r ${colorClasses[color as keyof typeof colorClasses]} text-white rounded-lg font-semibold transition-all hover:shadow-lg`}
+          className={`w-full flex items-center justify-center px-6 py-3 bg-gradient-to-r ${colorClasses[color as keyof typeof colorClasses]} text-white rounded-lg font-semibold transition-all hover:shadow-lg mt-auto`} // Added mt-auto
         >
           Start Assessment
           <ArrowRight className="h-4 w-4 ml-2" />
@@ -111,23 +108,6 @@ export default function AssessmentsPage() {
       ]
     },
     {
-      title: "Four Skills Assessment",
-      description: "Comprehensive evaluation of all language skills",
-      icon: Users,
-      href: "/four-skills-assessment",
-      color: "green",
-      estimatedTime: "45-60 minutes",
-      skillsAssessed: ["Reading", "Writing", "Listening", "Speaking"],
-      features: [
-        "Complete language proficiency evaluation",
-        "Audio recording for speaking assessment",
-        "Listening comprehension with realistic audio materials", // Changed from authentic
-        "Writing tasks with AI-powered feedback",
-        "Detailed skill-specific performance reports",
-        "CEFR level alignment and recommendations"
-      ]
-    },
-    {
       title: "Exam Practice",
       description: "Prepare for official examinations with questions and tasks designed to reflect leading UK exam board formats.",
       icon: GraduationCap,
@@ -142,6 +122,38 @@ export default function AssessmentsPage() {
         "Exam technique tips and strategies",
         "Simulated mock exam experience"
       ]
+    },
+    {
+      title: "Topic-Based Assessments", // New Card Title
+      description: "Focused practice on specific AQA themes and topics (Reading Skill)", // New Card Description
+      icon: FileText, // Appropriate icon for assessments/topics
+      href: "/exam-style-assessment-topic", // Link to your new page
+      color: "indigo", // Assign a new color
+      estimatedTime: "15-25 minutes", // Estimated time for these assessments
+      skillsAssessed: ["Reading", "Vocabulary", "Grammar"], // Skills for topic-based
+      features: [
+        "Specific AQA themes: People & lifestyle, Popular culture, Communication & the world",
+        "Targeted topics within each theme",
+        "Foundation and Higher tier options",
+        "Ideal for focused revision and skill reinforcement",
+        "Covers key vocabulary and grammar in context"
+      ]
+    },
+    {
+      title: "Dictation Practice",
+      description: "Improve listening and writing skills with GCSE-style dictation exercises",
+      icon: PenTool,
+      href: "/dictation",
+      color: "green",
+      estimatedTime: "10-15 minutes",
+      skillsAssessed: ["Listening", "Writing", "Spelling"],
+      features: [
+        "5 dictation sentences per assessment",
+        "Three playback speeds: Full, Slow, and Very Slow",
+        "Foundation and Higher tier options",
+        "Spanish, French, and German language support",
+        "Authentic GCSE-style content and format"
+      ]
     }
   ];
   return (
@@ -155,14 +167,14 @@ export default function AssessmentsPage() {
             </h1>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
               Evaluate your language skills with our comprehensive assessment tools.
-              Choose from reading comprehension, four skills evaluation, or exam-style practice.
+              Choose from reading comprehension, exam-style practice, or topic-based assessments.
             </p>
           </div>
         </div>
       </div>
 
       {/* NEW: Concise Disclaimer Notice */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8"> {/* Added padding-top */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
         <div className="bg-blue-50 border border-blue-200 text-blue-700 rounded-lg p-4 flex items-start text-sm">
           <Info className="h-5 w-5 flex-shrink-0 mr-3 text-blue-500" />
           <div>
@@ -175,7 +187,7 @@ export default function AssessmentsPage() {
 
       {/* Assessment Cards */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch"> {/* Added items-stretch */}
           {assessmentTypes.map((assessment, index) => (
             <AssessmentCard
               key={index}
@@ -197,7 +209,7 @@ export default function AssessmentsPage() {
               <div className="bg-blue-100 p-3 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
                 <Award className="h-8 w-8 text-blue-600" />
               </div>
-              <h3 className="font-semibold text-gray-900 mb-2">Gamified Progress</h3> {/* Changed from Gamified Learning */}
+              <h3 className="font-semibold text-gray-900 mb-2">Gamified Progress</h3>
               <p className="text-gray-600 text-sm">Earn points, unlock achievements, and track your progress</p>
             </div>
 
@@ -214,7 +226,7 @@ export default function AssessmentsPage() {
                 <FileText className="h-8 w-8 text-purple-600" />
               </div>
               <h3 className="font-semibold text-gray-900 mb-2">Exam Preparation</h3>
-              <p className="text-gray-600 text-sm">Practice with realistic exam formats and question types</p> {/* Changed from authentic */}
+              <p className="text-gray-600 text-sm">Practice with realistic exam formats and question types</p>
             </div>
 
             <div className="text-center">
@@ -243,10 +255,10 @@ export default function AssessmentsPage() {
               Quick Start: Reading Comprehension
             </Link>
             <Link
-              href="/four-skills-assessment"
+              href="/exam-style-assessment-topic"
               className="px-8 py-3 border-2 border-white text-white rounded-lg font-semibold hover:bg-white hover:text-blue-600 transition-colors"
             >
-              Full Assessment: Four Skills
+              Focused Practice: Topic-Based
             </Link>
           </div>
         </div>

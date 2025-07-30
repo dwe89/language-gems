@@ -203,11 +203,11 @@ export default function VocabMasterGame({
       generateMultipleChoice(firstWord, shuffledVocab);
     }
     
-    // Auto-play audio for listening mode and learn mode
+    // Auto-play audio for listening mode and learn mode (but not typing mode)
     if (selectedGameMode === 'listening') {
       setTimeout(() => playPronunciation(firstWord.spanish || '', 'es', firstWord), 1000);
     } else if (selectedGameMode === 'learn') {
-      setTimeout(() => playPronunciation(firstWord.spanish || '', 'es', firstWord), 1000);
+      setTimeout(() => playPronunciation(firstWord.spanish || '', 'es', firstWord), 2000); // Slower for learn mode
     }
     
     setShowTranslation(false);
@@ -589,6 +589,12 @@ export default function VocabMasterGame({
         speedBonus = 50; // Speed bonus
         break;
       case 'typing':
+        modeBonus = 100; // Double points for typing mode
+        break;
+      case 'learn':
+        modeBonus = 0; // Standard points for learn mode
+        break;
+      case 'typing':
         modeBonus = 20; // Typing requires exact recall
         break;
     }
@@ -713,11 +719,13 @@ export default function VocabMasterGame({
     setShowTranslation(false);
     focusInput();
 
-    // Auto-play audio for listening mode and learn mode
+    // Auto-play audio for listening mode and learn mode (but not typing mode)
     if (nextGameMode === 'listening') {
       setTimeout(() => playPronunciation(nextWord.spanish || '', 'es', nextWord), 1000);
     } else if (nextGameMode === 'learn') {
-      setTimeout(() => playPronunciation(nextWord.spanish || '', 'es', nextWord), 1000);
+      setTimeout(() => playPronunciation(nextWord.spanish || '', 'es', nextWord), 2000); // Slower for learn mode
+      // Auto-show hint after 5 seconds in learn mode
+      setTimeout(() => setShowHint(true), 5000);
     }
 
     if (mode === 'spaced_repetition' || mode === 'review_weak') {
@@ -1154,8 +1162,12 @@ export default function VocabMasterGame({
       <div className="space-y-4">
         <div className="text-center mb-4">
           <label className="block text-gray-700 font-medium mb-2">
-            {gameState.gameMode === 'typing' || gameState.gameMode === 'learn' || gameState.gameMode === 'recall'
-              ? 'Type the English translation:' 
+            {gameState.gameMode === 'typing'
+              ? 'Type the English translation (Double Points!):'
+              : gameState.gameMode === 'learn'
+                ? 'Type the English translation (Hints available):'
+              : gameState.gameMode === 'recall'
+                ? 'Type the English translation:'
               : isListeningMode
                 ? 'What did you hear?'
                 : isClozeMode
@@ -1227,7 +1239,7 @@ export default function VocabMasterGame({
             <ArrowRight className="h-4 w-4" />
           </button>
           
-          {!isListeningMode && !isClozeMode && !gameState.showAnswer && (
+          {!isListeningMode && !isClozeMode && !gameState.showAnswer && gameState.gameMode !== 'typing' && (
             <button
               onClick={() => setShowHint(!showHint)}
               className="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-xl font-semibold transition-colors"
@@ -1236,7 +1248,7 @@ export default function VocabMasterGame({
             </button>
           )}
           
-          {!gameState.showAnswer && (
+          {!gameState.showAnswer && gameState.gameMode !== 'typing' && (
             <button
               onClick={revealAnswer}
               className="px-6 py-3 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition-colors flex items-center space-x-2"
@@ -1272,10 +1284,16 @@ export default function VocabMasterGame({
                 <span>Context Exercise</span>
               </>
             )}
-            {(gameState.gameMode === 'learn' || gameState.gameMode === 'typing') && (
+            {gameState.gameMode === 'learn' && (
               <>
                 <Lightbulb className="h-4 w-4" />
-                <span>Learning Mode</span>
+                <span>Learn Mode - Guided Practice</span>
+              </>
+            )}
+            {gameState.gameMode === 'typing' && (
+              <>
+                <Keyboard className="h-4 w-4" />
+                <span>Typing Mode - Double Points!</span>
               </>
             )}
             {gameState.gameMode === 'recall' && (

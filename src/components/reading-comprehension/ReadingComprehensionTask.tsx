@@ -1,674 +1,594 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '../auth/AuthProvider';
+import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   BookOpen,
   Clock,
-  CheckCircle,
-  XCircle,
-  Award,
-  RotateCcw,
-  ArrowRight,
-  ArrowLeft,
+  Target,
   Star,
-  Gem,
-  Trophy
+  ArrowRight,
+  Filter,
+  Search
 } from 'lucide-react';
-import { readingComprehensionContent, ReadingText, ComprehensionQuestion } from '../../data/reading-comprehension-content';
-import { AssessmentGamificationService } from '../../services/assessmentGamificationService';
-import { createClient } from '@supabase/supabase-js';
+import { readingComprehensionContent } from '../../data/reading-comprehension-content';
 
-interface ReadingComprehensionTaskProps {
-  language: 'spanish' | 'french' | 'german';
-  category?: string;
-  subcategory?: string;
-  difficulty?: 'foundation' | 'intermediate' | 'higher';
-  assignmentMode?: boolean;
-  onComplete?: (results: TaskResults) => void;
+// Define the Category and Subcategory interfaces based on user's provided structure
+interface KSCategory {
+  id: string;
+  name: string; // This is the internal name like 'basics_core_language'
+  displayName: string; // This is the user-friendly name
+  icon: string;
+  subcategories: KSSubcategory[];
 }
 
-interface TaskResults {
-  textId: string;
-  totalQuestions: number;
-  correctAnswers: number;
-  score: number;
-  timeSpent: number;
-  questionResults: QuestionResult[];
-  passed: boolean;
+interface KSSubcategory {
+  id: string;
+  name: string; // Internal name
+  displayName: string; // User-friendly name
+  categoryId: string;
 }
 
-interface QuestionResult {
-  questionId: string;
-  userAnswer: string | string[];
-  correctAnswer: string | string[];
-  isCorrect: boolean;
-  points: number;
-  timeSpent: number;
-}
+// User's provided KS3 Spanish Categories
+const KS3_SPANISH_CATEGORIES: KSCategory[] = [
+  {
+    id: 'basics_core_language',
+    name: 'basics_core_language',
+    displayName: 'Basics & Core Language',
+    icon: '💬',
+    subcategories: [
+      { id: 'greetings_introductions', name: 'greetings_introductions', displayName: 'Greetings & Introductions', categoryId: 'basics_core_language' },
+      { id: 'common_phrases', name: 'common_phrases', displayName: 'Common Phrases', categoryId: 'basics_core_language' },
+      { id: 'opinions', name: 'opinions', displayName: 'Opinions', categoryId: 'basics_core_language' },
+      { id: 'numbers_1_30', name: 'numbers_1_30', displayName: 'Numbers 1-30', categoryId: 'basics_core_language' },
+      { id: 'numbers_40_100', name: 'numbers_40_100', displayName: 'Numbers 40-100', categoryId: 'basics_core_language' },
+      { id: 'colours', name: 'colours', displayName: 'Colours', categoryId: 'basics_core_language' },
+      { id: 'days', name: 'days', displayName: 'Days', categoryId: 'basics_core_language' },
+      { id: 'months', name: 'months', displayName: 'Months', categoryId: 'basics_core_language' }
+    ]
+  },
+  {
+    id: 'identity_personal_life',
+    name: 'identity_personal_life',
+    displayName: 'Identity & Personal Life',
+    icon: '👤',
+    subcategories: [
+      { id: 'personal_information', name: 'personal_information', displayName: 'Personal Information', categoryId: 'identity_personal_life' },
+      { id: 'family_friends', name: 'family_friends', displayName: 'Family & Friends', categoryId: 'identity_personal_life' },
+      { id: 'physical_personality_descriptions', name: 'physical_personality_descriptions', displayName: 'Physical & Personality Descriptions', categoryId: 'identity_personal_life' },
+      { id: 'pets', name: 'pets', displayName: 'Pets', categoryId: 'identity_personal_life' }
+    ]
+  },
+  {
+    id: 'home_local_area',
+    name: 'home_local_area',
+    displayName: 'Home & Local Area',
+    icon: '🏠',
+    subcategories: [
+      { id: 'house_rooms_furniture', name: 'house_rooms_furniture', displayName: 'House, Rooms & Furniture', categoryId: 'home_local_area' },
+      { id: 'household_items_chores', name: 'household_items_chores', displayName: 'Household Items & Chores', categoryId: 'home_local_area' },
+      { id: 'types_of_housing', name: 'types_of_housing', displayName: 'Types of Housing', categoryId: 'home_local_area' },
+      { id: 'local_area_places_town', name: 'local_area_places_town', displayName: 'Local Area & Places in Town', categoryId: 'home_local_area' },
+      { id: 'shops_services', name: 'shops_services', displayName: 'Shops & Services', categoryId: 'home_local_area' },
+      { id: 'directions_prepositions', name: 'directions_prepositions', displayName: 'Directions & Prepositions', categoryId: 'home_local_area' }
+    ]
+  },
+  {
+    id: 'school_jobs_future',
+    name: 'school_jobs_future',
+    displayName: 'School, Jobs & Future Plans',
+    icon: '🎓',
+    subcategories: [
+      { id: 'school_subjects', name: 'school_subjects', displayName: 'School Subjects', categoryId: 'school_jobs_future' },
+      { id: 'school_rules', name: 'school_rules', displayName: 'School Rules', categoryId: 'school_jobs_future' },
+      { id: 'classroom_objects', name: 'classroom_objects', displayName: 'Classroom Objects', categoryId: 'school_jobs_future' },
+      { id: 'daily_routine_school', name: 'daily_routine_school', displayName: 'Daily Routine at School', categoryId: 'school_jobs_future' },
+      { id: 'professions_jobs', name: 'professions_jobs', displayName: 'Professions & Jobs', categoryId: 'school_jobs_future' },
+      { id: 'future_ambitions', name: 'future_ambitions', displayName: 'Future Ambitions', categoryId: 'school_jobs_future' },
+      { id: 'qualities_for_jobs', name: 'qualities_for_jobs', displayName: 'Qualities for Jobs', categoryId: 'school_jobs_future' }
+    ]
+  },
+  {
+    id: 'free_time_leisure',
+    name: 'free_time_leisure',
+    displayName: 'Free Time & Leisure',
+    icon: '🎮',
+    subcategories: [
+      { id: 'hobbies_interests', name: 'hobbies_interests', displayName: 'Hobbies & Interests', categoryId: 'free_time_leisure' },
+      { id: 'sports', name: 'sports', displayName: 'Sports', categoryId: 'free_time_leisure' },
+      { id: 'social_activities', name: 'social_activities', displayName: 'Social Activities', categoryId: 'free_time_leisure' }
+    ]
+  },
+  {
+    id: 'food_drink',
+    name: 'food_drink',
+    displayName: 'Food & Drink',
+    icon: '🍽️',
+    subcategories: [
+      { id: 'meals', name: 'meals', displayName: 'Meals', categoryId: 'food_drink' },
+      { id: 'food_drink_vocabulary', name: 'food_drink_vocabulary', displayName: 'Food & Drink Vocabulary', categoryId: 'food_drink' },
+      { id: 'ordering_cafes_restaurants', name: 'ordering_cafes_restaurants', displayName: 'Ordering in Cafés & Restaurants', categoryId: 'food_drink' },
+      { id: 'shopping_for_food', name: 'shopping_for_food', displayName: 'Shopping for Food', categoryId: 'food_drink' }
+    ]
+  },
+  {
+    id: 'clothes_shopping',
+    name: 'clothes_shopping',
+    displayName: 'Clothes & Shopping',
+    icon: '👕',
+    subcategories: [
+      { id: 'clothes_accessories', name: 'clothes_accessories', displayName: 'Clothes & Accessories', categoryId: 'clothes_shopping' },
+      { id: 'shopping_phrases_prices', name: 'shopping_phrases_prices', displayName: 'Shopping Phrases & Prices', categoryId: 'clothes_shopping' }
+    ]
+  },
+  {
+    id: 'technology_media',
+    name: 'technology_media',
+    displayName: 'Technology & Media',
+    icon: '📱',
+    subcategories: [
+      { id: 'mobile_phones_social_media', name: 'mobile_phones_social_media', displayName: 'Mobile Phones & Social Media', categoryId: 'technology_media' },
+      { id: 'internet_digital_devices', name: 'internet_digital_devices', displayName: 'Internet & Digital Devices', categoryId: 'technology_media' },
+      { id: 'tv', name: 'tv', displayName: 'TV', categoryId: 'technology_media' },
+      { id: 'film', name: 'film', displayName: 'Film', categoryId: 'technology_media' },
+      { id: 'music', name: 'music', displayName: 'Music', categoryId: 'technology_media' }
+    ]
+  },
+  {
+    id: 'health_lifestyle',
+    name: 'health_lifestyle',
+    displayName: 'Health & Lifestyle',
+    icon: '⚕️',
+    subcategories: [
+      { id: 'parts_of_body', name: 'parts_of_body', displayName: 'Parts of the Body', categoryId: 'health_lifestyle' },
+      { id: 'illnesses_symptoms', name: 'illnesses_symptoms', displayName: 'Illnesses & Symptoms', categoryId: 'health_lifestyle' },
+      { id: 'at_the_doctors', name: 'at_the_doctors', displayName: 'At the Doctor\'s', categoryId: 'health_lifestyle' },
+      { id: 'healthy_living', name: 'healthy_living', displayName: 'Healthy Living', categoryId: 'health_lifestyle' }
+    ]
+  },
+  {
+    id: 'holidays_travel_culture',
+    name: 'holidays_travel_culture',
+    displayName: 'Holidays, Travel & Culture',
+    icon: '✈️',
+    subcategories: [
+      { id: 'countries', name: 'countries', displayName: 'Countries', categoryId: 'holidays_travel_culture' },
+      { id: 'nationalities', name: 'nationalities', displayName: 'Nationalities', categoryId: 'holidays_travel_culture' },
+      { id: 'transport', name: 'transport', displayName: 'Transport', categoryId: 'holidays_travel_culture' },
+      { id: 'travel_phrases', name: 'travel_phrases', displayName: 'Travel Phrases', categoryId: 'holidays_travel_culture' },
+      { id: 'accommodation', name: 'accommodation', displayName: 'Accommodation', categoryId: 'holidays_travel_culture' },
+      { id: 'holiday_activities', name: 'holiday_activities', displayName: 'Holiday Activities', categoryId: 'holidays_travel_culture' },
+      { id: 'weather_seasons', name: 'weather_seasons', displayName: 'Weather & Seasons', categoryId: 'holidays_travel_culture' },
+      { id: 'spanish_speaking_countries_traditions', name: 'spanish_speaking_countries_traditions', displayName: 'Spanish-speaking Countries & Traditions', categoryId: 'holidays_travel_culture' },
+      { id: 'festivals_celebrations', name: 'festivals_celebrations', displayName: 'Festivals & Celebrations', categoryId: 'holidays_travel_culture' }
+    ]
+  },
+  {
+    id: 'nature_environment',
+    name: 'nature_environment',
+    displayName: 'Nature & Environment',
+    icon: '🌿',
+    subcategories: [
+      { id: 'animals', name: 'animals', displayName: 'Animals', categoryId: 'nature_environment' },
+      { id: 'plants', name: 'plants', displayName: 'Plants', categoryId: 'nature_environment' },
+      { id: 'environmental_problems', name: 'environmental_problems', displayName: 'Environmental Problems', categoryId: 'nature_environment' }
+    ]
+  },
+  {
+    id: 'social_global_issues',
+    name: 'social_global_issues',
+    displayName: 'Social & Global Issues',
+    icon: '🌍',
+    subcategories: [
+      { id: 'social_issues', name: 'social_issues', displayName: 'Social Issues', categoryId: 'social_global_issues' },
+      { id: 'human_rights', name: 'human_rights', displayName: 'Human Rights', categoryId: 'social_global_issues' },
+      { id: 'global_problems_solutions', name: 'global_problems_solutions', displayName: 'Global Problems & Solutions', categoryId: 'social_global_issues' },
+      { id: 'current_affairs_world_events', name: 'current_affairs_world_events', displayName: 'Current Affairs & World Events', categoryId: 'social_global_issues' }
+    ]
+  }
+];
 
-export default function ReadingComprehensionTask({
-  language,
-  category,
-  subcategory,
-  difficulty,
-  assignmentMode = false,
-  onComplete
-}: ReadingComprehensionTaskProps) {
-  const { user } = useAuth();
-  const [selectedText, setSelectedText] = useState<ReadingText | null>(null);
-  const [questions, setQuestions] = useState<ComprehensionQuestion[]>([]);
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [userAnswers, setUserAnswers] = useState<Record<string, string | string[]>>({});
-  const [showResults, setShowResults] = useState(false);
-  const [results, setResults] = useState<TaskResults | null>(null);
-  const [startTime, setStartTime] = useState<Date | null>(null);
-  const [questionStartTimes, setQuestionStartTimes] = useState<Record<string, Date>>({});
-  const [timeSpent, setTimeSpent] = useState(0);
 
-  // Gamification state
-  const [gamificationService, setGamificationService] = useState<AssessmentGamificationService | null>(null);
-  const [gamificationResults, setGamificationResults] = useState<{
-    pointsEarned: number;
-    achievementsUnlocked: any[];
-    gemType: string;
-    bonusMultiplier: number;
-  } | null>(null);
-  const [showGamificationResults, setShowGamificationResults] = useState(false);
+// Data structure for AQA themes and topics
+const AQA_THEMES_TOPICS = {
+  'theme_1_people_lifestyle': {
+    name: 'Theme 1: People and lifestyle',
+    topics: [
+      { id: 'identity_relationships', name: 'Topic 1: Identity and relationships with others' },
+      { id: 'healthy_living', name: 'Topic 2: Healthy living and lifestyle' },
+      { id: 'education_work', name: 'Topic 3: Education and work' },
+    ]
+  },
+  'theme_2_popular_culture': {
+    name: 'Theme 2: Popular culture',
+    topics: [
+      { id: 'free_time_activities', name: 'Topic 1: Free-time activities' },
+      { id: 'customs_festivals', name: 'Topic 2: Customs, festivals and celebrations' },
+      { id: 'celebrity_culture', name: 'Topic 3: Celebrity culture' },
+    ]
+  },
+  'theme_3_communication_world': {
+    name: 'Theme 3: Communication and the world around us',
+    topics: [
+      { id: 'travel_tourism', name: 'Topic 1: Travel and tourism, including places of interest' },
+      { id: 'media_technology', name: 'Topic 2: Media and technology' },
+      { id: 'environment_where_people_live', name: 'Topic 3: The environment and where people live' },
+    ]
+  }
+};
 
-  // Timer effect
-  useEffect(() => {
-    if (startTime && !showResults) {
-      const timer = setInterval(() => {
-        setTimeSpent(Math.floor((Date.now() - startTime.getTime()) / 1000));
-      }, 1000);
-      return () => clearInterval(timer);
+export default function ReadingComprehensionPage() {
+  const router = useRouter();
+  const [selectedLanguage, setSelectedLanguage] = useState<'spanish' | 'french' | 'german'>('spanish');
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [selectedSubcategory, setSelectedSubcategory] = useState<string>('');
+  const [selectedDifficulty, setSelectedDifficulty] = useState<string>('');
+  const [selectedCurriculumLevel, setSelectedCurriculumLevel] = useState<string>(''); // New state for curriculum level
+  const [selectedExamBoard, setSelectedExamBoard] = useState<string>(''); // New state for exam board
+  const [selectedThemeTopic, setSelectedThemeTopic] = useState<string>(''); // New state for theme/topic
+  const [searchTerm, setSearchTerm] = useState('');
+
+  // Get available categories and subcategories from content
+  const getCategories = (): (KSCategory)[] => {
+    // If KS3 is selected, use the static KS3_SPANISH_CATEGORIES
+    if (selectedCurriculumLevel === 'ks3') {
+      return KS3_SPANISH_CATEGORIES;
     }
-  }, [startTime, showResults]);
 
-  // Load content on component mount
-  useEffect(() => {
-    loadContent();
-  }, [language, category, subcategory, difficulty]);
-
-  const loadContent = () => {
-    const languageKey = language === 'spanish' ? 'spanish' : language === 'french' ? 'french' : 'german';
-    let availableTexts = readingComprehensionContent.texts[languageKey] || [];
-
-    // Filter by category and subcategory if provided
-    if (category) {
-      availableTexts = availableTexts.filter(text => text.category === category);
-    }
-    if (subcategory) {
-      availableTexts = availableTexts.filter(text => text.subcategory === subcategory);
-    }
-    if (difficulty) {
-      availableTexts = availableTexts.filter(text => text.difficulty === difficulty);
-    }
-
-    if (availableTexts.length === 0) {
-      // Fallback to any text in the language
-      availableTexts = readingComprehensionContent.texts[languageKey] || [];
-    }
-
-    // Select a random text
-    const randomText = availableTexts[Math.floor(Math.random() * availableTexts.length)];
-    setSelectedText(randomText);
-
-    // Load questions for this text
-    const textQuestions = readingComprehensionContent.questions[languageKey]?.filter(
-      q => q.textId === randomText?.id
-    ) || [];
-    setQuestions(textQuestions);
-
-    // Initialize timing
-    setStartTime(new Date());
-    if (textQuestions.length > 0) {
-      setQuestionStartTimes({ [textQuestions[0].id]: new Date() });
-    }
+    // If KS4 or no level is selected, return an empty array for categories
+    // as categories are only relevant for KS3 now.
+    return [];
   };
 
-  const handleAnswerChange = (questionId: string, answer: string | string[]) => {
-    setUserAnswers(prev => ({
-      ...prev,
-      [questionId]: answer
-    }));
-  };
 
-  const handleNextQuestion = () => {
-    if (currentQuestionIndex < questions.length - 1) {
-      const nextIndex = currentQuestionIndex + 1;
-      setCurrentQuestionIndex(nextIndex);
-      const nextQuestionId = questions[nextIndex].id;
-      setQuestionStartTimes(prev => ({
-        ...prev,
-        [nextQuestionId]: new Date()
-      }));
+  // Helper to format category names, prioritizing displayName if available (for KS3 categories)
+  const formatCategoryName = (category: string, isKS3: boolean = false): string => {
+    if (isKS3) {
+      // Find the category in KS3_SPANISH_CATEGORIES by its ID and return its displayName
+      const ks3Category = KS3_SPANISH_CATEGORIES.find(cat => cat.id === category);
+      return ks3Category ? ks3Category.displayName : category;
     }
+    // Fallback for non-KS3 categories (old logic, though not used for display now)
+    return category
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
   };
 
-  const handlePreviousQuestion = () => {
-    if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(currentQuestionIndex - 1);
+  // Helper to format subcategory names, prioritizing displayName if available (for KS3 subcategories)
+  const formatSubcategoryName = (subcategory: string, categoryId: string, isKS3: boolean = false): string => {
+    if (isKS3) {
+      const ks3Category = KS3_SPANISH_CATEGORIES.find(cat => cat.id === categoryId);
+      const ks3Subcategory = ks3Category?.subcategories.find(sub => sub.id === subcategory);
+      return ks3Subcategory ? ks3Subcategory.displayName : subcategory;
     }
+    // Fallback for non-KS3 subcategories (old logic, though not used for display now)
+    return subcategory
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
   };
 
-  const calculateResults = (): TaskResults => {
-    const questionResults: QuestionResult[] = questions.map(question => {
-      const userAnswer = userAnswers[question.id] || '';
-      const isCorrect = checkAnswer(question, userAnswer);
-      const questionStartTime = questionStartTimes[question.id];
-      const timeSpent = questionStartTime ? Date.now() - questionStartTime.getTime() : 0;
+  // Helper to get category description (will be empty for KS3 as per new data structure)
+  const getCategoryDescription = (category: string, isKS3: boolean = false): string => {
+    if (isKS3) {
+      // KS3 categories do not have a 'description' field in the provided data
+      return '';
+    }
+    const descriptions: Record<string, string> = {
+      'food_drink': 'Texts about food, drinks, restaurants and eating habits',
+      'home_local_area': 'Descriptions of places, landmarks and urban life',
+      'school_jobs_future': 'School life, daily routines and educational experiences',
+      'identity_personal_life': 'Family relationships, friendships and celebrations',
+      'free_time_leisure': 'Leisure activities, sports and hobbies',
+      'holidays_travel_culture': 'Travel, holidays and tourist experiences',
+      'nature_environment': 'Environment, nature and sustainability',
+      'technology_media': 'Technology, social media and digital life',
+      'basics_core_language': 'Core language elements and basic communication',
+      'health_lifestyle': 'Health, lifestyle and wellbeing topics',
+      'social_global_issues': 'Social issues and global problems'
+    };
+    return descriptions[category] || 'Reading comprehension texts';
+  };
 
-      return {
-        questionId: question.id,
-        userAnswer,
-        correctAnswer: question.correctAnswer,
-        isCorrect,
-        points: isCorrect ? question.points : 0,
-        timeSpent: Math.round(timeSpent / 1000)
-      };
+  // Helper to get subcategory description (will be empty for KS3 as per new data structure)
+  const getSubcategoryDescription = (subcategory: string, isKS3: boolean = false): string => {
+    if (isKS3) {
+      // KS3 subcategories do not have a 'description' field in the provided data
+      return '';
+    }
+    const descriptions: Record<string, string> = {
+      'ordering_cafes_restaurants': 'Situations in cafes and restaurants, ordering food',
+      'food_drink_vocabulary': 'Food and drink vocabulary and experiences',
+      'meals': 'Meal times and family dining experiences',
+      'places_in_town': 'Town landmarks and important places',
+      'school_life': 'Daily school routines and educational experiences',
+      'family_friends': 'Family relationships and celebrations',
+      'daily_routine': 'Daily routines and schedules',
+      'hobbies_interests': 'Hobbies and personal interests',
+      'sports_outdoor': 'Outdoor sports and activities',
+      'countries': 'Countries and travel destinations',
+      'transport': 'Transportation and travel methods',
+      'environmental_issues': 'Climate change and environmental problems'
+    };
+    return descriptions[subcategory] || 'Specialized texts';
+  };
+
+  // Helper to get category icon, prioritizing icon from KS3 data if available
+  const getCategoryIcon = (category: string, isKS3: boolean = false): string => {
+    if (isKS3) {
+      const ks3Category = KS3_SPANISH_CATEGORIES.find(cat => cat.id === category);
+      return ks3Category ? ks3Category.icon : '📚'; // Fallback icon
+    }
+    const icons: Record<string, string> = {
+      'food_drink': '🍽️',
+      'home_local_area': '🏛️',
+      'school_jobs_future': '🎓',
+      'identity_personal_life': '👨‍👩‍👧‍👦',
+      'free_time_leisure': '⚽',
+      'holidays_travel_culture': '✈️',
+      'nature_environment': '🌱',
+      'technology_media': '💻',
+      'basics_core_language': '�',
+      'health_lifestyle': '💪',
+      'social_global_issues': '🌍'
+    };
+    return icons[category] || '📚';
+  };
+
+  const getDifficultyColor = (difficulty: string): string => {
+    const colors: Record<string, string> = {
+      'foundation': 'bg-green-100 text-green-800',
+      'intermediate': 'bg-yellow-100 text-yellow-800',
+      'higher': 'bg-red-100 text-red-800'
+    };
+    return colors[difficulty] || 'bg-gray-100 text-gray-800';
+  };
+
+  const handleStartTask = () => {
+    const params = new URLSearchParams({
+      language: selectedLanguage,
+      ...(selectedCurriculumLevel && { curriculumLevel: selectedCurriculumLevel }),
+      ...(selectedExamBoard && { examBoard: selectedExamBoard }),
+      ...(selectedThemeTopic && { themeTopic: selectedThemeTopic }),
+      // Only add category and subcategory if KS4 is NOT selected
+      ...(selectedCurriculumLevel !== 'ks4' && selectedCategory && { category: selectedCategory }),
+      ...(selectedCurriculumLevel !== 'ks4' && selectedSubcategory && { subcategory: selectedSubcategory }),
+      ...(selectedDifficulty && { difficulty: selectedDifficulty }),
     });
 
-    const correctAnswers = questionResults.filter(r => r.isCorrect).length;
-    const totalPoints = questionResults.reduce((sum, r) => sum + r.points, 0);
-    const maxPoints = questions.reduce((sum, q) => sum + q.points, 0);
-    const score = Math.round((totalPoints / maxPoints) * 100);
-    const passed = score >= 60; // 60% pass rate
-
-    return {
-      textId: selectedText?.id || '',
-      totalQuestions: questions.length,
-      correctAnswers,
-      score,
-      timeSpent,
-      questionResults,
-      passed
-    };
+    router.push(`/reading-comprehension/task?${params.toString()}`);
   };
 
-  const checkAnswer = (question: ComprehensionQuestion, userAnswer: string | string[]): boolean => {
-    const correctAnswer = question.correctAnswer;
-    
-    if (Array.isArray(correctAnswer) && Array.isArray(userAnswer)) {
-      return correctAnswer.length === userAnswer.length && 
-             correctAnswer.every(answer => 
-               userAnswer.some(ua => ua.toLowerCase().trim() === answer.toLowerCase().trim())
-             );
-    }
-    
-    if (typeof correctAnswer === 'string' && typeof userAnswer === 'string') {
-      return correctAnswer.toLowerCase().trim() === userAnswer.toLowerCase().trim();
-    }
-    
-    return false;
-  };
-
-  const handleSubmit = async () => {
-    const taskResults = calculateResults();
-    setResults(taskResults);
-
-    // Process gamification if user is logged in
-    if (user?.id && !assignmentMode) {
-      try {
-        // Initialize gamification service
-        const supabase = createClient(
-          process.env.NEXT_PUBLIC_SUPABASE_URL!,
-          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-        );
-        const gamificationSvc = new AssessmentGamificationService(supabase);
-
-        // Get user's previous best score for improvement tracking
-        const { data: previousResults } = await supabase
-          .from('assessment_progress')
-          .select('percentage')
-          .eq('user_id', user.id)
-          .eq('assessment_type', 'reading-comprehension')
-          .order('completed_at', { ascending: false })
-          .limit(1);
-
-        const previousBestScore = previousResults?.[0]?.percentage || 0;
-
-        // Get current streak
-        const { data: currentStreak } = await supabase.rpc('update_assessment_streak', {
-          p_user_id: user.id,
-          p_passed: taskResults.passed,
-          p_perfect: taskResults.score === 100
-        });
-
-        // Process gamification
-        const gamificationData = {
-          userId: user.id,
-          assessmentType: 'reading-comprehension' as const,
-          overallScore: taskResults.correctAnswers,
-          maxScore: taskResults.totalQuestions,
-          percentage: taskResults.score,
-          timeSpent,
-          passed: taskResults.passed,
-          streak: currentStreak || 0,
-          previousBestScore
-        };
-
-        const gamificationResult = await gamificationSvc.processAssessmentCompletion(gamificationData);
-        setGamificationResults(gamificationResult);
-
-        // Show gamification results after a brief delay
-        setTimeout(() => {
-          setShowGamificationResults(true);
-        }, 1000);
-
-      } catch (error) {
-        console.error('Error processing gamification:', error);
-      }
-    }
-
-    setShowResults(true);
-
-    // Save results to database
-    try {
-      await fetch('/api/reading-comprehension/results', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: user?.id,
-          textId: selectedText?.id,
-          results: taskResults,
-          assignmentMode
-        })
-      });
-    } catch (error) {
-      console.error('Error saving results:', error);
-    }
-
-    if (onComplete) {
-      onComplete(taskResults);
-    }
-  };
-
-  const handleRestart = () => {
-    setUserAnswers({});
-    setCurrentQuestionIndex(0);
-    setShowResults(false);
-    setResults(null);
-    setTimeSpent(0);
-    loadContent();
-  };
-
-  const formatTime = (seconds: number): string => {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-  };
-
-  if (!selectedText || questions.length === 0) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <BookOpen className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-600 mb-2">No Content Available</h2>
-          <p className="text-gray-500">No reading comprehension content found for the selected criteria.</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (showResults && results) {
-    return (
-      <div className="max-w-4xl mx-auto p-6">
-        <div className="bg-white rounded-lg shadow-lg p-8">
-          <div className="text-center mb-8">
-            <div className={`inline-flex items-center justify-center w-20 h-20 rounded-full mb-4 ${
-              results.passed ? 'bg-green-100' : 'bg-red-100'
-            }`}>
-              {results.passed ? (
-                <CheckCircle className="h-10 w-10 text-green-600" />
-              ) : (
-                <XCircle className="h-10 w-10 text-red-600" />
-              )}
-            </div>
-            <h2 className="text-3xl font-bold mb-2">
-              {results.passed ? 'Excellent Work!' : 'Keep Practicing!'}
-            </h2>
-            <p className="text-gray-600">
-              {results.passed ? 'You have successfully completed the task' : 'You can improve with more practice'}
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <div className="text-center p-4 bg-blue-50 rounded-lg">
-              <div className="text-3xl font-bold text-blue-600">{results.score}%</div>
-              <div className="text-gray-600">Score</div>
-            </div>
-            <div className="text-center p-4 bg-green-50 rounded-lg">
-              <div className="text-3xl font-bold text-green-600">
-                {results.correctAnswers}/{results.totalQuestions}
-              </div>
-              <div className="text-gray-600">Correct</div>
-            </div>
-            <div className="text-center p-4 bg-purple-50 rounded-lg">
-              <div className="text-3xl font-bold text-purple-600">
-                {formatTime(results.timeSpent)}
-              </div>
-              <div className="text-gray-600">Time</div>
-            </div>
-            <div className="text-center p-4 bg-yellow-50 rounded-lg">
-              <div className="text-3xl font-bold text-yellow-600">
-                {results.passed ? 'PASSED' : 'FAILED'}
-              </div>
-              <div className="text-gray-600">Status</div>
-            </div>
-          </div>
-
-          {/* Question by question results */}
-          <div className="mb-8">
-            <h3 className="text-xl font-semibold mb-4">Question Results</h3>
-            <div className="space-y-4">
-              {results.questionResults.map((result, index) => {
-                const question = questions.find(q => q.id === result.questionId);
-                return (
-                  <div key={result.questionId} className={`p-4 rounded-lg border ${
-                    result.isCorrect ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
-                  }`}>
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center mb-2">
-                          {result.isCorrect ? (
-                            <CheckCircle className="h-5 w-5 text-green-600 mr-2" />
-                          ) : (
-                            <XCircle className="h-5 w-5 text-red-600 mr-2" />
-                          )}
-                          <span className="font-medium">Question {index + 1}</span>
-                          <span className="ml-2 text-sm text-gray-500">
-                            ({result.points} {result.points === 1 ? 'point' : 'points'})
-                          </span>
-                        </div>
-                        <p className="text-gray-700 mb-2">{question?.question}</p>
-                        <div className="text-sm">
-                          <div className="mb-1">
-                            <span className="font-medium">Your answer: </span>
-                            <span className={result.isCorrect ? 'text-green-600' : 'text-red-600'}>
-                              {Array.isArray(result.userAnswer)
-                                ? result.userAnswer.join(', ')
-                                : result.userAnswer || 'No answer'}
-                            </span>
-                          </div>
-                          {!result.isCorrect && (
-                            <div>
-                              <span className="font-medium">Correct answer: </span>
-                              <span className="text-green-600">
-                                {Array.isArray(result.correctAnswer)
-                                  ? result.correctAnswer.join(', ')
-                                  : result.correctAnswer}
-                              </span>
-                            </div>
-                          )}
-                          {question?.explanation && !result.isCorrect && (
-                            <div className="mt-2 p-2 bg-blue-50 rounded text-blue-800 text-sm">
-                              <strong>Explanation:</strong> {question.explanation}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Gamification Results */}
-          {showGamificationResults && gamificationResults && !assignmentMode && (
-            <div className="mb-8 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg p-6 border border-purple-200">
-              <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-                <Trophy className="h-6 w-6 text-yellow-500 mr-2" />
-                Rewards Earned!
-              </h3>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                <div className="text-center p-4 bg-white rounded-lg shadow-sm">
-                  <div className="text-2xl font-bold text-blue-600">{gamificationResults.pointsEarned}</div>
-                  <div className="text-sm text-gray-600">Points Earned</div>
-                </div>
-
-                <div className="text-center p-4 bg-white rounded-lg shadow-sm">
-                  <div className="flex items-center justify-center mb-2">
-                    <Gem className={`h-8 w-8 ${
-                      gamificationResults.gemType === 'legendary' ? 'text-yellow-500' :
-                      gamificationResults.gemType === 'epic' ? 'text-purple-500' :
-                      gamificationResults.gemType === 'rare' ? 'text-blue-500' :
-                      gamificationResults.gemType === 'uncommon' ? 'text-green-500' : 'text-gray-500'
-                    }`} />
-                  </div>
-                  <div className="text-sm font-medium capitalize">{gamificationResults.gemType} Gem</div>
-                  <div className="text-xs text-gray-600">Collected</div>
-                </div>
-
-                <div className="text-center p-4 bg-white rounded-lg shadow-sm">
-                  <div className="text-2xl font-bold text-green-600">{gamificationResults.bonusMultiplier.toFixed(1)}x</div>
-                  <div className="text-sm text-gray-600">Bonus Multiplier</div>
-                </div>
-              </div>
-
-              {gamificationResults.achievementsUnlocked.length > 0 && (
-                <div className="bg-white rounded-lg p-4">
-                  <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
-                    <Star className="h-5 w-5 text-yellow-500 mr-2" />
-                    New Achievements Unlocked!
-                  </h4>
-                  <div className="space-y-2">
-                    {gamificationResults.achievementsUnlocked.map((achievement, index) => (
-                      <div key={index} className="flex items-center p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-                        <span className="text-2xl mr-3">{achievement.icon}</span>
-                        <div>
-                          <div className="font-medium text-gray-900">{achievement.name}</div>
-                          <div className="text-sm text-gray-600">{achievement.description}</div>
-                          <div className="text-xs text-yellow-600 font-medium">+{achievement.points} points</div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {!assignmentMode && (
-            <div className="flex justify-center space-x-4">
-              <button
-                onClick={handleRestart}
-                className="flex items-center px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-              >
-                <RotateCcw className="h-5 w-5 mr-2" />
-                Try Again
-              </button>
-              <button
-                onClick={() => window.history.back()}
-                className="px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
-              >
-                Back to Menu
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  const currentQuestion = questions[currentQuestionIndex];
+  const categories = getCategories();
+  // No need to filter categories for display grid anymore, as it's removed.
+  // The filtering for the dropdowns is handled implicitly by `getCategories`.
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
-      {/* Header */}
-      <div className="bg-white rounded-lg shadow-md p-4 mb-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold">{selectedText.title}</h1>
-            <p className="text-gray-600">
-              Question {currentQuestionIndex + 1} of {questions.length}
-            </p>
-            <div className="flex items-center mt-2 text-sm text-gray-500">
-              <BookOpen className="h-4 w-4 mr-1" />
-              <span>{selectedText.wordCount} words</span>
-              <Clock className="h-4 w-4 ml-4 mr-1" />
-              <span>{selectedText.estimatedReadingTime} min read</span>
-            </div>
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div className="flex items-center justify-center mb-4">
+            <BookOpen className="h-12 w-12 text-blue-600 mr-3" />
+            <h1 className="text-4xl font-bold text-gray-900">Reading Comprehension</h1>
           </div>
-          <div className="text-right">
-            <div className="text-lg font-semibold text-gray-700">
-              Time: {formatTime(timeSpent)}
-            </div>
-            <div className="text-sm text-gray-500">
-              {currentQuestion.points} {currentQuestion.points === 1 ? 'point' : 'points'}
-            </div>
-          </div>
-        </div>
-        
-        {/* Progress bar */}
-        <div className="mt-4">
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div 
-              className="bg-blue-500 h-2 rounded-full transition-all duration-300"
-              style={{ width: `${((currentQuestionIndex + 1) / questions.length) * 100}%` }}
-            ></div>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Reading text */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-semibold mb-4">Reading Text</h2>
-          <div className="prose max-w-none">
-            <div className="text-sm text-gray-500 mb-4 flex flex-wrap gap-2">
-              <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">
-                {selectedText.category.replace('_', ' ')}
-              </span>
-              <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">
-                {selectedText.subcategory.replace('_', ' ')}
-              </span>
-              <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs">
-                {selectedText.difficulty}
-              </span>
-            </div>
-            <div className="whitespace-pre-line leading-relaxed text-gray-800">
-              {selectedText.content}
-            </div>
-          </div>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            Improve your reading skills with authentic texts organized by topics and levels
+          </p>
         </div>
 
-        {/* Current question */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-semibold mb-4">Question {currentQuestionIndex + 1}</h2>
-          
-          <div className="mb-6">
-            <p className="text-lg mb-4">{currentQuestion.question}</p>
-            
-            {/* Render question based on type */}
-            {currentQuestion.type === 'multiple-choice' && currentQuestion.options && (
-              <div className="space-y-3">
-                {currentQuestion.options.map((option, index) => (
-                  <label key={index} className="flex items-center space-x-3 cursor-pointer p-3 rounded-lg hover:bg-gray-50 border">
-                    <input
-                      type="radio"
-                      name={`question-${currentQuestion.id}`}
-                      value={option}
-                      checked={userAnswers[currentQuestion.id] === option}
-                      onChange={(e) => handleAnswerChange(currentQuestion.id, e.target.value)}
-                      className="w-4 h-4 text-blue-600"
-                    />
-                    <span>{option}</span>
-                  </label>
-                ))}
+        {/* Language and Filters */}
+        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            {/* Language Selection */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Language
+              </label>
+              <select
+                value={selectedLanguage}
+                onChange={(e) => setSelectedLanguage(e.target.value as 'spanish' | 'french' | 'german')}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="spanish">Spanish</option>
+                <option value="french">French</option>
+                <option value="german">German</option>
+              </select>
+            </div>
+
+            {/* Curriculum Level Filter */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Curriculum Level
+              </label>
+              <select
+                value={selectedCurriculumLevel}
+                onChange={(e) => {
+                  setSelectedCurriculumLevel(e.target.value);
+                  setSelectedExamBoard(''); // Reset exam board when curriculum level changes
+                  setSelectedThemeTopic(''); // Reset theme/topic when curriculum level changes
+                  setSelectedCategory(''); // Reset category when curriculum level changes
+                  setSelectedSubcategory(''); // Reset subcategory when curriculum level changes
+                }}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="">All Levels</option>
+                <option value="ks3">KS3</option>
+                <option value="ks4">KS4</option>
+              </select>
+            </div>
+
+            {/* Exam Board Filter (visible only for KS4) */}
+            {selectedCurriculumLevel === 'ks4' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Exam Board
+                </label>
+                <select
+                  value={selectedExamBoard}
+                  onChange={(e) => {
+                    setSelectedExamBoard(e.target.value);
+                    setSelectedThemeTopic(''); // Reset theme/topic when exam board changes
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">All Boards</option>
+                  <option value="aqa">AQA</option>
+                  <option value="edexcel">Edexcel</option>
+                </select>
               </div>
             )}
 
-            {currentQuestion.type === 'true-false' && (
-              <div className="space-y-3">
-                {['True', 'False'].map((option) => (
-                  <label key={option} className="flex items-center space-x-3 cursor-pointer p-3 rounded-lg hover:bg-gray-50 border">
-                    <input
-                      type="radio"
-                      name={`question-${currentQuestion.id}`}
-                      value={option}
-                      checked={userAnswers[currentQuestion.id] === option}
-                      onChange={(e) => handleAnswerChange(currentQuestion.id, e.target.value)}
-                      className="w-4 h-4 text-blue-600"
-                    />
-                    <span>{option}</span>
-                  </label>
-                ))}
+            {/* AQA Themes and Topics Filter (visible only for AQA) */}
+            {selectedExamBoard === 'aqa' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  AQA Theme/Topic
+                </label>
+                <select
+                  value={selectedThemeTopic}
+                  onChange={(e) => setSelectedThemeTopic(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">All Themes/Topics</option>
+                  {Object.entries(AQA_THEMES_TOPICS).map(([themeId, theme]) => (
+                    <optgroup key={themeId} label={theme.name}>
+                      {theme.topics.map(topic => (
+                        <option key={topic.id} value={`${themeId}_${topic.id}`}>
+                          {topic.name}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
               </div>
             )}
 
-            {currentQuestion.type === 'short-answer' && (
-              <textarea
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                rows={4}
-                placeholder="Write your answer here..."
-                value={userAnswers[currentQuestion.id] as string || ''}
-                onChange={(e) => handleAnswerChange(currentQuestion.id, e.target.value)}
-              />
-            )}
-
-            {currentQuestion.type === 'gap-fill' && (
-              <div className="space-y-3">
-                {Array.isArray(currentQuestion.correctAnswer) ? (
-                  currentQuestion.correctAnswer.map((_, index) => (
-                    <input
-                      key={index}
-                      type="text"
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder={`Answer ${index + 1}...`}
-                      value={(userAnswers[currentQuestion.id] as string[])?.[index] || ''}
-                      onChange={(e) => {
-                        const currentAnswers = (userAnswers[currentQuestion.id] as string[]) || [];
-                        const newAnswers = [...currentAnswers];
-                        newAnswers[index] = e.target.value;
-                        handleAnswerChange(currentQuestion.id, newAnswers);
-                      }}
-                    />
-                  ))
-                ) : (
-                  <input
-                    type="text"
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Fill in the blank..."
-                    value={userAnswers[currentQuestion.id] as string || ''}
-                    onChange={(e) => handleAnswerChange(currentQuestion.id, e.target.value)}
-                  />
-                )}
+            {/* Category Filter (visible only if KS4 is NOT selected) */}
+            {selectedCurriculumLevel !== 'ks4' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Category
+                </label>
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => {
+                    setSelectedCategory(e.target.value);
+                    setSelectedSubcategory(''); // Reset subcategory when category changes
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">All categories</option>
+                  {categories.map(category => (
+                    <option key={category.id} value={category.id}>
+                      {getCategoryIcon(category.id, selectedCurriculumLevel === 'ks3')} {formatCategoryName(category.id, selectedCurriculumLevel === 'ks3')}
+                    </option>
+                  ))}
+                </select>
               </div>
             )}
+
+            {/* Subcategory Filter (visible only if KS4 is NOT selected) */}
+            {selectedCurriculumLevel !== 'ks4' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Subcategory
+                </label>
+                <select
+                  value={selectedSubcategory}
+                  onChange={(e) => setSelectedSubcategory(e.target.value)}
+                  disabled={!selectedCategory}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
+                >
+                  <option value="">All subcategories</option>
+                  {selectedCategory && categories
+                    .find(cat => cat.id === selectedCategory)
+                    ?.subcategories.map(subcategory => (
+                      <option key={subcategory.id} value={subcategory.id}>
+                        {formatSubcategoryName(subcategory.id, selectedCategory, selectedCurriculumLevel === 'ks3')}
+                      </option>
+                    ))}
+                </select>
+              </div>
+            )}
+
+            {/* Difficulty Filter */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Difficulty
+              </label>
+              <select
+                value={selectedDifficulty}
+                onChange={(e) => setSelectedDifficulty(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="">All difficulties</option>
+                <option value="foundation">Foundation</option>
+                <option value="intermediate">Intermediate</option>
+                <option value="higher">Higher</option>
+              </select>
+            </div>
+
+            {/* Search */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Search
+              </label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search topics..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+            </div>
           </div>
 
-          {/* Navigation buttons */}
-          <div className="flex justify-between">
+          {/* Start Button */}
+          <div className="mt-6 text-center">
             <button
-              onClick={handlePreviousQuestion}
-              disabled={currentQuestionIndex === 0}
-              className="flex items-center px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              onClick={handleStartTask}
+              className="inline-flex items-center px-8 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors"
             >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Previous
+              <Target className="h-5 w-5 mr-2" />
+              Start Reading Task
+              <ArrowRight className="h-5 w-5 ml-2" />
             </button>
+          </div>
+        </div>
 
-            {currentQuestionIndex === questions.length - 1 ? (
-              <button
-                onClick={handleSubmit}
-                className="flex items-center px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
-              >
-                <Award className="h-4 w-4 mr-2" />
-                Finish Task
-              </button>
-            ) : (
-              <button
-                onClick={handleNextQuestion}
-                className="flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-              >
-                Next
-                <ArrowRight className="h-4 w-4 ml-2" />
-              </button>
-            )}
+        {/* Quick Stats */}
+        <div className="mt-12 bg-white rounded-lg shadow-md p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Content Statistics</h3>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="text-center p-4 bg-blue-50 rounded-lg">
+              <div className="text-2xl font-bold text-blue-600">
+                {selectedCurriculumLevel === 'ks3' ? KS3_SPANISH_CATEGORIES.reduce((sum, cat) => sum + cat.subcategories.length, 0) : readingComprehensionContent.texts[selectedLanguage]?.length || 0}
+              </div>
+              <div className="text-sm text-gray-600">Available Texts</div>
+            </div>
+            <div className="text-center p-4 bg-green-50 rounded-lg">
+              <div className="text-2xl font-bold text-green-600">
+                {selectedCurriculumLevel === 'ks3' ? KS3_SPANISH_CATEGORIES.length : 0} {/* Updated to 0 for non-KS3 */}
+              </div>
+              <div className="text-sm text-gray-600">Categories</div>
+            </div>
+            <div className="text-center p-4 bg-purple-50 rounded-lg">
+              <div className="text-2xl font-bold text-purple-600">
+                {selectedCurriculumLevel === 'ks3' ? KS3_SPANISH_CATEGORIES.reduce((sum, cat) => sum + cat.subcategories.length, 0) : 0} {/* Updated to 0 for non-KS3 */}
+              </div>
+              <div className="text-sm text-gray-600">Subcategories</div>
+            </div>
+            <div className="text-center p-4 bg-yellow-50 rounded-lg">
+              <div className="text-2xl font-bold text-yellow-600">
+                {readingComprehensionContent.questions[selectedLanguage]?.length || 0}
+              </div>
+              <div className="text-sm text-gray-600">Questions</div>
+            </div>
           </div>
         </div>
       </div>

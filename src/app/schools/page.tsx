@@ -51,6 +51,23 @@ export default function SchoolsPage() {
             </h2>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {/* Exam Style Assessments */}
+              <Link href="/assessments" className="group">
+                <div className="bg-gradient-to-br from-indigo-900/40 to-emerald-900/40 backdrop-blur-sm rounded-2xl p-8 border-2 border-emerald-400/60 hover:border-emerald-400 transition-all duration-300 hover:scale-105 hover:shadow-2xl relative overflow-hidden">
+                  {/* Added a subtle glow effect */}
+                  <div className="absolute -top-4 -left-4 w-24 h-24 bg-emerald-500/30 rounded-full blur-xl animate-pulse opacity-50"></div>
+                  <div className="text-6xl mb-6 group-hover:scale-110 transition-transform duration-300 relative z-10">📊</div>
+                  <h3 className="text-3xl font-bold mb-4 text-emerald-300 relative z-10">Exam Style Assessments</h3>
+                  <p className="text-gray-300 leading-relaxed mb-4 relative z-10">
+                    Empower teachers with deep insights into student and class performance through official AQA-aligned Exam Style Assessments, tracking strengths and weaknesses by **GCSE theme, topic, and question type**, including detailed time analytics.
+                  </p>
+                  <div className="text-amber-400 font-medium group-hover:text-amber-300 relative z-10">
+                    Explore Assessment Insights →
+                  </div>
+                </div>
+              </Link>
+
+              {/* Customizable Vocabulary */}
               <div className="group bg-gradient-to-br from-indigo-900/40 to-purple-900/40 backdrop-blur-sm p-8 rounded-2xl border border-indigo-400/20 hover:border-pink-400/40 transition-all duration-300 hover:scale-105 hover:shadow-2xl">
                 <div className="w-16 h-16 rounded-full bg-gradient-to-r from-pink-500 to-purple-500 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
                   <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -61,6 +78,7 @@ export default function SchoolsPage() {
                 <p className="text-gray-300 leading-relaxed">Create and assign custom vocabulary lists that align with your curriculum and lesson plans. Perfect integration with your teaching style.</p>
               </div>
               
+              {/* Advanced Analytics */}
               <div className="group bg-gradient-to-br from-indigo-900/40 to-blue-900/40 backdrop-blur-sm p-8 rounded-2xl border border-indigo-400/20 hover:border-cyan-400/40 transition-all duration-300 hover:scale-105 hover:shadow-2xl">
                 <div className="w-16 h-16 rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
                   <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -84,64 +102,7 @@ export default function SchoolsPage() {
           </div>
         </section>
         
-        {/* Testimonials */}
-        <section className="py-20 px-4">
-          <div className="container mx-auto">
-            <h2 className="text-4xl font-bold text-white text-center mb-16">
-              <span className="bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">
-                What Educators Say
-              </span>
-            </h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl mx-auto">
-              <div className="group bg-gradient-to-br from-indigo-900/30 to-purple-900/30 backdrop-blur-sm p-8 rounded-2xl border border-indigo-400/20 hover:border-blue-400/40 transition-all duration-300 hover:scale-105">
-                <div className="flex items-center mb-6">
-                  <div className="w-16 h-16 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 flex items-center justify-center mr-4 group-hover:scale-110 transition-transform duration-300">
-                    <span className="text-white font-bold text-lg">JD</span>
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-medium text-white">Jane Doe</h3>
-                    <p className="text-blue-300">Spanish Teacher</p>
-                    <p className="text-gray-400 text-sm">Lincoln High School</p>
-                  </div>
-                </div>
-                <blockquote className="text-gray-300 italic text-lg leading-relaxed">
-                  "LanguageGems has transformed my classroom. The customizable vocab lists allow me to perfectly align with our textbook, and students love the gamified approach to learning."
-                </blockquote>
-                <div className="flex mt-4">
-                  {[...Array(5)].map((_, i) => (
-                    <svg key={i} className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                    </svg>
-                  ))}
-                </div>
-              </div>
-              
-              <div className="group bg-gradient-to-br from-indigo-900/30 to-pink-900/30 backdrop-blur-sm p-8 rounded-2xl border border-indigo-400/20 hover:border-pink-400/40 transition-all duration-300 hover:scale-105">
-                <div className="flex items-center mb-6">
-                  <div className="w-16 h-16 rounded-full bg-gradient-to-r from-pink-500 to-purple-500 flex items-center justify-center mr-4 group-hover:scale-110 transition-transform duration-300">
-                    <span className="text-white font-bold text-lg">JS</span>
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-medium text-white">John Smith</h3>
-                    <p className="text-pink-300">French Department Head</p>
-                    <p className="text-gray-400 text-sm">Westview College</p>
-                  </div>
-                </div>
-                <blockquote className="text-gray-300 italic text-lg leading-relaxed">
-                  "The analytics have given our department incredible insights into student struggles and strengths. We've been able to adjust our curriculum based on real data, improving outcomes dramatically."
-                </blockquote>
-                <div className="flex mt-4">
-                  {[...Array(5)].map((_, i) => (
-                    <svg key={i} className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                    </svg>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
+        {/* Removed: Testimonials Section */}
         
         {/* Pricing CTA */}
         <section className="py-20 px-4 bg-gradient-to-r from-indigo-900/50 to-purple-900/50 backdrop-blur-sm">
@@ -190,4 +151,4 @@ export default function SchoolsPage() {
       <Footer />
     </div>
   );
-} 
+}

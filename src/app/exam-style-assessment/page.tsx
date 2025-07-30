@@ -1,13 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { 
-  GraduationCap, 
-  FileText, 
-  Clock, 
+import {
+  GraduationCap,
   Target,
   ArrowLeft,
+  ArrowRight,
   Play,
   Settings,
   Award,
@@ -15,22 +14,70 @@ import {
   BookOpen,
   PenTool,
   Headphones,
-  MessageSquare
+  MessageSquare,
+  Clock,
+  TrendingUp,
+  Lightbulb,
+  FileText
 } from 'lucide-react';
+import ReactCountryFlag from 'react-country-flag';
+import { AQAReadingAssessmentService, type AQAAssessmentDefinition } from '../../services/aqaReadingAssessmentService';
+import { AQAListeningAssessmentService, type AQAListeningAssessmentDefinition } from '../../services/aqaListeningAssessmentService';
+
+// Language options with country flags
+const AVAILABLE_LANGUAGES = [
+  {
+    code: 'spanish',
+    countryCode: 'ES',
+    name: 'Spanish',
+    icon: <ReactCountryFlag countryCode="ES" svg style={{ width: '2rem', height: '2rem' }} className="rounded-full shadow-lg" />,
+    description: 'Learn Spanish vocabulary',
+    color: 'from-red-500 to-yellow-500'
+  },
+  {
+    code: 'french',
+    countryCode: 'FR',
+    name: 'French',
+    icon: <ReactCountryFlag countryCode="FR" svg style={{ width: '2rem', height: '2rem' }} className="rounded-full shadow-lg" />,
+    description: 'Master French language skills',
+    color: 'from-blue-500 to-red-500'
+  },
+  {
+    code: 'german',
+    countryCode: 'DE',
+    name: 'German',
+    icon: <ReactCountryFlag countryCode="DE" svg style={{ width: '2rem', height: '2rem' }} className="rounded-full shadow-lg" />,
+    description: 'Build German language proficiency',
+    color: 'from-gray-800 to-red-600'
+  },
+];
 
 export default function ExamStyleAssessmentPage() {
-  const [language, setLanguage] = useState('spanish');
-  const [level, setLevel] = useState('KS4');
-  const [difficulty, setDifficulty] = useState('foundation');
-  const [examBoard, setExamBoard] = useState('General');
-  const [category, setCategory] = useState('');
-  const [subcategory, setSubcategory] = useState('');
+  // Initialize states to empty strings, allowing users to make their first selection
+  const [language, setLanguage] = useState('');
+  const [level, setLevel] = useState('');
+  const [difficulty, setDifficulty] = useState('');
+  const [examBoard, setExamBoard] = useState('');
+  const [skill, setSkill] = useState('');
+
+  const [availableAssessments, setAvailableAssessments] = useState<AQAAssessmentDefinition[]>([]);
+  const [availableListeningAssessments, setAvailableListeningAssessments] = useState<AQAListeningAssessmentDefinition[]>([]);
+  const [isLoadingAssessments, setIsLoadingAssessments] = useState(false);
+  const [assessmentService] = useState(() => new AQAReadingAssessmentService());
+  const [listeningAssessmentService] = useState(() => new AQAListeningAssessmentService());
+
+  const [showAQAAssessments, setShowAQAAssessments] = useState(false);
+
+  useEffect(() => {
+    // Only show the specific AQA assessments section if AQA is selected
+    // and the skill is either reading or listening.
+    setShowAQAAssessments(examBoard === 'AQA' && (skill === 'reading' || skill === 'listening'));
+  }, [examBoard, skill]);
 
   const examBoards = [
     { id: 'General', name: 'General', description: 'Standard exam-style questions suitable for all boards' },
-    { id: 'AQA', name: 'AQA', description: 'AQA style format' },
-    { id: 'Edexcel', name: 'Edexcel', description: 'Pearson Edexcel exam format' },
-    { id: 'Eduqas', name: 'Eduqas', description: 'Eduqas (WJEC) exam format' }
+    { id: 'AQA', name: 'AQA', description: 'AQA style format with Foundation (45 min) and Higher (60 min) reading papers' },
+    { id: 'Edexcel', name: 'Edexcel', description: 'Pearson Edexcel exam format with Foundation (45 min) and Higher (60 min) reading papers' }
   ];
 
   const skillsAssessed = [
@@ -40,18 +87,97 @@ export default function ExamStyleAssessmentPage() {
     { name: 'Speaking', icon: MessageSquare, description: 'Oral communication assessment' }
   ];
 
+  // The form is always considered valid to allow dynamic filtering.
+  // The 'Start Assessment' button will navigate to a generic page,
+  // while specific AQA papers are linked directly within their section.
+  const isFormValid = true; 
+
+  const getEstimatedTime = () => {
+    if (skill === 'reading') {
+      return difficulty === 'foundation' ? '45 minutes' : '60 minutes';
+    } else if (skill === 'listening') {
+      return '35-45 minutes';
+    } else if (skill === 'writing') {
+      return '60-75 minutes';
+    } else if (skill === 'speaking') {
+      return '10-12 minutes';
+    }
+    return 'N/A';
+  };
+
   const handleStartAssessment = () => {
+    // This button is for starting a generic assessment based on current filters,
+    // primarily for 'General', 'Edexcel', and 'AQA speaking/writing' cases.
+    // Specific AQA Reading/Listening papers have direct links.
     const params = new URLSearchParams({
       language,
       level,
       difficulty,
       examBoard,
-      ...(category && { category }),
-      ...(subcategory && { subcategory })
+      skill
     });
-    
     window.location.href = `/exam-style-assessment/task?${params.toString()}`;
   };
+
+  // Helper to find the language details
+  const getCurrentLanguageDetails = (langCode: string) => {
+    return AVAILABLE_LANGUAGES.find(lang => lang.code === langCode);
+  };
+
+  // Load available assessments based on current filters (for AQA reading and listening)
+  const loadAvailableAssessments = async () => {
+    // Only attempt to load specific assessments if AQA is selected AND it's reading or listening
+    if (examBoard === 'AQA' && (skill === 'reading' || skill === 'listening')) {
+      setIsLoadingAssessments(true);
+      try {
+        const languageMap: Record<string, string> = {
+          'spanish': 'es',
+          'french': 'fr',
+          'german': 'de'
+        };
+
+        const languageCode = languageMap[language];
+
+        // Only fetch if language and difficulty are selected
+        if (languageCode && difficulty) {
+          if (skill === 'reading') {
+            const assessments = await assessmentService.getAssessmentsByLevel(
+              difficulty as 'foundation' | 'higher',
+              languageCode
+            );
+            setAvailableAssessments(assessments || []);
+            setAvailableListeningAssessments([]); // Clear listening assessments
+          } else if (skill === 'listening') {
+            console.log('Loading listening assessments for:', { difficulty, languageCode });
+            const listeningAssessments = await listeningAssessmentService.getAssessmentsByLevel(
+              difficulty as 'foundation' | 'higher',
+              languageCode
+            );
+            console.log('Listening assessments loaded:', listeningAssessments);
+            setAvailableListeningAssessments(listeningAssessments || []);
+            setAvailableAssessments([]); // Clear reading assessments
+          }
+        } else {
+          setAvailableAssessments([]); // Clear assessments if filters are incomplete
+          setAvailableListeningAssessments([]);
+        }
+      } catch (error) {
+        console.error('Error loading assessments:', error);
+        setAvailableAssessments([]);
+        setAvailableListeningAssessments([]);
+      } finally {
+        setIsLoadingAssessments(false);
+      }
+    } else {
+      setAvailableAssessments([]); // Clear assessments if not AQA reading/listening
+      setAvailableListeningAssessments([]);
+    }
+  };
+
+  // Load assessments when filters change
+  useEffect(() => {
+    loadAvailableAssessments();
+  }, [examBoard, skill, language, difficulty]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-purple-50">
@@ -59,7 +185,7 @@ export default function ExamStyleAssessmentPage() {
       <div className="bg-white shadow-sm">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center mb-4">
-            <Link 
+            <Link
               href="/assessments"
               className="flex items-center text-gray-600 hover:text-gray-900 transition-colors mr-4"
             >
@@ -67,7 +193,7 @@ export default function ExamStyleAssessmentPage() {
               Back to Assessments
             </Link>
           </div>
-          
+
           <div className="text-center">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
               Exam-Style Assessment
@@ -80,39 +206,42 @@ export default function ExamStyleAssessmentPage() {
       </div>
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Exam Board Selection */}
+        {/* Main Configuration Section */}
         <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
-            <GraduationCap className="h-6 w-6 mr-2 text-purple-600" />
-            Select Exam Board
-          </h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {examBoards.map(board => (
-              <div
-                key={board.id}
-                onClick={() => setExamBoard(board.id)}
-                className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                  examBoard === board.id
-                    ? 'border-purple-500 bg-purple-50'
-                    : 'border-gray-200 bg-white hover:border-gray-300'
-                }`}
-              >
-                <h3 className="font-semibold text-gray-900 mb-1">{board.name}</h3>
-                <p className="text-sm text-gray-600">{board.description}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Configuration */}
-        <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+          <h2 className="text-xl font-semibold text-gray-900 mb-2 flex items-center">
             <Settings className="h-6 w-6 mr-2 text-blue-600" />
-            Assessment Configuration
+            Configure Your Assessment
           </h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <p className="text-gray-600 text-sm mb-6">
+            Click to select your desired options below to see available assessments.
+          </p>
+
+          {/* Exam Board Selection */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Select Exam Board
+            </label>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {examBoards.map(board => (
+                <div
+                  key={board.id}
+                  onClick={() => setExamBoard(board.id)}
+                  className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                    examBoard === board.id
+                      ? 'border-purple-500 bg-purple-50'
+                      : 'border-gray-200 bg-white hover:border-gray-300'
+                  }`}
+                >
+                  <h3 className="font-semibold text-gray-900 mb-1">{board.name}</h3>
+                  <p className="text-sm text-gray-600">{board.description}</p>
+                </div>
+              ))}
+            </div>
+            {!examBoard && <p className="text-blue-600 text-xs mt-1">Click to select an exam board.</p>}
+          </div>
+
+          {/* Language, Level, Difficulty, Skill */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Language
@@ -122,10 +251,14 @@ export default function ExamStyleAssessmentPage() {
                 onChange={(e) => setLanguage(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               >
-                <option value="spanish">Spanish</option>
-                <option value="french">French</option>
-                <option value="german">German</option>
+                <option value="">Click to select language</option>
+                {AVAILABLE_LANGUAGES.map((lang) => (
+                  <option key={lang.code} value={lang.code}>
+                    {lang.name}
+                  </option>
+                ))}
               </select>
+              {!language && <p className="text-blue-600 text-xs mt-1">Click to select language.</p>}
             </div>
 
             <div>
@@ -137,9 +270,11 @@ export default function ExamStyleAssessmentPage() {
                 onChange={(e) => setLevel(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               >
+                <option value="">Click to select level</option>
                 <option value="KS3">KS3 (Years 7-9)</option>
                 <option value="KS4">KS4 (Years 10-11)</option>
               </select>
+              {!level && <p className="text-blue-600 text-xs mt-1">Click to select level.</p>}
             </div>
 
             <div>
@@ -151,136 +286,407 @@ export default function ExamStyleAssessmentPage() {
                 onChange={(e) => setDifficulty(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               >
+                <option value="">Click to select difficulty</option>
                 <option value="foundation">Foundation</option>
                 <option value="higher">Higher</option>
               </select>
+              {!difficulty && <p className="text-blue-600 text-xs mt-1">Click to select difficulty.</p>}
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Estimated Time
+                Skill
               </label>
-              <div className="px-3 py-2 bg-gray-50 border border-gray-300 rounded-md text-gray-700">
-                30-45 minutes
-              </div>
+              <select
+                value={skill}
+                onChange={(e) => setSkill(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-border-transparent"
+              >
+                <option value="">Click to select skill</option>
+                <option value="reading">Reading</option>
+                <option value="listening">Listening</option>
+                <option value="speaking">Speaking</option>
+                <option value="writing">Writing</option>
+              </select>
+              {!skill && <p className="text-blue-600 text-xs mt-1">Click to select skill.</p>}
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Category (Optional)
-              </label>
-              <input
-                type="text"
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                placeholder="e.g., food_drink, school_life..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Subcategory (Optional)
-              </label>
-              <input
-                type="text"
-                value={subcategory}
-                onChange={(e) => setSubcategory(e.target.value)}
-                placeholder="e.g., ordering_cafes_restaurants..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              />
+          {/* Estimated Time - moved here to be part of the configuration */}
+          <div className="mt-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Estimated Time
+            </label>
+            <div className="flex items-center px-3 py-2 bg-gray-50 border border-gray-300 rounded-md text-gray-700">
+              <Clock className="h-5 w-5 mr-2 text-gray-500" />
+              <span>{getEstimatedTime()}</span>
             </div>
           </div>
         </div>
 
-        {/* Skills Assessed */}
+        {/* Dynamic AQA Assessments Section */}
+        {showAQAAssessments && (
+          <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
+            <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+              {skill === 'reading' && <BookOpen className="h-6 w-6 mr-2 text-blue-600" />}
+              {skill === 'listening' && <Headphones className="h-6 w-6 mr-2 text-green-600" />}
+              AQA {skill.charAt(0).toUpperCase() + skill.slice(1)} Assessments
+            </h2>
+
+            {skill === 'reading' && (
+              <>
+                {/* Current Filter Summary */}
+                <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <div className="flex items-center">
+                        {/* Only show flag if language is selected */}
+                        {language && getCurrentLanguageDetails(language) && (
+                          <ReactCountryFlag
+                            countryCode={getCurrentLanguageDetails(language)?.countryCode || 'ES'}
+                            svg
+                            style={{ width: '24px', height: '18px' }}
+                            className="mr-3"
+                          />
+                        )}
+                        <span className="font-medium text-gray-900 capitalize">{language || 'Not Selected'}</span>
+                      </div>
+                      <div className="text-gray-600">•</div>
+                      <div className="font-medium text-gray-900">{level || 'Not Selected'}</div>
+                      <div className="text-gray-600">•</div>
+                      <div className="font-medium text-gray-900 capitalize">{difficulty || 'Not Selected'}</div>
+                      <div className="text-gray-600">•</div>
+                      <div className="font-medium text-gray-900 capitalize">{skill || 'Not Selected'}</div>
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      {isLoadingAssessments ? 'Loading...' :
+                        skill === 'reading'
+                          ? `${availableAssessments.length} paper${availableAssessments.length !== 1 ? 's' : ''} found`
+                          : `${availableListeningAssessments.length} paper${availableListeningAssessments.length !== 1 ? 's' : ''} found`
+                      }
+                    </div>
+                  </div>
+                </div>
+
+                {isLoadingAssessments ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                    <p className="text-gray-600">Loading assessments...</p>
+                  </div>
+                ) : (!language || !difficulty) ? ( // Check if language or difficulty are missing for AQA Reading
+                  <div className="text-center py-8">
+                    <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">Select Your Criteria</h3>
+                    <p className="text-gray-600">
+                      Please select a **Language** and **Difficulty** above to see available AQA Reading papers.
+                    </p>
+                  </div>
+                ) : availableAssessments.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                    {availableAssessments.map((assessment, index) => {
+                      const paperNumber = assessment.identifier.split('-')[1] || (index + 1);
+                      const isFoundation = assessment.level === 'foundation';
+
+                      return (
+                        <Link
+                          key={assessment.id}
+                          href={`/aqa-reading-test/${assessment.language}/${assessment.level}/${assessment.identifier}`}
+                          className={`block p-4 bg-gradient-to-br ${
+                            isFoundation
+                              ? 'from-blue-50 to-blue-100 border-blue-200 hover:border-blue-300'
+                              : 'from-purple-50 to-purple-100 border-purple-200 hover:border-purple-300'
+                          } rounded-lg border transition-all group`}
+                        >
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center">
+                              <FileText className={`h-5 w-5 ${isFoundation ? 'text-blue-600' : 'text-purple-600'} mr-2`} />
+                              <h4 className="font-semibold text-gray-900">Paper {paperNumber}</h4>
+                            </div>
+                            <div className={`px-2 py-1 rounded text-xs font-medium ${
+                              isFoundation ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'
+                            }`}>
+                              {assessment.level.charAt(0).toUpperCase() + assessment.level.slice(1)}
+                            </div>
+                          </div>
+
+                          <p className="text-sm text-gray-700 mb-3">
+                            {assessment.description || `Complete AQA-style ${assessment.level} reading assessment with 40 questions.`}
+                          </p>
+
+                          <div className="flex items-center justify-between">
+                            <div className="text-sm text-gray-600">
+                              <div className="flex items-center mb-1">
+                                <Clock className="h-3 w-3 mr-1" />
+                                {assessment.time_limit_minutes} minutes
+                              </div>
+                              <div>40 marks total</div>
+                            </div>
+                            <ArrowRight className={`h-4 w-4 ${
+                              isFoundation ? 'text-blue-600 group-hover:text-blue-700' : 'text-purple-600 group-hover:text-purple-700'
+                            } group-hover:translate-x-1 transition-transform`} />
+                          </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  // This is for when language and difficulty are selected, but no papers are found.
+                  <div className="text-center py-8">
+                    <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No Assessments Found</h3>
+                    <p className="text-gray-600">
+                      No AQA Reading assessments found for {language} ({difficulty} tier). Try different filter combinations.
+                    </p>
+                  </div>
+                )}
+
+                {/* Information Box - always present within AQA Reading section */}
+                <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                  <h4 className="font-semibold text-amber-900 mb-2">Assessment Information</h4>
+                  <p className="text-sm text-amber-800">
+                    Results are filtered by your selections: {examBoard || 'N/A'} • {language || 'N/A'} • {level || 'N/A'} • {difficulty || 'N/A'} • {skill || 'N/A'}.
+                    Change the filters above to see different assessments.
+                  </p>
+                </div>
+              </>
+            )}
+
+            {skill === 'listening' && (
+              <>
+                {/* Current Filter Summary */}
+                <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <div className="flex items-center">
+                        {/* Only show flag if language is selected */}
+                        {language && getCurrentLanguageDetails(language) && (
+                          <ReactCountryFlag
+                            countryCode={getCurrentLanguageDetails(language)?.countryCode || 'ES'}
+                            svg
+                            style={{ width: '24px', height: '18px' }}
+                            className="mr-3"
+                          />
+                        )}
+                        <span className="font-medium text-gray-900 capitalize">{language || 'Not Selected'}</span>
+                      </div>
+                      <div className="text-gray-600">•</div>
+                      <div className="font-medium text-gray-900">{level || 'Not Selected'}</div>
+                      <div className="text-gray-600">•</div>
+                      <div className="font-medium text-gray-900 capitalize">{difficulty || 'Not Selected'}</div>
+                      <div className="text-gray-600">•</div>
+                      <div className="font-medium text-gray-900 capitalize">{skill || 'Not Selected'}</div>
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      {isLoadingAssessments ? 'Loading...' : `${availableListeningAssessments.length} paper${availableListeningAssessments.length !== 1 ? 's' : ''} found`}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Available Listening Assessments */}
+                {isLoadingAssessments ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto mb-4"></div>
+                    <p className="text-gray-600">Loading listening assessments...</p>
+                  </div>
+                ) : availableListeningAssessments.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                    {availableListeningAssessments.map((assessment) => {
+                      const isFoundation = assessment.level === 'foundation';
+                      const paperNumber = assessment.identifier.split('-')[1];
+
+                      return (
+                        <Link
+                          key={assessment.id}
+                          href={`/aqa-listening-test/${assessment.language}/${assessment.level}/${assessment.identifier}`}
+                          className={`block p-4 bg-gradient-to-br ${
+                            isFoundation
+                              ? 'from-green-50 to-green-100 border-green-200 hover:border-green-300'
+                              : 'from-emerald-50 to-emerald-100 border-emerald-200 hover:border-emerald-300'
+                          } rounded-lg border transition-all group`}
+                        >
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center">
+                              <Headphones className={`h-5 w-5 ${isFoundation ? 'text-green-600' : 'text-emerald-600'} mr-2`} />
+                              <h4 className="font-semibold text-gray-900">Paper {paperNumber}</h4>
+                            </div>
+                            <div className={`px-2 py-1 rounded text-xs font-medium ${
+                              isFoundation
+                                ? 'bg-green-100 text-green-800'
+                                : 'bg-emerald-100 text-emerald-800'
+                            }`}>
+                              {assessment.level === 'foundation' ? 'Foundation' : 'Higher'}
+                            </div>
+                          </div>
+                          <p className="text-sm text-gray-600 mb-3">
+                            {assessment.description || `Complete AQA-style listening assessment with authentic audio and 8 question types.`}
+                          </p>
+                          <div className="flex items-center justify-between text-xs text-gray-500">
+                            <span>{assessment.total_questions} questions</span>
+                            <span>{assessment.time_limit_minutes} minutes</span>
+                          </div>
+                          <div className={`flex items-center text-sm ${isFoundation ? 'text-green-600 group-hover:text-green-700' : 'text-emerald-600 group-hover:text-emerald-700'} mt-2`}>
+                            <span className="font-medium">Audio included • Google Gemini TTS</span>
+                            <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                          </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <Headphones className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No Listening Assessments Found</h3>
+                    <p className="text-gray-600 mb-4">
+                      No listening assessments match your current selection. Try adjusting your filters above.
+                    </p>
+                  </div>
+                )}
+
+                <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                  <h4 className="font-semibold text-amber-900 mb-2">Assessment Information</h4>
+                  <p className="text-sm text-amber-800">
+                    Results are filtered by your selections: {examBoard || 'N/A'} • {language || 'N/A'} • {level || 'N/A'} • {difficulty || 'N/A'} • {skill || 'N/A'}.
+                    Change the filters above to see different assessments.
+                  </p>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* Speaking and Writing Placeholders for AQA */}
+        {examBoard === 'AQA' && (skill === 'speaking' || skill === 'writing') && (
+          <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
+            <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+              {skill === 'speaking' ? (
+                <MessageSquare className="h-6 w-6 mr-2 text-orange-600" />
+              ) : (
+                <PenTool className="h-6 w-6 mr-2 text-red-600" />
+              )}
+              AQA {skill.charAt(0).toUpperCase() + skill.slice(1)} Assessment
+            </h2>
+
+            <div className="p-6 bg-gray-50 rounded-lg border border-gray-200 text-center">
+              <p className="text-gray-700 mb-3 text-lg font-medium">
+                <span className="block text-4xl mb-2">🚀</span>
+                {skill.charAt(0).toUpperCase() + skill.slice(1)} assessments are coming soon!
+              </p>
+              <p className="text-gray-600">
+                We're actively developing comprehensive AQA-style {skill} assessments to provide the best practice experience.
+              </p>
+              <p className="text-sm text-gray-600 mt-2">
+                In the meantime, explore our fully available **Reading** and **Listening** assessments!
+              </p>
+              <div className="flex justify-center gap-4 mt-6">
+                 <button
+                    onClick={() => setSkill('reading')}
+                    className="flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                 >
+                    <BookOpen className="h-4 w-4 mr-2" /> Try Reading
+                 </button>
+                 <button
+                    onClick={() => setSkill('listening')}
+                    className="flex items-center px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                 >
+                    <Headphones className="h-4 w-4 mr-2" /> Try Listening
+                 </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Skills Assessed - Keep this section as it's general information */}
         <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
           <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
             <Target className="h-6 w-6 mr-2 text-green-600" />
             Skills Assessed
           </h2>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {skillsAssessed.map((skill, index) => (
+            {skillsAssessed.map((skillItem, index) => (
               <div key={index} className="flex items-center p-4 bg-gray-50 rounded-lg">
-                <skill.icon className="h-6 w-6 text-gray-600 mr-3" />
+                <skillItem.icon className="h-6 w-6 text-gray-600 mr-3" />
                 <div>
-                  <h3 className="font-medium text-gray-900">{skill.name}</h3>
-                  <p className="text-sm text-gray-600">{skill.description}</p>
+                  <h3 className="font-medium text-gray-900">{skillItem.name}</h3>
+                  <p className="text-sm text-gray-600">{skillItem.description}</p>
                 </div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Assessment Features */}
+        {/* Assessment Features - Keep this section as it's general information */}
         <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
           <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
             <Award className="h-6 w-6 mr-2 text-yellow-600" />
-            Assessment Features
+            Why Choose LanguageGems Assessments?
           </h2>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <h3 className="font-semibold text-gray-900 mb-3">Exam Preparation</h3>
+              <h3 className="font-semibold text-gray-900 mb-3 flex items-center">
+                <Lightbulb className="h-5 w-5 mr-2 text-orange-500" />
+                Boost Your Exam Readiness
+              </h3>
               <ul className="space-y-2">
-                <li className="flex items-center text-gray-700">
-                  <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                  Authentic exam question formats
+                <li className="flex items-start text-gray-700">
+                  <CheckCircle className="h-4 w-4 text-green-500 mr-2 mt-1 flex-shrink-0" />
+                  <span>Authentic exam question formats mirroring official papers</span>
                 </li>
-                <li className="flex items-center text-gray-700">
-                  <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                  Grade boundary predictions
+                <li className="flex items-start text-gray-700">
+                  <CheckCircle className="h-4 w-4 text-green-500 mr-2 mt-1 flex-shrink-0" />
+                  <span>Receive estimated grade boundary predictions for your score</span>
                 </li>
-                <li className="flex items-center text-gray-700">
-                  <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                  Exam technique tips
+                <li className="flex items-start text-gray-700">
+                  <CheckCircle className="h-4 w-4 text-green-500 mr-2 mt-1 flex-shrink-0" />
+                  <span>Get valuable exam technique tips to maximize your performance</span>
                 </li>
-                <li className="flex items-center text-gray-700">
-                  <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                  Mock exam simulation
+                <li className="flex items-start text-gray-700">
+                  <CheckCircle className="h-4 w-4 text-green-500 mr-2 mt-1 flex-shrink-0" />
+                  <span>Simulate real mock exams under timed conditions</span>
                 </li>
               </ul>
             </div>
-            
+
             <div>
-              <h3 className="font-semibold text-gray-900 mb-3">Performance Tracking</h3>
+              <h3 className="font-semibold text-gray-900 mb-3 flex items-center">
+                <TrendingUp className="h-5 w-5 mr-2 text-blue-500" />
+                Track Your Progress
+              </h3>
               <ul className="space-y-2">
-                <li className="flex items-center text-gray-700">
-                  <CheckCircle className="h-4 w-4 text-blue-500 mr-2" />
-                  Detailed performance analytics
+                <li className="flex items-start text-gray-700">
+                  <CheckCircle className="h-4 w-4 text-blue-500 mr-2 mt-1 flex-shrink-0" />
+                  <span>Detailed performance analytics to pinpoint strengths and weaknesses</span>
                 </li>
-                <li className="flex items-center text-gray-700">
-                  <CheckCircle className="h-4 w-4 text-blue-500 mr-2" />
-                  Skill-specific feedback
+                <li className="flex items-start text-gray-700">
+                  <CheckCircle className="h-4 w-4 text-blue-500 mr-2 mt-1 flex-shrink-0" />
+                  <span>Skill-specific feedback to guide your improvement</span>
                 </li>
-                <li className="flex items-center text-gray-700">
-                  <CheckCircle className="h-4 w-4 text-blue-500 mr-2" />
-                  Progress tracking over time
+                <li className="flex items-start text-gray-700">
+                  <CheckCircle className="h-4 w-4 text-blue-500 mr-2 mt-1 flex-shrink-0" />
+                  <span>Visual progress tracking over time to see your growth</span>
                 </li>
-                <li className="flex items-center text-gray-700">
-                  <CheckCircle className="h-4 w-4 text-blue-500 mr-2" />
-                  Achievement badges and rewards
+                <li className="flex items-start text-gray-700">
+                  <CheckCircle className="h-4 w-4 text-blue-500 mr-2 mt-1 flex-shrink-0" />
+                  <span>Earn achievement badges and rewards for your hard work</span>
                 </li>
               </ul>
             </div>
           </div>
         </div>
 
-        {/* Start Button */}
-        <div className="text-center">
+        {/* Start Assessment Button - always visible, but dynamic text */}
+        <div className="text-center mt-10">
           <button
             onClick={handleStartAssessment}
-            className="px-8 py-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl font-semibold text-lg transition-all flex items-center mx-auto"
+            className="px-8 py-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl font-semibold text-lg transition-all flex items-center mx-auto shadow-lg"
           >
             <Play className="h-5 w-5 mr-2" />
-            Start {examBoard} Exam Assessment
+            Start Assessment
           </button>
-          
+
           <p className="text-gray-600 text-sm mt-4">
-            This assessment will simulate the {examBoard} exam format with authentic question types and timing
+            Select your options above to find specific papers or click "Start Assessment" for a general practice session.
           </p>
         </div>
       </div>

@@ -1,21 +1,25 @@
 import Link from 'next/link';
 import { Metadata } from 'next';
-import { GraduationCap, Award, Users, BookOpen, MessageCircle, Star, Shield, Target, Heart, Lightbulb, Globe, CheckCircle } from 'lucide-react';
+import { GraduationCap, Award, Users, BookOpen, MessageCircle, Star, Shield, Target, Heart, Lightbulb, Globe, CheckCircle, Music, Brain, TrendingUp, BarChart2, Gamepad, Edit } from 'lucide-react'; // Added new icons
 import SEOWrapper from '../../components/seo/SEOWrapper';
 import { generateMetadata } from '../../components/seo/SEOWrapper';
 
 export const metadata: Metadata = generateMetadata({
-  title: 'About Daniel Etienne - MFL Teacher & Language Gems Founder',
-  description: 'Meet Daniel Etienne, experienced MFL teacher with 7+ years in education and founder of Language Gems. Discover his passion for innovative language learning and student success.',
+  title: 'About Daniel Etienne - MFL Teacher, Language Gems Founder, EdTech Innovator',
+  description: 'Meet Daniel Etienne, experienced MFL teacher, GCSE examiner, and founder of Language Gems, LingoSongs, and TeachWhizz. Discover his passion for innovative language learning and student success.',
   keywords: [
     'Daniel Etienne',
     'MFL teacher',
     'Language Gems founder',
+    'LingoSongs',
+    'TeachWhizz',
+    'GCSE examiner',
     'language learning expert',
     'GCSE language teacher',
     'educational technology',
     'modern foreign languages',
-    'language education specialist'
+    'language education specialist',
+    'AI in education'
   ],
   canonical: '/about',
 });
@@ -29,8 +33,8 @@ export default function AboutPage() {
     },
     {
       icon: Award,
-      title: "Speaking Exam Assessor",
-      description: "Direct experience in national assessment"
+      title: "GCSE Examiner Experience",
+      description: "Direct experience in national assessment processes"
     },
     {
       icon: Users,
@@ -41,6 +45,40 @@ export default function AboutPage() {
       icon: Target,
       title: "Assessment Specialist",
       description: "Contributing to standardisation processes"
+    },
+    {
+      icon: Music,
+      title: "Founder of LingoSongs",
+      description: "Creating engaging language learning songs and resources via LingoSongs.com"
+    },
+    {
+      icon: Brain,
+      title: "Creator of TeachWhizz",
+      description: "Developing AI-powered tools for educators at TeachWhizz.com"
+    }
+  ];
+
+  // New array for market gaps
+  const marketGaps = [
+    {
+      icon: BarChart2,
+      title: "Granular Vocabulary Tracking",
+      description: "Tools to precisely see what vocabulary students know and don't know, identifying strengths and weaknesses across topics, units, and themes, both individually and at a class level for effective planning."
+    },
+    {
+      icon: TrendingUp,
+      title: "Exam & Assessment Insights",
+      description: "Understanding student strengths and weaknesses in specific exam question types, themes, and units, and providing this crucial feedback to students so they can take ownership of their learning."
+    },
+    {
+      icon: Gamepad,
+      title: "Engaging & Thematic Games",
+      description: "A need for creative, immersive, and thematic language learning games that go beyond repetitive, boring matchups, making learning genuinely enjoyable."
+    },
+    {
+      icon: Edit,
+      title: "Customizable Content & Assignment Tools",
+      description: "The ability for teachers to assign their own custom vocabulary to interactive games, enabling direct classroom play, homework assignments with progress tracking, and fostering student ownership of their learning journey."
     }
   ];
 
@@ -94,7 +132,7 @@ export default function AboutPage() {
               Meet Daniel Etienne
             </h1>
             <p className="text-xl md:text-2xl text-gray-300 mb-8 max-w-3xl mx-auto">
-              Passionate Modern Foreign Languages teacher, educational innovator, and creator of LanguageGems
+              Passionate Modern Foreign Languages teacher, educational innovator, and creator of LanguageGems, LingoSongs, and TeachWhizz
             </p>
             
             {/* Quick Stats */}
@@ -147,18 +185,22 @@ export default function AboutPage() {
                   </p>
                   
                   <p className="text-lg text-slate-600 leading-relaxed mb-6">
-                    In addition to teaching, I bring direct experience in assessing speaking exams and contributing to national standardisation processes, ensuring fair and consistent student evaluation. This background has provided me with invaluable insights into exam preparation and the critical importance of targeted, constructive feedback in student development.
+                    In addition to teaching, I also serve as a <strong>GCSE examiner</strong>, bringing direct experience to the national assessment process. This background has provided me with invaluable insights into exam preparation and the critical importance of targeted, constructive feedback in student development.
+                  </p>
+
+                  <p className="text-lg text-slate-600 leading-relaxed mb-6">
+                    Beyond the classroom and LanguageGems, I am the founder of <strong>LingoSongs.com</strong> and run the associated TikTok channel, where I create engaging songs to help students learn languages in a fun and memorable way. I also developed <strong>TeachWhizz.com</strong>, a platform dedicated to providing AI-powered tools designed to support and empower fellow educators.
                   </p>
                   
                   <p className="text-lg text-slate-600 leading-relaxed">
-                    I am dedicated to supporting both learners and educators by providing high-quality resources and innovative teaching strategies tailored to the needs of today's digital-native classrooms. Through LanguageGems, I aim to make language learning more accessible, engaging, and effective for students worldwide.
+                    I am dedicated to supporting both learners and educators by providing high-quality resources and innovative teaching strategies tailored to the needs of today's digital-native classrooms. Through LanguageGems, LingoSongs, and TeachWhizz, I aim to make language learning more accessible, engaging, and effective for students worldwide.
                   </p>
                 </div>
               </div>
             </div>
 
             {/* Achievements Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
               {achievements.map((achievement, index) => {
                 const IconComponent = achievement.icon;
                 return (
@@ -168,6 +210,41 @@ export default function AboutPage() {
                     </div>
                     <h3 className="text-xl font-bold text-slate-900 mb-3">{achievement.title}</h3>
                     <p className="text-slate-600">{achievement.description}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* New Section: Identifying and Addressing Gaps in Language Education */}
+      <section className="py-20 bg-gradient-to-b from-blue-50 to-white">
+        <div className="container mx-auto px-6">
+          <div className="max-w-4xl mx-auto">
+            <div className="text-center mb-16">
+              <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-6">
+                Identifying and Addressing Gaps in Language Education
+              </h2>
+              <p className="text-xl text-slate-600 max-w-3xl mx-auto">
+                Throughout my teaching career, I've observed specific challenges in language learning. These insights inspired the development of platforms designed to bridge these gaps.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {marketGaps.map((gap, index) => {
+                const IconComponent = gap.icon;
+                return (
+                  <div key={index} className="bg-white rounded-2xl p-8 shadow-lg border border-slate-200 hover:shadow-xl transition-all duration-300">
+                    <div className="flex items-start gap-4">
+                      <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-teal-600 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
+                        <IconComponent className="h-6 w-6 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-bold text-slate-900 mb-3">{gap.title}</h3>
+                        <p className="text-slate-600 leading-relaxed">{gap.description}</p>
+                      </div>
+                    </div>
                   </div>
                 );
               })}
@@ -239,6 +316,19 @@ export default function AboutPage() {
               </Link>
             </div>
 
+            {/* Added links to LingoSongs and TeachWhizz */}
+            <div className="mt-8 text-slate-700 text-lg">
+                <p className="mb-4">Also explore my other projects:</p>
+                <div className="flex flex-wrap justify-center gap-4">
+                  <a href="https://lingosongs.com" target="_blank" rel="noopener noreferrer" className="inline-flex items-center text-indigo-700 hover:text-indigo-900 font-medium transition-colors">
+                    <Music className="h-5 w-5 mr-2" /> LingoSongs.com
+                  </a>
+                  <a href="https://teachwhizz.com" target="_blank" rel="noopener noreferrer" className="inline-flex items-center text-indigo-700 hover:text-indigo-900 font-medium transition-colors">
+                    <Brain className="h-5 w-5 mr-2" /> TeachWhizz.com
+                  </a>
+                </div>
+            </div>
+
           </div>
         </div>
       </section>
@@ -254,11 +344,12 @@ export default function AboutPage() {
                   <h3 className="text-2xl font-bold text-slate-900 mb-4">Important Disclaimer</h3>
                   <div className="prose prose-slate max-w-none">
                     <p className="text-slate-700 mb-4">
-                      LanguageGems.com is an independent educational resource website created and managed by Daniel Etienne, 
-                      a qualified Modern Foreign Languages teacher with extensive experience in language teaching and assessment.
+                      LanguageGems.com, LingoSongs.com, and TeachWhizz.com are independent educational resources 
+                      created and managed by Daniel Etienne, a qualified Modern Foreign Languages teacher with 
+                      extensive experience in language teaching and assessment.
                     </p>
                     <p className="text-slate-700 mb-4">
-                      <strong>Please note:</strong> LanguageGems.com is not affiliated with, endorsed by, or sponsored by any 
+                      <strong>Please note:</strong> These platforms are not affiliated with, endorsed by, or sponsored by any 
                       examination board or official educational body. The content and resources provided are for educational 
                       support and personal use only.
                     </p>
