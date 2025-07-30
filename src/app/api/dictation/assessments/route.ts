@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
+export const dynamic = 'force-dynamic';
+
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -10,10 +12,9 @@ export async function GET(request: NextRequest) {
   try {
     
     // Get query parameters for filtering
-    const { searchParams } = new URL(request.url);
-    const language = searchParams.get('language');
-    const level = searchParams.get('level');
-    const identifier = searchParams.get('identifier');
+    const language = request.nextUrl.searchParams.get('language');
+    const level = request.nextUrl.searchParams.get('level');
+    const identifier = request.nextUrl.searchParams.get('identifier');
 
     // Build query
     let query = supabase

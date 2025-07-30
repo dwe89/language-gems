@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
+export const dynamic = 'force-dynamic';
+
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -9,8 +11,7 @@ const supabase = createClient(
 export async function GET(request: NextRequest) {
   try {
     // Get query parameters for filtering
-    const { searchParams } = new URL(request.url);
-    const assessmentId = searchParams.get('assessment_id');
+    const assessmentId = request.nextUrl.searchParams.get('assessment_id');
 
     if (!assessmentId) {
       return NextResponse.json(
