@@ -457,7 +457,7 @@ export const regions = {
     id: 'forest_of_beginnings',
     name: 'Forest of Beginnings',
     emoji: '🌲',
-    description: 'A peaceful woodland where your Spanish journey begins with basic present tense verbs.',
+    description: 'A peaceful woodland where your journey begins with basic present tense verbs.',
     background: 'from-green-700 to-green-900',
     enemies: [gameEnemies.leaf_sprite, gameEnemies.forest_guardian, gameEnemies.moss_goblin],
     unlockRequirement: null,

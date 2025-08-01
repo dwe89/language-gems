@@ -182,6 +182,11 @@ export default function UnifiedCategorySelector({
   // Get categories for current curriculum level
   const currentCategories = getCategoriesByCurriculum(selectedCurriculumLevel);
 
+  // Debug logging
+  console.log('UnifiedCategorySelector - Current curriculum level:', selectedCurriculumLevel);
+  console.log('UnifiedCategorySelector - Current categories:', currentCategories.length, currentCategories.map(c => c.id));
+  console.log('UnifiedCategorySelector - Is demo:', isDemo);
+
   // Get current category data
   const currentCategory = currentCategories.find(cat => cat.id === selectedCategory);
 
@@ -511,6 +516,8 @@ const CategorySelection: React.FC<{
       {categories.map((category, index) => {
         const isRestricted = isDemoRestricted(category.id);
         const IconComponent = category.icon; // Get the component reference
+
+        console.log('Rendering category:', category.id, 'isRestricted:', isRestricted);
 
         return (
           <motion.div

@@ -46,20 +46,9 @@ export const useAudioManager = (): AudioManager & {
 
   const handleAudioFallback = useCallback(async (audioFile: string, fallbackText?: string) => {
     try {
-      // Option 1: Try to generate audio on-demand
-      console.log(`Attempting to generate missing audio: ${audioFile}`);
-
-      // Option 2: Use text-to-speech as fallback
-      if ('speechSynthesis' in window) {
-        const text = fallbackText || extractTextFromFilename(audioFile);
-        const language = extractLanguageFromFilename(audioFile);
-        console.log(`Using TTS fallback for: "${text}" in language: ${language}`);
-        await playTextToSpeech(text, language);
-      } else {
-        // Option 3: Show visual feedback only
-        console.log('Audio not available, showing visual feedback');
-        setIsPlaying(false);
-      }
+      // Disable TTS fallback for detective listening game
+      console.log(`Audio file not found: ${audioFile} - skipping TTS fallback`);
+      setIsPlaying(false);
     } catch (fallbackError) {
       console.warn('Fallback audio generation failed:', fallbackError);
       setIsPlaying(false);

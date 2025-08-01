@@ -3,14 +3,11 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Clock, 
   Star, 
-  Zap, 
-  Shield, 
-  Award,
   Gem,
   Timer,
-  Target
+  Heart,
+  Shield
 } from 'lucide-react';
 import { GameStats, GemType, PowerUp } from '../types';
 
@@ -88,8 +85,8 @@ export const GemUI: React.FC<GemUIProps> = ({
   powerUps,
   onPowerUpUse,
   combo,
-  lives,
-  survivalMode
+  lives = 3,
+  survivalMode = false
 }) => {
   const timePercentage = Math.max((timeLeft / 60) * 100, 0);
   const isLowTime = timeLeft <= 10;
@@ -146,6 +143,22 @@ export const GemUI: React.FC<GemUIProps> = ({
               </div>
             </div>
           </motion.div>
+
+          {/* Lives (if survival mode) */}
+          {survivalMode && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-red-500/20 backdrop-blur-sm rounded-xl p-3 border border-red-500/30 flex items-center space-x-2"
+            >
+              <Heart className="text-red-500" size={20} />
+              <div className="flex space-x-1">
+                {Array.from({ length: Math.max(lives, 0) }).map((_, i) => (
+                  <Heart key={i} className="text-red-500 fill-current" size={16} />
+                ))}
+              </div>
+            </motion.div>
+          )}
         </div>
       </div>
 
@@ -160,6 +173,37 @@ export const GemUI: React.FC<GemUIProps> = ({
           <ComboMeter combo={combo} maxCombo={gameStats.maxCombo} />
         </motion.div>
       </div>
+
+      {/* Power-ups */}
+      {powerUps.length > 0 && (
+        <div className="absolute bottom-4 right-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-slate-900/90 backdrop-blur-sm rounded-xl p-3 border border-slate-700/50"
+          >
+            <div className="text-sm text-slate-400 mb-2">Power-ups</div>
+            <div className="flex space-x-2">
+              {powerUps.map((powerUp) => (
+                <button
+                  key={powerUp.id}
+                  onClick={() => onPowerUpUse(powerUp.id)}
+                  disabled={powerUp.cooldown > 0 || !powerUp.active}
+                  className={`
+                    p-2 rounded-lg border transition-all pointer-events-auto
+                    ${powerUp.cooldown > 0 || !powerUp.active
+                      ? 'bg-slate-700 border-slate-600 opacity-50 cursor-not-allowed'
+                      : 'bg-blue-600 border-blue-500 hover:bg-blue-700 cursor-pointer'
+                    }
+                  `}
+                >
+                  <Shield size={20} className="text-white" />
+                </button>
+              ))}
+            </div>
+          </motion.div>
+        </div>
+      )}
 
       {/* Center Combo Effects */}
       <AnimatePresence>

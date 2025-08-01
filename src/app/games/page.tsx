@@ -85,22 +85,6 @@ const LoginRequiredGate = () => {
               </div>
 
               <div className="bg-white rounded-xl p-6 shadow-lg relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-bl from-green-500 to-transparent opacity-20 rounded-bl-full"></div>
-                <div className="absolute top-2 right-2 bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full font-bold">DEMO</div>
-                <div className="flex items-center mb-4">
-                  <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mr-3">
-                    <Flower className="h-5 w-5 text-green-600" />
-                  </div>
-                  <h3 className="font-bold text-lg">Language Garden</h3>
-                </div>
-                <p className="text-gray-600 text-sm mb-4">Plant vocabulary seeds and watch them grow as you learn!</p>
-                <div className="flex items-center justify-between text-xs text-gray-500">
-                  <span className="flex items-center"><Users className="h-3 w-3 mr-1" />2.1k players</span>
-                  <span className="flex items-center"><Star className="h-3 w-3 mr-1" />4.9★</span>
-                </div>
-              </div>
-
-              <div className="bg-white rounded-xl p-6 shadow-lg relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-bl from-purple-500 to-transparent opacity-20 rounded-bl-full"></div>
                 <div className="flex items-center mb-4">
                   <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
@@ -172,126 +156,12 @@ type Game = {
   name: string;
   description: string;
   thumbnail: string;
-  category: string;
+  category: string; // Changed to single string for primary category
+  subcategories?: string[]; // New: for more specific categorization like 'sentences'
   popular: boolean;
   languages: string[];
   path: string;
 };
-
-// Game data is now loaded dynamically in the component
-const staticGames = [
-  {
-    id: 'speed-builder',
-    title: 'Sentence Sprint',
-    description: 'Drag and drop words to build sentences before time runs out',
-    category: ['new', 'vocabulary', 'grammar'],
-    imageSrc: '/images/games/speed-builder.jpg',
-    icon: <Building2 className="text-indigo-500" size={20} />,
-    popular: true,
-    languages: ['English', 'Spanish', 'French', 'German'],
-    path: '/games/speed-builder'
-  },
-  {
-    id: 'vocab-blast',
-    title: 'Vocab Blast 💎',
-    description: 'Click-to-pop vocabulary game with 4 themed modes',
-    category: ['new', 'vocabulary'],
-    imageSrc: '/images/games/vocab-blast.jpg',
-    icon: <Rocket className="text-orange-500" size={20} />,
-    popular: true,
-    languages: ['Spanish', 'French', 'German', 'Italian', 'Portuguese'],
-    path: '/games/vocab-blast',
-  },
-  {
-    id: 'sentence-towers',
-    title: 'Word Towers 🏰',
-    description: 'Build towers by answering vocabulary questions correctly',
-    category: ['vocabulary', 'grammar'],
-    imageSrc: '/images/games/sentence-towers.jpg',
-    icon: <Castle className="text-amber-500" size={20} />,
-    popular: false,
-    languages: ['English', 'Spanish', 'Japanese'],
-    path: '/games/sentence-towers',
-  },
-  {
-    id: 'translation-tycoon',
-    title: 'Translation Tycoon 💰',
-    description: 'Earn virtual money by translating words and sentences',
-    category: ['vocabulary'],
-    imageSrc: '/images/games/placeholder.jpg',
-    icon: <DollarSign className="text-emerald-500" size={20} />,
-    popular: true,
-    languages: ['English', 'Spanish', 'French', 'German', 'Italian'],
-    path: '/games/translation-tycoon',
-  },
-  {
-    id: 'balloon-pop',
-    title: 'Balloon Pop Quiz 🎈',
-    description: 'Pop balloons with correct word translations',
-    category: ['vocabulary'],
-    imageSrc: '/images/games/placeholder.jpg',
-    icon: <CircleOff className="text-pink-500" size={20} />,
-    popular: false,
-    languages: ['English', 'Spanish', 'French'],
-    path: '/games/balloon-pop',
-  },
-  {
-    id: 'escape-translation',
-    title: 'Escape Translation Trap 🏃‍♀️🔐',
-    description: 'Translate words correctly to escape the room',
-    category: ['new', 'vocabulary'],
-    imageSrc: '/images/games/placeholder.jpg',
-    icon: <DoorOpen className="text-purple-500" size={20} />,
-    popular: false,
-    languages: ['English', 'Spanish', 'French', 'German'],
-    path: '/games/escape-translation',
-  },
-  {
-    id: 'hangman',
-    title: 'Hangman',
-    description: 'Classic word guessing game to practice vocabulary',
-    category: ['popular', 'vocabulary'],
-    imageSrc: '/images/games/hangman.jpg',
-    icon: <Puzzle className="text-cyan-500" size={20} />,
-    popular: true,
-    languages: ['English', 'Spanish', 'French', 'German', 'Italian', 'Japanese'],
-    path: '/games/hangman',
-  },
-  {
-    id: 'word-scramble',
-    title: 'Word Scramble',
-    description: 'Unscramble letters to form words',
-    category: ['vocabulary'],
-    imageSrc: '/images/games/word-scramble.jpg',
-    icon: <TagIcon className="text-blue-500" size={20} />,
-    popular: true,
-    languages: ['English', 'Spanish', 'French'],
-    path: '/games/word-scramble',
-  },
-  {
-    id: 'memory-game',
-    title: 'Memory Match',
-    description: 'Match word pairs in this classic memory game',
-    category: ['vocabulary'],
-    imageSrc: '/images/games/memory-match.jpg',
-    icon: <Gamepad2 className="text-green-500" size={20} />,
-    popular: false,
-    languages: ['English', 'Spanish', 'French', 'German'],
-    path: '/games/memory-game',
-  },
-  {
-    id: 'verb-quest',
-    title: 'Verb Quest ⚔️',
-    description: 'Embark on an RPG adventure to master Spanish verb conjugations through epic battles',
-    category: ['new', 'verbs', 'popular'],
-    imageSrc: '/images/games/placeholder.jpg',
-    icon: <Castle className="text-emerald-600" size={20} />,
-    popular: true,
-    languages: ['Spanish'],
-    path: '/games/verb-quest',
-  },
-
-];
 
 export default function GamesPage() {
   const { user, isLoading } = useAuth();
@@ -299,20 +169,26 @@ export default function GamesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [games, setGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('all');
+  const [selectedCategory, setSelectedCategory] = useState('all'); // Renamed from 'filter' for clarity
 
-
+  // Define your main categories
+  const categories = [
+    { value: 'all', label: 'All Games' },
+    { value: 'vocabulary', label: 'Vocabulary' },
+    { value: 'grammar', label: 'Grammar' },
+    { value: 'listening', label: 'Listening' },
+    { value: 'spelling', label: 'Spelling' },
+    { value: 'sentences', label: 'Sentences' }, // New category
+  ];
 
   useEffect(() => {
-    // This would be replaced with an actual API call in production
     const fetchGames = async () => {
       setLoading(true);
 
-      // Real games that are implemented in the codebase
       const actualGames: Game[] = [
         {
           id: 'vocabulary-mining',
-          name: 'Vocabulary Mining',
+          name: 'VocabMaster', // Renamed for consistency with saved info
           description: 'Mine rare vocabulary gems through intelligent spaced repetition, listening exercises, and adaptive learning.',
           thumbnail: '/images/games/vocabulary-mining.jpg',
           category: 'vocabulary',
@@ -325,7 +201,8 @@ export default function GamesPage() {
           name: 'Sentence Sprint',
           description: 'Drag and drop words to build sentences correctly before time runs out.',
           thumbnail: '/images/games/speed-builder.jpg',
-          category: 'vocabulary',
+          category: 'sentences', // Changed category
+          subcategories: ['sentences'],
           popular: true,
           languages: ['English', 'Spanish', 'French', 'German'],
           path: '/games/speed-builder'
@@ -362,7 +239,7 @@ export default function GamesPage() {
         },
         {
           id: 'memory-game',
-          name: 'Memory Game',
+          name: 'Memory Match', // Renamed for consistency
           description: 'Match pairs of cards to build vocabulary and memory skills.',
           thumbnail: '/images/games/memory-match.jpg',
           category: 'vocabulary',
@@ -400,7 +277,6 @@ export default function GamesPage() {
           languages: ['English', 'Spanish', 'French'],
           path: '/games/word-scramble'
         },
-
         {
           id: 'detective-listening',
           name: 'Detective Listening Game',
@@ -412,14 +288,46 @@ export default function GamesPage() {
           path: '/games/detective-listening'
         },
         {
-          id: 'vocab-blast',
-          name: 'Vocab Blast',
-          description: 'Click-to-pop vocabulary translation game with 4 themed modes: Neon Hack, Cannon Clash, Comet Catch, and Rising Lava Quiz.',
-          thumbnail: '/images/games/vocab-blast.jpg',
+          id: 'case-file-translator',
+          name: 'Case File Translator',
+          description: 'Solve detective cases by translating intercepted communications from Spanish, French, or German to English.',
+          thumbnail: '/images/games/case-file-translator.jpg',
+          category: 'sentences', // Changed category
+          subcategories: ['sentences'],
+          popular: true,
+          languages: ['Spanish', 'French', 'German'],
+          path: '/games/case-file-translator'
+        },
+        {
+          id: 'lava-temple-word-restore',
+          name: 'Lava Temple: Word Restore',
+          description: 'Restore ancient inscriptions by filling in missing words. Become a linguistic archaeologist and unlock temple secrets!',
+          thumbnail: '/images/games/lava-temple-word-restore.jpg',
+          category: 'sentences', // Changed category
+          subcategories: ['sentences'],
+          popular: true,
+          languages: ['Spanish', 'French', 'German'],
+          path: '/games/lava-temple-word-restore'
+        },
+        {
+          id: 'verb-quest',
+          name: 'Verb Quest',
+          description: 'Embark on an epic RPG adventure to master verb conjugations! Battle mystical creatures and unlock new regions as you learn.',
+          thumbnail: '/images/games/verb-quest.jpg',
+          category: 'grammar',
+          popular: true,
+          languages: ['Spanish', 'French', 'German'],
+          path: '/games/verb-quest'
+        },
+        {
+          id: 'vocab-blast', // New game ID
+          name: 'Vocab-Blast', // New game name
+          description: 'Click vocabulary gems to pop and translate them quickly', // New game description
+          thumbnail: '/images/games/vocab-blast.jpg', // New thumbnail
           category: 'vocabulary',
           popular: true,
-          languages: ['Spanish', 'French', 'German', 'Italian', 'Portuguese'],
-          path: '/games/vocab-blast'
+          languages: ['English', 'Spanish', 'French', 'German'], // Example languages
+          path: '/games/vocab-blast' // New path
         }
       ];
 
@@ -453,7 +361,7 @@ export default function GamesPage() {
   // Combined filtering logic for both category filter and search query
   const filteredGames = games.filter(game => {
     // Apply category filter
-    const matchesCategory = filter === 'all' || game.category.includes(filter);
+    const matchesCategory = selectedCategory === 'all' || game.category === selectedCategory || (game.subcategories && game.subcategories.includes(selectedCategory));
 
     // Apply search query filter
     const matchesSearch = searchQuery === '' ||
@@ -492,7 +400,7 @@ export default function GamesPage() {
             <div className="mt-4 p-4 bg-gradient-to-r from-blue-100 to-indigo-100 rounded-xl border border-blue-200">
               <p className="text-blue-800">
                 <span className="font-bold">💡 Pro Tip:</span> As a teacher, you can assign any of these games to your students
-                from the assignments page or directly from each game.
+                from the assignments page.
               </p>
             </div>
           )}
@@ -510,28 +418,21 @@ export default function GamesPage() {
             />
           </div>
 
-          <div className="flex space-x-3">
-            <div className="relative">
-              <button className="flex items-center space-x-1 bg-white text-gray-700 px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50">
-                <Filter className="h-4 w-4" />
-                <span>Filter</span>
-                <ChevronDown className="h-4 w-4" />
+          {/* Category filter boxes */}
+          <div className="flex flex-wrap gap-2">
+            {categories.map((category) => (
+              <button
+                key={category.value}
+                onClick={() => setSelectedCategory(category.value)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200
+                  ${selectedCategory === category.value
+                    ? 'bg-indigo-600 text-white shadow-md'
+                    : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-100'
+                  }`}
+              >
+                {category.label}
               </button>
-
-              {/* Filter dropdown would go here */}
-            </div>
-
-            <select
-              className="bg-white text-gray-700 px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500"
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-            >
-              <option value="all">All Games</option>
-              <option value="vocabulary">Vocabulary</option>
-              <option value="grammar">Grammar</option>
-              <option value="listening">Listening</option>
-              <option value="spelling">Spelling</option>
-            </select>
+            ))}
           </div>
         </div>
 
@@ -561,17 +462,18 @@ export default function GamesPage() {
                       if (parent) {
                         parent.className = "h-40 bg-gradient-to-br from-indigo-400 via-purple-500 to-pink-500 flex items-center justify-center relative";
                         const fallback = document.createElement('div');
-                        fallback.className = "absolute inset-0 flex items-center justify-center";
                         fallback.innerHTML = `<svg class="h-16 w-16 text-white/80" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>`;
                         parent.appendChild(fallback);
                       }
                     }}
                   />
+                  {/* Display 'DEMO' tag based on isDemo prop or other logic */}
                   <div className="absolute top-2 left-2 bg-orange-500 text-white text-xs px-2 py-1 rounded-full font-bold">
                     DEMO
                   </div>
+                  {/* Display the main category, or a subcategory if it's a sentences game */}
                   <div className="absolute top-2 right-2 bg-white/20 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-full">
-                    {game.category}
+                    {game.category === 'sentences' ? 'Sentences' : game.category.charAt(0).toUpperCase() + game.category.slice(1)}
                   </div>
                 </div>
 
@@ -604,4 +506,4 @@ export default function GamesPage() {
       </div>
     </div>
   );
-} 
+}

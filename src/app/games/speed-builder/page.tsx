@@ -2,13 +2,12 @@
 
 import React, { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useAuth } from '../../../components/auth/AuthProvider';
+import { useUnifiedAuth } from '../../../hooks/useUnifiedAuth';
 import { GemSpeedBuilder } from './components/GemSpeedBuilder';
-import UnifiedGameLauncher from '../../../components/games/UnifiedGameLauncher';
-import { UnifiedSelectionConfig, UnifiedVocabularyItem } from '../../../hooks/useUnifiedVocabulary';
+import UnifiedSentenceCategorySelector, { SentenceSelectionConfig } from '../../../components/games/UnifiedSentenceCategorySelector';
 
 export default function SpeedBuilderPage() {
-  const { user } = useAuth();
+  const { user } = useUnifiedAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const assignmentId = searchParams?.get('assignment');
@@ -16,17 +15,14 @@ export default function SpeedBuilderPage() {
 
   // Game state management
   const [gameStarted, setGameStarted] = useState(false);
-  const [selectedConfig, setSelectedConfig] = useState<UnifiedSelectionConfig | null>(null);
+  const [selectedConfig, setSelectedConfig] = useState<SentenceSelectionConfig | null>(null);
 
-  // Handle game start from unified launcher
-  const handleGameStart = (config: UnifiedSelectionConfig, vocabulary: UnifiedVocabularyItem[]) => {
+  // Handle selection complete from sentence selector
+  const handleSelectionComplete = (config: SentenceSelectionConfig) => {
     setSelectedConfig(config);
     setGameStarted(true);
-    
-    console.log('Speed Builder started with unified config:', {
-      config,
-      vocabularyCount: vocabulary.length
-    });
+
+    console.log('Speed Builder started with sentence config:', config);
   };
 
   // Handle back to menu
@@ -35,46 +31,66 @@ export default function SpeedBuilderPage() {
     setSelectedConfig(null);
   };
 
-  // Show unified launcher if game not started
+  // Show sentence category selector if game not started
   if (!gameStarted) {
     return (
-      <UnifiedGameLauncher
+      <UnifiedSentenceCategorySelector
         gameName="Speed Builder"
-        gameDescription="Build sentences quickly by arranging words in the correct order"
-        supportedLanguages={['es', 'fr', 'de']}
+        title="Speed Builder - Select Content"
+        supportedLanguages={['spanish', 'french', 'german']}
         showCustomMode={false} // Speed Builder uses sentence data, not vocabulary
-        minVocabularyRequired={0} // Uses sentence data
-        onGameStart={handleGameStart}
+        onSelectionComplete={handleSelectionComplete}
         onBack={() => router.push('/games')}
-        supportsThemes={false}
-        requiresAudio={false}
-      >
-        {/* Game-specific instructions */}
-        <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 mb-6 max-w-md mx-auto">
-          <h4 className="text-white font-semibold mb-3 text-center">How to Play</h4>
-          <div className="text-white/80 text-sm space-y-2">
-            <p>• Drag and drop words to build correct sentences</p>
-            <p>• Complete sentences as quickly as possible</p>
-            <p>• Earn points for speed and accuracy</p>
-            <p>• Progress through increasingly complex sentences</p>
-            <p>• Use power-ups to boost your performance</p>
-          </div>
-        </div>
-      </UnifiedGameLauncher>
+      />
     );
   }
 
   // Show full GemSpeedBuilder with all original features
   if (gameStarted && selectedConfig) {
-    // Convert unified config to legacy speed builder format
-    const legacyLanguage = selectedConfig.language === 'es' ? 'spanish' : 
-                          selectedConfig.language === 'fr' ? 'french' : 
-                          selectedConfig.language === 'de' ? 'german' : 'spanish';
+    // Convert sentence config to legacy speed builder format
+    const legacyLanguage = selectedConfig.language; // Already in full form (spanish, french, german)
 
     const legacyCurriculumType = selectedConfig.curriculumLevel === 'KS4' ? 'gcse' : 'ks3';
     const legacyTier = selectedConfig.curriculumLevel === 'KS4' ? 'foundation' : 'core';
-    const legacyTheme = selectedConfig.categoryId || 'general';
-    const legacyTopic = selectedConfig.subcategoryId || 'basic';
+
+    // Map sentence categories to Speed Builder themes
+    const categoryToThemeMapping: { [key: string]: string } = {
+      'basics_core_language': 'People and lifestyle',
+      'identity_personal_life': 'People and lifestyle',
+      'home_local_area': 'Communication and the world around us',
+      'free_time_leisure': 'Popular culture',
+      'food_drink': 'People and lifestyle',
+      'clothes_shopping': 'People and lifestyle',
+      'technology_media': 'Popular culture',
+      'health_lifestyle': 'People and lifestyle',
+      'holidays_travel_culture': 'Communication and the world around us',
+      'nature_environment': 'Communication and the world around us',
+      'social_global_issues': 'Communication and the world around us',
+      'general_concepts': 'People and lifestyle',
+      'daily_life': 'People and lifestyle',
+      'school_jobs_future': 'People and lifestyle'
+    };
+
+    // Map subcategories to Speed Builder topics
+    const subcategoryToTopicMapping: { [key: string]: string } = {
+      'greetings_introductions': 'Identity and relationships',
+      'family_friends': 'Identity and relationships',
+      'personal_information': 'Identity and relationships',
+      'daily_routine': 'Daily life',
+      'food_drink_vocabulary': 'Food and eating',
+      'meals': 'Food and eating',
+      'hobbies_interests': 'Free time activities',
+      'sports_ball_games': 'Free time activities',
+      'school_subjects': 'School',
+      'professions_jobs': 'Future Aspirations, Study and Work',
+      'places_in_town': 'Local Area, Holiday and Travel',
+      'transport': 'Local Area, Holiday and Travel',
+      'countries': 'Local Area, Holiday and Travel',
+      'weathers': 'Local Area, Holiday and Travel'
+    };
+
+    const legacyTheme = categoryToThemeMapping[selectedConfig.categoryId] || 'People and lifestyle';
+    const legacyTopic = subcategoryToTopicMapping[selectedConfig.subcategoryId || ''] || 'Identity and relationships';
 
     return (
       <div className="min-h-screen">
@@ -98,8 +114,9 @@ export default function SpeedBuilderPage() {
           theme={legacyTheme}
           topic={legacyTopic}
           onBackToMenu={handleBackToMenu}
-          assignmentId={assignmentId}
+          assignmentId={assignmentId || undefined}
           userId={user?.id}
+          sentenceConfig={selectedConfig}
         />
       </div>
     );

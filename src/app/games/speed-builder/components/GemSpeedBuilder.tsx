@@ -2,41 +2,22 @@
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Play, 
-  Pause, 
-  RefreshCw, 
-  Star, 
-  CheckCircle2, 
-  Zap, 
-  Shuffle,
-  Award,
-  Settings,
-  Home,
+import {
+  CheckCircle2,
   Clock,
-  Target,
-  TrendingUp,
-  BookOpen,
-  Lightbulb,
-  Timer,
-  Trophy,
-  Brain,
-  Sparkles,
   Gem,
+  ArrowLeft,
   Crown,
-  Plus,
-  ArrowLeft
+  Play,
+  Home
 } from 'lucide-react';
 import Link from 'next/link';
 import { createBrowserClient } from '../../../../lib/supabase-client';
-import { useSearchParams } from 'next/navigation';
+
 import confetti from 'canvas-confetti';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { SoundProvider, useSound, SoundControls } from './SoundManager';
-import { DifficultySelector } from './DifficultySelector';
-import { ThemeSelector } from './ThemeSelector';
-import { ThemeType, DifficultyLevel } from '../types';
 
 // Types
 interface WordItem {
@@ -91,13 +72,7 @@ interface PowerUp {
   gemCost: number;
 }
 
-interface FloatingGem {
-  id: string;
-  x: number;
-  y: number;
-  type: 'ruby' | 'sapphire' | 'emerald' | 'diamond' | 'amethyst' | 'topaz';
-  value: number;
-}
+
 
 // Gem colors and effects
 const gemColors = {
@@ -109,14 +84,7 @@ const gemColors = {
   topaz: 'from-yellow-400 to-yellow-600'
 };
 
-const gemGlow = {
-  ruby: 'drop-shadow-[0_0_15px_rgba(239,68,68,0.7)]',
-  sapphire: 'drop-shadow-[0_0_15px_rgba(59,130,246,0.7)]',
-  emerald: 'drop-shadow-[0_0_15px_rgba(34,197,94,0.7)]',
-  diamond: 'drop-shadow-[0_0_15px_rgba(6,182,212,0.7)]',
-  amethyst: 'drop-shadow-[0_0_15px_rgba(147,51,234,0.7)]',
-  topaz: 'drop-shadow-[0_0_15px_rgba(234,179,8,0.7)]'
-};
+
 
 // Pre-defined positions to avoid hydration errors
 const backgroundGemPositions = [
@@ -459,50 +427,7 @@ const GemPowerUpButton: React.FC<{
   );
 };
 
-// Sound system for enhanced audio feedback
-class SoundSystem {
-  private audioContext: AudioContext | null = null;
-  private sounds: { [key: string]: HTMLAudioElement } = {};
-  
-  constructor() {
-    if (typeof window !== 'undefined') {
-      // Pre-load better quality game sounds
-      this.loadSound('word-place', '/sounds/speed-builder/word-place.mp3');        // Gentle "pop" when word is placed correctly
-      this.loadSound('word-wrong', '/sounds/speed-builder/word-wrong.mp3');        // Soft "buzz" for incorrect placement
-      this.loadSound('sentence-complete', '/sounds/speed-builder/sentence-complete.mp3'); // Triumphant chime for completed sentence
-      this.loadSound('gem-collect', '/sounds/speed-builder/gem-collect.mp3');      // Sparkly gem collection sound
-      this.loadSound('power-up', '/sounds/speed-builder/power-up.mp3');           // Magical whoosh for power-ups
-      this.loadSound('time-warning', '/sounds/speed-builder/time-warning.mp3');   // Gentle pulse when time is low
-      this.loadSound('game-start', '/sounds/speed-builder/game-start.mp3');       // Upbeat game start sound
-      this.loadSound('button-hover', '/sounds/speed-builder/button-hover.mp3');   // Subtle hover sound
-      this.loadSound('level-complete', '/sounds/speed-builder/level-complete.mp3'); // Celebration for game completion
-    }
-  }
-  
-  private loadSound(name: string, path: string) {
-    try {
-      const audio = new Audio(path);
-      audio.preload = 'auto';
-      audio.volume = 0.6;
-      this.sounds[name] = audio;
-    } catch (error) {
-      console.warn(`Failed to load sound: ${name}`, error);
-    }
-  }
-  
-  play(soundName: string, volume: number = 0.6) {
-    try {
-      const sound = this.sounds[soundName];
-      if (sound) {
-        sound.volume = volume;
-        sound.currentTime = 0;
-        sound.play().catch(e => console.warn('Sound play failed:', e));
-      }
-    } catch (error) {
-      console.warn(`Failed to play sound: ${soundName}`, error);
-    }
-  }
-}
+
 
 // Internal component that uses the sound hook
 const GemSpeedBuilderInternal: React.FC<{
@@ -513,7 +438,8 @@ const GemSpeedBuilderInternal: React.FC<{
   tier?: string;
   vocabularyList?: any[];
   onGameComplete?: (stats: GameStats) => void;
-}> = ({ assignmentId, mode = 'freeplay', theme, topic, tier, vocabularyList, onGameComplete }) => {
+  sentenceConfig?: any;
+}> = ({ assignmentId, mode = 'freeplay', theme, topic, tier, vocabularyList, onGameComplete, sentenceConfig }) => {
   // Sound system
   const { playSound } = useSound();
   
@@ -549,14 +475,10 @@ const GemSpeedBuilderInternal: React.FC<{
   const [hintWordIndex, setHintWordIndex] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showSentenceResult, setShowSentenceResult] = useState(false);
-  const [difficulty, setDifficulty] = useState<DifficultyLevel>('medium');
-  const [currentTheme, setCurrentTheme] = useState<ThemeType>('default');
-  const [showSettings, setShowSettings] = useState(false);
 
   
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const supabase = createBrowserClient();
-  const searchParams = useSearchParams();
 
   // Initialize game
   useEffect(() => {
@@ -564,9 +486,11 @@ const GemSpeedBuilderInternal: React.FC<{
       // Load assignment config first (if in assignment mode)
       await loadAssignmentConfig();
       // Then fetch sentences with the updated config
-      fetchSentences();
+      await fetchSentences();
+      // Auto-start the game
+      startGame();
     };
-    
+
     initializeGame();
   }, [assignmentId, mode]);
 
@@ -644,145 +568,99 @@ const GemSpeedBuilderInternal: React.FC<{
     try {
       setIsLoading(true);
       
-      // Map theme selections to API themes  
-      const themeMapping: { [key: string]: string } = {
-        'Identity and Culture': 'People and lifestyle',
-        'Local Area, Holiday and Travel': 'Communication and the world around us',
-        'School': 'People and lifestyle',
-        'Future Aspirations, Study and Work': 'People and lifestyle',
-        'International and Global Dimension': 'Communication and the world around us',
-        'Animals and Nature': 'Communication and the world around us',
-        'Travel and Culture': 'Communication and the world around us',
-        'Technology and Modern Life': 'Popular culture'
-      };
-      
-      const apiTheme = themeMapping[theme || ''] || 'People and lifestyle';
-      
-      const requestBody = {
-        mode,
-        assignmentId,
-        theme: apiTheme,
-        topic: topic || 'Identity and relationships',
-        tier: tier || 'Foundation',
-        count: 15, // Request more sentences for progression
-        difficulty: 'medium',
-        vocabularyList: vocabularyList || []
-      };
-      
-      console.log('Sending API request with:', requestBody);
-      
-      const response = await fetch('/api/games/speed-builder/sentences', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody)
-      });
+      // Check if we have sentence selection config from the unified selector
+      if (sentenceConfig) {
+        console.log('Using unified sentence config:', sentenceConfig);
+        
+        const requestBody = {
+          language: sentenceConfig.language,
+          curriculumLevel: sentenceConfig.curriculumLevel,
+          categoryId: sentenceConfig.categoryId,
+          subcategoryId: sentenceConfig.subcategoryId,
+          count: 15,
+          customMode: sentenceConfig.customMode
+        };
+        
+        console.log('Sending unified API request with:', requestBody);
+        
+        const response = await fetch('/api/games/speed-builder/unified-sentences', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestBody)
+        });
 
-      console.log('API response status:', response.status);
-      
-      if (response.ok) {
-        const data = await response.json();
-        console.log('API response data:', data);
-        setAvailableSentences(data.sentences || []);
-        if (data.sentences?.length > 0) {
-          console.log('Loading first sentence:', data.sentences[0]);
-          loadSentence(data.sentences[0]);
-          return; // Success, exit early
+        console.log('Unified API response status:', response.status);
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Unified API response data:', data);
+          
+          if (data.sentences?.length > 0) {
+            setAvailableSentences(data.sentences);
+            loadSentence(data.sentences[0]);
+            return; // Success, exit early
+          } else {
+            console.log('Unified API returned no sentences, falling back to demo sentences');
+          }
         } else {
-          console.log('API returned no sentences, falling back to demo sentences');
+          console.log('Unified API response not ok, status:', response.status);
         }
       } else {
-        console.log('API response not ok, status:', response.status);
+        console.log('No unified sentence config found, using legacy API');
+        
+        // Fallback to legacy API for backward compatibility
+        const themeMapping: { [key: string]: string } = {
+          'Identity and Culture': 'People and lifestyle',
+          'Local Area, Holiday and Travel': 'Communication and the world around us',
+          'School': 'People and lifestyle',
+          'Future Aspirations, Study and Work': 'People and lifestyle',
+          'International and Global Dimension': 'Communication and the world around us',
+          'Animals and Nature': 'Communication and the world around us',
+          'Travel and Culture': 'Communication and the world around us',
+          'Technology and Modern Life': 'Popular culture'
+        };
+        
+        const apiTheme = themeMapping[theme || ''] || 'People and lifestyle';
+        
+        const requestBody = {
+          mode,
+          assignmentId,
+          theme: apiTheme,
+          topic: topic || 'Identity and relationships',
+          tier: tier || 'Foundation',
+          count: 15,
+          difficulty: 'medium',
+          vocabularyList: vocabularyList || []
+        };
+        
+        const response = await fetch('/api/games/speed-builder/sentences', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestBody)
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.sentences?.length > 0) {
+            setAvailableSentences(data.sentences);
+            loadSentence(data.sentences[0]);
+            return;
+          }
+        }
       }
       
-      // If API fails or returns no sentences, use fallback demo sentences
-      console.log('Using fallback demo sentences for theme:', theme, 'topic:', topic);
-      const demoSentences = generateDemoSentences(theme, topic);
-      setAvailableSentences(demoSentences);
-      if (demoSentences.length > 0) {
-        loadSentence(demoSentences[0]);
-      }
+      // If all APIs fail or return no sentences, show error
+      console.log('No sentences available for the selected criteria');
+      setAvailableSentences([]);
     } catch (error) {
       console.error('Error fetching sentences:', error);
-      // Fallback demo sentences
-      const demoSentences = generateDemoSentences(theme, topic);
-      setAvailableSentences(demoSentences);
-      if (demoSentences.length > 0) {
-        loadSentence(demoSentences[0]);
-      }
+      setAvailableSentences([]);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Generate demo sentences based on theme/topic
-  const generateDemoSentences = (selectedTheme?: string, selectedTopic?: string): SentenceData[] => {
-    
-    const animalSentences = [
-      { spanish: "El gato come pescado", english: "The cat eats fish" },
-      { spanish: "Los perros corren en el parque", english: "The dogs run in the park" },
-      { spanish: "Mi caballo es muy rápido", english: "My horse is very fast" },
-      { spanish: "La vaca da leche fresca", english: "The cow gives fresh milk" },
-      { spanish: "Los pájaros vuelan alto", english: "The birds fly high" },
-    ];
 
-    const travelSentences = [
-      { spanish: "Voy a la playa en verano", english: "I go to the beach in summer" },
-      { spanish: "El hotel está cerca del aeropuerto", english: "The hotel is near the airport" },
-      { spanish: "Necesito un mapa de la ciudad", english: "I need a map of the city" },
-      { spanish: "El tren llega a las cinco", english: "The train arrives at five" },
-      { spanish: "Mi maleta es muy pesada", english: "My suitcase is very heavy" },
-    ];
-
-    const familySentences = [
-      { spanish: "Mi madre cocina muy bien", english: "My mother cooks very well" },
-      { spanish: "Tengo dos hermanos mayores", english: "I have two older brothers" },
-      { spanish: "Mis abuelos viven en España", english: "My grandparents live in Spain" },
-      { spanish: "Mi padre trabaja en oficina", english: "My father works in an office" },
-      { spanish: "La familia come junta", english: "The family eats together" },
-    ];
-
-    const schoolSentences = [
-      { spanish: "Estudio matemáticas y ciencias", english: "I study math and science" },
-      { spanish: "La profesora es muy simpática", english: "The teacher is very nice" },
-      { spanish: "Los estudiantes hacen preguntas", english: "The students ask questions" },
-      { spanish: "El examen es mañana", english: "The exam is tomorrow" },
-      { spanish: "Me gusta aprender idiomas", english: "I like learning languages" },
-    ];
-
-    let selectedSentences;
-    switch (selectedTheme) {
-      case 'Local Area, Holiday and Travel':
-      case 'Travel and Culture':
-        selectedSentences = travelSentences;
-        break;
-      case 'Identity and Culture':
-      case 'Family and Friends':
-        selectedSentences = familySentences;
-        break;
-      case 'School':
-        selectedSentences = schoolSentences;
-        break;
-      case 'Animals and Nature':
-        selectedSentences = animalSentences;
-        break;
-      default:
-        selectedSentences = animalSentences;
-    }
-
-    return selectedSentences.map((sentence, index) => ({
-      id: `demo-${index}`,
-      text: sentence.spanish,
-      originalText: sentence.spanish,
-      translatedText: sentence.english,
-      language: 'Spanish',
-      difficulty: 'medium' as const,
-      curriculum: {
-        tier: 'Foundation' as const,
-        theme: selectedTheme || 'Animals',
-        topic: selectedTopic || 'Basic Conversation'
-      }
-    }));
-  };
 
   // Load a sentence for the game
   const loadSentence = (sentence: SentenceData) => {
@@ -1064,10 +942,7 @@ const GemSpeedBuilderInternal: React.FC<{
     }
   };
 
-  // Check if sentence is complete (legacy function using state)
-  const checkSentenceComplete = () => {
-    checkSentenceCompleteWithWords(placedWords);
-  };
+
 
   // Enhanced power-up activation
   const activatePowerUp = (powerUpId: string) => {
@@ -1118,7 +993,7 @@ const GemSpeedBuilderInternal: React.FC<{
   const endGame = async () => {
     setGameState('completed');
     
-    if (sessionId && sessionId !== `demo-${Date.now()}`) {
+    if (sessionId && !sessionId.startsWith('demo-')) {
       try {
         await fetch('/api/games/speed-builder/sessions', {
           method: 'POST',
@@ -1173,6 +1048,25 @@ const GemSpeedBuilderInternal: React.FC<{
           💎
         </motion.div>
         <span className="ml-4 text-2xl text-white font-bold">Loading Sprint...</span>
+      </div>
+    );
+  }
+
+  if (!currentSentence && availableSentences.length === 0 && !isLoading) {
+    return (
+      <div className="h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-6xl mb-4">😔</div>
+          <h2 className="text-2xl font-bold text-white mb-4">No Sentences Available</h2>
+          <p className="text-white/80 mb-6">No sentences found for the selected criteria.</p>
+          <Link
+            href="/games"
+            className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-bold shadow-xl hover:shadow-purple-500/50 transition-all duration-300 border border-white/20 inline-flex items-center gap-2"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            Back to Games
+          </Link>
+        </div>
       </div>
     );
   }
@@ -1285,93 +1179,7 @@ const GemSpeedBuilderInternal: React.FC<{
 
         {/* Main Game Content - No Scrolling */}
         <div className="relative z-10 flex-1 flex flex-col px-4 min-h-0">
-          {gameState === 'ready' && (
-            <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              className="flex-1 flex flex-col items-center justify-center text-center px-4"
-            >
-              <motion.div
-                animate={{ rotate: [0, 10, -10, 0] }}
-                transition={{ repeat: Infinity, duration: 3 }}
-                className="text-6xl mb-4"
-              >
-                💎
-              </motion.div>
-              <h1 className="text-4xl font-bold text-white mb-3">
-                Sentence Sprint
-              </h1>
-              <p className="text-lg text-white/80 mb-6 max-w-lg">
-                Race against time to build perfect sentences!
-              </p>
-              
-              {/* Settings Panel */}
-              {showSettings ? (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20 mb-6 w-full max-w-md"
-                >
-                  <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                    <Settings className="w-5 h-5" />
-                    Game Settings
-                  </h3>
-                  
-                  <div className="space-y-4">
-                    <DifficultySelector 
-                      currentDifficulty={difficulty}
-                      onSelectDifficulty={setDifficulty}
-                      playSound={playSound}
-                    />
-                    
-                    <ThemeSelector 
-                      currentTheme={currentTheme}
-                      onSelectTheme={setCurrentTheme}
-                      playSound={playSound}
-                    />
-                  </div>
-                  
-                  <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => setShowSettings(false)}
-                    className="mt-4 w-full px-4 py-2 bg-white/20 text-white rounded-lg font-medium hover:bg-white/30 transition-colors"
-                  >
-                    Done
-                  </motion.button>
-                </motion.div>
-              ) : (
-                <div className="flex flex-col sm:flex-row gap-4 mb-4">
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={startGame}
-                    className="px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-bold text-lg shadow-xl hover:shadow-purple-500/50 transition-all duration-300 border border-white/20 flex items-center gap-2"
-                  >
-                    <Play className="w-5 h-5" />
-                    Start Sprint
-                  </motion.button>
-                  
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setShowSettings(true)}
-                    className="px-6 py-3 bg-white/10 backdrop-blur-sm text-white rounded-xl font-bold hover:bg-white/20 transition-all duration-300 border border-white/20 flex items-center gap-2"
-                  >
-                    <Settings className="w-5 h-5" />
-                    Settings
-                  </motion.button>
-                </div>
-              )}
-              
-              {!showSettings && (
-                <div className="text-sm text-white/60 flex flex-wrap justify-center gap-4">
-                  <span>Difficulty: <span className="text-white font-medium">{difficulty}</span></span>
-                  <span>Theme: <span className="text-white font-medium">{currentTheme}</span></span>
-                </div>
-              )}
-            </motion.div>
-          )}
+
 
           {currentSentence && gameState === 'playing' && (
             <div className="flex-1 flex flex-col gap-4 min-h-0">
@@ -1382,7 +1190,7 @@ const GemSpeedBuilderInternal: React.FC<{
                 className="bg-white/10 backdrop-blur-lg rounded-xl p-4 border border-white/20 text-center flex-shrink-0"
               >
                 <h2 className="text-xl font-bold text-white mb-2">
-                  🏃‍♂️ Build: <span className="text-yellow-300">"{currentSentence.originalText}"</span>
+                  🏃‍♂️ Build: <span className="text-yellow-300">"{currentSentence.translatedText}"</span>
                 </h2>
                 {currentSentence.curriculum && (
                   <div className="flex flex-wrap justify-center gap-2 text-xs">
@@ -1429,7 +1237,7 @@ const GemSpeedBuilderInternal: React.FC<{
                 className="bg-white/5 backdrop-blur-lg rounded-xl p-4 flex-1 min-h-0"
               >
                 <h3 className="text-base font-bold text-center mb-3 text-white">
-                  � Available Words:
+                  Available Words:
                 </h3>
                 <div className="flex flex-wrap justify-center gap-2 sm:gap-3 h-full items-start content-start overflow-y-auto px-2 sm:px-0">
                   {shuffledWords
@@ -1548,6 +1356,7 @@ export const GemSpeedBuilder: React.FC<{
   tier?: string;
   vocabularyList?: any[];
   onGameComplete?: (stats: GameStats) => void;
+  sentenceConfig?: any;
 }> = (props) => {
   return (
     <SoundProvider initialTheme="default">

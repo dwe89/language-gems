@@ -6,9 +6,11 @@ import { characterClasses, CharacterClass } from './Character';
 
 interface CharacterCreationProps {
   onCharacterCreated: (name: string, characterClass: string) => void;
+  onBack?: () => void;
+  soundEnabled?: boolean;
 }
 
-export default function CharacterCreation({ onCharacterCreated }: CharacterCreationProps) {
+export default function CharacterCreation({ onCharacterCreated, onBack, soundEnabled }: CharacterCreationProps) {
   const [name, setName] = useState('');
   const [selectedClass, setSelectedClass] = useState<string | null>(null);
   const [showClassDetails, setShowClassDetails] = useState<string | null>(null);
@@ -60,7 +62,7 @@ export default function CharacterCreation({ onCharacterCreated }: CharacterCreat
               Create Your Hero
             </h1>
             <p className="text-xl text-gray-200 drop-shadow">
-              Choose your class and begin your journey through the Spanish language realms
+              Choose your class and begin your journey to master verbs!
             </p>
           </motion.div>
 

@@ -1,0 +1,331 @@
+/* Case File Translator Game Custom Styles */
+
+/* Translation card hover effects */
+.translation-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.translation-card:hover {
+  transform: translateY(-4px) rotateY(2deg);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+/* Case file animations */
+.case-file {
+  transform-style: preserve-3d;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.case-file:hover {
+  transform: rotateY(8deg) rotateX(3deg) translateZ(15px);
+}
+
+/* Language selection dial */
+.language-dial {
+  background: radial-gradient(circle, #1f2937 0%, #111827 100%);
+  border: 3px solid #374151;
+  position: relative;
+}
+
+.language-dial::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 4px;
+  height: 25px;
+  background: #f59e0b;
+  transform: translate(-50%, -50%) rotate(var(--dial-rotation, 0deg));
+  border-radius: 2px;
+  box-shadow: 0 0 8px #f59e0b;
+}
+
+/* Detective badge glow */
+.detective-badge {
+  position: relative;
+}
+
+.detective-badge::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  background: linear-gradient(45deg, #f59e0b, #d97706, #92400e, #f59e0b);
+  border-radius: inherit;
+  opacity: 0.7;
+  filter: blur(8px);
+  z-index: -1;
+  animation: badgeGlow 3s ease-in-out infinite;
+}
+
+@keyframes badgeGlow {
+  0%, 100% {
+    opacity: 0.7;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
+/* Typewriter effect for translations */
+.typewriter {
+  overflow: hidden;
+  border-right: 2px solid #f59e0b;
+  white-space: nowrap;
+  animation: typing 2s steps(40, end), blink-caret 0.75s step-end infinite;
+}
+
+@keyframes typing {
+  from {
+    width: 0;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+@keyframes blink-caret {
+  from, to {
+    border-color: transparent;
+  }
+  50% {
+    border-color: #f59e0b;
+  }
+}
+
+/* Translation input focus effects */
+.translation-input {
+  transition: all 0.3s ease;
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.8) 0%, rgba(30, 41, 59, 0.8) 100%);
+}
+
+.translation-input:focus {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(30, 41, 59, 0.9) 100%);
+  box-shadow: 0 0 0 2px #f59e0b, 0 0 20px rgba(245, 158, 11, 0.3);
+  transform: translateY(-2px);
+}
+
+/* Feedback animations */
+.feedback-correct {
+  animation: correctPulse 0.6s ease-out;
+}
+
+.feedback-incorrect {
+  animation: incorrectShake 0.6s ease-out;
+}
+
+@keyframes correctPulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+  }
+  70% {
+    transform: scale(1.02);
+    box-shadow: 0 0 0 10px rgba(34, 197, 94, 0);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+  }
+}
+
+@keyframes incorrectShake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  10%, 30%, 50%, 70%, 90% {
+    transform: translateX(-5px);
+  }
+  20%, 40%, 60%, 80% {
+    transform: translateX(5px);
+  }
+}
+
+/* Progress bar animations */
+.progress-bar {
+  background: linear-gradient(90deg, #f59e0b 0%, #d97706 50%, #92400e 100%);
+  background-size: 200% 100%;
+  animation: progressShimmer 2s ease-in-out infinite;
+}
+
+@keyframes progressShimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Case solved stamp effect */
+.solved-stamp {
+  transform: rotate(-12deg);
+  animation: stampAppear 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+@keyframes stampAppear {
+  0% {
+    transform: rotate(-12deg) scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: rotate(-12deg) scale(1.1);
+    opacity: 0.8;
+  }
+  100% {
+    transform: rotate(-12deg) scale(1);
+    opacity: 1;
+  }
+}
+
+/* Ambient particle effects */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-15px);
+  }
+}
+
+.floating-particle {
+  animation: float 4s ease-in-out infinite;
+}
+
+/* Language flag hover effects */
+.language-flag {
+  transition: all 0.3s ease;
+  filter: grayscale(0.2);
+}
+
+.language-flag:hover {
+  filter: grayscale(0) brightness(1.1);
+  transform: scale(1.1) rotate(5deg);
+}
+
+/* Detective office ambiance */
+.detective-office {
+  background: 
+    radial-gradient(circle at 20% 80%, rgba(245, 158, 11, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(59, 130, 246, 0.1) 0%, transparent 50%),
+    linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+}
+
+/* File cabinet drawer effect */
+.file-drawer {
+  background: linear-gradient(145deg, #374151 0%, #1f2937 100%);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+}
+
+.file-drawer:hover {
+  transform: translateX(5px);
+  box-shadow: 
+    inset 0 2px 4px rgba(0, 0, 0, 0.3),
+    -5px 0 15px rgba(0, 0, 0, 0.2);
+}
+
+/* Evidence collection animation */
+.evidence-collected {
+  animation: evidenceCollect 0.8s ease-out;
+}
+
+@keyframes evidenceCollect {
+  0% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2) rotate(10deg);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(0.8) rotate(0deg) translateY(-20px);
+    opacity: 0;
+  }
+}
+
+/* Loading spinner for translations */
+.translation-loading {
+  border: 2px solid rgba(245, 158, 11, 0.3);
+  border-top: 2px solid #f59e0b;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Magnifying glass search effect */
+.magnifying-glass {
+  position: relative;
+  overflow: hidden;
+}
+
+.magnifying-glass::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%);
+  transform: rotate(45deg);
+  animation: magnifyingSweep 3s ease-in-out infinite;
+}
+
+@keyframes magnifyingSweep {
+  0% {
+    transform: translateX(-100%) translateY(-100%) rotate(45deg);
+  }
+  50% {
+    transform: translateX(0%) translateY(0%) rotate(45deg);
+  }
+  100% {
+    transform: translateX(100%) translateY(100%) rotate(45deg);
+  }
+}
+
+/* Case difficulty indicators */
+.difficulty-easy {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+}
+
+.difficulty-medium {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+}
+
+.difficulty-hard {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+}
+
+/* Translation accuracy meter */
+.accuracy-meter {
+  background: conic-gradient(
+    from 0deg,
+    #ef4444 0deg 60deg,
+    #f59e0b 60deg 120deg,
+    #10b981 120deg 180deg,
+    #10b981 180deg 360deg
+  );
+  border-radius: 50%;
+  position: relative;
+}
+
+.accuracy-meter::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 80%;
+  height: 80%;
+  background: #1e293b;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}

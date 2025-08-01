@@ -161,7 +161,7 @@ export default function VerbQuestPage() {
           </h1>
           
           <p className="text-xl md:text-2xl text-green-100 mb-8 leading-relaxed">
-            Embark on an epic RPG adventure to master Spanish verb conjugations!
+            Embark on an epic RPG adventure to master verb conjugations!
             <br />
             Battle mystical creatures and unlock new regions as you learn.
           </p>

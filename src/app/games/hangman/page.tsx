@@ -171,7 +171,7 @@ export default function HangmanPage() {
         gameDescription="Guess the word letter by letter before the hangman is complete"
         supportedLanguages={['es', 'fr', 'de']}
         showCustomMode={true}
-        minVocabularyRequired={5}
+        minVocabularyRequired={0}
         onGameStart={handleGameStart}
         onBack={() => router.push('/games')}
         supportsThemes={true}

@@ -98,7 +98,7 @@ export default function MainNavigation() {
                       Soon
                     </span>
                   )}
-                  {item.name === 'Games' && !item.comingSoon && (
+                  {(item.name === 'Games' || item.name === 'Assessments') && !item.comingSoon && (
                     <span className="absolute -top-2 -right-2 text-xs bg-orange-500 text-white px-1 py-0.5 rounded-full font-bold">
                       DEMO
                     </span>
@@ -189,7 +189,7 @@ export default function MainNavigation() {
                           Coming Soon
                         </span>
                       )}
-                      {item.name === 'Games' && !item.comingSoon && (
+                      {(item.name === 'Games' || item.name === 'Assessments') && !item.comingSoon && (
                         <span className="ml-2 text-xs bg-orange-500 text-white px-2 py-1 rounded-full font-bold">
                           DEMO
                         </span>
@@ -245,4 +245,4 @@ export default function MainNavigation() {
       </div>
     </header>
   );
-} 
+}

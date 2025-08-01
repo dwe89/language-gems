@@ -28,7 +28,10 @@
     "test:watch": "vitest --watch",
     "populate-listening": "tsx scripts/populate-aqa-listening-assessments.ts",
     "populate-reading-comprehension": "tsx scripts/populate-reading-comprehension.ts",
-    "generate-dictation-papers": "tsx scripts/generate-dictation-papers.ts"
+    "generate-dictation-papers": "tsx scripts/generate-dictation-papers.ts",
+    "populate-aqa-writing-assessments": "tsx scripts/populate-aqa-writing-assessments.ts",
+    "populate-sentences": "tsx scripts/populate-sentences.ts",
+    "populate-word-restore": "tsx scripts/populate-word-restore-sentences.ts"
   },
   "dependencies": {
     "@aws-sdk/client-polly": "^3.848.0",
@@ -69,7 +72,7 @@
     "lucide-react": "^0.344.0",
     "next": "^14.2.30",
     "node-fetch": "^3.3.2",
-    "openai": "^5.9.0",
+    "openai": "^5.11.0",
     "pdfkit": "^0.17.1",
     "phaser": "^3.90.0",
     "pixi.js": "^8.11.0",

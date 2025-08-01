@@ -52,7 +52,7 @@ export default function SentenceTowersPage() {
         gameDescription="Build towers by stacking vocabulary blocks"
         supportedLanguages={['es', 'fr', 'de']}
         showCustomMode={true}
-        minVocabularyRequired={20}
+        minVocabularyRequired={0}
         onGameStart={handleGameStart}
         onBack={() => router.push('/games')}
         supportsThemes={false}

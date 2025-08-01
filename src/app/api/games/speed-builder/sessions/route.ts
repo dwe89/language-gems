@@ -60,16 +60,29 @@ export async function POST(request: NextRequest) {
     );
 
     const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+
+    console.log('Speed Builder Sessions API - User detected:', user ? { id: user.id, email: user.email } : 'No user');
+
+    // Allow demo mode - if no user or demo user, we'll skip database operations but still return success
+    const isDemoMode = !user || user.id === 'demo-user-id';
+
+    console.log('Speed Builder Sessions API - Demo mode:', isDemoMode);
 
     const { action, ...data } = await request.json();
+    console.log('Speed Builder Sessions API - Action:', action);
 
     switch (action) {
       case 'start': {
         const { assignmentId, gameMode, settings } = data as SessionStartRequest;
-        
+
+        // In demo mode, return a fake session ID without database operations
+        if (isDemoMode) {
+          return NextResponse.json({
+            sessionId: `demo-${Date.now()}`,
+            message: 'Demo session started successfully'
+          });
+        }
+
         const { data: session, error: sessionError } = await supabase
           .from('speed_builder_sessions')
           .insert({
@@ -88,15 +101,22 @@ export async function POST(request: NextRequest) {
 
         if (sessionError) throw sessionError;
 
-        return NextResponse.json({ 
+        return NextResponse.json({
           sessionId: session.id,
-          message: 'Session started successfully' 
+          message: 'Session started successfully'
         });
       }
 
       case 'end': {
         const { sessionId, stats, sentences } = data as SessionEndRequest;
-        
+
+        // In demo mode, just return success without database operations
+        if (isDemoMode || sessionId.startsWith('demo-')) {
+          return NextResponse.json({
+            message: 'Demo session ended successfully'
+          });
+        }
+
         const { error: updateError } = await supabase
           .from('speed_builder_sessions')
           .update({
@@ -115,7 +135,7 @@ export async function POST(request: NextRequest) {
             }
           })
           .eq('id', sessionId)
-          .eq('user_id', user.id);
+          .eq('user_id', user!.id);
 
         if (updateError) throw updateError;
 

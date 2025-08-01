@@ -14,7 +14,7 @@ import {
   Clipboard,    // For Basics & Core Language
   User,         // For Identity & Personal Life
   Home,         // For Home & Local Area
-  Gamepad,      // For Free Time & Leisure
+  Gamepad2,     // For Free Time & Leisure
   Utensils,     // For Food & Drink
   Shirt,        // For Clothes & Shopping
   Laptop,       // For Technology & Media
@@ -158,7 +158,7 @@ export const VOCABULARY_CATEGORIES: Category[] = [
     id: 'free_time_leisure',
     name: 'free_time_leisure',
     displayName: 'Free Time & Leisure',
-    icon: Gamepad, // Changed from '🎮' to Lucide Gamepad
+    icon: Gamepad2, // Changed from '🎮' to Lucide Gamepad2
     color: 'from-cyan-500 to-blue-600',
     subcategories: [
       { id: 'hobbies_interests', name: 'hobbies_interests', displayName: 'Hobbies & Interests', categoryId: 'free_time_leisure' },

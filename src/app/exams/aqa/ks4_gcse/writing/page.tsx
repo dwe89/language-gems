@@ -99,7 +99,7 @@ const foundationQuestions: Question[] = [
   {
     id: 'f5',
     type: 'article',
-    text: 'You are writing an article about your town and local area. Write approximately 90 words in Spanish. You must write something about each bullet point.',
+    text: 'You are writing an article about your town and local area. You must write something about each bullet point.',
     bullets: [
       'what you like or dislike about your town',
       'what facilities are available for young people',
@@ -129,7 +129,7 @@ const higherQuestions: Question[] = [
   {
     id: 'h2',
     type: 'article',
-    text: 'You are writing an article about technology in your life. Write approximately 90 words in Spanish. You must write something about each bullet point.',
+    text: 'You are writing an article about technology in your life. You must write something about each bullet point.',
     bullets: [
       'how you use technology in your daily life',
       'the advantages and disadvantages of social media',

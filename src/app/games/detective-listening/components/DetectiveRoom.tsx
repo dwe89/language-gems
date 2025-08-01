@@ -37,6 +37,20 @@ export default function DetectiveRoom({ caseType, subcategory, language, onGameC
     evidenceCollected: [] as Evidence[]
   });
 
+  // Audio state and refs
+  const [backgroundMusic, setBackgroundMusic] = useState<HTMLAudioElement | null>(null);
+  const [audioEffects, setAudioEffects] = useState<{
+    radioStatic: HTMLAudioElement | null;
+    radioBeep: HTMLAudioElement | null;
+    correctAnswer: HTMLAudioElement | null;
+    wrongAnswer: HTMLAudioElement | null;
+  }>({
+    radioStatic: null,
+    radioBeep: null,
+    correctAnswer: null,
+    wrongAnswer: null
+  });
+
   // Map language for vocabulary loading
   const mapLanguageForVocab = (lang: string) => {
     const mapping: Record<string, string> = {
@@ -104,15 +118,146 @@ export default function DetectiveRoom({ caseType, subcategory, language, onGameC
     }
   }, [vocabulary]);
 
+  // Initialize audio effects
+  useEffect(() => {
+    console.log('Initializing audio effects...');
+    
+    // Initialize background music
+    const bgMusic = new Audio('/audio/detective-listening/background-music.mp3');
+    bgMusic.loop = true;
+    bgMusic.volume = 0.15; // Keep it subtle
+    bgMusic.addEventListener('error', (e) => console.error('Background music load error:', e));
+    bgMusic.addEventListener('canplaythrough', () => console.log('Background music loaded successfully'));
+    setBackgroundMusic(bgMusic);
+
+    // Initialize sound effects
+    const effects = {
+      radioStatic: new Audio('/audio/detective-listening/radio-static.mp3'),
+      radioBeep: new Audio('/audio/detective-listening/radio-beep.mp3'),
+      correctAnswer: new Audio('/audio/detective-listening/correct-answer.mp3'),
+      wrongAnswer: new Audio('/audio/detective-listening/wrong-answer.mp3')
+    };
+
+    // Add error handling and set volumes for each effect
+    Object.entries(effects).forEach(([name, audio]) => {
+      if (audio) {
+        audio.addEventListener('error', (e) => console.error(`${name} load error:`, e));
+        audio.addEventListener('canplaythrough', () => console.log(`${name} loaded successfully`));
+        
+        // Set volumes
+        switch(name) {
+          case 'radioStatic':
+            audio.volume = 0.3;
+            break;
+          case 'radioBeep':
+            audio.volume = 0.4;
+            break;
+          case 'correctAnswer':
+            audio.volume = 0.5;
+            break;
+          case 'wrongAnswer':
+            audio.volume = 0.4;
+            break;
+        }
+      }
+    });
+
+    console.log('Audio effects initialized:', effects);
+    setAudioEffects(effects);
+
+    // Start background music
+    const playBgMusic = async () => {
+      try {
+        console.log('Attempting to play background music');
+        await bgMusic.play();
+        console.log('Background music started successfully');
+      } catch (error) {
+        console.log('Background music autoplay blocked - will play on first user interaction:', error);
+      }
+    };
+    playBgMusic();
+
+    // Cleanup function
+    return () => {
+      bgMusic.pause();
+      bgMusic.currentTime = 0;
+      Object.values(effects).forEach(audio => {
+        if (audio) {
+          audio.pause();
+          audio.currentTime = 0;
+        }
+      });
+    };
+  }, []);
+
+  // Helper function to play sound effects
+  const playSound = async (soundType: keyof typeof audioEffects) => {
+    console.log(`Attempting to play ${soundType}:`, audioEffects);
+    const sound = audioEffects[soundType];
+    console.log(`Sound object for ${soundType}:`, sound);
+    if (sound) {
+      try {
+        sound.currentTime = 0; // Reset to beginning
+        console.log(`Playing ${soundType} sound`);
+        await sound.play();
+        console.log(`${soundType} sound played successfully`);
+      } catch (error) {
+        console.error(`Could not play ${soundType} sound:`, error);
+      }
+    } else {
+      console.error(`${soundType} sound not found in audioEffects`);
+      // Try creating and playing the sound directly as fallback
+      try {
+        const directSound = new Audio(`/audio/detective-listening/${soundType === 'radioStatic' ? 'radio-static' : soundType === 'radioBeep' ? 'radio-beep' : soundType === 'correctAnswer' ? 'correct-answer' : 'wrong-answer'}.mp3`);
+        directSound.volume = 0.4;
+        await directSound.play();
+        console.log(`Direct ${soundType} sound played successfully`);
+      } catch (directError) {
+        console.error(`Direct ${soundType} sound also failed:`, directError);
+      }
+    }
+  };
+
+  // Ensure background music starts on first user interaction
+  const ensureBackgroundMusic = async () => {
+    console.log('ensureBackgroundMusic called, backgroundMusic:', backgroundMusic);
+    if (backgroundMusic && backgroundMusic.paused) {
+      try {
+        console.log('Starting background music...');
+        await backgroundMusic.play();
+        console.log('Background music started successfully');
+      } catch (error) {
+        console.error('Could not start background music:', error);
+      }
+    } else if (backgroundMusic) {
+      console.log('Background music is already playing');
+    } else {
+      console.log('Background music not initialized yet');
+    }
+  };
+
   const currentEvidence = evidenceList[currentEvidenceIndex];
 
   const handlePlayEvidence = async () => {
     if (currentEvidence && replayCount < 2) {
-      // Pass the actual word as fallback text for TTS
-      await playEvidence(currentEvidence.audio, currentEvidence.word);
-      if (!isPlaying) {
-        setReplayCount(prev => prev + 1);
-      }
+      // Ensure background music is playing on first interaction
+      await ensureBackgroundMusic();
+      
+      // Play radio static first
+      await playSound('radioStatic');
+      
+      // Small delay then play radio beep
+      setTimeout(async () => {
+        await playSound('radioBeep');
+        
+        // Another small delay then play the evidence audio
+        setTimeout(async () => {
+          await playEvidence(currentEvidence.audio, currentEvidence.word);
+          if (!isPlaying) {
+            setReplayCount(prev => prev + 1);
+          }
+        }, 300);
+      }, 500);
     }
   };
 
@@ -123,6 +268,14 @@ export default function DetectiveRoom({ caseType, subcategory, language, onGameC
     setShowFeedback(true);
     
     const isCorrect = answer === currentEvidence.correct;
+    
+    // Play feedback sound effect
+    if (isCorrect) {
+      playSound('correctAnswer');
+    } else {
+      playSound('wrongAnswer');
+    }
+    
     const updatedEvidence = {
       ...currentEvidence,
       answered: true,
@@ -234,42 +387,32 @@ export default function DetectiveRoom({ caseType, subcategory, language, onGameC
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-900 via-orange-800 to-red-900 relative overflow-hidden">
-      {/* Detective Room Background */}
-      <div className="absolute inset-0 opacity-40">
-        {/* Desk */}
-        <div className="absolute bottom-0 left-0 right-0 h-96 bg-gradient-to-t from-amber-800 to-amber-700"></div>
-        
-        {/* Filing Cabinet */}
-        <div className="absolute bottom-96 right-10 w-40 h-80 bg-gray-700 rounded-t-lg shadow-2xl">
-          <div className="w-full h-10 bg-gray-600 rounded-t-lg mb-2"></div>
-          <div className="w-full h-10 bg-gray-600 mb-2"></div>
-          <div className="w-full h-10 bg-gray-600"></div>
-        </div>
-
-        {/* Desk Lamp */}
-        <div className="absolute bottom-96 left-10 w-20 h-40 bg-gray-600 rounded-full shadow-xl">
-          <div className="w-24 h-24 bg-yellow-300 rounded-full -mt-6 -ml-2 opacity-70 blur-lg"></div>
-        </div>
-
-        {/* Case Board */}
-        <div className="absolute top-20 left-1/2 transform -translate-x-1/2 w-80 h-60 bg-cork-board bg-amber-100 rounded-lg shadow-2xl border-4 border-amber-800">
-          <div className="p-4">
-            <div className="text-amber-900 font-bold text-center mb-2">CASE BOARD</div>
-            <div className="grid grid-cols-5 gap-2">
-              {[...Array(10)].map((_, i) => (
-                <div
-                  key={i}
-                  className={`w-8 h-8 rounded border-2 ${
-                    i < gameProgress.correctAnswers
-                      ? 'bg-green-400 border-green-600'
-                      : i === currentEvidenceIndex
-                      ? 'bg-yellow-400 border-yellow-600 animate-pulse'
-                      : 'bg-gray-300 border-gray-400'
-                  }`}
-                />
-              ))}
-            </div>
+    <div 
+      className="min-h-screen relative overflow-hidden"
+      style={{
+        backgroundImage: "url('/images/games/detective-listening/detective-office-bg.jpg')",
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat'
+      }}
+    >
+      {/* Progress Indicator - subtle and integrated */}
+      <div className="absolute top-40 left-1/2 transform -translate-x-1/2 w-80 h-auto bg-black/30 backdrop-blur-sm rounded-lg shadow-lg border border-white/20 z-10">
+        <div className="p-4">
+          <div className="text-white/90 font-semibold text-center mb-3 text-sm">EVIDENCE PROGRESS</div>
+          <div className="grid grid-cols-10 gap-1">
+            {[...Array(10)].map((_, i) => (
+              <div
+                key={i}
+                className={`w-6 h-6 rounded-full border ${
+                  i < gameProgress.correctAnswers
+                    ? 'bg-green-500/80 border-green-400'
+                    : i === currentEvidenceIndex
+                    ? 'bg-yellow-500/80 border-yellow-400 animate-pulse'
+                    : 'bg-white/20 border-white/40'
+                }`}
+              />
+            ))}
           </div>
         </div>
       </div>
@@ -315,7 +458,7 @@ export default function DetectiveRoom({ caseType, subcategory, language, onGameC
       </div>
 
       {/* Main Game Area */}
-      <div className="relative z-10 max-w-4xl mx-auto px-6 py-8">
+      <div className="relative z-10 max-w-4xl mx-auto px-6 pt-32 pb-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Radio Section */}
           <motion.div

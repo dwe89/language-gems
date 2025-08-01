@@ -171,7 +171,7 @@ export default function DetectiveListeningGame({ settings, onBackToMenu, assignm
               subcategory={selectedSubcategory}
               language={selectedLanguage}
               onGameComplete={handleGameComplete}
-              onBack={assignmentMode ? onBackToMenu : () => setCurrentScreen('frequency-selection')}
+              onBack={assignmentMode || hasPreselectedSettings ? onBackToMenu : () => setCurrentScreen('frequency-selection')}
               assignmentMode={assignmentMode}
             />
           </motion.div>

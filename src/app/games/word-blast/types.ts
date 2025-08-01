@@ -1,3 +1,49 @@
+// Database sentence structure
+export interface DatabaseSentence {
+  id: string;
+  source_language: string;
+  source_sentence: string;
+  english_translation: string;
+  category: string;
+  subcategory: string;
+  difficulty_level: 'beginner' | 'intermediate' | 'advanced';
+  curriculum_level: 'KS3' | 'KS4' | 'KS5';
+  word_count: number;
+  complexity_score: number;
+}
+
+// Sentence challenge for Word Blast
+export interface SentenceChallenge {
+  id: string;
+  english: string;
+  targetLanguage: string;
+  targetSentence: string;
+  words: string[];
+  category: string;
+  subcategory?: string;
+  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  curriculumLevel: 'KS3' | 'KS4' | 'KS5';
+}
+
+// Theme configuration
+export interface ThemeConfig {
+  id: string;
+  name: string;
+  displayName: string;
+  description: string;
+  colors: {
+    primary: string;
+    secondary: string;
+    accent: string;
+    background: string;
+  };
+  effects: {
+    particles: boolean;
+    animations: boolean;
+    sounds: boolean;
+  };
+}
+
 export type WordItem = {
   id: string;
   word: string;
@@ -22,6 +68,7 @@ export type FallingGem = {
   rotation: number;
   scale: number;
   glowing: boolean;
+  powerUpType?: PowerUpType;
 };
 
 export type ComboEffect = {
@@ -54,18 +101,19 @@ export type Particle = {
   size: number;
 };
 
+export type PowerUpType = 'slowTime' | 'clearDecoys' | 'hintNext' | 'shieldLife' | 'recoverLife';
+
 export type PowerUp = {
   id: string;
-  type: 'gemFreeze' | 'doubleGems' | 'slowMotion' | 'gemMagnet' | 'perfectGem';
+  type: PowerUpType;
   icon: string;
   active: boolean;
   cooldown: number;
   duration: number;
   description: string;
-  gemType: GemType;
 };
 
-export type GameState = 'ready' | 'playing' | 'paused' | 'completed' | 'timeout' | 'tutorial';
+export type GameState = 'ready' | 'playing' | 'active' | 'paused' | 'completed' | 'timeout' | 'tutorial';
 
 export type GameSettings = {
   timeLimit: number;
@@ -76,6 +124,8 @@ export type GameSettings = {
   gemSpeed: number;
   maxGems: number;
   comboMultiplier: number;
+  sentenceComplexity: 'simple' | 'medium' | 'complex';
+  audioEnabled: boolean;
 };
 
 export type GameStats = {
@@ -84,9 +134,11 @@ export type GameStats = {
   maxCombo: number;
   gemsCollected: number;
   gemsMissed: number;
+  wordsCollected: number;
   accuracy: number;
   fastestResponse: number;
   totalPlayTime: number;
+  timeRemaining: number;
   gemsByType: Record<GemType, number>;
 };
 
@@ -95,6 +147,12 @@ export type SoundEffect = {
   src: string;
   volume: number;
   loop: boolean;
+};
+
+export type Challenge = {
+  english: string;
+  spanish: string;
+  words: string[];
 };
 
 export type GameTheme = {

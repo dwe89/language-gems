@@ -30,6 +30,18 @@ export default function VerbQuestGame({
   assignmentMode = false,
   assignmentConfig
 }: VerbQuestGameProps) {
+  // Safety check to ensure character and stats are properly initialized
+  if (!character || !character.stats) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center">
+        <div className="text-center text-white">
+          <div className="w-12 h-12 border-4 border-white/20 border-t-white rounded-full animate-spin mx-auto mb-4"></div>
+          <p>Loading character data...</p>
+        </div>
+      </div>
+    );
+  }
+
   const [gameState, setGameState] = useState<GameState>('worldmap');
   const [currentBattle, setCurrentBattle] = useState<any>(null);
   const [showIntro, setShowIntro] = useState(character.stats.level === 1 && character.stats.experience === 0);
@@ -103,7 +115,7 @@ export default function VerbQuestGame({
     if (region && region.enemies) {
       // Check if all enemies in this region are defeated
       const allEnemiesDefeated = region.enemies.every((enemy: any) => 
-        character.stats.defeatedEnemies.has(enemy.id)
+        character?.stats?.defeatedEnemies?.has(enemy.id)
       );
       
       if (allEnemiesDefeated) {
@@ -126,7 +138,7 @@ export default function VerbQuestGame({
           const nextRegion = regionOrder[currentIndex + 1];
           // Check if next region is unlocked
           const { isRegionUnlocked } = require('./VerbData');
-          if (isRegionUnlocked(nextRegion, character.stats)) {
+          if (character?.stats && isRegionUnlocked(nextRegion, character.stats)) {
             character.stats.currentRegion = nextRegion;
             character.saveProgress();
           }
@@ -185,10 +197,12 @@ export default function VerbQuestGame({
               transition={{ duration: 0.5 }}
             >
               <WorldMap
-                stats={character.stats}
+                stats={character?.stats}
                 onStartBattle={startBattle}
                 onUpdateStats={(newStats: any) => {
-                  character.stats = { ...character.stats, ...newStats };
+                  if (character?.stats) {
+                    character.stats = { ...character.stats, ...newStats };
+                  }
                 }}
                 soundEnabled={soundEnabled}
               />
@@ -224,7 +238,7 @@ function IntroSequence({ onComplete }: { onComplete: () => void }) {
   
   const introSteps = [
     {
-      text: "Welcome to the mystical world of Spanish verbs...",
+      text: "Welcome to the mystical world of Conjugaria...",
       image: "🌟"
     },
     {

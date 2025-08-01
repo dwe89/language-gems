@@ -339,7 +339,7 @@ export const enemies = {
     verbTypes: ['irregular', 'stem-changing', 'reflexive'],
     tenseTypes: ['present.irregular'],
     experience: 1000,
-    description: 'The ultimate master of all Spanish conjugations and verb forms.'
+    description: 'The ultimate master of all conjugations and verb forms.'
   }
 };
 
@@ -349,7 +349,7 @@ export const regions = {
     id: 'forest_of_beginnings',
     name: 'Forest of Beginnings',
     emoji: '🌲',
-    description: 'A peaceful woodland where your Spanish journey begins with basic present tense verbs.',
+    description: 'A peaceful woodland where your journey begins with basic present tense verbs.',
     background: 'from-green-700 to-green-900',
     enemies: [enemies.moss_goblin, enemies.leaf_sprite, enemies.forest_guardian],
     unlockRequirement: null,
