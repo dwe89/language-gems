@@ -5,22 +5,46 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { WordBlastEngineProps } from '../WordBlastEngine';
 import { WordObject, ParticleEffect, BaseThemeEngine } from '../BaseThemeEngine';
 
+// Updated PirateShip interface
 interface PirateShip extends WordObject {
   shipType: 'galleon' | 'frigate' | 'sloop';
   sailsUp: boolean;
-  treasureValue: number;
-  weathered: number;
-  floating: boolean;
+  sinkingProgress: number;
+  size: number;
+  direction: 'left' | 'right';
+  targetY: number; // The fixed Y position for the lane
+  spawnTime: number;
+  feedbackStatus?: 'incorrect';
+  firing?: boolean;
+  laneIndex: number; // Which lane (0-3) this ship is in
+  currentX: number; // To track actual X position for rendering
 }
 
-interface CannonBall {
-  id: string;
-  x: number;
-  y: number;
-  targetX: number;
-  targetY: number;
-  progress: number;
+// Theme engine class
+class PirateAdventureThemeEngine extends BaseThemeEngine {
+  // Override generateDecoys to use language-specific decoys and ensure they are truly distinct
+  generateDecoys(correctWords: string[], allChallenges: any[], difficulty: string, targetLanguage?: string): string[] {
+    // Use the enhanced base class method with language support
+    return super.generateDecoys(correctWords, allChallenges, difficulty, targetLanguage);
+  }
 }
+
+const MAX_ACTIVE_SHIPS = 15;
+const WATER_LINE = 300;
+const SHIP_WIDTH_ESTIMATE = 180;
+const SHIP_SPACING = 250; // Smaller spacing for faster appearance and denser flow
+const LANE_COUNT = 3; // Three distinct lanes as shown in the image
+
+// Define explicit Y coordinates for each lane to match the screenshot spacing
+const LANE_Y_POSITIONS = [
+  330, // Top Lane (Lane 0)
+  500, // Middle Lane (Lane 1)
+  680  // Bottom Lane (Lane 2)
+];
+
+// Threshold for ensuring all needed correct words are on screen
+const GUARANTEE_NEEDED_WORDS_THRESHOLD = 9;
+
 
 export default function PirateAdventureEngine(props: WordBlastEngineProps) {
   const {
@@ -37,180 +61,474 @@ export default function PirateAdventureEngine(props: WordBlastEngineProps) {
 
   const [pirateShips, setPirateShips] = useState<PirateShip[]>([]);
   const [particles, setParticles] = useState<ParticleEffect[]>([]);
-  const [cannonBalls, setCannonBalls] = useState<CannonBall[]>([]);
   const [wordsCollected, setWordsCollected] = useState<string[]>([]);
-  const [challengeProgress, setChallengeProgress] = useState(0);
-  const [currentWordIndex, setCurrentWordIndex] = useState(0);
-  
+  const [currentWordIndex, setCurrentWordIndex] = useState(0); // This will track how many words are collected
+
   const containerRef = useRef<HTMLDivElement>(null);
   const animationRef = useRef<number>();
   const themeEngine = useRef(new PirateAdventureThemeEngine());
+  const lastSpawnTime = useRef<number[]>(Array(LANE_COUNT).fill(0));
+  const lastShipPositions = useRef<number[]>(Array(LANE_COUNT).fill(-SHIP_SPACING)); // Track last ship position in each lane
+  const SPAWN_INTERVAL_PER_LANE = 1000; // Adjusted for faster ship flow
 
-  // Spawn pirate ships with words
-  const spawnPirateShips = () => {
-    if (!currentChallenge || isPaused || !gameActive) return;
+  const getScreenDimensions = () => {
+    if (typeof window !== 'undefined') {
+      return { width: window.innerWidth, height: window.innerHeight };
+    }
+    return { width: 1200, height: 800 };
+  };
 
-    const correctWords = currentChallenge.words;
-    const decoys = themeEngine.current.generateDecoys(correctWords, challenges, difficulty);
-    const allWords = [...correctWords, ...decoys];
-    const shuffledWords = allWords.sort(() => 0.5 - Math.random());
+  const createSingleShip = (laneIndex: number, forcedWord?: string, forcedIsCorrect?: boolean) => {
+    if (!currentChallenge || !currentChallenge.words || currentChallenge.words.length === 0) {
+      console.error('[PirateAdventure] createSingleShip called without valid currentChallenge');
+      return null;
+    }
 
-    const screenWidth = typeof window !== 'undefined' ? window.innerWidth : 1200;
-    const shipTypes: ('galleon' | 'frigate' | 'sloop')[] = ['galleon', 'frigate', 'sloop'];
+    const shipsInLane = pirateShips.filter(ship => ship.laneIndex === laneIndex && !ship.clicked);
+    
+    // Find the leftmost position of any active ship in this lane
+    const leftmostShipX = shipsInLane.reduce((minX, ship) => 
+        Math.min(minX, ship.currentX), 
+        Infinity 
+    );
+
+    // Calculate the desired spawn X for the new ship.
+    const desiredSpawnX = leftmostShipX - SHIP_SPACING - SHIP_WIDTH_ESTIMATE; 
+
+    // Also consider a hard limit for how far left they can spawn initially if no ships are present
+    const minimumSafeSpawnX = -SHIP_WIDTH_ESTIMATE - 100; 
+
+    const startX = Math.min(desiredSpawnX, minimumSafeSpawnX);
+
+    let wordToSpawn: string;
+    let isChosenWordCorrect: boolean;
+
+    // If a word is explicitly provided (by the main spawning loop), use it
+    if (forcedWord !== undefined && forcedIsCorrect !== undefined) {
+        wordToSpawn = forcedWord;
+        isChosenWordCorrect = forcedIsCorrect;
+    } else {
+        // Fallback: This path is primarily for initial spawns, or if the main loop doesn't force a word.
+        const correctWords = currentChallenge.words;
+        const wordsCurrentlyOnScreen = new Set(pirateShips.filter(s => !s.clicked).map(s => s.word.toLowerCase()));
+
+        // Get words still needed for the sentence that are NOT on screen
+        const wordsUncollectedNotOnScreen = correctWords.filter(word =>
+          !wordsCollected.includes(word) && !wordsCurrentlyOnScreen.has(word.toLowerCase())
+        );
+
+        const allDecoys = themeEngine.current.generateDecoys(correctWords, challenges, difficulty, currentChallenge.targetLanguage);
+        const availableDecoys = allDecoys.filter(decoy => !wordsCurrentlyOnScreen.has(decoy.toLowerCase()));
+
+        // Prioritize uncollected correct words if any are available
+        if (wordsUncollectedNotOnScreen.length > 0 && Math.random() < 0.7) { // Increased chance for correct words
+            wordToSpawn = wordsUncollectedNotOnScreen[Math.floor(Math.random() * wordsUncollectedNotOnScreen.length)];
+            isChosenWordCorrect = true;
+        } else if (availableDecoys.length > 0) {
+            wordToSpawn = availableDecoys[Math.floor(Math.random() * availableDecoys.length)];
+            isChosenWordCorrect = false;
+        } else if (correctWords.length > 0) { // Fallback if no specific uncollected or decoys, but challenge has words
+            wordToSpawn = correctWords[Math.floor(Math.random() * correctWords.length)]; // May respawn collected words
+            isChosenWordCorrect = true;
+        } else {
+            wordToSpawn = allDecoys[Math.floor(Math.random() * allDecoys.length)] || "null"; // Ultimate fallback
+            isChosenWordCorrect = false;
+        }
+    }
+
+    const { height: screenHeight } = getScreenDimensions();
+    const direction: 'left' | 'right' = 'left';
+
+    let targetY = LANE_Y_POSITIONS[laneIndex];
+    if (typeof targetY === 'undefined') {
+        console.warn(`[PirateAdventure] Invalid laneIndex: ${laneIndex}. Defaulting to first lane Y.`);
+        targetY = LANE_Y_POSITIONS[0]; 
+    }
+
+    return {
+      id: `ship-${Date.now()}-${Math.random()}`,
+      word: wordToSpawn,
+      isCorrect: isChosenWordCorrect,
+      x: startX, 
+      currentX: startX,
+      y: targetY, 
+      speed: 0.8 + Math.random() * 0.5, 
+      rotation: 0, 
+      scale: 1.0,
+      spawnTime: Date.now(),
+      clicked: false,
+      shipType: 'frigate' as 'frigate',
+      sailsUp: true,
+      sinkingProgress: 0,
+      size: 1.0,
+      feedbackStatus: undefined,
+      direction,
+      targetY,
+      laneIndex
+    };
+  };
+
+  const spawnInitialPirateShips = () => {
+    if (!currentChallenge) {
+      return;
+    }
+
+    setPirateShips([]);
+    setWordsCollected([]);
+    setCurrentWordIndex(0);
+    lastSpawnTime.current = Array(LANE_COUNT).fill(0);
+    lastShipPositions.current = Array(LANE_COUNT).fill(-SHIP_WIDTH_ESTIMATE * 5); 
 
     const newShips: PirateShip[] = [];
+    const { height: screenHeight } = getScreenDimensions();
 
-    shuffledWords.forEach((word, index) => {
-      const position = themeEngine.current.findNonOverlappingPosition(
-        newShips,
-        screenWidth,
-        800,
-        160
-      );
+    const allSentenceWords = [...currentChallenge.words];
+    const initialDecoysPool = [...themeEngine.current.generateDecoys(currentChallenge.words, challenges, difficulty, currentChallenge.targetLanguage)];
 
-      newShips.push({
-        id: `ship-${currentChallenge.id}-${index}-${Date.now()}`,
-        word,
-        isCorrect: correctWords.includes(word),
-        x: position.x,
-        y: position.y - (index * 120), // Stagger spawn times
-        speed: 0.6 + Math.random() * 0.3,
-        rotation: (Math.random() - 0.5) * 5, // Slight rocking motion
-        scale: 0.8 + Math.random() * 0.3,
-        spawnTime: Date.now(),
-        clicked: false,
-        shipType: shipTypes[Math.floor(Math.random() * shipTypes.length)],
-        sailsUp: Math.random() > 0.3,
-        treasureValue: Math.floor(Math.random() * 100) + 50,
-        weathered: Math.random() * 0.5 + 0.3,
-        floating: true
-      });
-    });
+    const shipsPerLane = Math.ceil(MAX_ACTIVE_SHIPS / LANE_COUNT);
 
+    for (let laneIndex = 0; laneIndex < LANE_COUNT; laneIndex++) {
+        let targetY = LANE_Y_POSITIONS[laneIndex];
+        if (typeof targetY === 'undefined') {
+            console.warn(`[PirateAdventure] Invalid laneIndex: ${laneIndex}. Defaulting to first lane Y.`);
+            targetY = LANE_Y_POSITIONS[0]; 
+        }
+
+        const baseStartX = -SHIP_WIDTH_ESTIMATE - 50; 
+
+        for (let shipInLane = 0; shipInLane < shipsPerLane && newShips.length < MAX_ACTIVE_SHIPS; shipInLane++) {
+            let wordToSpawn: string | undefined;
+            let isCorrect: boolean;
+
+            const randomChance = Math.random();
+            // Prioritize initial correct words more strongly for initial spawn
+            if (allSentenceWords.length > 0 && (randomChance < 0.8 || initialDecoysPool.length === 0)) { 
+                const wordIndex = Math.floor(Math.random() * allSentenceWords.length);
+                wordToSpawn = allSentenceWords.splice(wordIndex, 1)[0];
+                isCorrect = true;
+            } else if (initialDecoysPool.length > 0) {
+                const decoyIndex = Math.floor(Math.random() * initialDecoysPool.length);
+                wordToSpawn = initialDecoysPool.splice(decoyIndex, 1)[0];
+                isCorrect = false;
+            } else {
+                break;
+            }
+
+            if (wordToSpawn) {
+                const startX = baseStartX - (shipInLane * (SHIP_WIDTH_ESTIMATE + SHIP_SPACING)) - (Math.random() * 100);
+
+                const ship = {
+                    id: `ship-initial-${Date.now()}-${Math.random()}`,
+                    word: wordToSpawn,
+                    isCorrect: isCorrect,
+                    x: startX,
+                    currentX: startX,
+                    y: targetY, 
+                    speed: 0.8 + Math.random() * 0.5, 
+                    rotation: 0,
+                    scale: 1.0,
+                    spawnTime: Date.now(),
+                    clicked: false,
+                    shipType: 'frigate' as 'frigate',
+                    sailsUp: true,
+                    sinkingProgress: 0,
+                    size: 1.0,
+                    feedbackStatus: undefined,
+                    direction: 'left' as 'left',
+                    laneIndex: laneIndex,
+                    targetY: targetY
+                };
+
+                newShips.push(ship);
+            }
+        }
+    }
     setPirateShips(newShips);
   };
 
-  // Update ship positions and floating motion
+
   const updateShips = () => {
     if (isPaused || !gameActive) return;
 
+    const { width: screenWidth } = getScreenDimensions();
+    const shipsToRemove: PirateShip[] = [];
+
     setPirateShips(prev =>
-      prev.map(ship => ({
-        ...ship,
-        y: ship.y + ship.speed,
-        rotation: ship.rotation + Math.sin(Date.now() * 0.003) * 0.5, // Rocking motion
-        x: ship.x + Math.sin(Date.now() * 0.002 + ship.spawnTime * 0.001) * 0.3 // Side-to-side drift
-      })).filter(ship => ship.y < (typeof window !== 'undefined' ? window.innerHeight + 100 : 900))
+      prev
+        .filter(ship => ship && typeof ship === 'object')
+        .map(ship => {
+          const newX = ship.currentX + ship.speed;
+
+          const offScreen = newX > screenWidth + SHIP_WIDTH_ESTIMATE / 2;
+
+          if (offScreen) {
+            shipsToRemove.push(ship);
+            return ship;
+          }
+
+          const newY = ship.targetY; 
+
+          return {
+            ...ship,
+            currentX: newX,
+            y: newY,
+            rotation: 0 
+          };
+        }).filter(ship => {
+          const shouldRemove = shipsToRemove.some(s => s.id === ship.id);
+          if (shouldRemove) {
+            const trailParticles = themeEngine.current.createParticleEffect(ship.currentX, ship.y, 'ambient', 10);
+            setParticles(currentParticles => [...currentParticles, ...trailParticles]);
+          }
+          return !shouldRemove;
+        })
     );
   };
 
-  // Update cannon balls
-  const updateCannonBalls = () => {
-    setCannonBalls(prev =>
-      prev.map(ball => ({
-        ...ball,
-        progress: Math.min(ball.progress + 0.05, 1),
-        x: ball.x + (ball.targetX - ball.x) * 0.05,
-        y: ball.y + (ball.targetY - ball.y) * 0.05
-      })).filter(ball => ball.progress < 1)
-    );
-  };
+  const ShipComponent = React.memo(({ ship }: { ship: PirateShip }) => {
+    const isFlipped = false;
 
-  // Handle ship click (cannon fire)
+    const feedbackClasses = ship.feedbackStatus === 'incorrect' ? 'ring-4 ring-red-500 animate-pulse' : '';
+
+    return (
+      <div
+        className={`relative ${isFlipped ? 'scale-x-[-1]' : ''} ${feedbackClasses}`}
+        style={{
+          transform: `scale(${ship.size})`,
+          width: '140px',
+          height: '100px',
+          pointerEvents: 'none'
+        }}
+      >
+        <div className="relative" style={{ pointerEvents: 'none' }}>
+          <div className="relative bg-gradient-to-b from-black via-gray-900 to-gray-950 rounded-b-full border-2 border-gray-800 shadow-2xl"
+            style={{ width: '140px', height: '45px', pointerEvents: 'none' }}>
+            <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-32 h-3 bg-amber-950 rounded-b-full" style={{ pointerEvents: 'none' }}></div>
+            <div className="absolute top-2 left-2 right-2 h-0.5 bg-amber-700 opacity-60" style={{ pointerEvents: 'none' }}></div>
+            <div className="absolute top-4 left-2 right-2 h-0.5 bg-amber-700 opacity-60" style={{ pointerEvents: 'none' }}></div>
+            <div className="absolute top-6 left-2 right-2 h-0.5 bg-amber-700 opacity-60" style={{ pointerEvents: 'none' }}></div>
+          </div>
+          <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-28 h-4 bg-gradient-to-b from-gray-800 to-black rounded-t-lg border border-gray-700" style={{ pointerEvents: 'none' }}></div>
+          {ship.shipType === 'galleon' && (
+            <div className="absolute -top-4 right-4 w-8 h-6 bg-gradient-to-b from-gray-700 to-black rounded-t border border-gray-600" style={{ pointerEvents: 'none' }}></div>
+          )}
+          <div className="absolute top-0 left-1/3 transform -translate-x-1/2 -translate-y-16 w-1 h-20 bg-black shadow-sm" style={{ pointerEvents: 'none' }}></div>
+          {ship.shipType !== 'sloop' && (
+            <div className="absolute top-0 right-1/3 transform translate-x-1/2 -translate-y-14 w-1 h-16 bg-black shadow-sm" style={{ pointerEvents: 'none' }}></div>
+          )}
+          {ship.sailsUp && (
+            <>
+              <div className="absolute top-0 left-1/3 transform -translate-x-1/2 -translate-y-14 w-12 h-14 bg-gradient-to-br from-gray-100 via-gray-200 to-gray-300 rounded border border-gray-400 shadow-lg" style={{ pointerEvents: 'none' }}>
+                <div className="absolute top-2 left-1 right-1 h-0.5 bg-gray-400 opacity-40" style={{ pointerEvents: 'none' }}></div>
+                <div className="absolute top-4 left-1 right-1 h-0.5 bg-gray-400 opacity-40" style={{ pointerEvents: 'none' }}></div>
+                <div className="absolute top-6 left-1 right-1 h-0.5 bg-gray-400 opacity-40" style={{ pointerEvents: 'none' }}></div>
+              </div>
+              {ship.shipType !== 'sloop' && (
+                <div className="absolute top-0 right-1/3 transform translate-x-1/2 -translate-y-12 w-10 h-12 bg-gradient-to-br from-gray-100 via-gray-200 to-gray-300 rounded border border-gray-400 shadow-lg" style={{ pointerEvents: 'none' }}>
+                  <div className="absolute top-2 left-1 right-1 h-0.5 bg-gray-400 opacity-40" style={{ pointerEvents: 'none' }}></div>
+                  <div className="absolute top-4 left-1 right-1 h-0.5 bg-gray-400 opacity-40" style={{ pointerEvents: 'none' }}></div>
+                </div>
+              )}
+            </>
+          )}
+          <div className="absolute top-1/2 left-0 transform -translate-y-1/2 -translate-x-2 w-6 h-2 bg-gray-800 rounded-full shadow-md" style={{ pointerEvents: 'none' }}>
+            <div className="absolute right-0 top-1/2 transform -translate-y-1/2 w-2 h-3 bg-gray-700 rounded-full" style={{ pointerEvents: 'none' }}></div>
+          </div>
+          {ship.shipType === 'galleon' && (
+            <div className="absolute top-1/2 left-0 transform -translate-y-1/2 translate-y-2 -translate-x-2 w-5 h-2 bg-gray-800 rounded-full shadow-md" style={{ pointerEvents: 'none' }}>
+              <div className="absolute right-0 top-1/2 transform -translate-y-1/2 w-2 h-2 bg-gray-700 rounded-full" style={{ pointerEvents: 'none' }}></div>
+            </div>
+          )}
+          <div className="absolute top-0 right-6 transform -translate-y-12 w-4 h-3 bg-red-600 border-l-2 border-amber-900 shadow-sm" style={{ pointerEvents: 'none' }}>
+            <div className="w-full h-full bg-gradient-to-r from-red-600 to-red-700" style={{ pointerEvents: 'none' }}></div>
+          </div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 translate-y-1" style={{ pointerEvents: 'none' }}>
+            <div className="absolute -left-16 top-2 w-2 h-3 bg-gray-600 rounded-sm opacity-80" style={{ pointerEvents: 'none' }}></div>
+            <div className="absolute -right-12 -top-2 w-3 h-3 border-2 border-gray-600 rounded-full bg-gray-800" style={{ pointerEvents: 'none' }}></div>
+          </div>
+          <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-20 h-3 bg-white/20 rounded-full blur-sm" style={{ pointerEvents: 'none' }}></div>
+          <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-16 h-2 bg-white/30 rounded-full blur-xs" style={{ pointerEvents: 'none' }}></div>
+          <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-12 h-1 bg-white/40 rounded-full" style={{ pointerEvents: 'none' }}></div>
+        </div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 translate-y-1 bg-amber-50 text-amber-900 px-3 py-1.5 rounded-lg border-2 border-amber-600 font-bold text-sm shadow-xl" style={{ pointerEvents: 'none' }}>
+          {ship.word}
+        </div>
+      </div>
+    );
+  });
+
+
   const handleShipClick = (ship: PirateShip) => {
-    if (ship.clicked) return;
+    if (ship.feedbackStatus === 'incorrect' || ship.clicked) {
+      return;
+    }
 
-    // Mark as clicked to prevent double-clicks
-    setPirateShips(prev =>
-      prev.map(s => s.id === ship.id ? { ...s, clicked: true } : s)
-    );
+    // Check if the clicked word is ANY correct word from the sentence that hasn't been collected yet
+    const targetWordLower = ship.word.toLowerCase();
+    const isCorrectWordForSentence = currentChallenge.words.map(w => w.toLowerCase()).includes(targetWordLower) && !wordsCollected.map(w => w.toLowerCase()).includes(targetWordLower);
 
-    // Fire cannon ball
-    const cannonBall: CannonBall = {
-      id: `cannon-${Date.now()}`,
-      x: 50, // Cannon position (left side)
-      y: window.innerHeight - 100,
-      targetX: ship.x,
-      targetY: ship.y,
-      progress: 0
-    };
-    setCannonBalls(prev => [...prev, cannonBall]);
+    if (isCorrectWordForSentence) {
+      setPirateShips(prev =>
+        prev.map(s => s.id === ship.id ? { ...s, clicked: true } : s)
+      );
 
-    // Delayed hit effect
-    setTimeout(() => {
-      if (ship.isCorrect) {
-        // Correct word clicked - ship destroyed
-        const newWordsCollected = [...wordsCollected, ship.word];
-        setWordsCollected(newWordsCollected);
-        
-        // Create success particles (treasure explosion)
-        const successParticles = themeEngine.current.createParticleEffect(
-          ship.x, ship.y, 'success', 20
-        );
-        setParticles(prev => [...prev, ...successParticles]);
-        
-        // Create water splash effect
-        createWaterSplash(ship.x, ship.y);
-        
-        // Play cannon fire sound
-        playSFX('cannon-fire');
-        
-        // Award points
-        onCorrectAnswer(10 + (difficulty === 'advanced' ? 5 : 0));
-        
-        // Check if challenge is complete
-        if (newWordsCollected.length === currentChallenge.words.length) {
-          setTimeout(() => {
-            onChallengeComplete();
-            setWordsCollected([]);
-            setChallengeProgress(0);
-          }, 500);
-        } else {
-          setChallengeProgress(newWordsCollected.length / currentChallenge.words.length);
-        }
-      } else {
-        // Incorrect word clicked - missed shot
-        const errorParticles = themeEngine.current.createParticleEffect(
-          ship.x, ship.y, 'error', 12
-        );
-        setParticles(prev => [...prev, ...errorParticles]);
-        
-        // Play miss sound
-        playSFX('cannon-miss');
-        
-        onIncorrectAnswer();
+      // Add the word to collected words (maintaining original casing for display)
+      const originalWord = currentChallenge.words.find(w => w.toLowerCase() === targetWordLower) || ship.word;
+      const newWordsCollected = [...wordsCollected, originalWord];
+      setWordsCollected(newWordsCollected);
+      // Update currentWordIndex to reflect count of collected words for UI (e.g., scoring)
+      setCurrentWordIndex(newWordsCollected.length); 
+
+      const successParticles = themeEngine.current.createParticleEffect(
+        ship.currentX, ship.y, 'success', 20
+      );
+      setParticles(prev => [...prev, ...successParticles]);
+
+      playSFX('gem');
+
+      // Score bonus based on number of words collected
+      const score = 10 + (newWordsCollected.length * 2) + (difficulty === 'advanced' ? 5 : 0);
+      onCorrectAnswer(score);
+
+      // Challenge complete when all words are collected
+      if (newWordsCollected.length === currentChallenge.words.length) {
+        setTimeout(() => {
+          onChallengeComplete();
+          setWordsCollected([]);
+          setCurrentWordIndex(0);
+          setPirateShips([]); // Clear all ships on challenge complete
+        }, 500);
       }
 
-      // Remove clicked ship after animation
       setTimeout(() => {
         setPirateShips(prev => prev.filter(s => s.id !== ship.id));
-      }, 300);
-    }, 800); // Delay for cannon ball travel time
+      }, 200);
+
+    } else { // Incorrect click (decoy or correct word already collected)
+        setPirateShips(prev =>
+            prev.map(s => s.id === ship.id ? { ...s, feedbackStatus: 'incorrect' } : s)
+        );
+
+        const errorParticles = themeEngine.current.createParticleEffect(
+            ship.currentX, ship.y, 'error', 12
+        );
+        setParticles(prev => [...prev, ...errorParticles]);
+
+        playSFX('wrong-answer');
+        onIncorrectAnswer();
+
+        setTimeout(() => {
+            setPirateShips(prev =>
+                prev.map(s => s.id === ship.id ? { ...s, feedbackStatus: undefined } : s)
+            );
+        }, 500);
+    }
   };
 
-  // Create water splash effect
-  const createWaterSplash = (x: number, y: number) => {
-    const splashParticles = Array.from({ length: 15 }, (_, i) => ({
-      id: `splash-${Date.now()}-${i}`,
-      x,
-      y,
-      vx: (Math.random() - 0.5) * 12,
-      vy: -Math.random() * 8 - 3,
-      life: 1,
-      maxLife: 1,
-      color: '#3B82F6',
-      size: Math.random() * 6 + 3,
-      type: 'ambient' as const
-    }));
-
-    setParticles(prev => [...prev, ...splashParticles]);
+  const updateParticles = () => {
+    setParticles(prev =>
+      prev.map(p => ({
+        ...p,
+        x: p.x + p.vx,
+        y: p.y + p.vy,
+        life: p.life - 0.02
+      })).filter(p => p.life > 0)
+    );
   };
 
-  // Animation loop
   useEffect(() => {
     const animate = () => {
       updateShips();
-      updateCannonBalls();
+      updateParticles();
+
+      const now = Date.now(); 
+
+      if (currentChallenge && gameActive && !isPaused) {
+        // Words in the current sentence not yet collected by the student
+        const uncollectedSentenceWords = currentChallenge.words.filter(word => !wordsCollected.includes(word));
+
+        // Words currently on screen that are not yet collected
+        const wordsOnScreen = new Set(pirateShips.filter(s => !s.clicked).map(s => s.word.toLowerCase())); 
+
+        // Words that are part of the current sentence, not collected, and NOT currently on screen
+        const wordsNeededAndNotOnScreen = uncollectedSentenceWords.filter(word => !wordsOnScreen.has(word.toLowerCase()));
+
+        // Check if we need to prioritize spawning missing correct words
+        const needsToEnsureAllNeededWords = pirateShips.length < GUARANTEE_NEEDED_WORDS_THRESHOLD && wordsNeededAndNotOnScreen.length > 0;
+
+        if (pirateShips.length < MAX_ACTIVE_SHIPS) {
+            const shuffledLanes = Array.from({ length: LANE_COUNT }, (_, i) => i).sort(() => Math.random() - 0.5);
+            for (const laneIndex of shuffledLanes) {
+                if (now - lastSpawnTime.current[laneIndex] > SPAWN_INTERVAL_PER_LANE) {
+                    let wordToSpawn: string;
+                    let isChosenWordCorrect: boolean;
+
+                    const allDecoys = themeEngine.current.generateDecoys(currentChallenge.words, challenges, difficulty, currentChallenge.targetLanguage);
+                    const availableDecoys = allDecoys.filter(decoy => !wordsOnScreen.has(decoy.toLowerCase())); 
+
+                    // --- REVISED WORD SELECTION LOGIC ---
+                    if (needsToEnsureAllNeededWords) {
+                        // Prioritize spawning a random word from the 'needed and not on screen' pool
+                        const wordIndex = Math.floor(Math.random() * wordsNeededAndNotOnScreen.length);
+                        wordToSpawn = wordsNeededAndNotOnScreen[wordIndex];
+                        isChosenWordCorrect = true;
+                    } else {
+                        // If all needed words are on screen OR we have enough ships,
+                        // then spawn a mix of remaining uncollected words (if any) and decoys
+                        const generalSpawnPool: { word: string; isCorrect: boolean }[] = [];
+
+                        // Add remaining uncollected words to the pool (only if not already on screen)
+                        uncollectedSentenceWords.forEach(word => {
+                            if (!wordsOnScreen.has(word.toLowerCase())) { 
+                                generalSpawnPool.push({ word: word, isCorrect: true });
+                            }
+                        });
+
+                        // Add available decoys to the pool
+                        availableDecoys.forEach(word => generalSpawnPool.push({ word: word, isCorrect: false }));
+                        
+                        // Fallback: If the general pool is still empty, add any word from the challenge (even if collected) or more decoys.
+                        if (generalSpawnPool.length === 0) {
+                            currentChallenge.words.forEach(word => {
+                                if (!wordsOnScreen.has(word.toLowerCase())) {
+                                    generalSpawnPool.push({ word: word, isCorrect: true });
+                                }
+                            });
+                            // If still no words, then just add any decoy to keep ships coming
+                            if (generalSpawnPool.length === 0 && allDecoys.length > 0) {
+                                allDecoys.forEach(word => generalSpawnPool.push({ word: word, isCorrect: false }));
+                            }
+                        }
+
+                        if (generalSpawnPool.length > 0) {
+                            const chosenOption = generalSpawnPool[Math.floor(Math.random() * generalSpawnPool.length)];
+                            wordToSpawn = chosenOption.word;
+                            isChosenWordCorrect = chosenOption.isCorrect;
+                        } else {
+                            wordToSpawn = allDecoys[Math.floor(Math.random() * allDecoys.length)] || "placeholder";
+                            isChosenWordCorrect = false;
+                        }
+                    }
+                    // --- END REVISED WORD SELECTION LOGIC ---
+
+                    const newShip = createSingleShip(laneIndex, wordToSpawn, isChosenWordCorrect);
+
+                    if (newShip) {
+                        setPirateShips(prev => {
+                            // Prevent adding direct duplicates of the exact word if it's already active and unclicked on screen
+                            if (prev.some(s => s.word.toLowerCase() === newShip!.word.toLowerCase() && !s.clicked)) {
+                                return prev; 
+                            }
+                            return [...prev, newShip!];
+                        });
+                        lastSpawnTime.current[laneIndex] = now;
+                        lastShipPositions.current[laneIndex] = newShip.currentX;
+                    }
+                }
+            }
+        }
+      }
+
       animationRef.current = requestAnimationFrame(animate);
     };
 
@@ -223,16 +541,41 @@ export default function PirateAdventureEngine(props: WordBlastEngineProps) {
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [gameActive, isPaused]);
+  }, [gameActive, isPaused, pirateShips.length, currentChallenge, wordsCollected]); 
 
-  // Spawn ships when challenge changes
   useEffect(() => {
     if (currentChallenge && gameActive) {
-      setWordsCollected([]);
-      setChallengeProgress(0);
-      spawnPirateShips();
+      spawnInitialPirateShips();
+    } else if (!gameActive) {
+        setPirateShips([]);
+        setWordsCollected([]);
+        setCurrentWordIndex(0);
+        lastSpawnTime.current = Array(LANE_COUNT).fill(0);
     }
   }, [currentChallenge, gameActive]);
+
+
+  if (!currentChallenge) {
+    return (
+      <div className="flex items-center justify-center h-full w-full bg-slate-900 text-blue-200 text-xl">
+        No challenge loaded. Please start a game or check your data source.
+      </div>
+    );
+  }
+
+  // --- NEW LOGIC FOR PROGRESS DISPLAY: Fixed-length lines ---
+  const displayedProgress = currentChallenge.words.map(word => {
+    // Check if the word (case-insensitively) exists in the collected words
+    const isCollected = wordsCollected.map(w => w.toLowerCase()).includes(word.toLowerCase());
+    if (isCollected) {
+      // Find the original casing from collected words for display if preferred
+      return wordsCollected.find(w => w.toLowerCase() === word.toLowerCase()) || word;
+    } else {
+      // Return a fixed-length placeholder for uncollected words (e.g., two underscores)
+      return '__'; // Changed from '_'.repeat(word.length)
+    }
+  }).join(' ');
+
 
   return (
     <div
@@ -252,17 +595,17 @@ export default function PirateAdventureEngine(props: WordBlastEngineProps) {
         </video>
 
         {/* Video overlay gradient for better readability */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/50"></div>
+        <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/40"></div>
       </div>
 
       {/* English Sentence Display */}
-      <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-50">
+      <div className="absolute top-40 left-1/2 transform -translate-x-1/2 z-50">
         <div className="bg-black/70 backdrop-blur-sm rounded-lg px-6 py-4 border border-amber-500/30">
           <div className="text-center">
             <div className="text-sm text-amber-300 mb-1">🏴‍☠️ Decode this treasure map:</div>
             <div className="text-xl font-bold text-white">{currentChallenge.english}</div>
             <div className="text-sm text-blue-300 mt-2">
-              Click the {currentChallenge.targetLanguage} pirate ships in the correct order
+              Click the {currentChallenge.targetLanguage} pirate ships to collect the treasure!
             </div>
           </div>
         </div>
@@ -272,210 +615,75 @@ export default function PirateAdventureEngine(props: WordBlastEngineProps) {
       <div className="absolute top-24 left-1/2 transform -translate-x-1/2 z-50">
         <div className="bg-black/50 backdrop-blur-sm rounded-lg px-4 py-2 border border-amber-500/20">
           <div className="text-center">
-            <div className="text-sm text-amber-300">Treasure Map:</div>
+            <div className="text-sm text-amber-300">Treasure Collected:</div>
             <div className="text-lg font-bold text-white">
-              {wordsCollected.join(' ')}
-              {currentWordIndex < currentChallenge.words.length && (
-                <span className="text-blue-400 ml-2">
-                  (Next: {currentChallenge.words[currentWordIndex]})
-                </span>
-              )}
+              {displayedProgress} {/* Uses the new dynamic display */}
             </div>
           </div>
         </div>
       </div>
-      {/* Ocean Background */}
-      <div className="absolute inset-0">
-        {/* Clouds */}
-        {Array.from({ length: 5 }, (_, i) => (
-          <motion.div
-            key={i}
-            className="absolute bg-white/20 rounded-full"
-            style={{
-              width: `${Math.random() * 100 + 50}px`,
-              height: `${Math.random() * 30 + 20}px`,
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 30}%`
-            }}
-            animate={{
-              x: [-50, window.innerWidth + 50]
-            }}
-            transition={{
-              duration: Math.random() * 20 + 30,
-              repeat: Infinity,
-              ease: 'linear'
-            }}
-          />
-        ))}
-        
-        {/* Water waves */}
-        <div className="absolute bottom-0 left-0 right-0 h-32">
-          <motion.div
-            className="absolute inset-0 bg-gradient-to-t from-blue-600 to-blue-400 opacity-60"
-            animate={{
-              scaleY: [1, 1.1, 1],
-              scaleX: [1, 1.05, 1]
-            }}
-            transition={{
-              duration: 3,
-              repeat: Infinity,
-              ease: 'easeInOut'
-            }}
-          />
-        </div>
-        
-        {/* Seagulls */}
-        {Array.from({ length: 3 }, (_, i) => (
-          <motion.div
-            key={i}
-            className="absolute text-white text-sm"
-            animate={{
-              x: [-20, window.innerWidth + 20],
-              y: [Math.random() * 100 + 50, Math.random() * 100 + 100]
-            }}
-            transition={{
-              duration: Math.random() * 15 + 20,
-              repeat: Infinity,
-              ease: 'linear',
-              delay: Math.random() * 10
-            }}
-          >
-            🕊️
-          </motion.div>
-        ))}
-      </div>
-
-      {/* Cannon (fixed position) */}
-      <div className="absolute bottom-20 left-10">
-        <div className="text-6xl transform rotate-12">🔫</div>
-        <div className="text-amber-800 font-bold text-sm mt-2">CANNON</div>
-      </div>
 
       {/* Pirate Ships */}
       <AnimatePresence>
-        {pirateShips.map((ship) => (
-          <PirateShipComponent
-            key={ship.id}
-            ship={ship}
-            onClick={() => handleShipClick(ship)}
-          />
-        ))}
+        {pirateShips
+          .filter(ship => ship && typeof ship === 'object' && ship.id) 
+          .map((ship) => (
+            <motion.div
+              key={ship.id}
+              initial={{ opacity: 0, scale: 0.5, x: ship.currentX, y: ship.targetY }} 
+              animate={{
+                opacity: 1,
+                scale: ship.size,
+                x: ship.currentX,
+                y: ship.targetY, 
+                rotate: ship.rotation
+              }}
+              exit={{ opacity: 0, scale: 0 }}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleShipClick(ship);
+              }}
+              className="absolute cursor-pointer transition-all duration-300 hover:scale-105 select-none"
+              style={{
+                transform: `translate(-50%, -50%)`, 
+                zIndex: 100,
+                pointerEvents: 'auto',
+                width: `${SHIP_WIDTH_ESTIMATE}px`,
+                height: `120px`,
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center'
+              }}
+            >
+              <ShipComponent ship={ship} />
+            </motion.div>
+          ))}
       </AnimatePresence>
 
-      {/* Cannon Balls */}
-      <AnimatePresence>
-        {cannonBalls.map((ball) => (
-          <motion.div
-            key={ball.id}
-            className="absolute w-4 h-4 bg-gray-800 rounded-full shadow-lg"
-            style={{ x: ball.x, y: ball.y }}
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            exit={{ scale: 0 }}
-          />
-        ))}
-      </AnimatePresence>
-
-      {/* Particle Effects */}
+      {/* Particles */}
       <AnimatePresence>
         {particles.map((particle) => (
           <motion.div
             key={particle.id}
-            initial={{ opacity: 1, scale: 1, x: particle.x, y: particle.y }}
+            initial={{ opacity: 1, scale: 1 }}
             animate={{
-              opacity: 0,
-              scale: 0,
-              x: particle.x + particle.vx * 50,
-              y: particle.y + particle.vy * 50
+              opacity: particle.life,
+              scale: 1 - (1 - particle.life) * 0.5,
+              x: particle.x,
+              y: particle.y
             }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 1.5 }}
-            className="absolute w-2 h-2 rounded-full pointer-events-none"
+            exit={{ opacity: 0, scale: 0 }}
+            className="absolute pointer-events-none"
             style={{
-              backgroundColor: particle.color,
               width: particle.size,
-              height: particle.size
+              height: particle.size,
+              backgroundColor: particle.color,
+              borderRadius: '50%',
+              zIndex: 5
             }}
           />
         ))}
       </AnimatePresence>
-
-      {/* Challenge Progress - Pirate Map Style */}
-      <div className="absolute top-4 left-4 right-4">
-        <div className="bg-amber-100/90 rounded-lg p-4 backdrop-blur-sm border-2 border-amber-800 shadow-lg" style={{ fontFamily: 'serif' }}>
-          <div className="text-amber-900 text-lg font-bold mb-2">
-            🗺️ Quest: {currentChallenge?.english}
-          </div>
-          <div className="w-full bg-amber-800/30 rounded-full h-3 border border-amber-800">
-            <motion.div
-              className="bg-gradient-to-r from-amber-600 to-yellow-500 h-3 rounded-full"
-              initial={{ width: 0 }}
-              animate={{ width: `${challengeProgress * 100}%` }}
-              transition={{ duration: 0.3 }}
-            />
-          </div>
-          <div className="text-amber-800 text-sm mt-1">
-            ⚓ Ships Sunk: {wordsCollected.length} / {currentChallenge?.words.length || 0}
-          </div>
-        </div>
-      </div>
     </div>
   );
-}
-
-// Pirate Ship Component
-const PirateShipComponent: React.FC<{
-  ship: PirateShip;
-  onClick: () => void;
-}> = ({ ship, onClick }) => {
-  const shipEmojis = {
-    galleon: '🚢',
-    frigate: '⛵',
-    sloop: '🛥️'
-  };
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0, x: ship.x, y: ship.y, rotate: ship.rotation }}
-      animate={{
-        opacity: ship.clicked ? 0 : 1,
-        scale: ship.clicked ? 0.5 : ship.scale,
-        x: ship.x,
-        y: ship.y,
-        rotate: ship.rotation
-      }}
-      exit={{ opacity: 0, scale: 0 }}
-      onClick={onClick}
-      className="absolute cursor-pointer transition-all duration-200 hover:scale-110 select-none"
-    >
-      <div className="bg-amber-100 border-2 border-amber-800 rounded-lg px-4 py-3 shadow-lg backdrop-blur-sm min-w-[160px] text-center relative overflow-hidden">
-        {/* Weathered texture */}
-        <div className="absolute inset-0 bg-gradient-to-br from-amber-200/50 to-amber-800/30" />
-        
-        {/* Ship content */}
-        <div className="relative z-10">
-          <div className="flex items-center justify-center gap-2 mb-1">
-            <span className="text-2xl">{shipEmojis[ship.shipType]}</span>
-            <span className="text-xs text-amber-700">
-              {ship.sailsUp ? '⛵' : '🏴‍☠️'}
-            </span>
-          </div>
-          <div className="font-bold text-amber-900 text-lg drop-shadow-sm">
-            {ship.word}
-          </div>
-          <div className="text-xs text-amber-700 mt-1">
-            💰 {ship.treasureValue} doubloons
-          </div>
-        </div>
-        
-        {/* Rope border effect */}
-        <div className="absolute inset-0 rounded-lg border-2 border-amber-600/50" />
-      </div>
-    </motion.div>
-  );
-};
-
-// Theme engine implementation
-class PirateAdventureThemeEngine extends BaseThemeEngine {
-  // Inherits all base functionality
 }

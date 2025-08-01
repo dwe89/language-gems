@@ -54,8 +54,8 @@ export default function UnifiedSentenceTowersPage() {
   if (!gameStarted) {
     return (
       <UnifiedGameLauncher
-        gameName="Sentence Towers"
-        gameDescription="Build towers by stacking vocabulary blocks and creating sentences"
+        gameName="Word Towers"
+        gameDescription="Build towers by stacking vocabulary blocks and creating words"
         supportedLanguages={['es', 'fr', 'de']}
         showCustomMode={true}
         minVocabularyRequired={1}

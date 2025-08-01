@@ -132,7 +132,7 @@ export default function PirateAdventureEngine({
         isCorrect: translation === currentWord.translation,
         x: startX,
         y: targetY,
-        speed: 1 + Math.random() * 0.8, // Slower speed for longer visibility
+        speed: 1 + Math.random() * 3, // Slower speed for longer visibility
         sailsUp: Math.random() > 0.3,
         sinkingProgress: 0,
         size: Math.random() * 0.3 + 0.8,
@@ -183,6 +183,8 @@ export default function PirateAdventureEngine({
 
   // Handle ship click (cannon fire)
   const handleShipClick = (ship: PirateShip) => {
+    if (ship.firing) return; // Prevent double clicks
+
     // Trigger firing animation
     setPirateShips(prev =>
       prev.map(s => s.id === ship.id ? { ...s, firing: true } : s)
@@ -192,20 +194,23 @@ export default function PirateAdventureEngine({
     createCannonBall(ship.x, ship.y);
 
     // Play cannon fire sound immediately
-    playSFX('cannon-fire');
+    playSFX('gem');
 
     // Delay the result to show firing animation
     setTimeout(() => {
       if (ship.isCorrect) {
         onCorrectAnswer(currentWord);
         createExplosion(ship.x, ship.y, 'treasure');
+        
+        // Remove clicked ship immediately after correct answer
+        setPirateShips(prev => prev.filter(s => s.id !== ship.id));
       } else {
         onIncorrectAnswer();
         createExplosion(ship.x, ship.y, 'miss');
+        
+        // Remove clicked ship immediately after incorrect answer
+        setPirateShips(prev => prev.filter(s => s.id !== ship.id));
       }
-
-      // Remove clicked ship
-      setPirateShips(prev => prev.filter(s => s.id !== ship.id));
     }, 300);
   };
 

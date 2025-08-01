@@ -27,13 +27,15 @@ interface AudioFiles {
 
 const AUDIO_FILES: AudioFiles = {
   themes: {
-    'tokyo-nights': '/audio/themes/tokyo-nights-ambient.mp3',
-    'pirate-adventure': '/audio/themes/pirate-adventure-ambient.mp3',
-    'space-explorer': '/audio/themes/space-explorer-ambient.mp3',
-    'lava-temple': '/audio/themes/lava-temple-ambient.mp3',
-    'classic': '/audio/themes/classic-ambient.mp3'
+    // Paths updated to reflect /public/audio/themes/ location
+    'tokyo-nights': '/audio/themes/tokyonights.mp3',
+    'pirate-adventure': '/audio/themes/pirateadventure.mp3',
+    'space-explorer': '/audio/themes/spacevoyager.mp3', // Consistent with original request 'space voyager'
+    'lava-temple': '/audio/themes/lavatemple.mp3',
+    'classic': '/audio/themes/background.mp3'
   },
   sfx: {
+    // Assuming these SFX files are already correctly located in public/audio/sfx/
     'button-click': '/audio/sfx/button-click.mp3',
     'correct-answer': '/audio/sfx/correct-answer.mp3',
     'wrong-answer': '/audio/sfx/wrong-answer.mp3',
@@ -73,7 +75,7 @@ export const useAudio = (soundEnabled: boolean = true) => {
   // Play sound effect
   const playSFX = useCallback((soundName: keyof AudioFiles['sfx']) => {
     if (!soundEnabled) return;
-    
+
     const audio = audioRefs.current[soundName];
     if (audio) {
       audio.currentTime = 0;

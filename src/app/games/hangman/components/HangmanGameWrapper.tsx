@@ -22,6 +22,7 @@ interface HangmanGameWrapperProps {
   assignmentId?: string | null;
   userId?: string;
   isAssignmentMode?: boolean;
+  playSFX?: (soundName: string) => void;
 }
 
 interface GameVocabularyWord {

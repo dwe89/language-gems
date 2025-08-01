@@ -25,7 +25,7 @@ interface GemBlastEngineProps {
 
 class GemBlastScene extends Phaser.Scene {
   private fallingGems: FallingGem[] = [];
-  private gemSprites: Phaser.GameObjects.Sprite[] = [];
+  private gemSprites: Phaser.GameObjects.Container[] = [];
   private particles: ParticleEffect[] = [];
   private comboEffects: ComboEffect[] = [];
   private gameStats: GameStats;
@@ -48,9 +48,11 @@ class GemBlastScene extends Phaser.Scene {
       maxCombo: 0,
       gemsCollected: 0,
       gemsMissed: 0,
+      wordsCollected: 0,
       accuracy: 0,
       fastestResponse: Infinity,
       totalPlayTime: 0,
+      timeRemaining: 0,
       gemsByType: {
         ruby: 0,
         sapphire: 0,
@@ -86,6 +88,10 @@ class GemBlastScene extends Phaser.Scene {
     
     // Set up input handling
     this.input.on('pointerdown', this.handlePointerDown, this);
+    
+    // Spawn initial gems immediately
+    this.createNewGem();
+    this.lastGemSpawn = this.time.now;
   }
 
   update(time: number, delta: number) {
@@ -222,12 +228,6 @@ class GemBlastScene extends Phaser.Scene {
         sprite.x = gem.x;
         sprite.y = gem.y;
         sprite.rotation = gem.rotation;
-        
-        // Add glow effect for correct gems
-        if (gem.glowing) {
-          sprite.setTint(0xffffff);
-          sprite.setAlpha(0.8 + Math.sin(Date.now() * 0.005) * 0.2);
-        }
       }
       
       // Check if gem reached bottom
@@ -255,7 +255,7 @@ class GemBlastScene extends Phaser.Scene {
   }
 
   private spawnGems(time: number) {
-    const spawnDelay = Math.max(1000, 3000 - (this.gameStats.score / 100));
+    const spawnDelay = Math.max(300, 200 - (this.gameStats.score / 50));
     
     if (time - this.lastGemSpawn > spawnDelay && this.fallingGems.length < this.gameSettings.maxGems) {
       this.createNewGem();
@@ -288,7 +288,7 @@ class GemBlastScene extends Phaser.Scene {
         speed: this.gameSettings.gemSpeed + Phaser.Math.Between(-20, 20),
         rotation: 0,
         scale: 1,
-        glowing: isCorrect
+        glowing: false // Never glow based on 'isCorrect' or 'next in order'
       };
       
       // Create sprite

@@ -52,7 +52,7 @@ export default function TokyoNightsEngine(props: WordBlastEngineProps) {
     if (!currentChallenge || isPaused || !gameActive) return;
 
     const correctWords = currentChallenge.words;
-    const decoys = themeEngine.current.generateDecoys(correctWords, challenges, difficulty);
+    const decoys = themeEngine.current.generateDecoys(correctWords, challenges, difficulty, currentChallenge.targetLanguage);
     const allWords = [...correctWords, ...decoys];
     const shuffledWords = allWords.sort(() => 0.5 - Math.random());
 
@@ -128,7 +128,7 @@ export default function TokyoNightsEngine(props: WordBlastEngineProps) {
       createHackEffect(packet.x, packet.y);
       
       // Play success sound
-      playSFX('hack-success');
+      playSFX('gem');
       
       // Award points
       onCorrectAnswer(10 + (difficulty === 'advanced' ? 5 : 0));
@@ -151,7 +151,7 @@ export default function TokyoNightsEngine(props: WordBlastEngineProps) {
       setParticles(prev => [...prev, ...errorParticles]);
       
       // Play error sound
-      playSFX('hack-fail');
+      playSFX('wrong-answer');
       
       onIncorrectAnswer();
     }
@@ -224,8 +224,9 @@ export default function TokyoNightsEngine(props: WordBlastEngineProps) {
         <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/50"></div>
       </div>
 
-      {/* English Sentence Display */}
-      <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-50">
+{/* English Sentence Display */}
+      <div className="absolute top-40 left-1/2 transform -translate-x-1/2 z-50">
+
         <div className="bg-black/70 backdrop-blur-sm rounded-lg px-6 py-4 border border-pink-500/30">
           <div className="text-center">
             <div className="text-sm text-pink-300 mb-1">💻 Decode this message:</div>
@@ -237,22 +238,6 @@ export default function TokyoNightsEngine(props: WordBlastEngineProps) {
         </div>
       </div>
 
-      {/* Progress Display */}
-      <div className="absolute top-24 left-1/2 transform -translate-x-1/2 z-50">
-        <div className="bg-black/50 backdrop-blur-sm rounded-lg px-4 py-2 border border-pink-500/20">
-          <div className="text-center">
-            <div className="text-sm text-pink-300">Decoded Message:</div>
-            <div className="text-lg font-bold text-white">
-              {wordsCollected.join(' ')}
-              {currentWordIndex < currentChallenge.words.length && (
-                <span className="text-cyan-400 ml-2">
-                  (Next: {currentChallenge.words[currentWordIndex]})
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
       {/* Tokyo Nights Background */}
       <div className="absolute inset-0">
         {/* Digital rain effect */}
@@ -326,31 +311,7 @@ export default function TokyoNightsEngine(props: WordBlastEngineProps) {
         ))}
       </AnimatePresence>
 
-      {/* Challenge Progress - Hacker Terminal Style */}
-      <div className="absolute top-4 left-4 right-4">
-        <div className="bg-black/80 rounded-lg p-4 backdrop-blur-sm border border-pink-500/50 font-mono">
-          <div className="text-pink-400 text-sm mb-1">
-            {'>'} TRANSLATION_TARGET: <span className="text-cyan-400">{currentChallenge?.english}</span>
-          </div>
-          <div className="text-green-400 text-sm mb-2">
-            {'>'} STATUS: HACKING_IN_PROGRESS...
-          </div>
-          <div className="w-full bg-gray-800 rounded-full h-2 border border-pink-500/30">
-            <motion.div
-              className="bg-gradient-to-r from-pink-500 to-cyan-500 h-2 rounded-full"
-              initial={{ width: 0 }}
-              animate={{ width: `${challengeProgress * 100}%` }}
-              transition={{ duration: 0.3 }}
-              style={{
-                boxShadow: '0 0 10px rgba(236, 72, 153, 0.5)'
-              }}
-            />
-          </div>
-          <div className="text-cyan-300 text-xs mt-1">
-            PACKETS_INTERCEPTED: {wordsCollected.length} / {currentChallenge?.words.length || 0}
-          </div>
-        </div>
-      </div>
+
     </div>
   );
 }

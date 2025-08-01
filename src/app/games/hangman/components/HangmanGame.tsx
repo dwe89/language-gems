@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react'; // Removed useRef as backgroundMusicRef is gone
 import { ThemeProvider, useTheme } from './ThemeProvider';
 import confetti from 'canvas-confetti';
 import { motion } from 'framer-motion';
@@ -10,14 +10,35 @@ import LavaTempleAnimation from './themes/LavaTempleAnimation';
 import SpaceExplorerAnimation from './themes/SpaceExplorerAnimation';
 import PirateAdventureAnimation from './themes/PirateAdventureAnimation';
 import ClassicHangmanAnimation from './themes/ClassicHangmanAnimation';
-import SoundEffects from './SoundEffects';
 import TempleGuardianModal from './TempleGuardianModal';
 import TokyoNightsModal from './TokyoNightsModal';
 import SpaceExplorerModal from './SpaceExplorerModal';
-import PirateAdventureModal from './PirateAdventureModal';
+import PirateAdventureModal from './PirateAdventureModal'; // Confirm this path and component name
 import { CentralizedVocabularyService, CentralizedVocabularyWord } from 'gems/services/centralizedVocabularyService';
 import { createClient } from '@supabase/supabase-js';
-import { useAudio } from '../hooks/useAudio';
+// Removed: import { useAudio } from '../hooks/useAudio'; // This hook is used in the parent now
+
+// Defined here so GameContent can use it
+interface AudioFiles {
+  themes: {
+    'tokyo-nights': string;
+    'pirate-adventure': string;
+    'space-explorer': string;
+    'lava-temple': string;
+    'classic': string;
+  };
+  sfx: {
+    'button-click': string;
+    'correct-answer': string;
+    'wrong-answer': string;
+    'victory': string;
+    'defeat': string;
+    'tokyo-hack': string;
+    'pirate-treasure': string;
+    'space-docking': string;
+    'temple-power': string;
+  };
+}
 
 interface VocabularyItem {
   id: string;
@@ -44,6 +65,7 @@ interface HangmanGameProps {
   onGameEnd?: (result: 'win' | 'lose') => void;
   isFullscreen?: boolean;
   isAssignmentMode?: boolean;
+  playSFX: (soundName: keyof AudioFiles['sfx']) => void; // Passed from parent (HangmanPage.tsx)
 }
 
 // Mock word lists based on categories and difficulties
@@ -274,7 +296,7 @@ type ExtendedThemeContextType = {
   };
 };
 
-function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isFullscreen, isAssignmentMode }: HangmanGameProps) {
+export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isFullscreen, isAssignmentMode, playSFX }: HangmanGameProps) {
   const { themeId, themeClasses } = useTheme() as ExtendedThemeContextType;
   const [themeClassesState, setThemeClassesState] = useState(themeClasses);
   const [word, setWord] = useState('');
@@ -292,20 +314,9 @@ function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isFullscre
   const [showPowerupEffect, setShowPowerupEffect] = useState(false);
   const [animation, setAnimation] = useState<'correct' | 'wrong' | null>(null);
   
-  const [soundEffectTriggers, setSoundEffectTriggers] = useState({
-    correctLetter: false,
-    incorrectLetter: false,
-    gameWon: false,
-    gameLost: false,
-    hintUsed: false
-  });
+  // Removed soundEffectTriggers state as playSFX is called directly
   
-  const [soundEnabled, setSoundEnabled] = useState(true);
-
-  // Audio hook for sound effects
-  const { playSFX } = useAudio(soundEnabled);
-  const [musicEnabled, setMusicEnabled] = useState(false);
-  const backgroundMusicRef = useRef<HTMLAudioElement | null>(null);
+  const [musicEnabled, setMusicEnabled] = useState(true); // Default to true, as background music is handled by parent
 
   // Add a state to track correct guesses for the Tokyo Nights theme
   const [correctLetterCounter, setCorrectLetterCounter] = useState(0);
@@ -420,7 +431,7 @@ function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isFullscre
     return () => {
       if (timerInterval) clearInterval(timerInterval);
     };
-  }, [settings]);
+  }, [settings, vocabulary]);
   
   // Check win/lose conditions
   useEffect(() => {
@@ -433,7 +444,7 @@ function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isFullscre
     
     if (hasWon) {
       setGameStatus('won');
-      setSoundEffectTriggers(prev => ({...prev, gameWon: true}));
+      playSFX('victory'); // Use passed-in playSFX
       
       // Play audio for the completed word
       if (settings.playAudio) {
@@ -457,14 +468,14 @@ function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isFullscre
       if (onGameEnd) onGameEnd('win');
     } else if (wrongGuesses >= MAX_ATTEMPTS) {
       setGameStatus('lost');
-      setSoundEffectTriggers(prev => ({...prev, gameLost: true}));
+      playSFX('defeat'); // Use passed-in playSFX
       
       // Stop timer
       if (timerInterval) clearInterval(timerInterval);
       
       if (onGameEnd) onGameEnd('lose');
     }
-  }, [guessedLetters, wordLetters, wrongGuesses, gameStatus, timerInterval, onGameEnd]);
+  }, [guessedLetters, wordLetters, wrongGuesses, gameStatus, timerInterval, onGameEnd, playSFX, settings.playAudio, word]);
   
   const handleLetterGuess = (letter: string) => {
     const lowerLetter = letter.toLowerCase();
@@ -478,8 +489,7 @@ function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isFullscre
     
     if (doesWordContainLetter(word, lowerLetter)) {
       // Correct guess
-      setSoundEffectTriggers(prev => ({...prev, correctLetter: true}));
-      setTimeout(() => setSoundEffectTriggers(prev => ({...prev, correctLetter: false})), 10);
+      playSFX('correct-answer'); // Use passed-in playSFX
       
       // Increment correct letter counter for the Tokyo Nights theme
       if (themeId === 'tokyo') {
@@ -489,9 +499,7 @@ function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isFullscre
       // Check if the player has won - check if all non-space letters are guessed
       const isWin = wordLetters.every(letter => isLetterGuessed(letter, newGuessedLetters));
       if (isWin) {
-        setSoundEffectTriggers(prev => ({...prev, gameWon: true}));
-        setTimeout(() => setSoundEffectTriggers(prev => ({...prev, gameWon: false})), 10);
-        
+        playSFX('victory'); // Use passed-in playSFX
         setGameStatus('won');
         const newScore = calculateScore();
         setScore(newScore);
@@ -524,16 +532,13 @@ function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isFullscre
       }
     } else {
       // Wrong guess
-      setSoundEffectTriggers(prev => ({...prev, incorrectLetter: true}));
-      setTimeout(() => setSoundEffectTriggers(prev => ({...prev, incorrectLetter: false})), 10);
+      playSFX('wrong-answer'); // Use passed-in playSFX
       
       setWrongGuesses(prev => prev + 1);
       
       // Check if the player has lost
       if (wrongGuesses + 1 >= MAX_ATTEMPTS) {
-        setSoundEffectTriggers(prev => ({...prev, gameLost: true}));
-        setTimeout(() => setSoundEffectTriggers(prev => ({...prev, gameLost: false})), 10);
-        
+        playSFX('defeat'); // Use passed-in playSFX
         setGameStatus('lost');
       }
     }
@@ -546,11 +551,10 @@ function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isFullscre
     if (unguessedLetters.length === 0) return;
     
     const randomIndex = Math.floor(Math.random() * unguessedLetters.length);
-    const hintLetter = unguessedLetters[randomIndex];
+    const hintLetter = unguessedLetters[randomIndex]; 
     
     setHints(prev => prev - 1);
-    setSoundEffectTriggers(prev => ({...prev, hintUsed: true}));
-    setTimeout(() => setSoundEffectTriggers(prev => ({...prev, hintUsed: false})), 10);
+    playSFX('button-click'); // Use passed-in playSFX
     setShowPowerupEffect(true);
     setTimeout(() => setShowPowerupEffect(false), 800);
     handleLetterGuess(hintLetter);
@@ -660,10 +664,9 @@ function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isFullscre
     return Math.max(baseScore - wrongGuessPenalty - timePenalty, 50);
   };
   
-  const toggleSound = () => {
-    setSoundEnabled(prev => !prev);
-  };
-  
+  // Removed toggleSound as it's now handled by the parent useAudio hook via playSFX
+  // and music mute is also handled by the parent `useAudio` if passed in
+
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -694,7 +697,6 @@ function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isFullscre
     return <PirateAdventureAnimation mistakes={wrongGuesses} maxMistakes={MAX_ATTEMPTS} />;
   };
   
-
 
   const renderKeyboard = () => {
     // Two-row layout with accented letters based on language
@@ -770,7 +772,7 @@ function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isFullscre
             <button
               key={letter}
               onClick={() => {
-                playSFX('button-click');
+                playSFX('button-click'); // Use passed-in playSFX
                 handleLetterGuess(letter);
               }}
               disabled={isUsed || gameStatus !== 'playing'}
@@ -860,7 +862,9 @@ function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isFullscre
         text: 'text-cyan-50',
         accent: 'bg-pink-600',
         button: 'bg-cyan-600 hover:bg-cyan-700',
-        dangerText: 'Password Attempts'
+        dangerText: 'Password Attempts',
+        winMessage: 'Hack Successful!',
+        loseMessage: 'System Breached!'
       });
     } else if (themeId === 'temple') {
       setThemeClassesState({
@@ -869,7 +873,9 @@ function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isFullscre
         text: 'text-amber-50',
         accent: 'bg-amber-600',
         button: 'bg-amber-700 hover:bg-amber-800',
-        dangerText: 'Escape Chances'
+        dangerText: 'Escape Chances',
+        winMessage: 'Ancient Secret Unlocked!',
+        loseMessage: 'Trapped in the Temple!'
       });
     } else if (themeId === 'space') {
       setThemeClassesState({
@@ -878,135 +884,54 @@ function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isFullscre
         text: 'text-purple-50',
         accent: 'bg-purple-600',
         button: 'bg-purple-700 hover:bg-purple-800',
-        dangerText: 'Oxygen Level'
+        dangerText: 'Oxygen Level',
+        winMessage: 'Mission Accomplished!',
+        loseMessage: 'Lost in Space!'
       });
-    } else {
-      // Default pirate theme
+    } else if (themeId === 'pirate') {
       setThemeClassesState({
         ...themeClasses,
         background: 'bg-blue-900',
         text: 'text-amber-50',
         accent: 'bg-amber-600',
         button: 'bg-amber-700 hover:bg-amber-800',
-        dangerText: 'Lives Remaining'
+        dangerText: 'Lives Remaining',
+        winMessage: 'Treasure Found!',
+        loseMessage: 'Walk the Plank!'
+      });
+    } else { // Default / Classic theme
+      setThemeClassesState({
+        ...themeClasses,
+        background: 'bg-gray-800',
+        text: 'text-white',
+        accent: 'bg-blue-600',
+        button: 'bg-blue-700 hover:bg-blue-800',
+        dangerText: 'Lives Remaining',
+        winMessage: 'You Won!',
+        loseMessage: 'Game Over!'
       });
     }
   }, [themeId, themeClasses]);
 
-  // Initialize background music
-  useEffect(() => {
-    // Create audio element for background music
-    if (typeof window !== 'undefined') {
-      backgroundMusicRef.current = new Audio();
-      
-      // Set the music based on theme
-      if (themeId === 'default') {
-        backgroundMusicRef.current.src = '/games/hangman/sounds/songs/background.mp3';
-      } else if (themeId === 'tokyo') {
-        backgroundMusicRef.current.src = '/games/hangman/sounds/songs/tokyonights.mp3';
-      } else if (themeId === 'temple') {
-        backgroundMusicRef.current.src = '/games/hangman/sounds/songs/lavatemple.mp3';
-      } else if (themeId === 'space') {
-        backgroundMusicRef.current.src = '/games/hangman/sounds/songs/spacevoyager.mp3';
-      } else {
-        backgroundMusicRef.current.src = '/games/hangman/sounds/songs/pirateadventure.mp3';
-      }
-      
-      backgroundMusicRef.current.loop = true;
-      backgroundMusicRef.current.volume = 0.3;
-      
-      // Try to autoplay (may be rejected by browser)
-      backgroundMusicRef.current.play().then(() => {
-        setMusicEnabled(true);
-      }).catch(() => {
-        console.log("Autoplay prevented. Music will play on first user interaction.");
-        // Will play on first user interaction
-      });
-    }
-    
-    return () => {
-      if (backgroundMusicRef.current) {
-        backgroundMusicRef.current.pause();
-        backgroundMusicRef.current = null;
-      }
-    };
-  }, [themeId]);
-
-  // Toggle background music
-  const toggleMusic = () => {
-    if (!backgroundMusicRef.current) return;
-    
-    if (musicEnabled) {
-      backgroundMusicRef.current.pause();
-    } else {
-      backgroundMusicRef.current.play().catch(e => console.error("Error playing music:", e));
-    }
-    
-    setMusicEnabled(prev => !prev);
-  };
-  
-  // Enable playing music on first user interaction
-  useEffect(() => {
-    const playMusicOnInteraction = () => {
-      if (backgroundMusicRef.current && !musicEnabled) {
-        backgroundMusicRef.current.play().then(() => {
-          setMusicEnabled(true);
-        }).catch(e => console.error("Error playing music:", e));
-      }
-      
-      // Remove event listeners after first interaction
-      document.removeEventListener('click', playMusicOnInteraction);
-      document.removeEventListener('keydown', playMusicOnInteraction);
-    };
-    
-    document.addEventListener('click', playMusicOnInteraction);
-    document.addEventListener('keydown', playMusicOnInteraction);
-    
-    return () => {
-      document.removeEventListener('click', playMusicOnInteraction);
-      document.removeEventListener('keydown', playMusicOnInteraction);
-    };
-  }, [musicEnabled]);
-
   // Add an effect to show the theme-specific modals when theme is selected
   useEffect(() => {
-    if (settings.theme === 'lava-temple') {
-      // Check if it's the first time showing this modal in this session
-      const hasSeenModal = sessionStorage.getItem('has-seen-temple-guardian-modal');
+    // Only show modal once per session
+    const showModalOnce = (modalKey: string, setShowModal: (state: boolean) => void) => {
+      const hasSeenModal = sessionStorage.getItem(modalKey);
       if (!hasSeenModal) {
-        setShowTempleGuardianModal(true);
-        sessionStorage.setItem('has-seen-temple-guardian-modal', 'true');
+        setShowModal(true);
+        sessionStorage.setItem(modalKey, 'true');
       }
-    }
-    
-    // Show Tokyo Nights modal when theme is tokyo
-    if (settings.theme === 'tokyo') {
-      // Check if it's the first time showing this modal in this session
-      const hasSeenModal = sessionStorage.getItem('has-seen-tokyo-nights-modal');
-      if (!hasSeenModal) {
-        setShowTokyoNightsModal(true);
-        sessionStorage.setItem('has-seen-tokyo-nights-modal', 'true');
-      }
-    }
-    
-    // Show Space Explorer modal when theme is space
-    if (settings.theme === 'space') {
-      // Check if it's the first time showing this modal in this session
-      const hasSeenModal = sessionStorage.getItem('has-seen-space-explorer-modal');
-      if (!hasSeenModal) {
-        setShowSpaceExplorerModal(true);
-        sessionStorage.setItem('has-seen-space-explorer-modal', 'true');
-      }
-    }
+    };
 
-    // Show Pirate Adventure modal when theme is pirate
-    if (settings.theme === 'pirate') {
-      // Check if it's the first time showing this modal in this session
-      const hasSeenModal = sessionStorage.getItem('has-seen-pirate-adventure-modal');
-      if (!hasSeenModal) {
-        setShowPirateAdventureModal(true);
-        sessionStorage.setItem('has-seen-pirate-adventure-modal', 'true');
-      }
+    if (settings.theme === 'lava-temple') {
+      showModalOnce('has-seen-temple-guardian-modal', setShowTempleGuardianModal);
+    } else if (settings.theme === 'tokyo') {
+      showModalOnce('has-seen-tokyo-nights-modal', setShowTokyoNightsModal);
+    } else if (settings.theme === 'space') {
+      showModalOnce('has-seen-space-explorer-modal', setShowSpaceExplorerModal);
+    } else if (settings.theme === 'pirate') {
+      showModalOnce('has-seen-pirate-adventure-modal', setShowPirateAdventureModal);
     }
   }, [settings.theme]);
 
@@ -1027,17 +952,6 @@ function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isFullscre
           box-shadow: 0 0 20px rgba(245, 158, 11, 0.6), 0 0 40px rgba(245, 158, 11, 0.4), 0 0 60px rgba(245, 158, 11, 0.2);
         }
       `}</style>
-
-      {/* Sound effects component */}
-      <SoundEffects
-        theme={settings.theme}
-        onCorrect={soundEffectTriggers.correctLetter}
-        onIncorrect={soundEffectTriggers.incorrectLetter}
-        onWin={soundEffectTriggers.gameWon}
-        onLose={soundEffectTriggers.gameLost}
-        onHint={soundEffectTriggers.hintUsed}
-        muted={!soundEnabled}
-      />
 
       {/* Background video/animation fills entire screen */}
       <div className="absolute inset-0">
@@ -1071,23 +985,13 @@ function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isFullscre
 
         {/* Control buttons */}
         <div className="flex items-center space-x-1 md:space-x-2">
-          {/* Sound toggle button */}
+          {/* Music toggle button (now controls UI icon, actual music by parent) */}
           <button
             onClick={() => {
-              playSFX('button-click');
-              toggleSound();
-            }}
-            className="p-1.5 md:p-2 rounded-full bg-gray-700 hover:bg-gray-600 text-white text-sm md:text-base"
-            title={soundEnabled ? "Mute sound effects" : "Unmute sound effects"}
-          >
-            {soundEnabled ? "🔊" : "🔇"}
-          </button>
-
-          {/* Music toggle button */}
-          <button
-            onClick={() => {
-              playSFX('button-click');
-              toggleMusic();
+              playSFX('button-click'); // SFX for the button click itself
+              setMusicEnabled(prev => !prev); // Toggle local state for icon change
+              // If you want this button to control the parent's background music,
+              // you'd need to pass a `toggleMusic` prop from HangmanPage.tsx here.
             }}
             className="p-1.5 md:p-2 rounded-full bg-gray-700 hover:bg-gray-600 text-white"
             title={musicEnabled ? "Mute music" : "Play music"}
@@ -1098,7 +1002,7 @@ function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isFullscre
           {/* Hint button */}
           <button
             onClick={() => {
-              playSFX('button-click');
+              playSFX('button-click'); // Use passed-in playSFX
               handleHint();
             }}
             disabled={hints <= 0 || gameStatus !== 'playing'}
@@ -1150,10 +1054,7 @@ function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isFullscre
           <div className="text-center pb-2 md:pb-4">
             <div className="text-sm md:text-lg font-medium">
               <span className="opacity-75">
-                {themeId === 'tokyo' ? 'Password Attempts' :
-                 themeId === 'temple' ? 'Escape Chances' :
-                 themeId === 'space' ? 'Oxygen Level' :
-                 'Lives Remaining'}:
+                {themeClassesState.dangerText}:
               </span> {MAX_ATTEMPTS - wrongGuesses}/{MAX_ATTEMPTS}
             </div>
           </div>
@@ -1195,7 +1096,7 @@ function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isFullscre
             <div className="flex justify-center gap-4 mt-6">
               <button
                 onClick={() => {
-                  playSFX('button-click');
+                  playSFX('button-click'); // Use passed-in playSFX
                   resetGame();
                 }}
                 className={`${themeClassesState.button} py-3 px-6 rounded-lg font-bold text-white`}
@@ -1205,7 +1106,7 @@ function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isFullscre
 
               <button
                 onClick={() => {
-                  playSFX('button-click');
+                  playSFX('button-click'); // Use passed-in playSFX
                   onBackToMenu();
                 }}
                 className="bg-gray-700 hover:bg-gray-600 py-3 px-6 rounded-lg font-bold text-white"
@@ -1242,10 +1143,10 @@ function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isFullscre
   );
 }
 
-export default function HangmanGame(props: HangmanGameProps) {
+export default function HangmanGame({ playSFX, ...props }: HangmanGameProps) { // <--- FIXED HERE
   return (
     <ThemeProvider themeId={props.settings.theme}>
-      <GameContent {...props} />
+      <GameContent playSFX={playSFX} {...props} /> {/* <--- FIXED HERE */}
     </ThemeProvider>
   );
-} 
+}

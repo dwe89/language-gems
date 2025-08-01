@@ -1,4 +1,5 @@
 import { SentenceChallenge } from '../types';
+import { getDecoyWords, normalizeLanguage } from '../data/decoyWords';
 
 export interface WordObject {
   id: string;
@@ -7,7 +8,6 @@ export interface WordObject {
   x: number;
   y: number;
   speed: number;
-  rotation: number;
   scale: number;
   spawnTime: number;
   clicked: boolean;
@@ -28,27 +28,34 @@ export interface ParticleEffect {
 
 // Base theme engine class for shared functionality
 export abstract class BaseThemeEngine {
-  public generateDecoys(correctWords: string[], allChallenges: SentenceChallenge[], difficulty: string): string[] {
+  public generateDecoys(
+    correctWords: string[], 
+    allChallenges: SentenceChallenge[], 
+    difficulty: string,
+    targetLanguage?: string
+  ): string[] {
     // Get words from other sentences in the same category
     const otherWords = allChallenges
       .flatMap(challenge => challenge.words)
       .filter(word => !correctWords.includes(word))
       .filter((word, index, arr) => arr.indexOf(word) === index); // Remove duplicates
 
-    // Add some common Spanish words as additional decoys
-    const commonDecoys = [
-      'el', 'la', 'los', 'las', 'un', 'una', 'y', 'o', 'pero', 'que', 'de', 'del', 'al',
-      'en', 'con', 'por', 'para', 'sin', 'sobre', 'bajo', 'entre', 'desde', 'hasta',
-      'muy', 'más', 'menos', 'también', 'solo', 'siempre', 'nunca', 'aquí', 'allí',
-      'hoy', 'ayer', 'mañana', 'ahora', 'después', 'antes', 'cuando', 'donde', 'como'
-    ];
-
-    const allDecoys = [...otherWords, ...commonDecoys]
-      .filter(word => !correctWords.includes(word));
-
     // Determine number of decoys based on difficulty
     const decoyCount = difficulty === 'beginner' ? 4 : difficulty === 'intermediate' ? 6 : 8;
     
+    // Get language-specific decoys
+    const language = normalizeLanguage(targetLanguage || 'spanish');
+    const languageDecoys = getDecoyWords(
+      language, 
+      decoyCount * 2, // Get more than needed for better variety
+      correctWords
+    );
+
+    // Combine other challenge words with language-specific decoys
+    const allDecoys = [...otherWords, ...languageDecoys]
+      .filter(word => !correctWords.includes(word))
+      .filter((word, index, arr) => arr.indexOf(word) === index); // Remove duplicates
+
     // Shuffle and select decoys
     const shuffled = allDecoys.sort(() => 0.5 - Math.random());
     return shuffled.slice(0, decoyCount);
@@ -66,8 +73,11 @@ export abstract class BaseThemeEngine {
       ambient: ['#8B5CF6', '#A78BFA', '#C4B5FD']
     };
 
+    const timestamp = Date.now();
+    const randomSuffix = Math.random().toString(36).substr(2, 9);
+
     return Array.from({ length: count }, (_, i) => ({
-      id: `particle-${Date.now()}-${i}`,
+      id: `particle-${timestamp}-${randomSuffix}-${i}`,
       x,
       y,
       vx: (Math.random() - 0.5) * 10,

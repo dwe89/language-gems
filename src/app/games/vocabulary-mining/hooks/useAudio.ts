@@ -23,6 +23,10 @@ interface AudioFiles {
     'incorrect': string;
     'victory': string;
   };
+  // Background music
+  music: {
+    'background': string;
+  };
 }
 
 const AUDIO_FILES: AudioFiles = {
@@ -42,14 +46,18 @@ const AUDIO_FILES: AudioFiles = {
     'correct': '/audio/battle/correct_answer.mp3',
     'incorrect': '/audio/sfx/wrong-answer.mp3',
     'victory': '/audio/battle/victory.mp3'
+  },
+  music: {
+    'background': '/audio/themes/vocabulary-mining.mp3'
   }
 };
 
 export const useAudio = (soundEnabled: boolean = true) => {
   const audioRefs = useRef<{ [key: string]: HTMLAudioElement }>({});
   const wordAudioRef = useRef<HTMLAudioElement | null>(null);
+  const backgroundMusicRef = useRef<HTMLAudioElement | null>(null);
 
-  // Initialize audio files
+  // Initialize audio files and background music
   useEffect(() => {
     // Only initialize in browser environment
     if (typeof window === 'undefined') return;
@@ -80,7 +88,37 @@ export const useAudio = (soundEnabled: boolean = true) => {
       audio.loop = false;
       audioRefs.current[`feedback-${key}`] = audio;
     });
+
+    // Initialize and play background music
+    if (!backgroundMusicRef.current) {
+      const bgMusic = new Audio(AUDIO_FILES.music.background);
+      bgMusic.loop = true; // Loop the background music
+      bgMusic.volume = 0.3; // Set a lower volume for background music
+      bgMusic.preload = 'auto';
+      backgroundMusicRef.current = bgMusic;
+    }
+
   }, []);
+
+  // Control background music playback based on soundEnabled
+  useEffect(() => {
+    if (typeof window === 'undefined' || !backgroundMusicRef.current) return;
+
+    if (soundEnabled) {
+      backgroundMusicRef.current.play().catch((error) => {
+        console.warn('Failed to play background music:', error);
+      });
+    } else {
+      backgroundMusicRef.current.pause();
+    }
+
+    // Cleanup: pause music when component unmounts
+    return () => {
+      if (backgroundMusicRef.current) {
+        backgroundMusicRef.current.pause();
+      }
+    };
+  }, [soundEnabled]);
 
   // Play gem collection sound
   const playGemSound = useCallback((gemType: keyof AudioFiles['gems']) => {

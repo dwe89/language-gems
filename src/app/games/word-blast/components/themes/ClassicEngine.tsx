@@ -9,6 +9,8 @@ interface ClassicGem extends WordObject {
   gemType: 'ruby' | 'sapphire' | 'emerald' | 'diamond' | 'amethyst' | 'topaz';
   glowing: boolean;
   sparkleIntensity: number;
+  clicked: boolean; 
+  feedbackStatus?: 'incorrect'; // New property for temporary visual feedback
 }
 
 export default function ClassicEngine(props: WordBlastEngineProps) {
@@ -42,7 +44,7 @@ export default function ClassicEngine(props: WordBlastEngineProps) {
     }
 
     const correctWords = currentChallenge.words;
-    const decoys = themeEngine.current.generateDecoys(correctWords, challenges, difficulty);
+    const decoys = themeEngine.current.generateDecoys(correctWords, challenges, difficulty, currentChallenge.targetLanguage);
     const allWords = [...correctWords, ...decoys];
     const shuffledWords = allWords.sort(() => 0.5 - Math.random());
 
@@ -66,17 +68,17 @@ export default function ClassicEngine(props: WordBlastEngineProps) {
         isCorrect: correctWords.includes(word),
         x: position.x,
         y: position.y - (index * 80), // Stagger spawn times
-        speed: 1 + Math.random() * 0.5,
-        rotation: Math.random() * 360,
+        speed: 2 + Math.random() * 1, 
+        rotation: 0, 
         scale: 0.9 + Math.random() * 0.2,
         spawnTime: Date.now(),
         clicked: false,
         gemType: gemTypes[Math.floor(Math.random() * gemTypes.length)],
         glowing: Math.random() > 0.5,
-        sparkleIntensity: Math.random() * 0.5 + 0.5
+        sparkleIntensity: Math.random() * 0.5 + 0.5,
+        feedbackStatus: undefined // Initialize feedbackStatus
       });
     });
-
     console.log('[ClassicEngine] Gems spawned:', newGems);
     setGems(newGems);
   };
@@ -85,88 +87,120 @@ export default function ClassicEngine(props: WordBlastEngineProps) {
   const updateGems = () => {
     if (isPaused || !gameActive) return;
 
+    const screenHeight = typeof window !== 'undefined' ? window.innerHeight : 800;
+    const screenWidth = typeof window !== 'undefined' ? window.innerWidth : 1200;
+
     setGems(prev =>
-      prev.map(gem => ({
-        ...gem,
-        y: gem.y + gem.speed,
-        rotation: gem.rotation + 2,
-        sparkleIntensity: gem.sparkleIntensity + Math.sin(Date.now() * 0.01) * 0.1
-      })).filter(gem => gem.y < (typeof window !== 'undefined' ? window.innerHeight + 100 : 900))
+      prev.map(gem => {
+        let newY = gem.y + gem.speed;
+        let newX = gem.x;
+
+        // Logic for looping gems from bottom to top
+        if (newY > screenHeight + 100) { 
+          newY = -100 - (Math.random() * 100); 
+          newX = Math.random() * screenWidth; 
+        }
+
+        return {
+          ...gem,
+          y: newY,
+          x: newX,
+          rotation: 0, 
+          sparkleIntensity: gem.sparkleIntensity + Math.sin(Date.now() * 0.01) * 0.1
+        };
+      })
     );
   };
 
   // Handle gem click
   const handleGemClick = (gem: ClassicGem) => {
-    if (gem.clicked) return;
+    // Prevent re-clicks if a gem is already processing feedback or has been permanently clicked
+    if (gem.feedbackStatus === 'incorrect' || gem.clicked) return; 
 
-    // Mark as clicked to prevent double-clicks
-    setGems(prev =>
-      prev.map(g => g.id === gem.id ? { ...g, clicked: true } : g)
-    );
-
-    // Check if this is the correct word in the sequence
     const expectedWord = currentChallenge.words[currentWordIndex];
-    const isCorrectSequence = gem.word === expectedWord;
+    const isClickValidAndInOrder = gem.isCorrect && (gem.word === expectedWord);
 
-    if (gem.isCorrect && isCorrectSequence) {
-      // Correct word clicked in correct sequence
+    if (isClickValidAndInOrder) { 
+      // Scenario 1: Correct word clicked IN THE CORRECT ORDER
+      // This is the ONLY time gems disappear and progress advances.
+      setGems(prev =>
+        prev.map(g => g.id === gem.id ? { ...g, clicked: true } : g) // Mark for permanent removal
+      );
+
       const newWordsCollected = [...wordsCollected, gem.word];
       setWordsCollected(newWordsCollected);
       setCurrentWordIndex(prev => prev + 1);
 
-      // Create success particles
       const successParticles = themeEngine.current.createParticleEffect(
         gem.x, gem.y, 'success', 12
       );
       setParticles(prev => [...prev, ...successParticles]);
 
-      // Play success sound
-      playSFX('gem-collect');
-
-      // Award points (bonus for sequence)
-      const sequenceBonus = currentWordIndex * 2; // Bonus for maintaining sequence
+      playSFX('gem');
+      const sequenceBonus = currentWordIndex * 2; 
       onCorrectAnswer(10 + sequenceBonus + (difficulty === 'advanced' ? 5 : 0));
 
-      // Check if challenge is complete
       if (newWordsCollected.length === currentChallenge.words.length) {
         setTimeout(() => {
           onChallengeComplete();
-          setWordsCollected([]);
+          // Progress bar fully resets ONLY when challenge is complete/new one loads
+          setWordsCollected([]); 
           setChallengeProgress(0);
           setCurrentWordIndex(0);
         }, 500);
       } else {
         setChallengeProgress(newWordsCollected.length / currentChallenge.words.length);
       }
-    } else if (gem.isCorrect && !isCorrectSequence) {
-      // Correct word but wrong sequence - give feedback but don't penalize heavily
+      
+      // Remove clicked gem after animation
+      setTimeout(() => {
+        setGems(prev => prev.filter(g => g.id !== gem.id));
+      }, 300);
+
+    } else if (gem.isCorrect && !isClickValidAndInOrder) { 
+      // Scenario 2: Correct word clicked OUT OF ORDER
+      // Gem stays, flashes red. PROGRESS DOES NOT RESET.
+      setGems(prev =>
+        prev.map(g => g.id === gem.id ? { ...g, feedbackStatus: 'incorrect' } : g)
+      );
+
       const warningParticles = themeEngine.current.createParticleEffect(
-        gem.x, gem.y, 'ambient', 6
+        gem.x, gem.y, 'ambient', 6 
       );
       setParticles(prev => [...prev, ...warningParticles]);
 
-      // Play warning sound (less harsh than error)
-      playSFX('gem-collect');
-
-      // Small penalty but don't lose life
+      playSFX('gem'); // Play a less harsh sound for out-of-order
       onCorrectAnswer(-2); // Small point deduction
-    } else {
-      // Incorrect word clicked (decoy)
+
+      // Clear the feedbackStatus after a short delay
+      setTimeout(() => {
+        setGems(prev =>
+          prev.map(g => g.id === gem.id ? { ...g, feedbackStatus: undefined } : g)
+        );
+      }, 500); 
+
+    } else { 
+      // Scenario 3: Decoy word clicked (NOT part of the correct sentence at all)
+      // Gem stays, flashes red. PROGRESS DOES NOT RESET.
+      setGems(prev =>
+        prev.map(g => g.id === gem.id ? { ...g, feedbackStatus: 'incorrect' } : g)
+      );
+
       const errorParticles = themeEngine.current.createParticleEffect(
         gem.x, gem.y, 'error', 8
       );
       setParticles(prev => [...prev, ...errorParticles]);
 
-      // Play error sound
-      playSFX('gem-break');
+      playSFX('wrong-answer'); // Harsh sound for incorrect
+      onIncorrectAnswer(); // This reduces health/lives
 
-      onIncorrectAnswer();
+      // Clear the feedbackStatus after a short delay
+      setTimeout(() => {
+        setGems(prev =>
+          prev.map(g => g.id === gem.id ? { ...g, feedbackStatus: undefined } : g)
+        );
+      }, 500); 
     }
-
-    // Remove clicked gem after animation
-    setTimeout(() => {
-      setGems(prev => prev.filter(g => g.id !== gem.id));
-    }, 300);
   };
 
   // Animation loop
@@ -182,7 +216,7 @@ export default function ClassicEngine(props: WordBlastEngineProps) {
 
     return () => {
       if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
+        cancelAnimationFrame(animationRef.current); 
       }
     };
   }, [gameActive, isPaused]);
@@ -226,7 +260,8 @@ export default function ClassicEngine(props: WordBlastEngineProps) {
       <div className="absolute inset-0 bg-gradient-to-b from-slate-900 via-blue-900 to-slate-950"></div>
 
       {/* English Sentence Display */}
-      <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-50">
+      <div className="absolute top-40 left-1/2 transform -translate-x-1/2 z-50">
+
         <div className="bg-black/70 backdrop-blur-sm rounded-lg px-6 py-4 border border-white/20">
           <div className="text-center">
             <div className="text-sm text-gray-300 mb-1">Translate this sentence:</div>
@@ -245,11 +280,6 @@ export default function ClassicEngine(props: WordBlastEngineProps) {
             <div className="text-sm text-gray-300">Progress:</div>
             <div className="text-lg font-bold text-white">
               {wordsCollected.join(' ')}
-              {currentWordIndex < currentChallenge.words.length && (
-                <span className="text-blue-400 ml-2">
-                  (Next: {currentChallenge.words[currentWordIndex]})
-                </span>
-              )}
             </div>
           </div>
         </div>
@@ -309,25 +339,7 @@ export default function ClassicEngine(props: WordBlastEngineProps) {
         ))}
       </AnimatePresence>
 
-      {/* Challenge Progress */}
-      <div className="absolute top-4 left-4 right-4">
-        <div className="bg-black/50 rounded-lg p-4 backdrop-blur-sm border border-blue-300/30">
-          <div className="text-blue-200 text-lg font-bold mb-2">
-            {currentChallenge?.english}
-          </div>
-          <div className="w-full bg-blue-900/50 rounded-full h-2">
-            <motion.div
-              className="bg-gradient-to-r from-blue-400 to-cyan-500 h-2 rounded-full"
-              initial={{ width: 0 }}
-              animate={{ width: `${challengeProgress * 100}%` }}
-              transition={{ duration: 0.3 }}
-            />
-          </div>
-          <div className="text-blue-300 text-sm mt-1">
-            Words collected: {wordsCollected.length} / {currentChallenge?.words.length || 0}
-          </div>
-        </div>
-      </div>
+
     </div>
   );
 }
@@ -364,11 +376,26 @@ const GemComponent: React.FC<{
     topaz: 'shadow-yellow-400/80'
   };
 
+  // Helper functions for dynamic styling based on feedbackStatus
+  const getBorderClass = () => {
+    if (gem.feedbackStatus === 'incorrect') {
+      return 'border-red-500 ring-4 ring-red-500'; // Make it stand out with a red border/ring
+    }
+    return gemBorders[gem.gemType];
+  };
+
+  const getShadowClass = () => {
+    if (gem.feedbackStatus === 'incorrect') {
+      return 'shadow-red-500/80'; // Red shadow for incorrect feedback
+    }
+    return gemShadows[gem.gemType];
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0, x: gem.x, y: gem.y, rotate: gem.rotation }}
       animate={{
-        opacity: gem.clicked ? 0 : 1,
+        opacity: gem.clicked ? 0 : 1, // Only disappear if 'clicked' (for correct gems)
         scale: gem.clicked ? 0.5 : gem.scale,
         x: gem.x,
         y: gem.y,
@@ -376,9 +403,10 @@ const GemComponent: React.FC<{
       }}
       exit={{ opacity: 0, scale: 0 }}
       onClick={onClick}
+      // Add 'transition-all' for a smooth color change for feedbackStatus
       className="absolute cursor-pointer transition-all duration-200 hover:scale-110 select-none"
     >
-      <div className={`bg-gradient-to-r ${gemColors[gem.gemType]} text-white border-3 ${gemBorders[gem.gemType]} shadow-2xl ${gemShadows[gem.gemType]} rounded-xl px-6 py-3 font-bold backdrop-blur-sm bg-opacity-95 min-w-[120px] text-center relative overflow-hidden`}>
+      <div className={`bg-gradient-to-r ${gemColors[gem.gemType]} text-white border-3 ${getBorderClass()} shadow-2xl ${getShadowClass()} rounded-xl px-6 py-3 font-bold backdrop-blur-sm bg-opacity-95 min-w-[120px] text-center relative overflow-hidden`}>
         {/* Sparkle effect */}
         {gem.glowing && (
           <div className="absolute inset-0 bg-gradient-to-r from-white/20 via-transparent to-white/20 animate-pulse" />

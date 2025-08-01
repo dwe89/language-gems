@@ -52,7 +52,7 @@ export default function SpaceExplorerEngine(props: WordBlastEngineProps) {
     if (!currentChallenge || isPaused || !gameActive) return;
 
     const correctWords = currentChallenge.words;
-    const decoys = themeEngine.current.generateDecoys(correctWords, challenges, difficulty);
+    const decoys = themeEngine.current.generateDecoys(correctWords, challenges, difficulty, currentChallenge.targetLanguage);
     const allWords = [...correctWords, ...decoys];
     const shuffledWords = allWords.sort(() => 0.5 - Math.random());
 
@@ -76,7 +76,6 @@ export default function SpaceExplorerEngine(props: WordBlastEngineProps) {
         x: position.x,
         y: position.y - (index * 100), // Stagger spawn times
         speed: 0.8 + Math.random() * 0.4,
-        rotation: Math.random() * 360,
         scale: 0.8 + Math.random() * 0.3,
         spawnTime: Date.now(),
         clicked: false,
@@ -100,7 +99,6 @@ export default function SpaceExplorerEngine(props: WordBlastEngineProps) {
         ...comet,
         y: comet.y + comet.speed,
         x: comet.x + comet.trajectory * 0.5,
-        rotation: comet.spinning ? comet.rotation + 3 : comet.rotation,
         glowIntensity: comet.glowIntensity + Math.sin(Date.now() * 0.01) * 0.1
       })).filter(comet => comet.y < (typeof window !== 'undefined' ? window.innerHeight + 100 : 900))
     );
@@ -156,7 +154,7 @@ export default function SpaceExplorerEngine(props: WordBlastEngineProps) {
         createCosmicExplosion(comet.x, comet.y);
         
         // Play laser hit sound
-        playSFX('laser-hit');
+        playSFX('gem');
         
         // Award points
         onCorrectAnswer(10 + (difficulty === 'advanced' ? 5 : 0));
@@ -179,7 +177,7 @@ export default function SpaceExplorerEngine(props: WordBlastEngineProps) {
         setParticles(prev => [...prev, ...errorParticles]);
         
         // Play laser miss sound
-        playSFX('laser-miss');
+        playSFX('wrong-answer');
         
         onIncorrectAnswer();
       }
@@ -259,7 +257,8 @@ export default function SpaceExplorerEngine(props: WordBlastEngineProps) {
       </div>
 
       {/* English Sentence Display */}
-      <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-50">
+      <div className="absolute top-40 left-1/2 transform -translate-x-1/2 z-50">
+
         <div className="bg-black/70 backdrop-blur-sm rounded-lg px-6 py-4 border border-blue-500/30">
           <div className="text-center">
             <div className="text-sm text-blue-300 mb-1">🚀 Decode this space transmission:</div>
@@ -271,22 +270,6 @@ export default function SpaceExplorerEngine(props: WordBlastEngineProps) {
         </div>
       </div>
 
-      {/* Progress Display */}
-      <div className="absolute top-24 left-1/2 transform -translate-x-1/2 z-50">
-        <div className="bg-black/50 backdrop-blur-sm rounded-lg px-4 py-2 border border-blue-500/20">
-          <div className="text-center">
-            <div className="text-sm text-blue-300">Space Transmission:</div>
-            <div className="text-lg font-bold text-white">
-              {wordsCollected.join(' ')}
-              {currentWordIndex < currentChallenge.words.length && (
-                <span className="text-cyan-400 ml-2">
-                  (Next: {currentChallenge.words[currentWordIndex]})
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
       {/* Space Background */}
       <div className="absolute inset-0">
         {/* Stars */}
@@ -332,25 +315,6 @@ export default function SpaceExplorerEngine(props: WordBlastEngineProps) {
         {/* Distant planets */}
         <div className="absolute top-20 right-20 w-16 h-16 bg-gradient-to-br from-red-400 to-red-600 rounded-full opacity-60" />
         <div className="absolute top-40 left-10 w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full opacity-50" />
-      </div>
-
-      {/* Spaceship (fixed position) */}
-      <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2">
-        <motion.div
-          className="text-6xl"
-          animate={{
-            y: [0, -5, 0],
-            rotateZ: [0, 2, 0, -2, 0]
-          }}
-          transition={{
-            duration: 3,
-            repeat: Infinity,
-            ease: 'easeInOut'
-          }}
-        >
-          🚀
-        </motion.div>
-        <div className="text-cyan-400 font-bold text-sm mt-2 text-center">STARSHIP</div>
       </div>
 
       {/* Space Comets */}
@@ -408,31 +372,7 @@ export default function SpaceExplorerEngine(props: WordBlastEngineProps) {
         ))}
       </AnimatePresence>
 
-      {/* Challenge Progress - Space HUD Style */}
-      <div className="absolute top-4 left-4 right-4">
-        <div className="bg-black/80 rounded-lg p-4 backdrop-blur-sm border border-cyan-500/50 font-mono">
-          <div className="text-cyan-400 text-sm mb-1">
-            🛸 MISSION OBJECTIVE: <span className="text-green-400">{currentChallenge?.english}</span>
-          </div>
-          <div className="text-yellow-400 text-sm mb-2">
-            📡 STATUS: SCANNING_COMETS...
-          </div>
-          <div className="w-full bg-gray-800 rounded-full h-2 border border-cyan-500/30">
-            <motion.div
-              className="bg-gradient-to-r from-cyan-500 to-blue-500 h-2 rounded-full"
-              initial={{ width: 0 }}
-              animate={{ width: `${challengeProgress * 100}%` }}
-              transition={{ duration: 0.3 }}
-              style={{
-                boxShadow: '0 0 10px rgba(6, 182, 212, 0.5)'
-              }}
-            />
-          </div>
-          <div className="text-green-300 text-xs mt-1">
-            ☄️ COMETS_DESTROYED: {wordsCollected.length} / {currentChallenge?.words.length || 0}
-          </div>
-        </div>
-      </div>
+
     </div>
   );
 }
@@ -467,13 +407,12 @@ const SpaceCometComponent: React.FC<{
 
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0, x: comet.x, y: comet.y, rotate: comet.rotation }}
+      initial={{ opacity: 0, scale: 0, x: comet.x, y: comet.y, rotate: 0 }}
       animate={{
         opacity: comet.clicked ? 0 : 1,
         scale: comet.clicked ? 0.5 : comet.scale,
         x: comet.x,
         y: comet.y,
-        rotate: comet.rotation
       }}
       exit={{ opacity: 0, scale: 0 }}
       onClick={onClick}

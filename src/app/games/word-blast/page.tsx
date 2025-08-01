@@ -16,6 +16,7 @@ import { useSearchParams } from 'next/navigation';
 import confetti from 'canvas-confetti';
 import UnifiedSentenceCategorySelector, { SentenceSelectionConfig } from '../../../components/games/UnifiedSentenceCategorySelector';
 import WordBlastEngine from './components/WordBlastEngine';
+import { useAudio } from './hooks/useAudio';
 import {
   SentenceChallenge,
   ThemeConfig,
@@ -112,18 +113,13 @@ const AVAILABLE_THEMES: ThemeConfig[] = [
   }
 ];
 
-// Sound effects configuration
-const SOUND_EFFECTS = {
-  'gem-collect': '/sounds/correct.mp3',
-  'gem-break': '/sounds/incorrect.mp3',
-  'stone-crack': '/sounds/correct.mp3',
-  'stone-break': '/sounds/incorrect.mp3',
-  'cannon-fire': '/sounds/correct.mp3',
-  'cannon-miss': '/sounds/incorrect.mp3',
-  'hack-success': '/sounds/correct.mp3',
-  'hack-fail': '/sounds/incorrect.mp3',
-  'laser-hit': '/sounds/correct.mp3',
-  'laser-miss': '/sounds/incorrect.mp3'
+// Sound effects mapping for different themes
+const THEME_SOUND_MAPPING = {
+  'temple': { correct: 'gem', incorrect: 'wrong-answer' },
+  'tokyo': { correct: 'gem', incorrect: 'wrong-answer' },
+  'pirate': { correct: 'gem', incorrect: 'wrong-answer' },
+  'space': { correct: 'gem', incorrect: 'wrong-answer' },
+  'classic': { correct: 'gem', incorrect: 'wrong-answer' }
 };
 
 
@@ -169,20 +165,11 @@ export default function WordBlastPage() {
 
   // Audio
   const [audioEnabled, setAudioEnabled] = useState(true);
-  const audioRef = useRef<{ [key: string]: HTMLAudioElement }>({});
+  const { playSFX, startBackgroundMusic, stopBackgroundMusic } = useAudio(audioEnabled);
 
   // URL parameters
   const searchParams = useSearchParams();
   const assignmentId = searchParams?.get('assignmentId') || null;
-
-  // Initialize audio
-  useEffect(() => {
-    Object.entries(SOUND_EFFECTS).forEach(([key, src]) => {
-      const audio = new Audio(src);
-      audio.preload = 'auto';
-      audioRef.current[key] = audio;
-    });
-  }, []);
 
   // Auto-start game when challenges are loaded
   useEffect(() => {
@@ -192,17 +179,14 @@ export default function WordBlastPage() {
     }
   }, [challenges, gameState]);
 
-  // Play sound effect
-  const playSFX = (sound: string) => {
-    if (!audioEnabled || !audioRef.current[sound]) return;
-    
-    try {
-      audioRef.current[sound].currentTime = 0;
-      audioRef.current[sound].play().catch(console.error);
-    } catch (error) {
-      console.error('Error playing sound:', error);
+  // Start background music when game starts
+  useEffect(() => {
+    if (gameState === 'playing' && selectedTheme) {
+      startBackgroundMusic(selectedTheme as keyof typeof THEME_SOUND_MAPPING);
+    } else {
+      stopBackgroundMusic();
     }
-  };
+  }, [gameState, selectedTheme, startBackgroundMusic, stopBackgroundMusic]);
 
   // Fetch challenges from API
   const fetchChallenges = async () => {
@@ -290,8 +274,9 @@ export default function WordBlastPage() {
       maxCombo: Math.max(prev.maxCombo, prev.combo + 1),
       wordsCollected: prev.wordsCollected + 1
     }));
-    
-    playSFX('gem-collect');
+
+    const soundMapping = THEME_SOUND_MAPPING[selectedTheme as keyof typeof THEME_SOUND_MAPPING];
+    playSFX(soundMapping.correct);
   };
 
   // Handle incorrect answer
@@ -301,12 +286,15 @@ export default function WordBlastPage() {
       ...prev,
       combo: 0
     }));
-    
-    playSFX('gem-break');
-    
+
+    const soundMapping = THEME_SOUND_MAPPING[selectedTheme as keyof typeof THEME_SOUND_MAPPING];
+    playSFX(soundMapping.incorrect);
+
     // Check game over
     if (lives <= 1) {
       setGameState('completed');
+      playSFX('defeat');
+      stopBackgroundMusic();
       // Show final score with confetti
       confetti({
         particleCount: 100,
@@ -319,10 +307,11 @@ export default function WordBlastPage() {
   // Handle challenge complete
   const handleChallengeComplete = () => {
     const nextIndex = currentChallengeIndex + 1;
-    
+
     if (nextIndex >= challenges.length) {
       // All challenges completed
       setGameState('completed');
+      stopBackgroundMusic();
       confetti({
         particleCount: 200,
         spread: 100,
@@ -341,6 +330,7 @@ export default function WordBlastPage() {
     setCurrentChallengeIndex(0);
     setLives(3);
     setChallenges([]);
+    stopBackgroundMusic();
   };
 
   // Show sentence category selector if game not started

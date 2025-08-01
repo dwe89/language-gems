@@ -7,7 +7,8 @@ import {
   Volume2, VolumeX, Pause, Play, RotateCcw, Maximize, Minimize
 } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import UnifiedSentenceCategorySelector, { SentenceSelectionConfig } from '../../../components/games/UnifiedSentenceCategorySelector';
+import UnifiedGameLauncher from '../../../components/games/UnifiedGameLauncher';
+import { UnifiedSelectionConfig, UnifiedVocabularyItem } from '../../../hooks/useUnifiedVocabulary';
 import { useSounds } from './hooks/useSounds';
 
 import { useAuth } from '../../../components/auth/AuthProvider';
@@ -302,42 +303,78 @@ export default function SentenceTowersPage() {
     return <SentenceTowersAssignmentWrapper assignmentId={assignmentId} />;
   }
 
-  // Game state management for sentence selector
+  // Game state management for unified launcher
   const [gameStarted, setGameStarted] = useState(false);
-  const [selectedConfig, setSelectedConfig] = useState<SentenceSelectionConfig | null>(null);
+  const [selectedConfig, setSelectedConfig] = useState<UnifiedSelectionConfig | null>(null);
+  const [vocabulary, setVocabulary] = useState<UnifiedVocabularyItem[]>([]);
 
-  // Handle selection complete from sentence selector
-  const handleSelectionComplete = (config: SentenceSelectionConfig) => {
+  // Handle game start from unified launcher
+  const handleGameStart = (config: UnifiedSelectionConfig, vocabularyItems: UnifiedVocabularyItem[]) => {
     setSelectedConfig(config);
+    setVocabulary(vocabularyItems);
     setGameStarted(true);
     
-    console.log('Sentence Towers started with sentence config:', config);
+    console.log('Sentence Towers started with unified config:', {
+      config,
+      vocabularyCount: vocabularyItems.length
+    });
   };
 
   // Handle back to menu
   const handleBackToMenu = () => {
     setGameStarted(false);
     setSelectedConfig(null);
+    setVocabulary([]);
   };
 
-  // Show sentence category selector if game not started
+  // Show unified launcher if game not started
   if (!gameStarted) {
     return (
-      <UnifiedSentenceCategorySelector
-        gameName="Sentence Towers"
-        title="Sentence Towers - Select Content"
-        supportedLanguages={['spanish', 'french', 'german']}
+      <UnifiedGameLauncher
+        gameName="Word Towers"
+        gameDescription="Build towers by stacking vocabulary blocks and creating words"
+        supportedLanguages={['es', 'fr', 'de']}
         showCustomMode={true}
-        onSelectionComplete={handleSelectionComplete}
+        minVocabularyRequired={1}
+        onGameStart={handleGameStart}
         onBack={() => router.push('/games')}
-      />
+        supportsThemes={false}
+        requiresAudio={false}
+      >
+        {/* Game-specific instructions */}
+        <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 mb-6 max-w-md mx-auto">
+          <h4 className="text-white font-semibold mb-3 text-center">How to Play</h4>
+          <div className="text-white/80 text-sm space-y-2">
+            <p>• Stack vocabulary blocks to build towers</p>
+            <p>• Answer questions correctly to place blocks</p>
+            <p>• Build higher towers for more points</p>
+            <p>• Don't let your tower fall!</p>
+            <p>• Use special blocks for bonus effects</p>
+          </div>
+        </div>
+      </UnifiedGameLauncher>
     );
   }
 
   // Show game if started and config is available
-  if (gameStarted && selectedConfig) {
+  if (gameStarted && selectedConfig && vocabulary.length > 0) {
+    // Convert unified vocabulary to game format
+    const gameVocabulary = vocabulary.map(item => ({
+      id: item.id,
+      word: item.word,
+      translation: item.translation,
+      language: item.language,
+      category: item.category,
+      subcategory: item.subcategory,
+      part_of_speech: item.part_of_speech,
+      example_sentence_original: item.example_sentence_original,
+      example_sentence_translation: item.example_sentence_translation,
+      difficulty_level: item.difficulty_level || 'beginner'
+    }));
+
     return (
       <ImprovedSentenceTowersGame
+        gameVocabulary={gameVocabulary}
         onBackToMenu={handleBackToMenu}
         config={selectedConfig}
       />

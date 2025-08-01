@@ -7,6 +7,7 @@ import HangmanGameWrapper from './components/HangmanGameWrapper';
 import HangmanAssignmentWrapper from './components/HangmanAssignmentWrapper';
 import UnifiedGameLauncher from '../../../components/games/UnifiedGameLauncher';
 import { UnifiedSelectionConfig, UnifiedVocabularyItem } from '../../../hooks/useUnifiedVocabulary';
+import { useAudio } from './hooks/useAudio';
 
 export default function HangmanPage() {
   const { user, isLoading, isDemo } = useUnifiedAuth();
@@ -39,6 +40,40 @@ export default function HangmanPage() {
     vocabulary: UnifiedVocabularyItem[];
     theme: string;
   } | null>(null);
+
+  // Initialize the audio hook (assuming sound is enabled by default, or you can add a user preference)
+  const { playSFX, startBackgroundMusic, stopBackgroundMusic } = useAudio(true);
+
+  // --- Audio Management for Background Music ---
+  useEffect(() => {
+    if (gameStarted && gameConfig?.theme) {
+      // Map your theme strings to the keys expected by useAudio.ts
+      const themeMap: Record<string, 'classic' | 'space-explorer' | 'tokyo-nights' | 'pirate-adventure' | 'lava-temple'> = {
+        'default': 'classic',
+        'space': 'space-explorer',
+        'tokyo': 'tokyo-nights',
+        'pirate': 'pirate-adventure',
+        'temple': 'lava-temple',
+      };
+      
+      const audioThemeKey = themeMap[gameConfig.theme];
+      if (audioThemeKey) {
+        startBackgroundMusic(audioThemeKey);
+      } else {
+        // Fallback for unmapped themes or 'default' if not explicitly handled
+        startBackgroundMusic('classic'); 
+      }
+    } else {
+      // Stop music when game is not started (e.g., back to menu)
+      stopBackgroundMusic();
+    }
+
+    // Cleanup function to stop music when component unmounts or dependencies change
+    return () => {
+      stopBackgroundMusic();
+    };
+  }, [gameStarted, gameConfig?.theme, startBackgroundMusic, stopBackgroundMusic]);
+  // --- End Audio Management ---
 
   // Transform vocabulary for hangman game
   const transformVocabularyForHangman = (vocabulary: UnifiedVocabularyItem[]) => {
@@ -80,6 +115,7 @@ export default function HangmanPage() {
   const handleBackToMenu = () => {
     setGameStarted(false);
     setGameConfig(null);
+    stopBackgroundMusic();
   };
 
   // Load stats from localStorage
@@ -150,9 +186,11 @@ export default function HangmanPage() {
       if (newStats.streak > newStats.bestStreak) {
         newStats.bestStreak = newStats.streak;
       }
+      playSFX('victory');
     } else {
       newStats.gamesLost += 1;
       newStats.streak = 0;
+      playSFX('defeat');
     }
 
     setGameStats(newStats);
@@ -228,6 +266,7 @@ export default function HangmanPage() {
           assignmentId={assignmentId}
           userId={user?.id}
           isAssignmentMode={!!assignmentId}
+          playSFX={playSFX}
         />
       </div>
     );
@@ -235,4 +274,4 @@ export default function HangmanPage() {
 
   // Fallback
   return null;
-} 
+}
