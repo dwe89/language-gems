@@ -2,273 +2,691 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useEffect } from 'react';
+import {
+  Gamepad2,
+  BookOpen,
+  Users,
+  Award,
+  BarChart3,
+  Target,
+  Headphones,
+  PenTool,
+  FileText,
+  Zap,
+  Star,
+  ArrowRight,
+  Play,
+  CheckCircle,
+  Sparkles,
+  Trophy,
+  Clock,
+  Globe,
+  Brain,
+  Lightbulb,
+  Hourglass,
+  Rocket
+} from 'lucide-react';
 import Footer from '../components/layout/Footer';
 import SEOWrapper from '../components/seo/SEOWrapper';
 import { getFAQSchema } from '../lib/seo/structuredData';
 
+// Animated text data for hero section - Teacher-focused benefits
+const heroTextVariations = [
+  { text: "Boost Student Engagement", color: "text-blue-600" },
+  { text: "Uncover Real-time Progress", color: "text-green-600" },
+  { text: "Gain Predictive Insights", color: "text-purple-600" },
+  { text: "Streamline Assignments", color: "text-indigo-600" },
+  { text: "Tailor Learning to Every Student", color: "text-emerald-600" },
+  { text: "Excel in GCSE-Style Exams", color: "text-orange-600" }
+];
+
+// Animated text hook
+function useTypewriter(texts, speed = 100) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [currentText, setCurrentText] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  useEffect(() => {
+    const current = texts[currentIndex];
+    const fullText = current.text;
+
+    const timer = setTimeout(() => {
+      if (!isDeleting) {
+        // Typing
+        if (currentText.length < fullText.length) {
+          setCurrentText(fullText.slice(0, currentText.length + 1));
+        } else {
+          // Pause before deleting
+          setTimeout(() => setIsDeleting(true), 2000);
+        }
+      } else {
+        // Deleting
+        if (currentText.length > 0) {
+          setCurrentText(fullText.slice(0, currentText.length - 1));
+        } else {
+          setIsDeleting(false);
+          setCurrentIndex((prev) => (prev + 1) % texts.length);
+        }
+      }
+    }, isDeleting ? speed / 2 : speed);
+
+    return () => clearTimeout(timer);
+  }, [currentText, isDeleting, currentIndex, texts, speed]);
+
+  return {
+    text: currentText,
+    color: texts[currentIndex].color,
+    isDeleting
+  };
+}
+
 export default function Home() {
-  // FAQ data for structured data
+  const { text: animatedText, color: textColor } = useTypewriter(heroTextVariations);
+
+  // Slideshow images for hero section
+  const slideshowImages = [
+    { src: "/images/homepage/dashboard-mockups/dashboard-class-overview.jpg", alt: "LanguageGems Teacher Dashboard showing Class Performance Overview and Weak Areas" },
+    { src: "/images/homepage/dashboard-mockups/dashboard-student-progress.jpg", alt: "LanguageGems Teacher Dashboard showing Individual Student Progress and AI-Powered Recommendations" },
+    { src: "/images/homepage/dashboard-mockups/dashboard-create-assignment.jpg", alt: "LanguageGems Teacher Dashboard showing Assignment Creation Interface and Assignment Summary" }
+  ];
+
+  // Slideshow state and logic
+  const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentSlideIndex((prevIndex) => (prevIndex + 1) % slideshowImages.length);
+    }, 6000); // Change slide every 6 seconds
+
+    return () => clearInterval(interval);
+  }, [slideshowImages.length]);
+
+  // FAQ data for structured data (updated for teacher focus)
   const faqs = [
     {
-      question: "What makes Language Gems different from other language learning platforms?",
-      answer: "Language Gems is specifically designed for UK GCSE requirements with curriculum-aligned vocabulary, comprehensive teacher analytics, and gamified learning experiences that engage students while providing measurable results."
+      question: "How does LanguageGems support teachers and improve student outcomes?",
+      answer: "LanguageGems provides a comprehensive teacher dashboard with real-time analytics, predictive insights, and automated assignment tools. This saves teachers time, identifies struggling students early, and boosts engagement through gamified, curriculum-aligned content, ultimately leading to better GCSE results."
     },
     {
-      question: "Which languages does Language Gems support?",
-      answer: "We currently support Spanish, French, German, and Italian, with comprehensive GCSE-level vocabulary and grammar content for each language."
+      question: "Which languages and exam boards does LanguageGems support?",
+      answer: "We currently support Spanish, French, and German, with comprehensive vocabulary and grammar content aligned with GCSE-style requirements for exam boards like AQA and Edexcel. Our content is designed to prepare students for success in these examinations."
     },
     {
-      question: "How does the pricing work for schools?",
-      answer: "We offer transparent annual pricing starting from £399 for basic access, with our comprehensive school plan at £699/year including unlimited teachers and students with no hidden costs."
+      question: "What is the pricing structure for schools and educational institutions?",
+      answer: "We offer transparent annual pricing designed for schools, starting from £399 for basic access, with our comprehensive school plan at £699/year. This includes unlimited teachers and students, ensuring no hidden costs and scalable learning for your entire department."
     }
   ];
 
   const faqStructuredData = getFAQSchema(faqs);
 
+  // Feature categories for the new homepage
+  const gameCategories = [
+    {
+      title: "Vocabulary Mastery",
+      icon: Sparkles,
+      color: "from-blue-500 to-indigo-600",
+      description: "Our diverse range of vocabulary games ensures students not only learn new words but retain them long-term.",
+      games: [
+        { name: "VocabMaster", description: "Intelligent spaced repetition for lasting retention" },
+        { name: "Word Blast", description: "Fast-paced word recognition challenges" },
+        { name: "Memory Match", description: "Boost memory with engaging vocabulary pairs" },
+        { name: "Hangman", description: "Classic word guessing for core vocabulary" }
+      ]
+    },
+    {
+      title: "Sentence Construction & Translation",
+      icon: PenTool,
+      color: "from-green-500 to-emerald-600",
+      description: "Beyond individual words, our games build confidence in forming and translating complete sentences.",
+      games: [
+        { name: "Sentence Sprint", description: "Drag & drop sentence building for fluency" },
+        { name: "Translation Tycoon", description: "Business-themed translation practice" },
+        { name: "Word Scramble", description: "Unscramble letters to form correct words" }
+      ]
+    },
+    {
+      title: "Grammar & Conjugation",
+      icon: Target,
+      color: "from-purple-500 to-violet-600",
+      description: "Master complex grammatical structures and verb conjugations through interactive battles and quests.",
+      games: [
+        { name: "Conjugation Duel", description: "RPG-style Spanish verb conjugation battles" },
+        { name: "Verb Quest", description: "Engaging quests to master grammar rules" }
+      ]
+    },
+    {
+      title: "Listening Comprehension",
+      icon: Headphones,
+      color: "from-orange-500 to-red-600",
+      description: "Develop crucial listening skills with audio-based games designed to improve recognition and understanding.",
+      games: [
+        { name: "Detective Listening Game", description: "Solve cases by identifying words via audio" }
+      ]
+    }
+  ];
+
+  // Updated assessment types for teacher benefits
+  const assessmentTypes = [
+    {
+      title: "GCSE-Style Exam Practice", // Changed from "Exams by difficulty"
+      description: "Prepare students for success with official-style questions aligned with GCSE Foundation & Higher tiers, providing invaluable exam readiness.",
+      icon: Award,
+      features: ["GCSE-style Reading Tests", "GCSE-style Listening Tests", "Writing Tasks with guided prompts", "Speaking Practice prompts & recordings"]
+    },
+    {
+      title: "Reading Comprehension Analytics", // Emphasize analytics
+      description: "Automated analysis of multi-language texts provides instant feedback and identifies comprehension gaps, saving teachers marking time.",
+      icon: BookOpen,
+      features: ["Age-appropriate, diverse texts", "Multiple question types", "Automated marking & feedback", "Detailed progress tracking"]
+    },
+    {
+      title: "Precision Dictation Assessments", // More active title
+      description: "Improve listening and writing accuracy with audio-to-text practice at variable speeds, pinpointing specific phonetic and spelling weaknesses.",
+      icon: Headphones,
+      features: ["Normal & slow speed playback", "Foundation & Higher difficulty", "Instant error highlighting", "Targeted remedial practice"]
+    },
+    {
+      title: "Topic & Skill-Based Diagnostics", // More descriptive title
+      description: "Focused practice on specific curriculum themes and grammatical skills. Understand student strengths and weaknesses by theme, topic, and vocabulary.",
+      icon: FileText,
+      features: ["Organised by GCSE themes", "Targeted vocabulary & grammar topics", "Identifies weak areas automatically", "Reinforces specific skills"]
+    }
+  ];
+
+  // Updated platform features for teacher benefits and USPs
+  const platformFeatures = [
+    {
+      title: "Unrivaled Student Engagement",
+      description: "15+ interactive games, a cross-game XP system, and 50+ achievements keep students deeply motivated and actively learning.",
+      icon: Rocket, // Changed icon for engagement
+      stat: "Deep Engagement"
+    },
+    {
+      title: "Predictive Analytics & AI Insights",
+      description: "Identify struggling students before they fall behind with real-time, AI-powered insights into individual and class performance.",
+      icon: Brain, // Added icon for AI
+      stat: "Early Intervention"
+    },
+    {
+      title: "Streamlined Assignment Management",
+      description: "Create custom assignments in minutes with reusable templates and auto-grading, saving teachers hours of administrative work.",
+      icon: Hourglass, // Added icon for time-saving
+      stat: "Time-Saving Automation"
+    },
+    {
+      title: "GCSE Curriculum Aligned",
+      description: "Comprehensive content aligned with GCSE-style requirements for exam boards like AQA and Edexcel, ready to deploy for your classes.",
+      icon: Target,
+      stat: "Full GCSE Coverage"
+    }
+  ];
+
+  // New section for "Why Choose LanguageGems?"
+  const differentiators = [
+    {
+      title: "Comprehensive Gamification Ecosystem",
+      description: "Beyond simple games, our cross-game XP system, 50+ achievements, streak tracking, and power-ups drive consistent student motivation and engagement.",
+      icon: Trophy
+    },
+    {
+      title: "AI-Powered Predictive Analytics",
+      description: "Identify and address student struggles *before* they happen. Get real-time data, word-level difficulty analysis, and optimal assignment suggestions for every student and class.",
+      icon: BarChart3
+    },
+    {
+      title: "Sophisticated Assignment Automation",
+      description: "Save hours with customizable assignment templates, auto-grading with detailed feedback, flexible vocabulary selection modes, and real-time progress tracking.",
+      icon: Zap
+    },
+    {
+      title: "Pinpoint Strengths & Weaknesses",
+      description: "Our dashboard provides deep insights into student and class performance by theme, topic, and vocabulary, allowing you to easily spot and address specific learning gaps.",
+      icon: Lightbulb
+    },
+    {
+      title: "Unified Teacher Workflow Optimization",
+      description: "Manage all classes, assignments, and student progress from one intuitive dashboard, designed to streamline your daily teaching tasks and enhance efficiency.",
+      icon: Users
+    },
+    {
+      title: "Multi-Language & Custom Content Support",
+      description: "Seamlessly teach Spanish, French, and German with audio integration, multiple game types, and the ability to integrate your own custom vocabulary.",
+      icon: Globe
+    }
+  ];
+
+
   return (
     <SEOWrapper structuredData={faqStructuredData}>
       <div className="flex min-h-screen flex-col">
-      <main className="flex-grow">
-      {/* Hero Section */}
-      <div className="w-full relative min-h-[90vh] flex items-center justify-center overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
-        <div className="absolute inset-0 bg-[url('/images/homepage/subtle-pattern.svg')] opacity-5"></div>
-        
-        <div className="container mx-auto px-6 z-10 py-20">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-            <div className="lg:col-span-6 text-center lg:text-left">
-              <div className="mb-6">
-                <span className="inline-block bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 py-2 rounded-full text-sm font-semibold mb-4">
-                  For Teachers & Students
-                </span>
-              </div>
-              
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-slate-800 leading-tight mb-6">
-                Discover the Power of 
-                <span className="block text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
-                  Language Learning
-                </span>
-              </h1>
-              
-              <p className="text-lg md:text-xl text-slate-600 mb-8 leading-relaxed max-w-3xl mx-auto">
-                Interactive games, comprehensive lessons, and engaging content designed for modern language education
-              </p>
-              
-              <div className="flex flex-col sm:flex-row gap-4 mb-8">
-                <Link href="/games" className="inline-flex items-center justify-center bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-xl px-8 py-4 text-lg shadow-lg hover:shadow-xl transform transition-all hover:scale-105">
-                  Start Learning
-                  <svg className="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                  </svg>
-                </Link>
-                
-                <Link href="/resources" className="inline-flex items-center justify-center bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold rounded-xl px-8 py-4 text-lg shadow-lg hover:shadow-xl transform transition-all hover:scale-105">
-                  Free Worksheets
-                  <svg className="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
-                  </svg>
-                </Link>
-              </div>
-              
-              <div className="flex items-center gap-8 text-sm text-slate-500">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span>1000+ Schools</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                  <span>50+ Languages</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                  <span>Award Winning</span>
-                </div>
-              </div>
-            </div>
-            
-            <div className="lg:col-span-6 flex justify-center relative">
-              <div className="relative w-full max-w-lg">
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-indigo-400 rounded-3xl transform rotate-6 opacity-20"></div>
-                <div className="relative bg-white rounded-3xl p-8 shadow-2xl">
-                  <Image
-                    src="/images/homepage/hero.png"
-                    alt="Students using Language Gems interactive GCSE language learning games on tablets and computers"
-                    width={500}
-                    height={400}
-                    priority
-                    className="w-full h-auto rounded-2xl"
-                  />
-                </div>
-                
-                {/* Floating Feature Cards */}
-                <div className="absolute -top-4 -left-4 bg-white rounded-xl p-4 shadow-lg border border-slate-100 max-w-48">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                      <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
-                      </svg>
-                    </div>
-                    <span className="text-sm font-semibold text-slate-800">Free Resources</span>
-                  </div>
-                  <p className="text-xs text-slate-600">Worksheets, activities & materials</p>
-                </div>
-                
-                <div className="absolute -bottom-4 -right-4 bg-white rounded-xl p-4 shadow-lg border border-slate-100 max-w-48">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                      <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                      </svg>
-                    </div>
-                    <span className="text-sm font-semibold text-slate-800">Curriculum Aligned</span>
-                  </div>
-                  <p className="text-xs text-slate-600">Meets educational standards</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        {/* Subtle decorative elements */}
-        <div className="absolute top-20 left-10 w-20 h-20 bg-gradient-to-br from-blue-200 to-indigo-200 rounded-full opacity-60 animate-float"></div>
-        <div className="absolute bottom-20 right-10 w-16 h-16 bg-gradient-to-br from-purple-200 to-pink-200 rounded-full opacity-60 animate-float-delayed"></div>
-        <div className="absolute top-1/2 left-5 w-12 h-12 bg-gradient-to-br from-green-200 to-emerald-200 rounded-full opacity-60 animate-float-slow"></div>
-      </div>
+        <main className="flex-grow">
+          {/* Hero Section */}
+          <div className="w-full relative min-h-[90vh] flex items-center justify-center overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+            <div className="absolute inset-0 bg-[url('/images/homepage/subtle-pattern.svg')] opacity-5"></div>
 
-      {/* Feature Cards Section */}
-      <div className="w-full bg-white py-20">
-        <div className="container mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-slate-800 mb-4">
-              Everything You Need for Language Learning
-            </h2>
-            <p className="text-xl text-slate-600 max-w-3xl mx-auto">
-              Comprehensive tools designed for educators and students to make language learning engaging and effective
-            </p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-1 gap-8 max-w-md mx-auto">
-            {/* Interactive Games Card */}
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-8 hover:shadow-xl transition-all duration-300 border border-blue-100">
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center mb-6">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1.01M15 10h1.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <h3 className="text-2xl font-bold text-slate-800 mb-4">Interactive Games</h3>
-              <p className="text-slate-600 mb-6 leading-relaxed">
-                Engaging vocabulary games, pronunciation challenges, and skill-building activities that make learning fun and memorable.
-              </p>
-              <div className="flex flex-wrap gap-2 mb-6">
-                <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">Vocabulary</span>
-                <span className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-sm font-medium">Grammar</span>
-                <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-medium">Pronunciation</span>
-              </div>
-              <Link href="/games" className="inline-flex items-center text-blue-600 font-semibold hover:text-blue-700 transition-colors">
-                Explore Games
-                <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Demo Section */}
-      <div className="w-full bg-gradient-to-br from-slate-50 to-blue-50 py-20">
-        <div className="container mx-auto px-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <div className="mb-6">
-                <span className="inline-block bg-gradient-to-r from-emerald-600 to-green-600 text-white px-4 py-2 rounded-full text-sm font-semibold">
-                  See It In Action
-                </span>
-              </div>
-              
-              <h2 className="text-3xl md:text-4xl font-bold text-slate-800 mb-6">
-                Experience Modern Language Education
-              </h2>
-              
-              <p className="text-xl text-slate-600 mb-8 leading-relaxed">
-                Watch how our platform transforms traditional language learning with interactive content and real-time feedback.
-              </p>
-              
-              <div className="space-y-4 mb-8">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-slate-800">Classroom & Remote Learning</h4>
-                    <p className="text-slate-600">Perfect for in-person and online education</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-slate-800">Curriculum Aligned Content</h4>
-                    <p className="text-slate-600">Meets national and international standards</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-slate-800">Instant Feedback</h4>
-                    <p className="text-slate-600">Real-time assessment and guidance</p>
-                  </div>
-                </div>
-              </div>
-              
-              <Link href="/demo" className="inline-flex items-center bg-gradient-to-r from-emerald-600 to-green-600 text-white font-semibold rounded-xl px-8 py-4 text-lg shadow-lg hover:shadow-xl transform transition-all hover:scale-105">
-                Schedule Demo
-                <svg className="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-              </Link>
-            </div>
-            
-            <div className="relative">
-              <div className="relative bg-white rounded-2xl shadow-2xl overflow-hidden">
-                <div className="bg-slate-800 px-4 py-3 flex items-center gap-2">
-                  <div className="w-3 h-3 bg-red-400 rounded-full"></div>
-                  <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
-                  <div className="w-3 h-3 bg-green-400 rounded-full"></div>
-                  <span className="ml-4 text-slate-300 text-sm">LanguageGems Platform</span>
-                </div>
-                <div className="aspect-video">
-                  <video 
-                    className="w-full h-full object-cover"
-                    autoPlay 
-                    muted 
-                    loop 
-                    playsInline
+            <div className="container mx-auto px-6 z-10 py-20">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+                {/* Text Column - Now with a smaller col-span */}
+                <div className="lg:col-span-5 text-center lg:text-left">
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6 }}
+                    className="mb-6"
                   >
-                    <source src="/images/homepage/childrenusingtablet.mp4" type="video/mp4" />
-                    Your browser does not support the video tag.
-                  </video>
+                    <span className="inline-block bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 py-2 rounded-full text-sm font-semibold mb-4">
+                      🎓 For Language Teachers & Departments
+                    </span>
+                  </motion.div>
+
+                  <motion.h1
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.1 }}
+                    className="text-4xl md:text-5xl lg:text-6xl font-bold text-slate-800 leading-tight mb-6"
+                  >
+                    LanguageGems:
+                    <span className={`block text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 min-h-[1.2em] ${textColor}`}>
+                      {animatedText}
+                      <span className="animate-pulse">|</span>
+                    </span>
+                  </motion.h1>
+
+                  <motion.p
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.2 }}
+                    className="text-lg md:text-xl text-slate-600 mb-8 leading-relaxed max-w-3xl mx-auto lg:mx-0"
+                  >
+                    Empower your students and streamline your teaching with the most advanced
+                    GCSE language platform, combining engaging gamification with powerful AI-driven insights.
+                  </motion.p>
+
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.3 }}
+                    className="flex flex-col sm:flex-row gap-2 mb-6 justify-center lg:justify-start"
+                  >
+                    <Link href="/contact-sales" className="inline-flex items-center justify-center bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-xl px-5 py-2.5 text-base shadow-lg hover:shadow-xl transform transition-all hover:scale-105">
+                      <Clock className="mr-2 h-4 w-4" />
+                      Book a Free Demo
+                      <ArrowRight className="ml-2 w-4 h-4" />
+                    </Link>
+
+                    <Link href="/auth/signup" className="inline-flex items-center justify-center bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold rounded-xl px-5 py-2.5 text-base shadow-lg hover:shadow-xl transform transition-all hover:scale-105">
+                      <Users className="mr-2 h-4 w-4" />
+                      Start Your Free School Trial
+                      <ArrowRight className="ml-2 w-4 h-4" />
+                    </Link>
+                  </motion.div>
+
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.4 }}
+                    className="flex items-center gap-8 text-sm text-slate-500 justify-center lg:justify-start"
+                  >
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4 text-green-500" />
+                      <span>AI-Powered Insights</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Globe className="w-4 h-4 text-blue-500" />
+                      <span>3 Languages</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Trophy className="w-4 h-4 text-purple-500" />
+                      <span>GCSE Curriculum Aligned</span>
+                    </div>
+                  </motion.div>
                 </div>
+
+                {/* Slideshow Column - Now with a larger col-span and no extra containers */}
+                <motion.div
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.6, delay: 0.2 }}
+                  className="lg:col-span-7 flex justify-center relative"
+                >
+                   <div className="relative w-full max-w-lg lg:max-w-none">
+                    {/* Background gradient decoration - now hidden on mobile */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-indigo-400 rounded-3xl transform rotate-6 opacity-20 hidden lg:block"></div>
+
+                    {/* Slideshow container */}
+                    <div className="relative bg-white rounded-3xl p-8 shadow-2xl overflow-hidden h-[450px] w-full">
+                      <AnimatePresence mode="wait">
+                        <motion.div
+                          key={slideshowImages[currentSlideIndex].src} // Unique key for AnimatePresence
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          transition={{ duration: 0.8 }}
+                          className="absolute inset-0"
+                        >
+                          <Image
+                            src={slideshowImages[currentSlideIndex].src}
+                            alt={slideshowImages[currentSlideIndex].alt}
+                            layout="fill" // Use layout="fill" to make the image fill the container
+                            objectFit="cover"
+                            priority={currentSlideIndex === 0}
+                            className="rounded-2xl"
+                          />
+                          {/* Semi-transparent overlay for better text contrast */}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent rounded-2xl"></div>
+                        </motion.div>
+                      </AnimatePresence>
+                    </div>
+
+                    {/* Slideshow indicators */}
+                    <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
+                      {slideshowImages.map((_, index) => (
+                        <button
+                          key={index}
+                          onClick={() => setCurrentSlideIndex(index)}
+                          className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                            index === currentSlideIndex
+                              ? 'bg-blue-600 w-6'
+                              : 'bg-white/60 hover:bg-white/80'
+                          }`}
+                          aria-label={`Go to slide ${index + 1}`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </motion.div>
+              </div>
+            </div>
+
+            {/* Subtle decorative elements */}
+            <div className="absolute top-20 left-10 w-20 h-20 bg-gradient-to-br from-blue-200 to-indigo-200 rounded-full opacity-60 animate-float"></div>
+            <div className="absolute bottom-20 right-10 w-16 h-16 bg-gradient-to-br from-purple-200 to-pink-200 rounded-full opacity-60 animate-float-delayed"></div>
+            <div className="absolute top-1/2 left-5 w-12 h-12 bg-gradient-to-br from-green-200 to-emerald-200 rounded-full opacity-60 animate-float-slow"></div>
+          </div>
+
+          {/* Platform Overview Section */}
+          <div className="py-20 bg-white">
+            <div className="container mx-auto px-6">
+              <div className="text-center mb-16">
+                <motion.h2
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6 }}
+                  className="text-3xl md:text-4xl font-bold text-slate-800 mb-4"
+                >
+                  LanguageGems: Your All-in-One Solution for Modern Language Education
+                </motion.h2>
+                <motion.p
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.1 }}
+                  className="text-lg text-slate-600 max-w-3xl mx-auto"
+                >
+                  More than just games, LanguageGems combines engaging student experiences with powerful teacher tools designed to simplify your workflow and maximize learning outcomes.
+                </motion.p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
+                {platformFeatures.map((feature, index) => (
+                  <motion.div
+                    key={feature.title}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: index * 0.1 }}
+                    className="text-center"
+                  >
+                    <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                      <feature.icon className="w-8 h-8 text-white" />
+                    </div>
+                    <div className="text-3xl font-bold text-blue-600 mb-2">{feature.stat}</div>
+                    <h3 className="text-xl font-bold text-slate-800 mb-4">{feature.title}</h3>
+                    <p className="text-slate-600">{feature.description}</p>
+                  </motion.div>
+                ))}
               </div>
             </div>
           </div>
-        </div>
-      </div>
+
+          {/* Games Section */}
+          <div className="py-20 bg-gradient-to-br from-slate-50 to-blue-50">
+            <div className="container mx-auto px-6">
+              <div className="text-center mb-16">
+                <motion.h2
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6 }}
+                  className="text-3xl md:text-4xl font-bold text-slate-800 mb-4"
+                >
+                  Engage Every Student: Our Interactive Learning Games
+                </motion.h2>
+                <motion.p
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.1 }}
+                  className="text-lg text-slate-600 max-w-3xl mx-auto"
+                >
+                  Our comprehensive gamification ecosystem, featuring over 15 dynamic games, ensures students are constantly motivated and actively learning, turning practice into play.
+                </motion.p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                {gameCategories.map((category, index) => (
+                  <motion.div
+                    key={category.title}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: index * 0.1 }}
+                    className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300"
+                  >
+                    <div className={`w-12 h-12 bg-gradient-to-r ${category.color} rounded-xl flex items-center justify-center mb-4`}>
+                      <category.icon className="w-6 h-6 text-white" />
+                    </div>
+                    <h3 className="text-xl font-bold text-slate-800 mb-2">{category.title}</h3>
+                    <p className="text-slate-600 text-sm mb-4">{category.description}</p>
+                    <div className="space-y-2">
+                      {category.games.map((game, gameIndex) => (
+                        <div key={gameIndex} className="flex items-start gap-2">
+                          <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                          <div>
+                            <div className="font-medium text-slate-800 text-sm">{game.name}</div>
+                            <div className="text-xs text-slate-600">{game.description}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.4 }}
+                className="text-center mt-12"
+              >
+                <Link
+                  href="/games" // Link to a general games demo page
+                  className="inline-flex items-center justify-center bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-xl px-8 py-4 text-lg shadow-lg hover:shadow-xl transform transition-all hover:scale-105"
+                >
+                  <Play className="mr-2 h-5 w-5" />
+                  Explore Interactive Games
+                  <ArrowRight className="ml-2 w-5 h-5" />
+                </Link>
+              </motion.div>
+            </div>
+          </div>
+
+          {/* Assessments Section */}
+          <div className="py-20 bg-white">
+            <div className="container mx-auto px-6">
+              <div className="text-center mb-16">
+                <motion.h2
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6 }}
+                  className="text-3xl md:text-4xl font-bold text-slate-800 mb-4"
+                >
+                  Streamline Evaluation: Comprehensive Assessment Tools
+                </motion.h2>
+                <motion.p
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.1 }}
+                  className="text-lg text-slate-600 max-w-3xl mx-auto"
+                >
+                  Gain precise insights into student mastery with automated, curriculum-aligned assessments. Our tools save you time while providing detailed feedback for every student.
+                </motion.p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {assessmentTypes.map((assessment, index) => (
+                  <motion.div
+                    key={assessment.title}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: index * 0.1 }}
+                    className="bg-gradient-to-br from-slate-50 to-blue-50 rounded-2xl p-8 hover:shadow-xl transition-all duration-300"
+                  >
+                    <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center mb-6">
+                      <assessment.icon className="w-6 h-6 text-white" />
+                    </div>
+                    <h3 className="text-xl font-bold text-slate-800 mb-4">{assessment.title}</h3>
+                    <p className="text-slate-600 mb-6">{assessment.description}</p>
+                    <div className="space-y-2">
+                      {assessment.features.map((feature, featureIndex) => (
+                        <div key={featureIndex} className="flex items-center gap-2">
+                          <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                          <span className="text-sm text-slate-700">{feature}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.4 }}
+                className="text-center mt-12"
+              >
+                <Link
+                  href="/assessments" // Link to a general assessments demo page or book a demo
+                  className="inline-flex items-center justify-center bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold rounded-xl px-8 py-4 text-lg shadow-lg hover:shadow-xl transform transition-all hover:scale-105"
+                >
+                  <FileText className="mr-2 h-5 w-5" />
+                  Explore assessments
+                  <ArrowRight className="ml-2 w-5 h-5" />
+                </Link>
+              </motion.div>
+            </div>
+          </div>
+
+          {/* Teacher Tools Section - CRITICAL SECTION FOR TEACHERS */}
+          <div className="py-20 bg-gradient-to-br from-slate-50 to-blue-50">
+            <div className="container mx-auto px-6">
+              <div className="lg:col-span-12"> {/* Made the outer div full width on large screens */}
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.6 }}
+                  className="max-w-4xl mx-auto text-center" // Constrained the width and centered the content
+                >
+                  <div className="mb-6">
+                    <span className="inline-block bg-gradient-to-r from-emerald-600 to-green-600 text-white px-4 py-2 rounded-full text-sm font-semibold">
+                      🏫 For Department Heads & Teachers
+                    </span>
+                  </div>
+
+                  <h2 className="text-3xl md:text-4xl font-bold text-slate-800 mb-6">
+                    The Most Comprehensive Teacher Dashboard in Language Learning.
+                  </h2>
+
+                  <p className="text-lg text-slate-600 mb-8 leading-relaxed">
+                    From predictive analytics to automated assignment management, LanguageGems offers a unified dashboard designed to give you complete control and valuable insights, saving you hours of administrative work. Our dashboard pinpoints <strong>student strengths and weaknesses by theme, topic, and vocabulary</strong>, enabling truly targeted intervention.
+                  </p>
+
+                  <div className="space-y-4 mb-8">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                        <BarChart3 className="w-4 h-4 text-green-600" />
+                      </div>
+                      <span className="text-slate-700 font-medium">Real-time Predictive Analytics: Spot student weaknesses early.</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                        <PenTool className="w-4 h-4 text-blue-600" />
+                      </div>
+                      <span className="text-slate-700 font-medium">Sophisticated Assignment Automation: Save hours with auto-grading.</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                        <Target className="w-4 h-4 text-purple-600" />
+                      </div>
+                      <span className="text-slate-700 font-medium">Customizable & GCSE Curriculum-Aligned Content.</span>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row gap-4 justify-center"> {/* Centered the buttons */}
+                    <Link href="/auth/signup" className="inline-flex items-center justify-center bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-xl px-6 py-3 shadow-lg hover:shadow-xl transform transition-all hover:scale-105">
+                      <Users className="mr-2 h-4 w-4" />
+                      Start Your Free School Trial
+                      <ArrowRight className="ml-2 w-4 h-4" />
+                    </Link>
+                  </div>
+                </motion.div>
+              </div>
+            </div>
+          </div>
+
+          {/* Why Choose LanguageGems? (Strong Differentiators) */}
+          <div className="py-20 bg-white">
+            <div className="container mx-auto px-6">
+              <div className="text-center mb-16">
+                <motion.h2
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6 }}
+                  className="text-3xl md:text-4xl font-bold text-slate-800 mb-4"
+                >
+                  Why Choose LanguageGems? Unmatched Innovation for Language Departments
+                </motion.h2>
+                <motion.p
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.1 }}
+                  className="text-lg text-slate-600 max-w-3xl mx-auto"
+                >
+                  We are building the future of language education, providing tools that genuinely transform student engagement and teacher efficiency.
+                </motion.p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {differentiators.map((diff, index) => (
+                  <motion.div
+                    key={diff.title}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: index * 0.1 }}
+                    className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300"
+                  >
+                    <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center mb-4">
+                      <diff.icon className="w-6 h-6 text-white" />
+                    </div>
+                    <h3 className="text-xl font-bold text-slate-800 mb-2">{diff.title}</h3>
+                    <p className="text-slate-600 text-sm">{diff.description}</p>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          </div>
 
 
-      </main>
-      
-      <Footer />
+        </main>
+
+        <Footer />
       </div>
     </SEOWrapper>
   );
