@@ -1163,9 +1163,9 @@ export default function VocabMasterGame({
         <div className="text-center mb-4">
           <label className="block text-gray-700 font-medium mb-2">
             {gameState.gameMode === 'typing'
-              ? 'Type the English translation (Double Points!):'
+              ? 'Type the English translation:'
               : gameState.gameMode === 'learn'
-                ? 'Type the English translation (Hints available):'
+                ? 'Type the English translation:'
               : gameState.gameMode === 'recall'
                 ? 'Type the English translation:'
               : isListeningMode

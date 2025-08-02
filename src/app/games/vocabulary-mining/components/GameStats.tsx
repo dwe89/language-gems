@@ -105,8 +105,10 @@ export const GameStats: React.FC<GameStatsProps> = ({
               }}
             />
           </div>
-          <div className="text-xs text-yellow-200">+{sessionXP} XP this session</div>
-          <div className="text-xs text-blue-200 mt-1 truncate">{xpToNextLevel} XP to Level {currentLevel + 1}</div>
+          <div className="flex justify-between items-center text-[0.6rem] leading-tight">
+            <div className="text-yellow-200">+{sessionXP} XP this session</div>
+            <div className="text-blue-200">{xpToNextLevel} XP to Level {currentLevel + 1}</div>
+          </div>
         </div>
       </div>
 

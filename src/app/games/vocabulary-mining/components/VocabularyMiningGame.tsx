@@ -942,7 +942,8 @@ export default function VocabularyMiningGame({
     setShowHint(false);
 
     if (gameState.gameMode === 'multiple_choice') {
-      generateMultipleChoiceOptions(nextWordData);
+      const options = generateMultipleChoiceOptions(nextWordData);
+      setMultipleChoiceOptions(options);
     }
 
     // Auto-play audio for listening mode and learn mode (but not typing mode)
@@ -1145,7 +1146,8 @@ export default function VocabularyMiningGame({
             }}
             onModeChangeCallback={(mode, currentWord) => {
               if (mode === 'multiple_choice' && currentWord) {
-                generateMultipleChoiceOptions(currentWord);
+                const options = generateMultipleChoiceOptions(currentWord);
+                setMultipleChoiceOptions(options);
               }
 
               if (mode === 'dictation' && currentWord?.audio_url) {
@@ -1162,7 +1164,7 @@ export default function VocabularyMiningGame({
           {/* Enhanced Stats Row with XP Chart */}
           <GameStats
             gameState={gameState}
-            gemStats={{ common: 0, uncommon: 0, rare: 0, epic: 0, legendary: 0 }}
+            gemStats={gemsByType} // <--- CHANGED THIS LINE
             currentLevel={currentLevel}
             sessionXP={sessionXP}
             xpToNextLevel={xpToNextLevel}
@@ -1226,7 +1228,7 @@ export default function VocabularyMiningGame({
                   className="relative"
                 >
                   {/* Gem Discovery Chamber */}
-                  <div className="relative bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-xl 
+                  <div className="relative bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-xl
                                 rounded-3xl p-8 border-2 border-slate-600/30 shadow-2xl overflow-hidden">
 
                     {/* Inner Glow Effect */}
@@ -1265,7 +1267,7 @@ export default function VocabularyMiningGame({
                         </p>
 
                         {/* XP Value Badge */}
-                        <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-yellow-500/20 to-amber-500/20 
+                        <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-yellow-500/20 to-amber-500/20
                                       backdrop-blur-sm border border-yellow-500/30 rounded-full">
                           <span className="text-yellow-300 font-bold">
                             Worth {gameState.gameMode === 'typing' ? (
@@ -1301,7 +1303,7 @@ export default function VocabularyMiningGame({
                   {/* Word Display */}
                   <div className="relative">
                     {/* Word Container */}
-                    <div className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl rounded-2xl 
+                    <div className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl rounded-2xl
                                   border-2 border-white/20 p-8 shadow-2xl min-h-[300px] flex flex-col justify-center">
 
                       {gameState.gameMode === 'listening' ? (
@@ -1321,7 +1323,6 @@ export default function VocabularyMiningGame({
                         </div>
                       ) : gameState.gameMode === 'dictation' ? (
                         <div className="space-y-6">
-                          <div className="text-6xl mb-4">🎤</div>
                           <h2 className="text-2xl font-bold text-white">Listen & Write</h2>
                           <p className="text-white/80 text-lg">Listen carefully and type what you hear</p>
                           <button
@@ -1342,7 +1343,7 @@ export default function VocabularyMiningGame({
                           </h1>
 
                           {gameState.currentWord.part_of_speech && (
-                            <div className="inline-block px-4 py-2 bg-blue-500/20 backdrop-blur-sm 
+                            <div className="inline-block px-4 py-2 bg-blue-500/20 backdrop-blur-sm
                                           border border-blue-500/30 rounded-full text-blue-200 text-base">
                               {gameState.currentWord.part_of_speech}
                             </div>
