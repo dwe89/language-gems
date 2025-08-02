@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useUnifiedAuth } from '../../../hooks/useUnifiedAuth';
 import { GemSpeedBuilder } from './components/GemSpeedBuilder';
 import UnifiedSentenceCategorySelector, { SentenceSelectionConfig } from '../../../components/games/UnifiedSentenceCategorySelector';
+import InGameConfigPanel from '../../../components/games/InGameConfigPanel';
 
 export default function SpeedBuilderPage() {
   const { user } = useUnifiedAuth();
@@ -16,6 +17,7 @@ export default function SpeedBuilderPage() {
   // Game state management
   const [gameStarted, setGameStarted] = useState(false);
   const [selectedConfig, setSelectedConfig] = useState<SentenceSelectionConfig | null>(null);
+  const [showConfigPanel, setShowConfigPanel] = useState(false);
 
   // Handle selection complete from sentence selector
   const handleSelectionComplete = (config: SentenceSelectionConfig) => {
@@ -29,6 +31,21 @@ export default function SpeedBuilderPage() {
   const handleBackToMenu = () => {
     setGameStarted(false);
     setSelectedConfig(null);
+  };
+
+  // Config panel handlers
+  const handleOpenConfigPanel = () => {
+    setShowConfigPanel(true);
+  };
+
+  const handleCloseConfigPanel = () => {
+    setShowConfigPanel(false);
+  };
+
+  const handleConfigChange = (newConfig: SentenceSelectionConfig) => {
+    console.log('🔄 Updating game configuration:', newConfig);
+    setSelectedConfig(newConfig);
+    setShowConfigPanel(false);
   };
 
   // Show sentence category selector if game not started
@@ -117,7 +134,20 @@ export default function SpeedBuilderPage() {
           assignmentId={assignmentId || undefined}
           userId={user?.id}
           sentenceConfig={selectedConfig}
+          onOpenSettings={handleOpenConfigPanel}
         />
+
+        {/* In-game configuration panel */}
+        {selectedConfig && (
+          <InGameConfigPanel
+            currentConfig={selectedConfig as any}
+            onConfigChange={handleConfigChange as any}
+            supportedLanguages={['es', 'fr', 'de']}
+            supportsThemes={false}
+            isOpen={showConfigPanel}
+            onClose={handleCloseConfigPanel}
+          />
+        )}
       </div>
     );
   }

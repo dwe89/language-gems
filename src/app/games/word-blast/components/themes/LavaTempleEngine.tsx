@@ -42,7 +42,8 @@ export default function LavaTempleEngine(props: WordBlastEngineProps) {
     isPaused,
     gameActive,
     difficulty,
-    playSFX
+    playSFX,
+    onOpenSettings
   } = props;
 
   const [stoneTablets, setStoneTablets] = useState<StoneTablet[]>([]);
@@ -246,7 +247,6 @@ export default function LavaTempleEngine(props: WordBlastEngineProps) {
           y: newY,
           lavaProximity,
           runeGlow: tablet.runeGlow + Math.sin(Date.now() * 0.005) * 0.1,
-          rotation: 0
         });
       });
 
@@ -506,6 +506,22 @@ export default function LavaTempleEngine(props: WordBlastEngineProps) {
           </div>
       </div>
 
+      {/* Settings Button */}
+      {onOpenSettings && (
+        <div className="absolute top-6 right-6 z-50">
+          <button
+            onClick={() => {
+              playSFX('gem');
+              onOpenSettings();
+            }}
+            className="bg-black/50 hover:bg-black/70 backdrop-blur-sm rounded-lg p-3 border border-orange-500/30 text-orange-300 hover:text-orange-200 transition-all"
+            title="Settings"
+          >
+            ⚙️
+          </button>
+        </div>
+      )}
+
       {/* Lava Temple Background Effects */}
       <div className="absolute inset-0">
         {/* Temple pillars */}
@@ -607,13 +623,12 @@ const StoneTabletComponent: React.FC<{
 
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0, x: tablet.x, y: tablet.y, rotate: tablet.rotation }}
+      initial={{ opacity: 0, scale: 0, x: tablet.x, y: tablet.y, rotate: 0 }}
       animate={{
         opacity: tablet.clicked ? 0 : 1,
         scale: tablet.clicked ? 0.5 : tablet.scale,
         x: tablet.x,
         y: tablet.y,
-        rotate: tablet.rotation
       }}
       exit={{ opacity: 0, scale: 0 }}
       onClick={onClick}

@@ -1,36 +1,12 @@
 // Background themes
 export const THEMES = [
   { name: 'Default', path: '/games/memory-game/backgrounds/default.jpg' },
-  { name: 'Spanish Theme', path: '/games/memory-game/backgrounds/everything spanish.jpg' },
-  { name: 'French Theme', path: '/games/memory-game/backgrounds/everything france.jpg' },
-  { name: 'Classroom', path: '/games/memory-game/backgrounds/typical classroom.jpg' },
+  { name: 'Spanish Theme', path: '/games/memory-game/backgrounds/everything-spanish.jpg' },
+  { name: 'French Theme', path: '/games/memory-game/backgrounds/everything-france.jpg' },
+  { name: 'Classroom', path: '/games/memory-game/backgrounds/typical-classroom.jpg' },
   { name: 'Forest', path: '/games/memory-game/backgrounds/forest.jpg' },
   { name: 'Temple', path: '/games/memory-game/backgrounds/temple_of_chaos.jpg' },
   { name: 'Cave', path: '/games/memory-game/backgrounds/cave_of_memories.jpg' }
-];
-
-// Available languages and topics (same as in LanguageTopicSelector)
-export const LANGUAGES = [
-  { code: 'english', name: 'English' },
-  { code: 'spanish', name: 'Spanish' },
-  { code: 'french', name: 'French' },
-  { code: 'german', name: 'German' },
-  { code: 'italian', name: 'Italian' },
-  { code: 'portuguese', name: 'Portuguese' },
-  { code: 'chinese', name: 'Chinese' },
-  { code: 'japanese', name: 'Japanese' },
-  { code: 'korean', name: 'Korean' },
-  { code: 'arabic', name: 'Arabic' },
-  { code: 'russian', name: 'Russian' }
-];
-
-export const TOPICS = [
-  { code: 'animals', name: 'Animals' },
-  { code: 'colors', name: 'Colors' },
-  { code: 'food', name: 'Food' },
-  { code: 'countries', name: 'Countries' },
-  { code: 'numbers', name: 'Numbers' },
-  { code: 'custom', name: 'Custom' }
 ];
 
 export const DIFFICULTIES = [

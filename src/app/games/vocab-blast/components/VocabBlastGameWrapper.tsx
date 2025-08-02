@@ -25,6 +25,7 @@ interface VocabBlastGameWrapperProps {
   userId?: string;
   isAssignmentMode?: boolean;
   categoryVocabulary?: any[]; // Assignment vocabulary
+  onOpenSettings?: () => void; // Optional settings callback
 }
 
 // Language mapping function
@@ -297,6 +298,7 @@ export default function VocabBlastGameWrapper(props: VocabBlastGameWrapperProps)
       onGameEnd={handleEnhancedGameEnd}
       gameSessionId={gameSessionId}
       isAssignmentMode={props.isAssignmentMode}
+      onOpenSettings={props.onOpenSettings}
     />
   );
 }

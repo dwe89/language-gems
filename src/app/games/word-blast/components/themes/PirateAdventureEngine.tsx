@@ -636,7 +636,6 @@ export default function PirateAdventureEngine(props: WordBlastEngineProps) {
                 scale: ship.size,
                 x: ship.currentX,
                 y: ship.targetY, 
-                rotate: ship.rotation
               }}
               exit={{ opacity: 0, scale: 0 }}
               onClick={(e) => {

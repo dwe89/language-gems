@@ -16,6 +16,7 @@ import { useSearchParams } from 'next/navigation';
 import confetti from 'canvas-confetti';
 import UnifiedSentenceCategorySelector, { SentenceSelectionConfig } from '../../../components/games/UnifiedSentenceCategorySelector';
 import WordBlastEngine from './components/WordBlastEngine';
+import InGameConfigPanel from '../../../components/games/InGameConfigPanel';
 import { useAudio } from './hooks/useAudio';
 import {
   SentenceChallenge,
@@ -166,6 +167,7 @@ export default function WordBlastPage() {
   // Audio
   const [audioEnabled, setAudioEnabled] = useState(true);
   const { playSFX, startBackgroundMusic, stopBackgroundMusic } = useAudio(audioEnabled);
+  const [showConfigPanel, setShowConfigPanel] = useState(false);
 
   // URL parameters
   const searchParams = useSearchParams();
@@ -245,6 +247,24 @@ export default function WordBlastPage() {
     setCurrentChallengeIndex(0);
     setLives(3);
     setGameStats(initialStats);
+  };
+
+  // Config panel handlers
+  const handleOpenConfigPanel = () => {
+    setShowConfigPanel(true);
+  };
+
+  const handleCloseConfigPanel = () => {
+    setShowConfigPanel(false);
+  };
+
+  const handleConfigChange = (newConfig: SentenceSelectionConfig) => {
+    console.log('🔄 Updating game configuration:', newConfig);
+    setSelectedConfig(newConfig);
+    // Reload challenges with new configuration
+    if (gameStarted) {
+      fetchChallenges();
+    }
   };
 
   // Start game
@@ -508,7 +528,21 @@ export default function WordBlastPage() {
           score={gameStats.score}
           combo={gameStats.combo}
           playSFX={playSFX}
+          onOpenSettings={handleOpenConfigPanel}
         />
+
+        {/* In-game configuration panel */}
+        {selectedConfig && (
+          <InGameConfigPanel
+            currentConfig={selectedConfig as any}
+            onConfigChange={handleConfigChange as any}
+            supportedLanguages={['es', 'fr', 'de']}
+            supportsThemes={true}
+            currentTheme={selectedTheme}
+            isOpen={showConfigPanel}
+            onClose={handleCloseConfigPanel}
+          />
+        )}
       </div>
     );
   }

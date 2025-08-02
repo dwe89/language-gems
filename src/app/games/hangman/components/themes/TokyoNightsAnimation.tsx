@@ -273,7 +273,7 @@ export default function TokyoNightsAnimation({
             animate={{ opacity: [1, 0.5, 1] }}
             transition={{ duration: 1, repeat: Infinity }}
           >
-            LOCKDOWN IMMINENT: {Math.max(0, maxMistakes - mistakes)} ATTEMPTS REMAINING
+            LOCKDOWN IMMINENT: SYSTEM BREACH DETECTED
           </motion.div>
         </div>
       )}

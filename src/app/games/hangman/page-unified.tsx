@@ -120,10 +120,11 @@ export default function UnifiedHangmanPage() {
     });
   };
 
-  // Handle back to menu
+  // Handle back to games
   const handleBackToMenu = () => {
     setGameStarted(false);
     setGameConfig(null);
+    router.push('/games');
   };
 
   // Handle game end

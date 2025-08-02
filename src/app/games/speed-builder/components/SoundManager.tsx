@@ -27,6 +27,7 @@ const SOUNDS = {
 // Type definitions for our context
 interface SoundContextType {
   playSound: (soundName: keyof typeof SOUNDS | 'bgMusic') => void;
+  stopMusic: () => void;
   soundEnabled: boolean;
   musicEnabled: boolean;
   toggleSound: () => void;
@@ -144,8 +145,16 @@ export const SoundProvider: React.FC<{
     setMusicEnabled(prev => !prev);
   }, []);
   
+  const stopMusic = useCallback(() => {
+    if (bgMusic) {
+      bgMusic.pause();
+      bgMusic.currentTime = 0;
+    }
+  }, [bgMusic]);
+  
   const value = {
     playSound,
+    stopMusic,
     soundEnabled,
     musicEnabled,
     toggleSound,

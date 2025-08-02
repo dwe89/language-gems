@@ -11,7 +11,6 @@ import {
   Play,
   Home
 } from 'lucide-react';
-import Link from 'next/link';
 import { createBrowserClient } from '../../../../lib/supabase-client';
 
 import confetti from 'canvas-confetti';
@@ -439,9 +438,19 @@ const GemSpeedBuilderInternal: React.FC<{
   vocabularyList?: any[];
   onGameComplete?: (stats: GameStats) => void;
   sentenceConfig?: any;
-}> = ({ assignmentId, mode = 'freeplay', theme, topic, tier, vocabularyList, onGameComplete, sentenceConfig }) => {
+  onOpenSettings?: () => void;
+  onBackToMenu?: () => void;
+}> = ({ assignmentId, mode = 'freeplay', theme, topic, tier, vocabularyList, onGameComplete, sentenceConfig, onOpenSettings, onBackToMenu }) => {
   // Sound system
-  const { playSound } = useSound();
+  const { playSound, stopMusic } = useSound();
+  
+  // Handle back to menu with music cleanup
+  const handleBackToMenu = () => {
+    stopMusic();
+    if (onBackToMenu) {
+      onBackToMenu();
+    }
+  };
   
   // State
   const [gameState, setGameState] = useState<'ready' | 'playing' | 'paused' | 'completed'>('ready');
@@ -1059,13 +1068,13 @@ const GemSpeedBuilderInternal: React.FC<{
           <div className="text-6xl mb-4">😔</div>
           <h2 className="text-2xl font-bold text-white mb-4">No Sentences Available</h2>
           <p className="text-white/80 mb-6">No sentences found for the selected criteria.</p>
-          <Link
-            href="/games"
+          <button
+            onClick={handleBackToMenu}
             className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-bold shadow-xl hover:shadow-purple-500/50 transition-all duration-300 border border-white/20 inline-flex items-center gap-2"
           >
             <ArrowLeft className="w-5 h-5" />
             Back to Games
-          </Link>
+          </button>
         </div>
       </div>
     );
@@ -1105,10 +1114,10 @@ const GemSpeedBuilderInternal: React.FC<{
           <div className="flex justify-between items-center mb-3">
             {/* Left side - Back button and sound controls */}
             <div className="flex items-center gap-3">
-              <Link href="/games" className="flex items-center gap-2 text-white/80 hover:text-white transition-colors px-3 py-2 rounded-lg hover:bg-white/10">
+              <button onClick={handleBackToMenu} className="flex items-center gap-2 text-white/80 hover:text-white transition-colors px-3 py-2 rounded-lg hover:bg-white/10">
                 <ArrowLeft className="w-5 h-5" />
                 <span className="font-medium">Back</span>
-              </Link>
+              </button>
               <SoundControls />
             </div>
             
@@ -1149,16 +1158,28 @@ const GemSpeedBuilderInternal: React.FC<{
               </div>
             )}
 
-            {gameState === 'playing' && (
-              <motion.div
-                animate={{ scale: timeLeft < 20 ? [1, 1.05, 1] : 1 }}
-                transition={{ repeat: Infinity, duration: 0.5 }}
-                className={`px-3 py-2 rounded-lg border font-bold ${timeLeft < 20 ? 'bg-red-500/20 border-red-400 text-red-200' : 'bg-blue-500/20 border-blue-400 text-blue-200'}`}
-              >
-                <Clock className="inline w-4 h-4 mr-1" />
-                {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
-              </motion.div>
-            )}
+            <div className="flex items-center gap-3">
+              {gameState === 'playing' && (
+                <motion.div
+                  animate={{ scale: timeLeft < 20 ? [1, 1.05, 1] : 1 }}
+                  transition={{ repeat: Infinity, duration: 0.5 }}
+                  className={`px-3 py-2 rounded-lg border font-bold ${timeLeft < 20 ? 'bg-red-500/20 border-red-400 text-red-200' : 'bg-blue-500/20 border-blue-400 text-blue-200'}`}
+                >
+                  <Clock className="inline w-4 h-4 mr-1" />
+                  {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
+                </motion.div>
+              )}
+
+              {onOpenSettings && (
+                <button
+                  onClick={onOpenSettings}
+                  className="px-3 py-2 bg-white/10 hover:bg-white/20 rounded-lg border border-white/20 text-white transition-all"
+                  title="Settings"
+                >
+                  ⚙️
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Power-ups in header */}
@@ -1331,13 +1352,13 @@ const GemSpeedBuilderInternal: React.FC<{
                   Play Again
                 </motion.button>
                 
-                <Link
-                  href="/games"
+                <button
+                  onClick={handleBackToMenu}
                   className="px-6 py-2 bg-white/10 backdrop-blur-sm text-white rounded-xl font-bold hover:bg-white/20 transition-all duration-300 inline-flex items-center border border-white/20"
                 >
                   <Home className="w-4 h-4 mr-2" />
                   Back
-                </Link>
+                </button>
               </div>
             </motion.div>
           )}
@@ -1357,6 +1378,8 @@ export const GemSpeedBuilder: React.FC<{
   vocabularyList?: any[];
   onGameComplete?: (stats: GameStats) => void;
   sentenceConfig?: any;
+  onOpenSettings?: () => void;
+  onBackToMenu?: () => void;
 }> = (props) => {
   return (
     <SoundProvider initialTheme="default">

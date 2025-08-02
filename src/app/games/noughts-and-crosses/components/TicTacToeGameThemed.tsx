@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from './ThemeProvider';
-import { Brain, ArrowLeft, Volume2, VolumeX } from 'lucide-react';
+import { Brain, ArrowLeft, Volume2, VolumeX, Settings } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useAudio } from '../hooks/useAudio';
 
@@ -44,6 +44,7 @@ interface TicTacToeGameProps {
   }>;
   gameSessionId?: string | null;
   isAssignmentMode?: boolean;
+  onOpenSettings?: () => void;
 }
 
 // Simple vocabulary for the game
@@ -533,7 +534,8 @@ export default function TicTacToeGame({
   onGameEnd,
   vocabularyWords,
   gameSessionId,
-  isAssignmentMode
+  isAssignmentMode,
+  onOpenSettings
 }: TicTacToeGameProps) {
   const { themeClasses } = useTheme();
   
@@ -970,17 +972,32 @@ export default function TicTacToeGame({
             </h1>
           </motion.div>
           
-          <motion.button
-            onClick={() => {
-              playSFX('button-click');
-              setSoundEnabled(!soundEnabled);
-            }}
-            className="p-3 rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white transition-all shadow-lg border border-white/20"
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-          >
-            {soundEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
-          </motion.button>
+          <div className="flex items-center gap-3">
+            {onOpenSettings && (
+              <motion.button
+                onClick={() => {
+                  playSFX('button-click');
+                  onOpenSettings();
+                }}
+                className="p-3 rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white transition-all shadow-lg border border-white/20"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+              >
+                <Settings className="w-5 h-5" />
+              </motion.button>
+            )}
+            <motion.button
+              onClick={() => {
+                playSFX('button-click');
+                setSoundEnabled(!soundEnabled);
+              }}
+              className="p-3 rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white transition-all shadow-lg border border-white/20"
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+            >
+              {soundEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
+            </motion.button>
+          </div>
         </div>
       </div>
 

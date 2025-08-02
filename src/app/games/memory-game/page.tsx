@@ -8,6 +8,7 @@ import { WordPair } from './components/CustomWordsModal';
 import MemoryGameAssignmentWrapper from './components/MemoryAssignmentWrapper';
 import UnifiedGameLauncher from '../../../components/games/UnifiedGameLauncher';
 import { UnifiedSelectionConfig, UnifiedVocabularyItem } from '../../../hooks/useUnifiedVocabulary';
+import InGameConfigPanel from '../../../components/games/InGameConfigPanel';
 import './styles.css';
 
 export default function UnifiedMemoryGamePage() {
@@ -31,16 +32,17 @@ export default function UnifiedMemoryGamePage() {
     config: UnifiedSelectionConfig;
     vocabulary: UnifiedVocabularyItem[];
   } | null>(null);
+  const [showConfigPanel, setShowConfigPanel] = useState(false);
 
   // Transform unified vocabulary to memory game format
   const transformVocabularyForMemoryGame = (vocabulary: UnifiedVocabularyItem[]): WordPair[] => {
     return vocabulary.map(item => ({
       id: item.id,
-      word: item.word,
+      term: item.word,
       translation: item.translation,
-      language: item.language,
+      type: 'word' as const,
       category: item.category || 'general',
-      difficulty: item.difficulty_level || 'medium'
+      subcategory: item.subcategory
     }));
   };
 
@@ -76,6 +78,26 @@ export default function UnifiedMemoryGamePage() {
     setGameStarted(false);
     setGameConfig(null);
     setCustomWords([]);
+  };
+
+  // Config panel handlers
+  const handleOpenConfigPanel = () => {
+    setShowConfigPanel(true);
+  };
+
+  const handleCloseConfigPanel = () => {
+    setShowConfigPanel(false);
+  };
+
+  const handleConfigChange = (newConfig: UnifiedSelectionConfig, vocabulary: UnifiedVocabularyItem[]) => {
+    console.log('🔄 Updating game configuration:', newConfig);
+    const transformedVocabulary = transformVocabularyForMemoryGame(vocabulary);
+    setGameConfig(prev => prev ? {
+      ...prev,
+      config: newConfig,
+      vocabulary
+    } : null);
+    setCustomWords(transformedVocabulary);
   };
 
   // Show unified launcher if game not started
@@ -126,6 +148,17 @@ export default function UnifiedMemoryGamePage() {
           customWords={customWords.length > 0 ? customWords : undefined}
           isAssignmentMode={false}
           userId={user?.id}
+          onOpenSettings={handleOpenConfigPanel}
+        />
+
+        {/* In-game configuration panel */}
+        <InGameConfigPanel
+          currentConfig={gameConfig.config}
+          onConfigChange={handleConfigChange}
+          supportedLanguages={['es', 'fr', 'de']}
+          supportsThemes={false}
+          isOpen={showConfigPanel}
+          onClose={handleCloseConfigPanel}
         />
       </div>
     );

@@ -10,8 +10,13 @@ import { WordPair } from './CustomWordsModal';
 import CustomWordsModal from './CustomWordsModal';
 import { VOCABULARY } from '../data/vocabulary';
 import { FALLBACK_VOCABULARY } from '../data/fallbackVocabulary';
-import { THEMES, LANGUAGES, TOPICS, DIFFICULTIES, Card } from '../data/gameConstants';
+import { THEMES, Card } from '../data/gameConstants';
+import { GRID_SIZES } from '../data/gameConfig';
 import { useGameVocabulary, GameVocabularyWord } from '../../../../hooks/useGameVocabulary';
+import { 
+  Target, RotateCcw, BarChart3, Clock, 
+  Trophy, Play, Settings, PartyPopper 
+} from 'lucide-react';
 import './styles.css';
 
 interface MemoryGameMainProps {
@@ -27,6 +32,7 @@ interface MemoryGameMainProps {
   vocabulary?: GameVocabularyWord[];
   subcategory?: string;
   curriculumLevel?: 'KS3' | 'KS4';
+  onOpenSettings?: () => void;
 }
 
 export default function MemoryGameMain({
@@ -41,7 +47,8 @@ export default function MemoryGameMain({
   userId,
   vocabulary: providedVocabulary,
   subcategory,
-  curriculumLevel = 'KS3'
+  curriculumLevel = 'KS3',
+  onOpenSettings
 }: MemoryGameMainProps) {
   const { user } = useAuth();
   const { user: unifiedUser, isDemo } = useUnifiedAuth();
@@ -794,7 +801,7 @@ export default function MemoryGameMain({
                   <i className="fas fa-palette"></i> Theme
                 </button>
                 <button onClick={toggleSettingsModal} className="nav-btn">
-                  <i className="fas fa-cog"></i> Settings
+                  <i className="fas fa-cog"></i> Grid Size
                 </button>
               </>
             )}
@@ -803,7 +810,7 @@ export default function MemoryGameMain({
           <h1 className="title">
             {isAssignmentMode ? (
               <div className="assignment-title">
-                <div className="assignment-badge">📝 Assignment</div>
+                <div className="assignment-badge">Assignment</div>
                 <div className="assignment-name">{assignmentTitle}</div>
                 <div className="game-subtitle">Memory Match Game</div>
               </div>
@@ -823,6 +830,11 @@ export default function MemoryGameMain({
                 <span>Attempts: <span id="attempts">{attempts}</span></span>
               </div>
             </div>
+            {onOpenSettings && (
+              <button onClick={onOpenSettings} className="nav-btn">
+                <i className="fas fa-cog"></i>
+              </button>
+            )}
             <button onClick={toggleFullscreen} className="nav-btn">
               <i className={`fas ${isFullscreen ? 'fa-compress' : 'fa-expand'}`}></i>
             </button>
@@ -914,33 +926,41 @@ export default function MemoryGameMain({
           
           <div className="modal" id="winModal">
             <div className="modal-content win-modal">
-              <h2 className="win-title">🎉 Congratulations! 🎉</h2>
+              <div className="win-header">
+                <PartyPopper className="win-icon" size={48} />
+                <h2 className="win-title">Congratulations!</h2>
+                <PartyPopper className="win-icon" size={48} />
+              </div>
               
               {/* Performance Rating */}
               <div className={`performance-rating rating-${getPerformanceRating().rating}`}>
-                <div className="performance-stars">{getPerformanceRating().stars}</div>
+                <div className="performance-stars">
+                  {[...Array(getPerformanceRating().rating === 'excellent' ? 3 : getPerformanceRating().rating === 'good' ? 2 : 1)].map((_, i) => (
+                    <Trophy key={i} size={24} className="star-icon" />
+                  ))}
+                </div>
                 <div className="performance-text">{getPerformanceRating().text}</div>
               </div>
               
               {/* Enhanced Stats Grid */}
               <div className="win-stats">
                 <div className="stat-item">
-                  <span className="stat-icon">🎯</span>
+                  <Target className="stat-icon" size={32} />
                   <div className="stat-label">Matches</div>
                   <div className="stat-value">{matches}</div>
                 </div>
                 <div className="stat-item">
-                  <span className="stat-icon">🔄</span>
+                  <RotateCcw className="stat-icon" size={32} />
                   <div className="stat-label">Attempts</div>
                   <div className="stat-value">{attempts}</div>
                 </div>
                 <div className="stat-item">
-                  <span className="stat-icon">📊</span>
+                  <BarChart3 className="stat-icon" size={32} />
                   <div className="stat-label">Accuracy</div>
                   <div className="stat-value">{Math.round((matches / Math.max(attempts, 1)) * 100)}%</div>
                 </div>
                 <div className="stat-item">
-                  <span className="stat-icon">⏱️</span>
+                  <Clock className="stat-icon" size={32} />
                   <div className="stat-label">Time</div>
                   <div className="stat-value">{formatTime(gameTime)}</div>
                 </div>
@@ -949,10 +969,12 @@ export default function MemoryGameMain({
               {/* Action Buttons */}
               <div className="win-actions">
                 <button onClick={resetGame} className="win-btn win-btn-primary">
-                  🎮 Play Again
+                  <Play size={20} />
+                  Play Again
                 </button>
                 <button onClick={onBackToSettings} className="win-btn win-btn-secondary">
-                  ⚙️ New Game
+                  <Settings size={20} />
+                  New Game
                 </button>
               </div>
             </div>
@@ -966,42 +988,13 @@ export default function MemoryGameMain({
           <div className="modal-overlay" onClick={toggleSettingsModal}></div>
           <div className="modal" id="settingsModal">
             <div className="modal-content">
-              <h2 className="modal-title">Game Settings</h2>
+              <h2 className="modal-title">Grid Size Settings</h2>
+          
               
               <div className="settings-section">
-                <h3>Language</h3>
-                <div className="settings-options">
-                  {LANGUAGES.map((lang: { code: string; name: string }, index: number) => (
-                    <button 
-                      key={index} 
-                      className={`settings-option ${currentLanguage === lang.code ? 'selected' : ''}`}
-                      onClick={() => handleLanguageChange(lang.code)}
-                    >
-                      {lang.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              
-              <div className="settings-section">
-                <h3>Topic</h3>
-                <div className="settings-options">
-                  {TOPICS.map((t: { code: string; name: string }, index: number) => (
-                    <button 
-                      key={index} 
-                      className={`settings-option ${currentTopic === t.code ? 'selected' : ''}`}
-                      onClick={() => handleTopicChange(t.code)}
-                    >
-                      {t.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              
-              <div className="settings-section">
-                <h3>Difficulty</h3>
+                <h3>Grid Size</h3>
                 <div className="settings-grid">
-                  {DIFFICULTIES.map((diff: { code: string; name: string; pairs: number; grid: string }, index: number) => (
+                  {GRID_SIZES.map((diff: { code: string; name: string; pairs: number; grid: string }, index: number) => (
                     <button 
                       key={index} 
                       className={`difficulty-option ${currentDifficulty === diff.code ? 'selected' : ''}`}
@@ -1017,8 +1010,7 @@ export default function MemoryGameMain({
               </div>
               
               <div className="modal-buttons">
-                <button onClick={toggleSettingsModal} className="btn btn-secondary">Cancel</button>
-                <button onClick={resetGame} className="btn btn-primary">Apply</button>
+                <button onClick={toggleSettingsModal} className="btn btn-secondary">Apply</button>
               </div>
             </div>
           </div>

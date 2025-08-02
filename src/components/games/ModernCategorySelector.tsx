@@ -47,7 +47,7 @@ export interface Subcategory {
 
 // Curriculum levels - Assuming these are from your previous component and will be used or are implicitly passed
 // If these are defined elsewhere (e.g., in a central config), you'd update them there.
-const CURRICULUM_LEVELS_CONFIG = [
+export const CURRICULUM_LEVELS_CONFIG = [
   {
     code: 'KS3' as const,
     name: 'KS3',

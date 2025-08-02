@@ -7,6 +7,7 @@ import WordScrambleGameEnhanced from './components/WordScrambleGameEnhanced';
 import WordScrambleAssignmentWrapper from './components/WordScrambleAssignmentWrapper';
 import UnifiedGameLauncher from '../../../components/games/UnifiedGameLauncher';
 import { UnifiedSelectionConfig, UnifiedVocabularyItem } from '../../../hooks/useUnifiedVocabulary';
+import InGameConfigPanel from '../../../components/games/InGameConfigPanel';
 
 // Game configuration types
 type GameMode = 'classic' | 'blitz' | 'marathon' | 'timed_attack' | 'word_storm' | 'zen';
@@ -40,6 +41,7 @@ export default function WordScramblePage() {
     config: UnifiedSelectionConfig;
     vocabulary: UnifiedVocabularyItem[];
   } | null>(null);
+  const [showConfigPanel, setShowConfigPanel] = useState(false);
 
   // Authentication check
   if (!isLoading && !user && !isDemo) {
@@ -78,6 +80,24 @@ export default function WordScramblePage() {
   const handleBackToMenu = () => {
     setGameStarted(false);
     setGameConfig(null);
+  };
+
+  // Config panel handlers
+  const handleOpenConfigPanel = () => {
+    setShowConfigPanel(true);
+  };
+
+  const handleCloseConfigPanel = () => {
+    setShowConfigPanel(false);
+  };
+
+  const handleConfigChange = (newConfig: UnifiedSelectionConfig, vocabulary: UnifiedVocabularyItem[]) => {
+    console.log('🔄 Updating game configuration:', newConfig);
+    setGameConfig(prev => prev ? {
+      ...prev,
+      config: newConfig,
+      vocabulary
+    } : null);
   };
 
   // Show unified launcher if game not started
@@ -136,6 +156,17 @@ export default function WordScramblePage() {
           }}
           assignmentId={assignmentId}
           userId={user?.id}
+          onOpenSettings={handleOpenConfigPanel}
+        />
+
+        {/* In-game configuration panel */}
+        <InGameConfigPanel
+          currentConfig={gameConfig.config}
+          onConfigChange={handleConfigChange}
+          supportedLanguages={['es', 'fr', 'de']}
+          supportsThemes={false}
+          isOpen={showConfigPanel}
+          onClose={handleCloseConfigPanel}
         />
       </div>
     );

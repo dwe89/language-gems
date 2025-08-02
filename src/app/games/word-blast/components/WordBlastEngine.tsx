@@ -23,6 +23,7 @@ export interface WordBlastEngineProps {
   score: number;
   combo: number;
   playSFX: (sound: string) => void;
+  onOpenSettings?: () => void;
 }
 
 // Re-export for convenience

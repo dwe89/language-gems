@@ -223,9 +223,7 @@ export default function SpaceExplorerAnimation({
             <div className="text-white text-xs mt-2">
               {getWarningMessage()}
             </div>
-            <div className="mt-3 text-amber-300 text-xs font-bold">
-              {`${maxMistakes - mistakes} MISTAKES REMAINING BEFORE CRITICAL FAILURE`}
-            </div>
+
           </motion.div>
         )}
       </AnimatePresence>

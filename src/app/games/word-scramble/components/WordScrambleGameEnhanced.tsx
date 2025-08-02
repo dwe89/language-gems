@@ -32,6 +32,7 @@ interface WordScrambleGameEnhancedProps {
   vocabulary?: GameVocabularyWord[];
   isAssignmentMode?: boolean;
   assignmentId?: string;
+  onOpenSettings?: () => void;
 }
 
 interface Achievement {
@@ -314,6 +315,7 @@ interface WordScrambleGameProps {
   assignmentId?: string | null;
   userId?: string;
   isAssignmentMode?: boolean;
+  onOpenSettings?: () => void;
 }
 
 export default function WordScrambleGameEnhanced({
@@ -323,7 +325,8 @@ export default function WordScrambleGameEnhanced({
   categoryVocabulary,
   assignmentId,
   userId,
-  isAssignmentMode
+  isAssignmentMode,
+  onOpenSettings
 }: WordScrambleGameProps) {
   // Game state
   const [currentWordData, setCurrentWordData] = useState<any>(null);
@@ -892,16 +895,28 @@ export default function WordScrambleGameEnhanced({
             </p>
           </div>
 
-          <div className="text-right text-white">
-            {settings.gameMode !== 'zen' && (
-              <>
-                <div className="text-2xl font-bold">{formatTime(timeRemaining)}</div>
-                <div className="text-sm text-white/70">Time Left</div>
-                {freezeTimeRemaining > 0 && (
-                  <div className="text-blue-300 text-xs">Frozen: {freezeTimeRemaining}s</div>
-                )}
-              </>
+          <div className="flex items-center gap-3">
+            {onOpenSettings && (
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={onOpenSettings}
+                className="px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-lg text-white font-semibold transition-all"
+              >
+                ⚙️
+              </motion.button>
             )}
+            <div className="text-right text-white">
+              {settings.gameMode !== 'zen' && (
+                <>
+                  <div className="text-2xl font-bold">{formatTime(timeRemaining)}</div>
+                  <div className="text-sm text-white/70">Time Left</div>
+                  {freezeTimeRemaining > 0 && (
+                    <div className="text-blue-300 text-xs">Frozen: {freezeTimeRemaining}s</div>
+                  )}
+                </>
+              )}
+            </div>
           </div>
         </div>
 

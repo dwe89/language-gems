@@ -20,6 +20,7 @@ interface TicTacToeGameWrapperProps {
   onGameEnd: (result: { outcome: 'win' | 'loss' | 'tie'; wordsLearned: number; perfectGame?: boolean }) => void;
   assignmentId?: string | null;
   userId?: string;
+  onOpenSettings?: () => void;
 }
 
 export default function TicTacToeGameWrapper(props: TicTacToeGameWrapperProps) {

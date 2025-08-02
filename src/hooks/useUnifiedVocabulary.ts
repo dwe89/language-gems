@@ -260,6 +260,46 @@ export function useVocabularyWithLoadingGate(
 }
 
 /**
+ * Standalone function to load vocabulary for a given configuration
+ * Used for URL parameter auto-loading in game pages
+ */
+export async function loadVocabulary(config: UnifiedSelectionConfig): Promise<UnifiedVocabularyItem[]> {
+  try {
+    console.log('🔄 Loading vocabulary for config:', config);
+
+    let query = supabaseBrowser
+      .from('centralized_vocabulary')
+      .select('*')
+      .eq('language', config.language)
+      .eq('category', config.categoryId);
+
+    // Add subcategory filter if specified
+    if (config.subcategoryId) {
+      query = query.eq('subcategory', config.subcategoryId);
+    }
+
+    // Add curriculum level filter if needed (for KS4 specific content)
+    if (config.curriculumLevel === 'KS4') {
+      // For KS4, we might want to filter by specific fields or use different logic
+      // For now, we'll use the same query but this can be extended
+    }
+
+    const { data, error } = await query.limit(50);
+
+    if (error) {
+      console.error('❌ Error loading vocabulary:', error);
+      throw error;
+    }
+
+    console.log('✅ Vocabulary loaded:', { count: data?.length, data: data?.slice(0, 3) });
+    return data || [];
+  } catch (error) {
+    console.error('❌ Failed to load vocabulary:', error);
+    return [];
+  }
+}
+
+/**
  * Helper function to validate vocabulary before starting a game
  */
 export function validateVocabularyForGame(

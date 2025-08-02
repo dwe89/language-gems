@@ -23,6 +23,7 @@ interface HangmanGameWrapperProps {
   userId?: string;
   isAssignmentMode?: boolean;
   playSFX?: (soundName: string) => void;
+  onOpenSettings?: () => void;
 }
 
 interface GameVocabularyWord {
@@ -480,7 +481,7 @@ export default function HangmanGameWrapper(props: HangmanGameWrapperProps) {
             onClick={props.onBackToMenu}
             className="bg-transparent border-2 border-white text-white px-6 py-2 rounded-lg font-semibold hover:bg-white hover:text-black transition-colors"
           >
-            Back to Menu
+            Back to Games
           </button>
         </div>
       </div>

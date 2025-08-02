@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, AlertCircle, Loader2 } from 'lucide-react';
 import UnifiedCategorySelector, { UnifiedSelectionConfig } from './UnifiedCategorySelector';
@@ -61,11 +62,52 @@ export default function UnifiedGameLauncher({
   supportsThemes = false,
   defaultTheme = 'default'
 }: UnifiedGameLauncherProps) {
+  const searchParams = useSearchParams();
   const [selectedConfig, setSelectedConfig] = useState<UnifiedSelectionConfig | null>(null);
   const [showSelector, setShowSelector] = useState(true);
   const [selectedTheme, setSelectedTheme] = useState<string>(defaultTheme);
   const [showCustomVocabInput, setShowCustomVocabInput] = useState(false);
   const [customVocabInput, setCustomVocabInput] = useState<string>('');
+  const [urlParamsChecked, setUrlParamsChecked] = useState(false);
+
+  // Check for URL parameters and auto-start game
+  useEffect(() => {
+    const checkUrlParams = async () => {
+      if (urlParamsChecked || selectedConfig) {
+        return;
+      }
+
+      const lang = searchParams?.get('lang');
+      const level = searchParams?.get('level') as 'KS2' | 'KS3' | 'KS4' | 'KS5';
+      const cat = searchParams?.get('cat');
+      const subcat = searchParams?.get('subcat');
+      const theme = searchParams?.get('theme') || defaultTheme;
+
+      console.log(`🔍 [${gameName}] Checking URL params:`, { lang, level, cat, subcat, theme });
+
+      if (lang && level && cat && subcat) {
+        console.log(`✅ [${gameName}] Found URL parameters, auto-starting game...`);
+
+        const config: UnifiedSelectionConfig = {
+          language: lang,
+          curriculumLevel: level,
+          categoryId: cat,
+          subcategoryId: subcat,
+          customMode: false
+        };
+
+        setSelectedConfig(config);
+        setSelectedTheme(theme);
+        setShowSelector(false);
+      } else {
+        console.log(`❌ [${gameName}] Missing required URL parameters:`, { lang, level, cat, subcat });
+      }
+
+      setUrlParamsChecked(true);
+    };
+
+    checkUrlParams();
+  }, [searchParams, urlParamsChecked, selectedConfig, gameName, defaultTheme]);
 
   // Load vocabulary based on selected configuration
   const { 
@@ -81,6 +123,22 @@ export default function UnifiedGameLauncher({
     hasAudio: requiresAudio,
     customVocabulary: selectedConfig?.customMode ? customVocabulary : undefined
   });
+
+  // Auto-start game when vocabulary is loaded from URL parameters
+  useEffect(() => {
+    if (selectedConfig && !showSelector && vocabulary.length > 0 && !loading && !error && urlParamsChecked) {
+      console.log(`🚀 [${gameName}] Auto-starting game with vocabulary:`, vocabulary.length);
+
+      // Validate vocabulary
+      const validation = validateVocabularyForGame(vocabulary, minVocabularyRequired);
+      if (validation.isValid) {
+        // Auto-start the game
+        onGameStart(selectedConfig, vocabulary, supportsThemes ? selectedTheme : undefined);
+      } else {
+        console.log(`❌ [${gameName}] Vocabulary validation failed:`, validation.message);
+      }
+    }
+  }, [selectedConfig, showSelector, vocabulary, loading, error, urlParamsChecked, gameName, minVocabularyRequired, onGameStart, supportsThemes, selectedTheme]);
 
   const handleSelectionComplete = (config: UnifiedSelectionConfig) => {
     setSelectedConfig(config);

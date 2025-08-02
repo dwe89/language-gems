@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useUnifiedAuth } from '../../../hooks/useUnifiedAuth';
 import VocabBlastGameWrapper from './components/VocabBlastGameWrapper';
 import VocabBlastAssignmentWrapper from './components/VocabBlastAssignmentWrapper';
 import UnifiedGameLauncher from '../../../components/games/UnifiedGameLauncher';
-import { UnifiedSelectionConfig, UnifiedVocabularyItem } from '../../../hooks/useUnifiedVocabulary';
+import { UnifiedSelectionConfig, UnifiedVocabularyItem, loadVocabulary } from '../../../hooks/useUnifiedVocabulary';
+import InGameConfigPanel from '../../../components/games/InGameConfigPanel';
 import { ThemeProvider } from '../noughts-and-crosses/components/ThemeProvider';
 
 export type GameState = 'menu' | 'settings' | 'playing' | 'completed' | 'paused';
@@ -27,12 +28,42 @@ export default function VocabBlastPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  console.log('🎮 VocabBlastPage mounted');
+  console.log('🔍 SearchParams:', searchParams?.toString());
+  console.log('📋 URL params:', {
+    lang: searchParams?.get('lang'),
+    level: searchParams?.get('level'),
+    cat: searchParams?.get('cat'),
+    subcat: searchParams?.get('subcat')
+  });
+
+  // Temporary alert for debugging
+  if (searchParams?.get('lang')) {
+    console.log('🚨 FOUND URL PARAMS - should auto-start game!');
+    // For now, let's see if we can at least detect the params
+  }
+
   // Get URL parameters for assignment mode
   const assignmentId = searchParams?.get('assignment');
 
   // If assignment mode, render assignment wrapper
   if (assignmentId) {
-    return <VocabBlastAssignmentWrapper assignmentId={assignmentId} studentId={user?.id || ''} />;
+    return (
+      <VocabBlastAssignmentWrapper
+        assignmentId={assignmentId}
+        studentId={user?.id || ''}
+        onAssignmentComplete={(progress) => {
+          console.log('Assignment completed:', progress);
+          router.push('/student-dashboard/assignments');
+        }}
+        onBackToAssignments={() => {
+          router.push('/student-dashboard/assignments');
+        }}
+        onBackToMenu={() => {
+          router.push('/games/vocab-blast');
+        }}
+      />
+    );
   }
 
   // Game state management
@@ -44,6 +75,105 @@ export default function VocabBlastPage() {
     vocabulary: UnifiedVocabularyItem[];
     theme: string;
   } | null>(null);
+
+  // In-game configuration panel
+  const [showConfigPanel, setShowConfigPanel] = useState(false);
+
+  // Check for URL parameters from games page navigation
+  const [urlParamsChecked, setUrlParamsChecked] = useState(false);
+
+  // Check if URL parameters are present to determine initial auto-loading state
+  const [isAutoLoading, setIsAutoLoading] = useState(() => {
+    const hasUrlParams = searchParams?.get('lang') && searchParams?.get('level') && searchParams?.get('cat');
+    return !!hasUrlParams && !assignmentId;
+  });
+
+  // Handle game start from unified launcher
+  const handleGameStart = (config: UnifiedSelectionConfig, vocabulary: UnifiedVocabularyItem[], theme?: string) => {
+    const transformedVocabulary = transformVocabularyForVocabBlast(vocabulary);
+
+    setGameConfig({
+      config,
+      vocabulary: transformedVocabulary,
+      theme: theme || 'default'
+    });
+
+    setGameStarted(true);
+
+    console.log('Vocab Blast started with:', {
+      config,
+      vocabularyCount: vocabulary.length,
+      theme,
+      transformedCount: transformedVocabulary.length
+    });
+  };
+
+  // Check for URL parameters and auto-start game
+  useEffect(() => {
+    const checkUrlParams = async () => {
+      console.log('🔍 Checking URL params...', {
+        urlParamsChecked,
+        gameStarted,
+        assignmentId,
+        isLoading,
+        user: !!user,
+        isDemo
+      });
+
+      if (urlParamsChecked || gameStarted || assignmentId) {
+        console.log('❌ Skipping URL param check:', { urlParamsChecked, gameStarted, assignmentId });
+        return;
+      }
+
+      const lang = searchParams?.get('lang');
+      const level = searchParams?.get('level') as 'KS2' | 'KS3' | 'KS4' | 'KS5';
+      const cat = searchParams?.get('cat');
+      const subcat = searchParams?.get('subcat');
+      const theme = searchParams?.get('theme') || 'default';
+
+      console.log('📋 URL Parameters:', { lang, level, cat, subcat, theme });
+
+      if (lang && level && cat) {
+        setIsAutoLoading(true);
+        try {
+          const config: UnifiedSelectionConfig = {
+            language: lang,
+            curriculumLevel: level,
+            categoryId: cat,
+            subcategoryId: subcat || undefined
+          };
+
+          console.log('🚀 Auto-loading game with config:', config);
+
+          const vocabulary = await loadVocabulary(config);
+          console.log('📚 Vocabulary loaded:', { count: vocabulary?.length, vocabulary: vocabulary?.slice(0, 3) });
+
+          if (vocabulary && vocabulary.length > 0) {
+            console.log('✅ Starting game automatically...');
+            handleGameStart(config, vocabulary, theme);
+            setIsAutoLoading(false);
+          } else {
+            console.warn('⚠️ No vocabulary loaded for config:', config);
+            setIsAutoLoading(false);
+          }
+        } catch (error) {
+          console.error('❌ Error auto-loading game:', error);
+          setIsAutoLoading(false);
+        }
+      } else {
+        console.log('❌ Missing required URL parameters:', { lang, level, cat });
+      }
+
+      setUrlParamsChecked(true);
+    };
+
+    if (!isLoading && (user || isDemo)) {
+      console.log('✅ Auth ready, checking URL params...');
+      checkUrlParams();
+    } else {
+      console.log('⏳ Waiting for auth...', { isLoading, user: !!user, isDemo });
+    }
+  }, [searchParams, isLoading, user, isDemo, urlParamsChecked, assignmentId]);
 
   // Transform vocabulary for vocab blast game
   const transformVocabularyForVocabBlast = (vocabulary: UnifiedVocabularyItem[]) => {
@@ -66,37 +196,21 @@ export default function VocabBlastPage() {
     return null;
   }
 
-  // Show loading while authenticating
-  if (isLoading) {
+  // Show loading while authenticating or auto-loading from URL parameters
+  if (isLoading || isAutoLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-600 via-pink-600 to-red-700 flex items-center justify-center">
         <div className="text-center text-white">
           <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-white mx-auto mb-4"></div>
-          <p className="text-xl">Loading Vocab Blast...</p>
+          <p className="text-xl">
+            {isAutoLoading ? 'Starting game...' : 'Loading Vocab Blast...'}
+          </p>
         </div>
       </div>
     );
   }
 
-  // Handle game start from unified launcher
-  const handleGameStart = (config: UnifiedSelectionConfig, vocabulary: UnifiedVocabularyItem[], theme?: string) => {
-    const transformedVocabulary = transformVocabularyForVocabBlast(vocabulary);
 
-    setGameConfig({
-      config,
-      vocabulary: transformedVocabulary,
-      theme: theme || 'default'
-    });
-
-    setGameStarted(true);
-
-    console.log('Vocab Blast started with:', {
-      config,
-      vocabularyCount: vocabulary.length,
-      theme,
-      transformedCount: transformedVocabulary.length
-    });
-  };
 
   // Handle back to menu
   const handleBackToMenu = () => {
@@ -111,6 +225,26 @@ export default function VocabBlastPage() {
         router.push('/student-dashboard/assignments');
       }, 3000);
     }
+  };
+
+  // In-game configuration handlers
+  const handleConfigChange = (newConfig: UnifiedSelectionConfig, vocabulary: UnifiedVocabularyItem[], theme?: string) => {
+    console.log('🔄 Updating game configuration:', newConfig, 'Theme:', theme);
+    const transformedVocabulary = transformVocabularyForVocabBlast(vocabulary);
+    setGameConfig(prev => prev ? {
+      ...prev,
+      config: newConfig,
+      vocabulary: transformedVocabulary,
+      theme: theme || prev.theme
+    } : null);
+  };
+
+  const handleOpenConfigPanel = () => {
+    setShowConfigPanel(true);
+  };
+
+  const handleCloseConfigPanel = () => {
+    setShowConfigPanel(false);
   };
 
   // Show unified launcher if game not started
@@ -167,6 +301,18 @@ export default function VocabBlastPage() {
             assignmentId={assignmentId}
             userId={user?.id}
             categoryVocabulary={gameConfig.vocabulary}
+            onOpenSettings={handleOpenConfigPanel}
+          />
+
+          {/* In-game configuration panel */}
+          <InGameConfigPanel
+            currentConfig={gameConfig.config}
+            onConfigChange={handleConfigChange}
+            supportedLanguages={['es', 'fr', 'de']}
+            supportsThemes={true}
+            currentTheme={gameConfig.theme}
+            isOpen={showConfigPanel}
+            onClose={handleCloseConfigPanel}
           />
         </div>
       </ThemeProvider>

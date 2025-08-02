@@ -9,6 +9,7 @@ import {
 import { useRouter, useSearchParams } from 'next/navigation';
 import UnifiedGameLauncher from '../../../components/games/UnifiedGameLauncher';
 import { UnifiedSelectionConfig, UnifiedVocabularyItem } from '../../../hooks/useUnifiedVocabulary';
+import InGameConfigPanel from '../../../components/games/InGameConfigPanel';
 import { useSounds } from './hooks/useSounds';
 
 import { useAuth } from '../../../components/auth/AuthProvider';
@@ -469,6 +470,7 @@ function ImprovedSentenceTowersGame({
     }
   }, [gameVocabulary]);
   const [showSettings, setShowSettings] = useState(false);
+  const [showConfigPanel, setShowConfigPanel] = useState(false);
   const [craneLifting, setCraneLifting] = useState(false);
   const [craneWord, setCraneWord] = useState('');
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -961,6 +963,22 @@ function ImprovedSentenceTowersGame({
     }, isCorrect ? 3000 : 1500);
   }, [currentTargetWord, typedAnswer, selectedOption, handleCorrectAnswer, handleIncorrectAnswer, generateWordOptions]);
 
+  // Config panel handlers
+  const handleOpenConfigPanel = () => {
+    setShowConfigPanel(true);
+  };
+
+  const handleCloseConfigPanel = () => {
+    setShowConfigPanel(false);
+  };
+
+  const handleConfigChange = (newConfig: UnifiedSelectionConfig, newVocabulary: any[]) => {
+    console.log('🔄 Updating game configuration:', newConfig);
+    // Note: This would need to be passed up to parent component to update the actual config
+    // For now, just close the panel
+    setShowConfigPanel(false);
+  };
+
   // Utility functions
   const getBlockType = (difficulty: number): TowerBlock['type'] => {
     if (difficulty >= 4) return 'challenge';
@@ -1185,6 +1203,14 @@ function ImprovedSentenceTowersGame({
             className="p-2 md:p-3 bg-black/30 hover:bg-black/50 rounded-xl backdrop-blur-md border border-white/20 transition-all duration-300"
           >
             <Settings className="h-4 w-4 md:h-5 md:w-5 text-white" />
+          </button>
+
+          <button
+            onClick={handleOpenConfigPanel}
+            className="p-2 md:p-3 bg-black/30 hover:bg-black/50 rounded-xl backdrop-blur-md border border-white/20 transition-all duration-300"
+            title="Game Configuration"
+          >
+            ⚙️
           </button>
         </div>
       </div>
@@ -1823,7 +1849,17 @@ function ImprovedSentenceTowersGame({
         )}
       </AnimatePresence>
 
-
+      {/* In-game configuration panel */}
+      {config && (
+        <InGameConfigPanel
+          currentConfig={config}
+          onConfigChange={handleConfigChange}
+          supportedLanguages={['es', 'fr', 'de']}
+          supportsThemes={false}
+          isOpen={showConfigPanel}
+          onClose={handleCloseConfigPanel}
+        />
+      )}
 
       </motion.div>
     </div>

@@ -1,28 +1,5 @@
-// Available languages and topics (same as in LanguageTopicSelector)
-export const LANGUAGES = [
-  { code: 'english', name: 'English' },
-  { code: 'spanish', name: 'Spanish' },
-  { code: 'french', name: 'French' },
-  { code: 'german', name: 'German' },
-  { code: 'italian', name: 'Italian' },
-  { code: 'portuguese', name: 'Portuguese' },
-  { code: 'chinese', name: 'Chinese' },
-  { code: 'japanese', name: 'Japanese' },
-  { code: 'korean', name: 'Korean' },
-  { code: 'arabic', name: 'Arabic' },
-  { code: 'russian', name: 'Russian' }
-];
-
-export const TOPICS = [
-  { code: 'animals', name: 'Animals' },
-  { code: 'colors', name: 'Colors' },
-  { code: 'food', name: 'Food' },
-  { code: 'countries', name: 'Countries' },
-  { code: 'numbers', name: 'Numbers' },
-  { code: 'custom', name: 'Custom' }
-];
-
-export const DIFFICULTIES = [
+// Grid size configurations for memory game
+export const GRID_SIZES = [
   { code: 'easy-1', name: 'Easy (3×2)', pairs: 3, grid: '3x2' },
   { code: 'easy-2', name: 'Easy (4×2)', pairs: 4, grid: '4x2' },
   { code: 'medium-1', name: 'Medium (5×2)', pairs: 5, grid: '5x2' },

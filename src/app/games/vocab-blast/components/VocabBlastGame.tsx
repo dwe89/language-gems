@@ -2,11 +2,11 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Pause, Play, Volume2, VolumeX } from 'lucide-react';
+import { ArrowLeft, Pause, Play, Volume2, VolumeX, Settings } from 'lucide-react';
 import { GameVocabularyWord } from '../../../../hooks/useGameVocabulary';
 import { VocabBlastGameSettings } from '../page';
 import { useTheme } from '../../noughts-and-crosses/components/ThemeProvider';
-import { useAudio } from '../../noughts-and-crosses/hooks/useAudio';
+import { useAudio } from '../../vocab-blast/hooks/useAudio';
 import VocabBlastEngine from './VocabBlastEngine';
 
 interface VocabBlastGameProps {
@@ -34,6 +34,7 @@ interface VocabBlastGameProps {
   }) => void;
   gameSessionId?: string | null;
   isAssignmentMode?: boolean;
+  onOpenSettings?: () => void;
 }
 
 export interface VocabItem {
@@ -75,11 +76,21 @@ export default function VocabBlastGame({
   onBackToMenu,
   onGameEnd,
   gameSessionId,
-  isAssignmentMode
+  isAssignmentMode,
+  onOpenSettings
 }: VocabBlastGameProps) {
   const { themeClasses } = useTheme();
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [musicStarted, setMusicStarted] = useState(false);
   const { playSFX, playThemeSFX, startBackgroundMusic, stopBackgroundMusic } = useAudio(soundEnabled);
+
+  // Start music on first user interaction
+  const startMusicOnInteraction = () => {
+    if (!musicStarted && soundEnabled) {
+      startBackgroundMusic(settings.theme);
+      setMusicStarted(true);
+    }
+  };
 
   // Game state
   const [gameActive, setGameActive] = useState(false);
@@ -119,7 +130,7 @@ export default function VocabBlastGame({
       setGameActive(true);
       startTimer();
       startWordSpawning();
-      startBackgroundMusic(settings.theme);
+      // Don't start background music immediately - wait for user interaction
     }
 
     return () => {
@@ -179,6 +190,7 @@ export default function VocabBlastGame({
   };
 
   const handleCorrectAnswer = (word: GameVocabularyWord) => {
+    startMusicOnInteraction(); // Start music on first interaction
     playSFX('correct-answer');
     playThemeSFX(settings.theme);
 
@@ -216,6 +228,7 @@ export default function VocabBlastGame({
   };
 
   const handleIncorrectAnswer = () => {
+    startMusicOnInteraction(); // Start music on first interaction
     playSFX('wrong-answer');
 
     const responseTime = Date.now() - currentWordStartTime;
@@ -259,6 +272,7 @@ export default function VocabBlastGame({
   };
 
   const togglePause = () => {
+    startMusicOnInteraction(); // Start music on first interaction
     playSFX('button-click');
     setIsPaused(!isPaused);
     
@@ -338,7 +352,7 @@ export default function VocabBlastGame({
       {/* Game UI Overlay */}
       <div className="absolute inset-0 z-10 pointer-events-none">
         {/* Top Bar */}
-        <div className="flex justify-between items-center p-4 pointer-events-auto">
+        <div className="grid grid-cols-3 items-center p-4 pointer-events-auto">
           <div className="flex items-center gap-4">
             <button
               onClick={onBackToMenu}
@@ -362,6 +376,17 @@ export default function VocabBlastGame({
             >
               {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
             </button>
+
+            {/* Settings button - only show if not in assignment mode */}
+            {!isAssignmentMode && onOpenSettings && (
+              <button
+                onClick={onOpenSettings}
+                className="flex items-center gap-2 bg-black/50 hover:bg-black/70 text-white px-4 py-2 rounded-lg transition-colors"
+              >
+                <Settings className="w-4 h-4" />
+                Settings
+              </button>
+            )}
           </div>
 
           <div className="text-center">

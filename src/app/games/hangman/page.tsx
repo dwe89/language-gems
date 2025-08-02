@@ -7,6 +7,7 @@ import HangmanGameWrapper from './components/HangmanGameWrapper';
 import HangmanAssignmentWrapper from './components/HangmanAssignmentWrapper';
 import UnifiedGameLauncher from '../../../components/games/UnifiedGameLauncher';
 import { UnifiedSelectionConfig, UnifiedVocabularyItem } from '../../../hooks/useUnifiedVocabulary';
+import InGameConfigPanel from '../../../components/games/InGameConfigPanel';
 import { useAudio } from './hooks/useAudio';
 
 export default function HangmanPage() {
@@ -40,6 +41,7 @@ export default function HangmanPage() {
     vocabulary: UnifiedVocabularyItem[];
     theme: string;
   } | null>(null);
+  const [showConfigPanel, setShowConfigPanel] = useState(false);
 
   // Initialize the audio hook (assuming sound is enabled by default, or you can add a user preference)
   const { playSFX, startBackgroundMusic, stopBackgroundMusic } = useAudio(true);
@@ -85,8 +87,8 @@ export default function HangmanPage() {
       category: item.category,
       subcategory: item.subcategory,
       part_of_speech: item.part_of_speech,
-      example_sentence: item.example_sentence,
-      example_translation: item.example_translation,
+      example_sentence: item.example_sentence_original || '',
+      example_translation: item.example_sentence_translation || '',
       difficulty_level: item.difficulty_level || 'beginner'
     }));
   };
@@ -111,11 +113,32 @@ export default function HangmanPage() {
     });
   };
 
-  // Handle back to menu
+  // Handle back to games
   const handleBackToMenu = () => {
     setGameStarted(false);
     setGameConfig(null);
     stopBackgroundMusic();
+    router.push('/games');
+  };
+
+  // Config panel handlers
+  const handleOpenConfigPanel = () => {
+    setShowConfigPanel(true);
+  };
+
+  const handleCloseConfigPanel = () => {
+    setShowConfigPanel(false);
+  };
+
+  const handleConfigChange = (newConfig: UnifiedSelectionConfig, vocabulary: UnifiedVocabularyItem[], theme?: string) => {
+    console.log('🔄 Updating game configuration:', newConfig, 'Theme:', theme);
+    const transformedVocabulary = transformVocabularyForHangman(vocabulary);
+    setGameConfig(prev => prev ? {
+      ...prev,
+      config: newConfig,
+      vocabulary,
+      theme: theme || prev.theme
+    } : null);
   };
 
   // Load stats from localStorage
@@ -244,33 +267,47 @@ export default function HangmanPage() {
     );
   }
 
-  // Show game if started and config is available
   if (gameStarted && gameConfig) {
-    return (
-      <div className="fixed inset-0 w-full h-full">
-        <HangmanGameWrapper
-          settings={{
-            difficulty: gameConfig.config.curriculumLevel === 'KS4' ? 'hard' : 'medium',
-            category: gameConfig.config.categoryId,
-            subcategory: gameConfig.config.subcategoryId,
-            language: gameConfig.config.language === 'es' ? 'spanish' :
-                     gameConfig.config.language === 'fr' ? 'french' :
-                     gameConfig.config.language === 'de' ? 'german' : 'spanish',
-            theme: gameConfig.theme,
-            customWords: [],
-            categoryVocabulary: gameConfig.vocabulary
-          }}
-          onBackToMenu={handleBackToMenu}
-          onGameEnd={handleGameEnd}
-          isFullscreen={isFullscreen}
-          assignmentId={assignmentId}
-          userId={user?.id}
-          isAssignmentMode={!!assignmentId}
-          playSFX={playSFX}
-        />
-      </div>
-    );
-  }
+  return (
+    // Remove 'fixed inset-0 w-full h-full'. HangmanGameWrapper will handle the full-screen fixed positioning.
+    // You might want a simple, unstyled div here or nothing if HangmanGameWrapper handles everything.
+    // A simple div ensures the InGameConfigPanel can also be rendered within this context.
+    <div className="relative w-full h-full">
+      <HangmanGameWrapper
+        settings={{
+          difficulty: gameConfig.config.curriculumLevel === 'KS4' ? 'hard' : 'medium',
+          category: gameConfig.config.categoryId,
+          subcategory: gameConfig.config.subcategoryId,
+          language: gameConfig.config.language === 'es' ? 'spanish' :
+                   gameConfig.config.language === 'fr' ? 'french' :
+                   gameConfig.config.language === 'de' ? 'german' : 'spanish',
+          theme: gameConfig.theme,
+          customWords: [],
+          categoryVocabulary: gameConfig.vocabulary
+        }}
+        onBackToMenu={handleBackToMenu}
+        onGameEnd={handleGameEnd}
+        isFullscreen={isFullscreen}
+        assignmentId={assignmentId}
+        userId={user?.id}
+        isAssignmentMode={!!assignmentId}
+        playSFX={playSFX}
+        onOpenSettings={handleOpenConfigPanel}
+      />
+
+      {/* In-game configuration panel (assuming it needs to overlay the game) */}
+      <InGameConfigPanel
+        currentConfig={gameConfig.config}
+        onConfigChange={handleConfigChange}
+        supportedLanguages={['es', 'fr', 'de']}
+        supportsThemes={true}
+        currentTheme={gameConfig.theme}
+        isOpen={showConfigPanel}
+        onClose={handleCloseConfigPanel}
+      />
+    </div>
+  );
+}
 
   // Fallback
   return null;

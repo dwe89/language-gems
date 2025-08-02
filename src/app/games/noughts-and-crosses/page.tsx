@@ -1,14 +1,15 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useUnifiedAuth } from '../../../hooks/useUnifiedAuth';
 import { ThemeProvider } from './components/ThemeProvider';
 import TicTacToeGameWrapper from './components/TicTacToeGameWrapper';
 import NoughtsAndCrossesAssignmentWrapper from './components/NoughtsAssignmentWrapper';
 import UnifiedGameLauncher from '../../../components/games/UnifiedGameLauncher';
-import { UnifiedSelectionConfig, UnifiedVocabularyItem } from '../../../hooks/useUnifiedVocabulary';
+import { UnifiedSelectionConfig, UnifiedVocabularyItem, loadVocabulary } from '../../../hooks/useUnifiedVocabulary';
 import { useAudio } from './hooks/useAudio';
+import InGameConfigPanel from '../../../components/games/InGameConfigPanel';
 
 export default function UnifiedNoughtsAndCrossesPage() {
   const { user, isLoading, isDemo } = useUnifiedAuth();
@@ -35,6 +36,94 @@ export default function UnifiedNoughtsAndCrossesPage() {
     vocabulary: UnifiedVocabularyItem[];
     theme: string;
   } | null>(null);
+  const [showConfigPanel, setShowConfigPanel] = useState(false);
+
+  // Check for URL parameters from games page navigation
+  const [urlParamsChecked, setUrlParamsChecked] = useState(false);
+
+  // Handle game start from unified launcher
+  const handleGameStart = (config: UnifiedSelectionConfig, vocabulary: UnifiedVocabularyItem[], theme?: string) => {
+    const transformedVocabulary = transformVocabularyForTicTacToe(vocabulary);
+
+    setGameConfig({
+      config,
+      vocabulary: transformedVocabulary,
+      theme: theme || 'default'
+    });
+
+    setGameStarted(true);
+
+    console.log('Noughts and Crosses started with:', {
+      config,
+      vocabularyCount: vocabulary.length,
+      theme,
+      transformedCount: transformedVocabulary.length
+    });
+  };
+
+  // Check for URL parameters and auto-start game
+  useEffect(() => {
+    const checkUrlParams = async () => {
+      console.log('🔍 [Noughts&Crosses] Checking URL params...', {
+        urlParamsChecked,
+        gameStarted,
+        assignmentId,
+        mode,
+        isLoading,
+        user: !!user,
+        isDemo
+      });
+
+      if (urlParamsChecked || gameStarted || (assignmentId && mode === 'assignment')) {
+        console.log('❌ [Noughts&Crosses] Skipping URL param check:', { urlParamsChecked, gameStarted, assignmentId, mode });
+        return;
+      }
+
+      const lang = searchParams?.get('lang');
+      const level = searchParams?.get('level') as 'KS2' | 'KS3' | 'KS4' | 'KS5';
+      const cat = searchParams?.get('cat');
+      const subcat = searchParams?.get('subcat');
+      const theme = searchParams?.get('theme') || 'default';
+
+      console.log('📋 [Noughts&Crosses] URL Parameters:', { lang, level, cat, subcat, theme });
+
+      if (lang && level && cat) {
+        try {
+          const config: UnifiedSelectionConfig = {
+            language: lang,
+            curriculumLevel: level,
+            categoryId: cat,
+            subcategoryId: subcat || undefined
+          };
+
+          console.log('🚀 [Noughts&Crosses] Auto-loading game with config:', config);
+
+          const vocabulary = await loadVocabulary(config);
+          console.log('📚 [Noughts&Crosses] Vocabulary loaded:', { count: vocabulary?.length, vocabulary: vocabulary?.slice(0, 3) });
+
+          if (vocabulary && vocabulary.length > 0) {
+            console.log('✅ [Noughts&Crosses] Starting game automatically...');
+            handleGameStart(config, vocabulary, theme);
+          } else {
+            console.warn('⚠️ [Noughts&Crosses] No vocabulary loaded for config:', config);
+          }
+        } catch (error) {
+          console.error('❌ [Noughts&Crosses] Error auto-loading game:', error);
+        }
+      } else {
+        console.log('❌ [Noughts&Crosses] Missing required URL parameters:', { lang, level, cat });
+      }
+
+      setUrlParamsChecked(true);
+    };
+
+    if (!isLoading && (user || isDemo)) {
+      console.log('✅ [Noughts&Crosses] Auth ready, checking URL params...');
+      checkUrlParams();
+    } else {
+      console.log('⏳ [Noughts&Crosses] Waiting for auth...', { isLoading, user: !!user, isDemo });
+    }
+  }, [searchParams, isLoading, user, isDemo, urlParamsChecked, gameStarted, assignmentId, mode]);
 
   // Authentication check
   if (!isLoading && !user && !isDemo) {
@@ -69,25 +158,7 @@ export default function UnifiedNoughtsAndCrossesPage() {
     }));
   };
 
-  // Handle game start from unified launcher
-  const handleGameStart = (config: UnifiedSelectionConfig, vocabulary: UnifiedVocabularyItem[], theme?: string) => {
-    const transformedVocabulary = transformVocabularyForTicTacToe(vocabulary);
-    
-    setGameConfig({
-      config,
-      vocabulary: transformedVocabulary,
-      theme: theme || 'default'
-    });
-    
-    setGameStarted(true);
-    
-    console.log('Noughts and Crosses started with:', {
-      config,
-      vocabularyCount: vocabulary.length,
-      theme,
-      transformedCount: transformedVocabulary.length
-    });
-  };
+
 
   // Handle back to menu
   const handleBackToMenu = () => {
@@ -105,6 +176,26 @@ export default function UnifiedNoughtsAndCrossesPage() {
         router.push('/student-dashboard/assignments');
       }, 3000);
     }
+  };
+
+  // Config panel handlers
+  const handleOpenConfigPanel = () => {
+    setShowConfigPanel(true);
+  };
+
+  const handleCloseConfigPanel = () => {
+    setShowConfigPanel(false);
+  };
+
+  const handleConfigChange = (newConfig: UnifiedSelectionConfig, vocabulary: UnifiedVocabularyItem[], theme?: string) => {
+    console.log('🔄 Updating game configuration:', newConfig, 'Theme:', theme);
+    const transformedVocabulary = transformVocabularyForTicTacToe(vocabulary);
+    setGameConfig(prev => prev ? {
+      ...prev,
+      config: newConfig,
+      vocabulary: transformedVocabulary,
+      theme: theme || prev.theme
+    } : null);
   };
 
   // Show unified launcher if game not started
@@ -160,6 +251,18 @@ export default function UnifiedNoughtsAndCrossesPage() {
             onGameEnd={handleGameEnd}
             assignmentId={assignmentId}
             userId={user?.id}
+            onOpenSettings={handleOpenConfigPanel}
+          />
+
+          {/* In-game configuration panel */}
+          <InGameConfigPanel
+            currentConfig={gameConfig.config}
+            onConfigChange={handleConfigChange}
+            supportedLanguages={['es', 'fr', 'de']}
+            supportsThemes={true}
+            currentTheme={gameConfig.theme}
+            isOpen={showConfigPanel}
+            onClose={handleCloseConfigPanel}
           />
         </div>
       </ThemeProvider>

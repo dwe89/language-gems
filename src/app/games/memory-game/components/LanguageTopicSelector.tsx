@@ -14,17 +14,10 @@ interface LanguageTopicSelectorProps {
 
 // Available languages and topics
 const LANGUAGES = [
-  { code: 'english', name: 'English', color: 'bg-indigo-100 border-indigo-300 text-indigo-700' },
   { code: 'spanish', name: 'Spanish', color: 'bg-red-100 border-red-300 text-red-700' },
   { code: 'french', name: 'French', color: 'bg-blue-100 border-blue-300 text-blue-700' },
   { code: 'german', name: 'German', color: 'bg-yellow-100 border-yellow-300 text-yellow-800' },
-  { code: 'italian', name: 'Italian', color: 'bg-green-100 border-green-300 text-green-700' },
-  { code: 'portuguese', name: 'Portuguese', color: 'bg-green-100 border-green-300 text-green-700' },
-  { code: 'chinese', name: 'Chinese', color: 'bg-red-100 border-red-300 text-red-700' },
-  { code: 'japanese', name: 'Japanese', color: 'bg-pink-100 border-pink-300 text-pink-700' },
-  { code: 'korean', name: 'Korean', color: 'bg-blue-100 border-blue-300 text-blue-700' },
-  { code: 'arabic', name: 'Arabic', color: 'bg-amber-100 border-amber-300 text-amber-700' },
-  { code: 'russian', name: 'Russian', color: 'bg-blue-100 border-blue-300 text-blue-700' }
+
 ];
 
 // Category structure with hierarchical organization

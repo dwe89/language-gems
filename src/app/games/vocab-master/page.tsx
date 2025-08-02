@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../../../components/auth/AuthProvider';
 import UnifiedGameLauncher from '../../../components/games/UnifiedGameLauncher';
 import { UnifiedSelectionConfig, UnifiedVocabularyItem } from '../../../hooks/useUnifiedVocabulary';
+import InGameConfigPanel from '../../../components/games/InGameConfigPanel';
 
 export default function UnifiedGemCollectorPage() {
   const { user } = useAuth();
@@ -18,6 +19,7 @@ export default function UnifiedGemCollectorPage() {
     config: UnifiedSelectionConfig;
     vocabulary: UnifiedVocabularyItem[];
   } | null>(null);
+  const [showConfigPanel, setShowConfigPanel] = useState(false);
 
   // Handle game start from unified launcher
   const handleGameStart = (config: UnifiedSelectionConfig, vocabulary: UnifiedVocabularyItem[]) => {
@@ -30,6 +32,24 @@ export default function UnifiedGemCollectorPage() {
   const handleBackToMenu = () => {
     setGameStarted(false);
     setGameConfig(null);
+  };
+
+  // Config panel handlers
+  const handleOpenConfigPanel = () => {
+    setShowConfigPanel(true);
+  };
+
+  const handleCloseConfigPanel = () => {
+    setShowConfigPanel(false);
+  };
+
+  const handleConfigChange = (newConfig: UnifiedSelectionConfig, vocabulary: UnifiedVocabularyItem[]) => {
+    console.log('🔄 Updating game configuration:', newConfig);
+    setGameConfig(prev => prev ? {
+      ...prev,
+      config: newConfig,
+      vocabulary
+    } : null);
   };
 
   // Show unified launcher if game not started
@@ -66,13 +86,31 @@ export default function UnifiedGemCollectorPage() {
         <div className="text-center text-white">
           <h2 className="text-2xl font-bold mb-4">Gem Collector</h2>
           <p className="mb-4">Game integration in progress...</p>
-          <button
-            onClick={handleBackToMenu}
-            className="bg-white/20 hover:bg-white/30 px-6 py-3 rounded-lg transition-colors"
-          >
-            Back to Selection
-          </button>
+          <div className="flex gap-4 justify-center">
+            <button
+              onClick={handleOpenConfigPanel}
+              className="bg-white/20 hover:bg-white/30 px-6 py-3 rounded-lg transition-colors"
+            >
+              ⚙️ Settings
+            </button>
+            <button
+              onClick={handleBackToMenu}
+              className="bg-white/20 hover:bg-white/30 px-6 py-3 rounded-lg transition-colors"
+            >
+              Back to Selection
+            </button>
+          </div>
         </div>
+
+        {/* In-game configuration panel */}
+        <InGameConfigPanel
+          currentConfig={gameConfig.config}
+          onConfigChange={handleConfigChange}
+          supportedLanguages={['es', 'fr', 'de']}
+          supportsThemes={false}
+          isOpen={showConfigPanel}
+          onClose={handleCloseConfigPanel}
+        />
       </div>
     );
   }

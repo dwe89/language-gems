@@ -66,219 +66,8 @@ interface HangmanGameProps {
   isFullscreen?: boolean;
   isAssignmentMode?: boolean;
   playSFX: (soundName: keyof AudioFiles['sfx']) => void; // Passed from parent (HangmanPage.tsx)
+  onOpenSettings?: () => void;
 }
-
-// Mock word lists based on categories and difficulties
-const WORD_LISTS = {
-  // Basics categories
-  numbers: {
-    beginner: ['uno', 'dos', 'tres', 'cuatro', 'cinco'],
-    intermediate: ['seis', 'siete', 'ocho', 'nueve', 'diez'],
-    advanced: ['once', 'doce', 'trece', 'catorce', 'quince']
-  },
-  colors: {
-    beginner: ['rojo', 'azul', 'verde', 'negro', 'blanco'],
-    intermediate: ['amarillo', 'morado', 'naranja', 'gris', 'rosa'],
-    advanced: ['violeta', 'turquesa', 'marrón', 'dorado', 'plateado']
-  },
-  days: {
-    beginner: ['lunes', 'martes', 'viernes', 'sábado', 'domingo'],
-    intermediate: ['miércoles', 'jueves', 'semana', 'hoy', 'mañana'],
-    advanced: ['pasado mañana', 'anteayer', 'fin de semana', 'laboral', 'festivo']
-  },
-  months: {
-    beginner: ['enero', 'mayo', 'julio', 'junio', 'marzo'],
-    intermediate: ['febrero', 'abril', 'agosto', 'octubre', 'diciembre'],
-    advanced: ['noviembre', 'septiembre', 'primavera', 'verano', 'invierno']
-  },
-  greetings: {
-    beginner: ['hola', 'adios', 'gracias', 'buenos días', 'buenas noches'],
-    intermediate: ['buenas tardes', 'hasta luego', 'encantado', 'bienvenido', 'por favor'],
-    advanced: ['hasta pronto', 'mucho gusto', 'igualmente', 'disculpe', 'felicidades']
-  },
-  phrases: {
-    beginner: ['bien', 'mal', 'sí', 'no', 'quizás'],
-    intermediate: ['tal vez', 'posiblemente', 'seguramente', 'probablemente', 'ciertamente'],
-    advanced: ['sin embargo', 'por supuesto', 'de hecho', 'en realidad', 'a propósito']
-  },
-  
-  // People & Relationships categories
-  family: {
-    beginner: ['padre', 'madre', 'hijo', 'hija', 'hermano'],
-    intermediate: ['hermana', 'abuelo', 'abuela', 'tío', 'tía'],
-    advanced: ['sobrino', 'sobrina', 'cuñado', 'cuñada', 'yerno']
-  },
-  physicaltraits: {
-    beginner: ['alto', 'bajo', 'fuerte', 'débil', 'guapo'],
-    intermediate: ['delgado', 'gordo', 'rubio', 'moreno', 'calvo'],
-    advanced: ['musculoso', 'atlético', 'corpulento', 'esbelto', 'robusto']
-  },
-  personality: {
-    beginner: ['feliz', 'triste', 'enojado', 'tranquilo', 'nervioso'],
-    intermediate: ['amable', 'generoso', 'paciente', 'impaciente', 'tímido'],
-    advanced: ['comprensivo', 'confiable', 'temperamental', 'impulsivo', 'perseverante']
-  },
-  professions: {
-    beginner: ['doctor', 'maestro', 'cocinero', 'policía', 'bombero'],
-    intermediate: ['abogado', 'ingeniero', 'enfermero', 'arquitecto', 'piloto'],
-    advanced: ['carpintero', 'electricista', 'fontanero', 'contable', 'psicólogo']
-  },
-  
-  // Original categories for backward compatibility
-  animals: {
-    beginner: ['gato', 'perro', 'pez', 'vaca', 'pato'],
-    intermediate: ['elefante', 'cocodrilo', 'mariposa', 'murciélago', 'jirafa'],
-    advanced: ['ornitorrinco', 'rinoceronte', 'hipopótamo', 'león marino', 'oso pardo']
-  },
-  food: {
-    beginner: ['pan', 'café', 'leche', 'miel', 'arroz'],
-    intermediate: ['tortilla', 'ensalada', 'pescado', 'chocolate', 'piña'],
-    advanced: ['espaguetis', 'guacamole', 'champiñones', 'café con leche', 'té verde']
-  },
-  countries: {
-    beginner: ['españa', 'francia', 'china', 'japón', 'italia'],
-    intermediate: ['alemania', 'portugal', 'rusia', 'canadá', 'méxico'],
-    advanced: ['australia', 'sudáfrica', 'argentina', 'colombia', 'marruecos']
-  },
-  sports: {
-    beginner: ['fútbol', 'tenis', 'baloncesto', 'natación', 'golf'],
-    intermediate: ['voleibol', 'rugby', 'ciclismo', 'atletismo', 'boxeo'],
-    advanced: ['esgrima', 'equitación', 'waterpolo', 'gimnasia', 'halterofilia']
-  },
-  
-  // Additional categories from hierarchical structure
-  household: {
-    beginner: ['mesa', 'silla', 'cama', 'sofá', 'puerta'],
-    intermediate: ['ventana', 'cocina', 'nevera', 'lámpara', 'espejo'],
-    advanced: ['lavadora', 'microondas', 'aspiradora', 'calefacción', 'aire acondicionado']
-  },
-  rooms: {
-    beginner: ['salón', 'cocina', 'baño', 'dormitorio', 'comedor'],
-    intermediate: ['despacho', 'garaje', 'terraza', 'jardín', 'sótano'],
-    advanced: ['cuarto de baño', 'sala de estar', 'habitación principal', 'oficina en casa', 'cuarto de invitados']
-  },
-  foods: {
-    beginner: ['pan', 'queso', 'huevo', 'pollo', 'pasta'],
-    intermediate: ['carne', 'pescado', 'verdura', 'fruta', 'postre'],
-    advanced: ['marisco', 'legumbre', 'salsa', 'condimento', 'especias']
-  },
-  bodyparts: {
-    beginner: ['cabeza', 'brazo', 'pierna', 'mano', 'pie'],
-    intermediate: ['hombro', 'codo', 'rodilla', 'dedo', 'cuello'],
-    advanced: ['tobillo', 'muñeca', 'pecho', 'espalda', 'abdomen']
-  },
-  verbs: {
-    beginner: ['ser', 'estar', 'ir', 'tener', 'hacer'],
-    intermediate: ['poder', 'querer', 'decir', 'ver', 'saber'],
-    advanced: ['poner', 'salir', 'venir', 'seguir', 'conocer']
-  },
-  adjectives: {
-    beginner: ['grande', 'pequeño', 'bueno', 'malo', 'bonito'],
-    intermediate: ['precioso', 'horrible', 'interesante', 'aburrido', 'difícil'],
-    advanced: ['extraordinario', 'espectacular', 'insignificante', 'indescriptible', 'incomparable']
-  },
-  
-  // Fallback for testing only - should not be used in production
-  places: {
-    beginner: ['casa', 'calle', 'playa', 'parque', 'hotel'],
-    intermediate: ['biblioteca', 'restaurante', 'hospital', 'mercado', 'estación'],
-    advanced: ['universidad', 'aeropuerto', 'acantilado', 'cementerio', 'catedral']
-  }
-};
-
-// Different language word lists
-const LANGUAGE_WORD_LISTS: Record<string, Partial<typeof WORD_LISTS>> = {
-  spanish: WORD_LISTS,
-  english: {
-    // Basic categories
-    numbers: {
-      beginner: ['one', 'two', 'three', 'four', 'five'],
-      intermediate: ['six', 'seven', 'eight', 'nine', 'ten'],
-      advanced: ['eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen']
-    },
-    colors: {
-      beginner: ['red', 'blue', 'green', 'black', 'white'],
-      intermediate: ['yellow', 'purple', 'orange', 'gray', 'pink'],
-      advanced: ['violet', 'turquoise', 'brown', 'golden', 'silver']
-    },
-    days: {
-      beginner: ['monday', 'tuesday', 'friday', 'saturday', 'sunday'],
-      intermediate: ['wednesday', 'thursday', 'week', 'today', 'tomorrow'],
-      advanced: ['day after tomorrow', 'yesterday', 'weekend', 'weekday', 'holiday']
-    },
-    // Original categories
-    animals: {
-      beginner: ['cat', 'dog', 'fish', 'cow', 'duck'],
-      intermediate: ['elephant', 'crocodile', 'butterfly', 'bat', 'giraffe'],
-      advanced: ['platypus', 'rhinoceros', 'hippopotamus', 'chimpanzee', 'armadillo']
-    },
-    food: {
-      beginner: ['bread', 'coffee', 'milk', 'honey', 'rice'],
-      intermediate: ['omelet', 'salad', 'fish', 'chocolate', 'orange'],
-      advanced: ['spaghetti', 'guacamole', 'mushrooms', 'eggplant', 'zucchini']
-    },
-    // People categories
-    family: {
-      beginner: ['father', 'mother', 'son', 'daughter', 'brother'],
-      intermediate: ['sister', 'grandfather', 'grandmother', 'uncle', 'aunt'],
-      advanced: ['nephew', 'niece', 'brother-in-law', 'sister-in-law', 'son-in-law']
-    },
-    professions: {
-      beginner: ['doctor', 'teacher', 'cook', 'police', 'firefighter'],
-      intermediate: ['lawyer', 'engineer', 'nurse', 'architect', 'pilot'],
-      advanced: ['carpenter', 'electrician', 'plumber', 'accountant', 'psychologist']
-    }
-  },
-  french: {
-    numbers: {
-      beginner: ['un', 'deux', 'trois', 'quatre', 'cinq'],
-      intermediate: ['six', 'sept', 'huit', 'neuf', 'dix'],
-      advanced: ['onze', 'douze', 'treize', 'quatorze', 'quinze']
-    },
-    colors: {
-      beginner: ['rouge', 'bleu', 'vert', 'noir', 'blanc'],
-      intermediate: ['jaune', 'violet', 'orange', 'gris', 'rose'],
-      advanced: ['pourpre', 'turquoise', 'marron', 'doré', 'argenté']
-    },
-    animals: {
-      beginner: ['chat', 'chien', 'poisson', 'vache', 'canard'],
-      intermediate: ['éléphant', 'crocodile', 'papillon', 'chauve-souris', 'girafe'],
-      advanced: ['ornithorynque', 'rhinocéros', 'hippopotame', 'chimpanzé', 'tatou']
-    },
-    family: {
-      beginner: ['père', 'mère', 'fils', 'fille', 'frère'],
-      intermediate: ['soeur', 'grand-père', 'grand-mère', 'oncle', 'tante'],
-      advanced: ['neveu', 'nièce', 'beau-frère', 'belle-soeur', 'gendre']
-    }
-  },
-  german: {
-    numbers: {
-      beginner: ['eins', 'zwei', 'drei', 'vier', 'fünf'],
-      intermediate: ['sechs', 'sieben', 'acht', 'neun', 'zehn'],
-      advanced: ['elf', 'zwölf', 'dreizehn', 'vierzehn', 'fünfzehn']
-    },
-    colors: {
-      beginner: ['rot', 'blau', 'grün', 'schwarz', 'weiß'],
-      intermediate: ['gelb', 'lila', 'orange', 'grau', 'rosa'],
-      advanced: ['violett', 'türkis', 'braun', 'golden', 'silbern']
-    },
-    animals: {
-      beginner: ['katze', 'hund', 'fisch', 'kuh', 'ente'],
-      intermediate: ['elefant', 'krokodil', 'schmetterling', 'fledermaus', 'giraffe'],
-      advanced: ['schnabeltier', 'nashorn', 'nilpferd', 'schimpanse', 'gürteltier']
-    }
-  }
-};
-
-// Ensure each language has a fallback for all categories
-Object.keys(LANGUAGE_WORD_LISTS).forEach(language => {
-  if (language !== 'english' && language !== 'spanish') {
-    // English is our base fallback language
-    LANGUAGE_WORD_LISTS[language] = {
-      ...LANGUAGE_WORD_LISTS[language]
-    };
-  }
-});
 
 const MAX_ATTEMPTS = 6;
 
@@ -296,7 +85,7 @@ type ExtendedThemeContextType = {
   };
 };
 
-export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isFullscreen, isAssignmentMode, playSFX }: HangmanGameProps) {
+export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isFullscreen, isAssignmentMode, playSFX, onOpenSettings }: HangmanGameProps) {
   const { themeId, themeClasses } = useTheme() as ExtendedThemeContextType;
   const [themeClassesState, setThemeClassesState] = useState(themeClasses);
   const [word, setWord] = useState('');
@@ -313,9 +102,7 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
   const [hints, setHints] = useState(3);
   const [showPowerupEffect, setShowPowerupEffect] = useState(false);
   const [animation, setAnimation] = useState<'correct' | 'wrong' | null>(null);
-  
-  // Removed soundEffectTriggers state as playSFX is called directly
-  
+
   const [musicEnabled, setMusicEnabled] = useState(true); // Default to true, as background music is handled by parent
 
   // Add a state to track correct guesses for the Tokyo Nights theme
@@ -356,61 +143,11 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
         return selectedItem.word || 'fallback';
       }
 
-      try {
-        // Fallback to hardcoded word lists
-        const languageWordLists = LANGUAGE_WORD_LISTS[settings.language] || LANGUAGE_WORD_LISTS.english || {};
-
-        // First try to get the category from the selected language
-        const categoryWords = languageWordLists[settings.category as keyof typeof WORD_LISTS];
-        
-        // If category doesn't exist in selected language, try English
-        if (!categoryWords && settings.language !== 'english') {
-          const englishCategoryWords = LANGUAGE_WORD_LISTS.english?.[settings.category as keyof typeof WORD_LISTS];
-          
-          if (englishCategoryWords) {
-            const difficultyWords = englishCategoryWords[settings.difficulty as keyof (typeof englishCategoryWords)] || 
-                                   englishCategoryWords.beginner;
-            
-            if (difficultyWords && difficultyWords.length > 0) {
-              const randomIndex = Math.floor(Math.random() * difficultyWords.length);
-              return difficultyWords[randomIndex];
-            }
-          }
-        }
-        
-        // If we have a valid category, get words for the difficulty
-        if (categoryWords) {
-          const difficultyWords = categoryWords[settings.difficulty as keyof (typeof categoryWords)] || 
-                                 categoryWords.beginner;
-          
-          if (difficultyWords && difficultyWords.length > 0) {
-            const randomIndex = Math.floor(Math.random() * difficultyWords.length);
-            return difficultyWords[randomIndex];
-          }
-        }
-        
-        // If still no match, use animals as fallback
-        console.warn(`Category '${settings.category}' not found, falling back to 'animals'`);
-        const animalWords = languageWordLists.animals || LANGUAGE_WORD_LISTS.english?.animals;
-        
-        if (animalWords) {
-          const difficultyWords = animalWords[settings.difficulty as keyof (typeof animalWords)] || 
-                                 animalWords.beginner;
-          
-          if (difficultyWords && difficultyWords.length > 0) {
-            const randomIndex = Math.floor(Math.random() * difficultyWords.length);
-            return difficultyWords[randomIndex];
-          }
-        }
-        
-        // Last resort fallback
-        return 'fallback';
-      } catch (error) {
-        console.error('Error selecting word:', error);
-        return 'fallback'; // Emergency fallback word
-      }
+      // Fallback if no vocabulary is loaded
+      console.warn('No vocabulary available, using fallback word');
+      return 'fallback';
     };
-    
+
     const newWord = getRandomWord().toLowerCase();
     setWord(newWord);
     // Get unique letters excluding spaces and normalize for comparison
@@ -420,42 +157,42 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
     setWrongGuesses(0);
     setGameStatus('playing');
     setTimer(0);
-    
+
     // Start the timer
     const interval = setInterval(() => {
       setTimer(prev => prev + 1);
     }, 1000);
-    
+
     setTimerInterval(interval);
-    
+
     return () => {
       if (timerInterval) clearInterval(timerInterval);
     };
   }, [settings, vocabulary]);
-  
+
   // Check win/lose conditions
   useEffect(() => {
     if (gameStatus !== 'playing' || guessedLetters.length === 0) return;
-    
+
     // Check if all letters in the word have been guessed
-    const hasWon = wordLetters.every(letter => 
+    const hasWon = wordLetters.every(letter =>
       letter === ' ' || letter === '-' || isLetterGuessed(letter, guessedLetters)
     );
-    
+
     if (hasWon) {
       setGameStatus('won');
       playSFX('victory'); // Use passed-in playSFX
-      
+
       // Play audio for the completed word
       if (settings.playAudio) {
         setTimeout(() => {
           settings.playAudio!(word);
         }, 500); // Delay slightly to let the confetti start
       }
-      
+
       // Stop timer
       if (timerInterval) clearInterval(timerInterval);
-      
+
       // Trigger confetti
       setTimeout(() => {
         confetti({
@@ -464,38 +201,38 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
           origin: { y: 0.6 }
         });
       }, 300);
-      
+
       if (onGameEnd) onGameEnd('win');
     } else if (wrongGuesses >= MAX_ATTEMPTS) {
       setGameStatus('lost');
       playSFX('defeat'); // Use passed-in playSFX
-      
+
       // Stop timer
       if (timerInterval) clearInterval(timerInterval);
-      
+
       if (onGameEnd) onGameEnd('lose');
     }
   }, [guessedLetters, wordLetters, wrongGuesses, gameStatus, timerInterval, onGameEnd, playSFX, settings.playAudio, word]);
-  
+
   const handleLetterGuess = (letter: string) => {
     const lowerLetter = letter.toLowerCase();
-    
+
     if (gameStatus !== 'playing' || guessedLetters.includes(lowerLetter)) {
       return;
     }
-    
+
     const newGuessedLetters = [...guessedLetters, lowerLetter];
     setGuessedLetters(newGuessedLetters);
-    
+
     if (doesWordContainLetter(word, lowerLetter)) {
       // Correct guess
       playSFX('correct-answer'); // Use passed-in playSFX
-      
+
       // Increment correct letter counter for the Tokyo Nights theme
       if (themeId === 'tokyo') {
         setCorrectLetterCounter(prev => prev + 1);
       }
-      
+
       // Check if the player has won - check if all non-space letters are guessed
       const isWin = wordLetters.every(letter => isLetterGuessed(letter, newGuessedLetters));
       if (isWin) {
@@ -503,19 +240,19 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
         setGameStatus('won');
         const newScore = calculateScore();
         setScore(newScore);
-        
+
         // Play audio for the completed word
         if (settings.playAudio) {
           setTimeout(() => {
             settings.playAudio!(word);
           }, 500); // Delay slightly to let the win sound effects play first
         }
-        
+
         // Add the newScore to totalScore
         const currentTotal = parseInt(localStorage.getItem('hangmanTotalScore') || '0', 10);
         const updatedTotal = currentTotal + newScore;
         localStorage.setItem('hangmanTotalScore', updatedTotal.toString());
-        
+
         // Save the score to localStorage
         const savedScores = JSON.parse(localStorage.getItem('hangmanScores') || '[]');
         const newSavedScores = [
@@ -533,9 +270,9 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
     } else {
       // Wrong guess
       playSFX('wrong-answer'); // Use passed-in playSFX
-      
+
       setWrongGuesses(prev => prev + 1);
-      
+
       // Check if the player has lost
       if (wrongGuesses + 1 >= MAX_ATTEMPTS) {
         playSFX('defeat'); // Use passed-in playSFX
@@ -543,30 +280,30 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
       }
     }
   };
-  
+
   const handleHint = () => {
     if (hints <= 0 || gameStatus !== 'playing') return;
-    
+
     const unguessedLetters = wordLetters.filter(letter => !guessedLetters.includes(letter));
     if (unguessedLetters.length === 0) return;
-    
+
     const randomIndex = Math.floor(Math.random() * unguessedLetters.length);
-    const hintLetter = unguessedLetters[randomIndex]; 
-    
+    const hintLetter = unguessedLetters[randomIndex];
+
     setHints(prev => prev - 1);
     playSFX('button-click'); // Use passed-in playSFX
     setShowPowerupEffect(true);
     setTimeout(() => setShowPowerupEffect(false), 800);
     handleLetterGuess(hintLetter);
   };
-  
+
   const resetGame = () => {
     setGuessedLetters([]);
     setWrongGuesses(0);
     setGameStatus('playing');
     setTimer(0);
     setScore(0);
-    
+
     const getRandomWord = () => {
       // Check if we're using custom words
       if (settings.customWords && settings.customWords.length > 0) {
@@ -583,65 +320,15 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
         return selectedItem.word || 'fallback';
       }
 
-      try {
-        // Fallback to hardcoded word lists
-        const languageWordLists = LANGUAGE_WORD_LISTS[settings.language] || LANGUAGE_WORD_LISTS.english || {};
-
-        // First try to get the category from the selected language
-        const categoryWords = languageWordLists[settings.category as keyof typeof WORD_LISTS];
-        
-        // If category doesn't exist in selected language, try English
-        if (!categoryWords && settings.language !== 'english') {
-          const englishCategoryWords = LANGUAGE_WORD_LISTS.english?.[settings.category as keyof typeof WORD_LISTS];
-          
-          if (englishCategoryWords) {
-            const difficultyWords = englishCategoryWords[settings.difficulty as keyof (typeof englishCategoryWords)] || 
-                                   englishCategoryWords.beginner;
-            
-            if (difficultyWords && difficultyWords.length > 0) {
-              const randomIndex = Math.floor(Math.random() * difficultyWords.length);
-              return difficultyWords[randomIndex];
-            }
-          }
-        }
-        
-        // If we have a valid category, get words for the difficulty
-        if (categoryWords) {
-          const difficultyWords = categoryWords[settings.difficulty as keyof (typeof categoryWords)] || 
-                                 categoryWords.beginner;
-          
-          if (difficultyWords && difficultyWords.length > 0) {
-            const randomIndex = Math.floor(Math.random() * difficultyWords.length);
-            return difficultyWords[randomIndex];
-          }
-        }
-        
-        // If still no match, use animals as fallback
-        console.warn(`Category '${settings.category}' not found, falling back to 'animals'`);
-        const animalWords = languageWordLists.animals || LANGUAGE_WORD_LISTS.english?.animals;
-        
-        if (animalWords) {
-          const difficultyWords = animalWords[settings.difficulty as keyof (typeof animalWords)] || 
-                                 animalWords.beginner;
-          
-          if (difficultyWords && difficultyWords.length > 0) {
-            const randomIndex = Math.floor(Math.random() * difficultyWords.length);
-            return difficultyWords[randomIndex];
-          }
-        }
-        
-        // Last resort fallback
-        return 'fallback';
-      } catch (error) {
-        console.error('Error selecting word:', error);
-        return 'fallback'; // Emergency fallback word
-      }
+      // Fallback if no vocabulary is loaded
+      console.warn('No vocabulary available, using fallback word');
+      return 'fallback';
     };
-    
+
     const newWord = getRandomWord().toLowerCase();
     setWord(newWord);
     setWordLetters([...new Set(newWord.split('').filter((char: string) => char !== ' '))] as string[]);
-    
+
     // Restart the timer
     if (timerInterval) clearInterval(timerInterval);
     const interval = setInterval(() => {
@@ -649,21 +336,21 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
     }, 1000);
     setTimerInterval(interval);
   };
-  
+
   const calculateScore = () => {
     // Base score based on difficulty
     let baseScore = 100;
     if (settings.difficulty === 'intermediate') baseScore = 200;
     if (settings.difficulty === 'advanced') baseScore = 300;
     if (settings.difficulty === 'expert') baseScore = 400;
-    
+
     // Decrease score based on wrong guesses and time
     const wrongGuessPenalty = wrongGuesses * 10;
     const timePenalty = Math.floor(timer / 10);
-    
+
     return Math.max(baseScore - wrongGuessPenalty - timePenalty, 50);
   };
-  
+
   // Removed toggleSound as it's now handled by the parent useAudio hook via playSFX
   // and music mute is also handled by the parent `useAudio` if passed in
 
@@ -672,31 +359,31 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
-  
+
   const renderThematicAnimation = () => {
     if (themeId === 'default') {
       return <ClassicHangmanAnimation mistakes={wrongGuesses} maxMistakes={MAX_ATTEMPTS} />;
     }
-    
+
     if (themeId === 'tokyo') {
       return <TokyoNightsAnimation
         mistakes={wrongGuesses}
         maxMistakes={MAX_ATTEMPTS}
       />;
     }
-    
+
     if (themeId === 'temple') {
       return <LavaTempleAnimation mistakes={wrongGuesses} maxMistakes={MAX_ATTEMPTS} />;
     }
-    
+
     if (themeId === 'space') {
       return <SpaceExplorerAnimation mistakes={wrongGuesses} maxMistakes={MAX_ATTEMPTS} />;
     }
-    
+
     // Pirate theme animation
     return <PirateAdventureAnimation mistakes={wrongGuesses} maxMistakes={MAX_ATTEMPTS} />;
   };
-  
+
 
   const renderKeyboard = () => {
     // Two-row layout with accented letters based on language
@@ -731,9 +418,9 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
         row2: allLetters.slice(midPoint)
       };
     };
-    
+
     const { row1, row2 } = getKeyboardLayout();
-    
+
     const renderRow = (letters: string[]) => (
       <div className="flex flex-wrap justify-center gap-1 md:gap-3">
         {letters.map((letter) => {
@@ -743,7 +430,7 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
           const isWrong = isUsed && !doesWordContainLetter(word, lowerLetter);
 
           let buttonClass = "w-10 h-10 md:w-16 md:h-16 text-lg md:text-2xl font-bold rounded-xl transition-all duration-200 transform hover:scale-105 active:scale-95";
-          
+
           if (isCorrect) {
             // Apply theme-specific styles for correct letters
             if (themeId === 'tokyo') {
@@ -767,7 +454,7 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
             // Fallback style
             buttonClass += " bg-gray-400 text-gray-600 shadow-sm";
           }
-          
+
           return (
             <button
               key={letter}
@@ -784,7 +471,7 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
         })}
       </div>
     );
-    
+
     return (
       <div className="space-y-2 md:space-y-6 mt-2 md:mt-4">
         {renderRow(row1)}
@@ -792,64 +479,64 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
       </div>
     );
   };
-  
+
   const renderWord = () => {
     return (
       <div className="flex justify-center flex-wrap gap-2 md:gap-4">
         {word.split('').map((letter, index) => {
-            if (letter === ' ') {
-              // Render a space character
-              return (
-                <div key={index} className="w-4 md:w-6 flex items-end justify-center">
-                  <div className="w-4 h-4 md:w-6 md:h-6"></div>
-                </div>
-              );
-            }
-
-            const isRevealed = isLetterGuessed(letter, guessedLetters);
-
-            // Enhanced theme-specific glow effects for word squares
-            let squareClass = 'w-10 h-12 md:w-14 md:h-16 flex items-center justify-center rounded-xl transition-all duration-300 backdrop-blur-sm';
-
-            if (isRevealed) {
-              // Theme-specific styling for revealed letters
-              if (themeId === 'tokyo') {
-                squareClass += ' bg-pink-600/90 text-white shadow-2xl shadow-pink-500/60 ring-2 ring-pink-400/70 glow-pink';
-              } else if (themeId === 'space') {
-                squareClass += ' bg-purple-600/90 text-white shadow-2xl shadow-purple-500/60 ring-2 ring-purple-400/70 glow-purple';
-              } else if (themeId === 'temple') {
-                squareClass += ' bg-orange-600/90 text-white shadow-2xl shadow-orange-500/60 ring-2 ring-orange-400/70 glow-orange';
-              } else if (themeId === 'pirate') {
-                squareClass += ' bg-amber-600/90 text-white shadow-2xl shadow-amber-500/60 ring-2 ring-amber-400/70 glow-amber';
-              } else {
-                squareClass += ' bg-blue-600/90 text-white shadow-2xl shadow-blue-500/60 ring-2 ring-blue-400/70';
-              }
-            } else {
-              // Unrevealed letter styling with subtle theme hints
-              if (themeId === 'tokyo') {
-                squareClass += ' bg-white/70 border-2 border-pink-300/50 shadow-lg shadow-pink-500/20';
-              } else if (themeId === 'space') {
-                squareClass += ' bg-white/70 border-2 border-purple-300/50 shadow-lg shadow-purple-500/20';
-              } else if (themeId === 'temple') {
-                squareClass += ' bg-white/70 border-2 border-orange-300/50 shadow-lg shadow-orange-500/20';
-              } else if (themeId === 'pirate') {
-                squareClass += ' bg-white/70 border-2 border-amber-300/50 shadow-lg shadow-amber-500/20';
-              } else {
-                squareClass += ' bg-white/70 border-2 border-blue-300/50 shadow-lg shadow-blue-500/20';
-              }
-            }
-
+          if (letter === ' ') {
+            // Render a space character
             return (
-              <div key={index} className="text-center">
-                <div className={squareClass}>
-                  <span className="text-lg md:text-2xl font-bold">
-                    {isRevealed ? letter.toUpperCase() : ''}
-                  </span>
-                </div>
+              <div key={index} className="w-4 md:w-6 flex items-end justify-center">
+                <div className="w-4 h-4 md:w-6 md:h-6"></div>
               </div>
             );
-          })}
-        </div>
+          }
+
+          const isRevealed = isLetterGuessed(letter, guessedLetters);
+
+          // Enhanced theme-specific glow effects for word squares
+          let squareClass = 'w-10 h-12 md:w-14 md:h-16 flex items-center justify-center rounded-xl transition-all duration-300 backdrop-blur-sm';
+
+          if (isRevealed) {
+            // Theme-specific styling for revealed letters
+            if (themeId === 'tokyo') {
+              squareClass += ' bg-pink-600/90 text-white shadow-2xl shadow-pink-500/60 ring-2 ring-pink-400/70 glow-pink';
+            } else if (themeId === 'space') {
+              squareClass += ' bg-purple-600/90 text-white shadow-2xl shadow-purple-500/60 ring-2 ring-purple-400/70 glow-purple';
+            } else if (themeId === 'temple') {
+              squareClass += ' bg-orange-600/90 text-white shadow-2xl shadow-orange-500/60 ring-2 ring-orange-400/70 glow-orange';
+            } else if (themeId === 'pirate') {
+              squareClass += ' bg-amber-600/90 text-white shadow-2xl shadow-amber-500/60 ring-2 ring-amber-400/70 glow-amber';
+            } else {
+              squareClass += ' bg-blue-600/90 text-white shadow-2xl shadow-blue-500/60 ring-2 ring-blue-400/70';
+            }
+          } else {
+            // Unrevealed letter styling with subtle theme hints
+            if (themeId === 'tokyo') {
+              squareClass += ' bg-white/70 border-2 border-pink-300/50 shadow-lg shadow-pink-500/20';
+            } else if (themeId === 'space') {
+              squareClass += ' bg-white/70 border-2 border-purple-300/50 shadow-lg shadow-purple-500/20';
+            } else if (themeId === 'temple') {
+              squareClass += ' bg-white/70 border-2 border-orange-300/50 shadow-lg shadow-orange-500/20';
+            } else if (themeId === 'pirate') {
+              squareClass += ' bg-white/70 border-2 border-amber-300/50 shadow-lg shadow-amber-500/20';
+            } else {
+              squareClass += ' bg-white/70 border-2 border-blue-300/50 shadow-lg shadow-blue-500/20';
+            }
+          }
+
+          return (
+            <div key={index} className="text-center">
+              <div className={squareClass}>
+                <span className="text-lg md:text-2xl font-bold">
+                  {isRevealed ? letter.toUpperCase() : ''}
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
     );
   };
 
@@ -936,7 +623,7 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
   }, [settings.theme]);
 
   return (
-    <div className={`relative ${themeClassesState.background} ${themeClassesState.text} ${isFullscreen ? 'w-full h-screen flex flex-col overflow-hidden' : 'w-full h-screen flex flex-col'}`}>
+    <div className={`fixed inset-0 ${themeClassesState.background} ${themeClassesState.text} flex flex-col overflow-hidden z-40`}>
       {/* Custom CSS for glow effects */}
       <style jsx>{`
         .glow-pink {
@@ -958,15 +645,15 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
         {renderThematicAnimation()}
       </div>
 
-      {/* Top navigation and info bar - overlaid on background */}
-      <div className="relative z-20 flex justify-between items-center p-3 md:p-4 bg-black/30 backdrop-blur-sm">
+      {/* Top navigation and info bar - fixed above game content */}
+      <div className="fixed top-0 left-0 right-0 z-50 flex justify-between items-center p-3 md:p-4 bg-black/30 backdrop-blur-sm">
         {!isFullscreen && (
           <button
             onClick={onBackToMenu}
             className="px-3 py-2 md:px-4 md:py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white flex items-center text-sm md:text-base"
           >
             <span className="md:hidden">←</span>
-            <span className="hidden md:inline">Back to Menu</span>
+            <span className="hidden md:inline">Back to Games</span>
           </button>
         )}
 
@@ -981,10 +668,31 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
           <div className="text-xs md:text-sm opacity-75">
             {formatTime(timer)}
           </div>
+
+          {/* Lives remaining in top bar */}
+          {gameStatus === 'playing' && (
+            <div className="text-xs md:text-sm font-medium">
+              <span className="opacity-75">Lives:</span> {MAX_ATTEMPTS - wrongGuesses}/{MAX_ATTEMPTS}
+            </div>
+          )}
         </div>
 
         {/* Control buttons */}
         <div className="flex items-center space-x-1 md:space-x-2">
+          {/* Settings button */}
+          {onOpenSettings && (
+            <button
+              onClick={() => {
+                playSFX('button-click');
+                onOpenSettings();
+              }}
+              className="p-1.5 md:p-2 rounded-full bg-gray-700 hover:bg-gray-600 text-white"
+              title="Settings"
+            >
+              ⚙️
+            </button>
+          )}
+
           {/* Music toggle button (now controls UI icon, actual music by parent) */}
           <button
             onClick={() => {
@@ -1031,8 +739,8 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
         </div>
       </div>
 
-      {/* Progress bar - overlaid on background */}
-      <div className="relative z-20 px-3 md:px-4 pb-3 md:pb-4">
+      {/* Progress bar - fixed below navigation */}
+      <div className="fixed top-16 md:top-20 left-0 right-0 z-50 px-3 md:px-4 pb-3 md:pb-4">
         <div className="w-full h-2 md:h-3 bg-gray-700/50 rounded-full overflow-hidden backdrop-blur-sm">
           <div
             className="h-full rounded-full transition-all duration-500"
@@ -1044,21 +752,10 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
         </div>
       </div>
 
-      {/* Main game content area - positioned to avoid covering top UI */}
-      <div className="relative z-10 flex-1 flex flex-col pt-16 pb-4">
-        {/* Spacer to push content down */}
-        <div className="flex-1"></div>
+      {/* Main game content area - positioned below fixed UI */}
+      <div className="relative z-40 flex-1 flex flex-col pt-24 md:pt-28 pb-4">        <div className="flex-1"></div>
 
-        {/* Lives remaining display */}
-        {gameStatus === 'playing' && (
-          <div className="text-center pb-2 md:pb-4">
-            <div className="text-sm md:text-lg font-medium">
-              <span className="opacity-75">
-                {themeClassesState.dangerText}:
-              </span> {MAX_ATTEMPTS - wrongGuesses}/{MAX_ATTEMPTS}
-            </div>
-          </div>
-        )}
+
 
         {/* Word display positioned much lower */}
         {gameStatus === 'playing' && (
@@ -1074,62 +771,62 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
               {renderKeyboard()}
             </div>
           ) : (
-          <div className="text-center">
-            <h2 className="text-2xl md:text-3xl font-bold mb-4">
-              {gameStatus === 'won' 
-                ? (themeClassesState.winMessage) 
-                : (themeClassesState.loseMessage)}
-            </h2>
-            
-            <p className="text-xl mb-4">
-              {gameStatus === 'won' 
-                ? `Great job! You guessed the word correctly.` 
-                : `The word was: ${word.toUpperCase()}`}
-            </p>
-            
-            {gameStatus === 'won' && (
-              <div className="my-4 text-lg">
-                <p>Score: <span className="font-bold">{calculateScore()}</span></p>
-              </div>
-            )}
-            
-            <div className="flex justify-center gap-4 mt-6">
-              <button
-                onClick={() => {
-                  playSFX('button-click'); // Use passed-in playSFX
-                  resetGame();
-                }}
-                className={`${themeClassesState.button} py-3 px-6 rounded-lg font-bold text-white`}
-              >
-                Play Again
-              </button>
+            <div className="text-center">
+              <h2 className="text-2xl md:text-3xl font-bold mb-4">
+                {gameStatus === 'won'
+                  ? (themeClassesState.winMessage)
+                  : (themeClassesState.loseMessage)}
+              </h2>
 
-              <button
-                onClick={() => {
-                  playSFX('button-click'); // Use passed-in playSFX
-                  onBackToMenu();
-                }}
-                className="bg-gray-700 hover:bg-gray-600 py-3 px-6 rounded-lg font-bold text-white"
-              >
-                Back to Menu
-              </button>
+              <p className="text-xl mb-4">
+                {gameStatus === 'won'
+                  ? `Great job! You guessed the word correctly.`
+                  : `The word was: ${word.toUpperCase()}`}
+              </p>
+
+              {gameStatus === 'won' && (
+                <div className="my-4 text-lg">
+                  <p>Score: <span className="font-bold">{calculateScore()}</span></p>
+                </div>
+              )}
+
+              <div className="flex justify-center gap-4 mt-6">
+                <button
+                  onClick={() => {
+                    playSFX('button-click'); // Use passed-in playSFX
+                    resetGame();
+                  }}
+                  className={`${themeClassesState.button} py-3 px-6 rounded-lg font-bold text-white`}
+                >
+                  Play Again
+                </button>
+
+                <button
+                  onClick={() => {
+                    playSFX('button-click'); // Use passed-in playSFX
+                    onBackToMenu();
+                  }}
+                  className="bg-gray-700 hover:bg-gray-600 py-3 px-6 rounded-lg font-bold text-white"
+                >
+                  Back to Games
+                </button>
+              </div>
             </div>
-          </div>
-        )}
+          )}
         </div>
       </div>
-      
+
       {/* Theme-specific Modals */}
-      <TempleGuardianModal 
-        isOpen={showTempleGuardianModal} 
-        onClose={() => setShowTempleGuardianModal(false)} 
+      <TempleGuardianModal
+        isOpen={showTempleGuardianModal}
+        onClose={() => setShowTempleGuardianModal(false)}
       />
-      
-      <TokyoNightsModal 
-        isOpen={showTokyoNightsModal} 
-        onClose={() => setShowTokyoNightsModal(false)} 
+
+      <TokyoNightsModal
+        isOpen={showTokyoNightsModal}
+        onClose={() => setShowTokyoNightsModal(false)}
       />
-      
+
       <SpaceExplorerModal
         isOpen={showSpaceExplorerModal}
         onClose={() => setShowSpaceExplorerModal(false)}

@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import ReactCountryFlag from 'react-country-flag';
 import {
@@ -303,12 +304,14 @@ export default function UnifiedSentenceCategorySelector({
   title
 }: UnifiedSentenceCategorySelectorProps) {
   const { isDemo } = useDemoAuth();
+  const searchParams = useSearchParams();
   const [step, setStep] = useState<'language' | 'curriculum' | 'category' | 'subcategory'>('language');
   const [selectedLanguage, setSelectedLanguage] = useState<string>('');
   const [selectedCurriculumLevel, setSelectedCurriculumLevel] = useState<'KS2' | 'KS3' | 'KS4' | 'KS5'>('KS3');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [categories, setCategories] = useState<SentenceCategory[]>([]);
   const [loading, setLoading] = useState(false);
+  const [urlParamsChecked, setUrlParamsChecked] = useState(false);
 
   // Filter languages based on supported languages
   const availableLanguages = AVAILABLE_LANGUAGES.filter(lang =>
@@ -380,6 +383,58 @@ export default function UnifiedSentenceCategorySelector({
       setLoading(false);
     }
   };
+
+  // Check for URL parameters and auto-start game
+  useEffect(() => {
+    const checkUrlParams = async () => {
+      console.log('🔍 [UnifiedSentenceCategorySelector] Checking URL params...', {
+        urlParamsChecked,
+        gameName
+      });
+
+      if (urlParamsChecked) {
+        console.log('❌ [UnifiedSentenceCategorySelector] URL params already checked');
+        return;
+      }
+
+      const lang = searchParams?.get('lang');
+      const level = searchParams?.get('level') as 'KS2' | 'KS3' | 'KS4' | 'KS5';
+      const cat = searchParams?.get('cat');
+      const subcat = searchParams?.get('subcat');
+
+      console.log('📋 [UnifiedSentenceCategorySelector] URL Parameters:', { lang, level, cat, subcat });
+
+      if (lang && level && cat) {
+        console.log(`✅ [UnifiedSentenceCategorySelector] Found URL parameters, auto-starting ${gameName}...`);
+
+        // Map language codes to full names
+        const languageMap: { [key: string]: string } = {
+          'es': 'spanish',
+          'fr': 'french',
+          'de': 'german'
+        };
+
+        const fullLanguage = languageMap[lang] || lang;
+
+        const config: SentenceSelectionConfig = {
+          language: fullLanguage,
+          curriculumLevel: level,
+          categoryId: cat,
+          subcategoryId: subcat || undefined,
+          customMode: false
+        };
+
+        console.log(`🚀 [UnifiedSentenceCategorySelector] Auto-completing selection for ${gameName}:`, config);
+        onSelectionComplete(config);
+      } else {
+        console.log(`❌ [UnifiedSentenceCategorySelector] Missing required URL parameters:`, { lang, level, cat });
+      }
+
+      setUrlParamsChecked(true);
+    };
+
+    checkUrlParams();
+  }, [searchParams, urlParamsChecked, gameName, onSelectionComplete]);
 
   const handleLanguageSelect = (languageCode: string) => {
     setSelectedLanguage(languageCode);

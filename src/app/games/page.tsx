@@ -1,12 +1,17 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react'; // Added useRef
 import Link from 'next/link';
 import Image from 'next/image';
-import { Gamepad2, Search, Filter, ChevronDown, Building2, Rocket, Castle, DollarSign, CircleOff, DoorOpen, Puzzle, TagIcon, Lock, Trophy, Target, BarChart3, Play, BookOpen, Users, Star, Flower } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
+import { Gamepad2, Search, Building2, Rocket, Lock, Trophy, Target, BarChart3, Play, BookOpen, Users, Star } from 'lucide-react';
 import { useAuth } from '../../components/auth/AuthProvider';
 import { useDemoAuth } from '../../components/auth/DemoAuthProvider';
 import DemoBanner from '../../components/demo/DemoBanner';
+import GameSelectionSidebar, { SelectionState } from '../../components/games/FilterSidebar';
+import MobileGameSelectionModal from '../../components/games/MobileGameSelectionModal';
+
 
 // Login Required Component
 const LoginRequiredGate = () => {
@@ -166,10 +171,23 @@ type Game = {
 export default function GamesPage() {
   const { user, isLoading } = useAuth();
   const { isDemo } = useDemoAuth();
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [games, setGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('all'); // Renamed from 'filter' for clarity
+  const [selectedGameForSetup, setSelectedGameForSetup] = useState<Game | null>(null);
+  const [isMobileModalOpen, setIsMobileModalOpen] = useState(false);
+  const [currentSelection, setCurrentSelection] = useState<SelectionState>({
+    language: null,
+    curriculumLevel: null,
+    categoryId: null,
+    subcategoryId: null,
+    theme: null
+  });
+
+  const sidebarRef = useRef<HTMLDivElement>(null); // Ref for the sidebar
+
 
   // Define your main categories
   const categories = [
@@ -312,7 +330,7 @@ export default function GamesPage() {
         {
           id: 'verb-quest',
           name: 'Verb Quest',
-          description: 'Embark on an epic RPG adventure to master verb conjugations! Battle mystical creatures and unlock new regions as you learn.',
+          description: 'Embark on an epic RPG adventure to master verb conjugations!',
           thumbnail: '/images/games/verb-quest.jpg',
           category: 'grammar',
           popular: true,
@@ -341,6 +359,88 @@ export default function GamesPage() {
     fetchGames();
   }, []);
 
+  // New function to handle deselecting a game
+  const handleDeselectGame = () => {
+    setSelectedGameForSetup(null);
+    setCurrentSelection({
+      language: null,
+      curriculumLevel: null,
+      categoryId: null,
+      subcategoryId: null,
+      theme: null
+    });
+  };
+
+  // Handler for game selection (desktop: select game, mobile: open modal)
+  const handlePlayNowClick = (game: Game) => {
+    // If the same game is clicked again, deselect it.
+    if (selectedGameForSetup?.id === game.id) {
+        handleDeselectGame();
+        return;
+    }
+    
+    setSelectedGameForSetup(game);
+    // On mobile, open modal immediately
+    if (window.innerWidth < 768) {
+      setIsMobileModalOpen(true);
+    } else {
+      // On desktop, scroll to the sidebar to indicate next step
+      if (sidebarRef.current) {
+        sidebarRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+  };
+
+  // Handler for selection changes (desktop sidebar)
+  const handleSelectionChange = (selection: SelectionState) => {
+    setCurrentSelection(selection);
+  };
+
+  // Handler for selection completion (both desktop and mobile)
+  const handleSelectionComplete = (selection: SelectionState) => {
+    if (!selectedGameForSetup) return;
+
+    // Construct URL with parameters
+    const params = new URLSearchParams({
+      lang: selection.language!,
+      level: selection.curriculumLevel!,
+      cat: selection.categoryId!,
+      subcat: selection.subcategoryId!,
+      theme: selection.theme || 'default'
+    });
+
+    const url = `${selectedGameForSetup.path}?${params.toString()}`;
+    console.log('🚀 Navigating to:', url);
+    router.push(url);
+  };
+
+  // Combined filtering logic for category filter, search query, and advanced filters
+  const filteredGames = games.filter(game => {
+    // Apply category filter
+    const matchesCategory = selectedCategory === 'all' || game.category === selectedCategory || (game.subcategories && game.subcategories.includes(selectedCategory));
+
+    // Apply search query filter
+    const matchesSearch = searchQuery === '' ||
+      game.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      game.description.toLowerCase().includes(searchQuery.toLowerCase());
+
+    // Apply advanced filters
+    // Note: For now, we'll assume games don't have curriculum/category metadata
+    // In a real implementation, you'd add these fields to the Game interface
+    // and filter based on them. For demo purposes, we'll show all games
+    // when advanced filters are applied (this can be enhanced later)
+    const matchesAdvancedFilters = true; // Placeholder - implement based on your game metadata
+
+    return matchesCategory && matchesSearch && matchesAdvancedFilters;
+  });
+
+  // Check if selection is complete for desktop
+  const isSelectionComplete = currentSelection.language &&
+    currentSelection.curriculumLevel &&
+    currentSelection.categoryId &&
+    currentSelection.subcategoryId &&
+    (!selectedGameForSetup?.id.includes('vocab-blast') || currentSelection.theme);
+
   // If user is not authenticated and not in demo mode, show login gate
   if (!isLoading && !user && !isDemo) {
     return <LoginRequiredGate />;
@@ -357,19 +457,6 @@ export default function GamesPage() {
       </div>
     );
   }
-
-  // Combined filtering logic for both category filter and search query
-  const filteredGames = games.filter(game => {
-    // Apply category filter
-    const matchesCategory = selectedCategory === 'all' || game.category === selectedCategory || (game.subcategories && game.subcategories.includes(selectedCategory));
-
-    // Apply search query filter
-    const matchesSearch = searchQuery === '' ||
-      game.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      game.description.toLowerCase().includes(searchQuery.toLowerCase());
-
-    return matchesCategory && matchesSearch;
-  });
 
   return (
     <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 min-h-screen">
@@ -436,73 +523,166 @@ export default function GamesPage() {
           </div>
         </div>
 
-        {loading ? (
-          <div className="flex items-center justify-center h-60">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredGames.map((game) => (
-              <div
-                key={game.id}
-                className="bg-white rounded-xl overflow-hidden border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 hover:border-indigo-300"
-              >
-                <div className="h-40 relative overflow-hidden">
-                  {/* Game thumbnail */}
-                  <Image
-                    src={game.thumbnail}
-                    alt={game.name}
-                    fill
-                    className="object-cover"
-                    onError={(e) => {
-                      // Fallback to gradient background if image fails
-                      const target = e.target as HTMLImageElement;
-                      target.style.display = 'none';
-                      const parent = target.parentElement;
-                      if (parent) {
-                        parent.className = "h-40 bg-gradient-to-br from-indigo-400 via-purple-500 to-pink-500 flex items-center justify-center relative";
-                        const fallback = document.createElement('div');
-                        fallback.innerHTML = `<svg class="h-16 w-16 text-white/80" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>`;
-                        parent.appendChild(fallback);
-                      }
+        {/* Mobile: Select Content Button */}
+        <div className="md:hidden mb-6">
+          <button
+            onClick={() => setIsMobileModalOpen(true)}
+            className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-4 px-6 rounded-lg transition-all transform hover:scale-105 flex items-center justify-center space-x-2"
+          >
+            <span>🎮</span>
+            <span>Select Content & Start Game</span>
+          </button>
+        </div>
+
+        {/* Hybrid Layout: Desktop Sidebar + Mobile Full Width */}
+        <div className="flex gap-8">
+          {/* Desktop: Game Selection Sidebar */}
+          <div ref={sidebarRef} className="hidden md:block w-80 flex-shrink-0"> {/* Added ref here */}
+            {selectedGameForSetup ? (
+              <>
+                <div className="p-6 bg-green-50 rounded-xl shadow-lg sticky top-6 text-center">
+                  <h3 className="font-bold text-lg text-gray-900 mb-2">Selected Game:</h3>
+                  <p className="text-lg font-bold text-green-600 mb-4">{selectedGameForSetup.name}</p>
+                  <button
+                    onClick={handleDeselectGame}
+                    className="w-full bg-green-200 hover:bg-green-300 text-green-800 font-bold py-2 px-6 rounded-lg transition-all"
+                  >
+                    Change Game
+                  </button>
+                </div>
+                <div className="mt-4">
+                  <GameSelectionSidebar
+                    onSelectionComplete={handleSelectionComplete}
+                    onSelectionChange={handleSelectionChange}
+                    selectedGame={{
+                      id: selectedGameForSetup.id,
+                      name: selectedGameForSetup.name,
+                      supportsThemes: selectedGameForSetup.id.includes('vocab-blast')
                     }}
+                    className="sticky top-6"
                   />
-                  {/* Display 'DEMO' tag based on isDemo prop or other logic */}
-                  <div className="absolute top-2 left-2 bg-orange-500 text-white text-xs px-2 py-1 rounded-full font-bold">
-                    DEMO
-                  </div>
-                  {/* Display the main category, or a subcategory if it's a sentences game */}
-                  <div className="absolute top-2 right-2 bg-white/20 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-full">
-                    {game.category === 'sentences' ? 'Sentences' : game.category.charAt(0).toUpperCase() + game.category.slice(1)}
-                  </div>
                 </div>
-
-                <div className="p-5">
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">{game.name}</h3>
-                  <p className="text-gray-600 text-sm mb-4">{game.description}</p>
-
-                  <div className="flex space-x-3">
-                    <Link
-                      href={game.path}
-                      className="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-center py-2 rounded-lg font-medium transition-all transform hover:scale-105"
-                    >
-                      🎮 Play Now
-                    </Link>
-
-                    {user?.user_metadata?.role === 'teacher' && (
-                      <Link
-                        href={`/dashboard/assignments/new?gameId=${game.id}`}
-                        className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-center py-2 rounded-lg font-medium transition-all transform hover:scale-105"
-                      >
-                        📚 Assign
-                      </Link>
-                    )}
-                  </div>
+              </>
+            ) : (
+              <div className="p-6 bg-white rounded-xl shadow-lg sticky top-6 text-center">
+                <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Gamepad2 className="h-8 w-8 text-indigo-600" />
                 </div>
+                <h3 className="font-bold text-lg text-gray-900 mb-2">Ready to Play?</h3>
+                <p className="text-gray-600 text-sm">
+                  Choose a game from the list to start configuring your learning adventure!
+                </p>
               </div>
-            ))}
+            )}
           </div>
-        )}
+
+          {/* Games Grid */}
+          <div className="flex-1">
+            {loading ? (
+              <div className="flex items-center justify-center h-60">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+              </div>
+            ) : filteredGames.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="text-6xl mb-4">🎮</div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">No games found</h3>
+                <p className="text-gray-600">Try adjusting your search or category filters.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                {filteredGames.map((game) => {
+                  const isSelected = selectedGameForSetup?.id === game.id;
+                  const isDisabled = selectedGameForSetup && !isSelected; // Dim other cards if one is selected
+
+                  return (
+                    <motion.div
+                      key={game.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3 }}
+                      className={`rounded-xl overflow-hidden border shadow-lg transition-all duration-300 flex flex-col
+                        ${isSelected
+                          ? 'bg-green-50 border-green-500 shadow-xl ring-2 ring-green-200'
+                          : isDisabled
+                          ? 'bg-white border-gray-200 opacity-50 pointer-events-none'
+                          : 'bg-white border-gray-200 hover:shadow-xl hover:-translate-y-1 hover:border-indigo-300'
+                        }`}
+                    >
+                      <div className="h-40 relative overflow-hidden">
+                        {/* Game thumbnail */}
+                        <Image
+                          src={game.thumbnail}
+                          alt={game.name}
+                          fill
+                          className="object-cover"
+                          onError={(e) => {
+                            // Fallback to gradient background if image fails
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
+                            const parent = target.parentElement;
+                            if (parent) {
+                              parent.className = "h-40 bg-gradient-to-br from-indigo-400 via-purple-500 to-pink-500 flex items-center justify-center relative";
+                              const fallback = document.createElement('div');
+                              fallback.innerHTML = `<svg class="h-16 w-16 text-white/80" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>`;
+                              parent.appendChild(fallback);
+                            }
+                          }}
+                        />
+                        {/* Display 'DEMO' tag based on isDemo prop or other logic */}
+                        <div className="absolute top-2 left-2 bg-orange-500 text-white text-xs px-2 py-1 rounded-full font-bold">
+                          DEMO
+                        </div>
+                        {/* Display the main category, or a subcategory if it's a sentences game */}
+                        <div className="absolute top-2 right-2 bg-white/20 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-full">
+                          {game.category === 'sentences' ? 'Sentences' : game.category.charAt(0).toUpperCase() + game.category.slice(1)}
+                        </div>
+                      </div>
+
+                      <div className="p-5 flex flex-col flex-grow">
+                        <h3 className="text-xl font-bold text-gray-900 mb-2">{game.name}</h3>
+                        <p className="text-gray-600 text-sm mb-4 flex-grow">{game.description}</p>
+
+                        <div className="flex space-x-3 mt-auto">
+                          <button
+                            onClick={() => handlePlayNowClick(game)} // Changed click handler to one function for cleaner logic
+                            className={`flex-1 text-white text-center py-2 rounded-lg font-medium transition-all transform
+                              ${isSelected 
+                                ? 'bg-green-600 hover:bg-green-700' 
+                                : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 hover:scale-105'
+                              }`}
+                          >
+                            {isSelected ? '🎮 Change Game' : '🎮 Play Now'}
+                          </button>
+
+                          {user?.user_metadata?.role === 'teacher' && (
+                            <Link
+                              href={`/dashboard/assignments/new?gameId=${game.id}`}
+                              className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-center py-2 rounded-lg font-medium transition-all transform hover:scale-105"
+                            >
+                              📚 Assign
+                            </Link>
+                          )}
+                        </div>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Mobile Modal */}
+        <MobileGameSelectionModal
+          isOpen={isMobileModalOpen}
+          onClose={() => setIsMobileModalOpen(false)}
+          onSelectionComplete={handleSelectionComplete}
+          selectedGame={selectedGameForSetup ? {
+            id: selectedGameForSetup.id,
+            name: selectedGameForSetup.name,
+            supportsThemes: selectedGameForSetup.id.includes('vocab-blast')
+          } : null}
+        />
       </div>
     </div>
   );
