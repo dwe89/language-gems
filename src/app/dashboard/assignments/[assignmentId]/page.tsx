@@ -71,7 +71,7 @@ export default function AssignmentDetailsPage() {
     }
   };
 
-  const handlePlayGame = () => {
+  const handlePlayGame = async () => {
     if (assignment) {
       console.log('Starting game for assignment:', assignment);
       
@@ -84,38 +84,112 @@ export default function AssignmentDetailsPage() {
         const url = `/student-dashboard/assignments/${assignmentId}?preview=true`;
         console.log('Redirecting to multi-game view:', url);
         router.push(url);
+      } else if (assignment.game_type === 'assessment') {
+        // For assessment assignments, redirect to assessment assignment view with teacher preview mode
+        const url = `/assessments/assignment/${assignmentId}?preview=true`;
+        console.log('Redirecting to assessment assignment view:', url);
+        router.push(url);
       } else {
         // For single game assignments, navigate directly to the game with preview mode
         const gameType = assignment.game_type || assignment.type;
         console.log('Game type determined:', gameType);
         
         if (gameType && gameType !== 'undefined') {
-          // Map game types to actual game paths
-          const gamePathMap: Record<string, string> = {
-            'memory-game': 'memory-game',
-            'memory-match': 'memory-game', // Standardize to memory-game
-            'vocab-blast': 'vocab-blast',
-            'word-blast': 'word-blast', // Keep separate - different games
-            'hangman': 'hangman',
-            'noughts-and-crosses': 'noughts-and-crosses',
-            'speed-builder': 'speed-builder',
-            'vocabulary-mining': 'vocabulary-mining',
-            'gem-collector': 'vocabulary-mining', // Legacy mapping
-            'translation-tycoon': 'speed-builder', // Legacy mapping
-            'conjugation-duel': 'conjugation-duel',
-            'detective-listening': 'detective-listening',
-            'verb-quest': 'verb-quest',
-            'word-scramble': 'word-scramble',
-            'word-guesser': 'word-scramble', // Word guesser uses word scramble logic
-            'sentence-towers': 'sentence-towers',
-            'sentence-builder': 'speed-builder', // Legacy mapping
+          try {
+            // Fetch assignment vocabulary criteria
+            const response = await fetch(`/api/assignments/${assignmentId}/vocabulary`);
+            if (!response.ok) {
+              throw new Error('Failed to fetch assignment details');
+            }
 
-          };
-          
-          const gamePath = gamePathMap[gameType] || 'memory-game';
-          const gameUrl = `/games/${gamePath}?assignment=${assignmentId}&mode=assignment&preview=true`;
-          console.log('Redirecting to single game:', gameUrl);
-          router.push(gameUrl);
+            const data = await response.json();
+            const assignmentData = data.assignment;
+            const config = assignmentData.config || {};
+
+            // Extract vocabulary criteria from assignment config
+            const vocabularyConfig = config.vocabularyConfig || config;
+
+            // Map game types to actual game paths
+            const gamePathMap: Record<string, string> = {
+              'memory-game': 'memory-game',
+              'memory-match': 'memory-game', // Standardize to memory-game
+              'vocab-blast': 'vocab-blast',
+              'word-blast': 'word-blast', // Keep separate - different games
+              'hangman': 'hangman',
+              'noughts-and-crosses': 'noughts-and-crosses',
+              'speed-builder': 'speed-builder',
+              'vocabulary-mining': 'vocabulary-mining',
+              'gem-collector': 'vocabulary-mining', // Legacy mapping
+              'translation-tycoon': 'speed-builder', // Legacy mapping
+              'conjugation-duel': 'conjugation-duel',
+              'detective-listening': 'detective-listening',
+              'verb-quest': 'verb-quest',
+              'word-scramble': 'word-scramble',
+              'word-guesser': 'word-scramble', // Word guesser uses word scramble logic
+              'sentence-towers': 'sentence-towers',
+              'sentence-builder': 'speed-builder', // Legacy mapping
+            };
+
+            const gamePath = gamePathMap[gameType] || 'memory-game';
+
+            // Build URL parameters from assignment vocabulary criteria
+            const params = new URLSearchParams();
+
+            // Language mapping (default to Spanish if not specified)
+            const language = vocabularyConfig.language || 'es';
+            params.set('lang', language);
+
+            // Level (curriculum level)
+            const level = assignmentData.curriculum_level || assignment?.curriculum_level || 'KS3';
+            params.set('level', level);
+
+            // Category and subcategory
+            const category = vocabularyConfig.category || vocabularyConfig.theme || 'basics_core_language';
+            const subcategory = vocabularyConfig.subcategory || vocabularyConfig.topic || 'greetings_introductions';
+            params.set('cat', category);
+            params.set('subcat', subcategory);
+
+            // Theme (default to 'default')
+            const theme = vocabularyConfig.theme || 'default';
+            params.set('theme', theme);
+
+            // Add assignment mode parameters
+            params.set('assignment', assignmentId);
+            params.set('mode', 'assignment');
+            params.set('preview', 'true');
+
+            const gameUrl = `/games/${gamePath}?${params.toString()}`;
+            console.log('🚀 Redirecting to assignment game with new URL structure:', gameUrl);
+            router.push(gameUrl);
+
+          } catch (error) {
+            console.error('Error building assignment URL:', error);
+            // Fallback to old method
+            const gamePathMap: Record<string, string> = {
+              'memory-game': 'memory-game',
+              'memory-match': 'memory-game',
+              'vocab-blast': 'vocab-blast',
+              'word-blast': 'word-blast',
+              'hangman': 'hangman',
+              'noughts-and-crosses': 'noughts-and-crosses',
+              'speed-builder': 'speed-builder',
+              'vocabulary-mining': 'vocabulary-mining',
+              'gem-collector': 'vocabulary-mining',
+              'translation-tycoon': 'speed-builder',
+              'conjugation-duel': 'conjugation-duel',
+              'detective-listening': 'detective-listening',
+              'verb-quest': 'verb-quest',
+              'word-scramble': 'word-scramble',
+              'word-guesser': 'word-scramble',
+              'sentence-towers': 'sentence-towers',
+              'sentence-builder': 'speed-builder'
+            };
+
+            const gamePath = gamePathMap[gameType] || 'memory-game';
+            const gameUrl = `/games/${gamePath}?assignment=${assignmentId}&mode=assignment&preview=true`;
+            console.log('Fallback: Redirecting to single game:', gameUrl);
+            router.push(gameUrl);
+          }
         } else {
           console.error('Game type is undefined for assignment:', assignment);
           alert(`Unable to determine game type for this assignment. Game type found: ${gameType}`);

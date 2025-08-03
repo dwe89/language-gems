@@ -103,10 +103,22 @@ export default function GemCollectorAnalyticsPage() {
         const a = document.createElement('a');
         a.href = url;
         a.download = `gem-collector-analytics-${new Date().toISOString().split('T')[0]}.csv`;
+        a.style.display = 'none';
+        
         document.body.appendChild(a);
         a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
+        
+        // Safe cleanup with timeout to ensure click event is processed
+        setTimeout(() => {
+          try {
+            window.URL.revokeObjectURL(url);
+            if (a.parentNode === document.body) {
+              document.body.removeChild(a);
+            }
+          } catch (removeError) {
+            console.warn('Failed to remove download link from DOM:', removeError);
+          }
+        }, 100);
       }
     } catch (error) {
       console.error('Error exporting data:', error);

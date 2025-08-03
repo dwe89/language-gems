@@ -10,7 +10,7 @@ import { supabaseBrowser } from '../../../../../components/auth/AuthProvider';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { 
-  ArrowLeft, Save, Loader2, Settings, BookOpen, Users, GraduationCap
+  ArrowLeft, Save, Loader2, Settings, BookOpen, Users, GraduationCap, ChevronRight, Sparkles
 } from 'lucide-react';
 import { Button } from "../../../../../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../../../../components/ui/card";
@@ -150,11 +150,15 @@ export default function EditClassPage({ params }: { params: { classId: string } 
   
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-        <div className="flex items-center justify-center h-96">
-          <div className="flex flex-col items-center space-y-4">
-            <div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-200 border-t-indigo-600"></div>
-            <p className="text-slate-600 font-medium">Loading class details...</p>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50/30 to-purple-50/30 p-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="bg-white/80 backdrop-blur-sm rounded-3xl border border-white/20 shadow-2xl p-16 text-center">
+            <div className="relative mb-8">
+              <div className="animate-spin rounded-full h-16 w-16 border-4 border-indigo-200 border-t-indigo-600 mx-auto"></div>
+              <div className="absolute inset-0 rounded-full h-16 w-16 border-4 border-transparent border-r-purple-400 animate-pulse mx-auto"></div>
+            </div>
+            <h2 className="text-2xl font-bold text-slate-900 mb-2">Loading Class Settings</h2>
+            <p className="text-slate-600 font-medium">Preparing your class configuration...</p>
           </div>
         </div>
       </div>

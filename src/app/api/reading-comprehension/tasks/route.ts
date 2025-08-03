@@ -10,6 +10,18 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     
+    console.log('Reading Comprehension API - Received parameters:', {
+      language: searchParams.get('language'),
+      curriculum_level: searchParams.get('curriculum_level'),
+      exam_board: searchParams.get('exam_board'),
+      category: searchParams.get('category'),
+      subcategory: searchParams.get('subcategory'),
+      difficulty: searchParams.get('difficulty'),
+      theme_topic: searchParams.get('theme_topic'),
+      limit: searchParams.get('limit'),
+      random: searchParams.get('random')
+    });
+    
     let query = supabase
       .from('reading_comprehension_tasks')
       .select(`
@@ -35,6 +47,16 @@ export async function GET(request: NextRequest) {
     if (subcategory) query = query.eq('subcategory', subcategory);
     if (difficulty) query = query.eq('difficulty', difficulty);
     if (themeTopic) query = query.eq('theme_topic', themeTopic);
+
+    console.log('Reading Comprehension API - Applied filters:', {
+      language: language || 'none',
+      curriculum_level: curriculumLevel || 'none',
+      exam_board: examBoard || 'none',
+      category: category || 'none',
+      subcategory: subcategory || 'none',
+      difficulty: difficulty || 'none',
+      theme_topic: themeTopic || 'none'
+    });
 
     // Order and limit
     query = query.order('created_at', { ascending: false });

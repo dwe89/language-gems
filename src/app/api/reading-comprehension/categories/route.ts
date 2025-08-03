@@ -46,21 +46,8 @@ const getCategoryIcon = (categoryId: string): string => {
 
 async function loadCategoriesFromDatabase() {
   try {
-    // Define categories and subcategories suitable for reading comprehension
-    const readingComprehensionCategories = {
-      'clothes_shopping': ['clothes_accessories'],
-      'daily_life': ['daily_routine'],
-      'food_drink': ['food_drink_vocabulary', 'meals', 'ordering_cafes_restaurants'],
-      'free_time_leisure': ['hobbies_interests', 'social_activities', 'sports_ball_games', 'sports_indoor', 'sports_outdoor'],
-      'health_lifestyle': ['at_the_doctors', 'healthy_living', 'parts_of_body'],
-      'holidays_travel_culture': ['accommodation', 'countries', 'festivals_celebrations', 'holiday_activities', 'nationalities', 'transport', 'travel_destinations_types', 'weathers'],
-      'home_local_area': ['chores', 'directions', 'furniture', 'household_items', 'house_rooms', 'places_in_town'],
-      'identity_personal_life': ['family_friends', 'feelings_emotions', 'personal_information', 'pets', 'physical_personality_descriptions', 'relationships'],
-      'nature_environment': ['environmental_issues', 'farm_animals', 'insects_bugs', 'landscapes_features', 'plants', 'sea_animals', 'seasons', 'wild_animals'],
-      'school_jobs_future': ['classroom_objects', 'future_ambitions', 'professions_jobs', 'qualities_skills', 'school_life', 'school_rules', 'school_subjects'],
-      'social_global_issues': ['current_affairs_world_events', 'global_problems_solutions', 'human_rights', 'social_issues'],
-      'technology_media': ['film', 'internet_digital_devices', 'mobile_phones_social_media', 'music', 'online_safety', 'tv']
-    };
+    // Load all categories and subcategories from database - no hardcoded restrictions
+    // This allows the system to be flexible and use whatever vocabulary exists
 
     // Load KS3 categories from database to verify they exist
     // Handle pagination to get all records (Supabase has a 1000 record default limit)
@@ -100,19 +87,18 @@ async function loadCategoriesFromDatabase() {
       existingCombinations.add(`${item.category}:${item.subcategory}`);
     });
 
-    // Build formatted categories only for those suitable for reading comprehension
-    const formattedKS3Categories = Object.entries(readingComprehensionCategories).map(([categoryId, allowedSubcategories]) => {
-      // Filter subcategories to only include those that exist in the database
-      const existingSubcategories = allowedSubcategories.filter(subcategoryId =>
-        existingCombinations.has(`${categoryId}:${subcategoryId}`)
-      );
+    // Build formatted categories from all available data in database
+    const categoryMap = new Map<string, Set<string>>();
 
-      // Only include category if it has at least one existing subcategory
-      if (existingSubcategories.length === 0) {
-        return null;
+    ks3Categories?.forEach((item: any) => {
+      if (!categoryMap.has(item.category)) {
+        categoryMap.set(item.category, new Set());
       }
+      categoryMap.get(item.category)?.add(item.subcategory);
+    });
 
-      const subcategories = existingSubcategories.map(subcategoryId => ({
+    const formattedKS3Categories = Array.from(categoryMap.entries()).map(([categoryId, subcategorySet]) => {
+      const subcategories = Array.from(subcategorySet).map(subcategoryId => ({
         id: subcategoryId,
         name: subcategoryId,
         displayName: formatDisplayName(subcategoryId),
@@ -126,7 +112,13 @@ async function loadCategoriesFromDatabase() {
         icon: getCategoryIcon(categoryId),
         subcategories
       };
-    }).filter(Boolean); // Remove null entries
+    });
+
+    // Sort categories and subcategories
+    formattedKS3Categories.sort((a, b) => a.displayName.localeCompare(b.displayName));
+    formattedKS3Categories.forEach(category => {
+      category.subcategories.sort((a, b) => a.displayName.localeCompare(b.displayName));
+    });
 
     // Load KS4 themes
     const { data: ks4Themes, error: ks4Error } = await supabase
@@ -168,7 +160,7 @@ async function loadCategoriesFromDatabase() {
 export async function GET(request: NextRequest) {
   try {
     const now = Date.now();
-    
+
     // Check if we have valid cached data
     if (categoriesCache && (now - categoriesCache.lastUpdated) < CACHE_DURATION) {
       return NextResponse.json({
@@ -180,7 +172,7 @@ export async function GET(request: NextRequest) {
 
     // Load fresh data from database
     const categories = await loadCategoriesFromDatabase();
-    
+
     // Update cache
     categoriesCache = {
       ...categories,
@@ -196,8 +188,8 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Error in categories API:', error);
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         error: 'Failed to load categories',
         categories: null
       },

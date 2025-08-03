@@ -30,13 +30,12 @@ export default function ClassesPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newClass, setNewClass] = useState({
     name: '',
-    description: '',
     year_group: ''
   });
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  
+
   useEffect(() => {
     // Set a maximum loading timeout to prevent infinite loading
     const maxLoadingTimeout = setTimeout(() => {
@@ -46,7 +45,7 @@ export default function ClassesPage() {
         setError('Authentication required. Please refresh the page.');
       }
     }, 6000); // Reduced to 6 seconds for better UX
-    
+
     if (user && !authLoading) {
       console.log('User found, loading classes');
       loadClasses();
@@ -57,7 +56,7 @@ export default function ClassesPage() {
     } else {
       console.log('Auth still loading, waiting...');
     }
-    
+
     return () => clearTimeout(maxLoadingTimeout);
   }, [user, authLoading]);
 
@@ -66,24 +65,24 @@ export default function ClassesPage() {
       setLoading(false);
       return;
     }
-    
+
     try {
       setLoading(true);
       setError(null);
-      
+
       console.log('Loading classes for user:', user.id);
-      
+
       // Query the database for classes created by this teacher
       const { data: classesData, error: classesError } = await supabaseBrowser
         .from('classes')
         .select('*')
         .eq('teacher_id', user.id);
-      
+
       console.log('Classes query result:', { classesData, classesError });
-      
+
       if (classesError) {
         console.error('Classes query error:', classesError);
-        
+
         // If table doesn't exist, create sample data
         if (classesError.code === 'PGRST116' || classesError.message?.includes('does not exist')) {
           console.log('Classes table does not exist, creating sample data');
@@ -114,48 +113,48 @@ export default function ClassesPage() {
           setLoading(false);
           return;
         }
-        
+
         throw classesError;
       }
-      
+
       if (!classesData || classesData.length === 0) {
         console.log('No classes found for teacher');
         setClasses([]);
         setLoading(false);
         return;
       }
-      
+
       console.log(`Found ${classesData.length} classes`);
-      
+
       // Get student counts for each class
       const classIds = classesData.map(c => c.id);
       console.log('Class IDs to query:', classIds);
-      
+
       const { data: enrollmentsData, error: enrollmentsError } = await supabaseBrowser
         .from('class_enrollments')
         .select('class_id')
         .in('class_id', classIds)
         .eq('status', 'active');
-      
+
       console.log('Enrollments query result:', { enrollmentsData, enrollmentsError });
-      
+
       if (enrollmentsError) {
         console.error('Error fetching enrollments:', enrollmentsError);
         // Continue without enrollment data if that table doesn't exist
       }
-      
+
       // Calculate student count per class
       const studentCounts = (enrollmentsData || []).reduce((acc, enrollment) => {
         acc[enrollment.class_id] = (acc[enrollment.class_id] || 0) + 1;
         return acc;
       }, {} as Record<string, number>);
-      
+
       // Add student counts to classes
       const classesWithCounts = classesData.map(classItem => ({
         ...classItem,
         student_count: studentCounts[classItem.id] || 0
       }));
-      
+
       console.log('Final classes with counts:', classesWithCounts);
       setClasses(classesWithCounts);
     } catch (error) {
@@ -169,48 +168,48 @@ export default function ClassesPage() {
   const handleCreateClass = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
-    
+
     try {
       setIsSubmitting(true);
       setError(null);
-      
+
       // Validate inputs
       if (!newClass.name.trim()) {
         throw new Error('Class name is required');
       }
-      
+
       if (!newClass.year_group.trim()) {
         throw new Error('Year group/grade is required');
       }
-      
+
       // Create the new class in the database
       const newClassData = {
         name: newClass.name,
-        description: newClass.description || null,
+        description: null,
         level: 'beginner', // Default level
         year_group: newClass.year_group,
         teacher_id: user.id,
         created_at: new Date().toISOString()
       };
-      
+
       const { data, error } = await supabaseBrowser
         .from('classes')
         .insert([newClassData])
         .select();
-      
+
       if (error) {
         throw error;
       }
-      
+
       // Add the new class to the state with the ID from the database
       if (data && data.length > 0) {
-        setClasses([...classes, { 
-          ...data[0], 
-          student_count: 0 
+        setClasses([...classes, {
+          ...data[0],
+          student_count: 0
         }]);
-        
+
         // Reset form and close modal
-        setNewClass({ name: '', description: '', year_group: '' });
+        setNewClass({ name: '', year_group: '' });
         setShowCreateModal(false);
       }
     } catch (error: any) {
@@ -221,7 +220,7 @@ export default function ClassesPage() {
     }
   };
 
-  
+
   const handleDeleteClass = async (classId: string) => {
     if (!confirm('Are you sure you want to delete this class? This will also delete all related assignments, enrollments, and announcements. This cannot be undone.')) {
       return;
@@ -310,15 +309,14 @@ export default function ClassesPage() {
 
   // Filter and sort classes
   const filteredClasses = classes.filter(classItem => {
-    const matchesSearch = classItem.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      classItem.description?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = classItem.name.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesSearch;
   });
 
   // ClassCard Component
   const ClassCard = ({ classData, onDelete }: { classData: ClassData; onDelete: (id: string) => void }) => (
     <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-slate-200/60 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group">
-      <div className="p-6">
+      <div className="p-6 flex flex-col h-full">
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center space-x-3">
             <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
@@ -330,33 +328,32 @@ export default function ClassesPage() {
             </div>
           </div>
         </div>
-        
-        {classData.description && (
-          <p className="text-slate-600 text-sm mb-4 line-clamp-2 leading-relaxed">{classData.description}</p>
-        )}
-        
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center space-x-2">
-            <Users className="h-4 w-4 text-slate-400" />
-            <span className="text-sm font-medium text-slate-600">
-              {classData.student_count || 0} student{(classData.student_count || 0) !== 1 ? 's' : ''}
-            </span>
-          </div>
-          <div className="text-xs text-slate-400">
-            Created {new Date(classData.created_at).toLocaleDateString()}
-          </div>
+
+
+
+        {/* Student count and creation date - fixed positioning */}
+        <div className="flex items-center space-x-2 mb-2">
+          <Users className="h-4 w-4 text-slate-400" />
+          <span className="text-sm font-medium text-slate-600">
+            {classData.student_count || 0} student{(classData.student_count || 0) !== 1 ? 's' : ''}
+          </span>
         </div>
-        
-        <div className="flex gap-3">
-          <Link 
+
+        <div className="text-xs text-slate-400 mb-6">
+          Created {new Date(classData.created_at).toLocaleDateString()}
+        </div>
+
+        {/* Bottom section with button and delete icon */}
+        <div className="mt-auto flex items-center justify-between">
+          <Link
             href={`/dashboard/classes/${classData.id}`}
-            className="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-4 py-3 rounded-xl font-semibold transition-all duration-200 text-center shadow-lg hover:shadow-xl"
+            className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl"
           >
             View Class
           </Link>
-          <button 
+          <button
             onClick={() => onDelete(classData.id)}
-            className="p-3 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-xl transition-all duration-200 border border-red-200/50 hover:border-red-300"
+            className="p-3 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-xl transition-all duration-200 border border-red-200/50 hover:border-red-300 ml-3"
             aria-label="Delete class"
           >
             <Trash2 size={18} />
@@ -397,10 +394,10 @@ export default function ClassesPage() {
                 />
                 <Search className="absolute left-4 top-3.5 text-slate-400" size={18} />
               </div>
-              
+
 
             </div>
-            
+
             {/* Create Class Button */}
             <button
               onClick={() => setShowCreateModal(true)}
@@ -472,7 +469,7 @@ export default function ClassesPage() {
                     ✕
                   </button>
                 </div>
-                
+
                 <form onSubmit={handleCreateClass} className="space-y-6">
                   <div>
                     <label className="block text-sm font-semibold text-slate-700 mb-2">
@@ -487,22 +484,11 @@ export default function ClassesPage() {
                       onChange={(e) => setNewClass({ ...newClass, name: e.target.value })}
                     />
                   </div>
-                  
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-2">
-                      Description
-                    </label>
-                    <textarea
-                      className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 resize-none"
-                      rows={3}
-                      placeholder="Brief description of the class..."
-                      value={newClass.description}
-                      onChange={(e) => setNewClass({ ...newClass, description: e.target.value })}
-                    />
-                  </div>
-                  
+
+
+
                   <div className="grid grid-cols-1 gap-4">
-                    
+
                     <div>
                       <label className="block text-sm font-semibold text-slate-700 mb-2">
                         Year Group *
@@ -517,7 +503,7 @@ export default function ClassesPage() {
                       />
                     </div>
                   </div>
-                  
+
                   <div className="flex gap-3 pt-4">
                     <button
                       type="button"

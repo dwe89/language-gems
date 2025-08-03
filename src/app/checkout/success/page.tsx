@@ -24,9 +24,21 @@ export default function CheckoutSuccessPage() {
           const link = document.createElement('a');
           link.href = data.downloadUrl;
           link.download = productName;
+          link.style.display = 'none';
+          
           document.body.appendChild(link);
           link.click();
-          document.body.removeChild(link);
+          
+          // Safe cleanup with timeout
+          setTimeout(() => {
+            try {
+              if (link.parentNode === document.body) {
+                document.body.removeChild(link);
+              }
+            } catch (removeError) {
+              console.warn('Failed to remove download link from DOM:', removeError);
+            }
+          }, 100);
         }
       } else {
         const errorData = await response.json();

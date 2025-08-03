@@ -9,6 +9,7 @@ import { LogOut, User, Settings } from 'lucide-react';
 import SmartAuthButtons from '../../components/SmartAuthButtons';
 
 export default function MainNavigation() {
+  console.log('MainNavigation component loaded!');
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);

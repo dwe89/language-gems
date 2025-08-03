@@ -45,9 +45,10 @@ export default function VocabBlastPage() {
 
   // Get URL parameters for assignment mode
   const assignmentId = searchParams?.get('assignment');
+  const mode = searchParams?.get('mode');
 
   // If assignment mode, render assignment wrapper
-  if (assignmentId) {
+  if (assignmentId && mode === 'assignment') {
     return (
       <VocabBlastAssignmentWrapper
         assignmentId={assignmentId}

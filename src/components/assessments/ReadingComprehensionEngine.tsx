@@ -160,14 +160,24 @@ export default function ReadingComprehensionEngine({
         const params = new URLSearchParams({
           language: language,
           difficulty: difficulty,
-          ...(theme && { theme_topic: theme }),
-          ...(topic && { category: topic }),
+          ...(theme && { category: theme }),
+          ...(topic && { subcategory: topic }),
           limit: '1',
           random: 'true'
         });
 
+        console.log('ReadingComprehensionEngine - Loading with criteria:', {
+          language,
+          difficulty,
+          theme,
+          topic,
+          params: params.toString()
+        });
+
         const response = await fetch(`/api/reading-comprehension/tasks?${params.toString()}`);
         const data = await response.json();
+        
+        console.log('ReadingComprehensionEngine - API response:', data);
 
         if (data.tasks && data.tasks.length > 0) {
           const task = data.tasks[0];

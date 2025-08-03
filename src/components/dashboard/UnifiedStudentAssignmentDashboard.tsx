@@ -183,22 +183,103 @@ export default function UnifiedStudentAssignmentDashboard() {
     }
   };
 
-  const handleStartAssignment = (assignmentId: string, gameType: string) => {
-    // Navigate to the appropriate game assignment route
-    const gameRoutes: Record<string, string> = {
-      'hangman': '/games/hangman/assignment',
-      'memory-game': '/games/memory-game/assignment',
-      'word-scramble': '/games/word-scramble/assignment',
-      'vocab-blast': '/games/vocab-blast/assignment',
-      'word-guesser': '/games/word-guesser/assignment',
-      'noughts-crosses': '/games/noughts-crosses/assignment'
-    };
+  const handleStartAssignment = async (assignmentId: string, gameType: string) => {
+    try {
+      // Fetch assignment details to get vocabulary criteria
+      const response = await fetch(`/api/assignments/${assignmentId}/vocabulary`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch assignment details');
+      }
 
-    const route = gameRoutes[gameType];
-    if (route) {
-      window.location.href = `${route}/${assignmentId}`;
-    } else {
-      console.error('Unknown game type:', gameType);
+      const data = await response.json();
+      const assignment = data.assignment;
+      const config = assignment.config || {};
+
+      // Check if it's an assessment assignment
+      if (assignment.game_type === 'assessment') {
+        // For assessment assignments, navigate to the assessment assignment page
+        window.location.href = `/assessments/assignment/${assignmentId}`;
+        return;
+      }
+
+      // Check if it's a multi-game assignment
+      const isMultiGame = config.multiGame && config.selectedGames?.length > 1;
+      if (isMultiGame) {
+        // For multi-game assignments, navigate to the multi-game assignment page
+        window.location.href = `/games/multi-game?assignment=${assignmentId}&mode=assignment`;
+        return;
+      }
+
+      // Extract vocabulary criteria from assignment config
+      const vocabularyConfig = config.vocabularyConfig || config;
+
+      // Map game types to their URL paths
+      const gameRoutes: Record<string, string> = {
+        'hangman': '/games/hangman',
+        'memory-game': '/games/memory-game',
+        'word-scramble': '/games/word-scramble',
+        'vocab-blast': '/games/vocab-blast',
+        'word-guesser': '/games/word-guesser',
+        'noughts-crosses': '/games/noughts-crosses',
+        'vocabulary-mining': '/games/vocabulary-mining',
+        'word-blast': '/games/word-blast',
+        'detective-listening': '/games/detective-listening',
+        'multi-game': '/games/multi-game'
+      };
+
+      const gamePath = gameRoutes[gameType];
+      if (!gamePath) {
+        console.error('Unknown game type:', gameType);
+        return;
+      }
+
+      // Build URL parameters from assignment vocabulary criteria
+      const params = new URLSearchParams();
+
+      // Language mapping (default to Spanish if not specified)
+      const language = vocabularyConfig.language || 'es';
+      params.set('lang', language);
+
+      // Level (curriculum level)
+      const level = assignment.curriculum_level || 'KS3';
+      params.set('level', level);
+
+      // Category and subcategory
+      const category = vocabularyConfig.category || vocabularyConfig.theme || 'basics_core_language';
+      const subcategory = vocabularyConfig.subcategory || vocabularyConfig.topic || 'greetings_introductions';
+      params.set('cat', category);
+      params.set('subcat', subcategory);
+
+      // Theme (default to 'default')
+      const theme = vocabularyConfig.theme || 'default';
+      params.set('theme', theme);
+
+      // Add assignment mode parameters
+      params.set('assignment', assignmentId);
+      params.set('mode', 'assignment');
+
+      const gameUrl = `${gamePath}?${params.toString()}`;
+      console.log('🚀 Navigating to assignment game:', gameUrl);
+      window.location.href = gameUrl;
+
+    } catch (error) {
+      console.error('Error starting assignment:', error);
+      // Fallback to old method if new method fails
+      const gameRoutes: Record<string, string> = {
+        'hangman': '/games/hangman/assignment',
+        'memory-game': '/games/memory-game/assignment',
+        'word-scramble': '/games/word-scramble/assignment',
+        'vocab-blast': '/games/vocab-blast/assignment',
+        'word-guesser': '/games/word-guesser/assignment',
+        'noughts-crosses': '/games/noughts-crosses/assignment'
+      };
+
+      const route = gameRoutes[gameType];
+      if (route) {
+        window.location.href = `${route}/${assignmentId}`;
+      } else {
+        console.error('Unknown game type:', gameType);
+      }
     }
   };
 

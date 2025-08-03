@@ -24,7 +24,22 @@ export async function middleware(req: NextRequest) {
   if (hostname.startsWith('students.')) {
     // Rewrite to serve student portal content
     const url = req.nextUrl.clone();
-    url.pathname = `/student${url.pathname}`;
+    
+    // Special handling for student dashboard routes
+    if (url.pathname === '/student-dashboard' || url.pathname.startsWith('/student-dashboard/')) {
+      // Keep the path as-is for student dashboard routes
+      url.pathname = url.pathname;
+    } else if (url.pathname === '/dashboard') {
+      // Redirect /dashboard to /student-dashboard on student subdomain
+      url.pathname = '/student-dashboard';
+    } else if (url.pathname === '/') {
+      // Root of student subdomain goes to student portal
+      url.pathname = '/student';
+    } else {
+      // All other routes get prefixed with /student
+      url.pathname = `/student${url.pathname}`;
+    }
+    
     return NextResponse.rewrite(url);
   }
   
@@ -199,8 +214,14 @@ export async function middleware(req: NextRequest) {
     // Check if student trying to access teacher routes
     if (session && (path === '/dashboard' || path.startsWith('/dashboard/'))) {
       if (userRole === 'student') {
-        const redirectUrl = new URL('/student-dashboard', req.url);
-        return NextResponse.redirect(redirectUrl);
+        // Redirect students to student dashboard, considering subdomain context
+        if (hostname.startsWith('students.')) {
+          const redirectUrl = new URL('/student-dashboard', req.url);
+          return NextResponse.redirect(redirectUrl);
+        } else {
+          const redirectUrl = new URL('https://students.' + hostname + '/student-dashboard');
+          return NextResponse.redirect(redirectUrl);
+        }
       }
     }
 
@@ -225,8 +246,15 @@ export async function middleware(req: NextRequest) {
         const isPreviewMode = url.searchParams.get('preview') === 'true';
 
         if (!isPreviewMode) {
-          const redirectUrl = new URL('/dashboard', req.url);
-          return NextResponse.redirect(redirectUrl);
+          // Redirect teachers to main site dashboard
+          if (hostname.startsWith('students.')) {
+            const mainSiteUrl = hostname.replace('students.', '');
+            const redirectUrl = new URL('https://' + mainSiteUrl + '/dashboard');
+            return NextResponse.redirect(redirectUrl);
+          } else {
+            const redirectUrl = new URL('/dashboard', req.url);
+            return NextResponse.redirect(redirectUrl);
+          }
         }
       }
     }
@@ -267,10 +295,30 @@ export async function middleware(req: NextRequest) {
     }
   }
 
-  // If on auth routes and already logged in, redirect to dashboard
+  // If on auth routes and already logged in, redirect to appropriate dashboard
   if (isAuthRoute && session) {
     const redirectUrl = req.nextUrl.clone();
-    redirectUrl.pathname = userRole === 'student' ? '/student-dashboard' : '/account';
+    
+    if (userRole === 'student') {
+      // Students go to student dashboard on appropriate domain
+      if (hostname.startsWith('students.')) {
+        redirectUrl.pathname = '/student-dashboard';
+      } else {
+        // Redirect to student subdomain
+        const studentUrl = new URL('https://students.' + hostname + '/student-dashboard');
+        return NextResponse.redirect(studentUrl);
+      }
+    } else {
+      // Teachers/admins go to main site
+      if (hostname.startsWith('students.')) {
+        const mainSiteUrl = hostname.replace('students.', '');
+        const mainUrl = new URL('https://' + mainSiteUrl + '/account');
+        return NextResponse.redirect(mainUrl);
+      } else {
+        redirectUrl.pathname = '/account';
+      }
+    }
+    
     return NextResponse.redirect(redirectUrl);
   }
 

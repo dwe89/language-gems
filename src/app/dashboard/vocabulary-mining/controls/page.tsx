@@ -217,8 +217,22 @@ export default function TeacherControlsPage() {
     const a = document.createElement('a');
     a.href = url;
     a.download = `vocabulary-progress-report-${new Date().toISOString().split('T')[0]}.csv`;
+    a.style.display = 'none';
+    
+    document.body.appendChild(a);
     a.click();
-    window.URL.revokeObjectURL(url);
+    
+    // Safe cleanup with timeout
+    setTimeout(() => {
+      try {
+        window.URL.revokeObjectURL(url);
+        if (a.parentNode === document.body) {
+          document.body.removeChild(a);
+        }
+      } catch (removeError) {
+        console.warn('Failed to remove download link from DOM:', removeError);
+      }
+    }, 100);
   };
 
   const generateProgressReport = () => {

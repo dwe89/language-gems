@@ -32,6 +32,7 @@ export interface AssignmentData {
   due_date: string;
   class_name?: string;
   vocabulary_criteria: any;
+  curriculum_level?: string;
 }
 
 export interface GameProgress {
@@ -90,7 +91,8 @@ export const useAssignmentVocabulary = (assignmentId: string) => {
             vocabulary_assignment_list_id,
             vocabulary_criteria,
             due_date,
-            class_id
+            class_id,
+            curriculum_level
           `)
           .eq('id', assignmentId)
           .single();

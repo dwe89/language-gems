@@ -1,129 +1,135 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '../../components/auth/AuthProvider';
-import TeacherNavigation from '../../components/TeacherNavigation';
 import Link from 'next/link';
 import {
-  BookOpen, PenTool, BarChart2, Users, CheckCircle, Plus, Crown, Lock,
-  TrendingUp, Calendar, FileText, Award, Settings, Zap, Upload, Trophy,
-  Gamepad2, MinusCircle, GraduationCap, Pickaxe
+  BookOpen,
+  PenTool,
+  BarChart2,
+  Users,
+  CheckCircle,
+  Plus,
+  MinusCircle,
+  GraduationCap,
+  Sparkles,
+  ArrowRight,
+  Target,
+  Upload,
+  Gamepad2,
+  Trophy,
+  Award,
 } from 'lucide-react';
+import { useAuth } from '../../components/auth/AuthProvider';
 import { supabaseBrowser } from '../../components/auth/AuthProvider';
 
+// The main page component that handles authentication and renders the dashboard
 export default function DashboardPage() {
   const { user, isLoading: authLoading } = useAuth();
   
-  useEffect(() => {
-    console.log('User in dashboard:', {
-      id: user?.id,
-      email: user?.email,
-      metadata: user?.user_metadata,
-      role: user?.user_metadata?.role
-    });
-  }, [user]);
-  
-  // If auth is still loading, show a loading spinner
+  // Display a loading spinner while authentication is in progress
   if (authLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-teal-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading dashboard...</p>
+          <div className="relative">
+            <div className="animate-spin rounded-full h-16 w-16 border-4 border-indigo-200 border-t-indigo-600 mx-auto mb-6"></div>
+          </div>
+          <p className="text-slate-600 font-medium">Loading your dashboard...</p>
         </div>
       </div>
     );
   }
 
-  // If user is still null after auth loading is complete, show error
-  if (!user && !authLoading) {
+  // If the user is not authenticated after loading, prompt them to sign in
+  if (!user) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold text-gray-800 mb-4">Authentication Required</h2>
-          <p className="text-gray-600 mb-6">Please sign in to access your dashboard</p>
-          <Link 
-            href="/auth/login"
-            className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-          >
-            Sign In
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+        <div className="text-center p-12 bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl border border-white/20 max-w-md">
+          <div className="w-16 h-16 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
+            <GraduationCap className="h-8 w-8 text-white" />
+          </div>
+          <h2 className="text-2xl font-bold text-slate-900 mb-3">Welcome Back</h2>
+          <p className="text-slate-600 mb-8">Please sign in to access your teaching dashboard</p>
+          <Link href="/auth/login" className="w-full px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 hover:shadow-lg hover:scale-105 inline-block">
+            Sign In to Continue
           </Link>
         </div>
       </div>
     );
   }
 
-  // This route is only for teachers - students should use /student-dashboard
-  return <TeacherDashboard username={user?.user_metadata?.name || user?.email?.split('@')[0] || 'Teacher'} />;
+  // Render the dashboard for authenticated teachers
+  return (
+    <TeacherDashboard username={user?.user_metadata?.name || user?.email?.split('@')[0] || 'Teacher'} />
+  );
 }
 
-function TeacherDashboard({ username = 'Ms. Carter' }: { username?: string }) {
+// The main dashboard content for teachers
+function TeacherDashboard({ username }: { username: string }) {
   const { user } = useAuth();
   const [helpWidgetVisible, setHelpWidgetVisible] = useState(false);
   const [stats, setStats] = useState({
+    totalClasses: 0,
     activeStudents: 0,
     activeAssignments: 0,
-    completionRate: 0,
+    completionRate: 'N/A',
+    totalWords: 0,
     loading: true
   });
 
   useEffect(() => {
     if (!user) return;
 
+    // Fetch dashboard data with a single, more efficient query
     async function fetchDashboardData() {
       try {
-        // First, check if the user has any classes to determine if we should show the welcome widget
-        const { data: classesData, error: classesError } = await supabaseBrowser
+        const { data, error } = await supabaseBrowser
           .from('classes')
-          .select('id')
-          .eq('teacher_id', user!.id);
-
-        if (classesError) {
-          console.error('Error fetching classes for welcome widget:', classesError);
-        }
-
-        // Show welcome widget only if user has no classes
-        if (classesData) {
-          setHelpWidgetVisible(classesData.length === 0);
-        }
-
-        // Fetch total enrolled students count
-        const { data: enrollmentsData, error: enrollmentsError } = await supabaseBrowser
-          .from('class_enrollments')
           .select(`
-            student_id,
-            classes!inner(id, teacher_id)
+            id,
+            class_enrollments(student_id),
+            assignments(id)
           `)
-          .eq('classes.teacher_id', user!.id);
+          .eq('teacher_id', user.id);
 
-        if (enrollmentsError) {
-          console.error('Error fetching enrollments:', enrollmentsError);
+        if (error) {
+          console.error('Error fetching dashboard data:', error);
+          setStats(prev => ({ ...prev, loading: false }));
+          return;
         }
+        
+        // Flatten the data for easier processing
+        const allEnrollments = data.flatMap(cls => cls.class_enrollments);
+        const allAssignments = data.flatMap(cls => cls.assignments);
 
         // Get unique student count
-        const uniqueStudents = new Set(enrollmentsData?.map(e => e.student_id) || []);
+        const uniqueStudents = new Set(allEnrollments.map(e => e.student_id));
         const activeStudents = uniqueStudents.size;
 
-        // Fetch assignments count
-        const { data: assignmentsData, error: assignmentsError } = await supabaseBrowser
-          .from('assignments')
-          .select('id')
-          .eq('created_by', user!.id);
+        // Get assignment count
+        const activeAssignments = allAssignments.length;
 
-        if (assignmentsError) {
-          console.error('Error fetching assignments:', assignmentsError);
-        }
+        // Get total classes count
+        const totalClasses = data.length;
 
-        // Calculate completion rate (placeholder calculation)
-        // In a real app, you'd want to calculate this based on actual assignment submissions
-        const completionRate = Math.round(Math.random() * 30 + 70); // Placeholder: 70-100%
+        // Calculate a placeholder completion rate (to be replaced with real logic)
+        const completionRate = activeAssignments > 0 ? `${Math.round(Math.random() * 30 + 70)}%` : 'N/A';
+
+        // Placeholder for total words learned
+        const totalWords = Math.floor(Math.random() * 500) + 100;
 
         setStats({
+          totalClasses,
           activeStudents,
-          activeAssignments: assignmentsData?.length || 0,
+          activeAssignments,
           completionRate,
+          totalWords,
           loading: false
         });
+
+        // Show welcome widget if the user has no classes
+        setHelpWidgetVisible(data.length === 0);
+
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
         setStats(prev => ({ ...prev, loading: false }));
@@ -134,195 +140,137 @@ function TeacherDashboard({ username = 'Ms. Carter' }: { username?: string }) {
   }, [user]);
   
   return (
-    <div className="min-h-screen">
-      {/* Welcome Section */}
-      <section className="relative overflow-hidden">
-        <div className="max-w-7xl mx-auto px-6 py-12">
-          <div className="relative bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 rounded-2xl p-8 shadow-2xl overflow-hidden">
-            {/* Background Pattern */}
-            <div className="absolute inset-0 bg-white/10 backdrop-blur-sm"></div>
-            <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full -translate-y-48 translate-x-48"></div>
-            <div className="absolute bottom-0 left-0 w-64 h-64 bg-white/5 rounded-full translate-y-32 -translate-x-32"></div>
-            
-            <div className="relative z-10">
-              <div className="mb-8">
-                <h2 className="text-3xl md:text-4xl font-bold text-white mb-3">
-                  Welcome back, {username}! ✨
-                </h2>
-                <p className="text-indigo-100 text-lg max-w-2xl">
-                  Let's create amazing learning experiences for your students today
-                </p>
-              </div>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
-                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="text-2xl font-bold text-white mb-1">
-                        {stats.loading ? "..." : stats.activeStudents.toString()}
-                      </div>
-                      <div className="text-indigo-100 text-sm font-medium">Active Students</div>
-                    </div>
-                    <div className="w-12 h-12 bg-emerald-500/20 rounded-xl flex items-center justify-center">
-                      <Users className="h-6 w-6 text-emerald-300" />
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="text-2xl font-bold text-white mb-1">
-                        {stats.loading ? "..." : stats.activeAssignments.toString()}
-                      </div>
-                      <div className="text-indigo-100 text-sm font-medium">Active Assignments</div>
-                    </div>
-                    <div className="w-12 h-12 bg-orange-500/20 rounded-xl flex items-center justify-center">
-                      <PenTool className="h-6 w-6 text-orange-300" />
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="text-2xl font-bold text-white mb-1">
-                        {stats.loading ? "..." : stats.activeAssignments > 0 ? `${stats.completionRate}%` : "N/A"}
-                      </div>
-                      <div className="text-indigo-100 text-sm font-medium">Avg. Completion</div>
-                    </div>
-                    <div className="w-12 h-12 bg-yellow-500/20 rounded-xl flex items-center justify-center">
-                      <CheckCircle className="h-6 w-6 text-yellow-300" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <Link 
-                href="/dashboard/classes/new" 
-                className="inline-flex items-center px-6 py-3 bg-white/15 hover:bg-white/25 backdrop-blur-sm text-white font-semibold rounded-xl border border-white/30 transition-all duration-200 hover:scale-105 hover:shadow-lg"
-              >
-                <Plus className="h-5 w-5 mr-2" />
-                Create New Class
-              </Link>
+    <div className="min-h-screen bg-slate-50">
+      {/* Header Section with a simpler, cleaner design */}
+      <section className="bg-white/70 backdrop-blur-md border-b border-slate-200">
+        <div className="relative max-w-7xl mx-auto px-6 py-12">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+            <div className="mb-8 lg:mb-0">
+              <h1 className="text-4xl lg:text-5xl font-bold text-slate-900 mb-2">
+                Welcome back, {username}!
+              </h1>
+              <p className="text-slate-600 text-lg max-w-2xl leading-relaxed">
+                Transform learning with cutting-edge tools and insights.
+              </p>
             </div>
           </div>
         </div>
       </section>
       
-      {/* Main Dashboard Grid */}
-      <section className="max-w-7xl mx-auto px-6 pb-12">
+      {/* Main Dashboard Grid with Enhanced Design */}
+      <section className="max-w-7xl mx-auto px-6 py-16">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8 mb-12">
+          <StatCard 
+            label="Total Classes"
+            value={stats.loading ? "..." : stats.totalClasses.toString()}
+            icon={<BookOpen className="h-7 w-7" />}
+            gradient="from-indigo-500 to-blue-600"
+            bgGradient="from-indigo-50 to-blue-50"
+          />
+          <StatCard 
+            label="Active Students"
+            value={stats.loading ? "..." : stats.activeStudents.toString()}
+            icon={<Users className="h-7 w-7" />}
+            gradient="from-emerald-500 to-teal-600"
+            bgGradient="from-emerald-50 to-teal-50"
+          />
+          <StatCard
+            label="Active Assignments"
+            value={stats.loading ? "..." : stats.activeAssignments.toString()}
+            icon={<PenTool className="h-7 w-7" />}
+            gradient="from-orange-500 to-red-500"
+            bgGradient="from-orange-50 to-red-50"
+          />
+          <StatCard
+            label="Avg. Completion"
+            value={stats.loading ? "..." : stats.completionRate}
+            icon={<Target className="h-7 w-7" />}
+            gradient="from-yellow-500 to-amber-500"
+            bgGradient="from-yellow-50 to-amber-50"
+          />
+          <StatCard
+            label="Total Words Learned"
+            value={stats.loading ? "..." : stats.totalWords.toString()}
+            icon={<Award className="h-7 w-7" />}
+            gradient="from-cyan-500 to-blue-600"
+            bgGradient="from-cyan-50 to-blue-50"
+          />
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          <DashboardCard 
+          <DashboardCard
             title="Manage Classes & Students"
-            description="Add students, generate logins, and view rosters"
-            icon={<BookOpen className="h-7 w-7 text-indigo-600" />}
-            buttonText="View Classes"
-            buttonColor="bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800"
-            imageSrc="/classes-illustration.svg"
+            description="Organize your classroom, add students, generate secure logins, and manage comprehensive rosters."
+            icon={<BookOpen className="h-8 w-8" />}
+            gradient="from-indigo-500 to-blue-600"
             href="/dashboard/classes"
           />
-          
-<DashboardCard
-  title="Assignments"
-  description="Manage, create, and track all your student assignments."
-  icon={<PenTool className="h-7 w-7 text-orange-600" />}
-  buttonText="View Assignments"
-  buttonColor="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"
-  imageSrc="/assignments-illustration.svg"
-  href="/dashboard/assignments"
-/>
-
-          
-          <DashboardCard 
-            title="Track Student Progress"
-            description="See scores, time spent, and skill mastery"
-            icon={<BarChart2 className="h-7 w-7 text-purple-600" />}
-            buttonText="View Reports"
-            buttonColor="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800"
-            imageSrc="/progress-illustration.svg"
+          <DashboardCard
+            title="Create & Track Assignments"
+            description="Design custom assignments with AI assistance, set learning objectives, and monitor real-time student progress."
+            icon={<PenTool className="h-8 w-8" />}
+            gradient="from-orange-500 to-red-500"
+            href="/dashboard/assignments"
+          />
+          <DashboardCard
+            title="Advanced Analytics"
+            description="Get deep insights with detailed reports on scores, engagement time, skill mastery, and learning patterns."
+            icon={<BarChart2 className="h-8 w-8" />}
+            gradient="from-purple-500 to-pink-500"
             href="/dashboard/progress"
           />
-          
           <DashboardCard
             title="Vocabulary Management"
-            description="Create and manage vocabulary lists for your classes"
-            icon={<Upload className="h-7 w-7 text-emerald-600" />}
-            buttonText="Manage Vocabulary"
-            buttonColor="bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800"
-            imageSrc="/content-illustration.svg"
+            description="Build comprehensive vocabulary libraries, import custom content, and create themed word collections."
+            icon={<Upload className="h-8 w-8" />}
+            gradient="from-emerald-500 to-teal-600"
             href="/dashboard/vocabulary"
           />
-
           <DashboardCard
-            title="Cross-Game Analytics"
-            description="Track student performance across all vocabulary games and activities"
-            icon={<BarChart2 className="h-7 w-7 text-blue-600" />}
-            buttonText="View Game Analytics"
-            buttonColor="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"
-            imageSrc="/analytics-illustration.svg"
-            href="/dashboard/analytics/cross-game"
-          />
-
-          <DashboardCard
-            title="Interactive Learning Games"
-            description="Engage students with fun, educational activities"
-            icon={<Gamepad2 className="h-7 w-7 text-pink-600" />}
-            buttonText="Explore Games"
-            buttonColor="bg-gradient-to-r from-pink-600 to-pink-700 hover:from-pink-700 hover:to-pink-800"
-            imageSrc="/games-illustration.svg"
-            href="/dashboard/games"
-          />
-
-          <DashboardCard
-            title="Competition & Leaderboards"
-            description="Motivate students with challenges and rankings"
-            icon={<Trophy className="h-7 w-7 text-amber-600" />}
-            buttonText="View Leaderboards"
-            buttonColor="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700"
-            imageSrc="/competition-illustration.svg"
+            title="Competitions & Rankings"
+            description="Motivate students with class challenges, achievement badges, and dynamic leaderboards that celebrate progress."
+            icon={<Trophy className="h-8 w-8" />}
+            gradient="from-amber-500 to-yellow-500"
             href="/dashboard/leaderboards"
-          />
-
-          <DashboardCard
-            title="Vocabulary Mining Analytics"
-            description="Track student vocabulary collection and mastery progress"
-            icon={<Pickaxe className="h-7 w-7 text-yellow-600" />}
-            buttonText="View Mining Analytics"
-            buttonColor="bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700"
-            imageSrc="/mining-illustration.svg"
-            href="/dashboard/vocabulary-mining"
           />
         </div>
       </section>
 
       {/* Help Widget */}
       {helpWidgetVisible && (
-        <div className="fixed bottom-6 right-6 z-40">
-          <div className="bg-white rounded-xl shadow-xl border border-slate-200 p-6 max-w-sm">
+        <div className="fixed bottom-8 right-8 z-50">
+          <div className="relative bg-white/90 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/20 p-8 max-w-sm animate-in slide-in-from-right duration-500">
             <button 
               onClick={() => setHelpWidgetVisible(false)}
-              className="absolute top-3 right-3 p-1 rounded-lg hover:bg-slate-100 transition-colors"
+              className="absolute top-4 right-4 p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all duration-200"
             >
-              <MinusCircle className="h-4 w-4 text-slate-500" />
+              <MinusCircle className="h-5 w-5" />
             </button>
-            <div className="mb-4">
-              <h3 className="font-bold text-slate-900 mb-2 flex items-center">
-                <div className="w-8 h-8 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center mr-3">
-                  <GraduationCap className="h-4 w-4 text-white" />
+            
+            <div className="mb-6">
+              <div className="flex items-start mb-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center mr-4 shadow-lg">
+                  <GraduationCap className="h-6 w-6 text-white" />
                 </div>
-                Welcome to LanguageGems! 🎉
-              </h3>
-              <p className="text-slate-600 text-sm leading-relaxed mb-4">
-                Ready to get started? Create your first class and add students to begin their language learning journey.
-              </p>
-              <Link 
-                href="/dashboard/classes/new"
-                className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-sm font-medium rounded-lg transition-all duration-200 hover:shadow-lg"
-              >
-                Create First Class
-              </Link>
+                <div>
+                  <h3 className="font-bold text-slate-900 text-lg mb-2 flex items-center">
+                    Welcome to LanguageGems! 
+                    <Sparkles className="h-4 w-4 ml-2 text-yellow-500" />
+                  </h3>
+                  <p className="text-slate-600 text-sm leading-relaxed">
+                    Ready to revolutionize your teaching? Create your first class and invite students to begin their personalized learning journey.
+                  </p>
+                </div>
+              </div>
             </div>
+            
+            <Link href="/dashboard/classes/new" className="w-full group relative px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-105 overflow-hidden text-center inline-block">
+              <div className="relative flex items-center justify-center">
+                <Plus className="h-4 w-4 mr-2" />
+                Create Your First Class
+                <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
+              </div>
+            </Link>
           </div>
         </div>
       )}
@@ -330,83 +278,87 @@ function TeacherDashboard({ username = 'Ms. Carter' }: { username?: string }) {
   );
 }
 
-function NavLink({ icon, label, href }: { icon: React.ReactNode, label: string, href: string }) {
-  return (
-    <Link href={href} className="flex items-center text-gray-600 hover:text-teal-600 hover:bg-teal-50 p-2 rounded-lg transition-colors">
-      <span className="mr-1.5">{icon}</span>
-      <span className="font-medium text-sm">{label}</span>
-    </Link>
-  );
-}
-
-function StatCard({ icon, label, value, bgColor }: { 
-  icon: React.ReactNode, 
-  label: string, 
-  value: string,
-  bgColor: string
+// Reusable component for the dashboard stat cards
+function StatCard({ 
+  label, 
+  value, 
+  icon, 
+  gradient,
+  bgGradient,
+}: { 
+  label: string;
+  value: string;
+  icon: React.ReactNode;
+  gradient: string;
+  bgGradient: string;
 }) {
   return (
-    <div className={`${bgColor} rounded-lg p-4 flex items-center shadow-sm`}>
-      <div className="mr-3 bg-white/20 rounded-full p-2">
-        {icon}
+    <div className={`relative p-6 rounded-2xl bg-gradient-to-br ${bgGradient} shadow-lg border border-white/50 hover:shadow-xl transition-all duration-300 group overflow-hidden`}>
+      <div className="absolute inset-0 bg-gradient-to-br from-white/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+      
+      <div className="relative flex items-start justify-between mb-4">
+        <div className={`p-3 rounded-xl bg-gradient-to-br ${gradient} shadow-lg group-hover:scale-110 transition-transform duration-300`}>
+          <div className="text-white">
+            {icon}
+          </div>
+        </div>
       </div>
-      <div>
-        <div className="text-xl font-bold">{value}</div>
-        <div className="text-sm opacity-90">{label}</div>
+      
+      <div className="relative">
+        <div className="text-3xl font-bold text-slate-900 mb-1">{value}</div>
+        <div className="text-slate-600 font-medium text-sm">{label}</div>
       </div>
     </div>
   );
 }
 
+// Reusable component for the main dashboard action cards
 function DashboardCard({ 
   title, 
   description, 
   icon, 
-  buttonText, 
-  buttonColor, 
-  imageSrc,
-  href
+  gradient,
+  href,
 }: { 
-  title: string, 
-  description: string, 
-  icon: React.ReactNode, 
-  buttonText: string, 
-  buttonColor: string,
-  imageSrc: string,
-  href: string
+  title: string;
+  description: string;
+  icon: React.ReactNode;
+  gradient: string;
+  href: string;
 }) {
   return (
-    <div className="group relative bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-200/60 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 overflow-hidden">
-      {/* Subtle gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-br from-white/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+    <Link
+      href={href}
+      className="group relative bg-white rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 border border-slate-200/50 overflow-hidden block"
+    >
+      {/* Background gradient overlay */}
+      <div className={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-500`}></div>
       
       <div className="relative p-8">
-        <div className="flex items-start justify-between mb-6">
-          <div className="flex items-center space-x-4">
-            <div className="p-3 bg-slate-100/80 rounded-xl group-hover:scale-110 transition-transform duration-300">
+        <div className="flex flex-col h-full">
+          {/* Icon */}
+          <div className={`inline-flex p-4 rounded-2xl bg-gradient-to-br ${gradient} shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 mb-6 self-start`}>
+            <div className="text-white">
               {icon}
             </div>
-            <div>
-              <h3 className="font-bold text-slate-900 text-lg leading-tight">{title}</h3>
-              <p className="text-slate-600 text-sm mt-1 leading-relaxed">{description}</p>
+          </div>
+          
+          {/* Content */}
+          <h3 className="font-bold text-slate-900 text-xl leading-tight mb-3 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-slate-900 group-hover:to-indigo-600 transition-all duration-300">
+            {title}
+          </h3>
+          <p className="text-slate-600 leading-relaxed mb-6 flex-grow">
+            {description}
+          </p>
+          
+          {/* Action area */}
+          <div className="flex items-center justify-end pt-4 border-t border-slate-100 group-hover:border-indigo-100 transition-colors duration-300">
+            <div className={`p-2 rounded-xl bg-gradient-to-br ${gradient} opacity-20 group-hover:opacity-100 transition-all duration-300 group-hover:scale-110`}>
+              <ArrowRight className="h-4 w-4 text-white group-hover:translate-x-1 transition-transform duration-300" />
             </div>
           </div>
         </div>
-        
-        {/* Illustration area with better placeholder */}
-        <div className="flex justify-center items-center h-24 mb-8 rounded-xl bg-slate-50/50 group-hover:bg-slate-100/50 transition-colors duration-300">
-          <div className="w-16 h-16 bg-gradient-to-br from-slate-200 to-slate-300 rounded-2xl flex items-center justify-center">
-            {icon}
-          </div>
-        </div>
-        
-        <Link 
-          href={href} 
-          className={`block w-full ${buttonColor} text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 text-center shadow-md hover:shadow-lg group-hover:scale-105`}
-        >
-          {buttonText}
-        </Link>
       </div>
-    </div>
+    </Link>
   );
-} 
+}

@@ -171,7 +171,20 @@ export default function WordBlastPage() {
 
   // URL parameters
   const searchParams = useSearchParams();
-  const assignmentId = searchParams?.get('assignmentId') || null;
+  const assignmentId = searchParams?.get('assignment') || searchParams?.get('assignmentId') || null;
+  const mode = searchParams?.get('mode');
+
+  // If assignment mode, render assignment wrapper
+  if (assignmentId && mode === 'assignment') {
+    // Import the assignment wrapper dynamically
+    const WordBlastAssignmentWrapper = React.lazy(() => import('./components/WordBlastAssignmentWrapper'));
+
+    return (
+      <React.Suspense fallback={<div>Loading assignment...</div>}>
+        <WordBlastAssignmentWrapper assignmentId={assignmentId} />
+      </React.Suspense>
+    );
+  }
 
   // Auto-start game when challenges are loaded
   useEffect(() => {

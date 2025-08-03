@@ -5,6 +5,21 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, ChevronRight, Search, X, CheckCircle } from 'lucide-react';
 import { supabaseBrowser } from '../auth/AuthProvider';
 
+// Configuration for reading comprehension allowed categories
+const READING_COMPREHENSION_CATEGORIES = {
+  'identity_personal_life': ['family_friends', 'physical_personality_descriptions', 'feelings_emotions', 'personal_information', 'pets', 'relationships'],
+  'school_jobs_future': ['school_subjects', 'school_rules', 'classroom_objects', 'professions_jobs', 'future_ambitions', 'qualities_for_jobs', 'qualities_skills', 'school_life'],
+  'home_local_area': ['house_rooms_furniture', 'household_items_chores', 'furniture', 'places_in_town', 'directions', 'household_items', 'house_rooms', 'chores'],
+  'nature_environment': ['insects_bugs', 'plants', 'environmental_issues', 'farm_animals', 'landscapes_features', 'sea_animals', 'wild_animals'],
+  'daily_life': ['daily_routine', 'free_time_leisure', 'hobbies_interests', 'sports'],
+  'clothes_shopping': ['clothes_accessories'],
+  'food_drink': ['food_drink_vocabulary', 'meals', 'ordering_cafes_restaurants'],
+  'health_lifestyle': ['at_the_doctors', 'healthy_living', 'parts_of_body'],
+  'holidays_travel_culture': ['countries', 'accommodation', 'festivals_celebrations', 'holiday_activities', 'nationalities', 'transport', 'travel_destinations_types', 'weather_seasons'],
+  'social_global_issues': ['current_affairs_world_events', 'global_problems_solutions', 'human_rights', 'social_issues'],
+  'technology_media': ['film', 'internet_digital_devices', 'mobile_phones_social_media', 'online_safety', 'music', 'tv']
+};
+
 interface Category {
   id: string;
   name: string;
@@ -27,6 +42,7 @@ interface DatabaseCategorySelectorProps {
   onChange: (categories: string[], subcategories: string[]) => void;
   maxSelections?: number;
   showSearch?: boolean;
+  filterForReadingComprehension?: boolean;
 }
 
 export default function DatabaseCategorySelector({
@@ -36,7 +52,8 @@ export default function DatabaseCategorySelector({
   selectedSubcategories,
   onChange,
   maxSelections = 10,
-  showSearch = true
+  showSearch = true,
+  filterForReadingComprehension = false
 }: DatabaseCategorySelectorProps) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -88,7 +105,7 @@ export default function DatabaseCategorySelector({
           subcategories: Array.from(subcategorySet).map(subcategoryId => ({
             id: subcategoryId,
             name: subcategoryId,
-            displayName: subcategoryId.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+            displayName: subcategoryId.replace(/_/g, l => l.toUpperCase()),
             categoryId
           }))
         }));
@@ -99,7 +116,28 @@ export default function DatabaseCategorySelector({
           category.subcategories.sort((a, b) => a.displayName.localeCompare(b.displayName));
         });
 
-        setCategories(categoriesData);
+        // Filter for reading comprehension if requested
+        let finalCategories = categoriesData;
+        if (filterForReadingComprehension) {
+          finalCategories = categoriesData.filter(category => {
+            const allowedSubcategories = READING_COMPREHENSION_CATEGORIES[category.id as keyof typeof READING_COMPREHENSION_CATEGORIES];
+            if (!allowedSubcategories) return false;
+            
+            // Filter subcategories to only include allowed ones
+            const filteredSubcategories = category.subcategories.filter(sub => 
+              allowedSubcategories.includes(sub.id)
+            );
+            
+            // Only include category if it has allowed subcategories
+            if (filteredSubcategories.length === 0) return false;
+            
+            // Update the category with filtered subcategories
+            category.subcategories = filteredSubcategories;
+            return true;
+          });
+        }
+
+        setCategories(finalCategories);
       } catch (err) {
         console.error('Error loading categories:', err);
         setError('Failed to load categories');
@@ -109,7 +147,7 @@ export default function DatabaseCategorySelector({
     };
 
     loadCategories();
-  }, [language, curriculumLevel]);
+  }, [language, curriculumLevel, filterForReadingComprehension]);
 
   // Filter categories based on search
   const filteredCategories = categories.filter(category =>

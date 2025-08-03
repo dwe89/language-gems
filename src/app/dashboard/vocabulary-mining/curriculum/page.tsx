@@ -287,8 +287,22 @@ export default function CurriculumIntegrationPage() {
     const a = document.createElement('a');
     a.href = url;
     a.download = `${curriculum.id}.csv`;
+    a.style.display = 'none';
+    
+    document.body.appendChild(a);
     a.click();
-    window.URL.revokeObjectURL(url);
+    
+    // Safe cleanup with timeout
+    setTimeout(() => {
+      try {
+        window.URL.revokeObjectURL(url);
+        if (a.parentNode === document.body) {
+          document.body.removeChild(a);
+        }
+      } catch (removeError) {
+        console.warn('Failed to remove download link from DOM:', removeError);
+      }
+    }, 100);
   };
 
   const generateSampleCSV = (curriculum: any) => {

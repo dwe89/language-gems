@@ -4,7 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Gem, Trophy, BookOpen, Eye, ArrowRight, ArrowLeft, CheckCircle,
-  AlertCircle, Gamepad2, ClipboardList, X, Headphones, PenTool, Mic, Award, Info
+  AlertCircle, Gamepad2, ClipboardList, X, Headphones, PenTool, Mic, Award, Info,
+  FileText, Target
 } from 'lucide-react';
 import { useAuth } from '../auth/AuthProvider';
 import { supabaseBrowser } from '../auth/AuthProvider';
@@ -117,6 +118,46 @@ const ASSESSMENT_TYPES = [
     estimatedTime: '15-25 min',
     skills: ['Reading'],
     features: ['Multiple choice', 'True/false', 'Short answer', 'Automated marking']
+  },
+  {
+    id: 'aqa-reading',
+    name: 'AQA Reading Assessment',
+    description: 'Official AQA-style reading assessment with authentic exam questions',
+    icon: <FileText className="h-6 w-6" />,
+    color: 'from-indigo-500 to-indigo-600',
+    estimatedTime: '45-60 min',
+    skills: ['Reading'],
+    features: ['AQA format', 'Exam practice', 'Automated marking', 'Progress tracking']
+  },
+  {
+    id: 'aqa-listening',
+    name: 'AQA Listening Assessment',
+    description: 'Official AQA-style listening assessment with audio materials',
+    icon: <Headphones className="h-6 w-6" />,
+    color: 'from-purple-500 to-purple-600',
+    estimatedTime: '35-45 min',
+    skills: ['Listening'],
+    features: ['AQA format', 'Audio clips', 'Exam practice', 'Automated marking']
+  },
+  {
+    id: 'dictation',
+    name: 'Dictation Assessment',
+    description: 'Listen and write dictation exercises with accuracy scoring',
+    icon: <PenTool className="h-6 w-6" />,
+    color: 'from-green-500 to-green-600',
+    estimatedTime: '20-30 min',
+    skills: ['Listening', 'Writing'],
+    features: ['Audio dictation', 'Spelling accuracy', 'Speed control', 'Instant feedback']
+  },
+  {
+    id: 'four-skills',
+    name: 'Four Skills Assessment',
+    description: 'Comprehensive assessment covering reading, writing, listening, and speaking',
+    icon: <Target className="h-6 w-6" />,
+    color: 'from-teal-500 to-teal-600',
+    estimatedTime: '60-90 min',
+    skills: ['Reading', 'Writing', 'Listening', 'Speaking'],
+    features: ['Complete assessment', 'All four skills', 'Comprehensive scoring', 'Detailed feedback']
   },
   {
     id: 'listening-comprehension',
@@ -1039,6 +1080,7 @@ export default function EnhancedAssignmentCreator({
                   }));
                 }}
                 maxSelections={5}
+                filterForReadingComprehension={selectedAssessmentsBasket.some(assessment => assessment.type === 'reading-comprehension')}
               />
             </div>
           </div>

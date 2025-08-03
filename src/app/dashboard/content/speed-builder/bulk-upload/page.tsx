@@ -184,8 +184,22 @@ export default function BulkUploadPage() {
     const a = document.createElement('a');
     a.href = url;
     a.download = 'speed_builder_template.csv';
+    a.style.display = 'none';
+    
+    document.body.appendChild(a);
     a.click();
-    URL.revokeObjectURL(url);
+    
+    // Safe cleanup with timeout
+    setTimeout(() => {
+      try {
+        URL.revokeObjectURL(url);
+        if (a.parentNode === document.body) {
+          document.body.removeChild(a);
+        }
+      } catch (removeError) {
+        console.warn('Failed to remove download link from DOM:', removeError);
+      }
+    }, 100);
   };
 
   const validCount = parsedSentences.filter(s => s.valid).length;

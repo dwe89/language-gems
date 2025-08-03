@@ -202,29 +202,6 @@ export function StudentCard({ student, classId, onStudentDeleted }: StudentProps
                   </div>
                 </div>
               </div>
-              
-              <div className="opacity-0 group-hover:opacity-100 transition-all duration-200">
-                <SimpleDropdown
-                  items={[
-                    {
-                      label: 'View Password',
-                      onClick: fetchStudentPassword,
-                      icon: <Key className="h-4 w-4" />
-                    },
-                    {
-                      label: 'Reset Password',
-                      onClick: resetStudentPassword,
-                      icon: <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                    },
-                    {
-                      label: 'Remove Student',
-                      onClick: () => setShowDeleteDialog(true),
-                      icon: <Trash2 className="h-4 w-4" />,
-                      variant: 'destructive'
-                    }
-                  ]}
-                />
-              </div>
             </div>
             
             {/* Progress and stats */}
@@ -255,9 +232,33 @@ export function StudentCard({ student, classId, onStudentDeleted }: StudentProps
                     {activityStatus.status}
                   </div>
                 </div>
-                <div className="flex items-center text-slate-500 text-xs">
-                  <Clock className="h-3 w-3 mr-2" />
-                  <span>Last active: {formatDate(student.last_active)}</span>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center text-slate-500 text-xs">
+                    <Clock className="h-3 w-3 mr-2" />
+                    <span>Last active: {formatDate(student.last_active)}</span>
+                  </div>
+                  <div className="opacity-0 group-hover:opacity-100 transition-all duration-200">
+                    <SimpleDropdown
+                      items={[
+                        {
+                          label: 'View Password',
+                          onClick: fetchStudentPassword,
+                          icon: <Key className="h-4 w-4" />
+                        },
+                        {
+                          label: 'Reset Password',
+                          onClick: resetStudentPassword,
+                          icon: <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                        },
+                        {
+                          label: 'Remove Student',
+                          onClick: () => setShowDeleteDialog(true),
+                          icon: <Trash2 className="h-4 w-4" />,
+                          variant: 'destructive'
+                        }
+                      ]}
+                    />
+                  </div>
                 </div>
               </div>
             </div>
