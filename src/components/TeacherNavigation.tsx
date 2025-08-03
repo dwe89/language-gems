@@ -12,7 +12,8 @@ import {
   X,
   Settings,
   LogOut,
-  ChevronDown
+  ChevronDown,
+  BarChart3
 } from 'lucide-react';
 
 interface TeacherNavigationProps {
@@ -33,6 +34,12 @@ export default function TeacherNavigation({ children }: TeacherNavigationProps) 
       href: '/dashboard',
       icon: Home,
       description: 'Overview and quick stats'
+    },
+    {
+      name: 'Analytics',
+      href: '/dashboard/progress',
+      icon: BarChart3,
+      description: 'AI-powered insights and student performance tracking'
     },
     {
       name: 'Classes',
