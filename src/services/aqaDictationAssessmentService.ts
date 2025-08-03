@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { assessmentSkillTrackingService, type ListeningSkillMetrics } from './assessmentSkillTrackingService';
 
 // Types for dictation assessments
 export interface AQADictationAssessmentDefinition {
@@ -276,6 +277,50 @@ export class AQADictationAssessmentService {
     if (responsesError) {
       console.error('Error inserting dictation question responses:', responsesError);
       return false;
+    }
+
+    // Get the assessment result to extract student_id and assessment_id for skill tracking
+    const { data: resultData, error: resultFetchError } = await this.supabase
+      .from('aqa_dictation_results')
+      .select('student_id, assessment_id')
+      .eq('id', resultId)
+      .single();
+
+    if (!resultFetchError && resultData) {
+      // Get assessment details for language
+      const { data: assessmentData } = await this.supabase
+        .from('aqa_dictation_assessments')
+        .select('language')
+        .eq('id', resultData.assessment_id)
+        .single();
+
+      if (assessmentData) {
+        // Calculate dictation-specific listening metrics
+        const totalAudioPlays = Object.values(audioPlayCounts).reduce((sum, counts) =>
+          sum + (counts.normal || 0) + (counts.very_slow || 0), 0);
+        const correctAnswers = responses.filter(r => r.is_correct).length;
+
+        const listeningMetrics: ListeningSkillMetrics = {
+          audioComprehensionAccuracy: percentageScore,
+          responseTimePerEvidence: responses.length > 0 ? totalTimeSeconds / responses.length : 0,
+          listeningSkillProgression: percentageScore,
+          audioPlaybackCount: totalAudioPlays,
+          comprehensionSpeed: totalTimeSeconds > 0 ? (responses.length / totalTimeSeconds) * 60 : 0,
+          contextualUnderstanding: percentageScore // Dictation tests contextual listening comprehension
+        };
+
+        // Track listening skills (dictation is primarily a listening assessment)
+        await assessmentSkillTrackingService.trackListeningSkills(
+          resultData.student_id,
+          resultData.assessment_id,
+          'aqa_dictation',
+          assessmentData.language,
+          listeningMetrics,
+          responses.length,
+          correctAnswers,
+          totalTimeSeconds
+        );
+      }
     }
 
     return true;

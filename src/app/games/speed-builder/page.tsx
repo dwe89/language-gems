@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useUnifiedAuth } from '../../../hooks/useUnifiedAuth';
-import { GemSpeedBuilder } from './components/GemSpeedBuilder';
+import SpeedBuilderGameWrapper from './components/SpeedBuilderGameWrapper';
 import UnifiedSentenceCategorySelector, { SentenceSelectionConfig } from '../../../components/games/UnifiedSentenceCategorySelector';
 import InGameConfigPanel from '../../../components/games/InGameConfigPanel';
 
@@ -124,9 +124,7 @@ export default function SpeedBuilderPage() {
           </button>
         </div>
 
-        <GemSpeedBuilder
-          language={legacyLanguage}
-          curriculumType={legacyCurriculumType}
+        <SpeedBuilderGameWrapper
           tier={legacyTier}
           theme={legacyTheme}
           topic={legacyTopic}
@@ -135,6 +133,10 @@ export default function SpeedBuilderPage() {
           userId={user?.id}
           sentenceConfig={selectedConfig}
           onOpenSettings={handleOpenConfigPanel}
+          onGameEnd={(result) => {
+            console.log('Speed Builder ended:', result);
+            // Could add navigation logic here if needed
+          }}
         />
 
         {/* In-game configuration panel */}

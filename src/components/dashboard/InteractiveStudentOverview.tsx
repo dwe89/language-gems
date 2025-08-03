@@ -242,114 +242,87 @@ export default function InteractiveStudentOverview() {
   const loadStudentData = async () => {
     try {
       setLoading(true);
-      
-      // Mock data - replace with actual API calls
-      const mockStudents: StudentPerformanceData[] = [
-        {
-          id: '1',
-          name: 'Emma Thompson',
-          email: 'emma.t@school.com',
-          class_id: 'class-1',
-          class_name: 'Year 7 French',
-          enrolled_at: '2024-01-15T10:00:00Z',
-          last_active: '2024-08-02T14:30:00Z',
-          overall_progress: 85,
-          assignments_completed: 12,
-          assignments_total: 15,
-          average_score: 88,
-          average_accuracy: 92,
-          total_time_spent: 240,
-          vocabulary_mastery: 90,
-          grammar_mastery: 85,
-          listening_mastery: 80,
-          speaking_mastery: 88,
-          current_streak: 7,
-          longest_streak: 12,
-          login_frequency: 5,
-          session_duration_avg: 25,
-          words_learned: 156,
-          words_mastered: 142,
-          improvement_rate: 15.2,
-          difficulty_preference: 'medium',
-          at_risk: false,
-          risk_factors: [],
-          last_struggle_area: '',
-          total_xp: 2450,
-          current_level: 8,
-          achievements_count: 15,
-          leaderboard_position: 3
-        },
-        {
-          id: '2',
-          name: 'James Wilson',
-          email: 'james.w@school.com',
-          class_id: 'class-1',
-          class_name: 'Year 7 French',
-          enrolled_at: '2024-01-20T09:00:00Z',
-          last_active: '2024-07-30T16:45:00Z',
-          overall_progress: 45,
-          assignments_completed: 6,
-          assignments_total: 15,
-          average_score: 52,
-          average_accuracy: 68,
-          total_time_spent: 120,
-          vocabulary_mastery: 55,
-          grammar_mastery: 40,
-          listening_mastery: 48,
-          speaking_mastery: 45,
-          current_streak: 0,
-          longest_streak: 3,
-          login_frequency: 2,
-          session_duration_avg: 15,
-          words_learned: 78,
-          words_mastered: 45,
-          improvement_rate: -5.8,
-          difficulty_preference: 'easy',
-          at_risk: true,
-          risk_factors: ['Low completion rate', 'Infrequent logins', 'Declining performance'],
-          last_struggle_area: 'Past tense verbs',
-          total_xp: 890,
-          current_level: 3,
-          achievements_count: 4,
-          leaderboard_position: 18
-        },
-        {
-          id: '3',
-          name: 'Sophia Miller',
-          email: 'sophia.m@school.com',
-          class_id: 'class-2',
-          class_name: 'Year 8 Spanish',
-          enrolled_at: '2024-01-28T14:45:00Z',
-          last_active: '2024-08-01T11:20:00Z',
-          overall_progress: 72,
-          assignments_completed: 10,
-          assignments_total: 14,
-          average_score: 76,
-          average_accuracy: 82,
-          total_time_spent: 180,
-          vocabulary_mastery: 78,
-          grammar_mastery: 70,
-          listening_mastery: 75,
-          speaking_mastery: 72,
-          current_streak: 4,
-          longest_streak: 8,
-          login_frequency: 4,
-          session_duration_avg: 22,
-          words_learned: 124,
-          words_mastered: 98,
-          improvement_rate: 8.5,
-          difficulty_preference: 'medium',
-          at_risk: false,
-          risk_factors: [],
-          last_struggle_area: '',
-          total_xp: 1850,
-          current_level: 6,
-          achievements_count: 11,
-          leaderboard_position: 7
-        }
-      ];
 
-      setStudents(mockStudents);
+      // Load real student data from Supabase
+      const { data: studentsData, error } = await supabase
+        .from('enhanced_game_sessions')
+        .select(`
+          student_id,
+          accuracy_percentage,
+          xp_earned,
+          created_at,
+          game_type,
+          time_spent_seconds
+        `)
+        .order('created_at', { ascending: false })
+        .limit(100);
+
+      if (error) {
+        console.error('Error loading student data:', error);
+        setStudents([]);
+        return;
+      }
+
+      // Group by student and calculate metrics
+      const studentMetrics = new Map<string, any>();
+
+      studentsData?.forEach(session => {
+        const studentId = session.student_id;
+        if (!studentMetrics.has(studentId)) {
+          studentMetrics.set(studentId, {
+            id: studentId,
+            name: `Student ${studentId.slice(0, 8)}`, // Placeholder name
+            email: `student${studentId.slice(0, 8)}@school.com`,
+            class_id: 'class-1',
+            class_name: 'Mixed Class',
+            total_sessions: 0,
+            total_time_minutes: 0,
+            accuracy_scores: [],
+            xp_earned: 0,
+            last_active: session.created_at,
+            games_played: new Set(),
+            weekly_progress: 0,
+            achievements_count: 0,
+            leaderboard_position: 0
+          });
+        }
+
+        const student = studentMetrics.get(studentId);
+        student.total_sessions++;
+        student.total_time_minutes += (session.time_spent_seconds || 0) / 60;
+        if (session.accuracy_percentage !== null) {
+          student.accuracy_scores.push(session.accuracy_percentage);
+        }
+        student.xp_earned += session.xp_earned || 0;
+        student.games_played.add(session.game_type);
+
+        // Update last active if this session is more recent
+        if (new Date(session.created_at) > new Date(student.last_active)) {
+          student.last_active = session.created_at;
+        }
+      });
+
+      // Convert to final format
+      const processedStudents: StudentPerformanceData[] = Array.from(studentMetrics.values()).map((student, index) => ({
+        id: student.id,
+        name: student.name,
+        email: student.email,
+        class_id: student.class_id,
+        class_name: student.class_name,
+        total_sessions: student.total_sessions,
+        total_time_minutes: Math.round(student.total_time_minutes),
+        average_accuracy: student.accuracy_scores.length > 0
+          ? Math.round(student.accuracy_scores.reduce((a, b) => a + b, 0) / student.accuracy_scores.length)
+          : 0,
+        xp_earned: student.xp_earned,
+        last_active: student.last_active,
+        games_played: student.games_played.size,
+        weekly_progress: Math.min(100, student.total_sessions * 10), // Simple progress calculation
+        achievements_count: Math.floor(student.xp_earned / 100), // Simple achievement calculation
+        leaderboard_position: index + 1
+      }));
+
+      setStudents(processedStudents);
     } catch (error) {
       console.error('Error loading student data:', error);
     } finally {

@@ -160,7 +160,9 @@ export default function MemoryGameMain({
           language: currentLanguage,
           topic: currentTopic,
           difficulty: currentDifficulty,
-          customWordsCount: currentCustomWords.length
+          customWordsCount: currentCustomWords.length,
+          gridSize: cards.length,
+          totalPairs: cards.length / 2
         }
       });
       setGameSessionId(sessionId);
@@ -296,6 +298,12 @@ export default function MemoryGameMain({
         const accuracy = totalAttempts > 0 ? (totalMatches / totalAttempts) * 100 : 0;
         const finalScore = Math.round(accuracy);
 
+        // Calculate XP based on performance
+        const baseXP = totalMatches * 10; // 10 XP per match
+        const accuracyBonus = Math.round(accuracy * 0.5); // Bonus for accuracy
+        const speedBonus = timeSpent < 60 ? 20 : timeSpent < 120 ? 10 : 0; // Speed bonus
+        const totalXP = baseXP + accuracyBonus + speedBonus;
+
         await gameService.endGameSession(gameSessionId, {
           student_id: userId || user!.id,
           final_score: finalScore,
@@ -305,14 +313,21 @@ export default function MemoryGameMain({
           words_correct: totalMatches,
           unique_words_practiced: vocabularyProgress.size,
           duration_seconds: timeSpent,
+          xp_earned: totalXP,
+          bonus_xp: accuracyBonus + speedBonus,
           session_data: {
             matches: totalMatches,
             attempts: totalAttempts,
-            gameType: 'memory-game'
+            gameType: 'memory-game',
+            gridSize: cards.length,
+            totalPairs: cards.length / 2,
+            averageResponseTime: timeSpent / totalAttempts,
+            memoryAccuracy: accuracy,
+            perfectMatches: totalMatches
           }
         });
 
-        console.log('Enhanced game session ended successfully');
+        console.log('Enhanced game session ended successfully with XP:', totalXP);
       } catch (error) {
         console.error('Failed to end enhanced game session:', error);
       }
@@ -600,31 +615,63 @@ export default function MemoryGameMain({
         }
 
         // Track vocabulary progress for matched pair
-        if (isAssignmentMode && firstCard.vocabularyId) {
+        if (firstCard.vocabularyId) {
           const now = new Date();
           const responseTime = firstCard.firstAttemptTime ?
             (now.getTime() - firstCard.firstAttemptTime.getTime()) / 1000 : 0;
 
-          setVocabularyProgress(prev => {
-            const newProgress = new Map(prev);
-            const existing = newProgress.get(firstCard.vocabularyId!) || {
-              vocabularyId: firstCard.vocabularyId!,
-              attempts: 0,
-              correctAttempts: 0,
-              responseTime: 0,
-              wasCorrect: false
-            };
-
-            newProgress.set(firstCard.vocabularyId!, {
-              ...existing,
-              attempts: existing.attempts + 1,
-              correctAttempts: existing.correctAttempts + 1,
-              responseTime: responseTime,
-              wasCorrect: true
+          // Log word performance for analytics
+          if (gameService && gameSessionId && !isDemo) {
+            gameService.logWordPerformance({
+              session_id: gameSessionId,
+              vocabulary_id: firstCard.vocabularyId,
+              word_text: firstCard.value,
+              translation_text: (firstCard as any).translation || '',
+              language_pair: `${currentLanguage}_english`,
+              attempt_number: 1,
+              response_time_ms: Math.round(responseTime * 1000),
+              was_correct: true,
+              confidence_level: responseTime < 3 ? 5 : responseTime < 6 ? 4 : 3,
+              difficulty_level: currentDifficulty,
+              hint_used: false,
+              streak_count: matches + 1,
+              previous_attempts: 0,
+              mastery_level: 1,
+              context_data: {
+                gameType: 'memory-game',
+                cardPosition: firstCard.id,
+                matchType: 'vocabulary_pair',
+                flipCount: 2
+              },
+              timestamp: now
+            }).catch(error => {
+              console.error('Failed to log word performance:', error);
             });
+          }
 
-            return newProgress;
-          });
+          // Track vocabulary progress for assignment mode
+          if (isAssignmentMode) {
+            setVocabularyProgress(prev => {
+              const newProgress = new Map(prev);
+              const existing = newProgress.get(firstCard.vocabularyId!) || {
+                vocabularyId: firstCard.vocabularyId!,
+                attempts: 0,
+                correctAttempts: 0,
+                responseTime: 0,
+                wasCorrect: false
+              };
+
+              newProgress.set(firstCard.vocabularyId!, {
+                ...existing,
+                attempts: existing.attempts + 1,
+                correctAttempts: existing.correctAttempts + 1,
+                responseTime: responseTime,
+                wasCorrect: true
+              });
+
+              return newProgress;
+            });
+          }
         }
         
         // Check for win condition
@@ -650,30 +697,65 @@ export default function MemoryGameMain({
       }
 
       // Track vocabulary progress for failed attempt
-      if (isAssignmentMode && firstCard.vocabularyId) {
+      if (firstCard.vocabularyId) {
         const now = new Date();
         const responseTime = firstCard.firstAttemptTime ?
           (now.getTime() - firstCard.firstAttemptTime.getTime()) / 1000 : 0;
 
-        setVocabularyProgress(prev => {
-          const newProgress = new Map(prev);
-          const existing = newProgress.get(firstCard.vocabularyId!) || {
-            vocabularyId: firstCard.vocabularyId!,
-            attempts: 0,
-            correctAttempts: 0,
-            responseTime: 0,
-            wasCorrect: false
-          };
-
-          newProgress.set(firstCard.vocabularyId!, {
-            ...existing,
-            attempts: existing.attempts + 1,
-            responseTime: responseTime,
-            wasCorrect: false
+        // Log word performance for analytics (incorrect match)
+        if (gameService && gameSessionId && !isDemo) {
+          gameService.logWordPerformance({
+            session_id: gameSessionId,
+            vocabulary_id: firstCard.vocabularyId,
+            word_text: firstCard.value,
+            translation_text: (firstCard as any).translation || '',
+            language_pair: `${currentLanguage}_english`,
+            attempt_number: 1,
+            response_time_ms: Math.round(responseTime * 1000),
+            was_correct: false,
+            confidence_level: responseTime < 3 ? 2 : 1, // Lower confidence for incorrect
+            difficulty_level: currentDifficulty,
+            hint_used: false,
+            streak_count: 0, // Reset streak on incorrect
+            previous_attempts: 0,
+            mastery_level: 0,
+            error_type: 'memory_mismatch',
+            grammar_concept: 'vocabulary_recognition',
+            context_data: {
+              gameType: 'memory-game',
+              cardPosition: firstCard.id,
+              matchType: 'vocabulary_pair',
+              flipCount: 2,
+              incorrectMatch: card.value
+            },
+            timestamp: now
+          }).catch(error => {
+            console.error('Failed to log word performance:', error);
           });
+        }
 
-          return newProgress;
-        });
+        // Track vocabulary progress for assignment mode
+        if (isAssignmentMode) {
+          setVocabularyProgress(prev => {
+            const newProgress = new Map(prev);
+            const existing = newProgress.get(firstCard.vocabularyId!) || {
+              vocabularyId: firstCard.vocabularyId!,
+              attempts: 0,
+              correctAttempts: 0,
+              responseTime: 0,
+              wasCorrect: false
+            };
+
+            newProgress.set(firstCard.vocabularyId!, {
+              ...existing,
+              attempts: existing.attempts + 1,
+              responseTime: responseTime,
+              wasCorrect: false
+            });
+
+            return newProgress;
+          });
+        }
       }
 
       setTimeout(() => {

@@ -183,12 +183,66 @@ export default function VocabBlastGameWrapper(props: VocabBlastGameWrapperProps)
     timeSpent?: number;
     detailedStats?: any;
   }) => {
+    // Log word-level performance data if available
+    if (gameService && gameSessionId && result.detailedStats?.wordAttempts) {
+      try {
+        for (const wordAttempt of result.detailedStats.wordAttempts) {
+          const vocabularyItem = gameVocabulary.find(v => v.word.toLowerCase() === wordAttempt.word.toLowerCase());
+
+          await gameService.logWordPerformance({
+            session_id: gameSessionId,
+            vocabulary_id: vocabularyItem?.id ? parseInt(vocabularyItem.id) : undefined,
+            word_text: wordAttempt.word,
+            translation_text: wordAttempt.translation,
+            language_pair: `${props.settings.language}_english`,
+            attempt_number: 1,
+            response_time_ms: Math.round(wordAttempt.responseTime * 1000),
+            was_correct: wordAttempt.isCorrect,
+            confidence_level: wordAttempt.isCorrect ?
+              (wordAttempt.responseTime < 2 ? 5 : wordAttempt.responseTime < 4 ? 4 : 3) :
+              (wordAttempt.responseTime < 3 ? 2 : 1),
+            difficulty_level: props.settings.difficulty,
+            hint_used: false,
+            streak_count: wordAttempt.isCorrect ? 1 : 0,
+            previous_attempts: 0,
+            mastery_level: wordAttempt.isCorrect ? 1 : 0,
+            error_type: !wordAttempt.isCorrect ? 'click_accuracy' : undefined,
+            grammar_concept: 'vocabulary_recognition',
+            error_details: !wordAttempt.isCorrect ? {
+              gameMode: 'vocab-blast',
+              clickedIncorrectly: true,
+              responseTime: wordAttempt.responseTime
+            } : undefined,
+            context_data: {
+              gameType: 'vocab-blast',
+              theme: props.settings.theme,
+              timeLimit: props.settings.timeLimit,
+              gameOutcome: result.outcome,
+              clickAccuracy: wordAttempt.isCorrect
+            },
+            timestamp: new Date(wordAttempt.timestamp)
+          });
+        }
+
+        console.log('Vocab blast word performance logged for', result.detailedStats.wordAttempts.length, 'words');
+      } catch (error) {
+        console.error('Failed to log vocab blast word performance:', error);
+      }
+    }
+
     // End game session if it exists
     if (gameService && gameSessionId && props.userId) {
       try {
         const accuracy = result.accuracy || (result.wordsLearned > 0 ? (result.wordsLearned / (result.totalAttempts || gameVocabulary.length)) * 100 : 0);
         const finalScore = result.score;
         const actualTimeSpent = result.timeSpent || props.settings.timeLimit;
+
+        // Calculate XP based on performance
+        const baseXP = (result.correctAnswers || 0) * 12; // 12 XP per correct answer
+        const accuracyBonus = Math.round(accuracy * 0.4); // Bonus for accuracy
+        const speedBonus = actualTimeSpent < 60 ? 30 : actualTimeSpent < 120 ? 20 : 0; // Speed bonus
+        const comboBonus = result.detailedStats?.maxCombo ? result.detailedStats.maxCombo * 5 : 0; // Combo bonus
+        const totalXP = baseXP + accuracyBonus + speedBonus + comboBonus;
 
         await gameService.endGameSession(gameSessionId, {
           student_id: props.userId,
@@ -199,6 +253,8 @@ export default function VocabBlastGameWrapper(props: VocabBlastGameWrapperProps)
           words_correct: result.correctAnswers || result.wordsLearned,
           unique_words_practiced: result.wordsLearned,
           duration_seconds: actualTimeSpent,
+          xp_earned: totalXP,
+          bonus_xp: accuracyBonus + speedBonus + comboBonus,
           session_data: {
             outcome: result.outcome,
             finalScore: result.score,
@@ -209,11 +265,14 @@ export default function VocabBlastGameWrapper(props: VocabBlastGameWrapperProps)
             accuracy: accuracy,
             timeSpent: actualTimeSpent,
             gameMode: 'vocab-blast',
+            theme: props.settings.theme,
+            maxCombo: result.detailedStats?.maxCombo || 0,
+            clickAccuracy: accuracy,
             detailedStats: result.detailedStats
           }
         });
 
-        console.log('Vocab blast game session ended successfully with detailed analytics');
+        console.log('Vocab blast game session ended successfully with XP:', totalXP);
       } catch (error) {
         console.error('Failed to end vocab blast game session:', error);
       }

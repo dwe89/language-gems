@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createClient } from '@supabase/supabase-js';
 import { GameConfig } from './LavaTempleWordRestoreGame';
+import { EnhancedGameService } from '../../../../services/enhancedGameService';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -34,12 +35,16 @@ interface TempleRestorationProps {
   gameConfig: GameConfig;
   onRestorationComplete: (results: any) => void;
   onBackToMenu: () => void;
+  gameSessionId?: string | null;
+  gameService?: EnhancedGameService | null;
 }
 
 export default function TempleRestoration({
   gameConfig,
   onRestorationComplete,
-  onBackToMenu
+  onBackToMenu,
+  gameSessionId,
+  gameService
 }: TempleRestorationProps) {
   const [sentences, setSentences] = useState<any[]>([]);
   const [currentSentence, setCurrentSentence] = useState<any>(null);
@@ -54,6 +59,8 @@ export default function TempleRestoration({
   const [showFeedback, setShowFeedback] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
   const [gameStartTime] = useState(Date.now());
+  const [gapFillStartTime, setGapFillStartTime] = useState<number>(0);
+  const [contextCluesUsed, setContextCluesUsed] = useState(0);
 
   // Audio refs
   const backgroundMusicRef = useRef<HTMLAudioElement | null>(null);
@@ -156,6 +163,13 @@ export default function TempleRestoration({
 
     loadSentences();
   }, [gameConfig]);
+
+  // Set gap fill start time when sentence changes
+  useEffect(() => {
+    if (currentSentence && !showFeedback) {
+      setGapFillStartTime(Date.now());
+    }
+  }, [currentSentenceIndex, currentSentence, showFeedback]);
 
   // Generate gaps and options dynamically from sentence content
   const generateGapsAndOptions = async (sentence: any) => {
@@ -274,15 +288,43 @@ export default function TempleRestoration({
 
     if (!currentSentence) return;
     let correct = true;
+    const responseTime = gapFillStartTime > 0 ? Date.now() - gapFillStartTime : 0;
 
-    // Check each selected word against the correct options
+    // Check each selected word against the correct options and log performance
     for (let gapIndex = 0; gapIndex < currentSentence.gapIndices.length; gapIndex++) {
       const selectedWord = selectedWords[gapIndex];
       const correctOption = wordOptions[gapIndex]?.find(option => option.is_correct);
+      const isGapCorrect = selectedWord && correctOption && selectedWord === correctOption.option_text;
 
-      if (!selectedWord || !correctOption || selectedWord !== correctOption.option_text) {
+      if (!isGapCorrect) {
         correct = false;
-        break;
+      }
+
+      // Log word-level performance for each gap if game service is available
+      if (gameService && gameSessionId) {
+        try {
+          await gameService.logWordPerformance({
+            session_id: gameSessionId,
+            word_id: `${currentSentence.id}-gap-${gapIndex}`,
+            word: correctOption?.option_text || '',
+            translation: correctOption?.option_text || '',
+            is_correct: isGapCorrect,
+            response_time_ms: responseTime,
+            attempts: 1, // Each gap is attempted once per submission
+            error_type: isGapCorrect ? undefined : 'fill_in_blank_error',
+            grammar_concept: 'fill_in_blank_skills',
+            error_details: isGapCorrect ? undefined : {
+              selectedWord: selectedWord,
+              correctWord: correctOption?.option_text,
+              gapIndex: gapIndex,
+              sentenceContext: currentSentence.source_sentence,
+              templeContext: currentSentence.temple_context,
+              difficulty: gameConfig.difficulty
+            }
+          });
+        } catch (error) {
+          console.error('Failed to log gap fill performance:', error);
+        }
       }
     }
 

@@ -5,15 +5,45 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '../../../../store/gameStore';
 import { useBattle } from '../../../../hooks/useBattle';
 import { useBattleAudio } from '../../../../hooks/useBattleAudio';
+import { EnhancedGameService } from '../../../../services/enhancedGameService';
 import HealthBar from './HealthBar';
 import CharacterSprite from './CharacterSprite';
 
 interface BattleArenaProps {
   onBattleEnd: () => void;
   language?: string;
+  league?: string;
+  opponent?: { name: string; difficulty: string };
+  onBackToMenu?: () => void;
+  onGameEnd?: (result: any) => void;
+  assignmentId?: string;
+  userId?: string;
+  gameSessionId?: string | null;
+  gameService?: EnhancedGameService | null;
+  onConjugationComplete?: (
+    verb: string,
+    tense: string,
+    person: string,
+    userAnswer: string,
+    correctAnswer: string,
+    isCorrect: boolean,
+    responseTime: number
+  ) => void;
 }
 
-export default function BattleArena({ onBattleEnd, language = 'spanish' }: BattleArenaProps) {
+export default function BattleArena({
+  onBattleEnd,
+  language = 'spanish',
+  league,
+  opponent,
+  onBackToMenu,
+  onGameEnd,
+  assignmentId,
+  userId,
+  gameSessionId,
+  gameService,
+  onConjugationComplete
+}: BattleArenaProps) {
   const { 
     battleState, 
     playerStats,
@@ -23,8 +53,9 @@ export default function BattleArena({ onBattleEnd, language = 'spanish' }: Battl
   
   const { timeLeft, isAnswering, submitAnswer } = useBattle(language);
   const { playSound, playMusic, stopMusic } = useBattleAudio();
-  
+
   const battleLogRef = useRef<HTMLDivElement>(null);
+  const [conjugationStartTime, setConjugationStartTime] = React.useState<number>(0);
 
   // Get current league for theming
   const currentLeague = leagues.find(l => l.id === playerStats.currentLeague);
@@ -47,6 +78,13 @@ export default function BattleArena({ onBattleEnd, language = 'spanish' }: Battl
     }
   }, [battleState.battleLog]);
 
+  // Set conjugation start time when new question appears
+  useEffect(() => {
+    if (battleState.currentQuestion && battleState.isInBattle) {
+      setConjugationStartTime(Date.now());
+    }
+  }, [battleState.currentQuestion, battleState.isInBattle]);
+
   // Handle battle end
   useEffect(() => {
     if (!battleState.isInBattle && (battleState.playerHealth === 0 || battleState.opponentHealth === 0)) {
@@ -60,14 +98,30 @@ export default function BattleArena({ onBattleEnd, language = 'spanish' }: Battl
 
   const handleAnswerClick = (answer: string) => {
     if (isAnswering) return;
-    
+
     const isCorrect = answer === battleState.currentQuestion?.correctAnswer;
+    const responseTime = conjugationStartTime > 0 ? Date.now() - conjugationStartTime : 0;
+
     playSound(isCorrect ? 'correct_answer' : 'wrong_answer');
-    
+
     if (isCorrect) {
       playSound('sword_clash');
     }
-    
+
+    // Log conjugation performance if callback is available
+    if (onConjugationComplete && battleState.currentQuestion) {
+      const question = battleState.currentQuestion;
+      onConjugationComplete(
+        question.verb?.infinitive || 'unknown',
+        question.tense || 'present',
+        question.pronoun || 'yo',
+        answer,
+        question.correctAnswer,
+        isCorrect,
+        responseTime
+      );
+    }
+
     submitAnswer(answer);
   };
 

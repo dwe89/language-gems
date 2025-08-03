@@ -6,6 +6,7 @@ import { useTheme } from './ThemeProvider';
 import { Brain, ArrowLeft, Volume2, VolumeX, Settings } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useAudio } from '../hooks/useAudio';
+import { EnhancedGameService } from '../../../../services/enhancedGameService';
 
 // Theme animations
 import ClassicAnimation from './themes/ClassicAnimation';
@@ -36,6 +37,7 @@ interface TicTacToeGameProps {
     timeSpent?: number;
   }) => void;
   vocabularyWords?: Array<{
+    id?: string;
     word: string;
     translation: string;
     difficulty: string;
@@ -45,6 +47,8 @@ interface TicTacToeGameProps {
   gameSessionId?: string | null;
   isAssignmentMode?: boolean;
   onOpenSettings?: () => void;
+  gameService?: EnhancedGameService | null;
+  userId?: string;
 }
 
 // Simple vocabulary for the game
@@ -535,7 +539,9 @@ export default function TicTacToeGame({
   vocabularyWords,
   gameSessionId,
   isAssignmentMode,
-  onOpenSettings
+  onOpenSettings,
+  gameService,
+  userId
 }: TicTacToeGameProps) {
   const { themeClasses } = useTheme();
   
@@ -555,6 +561,7 @@ export default function TicTacToeGame({
   const [correctAnswers, setCorrectAnswers] = useState(0);
   const [totalQuestions, setTotalQuestions] = useState(0);
   const [gameStartTime, setGameStartTime] = useState<Date | null>(null);
+  const [questionStartTime, setQuestionStartTime] = useState<number>(0);
   const [storyDismissed, setStoryDismissed] = useState(false);
 
   // Start timer when story is dismissed
@@ -669,16 +676,56 @@ export default function TicTacToeGame({
     setCurrentQuestion(question);
     setPendingMove(index);
     setTotalQuestions(prev => prev + 1);
+    setQuestionStartTime(Date.now());
     setShowVocabQuestion(true);
   };
 
   const handleVocabAnswer = (selectedIndex: number) => {
     setShowVocabQuestion(false);
-    
+
     if (!currentQuestion || pendingMove === null) return;
-    
+
     const isCorrect = selectedIndex === currentQuestion.correctIndex;
-    
+    const responseTime = (Date.now() - questionStartTime) / 1000;
+
+    // Log word performance for analytics
+    if (gameService && userId && currentQuestion.word) {
+      gameService.logWordPerformance({
+        session_id: gameSessionId || 'temp-session',
+        vocabulary_id: currentQuestion.id ? parseInt(currentQuestion.id) : undefined,
+        word_text: currentQuestion.word,
+        translation_text: currentQuestion.translation,
+        language_pair: `${settings.language}_english`,
+        attempt_number: 1,
+        response_time_ms: Math.round(responseTime * 1000),
+        was_correct: isCorrect,
+        confidence_level: responseTime < 3 ? 5 : responseTime < 6 ? 4 : responseTime < 10 ? 3 : 2,
+        difficulty_level: settings.difficulty,
+        hint_used: false,
+        streak_count: isCorrect ? correctAnswers + 1 : 0,
+        previous_attempts: 0,
+        mastery_level: isCorrect ? 1 : 0,
+        error_type: isCorrect ? undefined : 'incorrect_selection',
+        grammar_concept: 'vocabulary_recognition',
+        error_details: isCorrect ? undefined : {
+          correctAnswer: currentQuestion.translation,
+          selectedAnswer: currentQuestion.options[selectedIndex],
+          gameMode: 'strategic_vocabulary',
+          boardPosition: pendingMove
+        },
+        context_data: {
+          gameType: 'noughts-and-crosses',
+          gameMode: 'strategic_vocabulary',
+          boardPosition: pendingMove,
+          gameState: gameState,
+          strategicContext: 'cell_placement'
+        },
+        timestamp: new Date()
+      }).catch(error => {
+        console.error('Failed to log word performance:', error);
+      });
+    }
+
     if (isCorrect) {
       // Play correct answer sound
       playSFX('correct-answer');

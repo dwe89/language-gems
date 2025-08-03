@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { assessmentSkillTrackingService, type ReadingSkillMetrics } from '@/services/assessmentSkillTrackingService';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -19,13 +20,13 @@ export async function POST(request: NextRequest) {
     const { data: result, error: resultError } = await supabase
       .from('reading_comprehension_results')
       .insert({
-        task_id: textId,
-        student_id: userId,
+        text_id: textId,
+        user_id: userId,
         assignment_id: assignmentMode ? results.assignmentId : null,
         total_questions: results.totalQuestions,
         correct_answers: results.correctAnswers,
-        score_percentage: results.score,
-        time_spent_seconds: results.timeSpent,
+        score: results.score,
+        time_spent: results.timeSpent,
         passed: results.passed,
       })
       .select()
@@ -58,6 +59,35 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Track reading skills in assessment_skill_breakdown table
+    const { data: taskData } = await supabase
+      .from('reading_comprehension_tasks')
+      .select('language, difficulty')
+      .eq('id', textId)
+      .single();
+
+    if (taskData) {
+      const readingMetrics: ReadingSkillMetrics = {
+        textComprehensionAccuracy: results.score,
+        inferenceAbility: results.score * 0.9, // Estimate inference component
+        vocabularyInContext: results.score * 0.95, // Estimate vocabulary component
+        readingSpeed: results.timeSpent > 0 ? (results.totalQuestions / results.timeSpent) * 60 : 0,
+        detailRetention: results.score,
+        criticalAnalysis: results.score * 0.85 // Estimate critical analysis component
+      };
+
+      await assessmentSkillTrackingService.trackReadingSkills(
+        userId,
+        result.id,
+        'reading_comprehension',
+        taskData.language,
+        readingMetrics,
+        results.totalQuestions,
+        results.correctAnswers,
+        results.timeSpent
+      );
+    }
+
     // Update assignment progress if this was part of an assignment
     if (assignmentMode && results.assignmentId) {
       await supabase
@@ -86,11 +116,7 @@ export async function GET(request: NextRequest) {
     
     let query = supabase
       .from('reading_comprehension_results')
-      .select(`
-        *,
-        reading_comprehension_tasks(*),
-        user_profiles!student_id(first_name, last_name)
-      `);
+      .select('*');
 
     // Apply filters
     const studentId = searchParams.get('student_id');
@@ -101,10 +127,8 @@ export async function GET(request: NextRequest) {
     const dateTo = searchParams.get('date_to');
     const limit = searchParams.get('limit');
 
-    if (studentId) query = query.eq('student_id', studentId);
-    if (taskId) query = query.eq('task_id', taskId);
-    if (language) query = query.eq('reading_comprehension_tasks.language', language);
-    if (difficulty) query = query.eq('reading_comprehension_tasks.difficulty', difficulty);
+    if (studentId) query = query.eq('user_id', studentId);
+    if (taskId) query = query.eq('text_id', taskId);
     if (dateFrom) query = query.gte('completed_at', dateFrom);
     if (dateTo) query = query.lte('completed_at', dateTo);
 
@@ -118,7 +142,43 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch results' }, { status: 500 });
     }
 
-    return NextResponse.json({ results: results || [] });
+    // Manually fetch task details and user profiles for each result
+    const enrichedResults = await Promise.all((results || []).map(async (result) => {
+      // Fetch task data
+      const { data: taskData } = await supabase
+        .from('reading_comprehension_tasks')
+        .select('*')
+        .eq('id', result.text_id)
+        .single();
+
+      // Fetch user profile data
+      const { data: userData } = await supabase
+        .from('user_profiles')
+        .select('first_name, last_name')
+        .eq('user_id', result.user_id)
+        .single();
+
+      return {
+        ...result,
+        reading_comprehension_task: taskData,
+        user_profile: userData
+      };
+    }));
+
+    // Apply language and difficulty filters on the enriched results
+    let filteredResults = enrichedResults;
+    if (language) {
+      filteredResults = filteredResults.filter(result => 
+        result.reading_comprehension_task?.language === language
+      );
+    }
+    if (difficulty) {
+      filteredResults = filteredResults.filter(result => 
+        result.reading_comprehension_task?.difficulty === difficulty
+      );
+    }
+
+    return NextResponse.json({ results: filteredResults });
   } catch (error) {
     console.error('API error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

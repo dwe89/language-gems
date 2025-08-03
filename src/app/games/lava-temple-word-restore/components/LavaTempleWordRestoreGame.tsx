@@ -6,6 +6,7 @@ import { useAuth } from '../../../../components/auth/AuthProvider';
 import LanguageSelection from './LanguageSelection';
 import TempleRestoration from './TempleRestoration';
 import TabletCompleted from './TabletCompleted';
+import { EnhancedGameService } from '../../../../services/enhancedGameService';
 
 export interface GameConfig {
   language: 'spanish' | 'french' | 'german';
@@ -18,6 +19,19 @@ interface LavaTempleWordRestoreGameProps {
   gameConfig: GameConfig;
   onBackToLauncher?: () => void;
   onBackToMenu?: () => void;
+  onRestorationComplete?: (result: {
+    score: number;
+    correctAnswers: number;
+    totalAttempts: number;
+    accuracy: number;
+    duration: number;
+    tabletsRestored: number;
+    fillInBlankAccuracy?: number;
+    contextClueUsage?: number;
+    templeProgression?: number;
+  }) => void;
+  gameSessionId?: string | null;
+  gameService?: EnhancedGameService | null;
 }
 
 type GameState = 'temple-restoration' | 'tablet-completed';
@@ -25,7 +39,10 @@ type GameState = 'temple-restoration' | 'tablet-completed';
 export default function LavaTempleWordRestoreGame({
   gameConfig,
   onBackToLauncher,
-  onBackToMenu
+  onBackToMenu,
+  onRestorationComplete,
+  gameSessionId,
+  gameService
 }: LavaTempleWordRestoreGameProps) {
   const { user } = useAuth();
   const [gameState, setGameState] = useState<GameState>('temple-restoration');
@@ -34,6 +51,22 @@ export default function LavaTempleWordRestoreGame({
   // Handle temple restoration completion
   const handleRestorationComplete = (results: any) => {
     setGameResults(results);
+
+    // Call the enhanced restoration completion handler if provided
+    if (onRestorationComplete) {
+      onRestorationComplete({
+        score: results.score || 0,
+        correctAnswers: results.correctAnswers || 0,
+        totalAttempts: results.totalAttempts || 0,
+        accuracy: results.accuracy || 0,
+        duration: results.duration || 0,
+        tabletsRestored: results.tabletsRestored || 0,
+        fillInBlankAccuracy: results.accuracy || 0,
+        contextClueUsage: results.contextClueUsage || 0,
+        templeProgression: results.tabletsRestored || 0
+      });
+    }
+
     setGameState('tablet-completed');
   };
 
@@ -84,6 +117,8 @@ export default function LavaTempleWordRestoreGame({
                 gameConfig={gameConfig}
                 onRestorationComplete={handleRestorationComplete}
                 onBackToMenu={handleBackToMenu}
+                gameSessionId={gameSessionId}
+                gameService={gameService}
               />
             </motion.div>
           )}

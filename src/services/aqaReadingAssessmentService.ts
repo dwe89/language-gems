@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import type { AQAReadingQuestion } from '@/components/assessments/AQAReadingAssessment';
+import { assessmentSkillTrackingService, type ReadingSkillMetrics } from './assessmentSkillTrackingService';
 
 export interface AQAAssessmentDefinition {
   id: string;
@@ -226,6 +227,29 @@ export class AQAReadingAssessmentService {
     const performanceByTheme = this.calculatePerformanceByCategory(responses, 'theme');
     const performanceByTopic = this.calculatePerformanceByCategory(responses, 'topic');
 
+    // Calculate reading skill metrics for skill tracking
+    const averageResponseTime = responses.length > 0 ? totalTimeSeconds / responses.length : 0;
+    const correctAnswers = responses.filter(r => r.is_correct).length;
+    const readingSpeed = totalTimeSeconds > 0 ? (responses.length / totalTimeSeconds) * 60 : 0; // questions per minute
+
+    // Analyze question types for specific skills
+    const inferenceQuestions = responses.filter(r => r.question_type === 'open-response' || r.question_type === 'opinion-rating');
+    const vocabularyQuestions = responses.filter(r => r.question_type === 'multiple-choice' || r.question_type === 'letter-matching');
+    const comprehensionQuestions = responses.filter(r => r.question_type === 'student-grid' || r.question_type === 'sentence-completion');
+
+    const readingMetrics: ReadingSkillMetrics = {
+      textComprehensionAccuracy: comprehensionQuestions.length > 0 ?
+        (comprehensionQuestions.filter(q => q.is_correct).length / comprehensionQuestions.length) * 100 : percentageScore,
+      inferenceAbility: inferenceQuestions.length > 0 ?
+        (inferenceQuestions.filter(q => q.is_correct).length / inferenceQuestions.length) * 100 : percentageScore,
+      vocabularyInContext: vocabularyQuestions.length > 0 ?
+        (vocabularyQuestions.filter(q => q.is_correct).length / vocabularyQuestions.length) * 100 : percentageScore,
+      readingSpeed: readingSpeed,
+      detailRetention: percentageScore, // Could be enhanced with detail-specific question analysis
+      criticalAnalysis: inferenceQuestions.length > 0 ?
+        (inferenceQuestions.filter(q => q.is_correct).length / inferenceQuestions.length) * 100 : percentageScore
+    };
+
     // Update the main result record
     const { error: resultError } = await this.supabase
       .from('aqa_reading_results')
@@ -262,6 +286,36 @@ export class AQAReadingAssessmentService {
     if (responsesError) {
       console.error('Error inserting question responses:', responsesError);
       return false;
+    }
+
+    // Get the assessment result to extract student_id and assessment_id for skill tracking
+    const { data: resultData, error: resultFetchError } = await this.supabase
+      .from('aqa_reading_results')
+      .select('student_id, assessment_id')
+      .eq('id', resultId)
+      .single();
+
+    if (!resultFetchError && resultData) {
+      // Get assessment details for language
+      const { data: assessmentData } = await this.supabase
+        .from('aqa_reading_assessments')
+        .select('language')
+        .eq('id', resultData.assessment_id)
+        .single();
+
+      if (assessmentData) {
+        // Track reading skills in assessment_skill_breakdown table
+        await assessmentSkillTrackingService.trackReadingSkills(
+          resultData.student_id,
+          resultData.assessment_id,
+          'aqa_reading',
+          assessmentData.language,
+          readingMetrics,
+          responses.length,
+          correctAnswers,
+          totalTimeSeconds
+        );
+      }
     }
 
     return true;

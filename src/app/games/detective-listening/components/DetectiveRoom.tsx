@@ -8,6 +8,7 @@ import { VOCABULARY_CATEGORIES } from '../../../../components/games/ModernCatego
 import { useAudioManager } from '../hooks/useAudioManager';
 import { Evidence } from '../types';
 import { StandardVocabularyItem, AssignmentData, GameProgress, calculateStandardScore } from '../../../../components/games/templates/GameAssignmentWrapper';
+import { EnhancedGameService } from '../../../../services/enhancedGameService';
 
 interface AssignmentMode {
   assignment: AssignmentData;
@@ -23,14 +24,29 @@ interface DetectiveRoomProps {
   onGameComplete: (results: any) => void;
   onBack: () => void;
   assignmentMode?: AssignmentMode;
+  gameSessionId?: string | null;
+  gameService?: EnhancedGameService | null;
+  vocabularyWords?: any[];
 }
 
-export default function DetectiveRoom({ caseType, subcategory, language, onGameComplete, onBack, assignmentMode }: DetectiveRoomProps) {
+export default function DetectiveRoom({
+  caseType,
+  subcategory,
+  language,
+  onGameComplete,
+  onBack,
+  assignmentMode,
+  gameSessionId,
+  gameService,
+  vocabularyWords
+}: DetectiveRoomProps) {
   const [currentEvidenceIndex, setCurrentEvidenceIndex] = useState(0);
   const [evidenceList, setEvidenceList] = useState<Evidence[]>([]);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
   const [replayCount, setReplayCount] = useState(0);
+  const [evidenceStartTime, setEvidenceStartTime] = useState<number>(0);
+  const [totalResponseTime, setTotalResponseTime] = useState<number>(0);
   const [gameProgress, setGameProgress] = useState({
     correctAnswers: 0,
     totalEvidence: 10,
@@ -240,16 +256,21 @@ export default function DetectiveRoom({ caseType, subcategory, language, onGameC
 
   const handlePlayEvidence = async () => {
     if (currentEvidence && replayCount < 2) {
+      // Set start time for response tracking
+      if (replayCount === 0) {
+        setEvidenceStartTime(Date.now());
+      }
+
       // Ensure background music is playing on first interaction
       await ensureBackgroundMusic();
-      
+
       // Play radio static first
       await playSound('radioStatic');
-      
+
       // Small delay then play radio beep
       setTimeout(async () => {
         await playSound('radioBeep');
-        
+
         // Another small delay then play the evidence audio
         setTimeout(async () => {
           await playEvidence(currentEvidence.audio, currentEvidence.word);
@@ -261,21 +282,50 @@ export default function DetectiveRoom({ caseType, subcategory, language, onGameC
     }
   };
 
-  const handleAnswerSelect = (answer: string) => {
+  const handleAnswerSelect = async (answer: string) => {
     if (showFeedback || !currentEvidence) return;
-    
+
     setSelectedAnswer(answer);
     setShowFeedback(true);
-    
+
     const isCorrect = answer === currentEvidence.correct;
-    
+    const responseTime = evidenceStartTime > 0 ? Date.now() - evidenceStartTime : 0;
+
+    // Update total response time
+    setTotalResponseTime(prev => prev + responseTime);
+
+    // Log word-level performance if game service is available
+    if (gameService && gameSessionId) {
+      try {
+        await gameService.logWordPerformance({
+          session_id: gameSessionId,
+          word_id: currentEvidence.id,
+          word: currentEvidence.word || currentEvidence.correct,
+          translation: currentEvidence.correct,
+          is_correct: isCorrect,
+          response_time_ms: responseTime,
+          attempts: currentEvidence.attempts + 1,
+          error_type: isCorrect ? undefined : 'listening_comprehension',
+          grammar_concept: 'listening_skills',
+          error_details: isCorrect ? undefined : {
+            selectedAnswer: answer,
+            correctAnswer: currentEvidence.correct,
+            evidenceType: 'audio_comprehension',
+            replayCount: replayCount
+          }
+        });
+      } catch (error) {
+        console.error('Failed to log word performance:', error);
+      }
+    }
+
     // Play feedback sound effect
     if (isCorrect) {
       playSound('correctAnswer');
     } else {
       playSound('wrongAnswer');
     }
-    
+
     const updatedEvidence = {
       ...currentEvidence,
       answered: true,
@@ -331,6 +381,7 @@ export default function DetectiveRoom({ caseType, subcategory, language, onGameC
         setSelectedAnswer(null);
         setShowFeedback(false);
         setReplayCount(0);
+        setEvidenceStartTime(0); // Reset timer for next evidence
       } else {
         // Game complete
         const finalCorrectAnswers = gameProgress.correctAnswers + (isCorrect ? 1 : 0);
@@ -365,10 +416,13 @@ export default function DetectiveRoom({ caseType, subcategory, language, onGameC
           });
         } else {
           // Regular game completion
+          const averageResponseTime = totalWords > 0 ? (totalResponseTime + responseTime) / totalWords : 0;
           onGameComplete({
             correctAnswers: finalCorrectAnswers,
             totalEvidence: totalWords,
-            evidenceCollected: [...gameProgress.evidenceCollected, updatedEvidence]
+            evidenceCollected: [...gameProgress.evidenceCollected, updatedEvidence],
+            timeSpent: Math.floor((totalResponseTime + responseTime) / 1000),
+            averageResponseTime: averageResponseTime
           });
         }
       }

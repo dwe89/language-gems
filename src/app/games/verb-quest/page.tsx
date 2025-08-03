@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { IoChevronBackOutline, IoVolumeHighOutline, IoVolumeMuteOutline } from 'react-icons/io5';
 import { useSearchParams } from 'next/navigation';
-import VerbQuestGame from './components/VerbQuestGame';
+import VerbQuestGameWrapper from './components/VerbQuestGameWrapper';
 import CharacterCreation from './components/CharacterCreation';
 import VerbQuestAssignmentWrapper from './components/VerbQuestAssignmentWrapper';
 import { Character } from './components/Character';
@@ -102,11 +102,12 @@ export default function VerbQuestPage() {
 
   if (gameState === 'playing' && character && character.stats && questSystem) {
     return (
-      <VerbQuestGame
+      <VerbQuestGameWrapper
         character={character}
         questSystem={questSystem}
         onBackToMenu={handleBackToMenu}
         soundEnabled={soundEnabled}
+        userId={character.stats.name} // Using character name as user ID for now
       />
     );
   }

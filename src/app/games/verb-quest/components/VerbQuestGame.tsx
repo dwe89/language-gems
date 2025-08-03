@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { IoArrowBackOutline, IoSettingsOutline, IoVolumeHighOutline, IoVolumeMuteOutline } from 'react-icons/io5';
+import { EnhancedGameService } from '../../../../services/enhancedGameService';
 import WorldMap from './WorldMap';
 import Battle from './Battle';
 import { Character } from './Character';
@@ -17,6 +18,20 @@ interface VerbQuestGameProps {
   onGameComplete?: (results: any) => void;
   assignmentMode?: boolean;
   assignmentConfig?: any;
+  gameSessionId?: string | null;
+  gameService?: EnhancedGameService | null;
+  onVerbConjugation?: (
+    verb: string,
+    tense: string,
+    person: string,
+    userAnswer: string,
+    correctAnswer: string,
+    isCorrect: boolean,
+    responseTime: number,
+    battleContext?: any
+  ) => void;
+  onQuestProgress?: (questId: string, questType: string, progress: number, completed: boolean) => void;
+  onBattleResult?: (enemy: any, victory: boolean, expGained: number) => void;
 }
 
 type GameState = 'worldmap' | 'battle' | 'intro' | 'menu';
@@ -28,7 +43,12 @@ export default function VerbQuestGame({
   soundEnabled = true,
   onGameComplete,
   assignmentMode = false,
-  assignmentConfig
+  assignmentConfig,
+  gameSessionId,
+  gameService,
+  onVerbConjugation,
+  onQuestProgress,
+  onBattleResult
 }: VerbQuestGameProps) {
   // Safety check to ensure character and stats are properly initialized
   if (!character || !character.stats) {
@@ -89,7 +109,7 @@ export default function VerbQuestGame({
       if (currentBattle?.enemy.id) {
         character.defeatEnemy(currentBattle.enemy.id);
       }
-      
+
       // Update current region if all enemies in current region are defeated
       if (currentBattle?.region) {
         const region = currentBattle.region;
@@ -97,12 +117,17 @@ export default function VerbQuestGame({
         updateCurrentRegionIfComplete(region);
       }
     }
-    
+
     // Update quests
     questSystem.updateProgress('defeat_enemies', 1);
-    // Save quests to localStorage  
+    // Save quests to localStorage
     localStorage.setItem('verbQuestQuests', JSON.stringify(questSystem.getActiveQuests()));
-    
+
+    // Log battle result for analytics
+    if (onBattleResult && currentBattle) {
+      onBattleResult(currentBattle.enemy, victory, expGained);
+    }
+
     setCurrentBattle(null);
     setGameState('worldmap');
   };
@@ -223,6 +248,7 @@ export default function VerbQuestGame({
                 character={character}
                 onBattleEnd={endBattle}
                 soundEnabled={soundEnabled}
+                onVerbConjugation={onVerbConjugation}
               />
             </motion.div>
           )}

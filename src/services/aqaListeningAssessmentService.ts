@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { assessmentSkillTrackingService, type ListeningSkillMetrics } from './assessmentSkillTrackingService';
 
 export interface AQAListeningAssessmentDefinition {
   id: string;
@@ -217,7 +218,7 @@ export class AQAListeningAssessmentService {
     audioPlayCounts: Record<string, number> = {}
   ): Promise<boolean> {
     const completionTime = new Date().toISOString();
-    
+
     // Calculate scores and performance summaries
     const rawScore = responses.reduce((sum, r) => sum + r.points_awarded, 0);
     const totalPossible = responses.reduce((sum, r) => sum + r.marks_possible, 0);
@@ -227,6 +228,20 @@ export class AQAListeningAssessmentService {
     const performanceByType = this.calculatePerformanceByCategory(responses, 'question_type');
     const performanceByTheme = this.calculatePerformanceByCategory(responses, 'theme');
     const performanceByTopic = this.calculatePerformanceByCategory(responses, 'topic');
+
+    // Calculate listening skill metrics for skill tracking
+    const totalAudioPlays = Object.values(audioPlayCounts).reduce((sum, count) => sum + count, 0);
+    const averageResponseTime = responses.length > 0 ? totalTimeSeconds / responses.length : 0;
+    const correctAnswers = responses.filter(r => r.is_correct).length;
+
+    const listeningMetrics: ListeningSkillMetrics = {
+      audioComprehensionAccuracy: percentageScore,
+      responseTimePerEvidence: averageResponseTime,
+      listeningSkillProgression: percentageScore, // Could be enhanced with historical comparison
+      audioPlaybackCount: totalAudioPlays,
+      comprehensionSpeed: totalTimeSeconds > 0 ? (responses.length / totalTimeSeconds) * 60 : 0, // questions per minute
+      contextualUnderstanding: percentageScore // Could be enhanced with context-specific analysis
+    };
 
     // Update the main result record
     const { error: resultError } = await this.supabase
@@ -265,6 +280,36 @@ export class AQAListeningAssessmentService {
     if (responsesError) {
       console.error('Error inserting question responses:', responsesError);
       return false;
+    }
+
+    // Get the assessment result to extract student_id and assessment_id for skill tracking
+    const { data: resultData, error: resultFetchError } = await this.supabase
+      .from('aqa_listening_results')
+      .select('student_id, assessment_id')
+      .eq('id', resultId)
+      .single();
+
+    if (!resultFetchError && resultData) {
+      // Get assessment details for language
+      const { data: assessmentData } = await this.supabase
+        .from('aqa_listening_assessments')
+        .select('language')
+        .eq('id', resultData.assessment_id)
+        .single();
+
+      if (assessmentData) {
+        // Track listening skills in assessment_skill_breakdown table
+        await assessmentSkillTrackingService.trackListeningSkills(
+          resultData.student_id,
+          resultData.assessment_id,
+          'aqa_listening',
+          assessmentData.language,
+          listeningMetrics,
+          responses.length,
+          correctAnswers,
+          totalTimeSeconds
+        );
+      }
     }
 
     return true;

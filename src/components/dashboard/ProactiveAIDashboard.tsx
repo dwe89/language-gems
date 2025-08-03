@@ -139,121 +139,15 @@ export default function ProactiveAIDashboard({ teacherId }: ProactiveAIDashboard
           setQuickMetrics(calculatedMetrics);
         } else {
           console.error('Failed to load insights:', data.error);
-          // Fall back to mock data
+          // Show empty state on error
           setInsights([]);
           setQuickMetrics([]);
         }
       } catch (error) {
         console.error('Error loading insights:', error);
-        // Fall back to mock data
-        const mockInsights: CriticalInsight[] = [
-        {
-          id: '1',
-          type: 'urgent_action',
-          priority: 'urgent',
-          title: 'James Wilson needs immediate intervention',
-          description: 'Performance dropped 35% in past week. Zero logins in 4 days. Risk of complete disengagement.',
-          impact: 'Student may fail current assignments and lose motivation entirely',
-          action: {
-            label: 'Contact Student & Parents',
-            route: '/dashboard/students/james-wilson',
-            data: { studentId: 'james-wilson', action: 'intervention' }
-          },
-          confidence: 0.94,
-          studentsAffected: 1,
-          timeframe: 'Act within 24 hours',
-          generated_at: new Date().toISOString()
-        },
-        {
-          id: '2',
-          type: 'at_risk_student',
-          priority: 'high',
-          title: '3 students struggling with past tense verbs',
-          description: 'Sarah, Mike, and Lisa all showing <40% accuracy on past tense conjugations across multiple games.',
-          impact: 'Core grammar concept affecting overall language progression',
-          action: {
-            label: 'Create Targeted Assignment',
-            route: '/dashboard/assignments/new',
-            data: { focus: 'past-tense-verbs', students: ['sarah', 'mike', 'lisa'] }
-          },
-          confidence: 0.87,
-          studentsAffected: 3,
-          timeframe: 'Address this week',
-          generated_at: new Date().toISOString()
-        },
-        {
-          id: '3',
-          type: 'class_trend',
-          priority: 'high',
-          title: 'Year 7 French engagement dropping',
-          description: 'Class average session time down 40% this week. Only 60% of students completed latest assignment.',
-          impact: 'Risk of class-wide motivation decline before half-term',
-          action: {
-            label: 'Review Class Strategy',
-            route: '/dashboard/classes/year-7-french',
-            data: { classId: 'year-7-french', focus: 'engagement' }
-          },
-          confidence: 0.82,
-          studentsAffected: 18,
-          timeframe: 'Address before next lesson',
-          generated_at: new Date().toISOString()
-        },
-        {
-          id: '4',
-          type: 'opportunity',
-          priority: 'medium',
-          title: 'Emma Thompson ready for advanced content',
-          description: '95% accuracy across all recent assignments. Completing tasks 2x faster than class average.',
-          impact: 'Opportunity to accelerate learning and maintain engagement',
-          action: {
-            label: 'Assign Challenge Activities',
-            route: '/dashboard/assignments/new',
-            data: { studentId: 'emma-thompson', difficulty: 'advanced' }
-          },
-          confidence: 0.91,
-          studentsAffected: 1,
-          timeframe: 'Next lesson',
-          generated_at: new Date().toISOString()
-        }
-      ];
-
-      const mockMetrics: QuickMetric[] = [
-        {
-          label: 'Students at Risk',
-          value: 4,
-          change: +1,
-          trend: 'up',
-          icon: <AlertTriangle className="w-5 h-5" />,
-          color: 'text-red-600'
-        },
-        {
-          label: 'Class Engagement',
-          value: '72%',
-          change: -8,
-          trend: 'down',
-          icon: <TrendingDown className="w-5 h-5" />,
-          color: 'text-orange-600'
-        },
-        {
-          label: 'Active Students',
-          value: 28,
-          change: -3,
-          trend: 'down',
-          icon: <Users className="w-5 h-5" />,
-          color: 'text-blue-600'
-        },
-        {
-          label: 'Avg. Session Time',
-          value: '18m',
-          change: -5,
-          trend: 'down',
-          icon: <Clock className="w-5 h-5" />,
-          color: 'text-purple-600'
-        }
-      ];
-
-        setInsights(mockInsights);
-        setQuickMetrics(mockMetrics);
+        // Show empty state on error
+        setInsights([]);
+        setQuickMetrics([]);
       }
 
       setLastUpdated(new Date());

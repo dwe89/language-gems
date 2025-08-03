@@ -27,6 +27,8 @@ interface SessionData {
   pause_count: number;
   hint_requests: number;
   retry_attempts: number;
+  xp_earned?: number;
+  bonus_xp?: number;
   session_data: any;
   device_info: any;
 }
@@ -108,6 +110,13 @@ export const useSessionSaving = (
     const accuracy = totalQuestions > 0 ? (gameState.correctAnswers / totalQuestions) * 100 : 0;
     const completionPercentage = vocabulary.length > 0 ? (gameState.currentWordIndex / vocabulary.length) * 100 : 0;
 
+    // Calculate XP based on performance
+    const baseXP = gameState.correctAnswers * 10; // 10 XP per correct answer
+    const accuracyBonus = Math.round(accuracy * 0.5); // Bonus for accuracy
+    const streakBonus = gameState.maxStreak * 5; // 5 XP per max streak
+    const gemBonus = gameState.gemsCollected * 3; // 3 XP per gem collected
+    const totalXP = baseXP + accuracyBonus + streakBonus + gemBonus;
+
     return {
       duration_seconds: gameState.timeSpent,
       final_score: gameState.score,
@@ -125,13 +134,17 @@ export const useSessionSaving = (
       pause_count: 0,
       hint_requests: 0, // This would need to be tracked
       retry_attempts: 0,
+      xp_earned: totalXP,
+      bonus_xp: accuracyBonus + streakBonus + gemBonus,
       session_data: {
         gameMode: gameState.gameMode,
         currentWordIndex: gameState.currentWordIndex,
         streak: gameState.streak,
         maxStreak: gameState.maxStreak,
         gemsCollected: gameState.gemsCollected,
-        currentGemType: gameState.currentGemType
+        currentGemType: gameState.currentGemType,
+        miningEfficiency: accuracy,
+        gemCollectionRate: gameState.gemsCollected / Math.max(totalQuestions, 1)
       },
       device_info: {
         userAgent: typeof window !== 'undefined' ? window.navigator.userAgent : '',

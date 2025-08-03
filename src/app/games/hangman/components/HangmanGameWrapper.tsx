@@ -215,21 +215,39 @@ export default function HangmanGameWrapper(props: HangmanGameWrapperProps) {
     if (gameService && gameSessionId && props.userId && sessionStartTime) {
       try {
         const sessionDuration = Math.floor((Date.now() - sessionStartTime.getTime()) / 1000);
+        const accuracy = sessionStats.totalWordsAttempted > 0 ?
+          (sessionStats.totalWordsCorrect / sessionStats.totalWordsAttempted) * 100 : 0;
 
-        await gameService.endGameSession({
-          session_id: gameSessionId,
+        // Calculate XP based on performance
+        const baseXP = sessionStats.totalWordsCorrect * 15; // 15 XP per word
+        const accuracyBonus = Math.round(accuracy * 0.3); // Bonus for accuracy
+        const speedBonus = sessionDuration < 120 ? 25 : sessionDuration < 300 ? 15 : 0; // Speed bonus
+        const totalXP = baseXP + accuracyBonus + speedBonus;
+
+        await gameService.endGameSession(gameSessionId, {
           student_id: props.userId,
-          assignment_id: props.assignmentId || undefined,
-          session_duration: sessionDuration,
-          total_score: score,
-          total_correct: correctAnswers,
-          total_incorrect: incorrectAnswers,
-          completion_status: 'completed'
+          final_score: sessionStats.totalScore,
+          accuracy_percentage: accuracy,
+          completion_percentage: 100,
+          words_attempted: sessionStats.totalWordsAttempted,
+          words_correct: sessionStats.totalWordsCorrect,
+          unique_words_practiced: sessionStats.totalWordsAttempted, // Each word is unique in hangman
+          duration_seconds: sessionDuration,
+          xp_earned: totalXP,
+          bonus_xp: accuracyBonus + speedBonus,
+          session_data: {
+            gameType: 'hangman',
+            totalWords: sessionStats.totalWordsAttempted,
+            correctWords: sessionStats.totalWordsCorrect,
+            averageTimePerWord: sessionStats.totalWordsAttempted > 0 ?
+              sessionDuration / sessionStats.totalWordsAttempted : 0,
+            hangmanAccuracy: accuracy
+          }
         });
 
-        console.log('Game session ended successfully');
+        console.log('Hangman game session ended with XP:', totalXP);
       } catch (error) {
-        console.error('Error ending game session:', error);
+        console.error('Error ending hangman game session:', error);
       }
     }
   };
@@ -265,169 +283,7 @@ export default function HangmanGameWrapper(props: HangmanGameWrapperProps) {
     }
   };
 
-  // Legacy function - now handled by useGameVocabulary hook
-  const loadVocabulary = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      // Check if we have category vocabulary from the category selector
-      if (props.settings.categoryVocabulary && props.settings.categoryVocabulary.length > 0) {
-        console.log('Using category-selected vocabulary:', props.settings.categoryVocabulary.length, 'words');
-        
-        // Transform category vocabulary to the expected format
-        const transformedVocabulary = props.settings.categoryVocabulary.map(item => ({
-          id: item.id,
-          word: item.word,
-          translation: item.translation,
-          language: item.language || 'spanish',
-          category: item.category || 'general',
-          subcategory: item.subcategory,
-          part_of_speech: item.part_of_speech,
-          difficulty_level: item.difficulty_level || 'beginner',
-          audio_url: item.audio_url,
-          example_sentence: item.example_sentence,
-          example_translation: item.example_translation
-        }));
-
-        // Organize by difficulty
-        const organizedVocabulary: VocabularyPool = {};
-        const language = props.settings.language === 'spanish' ? 'es' : props.settings.language;
-        const category = 'selected_topics';
-
-        organizedVocabulary[language] = {
-          [category]: {
-            beginner: transformedVocabulary.filter(w => 
-              !w.difficulty_level || w.difficulty_level === 'beginner' || w.word.length <= 6
-            ),
-            intermediate: transformedVocabulary.filter(w => 
-              w.difficulty_level === 'intermediate' || (w.word.length > 6 && w.word.length <= 10)
-            ),
-            advanced: transformedVocabulary.filter(w => 
-              w.difficulty_level === 'advanced' || w.word.length > 10
-            )
-          }
-        };
-
-        // Ensure we have words in each difficulty level by redistributing if needed
-        if (organizedVocabulary[language][category].beginner.length === 0) {
-          organizedVocabulary[language][category].beginner = transformedVocabulary.slice(0, Math.ceil(transformedVocabulary.length / 3));
-        }
-        if (organizedVocabulary[language][category].intermediate.length === 0) {
-          organizedVocabulary[language][category].intermediate = transformedVocabulary.slice(
-            Math.ceil(transformedVocabulary.length / 3), 
-            Math.ceil(transformedVocabulary.length * 2 / 3)
-          );
-        }
-        if (organizedVocabulary[language][category].advanced.length === 0) {
-          organizedVocabulary[language][category].advanced = transformedVocabulary.slice(Math.ceil(transformedVocabulary.length * 2 / 3));
-        }
-
-        setVocabularyPool(organizedVocabulary);
-        setIsLoading(false);
-        return;
-      }
-
-      // Original vocabulary loading logic when no category is selected
-      const vocabularyService = new CentralizedVocabularyService(supabase);
-      const mappedLanguage = mapLanguage(props.settings.language);
-      const mappedCategory = mapCategory(props.settings.category);
-      
-      // Load vocabulary for the specified language and category
-      let vocabulary: CentralizedVocabularyWord[] = [];
-      
-      try {
-        vocabulary = await vocabularyService.getVocabulary({
-          language: mappedLanguage,
-          category: mappedCategory,
-          hasAudio: true, // Prefer words with audio
-          limit: 100,
-          randomize: true
-        });
-      } catch (error) {
-        console.warn(`Failed to load vocabulary via service, trying direct query`);
-        
-        // Fallback: direct Supabase query
-        const { data, error: directError } = await supabase
-          .from('centralized_vocabulary')
-          .select('*')
-          .eq('language', mappedLanguage)
-          .eq('category', mappedCategory)
-          .not('audio_url', 'is', null)
-          .limit(100);
-          
-        if (!directError && data) {
-          vocabulary = data;
-        }
-      }
-
-      // Fallback to Spanish animals if no vocabulary found
-      if (vocabulary.length === 0) {
-        const { data, error: fallbackError } = await supabase
-          .from('centralized_vocabulary')
-          .select('*')
-          .eq('language', 'es')
-          .eq('category', 'animals')
-          .not('audio_url', 'is', null)
-          .limit(50);
-          
-        if (!fallbackError && data) {
-          vocabulary = data;
-        }
-      }
-
-      // Organize vocabulary by difficulty
-      const organizedVocabulary: VocabularyPool = {};
-      
-      // Initialize structure
-      organizedVocabulary[props.settings.language] = {};
-      organizedVocabulary[props.settings.language][props.settings.category] = {
-        beginner: [],
-        intermediate: [],
-        advanced: []
-      };
-
-      // Distribute words across difficulty levels
-      // Since our vocabulary doesn't have difficulty levels, we'll distribute based on word length
-      vocabulary.forEach((word, index) => {
-        const wordLength = word.word.length;
-        let difficulty: string;
-        
-        if (wordLength <= 5) {
-          difficulty = 'beginner';
-        } else if (wordLength <= 8) {
-          difficulty = 'intermediate'; 
-        } else {
-          difficulty = 'advanced';
-        }
-
-        // Also distribute evenly across difficulties
-        const difficultyIndex = index % 3;
-        const difficultyLevels = ['beginner', 'intermediate', 'advanced'];
-        const finalDifficulty = difficultyLevels[difficultyIndex];
-
-        organizedVocabulary[props.settings.language][props.settings.category][finalDifficulty].push(word);
-      });
-
-      // Ensure each difficulty has at least some words by redistributing if needed
-      const difficulties = ['beginner', 'intermediate', 'advanced'];
-      difficulties.forEach(diff => {
-        if (organizedVocabulary[props.settings.language][props.settings.category][diff].length === 0) {
-          // Copy from beginner as fallback
-          organizedVocabulary[props.settings.language][props.settings.category][diff] = 
-            [...organizedVocabulary[props.settings.language][props.settings.category]['beginner']];
-        }
-      });
-
-      setVocabularyPool(organizedVocabulary);
-      setIsLoading(false);
-      
-    } catch (error) {
-      console.error('Error loading vocabulary:', error);
-      setError('Failed to load vocabulary. Using fallback words.');
-      setIsLoading(false);
-    }
-  };
+  // Legacy function removed - now handled by useGameVocabulary hook
 
   // Function to get vocabulary for the game  
   const getVocabularyForGame = (): string[] => {
@@ -536,13 +392,70 @@ export default function HangmanGameWrapper(props: HangmanGameWrapperProps) {
     correctGuesses?: number;
     totalGuesses?: number;
     timeSpent?: number;
+    currentWord?: string;
+    vocabularyId?: number;
+    wrongGuesses?: number;
   }) => {
     // Update session stats for this word
-    setSessionStats(prev => ({
-      totalWordsAttempted: prev.totalWordsAttempted + 1,
-      totalWordsCorrect: prev.totalWordsCorrect + (result === 'win' ? 1 : 0),
-      totalScore: prev.totalScore + (result === 'win' ? 100 : 0)
-    }));
+    const newStats = {
+      totalWordsAttempted: sessionStats.totalWordsAttempted + 1,
+      totalWordsCorrect: sessionStats.totalWordsCorrect + (result === 'win' ? 1 : 0),
+      totalScore: sessionStats.totalScore + (result === 'win' ? 100 : 0)
+    };
+    setSessionStats(newStats);
+
+    // Log word performance if we have the necessary data
+    if (gameService && gameSessionId && gameStats?.currentWord) {
+      try {
+        const responseTime = gameStats.timeSpent || 0;
+        const accuracy = gameStats.totalGuesses ?
+          ((gameStats.totalGuesses - (gameStats.wrongGuesses || 0)) / gameStats.totalGuesses) :
+          (result === 'win' ? 1 : 0);
+
+        await gameService.logWordPerformance({
+          session_id: gameSessionId,
+          vocabulary_id: gameStats.vocabularyId,
+          word_text: gameStats.currentWord,
+          translation_text: '', // Could be enhanced to include translation
+          language_pair: `${props.settings.language}_english`,
+          attempt_number: 1,
+          response_time_ms: Math.round(responseTime * 1000),
+          was_correct: result === 'win',
+          confidence_level: result === 'win' ?
+            (responseTime < 30 ? 5 : responseTime < 60 ? 4 : 3) :
+            (gameStats.wrongGuesses || 0) < 3 ? 2 : 1,
+          difficulty_level: props.settings.difficulty,
+          hint_used: false,
+          streak_count: result === 'win' ? newStats.totalWordsCorrect : 0,
+          previous_attempts: 0,
+          mastery_level: result === 'win' ? 1 : 0,
+          error_type: result === 'lose' ? 'word_completion_failed' : undefined,
+          grammar_concept: 'vocabulary_spelling',
+          error_details: result === 'lose' ? {
+            wrongGuesses: gameStats.wrongGuesses || 0,
+            totalGuesses: gameStats.totalGuesses || 0,
+            incompleteWord: true
+          } : undefined,
+          context_data: {
+            gameType: 'hangman',
+            wordLength: gameStats.currentWord.length,
+            wrongGuesses: gameStats.wrongGuesses || 0,
+            totalGuesses: gameStats.totalGuesses || 0,
+            gameResult: result
+          },
+          timestamp: new Date()
+        });
+
+        console.log('Hangman word performance logged:', {
+          word: gameStats.currentWord,
+          result,
+          responseTime,
+          accuracy
+        });
+      } catch (error) {
+        console.error('Failed to log hangman word performance:', error);
+      }
+    }
 
     // Don't end the session here - let it continue for multiple words
     // The session will be ended when the user leaves the game
@@ -576,8 +489,8 @@ export default function HangmanGameWrapper(props: HangmanGameWrapperProps) {
       settings={enhancedSettings}
       vocabulary={gameVocabulary}
       onGameEnd={handleEnhancedGameEnd}
-      gameSessionId={gameSessionId}
       isAssignmentMode={props.isAssignmentMode}
+      playSFX={props.playSFX || (() => {})}
     />
   );
 }

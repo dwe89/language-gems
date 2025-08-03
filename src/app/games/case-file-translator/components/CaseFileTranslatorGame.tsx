@@ -7,6 +7,7 @@ import LanguageSelection from './LanguageSelection';
 import TranslatorRoom from './TranslatorRoom';
 import CaseSolved from './CaseSolved';
 import { StandardVocabularyItem, AssignmentData, GameProgress } from '../../../../components/games/templates/GameAssignmentWrapper';
+import { EnhancedGameService } from '../../../../services/enhancedGameService';
 
 type GameScreen = 'case-selection' | 'language-selection' | 'translator-room' | 'case-solved';
 
@@ -27,9 +28,27 @@ interface CaseFileTranslatorGameProps {
   };
   onBackToMenu: () => void;
   assignmentMode?: AssignmentMode;
+  onGameComplete?: (result: {
+    correctAnswers: number;
+    totalQuestions: number;
+    score: number;
+    timeSpent: number;
+    accuracy: number;
+    translationAccuracy?: number;
+    contextUnderstanding?: number;
+  }) => void;
+  gameSessionId?: string | null;
+  gameService?: EnhancedGameService | null;
 }
 
-export default function CaseFileTranslatorGame({ settings, onBackToMenu, assignmentMode }: CaseFileTranslatorGameProps) {
+export default function CaseFileTranslatorGame({
+  settings,
+  onBackToMenu,
+  assignmentMode,
+  onGameComplete,
+  gameSessionId,
+  gameService
+}: CaseFileTranslatorGameProps) {
   // If assignment mode or settings are provided (from unified launcher), skip case selection and go straight to translator room
   const hasPreselectedSettings = assignmentMode || (settings.caseType && settings.language);
   const [currentScreen, setCurrentScreen] = useState<GameScreen>(
@@ -80,7 +99,20 @@ export default function CaseFileTranslatorGame({ settings, onBackToMenu, assignm
 
   const handleGameComplete = (progress: any) => {
     setGameProgress(progress);
-    
+
+    // Call the enhanced game completion handler if provided
+    if (onGameComplete) {
+      onGameComplete({
+        correctAnswers: progress.correctAnswers || 0,
+        totalQuestions: progress.totalQuestions || 10,
+        score: progress.score || 0,
+        timeSpent: progress.timeSpent || 0,
+        accuracy: progress.accuracy || 0,
+        translationAccuracy: progress.accuracy || 0,
+        contextUnderstanding: progress.accuracy || 0
+      });
+    }
+
     if (assignmentMode) {
       // Convert to assignment progress format
       const assignmentProgress: GameProgress = {
@@ -96,11 +128,11 @@ export default function CaseFileTranslatorGame({ settings, onBackToMenu, assignm
         completedAt: progress.completedAt ? new Date(progress.completedAt) : undefined,
         sessionData: progress
       };
-      
+
       assignmentMode.onProgressUpdate(assignmentProgress);
       assignmentMode.onGameComplete(assignmentProgress);
     }
-    
+
     setCurrentScreen('case-solved');
   };
 
@@ -209,6 +241,8 @@ export default function CaseFileTranslatorGame({ settings, onBackToMenu, assignm
               onGameComplete={handleGameComplete}
               onBack={assignmentMode || hasPreselectedSettings ? onBackToMenu : () => setCurrentScreen('language-selection')}
               assignmentMode={assignmentMode}
+              gameSessionId={gameSessionId}
+              gameService={gameService}
             />
           </motion.div>
         )}

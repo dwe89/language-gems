@@ -35,6 +35,12 @@ export async function middleware(req: NextRequest) {
     } else if (url.pathname === '/') {
       // Root of student subdomain goes to student portal
       url.pathname = '/student';
+    } else if (url.pathname.startsWith('/auth/') || url.pathname.startsWith('/api/')) {
+      // Auth and API routes get prefixed with /student for auth routes, but API routes stay as-is
+      if (url.pathname.startsWith('/auth/')) {
+        url.pathname = `/student${url.pathname}`;
+      }
+      // API routes don't get prefixed - they stay as-is
     } else {
       // All other routes get prefixed with /student
       url.pathname = `/student${url.pathname}`;

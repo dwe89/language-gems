@@ -17,6 +17,7 @@ import confetti from 'canvas-confetti';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { SoundProvider, useSound, SoundControls } from './SoundManager';
+import { EnhancedGameService } from '../../../../services/enhancedGameService';
 
 // Types
 interface WordItem {
@@ -440,7 +441,9 @@ const GemSpeedBuilderInternal: React.FC<{
   sentenceConfig?: any;
   onOpenSettings?: () => void;
   onBackToMenu?: () => void;
-}> = ({ assignmentId, mode = 'freeplay', theme, topic, tier, vocabularyList, onGameComplete, sentenceConfig, onOpenSettings, onBackToMenu }) => {
+  gameSessionId?: string | null;
+  gameService?: EnhancedGameService | null;
+}> = ({ assignmentId, mode = 'freeplay', theme, topic, tier, vocabularyList, onGameComplete, sentenceConfig, onOpenSettings, onBackToMenu, gameSessionId, gameService }) => {
   // Sound system
   const { playSound, stopMusic } = useSound();
   
@@ -484,6 +487,8 @@ const GemSpeedBuilderInternal: React.FC<{
   const [hintWordIndex, setHintWordIndex] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showSentenceResult, setShowSentenceResult] = useState(false);
+  const [wordPlacementStartTime, setWordPlacementStartTime] = useState<number>(0);
+  const [sentenceStartTime, setSentenceStartTime] = useState<number>(0);
 
   
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -502,6 +507,13 @@ const GemSpeedBuilderInternal: React.FC<{
 
     initializeGame();
   }, [assignmentId, mode]);
+
+  // Set sentence start time when sentence changes
+  useEffect(() => {
+    if (currentSentence && gameState === 'playing') {
+      setSentenceStartTime(Date.now());
+    }
+  }, [currentSentenceIndex, currentSentence, gameState]);
 
   // Timer effect
   useEffect(() => {
@@ -861,6 +873,43 @@ const GemSpeedBuilderInternal: React.FC<{
 
     // Play sound
     playSound('drop');
+
+    // Log word-level performance if game service is available
+    if (gameService && gameSessionId && targetIndex !== -1) {
+      const responseTime = wordPlacementStartTime > 0 ? Date.now() - wordPlacementStartTime : 0;
+      const isCorrect = word.correctPosition === targetIndex;
+
+      // Log word placement performance
+      gameService.logWordPerformance({
+        session_id: gameSessionId,
+        word_id: word.id,
+        word: word.text,
+        translation: word.translation || word.text,
+        is_correct: isCorrect,
+        response_time_ms: responseTime,
+        attempts: 1, // Each drop is one attempt
+        error_type: isCorrect ? undefined : 'word_placement_error',
+        grammar_concept: 'sentence_building',
+        error_details: isCorrect ? undefined : {
+          placedPosition: targetIndex,
+          correctPosition: word.correctPosition,
+          sentenceContext: currentSentence?.text,
+          wordPlacementSpeed: responseTime > 0 ? 1000 / responseTime : 0
+        }
+      }).catch(error => {
+        console.error('Failed to log word placement performance:', error);
+      });
+
+      // Update stats for rapid-fire metrics
+      setStats(prev => ({
+        ...prev,
+        totalWordsPlaced: prev.totalWordsPlaced + 1,
+        accuracy: (prev.totalWordsPlaced * prev.accuracy + (isCorrect ? 100 : 0)) / (prev.totalWordsPlaced + 1)
+      }));
+    }
+
+    // Reset word placement start time for next placement
+    setWordPlacementStartTime(Date.now());
 
     // Check if sentence is complete - we'll do this in a useEffect to ensure state is updated
   };
@@ -1380,6 +1429,8 @@ export const GemSpeedBuilder: React.FC<{
   sentenceConfig?: any;
   onOpenSettings?: () => void;
   onBackToMenu?: () => void;
+  gameSessionId?: string | null;
+  gameService?: EnhancedGameService | null;
 }> = (props) => {
   return (
     <SoundProvider initialTheme="default">

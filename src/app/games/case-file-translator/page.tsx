@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../../../components/auth/AuthProvider';
 import UnifiedSentenceCategorySelector, { SentenceSelectionConfig } from '../../../components/games/UnifiedSentenceCategorySelector';
-import CaseFileTranslatorGame from './components/CaseFileTranslatorGame';
+import CaseFileTranslatorGameWrapper from './components/CaseFileTranslatorGameWrapper';
 
 export default function CaseFileTranslatorPage() {
   const { user } = useAuth();
@@ -57,9 +57,19 @@ export default function CaseFileTranslatorPage() {
 
     return (
       <div className="min-h-screen">
-        <CaseFileTranslatorGame
+        <CaseFileTranslatorGameWrapper
           settings={legacySettings}
           onBackToMenu={handleBackToMenu}
+          onGameEnd={(result) => {
+            console.log('Case File Translator ended:', result);
+            if (assignmentId) {
+              setTimeout(() => {
+                router.push('/student-dashboard/assignments');
+              }, 3000);
+            }
+          }}
+          assignmentId={assignmentId}
+          userId={user?.id}
         />
       </div>
     );

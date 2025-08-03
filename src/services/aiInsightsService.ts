@@ -52,6 +52,14 @@ export interface StudentAnalyticsData {
   student_id: string;
   student_name: string;
   class_id: string;
+  last_active?: string;
+  total_sessions?: number;
+  average_accuracy?: number;
+  is_at_risk?: boolean;
+  risk_factors?: string[];
+  game_sessions?: any[];
+  word_performance?: any[];
+  assessment_skills?: any[];
   recent_performance: {
     assignments_completed: number;
     average_score: number;
@@ -387,9 +395,163 @@ Format as JSON:
   // =====================================================
 
   private async gatherTeacherAnalyticsData(teacherId: string): Promise<StudentAnalyticsData[]> {
-    // This would gather real data from your database
-    // For now, returning mock data structure
-    return [];
+    try {
+      // Get all classes for this teacher
+      const { data: classes } = await this.supabase
+        .from('classes')
+        .select('id')
+        .eq('teacher_id', teacherId);
+
+      if (!classes || classes.length === 0) {
+        return [];
+      }
+
+      const classIds = classes.map(c => c.id);
+
+      // Get all students in teacher's classes with their analytics data
+      const { data: students } = await this.supabase
+        .from('students')
+        .select(`
+          id,
+          first_name,
+          last_name,
+          class_id,
+          created_at,
+          last_active_timestamp,
+          total_sessions_weekly,
+          average_accuracy_weekly,
+          is_at_risk,
+          risk_factors,
+          enhanced_game_sessions (
+            id,
+            game_id,
+            session_start,
+            session_end,
+            total_score,
+            accuracy_percentage,
+            xp_earned,
+            bonus_xp,
+            xp_multiplier
+          ),
+          word_performance_logs (
+            id,
+            word_id,
+            is_correct,
+            response_time_ms,
+            error_type,
+            grammar_concept,
+            difficulty_level,
+            created_at
+          ),
+          assessment_skill_breakdown (
+            id,
+            assessment_type,
+            language,
+            listening_score,
+            reading_score,
+            writing_score,
+            speaking_score,
+            vocabulary_comprehension,
+            grammar_accuracy,
+            pronunciation_accuracy,
+            fluency_score,
+            text_comprehension,
+            inference_ability,
+            structural_coherence,
+            total_questions,
+            correct_answers,
+            completion_time_seconds,
+            skill_data,
+            created_at
+          )
+        `)
+        .in('class_id', classIds);
+
+      if (!students) {
+        return [];
+      }
+
+      // Transform the data into StudentAnalyticsData format
+      return students.map(student => {
+        const gameSessions = student.enhanced_game_sessions || [];
+        const wordPerformance = student.word_performance_logs || [];
+        const assessmentSkills = student.assessment_skill_breakdown || [];
+
+        // Calculate recent performance metrics
+        const recentSessions = gameSessions.slice(-10); // Last 10 sessions
+        const totalScore = recentSessions.reduce((sum, session) => sum + (session.total_score || 0), 0);
+        const avgScore = recentSessions.length > 0 ? totalScore / recentSessions.length : 0;
+        const avgAccuracy = recentSessions.length > 0 ?
+          recentSessions.reduce((sum, session) => sum + (session.accuracy_percentage || 0), 0) / recentSessions.length : 0;
+
+        // Calculate skill breakdown from assessment data
+        const skillBreakdown: { [skill: string]: number } = {};
+        if (assessmentSkills.length > 0) {
+          const latestSkills = assessmentSkills.slice(-5); // Last 5 assessments
+          skillBreakdown.listening = latestSkills.reduce((sum, skill) => sum + (skill.listening_score || 0), 0) / latestSkills.length;
+          skillBreakdown.reading = latestSkills.reduce((sum, skill) => sum + (skill.reading_score || 0), 0) / latestSkills.length;
+          skillBreakdown.writing = latestSkills.reduce((sum, skill) => sum + (skill.writing_score || 0), 0) / latestSkills.length;
+          skillBreakdown.speaking = latestSkills.reduce((sum, skill) => sum + (skill.speaking_score || 0), 0) / latestSkills.length;
+          skillBreakdown.vocabulary = latestSkills.reduce((sum, skill) => sum + (skill.vocabulary_comprehension || 0), 0) / latestSkills.length;
+          skillBreakdown.grammar = latestSkills.reduce((sum, skill) => sum + (skill.grammar_accuracy || 0), 0) / latestSkills.length;
+        }
+
+        // Calculate vocabulary performance
+        const correctWords = wordPerformance.filter(w => w.is_correct).length;
+        const totalWords = wordPerformance.length;
+        const retentionRate = totalWords > 0 ? (correctWords / totalWords) * 100 : 0;
+        const difficultWords = wordPerformance
+          .filter(w => !w.is_correct)
+          .map(w => w.word_id)
+          .slice(0, 10); // Top 10 difficult words
+
+        return {
+          student_id: student.id,
+          student_name: `${student.first_name} ${student.last_name}`,
+          class_id: student.class_id,
+          last_active: student.last_active_timestamp,
+          total_sessions: student.total_sessions_weekly || 0,
+          average_accuracy: student.average_accuracy_weekly || 0,
+          is_at_risk: student.is_at_risk || false,
+          risk_factors: student.risk_factors || [],
+          game_sessions: gameSessions,
+          word_performance: wordPerformance,
+          assessment_skills: assessmentSkills,
+          recent_performance: {
+            assignments_completed: gameSessions.length,
+            average_score: avgScore,
+            average_accuracy: avgAccuracy,
+            time_spent: recentSessions.reduce((sum, session) => {
+              const start = new Date(session.session_start);
+              const end = new Date(session.session_end);
+              return sum + (end.getTime() - start.getTime()) / 1000;
+            }, 0),
+            last_active: student.last_active_timestamp ? new Date(student.last_active_timestamp) : new Date()
+          },
+          skill_breakdown: skillBreakdown,
+          vocabulary_performance: {
+            words_attempted: totalWords,
+            words_mastered: correctWords,
+            retention_rate: retentionRate,
+            difficult_words: difficultWords
+          },
+          engagement_metrics: {
+            login_frequency: student.total_sessions_weekly || 0,
+            session_duration: recentSessions.length > 0 ?
+              recentSessions.reduce((sum, session) => {
+                const start = new Date(session.session_start);
+                const end = new Date(session.session_end);
+                return sum + (end.getTime() - start.getTime()) / 1000;
+              }, 0) / recentSessions.length : 0,
+            streak_current: 0, // Would need streak calculation logic
+            motivation_indicators: student.is_at_risk ? ['at_risk'] : ['engaged']
+          }
+        };
+      });
+    } catch (error) {
+      console.error('Error gathering teacher analytics data:', error);
+      return [];
+    }
   }
 
   private calculateRiskFactors(student: StudentAnalyticsData): { riskScore: number; factors: string[]; primaryWeakness: string } {
@@ -432,13 +594,121 @@ Format as JSON:
   }
 
   private identifyWeaknessHotspots(data: StudentAnalyticsData[]): WeaknessHotspot[] {
-    // Analyze common weaknesses across students
     const hotspots: WeaknessHotspot[] = [];
 
-    // This would implement actual hotspot detection logic
-    // For now, returning empty array
+    if (data.length === 0) return hotspots;
 
-    return hotspots;
+    // Analyze skill performance across all students
+    const skillThresholds = {
+      listening: 70,
+      reading: 70,
+      writing: 65,
+      speaking: 65,
+      vocabulary: 75,
+      grammar: 70
+    };
+
+    // Check each skill area for widespread weakness
+    Object.entries(skillThresholds).forEach(([skill, threshold]) => {
+      const studentsWithSkillData = data.filter(student =>
+        student.skill_breakdown && student.skill_breakdown[skill] !== undefined
+      );
+
+      if (studentsWithSkillData.length === 0) return;
+
+      const strugglingStudents = studentsWithSkillData.filter(student =>
+        student.skill_breakdown[skill] < threshold
+      );
+
+      const affectedPercentage = (strugglingStudents.length / studentsWithSkillData.length) * 100;
+
+      // If more than 40% of students are struggling with this skill
+      if (affectedPercentage > 40) {
+        const averageScore = studentsWithSkillData.reduce((sum, student) =>
+          sum + student.skill_breakdown[skill], 0) / studentsWithSkillData.length;
+
+        const severityScore = Math.max(0, (threshold - averageScore) / threshold);
+
+        // Analyze common errors from assessment skill data
+        const commonErrors: string[] = [];
+        strugglingStudents.forEach(student => {
+          if (student.assessment_skills) {
+            student.assessment_skills.forEach((assessment: any) => {
+              if (assessment.skill_data && assessment.skill_data[`${skill}_metrics`]) {
+                // Extract specific error patterns based on skill type
+                const metrics = assessment.skill_data[`${skill}_metrics`];
+                if (skill === 'listening' && metrics.audio_comprehension_accuracy < threshold) {
+                  commonErrors.push('Audio comprehension difficulties');
+                }
+                if (skill === 'reading' && metrics.text_comprehension_accuracy < threshold) {
+                  commonErrors.push('Text comprehension challenges');
+                }
+                if (skill === 'writing' && metrics.grammar_accuracy < threshold) {
+                  commonErrors.push('Grammar accuracy issues');
+                }
+                if (skill === 'speaking' && metrics.pronunciation_accuracy < threshold) {
+                  commonErrors.push('Pronunciation difficulties');
+                }
+              }
+            });
+          }
+        });
+
+        hotspots.push({
+          area: skill,
+          type: ['vocabulary', 'grammar'].includes(skill) ? skill as 'vocabulary' | 'grammar' : 'skill',
+          affected_students: strugglingStudents.length,
+          severity_score: severityScore,
+          common_errors: [...new Set(commonErrors)].slice(0, 5), // Remove duplicates, limit to 5
+          recommended_actions: this.getRecommendedActions(skill, severityScore)
+        });
+      }
+    });
+
+    return hotspots.sort((a, b) => b.severity_score - a.severity_score);
+  }
+
+  private getRecommendedActions(skill: string, severityScore: number): string[] {
+    const baseActions: { [key: string]: string[] } = {
+      listening: [
+        'Provide additional audio comprehension exercises',
+        'Use varied audio speeds and accents',
+        'Implement listening strategy training'
+      ],
+      reading: [
+        'Focus on reading comprehension strategies',
+        'Provide texts at appropriate difficulty levels',
+        'Practice inference and analysis skills'
+      ],
+      writing: [
+        'Review grammar fundamentals',
+        'Practice structured writing exercises',
+        'Provide writing templates and frameworks'
+      ],
+      speaking: [
+        'Increase speaking practice opportunities',
+        'Focus on pronunciation drills',
+        'Build confidence through guided conversations'
+      ],
+      vocabulary: [
+        'Implement systematic vocabulary building',
+        'Use contextual learning approaches',
+        'Increase exposure to target vocabulary'
+      ],
+      grammar: [
+        'Review specific grammar rules',
+        'Provide targeted grammar exercises',
+        'Use communicative grammar practice'
+      ]
+    };
+
+    const actions = baseActions[skill] || ['Provide additional practice and support'];
+
+    if (severityScore > 0.7) {
+      actions.unshift('Consider intensive intervention program');
+    }
+
+    return actions;
   }
 
   private async predictStudentPerformance(student: StudentAnalyticsData): Promise<{ probability: number; factors: string[] }> {

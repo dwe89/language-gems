@@ -7,6 +7,7 @@ import RadioFrequencySelection from './RadioFrequencySelection';
 import DetectiveRoom from './DetectiveRoom';
 import CaseSolved from './CaseSolved';
 import { StandardVocabularyItem, AssignmentData, GameProgress } from '../../../../components/games/templates/GameAssignmentWrapper';
+import { EnhancedGameService } from '../../../../services/enhancedGameService';
 
 type GameScreen = 'case-selection' | 'frequency-selection' | 'detective-room' | 'case-solved';
 
@@ -25,9 +26,27 @@ interface DetectiveListeningGameProps {
   };
   onBackToMenu: () => void;
   assignmentMode?: AssignmentMode;
+  onGameComplete?: (result: {
+    correctAnswers: number;
+    totalEvidence: number;
+    evidenceCollected: any[];
+    timeSpent?: number;
+    averageResponseTime?: number;
+  }) => void;
+  gameSessionId?: string | null;
+  gameService?: EnhancedGameService | null;
+  vocabularyWords?: any[];
 }
 
-export default function DetectiveListeningGame({ settings, onBackToMenu, assignmentMode }: DetectiveListeningGameProps) {
+export default function DetectiveListeningGame({
+  settings,
+  onBackToMenu,
+  assignmentMode,
+  onGameComplete,
+  gameSessionId,
+  gameService,
+  vocabularyWords
+}: DetectiveListeningGameProps) {
   // If assignment mode or settings are provided (from unified launcher), skip case selection and go straight to detective room
   const hasPreselectedSettings = assignmentMode || (settings.caseType && settings.language);
   const [currentScreen, setCurrentScreen] = useState<GameScreen>(
@@ -75,6 +94,18 @@ export default function DetectiveListeningGame({ settings, onBackToMenu, assignm
 
   const handleGameComplete = (finalScore: any) => {
     setGameProgress(prev => ({ ...prev, ...finalScore }));
+
+    // Call the enhanced game completion handler if provided
+    if (onGameComplete) {
+      onGameComplete({
+        correctAnswers: finalScore.correctAnswers || 0,
+        totalEvidence: finalScore.totalEvidence || 10,
+        evidenceCollected: finalScore.evidenceCollected || [],
+        timeSpent: finalScore.timeSpent || 0,
+        averageResponseTime: finalScore.averageResponseTime || 0
+      });
+    }
+
     setCurrentScreen('case-solved');
   };
 
@@ -173,6 +204,9 @@ export default function DetectiveListeningGame({ settings, onBackToMenu, assignm
               onGameComplete={handleGameComplete}
               onBack={assignmentMode || hasPreselectedSettings ? onBackToMenu : () => setCurrentScreen('frequency-selection')}
               assignmentMode={assignmentMode}
+              gameSessionId={gameSessionId}
+              gameService={gameService}
+              vocabularyWords={vocabularyWords}
             />
           </motion.div>
         )}

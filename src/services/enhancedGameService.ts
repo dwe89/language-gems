@@ -11,35 +11,40 @@ export interface EnhancedGameSession {
   assignment_id?: string;
   game_type: string;
   session_mode: 'free_play' | 'assignment' | 'practice' | 'challenge';
-  
+
   // Session metadata
   started_at: Date;
   ended_at?: Date;
   duration_seconds: number;
-  
+
   // Performance metrics
   final_score: number;
   max_score_possible: number;
   accuracy_percentage: number;
   completion_percentage: number;
-  
+
   // Game-specific data
   level_reached: number;
   lives_used: number;
   power_ups_used: PowerUpUsage[];
   achievements_earned: string[];
-  
+
   // Learning metrics
   words_attempted: number;
   words_correct: number;
   unique_words_practiced: number;
   average_response_time_ms: number;
-  
+
   // Engagement metrics
   pause_count: number;
   hint_requests: number;
   retry_attempts: number;
-  
+
+  // XP and gamification (new fields)
+  xp_earned?: number;
+  bonus_xp?: number;
+  xp_multiplier?: number;
+
   // Session data
   session_data: Record<string, any>;
   device_info: Record<string, any>;
@@ -49,28 +54,33 @@ export interface WordPerformanceLog {
   id?: string;
   session_id: string;
   vocabulary_id?: number;
-  
+
   // Word details
   word_text: string;
   translation_text: string;
   language_pair: string;
-  
+
   // Performance data
   attempt_number: number;
   response_time_ms: number;
   was_correct: boolean;
   confidence_level?: number;
-  
+
   // Context
   difficulty_level: string;
   hint_used: boolean;
   power_up_active?: string;
   streak_count: number;
-  
+
   // Learning data
   previous_attempts: number;
   mastery_level: number;
-  
+
+  // Error analysis (new fields)
+  error_type?: string;
+  grammar_concept?: string;
+  error_details?: Record<string, any>;
+
   // Metadata
   context_data: Record<string, any>;
   timestamp: Date;

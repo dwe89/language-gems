@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { assessmentSkillTrackingService, type WritingSkillMetrics } from './assessmentSkillTrackingService';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -265,7 +266,8 @@ export class AQAWritingAssessmentService {
     resultId: string,
     totalScore: number,
     questionsCompleted: number,
-    totalTimeSpent: number
+    totalTimeSpent: number,
+    maxScore: number = 50
   ): Promise<boolean> {
     try {
       const { error } = await supabase
@@ -282,6 +284,49 @@ export class AQAWritingAssessmentService {
       if (error) {
         console.error('Error completing writing assessment:', error);
         return false;
+      }
+
+      // Get the assessment result to extract student_id and assessment_id for skill tracking
+      const { data: resultData, error: resultFetchError } = await supabase
+        .from('aqa_writing_results')
+        .select('student_id, assessment_id')
+        .eq('id', resultId)
+        .single();
+
+      if (!resultFetchError && resultData) {
+        // Get assessment details for language
+        const { data: assessmentData } = await supabase
+          .from('aqa_writing_assessments')
+          .select('language')
+          .eq('id', resultData.assessment_id)
+          .single();
+
+        if (assessmentData) {
+          // Calculate writing skill metrics
+          const percentageScore = maxScore > 0 ? (totalScore / maxScore) * 100 : 0;
+          const averageTimePerQuestion = questionsCompleted > 0 ? totalTimeSpent / questionsCompleted : 0;
+
+          const writingMetrics: WritingSkillMetrics = {
+            grammarAccuracy: percentageScore * 0.8, // Estimate grammar component
+            vocabularyUsage: percentageScore * 0.9, // Estimate vocabulary component
+            structuralCoherence: percentageScore * 0.85, // Estimate structure component
+            creativityScore: percentageScore * 0.7, // Estimate creativity component
+            wordCountAccuracy: 85, // Default - could be enhanced with actual word count analysis
+            taskCompletion: questionsCompleted > 0 ? 100 : 0 // Task completion percentage
+          };
+
+          // Track writing skills in assessment_skill_breakdown table
+          await assessmentSkillTrackingService.trackWritingSkills(
+            resultData.student_id,
+            resultData.assessment_id,
+            'aqa_writing',
+            assessmentData.language,
+            writingMetrics,
+            questionsCompleted,
+            Math.round(questionsCompleted * (percentageScore / 100)), // Estimate correct answers
+            totalTimeSpent
+          );
+        }
       }
 
       return true;

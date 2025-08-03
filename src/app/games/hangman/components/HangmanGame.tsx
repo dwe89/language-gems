@@ -62,7 +62,16 @@ interface HangmanGameProps {
   };
   vocabulary?: VocabularyItem[];
   onBackToMenu: () => void;
-  onGameEnd?: (result: 'win' | 'lose') => void;
+  onGameEnd?: (result: 'win' | 'lose', gameStats?: {
+    wordsCompleted?: number;
+    totalWords?: number;
+    correctGuesses?: number;
+    totalGuesses?: number;
+    timeSpent?: number;
+    currentWord?: string;
+    vocabularyId?: number;
+    wrongGuesses?: number;
+  }) => void;
   isFullscreen?: boolean;
   isAssignmentMode?: boolean;
   playSFX: (soundName: keyof AudioFiles['sfx']) => void; // Passed from parent (HangmanPage.tsx)
@@ -202,7 +211,19 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
         });
       }, 300);
 
-      if (onGameEnd) onGameEnd('win');
+      if (onGameEnd) {
+        const currentVocabItem = vocabulary?.find(v => v.word.toLowerCase() === word.toLowerCase());
+        onGameEnd('win', {
+          wordsCompleted: 1,
+          totalWords: 1,
+          correctGuesses: guessedLetters.filter(letter => word.toLowerCase().includes(letter)).length,
+          totalGuesses: guessedLetters.length,
+          timeSpent: timer,
+          currentWord: word,
+          vocabularyId: currentVocabItem?.id ? parseInt(currentVocabItem.id) : undefined,
+          wrongGuesses: wrongGuesses
+        });
+      }
     } else if (wrongGuesses >= MAX_ATTEMPTS) {
       setGameStatus('lost');
       playSFX('defeat'); // Use passed-in playSFX
@@ -210,7 +231,19 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
       // Stop timer
       if (timerInterval) clearInterval(timerInterval);
 
-      if (onGameEnd) onGameEnd('lose');
+      if (onGameEnd) {
+        const currentVocabItem = vocabulary?.find(v => v.word.toLowerCase() === word.toLowerCase());
+        onGameEnd('lose', {
+          wordsCompleted: 0,
+          totalWords: 1,
+          correctGuesses: guessedLetters.filter(letter => word.toLowerCase().includes(letter)).length,
+          totalGuesses: guessedLetters.length,
+          timeSpent: timer,
+          currentWord: word,
+          vocabularyId: currentVocabItem?.id ? parseInt(currentVocabItem.id) : undefined,
+          wrongGuesses: wrongGuesses
+        });
+      }
     }
   }, [guessedLetters, wordLetters, wrongGuesses, gameStatus, timerInterval, onGameEnd, playSFX, settings.playAudio, word]);
 

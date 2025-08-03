@@ -25,6 +25,16 @@ interface BattleProps {
   character: Character;
   onBattleEnd: (victory: boolean, expGained?: number) => void;
   soundEnabled: boolean;
+  onVerbConjugation?: (
+    verb: string,
+    tense: string,
+    person: string,
+    userAnswer: string,
+    correctAnswer: string,
+    isCorrect: boolean,
+    responseTime: number,
+    battleContext?: any
+  ) => void;
 }
 
 interface BattleQuestion {
@@ -38,7 +48,7 @@ interface BattleQuestion {
   options: string[];
 }
 
-export default function Battle({ enemy, region, character, onBattleEnd, soundEnabled }: BattleProps) {
+export default function Battle({ enemy, region, character, onBattleEnd, soundEnabled, onVerbConjugation }: BattleProps) {
   const [enemyHealth, setEnemyHealth] = useState(enemy.health);
   const [playerHealth, setPlayerHealth] = useState(character.stats.health);
   const [currentQuestion, setCurrentQuestion] = useState<BattleQuestion | null>(null);
@@ -47,6 +57,7 @@ export default function Battle({ enemy, region, character, onBattleEnd, soundEna
   const [isAnswering, setIsAnswering] = useState(true);
   const [battlePhase, setBattlePhase] = useState<'question' | 'result' | 'enemy_attack'>('question');
   const [showDamage, setShowDamage] = useState<{ type: 'player' | 'enemy'; amount: number } | null>(null);
+  const [questionStartTime, setQuestionStartTime] = useState<number>(0);
   
   const battleLogRef = useRef<HTMLDivElement>(null);
 
@@ -61,6 +72,13 @@ export default function Battle({ enemy, region, character, onBattleEnd, soundEna
       battleLogRef.current.scrollTop = battleLogRef.current.scrollHeight;
     }
   }, [battleLog]);
+
+  // Set question start time when new question appears
+  useEffect(() => {
+    if (currentQuestion && battlePhase === 'question') {
+      setQuestionStartTime(Date.now());
+    }
+  }, [currentQuestion, battlePhase]);
 
   const generateNewQuestion = () => {
     const enemyTenseTypes = enemy.tenseTypes || ['present.regular'];
@@ -107,12 +125,33 @@ export default function Battle({ enemy, region, character, onBattleEnd, soundEna
 
   const handleAnswerSelect = (answer: string) => {
     if (!isAnswering || !currentQuestion) return;
-    
+
     setSelectedAnswer(answer);
     setIsAnswering(false);
     setBattlePhase('result');
-    
+
     const isCorrect = answer === currentQuestion.correctAnswer;
+    const responseTime = questionStartTime > 0 ? Date.now() - questionStartTime : 0;
+
+    // Log verb conjugation performance if callback is available
+    if (onVerbConjugation && currentQuestion) {
+      onVerbConjugation(
+        currentQuestion.verb.infinitive,
+        currentQuestion.tenseType,
+        currentQuestion.pronoun,
+        answer,
+        currentQuestion.correctAnswer,
+        isCorrect,
+        responseTime,
+        {
+          enemy: enemy.name,
+          region: region,
+          playerHealth: playerHealth,
+          enemyHealth: enemyHealth,
+          battlePhase: battlePhase
+        }
+      );
+    }
     
     if (isCorrect) {
       playSound('correct');

@@ -579,10 +579,21 @@ function ImprovedSentenceTowersGame({
         device_info: {}
       };
 
+      // Calculate XP based on performance
+      const baseXP = gameState.blocksPlaced * 20; // 20 XP per block placed
+      const accuracyBonus = Math.round(gameState.accuracy * 100 * 0.3); // Bonus for accuracy
+      const heightBonus = gameState.maxHeight * 5; // Bonus for tower height
+      const streakBonus = gameState.streak * 2; // Bonus for streak
+      const totalXP = baseXP + accuracyBonus + heightBonus + streakBonus;
+
       // Start and immediately end the session with the service
       const sessionId = await enhancedGameService.startGameSession(sessionData);
-      await enhancedGameService.endGameSession(sessionId, sessionData);
-      console.log('Sentence Towers game session saved successfully');
+      await enhancedGameService.endGameSession(sessionId, {
+        ...sessionData,
+        xp_earned: totalXP,
+        bonus_xp: accuracyBonus + heightBonus + streakBonus
+      });
+      console.log('Sentence Towers game session saved successfully with XP:', totalXP);
     } catch (error) {
       console.error('Error saving Sentence Towers game session:', error);
     }
@@ -794,6 +805,39 @@ function ImprovedSentenceTowersGame({
     // Play correct answer sound
     sounds.playCorrectAnswer();
 
+    // Log word performance for analytics
+    if (enhancedGameService && user) {
+      const responseTime = (Date.now() - questionStartTime) / 1000;
+      enhancedGameService.logWordPerformance({
+        session_id: 'temp-session', // Will be replaced with actual session ID when available
+        vocabulary_id: option.id ? parseInt(option.id) : undefined,
+        word_text: option.word,
+        translation_text: option.translation,
+        language_pair: `${config.language}_english`,
+        attempt_number: 1,
+        response_time_ms: Math.round(responseTime * 1000),
+        was_correct: true,
+        confidence_level: responseTime < 3 ? 5 : responseTime < 6 ? 4 : responseTime < 10 ? 3 : 2,
+        difficulty_level: settings.difficulty,
+        hint_used: false,
+        streak_count: gameState.streak + 1,
+        previous_attempts: 0,
+        mastery_level: isTypingMode ? 2 : 1, // Higher mastery for typing mode
+        grammar_concept: 'sentence_building',
+        context_data: {
+          gameType: 'sentence-towers',
+          gameMode: isTypingMode ? 'typing' : 'multiple-choice',
+          towerHeight: gameState.currentHeight,
+          blockPosition: gameState.blocksPlaced + 1,
+          multiplier: gameState.multiplier,
+          doublePoints: isTypingMode
+        },
+        timestamp: new Date()
+      }).catch(error => {
+        console.error('Failed to log word performance:', error);
+      });
+    }
+
     setVocabulary(prev =>
       prev.map(word =>
         word.id === option.id ? { ...word, correct: true } : word
@@ -876,10 +920,49 @@ function ImprovedSentenceTowersGame({
   }, [gameState, towerBlocks, addParticleEffect, sounds, questionStartTime]);
 
   // Enhanced incorrect answer handling
-  const handleIncorrectAnswer = useCallback(() => {
+  const handleIncorrectAnswer = useCallback((incorrectOption?: WordOption) => {
+    // Log word performance for analytics if we have the incorrect option
+    if (enhancedGameService && user && incorrectOption && currentTargetWord) {
+      const responseTime = (Date.now() - questionStartTime) / 1000;
+      enhancedGameService.logWordPerformance({
+        session_id: 'temp-session', // Will be replaced with actual session ID when available
+        vocabulary_id: currentTargetWord.id ? parseInt(currentTargetWord.id) : undefined,
+        word_text: currentTargetWord.word,
+        translation_text: currentTargetWord.translation,
+        language_pair: `${config.language}_english`,
+        attempt_number: 1,
+        response_time_ms: Math.round(responseTime * 1000),
+        was_correct: false,
+        confidence_level: 1, // Low confidence for wrong answer
+        difficulty_level: settings.difficulty,
+        hint_used: false,
+        streak_count: 0,
+        previous_attempts: 0,
+        mastery_level: 0,
+        error_type: 'incorrect_selection',
+        grammar_concept: 'sentence_building',
+        error_details: {
+          correctAnswer: currentTargetWord.word,
+          selectedAnswer: incorrectOption.word,
+          gameMode: isTypingMode ? 'typing' : 'multiple-choice',
+          towerHeight: gameState.currentHeight
+        },
+        context_data: {
+          gameType: 'sentence-towers',
+          gameMode: isTypingMode ? 'typing' : 'multiple-choice',
+          towerHeight: gameState.currentHeight,
+          blockPosition: gameState.blocksPlaced + 1,
+          multiplier: gameState.multiplier
+        },
+        timestamp: new Date()
+      }).catch(error => {
+        console.error('Failed to log word performance:', error);
+      });
+    }
+
     // Play wrong answer sound
     sounds.playWrongAnswer();
-    
+
     // Trigger screen shake effect
     triggerScreenShake();
     
@@ -921,7 +1004,7 @@ function ImprovedSentenceTowersGame({
     if (option.isCorrect) {
       handleCorrectAnswer(option);
     } else {
-      handleIncorrectAnswer();
+      handleIncorrectAnswer(option);
     }
     
     setTimeout(() => {

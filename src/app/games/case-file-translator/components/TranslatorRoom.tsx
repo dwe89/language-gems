@@ -6,6 +6,7 @@ import { ArrowLeft, FileText, CheckCircle, Languages, Clock } from 'lucide-react
 import { createClient } from '@supabase/supabase-js';
 import { VOCABULARY_CATEGORIES } from '../../../../components/games/ModernCategorySelector';
 import { StandardVocabularyItem, AssignmentData, GameProgress } from '../../../../components/games/templates/GameAssignmentWrapper';
+import { EnhancedGameService } from '../../../../services/enhancedGameService';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -44,9 +45,20 @@ interface TranslatorRoomProps {
     onProgressUpdate: (progress: Partial<GameProgress>) => void;
     onGameComplete: (finalProgress: GameProgress) => void;
   };
+  gameSessionId?: string | null;
+  gameService?: EnhancedGameService | null;
 }
 
-export default function TranslatorRoom({ caseType, subcategory, language, onGameComplete, onBack, assignmentMode }: TranslatorRoomProps) {
+export default function TranslatorRoom({
+  caseType,
+  subcategory,
+  language,
+  onGameComplete,
+  onBack,
+  assignmentMode,
+  gameSessionId,
+  gameService
+}: TranslatorRoomProps) {
   const [currentSentenceIndex, setCurrentSentenceIndex] = useState(0);
   const [sentences, setSentences] = useState<TranslationSentence[]>([]);
   const [userTranslation, setUserTranslation] = useState('');
@@ -55,6 +67,7 @@ export default function TranslatorRoom({ caseType, subcategory, language, onGame
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [gameStartTime] = useState(Date.now());
+  const [translationStartTime, setTranslationStartTime] = useState<number>(0);
   const [backgroundMusic, setBackgroundMusic] = useState<HTMLAudioElement | null>(null);
   
   const [gameProgress, setGameProgress] = useState({
@@ -159,6 +172,13 @@ export default function TranslatorRoom({ caseType, subcategory, language, onGame
     }
   }, [language, caseType, subcategory]);
 
+  // Set translation start time when sentence changes
+  useEffect(() => {
+    if (sentences.length > 0 && !showFeedback) {
+      setTranslationStartTime(Date.now());
+    }
+  }, [currentSentenceIndex, sentences.length, showFeedback]);
+
   // Focus textarea when sentence changes
   useEffect(() => {
     if (textareaRef.current && !showFeedback) {
@@ -228,7 +248,35 @@ export default function TranslatorRoom({ caseType, subcategory, language, onGame
 
     const currentSentence = sentences[currentSentenceIndex];
     const correct = checkTranslation(userTranslation, currentSentence.english_translation);
-    
+    const responseTime = translationStartTime > 0 ? Date.now() - translationStartTime : 0;
+
+    // Log word-level performance if game service is available
+    if (gameService && gameSessionId) {
+      try {
+        await gameService.logWordPerformance({
+          session_id: gameSessionId,
+          word_id: currentSentence.id,
+          word: currentSentence.source_sentence,
+          translation: currentSentence.english_translation,
+          is_correct: correct,
+          response_time_ms: responseTime,
+          attempts: 1, // Each sentence is attempted once
+          error_type: correct ? undefined : 'translation_accuracy',
+          grammar_concept: 'translation_skills',
+          error_details: correct ? undefined : {
+            userTranslation: userTranslation.trim(),
+            correctTranslation: currentSentence.english_translation,
+            translationType: 'sentence_translation',
+            caseContext: currentSentence.case_context,
+            wordCount: currentSentence.word_count,
+            complexityScore: currentSentence.complexity_score
+          }
+        });
+      } catch (error) {
+        console.error('Failed to log translation performance:', error);
+      }
+    }
+
     setIsCorrect(correct);
     setShowFeedback(true);
 

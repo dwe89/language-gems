@@ -159,6 +159,13 @@ export default function TicTacToeGameWrapper(props: TicTacToeGameWrapperProps) {
           ? (sessionStats.totalGamesWon / sessionStats.totalGamesPlayed) * 100
           : 0;
 
+        // Calculate XP based on performance
+        const baseXP = sessionStats.totalCorrectAnswers * 8; // 8 XP per correct answer
+        const accuracyBonus = Math.round(accuracy * 0.2); // Bonus for accuracy
+        const winBonus = sessionStats.totalGamesWon * 15; // 15 XP per game won
+        const streakBonus = sessionStats.totalWordsLearned * 3; // 3 XP per word learned
+        const totalXP = baseXP + accuracyBonus + winBonus + streakBonus;
+
         await gameService.endGameSession(gameSessionId, {
           student_id: props.userId,
           final_score: Math.round(winRate),
@@ -168,15 +175,19 @@ export default function TicTacToeGameWrapper(props: TicTacToeGameWrapperProps) {
           words_correct: sessionStats.totalCorrectAnswers,
           unique_words_practiced: sessionStats.totalWordsLearned,
           duration_seconds: sessionDuration,
+          xp_earned: totalXP,
+          bonus_xp: accuracyBonus + winBonus + streakBonus,
           session_data: {
             sessionStats,
             totalSessionTime: sessionDuration,
             gamesPlayed: sessionStats.totalGamesPlayed,
-            winRate
+            winRate,
+            strategicThinking: sessionStats.totalGamesWon / Math.max(sessionStats.totalGamesPlayed, 1),
+            vocabularyAccuracy: accuracy
           }
         });
 
-        console.log('Noughts and crosses game session ended successfully');
+        console.log('Noughts and crosses game session ended successfully with XP:', totalXP);
       } catch (error) {
         console.error('Failed to end noughts and crosses game session:', error);
       }
@@ -226,6 +237,8 @@ export default function TicTacToeGameWrapper(props: TicTacToeGameWrapperProps) {
       onGameEnd={handleEnhancedGameEnd}
       gameSessionId={gameSessionId}
       isAssignmentMode={!!props.assignmentId}
+      gameService={gameService}
+      userId={props.userId}
     />
   );
 }

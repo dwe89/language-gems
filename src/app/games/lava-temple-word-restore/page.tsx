@@ -3,9 +3,11 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import UnifiedSentenceCategorySelector, { SentenceSelectionConfig } from '../../../components/games/UnifiedSentenceCategorySelector';
-import LavaTempleWordRestoreGame from './components/LavaTempleWordRestoreGame';
+import LavaTempleWordRestoreGameWrapper from './components/LavaTempleWordRestoreGameWrapper';
+import { useAuth } from '../../../components/auth/AuthProvider';
 
 export default function LavaTempleWordRestorePage() {
+  const { user } = useAuth();
   const router = useRouter();
   const [gameConfig, setGameConfig] = useState<SentenceSelectionConfig | null>(null);
   const [gameStarted, setGameStarted] = useState(false);
@@ -52,10 +54,15 @@ export default function LavaTempleWordRestorePage() {
     };
 
     return (
-      <LavaTempleWordRestoreGame
+      <LavaTempleWordRestoreGameWrapper
         gameConfig={legacyGameConfig}
         onBackToLauncher={handleBackToLauncher}
         onBackToMenu={handleBackToMenu}
+        onGameEnd={(result) => {
+          console.log('Lava Temple Word Restore ended:', result);
+          // Could add navigation logic here if needed
+        }}
+        userId={user?.id}
       />
     );
   }

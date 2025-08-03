@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../../../components/auth/AuthProvider';
 import { useUnifiedAuth } from '../../../../hooks/useUnifiedAuth';
 import { useSupabase } from '../../../../components/supabase/SupabaseProvider';
-import { SpacedRepetitionService, REVIEW_QUALITY } from '../../../../services/spacedRepetitionService';
+import { SpacedRepetitionService } from '../../../../services/spacedRepetitionService';
 import { 
   Home, CheckCircle, XCircle, ArrowRight, Trophy, RotateCcw,
   Volume2, Eye, EyeOff, Clock, Star, Brain, Target,
@@ -74,6 +74,18 @@ interface Props {
   config?: Record<string, any>;
   onComplete?: (results: any) => void;
   onExit?: () => void;
+  gameSessionId?: string | null;
+  gameService?: any;
+  onVocabularyMastery?: (
+    word: string,
+    translation: string,
+    userAnswer: string,
+    isCorrect: boolean,
+    responseTime: number,
+    gameMode: string,
+    masteryLevel?: number,
+    spacedRepetitionUpdate?: boolean
+  ) => void;
 }
 
 // =====================================================
@@ -85,7 +97,10 @@ export default function VocabMasterGame({
   vocabulary,
   config = {},
   onComplete,
-  onExit
+  onExit,
+  gameSessionId,
+  gameService,
+  onVocabularyMastery
 }: Props) {
   const { user } = useAuth();
   const { user: unifiedUser, isDemo } = useUnifiedAuth();
@@ -556,6 +571,23 @@ export default function VocabMasterGame({
       await updateUserProgress(gameState.currentWord, isCorrect, responseTime);
     }
 
+    // Log vocabulary mastery performance for analytics
+    if (onVocabularyMastery && gameState.currentWord) {
+      const masteryLevel = gameState.currentWord.mastery_level;
+      const spacedRepetitionUpdate = mode === 'spaced_repetition' || mode === 'review_weak';
+
+      onVocabularyMastery(
+        gameState.currentWord.spanish,
+        gameState.currentWord.english,
+        userAnswer,
+        isCorrect,
+        responseTime,
+        gameState.gameMode,
+        masteryLevel,
+        spacedRepetitionUpdate
+      );
+    }
+
     // Play audio when answer is correct
     if (isCorrect && gameState.currentWord) {
       setTimeout(() => {
@@ -633,8 +665,7 @@ export default function VocabMasterGame({
       });
 
       // Record in spaced repetition service
-      const quality = isCorrect ? REVIEW_QUALITY.PERFECT : REVIEW_QUALITY.INCORRECT;
-      await spacedRepetitionService.updateProgress(user.id, Number(word.id), quality, responseTime);
+      await spacedRepetitionService.updateProgress(user.id, Number(word.id), isCorrect, responseTime);
 
       // Update user vocabulary progress
       const { data: existingProgress } = await supabase

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { assessmentSkillTrackingService, type ListeningSkillMetrics, type ReadingSkillMetrics, type WritingSkillMetrics, type SpeakingSkillMetrics } from '@/services/assessmentSkillTrackingService';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -101,6 +102,9 @@ export async function POST(request: NextRequest) {
         console.error('Error saving skill result:', skillError);
       }
     }
+
+    // Track individual skills in assessment_skill_breakdown table
+    await trackFourSkillsBreakdown(userId, savedResult.id, language, results);
 
     // Update user statistics
     await updateUserFourSkillsStats(userId, results);
@@ -293,5 +297,113 @@ export async function GET(request: NextRequest) {
       { error: 'Internal server error' },
       { status: 500 }
     );
+  }
+}
+
+// Track individual skills breakdown for Four Skills Assessment
+async function trackFourSkillsBreakdown(
+  userId: string,
+  assessmentId: string,
+  language: string,
+  results: AssessmentResults
+) {
+  try {
+    for (const skillResult of results.skillResults) {
+      const totalQuestions = skillResult.questionResults?.length || 1;
+      const correctAnswers = skillResult.questionResults?.filter(q => q.correct).length ||
+                           Math.round(totalQuestions * (skillResult.percentage / 100));
+
+      switch (skillResult.skill) {
+        case 'listening':
+          const listeningMetrics: ListeningSkillMetrics = {
+            audioComprehensionAccuracy: skillResult.percentage,
+            responseTimePerEvidence: skillResult.timeSpent / totalQuestions,
+            listeningSkillProgression: skillResult.percentage,
+            audioPlaybackCount: 1, // Default - could be enhanced with actual play counts
+            comprehensionSpeed: skillResult.timeSpent > 0 ? (totalQuestions / skillResult.timeSpent) * 60 : 0,
+            contextualUnderstanding: skillResult.percentage
+          };
+
+          await assessmentSkillTrackingService.trackListeningSkills(
+            userId,
+            assessmentId,
+            'four_skills_listening',
+            language,
+            listeningMetrics,
+            totalQuestions,
+            correctAnswers,
+            skillResult.timeSpent
+          );
+          break;
+
+        case 'reading':
+          const readingMetrics: ReadingSkillMetrics = {
+            textComprehensionAccuracy: skillResult.percentage,
+            inferenceAbility: skillResult.percentage * 0.9,
+            vocabularyInContext: skillResult.percentage * 0.95,
+            readingSpeed: skillResult.timeSpent > 0 ? (totalQuestions / skillResult.timeSpent) * 60 : 0,
+            detailRetention: skillResult.percentage,
+            criticalAnalysis: skillResult.percentage * 0.85
+          };
+
+          await assessmentSkillTrackingService.trackReadingSkills(
+            userId,
+            assessmentId,
+            'four_skills_reading',
+            language,
+            readingMetrics,
+            totalQuestions,
+            correctAnswers,
+            skillResult.timeSpent
+          );
+          break;
+
+        case 'writing':
+          const writingMetrics: WritingSkillMetrics = {
+            grammarAccuracy: skillResult.percentage * 0.8,
+            vocabularyUsage: skillResult.percentage * 0.9,
+            structuralCoherence: skillResult.percentage * 0.85,
+            creativityScore: skillResult.percentage * 0.7,
+            wordCountAccuracy: 85, // Default
+            taskCompletion: skillResult.percentage
+          };
+
+          await assessmentSkillTrackingService.trackWritingSkills(
+            userId,
+            assessmentId,
+            'four_skills_writing',
+            language,
+            writingMetrics,
+            totalQuestions,
+            correctAnswers,
+            skillResult.timeSpent
+          );
+          break;
+
+        case 'speaking':
+          const speakingMetrics: SpeakingSkillMetrics = {
+            pronunciationAccuracy: skillResult.percentage * 0.85,
+            fluencyScore: skillResult.percentage * 0.9,
+            grammarInSpeech: skillResult.percentage * 0.8,
+            vocabularyRange: skillResult.percentage * 0.9,
+            communicativeEffectiveness: skillResult.percentage,
+            confidenceLevel: skillResult.percentage * 0.75
+          };
+
+          await assessmentSkillTrackingService.trackSpeakingSkills(
+            userId,
+            assessmentId,
+            'four_skills_speaking',
+            language,
+            speakingMetrics,
+            totalQuestions,
+            correctAnswers,
+            skillResult.timeSpent
+          );
+          break;
+      }
+    }
+  } catch (error) {
+    console.error('Error tracking four skills breakdown:', error);
   }
 }

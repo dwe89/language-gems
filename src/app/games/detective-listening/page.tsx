@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../../../components/auth/AuthProvider';
-import DetectiveListeningGame from './components/DetectiveListeningGame';
+import DetectiveListeningGameWrapper from './components/DetectiveListeningGameWrapper';
 import DetectiveListeningAssignmentWrapper from './components/DetectiveListeningAssignmentWrapper';
 import UnifiedGameLauncher from '../../../components/games/UnifiedGameLauncher';
 import { UnifiedSelectionConfig, UnifiedVocabularyItem } from '../../../hooks/useUnifiedVocabulary';
@@ -80,19 +80,21 @@ export default function UnifiedDetectiveListeningPage() {
 
   // Show game if started and config is available
   if (gameStarted && gameConfig) {
-    // Convert unified config to legacy detective listening format
-    const legacySettings = {
+    // Convert unified config to detective listening format
+    const gameSettings = {
       caseType: gameConfig.config.categoryId || 'general',
-      language: gameConfig.config.language === 'es' ? 'spanish' : 
-                gameConfig.config.language === 'fr' ? 'french' : 
+      language: gameConfig.config.language === 'es' ? 'spanish' :
+                gameConfig.config.language === 'fr' ? 'french' :
                 gameConfig.config.language === 'de' ? 'german' : 'spanish',
-      difficulty: gameConfig.config.curriculumLevel === 'KS4' ? 'hard' : 'normal'
+      difficulty: gameConfig.config.curriculumLevel === 'KS4' ? 'hard' : 'normal',
+      category: gameConfig.config.categoryId,
+      subcategory: gameConfig.config.subcategoryId
     };
 
     return (
       <div className="min-h-screen">
-        <DetectiveListeningGame
-          settings={legacySettings}
+        <DetectiveListeningGameWrapper
+          settings={gameSettings}
           onBackToMenu={handleBackToMenu}
           onGameEnd={(result) => {
             console.log('Detective Listening ended:', result);

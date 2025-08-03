@@ -7,7 +7,7 @@ import ConjugationDuelAssignmentWrapper from './components/ConjugationDuelAssign
 import LanguageSelection from './components/LanguageSelection';
 import LeagueSelection from './components/LeagueSelection';
 import OpponentSelection from './components/OpponentSelection';
-import BattleArena from './components/BattleArena';
+import ConjugationDuelGameWrapper from './components/ConjugationDuelGameWrapper';
 import UnifiedGameLauncher from '../../../components/games/UnifiedGameLauncher';
 import { UnifiedSelectionConfig, UnifiedVocabularyItem } from '../../../hooks/useUnifiedVocabulary';
 
@@ -178,7 +178,7 @@ export default function ConjugationDuelPage() {
     if (gameState === 'battle') {
       return (
         <div className="min-h-screen">
-          <BattleArena
+          <ConjugationDuelGameWrapper
             language={selectedLanguage}
             league={selectedLeague}
             opponent={selectedOpponent}

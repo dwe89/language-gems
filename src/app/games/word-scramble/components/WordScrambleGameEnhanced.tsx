@@ -318,6 +318,22 @@ interface WordScrambleGameProps {
   onOpenSettings?: () => void;
 }
 
+// Helper function to calculate letter placement accuracy
+const calculateLetterAccuracy = (attempted: string, correct: string): number => {
+  if (!attempted || !correct) return 0;
+
+  const maxLength = Math.max(attempted.length, correct.length);
+  let matches = 0;
+
+  for (let i = 0; i < maxLength; i++) {
+    if (attempted[i]?.toLowerCase() === correct[i]?.toLowerCase()) {
+      matches++;
+    }
+  }
+
+  return Math.round((matches / maxLength) * 100);
+};
+
 export default function WordScrambleGameEnhanced({
   settings,
   onBackToMenu,
@@ -475,6 +491,13 @@ export default function WordScrambleGameEnhanced({
         const accuracy = result.stats.wordsCompleted > 0 ?
           (result.stats.perfectWords / result.stats.wordsCompleted) * 100 : 0;
 
+        // Calculate XP based on performance
+        const baseXP = result.stats.wordsCompleted * 18; // 18 XP per word completed
+        const accuracyBonus = Math.round(accuracy * 0.5); // Bonus for accuracy
+        const streakBonus = result.stats.streak * 3; // Bonus for streak
+        const perfectBonus = result.stats.perfectWords * 10; // Bonus for perfect words
+        const totalXP = baseXP + accuracyBonus + streakBonus + perfectBonus;
+
         await gameService.endGameSession(gameSessionId, {
           student_id: userId,
           final_score: result.score,
@@ -484,14 +507,20 @@ export default function WordScrambleGameEnhanced({
           words_correct: result.stats.perfectWords,
           unique_words_practiced: result.stats.wordsCompleted,
           duration_seconds: Math.floor((Date.now() - wordStartTime) / 1000),
+          xp_earned: totalXP,
+          bonus_xp: accuracyBonus + streakBonus + perfectBonus,
           session_data: {
             gameMode: settings.gameMode,
             difficulty: settings.difficulty,
-            finalStats: result.stats
+            finalStats: result.stats,
+            averageSolveTime: result.stats.avgSolveTime,
+            letterAccuracy: result.stats.letterAccuracy,
+            streakCount: result.stats.streak,
+            perfectWords: result.stats.perfectWords
           }
         });
 
-        console.log('Word scramble game session ended successfully');
+        console.log('Word scramble game session ended successfully with XP:', totalXP);
       } catch (error) {
         console.error('Failed to end word scramble game session:', error);
       }
@@ -629,6 +658,39 @@ export default function WordScrambleGameEnhanced({
       avgSolveTime: (prev.avgSolveTime * prev.wordsCompleted + solveTime) / (prev.wordsCompleted + 1)
     }));
 
+    // Log word performance for analytics
+    if (gameService && gameSessionId && !isAssignmentMode) {
+      gameService.logWordPerformance({
+        session_id: gameSessionId,
+        vocabulary_id: currentWordData.id ? parseInt(currentWordData.id) : undefined,
+        word_text: currentWordData.word,
+        translation_text: currentWordData.translation || '',
+        language_pair: `${settings.language}_english`,
+        attempt_number: 1,
+        response_time_ms: Math.round(solveTime * 1000),
+        was_correct: true,
+        confidence_level: isPerfect ? 5 : solveTime < 10 ? 4 : solveTime < 20 ? 3 : 2,
+        difficulty_level: settings.difficulty,
+        hint_used: false,
+        streak_count: gameStats.streak + 1,
+        previous_attempts: 0,
+        mastery_level: isPerfect ? 2 : 1,
+        grammar_concept: 'word_reconstruction',
+        context_data: {
+          gameType: 'word-scramble',
+          gameMode: settings.gameMode,
+          scrambledWord: scrambledLetters.join(''),
+          letterPlacementAccuracy: 100, // Since answer was correct
+          solveTime: solveTime,
+          isPerfect: isPerfect,
+          pointsEarned: points
+        },
+        timestamp: new Date()
+      }).catch(error => {
+        console.error('Failed to log word performance:', error);
+      });
+    }
+
     // Combo system
     setComboCount(prev => prev + 1);
     if (gameStats.streak > 0 && gameStats.streak % 5 === 0) {
@@ -734,7 +796,46 @@ export default function WordScrambleGameEnhanced({
         }, 2000);
       }
     } else {
-      // Wrong answer
+      // Wrong answer - log performance for analytics
+      if (gameService && gameSessionId && !isAssignmentMode && currentWordData) {
+        const attemptTime = (Date.now() - wordStartTime) / 1000;
+        gameService.logWordPerformance({
+          session_id: gameSessionId,
+          vocabulary_id: currentWordData.id ? parseInt(currentWordData.id) : undefined,
+          word_text: currentWordData.word,
+          translation_text: currentWordData.translation || '',
+          language_pair: `${settings.language}_english`,
+          attempt_number: 1,
+          response_time_ms: Math.round(attemptTime * 1000),
+          was_correct: false,
+          confidence_level: 1, // Low confidence for wrong answer
+          difficulty_level: settings.difficulty,
+          hint_used: false,
+          streak_count: 0,
+          previous_attempts: 0,
+          mastery_level: 0,
+          error_type: 'letter_placement',
+          grammar_concept: 'word_reconstruction',
+          error_details: {
+            gameMode: settings.gameMode,
+            attemptedAnswer: userAnswer,
+            correctAnswer: currentWordData.word,
+            scrambledWord: scrambledLetters.join(''),
+            letterAccuracy: calculateLetterAccuracy(userAnswer, currentWordData.word)
+          },
+          context_data: {
+            gameType: 'word-scramble',
+            gameMode: settings.gameMode,
+            scrambledWord: scrambledLetters.join(''),
+            attemptedReconstruction: userAnswer,
+            attemptTime: attemptTime
+          },
+          timestamp: new Date()
+        }).catch(error => {
+          console.error('Failed to log word performance:', error);
+        });
+      }
+
       soundManager.current.play('wrong');
       setGameStats(prev => ({
         ...prev,
@@ -743,7 +844,7 @@ export default function WordScrambleGameEnhanced({
         multiplier: 1
       }));
       setComboCount(0);
-      
+
       // Clear selection to let player try again
       setSelectedLetters([]);
       setUserAnswer('');
