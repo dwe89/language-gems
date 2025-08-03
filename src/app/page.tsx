@@ -26,11 +26,14 @@ import {
   Brain,
   Lightbulb,
   Hourglass,
-  Rocket
+  Rocket,
+  GitCommit
 } from 'lucide-react';
 import Footer from '../components/layout/Footer';
 import SEOWrapper from '../components/seo/SEOWrapper';
 import { getFAQSchema } from '../lib/seo/structuredData';
+
+import { useAuth } from '../components/auth/AuthProvider';
 
 // Animated text data for hero section - Teacher-focused benefits
 const heroTextVariations = [
@@ -82,8 +85,47 @@ function useTypewriter(texts, speed = 100) {
   };
 }
 
+// Placeholder for founder photo - replace with a real image path
+const founderPhoto = "/images/placeholder-founder.jpg"; // Corrected to a local path
+
+// Development timeline for "Building in Public" section
+const developmentTimeline = [
+  {
+    date: "July 2025",
+    milestone: "Core vocabulary games completed",
+    status: "done",
+    icon: CheckCircle
+  },
+  {
+    date: "August 2025",
+    milestone: "Teacher dashboard in development",
+    status: "in-progress",
+    icon: GitCommit
+  },
+  {
+    date: "September 2025",
+    milestone: "Beta testing begins",
+    status: "upcoming",
+    icon: Clock
+  },
+  {
+    date: "Jan 2026",
+    milestone: "Full launch",
+    status: "upcoming",
+    icon: Rocket
+  }
+];
+
 export default function Home() {
   const { text: animatedText, color: textColor } = useTypewriter(heroTextVariations);
+  const { user } = useAuth();
+
+  // Auto-redirect logged-in students to their dashboard
+  useEffect(() => {
+    if (user?.user_metadata?.role === 'student') {
+      window.location.href = '/student-dashboard';
+    }
+  }, [user]);
 
   // Slideshow images for hero section
   const slideshowImages = [
@@ -170,25 +212,25 @@ export default function Home() {
   // Updated assessment types for teacher benefits
   const assessmentTypes = [
     {
-      title: "GCSE-Style Exam Practice", // Changed from "Exams by difficulty"
+      title: "GCSE-Style Exam Practice",
       description: "Prepare students for success with official-style questions aligned with GCSE Foundation & Higher tiers, providing invaluable exam readiness.",
       icon: Award,
       features: ["GCSE-style Reading Tests", "GCSE-style Listening Tests", "Writing Tasks with guided prompts", "Speaking Practice prompts & recordings"]
     },
     {
-      title: "Reading Comprehension Analytics", // Emphasize analytics
+      title: "Reading Comprehension Analytics",
       description: "Automated analysis of multi-language texts provides instant feedback and identifies comprehension gaps, saving teachers marking time.",
       icon: BookOpen,
       features: ["Age-appropriate, diverse texts", "Multiple question types", "Automated marking & feedback", "Detailed progress tracking"]
     },
     {
-      title: "Precision Dictation Assessments", // More active title
+      title: "Precision Dictation Assessments",
       description: "Improve listening and writing accuracy with audio-to-text practice at variable speeds, pinpointing specific phonetic and spelling weaknesses.",
       icon: Headphones,
       features: ["Normal & slow speed playback", "Foundation & Higher difficulty", "Instant error highlighting", "Targeted remedial practice"]
     },
     {
-      title: "Topic & Skill-Based Diagnostics", // More descriptive title
+      title: "Topic & Skill-Based Diagnostics",
       description: "Focused practice on specific curriculum themes and grammatical skills. Understand student strengths and weaknesses by theme, topic, and vocabulary.",
       icon: FileText,
       features: ["Organised by GCSE themes", "Targeted vocabulary & grammar topics", "Identifies weak areas automatically", "Reinforces specific skills"]
@@ -200,19 +242,19 @@ export default function Home() {
     {
       title: "Unrivaled Student Engagement",
       description: "15+ interactive games, a cross-game XP system, and 50+ achievements keep students deeply motivated and actively learning.",
-      icon: Rocket, // Changed icon for engagement
+      icon: Rocket,
       stat: "Deep Engagement"
     },
     {
       title: "Predictive Analytics & AI Insights",
       description: "Identify struggling students before they fall behind with real-time, AI-powered insights into individual and class performance.",
-      icon: Brain, // Added icon for AI
+      icon: Brain,
       stat: "Early Intervention"
     },
     {
       title: "Streamlined Assignment Management",
       description: "Create custom assignments in minutes with reusable templates and auto-grading, saving teachers hours of administrative work.",
-      icon: Hourglass, // Added icon for time-saving
+      icon: Hourglass,
       stat: "Time-Saving Automation"
     },
     {
@@ -268,7 +310,7 @@ export default function Home() {
 
             <div className="container mx-auto px-6 z-10 py-20">
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-                {/* Text Column - Now with a smaller col-span */}
+                {/* Text Column */}
                 <div className="lg:col-span-5 text-center lg:text-left">
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
@@ -308,18 +350,23 @@ export default function Home() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6, delay: 0.3 }}
-                    className="flex flex-col sm:flex-row gap-2 mb-6 justify-center lg:justify-start"
+                    className="flex flex-col sm:flex-row gap-4 mb-8 justify-center lg:justify-start"
                   >
-                    <Link href="/contact-sales" className="inline-flex items-center justify-center bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-xl px-5 py-2.5 text-base shadow-lg hover:shadow-xl transform transition-all hover:scale-105">
-                      <Clock className="mr-2 h-4 w-4" />
+                    <Link href="/contact-sales" className="inline-flex items-center justify-center bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-xl px-8 py-4 text-lg shadow-lg hover:shadow-xl transform transition-all hover:scale-105">
+                      <Clock className="mr-2 h-5 w-5" />
                       Book a Free Demo
-                      <ArrowRight className="ml-2 w-4 h-4" />
+                      <ArrowRight className="ml-2 w-5 h-5" />
                     </Link>
 
-                    <Link href="/auth/signup" className="inline-flex items-center justify-center bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold rounded-xl px-5 py-2.5 text-base shadow-lg hover:shadow-xl transform transition-all hover:scale-105">
-                      <Users className="mr-2 h-4 w-4" />
-                      Start Your Free School Trial
-                      <ArrowRight className="ml-2 w-4 h-4" />
+                    <Link href="/schools/pricing" className="inline-flex items-center justify-center bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-xl px-8 py-4 text-lg shadow-lg hover:shadow-xl transform transition-all hover:scale-105">
+                      <Users className="mr-2 h-5 w-5" />
+                      See Pricing
+                      <ArrowRight className="ml-2 w-5 h-5" />
+                    </Link>
+
+                    <Link href="/auth/signup" className="inline-flex items-center justify-center bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold rounded-xl px-8 py-4 text-lg shadow-lg hover:shadow-xl transform transition-all hover:scale-105">
+                      Start Free Trial
+                      <ArrowRight className="ml-2 w-5 h-5" />
                     </Link>
                   </motion.div>
 
@@ -344,22 +391,22 @@ export default function Home() {
                   </motion.div>
                 </div>
 
-                {/* Slideshow Column - Now with a larger col-span and no extra containers */}
+                {/* Slideshow Column */}
                 <motion.div
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.6, delay: 0.2 }}
                   className="lg:col-span-7 flex justify-center relative"
                 >
-                   <div className="relative w-full max-w-lg lg:max-w-none">
-                    {/* Background gradient decoration - now hidden on mobile */}
+                  <div className="relative w-full max-w-lg lg:max-w-none">
+                    {/* Background gradient decoration */}
                     <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-indigo-400 rounded-3xl transform rotate-6 opacity-20 hidden lg:block"></div>
 
                     {/* Slideshow container */}
                     <div className="relative bg-white rounded-3xl p-8 shadow-2xl overflow-hidden h-[450px] w-full">
                       <AnimatePresence mode="wait">
                         <motion.div
-                          key={slideshowImages[currentSlideIndex].src} // Unique key for AnimatePresence
+                          key={slideshowImages[currentSlideIndex].src}
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
                           exit={{ opacity: 0 }}
@@ -369,7 +416,7 @@ export default function Home() {
                           <Image
                             src={slideshowImages[currentSlideIndex].src}
                             alt={slideshowImages[currentSlideIndex].alt}
-                            layout="fill" // Use layout="fill" to make the image fill the container
+                            layout="fill"
                             objectFit="cover"
                             priority={currentSlideIndex === 0}
                             className="rounded-2xl"
@@ -386,11 +433,10 @@ export default function Home() {
                         <button
                           key={index}
                           onClick={() => setCurrentSlideIndex(index)}
-                          className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                            index === currentSlideIndex
+                          className={`w-2 h-2 rounded-full transition-all duration-300 ${index === currentSlideIndex
                               ? 'bg-blue-600 w-6'
                               : 'bg-white/60 hover:bg-white/80'
-                          }`}
+                            }`}
                           aria-label={`Go to slide ${index + 1}`}
                         />
                       ))}
@@ -406,7 +452,120 @@ export default function Home() {
             <div className="absolute top-1/2 left-5 w-12 h-12 bg-gradient-to-br from-green-200 to-emerald-200 rounded-full opacity-60 animate-float-slow"></div>
           </div>
 
-          {/* Platform Overview Section */}
+          {/* New Section: Founder's Story */}
+          <div className="py-20 bg-white">
+            <div className="container mx-auto px-6">
+              <div className="text-center mb-16">
+                <motion.h2
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6 }}
+                  className="text-3xl md:text-4xl font-bold text-slate-800 mb-4"
+                >
+                  The GCSE Language Platform Built by a Teacher.
+                </motion.h2>
+                <motion.p
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.1 }}
+                  className="text-lg text-slate-600 max-w-3xl mx-auto"
+                >
+                  Built by a language teacher who got frustrated with outdated, expensive platforms that don't actually help students learn.
+                </motion.p>
+              </div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.3 }}
+                className="flex flex-col md:flex-row items-center md:items-start gap-8 p-8 bg-slate-50 rounded-xl shadow-lg border border-slate-200 max-w-4xl mx-auto"
+              >
+                <Image
+                  src={founderPhoto}
+                  alt="Photo of founder, Daniel Etienne"
+                  width={128}
+                  height={128}
+                  className="rounded-full flex-shrink-0"
+                />
+                <div className="text-center md:text-left">
+                  <p className="text-slate-700 text-lg mb-2 italic">
+                    "After 8 years teaching GCSE Spanish, I am tired of paying £2000+ annually for platforms my students found boring. So I built what we actually needed."
+                  </p>
+                  <p className="text-slate-800 font-bold text-base">
+                    - Daniel Etienne, Founder & MFL Teacher
+                  </p>
+                </div>
+              </motion.div>
+            </div>
+          </div>
+
+          {/* Section: Building in Public & Roadmap */}
+          <div className="py-20 bg-gradient-to-br from-slate-50 to-blue-50">
+            <div className="container mx-auto px-6">
+              <div className="text-center mb-12">
+                <motion.h2
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6 }}
+                  className="text-3xl md:text-4xl font-bold text-slate-800 mb-4"
+                >
+                  Building With Teacher Input Every Step
+                </motion.h2>
+                <motion.p
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.1 }}
+                  className="text-lg text-slate-600 max-w-3xl mx-auto"
+                >
+                  Join our teacher advisory group and get early access to new features. Your feedback drives our development.
+                </motion.p>
+              </div>
+
+              <div className="max-w-4xl mx-auto space-y-8">
+                {developmentTimeline.map((item, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, x: -20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.6, delay: index * 0.1 }}
+                    className="flex items-start"
+                  >
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white flex-shrink-0 mt-1 mr-4 ${item.status === 'done' ? 'bg-green-500' :
+                        item.status === 'in-progress' ? 'bg-indigo-500 animate-pulse' :
+                          'bg-gray-400'
+                      }`}>
+                      <item.icon className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-gray-800 text-lg mb-1">{item.milestone}</p>
+                      <p className="text-gray-600 text-sm">{item.date}</p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: developmentTimeline.length * 0.1 + 0.2 }}
+                className="text-center mt-12"
+              >
+                <h3 className="text-2xl font-bold text-slate-800 mb-4">
+                  Help Shape the Future of LanguageGems
+                </h3>
+                <p className="text-lg text-slate-600 mb-6">
+                  Join our teacher advisory group and get early access to new features. Your feedback drives our development.
+                </p>
+                <Link href="/contact-sales" className="inline-flex items-center justify-center bg-white text-slate-700 font-semibold rounded-xl px-8 py-4 text-lg border border-slate-300 hover:bg-slate-100 transition-all">
+                  <Lightbulb className="mr-2 h-5 w-5" />
+                  Join Our Advisory Group
+                  <ArrowRight className="ml-2 w-5 h-5" />
+                </Link>
+              </motion.div>
+            </div>
+          </div>
+
+          {/* Section: Platform Overview */}
           <div className="py-20 bg-white">
             <div className="container mx-auto px-6">
               <div className="text-center mb-16">
@@ -507,7 +666,7 @@ export default function Home() {
                 className="text-center mt-12"
               >
                 <Link
-                  href="/games" // Link to a general games demo page
+                  href="/games"
                   className="inline-flex items-center justify-center bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-xl px-8 py-4 text-lg shadow-lg hover:shadow-xl transform transition-all hover:scale-105"
                 >
                   <Play className="mr-2 h-5 w-5" />
@@ -573,7 +732,7 @@ export default function Home() {
                 className="text-center mt-12"
               >
                 <Link
-                  href="/assessments" // Link to a general assessments demo page or book a demo
+                  href="/assessments"
                   className="inline-flex items-center justify-center bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold rounded-xl px-8 py-4 text-lg shadow-lg hover:shadow-xl transform transition-all hover:scale-105"
                 >
                   <FileText className="mr-2 h-5 w-5" />
@@ -587,12 +746,12 @@ export default function Home() {
           {/* Teacher Tools Section - CRITICAL SECTION FOR TEACHERS */}
           <div className="py-20 bg-gradient-to-br from-slate-50 to-blue-50">
             <div className="container mx-auto px-6">
-              <div className="lg:col-span-12"> {/* Made the outer div full width on large screens */}
+              <div className="lg:col-span-12">
                 <motion.div
                   initial={{ opacity: 0, x: -20 }}
                   whileInView={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.6 }}
-                  className="max-w-4xl mx-auto text-center" // Constrained the width and centered the content
+                  className="max-w-4xl mx-auto text-center"
                 >
                   <div className="mb-6">
                     <span className="inline-block bg-gradient-to-r from-emerald-600 to-green-600 text-white px-4 py-2 rounded-full text-sm font-semibold">
@@ -629,7 +788,7 @@ export default function Home() {
                     </div>
                   </div>
 
-                  <div className="flex flex-col sm:flex-row gap-4 justify-center"> {/* Centered the buttons */}
+                  <div className="flex flex-col sm:flex-row gap-4 justify-center">
                     <Link href="/auth/signup" className="inline-flex items-center justify-center bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-xl px-6 py-3 shadow-lg hover:shadow-xl transform transition-all hover:scale-105">
                       <Users className="mr-2 h-4 w-4" />
                       Start Your Free School Trial
@@ -682,7 +841,6 @@ export default function Home() {
               </div>
             </div>
           </div>
-
 
         </main>
 

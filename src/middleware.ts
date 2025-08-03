@@ -19,6 +19,15 @@ export async function middleware(req: NextRequest) {
     console.log('Middleware running for path:', req.nextUrl.pathname);
   }
   
+  // Check for student subdomain first - handle before any auth logic
+  const hostname = req.headers.get('host') || '';
+  if (hostname.startsWith('students.')) {
+    // Rewrite to serve student portal content
+    const url = req.nextUrl.clone();
+    url.pathname = `/student${url.pathname}`;
+    return NextResponse.rewrite(url);
+  }
+  
   // Create a response that we can modify
   let supabaseResponse = NextResponse.next({
     request: {
@@ -39,8 +48,7 @@ export async function middleware(req: NextRequest) {
           req.cookies.set(name, value);
           supabaseResponse.cookies.set(name, value, {
             ...options,
-            // Ensure cookies are properly set with secure defaults
-            httpOnly: false, // Allow client-side access
+            // Use secure defaults - let Supabase handle httpOnly properly
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'lax',
             path: '/',
@@ -58,6 +66,14 @@ export async function middleware(req: NextRequest) {
   const path = req.nextUrl.pathname;
   if (path.startsWith('/_next') || path.startsWith('/api') || path.startsWith('/favicon')) {
     return supabaseResponse;
+  }
+
+  // Redirect student routes on main domain to subdomain
+  if (path.startsWith('/student') && !hostname.startsWith('students.')) {
+    const studentUrl = new URL(req.url);
+    studentUrl.hostname = `students.${hostname}`;
+    studentUrl.pathname = path.replace('/student', '');
+    return NextResponse.redirect(studentUrl);
   }
 
   // Get the session with improved error handling

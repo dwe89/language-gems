@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../components/auth/AuthProvider';
 import { getNavigationItems } from '../../lib/featureFlags';
 import { LogOut, User, Settings } from 'lucide-react';
+import SmartAuthButtons from '../../components/SmartAuthButtons';
 
 export default function MainNavigation() {
   const pathname = usePathname();
@@ -111,13 +112,7 @@ export default function MainNavigation() {
           <div className="hidden md:flex items-center space-x-3">
             {(isMounted && user) ? (
               <>
-                <Link
-                  href="/dashboard"
-                  className="py-2 px-6 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-full font-bold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center"
-                >
-                  <Settings className="mr-2 h-4 w-4" />
-                  <span>Dashboard</span>
-                </Link>
+                <SmartAuthButtons />
                 <button
                   onClick={handleLogout}
                   className="py-2 px-6 bg-yellow-400 hover:bg-yellow-300 text-blue-800 rounded-full font-medium transition-colors flex items-center"
@@ -127,20 +122,7 @@ export default function MainNavigation() {
                 </button>
               </>
             ) : (
-              <>
-                <Link
-                  href="/auth/login"
-                  className="py-2 px-4 text-white hover:text-yellow-200 transition-colors"
-                >
-                  Login
-                </Link>
-                <Link
-                  href="/auth/signup"
-                  className="py-2 px-6 bg-yellow-400 hover:bg-yellow-300 text-blue-900 rounded-full font-bold transition-colors"
-                >
-                  Start Now
-                </Link>
-              </>
+              <SmartAuthButtons />
             )}
           </div>
 
@@ -201,44 +183,21 @@ export default function MainNavigation() {
               <li className="pt-4 border-t border-blue-700">
                 {(isMounted && user) ? (
                   <>
-                    <Link
-                      href="/dashboard"
-                      className="block py-3 px-4 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-full font-bold transition-all duration-200 shadow-lg text-center mb-3"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      Dashboard
-                    </Link>
+                    <SmartAuthButtons variant="mobile" />
                     <button
                       onClick={() => {
                         handleLogout();
                         setMobileMenuOpen(false);
                       }}
-                      className="block w-full text-left text-white hover:text-yellow-200 transition-colors"
+                      className="block w-full text-left text-white hover:text-yellow-200 transition-colors mt-3"
                     >
                       Sign Out
                     </button>
                   </>
                 ) : (
-                  <Link
-                    href="/auth/login"
-                    className="block text-white hover:text-yellow-200 transition-colors"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Login
-                  </Link>
+                  <SmartAuthButtons variant="mobile" />
                 )}
               </li>
-              {!user && (
-                <li className="pt-2">
-                  <Link
-                    href="/auth/signup"
-                    className="block py-2 px-6 bg-yellow-400 hover:bg-yellow-300 text-blue-900 rounded-full font-bold transition-colors text-center"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Start Now
-                  </Link>
-                </li>
-              )}
             </ul>
           </nav>
         )}
