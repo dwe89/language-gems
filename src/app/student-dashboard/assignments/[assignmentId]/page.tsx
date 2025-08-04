@@ -48,6 +48,8 @@ export default function StudentAssignmentDetailPage() {
   const [loading, setLoading] = useState(true);
   const [assignment, setAssignment] = useState<any>(null);
   const [error, setError] = useState<string>('');
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   
   // Check if this is a preview mode (teacher viewing the assignment)
   const [isPreviewMode, setIsPreviewMode] = useState(false);
@@ -104,8 +106,23 @@ export default function StudentAssignmentDetailPage() {
           // Continue without progress data
         }
 
+        // Get individual game progress for multi-game assignments
+        const { data: gameProgressData, error: gameProgressError } = await supabase
+          .from('assignment_game_progress')
+          .select('game_id, status, score, accuracy, time_spent, completed_at')
+          .eq('assignment_id', assignmentId)
+          .eq('student_id', user.id);
+
+        if (gameProgressError) {
+          console.error('Error fetching game progress:', gameProgressError);
+          // Continue without game progress data
+        }
+
         // Check if this is a multi-game assignment
-        const isMultiGame = assignmentData.game_config?.multiGame && assignmentData.game_config?.selectedGames?.length > 1;
+        const isMultiGame = assignmentData.game_type === 'multi-game' ||
+                           assignmentData.game_type === 'mixed-mode' ||
+                           (assignmentData.game_config?.multiGame && assignmentData.game_config?.selectedGames?.length > 1) ||
+                           (assignmentData.game_config?.gameConfig?.selectedGames && assignmentData.game_config.gameConfig.selectedGames.length > 1);
         
         const gameNameMap: Record<string, { name: string; description: string }> = {
           'vocabulary-mining': { name: 'Vocabulary Mining', description: 'Mine vocabulary gems to build your collection' },
@@ -125,39 +142,86 @@ export default function StudentAssignmentDetailPage() {
           'word-association': { name: 'Word Association', description: 'Connect related words and concepts' }
         };
 
-        let games: any[];
-        
+        let games: any[] = [];
+        let assessments: any[] = [];
+
         if (isMultiGame) {
-          // Multi-game assignment
-          games = assignmentData.game_config.selectedGames.map((gameId: string) => {
+          // Multi-game assignment - handle both old and new config structures
+          const selectedGames = assignmentData.game_config?.selectedGames ||
+                               assignmentData.game_config?.gameConfig?.selectedGames ||
+                               [];
+
+          games = selectedGames.map((gameId: string) => {
             const gameInfo = gameNameMap[gameId] || { name: gameId, description: 'Language learning game' };
-            // Use assignment progress for all games in multi-game assignments
-            const isCompleted = assignmentProgress?.status === 'completed';
+
+            // Find individual game progress
+            const gameProgress = gameProgressData?.find(gp => gp.game_id === gameId);
+            const isCompleted = gameProgress?.status === 'completed';
+
             return {
               id: gameId,
               name: gameInfo.name,
               description: gameInfo.description,
+              type: 'game',
               completed: isCompleted,
-              score: assignmentProgress?.score || 0,
-              timeSpent: assignmentProgress?.time_spent || 0
+              score: gameProgress?.score || 0,
+              accuracy: gameProgress?.accuracy || 0,
+              timeSpent: gameProgress?.time_spent || 0,
+              completedAt: gameProgress?.completed_at
+            };
+          });
+
+          // Extract assessments from the assignment config
+          const selectedAssessments = assignmentData.game_config?.assessmentConfig?.selectedAssessments || [];
+
+          assessments = selectedAssessments.map((assessment: any) => {
+            // Find individual assessment progress
+            const assessmentProgress = gameProgressData?.find(gp => gp.game_id === assessment.id);
+            const isCompleted = assessmentProgress?.status === 'completed';
+
+            return {
+              id: assessment.id,
+              name: assessment.name,
+              description: `${assessment.estimatedTime} • ${assessment.skills?.join(', ') || 'Assessment'}`,
+              type: 'assessment',
+              assessmentType: assessment.type,
+              completed: isCompleted,
+              score: assessmentProgress?.score || 0,
+              accuracy: assessmentProgress?.accuracy || 0,
+              timeSpent: assessmentProgress?.time_spent || 0,
+              completedAt: assessmentProgress?.completed_at
             };
           });
         } else {
-          // Single game assignment
+          // Single game assignment - use overall assignment progress
           const gameInfo = gameNameMap[assignmentData.game_type] || { name: assignmentData.game_type, description: 'Language learning game' };
           const isCompleted = assignmentProgress?.status === 'completed';
           games = [{
             id: assignmentData.game_type,
             name: gameInfo.name,
             description: gameInfo.description,
+            type: 'game',
             completed: isCompleted,
             score: assignmentProgress?.score || 0,
-            timeSpent: assignmentProgress?.time_spent || 0
+            accuracy: assignmentProgress?.accuracy || 0,
+            timeSpent: assignmentProgress?.time_spent || 0,
+            completedAt: assignmentProgress?.completed_at
           }];
         }
 
-        const completedGames = games.filter(g => g.completed).length;
-        const overallProgress = games.length > 0 ? (completedGames / games.length) * 100 : 0;
+        const allActivities = [...games, ...assessments];
+        const completedActivities = allActivities.filter(a => a.completed).length;
+        const overallProgress = allActivities.length > 0 ? Math.round((completedActivities / allActivities.length) * 100) : 0;
+
+        console.log('Assignment progress calculation:', {
+          totalGames: games.length,
+          totalAssessments: assessments.length,
+          totalActivities: allActivities.length,
+          completedActivities,
+          overallProgress,
+          games: games.map(g => ({ id: g.id, name: g.name, completed: g.completed })),
+          assessments: assessments.map(a => ({ id: a.id, name: a.name, completed: a.completed }))
+        });
 
         setAssignment({
           id: assignmentData.id,
@@ -166,8 +230,14 @@ export default function StudentAssignmentDetailPage() {
           dueDate: assignmentData.due_date ? new Date(assignmentData.due_date).toLocaleDateString() : undefined,
           isMultiGame,
           games,
+          assessments,
+          allActivities,
           totalGames: games.length,
-          completedGames,
+          totalAssessments: assessments.length,
+          totalActivities: allActivities.length,
+          completedGames: games.filter(g => g.completed).length,
+          completedAssessments: assessments.filter(a => a.completed).length,
+          completedActivities,
           overallProgress
         });
 
@@ -180,11 +250,66 @@ export default function StudentAssignmentDetailPage() {
     };
 
     fetchAssignmentDetail();
-  }, [user, assignmentId]);
+  }, [user, assignmentId, refreshKey]);
+
+  // Function to refresh assignment data (called when returning from games)
+  const refreshAssignmentData = () => {
+    setIsRefreshing(true);
+    setRefreshKey(prev => prev + 1);
+    // Reset refreshing state after a delay
+    setTimeout(() => setIsRefreshing(false), 1000);
+  };
+
+  // Listen for focus events to refresh data when returning from games
+  useEffect(() => {
+    const handleFocus = () => {
+      // Small delay to ensure any database updates have been processed
+      setTimeout(() => {
+        refreshAssignmentData();
+      }, 1000);
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, []);
 
   const handlePlayGame = (gameId: string) => {
     const previewParam = isPreviewMode ? '&preview=true' : '';
     router.push(`/games/${mapGameTypeToPath(gameId)}?assignment=${assignmentId}&mode=assignment${previewParam}`);
+  };
+
+  const handlePlayAssessment = (assessment: any) => {
+    const previewParam = isPreviewMode ? '&preview=true' : '';
+    let assessmentUrl = '';
+
+    switch (assessment.assessmentType) {
+      case 'reading-comprehension':
+        assessmentUrl = `/assessments/reading-comprehension?assignment=${assignmentId}&mode=assignment${previewParam}`;
+        break;
+      case 'aqa-reading':
+        assessmentUrl = `/assessments/aqa-reading?assignment=${assignmentId}&mode=assignment${previewParam}`;
+        break;
+      case 'aqa-listening':
+        assessmentUrl = `/assessments/aqa-listening?assignment=${assignmentId}&mode=assignment${previewParam}`;
+        break;
+      case 'dictation':
+        assessmentUrl = `/assessments/dictation?assignment=${assignmentId}&mode=assignment${previewParam}`;
+        break;
+      case 'four-skills':
+        assessmentUrl = `/assessments/four-skills?assignment=${assignmentId}&mode=assignment${previewParam}`;
+        break;
+      case 'listening-comprehension':
+        assessmentUrl = `/assessments/listening-comprehension?assignment=${assignmentId}&mode=assignment${previewParam}`;
+        break;
+      case 'exam-style-questions':
+        assessmentUrl = `/assessments/exam-style-questions?assignment=${assignmentId}&mode=assignment${previewParam}`;
+        break;
+      default:
+        alert(`Assessment type "${assessment.assessmentType}" is not yet supported.`);
+        return;
+    }
+
+    router.push(assessmentUrl);
   };
 
   if (loading) {
@@ -263,32 +388,63 @@ export default function StudentAssignmentDetailPage() {
                     <span>Due: {assignment.dueDate}</span>
                   </div>
                 )}
+                {assignment.totalGames > 0 && (
+                  <div className="flex items-center">
+                    <Gamepad2 className="h-4 w-4 mr-1" />
+                    <span>{assignment.totalGames} game{assignment.totalGames !== 1 ? 's' : ''}</span>
+                  </div>
+                )}
+                {assignment.totalAssessments > 0 && (
+                  <div className="flex items-center">
+                    <Target className="h-4 w-4 mr-1" />
+                    <span>{assignment.totalAssessments} assessment{assignment.totalAssessments !== 1 ? 's' : ''}</span>
+                  </div>
+                )}
                 <div className="flex items-center">
-                  <Gamepad2 className="h-4 w-4 mr-1" />
-                  <span>{assignment.totalGames} game{assignment.totalGames !== 1 ? 's' : ''}</span>
-                </div>
-                <div className="flex items-center">
-                  <Target className="h-4 w-4 mr-1" />
-                  <span>{assignment.completedGames} / {assignment.totalGames} completed</span>
+                  <CheckCircle className="h-4 w-4 mr-1" />
+                  <span>{assignment.completedActivities} / {assignment.totalActivities} completed</span>
                 </div>
               </div>
             </div>
             
             <div className="text-right">
-              <div className="text-2xl font-bold text-indigo-600">
+              <div className={`text-3xl font-bold ${assignment.overallProgress === 100 ? 'text-green-600' : 'text-indigo-600'}`}>
                 {Math.round(assignment.overallProgress)}%
               </div>
-              <div className="text-sm text-gray-500">Progress</div>
+              <div className="text-sm text-gray-500">
+                Progress
+                {isRefreshing && (
+                  <span className="ml-2 text-xs text-blue-600 animate-pulse">Updating...</span>
+                )}
+              </div>
+              {assignment.overallProgress === 100 && (
+                <div className="flex items-center justify-end mt-1">
+                  <CheckCircle className="h-4 w-4 text-green-600 mr-1" />
+                  <span className="text-xs font-medium text-green-700">Complete!</span>
+                </div>
+              )}
             </div>
           </div>
           
           {/* Progress Bar */}
-          <div className="w-full bg-gray-200 rounded-full h-3 mb-4">
-            <div 
-              className="bg-gradient-to-r from-indigo-500 to-purple-500 h-3 rounded-full transition-all duration-300"
+          <div className="w-full bg-gray-200 rounded-full h-4 mb-4 shadow-inner">
+            <div
+              className={`h-4 rounded-full transition-all duration-700 ${
+                assignment.overallProgress === 100
+                  ? 'bg-gradient-to-r from-green-400 to-green-600'
+                  : 'bg-gradient-to-r from-indigo-500 to-purple-500'
+              }`}
               style={{ width: `${assignment.overallProgress}%` }}
             ></div>
           </div>
+
+          {assignment.overallProgress === 100 && (
+            <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+              <p className="text-sm text-green-800 font-medium">
+                🎉 Congratulations! You've completed all games in this assignment.
+              </p>
+            </div>
+          )}
           
           {assignment.isMultiGame && (
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -304,62 +460,107 @@ export default function StudentAssignmentDetailPage() {
         </div>
       </div>
 
-      {/* Games List */}
+      {/* Activities List */}
       <div className="bg-white rounded-xl p-6 shadow-lg">
         <h2 className="text-xl font-bold text-gray-900 mb-6">
-          {assignment.isMultiGame ? 'Games to Complete' : 'Assignment Game'}
+          {assignment.isMultiGame ? 'Activities to Complete' : 'Assignment Activity'}
         </h2>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {assignment.games.map((game: any, index: number) => (
+          {assignment.allActivities.map((activity: any, index: number) => (
             <div
-              key={game.id}
-              className={`border rounded-xl p-6 transition-all duration-200 hover:shadow-lg ${
-                game.completed 
-                  ? 'border-green-200 bg-green-50' 
-                  : 'border-gray-200 bg-white hover:border-indigo-300'
+              key={activity.id}
+              className={`border rounded-xl p-6 transition-all duration-300 hover:shadow-lg transform hover:scale-105 ${
+                activity.completed
+                  ? 'border-green-300 bg-gradient-to-br from-green-50 to-green-100 shadow-green-100'
+                  : 'border-gray-200 bg-white hover:border-indigo-300 hover:shadow-indigo-100'
               }`}
             >
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{game.name}</h3>
-                  <p className="text-gray-600 text-sm mb-4">{game.description}</p>
+                  <div className="flex items-center mb-2">
+                    <h3 className="text-lg font-semibold text-gray-900">{activity.name}</h3>
+                    <span className={`ml-2 text-xs px-2 py-1 rounded-full font-medium ${
+                      activity.type === 'game'
+                        ? 'bg-blue-100 text-blue-700'
+                        : 'bg-purple-100 text-purple-700'
+                    }`}>
+                      {activity.type === 'game' ? 'GAME' : 'ASSESSMENT'}
+                    </span>
+                  </div>
+                  <p className="text-gray-600 text-sm mb-4">{activity.description}</p>
                 </div>
-                
-                {game.completed && (
-                  <CheckCircle className="h-6 w-6 text-green-500 flex-shrink-0" />
+
+                {activity.completed && (
+                  <div className="flex items-center space-x-2">
+                    <CheckCircle className="h-6 w-6 text-green-600 flex-shrink-0" />
+                    <span className="text-xs font-medium text-green-700 bg-green-200 px-2 py-1 rounded-full">
+                      COMPLETED
+                    </span>
+                  </div>
                 )}
               </div>
-              
-              {game.completed && (game.score !== undefined || game.timeSpent !== undefined) && (
-                <div className="bg-white rounded-lg p-3 mb-4 border border-green-200">
+
+              {activity.completed && (
+                <div className="bg-white rounded-lg p-4 mb-4 border border-green-200 shadow-sm">
                   <div className="grid grid-cols-2 gap-4 text-sm">
-                    {game.score !== undefined && (
-                      <div>
-                        <span className="text-gray-500">Score:</span>
-                        <span className="font-medium text-gray-900 ml-1">{game.score}%</span>
+                    {activity.score !== undefined && (
+                      <div className="flex items-center space-x-2">
+                        <Star className="h-4 w-4 text-yellow-500" />
+                        <div>
+                          <span className="text-gray-500">Score:</span>
+                          <span className="font-bold text-green-700 ml-1">{activity.score}%</span>
+                        </div>
                       </div>
                     )}
-                    {game.timeSpent !== undefined && (
-                      <div>
-                        <span className="text-gray-500">Time:</span>
-                        <span className="font-medium text-gray-900 ml-1">{Math.round(game.timeSpent / 60)}m</span>
+                    {activity.accuracy !== undefined && activity.accuracy > 0 && (
+                      <div className="flex items-center space-x-2">
+                        <Target className="h-4 w-4 text-blue-500" />
+                        <div>
+                          <span className="text-gray-500">Accuracy:</span>
+                          <span className="font-bold text-blue-700 ml-1">{Math.round(activity.accuracy)}%</span>
+                        </div>
+                      </div>
+                    )}
+                    {activity.timeSpent !== undefined && activity.timeSpent > 0 && (
+                      <div className="flex items-center space-x-2">
+                        <Clock className="h-4 w-4 text-purple-500" />
+                        <div>
+                          <span className="text-gray-500">Time:</span>
+                          <span className="font-bold text-purple-700 ml-1">{Math.round(activity.timeSpent / 60)}m</span>
+                        </div>
+                      </div>
+                    )}
+                    {activity.completedAt && (
+                      <div className="flex items-center space-x-2">
+                        <CheckCircle className="h-4 w-4 text-green-500" />
+                        <div>
+                          <span className="text-gray-500">Completed:</span>
+                          <span className="font-medium text-gray-700 ml-1">
+                            {new Date(activity.completedAt).toLocaleDateString()}
+                          </span>
+                        </div>
                       </div>
                     )}
                   </div>
                 </div>
               )}
-              
+
               <button
-                onClick={() => handlePlayGame(game.id)}
-                className={`w-full py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center ${
-                  game.completed
-                    ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                    : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                onClick={() => activity.type === 'game' ? handlePlayGame(activity.id) : handlePlayAssessment(activity)}
+                className={`w-full py-3 px-4 rounded-lg font-medium transition-all duration-200 flex items-center justify-center transform hover:scale-105 ${
+                  activity.completed
+                    ? 'bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700 shadow-lg'
+                    : activity.type === 'game'
+                      ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:from-indigo-600 hover:to-purple-700 shadow-lg'
+                      : 'bg-gradient-to-r from-purple-500 to-pink-600 text-white hover:from-purple-600 hover:to-pink-700 shadow-lg'
                 }`}
               >
                 <Play className="h-4 w-4 mr-2" />
-                {game.completed ? 'Play Again' : 'Start Game'}
+                {activity.completed
+                  ? (activity.type === 'game' ? 'Play Again' : 'Retake Assessment')
+                  : (activity.type === 'game' ? 'Start Game' : 'Start Assessment')
+                }
               </button>
             </div>
           ))}

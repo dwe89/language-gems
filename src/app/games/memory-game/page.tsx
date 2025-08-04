@@ -5,10 +5,16 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { useAuth } from '../../../components/auth/AuthProvider';
 import MemoryGameMain from './components/MemoryGameMain';
 import { WordPair } from './components/CustomWordsModal';
-import MemoryGameAssignmentWrapper from './components/MemoryAssignmentWrapper';
+import GameAssignmentWrapper, {
+  StandardVocabularyItem,
+  AssignmentData,
+  GameProgress,
+  calculateStandardScore
+} from '../../../components/games/templates/GameAssignmentWrapper';
 import UnifiedGameLauncher from '../../../components/games/UnifiedGameLauncher';
 import { UnifiedSelectionConfig, UnifiedVocabularyItem } from '../../../hooks/useUnifiedVocabulary';
 import InGameConfigPanel from '../../../components/games/InGameConfigPanel';
+import { useGameAudio } from '../../../hooks/useGlobalAudioContext';
 import './styles.css';
 
 export default function UnifiedMemoryGamePage() {
@@ -18,14 +24,12 @@ export default function UnifiedMemoryGamePage() {
   const assignmentId = searchParams?.get('assignment');
   const mode = searchParams?.get('mode');
 
-  // If assignment mode, render assignment wrapper
-  if (assignmentId && mode === 'assignment') {
-    return <MemoryGameAssignmentWrapper assignmentId={assignmentId} />;
-  }
-
-  // Game state management
+  // Game state management - ALWAYS initialize hooks first
   const [gameStarted, setGameStarted] = useState(false);
   const [customWords, setCustomWords] = useState<WordPair[]>([]);
+
+  // Initialize audio for assignment mode compatibility
+  const audioManager = useGameAudio(true);
 
   // Game configuration from unified launcher
   const [gameConfig, setGameConfig] = useState<{
@@ -33,6 +37,74 @@ export default function UnifiedMemoryGamePage() {
     vocabulary: UnifiedVocabularyItem[];
   } | null>(null);
   const [showConfigPanel, setShowConfigPanel] = useState(false);
+
+  // Assignment mode helper functions
+  const handleAssignmentComplete = (progress: GameProgress) => {
+    console.log('Memory Game assignment completed:', progress);
+    // Show completion message and redirect
+    setTimeout(() => {
+      router.push('/student-dashboard/assignments');
+    }, 3000);
+  };
+
+  const handleBackToAssignments = () => {
+    router.push('/student-dashboard/assignments');
+  };
+
+  // If assignment mode, render assignment wrapper (after all hooks are initialized)
+  if (assignmentId && mode === 'assignment') {
+    if (!user) {
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 flex items-center justify-center">
+          <div className="text-white text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+            <p className="text-lg">Loading...</p>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <GameAssignmentWrapper
+        assignmentId={assignmentId}
+        gameId="memory-game"
+        studentId={user.id}
+        onAssignmentComplete={handleAssignmentComplete}
+        onBackToAssignments={handleBackToAssignments}
+        onBackToMenu={() => router.push('/games/memory-game')}
+      >
+        {({ assignment, vocabulary, onProgressUpdate, onGameComplete }) => {
+          // Transform vocabulary to WordPair format for Memory Game
+          const wordPairs: WordPair[] = vocabulary.map((vocab: StandardVocabularyItem) => ({
+            id: vocab.id,
+            term: vocab.word,
+            translation: vocab.translation,
+            type: 'word' as const,
+            category: vocab.category,
+            subcategory: vocab.subcategory
+          }));
+
+          console.log('Memory Game Assignment - Vocabulary loaded:', vocabulary.length, 'items');
+          console.log('Memory Game Assignment - Word pairs:', wordPairs);
+
+          return (
+            <MemoryGameMain
+              language={vocabulary[0]?.language || "spanish"}
+              topic="Assignment"
+              difficulty="medium"
+              onBackToSettings={() => router.push('/games/memory-game')}
+              customWords={wordPairs}
+              isAssignmentMode={true}
+              assignmentTitle={assignment.title}
+              assignmentId={assignmentId}
+              userId={user.id}
+              audioManager={audioManager}
+            />
+          );
+        }}
+      </GameAssignmentWrapper>
+    );
+  }
 
   // Transform unified vocabulary to memory game format
   const transformVocabularyForMemoryGame = (vocabulary: UnifiedVocabularyItem[]): WordPair[] => {
@@ -149,6 +221,7 @@ export default function UnifiedMemoryGamePage() {
           isAssignmentMode={false}
           userId={user?.id}
           onOpenSettings={handleOpenConfigPanel}
+          audioManager={audioManager}
         />
 
         {/* In-game configuration panel */}

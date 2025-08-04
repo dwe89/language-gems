@@ -14,16 +14,33 @@ const featureFlags = {
 };
 
 export async function middleware(req: NextRequest) {
-  // Only log in development
+  // Re-enable logging to debug audio issue
   if (process.env.NODE_ENV === 'development') {
-    console.log('Middleware running for path:', req.nextUrl.pathname);
+    console.log('Middleware running for path:', req.nextUrl.pathname, 'hostname:', req.headers.get('host'));
   }
-  
-  // Check for student subdomain first - handle before any auth logic
+
+  // CRITICAL FIX: Fast path for static assets BEFORE any subdomain logic
+  // This prevents redirect loops when audio files are requested from main domain
+  const path = req.nextUrl.pathname;
   const hostname = req.headers.get('host') || '';
+
+  if (path.startsWith('/_next') || path.startsWith('/api') || path.startsWith('/favicon') ||
+      path.startsWith('/audio/') || path.startsWith('/images/') || path.startsWith('/public/') ||
+      path.startsWith('/games/') && (path.includes('/sounds/') || path.includes('/audio/'))) {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🎵 EARLY Fast path for static asset:', path, 'hostname:', hostname);
+    }
+    return NextResponse.next();
+  }
+
+  // Check for student subdomain - handle after fast path check
   if (hostname.startsWith('students.')) {
     // Rewrite to serve student portal content
     const url = req.nextUrl.clone();
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Student subdomain detected. Original path:', url.pathname);
+    }
     
     // Special handling for student dashboard routes
     if (url.pathname === '/student-dashboard' || url.pathname.startsWith('/student-dashboard/')) {
@@ -41,9 +58,58 @@ export async function middleware(req: NextRequest) {
         url.pathname = `/student${url.pathname}`;
       }
       // API routes don't get prefixed - they stay as-is
+    } else if (url.pathname.startsWith('/games/')) {
+      // Games routes don't get prefixed - they stay as-is to access main games directory
+      url.pathname = url.pathname;
+    } else if (url.pathname.startsWith('/audio/') || url.pathname.startsWith('/images/') || url.pathname.startsWith('/public/')) {
+      // Static assets (audio, images, public files) need to be redirected to main domain
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🎵 Static asset route detected, redirecting to main domain:', url.pathname);
+      }
+      // Redirect to main domain for static assets
+      const mainDomain = hostname.replace('students.', '');
+      // Don't add port if mainDomain already includes it
+      const hasPort = mainDomain.includes(':');
+      const port = hasPort ? '' : (url.port ? `:${url.port}` : (process.env.NODE_ENV === 'development' ? ':3000' : ''));
+      const baseUrl = `${url.protocol}//${mainDomain}${port}`;
+
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🎵 Constructing redirect URL:', {
+          pathname: url.pathname,
+          baseUrl: baseUrl,
+          protocol: url.protocol,
+          mainDomain: mainDomain,
+          port: port
+        });
+      }
+
+      const redirectUrl = new URL(url.pathname, baseUrl);
+      return NextResponse.redirect(redirectUrl);
+    } else if (url.pathname === '/assessments' || url.pathname.startsWith('/assessments/') ||
+               url.pathname === '/dictation' || url.pathname.startsWith('/dictation/') ||
+               url.pathname === '/exam-style-assessment' || url.pathname.startsWith('/exam-style-assessment/') ||
+               url.pathname === '/exam-style-assessment-topic' || url.pathname.startsWith('/exam-style-assessment-topic/') ||
+               url.pathname === '/four-skills-assessment' || url.pathname.startsWith('/four-skills-assessment/') ||
+               url.pathname === '/reading-comprehension' || url.pathname.startsWith('/reading-comprehension/') ||
+               url.pathname === '/aqa-listening-test' || url.pathname.startsWith('/aqa-listening-test/') ||
+               url.pathname === '/aqa-reading-test' || url.pathname.startsWith('/aqa-reading-test/') ||
+               url.pathname === '/aqa-reading-test-topic' || url.pathname.startsWith('/aqa-reading-test-topic/') ||
+               url.pathname === '/aqa-writing-test' || url.pathname.startsWith('/aqa-writing-test/')) {
+      // Assessment-related routes don't get prefixed - they stay as-is to access main assessment directories
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Assessment route detected, keeping path as-is:', url.pathname);
+      }
+      url.pathname = url.pathname;
     } else {
       // All other routes get prefixed with /student
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Other route, adding /student prefix. Original:', url.pathname, 'New:', `/student${url.pathname}`);
+      }
       url.pathname = `/student${url.pathname}`;
+    }
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Final rewrite path:', url.pathname);
     }
     
     return NextResponse.rewrite(url);
@@ -83,17 +149,20 @@ export async function middleware(req: NextRequest) {
     }
   );
 
-  // Fast path for public assets and API routes
-  const path = req.nextUrl.pathname;
-  if (path.startsWith('/_next') || path.startsWith('/api') || path.startsWith('/favicon')) {
-    return supabaseResponse;
-  }
+  // Fast path logic moved to top of middleware function
 
   // Redirect student routes on main domain to subdomain
   if (path.startsWith('/student') && !hostname.startsWith('students.')) {
     const studentUrl = new URL(req.url);
     studentUrl.hostname = `students.${hostname}`;
-    studentUrl.pathname = path.replace('/student', '');
+    // Handle different student route patterns
+    if (path.startsWith('/student-dashboard')) {
+      studentUrl.pathname = path; // Keep student-dashboard as-is
+    } else if (path.startsWith('/student/')) {
+      studentUrl.pathname = path.substring('/student'.length); // Remove /student prefix
+    } else if (path === '/student') {
+      studentUrl.pathname = '/'; // Root of student subdomain
+    }
     return NextResponse.redirect(studentUrl);
   }
 
@@ -220,6 +289,7 @@ export async function middleware(req: NextRequest) {
     // Check if student trying to access teacher routes
     if (session && (path === '/dashboard' || path.startsWith('/dashboard/'))) {
       if (userRole === 'student') {
+        console.log('Student trying to access teacher route, redirecting...');
         // Redirect students to student dashboard, considering subdomain context
         if (hostname.startsWith('students.')) {
           const redirectUrl = new URL('/student-dashboard', req.url);
@@ -266,16 +336,25 @@ export async function middleware(req: NextRequest) {
     }
 
     // If user is authenticated on landing page, redirect based on role but default to account
+    // BUT only redirect on student subdomain for student users
     if (session && path === '/') {
       const redirectUrl = req.nextUrl.clone();
       
       // In production, users without roles should go to blog instead of dashboards
       // BUT admin users can access dashboards
       const isAdmin = userRole === 'admin';
+      const isStudentSubdomain = hostname.startsWith('students.');
+      
       if (isProduction && !userRole && !isAdmin) {
         redirectUrl.pathname = '/blog';
       } else if (userRole === 'student') {
-        redirectUrl.pathname = '/student-dashboard';
+        // Only redirect students to dashboard if they're on the student subdomain
+        if (isStudentSubdomain) {
+          redirectUrl.pathname = '/student-dashboard';
+        } else {
+          // On main domain, students stay on homepage - don't redirect
+          return supabaseResponse;
+        }
       } else if (userRole === 'teacher' || userRole === 'admin') {
         redirectUrl.pathname = '/account';
       } else {

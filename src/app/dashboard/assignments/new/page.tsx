@@ -19,19 +19,19 @@ import { supabaseBrowser } from '../../../../components/auth/AuthProvider';
 const AVAILABLE_GAMES = [
   {
     id: 'vocabulary-mining',
-    name: '🔥 Vocabulary Mining',
-    description: '✨ Advanced vocabulary learning with spaced repetition, voice recognition, multiple modes (Learn/Match/Voice), and adaptive difficulty. Like Memrise + Quizlet combined!',
+    name: 'VocabMaster',
+    description: 'Mine rare vocabulary gems through intelligent spaced repetition, listening exercises, and adaptive learning.',
     icon: <Pickaxe className="text-yellow-500" size={20} />,
     category: 'vocabulary',
     difficulty: 'adaptive',
     timeToComplete: '10-20 min',
-    path: '/student-dashboard/vocabulary-mining/practice',
+    path: '/games/vocabulary-mining',
     featured: true // Mark as featured for highlighting
   },
 
   {
     id: 'speed-builder',
-    name: 'Speed Builder',
+    name: 'Sentence Sprint',
     description: 'Build sentences by dragging words into the correct order before time runs out',
     icon: <Building2 className="text-indigo-500" size={20} />,
     category: 'grammar',
@@ -90,20 +90,20 @@ const AVAILABLE_GAMES = [
     timeToComplete: '5-12 min',
     path: '/games/word-guesser'
   },
-  { 
-    id: 'sentence-towers', 
-    name: 'Sentence Towers', 
-    description: 'Build towering sentences by stacking words in the correct order',
+  {
+    id: 'sentence-towers',
+    name: 'Word Towers',
+    description: 'Build towers by matching words to translations. Wrong answers make towers fall!',
     icon: <Castle className="text-amber-500" size={20} />,
-    category: 'grammar',
+    category: 'vocabulary',
     difficulty: 'intermediate',
     timeToComplete: '6-12 min',
     path: '/games/sentence-towers'
   },
-  { 
-    id: 'noughts-and-crosses', 
-    name: 'Tic-Tac-Toe Vocabulary', 
-    description: 'Win tic-tac-toe by answering vocabulary questions correctly',
+  {
+    id: 'noughts-and-crosses',
+    name: 'Noughts and Crosses',
+    description: 'Play tic-tac-toe while practicing language terms.',
     icon: <Grid3X3 className="text-green-500" size={20} />,
     category: 'vocabulary',
     difficulty: 'beginner',
@@ -152,8 +152,8 @@ const AVAILABLE_GAMES = [
   },
   {
     id: 'vocab-blast',
-    name: 'Vocab Blast',
-    description: 'Fast-paced vocabulary action with themed adventures',
+    name: 'Vocab-Blast',
+    description: 'Click vocabulary gems to pop and translate them quickly',
     icon: <Zap className="text-yellow-500" size={20} />,
     category: 'vocabulary',
     difficulty: 'intermediate',

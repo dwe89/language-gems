@@ -17,15 +17,16 @@ export default function VerbQuestPage() {
   const assignmentId = searchParams?.get('assignment');
   const mode = searchParams?.get('mode');
 
-  // If assignment mode, render assignment wrapper
-  if (assignmentId && mode === 'assignment') {
-    return <VerbQuestAssignmentWrapper assignmentId={assignmentId} />;
-  }
-
+  // ALWAYS initialize hooks first to prevent "more hooks than previous render" error
   const [gameState, setGameState] = useState<'menu' | 'character-creation' | 'playing'>('menu');
   const [character, setCharacter] = useState<Character | null>(null);
   const [questSystem, setQuestSystem] = useState<QuestSystem | null>(null);
   const [soundEnabled, setSoundEnabled] = useState(true);
+
+  // If assignment mode, render assignment wrapper (after all hooks are initialized)
+  if (assignmentId && mode === 'assignment') {
+    return <VerbQuestAssignmentWrapper assignmentId={assignmentId} />;
+  }
 
   // Load character from localStorage
   useEffect(() => {

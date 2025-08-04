@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useEffect, useCallback } from 'react';
+import { createAudio, getAudioUrl } from '@/utils/audioUtils';
 
 interface AudioFiles {
   // Gem collection sounds (core functionality)
@@ -62,36 +63,36 @@ export const useAudio = (soundEnabled: boolean = true) => {
     // Only initialize in browser environment
     if (typeof window === 'undefined') return;
 
-    // Preload gem sounds
+    // Preload gem sounds using cross-subdomain audio utility
     Object.entries(AUDIO_FILES.gems).forEach(([key, src]) => {
-      const audio = new Audio(src);
+      const audio = createAudio(src);
       audio.preload = 'auto';
       audio.volume = 0.8;
       audio.loop = false;
       audioRefs.current[`gem-${key}`] = audio;
     });
 
-    // Preload achievement sounds
+    // Preload achievement sounds using cross-subdomain audio utility
     Object.entries(AUDIO_FILES.achievements).forEach(([key, src]) => {
-      const audio = new Audio(src);
+      const audio = createAudio(src);
       audio.preload = 'auto';
       audio.volume = 0.7;
       audio.loop = false;
       audioRefs.current[`achievement-${key}`] = audio;
     });
 
-    // Preload feedback sounds
+    // Preload feedback sounds using cross-subdomain audio utility
     Object.entries(AUDIO_FILES.feedback).forEach(([key, src]) => {
-      const audio = new Audio(src);
+      const audio = createAudio(src);
       audio.preload = 'auto';
       audio.volume = 0.6;
       audio.loop = false;
       audioRefs.current[`feedback-${key}`] = audio;
     });
 
-    // Initialize and play background music
+    // Initialize and play background music using cross-subdomain audio utility
     if (!backgroundMusicRef.current) {
-      const bgMusic = new Audio(AUDIO_FILES.music.background);
+      const bgMusic = createAudio(AUDIO_FILES.music.background);
       bgMusic.loop = true; // Loop the background music
       bgMusic.volume = 0.3; // Set a lower volume for background music
       bgMusic.preload = 'auto';
@@ -171,7 +172,7 @@ export const useAudio = (soundEnabled: boolean = true) => {
           wordAudioRef.current.currentTime = 0;
         }
 
-        wordAudioRef.current = new Audio(audioUrl);
+        wordAudioRef.current = createAudio(audioUrl);
         wordAudioRef.current.volume = 0.8;
 
         wordAudioRef.current.onended = () => resolve();

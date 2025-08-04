@@ -13,10 +13,12 @@ import { FALLBACK_VOCABULARY } from '../data/fallbackVocabulary';
 import { THEMES, Card } from '../data/gameConstants';
 import { GRID_SIZES } from '../data/gameConfig';
 import { useGameVocabulary, GameVocabularyWord } from '../../../../hooks/useGameVocabulary';
-import { 
-  Target, RotateCcw, BarChart3, Clock, 
-  Trophy, Play, Settings, PartyPopper 
+import {
+  Target, RotateCcw, BarChart3, Clock,
+  Trophy, Play, Settings, PartyPopper
 } from 'lucide-react';
+import { useGameAudio } from '../../../../hooks/useGlobalAudioContext';
+import { createAudio, getAudioUrl } from '../../../../utils/audioUtils';
 import './styles.css';
 
 interface MemoryGameMainProps {
@@ -33,6 +35,7 @@ interface MemoryGameMainProps {
   subcategory?: string;
   curriculumLevel?: 'KS3' | 'KS4';
   onOpenSettings?: () => void;
+  audioManager?: any;
 }
 
 export default function MemoryGameMain({
@@ -48,7 +51,8 @@ export default function MemoryGameMain({
   vocabulary: providedVocabulary,
   subcategory,
   curriculumLevel = 'KS3',
-  onOpenSettings
+  onOpenSettings,
+  audioManager: externalAudioManager
 }: MemoryGameMainProps) {
   const { user } = useAuth();
   const { user: unifiedUser, isDemo } = useUnifiedAuth();
@@ -69,6 +73,10 @@ export default function MemoryGameMain({
   const correctSoundRef = useRef<HTMLAudioElement | null>(null);
   const wrongSoundRef = useRef<HTMLAudioElement | null>(null);
   const winSoundRef = useRef<HTMLAudioElement | null>(null);
+
+  // Global audio context for assignment mode compatibility
+  const internalAudioManager = useGameAudio(true);
+  const audioManager = externalAudioManager || internalAudioManager;
   
   // Add state for current game settings
   const [currentLanguage, setCurrentLanguage] = useState(language);
@@ -174,10 +182,22 @@ export default function MemoryGameMain({
   
   // Initialize game
   useEffect(() => {
-    // Initialize audio
-    correctSoundRef.current = new Audio('/games/memory-game/sounds/correct.mp3');
-    wrongSoundRef.current = new Audio('/games/memory-game/sounds/wrong.mp3');
-    winSoundRef.current = new Audio('/games/memory-game/sounds/win.mp3');
+    // Initialize audio context first
+    if (audioManager && !audioManager.state.isInitialized) {
+      audioManager.initializeAudio().catch(console.warn);
+    }
+
+    // Initialize audio using audio utility
+    console.log('🎵 Initializing memory game audio files...');
+    correctSoundRef.current = createAudio('/games/memory-game/sounds/correct.mp3');
+    wrongSoundRef.current = createAudio('/games/memory-game/sounds/wrong.mp3');
+    winSoundRef.current = createAudio('/games/memory-game/sounds/win.mp3');
+    
+    console.log('🎵 Audio refs created:', {
+      correct: !!correctSoundRef.current,
+      wrong: !!wrongSoundRef.current,
+      win: !!winSoundRef.current
+    });
     
     // Load saved theme
     const savedTheme = localStorage.getItem('memoryGameTheme');
@@ -437,6 +457,7 @@ export default function MemoryGameMain({
       }
 
       // Priority 1: Use provided vocabulary (for assignment mode)
+      console.log('Memory Game - providedVocabulary:', providedVocabulary?.length || 0, 'items');
       if (providedVocabulary && providedVocabulary.length > 0) {
         const vocabList = providedVocabulary.map(item => ({
           term: item.word,
@@ -456,6 +477,7 @@ export default function MemoryGameMain({
       }
       // Priority 2: Use modern vocabulary system
       else if (gameVocabulary && gameVocabulary.length > 0) {
+        console.log('Memory Game - gameVocabulary:', gameVocabulary?.length || 0, 'items');
         const vocabList = gameVocabulary.map(item => ({
           term: item.word,
           translation: item.translation,
@@ -586,8 +608,13 @@ export default function MemoryGameMain({
     // Check for match
     if (firstCard.pairId === card.pairId) {
       // It's a match
+      console.log('🎵 Playing correct sound...');
       if (correctSoundRef.current) {
-        correctSoundRef.current.play();
+        audioManager.playAudio(correctSoundRef.current).catch((error: any) => {
+          console.warn('Failed to play correct sound:', error);
+        });
+      } else {
+        console.warn('correctSoundRef.current is null');
       }
       
       setTimeout(() => {
@@ -603,11 +630,11 @@ export default function MemoryGameMain({
 
         // Play audio for the vocabulary word if available
         // Try to play audio for the Spanish term (assuming it's available)
-        const spanishTerm = firstCard.value;
         const audioUrl = (firstCard as any).audio_url;
         if (audioUrl) {
           setTimeout(() => {
-            const audio = new Audio(audioUrl);
+            // Use audio utility to get correct URL for vocabulary audio
+            const audio = new Audio(getAudioUrl(audioUrl));
             audio.play().catch(error => {
               console.warn('Failed to play vocabulary audio:', error);
             });
@@ -678,8 +705,13 @@ export default function MemoryGameMain({
         const totalPairs = cards.length / 2;
         if (matches + 1 === totalPairs) {
           setGameWon(true);
+          console.log('🎵 Playing win sound...');
           if (winSoundRef.current) {
-            winSoundRef.current.play();
+            audioManager.playAudio(winSoundRef.current).catch((error: any) => {
+              console.warn('Failed to play win sound:', error);
+            });
+          } else {
+            console.warn('winSoundRef.current is null');
           }
 
           // Save assignment progress if in assignment mode
@@ -692,8 +724,13 @@ export default function MemoryGameMain({
       }, 500);
     } else {
       // Not a match
+      console.log('🎵 Playing wrong sound...');
       if (wrongSoundRef.current) {
-        wrongSoundRef.current.play();
+        audioManager.playAudio(wrongSoundRef.current).catch((error: any) => {
+          console.warn('Failed to play wrong sound:', error);
+        });
+      } else {
+        console.warn('wrongSoundRef.current is null');
       }
 
       // Track vocabulary progress for failed attempt

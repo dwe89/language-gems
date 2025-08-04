@@ -81,7 +81,7 @@ interface SmartAssignmentConfigProps {
 }
 
 export default function SmartAssignmentConfig({
-  selectedGames,
+  selectedGames = [],
   vocabularyConfig,
   sentenceConfig,
   grammarConfig,
@@ -91,6 +91,17 @@ export default function SmartAssignmentConfig({
 }: SmartAssignmentConfigProps) {
   
   const configSections = useMemo(() => {
+    if (!selectedGames || selectedGames.length === 0) {
+      return {
+        needsVocabulary: false,
+        needsSentences: false,
+        needsGrammar: false,
+        vocabularyGames: [],
+        sentenceGames: [],
+        grammarGames: []
+      };
+    }
+    
     const games = selectedGames.map(id => GAME_TYPES[id]).filter(Boolean);
 
     const needsVocabulary = games.some(game => game.type === 'vocabulary' || game.type === 'mixed');
@@ -111,7 +122,7 @@ export default function SmartAssignmentConfig({
     };
   }, [selectedGames]);
 
-  if (selectedGames.length === 0) {
+  if (!selectedGames || selectedGames.length === 0) {
     return (
       <div className="text-center py-12 text-gray-500">
         <BookOpen className="h-12 w-12 mx-auto mb-4 text-gray-300" />
@@ -234,7 +245,6 @@ function VocabularyConfigSection({ config, onChange }: {
           <option value="es">Spanish</option>
           <option value="fr">French</option>
           <option value="de">German</option>
-          <option value="it">Italian</option>
         </select>
       </div>
 
@@ -300,34 +310,7 @@ function VocabularyConfigSection({ config, onChange }: {
         />
       )}
 
-      {/* Word Count and Difficulty */}
-      {config.source && config.source !== 'create' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Number of Words</label>
-            <input
-              type="number"
-              min="5"
-              max="50"
-              value={config.wordCount || 10}
-              onChange={(e) => onChange({...config, wordCount: parseInt(e.target.value)})}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Difficulty Level</label>
-            <select
-              value={config.difficulty || 'intermediate'}
-              onChange={(e) => onChange({...config, difficulty: e.target.value})}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="beginner">Beginner</option>
-              <option value="intermediate">Intermediate</option>
-              <option value="advanced">Advanced</option>
-            </select>
-          </div>
-        </div>
-      )}
+
     </div>
   );
 }
@@ -381,47 +364,18 @@ function SentenceConfigSection({ config, onChange }: {
         />
       )}
 
-      {/* Sentence Count, Difficulty, and Grammar Focus */}
+      {/* Sentence Count only */}
       {config.source && config.source !== 'create' && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Number of Sentences</label>
-            <input
-              type="number"
-              min="5"
-              max="30"
-              value={config.sentenceCount || 10}
-              onChange={(e) => onChange({...config, sentenceCount: parseInt(e.target.value)})}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-transparent"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Difficulty Level</label>
-            <select
-              value={config.difficulty || 'intermediate'}
-              onChange={(e) => onChange({...config, difficulty: e.target.value})}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-transparent"
-            >
-              <option value="beginner">Beginner</option>
-              <option value="intermediate">Intermediate</option>
-              <option value="advanced">Advanced</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Grammar Focus</label>
-            <select
-              value={config.grammarFocus || ''}
-              onChange={(e) => onChange({...config, grammarFocus: e.target.value})}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-transparent"
-            >
-              <option value="">All Grammar</option>
-              <option value="present-tense">Present Tense</option>
-              <option value="ser-estar">Ser vs Estar</option>
-              <option value="adjective-agreement">Adjective Agreement</option>
-              <option value="gustar-verb">Gustar Verb</option>
-              <option value="reflexive-verbs">Reflexive Verbs</option>
-            </select>
-          </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Number of Sentences</label>
+          <input
+            type="number"
+            min="5"
+            max="30"
+            value={config.sentenceCount || 10}
+            onChange={(e) => onChange({...config, sentenceCount: parseInt(e.target.value)})}
+            className="w-full max-w-xs border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+          />
         </div>
       )}
     </div>

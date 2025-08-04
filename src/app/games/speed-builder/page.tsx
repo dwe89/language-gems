@@ -6,6 +6,7 @@ import { useUnifiedAuth } from '../../../hooks/useUnifiedAuth';
 import SpeedBuilderGameWrapper from './components/SpeedBuilderGameWrapper';
 import UnifiedSentenceCategorySelector, { SentenceSelectionConfig } from '../../../components/games/UnifiedSentenceCategorySelector';
 import InGameConfigPanel from '../../../components/games/InGameConfigPanel';
+import GameAssignmentWrapper from '../../../components/games/templates/GameAssignmentWrapper';
 
 export default function SpeedBuilderPage() {
   const { user } = useUnifiedAuth();
@@ -18,6 +19,15 @@ export default function SpeedBuilderPage() {
   const [gameStarted, setGameStarted] = useState(false);
   const [selectedConfig, setSelectedConfig] = useState<SentenceSelectionConfig | null>(null);
   const [showConfigPanel, setShowConfigPanel] = useState(false);
+
+  // Assignment mode handlers
+  const handleAssignmentComplete = () => {
+    router.push('/student-dashboard/assignments');
+  };
+
+  const handleBackToAssignments = () => {
+    router.push('/student-dashboard/assignments');
+  };
 
   // Handle selection complete from sentence selector
   const handleSelectionComplete = (config: SentenceSelectionConfig) => {
@@ -48,12 +58,96 @@ export default function SpeedBuilderPage() {
     setShowConfigPanel(false);
   };
 
+  // Assignment mode: wrap with GameAssignmentWrapper
+  if (assignmentId && mode === 'assignment' && user) {
+    return (
+      <GameAssignmentWrapper
+        assignmentId={assignmentId}
+        gameId="speed-builder"
+        studentId={user.id}
+        onAssignmentComplete={handleAssignmentComplete}
+        onBackToAssignments={handleBackToAssignments}
+        onBackToMenu={() => router.push('/games/speed-builder')}
+      >
+        {({ assignment, vocabulary, onProgressUpdate, onGameComplete }) => {
+          // Convert assignment vocabulary to sentence config format
+          const assignmentConfig: SentenceSelectionConfig = {
+            language: assignment.vocabulary_selection?.language || 'spanish',
+            curriculumLevel: assignment.vocabulary_selection?.curriculum_level || 'KS3',
+            categoryId: assignment.vocabulary_selection?.category || 'basics_core_language',
+            subcategoryId: assignment.vocabulary_selection?.subcategory || 'greetings_introductions',
+            wordCount: assignment.vocabulary_selection?.word_count || 20
+          };
+
+          // Map sentence categories to Speed Builder themes
+          const categoryToThemeMapping: { [key: string]: string } = {
+            'basics_core_language': 'People and lifestyle',
+            'identity_personal_life': 'People and lifestyle',
+            'home_local_area': 'Communication and the world around us',
+            'free_time_leisure': 'Popular culture',
+            'food_drink': 'People and lifestyle',
+            'clothes_shopping': 'People and lifestyle',
+            'technology_media': 'Popular culture',
+            'health_lifestyle': 'People and lifestyle',
+            'holidays_travel_culture': 'Communication and the world around us',
+            'nature_environment': 'Communication and the world around us',
+            'social_global_issues': 'Communication and the world around us',
+            'general_concepts': 'People and lifestyle',
+            'daily_life': 'People and lifestyle',
+            'school_jobs_future': 'People and lifestyle'
+          };
+
+          const subcategoryToTopicMapping: { [key: string]: string } = {
+            'greetings_introductions': 'Identity and relationships',
+            'family_friends': 'Identity and relationships',
+            'personal_information': 'Identity and relationships',
+            'daily_routine': 'Daily life',
+            'food_drink_vocabulary': 'Food and eating',
+            'meals': 'Food and eating',
+            'hobbies_interests': 'Free time activities',
+            'sports_ball_games': 'Free time activities',
+            'school_subjects': 'School',
+            'professions_jobs': 'Future Aspirations, Study and Work',
+            'places_in_town': 'Local Area, Holiday and Travel',
+            'transport': 'Local Area, Holiday and Travel',
+            'countries': 'Local Area, Holiday and Travel',
+            'weathers': 'Local Area, Holiday and Travel'
+          };
+
+          const legacyCurriculumType = assignmentConfig.curriculumLevel === 'KS4' ? 'gcse' : 'ks3';
+          const legacyTier = assignmentConfig.curriculumLevel === 'KS4' ? 'foundation' : 'core';
+          const legacyTheme = categoryToThemeMapping[assignmentConfig.categoryId] || 'People and lifestyle';
+          const legacyTopic = subcategoryToTopicMapping[assignmentConfig.subcategoryId || ''] || 'Identity and relationships';
+
+          return (
+            <div className="min-h-screen">
+              <SpeedBuilderGameWrapper
+                tier={legacyTier}
+                theme={legacyTheme}
+                topic={legacyTopic}
+                onBackToMenu={() => router.push('/games/speed-builder')}
+                assignmentId={assignmentId}
+                userId={user.id}
+                sentenceConfig={assignmentConfig}
+                onOpenSettings={() => {}}
+                onGameEnd={(result) => {
+                  console.log('Speed Builder assignment ended:', result);
+                  onGameComplete();
+                }}
+              />
+            </div>
+          );
+        }}
+      </GameAssignmentWrapper>
+    );
+  }
+
   // Show sentence category selector if game not started
   if (!gameStarted) {
     return (
       <UnifiedSentenceCategorySelector
-        gameName="Speed Builder"
-        title="Speed Builder - Select Content"
+        gameName="Sentence Sprint"
+        title="Sentence Sprint - Select Content"
         supportedLanguages={['spanish', 'french', 'german']}
         showCustomMode={false} // Speed Builder uses sentence data, not vocabulary
         onSelectionComplete={handleSelectionComplete}

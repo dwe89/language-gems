@@ -14,17 +14,18 @@ export default function DetectiveListeningPage() {
   const assignmentId = searchParams?.get('assignment');
   const mode = searchParams?.get('mode');
 
-  // If assignment mode, render assignment wrapper
-  if (assignmentId && mode === 'assignment') {
-    return <DetectiveListeningAssignmentWrapper assignmentId={assignmentId} />;
-  }
-
+  // ALWAYS initialize hooks first to prevent "more hooks than previous render" error
   const [gameStarted, setGameStarted] = useState(false);
   const [gameSettings, setGameSettings] = useState({
     caseType: '',
     language: '',
     difficulty: 'normal'
   });
+
+  // If assignment mode, render assignment wrapper (after all hooks are initialized)
+  if (assignmentId && mode === 'assignment') {
+    return <DetectiveListeningAssignmentWrapper assignmentId={assignmentId} />;
+  }
 
   const startGame = (settings: any) => {
     setGameSettings(settings);

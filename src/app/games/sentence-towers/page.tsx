@@ -15,7 +15,7 @@ import { useSounds } from './hooks/useSounds';
 import { useAuth } from '../../../components/auth/AuthProvider';
 import { useSupabase } from '../../../components/supabase/SupabaseProvider';
 import { EnhancedGameService } from '../../../services/enhancedGameService';
-import SentenceTowersAssignmentWrapper from './components/SentenceTowersAssignmentWrapper';
+import GameAssignmentWrapper from '../../../components/games/templates/GameAssignmentWrapper';
 
 // Enhanced Types
 interface TowerBlock {
@@ -294,14 +294,97 @@ const DynamicBackground = ({
 };
 
 export default function SentenceTowersPage() {
+  const { user } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const assignmentId = searchParams?.get('assignment');
   const mode = searchParams?.get('mode');
 
-  // If assignment mode, render assignment wrapper
-  if (assignmentId && mode === 'assignment') {
-    return <SentenceTowersAssignmentWrapper assignmentId={assignmentId} />;
+  // Assignment mode handlers
+  const handleAssignmentComplete = () => {
+    router.push('/student-dashboard/assignments');
+  };
+
+  const handleBackToAssignments = () => {
+    router.push('/student-dashboard/assignments');
+  };
+
+  // Assignment mode: wrap with GameAssignmentWrapper
+  if (assignmentId && mode === 'assignment' && user) {
+    return (
+      <GameAssignmentWrapper
+        assignmentId={assignmentId}
+        gameId="sentence-towers"
+        studentId={user.id}
+        onAssignmentComplete={handleAssignmentComplete}
+        onBackToAssignments={handleBackToAssignments}
+        onBackToMenu={() => router.push('/games/sentence-towers')}
+      >
+        {({ assignment, vocabulary, onProgressUpdate, onGameComplete }) => {
+          // Convert assignment vocabulary to game format
+          const gameVocabulary = vocabulary.map(item => ({
+            id: item.id,
+            word: item.word,
+            translation: item.translation,
+            language: item.language || assignment.vocabulary_criteria?.language || 'spanish',
+            category: item.category || 'assignment',
+            subcategory: item.subcategory || 'assignment',
+            part_of_speech: item.part_of_speech || 'noun',
+            example_sentence_original: '', // Not available in StandardVocabularyItem
+            example_sentence_translation: '', // Not available in StandardVocabularyItem
+            difficulty_level: 'beginner' // Default difficulty for assignment mode
+          }));
+
+          const handleGameComplete = (gameProgress: any) => {
+            // Calculate standardized progress metrics
+            const wordsCompleted = gameProgress.wordsCompleted || gameProgress.correctAnswers || 0;
+            const totalWords = vocabulary.length;
+            const score = gameProgress.score || 0;
+            const accuracy = totalWords > 0 ? (wordsCompleted / totalWords) * 100 : 0;
+
+            // Update progress
+            onProgressUpdate({
+              wordsCompleted,
+              totalWords,
+              score,
+              maxScore: totalWords * 100, // 100 points per word
+              accuracy
+            });
+
+            // Complete assignment
+            onGameComplete({
+              assignmentId: assignment.id,
+              gameId: 'sentence-towers',
+              studentId: user.id,
+              wordsCompleted,
+              totalWords,
+              score,
+              maxScore: totalWords * 100,
+              accuracy,
+              timeSpent: gameProgress.timeSpent || 0,
+              completedAt: new Date(),
+              sessionData: gameProgress
+            });
+          };
+
+          return (
+            <ImprovedSentenceTowersGame
+              gameVocabulary={gameVocabulary}
+              onBackToMenu={() => router.push('/games/sentence-towers')}
+              config={{
+                language: assignment.vocabulary_criteria?.language || 'spanish',
+                categoryId: assignment.vocabulary_criteria?.category || 'assignment',
+                subcategoryId: assignment.vocabulary_criteria?.subcategory || 'assignment',
+                curriculumLevel: (assignment.curriculum_level as 'KS2' | 'KS3' | 'KS4' | 'KS5') || 'KS3'
+              }}
+              assignmentMode={true}
+              onGameComplete={handleGameComplete}
+              onProgressUpdate={onProgressUpdate}
+            />
+          );
+        }}
+      </GameAssignmentWrapper>
+    );
   }
 
   // Game state management for unified launcher
@@ -390,11 +473,17 @@ export default function SentenceTowersPage() {
 function ImprovedSentenceTowersGame({
   gameVocabulary,
   onBackToMenu,
-  config
+  config,
+  assignmentMode = false,
+  onGameComplete,
+  onProgressUpdate
 }: {
   gameVocabulary: any[];
   onBackToMenu: () => void;
   config: UnifiedSelectionConfig;
+  assignmentMode?: boolean;
+  onGameComplete?: (gameProgress: any) => void;
+  onProgressUpdate?: (progress: any) => void;
 }) {
 
   // Authentication and services
@@ -603,8 +692,29 @@ function ImprovedSentenceTowersGame({
   useEffect(() => {
     if (gameState.status === 'failed' && gameState.blocksPlaced > 0) {
       saveGameSession();
+
+      // Handle assignment completion if in assignment mode
+      if (assignmentMode && onGameComplete) {
+        const gameProgress = {
+          wordsCompleted: gameState.wordsCompleted,
+          totalWords: gameState.totalWords,
+          score: gameState.score,
+          accuracy: gameState.accuracy,
+          timeSpent: settings.timeLimit - gameState.timeLeft,
+          correctAnswers: gameState.blocksPlaced,
+          sessionData: {
+            finalScore: gameState.score,
+            blocksPlaced: gameState.blocksPlaced,
+            maxHeight: gameState.maxHeight,
+            streak: gameState.streak,
+            multiplier: gameState.multiplier,
+            difficulty: settings.difficulty
+          }
+        };
+        onGameComplete(gameProgress);
+      }
     }
-  }, [gameState.status, gameState.blocksPlaced, saveGameSession]);
+  }, [gameState.status, gameState.blocksPlaced, saveGameSession, assignmentMode, onGameComplete, gameState, settings]);
 
   // Improved distractor selection algorithm
   const selectBestDistractors = (targetWord: any, candidates: any[], count: number) => {
@@ -914,7 +1024,17 @@ function ImprovedSentenceTowersGame({
         currentLevel: Math.floor(prev.blocksPlaced / 5) + 1,
         accuracy: (prev.blocksPlaced + 1) > 0 ? (prev.blocksPlaced + 1 - prev.blocksFallen) / (prev.blocksPlaced + 1) : 1
       };
-      
+
+      // Update assignment progress if in assignment mode
+      if (assignmentMode && onProgressUpdate) {
+        onProgressUpdate({
+          wordsCompleted: newWordsCompleted,
+          totalWords: updatedState.totalWords,
+          score: updatedState.score,
+          accuracy: updatedState.accuracy * 100
+        });
+      }
+
       return updatedState;
     });
   }, [gameState, towerBlocks, addParticleEffect, sounds, questionStartTime]);

@@ -3,13 +3,14 @@
 import React, { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../../../components/auth/AuthProvider';
-import ConjugationDuelAssignmentWrapper from './components/ConjugationDuelAssignmentWrapper';
+import GameAssignmentWrapper from '../../../components/games/templates/GameAssignmentWrapper';
 import LanguageSelection from './components/LanguageSelection';
 import LeagueSelection from './components/LeagueSelection';
 import OpponentSelection from './components/OpponentSelection';
 import ConjugationDuelGameWrapper from './components/ConjugationDuelGameWrapper';
 import UnifiedGameLauncher from '../../../components/games/UnifiedGameLauncher';
 import { UnifiedSelectionConfig, UnifiedVocabularyItem } from '../../../hooks/useUnifiedVocabulary';
+import Link from 'next/link';
 
 type GameState = 'language-select' | 'league-select' | 'opponent-select' | 'battle' | 'results';
 
@@ -20,9 +21,85 @@ export default function ConjugationDuelPage() {
   const assignmentId = searchParams?.get('assignment');
   const mode = searchParams?.get('mode');
 
-  // If assignment mode, render assignment wrapper
+  // If assignment mode, use GameAssignmentWrapper
   if (assignmentId && mode === 'assignment') {
-    return <ConjugationDuelAssignmentWrapper assignmentId={assignmentId} />;
+    return (
+      <GameAssignmentWrapper
+        assignmentId={assignmentId}
+        gameId="conjugation-duel"
+        studentId={user?.id}
+        onAssignmentComplete={(progress) => {
+          console.log('Conjugation Duel assignment completed:', progress);
+          router.push('/student-dashboard');
+        }}
+        onBackToAssignments={() => router.push('/student-dashboard')}
+        onBackToMenu={() => router.push('/games/conjugation-duel')}
+      >
+        {({ assignment, vocabulary, onProgressUpdate, onGameComplete }) => {
+          // Filter vocabulary to only include verbs
+          const verbs = vocabulary.filter(word =>
+            word.part_of_speech === 'v' ||
+            word.part_of_speech === 'verb' ||
+            word.word.includes('(to)')
+          );
+
+          const handleGameComplete = (gameResult: any) => {
+            // Calculate standardized progress metrics
+            const wordsCompleted = gameResult.verbsCompleted || gameResult.correctAnswers || 0;
+            const totalWords = verbs.length;
+            const score = gameResult.score || 0;
+            const accuracy = gameResult.accuracy || 0;
+
+            // Update progress
+            onProgressUpdate({
+              wordsCompleted,
+              totalWords,
+              score,
+              maxScore: totalWords * 100, // 100 points per verb
+              accuracy
+            });
+
+            // Complete assignment
+            onGameComplete({
+              assignmentId: assignment.id,
+              gameId: 'conjugation-duel',
+              studentId: user?.id || '',
+              wordsCompleted,
+              totalWords,
+              score,
+              maxScore: totalWords * 100,
+              accuracy,
+              timeSpent: gameResult.timeSpent || 0,
+              completedAt: new Date(),
+              sessionData: gameResult
+            });
+          };
+
+          const handleBackToAssignments = () => {
+            router.push('/student-dashboard');
+          };
+
+          // Convert assignment language to game format
+          const gameLanguage = assignment.vocabulary_criteria?.language === 'spanish' ? 'spanish' :
+                               assignment.vocabulary_criteria?.language === 'french' ? 'french' :
+                               assignment.vocabulary_criteria?.language === 'german' ? 'german' : 'spanish';
+
+          return (
+            <div className="min-h-screen">
+              <ConjugationDuelGameWrapper
+                language={gameLanguage}
+                league="assignment" // Special league for assignments
+                opponent={{ name: "Assignment Challenge", difficulty: "medium" }}
+                onBackToMenu={handleBackToAssignments}
+                onGameEnd={handleGameComplete}
+                assignmentId={assignment.id}
+                userId={user?.id}
+              />
+            </div>
+          );
+        }}
+      </GameAssignmentWrapper>
+    );
   }
 
   // Game state management

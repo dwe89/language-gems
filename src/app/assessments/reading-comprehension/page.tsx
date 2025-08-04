@@ -24,7 +24,10 @@ function ReadingComprehensionPageContent() {
           <p className="text-blue-200 text-lg">Test your reading skills with comprehensive passages</p>
         </div>
         
-        <ReadingComprehensionEngine />
+        <ReadingComprehensionEngine 
+          language="spanish"
+          difficulty="foundation"
+        />
       </div>
     </div>
   );

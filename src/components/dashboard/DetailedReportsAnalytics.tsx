@@ -115,6 +115,11 @@ export default function DetailedReportsAnalytics() {
   const [assignmentReports, setAssignmentReports] = useState<AssignmentPerformanceReport[]>([]);
   const [vocabularyAnalysis, setVocabularyAnalysis] = useState<VocabularyDifficultyAnalysis[]>([]);
   const [learningPatterns, setLearningPatterns] = useState<LearningPatternChart[]>([]);
+  const [realLearningPatterns, setRealLearningPatterns] = useState<{
+    peakLearningTime: string;
+    averageSessionDuration: number;
+    streakMaintenanceRate: number;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'assignments' | 'vocabulary' | 'patterns'>('assignments');
   const [expandedReports, setExpandedReports] = useState<Set<string>>(new Set());
@@ -143,16 +148,18 @@ export default function DetailedReportsAnalytics() {
   const loadReportsData = async () => {
     try {
       setLoading(true);
-      
-      const [assignments, vocabulary, patterns] = await Promise.all([
+
+      const [assignments, vocabulary, patterns, realPatterns] = await Promise.all([
         loadAssignmentReports(),
         loadVocabularyAnalysis(),
-        loadLearningPatterns()
+        loadLearningPatterns(),
+        loadRealLearningPatterns()
       ]);
 
       setAssignmentReports(assignments);
       setVocabularyAnalysis(vocabulary);
       setLearningPatterns(patterns);
+      setRealLearningPatterns(realPatterns);
     } catch (error) {
       console.error('Error loading reports data:', error);
     } finally {
@@ -408,6 +415,24 @@ export default function DetailedReportsAnalytics() {
     }
   };
 
+  const loadRealLearningPatterns = async () => {
+    try {
+      if (!user?.id) return null;
+
+      const response = await fetch(`/api/ai-insights?teacherId=${user.id}&action=get_learning_patterns`);
+      const data = await response.json();
+
+      if (data.success && data.learningPatterns) {
+        return data.learningPatterns;
+      }
+
+      return null;
+    } catch (error) {
+      console.error('Error loading real learning patterns:', error);
+      return null;
+    }
+  };
+
   // =====================================================
   // EVENT HANDLERS
   // =====================================================
@@ -423,8 +448,139 @@ export default function DetailedReportsAnalytics() {
   };
 
   const handleExportReport = (reportType: string, reportId?: string) => {
-    console.log(`Exporting ${reportType} report`, reportId);
-    // Implement export functionality
+    try {
+      let csvData: string[][] = [];
+      let headers: string[] = [];
+      let filename = '';
+
+      switch (reportType) {
+        case 'assignment':
+          const report = assignmentReports.find(r => r.assignment_id === reportId);
+          if (!report) return;
+
+          headers = [
+            'Assignment Title',
+            'Class Name',
+            'Created Date',
+            'Due Date',
+            'Total Students',
+            'Students Started',
+            'Students Completed',
+            'Completion Rate (%)',
+            'Average Score (%)',
+            'Average Time (min)',
+            'Engagement Score'
+          ];
+
+          csvData = [[
+            report.assignment_title,
+            report.class_name,
+            report.created_date,
+            report.due_date,
+            report.total_students.toString(),
+            report.students_started.toString(),
+            report.students_completed.toString(),
+            report.completion_rate.toString(),
+            report.average_score.toFixed(1),
+            report.average_time_minutes.toString(),
+            report.engagement_score.toString()
+          ]];
+
+          filename = `assignment-report-${report.assignment_title.replace(/[^a-zA-Z0-9]/g, '-')}-${new Date().toISOString().split('T')[0]}.csv`;
+          break;
+
+        case 'vocabulary':
+          headers = [
+            'Word',
+            'Language',
+            'Difficulty Level',
+            'Success Rate (%)',
+            'Average Attempts',
+            'Time to Master (min)',
+            'Retention Rate (%)',
+            'Common Mistakes'
+          ];
+
+          csvData = vocabularyAnalysis.map(item => [
+            item.word,
+            item.language,
+            item.difficulty_level,
+            item.success_rate.toFixed(1),
+            item.average_attempts.toString(),
+            item.time_to_master_minutes.toString(),
+            item.retention_rate.toFixed(1),
+            item.common_mistakes.join('; ')
+          ]);
+
+          filename = `vocabulary-analysis-${new Date().toISOString().split('T')[0]}.csv`;
+          break;
+
+        case 'patterns':
+          headers = [
+            'Date',
+            'Average Class Score (%)',
+            'Engagement Level',
+            'New Words Learned',
+            'Concepts Mastered',
+            'Skills Improved',
+            'Peak Activity Hour',
+            'Average Session Length (min)',
+            'Streak Maintenance Rate (%)'
+          ];
+
+          csvData = learningPatterns.map(pattern => [
+            pattern.date,
+            pattern.average_class_score.toFixed(1),
+            pattern.engagement_level.toString(),
+            pattern.new_words_learned.toString(),
+            pattern.concepts_mastered.toString(),
+            pattern.skills_improved.toString(),
+            pattern.peak_activity_hour.toString(),
+            pattern.average_session_length.toString(),
+            pattern.streak_maintenance_rate.toString()
+          ]);
+
+          filename = `learning-patterns-${new Date().toISOString().split('T')[0]}.csv`;
+          break;
+
+        case 'all':
+          // Export all data in separate sheets (simplified as single CSV with sections)
+          headers = ['Report Type', 'Data'];
+          csvData = [
+            ['Assignment Reports', `${assignmentReports.length} reports available`],
+            ['Vocabulary Analysis', `${vocabularyAnalysis.length} words analyzed`],
+            ['Learning Patterns', `${learningPatterns.length} data points`]
+          ];
+          filename = `all-reports-${new Date().toISOString().split('T')[0]}.csv`;
+          break;
+
+        default:
+          console.error('Unknown report type:', reportType);
+          return;
+      }
+
+      // Create CSV content
+      const csvContent = [
+        headers.join(','),
+        ...csvData.map(row => row.map(cell =>
+          typeof cell === 'string' && cell.includes(',') ? `"${cell}"` : cell
+        ).join(','))
+      ].join('\n');
+
+      // Create and download file
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', filename);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+    } catch (error) {
+      console.error('Error exporting report:', error);
+    }
   };
 
   const handleFilterChange = (key: keyof ReportFilters, value: string) => {
@@ -730,19 +886,25 @@ export default function DetailedReportsAnalytics() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-blue-50 p-4 rounded-lg">
             <h4 className="font-semibold text-blue-800 mb-2">Peak Learning Time</h4>
-            <div className="text-2xl font-bold text-blue-900">3:00 PM</div>
+            <div className="text-2xl font-bold text-blue-900">
+              {realLearningPatterns?.peakLearningTime || 'No data available'}
+            </div>
             <div className="text-sm text-blue-700">Most active hour</div>
           </div>
-          
+
           <div className="bg-green-50 p-4 rounded-lg">
             <h4 className="font-semibold text-green-800 mb-2">Average Session</h4>
-            <div className="text-2xl font-bold text-green-900">22 min</div>
+            <div className="text-2xl font-bold text-green-900">
+              {realLearningPatterns?.averageSessionDuration ? `${realLearningPatterns.averageSessionDuration} min` : 'No data available'}
+            </div>
             <div className="text-sm text-green-700">Session length</div>
           </div>
-          
+
           <div className="bg-purple-50 p-4 rounded-lg">
             <h4 className="font-semibold text-purple-800 mb-2">Streak Maintenance</h4>
-            <div className="text-2xl font-bold text-purple-900">68%</div>
+            <div className="text-2xl font-bold text-purple-900">
+              {realLearningPatterns?.streakMaintenanceRate !== undefined ? `${realLearningPatterns.streakMaintenanceRate}%` : 'No data available'}
+            </div>
             <div className="text-sm text-purple-700">Students maintaining streaks</div>
           </div>
         </div>

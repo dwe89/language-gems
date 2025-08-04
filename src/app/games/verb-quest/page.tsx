@@ -7,7 +7,7 @@ import { IoChevronBackOutline, IoVolumeHighOutline, IoVolumeMuteOutline } from '
 import { useSearchParams } from 'next/navigation';
 import VerbQuestGameWrapper from './components/VerbQuestGameWrapper';
 import CharacterCreation from './components/CharacterCreation';
-import VerbQuestAssignmentWrapper from './components/VerbQuestAssignmentWrapper';
+import GameAssignmentWrapper from '../../../components/games/templates/GameAssignmentWrapper';
 import { Character } from './components/Character';
 import { QuestSystem } from './components/QuestSystem';
 
@@ -17,15 +17,88 @@ export default function VerbQuestPage() {
   const assignmentId = searchParams?.get('assignment');
   const mode = searchParams?.get('mode');
 
-  // If assignment mode, render assignment wrapper
-  if (assignmentId && mode === 'assignment') {
-    return <VerbQuestAssignmentWrapper assignmentId={assignmentId} />;
-  }
-
+  // ALWAYS initialize hooks first to prevent "more hooks than previous render" error
   const [gameState, setGameState] = useState<'menu' | 'character-creation' | 'playing'>('menu');
   const [character, setCharacter] = useState<Character | null>(null);
   const [questSystem, setQuestSystem] = useState<QuestSystem | null>(null);
   const [soundEnabled, setSoundEnabled] = useState(true);
+
+  // If assignment mode, use GameAssignmentWrapper
+  if (assignmentId && mode === 'assignment') {
+    return (
+      <GameAssignmentWrapper
+        assignmentId={assignmentId}
+        gameId="verb-quest"
+        studentId={user?.id}
+        onAssignmentComplete={(progress) => {
+          console.log('Verb Quest assignment completed:', progress);
+          router.push('/student-dashboard');
+        }}
+        onBackToAssignments={() => router.push('/student-dashboard')}
+        onBackToMenu={() => router.push('/games/verb-quest')}
+      >
+        {({ assignment, vocabulary, onProgressUpdate, onGameComplete }) => {
+          // Filter vocabulary to only include verbs
+          const verbs = vocabulary.filter(word =>
+            word.part_of_speech === 'v' ||
+            word.part_of_speech === 'verb' ||
+            word.word.includes('(to)')
+          );
+
+          const handleGameComplete = (gameResult: any) => {
+            // Calculate standardized progress metrics
+            const wordsCompleted = gameResult.verbsCompleted || gameResult.correctAnswers || 0;
+            const totalWords = verbs.length;
+            const score = gameResult.score || 0;
+            const accuracy = gameResult.accuracy || 0;
+
+            // Update progress
+            onProgressUpdate({
+              wordsCompleted,
+              totalWords,
+              score,
+              maxScore: totalWords * 100, // 100 points per verb
+              accuracy
+            });
+
+            // Complete assignment
+            onGameComplete({
+              assignmentId: assignment.id,
+              gameId: 'verb-quest',
+              studentId: user?.id || '',
+              wordsCompleted,
+              totalWords,
+              score,
+              maxScore: totalWords * 100,
+              accuracy,
+              timeSpent: gameResult.timeSpent || 0,
+              completedAt: new Date(),
+              sessionData: gameResult
+            });
+          };
+
+          const handleBackToAssignments = () => {
+            router.push('/student-dashboard');
+          };
+
+          return (
+            <VerbQuestGameWrapper
+              onBackToMenu={handleBackToAssignments}
+              onGameEnd={handleGameComplete}
+              assignmentId={assignment.id}
+              userId={user?.id}
+              assignmentMode={true}
+              assignmentConfig={{
+                language: assignment.vocabulary_criteria?.language || 'spanish',
+                verbs: verbs,
+                curriculum_level: assignment.curriculum_level
+              }}
+            />
+          );
+        }}
+      </GameAssignmentWrapper>
+    );
+  }
 
   // Load character from localStorage
   useEffect(() => {

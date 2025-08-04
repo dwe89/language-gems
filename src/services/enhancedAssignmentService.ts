@@ -191,8 +191,9 @@ export class EnhancedAssignmentService {
     let vocabularyCriteria = {};
     let vocabularyCount = 10;
 
-    // Extract vocabulary configuration from game config
-    const vocabularyConfig = assignmentData.config?.vocabularyConfig;
+    // Extract vocabulary configuration from game config (handle nested structure)
+    const vocabularyConfig = assignmentData.config?.vocabularyConfig ||
+                            assignmentData.config?.gameConfig?.vocabularyConfig;
 
     if (vocabularyConfig && vocabularyConfig.source && vocabularyConfig.source !== 'custom' && vocabularyConfig.source !== '') {
       // Create vocabulary list based on configuration

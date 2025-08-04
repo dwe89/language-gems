@@ -2,9 +2,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Clock, Users, Target, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Clock, Users, Target } from 'lucide-react';
 import { useAuth } from '../../auth/AuthProvider';
 import { createBrowserClient } from '../../../lib/supabase-client';
+import { useGlobalAudioContext } from '../../../hooks/useGlobalAudioContext';
+import { createAudio, getAudioUrl } from '../../../utils/audioUtils';
 
 // Standard interfaces for assignment integration
 export interface StandardVocabularyItem {
@@ -199,6 +201,8 @@ export const useAssignmentVocabulary = (assignmentId: string) => {
           throw new Error(`Failed to load vocabulary: ${vocabularyError.message}`);
         }
 
+        console.log(`[SERVER] GameAssignmentWrapper - Loaded ${vocabularyData.length} vocabulary items for assignment ${assignmentId}`);
+
         if (!vocabularyData || vocabularyData.length === 0) {
           throw new Error('No vocabulary found for this assignment');
         }
@@ -256,8 +260,64 @@ export default function GameAssignmentWrapper({
   const { user } = useAuth();
   const router = useRouter();
   const supabase = createBrowserClient();
-  
+
   const { assignment, vocabulary, loading, error } = useAssignmentVocabulary(assignmentId);
+  const audioManager = useGlobalAudioContext();
+
+  // Initialize audio context but DON'T start background music
+  // (individual games handle their own background music)
+  useEffect(() => {
+    console.log('🎵 GameAssignmentWrapper: Initializing audio context for assignment games');
+    audioManager.initializeAudio().then(() => {
+      console.log('🎵 GameAssignmentWrapper: Audio context initialized - games will handle their own music');
+      // NOTE: Not starting background music here - individual games handle their own audio
+    }).catch(error => {
+      console.warn('🎵 GameAssignmentWrapper: Failed to initialize audio:', error);
+    });
+
+    // Cleanup function to stop any assignment music when component unmounts
+    return () => {
+      stopAssignmentBackgroundMusic();
+    };
+  }, [audioManager]);
+
+  // Background music management for assignment mode
+  const startAssignmentBackgroundMusic = () => {
+    try {
+      // Create and play background music for assignment mode using cross-subdomain audio utility
+      const backgroundMusic = createAudio(getAudioUrl('/audio/themes/classic-ambient.mp3'));
+      backgroundMusic.loop = true;
+      backgroundMusic.volume = 0.3;
+
+      console.log('🎵 GameAssignmentWrapper: Loading background music from:', backgroundMusic.src);
+
+      // Store reference for cleanup
+      (window as any).assignmentBackgroundMusic = backgroundMusic;
+
+      backgroundMusic.play().catch(error => {
+        console.warn('🎵 GameAssignmentWrapper: Failed to start background music:', error);
+      });
+
+      console.log('🎵 GameAssignmentWrapper: Background music started');
+    } catch (error) {
+      console.warn('🎵 GameAssignmentWrapper: Error creating background music:', error);
+    }
+  };
+
+  const stopAssignmentBackgroundMusic = () => {
+    try {
+      const backgroundMusic = (window as any).assignmentBackgroundMusic;
+      if (backgroundMusic) {
+        backgroundMusic.pause();
+        backgroundMusic.currentTime = 0;
+        (window as any).assignmentBackgroundMusic = null;
+        console.log('🎵 GameAssignmentWrapper: Background music stopped');
+      }
+    } catch (error) {
+      console.warn('🎵 GameAssignmentWrapper: Error stopping background music:', error);
+    }
+  };
+
   const [gameProgress, setGameProgress] = useState<Partial<GameProgress>>({
     assignmentId,
     gameId,
@@ -427,7 +487,7 @@ export default function GameAssignmentWrapper({
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <button
-              onClick={() => router.push('/dashboard/assignments')}
+              onClick={() => router.push('/student-dashboard/assignments')}
               className="flex items-center text-white hover:text-blue-200 transition-colors"
             >
               <ArrowLeft className="w-5 h-5 mr-2" />

@@ -29,12 +29,12 @@ export default function AQAAssignmentWrapper({
     
     // Show completion message and redirect
     setTimeout(() => {
-      router.push('/dashboard/assignments');
+      router.push('/student-dashboard/assignments');
     }, 3000);
   };
 
   const handleBackToAssignments = () => {
-    router.push('/dashboard/assignments');
+    router.push('/student-dashboard/assignments');
   };
 
   const handleBackToMenu = () => {

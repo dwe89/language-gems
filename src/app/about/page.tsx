@@ -3,6 +3,7 @@ import { Metadata } from 'next';
 import { GraduationCap, Award, Users, BookOpen, MessageCircle, Star, Shield, Target, Heart, Lightbulb, Globe, CheckCircle, Music, Brain, TrendingUp, BarChart2, Gamepad, Edit } from 'lucide-react'; // Added new icons
 import SEOWrapper from '../../components/seo/SEOWrapper';
 import { generateMetadata } from '../../components/seo/SEOWrapper';
+import Footer from '../../components/layout/Footer';
 
 export const metadata: Metadata = generateMetadata({
   title: 'About Daniel Etienne - MFL Teacher, Language Gems Founder, EdTech Innovator',
@@ -366,6 +367,8 @@ export default function AboutPage() {
         </div>
       </section>
       </div>
+      
+      <Footer />
     </SEOWrapper>
   );
 }

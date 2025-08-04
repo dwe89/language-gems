@@ -15,6 +15,7 @@ export default function SettingsPage() {
   const [profile, setProfile] = useState({
     display_name: '',
     email: '',
+    role: '',
     current_password: '',
     new_password: '',
     confirm_password: ''
@@ -34,12 +35,15 @@ export default function SettingsPage() {
           .eq('user_id', user.id)
           .single();
 
-        if (error) throw error;
+        if (error && error.code !== 'PGRST116') { // PGRST116 is "not found" error
+          throw error;
+        }
         
         setProfile({
           ...profile,
-          display_name: data.display_name || '',
-          email: user.email || ''
+          display_name: data?.display_name || '',
+          email: user.email || '',
+          role: user.user_metadata?.role || 'teacher'
         });
       } catch (error) {
         console.error('Error loading profile:', error);
@@ -50,7 +54,7 @@ export default function SettingsPage() {
     }
 
     loadUserProfile();
-  }, [user]);
+  }, [user?.id]); // Only depend on user.id to avoid infinite loops
 
   const updateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,13 +65,21 @@ export default function SettingsPage() {
       setSuccessMessage('');
       setErrorMessage('');
       
-      // Update user profile
+      // Update user profile - use upsert to handle cases where profile doesn't exist
       const { error } = await supabaseBrowser
         .from('user_profiles')
-        .update({
-          display_name: profile.display_name
-        })
-        .eq('user_id', user.id);
+        .upsert({
+          user_id: user.id,
+          display_name: profile.display_name,
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'user_id'
+        });
+
+      if (error) {
+        console.error('Profile update error:', error);
+        throw error;
+      }
 
       if (error) throw error;
       
@@ -169,6 +181,25 @@ export default function SettingsPage() {
                   />
                 </div>
                 <p className="mt-1 text-xs text-gray-400">Email cannot be changed directly. Please contact support for assistance.</p>
+              </div>
+
+              <div>
+                <label htmlFor="role" className="block text-sm font-medium text-gray-300 mb-1">
+                  Account Type
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <User className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    id="role"
+                    type="text"
+                    value={profile.role.charAt(0).toUpperCase() + profile.role.slice(1)}
+                    disabled
+                    className="block w-full pl-10 pr-3 py-2 border border-indigo-700 rounded-md bg-indigo-800/40 text-gray-400 focus:outline-none cursor-not-allowed"
+                  />
+                </div>
+                <p className="mt-1 text-xs text-gray-400">Account type cannot be changed. Contact support if you need to change your role.</p>
               </div>
             </div>
           </div>

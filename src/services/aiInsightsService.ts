@@ -3,8 +3,7 @@ import { SupabaseClient } from '@supabase/supabase-js';
 
 // Initialize OpenAI client
 const openai = new OpenAI({
-  apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY,
-  dangerouslyAllowBrowser: true
+  apiKey: process.env.OPENAI_API_KEY
 });
 
 // =====================================================
@@ -326,7 +325,7 @@ export class AIInsightsService {
 
     try {
       const completion = await openai.chat.completions.create({
-        model: "gpt-4.1-nano",
+        model: "gpt-4.1-nano-2025-04-14",
         messages: [{ role: "user", content: prompt }],
         temperature: 0.3,
         max_tokens: 500
@@ -554,42 +553,70 @@ Format as JSON:
     }
   }
 
-  private calculateRiskFactors(student: StudentAnalyticsData): { riskScore: number; factors: string[]; primaryWeakness: string } {
+  private calculateRiskFactors(student: any): { riskScore: number; factors: string[]; primaryWeakness: string } {
     const factors: string[] = [];
     let riskScore = 0;
 
-    // Analyze performance metrics
-    if (student.recent_performance.average_score < 60) {
-      factors.push('Low average score');
+    // Analyze performance metrics using actual data structure
+    const accuracy = student.average_accuracy || 0;
+    const totalSessions = student.total_sessions || 0;
+    const avgDuration = student.average_session_duration || 0;
+    const totalXp = student.total_xp || 0;
+
+    // Check accuracy (main performance indicator)
+    if (accuracy < 60) {
+      factors.push('Low accuracy rate (below 60%)');
+      riskScore += 0.4;
+    } else if (accuracy < 70) {
+      factors.push('Moderate accuracy concerns (below 70%)');
+      riskScore += 0.2;
+    }
+
+    // Check engagement based on session count and duration
+    if (totalSessions < 5) {
+      factors.push('Low session count');
       riskScore += 0.3;
     }
 
-    if (student.recent_performance.average_accuracy < 70) {
-      factors.push('Low accuracy rate');
+    if (avgDuration < 120) { // Less than 2 minutes average
+      factors.push('Very short session duration');
       riskScore += 0.2;
     }
 
-    if (student.engagement_metrics.login_frequency < 3) {
-      factors.push('Infrequent logins');
+    // Check XP earning rate (indicator of progress)
+    const xpPerSession = totalSessions > 0 ? totalXp / totalSessions : 0;
+    if (xpPerSession < 50) {
+      factors.push('Low XP earning rate');
       riskScore += 0.2;
     }
 
-    if (student.engagement_metrics.streak_current === 0) {
-      factors.push('No current learning streak');
-      riskScore += 0.1;
+    // Check recent activity pattern
+    const lastActive = student.last_active ? new Date(student.last_active) : null;
+    if (lastActive) {
+      const daysSinceActive = (Date.now() - lastActive.getTime()) / (1000 * 60 * 60 * 24);
+      if (daysSinceActive > 7) {
+        factors.push('Inactive for over a week');
+        riskScore += 0.3;
+      } else if (daysSinceActive > 3) {
+        factors.push('Inactive for several days');
+        riskScore += 0.1;
+      }
     }
 
-    // Determine primary weakness
-    const skillScores = Object.entries(student.skill_breakdown);
-    const lowestSkill = skillScores.reduce((min, [skill, score]) =>
-      score < min.score ? { skill, score } : min,
-      { skill: 'general', score: 100 }
-    );
+    // Determine primary weakness based on available data
+    let primaryWeakness = 'general';
+    if (accuracy < 60) {
+      primaryWeakness = 'accuracy';
+    } else if (avgDuration < 120) {
+      primaryWeakness = 'engagement';
+    } else if (totalSessions < 5) {
+      primaryWeakness = 'consistency';
+    }
 
     return {
       riskScore: Math.min(riskScore, 1.0),
       factors,
-      primaryWeakness: lowestSkill.skill
+      primaryWeakness
     };
   }
 

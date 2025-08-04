@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useUnifiedAuth } from '../../../hooks/useUnifiedAuth';
 import WordScrambleGameEnhanced from './components/WordScrambleGameEnhanced';
-import WordScrambleAssignmentWrapper from './components/WordScrambleAssignmentWrapper';
+import GameAssignmentWrapper from '../../../components/games/templates/GameAssignmentWrapper';
 import UnifiedGameLauncher from '../../../components/games/UnifiedGameLauncher';
 import { UnifiedSelectionConfig, UnifiedVocabularyItem } from '../../../hooks/useUnifiedVocabulary';
 import InGameConfigPanel from '../../../components/games/InGameConfigPanel';
@@ -28,9 +28,48 @@ export default function WordScramblePage() {
   const assignmentId = searchParams?.get('assignment');
   const mode = searchParams?.get('mode');
 
-  // If assignment mode, render assignment wrapper
-  if (assignmentId && mode === 'assignment') {
-    return <WordScrambleAssignmentWrapper assignmentId={assignmentId} />;
+  // Assignment mode handlers
+  const handleAssignmentComplete = () => {
+    router.push('/student-dashboard/assignments');
+  };
+
+  const handleBackToAssignments = () => {
+    router.push('/student-dashboard/assignments');
+  };
+
+  // Assignment mode: wrap with GameAssignmentWrapper
+  if (assignmentId && mode === 'assignment' && user) {
+    return (
+      <GameAssignmentWrapper
+        assignmentId={assignmentId}
+        gameId="word-scramble"
+        studentId={user.id}
+        onAssignmentComplete={handleAssignmentComplete}
+        onBackToAssignments={handleBackToAssignments}
+        onBackToMenu={() => router.push('/games/word-scramble')}
+      >
+        {({ assignment, vocabulary, onProgressUpdate, onGameComplete }) => {
+          // Convert assignment vocabulary to unified config format
+          const assignmentConfig: UnifiedSelectionConfig = {
+            language: assignment.vocabulary_criteria?.language || 'spanish',
+            curriculumLevel: (assignment.curriculum_level as 'KS2' | 'KS3' | 'KS4' | 'KS5') || 'KS3',
+            categoryId: assignment.vocabulary_criteria?.category || 'basics_core_language',
+            subcategoryId: assignment.vocabulary_criteria?.subcategory || 'greetings_introductions',
+            theme: assignment.game_config?.theme || 'classic'
+          };
+
+          return (
+            <WordScrambleGameEnhanced
+              config={assignmentConfig}
+              vocabulary={vocabulary}
+              onBackToMenu={() => router.push('/games/word-scramble')}
+              onGameComplete={onGameComplete}
+              assignmentMode={true}
+            />
+          );
+        }}
+      </GameAssignmentWrapper>
+    );
   }
 
   // Game state management

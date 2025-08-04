@@ -14,6 +14,7 @@ import {
 import { supabaseBrowser } from '../../../components/auth/AuthProvider';
 import { AssignmentCard } from '../../../components/classes/AssignmentCard';
 import DashboardHeader from '../../../components/dashboard/DashboardHeader';
+import ConfirmationDialog from '../../../components/ui/ConfirmationDialog';
 
 export default function AssignmentsPage() {
   const { user } = useAuth();
@@ -24,6 +25,15 @@ export default function AssignmentsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{
+    isOpen: boolean;
+    assignmentId: string;
+    assignmentName: string;
+  }>({
+    isOpen: false,
+    assignmentId: '',
+    assignmentName: ''
+  });
 
   const supabase = supabaseBrowser;
 
@@ -111,21 +121,35 @@ export default function AssignmentsPage() {
   };
 
   const deleteAssignment = async (id: string) => {
+    // Find assignment and prepare confirmation dialog
+    const assignment = assignments.find(a => a.id === id);
+    const assignmentName = assignment?.title || assignment?.name || 'Untitled Assignment';
+    
+    setDeleteConfirmation({
+      isOpen: true,
+      assignmentId: id,
+      assignmentName
+    });
+  };
+
+  const confirmDeleteAssignment = async () => {
     try {
       const { error } = await supabase
         .from('assignments')
         .delete()
-        .eq('id', id)
+        .eq('id', deleteConfirmation.assignmentId)
         .eq('created_by', user?.id);
 
       if (error) {
         console.error('Error deleting assignment:', error);
+        alert('Failed to delete assignment. Please try again.');
         return;
       }
 
-      setAssignments(assignments.filter(a => a.id !== id));
+      setAssignments(assignments.filter(a => a.id !== deleteConfirmation.assignmentId));
     } catch (error) {
       console.error('Error deleting assignment:', error);
+      alert('Failed to delete assignment. Please try again.');
     }
   };
 
@@ -275,6 +299,18 @@ export default function AssignmentsPage() {
             </div>
           </div>
         )}
+
+        {/* Confirmation Dialog */}
+        <ConfirmationDialog
+          isOpen={deleteConfirmation.isOpen}
+          onClose={() => setDeleteConfirmation({ isOpen: false, assignmentId: '', assignmentName: '' })}
+          onConfirm={confirmDeleteAssignment}
+          title="Delete Assignment"
+          message={`Are you sure you want to delete "${deleteConfirmation.assignmentName}"? This action cannot be undone and will remove all student progress data.`}
+          confirmText="Delete Assignment"
+          cancelText="Keep Assignment"
+          variant="danger"
+        />
       </div>
     </div>
   );

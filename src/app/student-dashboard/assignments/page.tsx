@@ -239,13 +239,7 @@ const AssignmentCard = ({
       
       <div className="flex space-x-2">
         <Link
-          href={
-            assignment.gameCount && assignment.gameCount > 1
-              ? `/student-dashboard/assignments/${assignment.id}`
-              : supportsAssignmentMode(assignment.type || null)
-                ? `/games/${mapGameTypeToPath(assignment.type || null)}/assignment/${assignment.id}`
-                : `/games/${mapGameTypeToPath(assignment.type || null)}?assignment=${assignment.id}`
-          }
+          href={`/student-dashboard/assignments/${assignment.id}`}
           className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg transition-colors font-medium flex items-center justify-center"
         >
           {assignment.status === 'completed' ? 'Review Assignment' : 'Continue Assignment'}
@@ -395,10 +389,20 @@ function AssignmentsPageContent() {
 
         // Transform assignments to match our type
         const processedAssignments: Assignment[] = (assignments || []).map((assignment: any, index) => {
-          const isMultiGame = assignment.game_config?.multiGame && assignment.game_config?.selectedGames?.length > 1;
-          const gameCount = isMultiGame ? assignment.game_config.selectedGames.length : 1;
-          const gameNames = isMultiGame 
-            ? assignment.game_config.selectedGames.map((gameId: string) => {
+          // Check if this is a multi-game assignment using the same logic as the detail page
+          const isMultiGame = assignment.game_type === 'multi-game' ||
+                             assignment.game_type === 'mixed-mode' ||
+                             (assignment.game_config?.multiGame && assignment.game_config?.selectedGames?.length > 1) ||
+                             (assignment.game_config?.gameConfig?.selectedGames && assignment.game_config.gameConfig.selectedGames.length > 1);
+
+          // Get the selected games from the correct config structure
+          const selectedGames = assignment.game_config?.selectedGames ||
+                               assignment.game_config?.gameConfig?.selectedGames ||
+                               [];
+
+          const gameCount = isMultiGame ? selectedGames.length : 1;
+          const gameNames = isMultiGame
+            ? selectedGames.map((gameId: string) => {
                 // Convert game IDs to readable names
                 const gameNameMap: Record<string, string> = {
                   'memory-game': 'Memory Match',
@@ -444,8 +448,8 @@ function AssignmentsPageContent() {
             className: classNameMap.get(assignment.class_id) || 'Your Class',
             points: assignment.points,
             type: assignment.game_type,
-            curriculum_level: assignment.curriculum_level as 'KS3' | 'KS4',
-            vocabulary_count: assignment.vocabulary_count,
+            curriculum_level: (assignment.curriculum_level || assignment.game_config?.curriculumLevel) as 'KS3' | 'KS4',
+            vocabulary_count: assignment.vocabulary_count || assignment.vocabulary_criteria?.wordCount || assignment.game_config?.gameConfig?.vocabularyConfig?.wordCount,
             progress: progress || enhancedProgressData ? {
               bestScore: enhancedProgressData?.best_score || 0,
               bestAccuracy: enhancedProgressData?.best_accuracy || 0,

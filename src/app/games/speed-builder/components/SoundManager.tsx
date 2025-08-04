@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { Volume2, VolumeX, Music } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { createAudio } from '@/utils/audioUtils';
 import { ThemeType } from '../types';
 
 // Define our sounds
@@ -55,19 +56,19 @@ export const SoundProvider: React.FC<{
     
     const audioElems: Record<string, HTMLAudioElement> = {};
     
-    // Create audio elements for each sound
+    // Create audio elements for each sound using cross-subdomain audio utility
     Object.entries(SOUNDS).forEach(([key, value]) => {
       if (key !== 'bgMusic') {
-        const audio = new Audio(value as string);
+        const audio = createAudio(value as string);
         audio.preload = 'auto';
         audioElems[key] = audio;
       }
     });
-    
+
     setAudioElements(audioElems);
-    
-    // Initialize background music
-    const music = new Audio(SOUNDS.bgMusic.default);
+
+    // Initialize background music using cross-subdomain audio utility
+    const music = createAudio(SOUNDS.bgMusic.default);
     music.loop = true;
     music.volume = 0.3;
     setBgMusic(music);

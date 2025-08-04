@@ -141,8 +141,8 @@ export class CentralizedVocabularyService {
       if (query.limit) {
         supabaseQuery = supabaseQuery.limit(query.limit);
       } else {
-        // Set a high default limit to avoid Supabase's 1000 row default limit
-        supabaseQuery = supabaseQuery.limit(10000);
+        // Set a reasonable default limit for games (100 words is usually enough)
+        supabaseQuery = supabaseQuery.limit(100);
       }
 
       if (query.offset) {

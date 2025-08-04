@@ -3,6 +3,7 @@
 import { useRef, useCallback, useState, useEffect } from 'react';
 import { AudioManager } from '../types';
 import { getAudioUrl, checkAudioExists } from '../utils/audioUtils';
+import { createAudio } from '@/utils/audioUtils';
 
 export const useAudioManager = (): AudioManager & {
   preloadAudio: (audioFiles: string[]) => Promise<void>;
@@ -183,7 +184,7 @@ export const useAudioManager = (): AudioManager & {
         const audioUrl = getAudioUrl(filename);
         console.log(`📦 Preloading: ${filename} from ${audioUrl}`);
         
-        const audio = new Audio(audioUrl);
+        const audio = createAudio(audioUrl);
         audio.preload = 'auto';
         audio.volume = volume;
 
@@ -266,7 +267,7 @@ export const useRadioEffects = () => {
   const [staticPlaying, setStaticPlaying] = useState(false);
 
   useEffect(() => {
-    staticRef.current = new Audio('/audio/detective-listening/radio-static.mp3');
+    staticRef.current = createAudio('/audio/detective-listening/radio-static.mp3');
     staticRef.current.loop = true;
     staticRef.current.volume = 0.1;
 
@@ -323,7 +324,7 @@ export const preloadAudio = (audioFiles: string[]): Promise<void[]> => {
   return Promise.all(
     audioFiles.map(file => {
       return new Promise<void>((resolve, reject) => {
-        const audio = new Audio(`${AUDIO_PATHS.BASE_PATH}${file}`);
+        const audio = createAudio(`${AUDIO_PATHS.BASE_PATH}${file}`);
         audio.addEventListener('canplaythrough', () => resolve());
         audio.addEventListener('error', () => {
           console.warn(`Failed to preload audio: ${file}`);

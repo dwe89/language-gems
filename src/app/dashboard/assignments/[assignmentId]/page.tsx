@@ -76,8 +76,12 @@ export default function AssignmentDetailsPage() {
       console.log('Starting game for assignment:', assignment);
       
       // Check if this is a multi-game assignment
-      const isMultiGame = assignment.game_config?.multiGame || assignment.config?.multiGame;
-      console.log('Is multi-game assignment:', isMultiGame);
+      const isMultiGame = assignment.game_type === 'multi-game' ||
+                         assignment.game_type === 'mixed-mode' ||
+                         assignment.game_config?.multiGame ||
+                         assignment.config?.multiGame ||
+                         (assignment.config?.gameConfig?.selectedGames && assignment.config.gameConfig.selectedGames.length > 1);
+      console.log('Is multi-game assignment:', isMultiGame, 'game_type:', assignment.game_type);
 
       if (isMultiGame) {
         // For multi-game assignments, redirect to student assignment view with teacher preview mode
@@ -292,11 +296,24 @@ export default function AssignmentDetailsPage() {
                 </div>
                 <p className="text-blue-200 capitalize">
                   {(() => {
-                    const isMultiGame = assignment.game_config?.multiGame || assignment.config?.multiGame;
-                    const selectedGames = assignment.game_config?.selectedGames || assignment.config?.selectedGames;
+                    const isMultiGame = assignment.game_type === 'multi-game' ||
+                                       assignment.game_type === 'mixed-mode' ||
+                                       assignment.game_config?.multiGame ||
+                                       assignment.config?.multiGame ||
+                                       (assignment.config?.gameConfig?.selectedGames && assignment.config.gameConfig.selectedGames.length > 1);
 
-                    if (isMultiGame && selectedGames?.length > 1) {
+                    const selectedGames = assignment.config?.gameConfig?.selectedGames ||
+                                         assignment.game_config?.selectedGames ||
+                                         assignment.config?.selectedGames;
+
+                    const selectedAssessments = assignment.config?.assessmentConfig?.selectedAssessments || [];
+
+                    if (assignment.game_type === 'mixed-mode') {
+                      return `Mixed Mode (${selectedGames?.length || 0} games, ${selectedAssessments?.length || 0} assessments)`;
+                    } else if (isMultiGame && selectedGames?.length > 1) {
                       return `Multi-Game (${selectedGames.length} games)`;
+                    } else if (assignment.game_type === 'assessment' && selectedAssessments?.length > 0) {
+                      return `Assessment (${selectedAssessments.length} assessments)`;
                     } else {
                       const gameType = assignment.game_type || assignment.type;
                       return gameType?.replace('-', ' ') || 'Unknown';

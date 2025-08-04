@@ -13,6 +13,7 @@ import {
   FileText, Gift, Lock, CheckCircle, ShoppingCart, ExternalLink
 } from 'lucide-react';
 import { useCart } from '../../contexts/CartContext';
+import Footer from '../../components/layout/Footer';
 import { CartSidebar } from '../../components/cart/CartSidebar';
 import { supabaseBrowser } from '../../components/auth/AuthProvider';
 import { Product } from '../../types/ecommerce';
@@ -287,7 +288,7 @@ export default function ResourcesPage() {
                 className="px-6 py-3 bg-green-600 text-white rounded-lg font-bold text-lg shadow-lg hover:bg-green-700 transition-colors"
                 style={{ minWidth: 160 }}
               >
-                🎁 Freebies
+                Freebies
               </Link>
               <button
                 onClick={toggleCart}
@@ -534,6 +535,8 @@ function SkillsHubLanding() {
           <span className="inline-block mt-auto px-4 py-2 bg-yellow-600 text-white rounded-lg font-medium hover:bg-yellow-700 transition-colors">Explore Exam Practice</span>
         </div>
       </div>
+      
+      <Footer />
     </div>
   );
 } 

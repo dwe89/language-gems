@@ -135,81 +135,65 @@ export default function GamificationAnalytics() {
   };
 
   const loadXPProgressions = async (): Promise<XPProgressionData[]> => {
-    // Load real XP progression data from game sessions
+    // Load student data from AI insights API for real names and data
     try {
-      const { data: sessions, error } = await supabase
-        .from('enhanced_game_sessions')
-        .select(`
-          student_id,
-          xp_earned,
-          created_at
-        `)
-        .order('created_at', { ascending: true })
-        .limit(300);
-
-      if (error || !sessions || sessions.length === 0) {
-        console.error('Error loading XP data:', error);
+      // Get current user (teacher) ID
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.error('No authenticated user found');
         return [];
       }
 
-      // Group by student and calculate progression
-      const studentXP = new Map<string, any>();
+      // Load student data from AI insights API
+      const response = await fetch(`/api/ai-insights?teacherId=${user.id}&action=get_insights`);
+      const data = await response.json();
 
-      sessions.forEach(session => {
-        const studentId = session.student_id;
-        if (!studentXP.has(studentId)) {
-          studentXP.set(studentId, {
-            student_id: studentId,
-            student_name: `Student ${studentId.slice(0, 8)}`,
-            total_xp: 0,
-            sessions: []
-          });
-        }
+      if (!data.success || !data.studentData) {
+        console.error('Failed to load student data from AI insights API');
+        return [];
+      }
 
-        const student = studentXP.get(studentId);
-        student.total_xp += session.xp_earned || 0;
-        student.sessions.push({
-          date: session.created_at,
-          xp: session.xp_earned || 0
-        });
+      // Transform AI insights data to XP progression format
+      const xpProgressions: XPProgressionData[] = data.studentData.map((student: any, index: number) => {
+        const totalXP = student.total_xp || 0;
+        const currentLevel = Math.floor(totalXP / 100) + 1;
+        const currentLevelXP = totalXP % 100;
+        const xpToNextLevel = 100 - currentLevelXP;
+
+        // Calculate weekly XP (mock calculation based on recent sessions)
+        const recentSessions = student.recent_sessions || [];
+        const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+        const twoWeeksAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
+
+        const xpThisWeek = recentSessions
+          .filter((s: any) => new Date(s.created_at) > oneWeekAgo)
+          .reduce((sum: number, s: any) => sum + (s.xp_earned || 0), 0);
+
+        const xpLastWeek = recentSessions
+          .filter((s: any) => new Date(s.created_at) > twoWeeksAgo && new Date(s.created_at) <= oneWeekAgo)
+          .reduce((sum: number, s: any) => sum + (s.xp_earned || 0), 0);
+
+        return {
+          student_id: student.student_id,
+          student_name: student.student_name,
+          class_name: student.class_name || 'Default Class',
+          current_level: currentLevel,
+          current_xp: currentLevelXP,
+          xp_to_next_level: xpToNextLevel,
+          total_xp_earned: totalXP,
+          xp_this_week: xpThisWeek,
+          xp_last_week: xpLastWeek,
+          level_up_date: null,
+          progression_rate: (student.total_sessions || 0) > 0 ? totalXP / (student.total_sessions || 1) : 0,
+          rank_in_class: index + 1,
+          rank_change: 0
+        };
       });
 
-      // Convert to progression format
-      return Array.from(studentXP.values())
-        .sort((a, b) => b.total_xp - a.total_xp)
-        .slice(0, 10)
-        .map((student, index) => {
-          const currentLevel = Math.floor(student.total_xp / 100) + 1;
-          const currentLevelXP = student.total_xp % 100;
-          const xpToNextLevel = 100 - currentLevelXP;
-          const xpThisWeek = student.sessions
-            .filter(s => new Date(s.date) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000))
-            .reduce((sum, s) => sum + s.xp, 0);
-          const xpLastWeek = student.sessions
-            .filter(s => {
-              const sessionDate = new Date(s.date);
-              const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-              const twoWeeksAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
-              return sessionDate >= twoWeeksAgo && sessionDate < weekAgo;
-            })
-            .reduce((sum, s) => sum + s.xp, 0);
-
-          return {
-            student_id: student.student_id,
-            student_name: student.student_name,
-            class_name: 'General Class',
-            current_level: currentLevel,
-            current_xp: currentLevelXP,
-            xp_to_next_level: xpToNextLevel,
-            total_xp_earned: student.total_xp,
-            xp_this_week: xpThisWeek,
-            xp_last_week: xpLastWeek,
-            level_up_date: null,
-            progression_rate: student.sessions.length > 0 ? student.total_xp / student.sessions.length : 0,
-            rank_in_class: index + 1,
-            rank_change: 0
-          };
-        });
+      // Sort by total XP and return top 10
+      return xpProgressions
+        .sort((a, b) => b.total_xp_earned - a.total_xp_earned)
+        .slice(0, 10);
     } catch (error) {
       console.error('Error in loadXPProgressions:', error);
       return [];

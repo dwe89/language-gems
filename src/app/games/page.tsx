@@ -8,6 +8,7 @@ import { motion } from 'framer-motion';
 import { Gamepad2, Search, Building2, Rocket, Lock, Trophy, Target, BarChart3, Play, BookOpen, Users, Star } from 'lucide-react';
 import { useAuth } from '../../components/auth/AuthProvider';
 import { useDemoAuth } from '../../components/auth/DemoAuthProvider';
+import Footer from '../../components/layout/Footer';
 import DemoBanner from '../../components/demo/DemoBanner';
 import GameSelectionSidebar, { SelectionState } from '../../components/games/FilterSidebar';
 import MobileGameSelectionModal from '../../components/games/MobileGameSelectionModal';
@@ -474,11 +475,11 @@ export default function GamesPage() {
 
           {/* Demo Banner */}
           {isDemo && (
-            <div className="mt-6 max-w-4xl mx-auto">
+            <div className="mt-6 max-w-4xl mx-auto px-4 sm:px-0">
               <DemoBanner
                 message="Demo Mode: Try our games with basic vocabulary. Sign up to unlock all categories, languages, and features!"
                 showStats={true}
-                variant="full"
+                variant="compact"
               />
             </div>
           )}
@@ -684,6 +685,8 @@ export default function GamesPage() {
           } : null}
         />
       </div>
+      
+      <Footer />
     </div>
   );
 }

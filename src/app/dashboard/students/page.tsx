@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth, supabaseBrowser } from '../../../components/auth/AuthProvider';
+import { FixedSizeList as List } from 'react-window'; // Virtual scrolling for large student lists
 import Link from 'next/link';
 import { Search, UserPlus, Filter, Mail, ArrowUpDown, BookOpen, UserCheck, UserX, Download, ArrowLeft } from 'lucide-react';
 import DashboardHeader from '../../../components/dashboard/DashboardHeader';

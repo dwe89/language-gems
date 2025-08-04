@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { StudentDataService } from '../../../services/studentDataService';
+import { SimpleStudentDataService } from '../../../services/simpleStudentDataService';
 import { AIInsightsService } from '../../../services/aiInsightsService';
 
 // Initialize Supabase client with service role for full access
@@ -19,14 +19,19 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Teacher ID is required' }, { status: 400 });
     }
 
-    const studentDataService = new StudentDataService();
+    const studentDataService = new SimpleStudentDataService();
     const aiInsightsService = new AIInsightsService(supabase);
 
     switch (action) {
       case 'get_insights':
-        // Get real student data
+        // Get real student data using simple service
         const studentData = await studentDataService.getStudentAnalyticsData(teacherId);
         const classAnalytics = await studentDataService.getClassAnalytics(teacherId);
+
+        // Debug logging
+        console.log(`AI Insights API - Teacher: ${teacherId}`);
+        console.log(`Students found: ${studentData.length}`);
+        console.log(`Classes found: ${classAnalytics.length}`);
         
         // Generate AI insights based on real data
         const insights = await aiInsightsService.generateInsightsFromData(teacherId, studentData, classAnalytics);
@@ -81,7 +86,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ success: true, message: 'Insight dismissed' });
 
       case 'generate_fresh_insights':
-        // Force regeneration of insights
+        // Force regeneration of insights using simple service
         const freshStudentData = await studentDataService.getStudentAnalyticsData(teacherId);
         const freshClassAnalytics = await studentDataService.getClassAnalytics(teacherId);
         
@@ -91,6 +96,24 @@ export async function GET(request: NextRequest) {
           success: true,
           insights: freshInsights,
           generated: freshInsights.length,
+          timestamp: new Date().toISOString()
+        });
+
+      case 'get_learning_patterns':
+        // Get learning patterns data
+        const learningPatterns = await studentDataService.getLearningPatterns(teacherId);
+        return NextResponse.json({
+          success: true,
+          learningPatterns,
+          timestamp: new Date().toISOString()
+        });
+
+      case 'debug_data':
+        // Debug endpoint to check data availability
+        const debugSummary = await studentDataService.getDebugSummary(teacherId);
+        return NextResponse.json({
+          success: true,
+          debug: debugSummary,
           timestamp: new Date().toISOString()
         });
 

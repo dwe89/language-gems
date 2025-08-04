@@ -4,14 +4,16 @@
 export const dynamic = 'force-dynamic';
 export const fetchCache = 'force-no-store';
 
-import { useState } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import { useAuth } from '../../../components/auth/AuthProvider';
 import { Brain, BarChart3, Users, Gamepad2 } from 'lucide-react';
 import DashboardHeader from '../../../components/dashboard/DashboardHeader';
 import ProactiveAIDashboard from '../../../components/dashboard/ProactiveAIDashboard';
-import InteractiveStudentOverview from '../../../components/dashboard/InteractiveStudentOverview';
-import DetailedReportsAnalytics from '../../../components/dashboard/DetailedReportsAnalytics';
-import GamificationAnalytics from '../../../components/dashboard/GamificationAnalytics';
+
+// Lazy load heavy dashboard components for better performance
+const InteractiveStudentOverview = lazy(() => import('../../../components/dashboard/InteractiveStudentOverview'));
+const DetailedReportsAnalytics = lazy(() => import('../../../components/dashboard/DetailedReportsAnalytics'));
+const GamificationAnalytics = lazy(() => import('../../../components/dashboard/GamificationAnalytics'));
 
 export default function ProgressPage() {
   const { user } = useAuth();
@@ -73,9 +75,36 @@ export default function ProgressPage() {
         {/* Dashboard Content */}
         <div className="space-y-8">
           {activeSection === 'insights' && <ProactiveAIDashboard teacherId={user.id} />}
-          {activeSection === 'students' && <InteractiveStudentOverview />}
-          {activeSection === 'reports' && <DetailedReportsAnalytics />}
-          {activeSection === 'gamification' && <GamificationAnalytics />}
+          {activeSection === 'students' && (
+            <Suspense fallback={
+              <div className="flex items-center justify-center p-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <span className="ml-3 text-gray-600">Loading student overview...</span>
+              </div>
+            }>
+              <InteractiveStudentOverview />
+            </Suspense>
+          )}
+          {activeSection === 'reports' && (
+            <Suspense fallback={
+              <div className="flex items-center justify-center p-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <span className="ml-3 text-gray-600">Loading detailed reports...</span>
+              </div>
+            }>
+              <DetailedReportsAnalytics />
+            </Suspense>
+          )}
+          {activeSection === 'gamification' && (
+            <Suspense fallback={
+              <div className="flex items-center justify-center p-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <span className="ml-3 text-gray-600">Loading gamification analytics...</span>
+              </div>
+            }>
+              <GamificationAnalytics />
+            </Suspense>
+          )}
         </div>
       </div>
     </div>

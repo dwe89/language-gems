@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   AlertTriangle, 
@@ -20,7 +20,7 @@ import {
 interface CriticalInsight {
   id: string;
   type: 'urgent_action' | 'at_risk_student' | 'class_trend' | 'opportunity';
-  priority: 'urgent' | 'high' | 'medium';
+  priority: 'urgent' | 'high' | 'medium' | 'low';
   title: string;
   description: string;
   impact: string;
@@ -48,9 +48,10 @@ interface ProactiveAIDashboardProps {
   teacherId: string;
 }
 
-export default function ProactiveAIDashboard({ teacherId }: ProactiveAIDashboardProps) {
+function ProactiveAIDashboard({ teacherId }: ProactiveAIDashboardProps) {
   const [insights, setInsights] = useState<CriticalInsight[]>([]);
   const [quickMetrics, setQuickMetrics] = useState<QuickMetric[]>([]);
+  const [studentData, setStudentData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
 
@@ -88,16 +89,27 @@ export default function ProactiveAIDashboard({ teacherId }: ProactiveAIDashboard
           setInsights(transformedInsights);
 
           // Calculate quick metrics from student data
-          const studentData = data.studentData || [];
-          const atRiskCount = studentData.filter((s: any) => s.is_at_risk).length;
-          const totalStudents = studentData.length;
+          const currentStudentData = data.studentData || [];
+          setStudentData(currentStudentData);
+          const atRiskCount = currentStudentData.filter((s: any) => s.is_at_risk).length;
+          const totalStudents = currentStudentData.length;
+
+          // Calculate engagement based on session frequency and accuracy
           const avgEngagement = totalStudents > 0
-            ? Math.round(studentData.reduce((sum: number, s: any) => sum + s.login_frequency, 0) / totalStudents * 10)
+            ? Math.round(currentStudentData.reduce((sum: number, s: any) => {
+                const sessionFrequency = Math.min(s.total_sessions || 0, 10) / 10; // Normalize to 0-1
+                const accuracyScore = (s.average_accuracy || 0) / 100; // Normalize to 0-1
+                return sum + (sessionFrequency * 0.6 + accuracyScore * 0.4) * 100; // Weighted score
+              }, 0) / totalStudents)
             : 0;
+
+          // Calculate average session time in minutes
           const avgSessionTime = totalStudents > 0
-            ? Math.round(studentData.reduce((sum: number, s: any) => sum + s.session_duration_avg, 0) / totalStudents)
+            ? Math.round(currentStudentData.reduce((sum: number, s: any) => sum + (s.average_session_duration || 0), 0) / totalStudents / 60)
             : 0;
-          const activeStudents = studentData.filter((s: any) =>
+
+          // Count students active in last 7 days
+          const activeStudents = currentStudentData.filter((s: any) =>
             new Date(s.last_active) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
           ).length;
 
@@ -112,7 +124,7 @@ export default function ProactiveAIDashboard({ teacherId }: ProactiveAIDashboard
             },
             {
               label: 'Class Engagement',
-              value: `${avgEngagement}%`,
+              value: isNaN(avgEngagement) ? '0%' : `${avgEngagement}%`,
               change: 0,
               trend: 'stable',
               icon: <TrendingDown className="w-5 h-5" />,
@@ -120,7 +132,7 @@ export default function ProactiveAIDashboard({ teacherId }: ProactiveAIDashboard
             },
             {
               label: 'Active Students',
-              value: activeStudents,
+              value: `${activeStudents}/${totalStudents}`,
               change: 0,
               trend: 'stable',
               icon: <Users className="w-5 h-5" />,
@@ -128,7 +140,7 @@ export default function ProactiveAIDashboard({ teacherId }: ProactiveAIDashboard
             },
             {
               label: 'Avg. Session Time',
-              value: `${avgSessionTime}m`,
+              value: isNaN(avgSessionTime) ? '0m' : `${avgSessionTime}m`,
               change: 0,
               trend: 'stable',
               icon: <Clock className="w-5 h-5" />,
@@ -161,7 +173,7 @@ export default function ProactiveAIDashboard({ teacherId }: ProactiveAIDashboard
     return () => clearInterval(interval);
   }, [teacherId]);
 
-  const handleInsightAction = async (insight: CriticalInsight) => {
+  const handleInsightAction = useCallback(async (insight: CriticalInsight) => {
     try {
       // Acknowledge the insight in the database
       const response = await fetch(`/api/ai-insights?teacherId=${teacherId}&action=acknowledge_insight&insightId=${insight.id}`, {
@@ -183,18 +195,19 @@ export default function ProactiveAIDashboard({ teacherId }: ProactiveAIDashboard
     } catch (error) {
       console.error('Error handling insight action:', error);
     }
-  };
+  }, [teacherId]);
 
-  const getPriorityColor = (priority: string) => {
+  const getPriorityColor = useCallback((priority: string) => {
     switch (priority) {
       case 'urgent': return 'border-red-500 bg-red-50';
       case 'high': return 'border-orange-500 bg-orange-50';
       case 'medium': return 'border-blue-500 bg-blue-50';
+      case 'low': return 'border-green-500 bg-green-50';
       default: return 'border-gray-300 bg-gray-50';
     }
-  };
+  }, []);
 
-  const getPriorityIcon = (type: string) => {
+  const getPriorityIcon = useCallback((type: string) => {
     switch (type) {
       case 'urgent_action': return <AlertTriangle className="w-6 h-6 text-red-600" />;
       case 'at_risk_student': return <TrendingDown className="w-6 h-6 text-orange-600" />;
@@ -202,7 +215,98 @@ export default function ProactiveAIDashboard({ teacherId }: ProactiveAIDashboard
       case 'opportunity': return <Target className="w-6 h-6 text-green-600" />;
       default: return <Brain className="w-6 h-6 text-gray-600" />;
     }
-  };
+  }, []);
+
+  // Generate positive insights when students are performing well
+  const generatePositiveInsights = useCallback((studentData: any[]): CriticalInsight[] => {
+    const positiveInsights: CriticalInsight[] = [];
+    const totalStudents = studentData.length;
+    const highPerformers = studentData.filter(s => (s.average_accuracy || 0) >= 75).length;
+    const activeStudents = studentData.filter(s =>
+      new Date(s.last_active) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+    ).length;
+    const avgAccuracy = totalStudents > 0
+      ? studentData.reduce((sum, s) => sum + (s.average_accuracy || 0), 0) / totalStudents
+      : 0;
+
+    if (highPerformers > 0) {
+      positiveInsights.push({
+        id: 'positive-performance',
+        type: 'opportunity',
+        priority: 'low',
+        title: `🎉 ${highPerformers} Student${highPerformers > 1 ? 's' : ''} Excelling`,
+        description: `${highPerformers} of your students are achieving 75%+ accuracy rates. This demonstrates strong comprehension and engagement with the material.`,
+        impact: 'Positive momentum in class performance',
+        timeframe: 'Current',
+        confidence: 0.95,
+        studentsAffected: highPerformers,
+        action: { label: 'View Details', route: '/dashboard/students', data: {} },
+        generated_at: new Date().toISOString()
+      });
+    }
+
+    if (activeStudents === totalStudents && totalStudents > 0) {
+      positiveInsights.push({
+        id: 'positive-engagement',
+        type: 'opportunity',
+        priority: 'low',
+        title: '🔥 100% Student Engagement',
+        description: 'All your students have been active within the past week, showing excellent engagement with the platform.',
+        impact: 'Strong class participation and consistency',
+        timeframe: 'Past 7 days',
+        confidence: 1.0,
+        studentsAffected: totalStudents,
+        action: { label: 'Celebrate Success', route: '/dashboard/classes', data: {} },
+        generated_at: new Date().toISOString()
+      });
+    }
+
+    if (avgAccuracy >= 80) {
+      positiveInsights.push({
+        id: 'positive-accuracy',
+        type: 'opportunity',
+        priority: 'low',
+        title: '⭐ Outstanding Class Average',
+        description: `Your class is maintaining an impressive ${Math.round(avgAccuracy)}% average accuracy rate, indicating excellent learning outcomes.`,
+        impact: 'Strong foundational learning across all students',
+        timeframe: 'Overall',
+        confidence: 0.9,
+        studentsAffected: totalStudents,
+        action: { label: 'Share Achievement', route: '/dashboard/progress', data: {} },
+        generated_at: new Date().toISOString()
+      });
+    }
+
+    return positiveInsights;
+  }, []);
+
+  // Filter insights by priority for display (memoized for performance)
+  const criticalInsights = useMemo(() =>
+    insights.filter(insight =>
+      insight.priority === 'urgent' || insight.priority === 'high'
+    ), [insights]
+  );
+
+  const mediumInsights = useMemo(() =>
+    insights.filter(insight =>
+      insight.priority === 'medium'
+    ), [insights]
+  );
+
+  // Generate positive insights when no critical issues exist
+  const positiveInsights = useMemo(() => {
+    if (criticalInsights.length === 0 && mediumInsights.length === 0) {
+      return generatePositiveInsights(studentData);
+    }
+    return [];
+  }, [criticalInsights.length, mediumInsights.length, studentData, generatePositiveInsights]);
+
+  // Combine all insights for display
+  const allInsights = useMemo(() => [
+    ...criticalInsights,
+    ...mediumInsights,
+    ...positiveInsights
+  ], [criticalInsights, mediumInsights, positiveInsights]);
 
   if (isLoading) {
     return (
@@ -287,11 +391,16 @@ export default function ProactiveAIDashboard({ teacherId }: ProactiveAIDashboard
       <div className="space-y-4">
         <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
           <MessageSquare className="w-5 h-5 text-blue-600" />
-          Critical Insights Requiring Action
+          {allInsights.some(i => i.priority === 'urgent' || i.priority === 'high')
+            ? 'Critical Insights Requiring Action'
+            : allInsights.length > 0
+              ? 'Class Performance Insights'
+              : 'AI Insights Dashboard'
+          }
         </h3>
-        
+
         <AnimatePresence>
-          {insights.map((insight, index) => (
+          {allInsights.map((insight, index) => (
             <motion.div
               key={insight.id}
               initial={{ opacity: 0, x: -20 }}
@@ -347,3 +456,6 @@ export default function ProactiveAIDashboard({ teacherId }: ProactiveAIDashboard
     </div>
   );
 }
+
+// Export memoized component for performance optimization
+export default memo(ProactiveAIDashboard);

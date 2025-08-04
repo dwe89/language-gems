@@ -97,15 +97,24 @@ export default function DatabaseCategorySelector({
           categoryMap.get(item.category)?.add(item.subcategory);
         });
 
+        // Helper function to format display names
+        const formatDisplayName = (text: string): string => {
+          return text
+            .replace(/_/g, ' ')
+            .replace(/\b\w/g, l => l.toUpperCase())
+            .replace(/\s+/g, ' ')
+            .trim();
+        };
+
         // Convert to category structure
         const categoriesData: Category[] = Array.from(categoryMap.entries()).map(([categoryId, subcategorySet]) => ({
           id: categoryId,
           name: categoryId,
-          displayName: categoryId.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+          displayName: formatDisplayName(categoryId),
           subcategories: Array.from(subcategorySet).map(subcategoryId => ({
             id: subcategoryId,
             name: subcategoryId,
-            displayName: subcategoryId.replace(/_/g, l => l.toUpperCase()),
+            displayName: formatDisplayName(subcategoryId),
             categoryId
           }))
         }));
@@ -232,39 +241,73 @@ export default function DatabaseCategorySelector({
 
       {/* Selected Items Display */}
       {(selectedCategories.length > 0 || selectedSubcategories.length > 0) && (
-        <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <h4 className="font-medium text-gray-900 mb-3">Selected Categories & Topics</h4>
-          <div className="flex flex-wrap gap-2">
-            {selectedCategories.map(categoryId => {
-              const category = categories.find(c => c.id === categoryId);
-              return (
-                <span key={categoryId} className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                  📁 {category?.displayName || categoryId}
-                  <button
-                    onClick={() => toggleCategory(categoryId)}
-                    className="ml-2 text-blue-600 hover:text-blue-800"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </span>
-              );
-            })}
-            {selectedSubcategories.map(subcategoryId => {
-              const subcategory = categories
-                .flatMap(c => c.subcategories)
-                .find(s => s.id === subcategoryId);
-              return (
-                <span key={subcategoryId} className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                  📄 {subcategory?.displayName || subcategoryId}
-                  <button
-                    onClick={() => toggleSubcategory(subcategoryId)}
-                    className="ml-2 text-green-600 hover:text-green-800"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </span>
-              );
-            })}
+        <div className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl shadow-sm">
+          <div className="flex items-center mb-4">
+            <CheckCircle className="h-5 w-5 text-blue-600 mr-2" />
+            <h4 className="font-semibold text-gray-900">Selected Content</h4>
+            <span className="ml-2 text-sm text-gray-500">
+              ({selectedCategories.length + selectedSubcategories.length} selected)
+            </span>
+          </div>
+          
+          <div className="space-y-4">
+            {/* Categories Section */}
+            {selectedCategories.length > 0 && (
+              <div>
+                <h5 className="text-sm font-medium text-gray-700 mb-2 flex items-center">
+                  <span className="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
+                  Categories ({selectedCategories.length})
+                </h5>
+                <div className="flex flex-wrap gap-2">
+                  {selectedCategories.map(categoryId => {
+                    const category = categories.find(c => c.id === categoryId);
+                    return (
+                      <span key={categoryId} className="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium bg-blue-100 text-blue-800 border border-blue-200 hover:bg-blue-200 transition-colors">
+                        <span className="mr-2">📁</span>
+                        {category?.displayName || categoryId.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                        <button
+                          onClick={() => toggleCategory(categoryId)}
+                          className="ml-2 text-blue-600 hover:text-blue-800 p-1 rounded-full hover:bg-blue-200 transition-colors"
+                          title="Remove category"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Topics Section */}
+            {selectedSubcategories.length > 0 && (
+              <div>
+                <h5 className="text-sm font-medium text-gray-700 mb-2 flex items-center">
+                  <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                  Topics ({selectedSubcategories.length})
+                </h5>
+                <div className="flex flex-wrap gap-2">
+                  {selectedSubcategories.map(subcategoryId => {
+                    const subcategory = categories
+                      .flatMap(c => c.subcategories)
+                      .find(s => s.id === subcategoryId);
+                    return (
+                      <span key={subcategoryId} className="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium bg-green-100 text-green-800 border border-green-200 hover:bg-green-200 transition-colors">
+                        <span className="mr-2">📄</span>
+                        {subcategory?.displayName || subcategoryId.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                        <button
+                          onClick={() => toggleSubcategory(subcategoryId)}
+                          className="ml-2 text-green-600 hover:text-green-800 p-1 rounded-full hover:bg-green-200 transition-colors"
+                          title="Remove topic"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -292,12 +335,18 @@ export default function DatabaseCategorySelector({
                   </span>
                   <button
                     onClick={() => toggleCategoryExpansion(category.id)}
-                    className="p-1 hover:bg-gray-100 rounded"
+                    className="flex items-center space-x-1 px-2 py-1 text-xs font-medium text-purple-600 bg-purple-50 hover:bg-purple-100 rounded-md transition-colors duration-200"
                   >
                     {expandedCategories.has(category.id) ? (
-                      <ChevronDown className="h-4 w-4 text-gray-500" />
+                      <>
+                        <ChevronDown className="h-3 w-3" />
+                        <span>Hide Topics</span>
+                      </>
                     ) : (
-                      <ChevronRight className="h-4 w-4 text-gray-500" />
+                      <>
+                        <ChevronRight className="h-3 w-3" />
+                        <span>Show Topics</span>
+                      </>
                     )}
                   </button>
                 </div>
@@ -312,20 +361,26 @@ export default function DatabaseCategorySelector({
                     transition={{ duration: 0.2 }}
                     className="overflow-hidden"
                   >
-                    <div className="mt-4 ml-6 grid grid-cols-1 md:grid-cols-2 gap-2">
-                      {category.subcategories.map(subcategory => (
-                        <label key={subcategory.id} className="flex items-center cursor-pointer p-2 hover:bg-gray-50 rounded">
-                          <input
-                            type="checkbox"
-                            checked={selectedSubcategories.includes(subcategory.id)}
-                            onChange={() => toggleSubcategory(subcategory.id)}
-                            className="rounded border-gray-300 text-green-600 focus:ring-green-500"
-                          />
-                          <span className="ml-2 text-sm text-gray-700">
-                            📄 {subcategory.displayName}
-                          </span>
-                        </label>
-                      ))}
+                    <div className="mt-4 ml-6 bg-gray-50 rounded-lg p-4">
+                      <div className="mb-3">
+                        <h4 className="text-sm font-medium text-gray-700 mb-1">Select Topics from {category.displayName}:</h4>
+                        <p className="text-xs text-gray-500">Choose specific topics to include in your assignment</p>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        {category.subcategories.map(subcategory => (
+                          <label key={subcategory.id} className="flex items-center cursor-pointer p-3 hover:bg-white hover:shadow-sm rounded-lg border border-transparent hover:border-gray-200 transition-all duration-200">
+                            <input
+                              type="checkbox"
+                              checked={selectedSubcategories.includes(subcategory.id)}
+                              onChange={() => toggleSubcategory(subcategory.id)}
+                              className="rounded border-gray-300 text-purple-600 focus:ring-purple-500 h-4 w-4"
+                            />
+                            <span className="ml-3 text-sm text-gray-700 font-medium">
+                              📄 {subcategory.displayName}
+                            </span>
+                          </label>
+                        ))}
+                      </div>
                     </div>
                   </motion.div>
                 )}

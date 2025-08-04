@@ -5,6 +5,7 @@ import { EnhancedGameService } from '../../../../services/enhancedGameService';
 import { useGameVocabulary, transformVocabularyForGame } from '../../../../hooks/useGameVocabulary';
 import { supabaseBrowser } from '../../../../components/auth/AuthProvider';
 import HangmanGame from './HangmanGame';
+import { createAudio } from '@/utils/audioUtils';
 
 interface HangmanGameWrapperProps {
   settings: {
@@ -475,7 +476,7 @@ export default function HangmanGameWrapper(props: HangmanGameWrapperProps) {
     playAudio: (word: string) => {
       const audioUrl = getAudioForWord(word);
       if (audioUrl) {
-        const audio = new Audio(audioUrl);
+        const audio = createAudio(audioUrl);
         audio.play().catch(error => {
           console.warn('Failed to play audio:', error);
         });

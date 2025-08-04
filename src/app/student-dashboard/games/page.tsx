@@ -27,8 +27,8 @@ type Game = {
 
 // Component to display a game card
 const GameCard = ({ game }: { game: Game }) => {
-  // Generate game path based on title or use predefined path
-  const gamePath = game.path || `/games/${game.title.toLowerCase().replace(/\s+/g, '-')}`;
+  // Generate game path for student subdomain - redirect to main site for games
+  const gamePath = game.path ? `http://localhost:3000${game.path}` : `http://localhost:3000/games/${game.title.toLowerCase().replace(/\s+/g, '-')}`;
 
   return (
     <div className="bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow">

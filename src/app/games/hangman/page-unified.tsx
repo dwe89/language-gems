@@ -17,12 +17,7 @@ export default function UnifiedHangmanPage() {
   const assignmentId = searchParams?.get('assignment');
   const mode = searchParams?.get('mode');
 
-  // If assignment mode, render assignment wrapper
-  if (assignmentId && mode === 'assignment') {
-    return <HangmanAssignmentWrapper assignmentId={assignmentId} />;
-  }
-
-  // Game state management
+  // ALWAYS initialize hooks first to prevent "more hooks than previous render" error
   const [gameStarted, setGameStarted] = useState(false);
   const [gameStats, setGameStats] = useState({
     gamesPlayed: 0,
@@ -31,6 +26,11 @@ export default function UnifiedHangmanPage() {
     streak: 0,
     bestStreak: 0,
   });
+
+  // If assignment mode, render assignment wrapper (after all hooks are initialized)
+  if (assignmentId && mode === 'assignment') {
+    return <HangmanAssignmentWrapper assignmentId={assignmentId} />;
+  }
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   // Game configuration from unified launcher

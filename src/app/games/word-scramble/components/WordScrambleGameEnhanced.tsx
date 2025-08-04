@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import { createClient } from '@supabase/supabase-js';
 import { EnhancedGameService } from 'gems/services/enhancedGameService';
+import { createAudio } from '@/utils/audioUtils';
 import { useGameVocabulary, GameVocabularyWord } from '../../../../hooks/useGameVocabulary';
 
 // Game Modes
@@ -254,7 +255,7 @@ class SoundManager {
     };
 
     Object.entries(soundFiles).forEach(([key, path]) => {
-      this.sounds[key] = new Audio(path);
+      this.sounds[key] = createAudio(path);
       this.sounds[key].volume = 0.4;
     });
   }

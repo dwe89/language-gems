@@ -1,0 +1,439 @@
+/* =====================================================
+   STUDENT THEME - AGE-APPROPRIATE DESIGN FOR 11-16 YEAR OLDS
+   ===================================================== */
+
+/* Import modern fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@300;400;500;600;700;800&display=swap');
+
+/* =====================================================
+   CSS CUSTOM PROPERTIES - STUDENT COLOR PALETTE
+   ===================================================== */
+
+:root {
+  /* Primary Colors - Vibrant and Engaging */
+  --student-primary-50: #eff6ff;
+  --student-primary-100: #dbeafe;
+  --student-primary-200: #bfdbfe;
+  --student-primary-300: #93c5fd;
+  --student-primary-400: #60a5fa;
+  --student-primary-500: #3b82f6;
+  --student-primary-600: #2563eb;
+  --student-primary-700: #1d4ed8;
+  --student-primary-800: #1e40af;
+  --student-primary-900: #1e3a8a;
+
+  /* Secondary Colors - Purple Accent */
+  --student-secondary-50: #faf5ff;
+  --student-secondary-100: #f3e8ff;
+  --student-secondary-200: #e9d5ff;
+  --student-secondary-300: #d8b4fe;
+  --student-secondary-400: #c084fc;
+  --student-secondary-500: #a855f7;
+  --student-secondary-600: #9333ea;
+  --student-secondary-700: #7c3aed;
+  --student-secondary-800: #6b21a8;
+  --student-secondary-900: #581c87;
+
+  /* Success Colors - Green */
+  --student-success-50: #f0fdf4;
+  --student-success-100: #dcfce7;
+  --student-success-200: #bbf7d0;
+  --student-success-300: #86efac;
+  --student-success-400: #4ade80;
+  --student-success-500: #22c55e;
+  --student-success-600: #16a34a;
+  --student-success-700: #15803d;
+  --student-success-800: #166534;
+  --student-success-900: #14532d;
+
+  /* Warning Colors - Orange */
+  --student-warning-50: #fffbeb;
+  --student-warning-100: #fef3c7;
+  --student-warning-200: #fde68a;
+  --student-warning-300: #fcd34d;
+  --student-warning-400: #fbbf24;
+  --student-warning-500: #f59e0b;
+  --student-warning-600: #d97706;
+  --student-warning-700: #b45309;
+  --student-warning-800: #92400e;
+  --student-warning-900: #78350f;
+
+  /* Error Colors - Red */
+  --student-error-50: #fef2f2;
+  --student-error-100: #fee2e2;
+  --student-error-200: #fecaca;
+  --student-error-300: #fca5a5;
+  --student-error-400: #f87171;
+  --student-error-500: #ef4444;
+  --student-error-600: #dc2626;
+  --student-error-700: #b91c1c;
+  --student-error-800: #991b1b;
+  --student-error-900: #7f1d1d;
+
+  /* Neutral Colors - Modern Grays */
+  --student-gray-50: #f9fafb;
+  --student-gray-100: #f3f4f6;
+  --student-gray-200: #e5e7eb;
+  --student-gray-300: #d1d5db;
+  --student-gray-400: #9ca3af;
+  --student-gray-500: #6b7280;
+  --student-gray-600: #4b5563;
+  --student-gray-700: #374151;
+  --student-gray-800: #1f2937;
+  --student-gray-900: #111827;
+
+  /* Gamification Colors */
+  --student-xp-color: #3b82f6;
+  --student-level-color: #f59e0b;
+  --student-streak-color: #ef4444;
+  --student-achievement-color: #10b981;
+
+  /* Background Gradients */
+  --student-gradient-primary: linear-gradient(135deg, var(--student-primary-500) 0%, var(--student-secondary-500) 100%);
+  --student-gradient-success: linear-gradient(135deg, var(--student-success-500) 0%, var(--student-success-600) 100%);
+  --student-gradient-warning: linear-gradient(135deg, var(--student-warning-500) 0%, var(--student-error-500) 100%);
+  --student-gradient-cool: linear-gradient(135deg, var(--student-primary-400) 0%, var(--student-secondary-400) 100%);
+
+  /* Typography Scale */
+  --student-font-family-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --student-font-family-display: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  /* Font Sizes - Optimized for Young Users */
+  --student-text-xs: 0.75rem;    /* 12px */
+  --student-text-sm: 0.875rem;   /* 14px */
+  --student-text-base: 1rem;     /* 16px */
+  --student-text-lg: 1.125rem;   /* 18px */
+  --student-text-xl: 1.25rem;    /* 20px */
+  --student-text-2xl: 1.5rem;    /* 24px */
+  --student-text-3xl: 1.875rem;  /* 30px */
+  --student-text-4xl: 2.25rem;   /* 36px */
+
+  /* Spacing Scale */
+  --student-space-1: 0.25rem;    /* 4px */
+  --student-space-2: 0.5rem;     /* 8px */
+  --student-space-3: 0.75rem;    /* 12px */
+  --student-space-4: 1rem;       /* 16px */
+  --student-space-5: 1.25rem;    /* 20px */
+  --student-space-6: 1.5rem;     /* 24px */
+  --student-space-8: 2rem;       /* 32px */
+  --student-space-10: 2.5rem;    /* 40px */
+  --student-space-12: 3rem;      /* 48px */
+
+  /* Border Radius */
+  --student-radius-sm: 0.375rem;  /* 6px */
+  --student-radius-md: 0.5rem;    /* 8px */
+  --student-radius-lg: 0.75rem;   /* 12px */
+  --student-radius-xl: 1rem;      /* 16px */
+  --student-radius-2xl: 1.5rem;   /* 24px */
+
+  /* Shadows */
+  --student-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --student-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --student-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --student-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+
+  /* Animation Durations */
+  --student-duration-fast: 150ms;
+  --student-duration-normal: 250ms;
+  --student-duration-slow: 350ms;
+}
+
+/* =====================================================
+   STUDENT THEME UTILITY CLASSES
+   ===================================================== */
+
+/* Typography Classes */
+.student-font-display {
+  font-family: var(--student-font-family-display);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+
+.student-font-body {
+  font-family: var(--student-font-family-primary);
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+.student-text-gradient {
+  background: var(--student-gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Button Styles */
+.student-btn-primary {
+  background: var(--student-gradient-primary);
+  color: white;
+  padding: var(--student-space-3) var(--student-space-6);
+  border-radius: var(--student-radius-lg);
+  font-family: var(--student-font-family-display);
+  font-weight: 600;
+  font-size: var(--student-text-base);
+  border: none;
+  cursor: pointer;
+  transition: all var(--student-duration-normal) ease;
+  box-shadow: var(--student-shadow-md);
+}
+
+.student-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--student-shadow-lg);
+}
+
+.student-btn-secondary {
+  background: white;
+  color: var(--student-primary-600);
+  border: 2px solid var(--student-primary-200);
+  padding: var(--student-space-3) var(--student-space-6);
+  border-radius: var(--student-radius-lg);
+  font-family: var(--student-font-family-display);
+  font-weight: 600;
+  font-size: var(--student-text-base);
+  cursor: pointer;
+  transition: all var(--student-duration-normal) ease;
+}
+
+.student-btn-secondary:hover {
+  border-color: var(--student-primary-400);
+  background: var(--student-primary-50);
+  transform: translateY(-1px);
+}
+
+/* Card Styles */
+.student-card {
+  background: white;
+  border-radius: var(--student-radius-xl);
+  padding: var(--student-space-6);
+  box-shadow: var(--student-shadow-sm);
+  border: 1px solid var(--student-gray-200);
+  transition: all var(--student-duration-normal) ease;
+}
+
+.student-card:hover {
+  box-shadow: var(--student-shadow-md);
+  transform: translateY(-2px);
+}
+
+.student-card-gradient {
+  background: var(--student-gradient-primary);
+  color: white;
+  border: none;
+}
+
+/* Progress Indicators */
+.student-progress-bar {
+  width: 100%;
+  height: var(--student-space-3);
+  background: var(--student-gray-200);
+  border-radius: var(--student-radius-lg);
+  overflow: hidden;
+}
+
+.student-progress-fill {
+  height: 100%;
+  background: var(--student-gradient-primary);
+  border-radius: var(--student-radius-lg);
+  transition: width var(--student-duration-slow) ease;
+}
+
+/* Badge Styles */
+.student-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--student-space-1) var(--student-space-3);
+  border-radius: var(--student-radius-lg);
+  font-size: var(--student-text-xs);
+  font-weight: 600;
+  font-family: var(--student-font-family-display);
+}
+
+.student-badge-primary {
+  background: var(--student-primary-100);
+  color: var(--student-primary-800);
+}
+
+.student-badge-success {
+  background: var(--student-success-100);
+  color: var(--student-success-800);
+}
+
+.student-badge-warning {
+  background: var(--student-warning-100);
+  color: var(--student-warning-800);
+}
+
+.student-badge-error {
+  background: var(--student-error-100);
+  color: var(--student-error-800);
+}
+
+/* Gamification Elements */
+.student-xp-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--student-space-2);
+  padding: var(--student-space-2) var(--student-space-4);
+  background: var(--student-primary-100);
+  color: var(--student-primary-800);
+  border-radius: var(--student-radius-lg);
+  font-weight: 600;
+  font-size: var(--student-text-sm);
+}
+
+.student-level-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--student-space-2);
+  padding: var(--student-space-2) var(--student-space-4);
+  background: var(--student-gradient-warning);
+  color: white;
+  border-radius: var(--student-radius-lg);
+  font-weight: 700;
+  font-size: var(--student-text-sm);
+  box-shadow: var(--student-shadow-md);
+}
+
+.student-streak-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--student-space-2);
+  padding: var(--student-space-2) var(--student-space-4);
+  background: linear-gradient(135deg, var(--student-error-500) 0%, #ff6b6b 100%);
+  color: white;
+  border-radius: var(--student-radius-lg);
+  font-weight: 600;
+  font-size: var(--student-text-sm);
+  animation: pulse 2s infinite;
+}
+
+/* Animations */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+@keyframes bounce {
+  0%, 20%, 53%, 80%, 100% {
+    transform: translate3d(0, 0, 0);
+  }
+  40%, 43% {
+    transform: translate3d(0, -8px, 0);
+  }
+  70% {
+    transform: translate3d(0, -4px, 0);
+  }
+  90% {
+    transform: translate3d(0, -2px, 0);
+  }
+}
+
+@keyframes slideInUp {
+  from {
+    transform: translate3d(0, 100%, 0);
+    opacity: 0;
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Animation Classes */
+.student-animate-bounce {
+  animation: bounce 1s infinite;
+}
+
+.student-animate-slide-up {
+  animation: slideInUp 0.5s ease-out;
+}
+
+.student-animate-fade-scale {
+  animation: fadeInScale 0.3s ease-out;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  :root {
+    --student-text-xs: 0.75rem;
+    --student-text-sm: 0.875rem;
+    --student-text-base: 1rem;
+    --student-text-lg: 1.125rem;
+    --student-text-xl: 1.25rem;
+    --student-text-2xl: 1.375rem;
+    --student-text-3xl: 1.625rem;
+    --student-text-4xl: 2rem;
+  }
+
+  .student-card {
+    padding: var(--student-space-4);
+  }
+
+  .student-btn-primary,
+  .student-btn-secondary {
+    padding: var(--student-space-3) var(--student-space-5);
+    font-size: var(--student-text-sm);
+  }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --student-gray-50: #1f2937;
+    --student-gray-100: #374151;
+    --student-gray-200: #4b5563;
+    --student-gray-300: #6b7280;
+    --student-gray-400: #9ca3af;
+    --student-gray-500: #d1d5db;
+    --student-gray-600: #e5e7eb;
+    --student-gray-700: #f3f4f6;
+    --student-gray-800: #f9fafb;
+    --student-gray-900: #ffffff;
+  }
+
+  .student-card {
+    background: var(--student-gray-100);
+    border-color: var(--student-gray-200);
+  }
+
+  .student-btn-secondary {
+    background: var(--student-gray-100);
+    color: var(--student-primary-400);
+    border-color: var(--student-gray-300);
+  }
+}
+
+/* Focus States for Accessibility */
+.student-btn-primary:focus,
+.student-btn-secondary:focus {
+  outline: 2px solid var(--student-primary-500);
+  outline-offset: 2px;
+}
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+  .student-card {
+    border-width: 2px;
+  }
+
+  .student-btn-primary,
+  .student-btn-secondary {
+    border-width: 2px;
+  }
+}

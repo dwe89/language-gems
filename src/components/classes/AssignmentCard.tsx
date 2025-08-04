@@ -68,9 +68,9 @@ export function AssignmentCard({ assignment, onDelete }: AssignmentProps) {
       
       <CardContent className="relative p-6">
         {/* Header */}
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex items-start space-x-3 flex-1">
-            <div className="p-3 bg-indigo-100 rounded-xl group-hover:scale-110 transition-transform duration-300">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-4 space-y-3 sm:space-y-0">
+          <div className="flex items-start space-x-3 flex-1 min-w-0">
+            <div className="p-3 bg-indigo-100 rounded-xl group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
               <FileText className="h-5 w-5 text-indigo-600" />
             </div>
             <div className="flex-1 min-w-0">
@@ -90,7 +90,7 @@ export function AssignmentCard({ assignment, onDelete }: AssignmentProps) {
           
           {/* Actions Menu */}
           {onDelete && (
-            <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+            <div className="flex items-center justify-end space-x-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-200 flex-shrink-0">
               <Link
                 href={`/dashboard/assignments/${assignment.id}/analytics`}
                 className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"

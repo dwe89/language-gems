@@ -1,4 +1,5 @@
 import { useRef, useEffect, useCallback } from 'react';
+import { createAudio } from '@/utils/audioUtils';
 
 export interface SoundEffects {
   playBackgroundMusic: () => void;
@@ -28,7 +29,7 @@ export const useSounds = (enabled: boolean = true): SoundEffects => {
     };
 
     Object.entries(sounds).forEach(([key, src]) => {
-      const audio = new Audio(src);
+      const audio = createAudio(src);
       audio.preload = 'auto';
       audio.volume = 0.7;
       audioRefs.current[key] = audio;

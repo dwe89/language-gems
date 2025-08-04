@@ -17,6 +17,8 @@ export default function NoughtsAndCrossesPage() {
   const { user, isLoading, isDemo } = useUnifiedAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  // ALWAYS initialize hooks first to prevent "more hooks than previous render" error
   const [soundEnabled] = useState(true);
   const { playSFX } = useAudio(soundEnabled);
 
@@ -24,7 +26,7 @@ export default function NoughtsAndCrossesPage() {
   const assignmentId = searchParams?.get('assignment');
   const mode = searchParams?.get('mode');
 
-  // If assignment mode, render assignment wrapper
+  // If assignment mode, render assignment wrapper (after all hooks are initialized)
   if (assignmentId && mode === 'assignment') {
     return <NoughtsAndCrossesAssignmentWrapper assignmentId={assignmentId} />;
   }

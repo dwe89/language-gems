@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useUnifiedAuth } from '../../../hooks/useUnifiedAuth';
 import { ThemeProvider } from './components/ThemeProvider';
 import TicTacToeGameWrapper from './components/TicTacToeGameWrapper';
-import NoughtsAndCrossesAssignmentWrapper from './components/NoughtsAssignmentWrapper';
+import GameAssignmentWrapper from '../../../components/games/templates/GameAssignmentWrapper';
 import UnifiedGameLauncher from '../../../components/games/UnifiedGameLauncher';
 import { UnifiedSelectionConfig, UnifiedVocabularyItem, loadVocabulary } from '../../../hooks/useUnifiedVocabulary';
 import { useAudio } from './hooks/useAudio';
@@ -15,6 +15,8 @@ export default function UnifiedNoughtsAndCrossesPage() {
   const { user, isLoading, isDemo } = useUnifiedAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  // ALWAYS initialize hooks first to prevent "more hooks than previous render" error
   const [soundEnabled] = useState(true);
   const { playSFX } = useAudio(soundEnabled);
 
@@ -22,9 +24,62 @@ export default function UnifiedNoughtsAndCrossesPage() {
   const assignmentId = searchParams?.get('assignment');
   const mode = searchParams?.get('mode');
 
-  // If assignment mode, render assignment wrapper
-  if (assignmentId && mode === 'assignment') {
-    return <NoughtsAndCrossesAssignmentWrapper assignmentId={assignmentId} />;
+  // Assignment mode handlers
+  const handleAssignmentComplete = () => {
+    router.push('/student-dashboard/assignments');
+  };
+
+  const handleBackToAssignments = () => {
+    router.push('/student-dashboard/assignments');
+  };
+
+  // Assignment mode: wrap with GameAssignmentWrapper (after all hooks are initialized)
+  if (assignmentId && mode === 'assignment' && user) {
+    return (
+      <GameAssignmentWrapper
+        assignmentId={assignmentId}
+        gameId="noughts-and-crosses"
+        studentId={user.id}
+        onAssignmentComplete={handleAssignmentComplete}
+        onBackToAssignments={handleBackToAssignments}
+        onBackToMenu={() => router.push('/games/noughts-and-crosses')}
+      >
+        {({ assignment, vocabulary, onProgressUpdate, onGameComplete }) => {
+          // Convert assignment vocabulary to unified config format
+          const assignmentConfig: UnifiedSelectionConfig = {
+            language: assignment.vocabulary_criteria?.language || 'spanish',
+            curriculumLevel: (assignment.curriculum_level as 'KS2' | 'KS3' | 'KS4' | 'KS5') || 'KS3',
+            categoryId: assignment.vocabulary_criteria?.category || 'basics_core_language',
+            subcategoryId: assignment.vocabulary_criteria?.subcategory || 'greetings_introductions',
+            theme: assignment.game_config?.theme || 'classic'
+          };
+
+          // Transform vocabulary for TicTacToe format
+          const transformedVocabulary = vocabulary.map(item => ({
+            id: item.id,
+            word: item.word,
+            translation: item.translation,
+            language: item.language,
+            part_of_speech: item.part_of_speech,
+            difficulty: 'medium' as const,
+            category: item.category || 'general'
+          }));
+
+          return (
+            <ThemeProvider theme={assignmentConfig.theme}>
+              <TicTacToeGameWrapper
+                config={assignmentConfig}
+                vocabulary={transformedVocabulary}
+                theme={assignmentConfig.theme}
+                onBackToMenu={() => router.push('/games/noughts-and-crosses')}
+                onGameComplete={onGameComplete}
+                assignmentMode={true}
+              />
+            </ThemeProvider>
+          );
+        }}
+      </GameAssignmentWrapper>
+    );
   }
 
   // Game state management

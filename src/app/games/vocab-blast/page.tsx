@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useUnifiedAuth } from '../../../hooks/useUnifiedAuth';
 import VocabBlastGameWrapper from './components/VocabBlastGameWrapper';
-import VocabBlastAssignmentWrapper from './components/VocabBlastAssignmentWrapper';
+import GameAssignmentWrapper from '../../../components/games/templates/GameAssignmentWrapper';
 import UnifiedGameLauncher from '../../../components/games/UnifiedGameLauncher';
 import { UnifiedSelectionConfig, UnifiedVocabularyItem, loadVocabulary } from '../../../hooks/useUnifiedVocabulary';
 import InGameConfigPanel from '../../../components/games/InGameConfigPanel';
@@ -47,23 +47,74 @@ export default function VocabBlastPage() {
   const assignmentId = searchParams?.get('assignment');
   const mode = searchParams?.get('mode');
 
-  // If assignment mode, render assignment wrapper
-  if (assignmentId && mode === 'assignment') {
+  // Assignment mode handlers
+  const handleAssignmentComplete = () => {
+    router.push('/student-dashboard/assignments');
+  };
+
+  const handleBackToAssignments = () => {
+    router.push('/student-dashboard/assignments');
+  };
+
+  // Assignment mode: wrap with GameAssignmentWrapper
+  if (assignmentId && mode === 'assignment' && user) {
     return (
-      <VocabBlastAssignmentWrapper
+      <GameAssignmentWrapper
         assignmentId={assignmentId}
-        studentId={user?.id || ''}
-        onAssignmentComplete={(progress) => {
-          console.log('Assignment completed:', progress);
-          router.push('/student-dashboard/assignments');
+        gameId="vocab-blast"
+        studentId={user.id}
+        onAssignmentComplete={handleAssignmentComplete}
+        onBackToAssignments={handleBackToAssignments}
+        onBackToMenu={() => router.push('/games/vocab-blast')}
+      >
+        {({ assignment, vocabulary, onProgressUpdate, onGameComplete }) => {
+          // Convert assignment to VocabBlast settings format
+          const gameSettings: VocabBlastGameSettings = {
+            difficulty: assignment.game_config?.difficulty || 'medium',
+            category: assignment.vocabulary_criteria?.category || 'basics_core_language',
+            language: assignment.vocabulary_criteria?.language || 'spanish',
+            theme: assignment.game_config?.theme || 'classic',
+            subcategory: assignment.vocabulary_criteria?.subcategory || 'greetings_introductions',
+            timeLimit: assignment.game_config?.timeLimit || 120,
+            mode: 'categories' as const,
+            customWords: undefined
+          };
+
+          return (
+            <ThemeProvider themeId={gameSettings.theme}>
+              <VocabBlastGameWrapper
+                settings={gameSettings}
+                onBackToMenu={() => router.push('/games/vocab-blast')}
+                onGameEnd={(result) => {
+                  console.log('VocabBlast assignment ended:', result);
+                  const gameProgress = {
+                    assignmentId: assignmentId,
+                    gameId: 'vocab-blast',
+                    studentId: user.id,
+                    wordsCompleted: result.wordsLearned || 0,
+                    totalWords: vocabulary.length,
+                    score: result.score || 0,
+                    maxScore: vocabulary.length * 100,
+                    timeSpent: result.timeSpent || 0,
+                    accuracy: result.accuracy || 0,
+                    completedAt: new Date(),
+                    sessionData: {
+                      gameResult: result,
+                      settings: gameSettings,
+                      vocabulary: vocabulary
+                    }
+                  };
+                  onGameComplete(gameProgress);
+                }}
+                assignmentId={assignmentId}
+                userId={user.id}
+                isAssignmentMode={true}
+                categoryVocabulary={vocabulary}
+              />
+            </ThemeProvider>
+          );
         }}
-        onBackToAssignments={() => {
-          router.push('/student-dashboard/assignments');
-        }}
-        onBackToMenu={() => {
-          router.push('/games/vocab-blast');
-        }}
-      />
+      </GameAssignmentWrapper>
     );
   }
 

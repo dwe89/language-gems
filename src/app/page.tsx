@@ -92,25 +92,25 @@ const founderPhoto = "/images/placeholder-founder.jpg"; // Corrected to a local 
 const developmentTimeline = [
   {
     date: "July 2025",
-    milestone: "Core vocabulary games completed",
+    milestone: "Core vocabulary games and teacher dashboard launched",
     status: "done",
     icon: CheckCircle
   },
   {
     date: "August 2025",
-    milestone: "Teacher dashboard in development",
+    milestone: "Student assessment system and enhanced analytics",
     status: "in-progress",
     icon: GitCommit
   },
   {
     date: "September 2025",
-    milestone: "Beta testing begins",
+    milestone: "Advanced AI features and personalized learning paths",
     status: "upcoming",
-    icon: Clock
+    icon: Brain
   },
   {
-    date: "Jan 2026",
-    milestone: "Full launch",
+    date: "October 2025",
+    milestone: "Mobile app launch and offline capabilities",
     status: "upcoming",
     icon: Rocket
   }

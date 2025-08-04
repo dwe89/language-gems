@@ -106,14 +106,15 @@ async function verifyDashboardData() {
 
     // 5. Verify Word Performance Logs
     console.log('\n5. Verifying word performance logs...');
-    
+    let wordLogs = [];
+
     // Filter sessions that have valid IDs
     const validSessions = sessions.filter(s => s.id && s.id !== 'undefined').slice(0, 10);
-    
+
     if (validSessions.length === 0) {
       console.log('   ⚠️  No valid session IDs found for word performance logs');
     } else {
-      const { data: wordLogs, error: wordError } = await supabase
+      const { data: wordLogsData, error: wordError } = await supabase
         .from('word_performance_logs')
         .select('session_id, word_text, was_correct, response_time_ms')
         .in('session_id', validSessions.map(s => s.id))
@@ -122,6 +123,7 @@ async function verifyDashboardData() {
       if (wordError) {
         console.error('   ❌ Word logs error:', wordError.message);
       } else {
+        wordLogs = wordLogsData || [];
         const wordStats = {
           total: wordLogs.length,
           correctRate: wordLogs.length > 0 ? wordLogs.filter(w => w.was_correct).length / wordLogs.length * 100 : 0,

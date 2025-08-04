@@ -1,10 +1,10 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '../lib/database.types';
 
-// Initialize Supabase client
+// Initialize Supabase client with service role for server-side operations
 const supabase = createClient<Database>(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
 export interface RealTimeStudentData {
@@ -93,9 +93,11 @@ export class StudentDataService {
         const classId = enrollment.class_id;
         const className = enrollment.classes?.name || 'Unknown Class';
 
+
+
         // Get student profile
         const { data: profile } = await supabase
-          .from('student_profiles')
+          .from('user_profiles')
           .select('display_name, user_id')
           .eq('user_id', studentId)
           .single();

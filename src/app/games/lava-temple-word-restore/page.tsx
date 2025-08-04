@@ -1,14 +1,19 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import UnifiedSentenceCategorySelector, { SentenceSelectionConfig } from '../../../components/games/UnifiedSentenceCategorySelector';
 import LavaTempleWordRestoreGameWrapper from './components/LavaTempleWordRestoreGameWrapper';
+import GameAssignmentWrapper from '../../../components/games/templates/GameAssignmentWrapper';
 import { useAuth } from '../../../components/auth/AuthProvider';
+import Link from 'next/link';
 
 export default function LavaTempleWordRestorePage() {
   const { user } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const assignmentId = searchParams?.get('assignment');
+  const mode = searchParams?.get('mode');
   const [gameConfig, setGameConfig] = useState<SentenceSelectionConfig | null>(null);
   const [gameStarted, setGameStarted] = useState(false);
 
@@ -28,6 +33,81 @@ export default function LavaTempleWordRestorePage() {
     setGameStarted(false);
     setGameConfig(null);
   };
+
+  // If assignment mode, use GameAssignmentWrapper
+  if (assignmentId && mode === 'assignment') {
+    return (
+      <GameAssignmentWrapper
+        assignmentId={assignmentId}
+        gameId="lava-temple-word-restore"
+        studentId={user?.id}
+        onAssignmentComplete={(progress) => {
+          console.log('Lava Temple Word Restore assignment completed:', progress);
+          router.push('/student-dashboard');
+        }}
+        onBackToAssignments={() => router.push('/student-dashboard')}
+        onBackToMenu={() => router.push('/games/lava-temple-word-restore')}
+      >
+        {({ assignment, vocabulary, onProgressUpdate, onGameComplete }) => {
+          const handleGameComplete = (gameResult: any) => {
+            // Calculate standardized progress metrics
+            const wordsCompleted = gameResult.correctAnswers || 0;
+            const totalWords = gameResult.totalAttempts || vocabulary.length;
+            const score = gameResult.score || 0;
+            const accuracy = gameResult.accuracy || 0;
+
+            // Update progress
+            onProgressUpdate({
+              wordsCompleted,
+              totalWords,
+              score,
+              maxScore: totalWords * 100, // 100 points per word
+              accuracy
+            });
+
+            // Complete assignment
+            onGameComplete({
+              assignmentId: assignment.id,
+              gameId: 'lava-temple-word-restore',
+              studentId: user?.id || '',
+              wordsCompleted,
+              totalWords,
+              score,
+              maxScore: totalWords * 100,
+              accuracy,
+              timeSpent: gameResult.duration || 0,
+              completedAt: new Date(),
+              sessionData: gameResult
+            });
+          };
+
+          const handleBackToAssignments = () => {
+            router.push('/student-dashboard');
+          };
+
+          // For sentence-based games like Lava Temple, we use the assignment's vocabulary criteria
+          // to configure the game rather than passing individual vocabulary items
+          const gameConfig = {
+            language: (assignment.vocabulary_criteria?.language || 'spanish') as 'spanish' | 'french' | 'german',
+            category: assignment.vocabulary_criteria?.category || 'assignment',
+            subcategory: assignment.vocabulary_criteria?.subcategory || 'assignment',
+            difficulty: 'beginner' as 'beginner' | 'intermediate' | 'advanced'
+          };
+
+          return (
+            <LavaTempleWordRestoreGameWrapper
+              gameConfig={gameConfig}
+              onBackToLauncher={handleBackToAssignments}
+              onBackToMenu={handleBackToAssignments}
+              onGameEnd={handleGameComplete}
+              assignmentId={assignment.id}
+              userId={user?.id}
+            />
+          );
+        }}
+      </GameAssignmentWrapper>
+    );
+  }
 
   // Show sentence category selector if game not started
   if (!gameStarted) {

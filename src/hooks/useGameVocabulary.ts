@@ -114,7 +114,7 @@ export function useGameVocabulary({
         return;
       }
 
-      // If no category selected, load all vocabulary for the language
+      // If no category selected, load vocabulary for the language with proper limits
       let query = supabaseBrowser
         .from('centralized_vocabulary')
         .select('*', { count: 'exact' })
@@ -136,14 +136,15 @@ export function useGameVocabulary({
 
       // Apply limit and ordering
       if (randomize) {
-        // For randomization, we need to get all records first, then randomize
-        const { data: allData, error: allError, count } = await query;
-        
-        if (allError) throw allError;
-        
-        if (allData) {
+        // For randomization, get a reasonable sample size (max 1000) then randomize
+        const sampleSize = Math.min(1000, limit * 10); // Get 10x the needed amount for better randomization
+        const { data: sampleData, error: sampleError, count } = await query.limit(sampleSize);
+
+        if (sampleError) throw sampleError;
+
+        if (sampleData) {
           // Randomize and limit
-          const randomizedData = allData.sort(() => Math.random() - 0.5).slice(0, limit);
+          const randomizedData = sampleData.sort(() => Math.random() - 0.5).slice(0, limit);
           
           const transformedVocabulary: GameVocabularyWord[] = randomizedData.map(item => ({
             id: item.id,

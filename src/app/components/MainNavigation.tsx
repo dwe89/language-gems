@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../components/auth/AuthProvider';
 import { getNavigationItems } from '../../lib/featureFlags';
-import { LogOut, User, Settings } from 'lucide-react';
+import { LogOut, User, Settings, Gem } from 'lucide-react';
 import SmartAuthButtons from '../../components/SmartAuthButtons';
 
 export default function MainNavigation() {
@@ -76,7 +76,7 @@ export default function MainNavigation() {
             href={(isMounted && user) ? "/account" : "/"} 
             className="font-bold text-2xl text-white flex items-center"
           >
-            <span className="text-3xl mr-2">💎</span>
+            <Gem className="h-8 w-8 mr-2 text-yellow-300" />
             <span className="text-yellow-300">Language<span className="text-white">Gems</span></span>
           </Link>
 

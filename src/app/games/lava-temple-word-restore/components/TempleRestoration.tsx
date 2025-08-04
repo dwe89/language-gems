@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { createClient } from '@supabase/supabase-js';
 import { GameConfig } from './LavaTempleWordRestoreGame';
 import { EnhancedGameService } from '../../../../services/enhancedGameService';
+import { createAudio } from '@/utils/audioUtils';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -71,10 +72,10 @@ export default function TempleRestoration({
   // Initialize audio
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      backgroundMusicRef.current = new Audio('/audio/themes/lava-temple-ambient.mp3');
-      correctSoundRef.current = new Audio('/audio/sfx/correct-answer.mp3');
-      incorrectSoundRef.current = new Audio('/audio/sfx/wrong-answer.mp3');
-      templePowerRef.current = new Audio('/audio/sfx/temple-power.mp3');
+      backgroundMusicRef.current = createAudio('/audio/themes/lava-temple-ambient.mp3');
+      correctSoundRef.current = createAudio('/audio/sfx/correct-answer.mp3');
+      incorrectSoundRef.current = createAudio('/audio/sfx/wrong-answer.mp3');
+      templePowerRef.current = createAudio('/audio/sfx/temple-power.mp3');
 
       // Setup background music
       if (backgroundMusicRef.current) {

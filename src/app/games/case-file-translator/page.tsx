@@ -5,6 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../../../components/auth/AuthProvider';
 import UnifiedSentenceCategorySelector, { SentenceSelectionConfig } from '../../../components/games/UnifiedSentenceCategorySelector';
 import CaseFileTranslatorGameWrapper from './components/CaseFileTranslatorGameWrapper';
+import GameAssignmentWrapper from '../../../components/games/templates/GameAssignmentWrapper';
+import Link from 'next/link';
 
 export default function CaseFileTranslatorPage() {
   const { user } = useAuth();
@@ -29,6 +31,83 @@ export default function CaseFileTranslatorPage() {
     setGameStarted(false);
     setGameConfig(null);
   };
+
+  // If assignment mode, use GameAssignmentWrapper
+  if (assignmentId && mode === 'assignment') {
+    return (
+      <GameAssignmentWrapper
+        assignmentId={assignmentId}
+        gameId="case-file-translator"
+        studentId={user?.id}
+        onAssignmentComplete={(progress) => {
+          console.log('Case File Translator assignment completed:', progress);
+          router.push('/student-dashboard');
+        }}
+        onBackToAssignments={() => router.push('/student-dashboard')}
+        onBackToMenu={() => router.push('/games/case-file-translator')}
+      >
+        {({ assignment, vocabulary, onProgressUpdate, onGameComplete }) => {
+          const handleGameComplete = (gameResult: any) => {
+            // Calculate standardized progress metrics
+            const wordsCompleted = gameResult.correctAnswers || 0;
+            const totalWords = gameResult.totalQuestions || vocabulary.length;
+            const score = gameResult.score || 0;
+            const accuracy = gameResult.accuracy || 0;
+
+            // Update progress
+            onProgressUpdate({
+              wordsCompleted,
+              totalWords,
+              score,
+              maxScore: totalWords * 100, // 100 points per word
+              accuracy
+            });
+
+            // Complete assignment
+            onGameComplete({
+              assignmentId: assignment.id,
+              gameId: 'case-file-translator',
+              studentId: user?.id || '',
+              wordsCompleted,
+              totalWords,
+              score,
+              maxScore: totalWords * 100,
+              accuracy,
+              timeSpent: gameResult.timeSpent || 0,
+              completedAt: new Date(),
+              sessionData: gameResult
+            });
+          };
+
+          const handleBackToAssignments = () => {
+            router.push('/student-dashboard');
+          };
+
+          // For sentence-based games like Case File Translator, we use the assignment's vocabulary criteria
+          // to configure the game rather than passing individual vocabulary items
+          const legacySettings = {
+            caseType: assignment.vocabulary_criteria?.category || 'assignment',
+            language: assignment.vocabulary_criteria?.language || 'spanish',
+            curriculumLevel: (assignment.curriculum_level as string) || 'KS3',
+            subcategory: assignment.vocabulary_criteria?.subcategory || 'assignment',
+            difficulty: 'beginner' // Default difficulty
+          };
+
+          return (
+            <div className="min-h-screen">
+              <CaseFileTranslatorGameWrapper
+                settings={legacySettings}
+                onBackToMenu={handleBackToAssignments}
+                onGameEnd={handleGameComplete}
+                assignmentId={assignment.id}
+                userId={user?.id}
+              />
+            </div>
+          );
+        }}
+      </GameAssignmentWrapper>
+    );
+  }
 
   // Show sentence category selector if game not started
   if (!gameStarted) {

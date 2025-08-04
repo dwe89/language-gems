@@ -6,6 +6,7 @@ import { ArrowLeft, Play, RotateCcw, Volume2, CheckCircle, XCircle, FileText } f
 import { useVocabularyByCategory } from '../../../../hooks/useVocabulary';
 import { VOCABULARY_CATEGORIES } from '../../../../components/games/ModernCategorySelector';
 import { useAudioManager } from '../hooks/useAudioManager';
+import { createAudio } from '@/utils/audioUtils';
 import { Evidence } from '../types';
 import { StandardVocabularyItem, AssignmentData, GameProgress, calculateStandardScore } from '../../../../components/games/templates/GameAssignmentWrapper';
 import { EnhancedGameService } from '../../../../services/enhancedGameService';
@@ -146,12 +147,12 @@ export default function DetectiveRoom({
     bgMusic.addEventListener('canplaythrough', () => console.log('Background music loaded successfully'));
     setBackgroundMusic(bgMusic);
 
-    // Initialize sound effects
+    // Initialize sound effects using cross-subdomain audio utility
     const effects = {
-      radioStatic: new Audio('/audio/detective-listening/radio-static.mp3'),
-      radioBeep: new Audio('/audio/detective-listening/radio-beep.mp3'),
-      correctAnswer: new Audio('/audio/detective-listening/correct-answer.mp3'),
-      wrongAnswer: new Audio('/audio/detective-listening/wrong-answer.mp3')
+      radioStatic: createAudio('/audio/detective-listening/radio-static.mp3'),
+      radioBeep: createAudio('/audio/detective-listening/radio-beep.mp3'),
+      correctAnswer: createAudio('/audio/detective-listening/correct-answer.mp3'),
+      wrongAnswer: createAudio('/audio/detective-listening/wrong-answer.mp3')
     };
 
     // Add error handling and set volumes for each effect
@@ -224,7 +225,7 @@ export default function DetectiveRoom({
       console.error(`${soundType} sound not found in audioEffects`);
       // Try creating and playing the sound directly as fallback
       try {
-        const directSound = new Audio(`/audio/detective-listening/${soundType === 'radioStatic' ? 'radio-static' : soundType === 'radioBeep' ? 'radio-beep' : soundType === 'correctAnswer' ? 'correct-answer' : 'wrong-answer'}.mp3`);
+        const directSound = createAudio(`/audio/detective-listening/${soundType === 'radioStatic' ? 'radio-static' : soundType === 'radioBeep' ? 'radio-beep' : soundType === 'correctAnswer' ? 'correct-answer' : 'wrong-answer'}.mp3`);
         directSound.volume = 0.4;
         await directSound.play();
         console.log(`Direct ${soundType} sound played successfully`);

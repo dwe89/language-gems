@@ -39,7 +39,7 @@ interface VocabularyList {
   id?: string;
   name: string;
   description: string;
-  language: 'spanish' | 'french' | 'german' | 'italian';
+  language: 'spanish' | 'french' | 'german';
   theme?: string;
   topic?: string;
   difficulty_level: 'beginner' | 'intermediate' | 'advanced';
@@ -64,8 +64,7 @@ const CONTENT_TYPES = [
 const LANGUAGES = [
   { id: 'spanish', label: 'Spanish', flag: '🇪🇸' },
   { id: 'french', label: 'French', flag: '🇫🇷' },
-  { id: 'german', label: 'German', flag: '🇩🇪' },
-  { id: 'italian', label: 'Italian', flag: '🇮🇹' }
+  { id: 'german', label: 'German', flag: '🇩🇪' }
 ];
 
 const DIFFICULTY_LEVELS = [

@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useEffect, useCallback } from 'react';
+import { createAudio, getAudioUrl } from '@/utils/audioUtils';
 
 interface AudioFiles {
   // Background themes
@@ -56,17 +57,17 @@ export const useAudio = (soundEnabled: boolean = true) => {
 
   // Initialize audio files
   useEffect(() => {
-    // Preload all sound effects
+    // Preload all sound effects using cross-subdomain audio utility
     Object.entries(AUDIO_FILES.sfx).forEach(([key, src]) => {
-      const audio = new Audio(src);
+      const audio = createAudio(src);
       audio.preload = 'auto';
       audio.volume = 0.6;
       audioRefs.current[key] = audio;
     });
 
-    // Preload theme music
+    // Preload theme music using cross-subdomain audio utility
     Object.entries(AUDIO_FILES.themes).forEach(([key, src]) => {
-      const audio = new Audio(src);
+      const audio = createAudio(src);
       audio.preload = 'auto';
       audio.loop = true;
       audio.volume = 0.3;

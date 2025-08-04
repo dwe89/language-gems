@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import { Gem } from 'lucide-react';
 
 export default function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -10,7 +11,8 @@ export default function Navigation() {
     <nav className="w-full bg-indigo-900/30 backdrop-blur-sm sticky top-0 z-50">
       <div className="container mx-auto px-4 py-3 flex justify-between items-center">
         <div className="flex items-center">
-          <Link href="/" className="text-2xl font-bold text-white mr-8">
+          <Link href="/" className="text-2xl font-bold text-white mr-8 flex items-center">
+            <Gem className="w-6 h-6 mr-2 text-cyan-400" />
             LanguageGems
           </Link>
           <ul className="hidden md:flex space-x-2">

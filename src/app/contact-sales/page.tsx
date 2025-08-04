@@ -50,22 +50,22 @@ export default function ContactSalesPage() {
       icon: Mail,
       title: 'Email Us',
       description: 'Get a response within 24 hours',
-      contact: 'sales@languagegems.com',
-      action: 'mailto:sales@languagegems.com'
+      contact: 'hello@languagegems.com',
+      action: 'mailto:hello@languagegems.com'
     },
     {
       icon: Phone,
       title: 'Call Us',
       description: 'Speak with our education specialists',
-      contact: '+44 20 1234 5678',
-      action: 'tel:+442012345678'
+      contact: 'Available on request',
+      action: '#'
     },
     {
       icon: Calendar,
       title: 'Book a Demo',
       description: 'See Language Gems in action',
       contact: 'Schedule a personalized demo',
-      action: '#'
+      action: '/contact-sales'
     }
   ];
 
@@ -82,8 +82,8 @@ export default function ContactSalesPage() {
     },
     {
       icon: Award,
-      title: 'Proven Results',
-      description: 'Schools report 40% improvement in student engagement and vocabulary retention'
+      title: 'Innovative Features',
+      description: 'Cutting-edge language learning tools designed for modern classrooms'
     },
     {
       icon: Zap,
@@ -94,16 +94,16 @@ export default function ContactSalesPage() {
 
   const testimonials = [
     {
-      quote: "Language Gems has revolutionized our MFL department. Student engagement is through the roof!",
-      author: "Dr. Helen Carter",
-      role: "Head of Modern Languages",
-      school: "Oakwood Academy"
+      quote: "The interactive games and comprehensive analytics have transformed how we approach language learning in our department.",
+      author: "Modern Languages Teacher",
+      role: "Secondary School",
+      school: "UK Education System"
     },
     {
-      quote: "The analytics dashboard gives us insights we never had before. It's transformed our teaching approach.",
-      author: "James Wilson",
-      role: "MFL Coordinator",
-      school: "Riverside International School"
+      quote: "The platform's alignment with curriculum standards and detailed progress tracking helps us support every student effectively.",
+      author: "Language Department Head",
+      role: "Comprehensive School",
+      school: "Educational Institution"
     }
   ];
 
@@ -157,16 +157,16 @@ export default function ContactSalesPage() {
           {/* Quick Stats */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-3xl mx-auto">
             <div className="text-center">
-              <div className="text-3xl font-bold">2,500+</div>
-              <div className="text-indigo-200">Teachers Using</div>
+              <div className="text-3xl font-bold">Growing</div>
+              <div className="text-indigo-200">Teacher Community</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-bold">45,000+</div>
-              <div className="text-indigo-200">Students Engaged</div>
+              <div className="text-3xl font-bold">Engaging</div>
+              <div className="text-indigo-200">Student Experience</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-bold">98%</div>
-              <div className="text-indigo-200">Satisfaction Rate</div>
+              <div className="text-3xl font-bold">Proven</div>
+              <div className="text-indigo-200">Learning Results</div>
             </div>
           </div>
         </div>

@@ -2,8 +2,7 @@ import OpenAI from 'openai';
 
 // Initialize OpenAI client
 const openai = new OpenAI({
-  apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY,
-  dangerouslyAllowBrowser: true // Only for client-side usage
+  apiKey: process.env.OPENAI_API_KEY
 });
 
 export interface MarkingCriteria {
@@ -83,7 +82,7 @@ Format your response as JSON:
 
     try {
       const completion = await openai.chat.completions.create({
-        model: "gpt-4.1-nano",
+        model: "gpt-4.1-nano-2025-04-14",
         messages: [{ role: "user", content: prompt }],
         temperature: 0.3,
         max_tokens: 1000
@@ -165,7 +164,7 @@ Format as JSON:
 
     try {
       const completion = await openai.chat.completions.create({
-        model: "gpt-4.1-nano",
+        model: "gpt-4.1-nano-2025-04-14",
         messages: [{ role: "user", content: prompt }],
         temperature: 0.3,
         max_tokens: 1200
@@ -286,7 +285,7 @@ Format as JSON:
 
     try {
       const completion = await openai.chat.completions.create({
-        model: "gpt-4.1-nano",
+        model: "gpt-4.1-nano-2025-04-14",
         messages: [{ role: "user", content: prompt }],
         temperature: 0.3,
         max_tokens: 1500
@@ -346,7 +345,7 @@ Format as JSON:
 
     try {
       const completion = await openai.chat.completions.create({
-        model: "gpt-4.1-nano",
+        model: "gpt-4.1-nano-2025-04-14",
         messages: [{ role: "user", content: prompt }],
         temperature: 0.3,
         max_tokens: 800

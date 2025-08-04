@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Calendar, User, Clock, ArrowRight, BookOpen, Users, Target, Brain } from 'lucide-react';
 import SEOWrapper from '../../components/seo/SEOWrapper';
 import { generateMetadata } from '../../components/seo/SEOWrapper';
+import Footer from '../../components/layout/Footer';
 
 export const metadata: Metadata = generateMetadata({
   title: 'Language Learning Blog - GCSE Tips, Teaching Strategies & Educational Insights',
@@ -357,6 +358,8 @@ export default function BlogPage() {
           </div>
         </section>
       </div>
+      
+      <Footer />
     </SEOWrapper>
   );
 }

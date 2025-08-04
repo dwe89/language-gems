@@ -102,18 +102,19 @@ async function checkDatabaseIndexes() {
 
   for (const indexQuery of indexQueries) {
     try {
-      const { data: indexes, error } = await supabase.rpc('execute_sql', {
-        query: indexQuery.query
+      // Use custom RPC function to check indexes
+      const { data: indexes, error } = await supabase.rpc('check_table_indexes', {
+        table_name: indexQuery.table
       });
 
       if (error) {
         console.log(`   ⚠️  Cannot check ${indexQuery.description}: ${error.message}`);
       } else {
         console.log(`   📊 ${indexQuery.description}: ${indexes?.length || 0} custom indexes found`);
-        
+
         if (indexes && indexes.length > 0) {
           indexes.forEach(index => {
-            console.log(`      - ${index.indexname}`);
+            console.log(`      - ${index.index_name}`);
           });
         }
       }
@@ -301,13 +302,24 @@ async function testDashboardComponentPerformance() {
 
   // Check dashboard components for performance patterns
   const dashboardPath = path.join(process.cwd(), 'src', 'components', 'dashboard');
-  
-  if (!fs.existsSync(dashboardPath)) {
-    console.log('   ⚠️  Dashboard components directory not found');
-    return;
+  const dashboardPagePath = path.join(process.cwd(), 'src', 'app', 'dashboard', 'progress');
+
+  let dashboardFiles = [];
+
+  if (fs.existsSync(dashboardPath)) {
+    const componentFiles = fs.readdirSync(dashboardPath).filter(file => file.endsWith('.tsx'));
+    dashboardFiles = dashboardFiles.concat(componentFiles.map(file => path.join(dashboardPath, file)));
   }
 
-  const dashboardFiles = fs.readdirSync(dashboardPath).filter(file => file.endsWith('.tsx'));
+  if (fs.existsSync(dashboardPagePath)) {
+    const pageFiles = fs.readdirSync(dashboardPagePath).filter(file => file.endsWith('.tsx'));
+    dashboardFiles = dashboardFiles.concat(pageFiles.map(file => path.join(dashboardPagePath, file)));
+  }
+
+  if (dashboardFiles.length === 0) {
+    console.log('   ⚠️  Dashboard files not found');
+    return;
+  }
   
   let optimizationPatterns = {
     useMemo: 0,
@@ -318,8 +330,7 @@ async function testDashboardComponentPerformance() {
     virtualization: 0
   };
 
-  for (const file of dashboardFiles) {
-    const filePath = path.join(dashboardPath, file);
+  for (const filePath of dashboardFiles) {
     const content = fs.readFileSync(filePath, 'utf8');
     
     // Check for performance optimization patterns
@@ -345,8 +356,7 @@ async function testDashboardComponentPerformance() {
   
   let performanceIssues = [];
   
-  for (const file of dashboardFiles) {
-    const filePath = path.join(dashboardPath, file);
+  for (const filePath of dashboardFiles) {
     const content = fs.readFileSync(filePath, 'utf8');
     
     // Check for performance anti-patterns

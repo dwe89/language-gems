@@ -297,15 +297,16 @@ export default function ImprovedSentenceTowers() {
   const assignmentId = searchParams?.get('assignment');
   const mode = searchParams?.get('mode');
 
-  // If assignment mode, render assignment wrapper
-  if (assignmentId && mode === 'assignment') {
-    return <SentenceTowersAssignmentWrapper assignmentId={assignmentId} />;
-  }
-
+  // ALWAYS initialize hooks first to prevent "more hooks than previous render" error
   // Authentication and services
   const { user } = useAuth();
   const { supabase } = useSupabase();
   const [enhancedGameService, setEnhancedGameService] = useState<EnhancedGameService | null>(null);
+
+  // If assignment mode, render assignment wrapper (after all hooks are initialized)
+  if (assignmentId && mode === 'assignment') {
+    return <SentenceTowersAssignmentWrapper assignmentId={assignmentId} />;
+  }
 
   // Initialize Enhanced Game Service
   useEffect(() => {

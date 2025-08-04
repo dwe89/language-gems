@@ -187,26 +187,16 @@ async function testDataSources() {
 }
 
 async function testAIInsightsAPI() {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3001';
   
   // Test main AI insights endpoint
   try {
-    // First, get a teacher ID from the database
-    const { data: teachers, error: teacherError } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('role', 'teacher')
-      .limit(1);
-
-    if (teacherError || !teachers || teachers.length === 0) {
-      console.log('   ⚠️  No teacher found for testing - using test ID');
-      var teacherId = '00000000-0000-0000-0000-000000000001';
-    } else {
-      var teacherId = teachers[0].id;
-      console.log(`   ✓ Using teacher ID: ${teacherId}`);
-    }
+    // Use the known teacher ID from our test data
+    var teacherId = '9efcdbe9-7116-4bb7-a696-4afb0fb34e4c';
+    console.log(`   ✓ Using teacher ID: ${teacherId}`);
 
     // Test get_insights endpoint
+    console.log(`   🔍 Testing URL: ${baseUrl}/api/ai-insights?teacherId=${teacherId}&action=get_insights`);
     const response = await fetch(`${baseUrl}/api/ai-insights?teacherId=${teacherId}&action=get_insights`);
     
     if (response.ok) {
@@ -223,7 +213,8 @@ async function testAIInsightsAPI() {
       console.log(`   ⚠️  AI insights API returned ${response.status}`);
     }
   } catch (error) {
-    console.log('   ⚠️  AI insights API test failed (server may not be running):', error.message);
+    console.log('   ⚠️  AI insights API test failed:', error.message);
+    console.log('   🔍 Error details:', error);
   }
 
   // Test pipeline endpoint
@@ -345,7 +336,7 @@ async function testInsightsPipeline() {
 
   // Test pipeline status
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3001';
     const response = await fetch(`${baseUrl}/api/ai-insights/pipeline?action=status`);
     
     if (response.ok) {

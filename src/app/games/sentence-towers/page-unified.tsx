@@ -15,12 +15,7 @@ export default function UnifiedSentenceTowersPage() {
   const assignmentId = searchParams?.get('assignment');
   const mode = searchParams?.get('mode');
 
-  // If assignment mode, render assignment wrapper
-  if (assignmentId && mode === 'assignment') {
-    return <SentenceTowersAssignmentWrapper assignmentId={assignmentId} />;
-  }
-
-  // Game state management
+  // ALWAYS initialize hooks first to prevent "more hooks than previous render" error
   const [gameStarted, setGameStarted] = useState(false);
 
   // Game configuration from unified launcher
@@ -28,6 +23,11 @@ export default function UnifiedSentenceTowersPage() {
     config: UnifiedSelectionConfig;
     vocabulary: UnifiedVocabularyItem[];
   } | null>(null);
+
+  // If assignment mode, render assignment wrapper (after all hooks are initialized)
+  if (assignmentId && mode === 'assignment') {
+    return <SentenceTowersAssignmentWrapper assignmentId={assignmentId} />;
+  }
 
   // Handle game start from unified launcher
   const handleGameStart = (config: UnifiedSelectionConfig, vocabulary: UnifiedVocabularyItem[]) => {

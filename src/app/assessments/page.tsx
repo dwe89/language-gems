@@ -14,6 +14,7 @@ import {
   PenTool,
   Info
 } from 'lucide-react';
+import Footer from '../../components/layout/Footer';
 
 const AssessmentCard = ({
   title,
@@ -263,6 +264,8 @@ export default function AssessmentsPage() {
           </div>
         </div>
       </div>
+      
+      <Footer />
     </div>
   );
 }

@@ -70,7 +70,7 @@ async function verifyDashboardComponents() {
   const dashboardComponents = [
     'src/app/dashboard/progress/page.tsx',
     'src/components/dashboard/ProactiveAIDashboard.tsx',
-    'src/components/dashboard/StudentPerformanceOverview.tsx',
+    'src/components/dashboard/InteractiveStudentOverview.tsx', // Updated to actual component name
     'src/components/dashboard/DetailedReportsAnalytics.tsx',
     'src/components/dashboard/GamificationAnalytics.tsx'
   ];

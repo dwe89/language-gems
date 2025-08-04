@@ -15,7 +15,7 @@ export default function SentenceTowersPage() {
   const assignmentId = searchParams?.get('assignment');
   const mode = searchParams?.get('mode');
 
-  // If assignment mode, render assignment wrapper
+  // If assignment mode, render assignment wrapper (after all hooks are initialized)
   if (assignmentId && mode === 'assignment') {
     return <SentenceTowersAssignmentWrapper assignmentId={assignmentId} />;
   }
