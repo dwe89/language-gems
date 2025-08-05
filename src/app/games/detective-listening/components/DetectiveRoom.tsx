@@ -300,12 +300,20 @@ export default function DetectiveRoom({
       try {
         await gameService.logWordPerformance({
           session_id: gameSessionId,
-          word_id: currentEvidence.id,
-          word: currentEvidence.word || currentEvidence.correct,
-          translation: currentEvidence.correct,
-          is_correct: isCorrect,
+          vocabulary_id: undefined, // Evidence ID not mapped to vocabulary ID
+          word_text: currentEvidence.word || currentEvidence.correct,
+          translation_text: currentEvidence.correct,
+          language_pair: `${mapLanguageForVocab(language)}_english`,
+          attempt_number: currentEvidence.attempts + 1,
           response_time_ms: responseTime,
-          attempts: currentEvidence.attempts + 1,
+          was_correct: isCorrect,
+          confidence_level: replayCount === 0 ? 5 : replayCount === 1 ? 3 : 1, // Lower confidence with more replays
+          difficulty_level: 'beginner',
+          hint_used: replayCount > 0, // Replays count as hints
+          power_up_active: undefined,
+          streak_count: gameProgress.correctAnswers + (isCorrect ? 1 : 0),
+          previous_attempts: currentEvidence.attempts,
+          mastery_level: isCorrect ? (replayCount === 0 ? 3 : 2) : 1,
           error_type: isCorrect ? undefined : 'listening_comprehension',
           grammar_concept: 'listening_skills',
           error_details: isCorrect ? undefined : {
@@ -313,7 +321,16 @@ export default function DetectiveRoom({
             correctAnswer: currentEvidence.correct,
             evidenceType: 'audio_comprehension',
             replayCount: replayCount
-          }
+          },
+          context_data: {
+            gameType: 'detective-listening',
+            caseType: caseType,
+            subcategory: subcategory,
+            evidenceIndex: currentEvidenceIndex,
+            totalEvidence: evidenceList.length,
+            replayCount: replayCount
+          },
+          timestamp: new Date()
         });
       } catch (error) {
         console.error('Failed to log word performance:', error);

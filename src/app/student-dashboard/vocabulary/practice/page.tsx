@@ -54,32 +54,31 @@ export default function VocabularyPracticePage() {
       
       try {
         let query = supabase
-          .from('student_vocabulary_progress')
+          .from('user_vocabulary_progress')
           .select(`
             id,
-            vocabulary_item_id,
-            proficiency_level,
-            correct_answers,
-            incorrect_answers,
-            vocabulary_items(
+            vocabulary_id,
+            times_seen,
+            times_correct,
+            is_learned,
+            last_seen,
+            vocabulary(
               id,
-              term,
-              translation,
-              example_sentence,
-              example_translation,
-              image_url,
-              audio_url,
-              list_id
+              spanish,
+              english,
+              theme,
+              topic,
+              difficulty_level
             )
           `)
-          .eq('student_id', user.id);
+          .eq('user_id', user.id);
         
         // If a specific item ID was passed, only practice that item
         if (specificItem) {
-          query = query.eq('vocabulary_item_id', specificItem);
+          query = query.eq('vocabulary_id', specificItem);
         } else {
-          // Otherwise, prioritize items due for review and weak items
-          query = query.or(`next_review.lte.${new Date().toISOString()},proficiency_level.lt.3`);
+          // Otherwise, prioritize items that need practice (not learned or low accuracy)
+          query = query.or(`is_learned.eq.false,times_seen.lt.5`);
         }
         
         // Limit to 20 items for a practice session
@@ -93,25 +92,24 @@ export default function VocabularyPracticePage() {
         if (data.length === 0) {
           // If no items found that match criteria, get any items
           const { data: anyItems, error: anyError } = await supabase
-            .from('student_vocabulary_progress')
+            .from('user_vocabulary_progress')
             .select(`
               id,
-              vocabulary_item_id,
-              proficiency_level,
-              correct_answers,
-              incorrect_answers,
-              vocabulary_items(
+              vocabulary_id,
+              times_seen,
+              times_correct,
+              is_learned,
+              last_seen,
+              vocabulary(
                 id,
-                term,
-                translation,
-                example_sentence,
-                example_translation,
-                image_url,
-                audio_url,
-                list_id
+                spanish,
+                english,
+                theme,
+                topic,
+                difficulty_level
               )
             `)
-            .eq('student_id', user.id)
+            .eq('user_id', user.id)
             .limit(20);
             
           if (anyError) {
@@ -134,16 +132,16 @@ export default function VocabularyPracticePage() {
       // Format items for practice
       const processedItems = items.map(item => ({
         progressId: item.id,
-        itemId: item.vocabulary_item_id,
-        term: item.vocabulary_items.term,
-        translation: item.vocabulary_items.translation,
-        exampleSentence: item.vocabulary_items.example_sentence,
-        exampleTranslation: item.vocabulary_items.example_translation,
-        imageUrl: item.vocabulary_items.image_url,
-        audioUrl: item.vocabulary_items.audio_url,
-        proficiencyLevel: item.proficiency_level,
-        correctAnswers: item.correct_answers,
-        incorrectAnswers: item.incorrect_answers
+        itemId: item.vocabulary_id,
+        term: item.vocabulary.spanish,
+        translation: item.vocabulary.english,
+        exampleSentence: '', // Not available in vocabulary table
+        exampleTranslation: '', // Not available in vocabulary table
+        imageUrl: undefined, // Not available in vocabulary table
+        audioUrl: undefined, // Not available in vocabulary table
+        proficiencyLevel: item.is_learned ? 5 : (item.times_seen > 0 ? Math.min(Math.floor((item.times_correct / item.times_seen) * 5) + 1, 5) : 1),
+        correctAnswers: item.times_correct,
+        incorrectAnswers: (item.times_seen || 0) - (item.times_correct || 0)
       }));
       
       // Shuffle the items

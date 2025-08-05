@@ -26,15 +26,7 @@ interface GameSettings {
   curriculumLevel?: 'KS3' | 'KS4';
 }
 
-interface WordScrambleGameEnhancedProps {
-  settings: GameSettings;
-  onGameEnd: (result: any) => void;
-  onBackToMenu: () => void;
-  vocabulary?: GameVocabularyWord[];
-  isAssignmentMode?: boolean;
-  assignmentId?: string;
-  onOpenSettings?: () => void;
-}
+
 
 interface Achievement {
   id: string;
@@ -397,12 +389,16 @@ export default function WordScrambleGameEnhanced({
 
   // Initialize game service
   useEffect(() => {
+    console.log('Word Scramble: Initializing game service with userId:', userId);
     if (userId) {
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
       const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
       const supabase = createClient(supabaseUrl, supabaseAnonKey);
       const service = new EnhancedGameService(supabase);
       setGameService(service);
+      console.log('Word Scramble: Game service initialized');
+    } else {
+      console.log('Word Scramble: No userId provided, cannot initialize game service');
     }
   }, [userId]);
 
@@ -414,9 +410,21 @@ export default function WordScrambleGameEnhanced({
   }, [gameService, userId, gameSessionId]);
 
   const startGameSession = async () => {
-    if (!gameService || !userId) return;
+    console.log('Word Scramble: Attempting to start session with userId:', userId, 'gameService:', !!gameService);
+
+    if (!gameService || !userId) {
+      console.log('Word Scramble: Cannot start session - missing gameService or userId');
+      return;
+    }
 
     try {
+      console.log('Word Scramble: Starting session with data:', {
+        student_id: userId,
+        assignment_id: assignmentId || undefined,
+        game_type: 'word-scramble',
+        session_mode: isAssignmentMode ? 'assignment' : 'free_play'
+      });
+
       const sessionId = await gameService.startGameSession({
         student_id: userId,
         assignment_id: assignmentId || undefined,
@@ -430,9 +438,10 @@ export default function WordScrambleGameEnhanced({
         }
       });
       setGameSessionId(sessionId);
-      console.log('Word scramble game session started:', sessionId);
+      console.log('Word scramble game session started successfully:', sessionId);
     } catch (error) {
       console.error('Failed to start word scramble game session:', error);
+      console.error('Error details:', error);
     }
   };
 
@@ -660,7 +669,7 @@ export default function WordScrambleGameEnhanced({
     }));
 
     // Log word performance for analytics
-    if (gameService && gameSessionId && !isAssignmentMode) {
+    if (gameService && gameSessionId) {
       gameService.logWordPerformance({
         session_id: gameSessionId,
         vocabulary_id: currentWordData.id ? parseInt(currentWordData.id) : undefined,
@@ -798,7 +807,7 @@ export default function WordScrambleGameEnhanced({
       }
     } else {
       // Wrong answer - log performance for analytics
-      if (gameService && gameSessionId && !isAssignmentMode && currentWordData) {
+      if (gameService && gameSessionId && currentWordData) {
         const attemptTime = (Date.now() - wordStartTime) / 1000;
         gameService.logWordPerformance({
           session_id: gameSessionId,

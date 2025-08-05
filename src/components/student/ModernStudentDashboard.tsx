@@ -7,8 +7,10 @@ import {
   User, Menu, X, ChevronRight, Star, Flame, Zap, Crown,
   Calendar, Clock, Target, Award, Gem, Heart, Brain,
   PlayCircle, PauseCircle, Volume2, VolumeX, Sun, Moon,
-  Maximize2, Minimize2, RefreshCw, Filter, Download
+  Maximize2, Minimize2, RefreshCw, Filter, Download,
+  CheckCircle, AlertCircle
 } from 'lucide-react';
+import Link from 'next/link';
 import { useAuth } from '../auth/AuthProvider';
 import { useTheme } from '../theme/ThemeProvider';
 import { useSupabase } from '../supabase/SupabaseProvider';
@@ -56,6 +58,9 @@ interface StudentStats {
   achievements: number;
   completedAssignments: number;
   totalAssignments: number;
+  strongWords?: number;
+  weakWords?: number;
+  vocabularyAccuracy?: number;
 }
 
 // =====================================================
@@ -205,6 +210,7 @@ export default function ModernStudentDashboard({
   const [studentStats, setStudentStats] = useState<StudentStats | null>(null);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [dismissedNotifications, setDismissedNotifications] = useState<Set<string>>(new Set());
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [assignments, setAssignments] = useState<any[]>([]);
@@ -275,9 +281,8 @@ export default function ModernStudentDashboard({
           title,
           status,
           due_date,
-          assignment_submissions!inner(
+          assignment_submissions(
             id,
-            status,
             score,
             submitted_at
           )
@@ -302,7 +307,12 @@ export default function ModernStudentDashboard({
       const currentStreak = calculateStreak(recentSessions || []);
 
       // Load recent activity (game sessions and achievements)
-      const recentActivityData = [];
+      const recentActivityData: Array<{
+        type: string;
+        title: string;
+        time: string;
+        xp: number;
+      }> = [];
 
       // Add recent game sessions
       if (recentSessions && recentSessions.length > 0) {
@@ -326,12 +336,13 @@ export default function ModernStudentDashboard({
 
       if (recentAchievements) {
         recentAchievements.forEach(achievement => {
-          const achievementData = JSON.parse(achievement.achievement_data);
+          // achievement_data is already a JSONB object, not a string
+          const achievementData = achievement.achievement_data;
           recentActivityData.push({
             type: 'achievement',
             title: `Earned "${achievementData.name}"`,
             time: formatTimeAgo(achievement.achieved_at),
-            xp: achievementData.xp_reward || 50
+            xp: achievementData.points_awarded || 50
           });
         });
       }
@@ -339,13 +350,73 @@ export default function ModernStudentDashboard({
       // Sort by time and take most recent 3
       setRecentActivity(recentActivityData.slice(0, 3));
 
+      // Get total achievements count
+      const { data: allAchievements } = await supabase
+        .from('achievements')
+        .select('id')
+        .eq('user_id', user.id);
+
       // Calculate stats
       const completedAssignments = assignments?.filter(a =>
-        a.assignment_submissions.some(s => s.status === 'completed')
+        a.assignment_submissions && a.assignment_submissions.length > 0
       ).length || 0;
 
       const totalAssignments = assignments?.length || 0;
       const totalXP = allSessions?.reduce((sum, session) => sum + (session.xp_earned || 0), 0) || 0;
+      const totalAchievements = allAchievements?.length || 0;
+
+      // Calculate vocabulary progress from word performance logs
+      const { data: vocabularyProgress } = await supabase
+        .from('word_performance_logs')
+        .select(`
+          word_text,
+          was_correct,
+          enhanced_game_sessions!inner(student_id)
+        `)
+        .eq('enhanced_game_sessions.student_id', user.id);
+
+      // Calculate vocabulary stats
+      let strongWords = 0;
+      let weakWords = 0;
+      let totalAccuracy = 0;
+
+      if (vocabularyProgress && vocabularyProgress.length > 0) {
+        // Group by word to calculate accuracy per word
+        const wordStats = new Map<string, { correct: number; total: number }>();
+
+        vocabularyProgress.forEach(log => {
+          const word = log.word_text.toLowerCase();
+          if (!wordStats.has(word)) {
+            wordStats.set(word, { correct: 0, total: 0 });
+          }
+          const stats = wordStats.get(word)!;
+          stats.total++;
+          if (log.was_correct) {
+            stats.correct++;
+          }
+        });
+
+        // Calculate strong/weak words and average accuracy
+        let totalWordsWithAttempts = 0;
+        let accuracySum = 0;
+
+        wordStats.forEach((stats, word) => {
+          if (stats.total >= 3) { // Only count words with at least 3 attempts
+            const accuracy = (stats.correct / stats.total) * 100;
+
+            if (accuracy >= 80) {
+              strongWords++;
+            } else if (accuracy < 60) {
+              weakWords++;
+            }
+
+            totalWordsWithAttempts++;
+            accuracySum += accuracy;
+          }
+        });
+
+        totalAccuracy = totalWordsWithAttempts > 0 ? Math.round(accuracySum / totalWordsWithAttempts) : 0;
+      }
 
       // Calculate proper level and XP to next level based on total XP
       const { level, xpToNext } = calculateLevelFromXP(totalXP);
@@ -355,9 +426,12 @@ export default function ModernStudentDashboard({
         xp: totalXP,
         xpToNext,
         streak: currentStreak,
-        achievements: profile?.total_achievements || 0,
+        achievements: totalAchievements,
         completedAssignments,
-        totalAssignments
+        totalAssignments,
+        strongWords,
+        weakWords,
+        vocabularyAccuracy: totalAccuracy
       });
 
     } catch (error) {
@@ -371,7 +445,10 @@ export default function ModernStudentDashboard({
         streak: 0,
         achievements: 0,
         completedAssignments: 0,
-        totalAssignments: 0
+        totalAssignments: 0,
+        strongWords: 0,
+        weakWords: 0,
+        vocabularyAccuracy: 0
       });
     } finally {
       setLoading(false);
@@ -390,26 +467,30 @@ export default function ModernStudentDashboard({
         .order('achieved_at', { ascending: false })
         .limit(5);
 
-      // Get assignment notifications
+      // Get assignment notifications - assignments due in the future
       const { data: assignmentNotifications } = await supabase
         .from('assignments')
-        .select(`
-          id,
-          title,
-          due_date,
-          assignment_submissions!left(status)
-        `)
-        .eq('assignment_submissions.student_id', user.id)
+        .select('id, title, due_date')
         .gte('due_date', new Date().toISOString())
         .order('due_date', { ascending: true })
         .limit(3);
+
+      // Check which assignments have submissions by the current user
+      const assignmentIds = assignmentNotifications?.map(a => a.id) || [];
+      const { data: userSubmissions } = assignmentIds.length > 0 ? await supabase
+        .from('assignment_submissions')
+        .select('assignment_id')
+        .eq('student_id', user.id)
+        .in('assignment_id', assignmentIds) : { data: [] };
+
+      const submittedAssignmentIds = new Set(userSubmissions?.map(s => s.assignment_id) || []);
 
       const notifications = [
         ...(achievements || []).map(a => ({
           id: `achievement-${a.id}`,
           type: 'achievement',
           title: 'New Achievement!',
-          message: `You earned the "${a.name || a.title || 'Unknown Achievement'}" badge!`,
+          message: `You earned the "${a.achievement_data?.name || a.name || a.title || 'Mystery Achievement'}" badge!`,
           timestamp: a.earned_at || a.achieved_at,
           isNew: true
         })),
@@ -419,7 +500,7 @@ export default function ModernStudentDashboard({
           title: 'Assignment Due Soon',
           message: `"${a.title}" is due ${new Date(a.due_date).toLocaleDateString()}`,
           timestamp: a.due_date,
-          isNew: !a.assignment_submissions?.some(s => s.status === 'completed')
+          isNew: !submittedAssignmentIds.has(a.id)
         }))
       ];
 
@@ -430,33 +511,55 @@ export default function ModernStudentDashboard({
     }
   };
 
+  const dismissNotification = (notificationId: string) => {
+    setDismissedNotifications(prev => new Set(prev).add(notificationId));
+  };
+
+  // Filter out dismissed notifications
+  const visibleNotifications = notifications.filter(n => !dismissedNotifications.has(n.id));
+
   const calculateStreak = (sessions: any[]) => {
     if (!sessions || sessions.length === 0) return 0;
 
-    let streak = 0;
-    const today = new Date();
-    const sortedSessions = sessions.sort((a, b) =>
-      new Date(b.started_at).getTime() - new Date(a.started_at).getTime()
-    );
-
-    // Group sessions by date
+    // Group sessions by date (YYYY-MM-DD format)
     const sessionsByDate = new Map();
-    sortedSessions.forEach(session => {
-      const date = new Date(session.started_at).toDateString();
+    sessions.forEach(session => {
+      const date = new Date(session.started_at).toISOString().split('T')[0];
       if (!sessionsByDate.has(date)) {
         sessionsByDate.set(date, []);
       }
       sessionsByDate.get(date).push(session);
     });
 
-    // Calculate consecutive days
-    let currentDate = new Date(today);
-    while (true) {
-      const dateStr = currentDate.toDateString();
-      if (sessionsByDate.has(dateStr)) {
+    // Get unique dates and sort them descending (most recent first)
+    const uniqueDates = Array.from(sessionsByDate.keys()).sort().reverse();
+    
+    if (uniqueDates.length === 0) return 0;
+
+    let streak = 0;
+    const today = new Date().toISOString().split('T')[0];
+    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+    // Start checking from either today (if user has activity today) or yesterday
+    let startDate = uniqueDates[0];
+    
+    // If most recent activity is more than 1 day old, streak is broken
+    if (startDate !== today && startDate !== yesterday) {
+      return 0;
+    }
+
+    // Calculate consecutive days working backwards from the start date
+    let currentDateToCheck = startDate;
+    
+    for (const activityDate of uniqueDates) {
+      if (activityDate === currentDateToCheck) {
         streak++;
-        currentDate.setDate(currentDate.getDate() - 1);
+        // Move to previous day
+        const prevDate = new Date(currentDateToCheck);
+        prevDate.setDate(prevDate.getDate() - 1);
+        currentDateToCheck = prevDate.toISOString().split('T')[0];
       } else {
+        // There's a gap in the dates, so the streak ends
         break;
       }
     }
@@ -470,7 +573,7 @@ export default function ModernStudentDashboard({
     try {
       setAssignmentsLoading(true);
 
-      // Get assignments for this student
+      // Get ALL assignments, not just those with submissions
       const { data: assignmentData, error } = await supabase
         .from('assignments')
         .select(`
@@ -478,25 +581,12 @@ export default function ModernStudentDashboard({
           title,
           description,
           type,
-          difficulty,
-          estimated_time,
+          time_limit,
           due_date,
-          max_score,
-          xp_reward,
-          language,
-          topics,
-          requirements,
-          max_attempts,
-          assignment_submissions!left(
-            id,
-            status,
-            score,
-            progress,
-            attempts,
-            submitted_at
-          )
+          points,
+          game_type,
+          max_attempts
         `)
-        .eq('assignment_submissions.student_id', user.id)
         .order('due_date', { ascending: true });
 
       if (error) {
@@ -505,26 +595,40 @@ export default function ModernStudentDashboard({
         return;
       }
 
+      // Get submissions for this student separately
+      const assignmentIds = assignmentData?.map(a => a.id) || [];
+      const { data: submissionData } = assignmentIds.length > 0 ? await supabase
+        .from('assignment_submissions')
+        .select('assignment_id, status, score, progress, attempts, submitted_at')
+        .eq('student_id', user.id)
+        .in('assignment_id', assignmentIds) : { data: [] };
+
+      // Create a map of submissions by assignment_id
+      const submissionMap = new Map();
+      (submissionData || []).forEach(sub => {
+        submissionMap.set(sub.assignment_id, sub);
+      });
+
       // Transform the data to match the expected format
       const transformedAssignments = (assignmentData || []).map(assignment => {
-        const submission = assignment.assignment_submissions?.[0];
+        const submission = submissionMap.get(assignment.id);
 
         return {
           id: assignment.id,
           title: assignment.title,
           description: assignment.description,
-          type: assignment.type || 'vocabulary',
-          difficulty: assignment.difficulty || 'beginner',
-          estimatedTime: assignment.estimated_time || 30,
+          type: assignment.game_type || assignment.type || 'vocabulary',
+          difficulty: 'beginner', // Default since column may not exist
+          estimatedTime: assignment.time_limit || 30,
           dueDate: new Date(assignment.due_date),
           status: submission?.status || 'not_started',
           progress: submission?.progress || 0,
           score: submission?.score || 0,
-          maxScore: assignment.max_score || 100,
-          xpReward: assignment.xp_reward || 100,
-          language: assignment.language || 'Spanish',
-          topics: assignment.topics || [],
-          requirements: assignment.requirements || [],
+          maxScore: assignment.points || 100,
+          xpReward: assignment.points || 100,
+          language: 'Spanish', // Default language since not stored in assignments
+          topics: [], // Default topics since not stored in assignments
+          requirements: [], // Default requirements since not stored in assignments
           attempts: submission?.attempts || 0,
           maxAttempts: assignment.max_attempts || 3,
           isLocked: false
@@ -718,6 +822,81 @@ export default function ModernStudentDashboard({
         />
       </div>
 
+      {/* Vocabulary Insights */}
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-gray-900">Vocabulary Progress</h2>
+          <Link
+            href="/student-dashboard/vocabulary/analysis"
+            className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center space-x-1"
+          >
+            <span>View Analysis</span>
+            <ChevronRight className="h-4 w-4" />
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-green-500 rounded-lg">
+                <CheckCircle className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <div className="text-lg font-bold text-green-800">
+                  {loading ? '...' : (studentStats?.strongWords || 0)}
+                </div>
+                <div className="text-sm text-green-600">Strong Words</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-red-500 rounded-lg">
+                <AlertCircle className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <div className="text-lg font-bold text-red-800">
+                  {loading ? '...' : (studentStats?.weakWords || 0)}
+                </div>
+                <div className="text-sm text-red-600">Weak Words</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-blue-500 rounded-lg">
+                <BarChart3 className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <div className="text-lg font-bold text-blue-800">
+                  {loading ? '...' : `${studentStats?.vocabularyAccuracy || 0}%`}
+                </div>
+                <div className="text-sm text-blue-600">Avg Accuracy</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-4 flex flex-wrap gap-2">
+          <Link
+            href="/student-dashboard/vocabulary/practice?focus=weak"
+            className="bg-red-600 text-white px-3 py-2 rounded-lg text-sm hover:bg-red-700 transition-colors flex items-center space-x-1"
+          >
+            <PlayCircle className="h-4 w-4" />
+            <span>Practice Weak Words</span>
+          </Link>
+          <Link
+            href="/student-dashboard/vocabulary/categories"
+            className="bg-orange-600 text-white px-3 py-2 rounded-lg text-sm hover:bg-orange-700 transition-colors flex items-center space-x-1"
+          >
+            <BarChart3 className="h-4 w-4" />
+            <span>Category Performance</span>
+          </Link>
+        </div>
+      </div>
+
       {/* Quick Actions */}
       <div>
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
@@ -835,9 +1014,9 @@ export default function ModernStudentDashboard({
       case 'assignments':
         return (
           <div className="space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <h2 className="text-2xl font-bold text-gray-900 student-font-display">My Assignments</h2>
-              <div className="flex items-center space-x-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <select className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                   <option>All Subjects</option>
                   <option>Spanish</option>
@@ -857,7 +1036,7 @@ export default function ModernStudentDashboard({
             <AssignmentProgressTracker studentId={user?.id} />
 
             {/* Enhanced Assignment Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-6">
               {assignmentsLoading ? (
                 // Loading skeleton
                 Array.from({ length: 3 }).map((_, index) => (
@@ -988,7 +1167,7 @@ export default function ModernStudentDashboard({
                 Welcome back, {user?.user_metadata?.first_name || user?.user_metadata?.name || user?.email?.split('@')[0] || 'Student'}!
               </h1>
               <p className="text-gray-600 mt-1">
-                Level {studentStats?.level || 1} • {studentStats?.totalXP || 0} XP • {studentStats?.currentStreak || 0} day streak
+                Level {studentStats?.level || 1} • {studentStats?.xp || 0} XP • {studentStats?.streak || 0} day streak
               </p>
             </div>
 
@@ -999,9 +1178,9 @@ export default function ModernStudentDashboard({
                 onClick={() => setShowNotifications(!showNotifications)}
               >
                 <Bell className="h-5 w-5" />
-                {notifications.length > 0 && (
+                {visibleNotifications.length > 0 && (
                   <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">
-                    {notifications.length}
+                    {visibleNotifications.length}
                   </span>
                 )}
               </button>
@@ -1019,12 +1198,12 @@ export default function ModernStudentDashboard({
                       <h3 className="font-semibold text-gray-900">Notifications</h3>
                     </div>
                     <div className="max-h-64 overflow-y-auto">
-                      {notifications.length === 0 ? (
+                      {visibleNotifications.length === 0 ? (
                         <div className="p-4 text-center text-gray-500">
                           No new notifications
                         </div>
                       ) : (
-                        notifications.map((notification) => (
+                        visibleNotifications.map((notification) => (
                           <div key={notification.id} className="p-3 border-b border-gray-100 hover:bg-gray-50">
                             <div className="flex items-start space-x-3">
                               <div className={`p-1 rounded-full ${
@@ -1047,6 +1226,16 @@ export default function ModernStudentDashboard({
                                   {notification.timestamp ? new Date(notification.timestamp).toLocaleDateString() : 'Recently'}
                                 </p>
                               </div>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  dismissNotification(notification.id);
+                                }}
+                                className="text-gray-400 hover:text-gray-600 text-xs px-2 py-1 rounded hover:bg-gray-100"
+                                title="Dismiss"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
                             </div>
                           </div>
                         ))
@@ -1061,9 +1250,9 @@ export default function ModernStudentDashboard({
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex gap-6">
+        <div className="flex flex-col lg:flex-row gap-6">
           {/* Desktop Sidebar - Hidden on Mobile */}
-          <aside className="hidden lg:block w-80 flex-shrink-0">
+          <aside className="lg:w-80 lg:flex-shrink-0">
             <div className="space-y-3">
               {navigationItems.map((item) => (
                 <NavigationCard
@@ -1077,7 +1266,7 @@ export default function ModernStudentDashboard({
           </aside>
 
           {/* Main Content */}
-          <main className="flex-1 min-w-0">
+          <main className="flex-1 min-w-0 overflow-hidden">
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentView}

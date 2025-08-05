@@ -488,21 +488,21 @@ export class EnhancedStudentAnalyticsService {
 
   private async getVocabularyMastery(studentId: string, dateRange?: { from: string; to: string }): Promise<VocabularyMasteryData> {
     const { data: vocabularyProgress } = await this.supabase
-      .from('student_vocabulary_practice')
+      .from('user_vocabulary_progress')
       .select(`
         vocabulary_id,
-        mastery_level,
-        correct_count,
-        incorrect_count,
-        last_practiced_at,
-        centralized_vocabulary (
-          word,
-          translation,
-          category,
-          subcategory
+        times_seen,
+        times_correct,
+        is_learned,
+        last_seen,
+        vocabulary:vocabulary_id (
+          spanish,
+          english,
+          theme,
+          topic
         )
       `)
-      .eq('student_id', studentId);
+      .eq('user_id', studentId);
 
     if (!vocabularyProgress) {
       return {
@@ -517,25 +517,25 @@ export class EnhancedStudentAnalyticsService {
     }
 
     const totalWords = vocabularyProgress.length;
-    const masteredWords = vocabularyProgress.filter(v => v.mastery_level >= 4).length;
-    const wordsInProgress = vocabularyProgress.filter(v => v.mastery_level >= 1 && v.mastery_level < 4).length;
+    const masteredWords = vocabularyProgress.filter(v => v.is_learned).length;
+    const wordsInProgress = vocabularyProgress.filter(v => v.times_seen > 0 && !v.is_learned).length;
     const wordsNeedingReview = vocabularyProgress.filter(v => {
-      const daysSinceLastPractice = v.last_practiced_at
-        ? Math.floor((Date.now() - new Date(v.last_practiced_at).getTime()) / (1000 * 60 * 60 * 24))
+      const daysSinceLastPractice = v.last_seen
+        ? Math.floor((Date.now() - new Date(v.last_seen).getTime()) / (1000 * 60 * 60 * 24))
         : 999;
-      return daysSinceLastPractice > 7 && v.mastery_level > 0;
+      return daysSinceLastPractice > 7 && v.times_seen > 0;
     }).length;
 
     // Category breakdown
     const categoryGroups = vocabularyProgress.reduce((acc, vocab) => {
-      const category = vocab.centralized_vocabulary?.category || 'Unknown';
+      const category = vocab.vocabulary?.theme || 'Unknown';
       if (!acc[category]) {
         acc[category] = { total: 0, mastered: 0, totalCorrect: 0, totalAttempts: 0, timeSpent: 0 };
       }
       acc[category].total += 1;
-      if (vocab.mastery_level >= 4) acc[category].mastered += 1;
-      acc[category].totalCorrect += vocab.correct_count;
-      acc[category].totalAttempts += vocab.correct_count + vocab.incorrect_count;
+      if (vocab.is_learned) acc[category].mastered += 1;
+      acc[category].totalCorrect += vocab.times_correct;
+      acc[category].totalAttempts += vocab.times_seen;
       return acc;
     }, {} as Record<string, any>);
 
@@ -549,16 +549,16 @@ export class EnhancedStudentAnalyticsService {
 
     // Recently learned words
     const recentlyLearned: RecentWord[] = vocabularyProgress
-      .filter(v => v.mastery_level >= 4 && v.last_practiced_at)
-      .sort((a, b) => new Date(b.last_practiced_at!).getTime() - new Date(a.last_practiced_at!).getTime())
+      .filter(v => v.is_learned && v.last_seen)
+      .sort((a, b) => new Date(b.last_seen!).getTime() - new Date(a.last_seen!).getTime())
       .slice(0, 10)
       .map(vocab => ({
-        word: vocab.centralized_vocabulary?.word || '',
-        translation: vocab.centralized_vocabulary?.translation || '',
-        category: vocab.centralized_vocabulary?.category || '',
-        masteredAt: vocab.last_practiced_at || '',
-        accuracy: vocab.correct_count + vocab.incorrect_count > 0
-          ? Math.round((vocab.correct_count / (vocab.correct_count + vocab.incorrect_count)) * 100)
+        word: vocab.vocabulary?.spanish || '',
+        translation: vocab.vocabulary?.english || '',
+        category: vocab.vocabulary?.theme || '',
+        masteredAt: vocab.last_seen || '',
+        accuracy: vocab.times_seen > 0
+          ? Math.round((vocab.times_correct / vocab.times_seen) * 100)
           : 0
       }));
 

@@ -608,15 +608,20 @@ function VocabularyGemCard({ gem }: { gem: GemCollection }) {
       if (gem.id.startsWith('practice-')) {
         // This is from the practice table, get vocabulary info
         const { data, error } = await supabase
-          .from('student_vocabulary_practice')
-          .select('spanish_term, english_translation')
+          .from('user_vocabulary_progress')
+          .select(`
+            vocabulary(
+              spanish,
+              english
+            )
+          `)
           .eq('id', gem.id.replace('practice-', ''))
           .single();
-        
-        if (!error && data) {
-          setVocabularyInfo({ 
-            spanish: data.spanish_term, 
-            english: data.english_translation 
+
+        if (!error && data && data.vocabulary) {
+          setVocabularyInfo({
+            spanish: data.vocabulary.spanish,
+            english: data.vocabulary.english
           });
         }
       } else {

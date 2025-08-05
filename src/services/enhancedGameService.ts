@@ -324,15 +324,25 @@ export class EnhancedGameService {
   // =====================================================
 
   async logWordPerformance(performanceData: WordPerformanceLog): Promise<void> {
-    const { error } = await this.supabase
-      .from('word_performance_logs')
-      .insert({
+    try {
+      // Enrich performance data with language and curriculum_level
+      const enrichedData = {
         ...performanceData,
+        language: performanceData.language || this.deriveLanguageFromContext(performanceData),
+        curriculum_level: performanceData.curriculum_level || await this.deriveCurriculumLevel(performanceData),
         timestamp: new Date()
-      });
+      };
 
-    if (error) {
-      throw new Error(`Failed to log word performance: ${error.message}`);
+      const { error } = await this.supabase
+        .from('word_performance_logs')
+        .insert(enrichedData);
+
+      if (error) {
+        throw new Error(`Failed to log word performance: ${error.message}`);
+      }
+    } catch (error) {
+      console.error('Error in logWordPerformance:', error);
+      throw error;
     }
   }
 
@@ -362,6 +372,75 @@ export class EnhancedGameService {
     }
 
     return data || [];
+  }
+
+  // =====================================================
+  // HELPER METHODS FOR DATA DERIVATION
+  // =====================================================
+
+  /**
+   * Derives language from performance data context
+   * Priority: performanceData.language > language_pair extraction > fallback
+   */
+  private deriveLanguageFromContext(performanceData: WordPerformanceLog): string {
+    // First priority: explicit language field
+    if (performanceData.language) {
+      return performanceData.language;
+    }
+
+    // Second priority: extract from language_pair (e.g., "es_english" -> "es")
+    if (performanceData.language_pair) {
+      const parts = performanceData.language_pair.split('_');
+      if (parts.length >= 2 && parts[0] !== 'english') {
+        return parts[0];
+      }
+    }
+
+    // Fallback: default to Spanish
+    return 'es';
+  }
+
+  /**
+   * Derives curriculum level from various data sources
+   * Priority: vocabulary lookup > assignment lookup > fallback
+   */
+  private async deriveCurriculumLevel(performanceData: WordPerformanceLog): Promise<string> {
+    try {
+      // First priority: lookup from centralized_vocabulary using vocabulary_id
+      if (performanceData.vocabulary_id) {
+        const { data: vocabData, error: vocabError } = await this.supabase
+          .from('centralized_vocabulary')
+          .select('curriculum_level')
+          .eq('id', performanceData.vocabulary_id)
+          .single();
+
+        if (!vocabError && vocabData?.curriculum_level) {
+          return vocabData.curriculum_level;
+        }
+      }
+
+      // Second priority: lookup from assignments via session_id
+      if (performanceData.session_id) {
+        const { data: sessionData, error: sessionError } = await this.supabase
+          .from('enhanced_game_sessions')
+          .select(`
+            assignment_id,
+            assignments!inner(curriculum_level)
+          `)
+          .eq('id', performanceData.session_id)
+          .single();
+
+        if (!sessionError && sessionData?.assignments?.curriculum_level) {
+          return sessionData.assignments.curriculum_level;
+        }
+      }
+
+      // Fallback: default to KS3
+      return 'KS3';
+    } catch (error) {
+      console.error('Error deriving curriculum level:', error);
+      return 'KS3';
+    }
   }
 
   // =====================================================

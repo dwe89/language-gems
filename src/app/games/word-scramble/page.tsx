@@ -58,13 +58,28 @@ export default function WordScramblePage() {
             theme: assignment.game_config?.theme || 'classic'
           };
 
+          // Convert assignment config to legacy settings format
+          const legacySettings = {
+            difficulty: assignment.game_config?.difficulty || 'medium',
+            category: assignmentConfig.categoryId,
+            language: assignmentConfig.language,
+            gameMode: assignment.game_config?.gameMode || 'classic',
+            subcategory: assignmentConfig.subcategoryId,
+            curriculumLevel: assignmentConfig.curriculumLevel
+          };
+
           return (
             <WordScrambleGameEnhanced
-              config={assignmentConfig}
-              vocabulary={vocabulary}
+              settings={legacySettings}
+              categoryVocabulary={vocabulary}
               onBackToMenu={() => router.push('/games/word-scramble')}
-              onGameComplete={onGameComplete}
-              assignmentMode={true}
+              onGameEnd={(result) => {
+                console.log('Word Scramble assignment ended:', result);
+                onGameComplete(result);
+              }}
+              assignmentId={assignmentId}
+              userId={user?.id}
+              isAssignmentMode={true}
             />
           );
         }}
@@ -193,8 +208,10 @@ export default function WordScramblePage() {
               }, 3000);
             }
           }}
+          categoryVocabulary={gameConfig.vocabulary || []}
           assignmentId={assignmentId}
           userId={user?.id}
+          isAssignmentMode={!!assignmentId}
           onOpenSettings={handleOpenConfigPanel}
         />
 

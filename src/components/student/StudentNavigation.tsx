@@ -5,20 +5,69 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { useAuth } from '../auth/AuthProvider';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Sparkles, 
-  Trophy, 
-  BookOpen, 
-  Gamepad2, 
-  BarChart3, 
-  User, 
-  LogOut, 
-  Menu, 
+import {
+  Sparkles,
+  Trophy,
+  BookOpen,
+  Gamepad2,
+  BarChart3,
+  User,
+  LogOut,
+  Menu,
   X,
   Gem,
   Star,
-  Zap
+  Zap,
+  Home,
+  Edit,
+  Brain
 } from 'lucide-react';
+
+// Navigation items for student dashboard
+const navItems = [
+  {
+    name: 'Dashboard',
+    href: '/student-dashboard',
+    icon: Home,
+    description: 'Overview and quick actions'
+  },
+  {
+    name: 'Assignments',
+    href: '/student-dashboard/assignments',
+    icon: BookOpen,
+    description: 'Current and upcoming tasks'
+  },
+  {
+    name: 'Games',
+    href: '/student-dashboard/games',
+    icon: Gamepad2,
+    description: 'Practice with fun games'
+  },
+  {
+    name: 'Progress',
+    href: '/student-dashboard/progress',
+    icon: BarChart3,
+    description: 'Track your learning journey'
+  },
+  {
+    name: 'Vocabulary',
+    href: '/student-dashboard/vocabulary',
+    icon: Brain,
+    description: 'Review your vocabulary progress'
+  },
+  {
+    name: 'Assessments',
+    href: '/assessments',
+    icon: Edit,
+    description: 'Take practice assessments'
+  },
+  {
+    name: 'Achievements',
+    href: '/student-dashboard/achievements',
+    icon: Trophy,
+    description: 'View your badges and rewards'
+  }
+];
 
 export default function StudentNavigation() {
   const pathname = usePathname();
@@ -74,7 +123,29 @@ export default function StudentNavigation() {
               <p className="text-xs text-white/80">Student Portal</p>
             </div>
           </Link>
-                
+
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex items-center space-x-1">
+            {navItems.slice(0, 5).map((item) => {
+              const Icon = item.icon;
+              const active = isActive(item.href);
+
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-all ${
+                    active
+                      ? 'bg-white/20 text-white'
+                      : 'text-white/80 hover:text-white hover:bg-white/10'
+                  }`}
+                >
+                  <Icon className="h-4 w-4" />
+                  <span className="text-sm font-medium">{item.name}</span>
+                </Link>
+              );
+            })}
+          </nav>
 
           {/* User Menu */}
           <div className="flex items-center space-x-4">

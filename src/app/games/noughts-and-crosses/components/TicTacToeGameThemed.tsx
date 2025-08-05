@@ -688,42 +688,40 @@ export default function TicTacToeGame({
     const isCorrect = selectedIndex === currentQuestion.correctIndex;
     const responseTime = (Date.now() - questionStartTime) / 1000;
 
-    // Log word performance for analytics
-    if (gameService && userId && currentQuestion.word) {
-      gameService.logWordPerformance({
-        session_id: gameSessionId || 'temp-session',
-        vocabulary_id: currentQuestion.id ? parseInt(currentQuestion.id) : undefined,
-        word_text: currentQuestion.word,
-        translation_text: currentQuestion.translation,
-        language_pair: `${settings.language}_english`,
-        attempt_number: 1,
-        response_time_ms: Math.round(responseTime * 1000),
-        was_correct: isCorrect,
-        confidence_level: responseTime < 3 ? 5 : responseTime < 6 ? 4 : responseTime < 10 ? 3 : 2,
-        difficulty_level: settings.difficulty,
-        hint_used: false,
-        streak_count: isCorrect ? correctAnswers + 1 : 0,
-        previous_attempts: 0,
-        mastery_level: isCorrect ? 1 : 0,
-        error_type: isCorrect ? undefined : 'incorrect_selection',
-        grammar_concept: 'vocabulary_recognition',
-        error_details: isCorrect ? undefined : {
-          correctAnswer: currentQuestion.translation,
-          selectedAnswer: currentQuestion.options[selectedIndex],
-          gameMode: 'strategic_vocabulary',
-          boardPosition: pendingMove
-        },
-        context_data: {
-          gameType: 'noughts-and-crosses',
-          gameMode: 'strategic_vocabulary',
-          boardPosition: pendingMove,
-          gameState: gameState,
-          strategicContext: 'cell_placement'
-        },
-        timestamp: new Date()
-      }).catch(error => {
-        console.error('Failed to log word performance:', error);
-      });
+    // Noughts and Crosses is a luck-based game - log word exposure only (not performance)
+    if (gameService && gameSessionId && !isAssignmentMode) {
+      try {
+        gameService.logWordPerformance({
+          session_id: gameSessionId,
+          vocabulary_id: currentQuestion.id ? parseInt(currentQuestion.id) : undefined,
+          word_text: currentQuestion.word,
+          translation_text: currentQuestion.translation,
+          language_pair: `${settings.language === 'spanish' ? 'es' : settings.language === 'french' ? 'fr' : 'en'}_english`,
+          attempt_number: 1,
+          response_time_ms: Math.round(responseTime * 1000),
+          was_correct: isCorrect,
+          confidence_level: 3, // Neutral confidence for luck-based games
+          difficulty_level: 'beginner',
+          hint_used: false,
+          power_up_active: undefined,
+          streak_count: correctAnswers + (isCorrect ? 1 : 0),
+          previous_attempts: 0,
+          mastery_level: 1, // Neutral mastery for luck-based games
+          error_type: isCorrect ? undefined : 'incorrect_selection',
+          grammar_concept: 'vocabulary_exposure',
+          error_details: undefined,
+          context_data: {
+            gameType: 'noughts-and-crosses',
+            isLuckBased: true, // Flag to indicate this is exposure tracking only
+            gameState: board.join(''),
+            totalQuestions: totalQuestions + 1,
+            correctAnswers: correctAnswers + (isCorrect ? 1 : 0)
+          },
+          timestamp: new Date()
+        });
+      } catch (error) {
+        console.error('Failed to log word exposure:', error);
+      }
     }
 
     if (isCorrect) {

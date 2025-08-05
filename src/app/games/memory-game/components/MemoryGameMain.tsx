@@ -647,33 +647,40 @@ export default function MemoryGameMain({
           const responseTime = firstCard.firstAttemptTime ?
             (now.getTime() - firstCard.firstAttemptTime.getTime()) / 1000 : 0;
 
-          // Log word performance for analytics
-          if (gameService && gameSessionId && !isDemo) {
-            gameService.logWordPerformance({
-              session_id: gameSessionId,
-              vocabulary_id: firstCard.vocabularyId,
-              word_text: firstCard.value,
-              translation_text: (firstCard as any).translation || '',
-              language_pair: `${currentLanguage}_english`,
-              attempt_number: 1,
-              response_time_ms: Math.round(responseTime * 1000),
-              was_correct: true,
-              confidence_level: responseTime < 3 ? 5 : responseTime < 6 ? 4 : 3,
-              difficulty_level: currentDifficulty,
-              hint_used: false,
-              streak_count: matches + 1,
-              previous_attempts: 0,
-              mastery_level: 1,
-              context_data: {
-                gameType: 'memory-game',
-                cardPosition: firstCard.id,
-                matchType: 'vocabulary_pair',
-                flipCount: 2
-              },
-              timestamp: now
-            }).catch(error => {
-              console.error('Failed to log word performance:', error);
-            });
+          // Memory Match is a luck-based game - log word exposure only (not performance)
+          if (gameService && gameSessionId && !isDemo && !isAssignmentMode) {
+            try {
+              gameService.logWordPerformance({
+                session_id: gameSessionId,
+                vocabulary_id: firstCard.vocabularyId,
+                word_text: firstCard.word,
+                translation_text: firstCard.translation,
+                language_pair: `${language === 'spanish' ? 'es' : language === 'french' ? 'fr' : 'en'}_english`,
+                attempt_number: 1,
+                response_time_ms: Math.round(responseTime * 1000),
+                was_correct: true, // Always true for matched pairs
+                confidence_level: 3, // Neutral confidence for luck-based games
+                difficulty_level: 'beginner',
+                hint_used: false,
+                power_up_active: undefined,
+                streak_count: matches + 1,
+                previous_attempts: 0,
+                mastery_level: 1, // Neutral mastery for luck-based games
+                error_type: undefined,
+                grammar_concept: 'vocabulary_exposure',
+                error_details: undefined,
+                context_data: {
+                  gameType: 'memory-match',
+                  isLuckBased: true, // Flag to indicate this is exposure tracking only
+                  pairId: firstCard.pairId,
+                  totalMatches: matches + 1,
+                  totalCards: cards.length
+                },
+                timestamp: now
+              });
+            } catch (error) {
+              console.error('Failed to log word exposure:', error);
+            }
           }
 
           // Track vocabulary progress for assignment mode
@@ -739,37 +746,7 @@ export default function MemoryGameMain({
         const responseTime = firstCard.firstAttemptTime ?
           (now.getTime() - firstCard.firstAttemptTime.getTime()) / 1000 : 0;
 
-        // Log word performance for analytics (incorrect match)
-        if (gameService && gameSessionId && !isDemo) {
-          gameService.logWordPerformance({
-            session_id: gameSessionId,
-            vocabulary_id: firstCard.vocabularyId,
-            word_text: firstCard.value,
-            translation_text: (firstCard as any).translation || '',
-            language_pair: `${currentLanguage}_english`,
-            attempt_number: 1,
-            response_time_ms: Math.round(responseTime * 1000),
-            was_correct: false,
-            confidence_level: responseTime < 3 ? 2 : 1, // Lower confidence for incorrect
-            difficulty_level: currentDifficulty,
-            hint_used: false,
-            streak_count: 0, // Reset streak on incorrect
-            previous_attempts: 0,
-            mastery_level: 0,
-            error_type: 'memory_mismatch',
-            grammar_concept: 'vocabulary_recognition',
-            context_data: {
-              gameType: 'memory-game',
-              cardPosition: firstCard.id,
-              matchType: 'vocabulary_pair',
-              flipCount: 2,
-              incorrectMatch: card.value
-            },
-            timestamp: now
-          }).catch(error => {
-            console.error('Failed to log word performance:', error);
-          });
-        }
+        // Memory Match is a luck-based game - no word performance logging needed
 
         // Track vocabulary progress for assignment mode
         if (isAssignmentMode) {

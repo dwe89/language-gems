@@ -4,7 +4,8 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { IoChevronBackOutline, IoVolumeHighOutline, IoVolumeMuteOutline } from 'react-icons/io5';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { useAuth } from '../../../components/auth/AuthProvider';
 import VerbQuestGameWrapper from './components/VerbQuestGameWrapper';
 import CharacterCreation from './components/CharacterCreation';
 import GameAssignmentWrapper from '../../../components/games/templates/GameAssignmentWrapper';
@@ -13,6 +14,8 @@ import { QuestSystem } from './components/QuestSystem';
 
 export default function VerbQuestPage() {
   // Check for assignment mode
+  const { user } = useAuth();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const assignmentId = searchParams?.get('assignment');
   const mode = searchParams?.get('mode');
@@ -81,18 +84,24 @@ export default function VerbQuestPage() {
             router.push('/student-dashboard');
           };
 
+          // Create a default character for assignment mode
+          const assignmentCharacter = new Character('Student', 'warrior');
+          const assignmentQuestSystem = new QuestSystem();
+
           return (
             <VerbQuestGameWrapper
+              character={assignmentCharacter}
+              questSystem={assignmentQuestSystem}
               onBackToMenu={handleBackToAssignments}
-              onGameEnd={handleGameComplete}
-              assignmentId={assignment.id}
-              userId={user?.id}
+              onGameComplete={handleGameComplete}
               assignmentMode={true}
               assignmentConfig={{
+                assignmentId: assignment.id,
                 language: assignment.vocabulary_criteria?.language || 'spanish',
                 verbs: verbs,
                 curriculum_level: assignment.curriculum_level
               }}
+              userId={user?.id}
             />
           );
         }}

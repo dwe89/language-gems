@@ -120,8 +120,20 @@ export default function HangmanPage() {
     router.push('/student-dashboard/assignments');
   };
 
+  // Show loading while authenticating (applies to both modes)
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-600 via-blue-600 to-indigo-700 flex items-center justify-center">
+        <div className="text-center text-white">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-white mx-auto mb-4"></div>
+          <p className="text-xl">Loading Hangman Game...</p>
+        </div>
+      </div>
+    );
+  }
+
   // If assignment mode, render assignment wrapper (after all hooks are initialized)
-  if (assignmentId && mode === 'assignment') {
+  if (isAssignmentMode) {
     if (!user) {
       return (
         <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center">
@@ -371,22 +383,10 @@ export default function HangmanPage() {
   }, []);
 
   // Conditional logic after all hooks are initialized
-  // Only redirect to login if not in demo mode and not authenticated
-  if (!isLoading && !user && !isDemo) {
+  // Only redirect to login if not in demo mode and not authenticated (but not in assignment mode)
+  if (!isLoading && !user && !isDemo && !isAssignmentMode) {
     router.push('/auth/login');
     return null;
-  }
-
-  // Show loading while authenticating
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-600 via-blue-600 to-indigo-700 flex items-center justify-center">
-        <div className="text-center text-white">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-white mx-auto mb-4"></div>
-          <p className="text-xl">Loading Hangman Game...</p>
-        </div>
-      </div>
-    );
   }
 
   const toggleFullscreen = () => {

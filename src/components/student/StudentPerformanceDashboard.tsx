@@ -6,7 +6,7 @@ import {
   TrendingUp, Trophy, Target, Clock, Star, Zap, Brain, Heart,
   BookOpen, Award, Flame, Calendar, BarChart3, PieChart,
   ChevronRight, ChevronDown, RefreshCw, Filter, Eye,
-  Gem, Crown, Medal, Sparkles, Activity, Users
+  Gem, Crown, Medal, Sparkles, Activity, Users, PlayCircle
 } from 'lucide-react';
 import { useAuth } from '../auth/AuthProvider';
 import { useSupabase } from '../supabase/SupabaseProvider';

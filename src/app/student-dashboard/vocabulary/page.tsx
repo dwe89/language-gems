@@ -6,10 +6,10 @@ export const dynamic = 'force-dynamic';
 import { useAuth } from '../../../components/auth/AuthProvider';
 import { useSupabase } from '../../../components/supabase/SupabaseProvider';
 import Link from 'next/link';
-import { 
-  CheckCircle, XCircle, Clock, BookOpen, 
-  BarChart2, Filter, Search, Calendar, 
-  ListFilter, ArrowUpDown, PlayCircle
+import {
+  CheckCircle, XCircle, Clock, BookOpen,
+  BarChart2, Filter, Search, Calendar,
+  ListFilter, ArrowUpDown, PlayCircle, Brain
 } from 'lucide-react';
 
 // Proficiency level labels and colors
@@ -48,30 +48,26 @@ export default function VocabularyDashboard() {
       setLoading(true);
       
       try {
-        // Query vocabulary practice data from the centralized table
+        // Query vocabulary practice data from the user_vocabulary_progress table
         const { data: progressData, error } = await supabase
-          .from('student_vocabulary_practice')
+          .from('user_vocabulary_progress')
           .select(`
             id,
             vocabulary_id,
-            mastery_level,
-            correct_count,
-            incorrect_count,
-            last_practiced_at,
-            next_review_at,
-            centralized_vocabulary!inner(
+            times_seen,
+            times_correct,
+            last_seen,
+            is_learned,
+            vocabulary!inner(
               id,
-              word,
-              translation,
-              example_sentence_original,
-              example_sentence_translation,
-              category,
-              subcategory,
-              difficulty_level,
-              language
+              spanish,
+              english,
+              theme,
+              topic,
+              difficulty_level
             )
           `)
-          .eq('student_id', user.id);
+          .eq('user_id', user.id);
 
         if (error) {
           console.error('Error fetching vocabulary progress:', error);
@@ -82,23 +78,23 @@ export default function VocabularyDashboard() {
         const processedItems = progressData.map(item => ({
           progressId: item.id,
           vocabularyItemId: item.vocabulary_id,
-          term: item.centralized_vocabulary.word,
-          translation: item.centralized_vocabulary.translation,
-          exampleSentence: item.centralized_vocabulary.example_sentence_original || '',
-          exampleTranslation: item.centralized_vocabulary.example_sentence_translation || '',
-          imageUrl: undefined, // Not available in centralized vocabulary
-          audioUrl: undefined, // Not available in centralized vocabulary
-          proficiencyLevel: item.mastery_level,
-          correctAnswers: item.correct_count,
-          incorrectAnswers: item.incorrect_count,
-          lastPracticed: item.last_practiced_at,
-          nextReview: item.next_review_at,
-          listId: item.centralized_vocabulary.category,
-          listName: item.centralized_vocabulary.category,
-          themeId: item.centralized_vocabulary.category,
-          topicId: item.centralized_vocabulary.subcategory,
-          accuracy: item.correct_count + item.incorrect_count > 0
-            ? Math.round((item.correct_count / (item.correct_count + item.incorrect_count)) * 100)
+          term: item.vocabulary.spanish,
+          translation: item.vocabulary.english,
+          exampleSentence: '', // Not available in vocabulary table
+          exampleTranslation: '', // Not available in vocabulary table
+          imageUrl: undefined, // Not available in vocabulary table
+          audioUrl: undefined, // Not available in vocabulary table
+          proficiencyLevel: item.is_learned ? 5 : (item.times_seen > 0 ? Math.min(Math.floor((item.times_correct / item.times_seen) * 5) + 1, 5) : 1),
+          correctAnswers: item.times_correct,
+          incorrectAnswers: (item.times_seen || 0) - (item.times_correct || 0),
+          lastPracticed: item.last_seen,
+          nextReview: null, // Not available in current schema
+          listId: item.vocabulary.theme,
+          listName: item.vocabulary.theme,
+          themeId: item.vocabulary.theme,
+          topicId: item.vocabulary.topic,
+          accuracy: item.times_seen > 0
+            ? Math.round((item.times_correct / item.times_seen) * 100)
             : 0
         }));
         
@@ -270,6 +266,14 @@ export default function VocabularyDashboard() {
         
         <Link href="/student-dashboard/vocabulary/progress" className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-md flex items-center">
           <BarChart2 className="mr-2 h-5 w-5" /> View Progress
+        </Link>
+
+        <Link href="/student-dashboard/vocabulary/analysis" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center">
+          <Brain className="mr-2 h-5 w-5" /> Vocabulary Analysis
+        </Link>
+
+        <Link href="/student-dashboard/vocabulary/categories" className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-md flex items-center">
+          <BarChart2 className="mr-2 h-5 w-5" /> Category Performance
         </Link>
       </div>
       

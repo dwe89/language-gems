@@ -490,6 +490,7 @@ function ImprovedSentenceTowersGame({
   const { user } = useAuth();
   const { supabase } = useSupabase();
   const [enhancedGameService, setEnhancedGameService] = useState<EnhancedGameService | null>(null);
+  const [gameSessionId, setGameSessionId] = useState<string | null>(null);
 
   // Initialize Enhanced Game Service
   useEffect(() => {
@@ -919,7 +920,7 @@ function ImprovedSentenceTowersGame({
     if (enhancedGameService && user) {
       const responseTime = (Date.now() - questionStartTime) / 1000;
       enhancedGameService.logWordPerformance({
-        session_id: 'temp-session', // Will be replaced with actual session ID when available
+        session_id: gameSessionId || 'fallback-session',
         vocabulary_id: option.id ? parseInt(option.id) : undefined,
         word_text: option.word,
         translation_text: option.translation,
@@ -1211,7 +1212,7 @@ function ImprovedSentenceTowersGame({
     return styles[type];
   };
 
-  const startGame = () => {
+  const startGame = async () => {
     setGameState({
       status: 'playing',
       score: 0,
@@ -1243,7 +1244,22 @@ function ImprovedSentenceTowersGame({
     }));
     setVocabulary(resetVocabulary);
     generateWordOptions();
-    
+
+    // Start game session for analytics
+    if (enhancedGameService && user) {
+      try {
+        const sessionId = await enhancedGameService.startGameSession({
+          student_id: user.id,
+          game_type: 'sentence-towers',
+          session_mode: 'free_play'
+        });
+        setGameSessionId(sessionId);
+        console.log('Sentence Towers game session started:', sessionId);
+      } catch (error) {
+        console.error('Failed to start game session:', error);
+      }
+    }
+
     // Start background music
     sounds.playBackgroundMusic();
   };

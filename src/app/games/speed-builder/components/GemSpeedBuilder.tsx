@@ -755,33 +755,40 @@ const GemSpeedBuilderInternal: React.FC<{
 
   // Start game session
   const startGame = async () => {
-    try {
-      const response = await fetch('/api/games/speed-builder/sessions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'start',
-          assignmentId,
-          gameMode: mode,
-          settings: {
-            timeLimit: 120,
-            difficulty: 'medium',
-            tier: tier || 'Foundation'
-          }
-        })
-      });
+    // Use enhanced game service if available, otherwise fall back to legacy API
+    if (gameService && gameSessionId) {
+      console.log('Speed Builder: Using enhanced session tracking with session ID:', gameSessionId);
+      setSessionId(gameSessionId);
+    } else {
+      console.log('Speed Builder: Falling back to legacy session tracking');
+      try {
+        const response = await fetch('/api/games/speed-builder/sessions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'start',
+            assignmentId,
+            gameMode: mode,
+            settings: {
+              timeLimit: 120,
+              difficulty: 'medium',
+              tier: tier || 'Foundation'
+            }
+          })
+        });
 
-      if (response.ok) {
-        const data = await response.json();
-        setSessionId(data.sessionId);
-      } else {
+        if (response.ok) {
+          const data = await response.json();
+          setSessionId(data.sessionId);
+        } else {
+          // Demo mode - generate a local session ID
+          setSessionId(`demo-${Date.now()}`);
+        }
+      } catch (error) {
+        console.error('Error starting session:', error);
         // Demo mode - generate a local session ID
         setSessionId(`demo-${Date.now()}`);
       }
-    } catch (error) {
-      console.error('Error starting session:', error);
-      // Demo mode - generate a local session ID
-      setSessionId(`demo-${Date.now()}`);
     }
 
     playSound('ui');
@@ -1050,8 +1057,11 @@ const GemSpeedBuilderInternal: React.FC<{
 
   const endGame = async () => {
     setGameState('completed');
-    
-    if (sessionId && !sessionId.startsWith('demo-')) {
+
+    // Enhanced session tracking is handled by SpeedBuilderGameWrapper
+    // Legacy session tracking for backward compatibility
+    if (sessionId && !sessionId.startsWith('demo-') && !gameService) {
+      console.log('Speed Builder: Ending legacy session');
       try {
         await fetch('/api/games/speed-builder/sessions', {
           method: 'POST',
@@ -1077,8 +1087,10 @@ const GemSpeedBuilderInternal: React.FC<{
           })
         });
       } catch (error) {
-        console.error('Error ending session:', error);
+        console.error('Error ending legacy session:', error);
       }
+    } else if (gameService) {
+      console.log('Speed Builder: Enhanced session tracking handled by wrapper');
     }
 
     // Celebration confetti

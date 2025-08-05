@@ -8,6 +8,7 @@ import {
   TrendingUp, CheckCircle, Lock, Sparkles,
   Gift, Calendar, Gem, Shield, Rocket, Mountain
 } from 'lucide-react';
+import { useSupabase } from '../supabase/SupabaseProvider';
 
 // =====================================================
 // TYPES AND INTERFACES
@@ -250,14 +251,73 @@ export default function AchievementSystem({
   studentId,
   showNotifications = true
 }: AchievementSystemProps) {
+  const { supabase } = useSupabase();
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [newAchievement, setNewAchievement] = useState<Achievement | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedTier, setSelectedTier] = useState<string>('all');
 
-  // Mock achievements data
+  // Helper function to calculate streak
+  const calculateStreak = async (sessions: any[]): Promise<number> => {
+    if (!sessions || sessions.length === 0) return 0;
+
+    const sortedSessions = sessions
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+    let streak = 0;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    for (let i = 0; i < sortedSessions.length; i++) {
+      const sessionDate = new Date(sortedSessions[i].created_at);
+      sessionDate.setHours(0, 0, 0, 0);
+
+      const daysDiff = Math.floor((today.getTime() - sessionDate.getTime()) / (1000 * 60 * 60 * 24));
+
+      if (daysDiff === streak) {
+        streak++;
+      } else if (daysDiff > streak) {
+        break;
+      }
+    }
+
+    return streak;
+  };
+
+  // Load real achievements data
   useEffect(() => {
-    const mockAchievements: Achievement[] = [
+    loadRealAchievements();
+  }, [studentId]);
+
+  const loadRealAchievements = async () => {
+    if (!studentId) return;
+
+    try {
+      // Get student's actual progress data
+      const { data: sessions } = await supabase
+        .from('enhanced_game_sessions')
+        .select('*')
+        .eq('student_id', studentId);
+
+      const { data: vocabularyProgress } = await supabase
+        .from('user_vocabulary_progress')
+        .select('*')
+        .eq('user_id', studentId);
+
+      const { data: assignments } = await supabase
+        .from('enhanced_assignment_progress')
+        .select('*')
+        .eq('student_id', studentId);
+
+      // Calculate real achievement progress
+      const completedAssignments = assignments?.filter(a => a.status === 'completed').length || 0;
+      const totalSessions = sessions?.length || 0;
+      const learnedWords = vocabularyProgress?.filter(v => v.is_learned).length || 0;
+      const totalXP = sessions?.reduce((sum, s) => sum + (s.xp_earned || 0), 0) || 0;
+      const perfectScores = sessions?.filter(s => s.accuracy_percentage === 100).length || 0;
+      const currentStreak = await calculateStreak(sessions || []);
+
+      const realAchievements: Achievement[] = [
       {
         id: '1',
         title: 'First Steps',
@@ -266,10 +326,10 @@ export default function AchievementSystem({
         category: 'learning',
         tier: 'bronze',
         points: 50,
-        progress: 1,
+        progress: Math.min(completedAssignments, 1),
         maxProgress: 1,
-        unlocked: true,
-        unlockedAt: new Date(Date.now() - 86400000),
+        unlocked: completedAssignments >= 1,
+        unlockedAt: completedAssignments >= 1 ? new Date(assignments?.[0]?.completed_at || Date.now()) : undefined,
         rarity: 'common'
       },
       {
@@ -280,10 +340,10 @@ export default function AchievementSystem({
         category: 'streak',
         tier: 'gold',
         points: 200,
-        progress: 7,
+        progress: Math.min(currentStreak, 7),
         maxProgress: 7,
-        unlocked: true,
-        unlockedAt: new Date(),
+        unlocked: currentStreak >= 7,
+        unlockedAt: currentStreak >= 7 ? new Date() : undefined,
         rarity: 'rare'
       },
       {
@@ -294,9 +354,9 @@ export default function AchievementSystem({
         category: 'mastery',
         tier: 'silver',
         points: 150,
-        progress: 73,
+        progress: Math.min(learnedWords, 100),
         maxProgress: 100,
-        unlocked: false,
+        unlocked: learnedWords >= 100,
         rarity: 'common'
       },
       {
@@ -307,9 +367,9 @@ export default function AchievementSystem({
         category: 'special',
         tier: 'platinum',
         points: 300,
-        progress: 2,
+        progress: Math.min(sessions?.filter(s => s.duration_seconds <= 120).length || 0, 5),
         maxProgress: 5,
-        unlocked: false,
+        unlocked: (sessions?.filter(s => s.duration_seconds <= 120).length || 0) >= 5,
         rarity: 'epic'
       },
       {
@@ -320,42 +380,49 @@ export default function AchievementSystem({
         category: 'mastery',
         tier: 'gold',
         points: 250,
-        progress: 0,
+        progress: Math.min(perfectScores, 1),
         maxProgress: 1,
-        unlocked: false,
+        unlocked: perfectScores >= 1,
         rarity: 'rare'
       },
       {
         id: '6',
-        title: 'Social Butterfly',
-        description: 'Help 3 classmates with their assignments',
+        title: 'Session Master',
+        description: 'Complete 25 game sessions',
         icon: Users,
-        category: 'social',
+        category: 'learning',
         tier: 'silver',
         points: 175,
-        progress: 1,
-        maxProgress: 3,
-        unlocked: false,
+        progress: Math.min(totalSessions, 25),
+        maxProgress: 25,
+        unlocked: totalSessions >= 25,
         rarity: 'common'
       },
       {
         id: '7',
-        title: 'Legend',
-        description: 'Reach the top of the class leaderboard',
+        title: 'XP Legend',
+        description: 'Earn 2000 total XP',
         icon: Crown,
         category: 'special',
         tier: 'diamond',
         points: 500,
-        progress: 0,
-        maxProgress: 1,
-        unlocked: false,
+        progress: Math.min(totalXP, 2000),
+        maxProgress: 2000,
+        unlocked: totalXP >= 2000,
         rarity: 'legendary'
       }
     ];
 
-    setAchievements(mockAchievements);
+    setAchievements(realAchievements);
 
-    // Simulate new achievement unlock
+    } catch (error) {
+      console.error('Error loading achievements:', error);
+      setAchievements([]);
+    }
+  };
+
+  // Simulate new achievement unlock
+  useEffect(() => {
     if (showNotifications) {
       const timer = setTimeout(() => {
         const streakAchievement = mockAchievements.find(a => a.id === '2');

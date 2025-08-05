@@ -80,22 +80,21 @@ export default function WordBlastPage() {
           };
 
           return (
-            <VocabBlastGame
-              settings={{
+            <WordBlastGameWrapper
+              onBackToMenu={handleBackToAssignments}
+              onGameComplete={handleGameComplete}
+              assignmentMode={true}
+              assignmentConfig={{
+                assignmentId: assignment.id,
+                vocabulary: wordBlastVocabulary,
                 difficulty: 'medium',
                 category: assignment.vocabulary_criteria?.category || 'assignment',
                 language: assignment.vocabulary_criteria?.language || 'spanish',
                 theme: 'classic',
                 subcategory: assignment.vocabulary_criteria?.subcategory || 'assignment',
-                timeLimit: 120, // 2 minutes default for assignments
-                mode: 'categories' as const,
-                customWords: vocabulary.map(v => v.word)
+                timeLimit: 120
               }}
-              vocabulary={wordBlastVocabulary}
-              onBackToMenu={handleBackToAssignments}
-              onGameEnd={handleGameComplete}
-              gameSessionId={null}
-              isAssignmentMode={true}
+              userId={user?.id}
             />
           );
         }}

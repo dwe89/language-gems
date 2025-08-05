@@ -413,25 +413,25 @@ export default function HangmanGameWrapper(props: HangmanGameWrapperProps) {
           ((gameStats.totalGuesses - (gameStats.wrongGuesses || 0)) / gameStats.totalGuesses) :
           (result === 'win' ? 1 : 0);
 
+        // Hangman is a luck-based game - log word exposure only (not performance)
         await gameService.logWordPerformance({
           session_id: gameSessionId,
           vocabulary_id: gameStats.vocabularyId,
           word_text: gameStats.currentWord,
-          translation_text: '', // Could be enhanced to include translation
-          language_pair: `${props.settings.language}_english`,
+          translation_text: '', // Translation not available in hangman context
+          language_pair: `${props.settings.language === 'spanish' ? 'es' : props.settings.language === 'french' ? 'fr' : 'en'}_english`,
           attempt_number: 1,
           response_time_ms: Math.round(responseTime * 1000),
           was_correct: result === 'win',
-          confidence_level: result === 'win' ?
-            (responseTime < 30 ? 5 : responseTime < 60 ? 4 : 3) :
-            (gameStats.wrongGuesses || 0) < 3 ? 2 : 1,
-          difficulty_level: props.settings.difficulty,
+          confidence_level: 3, // Neutral confidence for luck-based games
+          difficulty_level: 'beginner',
           hint_used: false,
-          streak_count: result === 'win' ? newStats.totalWordsCorrect : 0,
+          power_up_active: undefined,
+          streak_count: newStats.totalWordsCorrect,
           previous_attempts: 0,
-          mastery_level: result === 'win' ? 1 : 0,
-          error_type: result === 'lose' ? 'word_completion_failed' : undefined,
-          grammar_concept: 'vocabulary_spelling',
+          mastery_level: 1, // Neutral mastery for luck-based games
+          error_type: result === 'lose' ? 'incomplete_word' : undefined,
+          grammar_concept: 'vocabulary_exposure',
           error_details: result === 'lose' ? {
             wrongGuesses: gameStats.wrongGuesses || 0,
             totalGuesses: gameStats.totalGuesses || 0,
@@ -439,6 +439,7 @@ export default function HangmanGameWrapper(props: HangmanGameWrapperProps) {
           } : undefined,
           context_data: {
             gameType: 'hangman',
+            isLuckBased: true, // Flag to indicate this is exposure tracking only
             wordLength: gameStats.currentWord.length,
             wrongGuesses: gameStats.wrongGuesses || 0,
             totalGuesses: gameStats.totalGuesses || 0,

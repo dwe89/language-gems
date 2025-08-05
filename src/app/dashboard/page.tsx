@@ -112,11 +112,23 @@ function TeacherDashboard({ username }: { username: string }) {
         // Get total classes count
         const totalClasses = data.length;
 
-        // Calculate a placeholder completion rate (to be replaced with real logic)
-        const completionRate = activeAssignments > 0 ? `${Math.round(Math.random() * 30 + 70)}%` : 'N/A';
+        // Calculate actual completion rate from assignment submissions
+        const { data: submissionData } = await supabaseBrowser
+          .from('enhanced_assignment_progress')
+          .select('status')
+          .in('assignment_id', allAssignments.map(a => a.id));
 
-        // Placeholder for total words learned
-        const totalWords = Math.floor(Math.random() * 500) + 100;
+        const completedSubmissions = submissionData?.filter(s => s.status === 'completed').length || 0;
+        const totalSubmissions = submissionData?.length || 0;
+        const completionRate = totalSubmissions > 0 ? `${Math.round((completedSubmissions / totalSubmissions) * 100)}%` : 'N/A';
+
+        // Calculate actual total words learned from vocabulary progress
+        const { data: vocabularyData } = await supabaseBrowser
+          .from('user_vocabulary_progress')
+          .select('is_learned')
+          .eq('is_learned', true);
+
+        const totalWords = vocabularyData?.length || 0;
 
         setStats({
           totalClasses,

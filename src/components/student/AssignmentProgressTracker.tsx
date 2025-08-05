@@ -8,6 +8,7 @@ import {
   BookOpen, Trophy, Gem, Heart, Users, Crown,
   ArrowUp, ArrowDown, Minus, ChevronRight
 } from 'lucide-react';
+import { useSupabase } from '../supabase/SupabaseProvider';
 
 // =====================================================
 // TYPES AND INTERFACES
@@ -57,58 +58,58 @@ const ProgressRing: React.FC<{
   strokeWidth?: number;
   color?: string;
   showPercentage?: boolean;
-}> = ({ 
-  progress, 
-  size = 120, 
-  strokeWidth = 8, 
+}> = ({
+  progress,
+  size = 120,
+  strokeWidth = 8,
   color = '#3B82F6',
-  showPercentage = true 
+  showPercentage = true
 }) => {
-  const radius = (size - strokeWidth) / 2;
-  const circumference = radius * 2 * Math.PI;
-  const strokeDasharray = `${circumference} ${circumference}`;
-  const strokeDashoffset = circumference - (progress / 100) * circumference;
+    const radius = (size - strokeWidth) / 2;
+    const circumference = radius * 2 * Math.PI;
+    const strokeDasharray = `${circumference} ${circumference}`;
+    const strokeDashoffset = circumference - (progress / 100) * circumference;
 
-  return (
-    <div className="relative inline-flex items-center justify-center">
-      <svg
-        className="transform -rotate-90"
-        width={size}
-        height={size}
-      >
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          stroke="#E5E7EB"
-          strokeWidth={strokeWidth}
-          fill="transparent"
-        />
-        <motion.circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          stroke={color}
-          strokeWidth={strokeWidth}
-          fill="transparent"
-          strokeDasharray={strokeDasharray}
-          initial={{ strokeDashoffset: circumference }}
-          animate={{ strokeDashoffset }}
-          transition={{ duration: 1.5, ease: "easeOut" }}
-          strokeLinecap="round"
-        />
-      </svg>
-      
-      {showPercentage && (
-        <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-lg font-bold text-gray-900">
-            {Math.round(progress)}%
-          </span>
-        </div>
-      )}
-    </div>
-  );
-};
+    return (
+      <div className="relative inline-flex items-center justify-center">
+        <svg
+          className="transform -rotate-90"
+          width={size}
+          height={size}
+        >
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            stroke="#E5E7EB"
+            strokeWidth={strokeWidth}
+            fill="transparent"
+          />
+          <motion.circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            stroke={color}
+            strokeWidth={strokeWidth}
+            fill="transparent"
+            strokeDasharray={strokeDasharray}
+            initial={{ strokeDashoffset: circumference }}
+            animate={{ strokeDashoffset }}
+            transition={{ duration: 1.5, ease: "easeOut" }}
+            strokeLinecap="round"
+          />
+        </svg>
+
+        {showPercentage && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="text-lg font-bold text-gray-900">
+              {Math.round(progress)}%
+            </span>
+          </div>
+        )}
+      </div>
+    );
+  };
 
 // =====================================================
 // PROGRESS METRICS CARD
@@ -127,12 +128,11 @@ const ProgressMetricsCard: React.FC<{
         <div className={`p-2 rounded-lg ${color}`}>
           <Icon className="h-5 w-5 text-white" />
         </div>
-        
+
         {change !== undefined && (
-          <div className={`flex items-center space-x-1 text-sm ${
-            change > 0 ? 'text-green-600' :
-            change < 0 ? 'text-red-600' : 'text-gray-600'
-          }`}>
+          <div className={`flex items-center space-x-1 text-sm ${change > 0 ? 'text-green-600' :
+              change < 0 ? 'text-red-600' : 'text-gray-600'
+            }`}>
             {change > 0 && <ArrowUp className="h-3 w-3" />}
             {change < 0 && <ArrowDown className="h-3 w-3" />}
             {change === 0 && <Minus className="h-3 w-3" />}
@@ -140,7 +140,7 @@ const ProgressMetricsCard: React.FC<{
           </div>
         )}
       </div>
-      
+
       <div className="text-2xl font-bold text-gray-900 mb-1">
         {value}
       </div>
@@ -159,7 +159,7 @@ const AssignmentProgressItem: React.FC<{
 }> = ({ assignment, onClick }) => {
   const progressPercentage = (assignment.completedSections / assignment.totalSections) * 100;
   const scorePercentage = (assignment.score / assignment.maxScore) * 100;
-  
+
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
       case 'beginner': return 'bg-green-100 text-green-800';
@@ -188,7 +188,7 @@ const AssignmentProgressItem: React.FC<{
             <span className="text-xs text-gray-500">{assignment.type}</span>
           </div>
         </div>
-        
+
         <div className="text-right">
           <div className="text-sm font-medium text-gray-900">
             {assignment.completedSections}/{assignment.totalSections}
@@ -221,14 +221,14 @@ const AssignmentProgressItem: React.FC<{
           </div>
           <div className="text-xs text-gray-500">Score</div>
         </div>
-        
+
         <div>
           <div className="text-sm font-medium text-gray-900">
             {assignment.timeSpent}m
           </div>
           <div className="text-xs text-gray-500">Time</div>
         </div>
-        
+
         <div>
           <div className="text-sm font-medium text-blue-600">
             +{assignment.xpEarned} XP
@@ -243,7 +243,7 @@ const AssignmentProgressItem: React.FC<{
           <Clock className="h-3 w-3" />
           <span>Last activity: {assignment.lastActivity.toLocaleDateString()}</span>
         </div>
-        
+
         {assignment.streakContribution && (
           <div className="flex items-center space-x-1">
             <Star className="h-3 w-3 text-yellow-500" />
@@ -264,6 +264,7 @@ export default function AssignmentProgressTracker({
   assignments = [],
   showDetailedView = false
 }: AssignmentProgressTrackerProps) {
+  const { supabase } = useSupabase();
   const [selectedView, setSelectedView] = useState<'overview' | 'detailed'>('overview');
   const [progressMetrics, setProgressMetrics] = useState<ProgressMetrics>({
     totalAssignments: 0,
@@ -276,73 +277,224 @@ export default function AssignmentProgressTracker({
     strongestSubjects: [],
     improvementAreas: []
   });
+  const [assignmentList, setAssignmentList] = useState<AssignmentProgress[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Mock data for demonstration
+  // Load real assignment data
   useEffect(() => {
-    const mockAssignments: AssignmentProgress[] = [
-      {
-        assignmentId: '1',
-        title: 'Spanish Vocabulary: Family',
-        type: 'vocabulary',
-        progress: 85,
-        score: 42,
-        maxScore: 50,
-        timeSpent: 25,
-        completedSections: 4,
-        totalSections: 5,
-        lastActivity: new Date(Date.now() - 86400000),
-        difficulty: 'beginner',
-        xpEarned: 120,
-        streakContribution: true
-      },
-      {
-        assignmentId: '2',
-        title: 'French Grammar: Present Tense',
-        type: 'grammar',
-        progress: 60,
-        score: 28,
-        maxScore: 40,
-        timeSpent: 35,
-        completedSections: 3,
-        totalSections: 5,
-        lastActivity: new Date(Date.now() - 172800000),
-        difficulty: 'intermediate',
-        xpEarned: 95,
-        streakContribution: false
-      },
-      {
-        assignmentId: '3',
-        title: 'German Listening: Daily Conversations',
-        type: 'listening',
-        progress: 100,
-        score: 38,
-        maxScore: 40,
-        timeSpent: 20,
-        completedSections: 4,
-        totalSections: 4,
-        lastActivity: new Date(Date.now() - 259200000),
-        difficulty: 'advanced',
-        xpEarned: 180,
-        streakContribution: true
+    if (studentId && supabase) {
+      loadAssignmentProgress();
+    }
+  }, [studentId, supabase]);
+
+  // Helper function to calculate weekly progress from actual data
+  const calculateWeeklyProgress = async (submissions: any[]): Promise<number[]> => {
+    const weeklyData = Array(7).fill(0);
+    const now = new Date();
+
+    submissions.forEach(submission => {
+      if (submission.completed_at) {
+        const completedDate = new Date(submission.completed_at);
+        const daysAgo = Math.floor((now.getTime() - completedDate.getTime()) / (1000 * 60 * 60 * 24));
+        if (daysAgo < 7) {
+          weeklyData[6 - daysAgo] = Math.max(weeklyData[6 - daysAgo], submission.best_score || 0);
+        }
       }
-    ];
+    });
 
-    const mockMetrics: ProgressMetrics = {
-      totalAssignments: 12,
-      completedAssignments: 8,
-      averageScore: 82,
-      totalTimeSpent: 240,
-      totalXpEarned: 1450,
-      currentStreak: 7,
-      weeklyProgress: [65, 72, 78, 85, 82, 88, 92],
-      strongestSubjects: ['Vocabulary', 'Listening'],
-      improvementAreas: ['Grammar', 'Writing']
+    return weeklyData;
+  };
+
+  // Helper function to analyze subject performance
+  const analyzeSubjectPerformance = async (submissions: any[]): Promise<{strongest: string[], needsImprovement: string[]}> => {
+    const subjectScores: {[key: string]: {total: number, count: number}} = {};
+
+    submissions.forEach(submission => {
+      if (submission.assignment?.game_type && submission.best_score !== null) {
+        const subject = submission.assignment.game_type;
+        if (!subjectScores[subject]) {
+          subjectScores[subject] = {total: 0, count: 0};
+        }
+        subjectScores[subject].total += submission.best_score;
+        subjectScores[subject].count += 1;
+      }
+    });
+
+    const subjectAverages = Object.entries(subjectScores)
+      .map(([subject, data]) => ({
+        subject,
+        average: data.total / data.count
+      }))
+      .sort((a, b) => b.average - a.average);
+
+    const strongest = subjectAverages.slice(0, 2).map(s => s.subject);
+    const needsImprovement = subjectAverages.slice(-2).filter(s => s.average < 70).map(s => s.subject);
+
+    return {
+      strongest: strongest.length > 0 ? strongest : ['Continue practicing'],
+      needsImprovement: needsImprovement.length > 0 ? needsImprovement : []
     };
+  };
 
-    setProgressMetrics(mockMetrics);
-  }, []);
+  // Helper function to calculate current streak
+  const calculateCurrentStreak = async (userId: string): Promise<number> => {
+    try {
+      const { data: sessions } = await supabase
+        .from('enhanced_game_sessions')
+        .select('created_at')
+        .eq('student_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(30);
 
-  const completionRate = (progressMetrics.completedAssignments / progressMetrics.totalAssignments) * 100;
+      if (!sessions || sessions.length === 0) return 0;
+
+      let streak = 0;
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      for (let i = 0; i < sessions.length; i++) {
+        const sessionDate = new Date(sessions[i].created_at);
+        sessionDate.setHours(0, 0, 0, 0);
+
+        const daysDiff = Math.floor((today.getTime() - sessionDate.getTime()) / (1000 * 60 * 60 * 24));
+
+        if (daysDiff === streak) {
+          streak++;
+        } else if (daysDiff > streak) {
+          break;
+        }
+      }
+
+      return streak;
+    } catch (error) {
+      console.error('Error calculating streak:', error);
+      return 0;
+    }
+  };
+
+  const loadAssignmentProgress = async () => {
+    if (!studentId || !supabase) return;
+
+    try {
+      setLoading(true);
+
+      // Get ALL assignments first
+      const { data: assignmentData, error } = await supabase
+        .from('assignments')
+        .select(`
+          id,
+          title,
+          game_type,
+          points
+        `);
+
+      if (error) {
+        console.error('Error loading assignment progress:', error);
+        return;
+      }
+
+      // Get progress for this student - using enhanced_assignment_progress table
+      const assignmentIds = assignmentData?.map(a => a.id) || [];
+      const { data: progressData } = assignmentIds.length > 0 ? await supabase
+        .from('enhanced_assignment_progress')
+        .select('assignment_id, status, best_score, best_accuracy, total_time_spent, completed_at, updated_at')
+        .eq('student_id', studentId)
+        .in('assignment_id', assignmentIds) : { data: [] };
+
+      // Create a map of progress by assignment_id
+      const progressMap = new Map();
+      (progressData || []).forEach(progress => {
+        progressMap.set(progress.assignment_id, progress);
+      });
+
+      // Calculate metrics from real data
+      const assignments = assignmentData || [];
+      const completedAssignments = assignments.filter(a => {
+        const progress = progressMap.get(a.id);
+        return progress && progress.completed_at;
+      });
+
+      const totalScore = completedAssignments.reduce((sum, a) => {
+        const progress = progressMap.get(a.id);
+        return sum + (progress?.best_score || 0);
+      }, 0);
+
+      const averageScore = completedAssignments.length > 0 ?
+        Math.round(totalScore / completedAssignments.length) : 0;
+
+      const totalXpEarned = completedAssignments.reduce((sum, a) =>
+        sum + (a.points || 0), 0
+      );
+
+      const totalTimeSpent = (progressData || []).reduce((sum, p) =>
+        sum + (p.total_time_spent || 0), 0
+      );
+
+      // Create assignment progress objects for detailed view
+      const assignmentProgressList: AssignmentProgress[] = assignments.map(assignment => {
+        const progress = progressMap.get(assignment.id);
+        const completed = progress?.completed_at !== null;
+        const score = progress?.best_score || 0;
+        const timeSpent = Math.round((progress?.total_time_spent || 0) / 60); // Convert to minutes
+
+        return {
+          assignmentId: assignment.id,
+          title: assignment.title,
+          type: assignment.game_type || 'Unknown',
+          progress: completed ? 100 : 0,
+          score: score,
+          maxScore: 100, // Default max score since not stored in assignments
+          timeSpent: timeSpent,
+          completedSections: completed ? 1 : 0,
+          totalSections: 1,
+          lastActivity: progress?.updated_at ? new Date(progress.updated_at) : new Date(),
+          difficulty: 'intermediate' as const, // Default since not stored in assignments
+          xpEarned: completed ? (assignment.points || 0) : 0,
+          streakContribution: completed
+        };
+      });
+
+      // Calculate actual weekly progress from submissions
+      const weeklyProgress = await calculateWeeklyProgress(submissions);
+
+      // Calculate strongest subjects and improvement areas from actual data
+      const subjectAnalysis = await analyzeSubjectPerformance(submissions);
+
+      setProgressMetrics({
+        totalAssignments: assignments.length,
+        completedAssignments: completedAssignments.length,
+        averageScore,
+        totalTimeSpent: Math.round(totalTimeSpent / 60), // Convert seconds to minutes
+        totalXpEarned,
+        currentStreak: await calculateCurrentStreak(user.id),
+        weeklyProgress,
+        strongestSubjects: subjectAnalysis.strongest,
+        improvementAreas: subjectAnalysis.needsImprovement
+      });
+
+      setAssignmentList(assignmentProgressList);
+
+    } catch (error) {
+      console.error('Error loading assignment progress:', error);
+      // Keep default empty metrics
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const completionRate = progressMetrics.totalAssignments > 0 ?
+    (progressMetrics.completedAssignments / progressMetrics.totalAssignments) * 100 : 0;
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="text-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
+          <p className="text-gray-500 mt-2">Loading assignment progress...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -351,25 +503,23 @@ export default function AssignmentProgressTracker({
         <h2 className="text-2xl font-bold text-gray-900 student-font-display">
           Assignment Progress
         </h2>
-        
+
         <div className="flex items-center space-x-2">
           <button
             onClick={() => setSelectedView('overview')}
-            className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-              selectedView === 'overview'
+            className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${selectedView === 'overview'
                 ? 'bg-blue-500 text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
+              }`}
           >
             Overview
           </button>
           <button
             onClick={() => setSelectedView('detailed')}
-            className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-              selectedView === 'detailed'
+            className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${selectedView === 'detailed'
                 ? 'bg-blue-500 text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
+              }`}
           >
             Detailed
           </button>
@@ -388,7 +538,7 @@ export default function AssignmentProgressTracker({
                 <p className="text-blue-100 mb-4">
                   {progressMetrics.completedAssignments} of {progressMetrics.totalAssignments} assignments completed
                 </p>
-                
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <div className="text-2xl font-bold">{progressMetrics.averageScore}%</div>
@@ -400,7 +550,7 @@ export default function AssignmentProgressTracker({
                   </div>
                 </div>
               </div>
-              
+
               <div className="text-center">
                 <ProgressRing
                   progress={completionRate}
@@ -422,7 +572,7 @@ export default function AssignmentProgressTracker({
               icon={Gem}
               color="bg-blue-500"
             />
-            
+
             <ProgressMetricsCard
               title="Current Streak"
               value={`${progressMetrics.currentStreak} days`}
@@ -430,7 +580,7 @@ export default function AssignmentProgressTracker({
               icon={Star}
               color="bg-orange-500"
             />
-            
+
             <ProgressMetricsCard
               title="Assignments Done"
               value={progressMetrics.completedAssignments}
@@ -438,7 +588,7 @@ export default function AssignmentProgressTracker({
               icon={CheckCircle}
               color="bg-green-500"
             />
-            
+
             <ProgressMetricsCard
               title="Average Score"
               value={`${progressMetrics.averageScore}%`}
@@ -465,7 +615,7 @@ export default function AssignmentProgressTracker({
                 ))}
               </div>
             </div>
-            
+
             <div className="bg-white rounded-xl p-6 border border-gray-200">
               <h3 className="font-bold text-gray-900 mb-4 student-font-display">
                 Areas for Improvement
@@ -489,9 +639,9 @@ export default function AssignmentProgressTracker({
           <div className="text-sm text-gray-600 mb-4">
             Showing detailed progress for all assignments
           </div>
-          
-          {assignments.length > 0 ? (
-            assignments.map((assignment) => (
+
+          {assignmentList.length > 0 ? (
+            assignmentList.map((assignment) => (
               <AssignmentProgressItem
                 key={assignment.assignmentId}
                 assignment={assignment}

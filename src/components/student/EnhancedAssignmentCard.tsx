@@ -277,7 +277,7 @@ export default function EnhancedAssignmentCard({
 
   return (
     <motion.div
-      className={`bg-white rounded-xl border-2 transition-all duration-200 ${
+      className={`w-full bg-white rounded-xl border-2 transition-all duration-200 ${
         assignment.isLocked ? 'border-gray-200 opacity-60' :
         isOverdue ? 'border-red-200 shadow-red-100' :
         isCompleted ? 'border-green-200 shadow-green-100' :
@@ -287,30 +287,30 @@ export default function EnhancedAssignmentCard({
       onHoverStart={() => setIsHovered(true)}
       onHoverEnd={() => setIsHovered(false)}
     >
-      <div className="p-6">
+      <div className="p-4 sm:p-6">
         {/* Header */}
         <div className="flex items-start justify-between mb-4">
-          <div className="flex items-center space-x-3">
-            <div className={`p-3 rounded-lg bg-gradient-to-r ${typeColor}`}>
+          <div className="flex items-center space-x-3 flex-1 min-w-0">
+            <div className={`p-2 sm:p-3 rounded-lg bg-gradient-to-r ${typeColor} flex-shrink-0`}>
               {assignment.isLocked ? (
-                <Lock className="h-6 w-6 text-white" />
+                <Lock className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
               ) : (
-                <TypeIcon className="h-6 w-6 text-white" />
+                <TypeIcon className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
               )}
             </div>
             
-            <div className="flex-1">
-              <h3 className="font-bold text-gray-900 student-font-display">
+            <div className="flex-1 min-w-0">
+              <h3 className="font-bold text-gray-900 student-font-display text-sm sm:text-base line-clamp-2">
                 {assignment.title}
               </h3>
-              <div className="flex items-center space-x-2 mt-1">
+              <div className="flex items-center space-x-2 mt-1 flex-wrap">
                 <span className={`text-xs px-2 py-1 rounded-full ${difficultyColor}`}>
                   {assignment.difficulty}
                 </span>
-                <span className="text-xs text-gray-500">
+                <span className="text-xs text-gray-500 truncate">
                   {assignment.language}
                 </span>
-                <span className="text-xs text-gray-500">
+                <span className="text-xs text-gray-500 hidden sm:inline">
                   ~{assignment.estimatedTime}min
                 </span>
               </div>
@@ -318,11 +318,11 @@ export default function EnhancedAssignmentCard({
           </div>
           
           {/* Status & XP */}
-          <div className="text-right">
-            <div className={`text-sm font-medium ${statusColor}`}>
+          <div className="text-right flex-shrink-0">
+            <div className={`text-xs sm:text-sm font-medium ${statusColor} line-clamp-1`}>
               {assignment.status.replace('_', ' ')}
             </div>
-            <div className="flex items-center space-x-1 mt-1">
+            <div className="flex items-center justify-end space-x-1 mt-1">
               <Gem className="h-3 w-3 text-blue-500" />
               <span className="text-xs text-blue-600 font-medium">
                 {assignment.xpReward} XP
@@ -344,7 +344,7 @@ export default function EnhancedAssignmentCard({
         )}
 
         {/* Due Date & Time */}
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
           <div className="flex items-center space-x-2 text-sm text-gray-600">
             <Calendar className="h-4 w-4" />
             <span>Due {assignment.dueDate.toLocaleDateString()}</span>
@@ -359,12 +359,12 @@ export default function EnhancedAssignmentCard({
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2">
           <button
             onClick={() => setIsExpanded(!isExpanded)}
             className="flex items-center space-x-1 text-sm text-gray-600 hover:text-gray-900 transition-colors"
           >
-            <span>Details</span>
+            <span className="hidden sm:inline">Details</span>
             <motion.div
               animate={{ rotate: isExpanded ? 90 : 0 }}
               transition={{ duration: 0.2 }}
@@ -376,13 +376,13 @@ export default function EnhancedAssignmentCard({
           <div className="flex items-center space-x-2">
             {assignment.isLocked ? (
               <div className="flex items-center space-x-2 text-sm text-gray-500">
-                <Lock className="h-4 w-4" />
-                <span>Locked</span>
+                <Lock className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">Locked</span>
               </div>
             ) : (
               <motion.button
                 onClick={handlePrimaryAction}
-                className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
+                className={`flex items-center space-x-1 sm:space-x-2 px-3 sm:px-4 py-2 rounded-lg font-medium text-xs sm:text-sm transition-colors ${
                   canStart ? 'bg-blue-500 hover:bg-blue-600 text-white' :
                   canContinue ? 'bg-green-500 hover:bg-green-600 text-white' :
                   canReview ? 'bg-purple-500 hover:bg-purple-600 text-white' :
@@ -394,20 +394,20 @@ export default function EnhancedAssignmentCard({
               >
                 {canStart && (
                   <>
-                    <PlayCircle className="h-4 w-4" />
-                    <span>Start</span>
+                    <PlayCircle className="h-3 w-3 sm:h-4 sm:w-4" />
+                    <span className="hidden sm:inline">Start</span>
                   </>
                 )}
                 {canContinue && (
                   <>
-                    <RotateCcw className="h-4 w-4" />
-                    <span>Continue</span>
+                    <RotateCcw className="h-3 w-3 sm:h-4 sm:w-4" />
+                    <span className="hidden sm:inline">Continue</span>
                   </>
                 )}
                 {canReview && (
                   <>
-                    <BarChart3 className="h-4 w-4" />
-                    <span>Review</span>
+                    <BarChart3 className="h-3 w-3 sm:h-4 sm:w-4" />
+                    <span className="hidden sm:inline">Review</span>
                   </>
                 )}
               </motion.button>
