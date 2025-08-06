@@ -1,0 +1,868 @@
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '../../../../components/auth/AuthProvider';
+import { useSupabase } from '../../../../components/supabase/SupabaseProvider';
+import { SpacedRepetitionService } from '../../../../services/spacedRepetitionService';
+import {
+  ArrowRight, Shuffle, Target, Brain, Headphones, BookOpen,
+  TrendingUp, Clock, Settings, Play, Lightbulb, Zap,
+  RotateCcw, Flame, Trophy, ChevronRight, Volume2, Keyboard,
+  PenTool, CreditCard, Mic, Sparkles, Palette, ToggleLeft, ToggleRight,
+  ChevronDown, Globe, GraduationCap, FolderOpen, BarChart3
+} from 'lucide-react';
+import { useGameVocabulary } from '../../../../hooks/useGameVocabulary';
+
+// Unified Game Mode Interface
+interface GameMode {
+  id: string;
+  name: string;
+  description: string;
+  icon: React.ReactNode;
+  color: string;
+  category: 'learning' | 'practice' | 'review' | 'challenge';
+  estimatedTime: string;
+  difficulty: 'Beginner' | 'Intermediate' | 'Advanced' | 'Variable';
+  isRecommended?: boolean;
+  isPremium?: boolean;
+  source: 'vocab-master' | 'vocab-mining' | 'unified';
+}
+
+// Streamlined Mode Definitions - 8 consolidated modes for 11-13 year olds
+const CONSOLIDATED_GAME_MODES: GameMode[] = [
+  // I. Core Learning & Review (Primary, recurring activities)
+  {
+    id: 'learn_new',
+    name: 'Learn New Words',
+    description: 'Start with unfamiliar vocabulary. Choose your practice style inside!',
+    icon: <Lightbulb className="h-6 w-6" />,
+    color: 'bg-gradient-to-r from-green-400 to-blue-500',
+    category: 'core',
+    estimatedTime: '10-15 min',
+    difficulty: 'Beginner',
+    isRecommended: true,
+    source: 'unified'
+  },
+  {
+    id: 'review_weak',
+    name: 'Review Weak Words',
+    description: 'Practice words you find challenging. Multiple practice styles available!',
+    icon: <Target className="h-6 w-6" />,
+    color: 'bg-gradient-to-r from-red-400 to-pink-500',
+    category: 'core',
+    estimatedTime: '8-12 min',
+    difficulty: 'Variable',
+    source: 'unified'
+  },
+  {
+    id: 'mixed_review',
+    name: 'Mixed Review',
+    description: 'Practice all your vocabulary with different exercise types',
+    icon: <Shuffle className="h-6 w-6" />,
+    color: 'bg-gradient-to-r from-indigo-400 to-purple-500',
+    category: 'core',
+    estimatedTime: '10-20 min',
+    difficulty: 'Variable',
+    source: 'unified'
+  },
+
+  // II. Skill Builders & Specific Practice
+  {
+    id: 'context_practice',
+    name: 'Context Practice',
+    description: 'Learn words within full sentences and real examples',
+    icon: <BookOpen className="h-6 w-6" />,
+    color: 'bg-gradient-to-r from-emerald-400 to-teal-500',
+    category: 'skills',
+    estimatedTime: '12-18 min',
+    difficulty: 'Intermediate',
+    source: 'unified'
+  },
+  {
+    id: 'dictation',
+    name: 'Dictation',
+    description: 'Listen carefully and type what you hear in Spanish/French',
+    icon: <PenTool className="h-6 w-6" />,
+    color: 'bg-gradient-to-r from-indigo-500 to-indigo-600',
+    category: 'skills',
+    estimatedTime: '8-12 min',
+    difficulty: 'Advanced',
+    source: 'unified'
+  },
+  {
+    id: 'listening_comprehension',
+    name: 'Listening Comprehension',
+    description: 'Listen to words and type the English translation',
+    icon: <Headphones className="h-6 w-6" />,
+    color: 'bg-gradient-to-r from-blue-400 to-cyan-500',
+    category: 'skills',
+    estimatedTime: '10-15 min',
+    difficulty: 'Intermediate',
+    source: 'unified'
+  },
+  {
+    id: 'flashcards',
+    name: 'Flashcards',
+    description: 'Quick self-assessment - do you know this word?',
+    icon: <CreditCard className="h-6 w-6" />,
+    color: 'bg-gradient-to-r from-red-500 to-red-600',
+    category: 'skills',
+    estimatedTime: '5-10 min',
+    difficulty: 'Beginner',
+    source: 'unified'
+  },
+
+  // III. Challenges & Speed
+  {
+    id: 'speed_challenge',
+    name: 'Speed Challenge',
+    description: 'Test your reaction time - answer before time runs out!',
+    icon: <Zap className="h-6 w-6" />,
+    color: 'bg-gradient-to-r from-yellow-400 to-orange-500',
+    category: 'challenge',
+    estimatedTime: '5-8 min',
+    difficulty: 'Intermediate',
+    source: 'unified'
+  }
+];
+
+// Theme Configuration
+interface ThemeConfig {
+  id: 'mastery' | 'adventure';
+  name: string;
+  description: string;
+  icon: React.ReactNode;
+  color: string;
+}
+
+const THEME_OPTIONS: ThemeConfig[] = [
+  {
+    id: 'mastery',
+    name: 'Mastery Mode',
+    description: 'Clean, distraction-free academic interface',
+    icon: <BookOpen className="h-5 w-5" />,
+    color: 'text-blue-600'
+  },
+  {
+    id: 'adventure',
+    name: 'Adventure Mode',
+    description: 'Gamified experience with gems, XP, and achievements',
+    icon: <Sparkles className="h-5 w-5" />,
+    color: 'text-purple-600'
+  }
+];
+
+interface UnifiedVocabMasterLauncherProps {
+  onGameStart: (mode: string, vocabulary: any[], config: Record<string, any>) => void;
+  onBack: () => void;
+  presetConfig?: {
+    language?: string;
+    curriculumLevel?: 'KS2' | 'KS3' | 'KS4' | 'KS5';
+    categoryId?: string;
+    subcategoryId?: string;
+  } | null;
+  onFilterChange?: (config: { language: string; curriculumLevel: 'KS2' | 'KS3' | 'KS4' | 'KS5'; categoryId: string; subcategoryId: string }) => void;
+}
+
+export default function UnifiedVocabMasterLauncher({ onGameStart, onBack, presetConfig, onFilterChange }: UnifiedVocabMasterLauncherProps) {
+  const { user } = useAuth();
+  const { supabase } = useSupabase();
+  
+  // Dynamic filter state - the core of the new single-page experience
+  const [selectedLanguage, setSelectedLanguage] = useState<string>(presetConfig?.language || 'spanish');
+  const [selectedLevel, setSelectedLevel] = useState<'KS2' | 'KS3' | 'KS4' | 'KS5'>(presetConfig?.curriculumLevel || 'KS3');
+  const [selectedCategory, setSelectedCategory] = useState<string>(presetConfig?.categoryId || ''); // Default to "All Topics"
+  const [selectedSubcategory, setSelectedSubcategory] = useState<string>(presetConfig?.subcategoryId || ''); // Default to "All Subtopics"
+
+  // Game state management
+  const [selectedTheme, setSelectedTheme] = useState<'mastery' | 'adventure'>('mastery');
+  const [isLoading, setIsLoading] = useState(false);
+  const [selectedMode, setSelectedMode] = useState('');
+  const [showSettings, setShowSettings] = useState(false);
+  const [showPracticeMethodSelector, setShowPracticeMethodSelector] = useState(false);
+  const [selectedPracticeMethod, setSelectedPracticeMethod] = useState<'multiple_choice' | 'typing' | 'mixed'>('multiple_choice');
+
+  // Category filter for game modes (separate from content category)
+  const [gameModeCategory, setGameModeCategory] = useState<string>('all');
+
+  // Available subtopics based on selected category
+  const [availableSubtopics, setAvailableSubtopics] = useState<Array<{value: string, label: string}>>([]);
+  
+  // Settings
+  const [settings, setSettings] = useState({
+    wordsPerSession: 20,
+    difficulty: 'mixed',
+    audioEnabled: true,
+    theme: 'mixed'
+  });
+
+  // Dynamic vocabulary loading based on current filter selection
+  const {
+    vocabulary,
+    loading: vocabularyLoading,
+    error: vocabularyError
+  } = useGameVocabulary({
+    language: selectedLanguage === 'spanish' ? 'es' : selectedLanguage === 'french' ? 'fr' : 'de',
+    categoryId: selectedCategory === '' ? undefined : selectedCategory, // Empty string means "All Topics"
+    subcategoryId: selectedSubcategory === '' ? undefined : selectedSubcategory, // Empty string means "All Subtopics"
+    curriculumLevel: selectedLevel,
+    limit: 500, // Increased limit to get more realistic counts
+    randomize: true
+  });
+
+  // Get realistic vocabulary count based on selection
+  const getVocabularyCount = () => {
+    if (vocabularyLoading) return '...';
+    if (vocabularyError) return '0';
+    if (vocabulary.length === 0) return '0';
+
+    // Show actual count, but if it hits the limit, indicate there are more
+    if (vocabulary.length >= 500) {
+      return '500+';
+    }
+    return vocabulary.length.toString();
+  };
+
+  // User stats
+  const [userStats, setUserStats] = useState({
+    wordsLearned: 0,
+    totalWords: 0,
+    currentStreak: 0,
+    weeklyGoal: 50,
+    weeklyProgress: 0
+  });
+
+  // Load available subtopics when category changes
+  const loadAvailableSubtopics = async (categoryId: string) => {
+    if (!supabase || !categoryId) {
+      setAvailableSubtopics([]);
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('centralized_vocabulary')
+        .select('subcategory')
+        .eq('category', categoryId)
+        .not('subcategory', 'is', null)
+        .order('subcategory');
+
+      if (error) throw error;
+
+      // Get unique subtopics and format them
+      const uniqueSubtopics = [...new Set(data.map(item => item.subcategory))]
+        .filter(Boolean)
+        .map(subcategory => ({
+          value: subcategory,
+          label: subcategory.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+        }));
+
+      setAvailableSubtopics(uniqueSubtopics);
+    } catch (error) {
+      console.error('Error loading subtopics:', error);
+      setAvailableSubtopics([]);
+    }
+  };
+
+  // Load subtopics when category changes
+  useEffect(() => {
+    if (selectedCategory && selectedCategory !== '') {
+      loadAvailableSubtopics(selectedCategory);
+    } else {
+      setAvailableSubtopics([]);
+    }
+    // Reset subtopic when category changes
+    setSelectedSubcategory('');
+  }, [selectedCategory, supabase]);
+
+  // Load user stats when filters change
+  useEffect(() => {
+    loadUserStats();
+  }, [selectedLanguage, selectedLevel, selectedCategory, selectedSubcategory]);
+
+  // Notify parent of filter changes (only when filters actually change, not on mount)
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  useEffect(() => {
+    if (isInitialized && onFilterChange) {
+      onFilterChange({
+        language: selectedLanguage,
+        curriculumLevel: selectedLevel,
+        categoryId: selectedCategory,
+        subcategoryId: selectedSubcategory
+      });
+    } else if (!isInitialized) {
+      setIsInitialized(true);
+    }
+  }, [selectedLanguage, selectedLevel, selectedCategory, selectedSubcategory]);
+
+  const loadUserStats = async () => {
+    console.log('🔍 Loading user stats for:', {
+      userId: user?.id,
+      hasSupabase: !!supabase,
+      selectedLanguage,
+      selectedLevel,
+      selectedCategory
+    });
+
+    if (!user || !supabase) {
+      console.log('❌ No user or supabase, cannot load real stats');
+      setUserStats({
+        wordsLearned: 0,
+        totalWords: vocabulary.length,
+        currentStreak: 0,
+        weeklyGoal: 50,
+        weeklyProgress: 0
+      });
+      return;
+    }
+
+    try {
+      const languageCode = selectedLanguage === 'spanish' ? 'es' : selectedLanguage === 'french' ? 'fr' : 'de';
+
+      console.log('🔍 Querying performance data for admin user:', {
+        userId: user.id,
+        language: languageCode,
+        level: selectedLevel,
+        category: selectedCategory
+      });
+
+      // Query word_performance_logs for this specific user and language/level combination
+      let performanceQuery = supabase
+        .from('word_performance_logs')
+        .select(`
+          *,
+          enhanced_game_sessions!inner(student_id)
+        `)
+        .eq('enhanced_game_sessions.student_id', user.id)
+        .eq('language', languageCode);
+
+      // Add curriculum level filter if available
+      if (selectedLevel) {
+        performanceQuery = performanceQuery.eq('curriculum_level', selectedLevel);
+      }
+
+      const { data: performanceData, error } = await performanceQuery;
+
+      if (error) {
+        console.error('❌ Error loading user performance data:', error);
+      } else {
+        console.log('✅ Performance data loaded:', {
+          recordCount: performanceData?.length || 0,
+          sampleRecord: performanceData?.[0]
+        });
+      }
+
+      // Also check user_vocabulary_progress table for additional stats
+      const { data: vocabProgressData, error: vocabError } = await supabase
+        .from('user_vocabulary_progress')
+        .select('*')
+        .eq('user_id', user.id);
+
+      if (vocabError) {
+        console.error('❌ Error loading vocabulary progress:', vocabError);
+      } else {
+        console.log('✅ Vocabulary progress data loaded:', {
+          recordCount: vocabProgressData?.length || 0
+        });
+      }
+
+      // Calculate stats from performance data
+      const totalAttempts = performanceData?.length || 0;
+      const correctAttempts = performanceData?.filter(log => log.was_correct).length || 0;
+      const uniqueWordsFromPerformance = new Set(performanceData?.map(log => log.word_text) || []).size;
+      const learnedWordsFromProgress = vocabProgressData?.filter(item => item.is_learned).length || 0;
+
+      // Use the higher of the two counts
+      const wordsLearned = Math.max(uniqueWordsFromPerformance, learnedWordsFromProgress);
+
+      // Calculate current streak from recent performance
+      const sortedLogs = (performanceData || []).sort((a, b) =>
+        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+      );
+
+      let currentStreak = 0;
+      for (const log of sortedLogs.slice(0, 20)) { // Check last 20 attempts
+        if (log.was_correct) {
+          currentStreak++;
+        } else {
+          break;
+        }
+      }
+
+      // Calculate weekly progress (last 7 days)
+      const weekAgo = new Date();
+      weekAgo.setDate(weekAgo.getDate() - 7);
+      const weeklyCorrectWords = performanceData?.filter(log =>
+        new Date(log.timestamp) >= weekAgo && log.was_correct
+      ).length || 0;
+
+      const finalStats = {
+        wordsLearned,
+        totalWords: Math.max(vocabulary.length, wordsLearned + 50), // Add buffer for realistic total
+        currentStreak,
+        weeklyGoal: 50,
+        weeklyProgress: weeklyCorrectWords
+      };
+
+      setUserStats(finalStats);
+
+      console.log('✅ Final user stats calculated:', {
+        ...finalStats,
+        totalAttempts,
+        correctAttempts,
+        uniqueWordsFromPerformance,
+        learnedWordsFromProgress,
+        language: languageCode,
+        level: selectedLevel,
+        category: selectedCategory
+      });
+
+    } catch (error) {
+      console.error('❌ Error in loadUserStats:', error);
+      setUserStats({
+        wordsLearned: 0,
+        totalWords: vocabulary.length,
+        currentStreak: 0,
+        weeklyGoal: 50,
+        weeklyProgress: 0
+      });
+    }
+  };
+
+  // Filter modes by game mode category (not content category)
+  const getFilteredModes = () => {
+    if (gameModeCategory === 'all') return CONSOLIDATED_GAME_MODES;
+    return CONSOLIDATED_GAME_MODES.filter(mode => mode.category === gameModeCategory);
+  };
+
+  // Start game session
+  const startGameSession = async (modeId: string) => {
+    setIsLoading(true);
+    setSelectedMode(modeId);
+    
+    try {
+      // Get vocabulary subset based on mode
+      let vocabularySubset = vocabulary.slice(0, settings.wordsPerSession);
+      
+      // Apply mode-specific vocabulary filtering logic here
+      // (This would include the complex logic from both original games)
+      
+      const gameConfig = {
+        wordsPerSession: Math.min(settings.wordsPerSession, vocabularySubset.length),
+        difficulty: settings.difficulty,
+        audioEnabled: settings.audioEnabled,
+        theme: selectedTheme,
+        mode: modeId,
+        gamificationEnabled: selectedTheme === 'adventure',
+        // Include current filter context
+        language: selectedLanguage,
+        curriculumLevel: selectedLevel,
+        categoryId: selectedCategory,
+        subcategoryId: selectedSubcategory
+      };
+
+      console.log('🎯 Starting VocabMaster with context:', {
+        mode: modeId,
+        language: selectedLanguage,
+        level: selectedLevel,
+        category: selectedCategory,
+        subcategory: selectedSubcategory,
+        vocabularyCount: vocabularySubset.length
+      });
+
+      onGameStart(modeId, vocabularySubset, gameConfig);
+    } catch (error) {
+      console.error('Error starting game session:', error);
+      setIsLoading(false);
+      setSelectedMode('');
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center mb-8"
+        >
+          <div className="flex items-center justify-center mb-4">
+            <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-3 rounded-full">
+              <Brain className="h-8 w-8 text-white" />
+            </div>
+          </div>
+          <h1 className="text-4xl font-bold text-gray-800 mb-2">VocabMaster</h1>
+          <p className="text-gray-600 text-lg">
+            Master vocabulary with intelligent learning modes
+          </p>
+        </motion.div>
+
+        {/* Dynamic Filter Bar - The Core Innovation */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="mb-8"
+        >
+          <div className="bg-white rounded-xl shadow-lg p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-800 flex items-center">
+                <Settings className="h-5 w-5 mr-2 text-blue-600" />
+                Choose Your Learning Focus
+              </h3>
+              <div className="text-sm text-gray-500">
+                {getVocabularyCount()} words available
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              {/* Language Selector */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <Globe className="h-4 w-4 inline mr-1" />
+                  Language
+                </label>
+                <select
+                  value={selectedLanguage}
+                  onChange={(e) => setSelectedLanguage(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="spanish">Spanish</option>
+                  <option value="french">French</option>
+                  <option value="german">German</option>
+                </select>
+              </div>
+
+              {/* Level Selector */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <GraduationCap className="h-4 w-4 inline mr-1" />
+                  Level
+                </label>
+                <select
+                  value={selectedLevel}
+                  onChange={(e) => setSelectedLevel(e.target.value as 'KS2' | 'KS3' | 'KS4' | 'KS5')}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="KS2">KS2 (Ages 7-11)</option>
+                  <option value="KS3">KS3 (Ages 11-14)</option>
+                  <option value="KS4">KS4 (Ages 14-16)</option>
+                  <option value="KS5">KS5 (Ages 16-18)</option>
+                </select>
+              </div>
+
+              {/* Category Selector */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <FolderOpen className="h-4 w-4 inline mr-1" />
+                  Topic
+                </label>
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">All Topics</option>
+                  <option value="basics_core_language">Basics & Core Language</option>
+                  <option value="identity_personal_life">Identity & Personal Life</option>
+                  <option value="home_local_area">Home & Local Area</option>
+                  <option value="school_jobs_future">School, Jobs & Future</option>
+                  <option value="free_time_leisure">Free Time & Leisure</option>
+                  <option value="food_drink">Food & Drink</option>
+                  <option value="clothes_shopping">Clothes & Shopping</option>
+                  <option value="technology_media">Technology & Media</option>
+                  <option value="health_lifestyle">Health & Lifestyle</option>
+                  <option value="holidays_travel_culture">Holidays, Travel & Culture</option>
+                </select>
+              </div>
+
+              {/* Subtopic Selector */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <BarChart3 className="h-4 w-4 inline mr-1" />
+                  Subtopic
+                </label>
+                <select
+                  value={selectedSubcategory}
+                  onChange={(e) => setSelectedSubcategory(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  disabled={!selectedCategory || selectedCategory === ''}
+                >
+                  <option value="">All Subtopics</option>
+                  {availableSubtopics.map(subtopic => (
+                    <option key={subtopic.value} value={subtopic.value}>
+                      {subtopic.label}
+                    </option>
+                  ))}
+                </select>
+                {(!selectedCategory || selectedCategory === '') && (
+                  <p className="text-xs text-gray-500 mt-1">Select a topic first to see subtopics</p>
+                )}
+              </div>
+            </div>
+
+            {vocabularyError && (
+              <div className="mt-4 text-center text-red-500">
+                Error loading vocabulary. Please try again.
+              </div>
+            )}
+          </div>
+        </motion.div>
+
+        {/* Context-Aware User Stats Dashboard */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="mb-8"
+        >
+          <div className="bg-white rounded-xl shadow-lg p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-800">
+                Your Progress in {selectedLanguage.charAt(0).toUpperCase() + selectedLanguage.slice(1)} ({selectedLevel})
+              </h3>
+              <div className="text-sm text-gray-500">
+                {selectedCategory === '' ? 'All Topics' : selectedCategory.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                {selectedSubcategory && selectedSubcategory !== '' && ` • ${selectedSubcategory.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}`}
+                {selectedSubcategory === '' && selectedCategory !== '' && ' • All Subtopics'}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              <div className="text-center">
+                <div className="text-3xl font-bold text-blue-600">{userStats.wordsLearned}</div>
+                <div className="text-sm text-gray-600">Words Learned</div>
+                <div className="text-xs text-gray-400">in this selection</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-green-600">{userStats.currentStreak}</div>
+                <div className="text-sm text-gray-600">Day Streak</div>
+                <div className="text-xs text-gray-400">overall</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-purple-600">{userStats.weeklyProgress}</div>
+                <div className="text-sm text-gray-600">Weekly Goal</div>
+                <div className="text-xs text-gray-400">{userStats.weeklyGoal - userStats.weeklyProgress} to go</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-orange-600">
+                  {userStats.totalWords > 0 ? Math.round((userStats.wordsLearned / userStats.totalWords) * 100) : 0}%
+                </div>
+                <div className="text-sm text-gray-600">Progress</div>
+                <div className="text-xs text-gray-400">{userStats.totalWords} total available</div>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Theme Selection */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="mb-8"
+        >
+          <div className="bg-white rounded-xl shadow-lg p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-gray-800">Choose Your Experience</h2>
+              <Palette className="h-5 w-5 text-gray-600" />
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {THEME_OPTIONS.map((theme) => (
+                <button
+                  key={theme.id}
+                  onClick={() => setSelectedTheme(theme.id)}
+                  className={`p-4 rounded-lg border-2 transition-all duration-200 text-left ${
+                    selectedTheme === theme.id
+                      ? 'border-blue-500 bg-blue-50'
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className={theme.color}>
+                      {theme.icon}
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-gray-800">{theme.name}</h3>
+                      <p className="text-sm text-gray-600">{theme.description}</p>
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Category Filter */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="mb-6"
+        >
+          <div className="flex items-center justify-center space-x-2 flex-wrap gap-2">
+            {[
+              { id: 'all', label: 'All Modes' },
+              { id: 'core', label: 'Core Learning' },
+              { id: 'skills', label: 'Skill Builders' },
+              { id: 'challenge', label: 'Challenges' }
+            ].map((category) => (
+              <button
+                key={category.id}
+                onClick={() => setSelectedCategory(category.id)}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                  selectedCategory === category.id
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-white text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                {category.label}
+              </button>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* Mode Grid with Section Headers */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4 }}
+          className="space-y-8"
+        >
+          {gameModeCategory === 'all' ? (
+            // Show all modes organized by sections
+            <>
+              {/* Core Learning & Review Section */}
+              <div>
+                <div className="flex items-center mb-4">
+                  <Brain className="h-6 w-6 text-blue-600 mr-3" />
+                  <h3 className="text-xl font-bold text-gray-800">Core Learning & Review</h3>
+                </div>
+                <p className="text-gray-600 mb-6 text-sm">
+                  Primary activities that use spaced repetition to help you learn and remember vocabulary
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {CONSOLIDATED_GAME_MODES.filter(mode => mode.category === 'core').map((mode, index) => (
+                    <ModeCard key={mode.id} mode={mode} index={index} onSelect={startGameSession} isLoading={isLoading} selectedMode={selectedMode} vocabularyLength={vocabulary.length} />
+                  ))}
+                </div>
+              </div>
+
+              {/* Skill Builders Section */}
+              <div>
+                <div className="flex items-center mb-4">
+                  <Target className="h-6 w-6 text-green-600 mr-3" />
+                  <h3 className="text-xl font-bold text-gray-800">Skill Builders & Specific Practice</h3>
+                </div>
+                <p className="text-gray-600 mb-6 text-sm">
+                  Focused practice modes to develop specific language skills like listening and context understanding
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {CONSOLIDATED_GAME_MODES.filter(mode => mode.category === 'skills').map((mode, index) => (
+                    <ModeCard key={mode.id} mode={mode} index={index + 3} onSelect={startGameSession} isLoading={isLoading} selectedMode={selectedMode} vocabularyLength={vocabulary.length} />
+                  ))}
+                </div>
+              </div>
+
+              {/* Challenges Section */}
+              <div>
+                <div className="flex items-center mb-4">
+                  <Zap className="h-6 w-6 text-yellow-600 mr-3" />
+                  <h3 className="text-xl font-bold text-gray-800">Challenges & Speed</h3>
+                </div>
+                <p className="text-gray-600 mb-6 text-sm">
+                  Test your skills under time pressure and compete with yourself
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {CONSOLIDATED_GAME_MODES.filter(mode => mode.category === 'challenge').map((mode, index) => (
+                    <ModeCard key={mode.id} mode={mode} index={index + 7} onSelect={startGameSession} isLoading={isLoading} selectedMode={selectedMode} vocabularyLength={vocabulary.length} />
+                  ))}
+                </div>
+              </div>
+            </>
+          ) : (
+            // Show filtered modes in simple grid
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {getFilteredModes().map((mode, index) => (
+                <ModeCard key={mode.id} mode={mode} index={index} onSelect={startGameSession} isLoading={isLoading} selectedMode={selectedMode} vocabularyLength={vocabulary.length} />
+              ))}
+            </div>
+          )}
+        </motion.div>
+      </div>
+    </div>
+  );
+}
+
+// Extracted ModeCard component for reusability
+interface ModeCardProps {
+  mode: GameMode;
+  index: number;
+  onSelect: (modeId: string) => void;
+  isLoading: boolean;
+  selectedMode: string;
+  vocabularyLength: number;
+}
+
+function ModeCard({ mode, index, onSelect, isLoading, selectedMode, vocabularyLength }: ModeCardProps) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ delay: 0.05 * index }}
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+    >
+      <button
+        onClick={() => onSelect(mode.id)}
+        disabled={isLoading && selectedMode === mode.id || vocabularyLength === 0}
+        className={`w-full text-left p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 relative overflow-hidden ${
+          isLoading && selectedMode === mode.id || vocabularyLength === 0
+            ? 'opacity-50 cursor-not-allowed'
+            : 'hover:transform hover:-translate-y-1'
+        }`}
+      >
+        <div className={`absolute inset-0 ${mode.color} opacity-90`} />
+
+        <div className="relative z-10">
+          <div className="flex items-center justify-between mb-3">
+            <div className="text-white/90">
+              {mode.icon}
+            </div>
+            <div className="flex space-x-1">
+              {mode.isRecommended && (
+                <div className="bg-yellow-400 text-yellow-800 text-xs px-2 py-1 rounded-full font-semibold">
+                  Recommended
+                </div>
+              )}
+              {mode.isPremium && (
+                <div className="bg-purple-400 text-purple-800 text-xs px-2 py-1 rounded-full font-semibold">
+                  Premium
+                </div>
+              )}
+            </div>
+          </div>
+
+          <h3 className="text-xl font-bold text-white mb-2">
+            {mode.name}
+          </h3>
+
+          <p className="text-white/90 text-sm leading-relaxed">
+            {mode.description}
+          </p>
+
+          {isLoading && selectedMode === mode.id && (
+            <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+            </div>
+          )}
+        </div>
+      </button>
+    </motion.div>
+  );
+}
+

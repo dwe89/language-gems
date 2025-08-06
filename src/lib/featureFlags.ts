@@ -83,6 +83,13 @@ export const getNavigationItems = (isAuthenticated: boolean = false, userEmail?:
       comingSoonPath: '/coming-soon/games'
     },
     {
+      name: 'VocabMaster',
+      path: '/vocabmaster',
+      enabled: true,
+      comingSoon: false,
+      comingSoonPath: null
+    },
+    {
       name: 'Assessments',
       path: '/assessments',
       enabled: flags.assessments,

@@ -12,6 +12,7 @@ import Footer from '../../components/layout/Footer';
 import DemoBanner from '../../components/demo/DemoBanner';
 import GameSelectionSidebar, { SelectionState } from '../../components/games/FilterSidebar';
 import MobileGameSelectionModal from '../../components/games/MobileGameSelectionModal';
+import FeaturedVocabMasterCard from '../../components/games/FeaturedVocabMasterCard';
 
 
 // Login Required Component
@@ -206,14 +207,14 @@ export default function GamesPage() {
 
       const actualGames: Game[] = [
         {
-          id: 'vocabulary-mining',
-          name: 'VocabMaster', // Renamed for consistency with saved info
-          description: 'Mine rare vocabulary gems through intelligent spaced repetition, listening exercises, and adaptive learning.',
+          id: 'vocab-master',
+          name: 'VocabMaster',
+          description: 'Master vocabulary with smart, personalized reviews, adaptive learning, and 8 engaging game modes.',
           thumbnail: '/images/games/vocabulary-mining.jpg',
           category: 'vocabulary',
           popular: true,
-          languages: ['English', 'Spanish', 'French', 'German', 'Italian', 'Portuguese'],
-          path: '/games/vocabulary-mining'
+          languages: ['English', 'Spanish', 'French', 'German'],
+          path: '/games/vocab-master'
         },
         {
           id: 'speed-builder',
@@ -415,6 +416,24 @@ export default function GamesPage() {
     router.push(url);
   };
 
+  // Handler for VocabMaster "Choose Content" button
+  const handleVocabMasterChooseContent = () => {
+    // Find VocabMaster game and set it as selected
+    const vocabMasterGame = games.find(game => game.id === 'vocab-master');
+    if (vocabMasterGame) {
+      setSelectedGameForSetup(vocabMasterGame);
+      // On mobile, open modal immediately
+      if (window.innerWidth < 768) {
+        setIsMobileModalOpen(true);
+      } else {
+        // On desktop, scroll to the sidebar
+        if (sidebarRef.current) {
+          sidebarRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }
+    }
+  };
+
   // Combined filtering logic for category filter, search query, and advanced filters
   const filteredGames = games.filter(game => {
     // Apply category filter
@@ -591,7 +610,11 @@ export default function GamesPage() {
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                {filteredGames.map((game) => {
+                {/* Featured VocabMaster Card */}
+                <FeaturedVocabMasterCard onChooseContent={handleVocabMasterChooseContent} />
+
+                {/* Regular Games (excluding VocabMaster since it's featured) */}
+                {filteredGames.filter(game => game.id !== 'vocab-master').map((game) => {
                   const isSelected = selectedGameForSetup?.id === game.id;
                   const isDisabled = selectedGameForSetup && !isSelected; // Dim other cards if one is selected
 

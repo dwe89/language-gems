@@ -301,7 +301,7 @@ export default function InteractiveStudentOverview() {
         id: student.student_id,
         name: student.student_name,
         email: student.email,
-        class_id: student.class_id || 'default-class',
+        class_id: student.class_id || '7565cca8-9c14-469f-961e-35decf890563',
         class_name: student.class_name || 'Default Class',
         enrolled_at: student.last_active, // Use last_active as enrolled_at for now
         last_active: student.last_active,

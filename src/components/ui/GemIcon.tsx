@@ -1,5 +1,4 @@
 import React from 'react';
-import { motion } from 'framer-motion';
 
 export type GemType = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
 
@@ -11,217 +10,175 @@ interface GemIconProps {
   className?: string;
 }
 
-const GemIcon: React.FC<GemIconProps> = ({ 
-  type, 
-  size = 'medium', 
-  animated = false, 
+const GemIcon: React.FC<GemIconProps> = ({
+  type,
+  size = 'medium',
+  animated = false,
   collected = false,
-  className = '' 
+  className = ''
 }) => {
-  const sizeClasses = {
-    small: 'w-6 h-6',
-    medium: 'w-8 h-8',
-    large: 'w-12 h-12',
-    xl: 'w-16 h-16'
+  const sizeMap = {
+    small: 32,
+    medium: 64,
+    large: 96,
+    xl: 140
   };
 
-  const gemConfigs = {
-    common: {
-      primaryColor: '#3B82F6',
-      secondaryColor: '#60A5FA',
-      accentColor: '#93C5FD',
-      shadowColor: '#1E40AF',
-      name: 'Common Gem'
-    },
-    uncommon: {
-      primaryColor: '#10B981',
-      secondaryColor: '#34D399',
-      accentColor: '#6EE7B7',
-      shadowColor: '#047857',
-      name: 'Uncommon Gem'
-    },
-    rare: {
-      primaryColor: '#8B5CF6',
-      secondaryColor: '#A78BFA',
-      accentColor: '#C4B5FD',
-      shadowColor: '#5B21B6',
-      name: 'Rare Gem'
-    },
-    epic: {
-      primaryColor: '#EC4899',
-      secondaryColor: '#F472B6',
-      accentColor: '#F9A8D4',
-      shadowColor: '#BE185D',
-      name: 'Epic Gem'
-    },
-    legendary: {
-      primaryColor: '#F59E0B',
-      secondaryColor: '#FBBF24',
-      accentColor: '#FCD34D',
-      shadowColor: '#D97706',
-      name: 'Legendary Gem'
-    }
-  };
-
-  const config = gemConfigs[type];
-
-  const sparkleAnimation = {
-    scale: [1, 1.2, 1],
-    opacity: [0.7, 1, 0.7],
-    transition: {
-      duration: 2,
-      repeat: Infinity,
-      ease: "easeInOut"
-    }
-  };
-
-  const collectAnimation = {
-    scale: [1, 1.3, 1],
-    rotate: [0, 360],
-    transition: {
-      duration: 0.6,
-      ease: "easeOut"
-    }
-  };
+  const dimension = sizeMap[size];
 
   return (
-    <motion.div
-      className={`relative ${sizeClasses[size]} ${className}`}
-      animate={collected ? collectAnimation : (animated ? sparkleAnimation : {})}
-      title={config.name}
-    >
+    <div className={`flex items-center justify-center ${className}`}>
       <svg
-        viewBox="0 0 100 100"
-        className="w-full h-full drop-shadow-lg"
-        xmlns="http://www.w3.org/2000/svg"
+        width={dimension}
+        height={dimension}
+        viewBox="0 0 140 140"
+        className={`transition-all duration-500 ${animated && type === 'legendary' ? 'animate-pulse' : ''}`}
+        style={{
+          filter: `drop-shadow(0 0 20px ${
+            type === 'common' ? 'rgba(30, 58, 138, 0.6)' :
+            type === 'uncommon' ? 'rgba(8, 145, 178, 0.6)' :
+            type === 'rare' ? 'rgba(103, 232, 249, 0.6)' :
+            type === 'epic' ? 'rgba(165, 243, 252, 0.6)' :
+            'rgba(240, 171, 252, 0.8)'
+          })`
+        }}
       >
-        {/* Gem Shadow */}
-        <ellipse
-          cx="50"
-          cy="85"
-          rx="25"
-          ry="8"
-          fill={config.shadowColor}
-          opacity="0.3"
-        />
-        
-        {/* Main Gem Body */}
-        <path
-          d="M50 15 L70 35 L65 70 L35 70 L30 35 Z"
-          fill={`url(#gradient-${type})`}
-          stroke={config.primaryColor}
-          strokeWidth="1"
-        />
-        
-        {/* Gem Top Facet */}
-        <path
-          d="M50 15 L70 35 L50 25 Z"
-          fill={config.accentColor}
-          opacity="0.8"
-        />
-        
-        {/* Gem Left Facet */}
-        <path
-          d="M50 15 L30 35 L50 25 Z"
-          fill={config.secondaryColor}
-          opacity="0.9"
-        />
-        
-        {/* Gem Highlight */}
-        <path
-          d="M45 20 L55 20 L60 30 L40 30 Z"
-          fill="white"
-          opacity="0.4"
-        />
-        
-        {/* Inner Sparkle */}
-        <circle
-          cx="48"
-          cy="45"
-          r="3"
-          fill="white"
-          opacity="0.6"
-        />
-        
-        <circle
-          cx="55"
-          cy="50"
-          r="2"
-          fill="white"
-          opacity="0.4"
-        />
-
-        {/* Gradient Definitions */}
         <defs>
-          <linearGradient id={`gradient-${type}`} x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor={config.accentColor} />
-            <stop offset="50%" stopColor={config.primaryColor} />
-            <stop offset="100%" stopColor={config.shadowColor} />
+          <linearGradient id={`gemGradient-${type}`} x1="0%" y1="0%" x2="100%" y2="100%">
+            {type === 'common' ? (
+              <>
+                <stop offset="0%" style={{ stopColor: '#1E3A8A', stopOpacity: 1 }} />
+                <stop offset="30%" style={{ stopColor: '#1E40AF', stopOpacity: 1 }} />
+                <stop offset="70%" style={{ stopColor: '#1D4ED8', stopOpacity: 1 }} />
+                <stop offset="100%" style={{ stopColor: '#2563EB', stopOpacity: 1 }} />
+              </>
+            ) : type === 'uncommon' ? (
+              <>
+                <stop offset="0%" style={{ stopColor: '#0891B2', stopOpacity: 1 }} />
+                <stop offset="30%" style={{ stopColor: '#0E7490', stopOpacity: 1 }} />
+                <stop offset="70%" style={{ stopColor: '#155E75', stopOpacity: 1 }} />
+                <stop offset="100%" style={{ stopColor: '#164E63', stopOpacity: 1 }} />
+              </>
+            ) : type === 'rare' ? (
+              <>
+                <stop offset="0%" style={{ stopColor: '#67E8F9', stopOpacity: 1 }} />
+                <stop offset="30%" style={{ stopColor: '#22D3EE', stopOpacity: 1 }} />
+                <stop offset="70%" style={{ stopColor: '#06B6D4', stopOpacity: 1 }} />
+                <stop offset="100%" style={{ stopColor: '#0891B2', stopOpacity: 1 }} />
+              </>
+            ) : type === 'epic' ? (
+              <>
+                <stop offset="0%" style={{ stopColor: '#A5F3FC', stopOpacity: 1 }} />
+                <stop offset="30%" style={{ stopColor: '#67E8F9', stopOpacity: 1 }} />
+                <stop offset="70%" style={{ stopColor: '#22D3EE', stopOpacity: 1 }} />
+                <stop offset="100%" style={{ stopColor: '#06B6D4', stopOpacity: 1 }} />
+              </>
+            ) : (
+              <>
+                <stop offset="0%" style={{ stopColor: '#F0ABFC', stopOpacity: 1 }} />
+                <stop offset="30%" style={{ stopColor: '#E879F9', stopOpacity: 1 }} />
+                <stop offset="70%" style={{ stopColor: '#D946EF', stopOpacity: 1 }} />
+                <stop offset="100%" style={{ stopColor: '#C026D3', stopOpacity: 1 }} />
+              </>
+            )}
+          </linearGradient>
+
+          <radialGradient id={`gemHighlight-${type}`} cx="30%" cy="30%" r="40%">
+            <stop offset="0%" style={{ stopColor: '#ffffff', stopOpacity: 0.8 }} />
+            <stop offset="50%" style={{ stopColor: '#ffffff', stopOpacity: 0.3 }} />
+            <stop offset="100%" style={{ stopColor: '#ffffff', stopOpacity: 0 }} />
+          </radialGradient>
+
+          <radialGradient id={`gemShadow-${type}`} cx="70%" cy="70%" r="60%">
+            <stop offset="0%" style={{ stopColor: '#000000', stopOpacity: 0 }} />
+            <stop offset="70%" style={{ stopColor: '#000000', stopOpacity: 0.1 }} />
+            <stop offset="100%" style={{ stopColor: '#000000', stopOpacity: 0.3 }} />
+          </radialGradient>
+
+          {/* Top surface gradient */}
+          <linearGradient id={`topSurface-${type}`} x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style={{ stopColor: '#ffffff', stopOpacity: 0.8 }} />
+            <stop offset="50%" style={{ stopColor: '#ffffff', stopOpacity: 0.4 }} />
+            <stop offset="100%" style={{ stopColor: '#ffffff', stopOpacity: 0.1 }} />
+          </linearGradient>
+
+          {/* Left facet gradient */}
+          <linearGradient id={`leftFacet-${type}`} x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" style={{ stopColor: '#000000', stopOpacity: 0.2 }} />
+            <stop offset="100%" style={{ stopColor: '#000000', stopOpacity: 0.05 }} />
+          </linearGradient>
+
+          {/* Right facet gradient */}
+          <linearGradient id={`rightFacet-${type}`} x1="100%" y1="0%" x2="0%" y2="0%">
+            <stop offset="0%" style={{ stopColor: '#000000', stopOpacity: 0.3 }} />
+            <stop offset="100%" style={{ stopColor: '#000000', stopOpacity: 0.1 }} />
+          </linearGradient>
+
+          {/* Bottom facet gradient */}
+          <linearGradient id={`bottomFacet-${type}`} x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style={{ stopColor: '#000000', stopOpacity: 0.1 }} />
+            <stop offset="100%" style={{ stopColor: '#000000', stopOpacity: 0.4 }} />
           </linearGradient>
         </defs>
+
+        {/* Main gem body - Rounded 3D gem shape */}
+        <path
+          d="M70 20 Q95 25 100 50 Q95 75 85 90 Q70 110 70 110 Q70 110 55 90 Q45 75 40 50 Q45 25 70 20 Z"
+          fill={`url(#gemGradient-${type})`}
+          stroke="none"
+        />
+
+        {/* Top flat surface */}
+        <ellipse
+          cx="70" cy="30"
+          rx="22" ry="6"
+          fill={`url(#topSurface-${type})`}
+        />
+
+        {/* Left curved facet */}
+        <path
+          d="M48 30 Q40 50 48 85 Q58 75 58 50 Q58 35 48 30 Z"
+          fill={`url(#leftFacet-${type})`}
+        />
+
+        {/* Right curved facet */}
+        <path
+          d="M92 30 Q100 50 92 85 Q82 75 82 50 Q82 35 92 30 Z"
+          fill={`url(#rightFacet-${type})`}
+        />
+
+        {/* Bottom curved surface */}
+        <path
+          d="M48 85 Q70 110 92 85 Q82 95 70 105 Q58 95 48 85 Z"
+          fill={`url(#bottomFacet-${type})`}
+        />
+
+        {/* Highlight overlay */}
+        <path
+          d="M70 10 L110 50 L70 130 L30 50 Z"
+          fill={`url(#gemHighlight-${type})`}
+        />
+
+        {/* Inner shadow overlay */}
+        <path
+          d="M70 10 L110 50 L70 130 L30 50 Z"
+          fill={`url(#gemShadow-${type})`}
+        />
+
+        {/* Main highlight - bright spot like in reference */}
+        <ellipse
+          cx="60" cy="45"
+          rx="6" ry="10"
+          fill="rgba(255,255,255,0.9)"
+          className={animated ? "animate-pulse" : ""}
+        />
+        <ellipse
+          cx="58" cy="42"
+          rx="3" ry="5"
+          fill="rgba(255,255,255,1)"
+        />
       </svg>
-
-      {/* Sparkle Effects for Animated Gems */}
-      {animated && (
-        <>
-          <motion.div
-            className="absolute -top-1 -right-1 w-2 h-2 bg-white rounded-full"
-            animate={{
-              scale: [0, 1, 0],
-              opacity: [0, 1, 0],
-            }}
-            transition={{
-              duration: 1.5,
-              repeat: Infinity,
-              delay: 0,
-            }}
-          />
-          <motion.div
-            className="absolute -bottom-1 -left-1 w-1.5 h-1.5 bg-white rounded-full"
-            animate={{
-              scale: [0, 1, 0],
-              opacity: [0, 1, 0],
-            }}
-            transition={{
-              duration: 1.5,
-              repeat: Infinity,
-              delay: 0.5,
-            }}
-          />
-          <motion.div
-            className="absolute top-1/2 -right-2 w-1 h-1 bg-white rounded-full"
-            animate={{
-              scale: [0, 1, 0],
-              opacity: [0, 1, 0],
-            }}
-            transition={{
-              duration: 1.5,
-              repeat: Infinity,
-              delay: 1,
-            }}
-          />
-        </>
-      )}
-
-      {/* Special Crown for Legendary Gems */}
-      {type === 'legendary' && (
-        <svg
-          viewBox="0 0 20 20"
-          className="absolute -top-2 left-1/2 transform -translate-x-1/2 w-4 h-4"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            d="M2 12 L4 6 L7 10 L10 4 L13 10 L16 6 L18 12 Z"
-            fill="#FFD700"
-            stroke="#FFA500"
-            strokeWidth="0.5"
-          />
-          <circle cx="7" cy="8" r="1" fill="#FFD700" />
-          <circle cx="10" cy="6" r="1" fill="#FFD700" />
-          <circle cx="13" cy="8" r="1" fill="#FFD700" />
-        </svg>
-      )}
-    </motion.div>
+    </div>
   );
 };
 

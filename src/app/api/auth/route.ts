@@ -44,7 +44,7 @@ export async function POST(request: Request) {
             .select('code, school_name, school_initials, is_active, expires_at')
             .eq('school_initials', schoolCode)
             .eq('is_active', true)
-            .single();
+            .maybeSingle();
           
           if (schoolCodeError || !schoolCodeData) {
             console.log('Invalid school code provided:', schoolCode);

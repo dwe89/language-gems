@@ -12,6 +12,10 @@ export interface EnhancedGameSession {
   game_type: string;
   session_mode: 'free_play' | 'assignment' | 'practice' | 'challenge';
 
+  // Content metadata
+  category?: string;
+  subcategory?: string;
+
   // Session metadata
   started_at: Date;
   ended_at?: Date;
@@ -48,6 +52,10 @@ export interface EnhancedGameSession {
   // Session data
   session_data: Record<string, any>;
   device_info: Record<string, any>;
+
+  // Timestamps
+  created_at?: Date;
+  updated_at?: Date;
 }
 
 export interface WordPerformanceLog {
@@ -258,8 +266,50 @@ export class EnhancedGameService {
   // =====================================================
 
   async startGameSession(sessionData: Partial<EnhancedGameSession>): Promise<string> {
+    // Extract database columns from session data
+    const {
+      id,
+      student_id,
+      assignment_id,
+      game_type,
+      session_mode,
+      category,
+      subcategory,
+      started_at,
+      ended_at,
+      duration_seconds,
+      final_score,
+      max_score_possible,
+      accuracy_percentage,
+      completion_percentage,
+      level_reached,
+      lives_used,
+      power_ups_used,
+      achievements_earned,
+      words_attempted,
+      words_correct,
+      unique_words_practiced,
+      average_response_time_ms,
+      pause_count,
+      hint_requests,
+      retry_attempts,
+      session_data,
+      device_info,
+      created_at,
+      updated_at,
+      xp_earned,
+      bonus_xp,
+      xp_multiplier,
+      ...extraData // All other fields go into session_data
+    } = sessionData;
+
     const session: Partial<EnhancedGameSession> = {
-      ...sessionData,
+      student_id,
+      assignment_id,
+      game_type,
+      session_mode,
+      category,
+      subcategory,
       started_at: new Date(),
       duration_seconds: 0,
       final_score: 0,
@@ -276,7 +326,10 @@ export class EnhancedGameService {
       pause_count: 0,
       hint_requests: 0,
       retry_attempts: 0,
-      session_data: {},
+      session_data: {
+        ...extraData, // Include extra fields like game_mode, language_pair, etc.
+        ...(session_data || {})
+      },
       device_info: this.getDeviceInfo()
     };
 

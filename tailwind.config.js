@@ -20,6 +20,12 @@ module.exports = {
         'gradient-conic':
           'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
       },
+      // === ADDED/MODIFIED FOR GEM RENDERING ===
+      borderWidth: {
+        '12': '12px',
+        '16': '16px',
+        '20': '20px',
+      },
       animation: {
         'sparkle': 'sparkle 1.5s linear infinite',
         'float': 'float 3s ease-in-out infinite',
@@ -27,6 +33,7 @@ module.exports = {
         'float-slow': 'float 4s ease-in-out infinite',
         'ping-slow': 'ping 3s cubic-bezier(0, 0, 0.2, 1) infinite',
         'fade-in': 'fadeIn 0.5s ease-in-out',
+        'spin-slow': 'spin 3s linear infinite', // Added for gem rotation
       },
       keyframes: {
         sparkle: {
@@ -41,7 +48,12 @@ module.exports = {
           '0%': { opacity: 0 },
           '100%': { opacity: 1 },
         },
+        spin: { // Added for the gem's rotation
+          from: { transform: 'rotate(0deg)' },
+          to: { transform: 'rotate(360deg)' },
+        },
       },
+      // =======================================
       spacing: {
         '18': '4.5rem',
         '88': '22rem',
@@ -192,4 +204,4 @@ module.exports = {
   plugins: [
     require('@tailwindcss/typography'),
   ],
-}; 
+};

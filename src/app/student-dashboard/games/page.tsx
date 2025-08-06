@@ -1,50 +1,76 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Hexagon, Star, Clock, Users, Loader2, BookOpen } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
+import { Gamepad2, Search, Hexagon, Star, Clock, Users, Loader2, BookOpen, Play, Target, BarChart3 } from 'lucide-react';
 import { createBrowserClient } from '@supabase/ssr';
 import { useAuth } from '../../../components/auth/AuthProvider';
 import { useGameProgress } from '../../../hooks/useGameProgress';
 import { GameSummary } from '../../../services/gameProgressService';
+import GameSelectionSidebar, { SelectionState } from '../../../components/games/FilterSidebar';
+import MobileGameSelectionModal from '../../../components/games/MobileGameSelectionModal';
+import FeaturedVocabMasterCard from '../../../components/games/FeaturedVocabMasterCard';
 
 type Game = {
   id: string;
-  title: string;
+  name: string;
   description: string;
   thumbnail: string;
-  playTime: string;
-  gemColor: string;
-  difficulty: 1 | 2 | 3 | 4 | 5;
-  players: string;
+  category: string;
+  subcategories?: string[];
+  popular: boolean;
+  languages: string[];
+  path: string;
+  playTime?: string;
+  gemColor?: string;
+  difficulty?: 1 | 2 | 3 | 4 | 5;
+  players?: string;
   isNew?: boolean;
   isFeatured?: boolean;
   lastPlayed?: string;
   highScore?: number;
-  path?: string; // Add path property for direct linking
 };
 
 // Component to display a game card
-const GameCard = ({ game }: { game: Game }) => {
-  // Generate game path for student subdomain - redirect to main site for games
-  const gamePath = game.path ? `http://localhost:3000${game.path}` : `http://localhost:3000/games/${game.title.toLowerCase().replace(/\s+/g, '-')}`;
-
+const GameCard = ({ game, isSelected, isDisabled, onPlayNowClick }: {
+  game: Game;
+  isSelected: boolean;
+  isDisabled: boolean;
+  onPlayNowClick: (game: Game) => void;
+}) => {
   return (
-    <div className="bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow">
-      <div className="relative h-48">
-        <Image 
-          src={game.thumbnail || '/placeholder.svg'} 
-          alt={game.title}
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className={`rounded-xl overflow-hidden border shadow-lg transition-all duration-300 flex flex-col
+        ${isSelected
+          ? 'bg-green-50 border-green-500 shadow-xl ring-2 ring-green-200'
+          : isDisabled
+          ? 'bg-white border-gray-200 opacity-50 pointer-events-none'
+          : 'bg-white border-gray-200 hover:shadow-xl hover:-translate-y-1 hover:border-indigo-300'
+        }`}
+    >
+      <div className="h-40 relative overflow-hidden">
+        <Image
+          src={game.thumbnail}
+          alt={game.name}
           fill
-          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           className="object-cover"
-          priority={game.isFeatured}
           onError={(e) => {
-            // If image fails to load, replace with placeholder
+            // Fallback to gradient background if image fails
             const target = e.target as HTMLImageElement;
-            target.onerror = null; // prevent infinite loop
-            target.src = '/placeholder.svg';
+            target.style.display = 'none';
+            const parent = target.parentElement;
+            if (parent) {
+              parent.className = "h-40 bg-gradient-to-br from-indigo-400 via-purple-500 to-pink-500 flex items-center justify-center relative";
+              const fallback = document.createElement('div');
+              fallback.innerHTML = `<svg class="h-16 w-16 text-white/80" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>`;
+              parent.appendChild(fallback);
+            }
           }}
         />
         {game.isNew && (
@@ -52,9 +78,9 @@ const GameCard = ({ game }: { game: Game }) => {
             NEW
           </div>
         )}
-        {game.isFeatured && (
+        {game.popular && (
           <div className="absolute top-2 left-2 bg-purple-500 text-white px-2 py-1 rounded-full text-xs font-bold">
-            FEATURED
+            POPULAR
           </div>
         )}
         {game.highScore !== undefined && (
@@ -62,39 +88,30 @@ const GameCard = ({ game }: { game: Game }) => {
             High Score: {game.highScore}
           </div>
         )}
+        {/* Category badge */}
+        <div className="absolute top-2 right-2 bg-white/20 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-full">
+          {game.category === 'sentences' ? 'Sentences' : game.category.charAt(0).toUpperCase() + game.category.slice(1)}
+        </div>
       </div>
-      
-      <div className="p-4">
-        <div className="flex items-start justify-between">
-          <h3 className="text-xl font-bold">{game.title}</h3>
-          <div className={`${game.gemColor} mt-1`}>
-            <Hexagon className="h-6 w-6" strokeWidth={1.5} />
-          </div>
-        </div>
-        
-        <p className="text-gray-600 text-sm mt-2 line-clamp-2">{game.description}</p>
-        
-        <div className="flex justify-between items-center mt-4 text-sm text-gray-500">
-          <div className="flex items-center">
-            <Clock className="h-4 w-4 mr-1" />
-            <span>{game.playTime}</span>
-          </div>
-          <div className="flex items-center">
-            <Users className="h-4 w-4 mr-1" />
-            <span>{game.players}</span>
-          </div>
-        </div>
-        
-        <div className="flex justify-end items-center mt-4">
-          <Link 
-            href={gamePath}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors"
+
+      <div className="p-5 flex flex-col flex-grow">
+        <h3 className="text-xl font-bold text-gray-900 mb-2">{game.name}</h3>
+        <p className="text-gray-600 text-sm mb-4 flex-grow">{game.description}</p>
+
+        <div className="flex space-x-3 mt-auto">
+          <button
+            onClick={() => onPlayNowClick(game)}
+            className={`flex-1 text-white text-center py-2 rounded-lg font-medium transition-all transform
+              ${isSelected
+                ? 'bg-green-600 hover:bg-green-700'
+                : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 hover:scale-105'
+              }`}
           >
-            Play Now
-          </Link>
+            {isSelected ? '🎮 Change Game' : '🎮 Play Now'}
+          </button>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 
@@ -108,6 +125,7 @@ const LoadingState = () => (
 
 export default function GamesPage() {
   const { user } = useAuth();
+  const router = useRouter();
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL || '',
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
@@ -117,119 +135,316 @@ export default function GamesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [gameProgressMap, setGameProgressMap] = useState<Record<string, GameSummary[]>>({});
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedGameForSetup, setSelectedGameForSetup] = useState<Game | null>(null);
+  const [isMobileModalOpen, setIsMobileModalOpen] = useState(false);
+  const [currentSelection, setCurrentSelection] = useState<SelectionState>({
+    language: null,
+    curriculumLevel: null,
+    categoryId: null,
+    subcategoryId: null,
+    theme: null
+  });
 
-  // Default placeholder games in case of database error
-  const placeholderGames: Game[] = [
+  const sidebarRef = useRef<HTMLDivElement>(null);
+
+  // Define categories
+  const categories = [
+    { value: 'all', label: 'All Games' },
+    { value: 'vocabulary', label: 'Vocabulary' },
+    { value: 'grammar', label: 'Grammar' },
+    { value: 'listening', label: 'Listening' },
+    { value: 'spelling', label: 'Spelling' },
+    { value: 'sentences', label: 'Sentences' },
+  ];
+
+  // Updated games list to match main site
+  const actualGames: Game[] = [
     {
-      id: '1',
-      title: 'Vocabulary Mining',
-      description: 'Mine rare vocabulary gems through intelligent spaced repetition, listening exercises, and adaptive learning.',
-      thumbnail: '/images/games/gem-collector.jpg',
+      id: 'vocab-master',
+      name: 'VocabMaster',
+      description: 'Master vocabulary with smart, personalized reviews, adaptive learning, and 8 engaging game modes.',
+      thumbnail: '/images/games/vocabulary-mining.jpg',
+      category: 'vocabulary',
+      popular: true,
+      languages: ['English', 'Spanish', 'French', 'German'],
+      path: 'http://localhost:3000/games/vocab-master',
       playTime: '5-15 min',
       gemColor: 'text-yellow-500',
       difficulty: 2,
       players: 'Single Player',
-      isFeatured: true,
-      path: '/games/vocabulary-mining'
+      isFeatured: true
     },
     {
-      id: '2',
-      title: 'Translation Tycoon',
-      description: 'Build your own translation empire and learn vocabulary in a fun, interactive way!',
-      thumbnail: '/images/games/word-blast.jpg',
-      playTime: '5-15 min',
-      gemColor: 'text-blue-500',
+      id: 'speed-builder',
+      name: 'Sentence Sprint',
+      description: 'Drag and drop words to build sentences correctly before time runs out.',
+      thumbnail: '/images/games/speed-builder.jpg',
+      category: 'sentences',
+      subcategories: ['sentences'],
+      popular: true,
+      languages: ['English', 'Spanish', 'French', 'German'],
+      path: 'http://localhost:3000/games/speed-builder',
+      playTime: '5-10 min',
+      gemColor: 'text-red-500',
       difficulty: 2,
-      players: 'Single Player',
-      isFeatured: true,
-      path: '/games/translation-tycoon'
+      players: 'Single Player'
     },
     {
-      id: '3',
-      title: 'Word Blast',
-      description: 'Launch rockets by selecting the correct word translations before time runs out!',
+      id: 'word-blast',
+      name: 'Word Blast',
+      description: 'Launch rockets with correct word translations before time runs out!',
       thumbnail: '/images/games/word-blast.jpg',
+      category: 'vocabulary',
+      popular: true,
+      languages: ['English', 'Spanish', 'French'],
+      path: 'http://localhost:3000/games/word-blast',
       playTime: '3-5 min',
       gemColor: 'text-green-500',
       difficulty: 1,
-      players: 'Single Player',
-      path: '/games/word-blast'
+      players: 'Single Player'
     },
     {
-      id: '4',
-      title: 'Hangman',
-      description: 'Classic word guessing game to practice vocabulary.',
+      id: 'sentence-towers',
+      name: 'Word Towers',
+      description: 'Build towers by matching words to translations. Wrong answers make towers fall!',
+      thumbnail: '/images/games/sentence-towers.jpg',
+      category: 'vocabulary',
+      popular: true,
+      languages: ['English', 'Spanish', 'French', 'German'],
+      path: 'http://localhost:3000/games/sentence-towers',
+      playTime: '5-15 min',
+      gemColor: 'text-yellow-500',
+      difficulty: 4,
+      players: 'Single Player'
+    },
+    {
+      id: 'hangman',
+      name: 'Hangman',
+      description: 'Guess the word before the hangman is complete. Excellent for vocabulary practice.',
       thumbnail: '/images/games/hangman.jpg',
+      category: 'vocabulary',
+      popular: true,
+      languages: ['English', 'Spanish', 'French', 'German', 'Italian', 'Japanese'],
+      path: 'http://localhost:3000/games/hangman',
       playTime: '5-10 min',
       gemColor: 'text-purple-500',
       difficulty: 3,
-      players: 'Single Player',
-      path: '/games/hangman'
+      players: 'Single Player'
     },
     {
-      id: '5',
-      title: 'Memory Game',
+      id: 'memory-game',
+      name: 'Memory Match',
       description: 'Match pairs of cards to build vocabulary and memory skills.',
       thumbnail: '/images/games/memory-match.jpg',
+      category: 'vocabulary',
+      popular: false,
+      languages: ['English', 'Spanish', 'French', 'German'],
+      path: 'http://localhost:3000/games/memory-game',
       playTime: '5-10 min',
       gemColor: 'text-pink-500',
       difficulty: 2,
       players: 'Single Player',
-      isNew: true,
-      path: '/games/memory-game'
+      isNew: true
     },
     {
-      id: '6',
-      title: 'Sentence Sprint',
-      description: 'Drag and drop words to build sentences correctly before time runs out.',
-      thumbnail: '/images/games/speed-builder.jpg',
-      playTime: '5-10 min',
-      gemColor: 'text-red-500',
-      difficulty: 2,
-      players: 'Single Player',
-      path: '/games/speed-builder'
-    },
-    {
-      id: '7',
-      title: 'Sentence Towers',
-      description: 'Build towers by matching words to translations. Wrong answers make towers fall!',
-      thumbnail: '/images/games/sentence-towers.jpg',
-      playTime: '5-15 min',
-      gemColor: 'text-yellow-500',
-      difficulty: 4,
-      players: 'Single Player',
-      path: '/games/sentence-towers'
-    },
-    {
-      id: '8',
-      title: 'Noughts and Crosses',
-      description: 'Classic tic-tac-toe game with a language learning twist. Match words to their meanings!',
+      id: 'noughts-and-crosses',
+      name: 'Noughts and Crosses',
+      description: 'Play tic-tac-toe while practicing language terms.',
       thumbnail: '/images/games/noughts-and-crosses.jpg',
+      category: 'vocabulary',
+      popular: false,
+      languages: ['English', 'Spanish', 'French', 'German'],
+      path: 'http://localhost:3000/games/noughts-and-crosses',
       playTime: '3-5 min',
       gemColor: 'text-indigo-500',
       difficulty: 1,
-      players: '1-2 Players',
-      path: '/games/noughts-and-crosses'
+      players: '1-2 Players'
     },
+    {
+      id: 'conjugation-duel',
+      name: 'Conjugation Duel',
+      description: 'Epic verb conjugation battles in different arenas and leagues.',
+      thumbnail: '/images/games/conjugation-duel.jpg',
+      category: 'grammar',
+      popular: true,
+      languages: ['Spanish'],
+      path: 'http://localhost:3000/games/conjugation-duel',
+      playTime: '8-12 min',
+      gemColor: 'text-orange-500',
+      difficulty: 4,
+      players: 'Single Player'
+    },
+    {
+      id: 'word-scramble',
+      name: 'Word Scramble',
+      description: 'Unscramble jumbled words to improve spelling and word recognition.',
+      thumbnail: '/images/games/word-scramble.jpg',
+      category: 'spelling',
+      popular: true,
+      languages: ['English', 'Spanish', 'French'],
+      path: 'http://localhost:3000/games/word-scramble',
+      playTime: '4-8 min',
+      gemColor: 'text-cyan-500',
+      difficulty: 2,
+      players: 'Single Player'
+    },
+    {
+      id: 'detective-listening',
+      name: 'Detective Listening Game',
+      description: 'Solve cases by identifying evidence through listening to words in Spanish, French, or German and finding their English translations.',
+      thumbnail: '/images/games/detective-listening.jpg',
+      category: 'listening',
+      popular: true,
+      languages: ['Spanish', 'French', 'German'],
+      path: 'http://localhost:3000/games/detective-listening',
+      playTime: '6-10 min',
+      gemColor: 'text-amber-500',
+      difficulty: 3,
+      players: 'Single Player'
+    },
+    {
+      id: 'case-file-translator',
+      name: 'Case File Translator',
+      description: 'Solve detective cases by translating intercepted communications from Spanish, French, or German to English.',
+      thumbnail: '/images/games/case-file-translator.jpg',
+      category: 'sentences',
+      subcategories: ['sentences'],
+      popular: true,
+      languages: ['Spanish', 'French', 'German'],
+      path: 'http://localhost:3000/games/case-file-translator',
+      playTime: '8-12 min',
+      gemColor: 'text-emerald-500',
+      difficulty: 4,
+      players: 'Single Player'
+    },
+    {
+      id: 'lava-temple-word-restore',
+      name: 'Lava Temple: Word Restore',
+      description: 'Restore ancient inscriptions by filling in missing words. Become a linguistic archaeologist and unlock temple secrets!',
+      thumbnail: '/images/games/lava-temple-word-restore.jpg',
+      category: 'sentences',
+      subcategories: ['sentences'],
+      popular: true,
+      languages: ['Spanish', 'French', 'German'],
+      path: 'http://localhost:3000/games/lava-temple-word-restore',
+      playTime: '10-15 min',
+      gemColor: 'text-red-500',
+      difficulty: 4,
+      players: 'Single Player'
+    },
+    {
+      id: 'verb-quest',
+      name: 'Verb Quest',
+      description: 'Embark on an epic RPG adventure to master verb conjugations!',
+      thumbnail: '/images/games/verb-quest.jpg',
+      category: 'grammar',
+      popular: true,
+      languages: ['Spanish', 'French', 'German'],
+      path: 'http://localhost:3000/games/verb-quest',
+      playTime: '12-20 min',
+      gemColor: 'text-violet-500',
+      difficulty: 5,
+      players: 'Single Player'
+    },
+    {
+      id: 'vocab-blast',
+      name: 'Vocab-Blast',
+      description: 'Click vocabulary gems to pop and translate them quickly',
+      thumbnail: '/images/games/vocab-blast.jpg',
+      category: 'vocabulary',
+      popular: true,
+      languages: ['English', 'Spanish', 'French', 'German'],
+      path: 'http://localhost:3000/games/vocab-blast',
+      playTime: '3-6 min',
+      gemColor: 'text-lime-500',
+      difficulty: 2,
+      players: 'Single Player'
+    }
   ];
+
+  // Game selection handlers
+  const handleDeselectGame = () => {
+    setSelectedGameForSetup(null);
+    setCurrentSelection({
+      language: null,
+      curriculumLevel: null,
+      categoryId: null,
+      subcategoryId: null,
+      theme: null
+    });
+  };
+
+  const handlePlayNowClick = (game: Game) => {
+    // If the same game is clicked again, deselect it.
+    if (selectedGameForSetup?.id === game.id) {
+        handleDeselectGame();
+        return;
+    }
+
+    setSelectedGameForSetup(game);
+    // On mobile, open modal immediately
+    if (window.innerWidth < 768) {
+      setIsMobileModalOpen(true);
+    } else {
+      // On desktop, scroll to the sidebar to indicate next step
+      if (sidebarRef.current) {
+        sidebarRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+  };
+
+  const handleSelectionChange = (selection: SelectionState) => {
+    setCurrentSelection(selection);
+  };
+
+  const handleSelectionComplete = (selection: SelectionState) => {
+    if (!selectedGameForSetup) return;
+
+    // Construct URL with parameters
+    const params = new URLSearchParams({
+      lang: selection.language!,
+      level: selection.curriculumLevel!,
+      cat: selection.categoryId!,
+      subcat: selection.subcategoryId!,
+      theme: selection.theme || 'default'
+    });
+
+    const url = `${selectedGameForSetup.path}?${params.toString()}`;
+    console.log('🚀 Navigating to:', url);
+    window.location.href = url; // Use window.location for cross-domain navigation
+  };
+
+  const handleVocabMasterChooseContent = () => {
+    const vocabMasterGame = actualGames.find(game => game.id === 'vocab-master');
+    if (vocabMasterGame) {
+      setSelectedGameForSetup(vocabMasterGame);
+      if (window.innerWidth < 768) {
+        setIsMobileModalOpen(true);
+      } else {
+        if (sidebarRef.current) {
+          sidebarRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }
+    }
+  };
 
   useEffect(() => {
     const fetchGames = async () => {
       setLoading(true);
       setError(null);
-      
+
       try {
-        // Always use our placeholder games to ensure we show all available games
-        setGames(placeholderGames);
-        
+        // Use our updated games list
+        setGames(actualGames);
+
         // If user is logged in, fetch game progress
         let allGameProgress: Record<string, GameSummary[]> = {};
         if (user) {
           try {
-            // Get game stats which already contains recent games and avoids extra fetches
             const stats = await getStats();
-            
-            // Group game progress by gameId
+
             if (stats.recentGames && stats.recentGames.length > 0) {
               stats.recentGames.forEach(progress => {
                 if (!allGameProgress[progress.gameId]) {
@@ -238,17 +453,16 @@ export default function GamesPage() {
                 allGameProgress[progress.gameId].push(progress);
               });
             }
-            
+
             setGameProgressMap(allGameProgress);
-            
-            // Update placeholder games with user progress data
-            const gamesWithProgress = placeholderGames.map(game => {
-              // If we have progress for this game, add high score and last played
+
+            // Update games with user progress data
+            const gamesWithProgress = actualGames.map(game => {
               if (allGameProgress[game.id] && allGameProgress[game.id].length > 0) {
                 const gameProgress = allGameProgress[game.id];
                 const highScore = Math.max(...gameProgress.map(p => p.score));
                 const lastPlayed = gameProgress[0].playedAt;
-                
+
                 return {
                   ...game,
                   highScore,
@@ -257,7 +471,7 @@ export default function GamesPage() {
               }
               return game;
             });
-            
+
             setGames(gamesWithProgress);
           } catch (progressError) {
             console.error('Failed to fetch game progress:', progressError);
@@ -266,140 +480,212 @@ export default function GamesPage() {
       } catch (error) {
         console.error('Error loading games:', error);
         setError(error instanceof Error ? error.message : 'Unknown error loading games');
-        
-        // Use placeholder games as fallback
-        setGames(placeholderGames);
+        setGames(actualGames);
       } finally {
         setLoading(false);
       }
     };
-    
+
     fetchGames();
   }, [user]);
+
+  // Filtering logic
+  const filteredGames = games.filter(game => {
+    const matchesCategory = selectedCategory === 'all' || game.category === selectedCategory || (game.subcategories && game.subcategories.includes(selectedCategory));
+    const matchesSearch = searchQuery === '' ||
+      game.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      game.description.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesCategory && matchesSearch;
+  });
 
   if (loading) {
     return <LoadingState />;
   }
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-white">🎮 Games Library</h1>
-          <p className="text-indigo-100 mt-2">Choose any game and start earning gems!</p>
-        </div>
-        <Link 
-          href="/student-dashboard/assignments"
-          className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg transition-colors flex items-center space-x-2"
-        >
-          <BookOpen className="h-4 w-4" />
-          <span>Check Assignments</span>
-        </Link>
-      </div>
+    <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 min-h-screen">
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        {/* Header */}
+        <header className="mb-8">
+          <div className="flex items-center mb-2">
+            <Gamepad2 className="h-6 w-6 text-indigo-600 mr-2" />
+            <h1 className="text-3xl font-bold text-gray-900">🎮 Games Library</h1>
+          </div>
+          <p className="text-gray-600 max-w-2xl">
+            Choose any game and start earning gems! All progress counts towards your level and achievements.
+          </p>
 
-      {/* Mode Selection Banner */}
-      <div className="bg-white rounded-xl p-6 shadow-lg">
-        <div className="flex items-center space-x-4 mb-4">
-          <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
-            <Hexagon className="h-6 w-6 text-yellow-600" />
-          </div>
-          <div>
-            <h2 className="text-xl font-bold text-gray-900">🎯 Free Play Mode</h2>
-            <p className="text-gray-600">Play any game for fun and practice - all progress counts!</p>
-          </div>
-        </div>
-        
-        <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-lg p-4">
-          <div className="flex items-start justify-between flex-wrap gap-4">
-            <div className="flex-1">
-              <p className="text-gray-700 font-medium mb-2">✨ How Free Play Works:</p>
-              <ul className="text-sm text-gray-600 space-y-1">
-                <li>• Play any game below to earn gems and XP</li>
-                <li>• Practice weak vocabulary topics</li>
-                <li>• All progress contributes to your level and leaderboard ranking</li>
-                <li>• No time limits or pressure - learn at your own pace!</li>
-              </ul>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-2">
-              <Link 
+          <div className="mt-4 p-4 bg-gradient-to-r from-blue-100 to-indigo-100 rounded-xl border border-blue-200">
+            <div className="flex items-center justify-between">
+              <p className="text-blue-800">
+                <span className="font-bold">💡 Student Tip:</span> Play regularly to improve your vocabulary and climb the leaderboards!
+              </p>
+              <Link
                 href="/student-dashboard/assignments"
-                className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center space-x-2 text-sm"
               >
-                📚 View Homework Instead
-              </Link>
-              <Link 
-                href="/student-dashboard/vocabulary"
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center"
-              >
-                📖 Study Vocabulary
+                <BookOpen className="h-4 w-4" />
+                <span>Check Assignments</span>
               </Link>
             </div>
           </div>
-        </div>
-      </div>
+        </header>
 
-      {/* Featured Games Section */}
-      {games.filter(game => game.isFeatured).length > 0 && (
-        <div className="bg-white rounded-xl p-6 shadow-lg">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">⭐ Featured Games</h2>
-            <span className="text-sm text-gray-500">Most popular with students</span>
+        {/* Search and Filter Controls */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+          <div className="relative">
+            <Search className="h-5 w-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search games..."
+              className="pl-10 pr-4 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 w-full sm:w-80 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {games.filter(game => game.isFeatured).map(game => (
-              <GameCard key={game.id} game={game} />
+
+          {/* Category filter boxes */}
+          <div className="flex flex-wrap gap-2">
+            {categories.map((category) => (
+              <button
+                key={category.value}
+                onClick={() => setSelectedCategory(category.value)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200
+                  ${selectedCategory === category.value
+                    ? 'bg-indigo-600 text-white shadow-md'
+                    : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-100'
+                  }`}
+              >
+                {category.label}
+              </button>
             ))}
           </div>
         </div>
-      )}
 
-      {/* All Games Section */}
-      <div className="bg-white rounded-xl p-6 shadow-lg">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">🎮 All Games</h2>
-          <div className="flex items-center space-x-2 text-sm text-gray-500">
-            <Users className="h-4 w-4" />
-            <span>{games.length} games available</span>
+        {/* Mobile: Select Content Button */}
+        <div className="md:hidden mb-6">
+          <button
+            onClick={() => setIsMobileModalOpen(true)}
+            className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-4 px-6 rounded-lg transition-all transform hover:scale-105 flex items-center justify-center space-x-2"
+          >
+            <span>🎮</span>
+            <span>Select Content & Start Game</span>
+          </button>
+        </div>
+
+        {/* Hybrid Layout: Desktop Sidebar + Mobile Full Width */}
+        <div className="flex gap-8">
+          {/* Desktop: Game Selection Sidebar */}
+          <div ref={sidebarRef} className="hidden md:block w-80 flex-shrink-0">
+            {selectedGameForSetup ? (
+              <>
+                <div className="p-6 bg-green-50 rounded-xl shadow-lg sticky top-6 text-center">
+                  <h3 className="font-bold text-lg text-gray-900 mb-2">Selected Game:</h3>
+                  <p className="text-lg font-bold text-green-600 mb-4">{selectedGameForSetup.name}</p>
+                  <button
+                    onClick={handleDeselectGame}
+                    className="w-full bg-green-200 hover:bg-green-300 text-green-800 font-bold py-2 px-6 rounded-lg transition-all"
+                  >
+                    Change Game
+                  </button>
+                </div>
+                <div className="mt-4">
+                  <GameSelectionSidebar
+                    onSelectionComplete={handleSelectionComplete}
+                    onSelectionChange={handleSelectionChange}
+                    selectedGame={{
+                      id: selectedGameForSetup.id,
+                      name: selectedGameForSetup.name,
+                      supportsThemes: selectedGameForSetup.id.includes('vocab-blast')
+                    }}
+                    className="sticky top-6"
+                  />
+                </div>
+              </>
+            ) : (
+              <div className="p-6 bg-white rounded-xl shadow-lg sticky top-6 text-center">
+                <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Gamepad2 className="h-8 w-8 text-indigo-600" />
+                </div>
+                <h3 className="font-bold text-lg text-gray-900 mb-2">Ready to Play?</h3>
+                <p className="text-gray-600 text-sm">
+                  Choose a game from the list to start configuring your learning adventure!
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Games Grid */}
+          <div className="flex-1">
+            {loading ? (
+              <div className="flex items-center justify-center h-60">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+              </div>
+            ) : filteredGames.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="text-6xl mb-4">🎮</div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">No games found</h3>
+                <p className="text-gray-600">Try adjusting your search or category filters.</p>
+              </div>
+            ) : (
+              <div className="space-y-8">
+                {/* Featured VocabMaster Card */}
+                <FeaturedVocabMasterCard onChooseContent={handleVocabMasterChooseContent} />
+
+                {/* Regular Games Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {filteredGames.filter(game => game.id !== 'vocab-master').map((game) => {
+                    const isSelected = selectedGameForSetup?.id === game.id;
+                    const isDisabled = selectedGameForSetup && !isSelected;
+
+                    return (
+                      <GameCard
+                        key={game.id}
+                        game={game}
+                        isSelected={isSelected}
+                        isDisabled={isDisabled}
+                        onPlayNowClick={handlePlayNowClick}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         </div>
-        
-        {games.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {games.map(game => (
-              <GameCard key={game.id} game={game} />
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-12">
-            <Hexagon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No Games Available</h3>
-            <p className="text-gray-500 mb-4">
-              {error ? 'There was an error loading games. Please try again later.' : 'Games are being added. Check back soon!'}
-            </p>
-          </div>
-        )}
-      </div>
 
-      {/* Help Section */}
-      <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 rounded-xl p-6">
-        <div className="flex items-center space-x-4 mb-4">
-          <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
-            <BookOpen className="h-5 w-5 text-indigo-600" />
+        {/* Mobile Modal */}
+        <MobileGameSelectionModal
+          isOpen={isMobileModalOpen}
+          onClose={() => setIsMobileModalOpen(false)}
+          onSelectionComplete={handleSelectionComplete}
+          selectedGame={selectedGameForSetup ? {
+            id: selectedGameForSetup.id,
+            name: selectedGameForSetup.name,
+            supportsThemes: selectedGameForSetup.id.includes('vocab-blast')
+          } : null}
+        />
+
+        {/* Help Section */}
+        <div className="mt-8 bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 rounded-xl p-6">
+          <div className="flex items-center space-x-4 mb-4">
+            <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
+              <BookOpen className="h-5 w-5 text-indigo-600" />
+            </div>
+            <div>
+              <h3 className="font-bold text-gray-900">💡 Learning Tips</h3>
+              <p className="text-gray-600 text-sm">Get the most out of your LanguageGems experience</p>
+            </div>
           </div>
-          <div>
-            <h3 className="font-bold text-gray-900">💡 Learning Tips</h3>
-            <p className="text-gray-600 text-sm">Get the most out of your LanguageGems experience</p>
-          </div>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-          <div className="space-y-2">
-            <p className="font-medium text-gray-900">🎯 Focus on weak areas:</p>
-            <p className="text-gray-600">Check your vocabulary progress to see which topics need more practice.</p>
-          </div>
-          <div className="space-y-2">
-            <p className="font-medium text-gray-900">⚡ Play regularly:</p>
-            <p className="text-gray-600">Short, frequent sessions are more effective than long cramming sessions.</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div className="space-y-2">
+              <p className="font-medium text-gray-900">🎯 Focus on weak areas:</p>
+              <p className="text-gray-600">Check your vocabulary progress to see which topics need more practice.</p>
+            </div>
+            <div className="space-y-2">
+              <p className="font-medium text-gray-900">⚡ Play regularly:</p>
+              <p className="text-gray-600">Short, frequent sessions are more effective than long cramming sessions.</p>
+            </div>
           </div>
         </div>
       </div>

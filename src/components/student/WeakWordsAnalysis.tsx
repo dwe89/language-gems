@@ -194,7 +194,7 @@ export default function WeakWordsAnalysis() {
     const date = new Date(dateString);
     const now = new Date();
     const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-    
+
     if (diffDays === 0) return 'Today';
     if (diffDays === 1) return 'Yesterday';
     if (diffDays < 7) return `${diffDays} days ago`;
@@ -436,11 +436,10 @@ export default function WeakWordsAnalysis() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id as any)}
-                  className={`flex items-center space-x-2 py-4 border-b-2 font-medium text-sm transition-colors ${
-                    activeTab === tab.id
+                  className={`flex items-center space-x-2 py-4 border-b-2 font-medium text-sm transition-colors ${activeTab === tab.id
                       ? 'border-blue-500 text-blue-600'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
+                    }`}
                 >
                   <Icon className="h-4 w-4" />
                   <span>{tab.label}</span>
@@ -477,7 +476,7 @@ export default function WeakWordsAnalysis() {
                         <span>Practice Weak Words</span>
                       </Link>
                     </div>
-                    
+
                     <div className="grid gap-4">
                       {data.weakWords.map((word, index) => (
                         <div key={word.id} className="bg-red-50 border border-red-200 rounded-lg p-4">
@@ -499,11 +498,11 @@ export default function WeakWordsAnalysis() {
                               </div>
                             </div>
                             <div className="flex items-center space-x-2">
-                              {word.recommendedGames.slice(0, 2).map((game) => (
+                              {word.recommendedGames?.slice(0, 2).map((game) => (
                                 <span key={game} className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">
                                   {game}
                                 </span>
-                              ))}
+                              )) || null}
                             </div>
                           </div>
                         </div>

@@ -10,7 +10,8 @@ import {
   TrendingUp, Clock, Settings, Play, Lightbulb, Zap, 
   RotateCcw, Flame, Trophy, ChevronRight, Volume2
 } from 'lucide-react';
-import VocabMasterGame from './VocabMasterGame';
+import { VocabMasterGameEngine } from './VocabMasterGameEngine';
+import { VocabularyWord as VocabWord, GameResult } from '../types';
 
 // Category system imports
 import ModernCategorySelector from '../../../../components/games/ModernCategorySelector';
@@ -37,23 +38,8 @@ const getCategoryById = (id: string) => {
   return categoryMap[id] || { displayName: id };
 };
 
-interface VocabularyWord {
-  id: string | number;
-  spanish: string;
-  english: string;
-  theme: string;
-  topic: string;
-  part_of_speech: string;
-  example_sentence?: string;
-  example_translation?: string;
-  audio_url?: string;
-  times_seen?: number;
-  times_correct?: number;
-  last_seen?: Date;
-  is_learned?: boolean;
-  mastery_level?: number;
-  difficulty_rating?: number;
-}
+// Using VocabularyWord from types
+type VocabularyWord = VocabWord;
 
 interface GameSession {
   mode: string;
@@ -69,6 +55,7 @@ interface LearningMode {
   color: string;
   isRecommended?: boolean;
   isPremium?: boolean;
+  showCount?: boolean;
 }
 
 const LEARNING_MODES: LearningMode[] = [
@@ -85,7 +72,8 @@ const LEARNING_MODES: LearningMode[] = [
     name: 'Review Weak Words',
     description: 'Focus on words you\'ve struggled with before',
     icon: <Target className="h-6 w-6" />,
-    color: 'bg-gradient-to-r from-red-400 to-pink-500'
+    color: 'bg-gradient-to-r from-red-400 to-pink-500',
+    showCount: true
   },
   {
     id: 'spaced_repetition',
@@ -140,6 +128,7 @@ export default function VocabMasterLauncher() {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingVocabulary, setIsLoadingVocabulary] = useState(true);
   const [showSettings, setShowSettings] = useState(false);
+  const [weakWordsCount, setWeakWordsCount] = useState<number>(0);
   const [settings, setSettings] = useState({
     wordsPerSession: 20,
     difficulty: 'mixed',
@@ -177,11 +166,13 @@ export default function VocabMasterLauncher() {
   useEffect(() => {
     loadVocabulary();
     loadUserStats();
+    loadWeakWordsCount();
   }, [user, selectedLanguage]);
 
   // Reload vocabulary when categories change or when hook data is ready
   useEffect(() => {
     loadVocabulary();
+    loadWeakWordsCount();
   }, [selectedLanguage, selectedCategory, selectedSubcategory, filteredVocabulary]);
 
   const loadVocabulary = async () => {
@@ -312,11 +303,11 @@ export default function VocabMasterLauncher() {
 
   const calculateWeeklyProgress = async (): Promise<number> => {
     if (!user) return 0;
-    
+
     // Calculate progress towards weekly goal
     const weekStart = new Date();
     weekStart.setDate(weekStart.getDate() - weekStart.getDay());
-    
+
     try {
       const { data } = await supabase
         .from('user_vocabulary_progress')
@@ -327,6 +318,21 @@ export default function VocabMasterLauncher() {
       return Math.min((data?.length || 0), userStats.weeklyGoal);
     } catch {
       return 0;
+    }
+  };
+
+  const loadWeakWordsCount = async () => {
+    if (!user || vocabulary.length === 0) {
+      setWeakWordsCount(0);
+      return;
+    }
+
+    try {
+      const count = await getWeakWordsCount();
+      setWeakWordsCount(count);
+    } catch (error) {
+      console.error('Failed to load weak words count:', error);
+      setWeakWordsCount(0);
     }
   };
 
@@ -470,6 +476,27 @@ export default function VocabMasterLauncher() {
     }
   };
 
+  const getWeakWordsCount = async (): Promise<number> => {
+    if (!user) return 0;
+
+    try {
+      const { data: progressData } = await supabase
+        .from('user_vocabulary_progress')
+        .select('vocabulary_id, times_seen, times_correct')
+        .eq('user_id', user.id)
+        .gt('times_seen', 2);
+
+      const weakWordIds = progressData
+        ?.filter(p => (p.times_correct / p.times_seen) < 0.7)
+        .map(p => p.vocabulary_id) || [];
+
+      return vocabulary.filter(word => weakWordIds.includes(word.id)).length;
+    } catch (error) {
+      console.error('Error getting weak words count:', error);
+      return 0;
+    }
+  };
+
   const getWeakWords = async (): Promise<VocabularyWord[]> => {
     if (!user) {
       return vocabulary
@@ -532,13 +559,16 @@ export default function VocabMasterLauncher() {
     }
   };
 
-  const handleGameComplete = (results: any) => {
+  const handleGameComplete = (results: GameResult) => {
     // Update user stats
     loadUserStats();
     setGameSession(null);
     setSelectedMode('');
-    
+
     console.log('Game completed with results:', results);
+
+    // TODO: Show results modal or redirect to results page
+    // Could show: score, accuracy, time spent, words learned, etc.
   };
 
   const handleGameExit = () => {
@@ -549,12 +579,18 @@ export default function VocabMasterLauncher() {
   // Render game if session is active
   if (gameSession) {
     return (
-      <VocabMasterGame
-        mode={gameSession.mode}
-        vocabulary={gameSession.vocabulary}
-        config={gameSession.config}
-        onComplete={handleGameComplete}
+      <VocabMasterGameEngine
+        config={{
+          mode: gameSession.mode,
+          vocabulary: gameSession.vocabulary,
+          audioEnabled: gameSession.config?.enableAudio ?? true,
+          assignmentMode: gameSession.config?.assignmentMode ?? false,
+          assignmentTitle: gameSession.config?.assignmentTitle,
+          assignmentId: gameSession.config?.assignmentId
+        }}
+        onGameComplete={handleGameComplete}
         onExit={handleGameExit}
+        isAdventureMode={true}
       />
     );
   }
@@ -842,6 +878,14 @@ export default function VocabMasterLauncher() {
                     
                     <p className="text-white/90 text-sm leading-relaxed mb-4">
                       {mode.description}
+                      {mode.showCount && mode.id === 'review_weak' && (
+                        <span className="block mt-2 text-white/80 font-medium">
+                          {weakWordsCount > 0
+                            ? `${weakWordsCount} weak words found`
+                            : 'No weak words yet - practice more to identify areas for improvement'
+                          }
+                        </span>
+                      )}
                     </p>
                     
                     <div className="flex items-center justify-between">

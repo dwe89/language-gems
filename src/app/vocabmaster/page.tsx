@@ -2,11 +2,11 @@
 
 import React from 'react';
 import { useSearchParams } from 'next/navigation';
-import UnifiedVocabMasterWrapper from './components/UnifiedVocabMasterWrapper';
+import UnifiedVocabMasterWrapper from '../games/vocab-master/components/UnifiedVocabMasterWrapper';
 
-export default function VocabMasterPage() {
+export default function VocabMasterStandalonePage() {
   const searchParams = useSearchParams();
-
+  
   // Convert URLSearchParams to plain object for the wrapper
   const searchParamsObj = {
     lang: searchParams?.get('lang') || undefined,
@@ -15,9 +15,9 @@ export default function VocabMasterPage() {
     subcat: searchParams?.get('subcat') || undefined,
     theme: searchParams?.get('theme') || undefined,
     assignment: searchParams?.get('assignment') || undefined,
+    // Flag to indicate this is standalone access
+    standalone: 'true'
   };
 
   return <UnifiedVocabMasterWrapper searchParams={searchParamsObj} />;
 }
-
-

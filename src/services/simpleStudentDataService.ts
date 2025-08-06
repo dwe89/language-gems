@@ -457,7 +457,7 @@ export class SimpleStudentDataService {
         .map(([factor]) => factor);
 
       const classAnalytics: SimpleClassAnalytics = {
-        class_id: 'default-class',
+        class_id: '7565cca8-9c14-469f-961e-35decf890563',
         class_name: 'All Students',
         total_students: totalStudents,
         active_students: activeStudents,
