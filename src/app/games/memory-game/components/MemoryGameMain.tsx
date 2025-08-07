@@ -580,7 +580,7 @@ export default function MemoryGameMain({
   };
   
   // Handle card click
-  const handleCardClick = (card: Card) => {
+  const handleCardClick = async (card: Card) => {
     // Ignore if can't flip or card is already flipped/matched
     if (!canFlip || card.flipped || card.matched) {
       return;
@@ -621,7 +621,7 @@ export default function MemoryGameMain({
         console.warn('correctSoundRef.current is null');
       }
       
-      setTimeout(() => {
+      setTimeout(async () => {
         // Mark both cards as matched
         const matchedCards = cards.map(c => 
           c.pairId === firstCard.pairId ? { ...c, matched: true, flipped: true } : c

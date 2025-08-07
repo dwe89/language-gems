@@ -684,7 +684,7 @@ export default function TicTacToeGame({
     setShowVocabQuestion(true);
   };
 
-  const handleVocabAnswer = (selectedIndex: number) => {
+  const handleVocabAnswer = async (selectedIndex: number) => {
     setShowVocabQuestion(false);
 
     if (!currentQuestion || pendingMove === null) return;

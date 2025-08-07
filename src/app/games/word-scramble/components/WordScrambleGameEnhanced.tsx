@@ -624,7 +624,7 @@ export default function WordScrambleGameEnhanced({
   }, [selectedLetters, scrambledLetters]);
 
   // Check answer
-  const checkAnswer = useCallback(() => {
+  const checkAnswer = useCallback(async () => {
     if (!currentWordData || userAnswer.toLowerCase() !== currentWordData.word.toLowerCase()) {
       return false;
     }
@@ -824,7 +824,7 @@ export default function WordScrambleGameEnhanced({
   }, []);
 
   // Submit answer
-  const submitAnswer = useCallback(() => {
+  const submitAnswer = useCallback(async () => {
     if (gameState !== 'playing' || !userAnswer.trim()) return;
 
     if (checkAnswer()) {
