@@ -13,6 +13,7 @@ import DemoBanner from '../../components/demo/DemoBanner';
 import GameSelectionSidebar, { SelectionState } from '../../components/games/FilterSidebar';
 import MobileGameSelectionModal from '../../components/games/MobileGameSelectionModal';
 import FeaturedVocabMasterCard from '../../components/games/FeaturedVocabMasterCard';
+import FSRSGameRecommendations from '../../components/games/FSRSGameRecommendations';
 
 
 // Login Required Component
@@ -180,6 +181,7 @@ export default function GamesPage() {
   const [selectedCategory, setSelectedCategory] = useState('all'); // Renamed from 'filter' for clarity
   const [selectedGameForSetup, setSelectedGameForSetup] = useState<Game | null>(null);
   const [isMobileModalOpen, setIsMobileModalOpen] = useState(false);
+  const [showFSRSRecommendations, setShowFSRSRecommendations] = useState(false);
   const [currentSelection, setCurrentSelection] = useState<SelectionState>({
     language: null,
     curriculumLevel: null,
@@ -416,6 +418,24 @@ export default function GamesPage() {
     router.push(url);
   };
 
+  // Handler for FSRS game recommendations
+  const handleFSRSGameSelect = (gameId: string, recommendedWords?: any[]) => {
+    // Find the game and navigate directly with FSRS parameters
+    const game = games.find(g => g.id === gameId);
+    if (game) {
+      // For FSRS recommendations, we can skip the selection process
+      // and go directly to the game with recommended words
+      const params = new URLSearchParams({
+        fsrs: 'true',
+        words: recommendedWords ? JSON.stringify(recommendedWords.slice(0, 20)) : '[]'
+      });
+
+      const url = `${game.path}?${params.toString()}`;
+      console.log('🧠 FSRS Navigation to:', url);
+      router.push(url);
+    }
+  };
+
   // Handler for VocabMaster "Choose Content" button
   const handleVocabMasterChooseContent = () => {
     // Find VocabMaster game and set it as selected
@@ -512,6 +532,33 @@ export default function GamesPage() {
             </div>
           )}
         </header>
+
+        {/* FSRS Recommendations Section */}
+        {user && !isDemo && (
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-gray-900 flex items-center">
+                <Target className="w-5 h-5 mr-2 text-blue-600" />
+                Personalized Recommendations
+              </h2>
+              <button
+                onClick={() => setShowFSRSRecommendations(!showFSRSRecommendations)}
+                className="text-blue-600 hover:text-blue-800 font-medium flex items-center space-x-1"
+              >
+                <span>{showFSRSRecommendations ? 'Hide' : 'Show'} Smart Recommendations</span>
+                <BarChart3 className="w-4 h-4" />
+              </button>
+            </div>
+
+            {showFSRSRecommendations && (
+              <FSRSGameRecommendations
+                onGameSelect={handleFSRSGameSelect}
+                timeAvailable={30}
+                maxRecommendations={6}
+              />
+            )}
+          </div>
+        )}
 
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
           <div className="relative">

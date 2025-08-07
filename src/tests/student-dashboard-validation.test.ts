@@ -79,12 +79,9 @@ describe('Student Dashboard Navigation', () => {
     // Test that navItems array is properly defined
     const expectedNavItems = [
       'Dashboard',
-      'Assignments', 
+      'Assignments',
       'Games',
-      'Progress',
-      'Vocabulary',
-      'Assessments',
-      'Achievements'
+      'Assessments'
     ];
 
     // This would be imported from the actual component
@@ -92,11 +89,8 @@ describe('Student Dashboard Navigation', () => {
     const navItems = [
       { name: 'Dashboard', href: '/student-dashboard', icon: 'Home' },
       { name: 'Assignments', href: '/student-dashboard/assignments', icon: 'BookOpen' },
-      { name: 'Games', href: '/student-dashboard/games', icon: 'Gamepad2' },
-      { name: 'Progress', href: '/student-dashboard/progress', icon: 'BarChart3' },
-      { name: 'Vocabulary', href: '/student-dashboard/vocabulary', icon: 'Brain' },
-      { name: 'Assessments', href: '/assessments', icon: 'Edit' },
-      { name: 'Achievements', href: '/student-dashboard/achievements', icon: 'Trophy' }
+      { name: 'Games', href: '/games', icon: 'Gamepad2' },
+      { name: 'Assessments', href: '/assessments', icon: 'Edit' }
     ];
 
     expect(navItems).toHaveLength(7);
@@ -109,11 +103,8 @@ describe('Student Dashboard Navigation', () => {
     const navItems = [
       { name: 'Dashboard', href: '/student-dashboard', icon: 'Home' },
       { name: 'Assignments', href: '/student-dashboard/assignments', icon: 'BookOpen' },
-      { name: 'Games', href: '/student-dashboard/games', icon: 'Gamepad2' },
-      { name: 'Progress', href: '/student-dashboard/progress', icon: 'BarChart3' },
-      { name: 'Vocabulary', href: '/student-dashboard/vocabulary', icon: 'Brain' },
-      { name: 'Assessments', href: '/assessments', icon: 'Edit' },
-      { name: 'Achievements', href: '/student-dashboard/achievements', icon: 'Trophy' }
+      { name: 'Games', href: '/games', icon: 'Gamepad2' },
+      { name: 'Assessments', href: '/assessments', icon: 'Edit' }
     ];
 
     navItems.forEach(item => {

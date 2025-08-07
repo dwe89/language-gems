@@ -26,6 +26,7 @@ export interface EnhancedGameSession {
   max_score_possible: number;
   accuracy_percentage: number;
   completion_percentage: number;
+  completion_status?: 'not_started' | 'in_progress' | 'completed' | 'abandoned';
 
   // Game-specific data
   level_reached: number;
@@ -48,6 +49,12 @@ export interface EnhancedGameSession {
   xp_earned?: number;
   bonus_xp?: number;
   xp_multiplier?: number;
+
+  // Streak tracking
+  max_streak?: number;
+
+  // Performance metadata
+  performance_metrics?: Record<string, any>;
 
   // Session data
   session_data: Record<string, any>;
@@ -282,6 +289,7 @@ export class EnhancedGameService {
       max_score_possible,
       accuracy_percentage,
       completion_percentage,
+      completion_status,
       level_reached,
       lives_used,
       power_ups_used,
@@ -315,6 +323,7 @@ export class EnhancedGameService {
       final_score: 0,
       accuracy_percentage: 0,
       completion_percentage: 0,
+      completion_status: completion_status || 'in_progress',
       level_reached: 1,
       lives_used: 0,
       power_ups_used: [],
@@ -478,7 +487,7 @@ export class EnhancedGameService {
           .from('enhanced_game_sessions')
           .select(`
             assignment_id,
-            assignments!inner(curriculum_level)
+            assignments(curriculum_level)
           `)
           .eq('id', performanceData.session_id)
           .single();

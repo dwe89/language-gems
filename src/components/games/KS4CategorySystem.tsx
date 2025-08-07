@@ -2,13 +2,30 @@
 // This extends the KS3 system with more advanced vocabulary and topics
 
 import { Category, Subcategory } from './ModernCategorySelector';
+import {
+  Globe,
+  Heart,
+  GraduationCap,
+  Palette,
+  Syringe, // Changed from Hospital to Syringe (Lucide does not have 'Hospital')
+  Rocket,
+  Leaf,
+  Globe2,
+  Book,
+  Sparkles,
+  Lightbulb,
+  Droplets,
+  Scale,
+  Mic,
+  Activity
+} from 'lucide-react';
 
 export const KS4_VOCABULARY_CATEGORIES: Category[] = [
   {
     id: 'identity_culture_ks4',
     name: 'identity_culture_ks4',
-    displayName: 'Identity & Culture (GCSE)',
-    icon: '🌍',
+    displayName: 'Identity & Culture (GCSE)', // Added missing displayName
+    icon: Mic,
     color: 'from-purple-600 to-indigo-700',
     subcategories: [
       { id: 'personal_identity_values', name: 'personal_identity_values', displayName: 'Personal Identity & Values', categoryId: 'identity_culture_ks4' },
@@ -23,8 +40,8 @@ export const KS4_VOCABULARY_CATEGORIES: Category[] = [
   {
     id: 'relationships_choices_ks4',
     name: 'relationships_choices_ks4',
-    displayName: 'Relationships & Choices (GCSE)',
-    icon: '💝',
+    displayName: 'Relationships & Choices (GCSE)', // Added missing displayName
+    icon: Sparkles,
     color: 'from-pink-600 to-rose-700',
     subcategories: [
       { id: 'family_relationships_advanced', name: 'family_relationships_advanced', displayName: 'Family Relationships (Advanced)', categoryId: 'relationships_choices_ks4' },
@@ -40,7 +57,7 @@ export const KS4_VOCABULARY_CATEGORIES: Category[] = [
     id: 'education_employment_ks4',
     name: 'education_employment_ks4',
     displayName: 'Education & Employment (GCSE)',
-    icon: '🎓',
+    icon: Book,
     color: 'from-blue-600 to-cyan-700',
     subcategories: [
       { id: 'education_systems', name: 'education_systems', displayName: 'Education Systems', categoryId: 'education_employment_ks4' },
@@ -57,7 +74,7 @@ export const KS4_VOCABULARY_CATEGORIES: Category[] = [
     id: 'leisure_lifestyle_ks4',
     name: 'leisure_lifestyle_ks4',
     displayName: 'Leisure & Lifestyle (GCSE)',
-    icon: '🎨',
+    icon: Palette,
     color: 'from-green-600 to-teal-700',
     subcategories: [
       { id: 'arts_culture', name: 'arts_culture', displayName: 'Arts & Culture', categoryId: 'leisure_lifestyle_ks4' },
@@ -74,7 +91,7 @@ export const KS4_VOCABULARY_CATEGORIES: Category[] = [
     id: 'health_wellbeing_ks4',
     name: 'health_wellbeing_ks4',
     displayName: 'Health & Wellbeing (GCSE)',
-    icon: '🏥',
+    icon: Activity,
     color: 'from-red-600 to-pink-700',
     subcategories: [
       { id: 'mental_health', name: 'mental_health', displayName: 'Mental Health', categoryId: 'health_wellbeing_ks4' },
@@ -90,7 +107,7 @@ export const KS4_VOCABULARY_CATEGORIES: Category[] = [
     id: 'technology_future_ks4',
     name: 'technology_future_ks4',
     displayName: 'Technology & Future (GCSE)',
-    icon: '🚀',
+    icon: Lightbulb,
     color: 'from-indigo-600 to-purple-700',
     subcategories: [
       { id: 'digital_revolution', name: 'digital_revolution', displayName: 'Digital Revolution', categoryId: 'technology_future_ks4' },
@@ -106,7 +123,7 @@ export const KS4_VOCABULARY_CATEGORIES: Category[] = [
     id: 'environment_sustainability_ks4',
     name: 'environment_sustainability_ks4',
     displayName: 'Environment & Sustainability (GCSE)',
-    icon: '🌱',
+    icon: Droplets,
     color: 'from-green-700 to-emerald-800',
     subcategories: [
       { id: 'climate_change', name: 'climate_change', displayName: 'Climate Change', categoryId: 'environment_sustainability_ks4' },
@@ -122,7 +139,7 @@ export const KS4_VOCABULARY_CATEGORIES: Category[] = [
     id: 'global_issues_ks4',
     name: 'global_issues_ks4',
     displayName: 'Global Issues (GCSE)',
-    icon: '🌐',
+    icon: Scale,
     color: 'from-slate-700 to-gray-800',
     subcategories: [
       { id: 'poverty_inequality', name: 'poverty_inequality', displayName: 'Poverty & Inequality', categoryId: 'global_issues_ks4' },

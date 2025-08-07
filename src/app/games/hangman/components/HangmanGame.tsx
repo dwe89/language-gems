@@ -16,6 +16,7 @@ import SpaceExplorerModal from './SpaceExplorerModal';
 import PirateAdventureModal from './PirateAdventureModal'; // Confirm this path and component name
 import { CentralizedVocabularyService, CentralizedVocabularyWord } from 'gems/services/centralizedVocabularyService';
 import { createClient } from '@supabase/supabase-js';
+import { useUnifiedSpacedRepetition } from '../../../../hooks/useUnifiedSpacedRepetition';
 // Removed: import { useAudio } from '../hooks/useAudio'; // This hook is used in the parent now
 
 // Defined here so GameContent can use it
@@ -95,6 +96,9 @@ type ExtendedThemeContextType = {
 };
 
 export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isFullscreen, isAssignmentMode, playSFX, onOpenSettings }: HangmanGameProps) {
+  // Initialize FSRS spaced repetition system
+  const { recordWordPractice, algorithm } = useUnifiedSpacedRepetition('hangman');
+
   const { themeId, themeClasses } = useTheme() as ExtendedThemeContextType;
   const [themeClassesState, setThemeClassesState] = useState(themeClasses);
   const [word, setWord] = useState('');
@@ -192,6 +196,49 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
       setGameStatus('won');
       playSFX('victory'); // Use passed-in playSFX
 
+      // Record word practice with FSRS system for successful completion
+      if (!isAssignmentMode) {
+        try {
+          const currentVocabItem = vocabulary?.find(v => v.word.toLowerCase() === word.toLowerCase());
+          const wordData = {
+            id: currentVocabItem?.id || `hangman-${word}`,
+            word: word,
+            translation: currentVocabItem?.translation || word, // Use translation if available
+            language: settings.language === 'spanish' ? 'es' : settings.language === 'french' ? 'fr' : 'en'
+          };
+
+          // Calculate confidence based on performance
+          const correctGuessCount = guessedLetters.filter(letter => word.toLowerCase().includes(letter)).length;
+          const totalGuessCount = guessedLetters.length;
+          const accuracy = totalGuessCount > 0 ? correctGuessCount / totalGuessCount : 1;
+          const timeBonus = timer < 60 ? 0.1 : timer < 120 ? 0.05 : 0; // Bonus for quick completion
+          const mistakesPenalty = wrongGuesses * 0.1; // Penalty for wrong guesses
+          const confidence = Math.max(0.1, Math.min(0.95, accuracy + timeBonus - mistakesPenalty));
+
+          // Record successful word completion with FSRS
+          recordWordPractice(
+            wordData,
+            true, // Successful completion
+            timer * 1000, // Convert to milliseconds
+            confidence
+          ).then(fsrsResult => {
+            if (fsrsResult) {
+              console.log(`FSRS recorded for hangman word "${word}":`, {
+                algorithm: fsrsResult.algorithm,
+                points: fsrsResult.points,
+                nextReview: fsrsResult.nextReviewDate,
+                interval: fsrsResult.interval,
+                masteryLevel: fsrsResult.masteryLevel
+              });
+            }
+          }).catch(error => {
+            console.error('Error recording FSRS practice for hangman:', error);
+          });
+        } catch (error) {
+          console.error('Error setting up FSRS recording for hangman:', error);
+        }
+      }
+
       // Play audio for the completed word
       if (settings.playAudio) {
         setTimeout(() => {
@@ -227,6 +274,39 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
     } else if (wrongGuesses >= MAX_ATTEMPTS) {
       setGameStatus('lost');
       playSFX('defeat'); // Use passed-in playSFX
+
+      // Record word practice with FSRS system for failed attempt
+      if (!isAssignmentMode) {
+        try {
+          const currentVocabItem = vocabulary?.find(v => v.word.toLowerCase() === word.toLowerCase());
+          const wordData = {
+            id: currentVocabItem?.id || `hangman-${word}`,
+            word: word,
+            translation: currentVocabItem?.translation || word,
+            language: settings.language === 'spanish' ? 'es' : settings.language === 'french' ? 'fr' : 'en'
+          };
+
+          // Record failed attempt with FSRS (low confidence)
+          recordWordPractice(
+            wordData,
+            false, // Failed completion
+            timer * 1000, // Convert to milliseconds
+            0.1 // Low confidence for failed attempts
+          ).then(fsrsResult => {
+            if (fsrsResult) {
+              console.log(`FSRS recorded failed hangman attempt for "${word}":`, {
+                algorithm: fsrsResult.algorithm,
+                nextReview: fsrsResult.nextReviewDate,
+                interval: fsrsResult.interval
+              });
+            }
+          }).catch(error => {
+            console.error('Error recording FSRS failed practice for hangman:', error);
+          });
+        } catch (error) {
+          console.error('Error setting up FSRS recording for failed hangman:', error);
+        }
+      }
 
       // Stop timer
       if (timerInterval) clearInterval(timerInterval);

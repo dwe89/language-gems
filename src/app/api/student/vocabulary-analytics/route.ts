@@ -119,7 +119,12 @@ export async function GET(request: NextRequest) {
       case 'recommendations':
         // Get AI-powered recommendations
         const recommendations = await analytics.getRecommendations(studentId, filters);
-        return NextResponse.json({ recommendations });
+        return NextResponse.json({ 
+          recommendations: recommendations.map(rec => ({
+            ...rec,
+            estimatedTime: `${rec.estimatedTime} min`
+          }))
+        });
 
       case 'analysis':
         // Get comprehensive analysis (what the dashboard needs)
@@ -148,7 +153,10 @@ export async function GET(request: NextRequest) {
           },
           weakWords: analysisWeakWords,
           strongWords: analysisStrongWords,
-          recommendations: analysisRecommendations,
+          recommendations: analysisRecommendations.map(rec => ({
+            ...rec,
+            estimatedTime: `${rec.estimatedTime} min`
+          })),
           stats: analysisStats,
           availableFilters,
           appliedFilters: filters

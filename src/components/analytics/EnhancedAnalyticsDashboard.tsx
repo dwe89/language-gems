@@ -16,6 +16,7 @@ import { useAuth } from '../auth/AuthProvider';
 import { useSupabase } from '../supabase/SupabaseProvider';
 import { EnhancedGameService } from '../../services/enhancedGameService';
 import { EnhancedAssignmentService, ClassPerformanceMetrics } from '../../services/enhancedAssignmentService';
+import { FSRSAnalyticsService, FSRSStudentAnalytics, FSRSInsight } from '../../services/fsrsAnalyticsService';
 
 // =====================================================
 // TYPES AND INTERFACES
@@ -39,6 +40,8 @@ interface AnalyticsData {
   achievementStats: AchievementStatsData[];
   leaderboards: LeaderboardData[];
   trends: TrendData[];
+  fsrsInsights?: FSRSInsight[];
+  fsrsStudentAnalytics?: FSRSStudentAnalytics[];
 }
 
 interface GamePerformanceData {
@@ -151,6 +154,7 @@ export default function EnhancedAnalyticsDashboard({
   // Services
   const [gameService] = useState(() => new EnhancedGameService(supabase));
   const [assignmentService] = useState(() => new EnhancedAssignmentService(supabase));
+  const [fsrsAnalyticsService] = useState(() => new FSRSAnalyticsService(supabase));
   
   // State
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
@@ -190,7 +194,7 @@ export default function EnhancedAnalyticsDashboard({
   };
 
   const loadTeacherAnalytics = async () => {
-    // Load comprehensive teacher analytics
+    // Load comprehensive teacher analytics including FSRS insights
     const [
       overviewData,
       gamePerformanceData,
@@ -199,7 +203,9 @@ export default function EnhancedAnalyticsDashboard({
       timeAnalyticsData,
       achievementStatsData,
       leaderboardData,
-      trendData
+      trendData,
+      fsrsInsights,
+      fsrsStudentAnalytics
     ] = await Promise.all([
       loadOverviewData(),
       loadGamePerformanceData(),
@@ -208,7 +214,9 @@ export default function EnhancedAnalyticsDashboard({
       loadTimeAnalyticsData(),
       loadAchievementStatsData(),
       loadLeaderboardData(),
-      loadTrendData()
+      loadTrendData(),
+      loadFSRSInsights(),
+      loadFSRSStudentAnalytics()
     ]);
 
     setAnalyticsData({
@@ -219,7 +227,9 @@ export default function EnhancedAnalyticsDashboard({
       timeAnalytics: timeAnalyticsData,
       achievementStats: achievementStatsData,
       leaderboards: leaderboardData,
-      trends: trendData
+      trends: trendData,
+      fsrsInsights,
+      fsrsStudentAnalytics
     });
   };
 
@@ -598,6 +608,43 @@ export default function EnhancedAnalyticsDashboard({
         engagement: 94.1
       }
     ];
+  };
+
+  // FSRS Analytics Loading Functions
+  const loadFSRSInsights = async (): Promise<FSRSInsight[]> => {
+    try {
+      if (!user?.id) return [];
+      return await fsrsAnalyticsService.generateFSRSInsights(user.id);
+    } catch (error) {
+      console.error('Error loading FSRS insights:', error);
+      return [];
+    }
+  };
+
+  const loadFSRSStudentAnalytics = async (): Promise<FSRSStudentAnalytics[]> => {
+    try {
+      if (!user?.id) return [];
+
+      // Get all students for this teacher
+      const { data: students } = await supabase
+        .from('student_credentials')
+        .select('student_id')
+        .eq('teacher_id', user.id);
+
+      if (!students || students.length === 0) return [];
+
+      // Load FSRS analytics for each student
+      const studentAnalytics = await Promise.all(
+        students.slice(0, 10).map(student => // Limit to first 10 students for performance
+          fsrsAnalyticsService.generateStudentAnalytics(student.student_id)
+        )
+      );
+
+      return studentAnalytics.filter(analytics => analytics.vocabularyMastery.length > 0);
+    } catch (error) {
+      console.error('Error loading FSRS student analytics:', error);
+      return [];
+    }
   };
 
   const loadStudentDetailedProgressData = async (studentId: string): Promise<StudentProgressData> => {

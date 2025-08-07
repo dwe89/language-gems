@@ -24,7 +24,8 @@ export type GameMode =
   | 'typing' 
   | 'dictation' 
   | 'flashcards' 
-  | 'match';
+  | 'match'
+  | 'mixed';
 
 export interface GameState {
   currentWordIndex: number;
@@ -56,6 +57,7 @@ export interface GameState {
   isFlashcardFlipped: boolean;
   // Mode-specific state
   showHint: boolean;
+  translationShown: boolean;
   multipleChoiceOptions: MultipleChoiceOption[];
   // Dynamic exercise data for different modes
   currentExerciseData: ExerciseData | null;
@@ -93,9 +95,15 @@ export interface ExerciseData {
   // listening?: { audioUrl: string; transcript: string; };
 }
 
+export interface MatchingWord {
+  id: number;
+  text: string;
+  originalWord: VocabularyWord;
+}
+
 export interface MatchingPairs {
-  spanish: string[];
-  english: string[];
+  spanish: MatchingWord[];
+  english: MatchingWord[];
   matched: Set<number>;
   selectedSpanish: number | null;
   selectedEnglish: number | null;
@@ -131,12 +139,13 @@ export interface ModeComponent {
   onNext: () => void;
   isAdventureMode: boolean;
   playPronunciation: (text: string, language?: 'es' | 'en', word?: VocabularyWord) => void;
+  onModeSpecificAction?: (action: string, data?: any) => void;
 }
 
 export interface ModeConfig {
   id: string;
   name: string;
-  component: React.ComponentType<ModeComponent>;
+  component: React.ComponentType<ModeComponent> | null;
   requiresInput: boolean;
   autoAdvance: boolean;
   hasTimer: boolean;

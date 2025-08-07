@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { useGameAudio } from '../../../../hooks/useGlobalAudioContext';
 import { createAudio, getAudioUrl } from '../../../../utils/audioUtils';
+import { useUnifiedSpacedRepetition } from '../../../../hooks/useUnifiedSpacedRepetition';
 import './styles.css';
 
 interface MemoryGameMainProps {
@@ -56,6 +57,9 @@ export default function MemoryGameMain({
 }: MemoryGameMainProps) {
   const { user } = useAuth();
   const { user: unifiedUser, isDemo } = useUnifiedAuth();
+
+  // Initialize FSRS spaced repetition system
+  const { recordWordPractice, algorithm } = useUnifiedSpacedRepetition('memory-game');
   // Game state
   const [cards, setCards] = useState<Card[]>([]);
   const [matches, setMatches] = useState(0);
@@ -647,7 +651,40 @@ export default function MemoryGameMain({
           const responseTime = firstCard.firstAttemptTime ?
             (now.getTime() - firstCard.firstAttemptTime.getTime()) / 1000 : 0;
 
-          // Memory Match is a luck-based game - log word exposure only (not performance)
+          // Record word practice with FSRS system
+          if (!isDemo && !isAssignmentMode) {
+            try {
+              // Record practice for both words in the matched pair
+              const wordData = {
+                id: firstCard.vocabularyId || `${firstCard.word}-${firstCard.translation}`,
+                word: firstCard.word,
+                translation: firstCard.translation,
+                language: language === 'spanish' ? 'es' : language === 'french' ? 'fr' : 'en'
+              };
+
+              // Record successful match with FSRS
+              const fsrsResult = await recordWordPractice(
+                wordData,
+                true, // Always correct for matched pairs
+                responseTime * 1000, // Convert to milliseconds
+                0.7 // Moderate confidence for memory games (luck-based)
+              );
+
+              if (fsrsResult) {
+                console.log(`FSRS recorded for ${firstCard.word}:`, {
+                  algorithm: fsrsResult.algorithm,
+                  points: fsrsResult.points,
+                  nextReview: fsrsResult.nextReviewDate,
+                  interval: fsrsResult.interval,
+                  masteryLevel: fsrsResult.masteryLevel
+                });
+              }
+            } catch (error) {
+              console.error('Error recording FSRS practice:', error);
+            }
+          }
+
+          // Legacy word performance logging (for analytics)
           if (gameService && gameSessionId && !isDemo && !isAssignmentMode) {
             try {
               gameService.logWordPerformance({
@@ -746,7 +783,35 @@ export default function MemoryGameMain({
         const responseTime = firstCard.firstAttemptTime ?
           (now.getTime() - firstCard.firstAttemptTime.getTime()) / 1000 : 0;
 
-        // Memory Match is a luck-based game - no word performance logging needed
+        // Record failed match with FSRS system (for learning purposes)
+        if (!isDemo && !isAssignmentMode) {
+          try {
+            const wordData = {
+              id: firstCard.vocabularyId || `${firstCard.word}-${firstCard.translation}`,
+              word: firstCard.word,
+              translation: firstCard.translation,
+              language: language === 'spanish' ? 'es' : language === 'french' ? 'fr' : 'en'
+            };
+
+            // Record failed attempt with FSRS (helps with difficulty assessment)
+            const fsrsResult = await recordWordPractice(
+              wordData,
+              false, // Incorrect match
+              responseTime * 1000, // Convert to milliseconds
+              0.3 // Lower confidence for failed matches
+            );
+
+            if (fsrsResult) {
+              console.log(`FSRS recorded failed match for ${firstCard.word}:`, {
+                algorithm: fsrsResult.algorithm,
+                nextReview: fsrsResult.nextReviewDate,
+                interval: fsrsResult.interval
+              });
+            }
+          } catch (error) {
+            console.error('Error recording FSRS failed practice:', error);
+          }
+        }
 
         // Track vocabulary progress for assignment mode
         if (isAssignmentMode) {

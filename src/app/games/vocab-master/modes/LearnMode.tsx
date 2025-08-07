@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { BookOpen, Volume2, Lightbulb, Eye, EyeOff, Target } from 'lucide-react';
+import { BookOpen, Volume2, Lightbulb, Eye, EyeOff, Target, Star, Zap } from 'lucide-react';
 import { ModeComponent } from '../types';
 import { getPlaceholderText } from '../utils/answerValidation';
+import { getAdventureTheme, getAccentColorClasses } from '../utils/adventureThemes';
 
 interface LearnModeProps extends ModeComponent {
   userAnswer: string;
@@ -20,7 +21,8 @@ export const LearnMode: React.FC<LearnModeProps> = ({
   showHint,
   onToggleHint,
   isAdventureMode,
-  playPronunciation
+  playPronunciation,
+  onModeSpecificAction
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [showTranslation, setShowTranslation] = useState(false);
@@ -32,7 +34,19 @@ export const LearnMode: React.FC<LearnModeProps> = ({
     }
     // Reset translation visibility for new word
     setShowTranslation(false);
-  }, [gameState.currentWordIndex]);
+
+    // Auto-play audio when new word appears
+    if (gameState.currentWord?.audio_url) {
+      const timer = setTimeout(() => {
+        playPronunciation(
+          gameState.currentWord?.spanish || gameState.currentWord?.word || '',
+          'es',
+          gameState.currentWord || undefined
+        );
+      }, 500); // Small delay to let the UI settle
+      return () => clearTimeout(timer);
+    }
+  }, [gameState.currentWordIndex, gameState.currentWord, playPronunciation]);
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && userAnswer.trim()) {
@@ -49,12 +63,14 @@ export const LearnMode: React.FC<LearnModeProps> = ({
   };
 
   // Enhanced styling for both adventure and learn modes
+  const adventureTheme = getAdventureTheme('learn');
+  
   const containerClasses = isAdventureMode 
-    ? "min-h-screen bg-gradient-to-br from-blue-900 via-indigo-950 to-purple-950"
+    ? adventureTheme.background
     : "min-h-screen bg-gray-50 font-sans antialiased"; // Lighter background for non-adventure mode
 
   const cardClasses = isAdventureMode 
-    ? "bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-xl rounded-3xl p-8 border-2 border-slate-600/30 shadow-2xl"
+    ? adventureTheme.cardStyle
     : "bg-white rounded-2xl shadow-lg p-7 border border-gray-100"; // Softer shadows, rounded corners, subtle border
 
   const textPrimary = isAdventureMode ? "text-white" : "text-gray-900"; // Darker primary text for light mode
@@ -80,8 +96,9 @@ export const LearnMode: React.FC<LearnModeProps> = ({
                   <BookOpen className="h-12 w-12 mx-auto" />
                 </div>
                 
-                <h2 className="text-xl font-bold text-gray-800"> {/* Darker heading */}
-                  📚 Learn New Words
+                <h2 className="text-xl font-bold text-gray-800 flex items-center justify-center"> {/* Darker heading */}
+                  <BookOpen className="h-5 w-5 mr-2" />
+                  Learn New Words
                 </h2>
 
                 <div className="space-y-4">
@@ -110,7 +127,12 @@ export const LearnMode: React.FC<LearnModeProps> = ({
                   {/* Translation toggle */}
                   <div className="flex justify-center">
                     <button
-                      onClick={() => setShowTranslation(!showTranslation)}
+                      onClick={() => {
+                        setShowTranslation(!showTranslation);
+                        if (!showTranslation && onModeSpecificAction) {
+                          onModeSpecificAction('show_translation');
+                        }
+                      }}
                       className="flex items-center space-x-2 px-4 py-2 rounded-xl transition-colors border border-gray-300 text-gray-700 hover:bg-gray-100"
                     >
                       {showTranslation ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
@@ -164,8 +186,9 @@ export const LearnMode: React.FC<LearnModeProps> = ({
                     animate={{ opacity: 1, height: 'auto' }}
                     className="p-3 rounded-xl bg-yellow-50 text-yellow-800 border border-yellow-200"
                   >
-                    <p className="text-sm font-mono">
-                      💡 {getHintText()}
+                    <p className="text-sm font-mono flex items-center">
+                      <Lightbulb className="h-4 w-4 mr-2" />
+                      {getHintText()}
                     </p>
                   </motion.div>
                 )}
@@ -216,7 +239,7 @@ export const LearnMode: React.FC<LearnModeProps> = ({
 
               <div className="bg-purple-50 rounded-xl p-4 flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                  <span className="h-5 w-5 text-purple-500">🎯</span>
+                  <Target className="h-5 w-5 text-purple-500" />
                   <span className="font-medium">Accuracy</span>
                 </div>
                 <span className="text-2xl font-bold text-purple-700">
@@ -226,7 +249,7 @@ export const LearnMode: React.FC<LearnModeProps> = ({
 
               <div className="bg-purple-50 rounded-xl p-4 flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                  <span className="h-5 w-5 text-purple-500">⭐</span>
+                  <Star className="h-5 w-5 text-purple-500" />
                   <span className="font-medium">0 XP</span>
                 </div>
                 <div className="text-right">
@@ -267,6 +290,20 @@ export const LearnMode: React.FC<LearnModeProps> = ({
   return (
     <div className={`${containerClasses} p-6`}>
       <div className="max-w-4xl mx-auto space-y-8">
+        {/* Adventure Mode Header */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center mb-6"
+        >
+          <h1 className="text-4xl font-bold text-white mb-2">
+            {adventureTheme.emoji} {adventureTheme.name}
+          </h1>
+          <p className="text-white/80 text-lg">
+            {adventureTheme.description}
+          </p>
+        </motion.div>
+
         {/* Word display */}
         <motion.div
           key={gameState.currentWordIndex}
@@ -279,8 +316,9 @@ export const LearnMode: React.FC<LearnModeProps> = ({
               <BookOpen className={`h-16 w-16 mx-auto ${isAdventureMode ? 'text-blue-300' : 'text-blue-500'}`} />
             </div>
             
-            <h2 className={`text-2xl font-bold ${textPrimary}`}>
-              📚 Learn New Words
+            <h2 className={`text-2xl font-bold ${textPrimary} flex items-center justify-center`}>
+              <BookOpen className="h-6 w-6 mr-2" />
+              Learn New Words
             </h2>
 
             <div className="space-y-4">
@@ -317,7 +355,12 @@ export const LearnMode: React.FC<LearnModeProps> = ({
               {/* Translation toggle */}
               <div className="flex justify-center">
                 <button
-                  onClick={() => setShowTranslation(!showTranslation)}
+                  onClick={() => {
+                    setShowTranslation(!showTranslation);
+                    if (!showTranslation && onModeSpecificAction) {
+                      onModeSpecificAction('show_translation');
+                    }
+                  }}
                   className={`flex items-center space-x-2 px-4 py-2 rounded-xl transition-colors border ${
                     isAdventureMode
                       ? 'bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 border-slate-600/30'
@@ -412,8 +455,9 @@ export const LearnMode: React.FC<LearnModeProps> = ({
                     : 'bg-yellow-50 text-yellow-800 border border-yellow-200' // Adjusted for consistency
                 }`}
               >
-                <p className="text-sm font-mono">
-                  💡 {getHintText()}
+                <p className="text-sm font-mono flex items-center">
+                  <Lightbulb className="h-4 w-4 mr-2" />
+                  {getHintText()}
                 </p>
               </motion.div>
             )}

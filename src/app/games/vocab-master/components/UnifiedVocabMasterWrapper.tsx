@@ -7,8 +7,10 @@ import { useSupabase } from '../../../../components/supabase/SupabaseProvider';
 import { useGameVocabulary } from '../../../../hooks/useGameVocabulary';
 import { EnhancedGameService } from '../../../../services/enhancedGameService';
 import { SpacedRepetitionService } from '../../../../services/spacedRepetitionService';
+import { useUnifiedSpacedRepetition } from '../../../../hooks/useUnifiedSpacedRepetition';
 import UnifiedVocabMasterLauncher from './UnifiedVocabMasterLauncher';
 import { VocabMasterGameEngine } from './VocabMasterGameEngine';
+import { GameCompletionScreen } from './GameCompletionScreen';
 import VocabMasterAssignmentWrapper from './VocabMasterAssignmentWrapper';
 import { VocabularyWord as VocabWord, GameResult } from '../types';
 import UnifiedGameLauncher from '../../../../components/games/UnifiedGameLauncher';
@@ -44,6 +46,10 @@ export default function UnifiedVocabMasterWrapper({ searchParams = {} }: Props) 
   const [vocabularyLoading, setVocabularyLoading] = useState(false);
   const [vocabularyError, setVocabularyError] = useState<string | null>(null);
 
+  // Track whether URL params have been processed to prevent premature rendering
+  const [urlParamsProcessed, setUrlParamsProcessed] = useState(false);
+  const [isClient, setIsClient] = useState(false);
+
   // Services
   const [gameService, setGameService] = useState<EnhancedGameService | null>(null);
   const [spacedRepetitionService, setSpacedRepetitionService] = useState<SpacedRepetitionService | null>(null);
@@ -54,11 +60,25 @@ export default function UnifiedVocabMasterWrapper({ searchParams = {} }: Props) 
   // Standalone access detection (from /vocabmaster URL)
   const isStandaloneAccess = searchParams.standalone === 'true';
 
+  // Initialize FSRS spaced repetition system
+  const { recordWordPractice, algorithm } = useUnifiedSpacedRepetition('vocab-master');
+
+  // Client-side hydration check
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
   // Check for URL parameters on mount (from games page)
   useEffect(() => {
+    if (!isClient) {
+      console.log('🔄 Skipping URL params processing - not on client yet');
+      return;
+    }
+
     console.log('🔄 URL params useEffect running. Current gameState:', gameState);
     console.log('🔄 isAssignmentMode:', isAssignmentMode);
     console.log('🔄 searchParams:', searchParams);
+    console.log('🔄 urlParamsProcessed:', urlParamsProcessed);
 
     const checkUrlParams = () => {
       const lang = searchParams.lang;
@@ -93,11 +113,13 @@ export default function UnifiedVocabMasterWrapper({ searchParams = {} }: Props) 
         // Go directly to launcher with pre-set config
         console.log('🚀 Setting gameState to launcher (with params)');
         setGameState('launcher');
+        setUrlParamsProcessed(true);
       } else {
         console.log('❌ No URL parameters - will show launcher with filter selectors');
         console.log('🚀 Setting gameState to launcher (no params)');
         // Go directly to launcher without pre-set config
         setGameState('launcher');
+        setUrlParamsProcessed(true);
       }
     };
 
@@ -106,8 +128,9 @@ export default function UnifiedVocabMasterWrapper({ searchParams = {} }: Props) 
       checkUrlParams();
     } else {
       console.log('🚫 Skipping URL check - in assignment mode');
+      setUrlParamsProcessed(true);
     }
-  }, [searchParams, isAssignmentMode]);
+  }, [searchParams, isAssignmentMode, isClient]);
 
   // Initialize services
   useEffect(() => {
@@ -216,15 +239,19 @@ export default function UnifiedVocabMasterWrapper({ searchParams = {} }: Props) 
       const sessionId = await gameService.startGameSession({
         student_id: userId,
         game_type: 'vocab-master',
-        game_mode: mode,
-        language_pair: `${selectedConfig?.language || 'spanish'}_english`,
-        curriculum_level: selectedConfig?.curriculumLevel || 'KS3',
+        session_mode: isAssignmentMode ? 'assignment' : 'free_play',
         category: selectedConfig?.categoryId || 'basics',
         subcategory: selectedConfig?.subcategoryId || undefined,
-        theme_name: searchParams.theme || 'default',
-        total_words: vocabularySubset.length,
-        difficulty_level: config.difficulty || 'mixed',
-        is_assignment: isAssignmentMode,
+        started_at: new Date(),
+        duration_seconds: 0,
+        final_score: 0,
+        max_score_possible: vocabularySubset.length * 10,
+        accuracy_percentage: 0,
+        completion_percentage: 0,
+        completion_status: 'in_progress',
+        words_attempted: 0,
+        words_correct: 0,
+        unique_words_practiced: vocabularySubset.length,
         assignment_id: searchParams.assignment || undefined
       });
 
@@ -252,8 +279,61 @@ export default function UnifiedVocabMasterWrapper({ searchParams = {} }: Props) 
     responseTime: number,
     gameMode: string,
     masteryLevel?: number,
-    spacedRepetitionUpdate?: boolean
+    vocabularyId?: string
   ) => {
+    // Record word practice with FSRS system first (works in all modes)
+    if (!isDemo) {
+      try {
+        const wordData = {
+          id: vocabularyId || `${word}-${translation}`,
+          word: word,
+          translation: translation,
+          language: selectedConfig?.language === 'spanish' ? 'es' : selectedConfig?.language === 'french' ? 'fr' : 'en'
+        };
+
+        // Calculate confidence based on game mode and response time
+        let confidence = 0.7; // Default confidence
+
+        // Adjust confidence based on game mode
+        switch (gameMode) {
+          case 'speed':
+            confidence = isCorrect ? (responseTime < 2000 ? 0.9 : responseTime < 4000 ? 0.8 : 0.6) : 0.1;
+            break;
+          case 'multiple_choice':
+            confidence = isCorrect ? 0.5 : 0.2; // Lower confidence due to guessing
+            break;
+          case 'dictation':
+            confidence = isCorrect ? 0.9 : 0.2; // High confidence for typing accuracy
+            break;
+          case 'listening':
+            confidence = isCorrect ? 0.6 : 0.2; // Audio comprehension
+            break;
+          default:
+            confidence = isCorrect ? 0.7 : 0.3;
+        }
+
+        // Record practice with FSRS
+        const fsrsResult = await recordWordPractice(
+          wordData,
+          isCorrect,
+          responseTime,
+          confidence
+        );
+
+        if (fsrsResult) {
+          console.log(`FSRS recorded for ${word} (${gameMode}):`, {
+            algorithm: fsrsResult.algorithm,
+            points: fsrsResult.points,
+            nextReview: fsrsResult.nextReviewDate,
+            interval: fsrsResult.interval,
+            masteryLevel: fsrsResult.masteryLevel
+          });
+        }
+      } catch (error) {
+        console.error('Error recording FSRS practice:', error);
+      }
+    }
+
     // Skip database operations in demo mode
     if (isDemo || !gameService || !gameSessionId) {
       console.log('🎮 Demo mode: Skipping vocabulary mastery recording for word:', word);
@@ -297,18 +377,22 @@ export default function UnifiedVocabMasterWrapper({ searchParams = {} }: Props) 
         timestamp: new Date()
       });
 
-      // Update spaced repetition if enabled
-      if (spacedRepetitionUpdate && spacedRepetitionService && (user || unifiedUser)) {
+      // Update spaced repetition if vocabulary ID is available
+      if (vocabularyId && spacedRepetitionService && (user || unifiedUser)) {
         const userId = user?.id || unifiedUser?.id;
         if (userId) {
-          await spacedRepetitionService.updateWordProgress(
-            userId,
-            word,
-            translation,
-            isCorrect,
-            responseTime,
-            gameMode
-          );
+          try {
+            console.log('🔄 Updating spaced repetition for word:', word, 'ID:', vocabularyId);
+            await spacedRepetitionService.updateProgress(
+              userId,
+              vocabularyId, // Use the UUID directly - SpacedRepetitionService needs to be updated to handle UUIDs
+              isCorrect,
+              responseTime
+            );
+            console.log('✅ Spaced repetition updated successfully');
+          } catch (error) {
+            console.error('❌ Failed to update spaced repetition:', error);
+          }
         }
       }
     } catch (error) {
@@ -354,8 +438,7 @@ export default function UnifiedVocabMasterWrapper({ searchParams = {} }: Props) 
     // Skip database operations in demo mode
     if (isDemo || !gameService || !gameSessionId) {
       console.log('🎮 Demo mode: Skipping game completion recording');
-      setGameState('complete');
-      setGameResults(results);
+      // Don't set state here - it's handled in the onGameComplete callback
       return;
     }
 
@@ -363,24 +446,25 @@ export default function UnifiedVocabMasterWrapper({ searchParams = {} }: Props) 
       // End game session
       await gameService.endGameSession(gameSessionId, {
         final_score: results.score || 0,
-        words_completed: results.wordsReviewed || 0,
+        words_attempted: results.wordsReviewed || 0,
+        words_correct: results.correctAnswers || 0,
         accuracy_percentage: results.accuracy || 0,
-        session_duration_ms: results.timeSpent || 0,
+        duration_seconds: Math.floor((results.timeSpent || 0) / 1000), // Convert ms to seconds
         max_streak: results.maxStreak || 0,
         completion_status: 'completed',
-        bonus_points: results.gemsCollected || 0,
         performance_metrics: {
           mode: selectedMode,
           theme: results.theme,
           wordsLearned: results.wordsLearned,
-          xpEarned: results.xpEarned
+          xpEarned: results.xpEarned,
+          gemsCollected: results.gemsCollected || 0
         }
       });
 
-      setGameResults(results);
-      setGameState('complete');
+      // Don't set game state here - it's handled in the onGameComplete callback
     } catch (error) {
       console.error('Failed to complete game session:', error);
+      // Only set state on error
       setGameState('complete');
     }
   };
@@ -454,13 +538,22 @@ export default function UnifiedVocabMasterWrapper({ searchParams = {} }: Props) 
   // Regular game mode
   return (
     <div>
-      {gameState === 'launcher' && (
+      {gameState === 'launcher' && isClient && urlParamsProcessed && (
         <UnifiedVocabMasterLauncher
           onGameStart={handleGameStart}
           onBack={handleBackToSelector}
           presetConfig={selectedConfig}
           onFilterChange={handleFilterChange}
         />
+      )}
+
+      {gameState === 'launcher' && (!isClient || !urlParamsProcessed) && (
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading vocabulary filters...</p>
+          </div>
+        </div>
       )}
 
       {gameState === 'playing' && vocabulary.length > 0 && (
@@ -484,11 +577,28 @@ export default function UnifiedVocabMasterWrapper({ searchParams = {} }: Props) 
             assignmentMode: false
           }}
           onGameComplete={(results: GameResult) => {
+            // Pass the results in the format expected by GameCompletionScreen
+            const completionResults = {
+              score: results.score,
+              accuracy: results.accuracy,
+              totalWords: results.totalWords, // Keep original field name for completion screen
+              correctAnswers: results.correctAnswers,
+              timeSpent: results.timeSpent,
+              maxStreak: results.maxStreak,
+              wordsLearned: results.wordsLearned, // Keep as array for completion screen
+              wordsStruggling: results.wordsStruggling,
+              gemsCollected: results.gemsCollected,
+              mode: selectedMode,
+              theme: gameConfig.theme || 'adventure'
+            };
+
+            // Also call handleGameComplete for database operations
             handleGameComplete({
               score: results.score,
               accuracy: results.accuracy,
               wordsLearned: results.wordsLearned.length,
               wordsReviewed: results.totalWords,
+              correctAnswers: results.correctAnswers,
               timeSpent: results.timeSpent,
               maxStreak: results.maxStreak,
               mode: selectedMode,
@@ -496,9 +606,37 @@ export default function UnifiedVocabMasterWrapper({ searchParams = {} }: Props) 
               gemsCollected: results.gemsCollected,
               xpEarned: undefined
             });
+
+            // Set the results for the completion screen
+            setGameResults(completionResults);
+            setGameState('complete');
           }}
           onExit={handleExit}
           isAdventureMode={gameConfig.theme === 'adventure' || gameConfig.gamificationEnabled === true}
+          onWordAttempt={handleVocabularyMastery}
+        />
+      )}
+
+      {gameState === 'complete' && gameResults && (
+        <GameCompletionScreen
+          result={gameResults}
+          isAdventureMode={gameConfig.theme === 'adventure' || gameConfig.gamificationEnabled === true}
+          onPlayAgain={() => {
+            // Reset to launcher to start a new game
+            setGameState('launcher');
+            setGameResults(null);
+            setGameSessionId(null);
+            setSelectedMode('');
+            setGameConfig({});
+          }}
+          onBackToMenu={() => {
+            // Reset to launcher
+            setGameState('launcher');
+            setGameResults(null);
+            setGameSessionId(null);
+            setSelectedMode('');
+            setGameConfig({});
+          }}
         />
       )}
 

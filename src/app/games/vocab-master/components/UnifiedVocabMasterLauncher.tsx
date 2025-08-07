@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../../../components/auth/AuthProvider';
 import { useSupabase } from '../../../../components/supabase/SupabaseProvider';
@@ -168,12 +168,45 @@ interface UnifiedVocabMasterLauncherProps {
 export default function UnifiedVocabMasterLauncher({ onGameStart, onBack, presetConfig, onFilterChange }: UnifiedVocabMasterLauncherProps) {
   const { user } = useAuth();
   const { supabase } = useSupabase();
-  
+
   // Dynamic filter state - the core of the new single-page experience
   const [selectedLanguage, setSelectedLanguage] = useState<string>(presetConfig?.language || 'spanish');
   const [selectedLevel, setSelectedLevel] = useState<'KS2' | 'KS3' | 'KS4' | 'KS5'>(presetConfig?.curriculumLevel || 'KS3');
   const [selectedCategory, setSelectedCategory] = useState<string>(presetConfig?.categoryId || ''); // Default to "All Topics"
   const [selectedSubcategory, setSelectedSubcategory] = useState<string>(presetConfig?.subcategoryId || ''); // Default to "All Subtopics"
+
+  // Track initialization state to prevent infinite loops
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  // Store the applied preset config to prevent losing it
+  const [appliedPresetConfig, setAppliedPresetConfig] = useState<typeof presetConfig>(null);
+
+  // Update state when presetConfig changes (but don't lose it once applied)
+  useEffect(() => {
+    console.log('🔄 Preset config effect running:', { presetConfig, appliedPresetConfig, isInitialized });
+    if (presetConfig && (!appliedPresetConfig || JSON.stringify(presetConfig) !== JSON.stringify(appliedPresetConfig))) {
+      console.log('✅ Applying preset config:', presetConfig);
+      setSelectedLanguage(presetConfig.language || 'spanish');
+      setSelectedLevel(presetConfig.curriculumLevel || 'KS3');
+      setSelectedCategory(presetConfig.categoryId || '');
+      setSelectedSubcategory(presetConfig.subcategoryId || '');
+      setAppliedPresetConfig(presetConfig);
+      // Only set isInitialized to true ONCE after applying preset config
+      if (!isInitialized) setIsInitialized(true);
+      console.log('✅ State updated to:', {
+        language: presetConfig.language,
+        category: presetConfig.categoryId,
+        subcategory: presetConfig.subcategoryId
+      });
+    } else if (!presetConfig && appliedPresetConfig && isInitialized) {
+      console.log('⚠️ Preset config became null but we already applied one - keeping current state');
+    } else if (!presetConfig && !isInitialized) {
+      console.log('❌ No preset config available - initializing with defaults');
+      setIsInitialized(true); // Initialize with defaults
+    } else {
+      console.log('👌 No preset config change or already initialized/applied.');
+    }
+  }, [presetConfig, appliedPresetConfig, isInitialized]);
 
   // Game state management
   const [selectedTheme, setSelectedTheme] = useState<'mastery' | 'adventure'>('mastery');
@@ -187,8 +220,8 @@ export default function UnifiedVocabMasterLauncher({ onGameStart, onBack, preset
   const [gameModeCategory, setGameModeCategory] = useState<string>('all');
 
   // Available subtopics based on selected category
-  const [availableSubtopics, setAvailableSubtopics] = useState<Array<{value: string, label: string}>>([]);
-  
+  const [availableSubtopics, setAvailableSubtopics] = useState<Array<{ value: string, label: string }>>([]);
+
   // Settings
   const [settings, setSettings] = useState({
     wordsPerSession: 20,
@@ -198,17 +231,32 @@ export default function UnifiedVocabMasterLauncher({ onGameStart, onBack, preset
   });
 
   // Dynamic vocabulary loading based on current filter selection
+  const vocabularyParams = useMemo(() => {
+    const params = {
+      language: selectedLanguage === 'spanish' ? 'es' : selectedLanguage === 'french' ? 'fr' : 'de',
+      categoryId: selectedCategory === '' ? undefined : selectedCategory, // Empty string means "All Topics"
+      subcategoryId: selectedSubcategory === '' ? undefined : selectedSubcategory, // Empty string means "All Subtopics"
+      curriculumLevel: selectedLevel,
+      limit: 500, // Increased limit to get more realistic counts
+      randomize: true
+    };
+    console.log('🎯 Vocabulary params:', params, 'from state:', {
+      selectedLanguage,
+      selectedCategory,
+      selectedSubcategory,
+      selectedLevel,
+      presetConfig
+    });
+    return params;
+  }, [selectedLanguage, selectedCategory, selectedSubcategory, selectedLevel]);
+
   const {
     vocabulary,
     loading: vocabularyLoading,
     error: vocabularyError
   } = useGameVocabulary({
-    language: selectedLanguage === 'spanish' ? 'es' : selectedLanguage === 'french' ? 'fr' : 'de',
-    categoryId: selectedCategory === '' ? undefined : selectedCategory, // Empty string means "All Topics"
-    subcategoryId: selectedSubcategory === '' ? undefined : selectedSubcategory, // Empty string means "All Subtopics"
-    curriculumLevel: selectedLevel,
-    limit: 500, // Increased limit to get more realistic counts
-    randomize: true
+    ...vocabularyParams,
+    enabled: isInitialized // Only fetch vocabulary after component is properly initialized
   });
 
   // Get realistic vocabulary count based on selection
@@ -272,9 +320,11 @@ export default function UnifiedVocabMasterLauncher({ onGameStart, onBack, preset
     } else {
       setAvailableSubtopics([]);
     }
-    // Reset subtopic when category changes
-    setSelectedSubcategory('');
-  }, [selectedCategory, supabase]);
+    // Only reset subtopic when category changes AND we're not initializing from presetConfig
+    if (isInitialized && !presetConfig) {
+      setSelectedSubcategory('');
+    }
+  }, [selectedCategory, supabase, isInitialized, presetConfig]);
 
   // Load user stats when filters change
   useEffect(() => {
@@ -282,32 +332,27 @@ export default function UnifiedVocabMasterLauncher({ onGameStart, onBack, preset
   }, [selectedLanguage, selectedLevel, selectedCategory, selectedSubcategory]);
 
   // Notify parent of filter changes (only when filters actually change, not on mount)
-  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    if (isInitialized && onFilterChange) {
+    // Only notify parent of filter changes when user manually changes filters (not from preset config)
+    if (isInitialized && onFilterChange && !presetConfig) {
+      console.log('📤 Notifying parent of filter changes:', {
+        language: selectedLanguage,
+        curriculumLevel: selectedLevel,
+        categoryId: selectedCategory,
+        subcategoryId: selectedSubcategory
+      });
       onFilterChange({
         language: selectedLanguage,
         curriculumLevel: selectedLevel,
         categoryId: selectedCategory,
         subcategoryId: selectedSubcategory
       });
-    } else if (!isInitialized) {
-      setIsInitialized(true);
     }
-  }, [selectedLanguage, selectedLevel, selectedCategory, selectedSubcategory]);
+  }, [selectedLanguage, selectedLevel, selectedCategory, selectedSubcategory, isInitialized, presetConfig, onFilterChange]);
 
   const loadUserStats = async () => {
-    console.log('🔍 Loading user stats for:', {
-      userId: user?.id,
-      hasSupabase: !!supabase,
-      selectedLanguage,
-      selectedLevel,
-      selectedCategory
-    });
-
     if (!user || !supabase) {
-      console.log('❌ No user or supabase, cannot load real stats');
       setUserStats({
         wordsLearned: 0,
         totalWords: vocabulary.length,
@@ -319,14 +364,18 @@ export default function UnifiedVocabMasterLauncher({ onGameStart, onBack, preset
     }
 
     try {
-      const languageCode = selectedLanguage === 'spanish' ? 'es' : selectedLanguage === 'french' ? 'fr' : 'de';
+      // Map UI language selection to database language values
+      const languageMapping: { [key: string]: string } = {
+        'spanish': 'spanish',
+        'es': 'spanish',
+        'french': 'french',
+        'fr': 'french',
+        'german': 'german',
+        'de': 'german'
+      };
+      const dbLanguage = languageMapping[selectedLanguage] || 'spanish';
 
-      console.log('🔍 Querying performance data for admin user:', {
-        userId: user.id,
-        language: languageCode,
-        level: selectedLevel,
-        category: selectedCategory
-      });
+      console.log('🔍 Loading user stats for:', { selectedLanguage, dbLanguage, selectedLevel, user: user.id });
 
       // Query word_performance_logs for this specific user and language/level combination
       let performanceQuery = supabase
@@ -336,7 +385,7 @@ export default function UnifiedVocabMasterLauncher({ onGameStart, onBack, preset
           enhanced_game_sessions!inner(student_id)
         `)
         .eq('enhanced_game_sessions.student_id', user.id)
-        .eq('language', languageCode);
+        .eq('language', dbLanguage);
 
       // Add curriculum level filter if available
       if (selectedLevel) {
@@ -348,10 +397,7 @@ export default function UnifiedVocabMasterLauncher({ onGameStart, onBack, preset
       if (error) {
         console.error('❌ Error loading user performance data:', error);
       } else {
-        console.log('✅ Performance data loaded:', {
-          recordCount: performanceData?.length || 0,
-          sampleRecord: performanceData?.[0]
-        });
+        console.log('📊 Performance data loaded:', performanceData?.length || 0, 'records');
       }
 
       // Also check user_vocabulary_progress table for additional stats
@@ -363,9 +409,19 @@ export default function UnifiedVocabMasterLauncher({ onGameStart, onBack, preset
       if (vocabError) {
         console.error('❌ Error loading vocabulary progress:', vocabError);
       } else {
-        console.log('✅ Vocabulary progress data loaded:', {
-          recordCount: vocabProgressData?.length || 0
-        });
+        console.log('📈 Vocabulary progress data loaded:', vocabProgressData?.length || 0, 'records');
+      }
+
+      // Also check vocabulary_gem_collection for spaced repetition progress
+      const { data: gemCollectionData, error: gemError } = await supabase
+        .from('vocabulary_gem_collection')
+        .select('*')
+        .eq('student_id', user.id);
+
+      if (gemError) {
+        console.error('❌ Error loading gem collection data:', gemError);
+      } else {
+        console.log('💎 Gem collection data loaded:', gemCollectionData?.length || 0, 'records');
       }
 
       // Calculate stats from performance data
@@ -374,8 +430,18 @@ export default function UnifiedVocabMasterLauncher({ onGameStart, onBack, preset
       const uniqueWordsFromPerformance = new Set(performanceData?.map(log => log.word_text) || []).size;
       const learnedWordsFromProgress = vocabProgressData?.filter(item => item.is_learned).length || 0;
 
-      // Use the higher of the two counts
-      const wordsLearned = Math.max(uniqueWordsFromPerformance, learnedWordsFromProgress);
+      // Calculate learned words from gem collection (mastery level >= 3)
+      const learnedWordsFromGems = gemCollectionData?.filter(item => item.mastery_level >= 3).length || 0;
+
+      // Use the highest count from all sources
+      const wordsLearned = Math.max(uniqueWordsFromPerformance, learnedWordsFromProgress, learnedWordsFromGems);
+
+      console.log('📊 Words learned calculation:', {
+        uniqueWordsFromPerformance,
+        learnedWordsFromProgress,
+        learnedWordsFromGems,
+        finalWordsLearned: wordsLearned
+      });
 
       // Calculate current streak from recent performance
       const sortedLogs = (performanceData || []).sort((a, b) =>
@@ -406,18 +472,8 @@ export default function UnifiedVocabMasterLauncher({ onGameStart, onBack, preset
         weeklyProgress: weeklyCorrectWords
       };
 
+      console.log('📈 Final user stats calculated:', finalStats);
       setUserStats(finalStats);
-
-      console.log('✅ Final user stats calculated:', {
-        ...finalStats,
-        totalAttempts,
-        correctAttempts,
-        uniqueWordsFromPerformance,
-        learnedWordsFromProgress,
-        language: languageCode,
-        level: selectedLevel,
-        category: selectedCategory
-      });
 
     } catch (error) {
       console.error('❌ Error in loadUserStats:', error);
@@ -441,14 +497,14 @@ export default function UnifiedVocabMasterLauncher({ onGameStart, onBack, preset
   const startGameSession = async (modeId: string) => {
     setIsLoading(true);
     setSelectedMode(modeId);
-    
+
     try {
       // Get vocabulary subset based on mode
       let vocabularySubset = vocabulary.slice(0, settings.wordsPerSession);
-      
+
       // Apply mode-specific vocabulary filtering logic here
       // (This would include the complex logic from both original games)
-      
+
       const gameConfig = {
         wordsPerSession: Math.min(settings.wordsPerSession, vocabularySubset.length),
         difficulty: settings.difficulty,
@@ -500,117 +556,195 @@ export default function UnifiedVocabMasterLauncher({ onGameStart, onBack, preset
           </p>
         </motion.div>
 
-        {/* Dynamic Filter Bar - The Core Innovation */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="mb-8"
-        >
-          <div className="bg-white rounded-xl shadow-lg p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-800 flex items-center">
-                <Settings className="h-5 w-5 mr-2 text-blue-600" />
-                Choose Your Learning Focus
-              </h3>
-              <div className="text-sm text-gray-500">
-                {getVocabularyCount()} words available
+        {/* Dynamic Filter Bar - Only show if no preset config or if user wants to change */}
+        {(!presetConfig || showSettings) && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="mb-8"
+          >
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-800 flex items-center">
+                  <Settings className="h-5 w-5 mr-2 text-blue-600" />
+                  Choose Your Learning Focus
+                </h3>
+                <div className="text-sm text-gray-500">
+                  {getVocabularyCount()} words available
+                </div>
               </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                {/* Language Selector */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <Globe className="h-4 w-4 inline mr-1" />
+                    Language
+                  </label>
+                  <select
+                    value={selectedLanguage}
+                    onChange={(e) => setSelectedLanguage(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="spanish">Spanish</option>
+                    <option value="french">French</option>
+                    <option value="german">German</option>
+                  </select>
+                </div>
+
+                {/* Level Selector */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <GraduationCap className="h-4 w-4 inline mr-1" />
+                    Level
+                  </label>
+                  <select
+                    value={selectedLevel}
+                    onChange={(e) => setSelectedLevel(e.target.value as 'KS2' | 'KS3' | 'KS4' | 'KS5')}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="KS2">KS2 (Ages 7-11)</option>
+                    <option value="KS3">KS3 (Ages 11-14)</option>
+                    <option value="KS4">KS4 (Ages 14-16)</option>
+                    <option value="KS5">KS5 (Ages 16-18)</option>
+                  </select>
+                </div>
+
+                {/* Category Selector */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <FolderOpen className="h-4 w-4 inline mr-1" />
+                    Topic
+                  </label>
+                  <select
+                    value={selectedCategory}
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="">All Topics</option>
+                    <option value="basics_core_language">Basics & Core Language</option>
+                    <option value="identity_personal_life">Identity & Personal Life</option>
+                    <option value="home_local_area">Home & Local Area</option>
+                    <option value="school_jobs_future">School, Jobs & Future</option>
+                    <option value="free_time_leisure">Free Time & Leisure</option>
+                    <option value="food_drink">Food & Drink</option>
+                    <option value="clothes_shopping">Clothes & Shopping</option>
+                    <option value="technology_media">Technology & Media</option>
+                    <option value="health_lifestyle">Health & Lifestyle</option>
+                    <option value="holidays_travel_culture">Holidays, Travel & Culture</option>
+                  </select>
+                </div>
+
+                {/* Subtopic Selector */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <BarChart3 className="h-4 w-4 inline mr-1" />
+                    Subtopic
+                  </label>
+                  <select
+                    value={selectedSubcategory}
+                    onChange={(e) => setSelectedSubcategory(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    disabled={!selectedCategory || selectedCategory === ''}
+                  >
+                    <option value="">All Subtopics</option>
+                    {availableSubtopics.map(subtopic => (
+                      <option key={subtopic.value} value={subtopic.value}>
+                        {subtopic.label}
+                      </option>
+                    ))}
+                  </select>
+                  {(!selectedCategory || selectedCategory === '') && (
+                    <p className="text-xs text-gray-500 mt-1">Select a topic first to see subtopics</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Done button when changing preset config */}
+              {presetConfig && showSettings && (
+                <div className="mt-4 flex justify-end">
+                  <button
+                    onClick={() => setShowSettings(false)}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    Done
+                  </button>
+                </div>
+              )}
+
+              {vocabularyError && (
+                <div className="mt-4 text-center text-red-500">
+                  Error loading vocabulary. Please try again.
+                </div>
+              )}
             </div>
+          </motion.div>
+        )}
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              {/* Language Selector */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <Globe className="h-4 w-4 inline mr-1" />
-                  Language
-                </label>
-                <select
-                  value={selectedLanguage}
-                  onChange={(e) => setSelectedLanguage(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="spanish">Spanish</option>
-                  <option value="french">French</option>
-                  <option value="german">German</option>
-                </select>
+        {/* Pre-selected Categories Summary - Show when categories are preset */}
+        {presetConfig && !showSettings && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="mb-8"
+          >
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-800 flex items-center">
+                  <FolderOpen className="h-5 w-5 mr-2 text-blue-600" />
+                  Selected Learning Focus
+                </h3>
+                <div className="flex items-center space-x-4">
+                  <div className="text-sm text-gray-500">
+                    {getVocabularyCount()} words available
+                  </div>
+                  <button
+                    onClick={() => setShowSettings(true)}
+                    className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center"
+                  >
+                    <Settings className="h-4 w-4 mr-1" />
+                    Change
+                  </button>
+                </div>
               </div>
 
-              {/* Level Selector */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <GraduationCap className="h-4 w-4 inline mr-1" />
-                  Level
-                </label>
-                <select
-                  value={selectedLevel}
-                  onChange={(e) => setSelectedLevel(e.target.value as 'KS2' | 'KS3' | 'KS4' | 'KS5')}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="KS2">KS2 (Ages 7-11)</option>
-                  <option value="KS3">KS3 (Ages 11-14)</option>
-                  <option value="KS4">KS4 (Ages 14-16)</option>
-                  <option value="KS5">KS5 (Ages 16-18)</option>
-                </select>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="bg-blue-50 rounded-lg p-3">
+                  <div className="text-sm font-medium text-gray-700 mb-1">Language</div>
+                  <div className="text-lg font-semibold text-blue-700 capitalize">
+                    {selectedLanguage}
+                  </div>
+                </div>
+                <div className="bg-green-50 rounded-lg p-3">
+                  <div className="text-sm font-medium text-gray-700 mb-1">Level</div>
+                  <div className="text-lg font-semibold text-green-700">
+                    {selectedLevel}
+                  </div>
+                </div>
+                <div className="bg-purple-50 rounded-lg p-3">
+                  <div className="text-sm font-medium text-gray-700 mb-1">Topic</div>
+                  <div className="text-lg font-semibold text-purple-700">
+                    {selectedCategory ? selectedCategory.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'All Topics'}
+                  </div>
+                </div>
+                <div className="bg-orange-50 rounded-lg p-3">
+                  <div className="text-sm font-medium text-gray-700 mb-1">Subtopic</div>
+                  <div className="text-lg font-semibold text-orange-700">
+                    {selectedSubcategory ? selectedSubcategory.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'All Subtopics'}
+                  </div>
+                </div>
               </div>
 
-              {/* Category Selector */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <FolderOpen className="h-4 w-4 inline mr-1" />
-                  Topic
-                </label>
-                <select
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="">All Topics</option>
-                  <option value="basics_core_language">Basics & Core Language</option>
-                  <option value="identity_personal_life">Identity & Personal Life</option>
-                  <option value="home_local_area">Home & Local Area</option>
-                  <option value="school_jobs_future">School, Jobs & Future</option>
-                  <option value="free_time_leisure">Free Time & Leisure</option>
-                  <option value="food_drink">Food & Drink</option>
-                  <option value="clothes_shopping">Clothes & Shopping</option>
-                  <option value="technology_media">Technology & Media</option>
-                  <option value="health_lifestyle">Health & Lifestyle</option>
-                  <option value="holidays_travel_culture">Holidays, Travel & Culture</option>
-                </select>
-              </div>
-
-              {/* Subtopic Selector */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <BarChart3 className="h-4 w-4 inline mr-1" />
-                  Subtopic
-                </label>
-                <select
-                  value={selectedSubcategory}
-                  onChange={(e) => setSelectedSubcategory(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  disabled={!selectedCategory || selectedCategory === ''}
-                >
-                  <option value="">All Subtopics</option>
-                  {availableSubtopics.map(subtopic => (
-                    <option key={subtopic.value} value={subtopic.value}>
-                      {subtopic.label}
-                    </option>
-                  ))}
-                </select>
-                {(!selectedCategory || selectedCategory === '') && (
-                  <p className="text-xs text-gray-500 mt-1">Select a topic first to see subtopics</p>
-                )}
-              </div>
+              {vocabularyError && (
+                <div className="mt-4 text-center text-red-500">
+                  Error loading vocabulary. Please try again.
+                </div>
+              )}
             </div>
-
-            {vocabularyError && (
-              <div className="mt-4 text-center text-red-500">
-                Error loading vocabulary. Please try again.
-              </div>
-            )}
-          </div>
-        </motion.div>
+          </motion.div>
+        )}
 
         {/* Context-Aware User Stats Dashboard */}
         <motion.div
@@ -670,17 +804,16 @@ export default function UnifiedVocabMasterLauncher({ onGameStart, onBack, preset
               <h2 className="text-xl font-bold text-gray-800">Choose Your Experience</h2>
               <Palette className="h-5 w-5 text-gray-600" />
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {THEME_OPTIONS.map((theme) => (
                 <button
                   key={theme.id}
                   onClick={() => setSelectedTheme(theme.id)}
-                  className={`p-4 rounded-lg border-2 transition-all duration-200 text-left ${
-                    selectedTheme === theme.id
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
+                  className={`p-4 rounded-lg border-2 transition-all duration-200 text-left ${selectedTheme === theme.id
+                    ? 'border-blue-500 bg-blue-50'
+                    : 'border-gray-200 hover:border-gray-300'
+                    }`}
                 >
                   <div className="flex items-center space-x-3">
                     <div className={theme.color}>
@@ -714,11 +847,10 @@ export default function UnifiedVocabMasterLauncher({ onGameStart, onBack, preset
               <button
                 key={category.id}
                 onClick={() => setSelectedCategory(category.id)}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                  selectedCategory === category.id
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-white text-gray-600 hover:bg-gray-100'
-                }`}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${selectedCategory === category.id
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-white text-gray-600 hover:bg-gray-100'
+                  }`}
               >
                 {category.label}
               </button>
@@ -820,11 +952,10 @@ function ModeCard({ mode, index, onSelect, isLoading, selectedMode, vocabularyLe
       <button
         onClick={() => onSelect(mode.id)}
         disabled={isLoading && selectedMode === mode.id || vocabularyLength === 0}
-        className={`w-full text-left p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 relative overflow-hidden ${
-          isLoading && selectedMode === mode.id || vocabularyLength === 0
-            ? 'opacity-50 cursor-not-allowed'
-            : 'hover:transform hover:-translate-y-1'
-        }`}
+        className={`w-full text-left p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 relative overflow-hidden ${isLoading && selectedMode === mode.id || vocabularyLength === 0
+          ? 'opacity-50 cursor-not-allowed'
+          : 'hover:transform hover:-translate-y-1'
+          }`}
       >
         <div className={`absolute inset-0 ${mode.color} opacity-90`} />
 
@@ -865,4 +996,3 @@ function ModeCard({ mode, index, onSelect, isLoading, selectedMode, vocabularyLe
     </motion.div>
   );
 }
-

@@ -7,6 +7,7 @@ import { Brain, ArrowLeft, Volume2, VolumeX, Settings } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useAudio } from '../hooks/useAudio';
 import { EnhancedGameService } from '../../../../services/enhancedGameService';
+import { useUnifiedSpacedRepetition } from '../../../../hooks/useUnifiedSpacedRepetition';
 
 // Theme animations
 import ClassicAnimation from './themes/ClassicAnimation';
@@ -543,8 +544,11 @@ export default function TicTacToeGame({
   gameService,
   userId
 }: TicTacToeGameProps) {
+  // Initialize FSRS spaced repetition system
+  const { recordWordPractice, algorithm } = useUnifiedSpacedRepetition('noughts-and-crosses');
+
   const { themeClasses } = useTheme();
-  
+
   // Audio state
   const [soundEnabled, setSoundEnabled] = useState(true);
   const { playSFX, playThemeSFX, startBackgroundMusic, stopBackgroundMusic } = useAudio(soundEnabled);
@@ -687,6 +691,43 @@ export default function TicTacToeGame({
 
     const isCorrect = selectedIndex === currentQuestion.correctIndex;
     const responseTime = (Date.now() - questionStartTime) / 1000;
+
+    // Record word practice with FSRS system
+    if (!isAssignmentMode && currentQuestion) {
+      try {
+        const wordData = {
+          id: currentQuestion.id || `noughts-${currentQuestion.word}`,
+          word: currentQuestion.word,
+          translation: currentQuestion.translation,
+          language: settings.language === 'spanish' ? 'es' : settings.language === 'french' ? 'fr' : 'en'
+        };
+
+        // Calculate confidence for luck-based game (lower confidence due to guessing)
+        const baseConfidence = isCorrect ? 0.4 : 0.2; // Lower confidence for multiple choice
+        const speedBonus = responseTime < 3 ? 0.1 : responseTime < 5 ? 0.05 : 0;
+        const confidence = Math.max(0.1, Math.min(0.6, baseConfidence + speedBonus)); // Cap at 0.6 for luck-based
+
+        // Record practice with FSRS
+        const fsrsResult = await recordWordPractice(
+          wordData,
+          isCorrect,
+          responseTime * 1000, // Convert to milliseconds
+          confidence
+        );
+
+        if (fsrsResult) {
+          console.log(`FSRS recorded for noughts-and-crosses "${currentQuestion.word}":`, {
+            algorithm: fsrsResult.algorithm,
+            points: fsrsResult.points,
+            nextReview: fsrsResult.nextReviewDate,
+            interval: fsrsResult.interval,
+            masteryLevel: fsrsResult.masteryLevel
+          });
+        }
+      } catch (error) {
+        console.error('Error recording FSRS practice for noughts-and-crosses:', error);
+      }
+    }
 
     // Noughts and Crosses is a luck-based game - log word exposure only (not performance)
     if (gameService && gameSessionId && !isAssignmentMode) {

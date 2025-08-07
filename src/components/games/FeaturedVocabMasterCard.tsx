@@ -23,7 +23,7 @@ export default function FeaturedVocabMasterCard({ onChooseContent }: FeaturedVoc
   const router = useRouter();
 
   const handleQuickStart = () => {
-    router.push('/vocabmaster');
+    router.push('/student-dashboard/vocabmaster');
   };
 
   return (
@@ -186,7 +186,7 @@ export default function FeaturedVocabMasterCard({ onChooseContent }: FeaturedVoc
                 
               </div>
               <Link
-                href="/vocabmaster/about"
+                href="/student-dashboard/vocabmaster"
                 className="flex items-center gap-1 text-white/60 hover:text-white/80 transition-colors"
               >
                 <span>Learn more</span>

@@ -79,8 +79,8 @@ export const ListeningMode: React.FC<ListeningModeProps> = ({
             Listen to the Spanish word and type its English translation
           </p>
 
-          {/* Audio controls */}
-          <div className="flex items-center justify-center space-x-4">
+          {/* Single audio control */}
+          <div className="flex justify-center">
             <button
               onClick={() => playPronunciation(gameState.currentWord?.spanish || '', 'es', gameState.currentWord)}
               disabled={gameState.audioPlaying}
@@ -94,23 +94,14 @@ export const ListeningMode: React.FC<ListeningModeProps> = ({
             >
               <Volume2 className="h-8 w-8" />
             </button>
-            
-            {canReplayAudio && (
-              <button
-                onClick={onReplayAudio}
-                className={`flex items-center space-x-2 px-4 py-2 rounded-full transition-colors ${
-                  isAdventureMode
-                    ? 'bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-200 border border-yellow-400/30'
-                    : 'bg-yellow-100 hover:bg-yellow-200 text-yellow-700 border border-yellow-300'
-                }`}
-              >
-                <Volume2 className="h-4 w-4" />
-                <span className="text-sm">
-                  Replay ({2 - audioReplayCount} left)
-                </span>
-              </button>
-            )}
           </div>
+
+          {/* Replay info */}
+          {canReplayAudio && (
+            <div className={`text-center text-sm ${isAdventureMode ? 'text-white/60' : 'text-gray-500'}`}>
+              {2 - audioReplayCount} replays remaining
+            </div>
+          )}
         </div>
       </motion.div>
 

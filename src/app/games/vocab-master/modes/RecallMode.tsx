@@ -1,8 +1,9 @@
 import React, { useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Brain, Volume2, Target, Lightbulb } from 'lucide-react';
+import { Brain, Volume2, Target, Lightbulb, Star } from 'lucide-react';
 import { ModeComponent } from '../types';
 import { getPlaceholderText } from '../utils/answerValidation';
+import { getAdventureTheme, getAccentColorClasses } from '../utils/adventureThemes';
 
 interface RecallModeProps extends ModeComponent {
   userAnswer: string;
@@ -27,7 +28,19 @@ export const RecallMode: React.FC<RecallModeProps> = ({
     if (inputRef.current) {
       inputRef.current.focus();
     }
-  }, [gameState.currentWordIndex]);
+
+    // Auto-play audio when new word appears
+    if (gameState.currentWord?.audio_url) {
+      const timer = setTimeout(() => {
+        playPronunciation(
+          gameState.currentWord?.spanish || gameState.currentWord?.word || '',
+          'es',
+          gameState.currentWord || undefined
+        );
+      }, 500); // Small delay to let the UI settle
+      return () => clearTimeout(timer);
+    }
+  }, [gameState.currentWordIndex, gameState.currentWord, playPronunciation]);
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && userAnswer.trim()) {
@@ -50,29 +63,31 @@ export const RecallMode: React.FC<RecallModeProps> = ({
   };
 
   // Enhanced styling for both adventure and mastery modes
-  const containerClasses = isAdventureMode 
-    ? "min-h-screen bg-gradient-to-br from-blue-900 via-indigo-950 to-purple-950"
-    : "min-h-screen bg-white";
+  const adventureTheme = getAdventureTheme('recall');
+  
+  const containerClasses = isAdventureMode
+    ? adventureTheme.background
+    : "min-h-screen bg-gray-50 font-sans antialiased";
 
-  const cardClasses = isAdventureMode 
-    ? "bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-xl rounded-3xl p-8 border-2 border-slate-600/30 shadow-2xl"
-    : "bg-blue-600 rounded-3xl p-8 text-white";
+  const cardClasses = isAdventureMode
+    ? adventureTheme.cardStyle
+    : "bg-white rounded-2xl shadow-lg p-7 border border-gray-100";
 
-  const inputCardClasses = isAdventureMode 
-    ? "bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-xl rounded-3xl p-8 border-2 border-slate-600/30 shadow-2xl"
-    : "bg-blue-600 rounded-3xl p-6 text-white";
+  const inputCardClasses = isAdventureMode
+    ? adventureTheme.cardStyle
+    : "bg-white rounded-2xl shadow-lg p-6 border border-gray-100";
 
-  const textPrimary = isAdventureMode ? "text-white" : "text-white";
-  const textSecondary = isAdventureMode ? "text-white/80" : "text-white/80";
-  const textMuted = isAdventureMode ? "text-white/60" : "text-white/60";
+  const textPrimary = isAdventureMode ? "text-white" : "text-gray-900";
+  const textSecondary = isAdventureMode ? "text-white/80" : "text-gray-600";
+  const textMuted = isAdventureMode ? "text-white/60" : "text-gray-500";
 
   if (!isAdventureMode) {
     // Layout matching the screenshot
     return (
-      <div className="min-h-screen bg-white flex">
+      <div className="min-h-screen bg-gray-50 flex">
         {/* Main content area */}
         <div className="flex-1 p-8 flex flex-col justify-center">
-          <div className="max-w-2xl mx-auto w-full space-y-8">
+          <div className="max-w-2xl mx-auto w-full space-y-7">
             {/* Word display card */}
             <motion.div
               key={gameState.currentWordIndex}
@@ -81,18 +96,34 @@ export const RecallMode: React.FC<RecallModeProps> = ({
               className={cardClasses}
             >
               <div className="text-center space-y-6">
-                <h3 className="text-6xl font-bold text-white">
+                <div className="text-4xl text-purple-500">
+                  <Brain className="h-12 w-12 mx-auto" />
+                </div>
+
+                <h2 className="text-xl font-bold text-gray-800 flex items-center justify-center">
+                  <Brain className="h-5 w-5 mr-2" />
+                  Recall Challenge
+                </h2>
+
+                <h3 className="text-5xl font-extrabold text-purple-700">
                   {gameState.currentWord?.spanish || gameState.currentWord?.word}
                 </h3>
+
+                {/* Part of speech */}
+                {gameState.currentWord?.part_of_speech && (
+                  <div className="inline-block px-3 py-1 rounded-full text-sm bg-purple-100 text-purple-700 font-medium">
+                    {gameState.currentWord.part_of_speech}
+                  </div>
+                )}
 
                 {/* Audio button */}
                 {gameState.currentWord?.audio_url && (
                   <button
                     onClick={() => playPronunciation(gameState.currentWord?.spanish || '', 'es', gameState.currentWord || undefined)}
                     disabled={gameState.audioPlaying}
-                    className="p-6 rounded-full bg-blue-500 hover:bg-blue-400 text-white border-2 border-blue-400 transition-colors"
+                    className="p-4 rounded-full bg-purple-500 hover:bg-purple-600 text-white shadow-md transition-all duration-200 disabled:bg-gray-300 disabled:cursor-not-allowed"
                   >
-                    <Volume2 className="h-8 w-8" />
+                    <Volume2 className="h-7 w-7" />
                   </button>
                 )}
               </div>
@@ -100,11 +131,20 @@ export const RecallMode: React.FC<RecallModeProps> = ({
 
             {/* Input area */}
             <div className={inputCardClasses}>
-              <div className="space-y-6">
-                <h3 className="text-xl font-semibold text-white">
-                  Type the English translation:
-                </h3>
-                
+              <div className="space-y-5">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-gray-800">
+                    Type the English translation:
+                  </h3>
+
+                  <button
+                    className="flex items-center space-x-2 px-3 py-1 rounded-xl text-sm transition-colors border border-gray-300 text-gray-600 hover:bg-gray-100"
+                  >
+                    <Lightbulb className="h-4 w-4" />
+                    <span>Hint</span>
+                  </button>
+                </div>
+
                 <div className="relative">
                   <input
                     ref={inputRef}
@@ -113,92 +153,81 @@ export const RecallMode: React.FC<RecallModeProps> = ({
                     onChange={(e) => onAnswerChange(e.target.value)}
                     onKeyDown={handleKeyPress}
                     placeholder="Type your answer..."
-                    className="w-full p-4 rounded-xl text-lg font-medium bg-blue-500/30 text-white placeholder-white/60 border border-blue-400/30 focus:border-white/50 focus:ring-2 focus:ring-white/20 transition-all duration-200"
+                    className="w-full p-4 rounded-xl text-lg font-medium bg-gray-50 text-gray-900 placeholder-gray-400 border border-gray-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-100 transition-all duration-200 outline-none"
                     autoFocus
                   />
                 </div>
 
-                {/* Action buttons */}
-                <div className="flex space-x-3">
-                  <button
-                    onClick={onSubmit}
-                    disabled={!userAnswer.trim()}
-                    className={`flex-1 py-3 rounded-xl font-semibold transition-all duration-200 ${
-                      userAnswer.trim()
-                        ? 'bg-blue-500/40 hover:bg-blue-500/50 text-white border border-blue-400/30'
-                        : 'bg-blue-500/20 text-white/50 cursor-not-allowed border border-blue-400/20'
-                    }`}
-                  >
-                    Submit Answer
-                  </button>
-
-                  {/* Hint button */}
-                  <button
-                    className="px-4 py-3 rounded-xl font-medium transition-all duration-200 border border-blue-400/30 text-white/80 hover:bg-blue-500/20"
-                    title="Show hint"
-                  >
-                    <Lightbulb className="h-5 w-5" />
-                  </button>
-                </div>
+                <button
+                  onClick={onSubmit}
+                  disabled={!userAnswer.trim()}
+                  className={`w-full py-3 rounded-xl font-semibold text-white transition-all duration-200 shadow-md ${
+                    userAnswer.trim()
+                      ? 'bg-purple-600 hover:bg-purple-700'
+                      : 'bg-purple-300 cursor-not-allowed'
+                  }`}
+                >
+                  Check Answer
+                </button>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Right sidebar matching screenshot */}
-        <div className="w-80 p-8 space-y-6">
+        {/* Right sidebar - same as LearnMode */}
+        <div className="w-80 p-8 space-y-6 bg-gray-100 border-l border-gray-200">
           {/* Performance card */}
-          <div className="bg-purple-600 rounded-3xl p-6 text-white">
+          <div className="bg-white rounded-2xl shadow-sm p-6 text-gray-800 border border-gray-100">
             <h4 className="text-xl font-bold mb-4">Performance</h4>
-            
+
             <div className="space-y-4">
-              <div className="bg-purple-500/30 rounded-2xl p-4 flex items-center justify-between">
+              <div className="bg-purple-50 rounded-xl p-4 flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                  <Target className="h-5 w-5 text-cyan-300" />
+                  <Target className="h-5 w-5 text-purple-500" />
                   <span className="font-medium">Streak</span>
                 </div>
-                <span className="text-2xl font-bold">{streak}</span>
+                <span className="text-2xl font-bold text-purple-700">{streak}</span>
               </div>
 
-              <div className="bg-purple-500/30 rounded-2xl p-4 flex items-center justify-between">
+              <div className="bg-purple-50 rounded-xl p-4 flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                  <span className="h-5 w-5 text-cyan-300">🎯</span>
+                  <Target className="h-5 w-5 text-purple-500" />
                   <span className="font-medium">Accuracy</span>
                 </div>
-                <span className="text-2xl font-bold">
+                <span className="text-2xl font-bold text-purple-700">
                   {gameState.totalWords > 0 ? Math.round((gameState.correctAnswers / (gameState.correctAnswers + gameState.incorrectAnswers || 1)) * 100) : 0}%
                 </span>
               </div>
 
-              <div className="bg-purple-500/30 rounded-2xl p-4 flex items-center justify-between">
+              <div className="bg-purple-50 rounded-xl p-4 flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                  <span className="h-5 w-5 text-cyan-300">⭐</span>
+                  <Star className="h-5 w-5 text-purple-500" />
                   <span className="font-medium">0 XP</span>
                 </div>
                 <div className="text-right">
-                  <div className="text-xs text-white/60">Level 1</div>
+                  <div className="text-xs text-gray-500">Level 1</div>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Session Progress card */}
-          <div className="bg-purple-600 rounded-3xl p-6 text-white">
+          <div className="bg-white rounded-2xl shadow-sm p-6 text-gray-800 border border-gray-100">
             <h4 className="text-xl font-bold mb-4">Session Progress</h4>
-            
+
             <div className="space-y-3">
-              <div className="bg-purple-500/30 rounded-full h-3 overflow-hidden">
+              <div className="bg-purple-100 rounded-full h-3 overflow-hidden">
                 <div
-                  className="bg-gradient-to-r from-cyan-400 to-blue-500 h-full rounded-full transition-all duration-500"
+                  className="bg-gradient-to-r from-purple-400 to-purple-600 h-full rounded-full transition-all duration-500"
                   style={{ width: `${((gameState.currentWordIndex + 1) / gameState.totalWords) * 100}%` }}
                 ></div>
               </div>
-              
+
               <div className="text-center">
-                <div className="text-2xl font-bold">
+                <div className="text-2xl font-bold text-purple-700">
                   {Math.round(((gameState.currentWordIndex + 1) / gameState.totalWords) * 100)}% Complete
                 </div>
-                <div className="text-sm text-white/60 mt-1">
+                <div className="text-sm text-gray-500 mt-1">
                   {gameState.totalWords - (gameState.currentWordIndex + 1)} words remaining
                 </div>
               </div>
@@ -213,6 +242,20 @@ export const RecallMode: React.FC<RecallModeProps> = ({
   return (
     <div className={`${containerClasses} p-6`}>
       <div className="max-w-4xl mx-auto space-y-8">
+        {/* Adventure Mode Header */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center mb-6"
+        >
+          <h1 className="text-4xl font-bold text-white mb-2">
+            {adventureTheme.emoji} {adventureTheme.name}
+          </h1>
+          <p className="text-white/80 text-lg">
+            {adventureTheme.description}
+          </p>
+        </motion.div>
+
         {/* Word display with streak */}
         <motion.div
           key={gameState.currentWordIndex}
@@ -222,11 +265,12 @@ export const RecallMode: React.FC<RecallModeProps> = ({
         >
           <div className="text-center space-y-6">
             <div className="text-6xl">
-              <Brain className="h-16 w-16 text-purple-300 mx-auto" />
+              <Brain className={`h-16 w-16 mx-auto ${isAdventureMode ? adventureTheme.accentColor === 'purple' ? 'text-purple-300' : 'text-violet-300' : 'text-purple-300'}`} />
             </div>
             
-            <h2 className="text-2xl font-bold text-white">
-              🧠 Mastery Challenge
+            <h2 className="text-2xl font-bold text-white flex items-center justify-center">
+              <Brain className="h-6 w-6 mr-2" />
+              Mastery Challenge
             </h2>
 
             {/* Streak display */}

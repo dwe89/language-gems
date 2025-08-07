@@ -94,6 +94,7 @@ export interface VocabularyRecommendation {
   recommendedGames: string[];
   priority: 'high' | 'medium' | 'low';
   estimatedTime: number; // minutes
+  action: string; // URL for the action button
 }
 
 // =====================================================
@@ -372,7 +373,8 @@ export class UnifiedVocabularyAnalytics {
         targetWords: weakWords.slice(0, 5).map(w => w.word),
         recommendedGames: ['Word Scramble', 'Speed Builder', 'Conjugation Duel'],
         priority: 'high',
-        estimatedTime: 15
+        estimatedTime: 15,
+        action: '/student-dashboard/vocabulary/practice?focus=weak'
       });
     }
 
@@ -385,7 +387,8 @@ export class UnifiedVocabularyAnalytics {
         targetWords: reviewWords.slice(0, 5).map(w => w.word),
         recommendedGames: ['Memory Match', 'Vocab Master'],
         priority: 'medium',
-        estimatedTime: 10
+        estimatedTime: 10,
+        action: '/student-dashboard/vocabulary/review?focus=old'
       });
     }
 
@@ -398,7 +401,8 @@ export class UnifiedVocabularyAnalytics {
         targetWords: [],
         recommendedGames: ['Word Towers', 'Detective Games'],
         priority: 'low',
-        estimatedTime: 20
+        estimatedTime: 20,
+        action: '/student-dashboard/games?mode=challenge'
       });
     }
 

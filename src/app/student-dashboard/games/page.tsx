@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Gamepad2, Search, Hexagon, Star, Clock, Users, Loader2, BookOpen, Play, Target, BarChart3 } from 'lucide-react';
 import { createBrowserClient } from '@supabase/ssr';
@@ -126,6 +126,7 @@ const LoadingState = () => (
 export default function GamesPage() {
   const { user } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL || '',
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
@@ -169,7 +170,7 @@ export default function GamesPage() {
       category: 'vocabulary',
       popular: true,
       languages: ['English', 'Spanish', 'French', 'German'],
-      path: 'http://localhost:3000/games/vocab-master',
+      path: '/student-dashboard/games/vocab-master',
       playTime: '5-15 min',
       gemColor: 'text-yellow-500',
       difficulty: 2,
@@ -185,7 +186,7 @@ export default function GamesPage() {
       subcategories: ['sentences'],
       popular: true,
       languages: ['English', 'Spanish', 'French', 'German'],
-      path: 'http://localhost:3000/games/speed-builder',
+      path: '/student-dashboard/games/speed-builder',
       playTime: '5-10 min',
       gemColor: 'text-red-500',
       difficulty: 2,
@@ -199,7 +200,7 @@ export default function GamesPage() {
       category: 'vocabulary',
       popular: true,
       languages: ['English', 'Spanish', 'French'],
-      path: 'http://localhost:3000/games/word-blast',
+      path: '/student-dashboard/games/word-blast',
       playTime: '3-5 min',
       gemColor: 'text-green-500',
       difficulty: 1,
@@ -213,7 +214,7 @@ export default function GamesPage() {
       category: 'vocabulary',
       popular: true,
       languages: ['English', 'Spanish', 'French', 'German'],
-      path: 'http://localhost:3000/games/sentence-towers',
+      path: '/student-dashboard/games/sentence-towers',
       playTime: '5-15 min',
       gemColor: 'text-yellow-500',
       difficulty: 4,
@@ -227,7 +228,7 @@ export default function GamesPage() {
       category: 'vocabulary',
       popular: true,
       languages: ['English', 'Spanish', 'French', 'German', 'Italian', 'Japanese'],
-      path: 'http://localhost:3000/games/hangman',
+      path: '/student-dashboard/games/hangman',
       playTime: '5-10 min',
       gemColor: 'text-purple-500',
       difficulty: 3,
@@ -241,7 +242,7 @@ export default function GamesPage() {
       category: 'vocabulary',
       popular: false,
       languages: ['English', 'Spanish', 'French', 'German'],
-      path: 'http://localhost:3000/games/memory-game',
+      path: '/student-dashboard/games/memory-game',
       playTime: '5-10 min',
       gemColor: 'text-pink-500',
       difficulty: 2,
@@ -256,7 +257,7 @@ export default function GamesPage() {
       category: 'vocabulary',
       popular: false,
       languages: ['English', 'Spanish', 'French', 'German'],
-      path: 'http://localhost:3000/games/noughts-and-crosses',
+      path: '/student-dashboard/games/noughts-and-crosses',
       playTime: '3-5 min',
       gemColor: 'text-indigo-500',
       difficulty: 1,
@@ -270,7 +271,7 @@ export default function GamesPage() {
       category: 'grammar',
       popular: true,
       languages: ['Spanish'],
-      path: 'http://localhost:3000/games/conjugation-duel',
+      path: '/student-dashboard/games/conjugation-duel',
       playTime: '8-12 min',
       gemColor: 'text-orange-500',
       difficulty: 4,
@@ -284,7 +285,7 @@ export default function GamesPage() {
       category: 'spelling',
       popular: true,
       languages: ['English', 'Spanish', 'French'],
-      path: 'http://localhost:3000/games/word-scramble',
+      path: '/student-dashboard/games/word-scramble',
       playTime: '4-8 min',
       gemColor: 'text-cyan-500',
       difficulty: 2,
@@ -298,7 +299,7 @@ export default function GamesPage() {
       category: 'listening',
       popular: true,
       languages: ['Spanish', 'French', 'German'],
-      path: 'http://localhost:3000/games/detective-listening',
+      path: '/student-dashboard/games/detective-listening',
       playTime: '6-10 min',
       gemColor: 'text-amber-500',
       difficulty: 3,
@@ -313,7 +314,7 @@ export default function GamesPage() {
       subcategories: ['sentences'],
       popular: true,
       languages: ['Spanish', 'French', 'German'],
-      path: 'http://localhost:3000/games/case-file-translator',
+      path: '/student-dashboard/games/case-file-translator',
       playTime: '8-12 min',
       gemColor: 'text-emerald-500',
       difficulty: 4,
@@ -328,7 +329,7 @@ export default function GamesPage() {
       subcategories: ['sentences'],
       popular: true,
       languages: ['Spanish', 'French', 'German'],
-      path: 'http://localhost:3000/games/lava-temple-word-restore',
+      path: '/student-dashboard/games/lava-temple-word-restore',
       playTime: '10-15 min',
       gemColor: 'text-red-500',
       difficulty: 4,
@@ -342,7 +343,7 @@ export default function GamesPage() {
       category: 'grammar',
       popular: true,
       languages: ['Spanish', 'French', 'German'],
-      path: 'http://localhost:3000/games/verb-quest',
+      path: '/student-dashboard/games/verb-quest',
       playTime: '12-20 min',
       gemColor: 'text-violet-500',
       difficulty: 5,
@@ -356,13 +357,37 @@ export default function GamesPage() {
       category: 'vocabulary',
       popular: true,
       languages: ['English', 'Spanish', 'French', 'German'],
-      path: 'http://localhost:3000/games/vocab-blast',
+      path: '/student-dashboard/games/vocab-blast',
       playTime: '3-6 min',
       gemColor: 'text-lime-500',
       difficulty: 2,
       players: 'Single Player'
     }
   ];
+
+  // Handle URL parameters for direct category/subcategory access or game selection
+  useEffect(() => {
+    const category = searchParams?.get('category');
+    const subcategory = searchParams?.get('subcategory');
+    const gameParam = searchParams?.get('game');
+
+    if ((category && subcategory && !selectedGameForSetup) || (gameParam && !selectedGameForSetup)) {
+      // Auto-select VocabMaster when category/subcategory parameters are present or game=vocab-master
+      const vocabMasterGame = actualGames.find(game => game.id === 'vocab-master');
+      if (vocabMasterGame) {
+        setSelectedGameForSetup(vocabMasterGame);
+
+        // Pre-fill the selection with URL parameters
+        setCurrentSelection({
+          language: 'es', // Default to Spanish
+          curriculumLevel: 'KS3', // Default to KS3
+          categoryId: category || 'basics_core_language',
+          subcategoryId: subcategory || 'greetings_introductions',
+          theme: 'default'
+        });
+      }
+    }
+  }, [searchParams, selectedGameForSetup, actualGames]);
 
   // Game selection handlers
   const handleDeselectGame = () => {
@@ -509,7 +534,7 @@ export default function GamesPage() {
         <header className="mb-8">
           <div className="flex items-center mb-2">
             <Gamepad2 className="h-6 w-6 text-indigo-600 mr-2" />
-            <h1 className="text-3xl font-bold text-gray-900">🎮 Games Library</h1>
+            <h1 className="text-3xl font-bold text-gray-900">Games Library</h1>
           </div>
           <p className="text-gray-600 max-w-2xl">
             Choose any game and start earning gems! All progress counts towards your level and achievements.

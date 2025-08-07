@@ -7,6 +7,7 @@ import { createClient } from '@supabase/supabase-js';
 import { VOCABULARY_CATEGORIES } from '../../../../components/games/ModernCategorySelector';
 import { StandardVocabularyItem, AssignmentData, GameProgress } from '../../../../components/games/templates/GameAssignmentWrapper';
 import { EnhancedGameService } from '../../../../services/enhancedGameService';
+import { useUnifiedSpacedRepetition } from '../../../../hooks/useUnifiedSpacedRepetition';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -59,6 +60,9 @@ export default function TranslatorRoom({
   gameSessionId,
   gameService
 }: TranslatorRoomProps) {
+  // Initialize FSRS spaced repetition system
+  const { recordWordPractice, algorithm } = useUnifiedSpacedRepetition('case-file-translator');
+
   const [currentSentenceIndex, setCurrentSentenceIndex] = useState(0);
   const [sentences, setSentences] = useState<TranslationSentence[]>([]);
   const [userTranslation, setUserTranslation] = useState('');
@@ -249,6 +253,69 @@ export default function TranslatorRoom({
     const currentSentence = sentences[currentSentenceIndex];
     const correct = checkTranslation(userTranslation, currentSentence.english_translation);
     const responseTime = translationStartTime > 0 ? Date.now() - translationStartTime : 0;
+
+    // Record translation practice with FSRS system
+    if (!assignmentMode && currentSentence) {
+      try {
+        // Extract key words from the sentence for FSRS tracking
+        const sourceWords = currentSentence.source_sentence
+          .toLowerCase()
+          .replace(/[.,!?;:]/g, '')
+          .split(' ')
+          .filter(word => word.length > 2); // Focus on meaningful words
+
+        // Record practice for each significant word in the sentence
+        for (const word of sourceWords.slice(0, 3)) { // Limit to first 3 words to avoid spam
+          const wordData = {
+            id: `case-file-${currentSentence.id}-${word}`,
+            word: word,
+            translation: currentSentence.english_translation, // Full translation as context
+            language: language === 'spanish' ? 'es' : language === 'french' ? 'fr' : 'en'
+          };
+
+          // Calculate confidence based on translation accuracy and complexity
+          let confidence = 0.6; // Base confidence for translation tasks
+
+          if (correct) {
+            confidence += 0.2; // Bonus for correct translation
+
+            // Bonus for speed (translations should be thoughtful, not rushed)
+            if (responseTime > 10000 && responseTime < 60000) {
+              confidence += 0.1; // Sweet spot for translation time
+            }
+
+            // Bonus for sentence complexity
+            if (currentSentence.complexity_score && currentSentence.complexity_score > 3) {
+              confidence += 0.1; // Bonus for complex sentences
+            }
+          } else {
+            confidence = 0.2; // Lower confidence for incorrect translations
+          }
+
+          confidence = Math.max(0.1, Math.min(0.95, confidence));
+
+          // Record practice with FSRS
+          const fsrsResult = await recordWordPractice(
+            wordData,
+            correct,
+            responseTime,
+            confidence
+          );
+
+          if (fsrsResult) {
+            console.log(`FSRS recorded for case-file word "${word}":`, {
+              algorithm: fsrsResult.algorithm,
+              points: fsrsResult.points,
+              nextReview: fsrsResult.nextReviewDate,
+              interval: fsrsResult.interval,
+              masteryLevel: fsrsResult.masteryLevel
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error recording FSRS practice for case-file-translator:', error);
+      }
+    }
 
     // Log word-level performance if game service is available
     if (gameService && gameSessionId) {

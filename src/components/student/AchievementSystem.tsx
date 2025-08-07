@@ -423,16 +423,16 @@ export default function AchievementSystem({
 
   // Simulate new achievement unlock
   useEffect(() => {
-    if (showNotifications) {
+    if (showNotifications && achievements.length > 0) {
       const timer = setTimeout(() => {
-        const streakAchievement = mockAchievements.find(a => a.id === '2');
+        const streakAchievement = achievements.find(a => a.id === '2');
         if (streakAchievement) {
           setNewAchievement(streakAchievement);
         }
       }, 2000);
       return () => clearTimeout(timer);
     }
-  }, [showNotifications]);
+  }, [showNotifications, achievements]);
 
   const categories = [
     { id: 'all', label: 'All', icon: Trophy },

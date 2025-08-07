@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
+import {
   BarChart3, TrendingUp, FileText, Calendar, Download,
   Target, AlertCircle, CheckCircle, Clock, Users,
   BookOpen, Brain, Zap, Star, Filter, RefreshCw,
@@ -21,29 +21,29 @@ interface AssignmentPerformanceReport {
   class_name: string;
   created_date: string;
   due_date: string;
-  
+
   // Participation metrics
   total_students: number;
   students_started: number;
   students_completed: number;
   completion_rate: number;
-  
+
   // Performance metrics
   average_score: number;
   median_score: number;
   highest_score: number;
   lowest_score: number;
   standard_deviation: number;
-  
+
   // Time metrics
   average_time_spent: number; // minutes
   median_time_spent: number;
-  
+
   // Difficulty analysis
   difficulty_rating: number; // 1-5 scale
   common_errors: string[];
   challenging_questions: string[];
-  
+
   // Trends
   performance_trend: 'improving' | 'stable' | 'declining';
   engagement_score: number;
@@ -55,19 +55,19 @@ interface VocabularyDifficultyAnalysis {
   language: string;
   theme: string;
   topic: string;
-  
+
   // Difficulty metrics
   total_attempts: number;
   correct_attempts: number;
   accuracy_rate: number;
   average_response_time: number; // seconds
   difficulty_score: number; // 0-1 scale
-  
+
   // Student impact
   students_attempted: number;
   students_struggling: number; // accuracy < 60%
   students_mastered: number; // accuracy > 90%
-  
+
   // Learning patterns
   common_mistakes: string[];
   improvement_trend: 'improving' | 'stable' | 'declining';
@@ -77,17 +77,17 @@ interface VocabularyDifficultyAnalysis {
 interface LearningPatternChart {
   period: string;
   date: string;
-  
+
   // Class performance
   average_class_score: number;
   completion_rate: number;
   engagement_level: number;
-  
+
   // Learning metrics
   new_words_learned: number;
   concepts_mastered: number;
   skills_improved: number;
-  
+
   // Behavioral patterns
   peak_activity_hour: number;
   average_session_length: number;
@@ -110,7 +110,7 @@ interface ReportFilters {
 export default function DetailedReportsAnalytics() {
   const { user } = useAuth();
   const { supabase } = useSupabase();
-  
+
   // State management
   const [assignmentReports, setAssignmentReports] = useState<AssignmentPerformanceReport[]>([]);
   const [vocabularyAnalysis, setVocabularyAnalysis] = useState<VocabularyDifficultyAnalysis[]>([]);
@@ -123,7 +123,7 @@ export default function DetailedReportsAnalytics() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'assignments' | 'vocabulary' | 'patterns'>('assignments');
   const [expandedReports, setExpandedReports] = useState<Set<string>>(new Set());
-  
+
   // Filter state
   const [filters, setFilters] = useState<ReportFilters>({
     time_period: '30_days',
@@ -595,7 +595,7 @@ export default function DetailedReportsAnalytics() {
     <div className="space-y-6">
       {assignmentReports.map((report) => {
         const isExpanded = expandedReports.has(report.assignment_id);
-        
+
         return (
           <motion.div
             key={report.assignment_id}
@@ -604,7 +604,7 @@ export default function DetailedReportsAnalytics() {
             className="bg-white rounded-xl shadow-lg overflow-hidden"
           >
             {/* Report Header */}
-            <div 
+            <div
               className="p-6 cursor-pointer hover:bg-gray-50 transition-colors"
               onClick={() => toggleReportExpansion(report.assignment_id)}
             >
@@ -618,7 +618,7 @@ export default function DetailedReportsAnalytics() {
                     <p className="text-sm text-gray-600">{report.class_name} • Due: {new Date(report.due_date).toLocaleDateString()}</p>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center space-x-4">
                   {/* Quick Stats */}
                   <div className="text-right">
@@ -627,14 +627,13 @@ export default function DetailedReportsAnalytics() {
                   </div>
                   <div className="text-right">
                     <div className="text-sm text-gray-500">Avg Score</div>
-                    <div className={`text-lg font-semibold ${
-                      report.average_score >= 80 ? 'text-green-600' : 
-                      report.average_score >= 60 ? 'text-yellow-600' : 'text-red-600'
-                    }`}>
+                    <div className={`text-lg font-semibold ${report.average_score >= 80 ? 'text-green-600' :
+                        report.average_score >= 60 ? 'text-yellow-600' : 'text-red-600'
+                      }`}>
                       {report.average_score.toFixed(1)}%
                     </div>
                   </div>
-                  
+
                   <button className="text-gray-400 hover:text-gray-600">
                     {isExpanded ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
                   </button>
@@ -662,7 +661,7 @@ export default function DetailedReportsAnalytics() {
                         <div className="text-2xl font-bold text-blue-900">{report.students_completed}/{report.total_students}</div>
                         <div className="text-sm text-blue-700">Students completed</div>
                       </div>
-                      
+
                       <div className="bg-green-50 p-4 rounded-lg">
                         <div className="flex items-center space-x-2 mb-2">
                           <Target className="h-4 w-4 text-green-600" />
@@ -671,7 +670,7 @@ export default function DetailedReportsAnalytics() {
                         <div className="text-2xl font-bold text-green-900">{report.average_score.toFixed(1)}%</div>
                         <div className="text-sm text-green-700">Average score</div>
                       </div>
-                      
+
                       <div className="bg-yellow-50 p-4 rounded-lg">
                         <div className="flex items-center space-x-2 mb-2">
                           <Clock className="h-4 w-4 text-yellow-600" />
@@ -680,7 +679,7 @@ export default function DetailedReportsAnalytics() {
                         <div className="text-2xl font-bold text-yellow-900">{report.average_time_spent.toFixed(1)}</div>
                         <div className="text-sm text-yellow-700">Minutes average</div>
                       </div>
-                      
+
                       <div className="bg-purple-50 p-4 rounded-lg">
                         <div className="flex items-center space-x-2 mb-2">
                           <Star className="h-4 w-4 text-purple-600" />
@@ -726,18 +725,17 @@ export default function DetailedReportsAnalytics() {
                     {/* Action Buttons */}
                     <div className="flex items-center justify-between pt-4 border-t border-gray-200">
                       <div className="flex items-center space-x-2 text-sm text-gray-600">
-                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${
-                          report.performance_trend === 'improving' ? 'bg-green-100 text-green-800' :
-                          report.performance_trend === 'declining' ? 'bg-red-100 text-red-800' :
-                          'bg-yellow-100 text-yellow-800'
-                        }`}>
+                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${report.performance_trend === 'improving' ? 'bg-green-100 text-green-800' :
+                            report.performance_trend === 'declining' ? 'bg-red-100 text-red-800' :
+                              'bg-yellow-100 text-yellow-800'
+                          }`}>
                           {report.performance_trend === 'improving' ? <TrendingUp className="h-3 w-3 mr-1" /> : null}
                           {report.performance_trend}
                         </span>
                         <span>•</span>
                         <span>Engagement: {report.engagement_score}/10</span>
                       </div>
-                      
+
                       <div className="flex items-center space-x-3">
                         <button
                           onClick={() => handleExportReport('assignment', report.assignment_id)}
@@ -767,7 +765,7 @@ export default function DetailedReportsAnalytics() {
       <div className="bg-white rounded-xl shadow-lg overflow-hidden">
         <div className="p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Vocabulary Difficulty Analysis</h3>
-          
+
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
@@ -792,27 +790,26 @@ export default function DetailedReportsAnalytics() {
                   >
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div>
-                        <div className="font-semibold text-gray-900">{word.word}</div>
-                        <div className="text-sm text-gray-500">{word.translation}</div>
+                        <div className="font-semibold text-gray-900">{word.word || 'N/A'}</div>
+                        <div className="text-sm text-gray-500">{word.translation || 'N/A'}</div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        {word.language}
+                        {word.language || 'N/A'}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center space-x-2">
                         <div className="w-16 bg-gray-200 rounded-full h-2">
-                          <div 
-                            className={`h-2 rounded-full ${
-                              word.accuracy_rate >= 80 ? 'bg-green-500' :
-                              word.accuracy_rate >= 60 ? 'bg-yellow-500' : 'bg-red-500'
-                            }`}
-                            style={{ width: `${word.accuracy_rate}%` }}
+                          <div
+                            className={`h-2 rounded-full ${(word.accuracy_rate || 0) >= 80 ? 'bg-green-500' :
+                                (word.accuracy_rate || 0) >= 60 ? 'bg-yellow-500' : 'bg-red-500'
+                              }`}
+                            style={{ width: `${word.accuracy_rate || 0}%` }}
                           ></div>
                         </div>
-                        <span className="text-sm font-medium">{word.accuracy_rate.toFixed(1)}%</span>
+                        <span className="text-sm font-medium">{(word.accuracy_rate || 0).toFixed(1)}%</span>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -820,25 +817,23 @@ export default function DetailedReportsAnalytics() {
                         {[...Array(5)].map((_, i) => (
                           <Star
                             key={i}
-                            className={`h-4 w-4 ${
-                              i < Math.round(word.difficulty_score * 5) ? 'text-yellow-400 fill-current' : 'text-gray-300'
-                            }`}
+                            className={`h-4 w-4 ${i < Math.round((word.difficulty_score || 0) * 5) ? 'text-yellow-400 fill-current' : 'text-gray-300'
+                              }`}
                           />
                         ))}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-center">
-                      <span className="text-sm font-medium text-red-600">{word.students_struggling}</span>
-                      <span className="text-sm text-gray-500">/{word.students_attempted}</span>
+                      <span className="text-sm font-medium text-red-600">{word.students_struggling || 0}</span>
+                      <span className="text-sm text-gray-500">/{word.students_attempted || 0}</span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${
-                        word.improvement_trend === 'improving' ? 'bg-green-100 text-green-800' :
-                        word.improvement_trend === 'declining' ? 'bg-red-100 text-red-800' :
-                        'bg-yellow-100 text-yellow-800'
-                      }`}>
-                        {word.improvement_trend === 'improving' && <TrendingUp className="h-3 w-3 mr-1" />}
-                        {word.improvement_trend}
+                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${(word.improvement_trend || 'stable') === 'improving' ? 'bg-green-100 text-green-800' :
+                          (word.improvement_trend || 'stable') === 'declining' ? 'bg-red-100 text-red-800' :
+                            'bg-yellow-100 text-yellow-800'
+                        }`}>
+                        {(word.improvement_trend || 'stable') === 'improving' && <TrendingUp className="h-3 w-3 mr-1" />}
+                        {word.improvement_trend || 'stable'}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -860,7 +855,7 @@ export default function DetailedReportsAnalytics() {
     <div className="space-y-6">
       <div className="bg-white rounded-xl shadow-lg p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-6">Learning Pattern Trends (Last 30 Days)</h3>
-        
+
         {/* Simple Chart Visualization */}
         <div className="h-64 bg-gray-50 rounded-lg p-4 mb-6">
           <div className="h-full flex items-end justify-between space-x-2">
@@ -936,7 +931,7 @@ export default function DetailedReportsAnalytics() {
             <p className="text-gray-600">Comprehensive performance analysis and insights</p>
           </div>
         </div>
-        
+
         <div className="flex items-center space-x-3">
           <button
             onClick={() => handleExportReport('all')}
@@ -964,7 +959,7 @@ export default function DetailedReportsAnalytics() {
               <option value="all_time">All time</option>
             </select>
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Class</label>
             <select
@@ -977,7 +972,7 @@ export default function DetailedReportsAnalytics() {
               <option value="class-2">Year 8 Spanish</option>
             </select>
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Assignment Type</label>
             <select
@@ -991,7 +986,7 @@ export default function DetailedReportsAnalytics() {
               <option value="listening">Listening</option>
             </select>
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Language</label>
             <select
@@ -1005,7 +1000,7 @@ export default function DetailedReportsAnalytics() {
               <option value="german">German</option>
             </select>
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Difficulty</label>
             <select
@@ -1036,11 +1031,10 @@ export default function DetailedReportsAnalytics() {
                 <button
                   key={tab.key}
                   onClick={() => setActiveTab(tab.key as any)}
-                  className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm ${
-                    activeTab === tab.key
+                  className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm ${activeTab === tab.key
                       ? 'border-blue-500 text-blue-600'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
+                    }`}
                 >
                   <Icon className="h-4 w-4" />
                   <span>{tab.label}</span>

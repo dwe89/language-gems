@@ -3,5 +3,18 @@
   "buildCommand": "next build",
   "devCommand": "next dev",
   "installCommand": "npm install",
-  "framework": "nextjs"
+  "framework": "nextjs",
+  "redirects": [
+    {
+      "source": "/(.*)",
+      "destination": "https://www.languagegems.com/auth/student-login",
+      "statusCode": 307,
+      "has": [
+        {
+          "type": "host",
+          "value": "students.languagegems.com"
+        }
+      ]
+    }
+  ]
 } 

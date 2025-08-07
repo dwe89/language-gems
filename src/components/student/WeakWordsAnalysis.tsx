@@ -8,6 +8,8 @@ import {
   RefreshCw, Filter, Eye, Gamepad2, Award, Lightbulb
 } from 'lucide-react';
 import { useAuth } from '../auth/AuthProvider';
+import { useSupabase } from '../supabase/SupabaseProvider';
+import { UnifiedVocabularyService, VocabularyItem } from '../../services/unifiedVocabularyService';
 import Link from 'next/link';
 
 interface WeakWord {
@@ -22,6 +24,16 @@ interface WeakWord {
   lastPracticed: string;
   difficultyLevel: string;
   recommendedGames: string[];
+  // FSRS Memory Data
+  fsrsData?: {
+    difficulty: number;      // 1-10 scale
+    stability: number;       // Days
+    retrievability: number;  // 0-1 probability
+    optimalInterval: number; // Days until next review
+    masteryLevel: 'new' | 'learning' | 'review' | 'relearning';
+    reviewCount: number;
+    lapseCount: number;
+  };
 }
 
 interface StrongWord {
@@ -34,6 +46,16 @@ interface StrongWord {
   totalAttempts: number;
   masteryLevel: number;
   lastPracticed: string;
+  // FSRS Memory Data
+  fsrsData?: {
+    difficulty: number;
+    stability: number;
+    retrievability: number;
+    optimalInterval: number;
+    masteryLevel: 'new' | 'learning' | 'review' | 'relearning';
+    reviewCount: number;
+    lapseCount: number;
+  };
 }
 
 interface AIRecommendation {
@@ -60,6 +82,8 @@ interface AnalysisData {
 
 export default function WeakWordsAnalysis() {
   const { user } = useAuth();
+  const { supabase } = useSupabase();
+  const [vocabularyService] = useState(() => new UnifiedVocabularyService(supabase));
   const [data, setData] = useState<AnalysisData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -136,30 +160,98 @@ export default function WeakWordsAnalysis() {
       setLoading(true);
       setError(null);
 
-      // Build query parameters with filters
-      const params = new URLSearchParams({
-        studentId: user.id
-      });
+      // Get vocabulary data using unified service
+      const { items, stats } = await vocabularyService.getVocabularyData(user.id);
 
-      if (selectedLanguage) params.append('language', selectedLanguage);
-      if (selectedCategory) params.append('category', selectedCategory);
-      if (selectedSubcategory) params.append('subcategory', selectedSubcategory);
-      if (selectedCurriculumLevel) params.append('curriculum_level', selectedCurriculumLevel);
-
-      // Use the new unified vocabulary analytics API
-      params.append('type', 'analysis');
-      const response = await fetch(`/api/student/vocabulary-analytics?${params.toString()}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch analysis data');
+      // Apply filters
+      let filteredItems = items;
+      if (selectedLanguage) {
+        filteredItems = filteredItems.filter(item => item.language === selectedLanguage);
+      }
+      if (selectedCategory) {
+        filteredItems = filteredItems.filter(item => item.category === selectedCategory);
+      }
+      if (selectedSubcategory) {
+        filteredItems = filteredItems.filter(item => item.subcategory === selectedSubcategory);
+      }
+      if (selectedCurriculumLevel) {
+        filteredItems = filteredItems.filter(item => item.curriculumLevel === selectedCurriculumLevel);
       }
 
-      const analysisData = await response.json();
+      // Get weak and strong words
+      const weakWords = filteredItems.filter(item => item.isStruggling);
+      const strongWords = filteredItems.filter(item => item.isMastered);
+
+      // Create analysis data
+      const analysisData: AnalysisData = {
+        weakWords: weakWords.map(item => ({
+          id: item.id,
+          word: item.word,
+          translation: item.translation,
+          category: item.category,
+          subcategory: item.subcategory,
+          accuracy: item.accuracy,
+          totalAttempts: item.totalEncounters,
+          correctAttempts: item.correctEncounters,
+          lastPracticed: item.lastEncountered || '',
+          difficultyLevel: item.accuracy < 50 ? 'Very Hard' : item.accuracy < 70 ? 'Hard' : 'Medium',
+          recommendedGames: ['VocabMaster', 'Word Blast'],
+          fsrsData: item.fsrsDifficulty ? {
+            difficulty: item.fsrsDifficulty,
+            stability: item.fsrsStability || 0,
+            retrievability: item.fsrsRetrievability || 0,
+            optimalInterval: 1,
+            masteryLevel: 'learning',
+            reviewCount: item.totalEncounters,
+            lapseCount: item.totalEncounters - item.correctEncounters
+          } : undefined
+        })),
+        strongWords: strongWords.map(item => ({
+          id: item.id,
+          word: item.word,
+          translation: item.translation,
+          category: item.category,
+          subcategory: item.subcategory,
+          accuracy: item.accuracy,
+          totalAttempts: item.totalEncounters,
+          masteryLevel: item.masteryLevel,
+          lastPracticed: item.lastEncountered || '',
+          fsrsData: item.fsrsDifficulty ? {
+            difficulty: item.fsrsDifficulty,
+            stability: item.fsrsStability || 0,
+            retrievability: item.fsrsRetrievability || 0,
+            optimalInterval: 1,
+            masteryLevel: 'review',
+            reviewCount: item.totalEncounters,
+            lapseCount: item.totalEncounters - item.correctEncounters
+          } : undefined
+        })),
+        recommendations: [
+          {
+            type: 'practice',
+            title: 'Focus on Weak Words',
+            description: `Practice your ${weakWords.length} struggling words`,
+            action: 'Practice Now',
+            priority: 'high',
+            estimatedTime: '15-20 min',
+            targetWords: weakWords.slice(0, 5).map(w => w.word)
+          }
+        ],
+        summary: {
+          weakWordsCount: weakWords.length,
+          strongWordsCount: strongWords.length,
+          averageAccuracy: stats.averageAccuracy
+        },
+        availableFilters: {
+          languages: [...new Set(items.map(item => item.language))],
+          categories: [...new Set(items.map(item => item.category))],
+          subcategories: [...new Set(items.map(item => item.subcategory))],
+          curriculumLevels: [...new Set(items.map(item => item.curriculumLevel))]
+        }
+      };
+
       setData(analysisData);
-
-      // Set available filters from the response
-      if (analysisData.availableFilters) {
-        setAvailableFilters(analysisData.availableFilters);
-      }
+      setAvailableFilters(analysisData.availableFilters);
     } catch (err) {
       console.error('Error fetching weak words analysis:', err);
       setError('Failed to load vocabulary analysis. Please try again.');

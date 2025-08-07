@@ -7,6 +7,7 @@ import { createClient } from '@supabase/supabase-js';
 import { EnhancedGameService } from 'gems/services/enhancedGameService';
 import { createAudio } from '@/utils/audioUtils';
 import { useGameVocabulary, GameVocabularyWord } from '../../../../hooks/useGameVocabulary';
+import { useUnifiedSpacedRepetition } from '../../../../hooks/useUnifiedSpacedRepetition';
 
 // Game Modes
 type GameMode = 'classic' | 'blitz' | 'marathon' | 'timed_attack' | 'word_storm' | 'zen';
@@ -337,6 +338,9 @@ export default function WordScrambleGameEnhanced({
   isAssignmentMode,
   onOpenSettings
 }: WordScrambleGameProps) {
+  // Initialize FSRS spaced repetition system
+  const { recordWordPractice, algorithm } = useUnifiedSpacedRepetition('word-scramble');
+
   // Game state
   const [currentWordData, setCurrentWordData] = useState<any>(null);
   const [scrambledLetters, setScrambledLetters] = useState<string[]>([]);
@@ -656,6 +660,44 @@ export default function WordScrambleGameEnhanced({
       createParticleEffect('perfect');
     }
 
+    // Record word practice with FSRS system
+    if (!isAssignmentMode) {
+      try {
+        const wordData = {
+          id: currentWordData.id || `${currentWordData.word}-${currentWordData.translation}`,
+          word: currentWordData.word,
+          translation: currentWordData.translation || currentWordData.english || '',
+          language: settings.language === 'spanish' ? 'es' : settings.language === 'french' ? 'fr' : 'en'
+        };
+
+        // Calculate confidence based on solve time and difficulty
+        const maxTime = 30; // Maximum expected time
+        const timeConfidence = Math.max(0.1, 1 - (solveTime / maxTime));
+        const difficultyConfidence = isPerfect ? 0.9 : 0.7;
+        const confidence = (timeConfidence + difficultyConfidence) / 2;
+
+        // Record successful word completion with FSRS
+        const fsrsResult = await recordWordPractice(
+          wordData,
+          true, // Correct answer
+          solveTime * 1000, // Convert to milliseconds
+          confidence
+        );
+
+        if (fsrsResult) {
+          console.log(`FSRS recorded for ${currentWordData.word}:`, {
+            algorithm: fsrsResult.algorithm,
+            points: fsrsResult.points,
+            nextReview: fsrsResult.nextReviewDate,
+            interval: fsrsResult.interval,
+            masteryLevel: fsrsResult.masteryLevel
+          });
+        }
+      } catch (error) {
+        console.error('Error recording FSRS practice:', error);
+      }
+    }
+
     // Update game stats
     setGameStats(prev => ({
       ...prev,
@@ -806,6 +848,38 @@ export default function WordScrambleGameEnhanced({
         }, 2000);
       }
     } else {
+      // Record incorrect attempt with FSRS system
+      if (!isAssignmentMode && currentWordData) {
+        try {
+          const wordData = {
+            id: currentWordData.id || `${currentWordData.word}-${currentWordData.translation}`,
+            word: currentWordData.word,
+            translation: currentWordData.translation || currentWordData.english || '',
+            language: settings.language === 'spanish' ? 'es' : settings.language === 'french' ? 'fr' : 'en'
+          };
+
+          const attemptTime = (Date.now() - wordStartTime) / 1000;
+
+          // Record failed attempt with FSRS
+          const fsrsResult = await recordWordPractice(
+            wordData,
+            false, // Incorrect answer
+            attemptTime * 1000, // Convert to milliseconds
+            0.2 // Low confidence for incorrect answers
+          );
+
+          if (fsrsResult) {
+            console.log(`FSRS recorded failed attempt for ${currentWordData.word}:`, {
+              algorithm: fsrsResult.algorithm,
+              nextReview: fsrsResult.nextReviewDate,
+              interval: fsrsResult.interval
+            });
+          }
+        } catch (error) {
+          console.error('Error recording FSRS failed practice:', error);
+        }
+      }
+
       // Wrong answer - log performance for analytics
       if (gameService && gameSessionId && currentWordData) {
         const attemptTime = (Date.now() - wordStartTime) / 1000;

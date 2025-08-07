@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { EnhancedGameService } from '../../../../services/enhancedGameService';
+import { useUnifiedSpacedRepetition } from '../../../../hooks/useUnifiedSpacedRepetition';
 import UnifiedSentenceCategorySelector, { SentenceSelectionConfig } from '../../../../components/games/UnifiedSentenceCategorySelector';
 import WordBlastEngine from './WordBlastEngine';
 import InGameConfigPanel from '../../../../components/games/InGameConfigPanel';
@@ -177,6 +178,9 @@ export default function WordBlastGame({
   onChainReaction,
   onBlastCombo
 }: WordBlastGameProps) {
+  // Initialize FSRS spaced repetition system
+  const { recordWordPractice, algorithm } = useUnifiedSpacedRepetition('word-blast');
+
   // Game flow state
   const [gameStarted, setGameStarted] = useState(false);
   const [selectedConfig, setSelectedConfig] = useState<SentenceSelectionConfig | null>(null);
@@ -315,6 +319,46 @@ export default function WordBlastGame({
         wordsCollected: prev.wordsCollected + 1
       };
 
+      // Record word practice with FSRS system
+      if (!assignmentMode && currentChallenge) {
+        try {
+          const wordData = {
+            id: `word-blast-${currentChallenge.english}`,
+            word: currentChallenge.spanish,
+            translation: currentChallenge.english,
+            language: selectedConfig?.language === 'spanish' ? 'es' : selectedConfig?.language === 'french' ? 'fr' : 'en'
+          };
+
+          // Calculate confidence based on combo level and response time
+          const baseConfidence = 0.7; // Good confidence for word matching
+          const comboBonus = Math.min(newCombo * 0.05, 0.2); // Up to 20% bonus for combos
+          const speedBonus = responseTime < 2000 ? 0.1 : responseTime < 4000 ? 0.05 : 0;
+          const confidence = Math.min(0.95, baseConfidence + comboBonus + speedBonus);
+
+          // Record practice with FSRS
+          recordWordPractice(
+            wordData,
+            true, // Correct answer
+            responseTime,
+            confidence
+          ).then(fsrsResult => {
+            if (fsrsResult) {
+              console.log(`FSRS recorded for word-blast "${currentChallenge.spanish}":`, {
+                algorithm: fsrsResult.algorithm,
+                points: fsrsResult.points,
+                nextReview: fsrsResult.nextReviewDate,
+                interval: fsrsResult.interval,
+                masteryLevel: fsrsResult.masteryLevel
+              });
+            }
+          }).catch(error => {
+            console.error('Error recording FSRS practice for word-blast:', error);
+          });
+        } catch (error) {
+          console.error('Error setting up FSRS recording for word-blast:', error);
+        }
+      }
+
       // Log word match performance
       if (onWordMatch && currentChallenge) {
         onWordMatch(
@@ -359,6 +403,38 @@ export default function WordBlastGame({
     
     setLives(prev => Math.max(0, prev - 1));
     
+    // Record word practice with FSRS system for incorrect answer
+    if (!assignmentMode && currentChallenge) {
+      try {
+        const wordData = {
+          id: `word-blast-${currentChallenge.english}`,
+          word: currentChallenge.spanish,
+          translation: currentChallenge.english,
+          language: selectedConfig?.language === 'spanish' ? 'es' : selectedConfig?.language === 'french' ? 'fr' : 'en'
+        };
+
+        // Record failed attempt with FSRS
+        recordWordPractice(
+          wordData,
+          false, // Incorrect answer
+          responseTime,
+          0.2 // Low confidence for incorrect answers
+        ).then(fsrsResult => {
+          if (fsrsResult) {
+            console.log(`FSRS recorded failed word-blast attempt for "${currentChallenge.spanish}":`, {
+              algorithm: fsrsResult.algorithm,
+              nextReview: fsrsResult.nextReviewDate,
+              interval: fsrsResult.interval
+            });
+          }
+        }).catch(error => {
+          console.error('Error recording FSRS failed practice for word-blast:', error);
+        });
+      } catch (error) {
+        console.error('Error setting up FSRS recording for failed word-blast:', error);
+      }
+    }
+
     setGameStats(prev => {
       // Log word match performance
       if (onWordMatch && currentChallenge) {

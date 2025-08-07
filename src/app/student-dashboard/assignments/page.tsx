@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, Component } from 'react';
-import { Hexagon, Clock, CheckCircle, BookOpen, Gamepad2, ArrowRight } from 'lucide-react';
+import { Hexagon, Clock, CheckCircle, BookOpen, Gamepad2, ArrowRight, Target, TrendingUp, Star, Award } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '../../../components/auth/AuthProvider';
 import { supabaseBrowser } from '../../../components/auth/AuthProvider';
@@ -28,19 +28,28 @@ class AssignmentErrorBoundary extends Component<
   render() {
     if (this.state.hasError) {
       return (
-        <div className="space-y-8">
-          <div>
-            <h1 className="text-3xl font-bold text-white">📚 Assignments</h1>
-            <p className="text-indigo-100 mt-2">Something went wrong loading assignments</p>
-          </div>
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-            <p>An unexpected error occurred. Please refresh the page or try again later.</p>
-            <button 
-              onClick={() => window.location.reload()}
-              className="mt-2 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
-            >
-              Refresh Page
-            </button>
+        <div className="min-h-screen bg-gray-50 p-6">
+          <div className="max-w-7xl mx-auto space-y-6">
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                  <BookOpen className="h-6 w-6 text-red-600" />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-900">Assignments</h1>
+                  <p className="text-gray-600">Something went wrong loading assignments</p>
+                </div>
+              </div>
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+                <p>An unexpected error occurred. Please refresh the page or try again later.</p>
+                <button 
+                  onClick={() => window.location.reload()}
+                  className="mt-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  Refresh Page
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       );
@@ -146,7 +155,7 @@ const AssignmentCard = ({
   };
 
   return (
-    <div className="bg-white rounded-xl p-6 shadow-md hover:shadow-lg transition-shadow border border-gray-100">
+    <div className="bg-white rounded-xl p-6 border border-gray-200 hover:shadow-md transition-all duration-200 hover:border-gray-300">
       <div className="flex items-center mb-4">
         <div className={`${gemColors[assignment.gemType]} mr-4`}>
           <Hexagon className="h-10 w-10" strokeWidth={1.5} />
@@ -497,13 +506,22 @@ function AssignmentsPageContent() {
 
   if (loading) {
     return (
-      <div className="space-y-8">
-        <div>
-          <h1 className="text-3xl font-bold text-white">📚 Assignments</h1>
-          <p className="text-indigo-100 mt-2">Loading your assignments...</p>
-        </div>
-        <div className="flex items-center justify-center py-20">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white"></div>
+      <div className="min-h-screen bg-gray-50 p-6">
+        <div className="max-w-7xl mx-auto space-y-6">
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                <BookOpen className="h-6 w-6 text-blue-600" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">Assignments</h1>
+                <p className="text-gray-600">Loading your assignments...</p>
+              </div>
+            </div>
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-600"></div>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -511,84 +529,109 @@ function AssignmentsPageContent() {
 
   if (error) {
     return (
-      <div className="space-y-8">
-        <div>
-          <h1 className="text-3xl font-bold text-white">📚 Assignments</h1>
-          <p className="text-indigo-100 mt-2">Error loading assignments</p>
-        </div>
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-          {error}
+      <div className="min-h-screen bg-gray-50 p-6">
+        <div className="max-w-7xl mx-auto space-y-6">
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                <BookOpen className="h-6 w-6 text-red-600" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">Assignments</h1>
+                <p className="text-gray-600">Error loading assignments</p>
+              </div>
+            </div>
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+              {error}
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-white">📚 Assignments</h1>
-          <p className="text-indigo-100 mt-2">Complete teacher-set tasks to earn assignment grades</p>
-        </div>
-        <Link 
-          href="/student-dashboard/games"
-          className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg transition-colors flex items-center space-x-2"
-        >
-          <Gamepad2 className="h-4 w-4" />
-          <span>Free Play Games</span>
-        </Link>
-      </div>
-
-      {/* Mode Info Banner */}
-      <div className="bg-white rounded-xl p-6 shadow-lg">
-        <div className="flex items-center space-x-4 mb-4">
-          <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
-            <BookOpen className="h-6 w-6 text-purple-600" />
-          </div>
-          <div>
-            <h2 className="text-xl font-bold text-gray-900">🎯 Assignment Mode</h2>
-            <p className="text-gray-600">Guided learning with teacher-set goals and deadlines</p>
-          </div>
-        </div>
-        
-        <div className="bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-lg p-4">
-          <div className="flex items-start justify-between flex-wrap gap-4">
-            <div className="flex-1">
-              <p className="text-gray-700 font-medium mb-2">✨ Assignment Benefits:</p>
-              <ul className="text-sm text-gray-600 space-y-1">
-                <li>• Structured learning path designed by your teacher</li>
-                <li>• Grades count towards your course progress</li>
-                <li>• Targeted practice on specific topics</li>
-                <li>• Clear deadlines to keep you on track</li>
-              </ul>
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                <BookOpen className="h-6 w-6 text-blue-600" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">Assignments</h1>
+                <p className="text-gray-600">Complete teacher-set tasks to earn assignment grades</p>
+              </div>
             </div>
-            <div className="flex flex-col sm:flex-row gap-2">
-              <Link 
-                href="/student-dashboard/games"
-                className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center"
-              >
-                🎮 Free Play Instead
-              </Link>
-              <Link 
-                href="/student-dashboard/progress"
-                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center"
-              >
-                📊 View Progress
-              </Link>
+            <Link 
+              href="/student-dashboard/games"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center space-x-2"
+            >
+              <Gamepad2 className="h-4 w-4" />
+              <span>Free Play Games</span>
+            </Link>
+          </div>
+        </div>
+
+        {/* Mode Info Banner */}
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="flex items-center space-x-4 mb-4">
+            <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+              <Target className="h-6 w-6 text-purple-600" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">Assignment Mode</h2>
+              <p className="text-gray-600">Guided learning with teacher-set goals and deadlines</p>
             </div>
           </div>
+          
+          <div className="bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-lg p-4">
+            <div className="flex items-start justify-between flex-wrap gap-4">
+              <div className="flex-1">
+                <div className="flex items-center space-x-2 mb-3">
+                  <Star className="h-4 w-4 text-purple-600" />
+                  <p className="text-gray-700 font-medium">Assignment Benefits:</p>
+                </div>
+                <ul className="text-sm text-gray-600 space-y-1">
+                  <li>• Structured learning path designed by your teacher</li>
+                  <li>• Grades count towards your course progress</li>
+                  <li>• Targeted practice on specific topics</li>
+                  <li>• Clear deadlines to keep you on track</li>
+                </ul>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Link 
+                  href="/student-dashboard/games"
+                  className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center space-x-2"
+                >
+                  <Gamepad2 className="h-4 w-4" />
+                  <span>Free Play Instead</span>
+                </Link>
+                <Link 
+                  href="/student-dashboard/progress"
+                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center space-x-2"
+                >
+                  <TrendingUp className="h-4 w-4" />
+                  <span>View Progress</span>
+                </Link>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
 
-      {/* Current Assignments */}
-      <div className="bg-white rounded-xl p-6 shadow-lg">
-        <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
-          <span className="bg-blue-100 text-blue-600 rounded-full p-2 mr-3">
-            <BookOpen className="h-5 w-5" />
-          </span>
-          Current Assignments ({currentAssignments.length})
-        </h2>
+        {/* Current Assignments */}
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="flex items-center space-x-3 mb-6">
+            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+              <BookOpen className="h-5 w-5 text-blue-600" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">Current Assignments</h2>
+              <p className="text-sm text-gray-600">{currentAssignments.length} assignments to complete</p>
+            </div>
+          </div>
         
         {currentAssignments.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -596,23 +639,34 @@ function AssignmentsPageContent() {
               <AssignmentCard key={assignment.id} assignment={assignment} />
             ))}
           </div>
-        ) : (
-          <div className="text-center py-12">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <BookOpen className="h-8 w-8 text-gray-400" />
+          ) : (
+            <div className="text-center py-12">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <BookOpen className="h-8 w-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No assignments yet</h3>
+              <p className="text-gray-600">Your teacher hasn't assigned any work yet. Check back later!</p>
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No assignments yet</h3>
-            <p className="text-gray-600">Your teacher hasn't assigned any work yet. Check back later!</p>
-          </div>
-        )}
-      </div>
-      
-      {/* Completed Assignments */}
-      <div className="bg-white rounded-xl p-6 shadow-lg">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">✅ Completed Assignments</h2>
-          <span className="text-green-600 font-medium">{completedAssignments.length} completed</span>
+          )}
         </div>
+      
+        {/* Completed Assignments */}
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                <CheckCircle className="h-5 w-5 text-green-600" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">Completed Assignments</h2>
+                <p className="text-sm text-gray-600">{completedAssignments.length} assignments completed</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Award className="h-4 w-4 text-green-600" />
+              <span className="text-green-600 font-medium">{completedAssignments.length} completed</span>
+            </div>
+          </div>
         
         {completedAssignments.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -620,11 +674,15 @@ function AssignmentsPageContent() {
               <AssignmentCard key={assignment.id} assignment={assignment} />
             ))}
           </div>
-        ) : (
-          <div className="text-center py-8">
-            <p className="text-gray-500">No completed assignments yet.</p>
-          </div>
-        )}
+          ) : (
+            <div className="text-center py-8">
+              <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <CheckCircle className="h-6 w-6 text-gray-400" />
+              </div>
+              <p className="text-gray-500">No completed assignments yet.</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

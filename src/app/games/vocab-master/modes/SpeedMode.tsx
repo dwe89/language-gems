@@ -1,8 +1,43 @@
 import React, { useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Clock, Zap } from 'lucide-react';
-import { ModeComponent } from '../types';
+import { ModeComponent, VocabularyWord } from '../types';
 import { getPlaceholderText } from '../utils/answerValidation';
+import { getAdventureTheme, getAccentColorClasses } from '../utils/adventureThemes';
+
+// Calculate dynamic time based on word complexity
+const calculateWordTime = (word: VocabularyWord): number => {
+  const translation = word.english || word.translation || '';
+  const spanish = word.spanish || word.word || '';
+
+  // Base time: 3 seconds
+  let timeSeconds = 3;
+
+  // Add time based on translation length
+  const translationLength = translation.length;
+  if (translationLength <= 5) {
+    timeSeconds += 1; // Short words like "cat", "dog" = 4 seconds
+  } else if (translationLength <= 10) {
+    timeSeconds += 2; // Medium words like "elephant" = 5 seconds
+  } else if (translationLength <= 15) {
+    timeSeconds += 3; // Longer words = 6 seconds
+  } else {
+    timeSeconds += 4; // Very long words/phrases = 7 seconds
+  }
+
+  // Add time for complex Spanish words (accents, ñ, longer words)
+  if (spanish.includes('ñ') || /[áéíóúü]/.test(spanish)) {
+    timeSeconds += 1; // Extra time for accented characters
+  }
+
+  // Add time for phrases (multiple words)
+  if (translation.includes(' ') || spanish.includes(' ')) {
+    timeSeconds += 1; // Extra time for phrases
+  }
+
+  // Minimum 3 seconds, maximum 8 seconds
+  return Math.max(3, Math.min(8, timeSeconds));
+};
 
 interface SpeedModeProps extends ModeComponent {
   userAnswer: string;
@@ -43,43 +78,76 @@ export const SpeedMode: React.FC<SpeedModeProps> = ({
     }
   };
 
-  const baseClasses = isAdventureMode 
-    ? "bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-xl rounded-3xl p-8 border-2 border-slate-600/30 shadow-2xl"
+  // Calculate dynamic time for current word
+  const dynamicTime = gameState.currentWord ? calculateWordTime(gameState.currentWord) : 5;
+  const timePercentage = (timeLeft / dynamicTime) * 100;
+
+  const adventureTheme = getAdventureTheme('speed');
+
+  const baseClasses = isAdventureMode
+    ? adventureTheme.cardStyle
     : "bg-white rounded-xl shadow-lg p-8";
+
+  const containerClasses = isAdventureMode
+    ? adventureTheme.background
+    : "bg-gray-50";
 
   const timerColor = timeLeft <= 3 ? 'text-red-400' : timeLeft <= 6 ? 'text-yellow-400' : 'text-green-400';
   const timerBgColor = timeLeft <= 3 ? 'bg-red-500/20' : timeLeft <= 6 ? 'bg-yellow-500/20' : 'bg-green-500/20';
 
   return (
-    <div className="space-y-8">
-      {/* Word display with timer */}
-      <motion.div
-        key={gameState.currentWordIndex}
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className={baseClasses}
-      >
-        <div className="text-center space-y-6">
-          <div className="text-6xl">
-            <Zap className="h-16 w-16 text-yellow-300 mx-auto" />
-          </div>
-          
-          <h2 className={`text-2xl font-bold ${isAdventureMode ? 'text-white' : 'text-gray-800'}`}>
-            ⚡ Speed Challenge
-          </h2>
-
-          {/* Timer display */}
+    <div className={`${containerClasses} min-h-screen flex flex-col items-center justify-center p-8`}>
+      <div className="max-w-4xl mx-auto w-full space-y-8">
+        {/* Adventure Mode Header */}
+        {isAdventureMode && (
           <motion.div
-            key={timeLeft}
-            initial={{ scale: 1.2 }}
-            animate={{ scale: 1 }}
-            className={`inline-flex items-center space-x-2 px-4 py-2 rounded-full ${timerBgColor}`}
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center mb-6"
           >
-            <Clock className={`h-5 w-5 ${timerColor}`} />
-            <div className={`text-2xl font-bold ${timerColor}`}>
-              {timeLeft}s
-            </div>
+            <h1 className="text-4xl font-bold text-white mb-2">
+              {adventureTheme.emoji} {adventureTheme.name}
+            </h1>
+            <p className="text-white/80 text-lg">
+              {adventureTheme.description}
+            </p>
           </motion.div>
+        )}
+
+        {/* Word display with timer */}
+        <motion.div
+          key={gameState.currentWordIndex}
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className={baseClasses}
+        >
+          <div className="text-center space-y-6">
+            <div className="text-6xl">
+              <Zap className={`h-16 w-16 mx-auto ${isAdventureMode ? adventureTheme.accentColor === 'yellow' ? 'text-yellow-300' : 'text-yellow-400' : 'text-yellow-300'}`} />
+            </div>
+            
+            <h2 className={`text-2xl font-bold ${isAdventureMode ? 'text-white' : 'text-gray-800'}`}>
+              ⚡ Speed Challenge
+            </h2>
+
+          {/* Timer display with dynamic time info */}
+          <div className="text-center space-y-2">
+            <motion.div
+              key={timeLeft}
+              initial={{ scale: 1.2 }}
+              animate={{ scale: 1 }}
+              className={`inline-flex items-center space-x-2 px-4 py-2 rounded-full ${timerBgColor}`}
+            >
+              <Clock className={`h-5 w-5 ${timerColor}`} />
+              <div className={`text-2xl font-bold ${timerColor}`}>
+                {timeLeft}s
+              </div>
+            </motion.div>
+
+            <div className={`text-xs ${isAdventureMode ? 'text-white/60' : 'text-gray-500'}`}>
+              Time adjusted for complexity ({dynamicTime}s total)
+            </div>
+          </div>
 
           {/* Word to translate */}
           <motion.div
@@ -115,7 +183,7 @@ export const SpeedMode: React.FC<SpeedModeProps> = ({
               placeholder={getPlaceholderText('speed')}
               className={`w-full p-4 rounded-lg text-lg font-medium transition-all duration-200 ${
                 isAdventureMode
-                  ? 'bg-slate-700/50 text-white placeholder-slate-400 border border-slate-500/30 focus:border-yellow-400/50 focus:ring-2 focus:ring-yellow-400/20'
+                  ? `bg-slate-700/50 text-white placeholder-slate-400 border ${getAccentColorClasses(adventureTheme.accentColor, 'border')} focus:border-${adventureTheme.accentColor}-400/50 focus:ring-2 focus:ring-${adventureTheme.accentColor}-400/20`
                   : 'bg-gray-50 text-gray-800 placeholder-gray-500 border border-gray-200 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200'
               }`}
               autoFocus
@@ -130,7 +198,7 @@ export const SpeedMode: React.FC<SpeedModeProps> = ({
             className={`w-full py-3 rounded-lg font-semibold transition-all duration-200 ${
               userAnswer.trim() && timeLeft > 0
                 ? isAdventureMode
-                  ? 'bg-yellow-500 hover:bg-yellow-600 text-black shadow-lg hover:shadow-yellow-500/25'
+                  ? getAccentColorClasses(adventureTheme.accentColor, 'button')
                   : 'bg-yellow-600 hover:bg-yellow-700 text-white shadow-lg'
                 : 'bg-gray-300 text-gray-500 cursor-not-allowed'
             }`}
@@ -154,6 +222,7 @@ export const SpeedMode: React.FC<SpeedModeProps> = ({
             ))}
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

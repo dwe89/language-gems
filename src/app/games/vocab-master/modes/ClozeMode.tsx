@@ -84,72 +84,71 @@ export const ClozeMode: React.FC<ClozeModeProps> = ({
   }
 
   return (
-    <div className={`${containerClasses} flex flex-col items-center justify-center p-8`}>
-      <div className="max-w-4xl mx-auto w-full space-y-7">
-        {/* Context display */}
-        <motion.div
-          key={gameState.currentWordIndex}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className={cardClasses}
-        >
-          <div className="text-center space-y-6">
-            <div className={`text-6xl ${isAdventureMode ? 'text-green-300' : 'text-blue-500'}`}>
-              <BookOpen className="h-16 w-16 mx-auto" />
-            </div>
-
-            <h2 className={`text-2xl font-bold ${textPrimary}`}>
-              📝 Context Practice
-            </h2>
-
-            {/* Blanked Sentence (Target Language) */}
-            <div className={`p-6 rounded-xl border-2 ${isAdventureMode
-              ? 'bg-slate-700/40 border-slate-600/30'
-              : 'bg-blue-50 border-blue-200'
-              }`}>
-              <div className="mb-4">
-                <h3 className={`text-lg font-semibold mb-2 ${isAdventureMode ? 'text-blue-200' : 'text-blue-800'}`}>
-                  Complete the sentence:
-                </h3>
-                <p className={`text-2xl font-semibold leading-relaxed ${isAdventureMode ? 'text-white' : 'text-blue-900'}`}>
-                  {clozeData.blankedSentence}
-                </p>
-              </div>
-
-              {/* Audio button */}
-              <button
-                onClick={handlePlayAudio}
-                className={`p-3 rounded-full transition-colors border-2 shadow-sm ${
-                  gameState.audioPlaying
-                    ? 'bg-gray-200 text-gray-400 cursor-not-allowed border-gray-300'
-                    : isAdventureMode
-                      ? 'bg-blue-500/30 hover:bg-blue-500/40 text-blue-200 border-blue-400/50'
-                      : 'bg-blue-100 hover:bg-blue-200 text-blue-700 border-blue-300'
-                }`}
-                disabled={gameState.audioPlaying}
+    <div className="min-h-screen bg-gray-50 flex">
+      {/* Main content area - optimized for no scrolling */}
+      <div className="flex-1 p-6 flex flex-col justify-center">
+        <div className="max-w-3xl mx-auto w-full space-y-5">
+         
+         {/* Context display */}
+              <motion.div
+                key={gameState.currentWordIndex}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={cardClasses}
               >
-                <Volume2 className="h-6 w-6" />
-              </button>
-            </div>
+                <div className="text-center space-y-4">
+                  <div className="flex items-center justify-center space-x-3">
+                    <BookOpen className={`h-8 w-8 ${isAdventureMode ? 'text-green-300' : 'text-blue-500'}`} />
+                    <h2 className={`text-xl font-bold ${textPrimary}`}>
+                      Context Practice
+                    </h2>
+                  </div>
 
-            {/* English Translation */}
-            <div className={`p-6 rounded-xl border-2 ${isAdventureMode
-              ? 'bg-green-800/20 border-green-600/30'
-              : 'bg-green-50 border-green-200'
-              }`}>
-              <h3 className={`text-lg font-semibold mb-2 ${isAdventureMode ? 'text-green-200' : 'text-green-800'}`}>
-                Translation:
-              </h3>
-              <p className={`text-xl font-medium leading-relaxed ${isAdventureMode ? 'text-green-100' : 'text-green-900'}`}>
-                {clozeData.englishTranslation}
-              </p>
-            </div>
+                  {/* Compact sentence and translation layout */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Blanked Sentence */}
+                    <div className={`p-4 rounded-xl border ${isAdventureMode
+                      ? 'bg-slate-700/40 border-slate-600/30'
+                      : 'bg-blue-50 border-blue-200'
+                      }`}>
+                      <h3 className={`text-sm font-semibold mb-2 ${isAdventureMode ? 'text-blue-200' : 'text-blue-800'}`}>
+                        Complete the sentence:
+                      </h3>
+                      <p className={`text-lg font-semibold leading-relaxed ${isAdventureMode ? 'text-white' : 'text-blue-900'}`}>
+                        {clozeData.blankedSentence}
+                      </p>
 
-            <div className={`text-lg italic ${textMuted}`}>
-              Think about the missing word that fits this context.
-            </div>
-          </div>
-        </motion.div>
+                      {/* Audio button */}
+                      <button
+                        onClick={handlePlayAudio}
+                        className={`mt-3 p-2 rounded-full transition-colors border shadow-sm ${
+                          gameState.audioPlaying
+                            ? 'bg-gray-200 text-gray-400 cursor-not-allowed border-gray-300'
+                            : isAdventureMode
+                              ? 'bg-blue-500/30 hover:bg-blue-500/40 text-blue-200 border-blue-400/50'
+                              : 'bg-blue-100 hover:bg-blue-200 text-blue-700 border-blue-300'
+                        }`}
+                        disabled={gameState.audioPlaying}
+                      >
+                        <Volume2 className="h-5 w-5" />
+                      </button>
+                    </div>
+
+                    {/* English Translation */}
+                    <div className={`p-4 rounded-xl border ${isAdventureMode
+                      ? 'bg-green-800/20 border-green-600/30'
+                      : 'bg-green-50 border-green-200'
+                      }`}>
+                      <h3 className={`text-sm font-semibold mb-2 ${isAdventureMode ? 'text-green-200' : 'text-green-800'}`}>
+                        Translation:
+                      </h3>
+                      <p className={`text-lg font-medium leading-relaxed ${isAdventureMode ? 'text-green-100' : 'text-green-900'}`}>
+                        {clozeData.englishTranslation}
+                      </p>
+                    </div>
+                  </div> {/* Close grid div here */}
+                </div> {/* Close text-center div here */}
+              </motion.div> {/* Close motion.div here */}
 
         {/* Input area */}
         <div className={cardClasses}>
@@ -223,6 +222,48 @@ export const ClozeMode: React.FC<ClozeModeProps> = ({
             </button>
           </div>
         </div>
+      </div>
+
+      {/* Right sidebar - Progress info */}
+      <div className="w-80 p-6 space-y-4 bg-gray-100 border-l border-gray-200">
+        <div className="bg-white rounded-2xl shadow-sm p-5 border border-gray-100">
+          <h4 className="text-lg font-bold mb-3 text-gray-800">Progress</h4>
+
+          <div className="space-y-3">
+            <div className="bg-blue-50 rounded-xl p-3 flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <BookOpen className="h-4 w-4 text-blue-500" />
+                <span className="font-medium text-blue-700">Question</span>
+              </div>
+              <span className="text-lg font-bold text-blue-700">
+                {gameState.currentWordIndex + 1}/{gameState.totalWords}
+              </span>
+            </div>
+
+            <div className="bg-green-50 rounded-xl p-3 flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <span className="h-4 w-4 text-green-500">✓</span>
+                <span className="font-medium text-green-700">Correct</span>
+              </div>
+              <span className="text-lg font-bold text-green-700">{gameState.correctAnswers}</span>
+            </div>
+          </div>
+
+          <div className="mt-4">
+            <div className="bg-blue-100 rounded-full h-2 overflow-hidden">
+              <div
+                className="bg-gradient-to-r from-blue-400 to-blue-600 h-full rounded-full transition-all duration-500"
+                style={{ width: `${((gameState.currentWordIndex + 1) / gameState.totalWords) * 100}%` }}
+              ></div>
+            </div>
+            <div className="text-center mt-2">
+              <div className="text-lg font-bold text-blue-700">
+                {Math.round(((gameState.currentWordIndex + 1) / gameState.totalWords) * 100)}% Complete
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
       </div>
     </div>
   );

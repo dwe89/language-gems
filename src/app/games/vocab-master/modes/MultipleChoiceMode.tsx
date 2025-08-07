@@ -60,8 +60,8 @@ export const MultipleChoiceMode: React.FC<MultipleChoiceModeProps> = ({
 
     // Create options array
     const allOptions: MultipleChoiceOption[] = [
-      { text: correctAnswer, isCorrect: true },
-      ...incorrectOptions.slice(0, 3).map(text => ({ text, isCorrect: false }))
+      { id: 'correct', text: correctAnswer, isCorrect: true },
+      ...incorrectOptions.slice(0, 3).map((text, index) => ({ id: `incorrect-${index}`, text, isCorrect: false }))
     ];
 
     // Shuffle options
@@ -157,7 +157,7 @@ export const MultipleChoiceMode: React.FC<MultipleChoiceModeProps> = ({
             {/* Audio button */}
             {gameState.currentWord?.audio_url && (
               <button
-                onClick={() => playPronunciation(gameState.currentWord?.spanish || '', 'es', gameState.currentWord)}
+                onClick={() => gameState.currentWord && playPronunciation(gameState.currentWord?.spanish || '', 'es', gameState.currentWord)}
                 disabled={gameState.audioPlaying}
                 className={`p-3 rounded-full transition-colors border ${
                   gameState.audioPlaying
@@ -225,6 +225,33 @@ export const MultipleChoiceMode: React.FC<MultipleChoiceModeProps> = ({
               <p className="mt-2 text-sm">
                 The correct answer is: <strong>{options.find(o => o.isCorrect)?.text}</strong>
               </p>
+            )}
+            
+            {/* Example sentence display */}
+            {gameState.currentWord?.example_sentence && (
+              <div className={`mt-3 pt-3 border-t ${
+                isAdventureMode 
+                  ? 'border-gray-400/30' 
+                  : 'border-gray-300'
+              }`}>
+                <div className={`text-sm font-medium mb-1 ${
+                  isAdventureMode ? 'text-gray-300' : 'text-gray-600'
+                }`}>
+                  Example:
+                </div>
+                <div className={`text-sm italic mb-1 ${
+                  isAdventureMode ? 'text-gray-200' : 'text-gray-700'
+                }`}>
+                  {gameState.currentWord.example_sentence}
+                </div>
+                {gameState.currentWord?.example_translation && (
+                  <div className={`text-xs ${
+                    isAdventureMode ? 'text-gray-400' : 'text-gray-500'
+                  }`}>
+                    {gameState.currentWord.example_translation}
+                  </div>
+                )}
+              </div>
             )}
           </motion.div>
         )}

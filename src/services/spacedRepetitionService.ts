@@ -251,13 +251,13 @@ export class SpacedRepetitionService {
   /**
    * Update user progress after a practice session
    * @param userId User ID
-   * @param vocabularyId Vocabulary word ID
+   * @param vocabularyId Vocabulary word ID (UUID string)
    * @param correct Whether the answer was correct
    * @param responseTime Response time in milliseconds
    */
   async updateProgress(
     userId: string,
-    vocabularyId: number,
+    vocabularyId: string,
     correct: boolean,
     responseTime: number = 0
   ): Promise<{ gemType: string; upgraded: boolean; points: number }> {
@@ -339,17 +339,21 @@ export class SpacedRepetitionService {
           difficulty_rating: this.calculateDifficulty(updatedData.easeFactor, responseTime)
         });
 
-      // Also update simplified progress table
+      // TODO: Update simplified progress table - needs mapping from UUID to integer ID
+      // The user_vocabulary_progress table uses integer vocabulary_id while centralized_vocabulary uses UUID
+      // For now, we'll rely on vocabulary_gem_collection which properly uses UUID
+      /*
       await this.supabase
         .from('user_vocabulary_progress')
         .upsert({
           user_id: userId,
-          vocabulary_id: vocabularyId,
+          vocabulary_id: vocabularyId, // This would need to be converted from UUID to integer
           times_seen: (existingData?.total_encounters || 0) + 1,
           times_correct: (existingData?.correct_encounters || 0) + (quality >= 3 ? 1 : 0),
           last_seen: new Date().toISOString(),
           is_learned: masteryLevel >= 3 // Consider learned at mastery level 3+
         });
+      */
 
       return {
         gemType: newGemType,

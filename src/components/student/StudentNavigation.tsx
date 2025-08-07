@@ -7,10 +7,8 @@ import { useAuth } from '../auth/AuthProvider';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Sparkles,
-  Trophy,
   BookOpen,
   Gamepad2,
-  BarChart3,
   User,
   LogOut,
   Menu,
@@ -19,8 +17,7 @@ import {
   Star,
   Zap,
   Home,
-  Edit,
-  Brain
+  Edit
 } from 'lucide-react';
 
 // Navigation items for student dashboard
@@ -39,21 +36,9 @@ const navItems = [
   },
   {
     name: 'Games',
-    href: '/student-dashboard/games',
+    href: '/games',
     icon: Gamepad2,
     description: 'Practice with fun games'
-  },
-  {
-    name: 'Progress',
-    href: '/student-dashboard/progress',
-    icon: BarChart3,
-    description: 'Track your learning journey'
-  },
-  {
-    name: 'Vocabulary',
-    href: '/student-dashboard/vocabulary',
-    icon: Brain,
-    description: 'Review your vocabulary progress'
   },
   {
     name: 'Assessments',
@@ -61,12 +46,6 @@ const navItems = [
     icon: Edit,
     description: 'Take practice assessments'
   },
-  {
-    name: 'Achievements',
-    href: '/student-dashboard/achievements',
-    icon: Trophy,
-    description: 'View your badges and rewards'
-  }
 ];
 
 export default function StudentNavigation() {
@@ -74,7 +53,7 @@ export default function StudentNavigation() {
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
-  const { user, signOut, isLoading, userRole } = useAuth();
+  const { user, signOut } = useAuth();
 
   useEffect(() => {
     setIsMounted(true);

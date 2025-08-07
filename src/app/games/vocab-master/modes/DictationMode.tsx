@@ -33,7 +33,7 @@ export const DictationMode: React.FC<DictationModeProps> = ({
         playPronunciation(
           gameState.currentWord?.spanish || '', 
           'es', 
-          gameState.currentWord
+          gameState.currentWord || undefined
         );
       }, 1000);
       return () => clearTimeout(timer);
@@ -75,10 +75,19 @@ export const DictationMode: React.FC<DictationModeProps> = ({
             🎧 Listen and Type What You Hear
           </h2>
 
-          {/* Audio controls */}
-          <div className="flex items-center justify-center space-x-4">
+          <p className={`text-lg ${isAdventureMode ? 'text-white/80' : 'text-gray-600'}`}>
+            Listen carefully to the audio and type exactly what you hear in Spanish.
+          </p>
+
+          {/* Audio-only indicator - no word display */}
+          <div className={`text-3xl font-bold ${isAdventureMode ? 'text-white/40' : 'text-gray-400'} tracking-wider`}>
+            [ AUDIO ONLY ]
+          </div>
+
+          {/* Single audio control */}
+          <div className="flex justify-center">
             <button
-              onClick={() => playPronunciation(gameState.currentWord?.spanish || '', 'es', gameState.currentWord)}
+              onClick={() => playPronunciation(gameState.currentWord?.spanish || '', 'es', gameState.currentWord || undefined)}
               disabled={gameState.audioPlaying}
               className={`p-6 rounded-full transition-colors border-2 shadow-lg ${
                 gameState.audioPlaying
@@ -90,23 +99,14 @@ export const DictationMode: React.FC<DictationModeProps> = ({
             >
               <Volume2 className="h-8 w-8" />
             </button>
-            
-            {canReplayAudio && (
-              <button
-                onClick={onReplayAudio}
-                className={`flex items-center space-x-2 px-4 py-2 rounded-full transition-colors ${
-                  isAdventureMode
-                    ? 'bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-200 border border-yellow-400/30'
-                    : 'bg-yellow-100 hover:bg-yellow-200 text-yellow-700 border border-yellow-300'
-                }`}
-              >
-                <Volume2 className="h-4 w-4" />
-                <span className="text-sm">
-                  Replay ({2 - audioReplayCount} left)
-                </span>
-              </button>
-            )}
           </div>
+
+          {/* Replay info */}
+          {canReplayAudio && (
+            <div className={`text-center text-sm ${isAdventureMode ? 'text-white/60' : 'text-gray-500'}`}>
+              {2 - audioReplayCount} replays remaining
+            </div>
+          )}
         </div>
       </motion.div>
 
@@ -148,6 +148,55 @@ export const DictationMode: React.FC<DictationModeProps> = ({
           >
             Submit Dictation
           </button>
+        </div>
+      </div>
+
+      {/* Progress sidebar */}
+      <div className="w-80 p-6 space-y-4 bg-gray-100 border-l border-gray-200">
+        <div className="bg-white rounded-2xl shadow-sm p-5 border border-gray-100">
+          <h4 className="text-lg font-bold mb-3 text-gray-800">Dictation Progress</h4>
+
+          <div className="space-y-3">
+            <div className="bg-blue-50 rounded-xl p-3 flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Headphones className="h-4 w-4 text-blue-500" />
+                <span className="font-medium text-blue-700">Question</span>
+              </div>
+              <span className="text-lg font-bold text-blue-700">
+                {gameState.currentWordIndex + 1}/{gameState.totalWords}
+              </span>
+            </div>
+
+            <div className="bg-green-50 rounded-xl p-3 flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <span className="h-4 w-4 text-green-500">✓</span>
+                <span className="font-medium text-green-700">Correct</span>
+              </div>
+              <span className="text-lg font-bold text-green-700">{gameState.correctAnswers}</span>
+            </div>
+
+            <div className="bg-red-50 rounded-xl p-3 flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <span className="h-4 w-4 text-red-500">✗</span>
+                <span className="font-medium text-red-700">Incorrect</span>
+              </div>
+              <span className="text-lg font-bold text-red-700">{gameState.incorrectAnswers}</span>
+            </div>
+          </div>
+
+          <div className="mt-4">
+            <div className="bg-blue-100 rounded-full h-2 overflow-hidden">
+              <div
+                className="bg-gradient-to-r from-blue-400 to-blue-600 h-full rounded-full transition-all duration-500"
+                style={{ width: `${((gameState.currentWordIndex + 1) / gameState.totalWords) * 100}%` }}
+              ></div>
+            </div>
+            <div className="text-center mt-2">
+              <div className="text-lg font-bold text-blue-700">
+                {Math.round(((gameState.currentWordIndex + 1) / gameState.totalWords) * 100)}% Complete
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

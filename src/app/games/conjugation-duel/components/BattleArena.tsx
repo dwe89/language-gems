@@ -6,6 +6,7 @@ import { useGameStore } from '../../../../store/gameStore';
 import { useBattle } from '../../../../hooks/useBattle';
 import { useBattleAudio } from '../../../../hooks/useBattleAudio';
 import { EnhancedGameService } from '../../../../services/enhancedGameService';
+import { useUnifiedSpacedRepetition } from '../../../../hooks/useUnifiedSpacedRepetition';
 import HealthBar from './HealthBar';
 import CharacterSprite from './CharacterSprite';
 
@@ -44,13 +45,16 @@ export default function BattleArena({
   gameService,
   onConjugationComplete
 }: BattleArenaProps) {
-  const { 
-    battleState, 
+  // Initialize FSRS spaced repetition system
+  const { recordWordPractice, algorithm } = useUnifiedSpacedRepetition('conjugation-duel');
+
+  const {
+    battleState,
     playerStats,
     leagues,
-    setBattleState 
+    setBattleState
   } = useGameStore();
-  
+
   const { timeLeft, isAnswering, submitAnswer } = useBattle(language);
   const { playSound, playMusic, stopMusic } = useBattleAudio();
 
@@ -106,6 +110,55 @@ export default function BattleArena({
 
     if (isCorrect) {
       playSound('sword_clash');
+    }
+
+    // Record conjugation practice with FSRS system
+    if (!assignmentId && battleState.currentQuestion) {
+      try {
+        const question = battleState.currentQuestion;
+        const wordData = {
+          id: `${question.verb?.infinitive || 'unknown'}-${question.tense}-${question.pronoun}`,
+          word: question.verb?.infinitive || 'unknown',
+          translation: `${question.pronoun} ${question.correctAnswer}`, // Conjugated form as translation
+          language: language === 'spanish' ? 'es' : language === 'french' ? 'fr' : 'en'
+        };
+
+        // Calculate confidence based on conjugation accuracy and response time
+        let confidence = 0.8; // High base confidence for conjugation practice
+
+        // Adjust for response time (conjugations should be quick once learned)
+        if (responseTime < 3000) confidence += 0.1;
+        else if (responseTime > 8000) confidence -= 0.2;
+
+        // Adjust for tense complexity
+        if (question.tense === 'subjunctive' || question.tense === 'conditional') {
+          confidence += 0.1; // Bonus for complex tenses
+        }
+
+        confidence = Math.max(0.1, Math.min(0.95, confidence));
+
+        // Record practice with FSRS
+        recordWordPractice(
+          wordData,
+          isCorrect,
+          responseTime,
+          confidence
+        ).then(fsrsResult => {
+          if (fsrsResult) {
+            console.log(`FSRS recorded for conjugation "${question.verb?.infinitive}" (${question.tense}):`, {
+              algorithm: fsrsResult.algorithm,
+              points: fsrsResult.points,
+              nextReview: fsrsResult.nextReviewDate,
+              interval: fsrsResult.interval,
+              masteryLevel: fsrsResult.masteryLevel
+            });
+          }
+        }).catch(error => {
+          console.error('Error recording FSRS conjugation practice:', error);
+        });
+      } catch (error) {
+        console.error('Error setting up FSRS recording for conjugation:', error);
+      }
     }
 
     // Log conjugation performance if callback is available

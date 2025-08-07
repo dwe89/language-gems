@@ -78,7 +78,7 @@ export const useSpacedRepetition = (supabase: SupabaseClient | null, userId: str
       // Use the enhanced spaced repetition service
       const result = await spacedRepetitionService.updateProgress(
         userId,
-        Number(word.id),
+        word.id, // Use UUID string directly
         correct,
         responseTime
       );

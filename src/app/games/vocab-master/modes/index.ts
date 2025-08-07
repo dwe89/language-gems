@@ -10,6 +10,7 @@ import { MultipleChoiceMode } from './MultipleChoiceMode';
 import { FlashcardsMode } from './FlashcardsMode';
 import { LearnMode } from './LearnMode';
 import { RecallMode } from './RecallMode';
+import { MixedMode } from './MixedMode';
 
 /**
  * Registry of all available game modes
@@ -103,6 +104,15 @@ export const MODE_REGISTRY: Record<GameMode, ModeConfig> = {
     requiresInput: true,
     autoAdvance: false,
     hasTimer: true
+  },
+
+  mixed: {
+    id: 'mixed',
+    name: 'Mixed Practice',
+    component: MixedMode as any,
+    requiresInput: true,
+    autoAdvance: false,
+    hasTimer: false
   }
 };
 
@@ -151,23 +161,31 @@ export function hasTimer(gameMode: GameMode): boolean {
 export function mapLauncherModeToGameMode(launcherMode: string): GameMode {
   switch (launcherMode) {
     case 'learn_new':
-    case 'review_weak':
-    case 'mixed_review':
       return 'learn';
+    case 'review_weak':
+      return 'recall'; // Use recall mode for weak words
+    case 'mixed_review':
+      return 'mixed'; // Special mixed mode
     case 'context_practice':
       return 'cloze';
+    case 'listening_practice':
     case 'listening_comprehension':
       return 'listening';
     case 'dictation_practice':
+    case 'dictation':
       return 'dictation';
     case 'flashcard_review':
       return 'flashcards';
     case 'multiple_choice_quiz':
       return 'multiple_choice';
     case 'speed_challenge':
+    case 'speed_review':
       return 'speed';
     case 'word_matching':
+    case 'match':
       return 'match';
+    case 'spaced_repetition':
+      return 'recall'; // Use recall mode for spaced repetition
     default:
       return 'learn';
   }

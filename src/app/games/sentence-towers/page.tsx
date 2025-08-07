@@ -16,6 +16,7 @@ import { useAuth } from '../../../components/auth/AuthProvider';
 import { useSupabase } from '../../../components/supabase/SupabaseProvider';
 import { EnhancedGameService } from '../../../services/enhancedGameService';
 import GameAssignmentWrapper from '../../../components/games/templates/GameAssignmentWrapper';
+import { useUnifiedSpacedRepetition } from '../../../hooks/useUnifiedSpacedRepetition';
 
 // Enhanced Types
 interface TowerBlock {
@@ -489,6 +490,9 @@ function ImprovedSentenceTowersGame({
   // Authentication and services
   const { user } = useAuth();
   const { supabase } = useSupabase();
+
+  // Initialize FSRS spaced repetition system
+  const { recordWordPractice, algorithm } = useUnifiedSpacedRepetition('sentence-towers');
   const [enhancedGameService, setEnhancedGameService] = useState<EnhancedGameService | null>(null);
   const [gameSessionId, setGameSessionId] = useState<string | null>(null);
 
@@ -912,9 +916,55 @@ function ImprovedSentenceTowersGame({
   }, [vocabulary, gameState.currentLevel, gameState.accuracy]);
 
   // Enhanced correct answer handling
-  const handleCorrectAnswer = useCallback((option: WordOption, isTypingMode = false) => {
+  const handleCorrectAnswer = useCallback(async (option: WordOption, isTypingMode = false) => {
     // Play correct answer sound
     sounds.playCorrectAnswer();
+
+    // Record word practice with FSRS system
+    if (!assignmentMode && option) {
+      try {
+        const wordData = {
+          id: option.id || `${option.word}-${option.translation}`,
+          word: option.word,
+          translation: option.translation,
+          language: config.language === 'spanish' ? 'es' : config.language === 'french' ? 'fr' : 'en'
+        };
+
+        const responseTime = (Date.now() - questionStartTime);
+
+        // Calculate confidence based on typing mode and response time
+        let confidence = 0.8; // Base confidence for correct answers
+        if (isTypingMode) {
+          confidence = 0.9; // Higher confidence for typing mode
+        }
+
+        // Adjust for response time
+        if (responseTime < 3000) confidence += 0.1;
+        else if (responseTime > 10000) confidence -= 0.2;
+
+        confidence = Math.max(0.1, Math.min(0.95, confidence));
+
+        // Record practice with FSRS
+        const fsrsResult = await recordWordPractice(
+          wordData,
+          true, // Correct answer
+          responseTime,
+          confidence
+        );
+
+        if (fsrsResult) {
+          console.log(`FSRS recorded for ${option.word} (${isTypingMode ? 'typing' : 'selection'}):`, {
+            algorithm: fsrsResult.algorithm,
+            points: fsrsResult.points,
+            nextReview: fsrsResult.nextReviewDate,
+            interval: fsrsResult.interval,
+            masteryLevel: fsrsResult.masteryLevel
+          });
+        }
+      } catch (error) {
+        console.error('Error recording FSRS practice:', error);
+      }
+    }
 
     // Log word performance for analytics
     if (enhancedGameService && user) {
@@ -1041,7 +1091,39 @@ function ImprovedSentenceTowersGame({
   }, [gameState, towerBlocks, addParticleEffect, sounds, questionStartTime]);
 
   // Enhanced incorrect answer handling
-  const handleIncorrectAnswer = useCallback((incorrectOption?: WordOption) => {
+  const handleIncorrectAnswer = useCallback(async (incorrectOption?: WordOption) => {
+    // Record word practice with FSRS system for incorrect answer
+    if (!assignmentMode && currentTargetWord) {
+      try {
+        const wordData = {
+          id: currentTargetWord.id || `${currentTargetWord.word}-${currentTargetWord.translation}`,
+          word: currentTargetWord.word,
+          translation: currentTargetWord.translation,
+          language: config.language === 'spanish' ? 'es' : config.language === 'french' ? 'fr' : 'en'
+        };
+
+        const responseTime = (Date.now() - questionStartTime);
+
+        // Record failed attempt with FSRS
+        const fsrsResult = await recordWordPractice(
+          wordData,
+          false, // Incorrect answer
+          responseTime,
+          0.2 // Low confidence for incorrect answers
+        );
+
+        if (fsrsResult) {
+          console.log(`FSRS recorded failed attempt for ${currentTargetWord.word}:`, {
+            algorithm: fsrsResult.algorithm,
+            nextReview: fsrsResult.nextReviewDate,
+            interval: fsrsResult.interval
+          });
+        }
+      } catch (error) {
+        console.error('Error recording FSRS failed practice:', error);
+      }
+    }
+
     // Log word performance for analytics if we have the incorrect option
     if (enhancedGameService && user && incorrectOption && currentTargetWord) {
       const responseTime = (Date.now() - questionStartTime) / 1000;

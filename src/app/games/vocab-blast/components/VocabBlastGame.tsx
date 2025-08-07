@@ -8,6 +8,7 @@ import { VocabBlastGameSettings } from '../page';
 import { useTheme } from '../../noughts-and-crosses/components/ThemeProvider';
 import { useAudio } from '../../vocab-blast/hooks/useAudio';
 import VocabBlastEngine from './VocabBlastEngine';
+import { useUnifiedSpacedRepetition } from '../../../../hooks/useUnifiedSpacedRepetition';
 
 interface VocabBlastGameProps {
   settings: VocabBlastGameSettings;
@@ -83,6 +84,9 @@ export default function VocabBlastGame({
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [musicStarted, setMusicStarted] = useState(false);
   const { playSFX, playThemeSFX, startBackgroundMusic, stopBackgroundMusic } = useAudio(soundEnabled);
+
+  // Initialize FSRS spaced repetition system
+  const { recordWordPractice, algorithm } = useUnifiedSpacedRepetition('vocab-blast');
 
   // Start music on first user interaction
   const startMusicOnInteraction = () => {
@@ -189,12 +193,50 @@ export default function VocabBlastGame({
     setCurrentWordStartTime(Date.now());
   };
 
-  const handleCorrectAnswer = (word: GameVocabularyWord) => {
+  const handleCorrectAnswer = async (word: GameVocabularyWord) => {
     startMusicOnInteraction(); // Start music on first interaction
     playSFX('correct-answer');
     playThemeSFX(settings.theme);
 
     const responseTime = Date.now() - currentWordStartTime;
+
+    // Record word practice with FSRS system
+    if (!isAssignmentMode) {
+      try {
+        const wordData = {
+          id: word.id || `${word.word}-${word.translation}`,
+          word: word.word,
+          translation: word.translation,
+          language: settings.language === 'spanish' ? 'es' : settings.language === 'french' ? 'fr' : 'en'
+        };
+
+        // Calculate confidence based on response time and game difficulty
+        const maxTime = settings.difficulty === 'easy' ? 8000 : settings.difficulty === 'medium' ? 6000 : 4000;
+        const timeConfidence = Math.max(0.1, 1 - (responseTime / maxTime));
+        const difficultyConfidence = 0.9; // High confidence for correct answers in speed games
+        const confidence = (timeConfidence + difficultyConfidence) / 2;
+
+        // Record successful answer with FSRS
+        const fsrsResult = await recordWordPractice(
+          wordData,
+          true, // Correct answer
+          responseTime,
+          confidence
+        );
+
+        if (fsrsResult) {
+          console.log(`FSRS recorded for ${word.word}:`, {
+            algorithm: fsrsResult.algorithm,
+            points: fsrsResult.points,
+            nextReview: fsrsResult.nextReviewDate,
+            interval: fsrsResult.interval,
+            masteryLevel: fsrsResult.masteryLevel
+          });
+        }
+      } catch (error) {
+        console.error('Error recording FSRS practice:', error);
+      }
+    }
 
     // Track detailed word attempt
     const attempt: WordAttempt = {
@@ -227,11 +269,41 @@ export default function VocabBlastGame({
     selectNextWord();
   };
 
-  const handleIncorrectAnswer = () => {
+  const handleIncorrectAnswer = async () => {
     startMusicOnInteraction(); // Start music on first interaction
     playSFX('wrong-answer');
 
     const responseTime = Date.now() - currentWordStartTime;
+
+    // Record word practice with FSRS system for incorrect answer
+    if (!isAssignmentMode && currentWord) {
+      try {
+        const wordData = {
+          id: currentWord.id || `${currentWord.word}-${currentWord.translation}`,
+          word: currentWord.spanish || currentWord.word,
+          translation: currentWord.english || currentWord.translation,
+          language: settings.language === 'spanish' ? 'es' : settings.language === 'french' ? 'fr' : 'en'
+        };
+
+        // Record failed attempt with FSRS
+        const fsrsResult = await recordWordPractice(
+          wordData,
+          false, // Incorrect answer
+          responseTime,
+          0.1 // Low confidence for incorrect answers in speed games
+        );
+
+        if (fsrsResult) {
+          console.log(`FSRS recorded failed attempt for ${currentWord.word}:`, {
+            algorithm: fsrsResult.algorithm,
+            nextReview: fsrsResult.nextReviewDate,
+            interval: fsrsResult.interval
+          });
+        }
+      } catch (error) {
+        console.error('Error recording FSRS failed practice:', error);
+      }
+    }
 
     // Track detailed word attempt for incorrect answer
     if (currentWord) {

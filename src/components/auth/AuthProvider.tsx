@@ -2,10 +2,10 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode, useRef, useCallback } from 'react';
 import { Session, User } from '@supabase/supabase-js';
-import { createBrowserClient } from '@supabase/ssr';
 import { useRouter } from 'next/navigation';
 import type { Database } from '../../lib/database.types';
 import { DemoAuthProvider } from './DemoAuthProvider';
+import { createClient } from '../../utils/supabase/client';
 
 interface AuthContextType {
   user: User | null;
@@ -23,12 +23,8 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// At top, after imports, create client once
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-
-// Initialize a single Supabase browser client instance (module-level singleton)
-export const supabaseBrowser = createBrowserClient<Database>(supabaseUrl, supabaseAnonKey);
+// Initialize a single Supabase browser client instance with unified cookie configuration
+export const supabaseBrowser = createClient();
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -224,11 +220,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Get the current session
     const initializeAuth = async () => {
       try {
-        console.log('Fetching current session...');
+        console.log('🔍 Fetching current session...');
+        console.log('🍪 Current cookies:', document.cookie);
+
+        // Normal session check
         const { data: { session: currentSession }, error } = await supabaseBrowser.auth.getSession();
-        
+
         if (error) {
-          console.error('Error getting session:', error);
+          console.error('❌ Error getting session:', error);
           if (mounted) {
             setIsLoading(false);
             isInitializing.current = false;
@@ -239,7 +238,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return;
         }
 
-        console.log('Session fetched, updating auth state...', !!currentSession);
+        console.log('📊 Session fetched:', {
+          hasSession: !!currentSession,
+          userId: currentSession?.user?.id,
+          email: currentSession?.user?.email,
+          accessToken: currentSession?.access_token ? 'present' : 'missing'
+        });
 
         if (mounted) {
           // Clear the timeout since we're about to complete

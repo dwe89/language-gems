@@ -6,6 +6,7 @@ import { createClient } from '@supabase/supabase-js';
 import { GameConfig } from './LavaTempleWordRestoreGame';
 import { EnhancedGameService } from '../../../../services/enhancedGameService';
 import { createAudio } from '@/utils/audioUtils';
+import { useUnifiedSpacedRepetition } from '../../../../hooks/useUnifiedSpacedRepetition';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -47,6 +48,9 @@ export default function TempleRestoration({
   gameSessionId,
   gameService
 }: TempleRestorationProps) {
+  // Initialize FSRS spaced repetition system
+  const { recordWordPractice, algorithm } = useUnifiedSpacedRepetition('lava-temple-word-restore');
+
   const [sentences, setSentences] = useState<any[]>([]);
   const [currentSentence, setCurrentSentence] = useState<any>(null);
   const [currentSentenceIndex, setCurrentSentenceIndex] = useState(0);
@@ -299,6 +303,43 @@ export default function TempleRestoration({
 
       if (!isGapCorrect) {
         correct = false;
+      }
+
+      // Record word practice with FSRS system for each gap
+      if (correctOption?.option_text) {
+        try {
+          const wordData = {
+            id: `${currentSentence.id}-gap-${gapIndex}`,
+            word: correctOption.option_text,
+            translation: correctOption.option_text, // In fill-in-blank, word and translation are the same
+            language: gameConfig.language === 'spanish' ? 'es' : gameConfig.language === 'french' ? 'fr' : 'de'
+          };
+
+          // Calculate confidence based on fill-in-blank accuracy and context
+          const baseConfidence = isGapCorrect ? 0.8 : 0.2; // High confidence for fill-in-blank when correct
+          const contextBonus = currentSentence.temple_context ? 0.1 : 0; // Bonus for context clues
+          const confidence = Math.min(0.95, baseConfidence + contextBonus);
+
+          // Record practice with FSRS
+          const fsrsResult = await recordWordPractice(
+            wordData,
+            isGapCorrect,
+            responseTime,
+            confidence
+          );
+
+          if (fsrsResult) {
+            console.log(`FSRS recorded for gap ${gapIndex} (${correctOption.option_text}):`, {
+              algorithm: fsrsResult.algorithm,
+              points: fsrsResult.points,
+              nextReview: fsrsResult.nextReviewDate,
+              interval: fsrsResult.interval,
+              masteryLevel: fsrsResult.masteryLevel
+            });
+          }
+        } catch (error) {
+          console.error('Error recording FSRS practice for gap:', error);
+        }
       }
 
       // Log word-level performance for each gap if game service is available

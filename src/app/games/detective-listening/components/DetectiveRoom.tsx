@@ -10,6 +10,7 @@ import { createAudio } from '@/utils/audioUtils';
 import { Evidence } from '../types';
 import { StandardVocabularyItem, AssignmentData, GameProgress, calculateStandardScore } from '../../../../components/games/templates/GameAssignmentWrapper';
 import { EnhancedGameService } from '../../../../services/enhancedGameService';
+import { useUnifiedSpacedRepetition } from '../../../../hooks/useUnifiedSpacedRepetition';
 
 interface AssignmentMode {
   assignment: AssignmentData;
@@ -41,6 +42,9 @@ export default function DetectiveRoom({
   gameService,
   vocabularyWords
 }: DetectiveRoomProps) {
+  // Initialize FSRS spaced repetition system
+  const { recordWordPractice, algorithm } = useUnifiedSpacedRepetition('detective-listening');
+
   const [currentEvidenceIndex, setCurrentEvidenceIndex] = useState(0);
   const [evidenceList, setEvidenceList] = useState<Evidence[]>([]);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
@@ -294,6 +298,44 @@ export default function DetectiveRoom({
 
     // Update total response time
     setTotalResponseTime(prev => prev + responseTime);
+
+    // Record word practice with FSRS system
+    if (!assignmentMode && currentEvidence) {
+      try {
+        const wordData = {
+          id: currentEvidence.id || `${currentEvidence.word || currentEvidence.correct}-${currentEvidence.correct}`,
+          word: currentEvidence.word || currentEvidence.correct,
+          translation: currentEvidence.correct,
+          language: mapLanguageForVocab(language)
+        };
+
+        // Calculate confidence based on response time and replay count
+        const baseConfidence = isCorrect ? 0.6 : 0.2; // Lower base for listening games
+        const replayPenalty = replayCount * 0.1; // Reduce confidence for replays
+        const timeFactor = responseTime > 10000 ? 0.1 : responseTime > 5000 ? 0.05 : 0; // Penalty for slow responses
+        const confidence = Math.max(0.1, baseConfidence - replayPenalty - timeFactor);
+
+        // Record practice with FSRS
+        const fsrsResult = await recordWordPractice(
+          wordData,
+          isCorrect,
+          responseTime,
+          confidence
+        );
+
+        if (fsrsResult) {
+          console.log(`FSRS recorded for ${currentEvidence.word || currentEvidence.correct}:`, {
+            algorithm: fsrsResult.algorithm,
+            points: fsrsResult.points,
+            nextReview: fsrsResult.nextReviewDate,
+            interval: fsrsResult.interval,
+            masteryLevel: fsrsResult.masteryLevel
+          });
+        }
+      } catch (error) {
+        console.error('Error recording FSRS practice:', error);
+      }
+    }
 
     // Log word-level performance if game service is available
     if (gameService && gameSessionId) {

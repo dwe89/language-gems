@@ -1,13 +1,13 @@
 'use client';
 
 import React from 'react';
-import CategoryPerformanceBreakdown from '../../../../components/student/CategoryPerformanceBreakdown';
+import VocabularyCategoriesAnalytics from '../../../../components/student/VocabularyCategoriesAnalytics';
 
 export default function CategoryPerformancePage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <CategoryPerformanceBreakdown />
+        <VocabularyCategoriesAnalytics />
       </div>
     </div>
   );

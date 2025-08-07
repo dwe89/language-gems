@@ -5,6 +5,7 @@ import React, { useState, useEffect } from 'react';
 export const dynamic = 'force-dynamic';
 import { useAuth } from '../../../components/auth/AuthProvider';
 import { useSupabase } from '../../../components/supabase/SupabaseProvider';
+import { UnifiedVocabularyService, VocabularyItem, VocabularyStats } from '../../../services/unifiedVocabularyService';
 import Link from 'next/link';
 import {
   CheckCircle, XCircle, Clock, BookOpen,
@@ -12,32 +13,36 @@ import {
   ListFilter, ArrowUpDown, PlayCircle, Brain
 } from 'lucide-react';
 
-// Proficiency level labels and colors
+// Proficiency level labels and colors - Professional styling
 const proficiencyLevels = [
-  { level: 0, label: 'Unknown', color: 'bg-gray-200', textColor: 'text-gray-800' },
-  { level: 1, label: 'Seen', color: 'bg-red-200', textColor: 'text-red-800' },
-  { level: 2, label: 'Recognized', color: 'bg-orange-200', textColor: 'text-orange-800' },
-  { level: 3, label: 'Practiced', color: 'bg-yellow-200', textColor: 'text-yellow-800' },
-  { level: 4, label: 'Mastered', color: 'bg-green-200', textColor: 'text-green-800' },
-  { level: 5, label: 'Expert', color: 'bg-emerald-200', textColor: 'text-emerald-800' },
+  { level: 0, label: 'Unknown', color: 'bg-gray-100 border border-gray-300', textColor: 'text-gray-700' },
+  { level: 1, label: 'Seen', color: 'bg-red-50 border border-red-200', textColor: 'text-red-700' },
+  { level: 2, label: 'Recognized', color: 'bg-orange-50 border border-orange-200', textColor: 'text-orange-700' },
+  { level: 3, label: 'Practiced', color: 'bg-blue-50 border border-blue-200', textColor: 'text-blue-700' },
+  { level: 4, label: 'Mastered', color: 'bg-green-50 border border-green-200', textColor: 'text-green-700' },
+  { level: 5, label: 'Expert', color: 'bg-purple-50 border border-purple-200', textColor: 'text-purple-700' },
 ];
 
 export default function VocabularyDashboard() {
   const { user } = useAuth();
   const { supabase } = useSupabase();
-  const [vocabularyItems, setVocabularyItems] = useState([]);
-  const [filteredItems, setFilteredItems] = useState([]);
+  const [vocabularyService] = useState(() => new UnifiedVocabularyService(supabase));
+  const [vocabularyItems, setVocabularyItems] = useState<VocabularyItem[]>([]);
+  const [filteredItems, setFilteredItems] = useState<VocabularyItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTheme, setSelectedTheme] = useState('all');
   const [selectedProficiency, setSelectedProficiency] = useState('all');
-  const [themes, setThemes] = useState([]);
-  const [sortConfig, setSortConfig] = useState({ key: 'last_practiced', direction: 'desc' });
-  const [stats, setStats] = useState({
+  const [themes, setThemes] = useState<string[]>([]);
+  const [sortConfig, setSortConfig] = useState({ key: 'lastEncountered', direction: 'desc' });
+  const [stats, setStats] = useState<VocabularyStats>({
     totalWords: 0,
-    knownWords: 0,
-    weakWords: 0,
-    reviewDue: 0,
+    masteredWords: 0,
+    strugglingWords: 0,
+    overdueWords: 0,
+    averageAccuracy: 0,
+    memoryStrength: 0,
+    wordsReadyForReview: 0
   });
 
   // Fetch vocabulary progress for the current user
@@ -46,81 +51,18 @@ export default function VocabularyDashboard() {
 
     const fetchVocabularyProgress = async () => {
       setLoading(true);
-      
+
       try {
-        // Query vocabulary practice data from the user_vocabulary_progress table
-        const { data: progressData, error } = await supabase
-          .from('user_vocabulary_progress')
-          .select(`
-            id,
-            vocabulary_id,
-            times_seen,
-            times_correct,
-            last_seen,
-            is_learned,
-            vocabulary!inner(
-              id,
-              spanish,
-              english,
-              theme,
-              topic,
-              difficulty_level
-            )
-          `)
-          .eq('user_id', user.id);
+        // Use unified vocabulary service for consistent data
+        const { items, stats } = await vocabularyService.getVocabularyData(user.id);
 
-        if (error) {
-          console.error('Error fetching vocabulary progress:', error);
-          return;
-        }
+        setVocabularyItems(items);
+        setStats(stats);
+        setFilteredItems(items);
 
-        // Process and set vocabulary items
-        const processedItems = progressData.map(item => ({
-          progressId: item.id,
-          vocabularyItemId: item.vocabulary_id,
-          term: item.vocabulary.spanish,
-          translation: item.vocabulary.english,
-          exampleSentence: '', // Not available in vocabulary table
-          exampleTranslation: '', // Not available in vocabulary table
-          imageUrl: undefined, // Not available in vocabulary table
-          audioUrl: undefined, // Not available in vocabulary table
-          proficiencyLevel: item.is_learned ? 5 : (item.times_seen > 0 ? Math.min(Math.floor((item.times_correct / item.times_seen) * 5) + 1, 5) : 1),
-          correctAnswers: item.times_correct,
-          incorrectAnswers: (item.times_seen || 0) - (item.times_correct || 0),
-          lastPracticed: item.last_seen,
-          nextReview: null, // Not available in current schema
-          listId: item.vocabulary.theme,
-          listName: item.vocabulary.theme,
-          themeId: item.vocabulary.theme,
-          topicId: item.vocabulary.topic,
-          accuracy: item.times_seen > 0
-            ? Math.round((item.times_correct / item.times_seen) * 100)
-            : 0
-        }));
-        
-        setVocabularyItems(processedItems);
-        setFilteredItems(processedItems);
-        
-        // Extract unique themes
-        const uniqueThemes = [...new Set(processedItems.map(item => item.themeId))];
+        // Extract unique themes/categories
+        const uniqueThemes = [...new Set(items.map(item => item.category))];
         setThemes(uniqueThemes);
-        
-        // Calculate stats
-        const totalWords = processedItems.length;
-        const knownWords = processedItems.filter(item => item.proficiencyLevel >= 4).length;
-        const weakWords = processedItems.filter(item => 
-          item.accuracy < 70 && item.correctAnswers + item.incorrectAnswers > 0
-        ).length;
-        const reviewDue = processedItems.filter(item => 
-          item.nextReview && new Date(item.nextReview) <= new Date()
-        ).length;
-        
-        setStats({
-          totalWords,
-          knownWords,
-          weakWords,
-          reviewDue
-        });
       } catch (error) {
         console.error('Error in vocabulary data processing:', error);
       } finally {
@@ -139,39 +81,39 @@ export default function VocabularyDashboard() {
     
     // Apply search term
     if (searchTerm) {
-      filtered = filtered.filter(item => 
-        item.term.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      filtered = filtered.filter(item =>
+        item.word.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.translation.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
-    
+
     // Apply theme filter
     if (selectedTheme !== 'all') {
-      filtered = filtered.filter(item => item.themeId === selectedTheme);
+      filtered = filtered.filter(item => item.category === selectedTheme);
     }
-    
+
     // Apply proficiency filter
     if (selectedProficiency !== 'all') {
       const profLevel = parseInt(selectedProficiency);
-      filtered = filtered.filter(item => item.proficiencyLevel === profLevel);
+      filtered = filtered.filter(item => item.masteryLevel === profLevel);
     }
     
     // Apply sorting
     filtered.sort((a, b) => {
-      if (sortConfig.key === 'term') {
-        return sortConfig.direction === 'asc' 
-          ? a.term.localeCompare(b.term)
-          : b.term.localeCompare(a.term);
+      if (sortConfig.key === 'word') {
+        return sortConfig.direction === 'asc'
+          ? a.word.localeCompare(b.word)
+          : b.word.localeCompare(a.word);
       }
-      
-      if (sortConfig.key === 'proficiency_level') {
-        return sortConfig.direction === 'asc' 
-          ? a.proficiencyLevel - b.proficiencyLevel
-          : b.proficiencyLevel - a.proficiencyLevel;
+
+      if (sortConfig.key === 'masteryLevel') {
+        return sortConfig.direction === 'asc'
+          ? a.masteryLevel - b.masteryLevel
+          : b.masteryLevel - a.masteryLevel;
       }
-      
+
       if (sortConfig.key === 'accuracy') {
-        return sortConfig.direction === 'asc' 
+        return sortConfig.direction === 'asc'
           ? a.accuracy - b.accuracy
           : b.accuracy - a.accuracy;
       }
@@ -228,7 +170,7 @@ export default function VocabularyDashboard() {
                             <CheckCircle className="h-8 w-8 mr-3" />
             <div>
               <p className="text-sm font-medium opacity-80">Mastered Words</p>
-              <p className="text-2xl font-bold">{stats.knownWords}</p>
+              <p className="text-2xl font-bold">{stats.masteredWords}</p>
             </div>
           </div>
         </div>
@@ -238,7 +180,7 @@ export default function VocabularyDashboard() {
                             <XCircle className="h-8 w-8 mr-3" />
             <div>
               <p className="text-sm font-medium opacity-80">Weak Words</p>
-              <p className="text-2xl font-bold">{stats.weakWords}</p>
+              <p className="text-2xl font-bold">{stats.strugglingWords}</p>
             </div>
           </div>
         </div>
@@ -248,7 +190,7 @@ export default function VocabularyDashboard() {
             <Clock className="h-8 w-8 mr-3" />
             <div>
               <p className="text-sm font-medium opacity-80">Due for Review</p>
-              <p className="text-2xl font-bold">{stats.reviewDue}</p>
+              <p className="text-2xl font-bold">{stats.wordsReadyForReview}</p>
             </div>
           </div>
         </div>
@@ -359,11 +301,11 @@ export default function VocabularyDashboard() {
                 <th 
                   scope="col" 
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                  onClick={() => requestSort('proficiency_level')}
+                  onClick={() => requestSort('masteryLevel')}
                 >
                   <div className="flex items-center">
                     Proficiency
-                    {sortConfig.key === 'proficiency_level' && (
+                    {sortConfig.key === 'masteryLevel' && (
                       <ArrowUpDown className="ml-1 h-4 w-4" />
                     )}
                   </div>
@@ -383,11 +325,11 @@ export default function VocabularyDashboard() {
                 <th 
                   scope="col" 
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                  onClick={() => requestSort('last_practiced')}
+                  onClick={() => requestSort('lastEncountered')}
                 >
                   <div className="flex items-center">
                     Last Practiced
-                    {sortConfig.key === 'last_practiced' && (
+                    {sortConfig.key === 'lastEncountered' && (
                       <ArrowUpDown className="ml-1 h-4 w-4" />
                     )}
                   </div>
@@ -400,24 +342,24 @@ export default function VocabularyDashboard() {
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredItems.length > 0 ? (
                 filteredItems.map((item) => (
-                  <tr key={item.progressId} className="hover:bg-gray-50">
+                  <tr key={item.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {item.term}
+                      {item.word}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {item.translation}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${proficiencyLevels[item.proficiencyLevel].color} ${proficiencyLevels[item.proficiencyLevel].textColor}`}>
-                        {proficiencyLevels[item.proficiencyLevel].label}
+                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${proficiencyLevels[item.masteryLevel].color} ${proficiencyLevels[item.masteryLevel].textColor}`}>
+                        {proficiencyLevels[item.masteryLevel].label}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {item.correctAnswers + item.incorrectAnswers > 0 ? (
+                      {item.totalEncounters > 0 ? (
                         <div className="w-full bg-gray-200 rounded-full h-2.5">
-                          <div 
+                          <div
                             className={`h-2.5 rounded-full ${
-                              item.accuracy > 80 ? 'bg-green-600' : 
+                              item.accuracy > 80 ? 'bg-green-600' :
                               item.accuracy > 60 ? 'bg-yellow-400' : 'bg-red-600'
                             }`}
                             style={{ width: `${item.accuracy}%` }}
@@ -428,7 +370,7 @@ export default function VocabularyDashboard() {
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {item.lastPracticed ? new Date(item.lastPracticed).toLocaleDateString() : 'Never'}
+                      {item.lastEncountered ? new Date(item.lastEncountered).toLocaleDateString() : 'Never'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <Link

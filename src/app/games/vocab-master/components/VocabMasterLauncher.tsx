@@ -109,6 +109,20 @@ const LEARNING_MODES: LearningMode[] = [
     description: 'Random mix of all learned vocabulary',
     icon: <Shuffle className="h-6 w-6" />,
     color: 'bg-gradient-to-r from-indigo-400 to-purple-500'
+  },
+  {
+    id: 'dictation',
+    name: 'Dictation Practice',
+    description: 'Listen and type what you hear - audio only',
+    icon: <Headphones className="h-6 w-6" />,
+    color: 'bg-gradient-to-r from-pink-400 to-red-500'
+  },
+  {
+    id: 'match',
+    name: 'Word Matching',
+    description: 'Match Spanish words with their English translations',
+    icon: <Target className="h-6 w-6" />,
+    color: 'bg-gradient-to-r from-violet-400 to-purple-500'
   }
 ];
 

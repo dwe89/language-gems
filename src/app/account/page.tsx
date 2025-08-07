@@ -2,13 +2,22 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '../../components/auth/AuthProvider';
 import { supabaseBrowser } from '../../components/auth/AuthProvider';
 import { User, ShoppingBag, Settings, CreditCard, Crown, ArrowRight, School } from 'lucide-react';
 
 export default function AccountPage() {
-  const { user, isLoading, userRole, hasSubscription, isAdmin, isTeacher } = useAuth();
+  const { user, isLoading, userRole, hasSubscription, isAdmin, isTeacher, isStudent } = useAuth();
   const [schoolInfo, setSchoolInfo] = useState<{schoolCode: string, schoolInitials: string} | null>(null);
+  const router = useRouter();
+
+  // Redirect students to their dashboard - they shouldn't access the account page
+  useEffect(() => {
+    if (!isLoading && isStudent) {
+      router.replace('/student-dashboard');
+    }
+  }, [isLoading, isStudent, router]);
 
   // Load school information for teachers
   useEffect(() => {
@@ -53,6 +62,18 @@ export default function AccountPage() {
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500 mx-auto mb-4"></div>
           <p className="text-slate-600">Loading your account...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Redirect students - they shouldn't access this page
+  if (isStudent) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500 mx-auto mb-4"></div>
+          <p className="text-slate-600">Redirecting to your dashboard...</p>
         </div>
       </div>
     );

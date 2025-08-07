@@ -6,6 +6,7 @@ import { validateGameAnswer } from '../utils/answerValidation';
 import { getModeConfig, mapLauncherModeToGameMode, hasCustomComponent } from '../modes';
 import { exerciseDataService } from '../services/exerciseDataService';
 
+
 // Import gamification components
 import GemIcon, { GemType } from '../../../../components/ui/GemIcon'; // Keep for now, though not used in new gem structure
 import GemCollectionAnimation from '../../../../components/ui/GemCollectionAnimation';
@@ -25,19 +26,65 @@ import { FlashcardsMode } from '../modes/FlashcardsMode';
 import { LearnMode }
   from '../modes/LearnMode';
 import { RecallMode } from '../modes/RecallMode';
+import { MixedMode } from '../modes/MixedMode';
+
+// Calculate dynamic time based on word complexity
+const calculateWordTime = (word: VocabularyWord): number => {
+  const translation = word.english || word.translation || '';
+  const spanish = word.spanish || word.word || '';
+
+  // Base time: 3 seconds
+  let timeSeconds = 3;
+
+  // Add time based on translation length
+  const translationLength = translation.length;
+  if (translationLength <= 5) {
+    timeSeconds += 1; // Short words like "cat", "dog" = 4 seconds
+  } else if (translationLength <= 10) {
+    timeSeconds += 2; // Medium words like "elephant" = 5 seconds
+  } else if (translationLength <= 15) {
+    timeSeconds += 3; // Longer words = 6 seconds
+  } else {
+    timeSeconds += 4; // Very long words/phrases = 7 seconds
+  }
+
+  // Add time for complex Spanish words (accents, ñ, longer words)
+  if (spanish.includes('ñ') || /[áéíóúü]/.test(spanish)) {
+    timeSeconds += 1; // Extra time for accented characters
+  }
+
+  // Add time for phrases (multiple words)
+  if (translation.includes(' ') || spanish.includes(' ')) {
+    timeSeconds += 1; // Extra time for phrases
+  }
+
+  // Minimum 3 seconds, maximum 8 seconds
+  return Math.max(3, Math.min(8, timeSeconds));
+};
 
 interface VocabMasterGameEngineProps {
   config: GameConfig;
   onGameComplete: (result: GameResult) => void;
   onExit: () => void;
   isAdventureMode?: boolean;
+  onWordAttempt?: (
+    word: string,
+    translation: string,
+    userAnswer: string,
+    isCorrect: boolean,
+    responseTime: number,
+    gameMode: string,
+    masteryLevel?: number,
+    vocabularyId?: string
+  ) => void;
 }
 
 export const VocabMasterGameEngine: React.FC<VocabMasterGameEngineProps> = ({
   config,
   onGameComplete,
   onExit,
-  isAdventureMode = false
+  isAdventureMode = false,
+  onWordAttempt
 }) => {
   // Core game state
   const [gameState, setGameState] = useState<GameState>(() => ({
@@ -66,15 +113,18 @@ export const VocabMasterGameEngine: React.FC<VocabMasterGameEngineProps> = ({
     isAnswerRevealed: false,
     gemsCollected: 0,
     currentGemType: 'common',
-    speedModeTimeLeft: 10,
+    speedModeTimeLeft: config.vocabulary[0] ? calculateWordTime(config.vocabulary[0]) : 5,
     isFlashcardFlipped: false,
     showHint: false,
+    translationShown: false,
     multipleChoiceOptions: []
   }));
 
   // UI state
   const [userAnswer, setUserAnswer] = useState('');
   const [audioManager] = useState(() => new AudioManager(config.audioEnabled));
+  const [currentResponseTime, setCurrentResponseTime] = useState(0);
+  const [questionStartTime, setQuestionStartTime] = useState(Date.now());
 
   // Gamification state
   const [showGemAnimation, setShowGemAnimation] = useState(false);
@@ -190,8 +240,9 @@ export const VocabMasterGameEngine: React.FC<VocabMasterGameEngineProps> = ({
 
   // Handle answer submission
   const handleAnswer = useCallback(async (answer: string) => {
-    const startTime = Date.now();
-    
+    const responseTime = Date.now() - questionStartTime;
+    setCurrentResponseTime(responseTime);
+
     // Convert new cloze format to legacy format for validation
     let sentenceData: ClozeExercise | null = null;
     if (gameState.currentExerciseData?.cloze) {
@@ -203,32 +254,89 @@ export const VocabMasterGameEngine: React.FC<VocabMasterGameEngineProps> = ({
         position: clozeData.wordPosition
       };
     }
-    
+
     const validation = validateGameAnswer(answer, gameState.gameMode, gameState.currentWord, sentenceData);
-    const responseTime = Date.now() - startTime;
+
+    // Log word attempt for analytics (if callback provided)
+    if (onWordAttempt && gameState.currentWord) {
+      const word = gameState.currentWord.spanish || gameState.currentWord.word || '';
+      const translation = gameState.currentWord.english || gameState.currentWord.translation || '';
+      const masteryLevel = validation.isCorrect ? 3 : 1; // Simple mastery calculation
+
+      onWordAttempt(
+        word,
+        translation,
+        answer,
+        validation.isCorrect,
+        responseTime,
+        gameState.gameMode,
+        masteryLevel,
+        gameState.currentWord.id // Pass the vocabulary ID for spaced repetition
+      );
+    }
+
+    // If translation was shown, don't count as correct or incorrect - just neutral
+    const shouldCountAnswer = !gameState.translationShown;
+    const isCorrectForScoring = validation.isCorrect && shouldCountAnswer;
 
     setGameState(prev => ({
       ...prev,
       isCorrect: validation.isCorrect,
       showAnswer: true,
-      feedback: validation.isCorrect ? 'Correct!' : `Incorrect. The answer is: ${getCorrectAnswer()}`,
-      score: validation.isCorrect ? prev.score + (isAdventureMode ? GEM_TYPES[prev.currentGemType].points : 10) : prev.score,
-      correctAnswers: validation.isCorrect ? prev.correctAnswers + 1 : prev.correctAnswers,
-      incorrectAnswers: validation.isCorrect ? prev.incorrectAnswers : prev.incorrectAnswers + 1,
-      streak: validation.isCorrect ? prev.streak + 1 : 0,
-      maxStreak: validation.isCorrect ? Math.max(prev.maxStreak, prev.streak + 1) : prev.maxStreak
+      feedback: gameState.translationShown
+        ? 'Translation was shown - practice more!'
+        : validation.isCorrect
+          ? 'Correct!'
+          : `Incorrect. The answer is: ${getCorrectAnswer()}`,
+      score: isCorrectForScoring ? prev.score + (isAdventureMode ? GEM_TYPES[prev.currentGemType].points : 10) : prev.score,
+      correctAnswers: isCorrectForScoring ? prev.correctAnswers + 1 : prev.correctAnswers,
+      incorrectAnswers: shouldCountAnswer && !validation.isCorrect ? prev.incorrectAnswers + 1 : prev.incorrectAnswers,
+      streak: isCorrectForScoring ? prev.streak + 1 : shouldCountAnswer ? 0 : prev.streak,
+      maxStreak: isCorrectForScoring ? Math.max(prev.maxStreak, prev.streak + 1) : prev.maxStreak
     }));
+
+    // Play sound effects for correct/incorrect answers
+    if (config.audioEnabled) {
+      if (validation.isCorrect) {
+        audioFeedbackService.playCorrectSound();
+      } else {
+        audioFeedbackService.playErrorSound();
+      }
+    }
 
     // Adventure mode gamification
     if (isAdventureMode && validation.isCorrect) {
       await handleGemCollection(validation.isCorrect, responseTime);
     }
 
-    // Auto-advance after delay
+    // Auto-advance to next word after a brief delay
     setTimeout(() => {
       nextWord();
-    }, 2000);
-  }, [gameState.gameMode, gameState.currentWord, gameState.currentExerciseData, isAdventureMode]);
+    }, 1000); // 1 second delay to show any brief feedback
+  }, [gameState.gameMode, gameState.currentWord, gameState.currentExerciseData, isAdventureMode, questionStartTime]);
+
+  // Speed mode timer
+  useEffect(() => {
+    if (gameState.gameMode !== 'speed' || gameState.speedModeTimeLeft <= 0 || gameState.showAnswer) {
+      return;
+    }
+
+    const timer = setInterval(() => {
+      setGameState(prev => {
+        if (prev.speedModeTimeLeft <= 1) {
+          // Time's up - submit empty answer
+          setTimeout(() => handleAnswer(''), 100);
+          return prev;
+        }
+        return {
+          ...prev,
+          speedModeTimeLeft: prev.speedModeTimeLeft - 1
+        };
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [gameState.gameMode, gameState.speedModeTimeLeft, gameState.showAnswer, gameState.currentWordIndex, handleAnswer]);
 
   // Get correct answer for current word and mode
   const getCorrectAnswer = useCallback(() => {
@@ -290,12 +398,13 @@ export const VocabMasterGameEngine: React.FC<VocabMasterGameEngineProps> = ({
 
     if (nextIndex >= config.vocabulary.length) {
       // Game complete
+      const wordsAttempted = gameState.currentWordIndex + 1; // Actual words attempted
       const result: GameResult = {
         score: gameState.score,
-        accuracy: gameState.totalWords > 0 ? (gameState.correctAnswers / gameState.totalWords) * 100 : 0,
+        accuracy: wordsAttempted > 0 ? (gameState.correctAnswers / wordsAttempted) * 100 : 0,
         timeSpent: Math.floor((Date.now() - gameState.startTime.getTime()) / 1000),
         correctAnswers: gameState.correctAnswers,
-        totalWords: gameState.totalWords,
+        totalWords: wordsAttempted, // Use actual words attempted, not total vocabulary length
         wordsLearned: gameState.wordsLearned,
         wordsStruggling: gameState.wordsStruggling,
         gemsCollected: gameState.gemsCollected,
@@ -310,6 +419,9 @@ export const VocabMasterGameEngine: React.FC<VocabMasterGameEngineProps> = ({
     const nextWord = config.vocabulary[nextIndex];
     const newOptions = generateMultipleChoiceOptions(nextWord, config.vocabulary);
 
+    // Reset question start time for response time tracking
+    setQuestionStartTime(Date.now());
+
     setGameState(prev => ({
       ...prev,
       currentWordIndex: nextIndex,
@@ -317,7 +429,8 @@ export const VocabMasterGameEngine: React.FC<VocabMasterGameEngineProps> = ({
       showAnswer: false,
       isCorrect: null,
       feedback: '',
-      speedModeTimeLeft: prev.gameMode === 'speed' ? 10 : prev.speedModeTimeLeft,
+      translationShown: false, // Reset translation shown flag
+      speedModeTimeLeft: prev.gameMode === 'speed' ? calculateWordTime(nextWord) : prev.speedModeTimeLeft,
       multipleChoiceOptions: newOptions
     }));
 
@@ -330,9 +443,6 @@ export const VocabMasterGameEngine: React.FC<VocabMasterGameEngineProps> = ({
   // Handle mode-specific interactions
   const handleModeSpecificAction = useCallback((action: string, data?: any) => {
     switch (action) {
-      case 'match_complete':
-        handleAnswer(data.matchDescription);
-        break;
       case 'time_up':
         handleAnswer('');
         break;
@@ -341,6 +451,9 @@ export const VocabMasterGameEngine: React.FC<VocabMasterGameEngineProps> = ({
           setGameState(prev => ({ ...prev, audioReplayCount: prev.audioReplayCount + 1 }));
           playPronunciation(gameState.currentWord?.spanish || '', 'es', gameState.currentWord);
         }
+        break;
+      case 'show_translation':
+        setGameState(prev => ({ ...prev, translationShown: true }));
         break;
     }
   }, [gameState, handleAnswer, playPronunciation]);
@@ -360,7 +473,8 @@ export const VocabMasterGameEngine: React.FC<VocabMasterGameEngineProps> = ({
       onAnswer: handleAnswer,
       onNext: nextWord,
       isAdventureMode,
-      playPronunciation
+      playPronunciation,
+      onModeSpecificAction: handleModeSpecificAction
     };
 
     switch (gameState.gameMode) {
@@ -405,7 +519,7 @@ export const VocabMasterGameEngine: React.FC<VocabMasterGameEngineProps> = ({
           <MatchingMode
             {...commonProps}
             onMatchComplete={(isCorrect, description) =>
-              handleModeSpecificAction('match_complete', { matchDescription: description })
+              handleAnswer(isCorrect ? 'correct' : 'incorrect')
             }
           />
         );
@@ -467,6 +581,32 @@ export const VocabMasterGameEngine: React.FC<VocabMasterGameEngineProps> = ({
             {...commonProps}
             onSelfAssessment={(isCorrect) => handleAnswer(isCorrect ? 'correct' : 'incorrect')}
             showAnswer={gameState.showAnswer}
+          />
+        );
+
+      case 'mixed':
+        return (
+          <MixedMode
+            {...commonProps}
+            userAnswer={userAnswer}
+            onAnswerChange={setUserAnswer}
+            onSubmit={() => handleAnswer(userAnswer)}
+            onChoiceSelect={(choiceIndex: number) => {
+              const selectedOption = gameState.multipleChoiceOptions[choiceIndex];
+              if (selectedOption) {
+                handleAnswer(selectedOption.text);
+              }
+            }}
+            selectedChoice={null}
+            showAnswer={gameState.showAnswer}
+            isCorrect={gameState.isCorrect}
+            canReplayAudio={gameState.audioReplayCount < 2}
+            onReplayAudio={() => handleModeSpecificAction('replay_audio')}
+            audioReplayCount={gameState.audioReplayCount}
+            timeLeft={gameState.speedModeTimeLeft}
+            onTimeUp={() => handleModeSpecificAction('time_up')}
+            showHint={gameState.showHint}
+            onToggleHint={() => setGameState(prev => ({ ...prev, showHint: !prev.showHint }))}
           />
         );
 
@@ -1028,34 +1168,7 @@ export const VocabMasterGameEngine: React.FC<VocabMasterGameEngineProps> = ({
           onComplete={() => setShowGemAnimation(false)}
         />
 
-        {/* Centered Modal Feedback - Success */}
-        {gameState.isCorrect === true && (
-          <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/20 backdrop-blur-sm">
-            <div className="bg-gradient-to-br from-cyan-500 to-blue-600 rounded-3xl p-8 text-center border border-cyan-400/50 shadow-2xl shadow-cyan-500/30 transform animate-pulse max-w-md mx-4">
-              <div className="text-white text-5xl mb-4 drop-shadow-lg flex justify-center">
-                <Sparkles className="h-12 w-12" />
-              </div>
-              <div className="text-white font-bold text-2xl mb-3">Excellent!</div>
-              <div className="text-cyan-100 text-lg font-medium mb-2">+1 Gem Collected</div>
-              <div className="text-cyan-200 text-base">Streak: {gameState.streak}</div>
-            </div>
-          </div>
-        )}
 
-        {/* Centered Modal Feedback - Error */}
-        {gameState.isCorrect === false && (
-          <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/20 backdrop-blur-sm">
-            <div className="bg-gradient-to-br from-red-600 to-red-700 rounded-3xl p-8 text-center border border-red-500/50 shadow-2xl shadow-red-600/30 max-w-md mx-4">
-              <div className="text-white text-5xl mb-4 flex justify-center">
-                <Zap className="h-12 w-12" />
-              </div>
-              <div className="text-white font-bold text-2xl mb-3">Keep Trying!</div>
-              <div className="text-red-100 text-base">
-                Answer: <span className="font-semibold">{getCorrectAnswer()}</span>
-              </div>
-            </div>
-          </div>
-        )}
 
         <AchievementNotification
           achievement={currentAchievement}
@@ -1073,6 +1186,8 @@ export const VocabMasterGameEngine: React.FC<VocabMasterGameEngineProps> = ({
   return (
     <div className="min-h-screen">
       {renderModeComponent()}
+
+
 
       {/* Game progress */}
       <div className="fixed bottom-4 right-4 bg-black/50 text-white px-4 py-2 rounded-lg">

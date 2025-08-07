@@ -8,11 +8,11 @@ import {
   Calendar, Clock, Target, Award, Gem, Heart, Brain,
   PlayCircle, PauseCircle, Volume2, VolumeX, Sun, Moon,
   Maximize2, Minimize2, RefreshCw, Filter, Download,
-  CheckCircle, AlertCircle
+  CheckCircle, AlertCircle, TrendingUp
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '../auth/AuthProvider';
-import { useTheme } from '../theme/ThemeProvider';
+
 import { useSupabase } from '../supabase/SupabaseProvider';
 import StudentPerformanceDashboard from './StudentPerformanceDashboard';
 import StudentProgressVisualization from './StudentProgressVisualization';
@@ -21,14 +21,17 @@ import AchievementSystem from './AchievementSystem';
 import LearningStreakTracker from './LearningStreakTracker';
 import EnhancedAssignmentCard from './EnhancedAssignmentCard';
 import AssignmentProgressTracker from './AssignmentProgressTracker';
-import DataVerificationPanel from './DataVerificationPanel';
+
+import FSRSPersonalizedInsights from './FSRSPersonalizedInsights';
+import { UnifiedStudentDashboardService, DashboardMetrics } from '../../services/unifiedStudentDashboardService';
+import { UnifiedVocabularyService, VocabularyStats } from '../../services/unifiedVocabularyService';
 
 // =====================================================
 // TYPES AND INTERFACES
 // =====================================================
 
 interface ModernStudentDashboardProps {
-  initialView?: 'home' | 'assignments' | 'progress' | 'achievements' | 'settings';
+  initialView?: 'home' | 'assignments' | 'vocabulary' | 'assessments' | 'achievements';
 }
 
 interface NavigationItem {
@@ -201,21 +204,32 @@ export default function ModernStudentDashboard({
   initialView = 'home'
 }: ModernStudentDashboardProps) {
   const { user } = useAuth();
-  const { theme, toggleTheme, setTheme } = useTheme();
+
   const { supabase } = useSupabase();
   
   // State
   const [currentView, setCurrentView] = useState(initialView);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [studentStats, setStudentStats] = useState<StudentStats | null>(null);
+  const [dashboardMetrics, setDashboardMetrics] = useState<DashboardMetrics | null>(null);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [dismissedNotifications, setDismissedNotifications] = useState<Set<string>>(new Set());
+  const [dismissedNotifications, setDismissedNotifications] = useState<Set<string>>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('dismissedNotifications');
+      return saved ? new Set(JSON.parse(saved)) : new Set();
+    }
+    return new Set();
+  });
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [assignments, setAssignments] = useState<any[]>([]);
   const [assignmentsLoading, setAssignmentsLoading] = useState(false);
-  const [recentActivity, setRecentActivity] = useState<any[]>([]);
+
+
+  // Initialize unified services
+  const [dashboardService] = useState(() => new UnifiedStudentDashboardService(supabase));
+  const [vocabularyService] = useState(() => new UnifiedVocabularyService(supabase));
 
   // Level calculation function (exponential growth)
   const calculateLevelFromXP = (totalXP: number) => {
@@ -252,187 +266,73 @@ export default function ModernStudentDashboard({
     return date.toLocaleDateString();
   };
 
-  // Load real student data
+  // Load real student data using unified service
   useEffect(() => {
     if (user?.id) {
-      loadStudentData();
+      loadUnifiedDashboardData();
       loadNotifications();
     }
   }, [user?.id]);
 
-  const loadStudentData = async () => {
+  const loadUnifiedDashboardData = async () => {
     if (!user?.id || !supabase) return;
 
     try {
       setLoading(true);
 
-      // Get student profile data
+      // Load unified vocabulary data for consistent metrics
+      const { stats: vocabularyStats } = await vocabularyService.getVocabularyData(user.id);
+
+      // Load dashboard metrics for other data
+      const metrics = await dashboardService.getDashboardMetrics(user.id);
+
+      // Use vocabulary stats for vocabulary-related metrics, dashboard service for others
+      const unifiedMetrics = {
+        ...metrics,
+        totalWordsTracked: vocabularyStats.totalWords,
+        masteredWords: vocabularyStats.masteredWords,
+        strugglingWords: vocabularyStats.strugglingWords,
+        overdueWords: vocabularyStats.overdueWords,
+        overallAccuracy: vocabularyStats.averageAccuracy,
+        memoryStrength: vocabularyStats.memoryStrength,
+        wordsReadyForReview: vocabularyStats.wordsReadyForReview
+      };
+
+      setDashboardMetrics(unifiedMetrics);
+
+      // Get basic profile data for level calculation
       const { data: profile } = await supabase
         .from('user_profiles')
         .select('*')
         .eq('user_id', user.id)
         .single();
 
-      // Get assignment progress
-      const { data: assignments } = await supabase
-        .from('assignments')
-        .select(`
-          id,
-          title,
-          status,
-          due_date,
-          assignment_submissions(
-            id,
-            score,
-            submitted_at
-          )
-        `)
-        .eq('assignment_submissions.student_id', user.id);
-
-      // Get recent game sessions for streak calculation
-      const { data: recentSessions } = await supabase
-        .from('enhanced_game_sessions')
-        .select('started_at, xp_earned')
-        .eq('student_id', user.id)
-        .order('started_at', { ascending: false })
-        .limit(30);
-
-      // Get ALL game sessions for total XP calculation
-      const { data: allSessions } = await supabase
+      // Get total XP for level calculation
+      const { data: xpSummary } = await supabase
         .from('enhanced_game_sessions')
         .select('xp_earned')
         .eq('student_id', user.id);
 
-      // Calculate current streak
-      const currentStreak = calculateStreak(recentSessions || []);
+      const totalXP = xpSummary?.reduce((sum, session) => sum + (session.xp_earned || 0), 0) || 0;
 
-      // Load recent activity (game sessions and achievements)
-      const recentActivityData: Array<{
-        type: string;
-        title: string;
-        time: string;
-        xp: number;
-      }> = [];
-
-      // Add recent game sessions
-      if (recentSessions && recentSessions.length > 0) {
-        recentSessions.slice(0, 3).forEach(session => {
-          recentActivityData.push({
-            type: 'game',
-            title: `Played vocabulary game`,
-            time: formatTimeAgo(session.started_at),
-            xp: session.xp_earned
-          });
-        });
-      }
-
-      // Get recent achievements
-      const { data: recentAchievements } = await supabase
-        .from('achievements')
-        .select('achievement_data, achieved_at')
-        .eq('user_id', user.id)
-        .order('achieved_at', { ascending: false })
-        .limit(2);
-
-      if (recentAchievements) {
-        recentAchievements.forEach(achievement => {
-          // achievement_data is already a JSONB object, not a string
-          const achievementData = achievement.achievement_data;
-          recentActivityData.push({
-            type: 'achievement',
-            title: `Earned "${achievementData.name}"`,
-            time: formatTimeAgo(achievement.achieved_at),
-            xp: achievementData.points_awarded || 50
-          });
-        });
-      }
-
-      // Sort by time and take most recent 3
-      setRecentActivity(recentActivityData.slice(0, 3));
-
-      // Get total achievements count
-      const { data: allAchievements } = await supabase
-        .from('achievements')
-        .select('id')
-        .eq('user_id', user.id);
-
-      // Calculate stats
-      const completedAssignments = assignments?.filter(a =>
-        a.assignment_submissions && a.assignment_submissions.length > 0
-      ).length || 0;
-
-      const totalAssignments = assignments?.length || 0;
-      const totalXP = allSessions?.reduce((sum, session) => sum + (session.xp_earned || 0), 0) || 0;
-      const totalAchievements = allAchievements?.length || 0;
-
-      // Calculate vocabulary progress from word performance logs
-      const { data: vocabularyProgress } = await supabase
-        .from('word_performance_logs')
-        .select(`
-          word_text,
-          was_correct,
-          enhanced_game_sessions!inner(student_id)
-        `)
-        .eq('enhanced_game_sessions.student_id', user.id);
-
-      // Calculate vocabulary stats
-      let strongWords = 0;
-      let weakWords = 0;
-      let totalAccuracy = 0;
-
-      if (vocabularyProgress && vocabularyProgress.length > 0) {
-        // Group by word to calculate accuracy per word
-        const wordStats = new Map<string, { correct: number; total: number }>();
-
-        vocabularyProgress.forEach(log => {
-          const word = log.word_text.toLowerCase();
-          if (!wordStats.has(word)) {
-            wordStats.set(word, { correct: 0, total: 0 });
-          }
-          const stats = wordStats.get(word)!;
-          stats.total++;
-          if (log.was_correct) {
-            stats.correct++;
-          }
-        });
-
-        // Calculate strong/weak words and average accuracy
-        let totalWordsWithAttempts = 0;
-        let accuracySum = 0;
-
-        wordStats.forEach((stats, word) => {
-          if (stats.total >= 3) { // Only count words with at least 3 attempts
-            const accuracy = (stats.correct / stats.total) * 100;
-
-            if (accuracy >= 80) {
-              strongWords++;
-            } else if (accuracy < 60) {
-              weakWords++;
-            }
-
-            totalWordsWithAttempts++;
-            accuracySum += accuracy;
-          }
-        });
-
-        totalAccuracy = totalWordsWithAttempts > 0 ? Math.round(accuracySum / totalWordsWithAttempts) : 0;
-      }
-
-      // Calculate proper level and XP to next level based on total XP
+      // Calculate level from XP
       const { level, xpToNext } = calculateLevelFromXP(totalXP);
 
+      // Set student stats using unified metrics and basic profile data
       setStudentStats({
         level,
         xp: totalXP,
         xpToNext,
-        streak: currentStreak,
-        achievements: totalAchievements,
-        completedAssignments,
-        totalAssignments,
-        strongWords,
-        weakWords,
-        vocabularyAccuracy: totalAccuracy
+        streak: Math.round(unifiedMetrics.consistencyScore / 14.3), // Convert to days
+        achievements: 0, // TODO: Get from achievements table
+        totalAssignments: unifiedMetrics.totalWordsTracked, // Use vocabulary words as "assignments"
+        completedAssignments: unifiedMetrics.masteredWords,
+        strongWords: unifiedMetrics.masteredWords,
+        weakWords: unifiedMetrics.strugglingWords,
+        vocabularyAccuracy: unifiedMetrics.overallAccuracy
       });
+
+
 
     } catch (error) {
       console.error('Error loading student data:', error);
@@ -512,60 +412,19 @@ export default function ModernStudentDashboard({
   };
 
   const dismissNotification = (notificationId: string) => {
-    setDismissedNotifications(prev => new Set(prev).add(notificationId));
+    setDismissedNotifications(prev => {
+      const newSet = new Set(prev).add(notificationId);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('dismissedNotifications', JSON.stringify(Array.from(newSet)));
+      }
+      return newSet;
+    });
   };
 
   // Filter out dismissed notifications
   const visibleNotifications = notifications.filter(n => !dismissedNotifications.has(n.id));
 
-  const calculateStreak = (sessions: any[]) => {
-    if (!sessions || sessions.length === 0) return 0;
 
-    // Group sessions by date (YYYY-MM-DD format)
-    const sessionsByDate = new Map();
-    sessions.forEach(session => {
-      const date = new Date(session.started_at).toISOString().split('T')[0];
-      if (!sessionsByDate.has(date)) {
-        sessionsByDate.set(date, []);
-      }
-      sessionsByDate.get(date).push(session);
-    });
-
-    // Get unique dates and sort them descending (most recent first)
-    const uniqueDates = Array.from(sessionsByDate.keys()).sort().reverse();
-    
-    if (uniqueDates.length === 0) return 0;
-
-    let streak = 0;
-    const today = new Date().toISOString().split('T')[0];
-    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-
-    // Start checking from either today (if user has activity today) or yesterday
-    let startDate = uniqueDates[0];
-    
-    // If most recent activity is more than 1 day old, streak is broken
-    if (startDate !== today && startDate !== yesterday) {
-      return 0;
-    }
-
-    // Calculate consecutive days working backwards from the start date
-    let currentDateToCheck = startDate;
-    
-    for (const activityDate of uniqueDates) {
-      if (activityDate === currentDateToCheck) {
-        streak++;
-        // Move to previous day
-        const prevDate = new Date(currentDateToCheck);
-        prevDate.setDate(prevDate.getDate() - 1);
-        currentDateToCheck = prevDate.toISOString().split('T')[0];
-      } else {
-        // There's a gap in the dates, so the streak ends
-        break;
-      }
-    }
-
-    return streak;
-  };
 
   const loadAssignments = async () => {
     if (!user?.id || !supabase) return;
@@ -664,16 +523,23 @@ export default function ModernStudentDashboard({
       id: 'assignments',
       label: 'Assignments',
       icon: BookOpen,
-      badge: assignments.length,
+      badge: assignments.filter(a => a.status === 'active' || a.status === 'pending').length,
       color: 'bg-gradient-to-r from-green-500 to-green-600',
       description: 'Current and upcoming tasks'
     },
     {
-      id: 'progress',
-      label: 'Progress',
-      icon: BarChart3,
+      id: 'vocabulary',
+      label: 'Vocabulary',
+      icon: Brain,
       color: 'bg-gradient-to-r from-purple-500 to-purple-600',
-      description: 'Track your learning journey'
+      description: 'View all your vocabulary progress'
+    },
+    {
+      id: 'assessments',
+      label: 'Assessments',
+      icon: BarChart3,
+      color: 'bg-gradient-to-r from-indigo-500 to-indigo-600',
+      description: 'Track your assessment performance'
     },
     {
       id: 'achievements',
@@ -681,65 +547,10 @@ export default function ModernStudentDashboard({
       icon: Trophy,
       color: 'bg-gradient-to-r from-yellow-500 to-orange-500',
       description: 'Badges and rewards earned'
-    },
-    {
-      id: 'settings',
-      label: 'Settings',
-      icon: Settings,
-      color: 'bg-gradient-to-r from-gray-500 to-gray-600',
-      description: 'Customize your experience'
     }
   ];
 
-  // Quick actions - defined as a function to avoid null reference errors
-  const getQuickActions = (): QuickActionCard[] => {
-    const activeAssignment = assignments.find(a => a.status === 'active');
 
-    return [
-      {
-        id: 'continue-assignment',
-        title: activeAssignment ? 'Continue Assignment' : 'No Active Assignment',
-        description: activeAssignment
-          ? `${activeAssignment.title || 'Reading Comprehension assessment'} - Due ${new Date(activeAssignment.due_date).toLocaleDateString()}`
-          : 'Complete your current assignments',
-        icon: PlayCircle,
-        color: 'bg-gradient-to-r from-green-500 to-green-600',
-        action: () => {
-          if (activeAssignment) {
-            window.location.href = `/student-dashboard/assignments/${activeAssignment.id}`;
-          } else {
-            window.location.href = '/student-dashboard/assignments';
-          }
-        },
-        disabled: !activeAssignment
-      },
-      {
-        id: 'daily-challenge',
-        title: 'Daily Challenge',
-        description: 'Earn bonus XP today!',
-        icon: Target,
-        color: 'bg-gradient-to-r from-orange-500 to-red-500',
-        action: () => console.log('Start daily challenge')
-      },
-      {
-        id: 'practice-mode',
-        title: 'Practice Mode',
-        description: 'Review learned vocabulary',
-        icon: Brain,
-        color: 'bg-gradient-to-r from-purple-500 to-pink-500',
-        action: () => console.log('Start practice')
-      },
-      {
-        id: 'streak-saver',
-        title: 'Streak Saver',
-        description: `Keep your ${studentStats?.streak || 0}-day streak alive!`,
-        icon: Flame,
-        color: 'bg-gradient-to-r from-red-500 to-pink-500',
-        action: () => console.log('Save streak'),
-        disabled: (studentStats?.streak || 0) === 0
-      }
-    ];
-  };
 
   // Render home view
   const renderHomeView = () => (
@@ -749,7 +560,6 @@ export default function ModernStudentDashboard({
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold">Welcome back, {user?.user_metadata?.first_name || user?.user_metadata?.name || user?.email?.split('@')[0] || 'Student'}! 👋</h1>
-            <p className="text-blue-100 mt-1">Ready to continue your learning journey?</p>
           </div>
           
           <div className="text-right">
@@ -822,17 +632,110 @@ export default function ModernStudentDashboard({
         />
       </div>
 
+      {/* FSRS Personalized Learning Insights - Temporarily disabled for debugging */}
+      {/* <FSRSPersonalizedInsights className="mb-6" /> */}
+
+      {/* Unified Dashboard Metrics */}
+      {dashboardMetrics && (
+        <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Learning Analytics</h2>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-blue-600">{dashboardMetrics.totalWordsTracked}</div>
+              <div className="text-sm text-gray-600">Words Tracked</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-600">{dashboardMetrics.overallAccuracy.toFixed(1)}%</div>
+              <div className="text-sm text-gray-600">Overall Accuracy</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-purple-600">{dashboardMetrics.memoryStrength.toFixed(1)}%</div>
+              <div className="text-sm text-gray-600">Memory Strength</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-orange-600">{dashboardMetrics.wordsReadyForReview}</div>
+              <div className="text-sm text-gray-600">Due for Review</div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <h3 className="font-medium text-gray-900 mb-2">Vocabulary Status</h3>
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-600">Mastered Words:</span>
+                  <span className="text-sm font-medium text-green-600">{dashboardMetrics.masteredWords}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-600">Struggling Words:</span>
+                  <span className="text-sm font-medium text-red-600">{dashboardMetrics.strugglingWords}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-600">Overdue Words:</span>
+                  <span className="text-sm font-medium text-orange-600">{dashboardMetrics.overdueWords}</span>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h3 className="font-medium text-gray-900 mb-2">Study Recommendations</h3>
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-600">Recommended Study Time:</span>
+                  <span className="text-sm font-medium text-blue-600">{dashboardMetrics.recommendedStudyTime} min</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-600">Consistency Score:</span>
+                  <span className="text-sm font-medium text-purple-600">{dashboardMetrics.consistencyScore.toFixed(1)}%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {dashboardMetrics.priorityWords.length > 0 && (
+            <div className="mt-4 pt-4 border-t border-gray-200">
+              <h3 className="font-medium text-gray-900 mb-2">Priority Words to Review</h3>
+              <div className="flex flex-wrap gap-2">
+                {dashboardMetrics.priorityWords.slice(0, 5).map((word, index) => (
+                  <span
+                    key={index}
+                    className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      word.reason === 'overdue' ? 'bg-red-100 text-red-800' :
+                      word.reason === 'struggling' ? 'bg-orange-100 text-orange-800' :
+                      word.reason === 'inconsistent' ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-blue-100 text-blue-800'
+                    }`}
+                  >
+                    {word.word} ({word.reason})
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Vocabulary Insights */}
       <div className="bg-white rounded-xl border border-gray-200 p-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-gray-900">Vocabulary Progress</h2>
-          <Link
-            href="/student-dashboard/vocabulary/analysis"
-            className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center space-x-1"
-          >
-            <span>View Analysis</span>
-            <ChevronRight className="h-4 w-4" />
-          </Link>
+          <div className="flex items-center space-x-3">
+            <Link
+              href="/student-dashboard/vocabulary"
+              className="bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-1"
+            >
+              <BookOpen className="h-4 w-4" />
+              <span>View All Words</span>
+            </Link>
+            <Link
+              href="/student-dashboard/vocabulary/analysis"
+              className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center space-x-1"
+            >
+              <span>View Analysis</span>
+              <ChevronRight className="h-4 w-4" />
+            </Link>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -881,7 +784,7 @@ export default function ModernStudentDashboard({
 
         <div className="mt-4 flex flex-wrap gap-2">
           <Link
-            href="/student-dashboard/vocabulary/practice?focus=weak"
+            href="/student-dashboard/games/vocab-master?lang=es&level=KS3&mode=weak&theme=default"
             className="bg-red-600 text-white px-3 py-2 rounded-lg text-sm hover:bg-red-700 transition-colors flex items-center space-x-1"
           >
             <PlayCircle className="h-4 w-4" />
@@ -894,113 +797,26 @@ export default function ModernStudentDashboard({
             <BarChart3 className="h-4 w-4" />
             <span>Category Performance</span>
           </Link>
+          <Link
+            href="/student-dashboard/vocabulary/progress"
+            className="bg-purple-600 text-white px-3 py-2 rounded-lg text-sm hover:bg-purple-700 transition-colors flex items-center space-x-1"
+          >
+            <TrendingUp className="h-4 w-4" />
+            <span>View Progress</span>
+          </Link>
+          <Link
+            href="/student-dashboard/vocabulary/review"
+            className="bg-green-600 text-white px-3 py-2 rounded-lg text-sm hover:bg-green-700 transition-colors flex items-center space-x-1"
+          >
+            <Clock className="h-4 w-4" />
+            <span>Review Schedule</span>
+          </Link>
         </div>
       </div>
 
-      {/* Quick Actions */}
-      <div>
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {getQuickActions().map((action) => (
-            <QuickActionCard key={action.id} action={action} />
-          ))}
-        </div>
-      </div>
 
-      {/* Learning Streak & Recent Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Mini Streak Tracker */}
-        <div className="bg-gradient-to-r from-orange-500 to-red-600 rounded-xl p-6 text-white">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center space-x-3">
-              <motion.div
-                animate={{ rotate: [0, 10, -10, 0] }}
-                transition={{ duration: 2, repeat: Infinity }}
-                className="p-2 bg-white/20 rounded-full"
-              >
-                <Flame className="h-6 w-6" />
-              </motion.div>
-              <div>
-                <h3 className="text-lg font-bold student-font-display">
-                  {studentStats?.streak || 0} Day Streak
-                </h3>
-                <p className="text-orange-100 text-sm">Keep it going!</p>
-              </div>
-            </div>
-            <button
-              onClick={() => setCurrentView('achievements')}
-              className="text-xs bg-white/20 hover:bg-white/30 px-3 py-1 rounded-full transition-colors"
-            >
-              View All
-            </button>
-          </div>
 
-          {/* Weekly Progress */}
-          <div className="grid grid-cols-7 gap-1">
-            {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => (
-              <div key={index} className="text-center">
-                <div className="text-xs mb-1 text-orange-200">{day}</div>
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${
-                  index < 5 ? 'bg-white text-orange-600' : 'bg-white/20 text-white'
-                }`}>
-                  {index < 5 ? '✓' : '○'}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
 
-        {/* Recent Activity */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4 student-font-display">Recent Activity</h3>
-
-          <div className="space-y-3">
-            {recentActivity.length > 0 ? recentActivity.map((activity, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.1 }}
-                className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg"
-              >
-                <div className={`p-2 rounded-lg ${
-                  activity.type === 'assignment' ? 'bg-green-500' :
-                  activity.type === 'achievement' ? 'bg-yellow-500' :
-                  activity.type === 'game' ? 'bg-blue-500' : 'bg-red-500'
-                }`}>
-                  {activity.type === 'assignment' && <BookOpen className="h-4 w-4 text-white" />}
-                  {activity.type === 'achievement' && <Trophy className="h-4 w-4 text-white" />}
-                  {activity.type === 'game' && <PlayCircle className="h-4 w-4 text-white" />}
-                  {activity.type === 'streak' && <Flame className="h-4 w-4 text-white" />}
-                </div>
-
-                <div className="flex-1">
-                  <p className="font-medium text-gray-900 text-sm">{activity.title}</p>
-                  <p className="text-xs text-gray-600">{activity.time}</p>
-                </div>
-
-                <div className="text-right">
-                  {activity.score && (
-                    <span className="text-xs font-medium text-green-600">{activity.score}%</span>
-                  )}
-                  {activity.xp && (
-                    <span className="text-xs font-medium text-blue-600">+{activity.xp} XP</span>
-                  )}
-                  {activity.bonus && (
-                    <span className="text-xs font-medium text-orange-600">+{activity.bonus}</span>
-                  )}
-                </div>
-              </motion.div>
-            )) : (
-              <div className="text-center py-8 text-gray-500">
-                <PlayCircle className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-                <p className="text-sm">No recent activity yet</p>
-                <p className="text-xs">Start playing games to see your activity here!</p>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
     </div>
   );
 
@@ -1009,8 +825,169 @@ export default function ModernStudentDashboard({
     switch (currentView) {
       case 'home':
         return renderHomeView();
-      case 'progress':
-        return <StudentPerformanceDashboard />;
+      case 'vocabulary':
+        return (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-gray-900">Vocabulary Progress</h2>
+              <Link
+                href="/student-dashboard/vocabulary"
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
+              >
+                <BookOpen className="h-4 w-4" />
+                <span>View All Words</span>
+              </Link>
+            </div>
+
+            {/* Vocabulary metrics from unified dashboard */}
+            {dashboardMetrics && (
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div className="bg-white rounded-xl border border-gray-200 p-6">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-3 bg-blue-500 rounded-lg">
+                      <Brain className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <div className="text-2xl font-bold text-gray-900">{dashboardMetrics.totalWordsTracked}</div>
+                      <div className="text-sm text-gray-600">Words Tracked</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-xl border border-gray-200 p-6">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-3 bg-green-500 rounded-lg">
+                      <Target className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <div className="text-2xl font-bold text-gray-900">{dashboardMetrics.overallAccuracy.toFixed(1)}%</div>
+                      <div className="text-sm text-gray-600">Overall Accuracy</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-xl border border-gray-200 p-6">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-3 bg-purple-500 rounded-lg">
+                      <Zap className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <div className="text-2xl font-bold text-gray-900">{dashboardMetrics.memoryStrength.toFixed(0)}%</div>
+                      <div className="text-sm text-gray-600">Memory Strength</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-xl border border-gray-200 p-6">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-3 bg-orange-500 rounded-lg">
+                      <Clock className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <div className="text-2xl font-bold text-gray-900">{dashboardMetrics.wordsReadyForReview}</div>
+                      <div className="text-sm text-gray-600">Ready to Review</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Vocabulary status breakdown */}
+            {dashboardMetrics && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-green-50 border border-green-200 rounded-xl p-6">
+                  <div className="flex items-center space-x-3">
+                    <CheckCircle className="h-8 w-8 text-green-600" />
+                    <div>
+                      <div className="text-2xl font-bold text-green-800">{dashboardMetrics.masteredWords}</div>
+                      <div className="text-sm text-green-600">Mastered Words</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-orange-50 border border-orange-200 rounded-xl p-6">
+                  <div className="flex items-center space-x-3">
+                    <AlertCircle className="h-8 w-8 text-orange-600" />
+                    <div>
+                      <div className="text-2xl font-bold text-orange-800">{dashboardMetrics.strugglingWords}</div>
+                      <div className="text-sm text-orange-600">Need Practice</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-red-50 border border-red-200 rounded-xl p-6">
+                  <div className="flex items-center space-x-3">
+                    <AlertCircle className="h-8 w-8 text-red-600" />
+                    <div>
+                      <div className="text-2xl font-bold text-red-800">{dashboardMetrics.overdueWords}</div>
+                      <div className="text-sm text-red-600">Overdue Words</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Quick vocabulary actions */}
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Vocabulary Actions</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <Link
+                  href="/student-dashboard/games/vocab-master?lang=es&level=KS3&mode=weak&theme=default"
+                  className="bg-red-600 text-white px-4 py-3 rounded-lg hover:bg-red-700 transition-colors flex items-center space-x-2"
+                >
+                  <PlayCircle className="h-4 w-4" />
+                  <span>Practice Weak Words</span>
+                </Link>
+                <Link
+                  href="/student-dashboard/vocabulary/categories"
+                  className="bg-orange-600 text-white px-4 py-3 rounded-lg hover:bg-orange-700 transition-colors flex items-center space-x-2"
+                >
+                  <BarChart3 className="h-4 w-4" />
+                  <span>Category Performance</span>
+                </Link>
+                <Link
+                  href="/student-dashboard/vocabulary/progress"
+                  className="bg-purple-600 text-white px-4 py-3 rounded-lg hover:bg-purple-700 transition-colors flex items-center space-x-2"
+                >
+                  <TrendingUp className="h-4 w-4" />
+                  <span>View Progress</span>
+                </Link>
+                <Link
+                  href="/student-dashboard/vocabulary/review"
+                  className="bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
+                >
+                  <Clock className="h-4 w-4" />
+                  <span>Review Schedule</span>
+                </Link>
+              </div>
+            </div>
+
+            {/* Priority words section */}
+            {dashboardMetrics?.priorityWords && dashboardMetrics.priorityWords.length > 0 && (
+              <div className="bg-white rounded-xl border border-gray-200 p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Priority Words</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {dashboardMetrics.priorityWords.slice(0, 8).map((word, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div>
+                        <span className="font-medium text-gray-900">{word.word}</span>
+                        <span className="text-gray-600 ml-2">({word.translation})</span>
+                      </div>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        word.reason === 'overdue' ? 'bg-red-100 text-red-800' :
+                        word.reason === 'struggling' ? 'bg-orange-100 text-orange-800' :
+                        word.reason === 'inconsistent' ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-blue-100 text-blue-800'
+                      }`}>
+                        {word.reason}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        );
       case 'assignments':
         return (
           <div className="space-y-6">
@@ -1067,90 +1044,39 @@ export default function ModernStudentDashboard({
             </div>
           </div>
         );
-      case 'achievements':
-        return <AchievementSystem studentId={user?.id} showNotifications={true} />;
-      case 'settings':
+      case 'assessments':
         return (
           <div className="space-y-6">
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Account Settings</h2>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Display Name
-                  </label>
-                  <input
-                    type="text"
-                    value={user?.user_metadata?.first_name || user?.user_metadata?.name || ''}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Enter your name"
-                    readOnly
-                  />
-                  <p className="text-xs text-gray-500 mt-1">Contact your teacher to change your name</p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    value={user?.email || ''}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50"
-                    readOnly
-                  />
-                </div>
-              </div>
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-gray-900">Assessment Analytics</h2>
+              <Link
+                href="/student-dashboard/assessments"
+                className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors flex items-center space-x-2"
+              >
+                <PlayCircle className="h-4 w-4" />
+                <span>Take Assessment</span>
+              </Link>
             </div>
 
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Preferences</h2>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Theme
-                  </label>
-                  <select
-                    value={theme}
-                    onChange={(e) => setTheme(e.target.value as any)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="light">Light</option>
-                    <option value="dark">Dark</option>
-                    <option value="student">Student (Colorful)</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      defaultChecked
-                    />
-                    <span className="text-sm text-gray-700">Enable achievement notifications</span>
-                  </label>
-                </div>
-
-                <div>
-                  <label className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      defaultChecked
-                    />
-                    <span className="text-sm text-gray-700">Enable assignment reminders</span>
-                  </label>
-                </div>
-              </div>
+            <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
+              <BarChart3 className="h-12 w-12 text-indigo-500 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Assessment Analytics</h3>
+              <p className="text-gray-600 mb-4">
+                Track your performance across listening, reading, speaking, and writing assessments.
+              </p>
+              <Link
+                href="/student-dashboard/assessments"
+                className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors inline-flex items-center space-x-2"
+              >
+                <BarChart3 className="h-4 w-4" />
+                <span>View Full Analytics</span>
+              </Link>
             </div>
-
-            {/* Data Verification Panel */}
-            <DataVerificationPanel studentId={user?.id} showDetailed={true} />
           </div>
         );
+      case 'achievements':
+        return <AchievementSystem studentId={user?.id} showNotifications={true} />;
+
       default:
         return renderHomeView();
     }

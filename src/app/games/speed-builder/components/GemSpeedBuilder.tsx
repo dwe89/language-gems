@@ -18,6 +18,7 @@ import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { SoundProvider, useSound, SoundControls } from './SoundManager';
 import { EnhancedGameService } from '../../../../services/enhancedGameService';
+import { useUnifiedSpacedRepetition } from '../../../../hooks/useUnifiedSpacedRepetition';
 
 // Types
 interface WordItem {
@@ -444,9 +445,12 @@ const GemSpeedBuilderInternal: React.FC<{
   gameSessionId?: string | null;
   gameService?: EnhancedGameService | null;
 }> = ({ assignmentId, mode = 'freeplay', theme, topic, tier, vocabularyList, onGameComplete, sentenceConfig, onOpenSettings, onBackToMenu, gameSessionId, gameService }) => {
+  // Initialize FSRS spaced repetition system
+  const { recordWordPractice, algorithm } = useUnifiedSpacedRepetition('speed-builder');
+
   // Sound system
   const { playSound, stopMusic } = useSound();
-  
+
   // Handle back to menu with music cleanup
   const handleBackToMenu = () => {
     stopMusic();
@@ -534,7 +538,7 @@ const GemSpeedBuilderInternal: React.FC<{
   useEffect(() => {
     if (gameState === 'playing' && placedWords.every(w => w !== null)) {
       console.log('Sentence complete detected, checking correctness');
-      checkSentenceCompleteWithWords(placedWords);
+      checkSentenceCompleteWithWords(placedWords).catch(console.error);
     }
   }, [placedWords, gameState]);
 
@@ -922,7 +926,7 @@ const GemSpeedBuilderInternal: React.FC<{
   };
 
   // Check if sentence is complete (with words array parameter)
-  const checkSentenceCompleteWithWords = (wordsArray: (WordItem | null)[]) => {
+  const checkSentenceCompleteWithWords = async (wordsArray: (WordItem | null)[]) => {
     if (wordsArray.length === 0 || wordsArray.some(w => w === null)) return;
     
     const isCorrect = wordsArray.every((word, index) => {
@@ -934,10 +938,56 @@ const GemSpeedBuilderInternal: React.FC<{
     setShowSentenceResult(true);
 
     if (isCorrect) {
+      // Record word practice with FSRS system for each correctly placed word
+      if (!assignmentId && currentSentence) {
+        try {
+          const sentenceCompletionTime = Date.now() - (sentenceStartTime || Date.now());
+          const averageWordTime = sentenceCompletionTime / wordsArray.length;
+
+          // Record each word as correctly practiced
+          for (const word of wordsArray) {
+            if (word) {
+              const wordData = {
+                id: `${currentSentence.id}-${word.text}`,
+                word: word.text,
+                translation: word.text, // In sentence building, word is its own context
+                language: sentenceConfig?.language === 'spanish' ? 'es' : sentenceConfig?.language === 'french' ? 'fr' : 'en'
+              };
+
+              // Calculate confidence based on sentence completion speed and streak
+              const baseConfidence = 0.7; // Good confidence for sentence building
+              const streakBonus = Math.min(stats.streak * 0.05, 0.2); // Up to 20% bonus for streaks
+              const speedBonus = averageWordTime < 2000 ? 0.1 : 0; // Bonus for fast completion
+              const confidence = Math.min(0.95, baseConfidence + streakBonus + speedBonus);
+
+              // Record practice with FSRS
+              const fsrsResult = await recordWordPractice(
+                wordData,
+                true, // Correct placement
+                averageWordTime,
+                confidence
+              );
+
+              if (fsrsResult) {
+                console.log(`FSRS recorded for word "${word.text}" in sentence:`, {
+                  algorithm: fsrsResult.algorithm,
+                  points: fsrsResult.points,
+                  nextReview: fsrsResult.nextReviewDate,
+                  interval: fsrsResult.interval,
+                  masteryLevel: fsrsResult.masteryLevel
+                });
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Error recording FSRS practice for sentence:', error);
+        }
+      }
+
       // Sentence is correct - celebrate and move to next
       playSound('correct');
       createGemCollectionEffect(wordsArray.length);
-      
+
       // Update stats
       const newSentencesCompleted = stats.sentencesCompleted + 1;
       const baseGemsEarned = wordsArray.length;

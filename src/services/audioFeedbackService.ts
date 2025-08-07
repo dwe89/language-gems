@@ -18,6 +18,7 @@ export class AudioFeedbackService {
       legendary: '/audio/achievements/achievement-legendary.mp3'
     },
     feedback: {
+      correct: '/audio/sfx/correct-answer.mp3',
       incorrect: '/audio/sfx/wrong-answer.mp3',
       levelComplete: '/audio/battle/victory.mp3'
     }
@@ -106,6 +107,11 @@ export class AudioFeedbackService {
   // Play error sound for incorrect answers
   async playErrorSound(): Promise<void> {
     await this.playAudio('feedback-incorrect', 0.6);
+  }
+
+  // Play correct answer sound
+  async playCorrectSound(): Promise<void> {
+    await this.playAudio('feedback-correct', 0.7);
   }
 
   // Play level complete sound

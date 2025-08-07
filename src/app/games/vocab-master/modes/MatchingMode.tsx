@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Shuffle } from 'lucide-react';
 import { ModeComponent, MatchingPairs, VocabularyWord } from '../types';
+import { getAdventureTheme, getAccentColorClasses } from '../utils/adventureThemes';
 
 interface MatchingModeProps extends ModeComponent {
   onMatchComplete: (isCorrect: boolean, matchDescription: string) => void;
@@ -31,13 +32,23 @@ export const MatchingMode: React.FC<MatchingModeProps> = ({
     // Take 6 words for matching (3 pairs visible at once)
     const startIndex = Math.max(0, gameState.currentWordIndex);
     const wordsForMatching = vocabulary.slice(startIndex, startIndex + 6);
-    
-    const spanish = wordsForMatching.map(w => w.spanish || w.word || '').filter(Boolean);
-    const english = wordsForMatching.map(w => w.english || w.translation || '').filter(Boolean);
-    
+
+    // Create pairs with IDs to track correct matches
+    const spanishWords = wordsForMatching.map((w, i) => ({
+      id: i,
+      text: w.spanish || w.word || '',
+      originalWord: w
+    })).filter(item => item.text);
+
+    const englishWords = wordsForMatching.map((w, i) => ({
+      id: i,
+      text: w.english || w.translation || '',
+      originalWord: w
+    })).filter(item => item.text);
+
     setMatchingPairs({
-      spanish: spanish.sort(() => Math.random() - 0.5),
-      english: english.sort(() => Math.random() - 0.5),
+      spanish: spanishWords.sort(() => Math.random() - 0.5),
+      english: englishWords.sort(() => Math.random() - 0.5),
       matched: new Set(),
       selectedSpanish: null,
       selectedEnglish: null
@@ -61,14 +72,11 @@ export const MatchingMode: React.FC<MatchingModeProps> = ({
       // Check if it's a correct match
       const spanishWord = matchingPairs.spanish[newSelectedSpanish];
       const englishWord = matchingPairs.english[newSelectedEnglish];
-      
-      // Find the vocabulary word that matches
-      const matchingWord = vocabulary.find(w => 
-        (w.spanish === spanishWord || w.word === spanishWord) && 
-        (w.english === englishWord || w.translation === englishWord)
-      );
-      
-      if (matchingWord) {
+
+      // Check if the IDs match (same original word)
+      const isCorrectMatch = spanishWord.id === englishWord.id;
+
+      if (isCorrectMatch) {
         // Correct match
         setMatchingPairs(prev => ({
           ...prev,
@@ -76,8 +84,8 @@ export const MatchingMode: React.FC<MatchingModeProps> = ({
           selectedSpanish: null,
           selectedEnglish: null
         }));
-        
-        onMatchComplete(true, `${spanishWord} = ${englishWord}`);
+
+        onMatchComplete(true, `${spanishWord.text} = ${englishWord.text}`);
       } else {
         // Incorrect match - show briefly then reset
         setTimeout(() => {
@@ -87,41 +95,66 @@ export const MatchingMode: React.FC<MatchingModeProps> = ({
             selectedEnglish: null
           }));
         }, 1000);
-        
-        onMatchComplete(false, `${spanishWord} ≠ ${englishWord}`);
+
+        onMatchComplete(false, `${spanishWord.text} ≠ ${englishWord.text}`);
       }
     }
   };
 
-  const baseClasses = isAdventureMode 
-    ? "bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-xl rounded-3xl p-8 border-2 border-slate-600/30 shadow-2xl"
-    : "bg-white rounded-xl shadow-lg p-8";
+  // Enhanced styling for both adventure and mastery modes
+  const adventureTheme = getAdventureTheme('match');
+  
+  const containerClasses = isAdventureMode 
+    ? adventureTheme.background
+    : "min-h-screen bg-gray-50 font-sans antialiased";
+
+  const cardClasses = isAdventureMode 
+    ? adventureTheme.cardStyle
+    : "bg-white rounded-2xl shadow-lg p-8 border border-gray-100";
 
   const completedPairs = matchingPairs.matched.size / 2;
   const totalPairs = Math.min(matchingPairs.spanish.length, matchingPairs.english.length);
 
   return (
-    <motion.div
-      key={gameState.currentWordIndex}
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className={baseClasses}
-    >
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="text-center space-y-4">
-          <div className="text-6xl">
-            <Shuffle className="h-16 w-16 text-purple-300 mx-auto" />
-          </div>
-          
-          <h2 className={`text-2xl font-bold ${isAdventureMode ? 'text-white' : 'text-gray-800'}`}>
-            🔗 Match Words with Translations
-          </h2>
+    <div className={`${containerClasses} flex flex-col items-center justify-center p-8`}>
+      <div className="max-w-4xl mx-auto w-full">
+        {/* Adventure Mode Header */}
+        {isAdventureMode && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center mb-6"
+          >
+            <h1 className="text-4xl font-bold text-white mb-2">
+              {adventureTheme.emoji} {adventureTheme.name}
+            </h1>
+            <p className="text-white/80 text-lg">
+              {adventureTheme.description}
+            </p>
+          </motion.div>
+        )}
+        
+        <motion.div
+          key={gameState.currentWordIndex}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className={cardClasses}
+        >
+          <div className="space-y-6">
+            {/* Header */}
+            <div className="text-center space-y-4">
+              <div className="text-6xl">
+                <Shuffle className={`h-16 w-16 mx-auto ${isAdventureMode ? adventureTheme.accentColor === 'violet' ? 'text-violet-300' : 'text-purple-300' : 'text-purple-500'}`} />
+              </div>
+              
+              <h2 className={`text-2xl font-bold ${isAdventureMode ? 'text-white' : 'text-gray-900'}`}>
+                🔗 Match Words with Translations
+              </h2>
 
-          <div className={`text-sm ${isAdventureMode ? 'text-slate-300' : 'text-gray-600'}`}>
-            Progress: {completedPairs} / {totalPairs} pairs matched
-          </div>
-        </div>
+              <div className={`text-sm ${isAdventureMode ? 'text-slate-300' : 'text-gray-600'}`}>
+                Progress: {completedPairs} / {totalPairs} pairs matched
+              </div>
+            </div>
 
         {/* Matching grid */}
         <div className="grid grid-cols-2 gap-6">
@@ -151,7 +184,7 @@ export const MatchingMode: React.FC<MatchingModeProps> = ({
                         : 'bg-gray-100 hover:bg-gray-200 text-gray-800'
                 }`}
               >
-                {word}
+                {word.text}
               </motion.button>
             ))}
           </div>
@@ -182,7 +215,7 @@ export const MatchingMode: React.FC<MatchingModeProps> = ({
                         : 'bg-gray-100 hover:bg-gray-200 text-gray-800'
                 }`}
               >
-                {word}
+                {word.text}
               </motion.button>
             ))}
           </div>
@@ -194,5 +227,7 @@ export const MatchingMode: React.FC<MatchingModeProps> = ({
         </div>
       </div>
     </motion.div>
+      </div>
+    </div>
   );
 };
