@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Head from 'next/head';
 import {
   GraduationCap,
   Target,
@@ -24,6 +25,7 @@ import ReactCountryFlag from 'react-country-flag';
 import { AQAReadingAssessmentService, type AQAAssessmentDefinition } from '../../services/aqaReadingAssessmentService';
 import { AQAListeningAssessmentService, type AQAListeningAssessmentDefinition } from '../../services/aqaListeningAssessmentService';
 import { AQAWritingAssessmentService, type AQAWritingAssessmentDefinition } from '../../services/aqaWritingAssessmentService';
+import { EdexcelListeningAssessmentService, type EdexcelListeningAssessmentDefinition } from '../../services/edexcelListeningAssessmentService';
 
 // Language options with country flags
 const AVAILABLE_LANGUAGES = [
@@ -64,21 +66,23 @@ export default function ExamStyleAssessmentPage() {
   const [availableAssessments, setAvailableAssessments] = useState<AQAAssessmentDefinition[]>([]);
   const [availableListeningAssessments, setAvailableListeningAssessments] = useState<AQAListeningAssessmentDefinition[]>([]);
   const [availableWritingAssessments, setAvailableWritingAssessments] = useState<AQAWritingAssessmentDefinition[]>([]);
+  const [availableEdexcelListeningAssessments, setAvailableEdexcelListeningAssessments] = useState<EdexcelListeningAssessmentDefinition[]>([]);
   const [isLoadingAssessments, setIsLoadingAssessments] = useState(false);
   const [assessmentService] = useState(() => new AQAReadingAssessmentService());
   const [listeningAssessmentService] = useState(() => new AQAListeningAssessmentService());
   const [writingAssessmentService] = useState(() => new AQAWritingAssessmentService());
+  const [edexcelListeningAssessmentService] = useState(() => new EdexcelListeningAssessmentService());
 
   const [showAQAAssessments, setShowAQAAssessments] = useState(false);
+  const [showEdexcelAssessments, setShowEdexcelAssessments] = useState(false);
 
   useEffect(() => {
-    // Only show the specific AQA assessments section if AQA is selected
-    // and the skill is reading, listening, or writing.
+    // Show specific assessments section based on exam board and skill
     setShowAQAAssessments(examBoard === 'AQA' && (skill === 'reading' || skill === 'listening' || skill === 'writing'));
+    setShowEdexcelAssessments(examBoard === 'Edexcel' && (skill === 'listening'));
   }, [examBoard, skill]);
 
   const examBoards = [
-    { id: 'General', name: 'General', description: 'Standard exam-style questions suitable for all boards' },
     { id: 'AQA', name: 'AQA', description: 'AQA style format with Foundation (45 min) and Higher (60 min) reading papers' },
     { id: 'Edexcel', name: 'Edexcel', description: 'Pearson Edexcel exam format with Foundation (45 min) and Higher (60 min) reading papers' }
   ];
@@ -127,10 +131,11 @@ export default function ExamStyleAssessmentPage() {
     return AVAILABLE_LANGUAGES.find(lang => lang.code === langCode);
   };
 
-  // Load available assessments based on current filters (for AQA reading, listening, and writing)
+  // Load available assessments based on current filters (for AQA and Edexcel)
   const loadAvailableAssessments = async () => {
-    // Only attempt to load specific assessments if AQA is selected AND it's reading, listening, or writing
-    if (examBoard === 'AQA' && (skill === 'reading' || skill === 'listening' || skill === 'writing')) {
+    // Load specific assessments based on exam board and skill
+    if ((examBoard === 'AQA' && (skill === 'reading' || skill === 'listening' || skill === 'writing')) ||
+        (examBoard === 'Edexcel' && skill === 'listening')) {
       setIsLoadingAssessments(true);
       try {
         const languageMap: Record<string, string> = {
@@ -143,38 +148,56 @@ export default function ExamStyleAssessmentPage() {
 
         // Only fetch if language and difficulty are selected
         if (languageCode && difficulty) {
-          if (skill === 'reading') {
-            const assessments = await assessmentService.getAssessmentsByLevel(
+          if (examBoard === 'AQA') {
+            if (skill === 'reading') {
+              const assessments = await assessmentService.getAssessmentsByLevel(
+                difficulty as 'foundation' | 'higher',
+                languageCode
+              );
+              setAvailableAssessments(assessments || []);
+              setAvailableListeningAssessments([]);
+              setAvailableWritingAssessments([]);
+              setAvailableEdexcelListeningAssessments([]);
+            } else if (skill === 'listening') {
+              console.log('Loading AQA listening assessments for:', { difficulty, languageCode });
+              const listeningAssessments = await listeningAssessmentService.getAssessmentsByLevel(
+                difficulty as 'foundation' | 'higher',
+                languageCode
+              );
+              console.log('AQA Listening assessments loaded:', listeningAssessments);
+              setAvailableListeningAssessments(listeningAssessments || []);
+              setAvailableAssessments([]);
+              setAvailableWritingAssessments([]);
+              setAvailableEdexcelListeningAssessments([]);
+            } else if (skill === 'writing') {
+              console.log('Loading AQA writing assessments for:', { difficulty, languageCode });
+              const writingAssessments = await writingAssessmentService.getAssessmentsByLevel(
+                difficulty as 'foundation' | 'higher',
+                languageCode
+              );
+              console.log('AQA Writing assessments loaded:', writingAssessments);
+              setAvailableWritingAssessments(writingAssessments || []);
+              setAvailableAssessments([]);
+              setAvailableListeningAssessments([]);
+              setAvailableEdexcelListeningAssessments([]);
+            }
+          } else if (examBoard === 'Edexcel' && skill === 'listening') {
+            console.log('Loading Edexcel listening assessments for:', { difficulty, languageCode });
+            const edexcelListeningAssessments = await edexcelListeningAssessmentService.getAssessmentsByLevel(
               difficulty as 'foundation' | 'higher',
               languageCode
             );
-            setAvailableAssessments(assessments || []);
-            setAvailableListeningAssessments([]); // Clear listening assessments
-          } else if (skill === 'listening') {
-            console.log('Loading listening assessments for:', { difficulty, languageCode });
-            const listeningAssessments = await listeningAssessmentService.getAssessmentsByLevel(
-              difficulty as 'foundation' | 'higher',
-              languageCode
-            );
-            console.log('Listening assessments loaded:', listeningAssessments);
-            setAvailableListeningAssessments(listeningAssessments || []);
-            setAvailableAssessments([]); // Clear reading assessments
-            setAvailableWritingAssessments([]); // Clear writing assessments
-          } else if (skill === 'writing') {
-            console.log('Loading writing assessments for:', { difficulty, languageCode });
-            const writingAssessments = await writingAssessmentService.getAssessmentsByLevel(
-              difficulty as 'foundation' | 'higher',
-              languageCode
-            );
-            console.log('Writing assessments loaded:', writingAssessments);
-            setAvailableWritingAssessments(writingAssessments || []);
-            setAvailableAssessments([]); // Clear reading assessments
-            setAvailableListeningAssessments([]); // Clear listening assessments
+            console.log('Edexcel Listening assessments loaded:', edexcelListeningAssessments);
+            setAvailableEdexcelListeningAssessments(edexcelListeningAssessments || []);
+            setAvailableAssessments([]);
+            setAvailableListeningAssessments([]);
+            setAvailableWritingAssessments([]);
           }
         } else {
-          setAvailableAssessments([]); // Clear assessments if filters are incomplete
+          setAvailableAssessments([]);
           setAvailableListeningAssessments([]);
           setAvailableWritingAssessments([]);
+          setAvailableEdexcelListeningAssessments([]);
         }
       } catch (error) {
         console.error('Error loading assessments:', error);
@@ -184,9 +207,10 @@ export default function ExamStyleAssessmentPage() {
         setIsLoadingAssessments(false);
       }
     } else {
-      setAvailableAssessments([]); // Clear assessments if not AQA reading/listening/writing
+      setAvailableAssessments([]);
       setAvailableListeningAssessments([]);
       setAvailableWritingAssessments([]);
+      setAvailableEdexcelListeningAssessments([]);
     }
   };
 
@@ -196,7 +220,14 @@ export default function ExamStyleAssessmentPage() {
   }, [examBoard, skill, language, difficulty]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-purple-50">
+    <>
+      <Head>
+        <title>Exam-Style Assessment | GCSE Language Testing | Language Gems</title>
+        <meta name="description" content="Practice GCSE-style assessments in Spanish, French, and German. AQA, Edexcel, OCR compliant reading, writing, listening, and speaking assessments for exam preparation." />
+        <meta name="keywords" content="GCSE exam assessments, AQA language assessment, GCSE Spanish test, GCSE French test, GCSE German test, language exam practice, GCSE assessment preparation" />
+        <link rel="canonical" href="https://languagegems.com/exam-style-assessment" />
+      </Head>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-purple-50">
       {/* Header */}
       <div className="bg-white shadow-sm">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -679,6 +710,157 @@ export default function ExamStyleAssessmentPage() {
           </div>
         )}
 
+        {/* Dynamic Edexcel Assessments Section */}
+        {showEdexcelAssessments && (
+          <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
+            <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+              <Headphones className="h-6 w-6 mr-2 text-purple-600" />
+              Edexcel Listening Assessments
+            </h2>
+
+            {/* Current Filter Summary */}
+            <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <div className="flex items-center">
+                    {language && getCurrentLanguageDetails(language) && (
+                      <ReactCountryFlag
+                        countryCode={getCurrentLanguageDetails(language)?.countryCode || 'ES'}
+                        svg
+                        style={{ width: '24px', height: '18px' }}
+                        className="mr-3"
+                      />
+                    )}
+                    <span className="font-medium text-gray-900 capitalize">{language || 'Not Selected'}</span>
+                  </div>
+                  <div className="text-gray-600">•</div>
+                  <div className="font-medium text-gray-900">{level || 'Not Selected'}</div>
+                  <div className="text-gray-600">•</div>
+                  <div className="font-medium text-gray-900 capitalize">{difficulty || 'Not Selected'}</div>
+                  <div className="text-gray-600">•</div>
+                  <div className="font-medium text-gray-900 capitalize">{skill || 'Not Selected'}</div>
+                </div>
+                <div className="text-sm text-gray-500">
+                  {isLoadingAssessments ? 'Loading...' : `${availableEdexcelListeningAssessments.length} paper${availableEdexcelListeningAssessments.length !== 1 ? 's' : ''} found`}
+                </div>
+              </div>
+            </div>
+
+            {/* Available Edexcel Listening Assessments */}
+            {isLoadingAssessments ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto mb-4"></div>
+                <p className="text-gray-600">Loading Edexcel listening assessments...</p>
+              </div>
+            ) : (!language || !difficulty) ? (
+              <div className="text-center py-8">
+                <Headphones className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Select Your Criteria</h3>
+                <p className="text-gray-600">
+                  Please select a **Language** and **Difficulty** above to see available Edexcel Listening papers.
+                </p>
+              </div>
+            ) : availableEdexcelListeningAssessments.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                {availableEdexcelListeningAssessments.map((assessment) => {
+                  const isFoundation = assessment.level === 'foundation';
+                  const paperNumber = assessment.identifier.split('-')[1];
+
+                  return (
+                    <Link
+                      key={assessment.id}
+                      href={`/edexcel-listening-test/${assessment.language}/${assessment.level}/${assessment.identifier}`}
+                      className={`block p-4 bg-gradient-to-br ${
+                        isFoundation
+                          ? 'from-purple-50 to-purple-100 border-purple-200 hover:border-purple-300'
+                          : 'from-indigo-50 to-indigo-100 border-indigo-200 hover:border-indigo-300'
+                      } rounded-lg border transition-all group`}
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center">
+                          <Headphones className={`h-5 w-5 ${isFoundation ? 'text-purple-600' : 'text-indigo-600'} mr-2`} />
+                          <h4 className="font-semibold text-gray-900">Paper {paperNumber}</h4>
+                        </div>
+                        <div className={`px-2 py-1 rounded text-xs font-medium ${
+                          isFoundation
+                            ? 'bg-purple-100 text-purple-800'
+                            : 'bg-indigo-100 text-indigo-800'
+                        }`}>
+                          {assessment.level === 'foundation' ? 'Foundation' : 'Higher'}
+                        </div>
+                      </div>
+                      <p className="text-sm text-gray-600 mb-3">
+                        {assessment.description || `Complete Edexcel-style listening assessment with Section A (40 marks) and Section B dictation (10 marks).`}
+                      </p>
+                      <div className="flex items-center justify-between text-xs text-gray-500 mb-2">
+                        <span>{assessment.total_questions} questions</span>
+                        <span>{assessment.time_limit_minutes} minutes</span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs text-gray-500">
+                        <span>50 marks total</span>
+                        <span>3x audio playback</span>
+                      </div>
+                      <div className={`flex items-center text-sm ${isFoundation ? 'text-purple-600 group-hover:text-purple-700' : 'text-indigo-600 group-hover:text-indigo-700'} mt-2`}>
+                        <span className="font-medium">Sections A & B • Crossover questions</span>
+                        <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <Headphones className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No Edexcel Listening Assessments Found</h3>
+                <p className="text-gray-600 mb-4">
+                  No Edexcel listening assessments match your current selection. Try adjusting your filters above.
+                </p>
+              </div>
+            )}
+
+            <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+              <h4 className="font-semibold text-amber-900 mb-2">Assessment Information</h4>
+              <p className="text-sm text-amber-800">
+                Results are filtered by your selections: {examBoard || 'N/A'} • {language || 'N/A'} • {level || 'N/A'} • {difficulty || 'N/A'} • {skill || 'N/A'}.
+                Change the filters above to see different assessments.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Placeholder for other Edexcel skills */}
+        {examBoard === 'Edexcel' && skill !== 'listening' && (
+          <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
+            <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+              {skill === 'reading' && <BookOpen className="h-6 w-6 mr-2 text-blue-600" />}
+              {skill === 'writing' && <PenTool className="h-6 w-6 mr-2 text-red-600" />}
+              {skill === 'speaking' && <MessageSquare className="h-6 w-6 mr-2 text-orange-600" />}
+              Edexcel {skill ? skill.charAt(0).toUpperCase() + skill.slice(1) : ''} Assessment
+            </h2>
+
+            <div className="p-6 bg-gray-50 rounded-lg border border-gray-200 text-center">
+              <p className="text-gray-700 mb-3 text-lg font-medium">
+                <span className="block text-4xl mb-2">🚧</span>
+                Edexcel {skill} assessments are coming soon!
+              </p>
+              <p className="text-gray-600">
+                We're actively developing comprehensive Edexcel-style {skill} assessments to provide the best practice experience.
+              </p>
+              <p className="text-sm text-gray-600 mt-2">
+                In the meantime, explore our fully available **Edexcel Listening** assessments!
+              </p>
+              <div className="flex justify-center gap-3 mt-6">
+                 <button
+                    onClick={() => setSkill('listening')}
+                    className="flex items-center px-3 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors text-sm"
+                 >
+                    <Headphones className="h-4 w-4 mr-1" /> Listening
+                 </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Speaking Placeholder for AQA */}
         {examBoard === 'AQA' && skill === 'speaking' && (
           <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
@@ -696,7 +878,7 @@ export default function ExamStyleAssessmentPage() {
                 We're actively developing comprehensive AQA-style speaking assessments to provide the best practice experience.
               </p>
               <p className="text-sm text-gray-600 mt-2">
-                In the meantime, explore our fully available **Reading**, **Listening**, and **Writing** assessments!
+               In the meantime, explore our fully available <strong>Reading</strong>, <strong>Listening</strong>, and <strong>Writing</strong> assessments!
               </p>
               <div className="flex justify-center gap-3 mt-6">
                  <button
@@ -818,5 +1000,6 @@ export default function ExamStyleAssessmentPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }

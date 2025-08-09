@@ -13,11 +13,15 @@ interface DetectiveListeningGameWrapperProps {
     difficulty: string;
     category?: string;
     subcategory?: string;
+    // KS4-specific parameters
+    curriculumLevel?: string;
+    examBoard?: 'AQA' | 'edexcel';
+    tier?: 'foundation' | 'higher';
   };
   onBackToMenu: () => void;
-  onGameEnd: (result: { 
-    correctAnswers: number; 
-    totalEvidence: number; 
+  onGameEnd: (result: {
+    correctAnswers: number;
+    totalEvidence: number;
     evidenceCollected: any[];
     timeSpent?: number;
     averageResponseTime?: number;
@@ -53,6 +57,9 @@ export default function DetectiveListeningGameWrapper(props: DetectiveListeningG
     language: mapLanguage(props.settings.language),
     categoryId: props.settings.category || props.settings.caseType,
     subcategoryId: props.settings.subcategory,
+    curriculumLevel: props.settings.curriculumLevel,
+    examBoard: props.settings.examBoard,
+    tier: props.settings.tier,
     limit: 20,
     randomize: true
   });

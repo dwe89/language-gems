@@ -27,6 +27,8 @@ export interface UseVocabularyFiltersParams {
   subcategoryId?: string;
   difficultyLevel?: string;
   curriculumLevel?: string;
+  examBoard?: string;
+  tier?: string;
 }
 
 export function useVocabularyByCategory({
@@ -34,14 +36,18 @@ export function useVocabularyByCategory({
   categoryId,
   subcategoryId,
   difficultyLevel = 'beginner',
-  curriculumLevel = 'KS3'
+  curriculumLevel = 'KS3',
+  examBoard,
+  tier
 }: UseVocabularyFiltersParams) {
   console.log('🔥🔥🔥 VOCABULARY HOOK CALLED 🔥🔥🔥', {
     language,
     categoryId,
     subcategoryId,
     difficultyLevel,
-    curriculumLevel
+    curriculumLevel,
+    examBoard,
+    tier
   });
 
   const [vocabulary, setVocabulary] = useState<VocabularyItem[]>([]);
@@ -72,16 +78,45 @@ export function useVocabularyByCategory({
           .select('*')
           .eq('language', language);
 
-        // Add category filter if specified
-        if (categoryId) {
-          console.log('Adding category filter:', categoryId);
-          query = query.eq('category', categoryId);
-        }
+        // Handle KS4 filtering differently - use theme_name and unit_name
+        if (curriculumLevel === 'KS4') {
+          // For KS4, map categoryId to theme_name
+          if (categoryId) {
+            const themeMapping: Record<string, string> = {
+              'aqa_general': 'General',
+              'aqa_communication': 'Communication and the world around us',
+              'aqa_people_lifestyle': 'People and lifestyle',
+              'aqa_popular_culture': 'Popular culture',
+              'aqa_cultural_items': 'Cultural items',
+              'edexcel_general': 'General',
+              'edexcel_personal_world': 'My personal world',
+              'edexcel_neighborhood': 'My neighborhood',
+              'edexcel_studying_future': 'Studying and my future',
+              'edexcel_travel_tourism': 'Travel and tourism',
+              'edexcel_media_technology': 'Media and technology'
+            };
 
-        // Add subcategory filter if specified
-        if (subcategoryId) {
-          console.log('Adding subcategory filter:', subcategoryId);
-          query = query.eq('subcategory', subcategoryId);
+            const themeName = themeMapping[categoryId] || categoryId;
+            console.log('Adding KS4 theme filter:', categoryId, '->', themeName);
+            query = query.like('theme_name', `%${themeName}%`);
+          }
+
+          // For KS4, subcategoryId is the unit_name
+          if (subcategoryId) {
+            console.log('Adding KS4 unit filter:', subcategoryId);
+            query = query.like('unit_name', `%${subcategoryId}%`);
+          }
+        } else {
+          // For KS3 and other levels, use category and subcategory fields
+          if (categoryId) {
+            console.log('Adding category filter:', categoryId);
+            query = query.eq('category', categoryId);
+          }
+
+          if (subcategoryId) {
+            console.log('Adding subcategory filter:', subcategoryId);
+            query = query.eq('subcategory', subcategoryId);
+          }
         }
         // Note: If no subcategory is specified, we get all items from the category
 
@@ -94,6 +129,18 @@ export function useVocabularyByCategory({
         // Note: Skip curriculum level filtering for now as database uses different format (A1, A2) vs KS3
         if (curriculumLevel && curriculumLevel !== 'KS3') {
           query = query.or(`curriculum_level.ilike.%${curriculumLevel}%,curriculum_level.is.null`);
+        }
+
+        // Add KS4-specific filters
+        if (curriculumLevel === 'KS4') {
+          if (examBoard) {
+            console.log('Adding KS4 exam board filter:', examBoard);
+            query = query.eq('exam_board_code', examBoard);
+          }
+          if (tier) {
+            console.log('Adding KS4 tier filter:', tier);
+            query = query.like('tier', `%${tier}%`);
+          }
         }
 
         console.log('🔍 About to execute query with filters:', {
@@ -124,7 +171,7 @@ export function useVocabularyByCategory({
     };
 
     fetchVocabulary();
-  }, [language, categoryId, subcategoryId, difficultyLevel, curriculumLevel]);
+  }, [language, categoryId, subcategoryId, difficultyLevel, curriculumLevel, examBoard, tier]);
 
   return { vocabulary, loading, error, refetch: () => {
     // Trigger refetch by incrementing a dependency

@@ -35,6 +35,8 @@ import { useDemoAuth } from '../auth/DemoAuthProvider';
 // Import category data
 import { VOCABULARY_CATEGORIES as KS3_CATEGORIES } from './ModernCategorySelector';
 import { KS4_VOCABULARY_CATEGORIES as KS4_CATEGORIES } from './KS4CategorySystem';
+import KS4ExamBoardSelector from '@/components/vocabulary/KS4ExamBoardSelector';
+import KS4TierSelector from '@/components/vocabulary/KS4TierSelector';
 
 // Import the same types and data from UnifiedCategorySelector
 export interface UnifiedSelectionConfig {
@@ -43,6 +45,9 @@ export interface UnifiedSelectionConfig {
   categoryId: string;
   subcategoryId?: string;
   customMode?: boolean;
+  // KS4-specific fields
+  examBoard?: 'AQA' | 'edexcel';
+  tier?: 'foundation' | 'higher';
 }
 
 // Category interface
@@ -134,9 +139,11 @@ export default function CompactCategorySelector({
   defaultTheme = 'default'
 }: CompactCategorySelectorProps) {
   const { isDemo } = useDemoAuth();
-  const [step, setStep] = useState<'language' | 'curriculum' | 'category' | 'subcategory' | 'theme'>('language');
+  const [step, setStep] = useState<'language' | 'curriculum' | 'examBoard' | 'tier' | 'category' | 'subcategory' | 'theme'>('language');
   const [selectedLanguage, setSelectedLanguage] = useState<string>('');
   const [selectedCurriculumLevel, setSelectedCurriculumLevel] = useState<'KS2' | 'KS3' | 'KS4' | 'KS5'>('KS3');
+  const [selectedExamBoard, setSelectedExamBoard] = useState<'AQA' | 'edexcel'>('AQA');
+  const [selectedTier, setSelectedTier] = useState<'foundation' | 'higher'>('foundation');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedSubcategory, setSelectedSubcategory] = useState<string>('');
   const [selectedTheme, setSelectedTheme] = useState(defaultTheme);
@@ -155,6 +162,21 @@ export default function CompactCategorySelector({
 
   const handleCurriculumSelect = (level: 'KS2' | 'KS3' | 'KS4' | 'KS5') => {
     setSelectedCurriculumLevel(level);
+    // For KS4, we need exam board and tier selection first
+    if (level === 'KS4') {
+      setStep('examBoard');
+    } else {
+      setStep('category');
+    }
+  };
+
+  const handleExamBoardSelect = (examBoard: 'AQA' | 'edexcel') => {
+    setSelectedExamBoard(examBoard);
+    setStep('tier');
+  };
+
+  const handleTierSelect = (tier: 'foundation' | 'higher') => {
+    setSelectedTier(tier);
     setStep('category');
   };
 
@@ -174,7 +196,9 @@ export default function CompactCategorySelector({
           language: selectedLanguage,
           curriculumLevel: selectedCurriculumLevel,
           categoryId,
-          subcategoryId: undefined
+          subcategoryId: undefined,
+          examBoard: selectedCurriculumLevel === 'KS4' ? selectedExamBoard : undefined,
+          tier: selectedCurriculumLevel === 'KS4' ? selectedTier : undefined
         }, selectedTheme);
       }
     }
@@ -192,7 +216,9 @@ export default function CompactCategorySelector({
         language: selectedLanguage,
         curriculumLevel: selectedCurriculumLevel,
         categoryId: selectedCategory,
-        subcategoryId
+        subcategoryId,
+        examBoard: selectedCurriculumLevel === 'KS4' ? selectedExamBoard : undefined,
+        tier: selectedCurriculumLevel === 'KS4' ? selectedTier : undefined
       }, selectedTheme);
     }
   };
@@ -205,7 +231,9 @@ export default function CompactCategorySelector({
       language: selectedLanguage,
       curriculumLevel: selectedCurriculumLevel,
       categoryId: selectedCategory,
-      subcategoryId: selectedSubcategory || undefined
+      subcategoryId: selectedSubcategory || undefined,
+      examBoard: selectedCurriculumLevel === 'KS4' ? selectedExamBoard : undefined,
+      tier: selectedCurriculumLevel === 'KS4' ? selectedTier : undefined
     }, themeId);
   };
 
@@ -215,8 +243,19 @@ export default function CompactCategorySelector({
         setStep('language');
         setSelectedLanguage('');
         break;
-      case 'category':
+      case 'examBoard':
         setStep('curriculum');
+        break;
+      case 'tier':
+        setStep('examBoard');
+        setSelectedExamBoard('AQA');
+        break;
+      case 'category':
+        if (selectedCurriculumLevel === 'KS4') {
+          setStep('tier');
+        } else {
+          setStep('curriculum');
+        }
         break;
       case 'subcategory':
         setStep('category');
@@ -359,6 +398,39 @@ export default function CompactCategorySelector({
                 </button>
               ))}
             </div>
+          </motion.div>
+        )}
+
+        {step === 'examBoard' && (
+          <motion.div
+            key="examBoard"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            className="space-y-4"
+          >
+            <KS4ExamBoardSelector
+              onExamBoardSelect={handleExamBoardSelect}
+              onBack={goBack}
+              selectedLanguage={AVAILABLE_LANGUAGES.find(l => l.code === selectedLanguage)?.name || 'Spanish'}
+            />
+          </motion.div>
+        )}
+
+        {step === 'tier' && (
+          <motion.div
+            key="tier"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            className="space-y-4"
+          >
+            <KS4TierSelector
+              onTierSelect={handleTierSelect}
+              onBack={goBack}
+              selectedExamBoard={selectedExamBoard}
+              selectedLanguage={AVAILABLE_LANGUAGES.find(l => l.code === selectedLanguage)?.name || 'Spanish'}
+            />
           </motion.div>
         )}
 

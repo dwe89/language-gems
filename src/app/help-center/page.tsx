@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Head from 'next/head';
 import { useState } from 'react';
 import { 
   Search, HelpCircle, BookOpen, Users, Settings, Gamepad2, 
@@ -121,7 +122,14 @@ export default function HelpCenterPage() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+    <>
+      <Head>
+        <title>Help Center | Support & FAQs | Language Gems</title>
+        <meta name="description" content="Get help with Language Gems platform. Find answers to common questions about our GCSE language learning games, MFL teaching resources, and platform features." />
+        <meta name="keywords" content="Language Gems help, GCSE language learning support, MFL teaching help, language games FAQ, teacher support" />
+        <link rel="canonical" href="https://languagegems.com/help-center" />
+      </Head>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
       {/* Header */}
       <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-16">
         <div className="container mx-auto px-4 text-center">
@@ -245,5 +253,6 @@ export default function HelpCenterPage() {
 
       <Footer />
     </div>
+    </>
   );
 }

@@ -90,7 +90,10 @@ export default function CaseFileTranslatorPage() {
             language: assignment.vocabulary_criteria?.language || 'spanish',
             curriculumLevel: (assignment.curriculum_level as string) || 'KS3',
             subcategory: assignment.vocabulary_criteria?.subcategory || 'assignment',
-            difficulty: 'beginner' // Default difficulty
+            difficulty: 'beginner', // Default difficulty
+            // KS4-specific parameters
+            examBoard: assignment.exam_board as 'AQA' | 'edexcel',
+            tier: assignment.tier as 'foundation' | 'higher'
           };
 
           return (

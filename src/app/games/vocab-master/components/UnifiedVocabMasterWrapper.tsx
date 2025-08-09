@@ -25,6 +25,9 @@ interface Props {
     theme?: string;
     assignment?: string;
     standalone?: string;
+    // KS4-specific parameters
+    examBoard?: string;
+    tier?: string;
   };
 }
 
@@ -85,8 +88,10 @@ export default function UnifiedVocabMasterWrapper({ searchParams = {} }: Props) 
       const level = searchParams.level as 'KS2' | 'KS3' | 'KS4' | 'KS5';
       const cat = searchParams.cat;
       const subcat = searchParams.subcat;
+      const examBoard = searchParams.examBoard as 'AQA' | 'edexcel' | undefined;
+      const tier = searchParams.tier as 'foundation' | 'higher' | undefined;
 
-      console.log('🔍 VocabMaster checking URL params:', { lang, level, cat, subcat });
+      console.log('🔍 VocabMaster checking URL params:', { lang, level, cat, subcat, examBoard, tier });
 
       if (lang && level && cat && !isAssignmentMode) {
         console.log('✅ Found URL parameters, pre-setting VocabMaster filters...');
@@ -105,7 +110,10 @@ export default function UnifiedVocabMasterWrapper({ searchParams = {} }: Props) 
           curriculumLevel: level,
           categoryId: cat,
           subcategoryId: subcat || undefined,
-          customMode: false
+          customMode: false,
+          // KS4-specific parameters
+          examBoard: examBoard || undefined,
+          tier: tier || undefined
         };
 
         console.log('🚀 Pre-setting VocabMaster config:', config);
@@ -583,6 +591,7 @@ export default function UnifiedVocabMasterWrapper({ searchParams = {} }: Props) 
               accuracy: results.accuracy,
               totalWords: results.totalWords, // Keep original field name for completion screen
               correctAnswers: results.correctAnswers,
+              incorrectAnswers: results.incorrectAnswers,
               timeSpent: results.timeSpent,
               maxStreak: results.maxStreak,
               wordsLearned: results.wordsLearned, // Keep as array for completion screen

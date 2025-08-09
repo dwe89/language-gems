@@ -13,6 +13,9 @@ export interface SelectionState {
   categoryId: string | null;
   subcategoryId: string | null;
   theme: string | null;
+  // KS4-specific fields
+  examBoard?: 'AQA' | 'edexcel' | null;
+  tier?: 'foundation' | 'higher' | null;
 }
 
 interface GameSelectionSidebarProps {
@@ -26,6 +29,16 @@ const SUPPORTED_LANGUAGES = [
   { code: 'es', name: 'Spanish' },
   { code: 'fr', name: 'French' },
   { code: 'de', name: 'German' }
+];
+
+const EXAM_BOARDS = [
+  { code: 'AQA', name: 'AQA', displayName: 'AQA' },
+  { code: 'edexcel', name: 'Edexcel', displayName: 'Edexcel' }
+];
+
+const TIERS = [
+  { code: 'foundation', name: 'Foundation', displayName: 'Foundation Tier', description: 'Grades 1-5' },
+  { code: 'higher', name: 'Higher', displayName: 'Higher Tier', description: 'Grades 4-9' }
 ];
 
 const GAME_THEMES = [
@@ -77,14 +90,16 @@ export default function GameSelectionSidebar({
     curriculumLevel: null,
     categoryId: null,
     subcategoryId: null,
-    theme: null
+    theme: null,
+    examBoard: null,
+    tier: null
   });
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [currentStep, setCurrentStep] = useState(1);
 
-  // Get categories based on selected curriculum level
+  // Get categories based on selected curriculum level and exam board
   const currentCategories = selection.curriculumLevel
-    ? getCategoriesByCurriculum(selection.curriculumLevel)
+    ? getCategoriesByCurriculum(selection.curriculumLevel, selection.examBoard || undefined)
     : [];
 
   // Check if selection is complete
@@ -92,7 +107,9 @@ export default function GameSelectionSidebar({
     selection.curriculumLevel &&
     selection.categoryId &&
     selection.subcategoryId &&
-    (!selectedGame?.supportsThemes || selection.theme);
+    (!selectedGame?.supportsThemes || selection.theme) &&
+    // For KS4, require exam board and tier selection
+    (selection.curriculumLevel !== 'KS4' || (selection.examBoard && selection.tier));
 
   const updateSelection = (updates: Partial<SelectionState>) => {
     const newSelection = { ...selection, ...updates };
@@ -109,10 +126,33 @@ export default function GameSelectionSidebar({
     updateSelection({
       curriculumLevel: level,
       categoryId: null,
+      subcategoryId: null,
+      examBoard: null,
+      tier: null
+    });
+    setSelectedCategory(null);
+    // For KS4, go to exam board selection; otherwise go to category
+    setCurrentStep(level === 'KS4' ? 3 : 5);
+  };
+
+  const handleExamBoardSelect = (examBoard: 'AQA' | 'edexcel') => {
+    updateSelection({
+      examBoard,
+      categoryId: null,
       subcategoryId: null
     });
     setSelectedCategory(null);
-    setCurrentStep(3);
+    setCurrentStep(4);
+  };
+
+  const handleTierSelect = (tier: 'foundation' | 'higher') => {
+    updateSelection({
+      tier,
+      categoryId: null,
+      subcategoryId: null
+    });
+    setSelectedCategory(null);
+    setCurrentStep(5);
   };
 
   const handleCategorySelect = (category: Category) => {
@@ -121,15 +161,15 @@ export default function GameSelectionSidebar({
       categoryId: category.id,
       subcategoryId: null
     });
-    setCurrentStep(4);
+    setCurrentStep(6);
   };
 
   const handleSubcategorySelect = (subcategory: Subcategory) => {
     updateSelection({ subcategoryId: subcategory.id });
     if (selectedGame?.supportsThemes) {
-      setCurrentStep(5);
+      setCurrentStep(7);
     } else {
-      setCurrentStep(5);
+      setCurrentStep(7);
       const finalSelection = { ...selection, subcategoryId: subcategory.id, theme: 'default' };
       setSelection(finalSelection);
       onSelectionComplete(finalSelection);
@@ -145,10 +185,12 @@ export default function GameSelectionSidebar({
   const handleBack = (step: number) => {
     setCurrentStep(step);
     // Reset downstream selections to ensure a fresh flow
-    if (step === 1) updateSelection({ language: null, curriculumLevel: null, categoryId: null, subcategoryId: null, theme: null });
-    if (step === 2) updateSelection({ curriculumLevel: null, categoryId: null, subcategoryId: null, theme: null });
-    if (step === 3) updateSelection({ categoryId: null, subcategoryId: null, theme: null });
-    if (step === 4) updateSelection({ subcategoryId: null, theme: null });
+    if (step === 1) updateSelection({ language: null, curriculumLevel: null, categoryId: null, subcategoryId: null, theme: null, examBoard: null, tier: null });
+    if (step === 2) updateSelection({ curriculumLevel: null, categoryId: null, subcategoryId: null, theme: null, examBoard: null, tier: null });
+    if (step === 3) updateSelection({ examBoard: null, tier: null, categoryId: null, subcategoryId: null, theme: null });
+    if (step === 4) updateSelection({ tier: null, categoryId: null, subcategoryId: null, theme: null });
+    if (step === 5) updateSelection({ categoryId: null, subcategoryId: null, theme: null });
+    if (step === 6) updateSelection({ subcategoryId: null, theme: null });
   };
 
   return (
@@ -258,22 +300,120 @@ export default function GameSelectionSidebar({
           )}
         </div>
 
-        {/* Step 3: Category Selection */}
-        <div className={`${currentStep >= 3 ? 'opacity-100' : 'opacity-50 pointer-events-none'}`}>
+        {/* Step 3: Exam Board Selection (KS4 only) */}
+        {selection.curriculumLevel === 'KS4' && (
+          <div className={`${currentStep >= 3 ? 'opacity-100' : 'opacity-50 pointer-events-none'}`}>
+            <div className="flex items-center space-x-3 mb-4">
+              <button onClick={() => handleBack(2)} className="p-1 rounded-full hover:bg-gray-100 transition-colors">
+                <ArrowLeft className="h-5 w-5 text-gray-500" />
+              </button>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                selection.examBoard ? 'bg-green-500 text-white' : 'bg-indigo-500 text-white'
+              }`}>
+                {selection.examBoard ? '✓' : '3'}
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900">Select Exam Board</h3>
+            </div>
+            {selection.examBoard && currentStep > 3 ? (
+              <button
+                onClick={() => handleBack(3)}
+                className="flex items-center justify-between w-full p-4 rounded-lg border border-indigo-500 bg-indigo-50 text-indigo-700 transition-all"
+              >
+                <span className="font-medium">{EXAM_BOARDS.find(b => b.code === selection.examBoard)?.displayName}</span>
+                <ArrowRight className="h-4 w-4" />
+              </button>
+            ) : (
+              <div className="grid grid-cols-1 gap-3">
+                {EXAM_BOARDS.map((examBoard) => {
+                  const isSelected = selection.examBoard === examBoard.code;
+                  return (
+                    <button
+                      key={examBoard.code}
+                      onClick={() => handleExamBoardSelect(examBoard.code as 'AQA' | 'edexcel')}
+                      className={`flex items-center space-x-3 p-4 rounded-lg border transition-all ${
+                        isSelected
+                          ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
+                          : 'border-gray-200 hover:border-gray-300 bg-white hover:bg-gray-50'
+                      }`}
+                    >
+                      <div className="text-left">
+                        <div className="font-medium">{examBoard.displayName}</div>
+                        <div className="text-sm text-gray-500">GCSE {examBoard.name}</div>
+                      </div>
+                      {isSelected && <ArrowRight className="h-4 w-4 ml-auto" />}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Step 4: Tier Selection (KS4 only) */}
+        {selection.curriculumLevel === 'KS4' && (
+          <div className={`${currentStep >= 4 ? 'opacity-100' : 'opacity-50 pointer-events-none'}`}>
+            <div className="flex items-center space-x-3 mb-4">
+              <button onClick={() => handleBack(3)} className="p-1 rounded-full hover:bg-gray-100 transition-colors">
+                <ArrowLeft className="h-5 w-5 text-gray-500" />
+              </button>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                selection.tier ? 'bg-green-500 text-white' : 'bg-indigo-500 text-white'
+              }`}>
+                {selection.tier ? '✓' : '4'}
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900">Select Tier</h3>
+            </div>
+            {selection.tier && currentStep > 4 ? (
+              <button
+                onClick={() => handleBack(4)}
+                className="flex items-center justify-between w-full p-4 rounded-lg border border-indigo-500 bg-indigo-50 text-indigo-700 transition-all"
+              >
+                <span className="font-medium">{TIERS.find(t => t.code === selection.tier)?.displayName}</span>
+                <ArrowRight className="h-4 w-4" />
+              </button>
+            ) : (
+              <div className="grid grid-cols-1 gap-3">
+                {TIERS.map((tier) => {
+                  const isSelected = selection.tier === tier.code;
+                  return (
+                    <button
+                      key={tier.code}
+                      onClick={() => handleTierSelect(tier.code as 'foundation' | 'higher')}
+                      className={`flex items-center space-x-3 p-4 rounded-lg border transition-all ${
+                        isSelected
+                          ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
+                          : 'border-gray-200 hover:border-gray-300 bg-white hover:bg-gray-50'
+                      }`}
+                    >
+                      <div className="text-left">
+                        <div className="font-medium">{tier.displayName}</div>
+                        <div className="text-sm text-gray-500">{tier.description}</div>
+                      </div>
+                      {isSelected && <ArrowRight className="h-4 w-4 ml-auto" />}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Step 5: Category Selection */}
+        <div className={`${currentStep >= 5 ? 'opacity-100' : 'opacity-50 pointer-events-none'}`}>
           <div className="flex items-center space-x-3 mb-4">
-            <button onClick={() => handleBack(2)} className="p-1 rounded-full hover:bg-gray-100 transition-colors">
+            <button onClick={() => handleBack(selection.curriculumLevel === 'KS4' ? 4 : 2)} className="p-1 rounded-full hover:bg-gray-100 transition-colors">
               <ArrowLeft className="h-5 w-5 text-gray-500" />
             </button>
             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
               selection.categoryId ? 'bg-green-500 text-white' : 'bg-indigo-500 text-white'
             }`}>
-              {selection.categoryId ? '✓' : '3'}
+              {selection.categoryId ? '✓' : (selection.curriculumLevel === 'KS4' ? '5' : '3')}
             </div>
             <h3 className="text-lg font-semibold text-gray-900">Select Category</h3>
           </div>
-          {selection.categoryId && currentStep > 3 ? (
+          {selection.categoryId && currentStep > 5 ? (
             <button
-              onClick={() => handleBack(3)}
+              onClick={() => handleBack(5)}
               className="flex items-center justify-between w-full p-4 rounded-lg border border-indigo-500 bg-indigo-50 text-indigo-700 transition-all"
             >
               <span className="font-medium">{selectedCategory?.displayName}</span>
@@ -306,22 +446,22 @@ export default function GameSelectionSidebar({
           )}
         </div>
 
-        {/* Step 4: Subcategory Selection */}
-        <div className={`${currentStep >= 4 ? 'opacity-100' : 'opacity-50 pointer-events-none'}`}>
+        {/* Step 6: Subcategory Selection */}
+        <div className={`${currentStep >= 6 ? 'opacity-100' : 'opacity-50 pointer-events-none'}`}>
           <div className="flex items-center space-x-3 mb-4">
-            <button onClick={() => handleBack(3)} className="p-1 rounded-full hover:bg-gray-100 transition-colors">
+            <button onClick={() => handleBack(5)} className="p-1 rounded-full hover:bg-gray-100 transition-colors">
               <ArrowLeft className="h-5 w-5 text-gray-500" />
             </button>
             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
               selection.subcategoryId ? 'bg-green-500 text-white' : 'bg-indigo-500 text-white'
             }`}>
-              {selection.subcategoryId ? '✓' : '4'}
+              {selection.subcategoryId ? '✓' : (selection.curriculumLevel === 'KS4' ? '6' : '4')}
             </div>
             <h3 className="text-lg font-semibold text-gray-900">Select Subtopic</h3>
           </div>
-          {selection.subcategoryId && currentStep > 4 ? (
+          {selection.subcategoryId && currentStep > 6 ? (
             <button
-              onClick={() => handleBack(4)}
+              onClick={() => handleBack(6)}
               className="flex items-center justify-between w-full p-4 rounded-lg border border-indigo-500 bg-indigo-50 text-indigo-700 transition-all"
             >
               <span className="font-medium">{selectedCategory?.subcategories.find(s => s.id === selection.subcategoryId)?.displayName}</span>
@@ -352,23 +492,23 @@ export default function GameSelectionSidebar({
           )}
         </div>
 
-        {/* Step 5: Theme Selection (if game supports themes) */}
+        {/* Step 7: Theme Selection (if game supports themes) */}
         {selectedGame?.supportsThemes && (
-          <div className={`${currentStep >= 5 ? 'opacity-100' : 'opacity-50 pointer-events-none'}`}>
+          <div className={`${currentStep >= 7 ? 'opacity-100' : 'opacity-50 pointer-events-none'}`}>
             <div className="flex items-center space-x-3 mb-4">
-              <button onClick={() => handleBack(4)} className="p-1 rounded-full hover:bg-gray-100 transition-colors">
+              <button onClick={() => handleBack(6)} className="p-1 rounded-full hover:bg-gray-100 transition-colors">
                 <ArrowLeft className="h-5 w-5 text-gray-500" />
               </button>
               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
                 selection.theme ? 'bg-green-500 text-white' : 'bg-indigo-500 text-white'
               }`}>
-                {selection.theme ? '✓' : '5'}
+                {selection.theme ? '✓' : (selection.curriculumLevel === 'KS4' ? '7' : '5')}
               </div>
               <h3 className="text-lg font-semibold text-gray-900">Select Theme</h3>
             </div>
-            {selection.theme && currentStep > 5 ? (
+            {selection.theme && currentStep > 7 ? (
               <button
-                onClick={() => handleBack(5)}
+                onClick={() => handleBack(7)}
                 className="flex items-center justify-between w-full p-4 rounded-lg border border-indigo-500 bg-indigo-50 text-indigo-700 transition-all"
               >
                 <span className="font-medium">{GAME_THEMES.find(t => t.id === selection.theme)?.name}</span>

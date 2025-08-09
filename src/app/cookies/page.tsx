@@ -1,9 +1,17 @@
-'use client';
 
 import React from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Cookie, Settings } from 'lucide-react';
 import Footer from '../../components/layout/Footer';
+import { Metadata } from 'next';
+import { generateMetadata } from '../../components/seo/SEOWrapper';
+
+export const metadata: Metadata = generateMetadata({
+  title: 'Cookie Policy | Language Gems Educational Platform',
+  description: 'Cookie usage policy for Language Gems educational platform. Learn how we use cookies to improve your learning experience.',
+  canonical: '/cookies'
+});
+
 
 export default function CookiePolicyPage() {
   return (

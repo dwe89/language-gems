@@ -1,5 +1,23 @@
 import Link from 'next/link';
+import { Metadata } from 'next';
 import { MapPin, GraduationCap, Users, BookOpen, Gamepad2, Target, Shield, Settings, FileText, HelpCircle } from 'lucide-react';
+import SEOWrapper from '../../components/seo/SEOWrapper';
+import { generateMetadata } from '../../components/seo/SEOWrapper';
+
+export const metadata: Metadata = generateMetadata({
+  title: 'Site Map | Language Gems Platform Navigation',
+  description: 'Navigate Language Gems easily with our comprehensive site map. Find GCSE language learning games, resources, school solutions, and educational content.',
+  keywords: [
+    'Language Gems sitemap',
+    'site navigation',
+    'GCSE language learning games',
+    'educational platform map',
+    'language learning resources',
+    'school solutions',
+    'platform navigation'
+  ],
+  canonical: '/sitemap',
+});
 
 interface PageLink {
   href: string;
@@ -105,8 +123,14 @@ export default function SitemapPage() {
     </div>
   );
 
+  const breadcrumbs = [
+    { name: 'Home', url: '/' },
+    { name: 'Site Map', url: '/sitemap' }
+  ];
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <SEOWrapper breadcrumbs={breadcrumbs}>
+      <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
       <section className="relative py-20 px-4 overflow-hidden bg-gradient-to-br from-indigo-900 via-purple-900 to-slate-900">
         <div className="absolute inset-0 z-0">
@@ -248,5 +272,6 @@ export default function SitemapPage() {
         </div>
       </section>
     </div>
+    </SEOWrapper>
   );
 }

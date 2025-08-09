@@ -29,7 +29,7 @@ const pirataOne = Pirata_One({
 
 export const metadata: Metadata = {
   title: {
-    default: 'Language Gems - Interactive GCSE Language Learning Games & Vocabulary Platform',
+    default: 'GCSE Language Learning Games | Interactive Vocabulary Platform | Language Gems',
     template: '%s | Language Gems'
   },
   description: 'Transform GCSE language learning with 15+ interactive games, adaptive vocabulary practice, and comprehensive teacher analytics. Trusted by UK schools for Spanish, French, and German education.',

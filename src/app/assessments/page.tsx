@@ -1,7 +1,8 @@
-'use client';
 
 import React from 'react';
 import Link from 'next/link';
+import { Metadata } from 'next';
+import { generateMetadata } from '../../components/seo/SEOWrapper';
 import {
   BookOpen,
   FileText,
@@ -14,6 +15,12 @@ import {
   PenTool,
   Info
 } from 'lucide-react';
+
+export const metadata: Metadata = generateMetadata({
+  title: 'GCSE Language Assessments | Reading Comprehension & Vocabulary Tests | Language Gems',
+  description: 'Complete GCSE language assessments including reading comprehension, listening tests, and vocabulary practice. Official practice materials for AQA exams.',
+  canonical: '/assessments'
+});
 import Footer from '../../components/layout/Footer';
 
 const AssessmentCard = ({

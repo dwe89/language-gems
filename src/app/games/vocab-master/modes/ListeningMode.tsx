@@ -25,18 +25,28 @@ export const ListeningMode: React.FC<ListeningModeProps> = ({
   audioReplayCount
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
+  const lastPlayedWordRef = useRef<string | null>(null);
 
   useEffect(() => {
     // Auto-play audio when word loads
     if (gameState.currentWord) {
-      const timer = setTimeout(() => {
-        playPronunciation(
-          gameState.currentWord?.spanish || '', 
-          'es', 
-          gameState.currentWord
-        );
-      }, 1000);
-      return () => clearTimeout(timer);
+      const currentWordKey = `${gameState.currentWord.id}-listening`;
+      
+      if (lastPlayedWordRef.current !== currentWordKey) {
+        lastPlayedWordRef.current = currentWordKey;
+        
+        const timer = setTimeout(() => {
+          // Double-check the word hasn't changed while we were waiting
+          if (lastPlayedWordRef.current === currentWordKey && gameState.currentWord) {
+            playPronunciation(
+              gameState.currentWord?.spanish || '', 
+              'es', 
+              gameState.currentWord
+            );
+          }
+        }, 1000);
+        return () => clearTimeout(timer);
+      }
     }
   }, [gameState.currentWord, playPronunciation]);
 
@@ -82,7 +92,7 @@ export const ListeningMode: React.FC<ListeningModeProps> = ({
           {/* Single audio control */}
           <div className="flex justify-center">
             <button
-              onClick={() => playPronunciation(gameState.currentWord?.spanish || '', 'es', gameState.currentWord)}
+              onClick={() => playPronunciation(gameState.currentWord?.spanish || '', 'es', gameState.currentWord || undefined)}
               disabled={gameState.audioPlaying}
               className={`p-6 rounded-full transition-colors border-2 shadow-lg ${
                 gameState.audioPlaying

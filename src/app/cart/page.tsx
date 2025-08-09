@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Head from 'next/head';
 import { useRouter } from 'next/navigation';
 import { useCart } from '../../contexts/CartContext';
 import { useAuth } from '../../components/auth/AuthProvider';
@@ -157,7 +158,14 @@ export default function CartPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <>
+      <Head>
+        <title>Shopping Cart | Language Gems Educational Resources</title>
+        <meta name="description" content="Review your Language Gems shopping cart with educational resources, worksheets, and learning materials. Secure checkout for premium GCSE language learning content." />
+        <meta name="keywords" content="shopping cart, Language Gems cart, educational resources checkout, GCSE materials purchase, language learning resources" />
+        <link rel="canonical" href="https://languagegems.com/cart" />
+      </Head>
+      <div className="min-h-screen bg-slate-50">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
@@ -418,5 +426,6 @@ export default function CartPage() {
         </div>
       </div>
     </div>
+    </>
   );
 } 

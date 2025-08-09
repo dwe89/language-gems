@@ -12,6 +12,7 @@ const { PollyClient, SynthesizeSpeechCommand } = require('@aws-sdk/client-polly'
 const fs = require('fs').promises;
 const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
+const { cleanWordForAudio } = require('./audio-word-cleaner');
 
 // Check for required environment variables
 const requiredVars = ['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY', 'AWS_REGION'];
@@ -221,15 +222,19 @@ async function generateAllAudio() {
         // Process batch in parallel
         const batchPromises = batch.map(async (vocab) => {
             const { id, language, word, category } = vocab;
-            
+
+            // Clean word for audio generation (remove grammatical notation)
+            const audioWord = cleanWordForAudio(word, language);
+            console.log(`  Processing: "${word}" → "${audioWord}" (${language})`);
+
             // Create sanitized filename
             const sanitizedWord = sanitizeFilename(word);
             const filename = `${language}_${category}_${sanitizedWord}.mp3`;
             const filePath = path.join(AUDIO_DIR, filename);
             const audioUrl = `/audio/vocabulary/${filename}`;
 
-            // Generate audio file
-            const success = await generateAudio(word, language, filePath);
+            // Generate audio file using cleaned word
+            const success = await generateAudio(audioWord, language, filePath);
             
             if (success) {
                 // Update database with audio URL

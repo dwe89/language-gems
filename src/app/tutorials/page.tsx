@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Head from 'next/head';
 import { useState } from 'react';
 import { 
   Play, Clock, Users, Star, BookOpen, Gamepad2, 
@@ -166,7 +167,14 @@ export default function TutorialsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+    <>
+      <Head>
+        <title>Getting Started Guide | Language Gems Tutorials for Teachers</title>
+        <meta name="description" content="Learn how to use Language Gems in your classroom. Step-by-step tutorials for MFL teachers to maximize student engagement with GCSE language learning games." />
+        <meta name="keywords" content="Language Gems tutorials, MFL teacher training, GCSE language learning guide, teacher tutorials, classroom setup" />
+        <link rel="canonical" href="https://languagegems.com/tutorials" />
+      </Head>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
       {/* Header */}
       <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-16">
         <div className="container mx-auto px-4">
@@ -352,5 +360,6 @@ export default function TutorialsPage() {
 
       <Footer />
     </div>
+    </>
   );
 }

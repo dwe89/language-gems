@@ -10,9 +10,11 @@ import {
   TrendingUp, Clock, Settings, Play, Lightbulb, Zap,
   RotateCcw, Flame, Trophy, ChevronRight, Volume2, Keyboard,
   PenTool, CreditCard, Mic, Sparkles, Palette, ToggleLeft, ToggleRight,
-  ChevronDown, Globe, GraduationCap, FolderOpen, BarChart3
+  ChevronDown, Globe, GraduationCap, FolderOpen, BarChart3, Award
 } from 'lucide-react';
 import { useGameVocabulary } from '../../../../hooks/useGameVocabulary';
+import { getCategoriesByCurriculum } from '../../../../components/games/KS4CategorySystem';
+import { VOCABULARY_CATEGORIES } from '../../../../components/games/ModernCategorySelector';
 
 // Unified Game Mode Interface
 interface GameMode {
@@ -21,7 +23,7 @@ interface GameMode {
   description: string;
   icon: React.ReactNode;
   color: string;
-  category: 'learning' | 'practice' | 'review' | 'challenge';
+  category: 'learning' | 'practice' | 'review' | 'challenge' | 'core' | 'skills';
   estimatedTime: string;
   difficulty: 'Beginner' | 'Intermediate' | 'Advanced' | 'Variable';
   isRecommended?: boolean;
@@ -161,6 +163,8 @@ interface UnifiedVocabMasterLauncherProps {
     curriculumLevel?: 'KS2' | 'KS3' | 'KS4' | 'KS5';
     categoryId?: string;
     subcategoryId?: string;
+    examBoard?: 'AQA' | 'edexcel';
+    tier?: 'foundation' | 'higher';
   } | null;
   onFilterChange?: (config: { language: string; curriculumLevel: 'KS2' | 'KS3' | 'KS4' | 'KS5'; categoryId: string; subcategoryId: string }) => void;
 }
@@ -174,6 +178,14 @@ export default function UnifiedVocabMasterLauncher({ onGameStart, onBack, preset
   const [selectedLevel, setSelectedLevel] = useState<'KS2' | 'KS3' | 'KS4' | 'KS5'>(presetConfig?.curriculumLevel || 'KS3');
   const [selectedCategory, setSelectedCategory] = useState<string>(presetConfig?.categoryId || ''); // Default to "All Topics"
   const [selectedSubcategory, setSelectedSubcategory] = useState<string>(presetConfig?.subcategoryId || ''); // Default to "All Subtopics"
+
+  // KS4-specific state
+  const [selectedExamBoard, setSelectedExamBoard] = useState<'AQA' | 'edexcel'>('AQA');
+  const [selectedTier, setSelectedTier] = useState<'foundation' | 'higher'>('foundation');
+
+  // Dynamic categories based on curriculum level and exam board
+  const [availableCategories, setAvailableCategories] = useState<Array<{value: string, label: string}>>([]);
+  const [availableSubcategories, setAvailableSubcategories] = useState<Array<{value: string, label: string}>>([]);
 
   // Track initialization state to prevent infinite loops
   const [isInitialized, setIsInitialized] = useState(false);
@@ -190,6 +202,13 @@ export default function UnifiedVocabMasterLauncher({ onGameStart, onBack, preset
       setSelectedLevel(presetConfig.curriculumLevel || 'KS3');
       setSelectedCategory(presetConfig.categoryId || '');
       setSelectedSubcategory(presetConfig.subcategoryId || '');
+      // Set KS4-specific parameters from preset config
+      if (presetConfig.examBoard) {
+        setSelectedExamBoard(presetConfig.examBoard as 'AQA' | 'edexcel');
+      }
+      if (presetConfig.tier) {
+        setSelectedTier(presetConfig.tier as 'foundation' | 'higher');
+      }
       setAppliedPresetConfig(presetConfig);
       // Only set isInitialized to true ONCE after applying preset config
       if (!isInitialized) setIsInitialized(true);
@@ -219,8 +238,7 @@ export default function UnifiedVocabMasterLauncher({ onGameStart, onBack, preset
   // Category filter for game modes (separate from content category)
   const [gameModeCategory, setGameModeCategory] = useState<string>('all');
 
-  // Available subtopics based on selected category
-  const [availableSubtopics, setAvailableSubtopics] = useState<Array<{ value: string, label: string }>>([]);
+
 
   // Settings
   const [settings, setSettings] = useState({
@@ -237,6 +255,9 @@ export default function UnifiedVocabMasterLauncher({ onGameStart, onBack, preset
       categoryId: selectedCategory === '' ? undefined : selectedCategory, // Empty string means "All Topics"
       subcategoryId: selectedSubcategory === '' ? undefined : selectedSubcategory, // Empty string means "All Subtopics"
       curriculumLevel: selectedLevel,
+      // KS4-specific parameters
+      examBoard: selectedLevel === 'KS4' ? selectedExamBoard : undefined,
+      tier: selectedLevel === 'KS4' ? selectedTier : undefined,
       limit: 500, // Increased limit to get more realistic counts
       randomize: true
     };
@@ -248,7 +269,7 @@ export default function UnifiedVocabMasterLauncher({ onGameStart, onBack, preset
       presetConfig
     });
     return params;
-  }, [selectedLanguage, selectedCategory, selectedSubcategory, selectedLevel]);
+  }, [selectedLanguage, selectedCategory, selectedSubcategory, selectedLevel, selectedExamBoard, selectedTier]);
 
   const {
     vocabulary,
@@ -281,10 +302,53 @@ export default function UnifiedVocabMasterLauncher({ onGameStart, onBack, preset
     weeklyProgress: 0
   });
 
-  // Load available subtopics when category changes
+  // Load categories dynamically based on curriculum level and exam board
+  const loadCategories = () => {
+    if (selectedLevel === 'KS4') {
+      const categories = getCategoriesByCurriculum('KS4', selectedExamBoard);
+      const categoryOptions = categories.map(cat => ({
+        value: cat.id,
+        label: cat.displayName
+      }));
+      setAvailableCategories(categoryOptions);
+    } else {
+      // For KS3 and other levels, use the standard categories
+      const categories = selectedLevel === 'KS3' ? VOCABULARY_CATEGORIES : [];
+      const categoryOptions = categories.map(cat => ({
+        value: cat.id,
+        label: cat.displayName
+      }));
+      setAvailableCategories(categoryOptions);
+    }
+  };
+
+  // Load subcategories when category changes
+  const loadSubcategories = (categoryId: string) => {
+    if (!categoryId) {
+      setAvailableSubcategories([]);
+      return;
+    }
+
+    if (selectedLevel === 'KS4') {
+      const categories = getCategoriesByCurriculum('KS4', selectedExamBoard);
+      const selectedCategory = categories.find(cat => cat.id === categoryId);
+      if (selectedCategory) {
+        const subcategoryOptions = selectedCategory.subcategories.map(sub => ({
+          value: sub.id,
+          label: sub.displayName
+        }));
+        setAvailableSubcategories(subcategoryOptions);
+      }
+    } else {
+      // For KS3, load from database
+      loadAvailableSubtopics(categoryId);
+    }
+  };
+
+  // Load available subtopics when category changes (for KS3 and fallback)
   const loadAvailableSubtopics = async (categoryId: string) => {
     if (!supabase || !categoryId) {
-      setAvailableSubtopics([]);
+      setAvailableSubcategories([]);
       return;
     }
 
@@ -303,28 +367,38 @@ export default function UnifiedVocabMasterLauncher({ onGameStart, onBack, preset
         .filter(Boolean)
         .map(subcategory => ({
           value: subcategory,
-          label: subcategory.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+          label: subcategory.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())
         }));
 
-      setAvailableSubtopics(uniqueSubtopics);
+      setAvailableSubcategories(uniqueSubtopics);
     } catch (error) {
       console.error('Error loading subtopics:', error);
-      setAvailableSubtopics([]);
+      setAvailableSubcategories([]);
     }
   };
 
-  // Load subtopics when category changes
+  // Load categories when level or exam board changes
+  useEffect(() => {
+    loadCategories();
+    // Reset category and subcategory when level/exam board changes
+    if (isInitialized && !presetConfig) {
+      setSelectedCategory('');
+      setSelectedSubcategory('');
+    }
+  }, [selectedLevel, selectedExamBoard, isInitialized, presetConfig]);
+
+  // Load subcategories when category changes
   useEffect(() => {
     if (selectedCategory && selectedCategory !== '') {
-      loadAvailableSubtopics(selectedCategory);
+      loadSubcategories(selectedCategory);
     } else {
-      setAvailableSubtopics([]);
+      setAvailableSubcategories([]);
     }
     // Only reset subtopic when category changes AND we're not initializing from presetConfig
     if (isInitialized && !presetConfig) {
       setSelectedSubcategory('');
     }
-  }, [selectedCategory, supabase, isInitialized, presetConfig]);
+  }, [selectedCategory, selectedLevel, selectedExamBoard, supabase, isInitialized, presetConfig]);
 
   // Load user stats when filters change
   useEffect(() => {
@@ -611,6 +685,42 @@ export default function UnifiedVocabMasterLauncher({ onGameStart, onBack, preset
                   </select>
                 </div>
 
+                {/* Exam Board Selector - Only show for KS4 */}
+                {selectedLevel === 'KS4' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <Award className="h-4 w-4 inline mr-1" />
+                      Exam Board
+                    </label>
+                    <select
+                      value={selectedExamBoard}
+                      onChange={(e) => setSelectedExamBoard(e.target.value as 'AQA' | 'edexcel')}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="AQA">AQA</option>
+                      <option value="edexcel">Edexcel</option>
+                    </select>
+                  </div>
+                )}
+
+                {/* Tier Selector - Only show for KS4 */}
+                {selectedLevel === 'KS4' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <Target className="h-4 w-4 inline mr-1" />
+                      Tier
+                    </label>
+                    <select
+                      value={selectedTier}
+                      onChange={(e) => setSelectedTier(e.target.value as 'foundation' | 'higher')}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="foundation">Foundation Tier (Grades 1-5)</option>
+                      <option value="higher">Higher Tier (Grades 4-9)</option>
+                    </select>
+                  </div>
+                )}
+
                 {/* Category Selector */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -623,16 +733,11 @@ export default function UnifiedVocabMasterLauncher({ onGameStart, onBack, preset
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
                     <option value="">All Topics</option>
-                    <option value="basics_core_language">Basics & Core Language</option>
-                    <option value="identity_personal_life">Identity & Personal Life</option>
-                    <option value="home_local_area">Home & Local Area</option>
-                    <option value="school_jobs_future">School, Jobs & Future</option>
-                    <option value="free_time_leisure">Free Time & Leisure</option>
-                    <option value="food_drink">Food & Drink</option>
-                    <option value="clothes_shopping">Clothes & Shopping</option>
-                    <option value="technology_media">Technology & Media</option>
-                    <option value="health_lifestyle">Health & Lifestyle</option>
-                    <option value="holidays_travel_culture">Holidays, Travel & Culture</option>
+                    {availableCategories.map(category => (
+                      <option key={category.value} value={category.value}>
+                        {category.label}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
@@ -649,9 +754,9 @@ export default function UnifiedVocabMasterLauncher({ onGameStart, onBack, preset
                     disabled={!selectedCategory || selectedCategory === ''}
                   >
                     <option value="">All Subtopics</option>
-                    {availableSubtopics.map(subtopic => (
-                      <option key={subtopic.value} value={subtopic.value}>
-                        {subtopic.label}
+                    {availableSubcategories.map(subcategory => (
+                      <option key={subcategory.value} value={subcategory.value}>
+                        {subcategory.label}
                       </option>
                     ))}
                   </select>

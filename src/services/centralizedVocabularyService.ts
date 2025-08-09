@@ -7,8 +7,16 @@ export interface CentralizedVocabularyWord {
   translation: string;
   audio_url?: string;
   category?: string; // 'animals', 'food', 'family', etc.
+  subcategory?: string;
   difficulty_level?: string;
   part_of_speech?: string;
+  example_sentence?: string;
+  example_translation?: string;
+  curriculum_level?: string;
+  tier?: string;
+  exam_board_code?: string;
+  theme_name?: string;
+  unit_name?: string;
   metadata?: Record<string, any>; // Gender, IPA, etc.
   created_at?: string;
   updated_at?: string;
@@ -95,7 +103,8 @@ export class CentralizedVocabularyService {
       }
 
       if (query.tier) {
-        supabaseQuery = supabaseQuery.or(`tier.eq.${query.tier},tier.eq.both`);
+        // Handle combined tiers (e.g., "foundation; higher") and exact matches
+        supabaseQuery = supabaseQuery.or(`tier.like.%${query.tier}%,tier.eq.both`);
       }
 
       if (query.examBoard) {
@@ -103,11 +112,13 @@ export class CentralizedVocabularyService {
       }
 
       if (query.themeName) {
-        supabaseQuery = supabaseQuery.eq('theme_name', query.themeName);
+        // Use LIKE matching to handle combined themes (e.g., "Theme1; Theme2")
+        supabaseQuery = supabaseQuery.like('theme_name', `%${query.themeName}%`);
       }
 
       if (query.unitName) {
-        supabaseQuery = supabaseQuery.eq('unit_name', query.unitName);
+        // Use LIKE matching to handle combined units (e.g., "Unit1; Unit2")
+        supabaseQuery = supabaseQuery.like('unit_name', `%${query.unitName}%`);
       }
 
       if (query.subcategory) {

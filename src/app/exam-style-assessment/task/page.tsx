@@ -17,7 +17,7 @@ export default function ExamStyleAssessmentTaskPage() {
     // Handle listening assessments
     if (skill === 'listening') {
       let languageCode = 'es'; // default to Spanish
-      
+
       // Map language names to codes
       switch (language?.toLowerCase()) {
         case 'french':
@@ -34,14 +34,21 @@ export default function ExamStyleAssessmentTaskPage() {
 
       // Map difficulty to tier
       const tier = difficulty === 'higher' ? 'higher' : 'foundation';
-      
+
       // Default to paper-1
       const paper = 'paper-1';
-      
-      // Redirect to the AQA listening test
-      const redirectUrl = `/aqa-listening-test/${languageCode}/${tier}/${paper}`;
-      console.log('Redirecting to:', redirectUrl);
-      router.replace(redirectUrl);
+
+      // Redirect based on exam board
+      if (examBoard === 'Edexcel') {
+        const redirectUrl = `/edexcel-listening-test/${languageCode}/${tier}/${paper}`;
+        console.log('Redirecting to Edexcel:', redirectUrl);
+        router.replace(redirectUrl);
+      } else {
+        // Default to AQA for backward compatibility
+        const redirectUrl = `/aqa-listening-test/${languageCode}/${tier}/${paper}`;
+        console.log('Redirecting to AQA:', redirectUrl);
+        router.replace(redirectUrl);
+      }
       return;
     }
 

@@ -109,18 +109,53 @@ export function useUnifiedVocabulary({
         // For KS3, use curriculum_level or tier
         query = query.or('curriculum_level.eq.KS3,tier.in.(Foundation,Core)');
       } else if (config.curriculumLevel === 'KS4') {
-        // For KS4, use curriculum_level or tier
-        query = query.or('curriculum_level.eq.KS4,tier.in.(Foundation,Higher,Core)');
+        // For KS4, use curriculum_level
+        query = query.eq('curriculum_level', 'KS4');
+
+        // Add KS4-specific filters
+        if (config.examBoard) {
+          query = query.eq('exam_board_code', config.examBoard);
+        }
+        if (config.tier) {
+          query = query.like('tier', `%${config.tier}%`);
+        }
       }
 
-      // Filter by category
+      // Handle category filtering differently for KS4 vs other levels
       if (config.categoryId && config.categoryId !== 'custom') {
-        query = query.eq('category', config.categoryId);
+        if (config.curriculumLevel === 'KS4') {
+          // For KS4, map categoryId to theme_name
+          const themeMapping: Record<string, string> = {
+            'aqa_general': 'General',
+            'aqa_communication': 'Communication and the world around us',
+            'aqa_people_lifestyle': 'People and lifestyle',
+            'aqa_popular_culture': 'Popular culture',
+            'aqa_cultural_items': 'Cultural items',
+            'edexcel_general': 'General',
+            'edexcel_personal_world': 'My personal world',
+            'edexcel_neighborhood': 'My neighborhood',
+            'edexcel_studying_future': 'Studying and my future',
+            'edexcel_travel_tourism': 'Travel and tourism',
+            'edexcel_media_technology': 'Media and technology'
+          };
+
+          const themeName = themeMapping[config.categoryId] || config.categoryId;
+          query = query.like('theme_name', `%${themeName}%`);
+        } else {
+          // For other levels, use category field
+          query = query.eq('category', config.categoryId);
+        }
       }
 
-      // Filter by subcategory if specified
+      // Handle subcategory filtering differently for KS4 vs other levels
       if (config.subcategoryId) {
-        query = query.eq('subcategory', config.subcategoryId);
+        if (config.curriculumLevel === 'KS4') {
+          // For KS4, subcategoryId is the unit_name
+          query = query.like('unit_name', `%${config.subcategoryId}%`);
+        } else {
+          // For other levels, use subcategory field
+          query = query.eq('subcategory', config.subcategoryId);
+        }
       }
 
       // Apply limit

@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, AlertCircle, Loader2 } from 'lucide-react';
 import UnifiedCategorySelector, { UnifiedSelectionConfig } from './UnifiedCategorySelector';
 import { useUnifiedVocabulary, validateVocabularyForGame, UnifiedVocabularyItem } from '../../hooks/useUnifiedVocabulary';
+import { useUnifiedAuth } from '../../hooks/useUnifiedAuth';
 
 // Theme options for games that support themes
 export interface GameTheme {
@@ -62,28 +63,58 @@ export default function UnifiedGameLauncher({
   supportsThemes = false,
   defaultTheme = 'default'
 }: UnifiedGameLauncherProps) {
+  console.log(`🎯 [${gameName}] UnifiedGameLauncher component rendering`);
   const searchParams = useSearchParams();
+  const { user, isLoading, isDemo } = useUnifiedAuth();
   const [selectedConfig, setSelectedConfig] = useState<UnifiedSelectionConfig | null>(null);
   const [showSelector, setShowSelector] = useState(true);
   const [selectedTheme, setSelectedTheme] = useState<string>(defaultTheme);
   const [showCustomVocabInput, setShowCustomVocabInput] = useState(false);
   const [customVocabInput, setCustomVocabInput] = useState<string>('');
   const [urlParamsChecked, setUrlParamsChecked] = useState(false);
+  const [isClient, setIsClient] = useState(false);
+
+  // Test if useEffect works at all
+  useEffect(() => {
+    console.log(`🧪 [${gameName}] Basic useEffect test - this should always run`);
+  });
+
+  // Ensure we're on the client side
+  useEffect(() => {
+    console.log(`🖥️ [${gameName}] Client-side hydration complete`);
+    setIsClient(true);
+  }, [gameName]);
 
   // Check for URL parameters and auto-start game
   useEffect(() => {
+    console.log(`🔧 [${gameName}] useEffect triggered - isClient:`, isClient, 'urlParamsChecked:', urlParamsChecked);
+    if (!isClient) return;
     const checkUrlParams = async () => {
-      if (urlParamsChecked || selectedConfig) {
+      console.log(`🚀 [${gameName}] checkUrlParams called - urlParamsChecked:`, urlParamsChecked, 'selectedConfig:', !!selectedConfig, 'auth:', { isLoading, user: !!user, isDemo });
+
+      if (urlParamsChecked || selectedConfig || !searchParams) {
+        console.log(`⏭️ [${gameName}] Skipping URL param check - already checked or config exists or no searchParams`);
         return;
       }
+
+      // Note: Process URL params immediately, don't wait for auth like Vocab Blast does
 
       const lang = searchParams?.get('lang');
       const level = searchParams?.get('level') as 'KS2' | 'KS3' | 'KS4' | 'KS5';
       const cat = searchParams?.get('cat');
       const subcat = searchParams?.get('subcat');
       const theme = searchParams?.get('theme') || defaultTheme;
+      const examBoard = searchParams?.get('examBoard') as 'AQA' | 'edexcel';
+      const tier = searchParams?.get('tier') as 'foundation' | 'higher';
 
-      console.log(`🔍 [${gameName}] Checking URL params:`, { lang, level, cat, subcat, theme });
+      console.log(`🔍 [${gameName}] Checking URL params:`, { lang, level, cat, subcat, theme, examBoard, tier });
+      console.log(`🔍 [${gameName}] URL param validation:`, {
+        hasLang: !!lang,
+        hasLevel: !!level,
+        hasCat: !!cat,
+        hasSubcat: !!subcat,
+        subcatValue: subcat
+      });
 
       if (lang && level && cat && subcat) {
         console.log(`✅ [${gameName}] Found URL parameters, auto-starting game...`);
@@ -93,7 +124,10 @@ export default function UnifiedGameLauncher({
           curriculumLevel: level,
           categoryId: cat,
           subcategoryId: subcat,
-          customMode: false
+          customMode: false,
+          // KS4-specific parameters
+          examBoard: examBoard || undefined,
+          tier: tier || undefined
         };
 
         setSelectedConfig(config);
@@ -107,7 +141,7 @@ export default function UnifiedGameLauncher({
     };
 
     checkUrlParams();
-  }, [searchParams, urlParamsChecked, selectedConfig, gameName, defaultTheme]);
+  }, [searchParams, urlParamsChecked, selectedConfig, gameName, defaultTheme, isClient, isLoading, user, isDemo]);
 
   // Load vocabulary based on selected configuration
   const { 
@@ -183,6 +217,7 @@ export default function UnifiedGameLauncher({
         onSelectionComplete={handleSelectionComplete}
         onBack={onBack}
         title={gameDescription ? `${gameName} - ${gameDescription}` : undefined}
+        presetConfig={selectedConfig}
       />
     );
   }

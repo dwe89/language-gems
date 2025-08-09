@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Head from 'next/head';
 import { useState } from 'react';
 import { 
   Mail, Phone, Clock, MapPin, Send, CheckCircle,
@@ -145,7 +146,14 @@ export default function ContactSalesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+    <>
+      <Head>
+        <title>Contact Sales | School Pricing & Demos | Language Gems for Schools</title>
+        <meta name="description" content="Contact our education specialists for school pricing, demos, and bulk licensing. Get Language Gems GCSE language learning platform for your entire MFL department." />
+        <meta name="keywords" content="Language Gems schools, GCSE language learning pricing, MFL department licensing, school demos, education sales" />
+        <link rel="canonical" href="https://languagegems.com/contact-sales" />
+      </Head>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
       {/* Header */}
       <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-16">
         <div className="container mx-auto px-4 text-center">
@@ -445,5 +453,6 @@ export default function ContactSalesPage() {
 
       <Footer />
     </div>
+    </>
   );
 }

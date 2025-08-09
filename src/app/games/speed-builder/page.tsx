@@ -115,7 +115,7 @@ export default function SpeedBuilderPage() {
           };
 
           const legacyCurriculumType = assignmentConfig.curriculumLevel === 'KS4' ? 'gcse' : 'ks3';
-          const legacyTier = assignmentConfig.curriculumLevel === 'KS4' ? 'foundation' : 'core';
+          const legacyTier = assignmentConfig.curriculumLevel === 'KS4' ? 'Foundation' : 'Higher';
           const legacyTheme = categoryToThemeMapping[assignmentConfig.categoryId] || 'People and lifestyle';
           const legacyTopic = subcategoryToTopicMapping[assignmentConfig.subcategoryId || ''] || 'Identity and relationships';
 
@@ -162,7 +162,7 @@ export default function SpeedBuilderPage() {
     const legacyLanguage = selectedConfig.language; // Already in full form (spanish, french, german)
 
     const legacyCurriculumType = selectedConfig.curriculumLevel === 'KS4' ? 'gcse' : 'ks3';
-    const legacyTier = selectedConfig.curriculumLevel === 'KS4' ? 'foundation' : 'core';
+    const legacyTier = selectedConfig.curriculumLevel === 'KS4' ? 'Foundation' : 'Higher';
 
     // Map sentence categories to Speed Builder themes
     const categoryToThemeMapping: { [key: string]: string } = {

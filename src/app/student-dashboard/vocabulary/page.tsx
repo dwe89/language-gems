@@ -33,6 +33,9 @@ export default function VocabularyDashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTheme, setSelectedTheme] = useState('all');
   const [selectedProficiency, setSelectedProficiency] = useState('all');
+  const [selectedCurriculumLevel, setSelectedCurriculumLevel] = useState('all');
+  const [selectedExamBoard, setSelectedExamBoard] = useState('all');
+  const [selectedTier, setSelectedTier] = useState('all');
   const [themes, setThemes] = useState<string[]>([]);
   const [sortConfig, setSortConfig] = useState({ key: 'lastEncountered', direction: 'desc' });
   const [stats, setStats] = useState<VocabularyStats>({
@@ -92,6 +95,21 @@ export default function VocabularyDashboard() {
       filtered = filtered.filter(item => item.category === selectedTheme);
     }
 
+    // Apply curriculum level filter
+    if (selectedCurriculumLevel !== 'all') {
+      filtered = filtered.filter(item => item.curriculumLevel === selectedCurriculumLevel);
+    }
+
+    // Apply exam board filter (for KS4)
+    if (selectedExamBoard !== 'all') {
+      filtered = filtered.filter(item => item.examBoard === selectedExamBoard);
+    }
+
+    // Apply tier filter (for KS4)
+    if (selectedTier !== 'all') {
+      filtered = filtered.filter(item => item.tier === selectedTier);
+    }
+
     // Apply proficiency filter
     if (selectedProficiency !== 'all') {
       const profLevel = parseInt(selectedProficiency);
@@ -130,7 +148,7 @@ export default function VocabularyDashboard() {
     });
     
     setFilteredItems(filtered);
-  }, [vocabularyItems, searchTerm, selectedTheme, selectedProficiency, sortConfig]);
+  }, [vocabularyItems, searchTerm, selectedTheme, selectedProficiency, selectedCurriculumLevel, selectedExamBoard, selectedTier, sortConfig]);
 
   // Handle sort request
   const requestSort = (key) => {
@@ -275,6 +293,49 @@ export default function VocabularyDashboard() {
             </select>
           </div>
         </div>
+
+        {/* Curriculum Level Filter */}
+        <div className="flex-1 min-w-[200px]">
+          <select
+            className="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5"
+            value={selectedCurriculumLevel}
+            onChange={(e) => setSelectedCurriculumLevel(e.target.value)}
+          >
+            <option value="all">All Levels</option>
+            <option value="KS3">KS3 (Ages 11-14)</option>
+            <option value="KS4">KS4 (GCSE)</option>
+          </select>
+        </div>
+
+        {/* Exam Board Filter - Only show for KS4 */}
+        {selectedCurriculumLevel === 'KS4' && (
+          <div className="flex-1 min-w-[200px]">
+            <select
+              className="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5"
+              value={selectedExamBoard}
+              onChange={(e) => setSelectedExamBoard(e.target.value)}
+            >
+              <option value="all">All Exam Boards</option>
+              <option value="AQA">AQA</option>
+              <option value="edexcel">Edexcel</option>
+            </select>
+          </div>
+        )}
+
+        {/* Tier Filter - Only show for KS4 */}
+        {selectedCurriculumLevel === 'KS4' && (
+          <div className="flex-1 min-w-[200px]">
+            <select
+              className="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5"
+              value={selectedTier}
+              onChange={(e) => setSelectedTier(e.target.value)}
+            >
+              <option value="all">All Tiers</option>
+              <option value="foundation">Foundation Tier</option>
+              <option value="higher">Higher Tier</option>
+            </select>
+          </div>
+        )}
       </div>
       
       {/* Vocabulary Table */}

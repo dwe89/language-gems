@@ -15,6 +15,10 @@ interface TicTacToeGameWrapperProps {
     theme: string;
     playerMark: string;
     computerMark: string;
+    // KS4-specific parameters
+    curriculumLevel?: string;
+    examBoard?: 'AQA' | 'edexcel';
+    tier?: 'foundation' | 'higher';
   };
   onBackToMenu: () => void;
   onGameEnd: (result: { outcome: 'win' | 'loss' | 'tie'; wordsLearned: number; perfectGame?: boolean }) => void;
@@ -51,6 +55,9 @@ export default function TicTacToeGameWrapper(props: TicTacToeGameWrapperProps) {
     language: mapLanguage(props.settings.language),
     categoryId: props.settings.category,
     subcategoryId: props.settings.subcategory,
+    curriculumLevel: props.settings.curriculumLevel,
+    examBoard: props.settings.examBoard,
+    tier: props.settings.tier,
     limit: 50,
     randomize: true
   });

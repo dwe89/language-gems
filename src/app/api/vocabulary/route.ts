@@ -47,6 +47,13 @@ export interface ModernVocabularyQuery {
   search?: string;
   randomize?: boolean;
   hasAudio?: boolean;
+  // KS4-specific parameters
+  curriculumLevel?: string;
+  examBoard?: string;
+  tier?: string;
+  themeName?: string;
+  unitName?: string;
+  subcategory?: string;
 }
 
 async function handleLegacyRequest(supabase: any, searchParams: URLSearchParams) {
@@ -140,19 +147,56 @@ export async function GET(request: NextRequest) {
     const vocabularyService = new CentralizedVocabularyService(supabase);
     
     // Extract query parameters
+    const curriculumLevel = searchParams.get('curriculumLevel');
+    const category = searchParams.get('category');
+    const subcategory = searchParams.get('subcategory');
+
+    // Map KS4 category IDs to theme names or use direct theme/unit names
+    let themeName: string | undefined = searchParams.get('themeName') || undefined;
+    let unitName: string | undefined = searchParams.get('unitName') || undefined;
+
+    // If no direct theme/unit names provided, try to map from category IDs
+    if (curriculumLevel === 'KS4' && category && !themeName) {
+      const themeMapping: Record<string, string> = {
+        'aqa_general': 'General',
+        'aqa_communication': 'Communication and the world around us',
+        'aqa_people_lifestyle': 'People and lifestyle',
+        'aqa_popular_culture': 'Popular culture',
+        'aqa_cultural_items': 'Cultural items',
+        'edexcel_general': 'General',
+        'edexcel_personal_world': 'My personal world',
+        'edexcel_neighborhood': 'My neighborhood',
+        'edexcel_studying_future': 'Studying and my future',
+        'edexcel_travel_tourism': 'Travel and tourism',
+        'edexcel_media_technology': 'Media and technology'
+      };
+
+      themeName = themeMapping[category] || category;
+      unitName = subcategory; // For KS4, subcategory is the unit name
+    }
+
     const query: CentralizedQuery = {
       language: searchParams.get('language') || 'es',
-      category: searchParams.get('category') || undefined,
+      category: curriculumLevel === 'KS4' ? undefined : category, // Don't use category for KS4
+      subcategory: curriculumLevel === 'KS4' ? undefined : subcategory, // Don't use subcategory for KS4
       difficulty_level: searchParams.get('difficulty_level') || undefined,
       limit: parseInt(searchParams.get('limit') || '20'),
       offset: parseInt(searchParams.get('offset') || '0'),
       part_of_speech: searchParams.get('part_of_speech') || undefined,
       search: searchParams.get('search') || undefined,
       randomize: searchParams.get('randomize') === 'true',
-      hasAudio: searchParams.has('hasAudio') ? searchParams.get('hasAudio') === 'true' : undefined
+      hasAudio: searchParams.has('hasAudio') ? searchParams.get('hasAudio') === 'true' : undefined,
+      // KS4-specific parameters
+      curriculumLevel: curriculumLevel || undefined,
+      examBoard: searchParams.get('examBoard') || undefined,
+      tier: searchParams.get('tier') || undefined,
+      themeName: themeName,
+      unitName: unitName
     };
 
+    console.log('🔍 API Vocabulary Query:', query);
     const vocabulary = await vocabularyService.getVocabulary(query);
+    console.log('📊 API Vocabulary Result:', { count: vocabulary?.length || 0, firstItem: vocabulary?.[0] });
 
     return NextResponse.json({
       vocabulary,

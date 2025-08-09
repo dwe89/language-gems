@@ -1,5 +1,18 @@
 import Link from 'next/link';
+import { Metadata } from 'next';
 import Footer from '../../components/layout/Footer';
+import { generateMetadata } from '../../components/seo/SEOWrapper';
+
+export const metadata: Metadata = generateMetadata({
+  title: 'Language Gems for Schools | GCSE Spanish, French & German Learning Platform',
+  description: 'Transform your MFL department with Language Gems. Interactive GCSE language learning games for Spanish, French, and German. Trusted by UK schools with comprehensive teaching resources.',
+  keywords: [
+    'GCSE Spanish', 'GCSE French', 'GCSE German', 
+    'MFL teaching resources', 'Spanish games', 'French games', 'German games',
+    'language learning platform schools', 'MFL department', 'GCSE language learning'
+  ],
+  canonical: '/schools'
+});
 
 export default function SchoolsPage() {
   return (

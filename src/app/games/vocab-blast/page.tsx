@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Head from 'next/head';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useUnifiedAuth } from '../../../hooks/useUnifiedAuth';
 import VocabBlastGameWrapper from './components/VocabBlastGameWrapper';
@@ -21,6 +22,10 @@ export interface VocabBlastGameSettings {
   timeLimit: number;
   mode: 'categories' | 'custom';
   customWords?: string[];
+  // KS4-specific parameters
+  curriculumLevel?: string;
+  examBoard?: 'AQA' | 'edexcel';
+  tier?: 'foundation' | 'higher';
 }
 
 export default function VocabBlastPage() {
@@ -77,7 +82,11 @@ export default function VocabBlastPage() {
             subcategory: assignment.vocabulary_criteria?.subcategory || 'greetings_introductions',
             timeLimit: assignment.game_config?.timeLimit || 120,
             mode: 'categories' as const,
-            customWords: undefined
+            customWords: undefined,
+            // KS4-specific parameters
+            curriculumLevel: assignment.curriculum_level,
+            examBoard: assignment.exam_board as 'AQA' | 'edexcel',
+            tier: assignment.tier as 'foundation' | 'higher'
           };
 
           return (
@@ -182,8 +191,10 @@ export default function VocabBlastPage() {
       const cat = searchParams?.get('cat');
       const subcat = searchParams?.get('subcat');
       const theme = searchParams?.get('theme') || 'default';
+      const examBoard = searchParams?.get('examBoard') as 'AQA' | 'edexcel';
+      const tier = searchParams?.get('tier') as 'foundation' | 'higher';
 
-      console.log('📋 URL Parameters:', { lang, level, cat, subcat, theme });
+      console.log('📋 URL Parameters:', { lang, level, cat, subcat, theme, examBoard, tier });
 
       if (lang && level && cat) {
         setIsAutoLoading(true);
@@ -192,7 +203,10 @@ export default function VocabBlastPage() {
             language: lang,
             curriculumLevel: level,
             categoryId: cat,
-            subcategoryId: subcat || undefined
+            subcategoryId: subcat || undefined,
+            // KS4-specific parameters
+            examBoard: examBoard || undefined,
+            tier: tier || undefined
           };
 
           console.log('🚀 Auto-loading game with config:', config);
@@ -344,7 +358,14 @@ export default function VocabBlastPage() {
     };
 
     return (
-      <ThemeProvider themeId={gameConfig.theme}>
+      <>
+        <Head>
+          <title>Vocab Blast Game | GCSE Vocabulary Learning | Language Gems</title>
+          <meta name="description" content="Practice GCSE Spanish, French, and German vocabulary with Vocab Blast - an interactive word learning game. Perfect for vocabulary building and exam preparation." />
+          <meta name="keywords" content="Vocab Blast, GCSE vocabulary game, Spanish vocabulary, French vocabulary, German vocabulary, language learning game, vocabulary practice" />
+          <link rel="canonical" href="https://languagegems.com/games/vocab-blast" />
+        </Head>
+        <ThemeProvider themeId={gameConfig.theme}>
         <div className="min-h-screen">
           <VocabBlastGameWrapper
             settings={legacySettings}
@@ -368,6 +389,7 @@ export default function VocabBlastPage() {
           />
         </div>
       </ThemeProvider>
+      </>
     );
   }
 

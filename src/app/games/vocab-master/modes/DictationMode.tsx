@@ -25,18 +25,28 @@ export const DictationMode: React.FC<DictationModeProps> = ({
   audioReplayCount
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
+  const lastPlayedWordRef = useRef<string | null>(null);
 
   useEffect(() => {
     // Auto-play audio when word loads
     if (gameState.currentWord) {
-      const timer = setTimeout(() => {
-        playPronunciation(
-          gameState.currentWord?.spanish || '', 
-          'es', 
-          gameState.currentWord || undefined
-        );
-      }, 1000);
-      return () => clearTimeout(timer);
+      const currentWordKey = `${gameState.currentWord.id}-dictation`;
+      
+      if (lastPlayedWordRef.current !== currentWordKey) {
+        lastPlayedWordRef.current = currentWordKey;
+        
+        const timer = setTimeout(() => {
+          // Double-check the word hasn't changed while we were waiting
+          if (lastPlayedWordRef.current === currentWordKey && gameState.currentWord) {
+            playPronunciation(
+              gameState.currentWord?.spanish || '', 
+              'es', 
+              gameState.currentWord || undefined
+            );
+          }
+        }, 1000);
+        return () => clearTimeout(timer);
+      }
     }
   }, [gameState.currentWord, playPronunciation]);
 

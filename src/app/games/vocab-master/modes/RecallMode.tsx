@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Brain, Volume2, Target, Lightbulb, Star } from 'lucide-react';
 import { ModeComponent } from '../types';
 import { getPlaceholderText } from '../utils/answerValidation';
@@ -22,6 +22,7 @@ export const RecallMode: React.FC<RecallModeProps> = ({
   playPronunciation
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
+  const lastPlayedWordRef = useRef<string | null>(null);
 
   useEffect(() => {
     // Focus input when word changes
@@ -29,18 +30,27 @@ export const RecallMode: React.FC<RecallModeProps> = ({
       inputRef.current.focus();
     }
 
-    // Auto-play audio when new word appears
+    // Auto-play audio when new word appears (but avoid playing same word multiple times)
     if (gameState.currentWord?.audio_url) {
-      const timer = setTimeout(() => {
-        playPronunciation(
-          gameState.currentWord?.spanish || gameState.currentWord?.word || '',
-          'es',
-          gameState.currentWord || undefined
-        );
-      }, 500); // Small delay to let the UI settle
-      return () => clearTimeout(timer);
+      const currentWordKey = `${gameState.currentWord.id}-${gameState.currentWordIndex}`;
+      
+      if (lastPlayedWordRef.current !== currentWordKey) {
+        lastPlayedWordRef.current = currentWordKey;
+        
+        const timer = setTimeout(() => {
+          // Double-check the word hasn't changed while we were waiting
+          if (lastPlayedWordRef.current === currentWordKey && gameState.currentWord) {
+            playPronunciation(
+              gameState.currentWord?.spanish || gameState.currentWord?.word || '',
+              'es',
+              gameState.currentWord || undefined
+            );
+          }
+        }, 500); // Small delay to let the UI settle
+        return () => clearTimeout(timer);
+      }
     }
-  }, [gameState.currentWordIndex, gameState.currentWord, playPronunciation]);
+  }, [gameState.currentWord, playPronunciation]); // Removed currentWordIndex from dependencies
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && userAnswer.trim()) {
@@ -89,12 +99,15 @@ export const RecallMode: React.FC<RecallModeProps> = ({
         <div className="flex-1 p-8 flex flex-col justify-center">
           <div className="max-w-2xl mx-auto w-full space-y-7">
             {/* Word display card */}
-            <motion.div
-              key={gameState.currentWordIndex}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className={cardClasses}
-            >
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={gameState.currentWordIndex}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+                className={cardClasses}
+              >
               <div className="text-center space-y-6">
                 <div className="text-4xl text-purple-500">
                   <Brain className="h-12 w-12 mx-auto" />
@@ -128,6 +141,7 @@ export const RecallMode: React.FC<RecallModeProps> = ({
                 )}
               </div>
             </motion.div>
+            </AnimatePresence>
 
             {/* Input area */}
             <div className={inputCardClasses}>
@@ -257,12 +271,15 @@ export const RecallMode: React.FC<RecallModeProps> = ({
         </motion.div>
 
         {/* Word display with streak */}
-        <motion.div
-          key={gameState.currentWordIndex}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className={cardClasses}
-        >
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={gameState.currentWordIndex}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+            className={cardClasses}
+          >
           <div className="text-center space-y-6">
             <div className="text-6xl">
               <Brain className={`h-16 w-16 mx-auto ${isAdventureMode ? adventureTheme.accentColor === 'purple' ? 'text-purple-300' : 'text-violet-300' : 'text-purple-300'}`} />
@@ -320,6 +337,7 @@ export const RecallMode: React.FC<RecallModeProps> = ({
             </div>
           </div>
         </motion.div>
+        </AnimatePresence>
 
         {/* Input area */}
         <div className={cardClasses}>

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useVocabularyByCategory } from './useVocabulary';
 import { supabaseBrowser } from '../components/auth/AuthProvider';
+import { CentralizedVocabularyService } from '../services/centralizedVocabularyService';
 
 export interface GameVocabularyWord {
   id: string;
@@ -26,6 +27,9 @@ interface UseGameVocabularyProps {
   hasAudio?: boolean;
   difficultyLevel?: string;
   curriculumLevel?: string;
+  // KS4-specific parameters
+  examBoard?: 'AQA' | 'edexcel';
+  tier?: 'foundation' | 'higher';
   enabled?: boolean; // Allow disabling the hook
 }
 
@@ -47,9 +51,11 @@ export function useGameVocabulary({
   subcategoryId,
   limit = 100,
   randomize = true,
-  hasAudio = false,
+  hasAudio, // Remove default to allow undefined (no audio filtering)
   difficultyLevel,
   curriculumLevel,
+  examBoard,
+  tier,
   enabled = true
 }: UseGameVocabularyProps): UseGameVocabularyReturn {
   const [vocabulary, setVocabulary] = useState<GameVocabularyWord[]>([]);
@@ -67,7 +73,9 @@ export function useGameVocabulary({
     categoryId: categoryId || undefined,
     subcategoryId: subcategoryId || undefined,
     difficultyLevel,
-    curriculumLevel
+    curriculumLevel,
+    examBoard,
+    tier
   });
 
   const loadVocabulary = async () => {
@@ -82,7 +90,70 @@ export function useGameVocabulary({
     setError(null);
 
     try {
-      // If category is selected, use the hook result
+      // For KS4, use centralized vocabulary service with exam board and tier filtering
+      if (curriculumLevel === 'KS4') {
+        const vocabularyService = new CentralizedVocabularyService(supabaseBrowser);
+
+        // Map categoryId to themeName and subcategoryId to unitName for KS4
+        const vocabularyQuery: any = {
+          language,
+          curriculumLevel,
+          examBoard,
+          tier,
+          hasAudio,
+          limit,
+          randomize
+        };
+
+        // For KS4, categoryId represents the theme and subcategoryId represents the unit
+        if (categoryId) {
+          // Map category ID to actual theme name
+          const themeMapping: Record<string, string> = {
+            'aqa_general': 'General',
+            'aqa_communication': 'Communication and the world around us',
+            'aqa_people_lifestyle': 'People and lifestyle',
+            'aqa_popular_culture': 'Popular culture',
+            'aqa_cultural_items': 'Cultural items',
+            'edexcel_general': 'General',
+            'edexcel_personal_world': 'My personal world',
+            'edexcel_neighborhood': 'My neighborhood',
+            'edexcel_studying_future': 'Studying and my future',
+            'edexcel_travel_tourism': 'Travel and tourism',
+            'edexcel_media_technology': 'Media and technology'
+          };
+
+          vocabularyQuery.themeName = themeMapping[categoryId] || categoryId;
+        }
+
+        if (subcategoryId) {
+          // subcategoryId is the actual unit name
+          vocabularyQuery.unitName = subcategoryId;
+        }
+
+        const centralizedVocabulary = await vocabularyService.getVocabulary(vocabularyQuery);
+
+        const transformedVocabulary: GameVocabularyWord[] = centralizedVocabulary
+          .filter(item => item.word && item.translation)
+          .map(item => ({
+            id: item.id,
+            word: item.word,
+            translation: item.translation,
+            category: item.category,
+            subcategory: item.subcategory,
+            part_of_speech: item.part_of_speech,
+            example_sentence: item.example_sentence,
+            example_translation: item.example_translation,
+            audio_url: item.audio_url,
+            curriculum_level: item.curriculum_level
+          }));
+
+        setVocabulary(transformedVocabulary);
+        setTotalCount(transformedVocabulary.length);
+        setLoading(false);
+        return;
+      }
+
+      // For non-KS4, use the existing category hook result
       if (categoryId && categoryVocabulary) {
         const transformedVocabulary: GameVocabularyWord[] = categoryVocabulary
           .filter(item => item.word && item.translation)
@@ -228,7 +299,7 @@ export function useGameVocabulary({
   // Load vocabulary when parameters change
   useEffect(() => {
     loadVocabulary();
-  }, [language, categoryId, subcategoryId, limit, randomize, hasAudio, difficultyLevel, curriculumLevel, enabled]);
+  }, [language, categoryId, subcategoryId, limit, randomize, hasAudio, difficultyLevel, curriculumLevel, examBoard, tier, enabled]);
 
   // Handle category hook updates
   useEffect(() => {

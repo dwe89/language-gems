@@ -31,12 +31,12 @@ export default function FilterBreadcrumbs({
     : null;
 
   const categoryName = filters.categoryId && filters.curriculumLevel
-    ? getCategoriesByCurriculum(filters.curriculumLevel)
+    ? getCategoriesByCurriculum(filters.curriculumLevel, filters.examBoard || undefined)
         .find(cat => cat.id === filters.categoryId)?.displayName
     : null;
 
   const subcategoryName = filters.subcategoryId && filters.categoryId && filters.curriculumLevel
-    ? getCategoriesByCurriculum(filters.curriculumLevel)
+    ? getCategoriesByCurriculum(filters.curriculumLevel, filters.examBoard || undefined)
         .find(cat => cat.id === filters.categoryId)
         ?.subcategories.find(sub => sub.id === filters.subcategoryId)?.displayName
     : null;

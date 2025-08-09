@@ -94,16 +94,22 @@ export default function AuthForm({ mode }: AuthFormProps) {
           }, 100);
         } else {
           // Use the signIn method from auth context for teachers/admins
-          const { error: signInError } = await signIn(finalEmailOrUsername, password);
+          const { error: signInError, user: signedInUser } = await signIn(finalEmailOrUsername, password);
           
           if (signInError) {
             throw new Error(signInError);
           }
           
-          console.log('Login successful, navigating to account page');
+          console.log('Login successful, navigating to appropriate page');
           // Use setTimeout to avoid DOM manipulation conflicts
           setTimeout(() => {
-            router.push('/account');
+            // Redirect based on user role to prevent unnecessary redirects
+            const userRole = signedInUser?.user_metadata?.role;
+            if (userRole === 'student') {
+              router.push('/student-dashboard');
+            } else {
+              router.push('/account');
+            }
           }, 100);
         }
       } else {
@@ -182,9 +188,9 @@ export default function AuthForm({ mode }: AuthFormProps) {
         throw new Error(signInError);
       }
       
-      console.log('Student login successful, navigating to account page');
+      console.log('Student login successful, navigating to student dashboard');
       setTimeout(() => {
-        router.push('/account');
+        router.push('/student-dashboard');
       }, 100);
     } catch (err) {
       console.error('Student login error:', err);

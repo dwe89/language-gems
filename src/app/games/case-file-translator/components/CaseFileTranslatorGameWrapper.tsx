@@ -12,11 +12,14 @@ interface CaseFileTranslatorGameWrapperProps {
     curriculumLevel: string;
     subcategory?: string;
     difficulty: string;
+    // KS4-specific parameters
+    examBoard?: 'AQA' | 'edexcel';
+    tier?: 'foundation' | 'higher';
   };
   onBackToMenu: () => void;
-  onGameEnd: (result: { 
-    correctAnswers: number; 
-    totalQuestions: number; 
+  onGameEnd: (result: {
+    correctAnswers: number;
+    totalQuestions: number;
     score: number;
     timeSpent: number;
     accuracy: number;

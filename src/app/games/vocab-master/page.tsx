@@ -15,6 +15,9 @@ export default function VocabMasterPage() {
     subcat: searchParams?.get('subcat') || undefined,
     theme: searchParams?.get('theme') || undefined,
     assignment: searchParams?.get('assignment') || undefined,
+    // KS4-specific parameters
+    examBoard: searchParams?.get('examBoard') || undefined,
+    tier: searchParams?.get('tier') || undefined,
   };
 
   return <UnifiedVocabMasterWrapper searchParams={searchParamsObj} />;

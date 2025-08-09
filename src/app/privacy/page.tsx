@@ -1,9 +1,17 @@
-'use client';
 
 import React from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Shield, Lock } from 'lucide-react';
 import Footer from '../../components/layout/Footer';
+import { Metadata } from 'next';
+import { generateMetadata } from '../../components/seo/SEOWrapper';
+
+export const metadata: Metadata = generateMetadata({
+  title: 'Privacy Policy | Student Data Protection | Language Gems',
+  description: 'Privacy policy and student data protection information for Language Gems educational platform. GDPR compliant and school-safe.',
+  canonical: '/privacy'
+});
+
 
 export default function PrivacyPolicyPage() {
   return (

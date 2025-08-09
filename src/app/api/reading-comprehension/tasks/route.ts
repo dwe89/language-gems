@@ -17,6 +17,7 @@ export async function GET(request: NextRequest) {
       language: searchParams.get('language'),
       curriculum_level: searchParams.get('curriculum_level'),
       exam_board: searchParams.get('exam_board'),
+      tier: searchParams.get('tier'),
       category: searchParams.get('category'),
       subcategory: searchParams.get('subcategory'),
       difficulty: searchParams.get('difficulty'),
@@ -36,6 +37,7 @@ export async function GET(request: NextRequest) {
     const language = searchParams.get('language');
     const curriculumLevel = searchParams.get('curriculum_level');
     const examBoard = searchParams.get('exam_board');
+    const tier = searchParams.get('tier');
     const category = searchParams.get('category');
     const subcategory = searchParams.get('subcategory');
     const difficulty = searchParams.get('difficulty');
@@ -46,6 +48,7 @@ export async function GET(request: NextRequest) {
     if (language) query = query.eq('language', language);
     if (curriculumLevel) query = query.eq('curriculum_level', curriculumLevel);
     if (examBoard) query = query.eq('exam_board', examBoard);
+    if (tier) query = query.eq('tier', tier);
     if (category) query = query.eq('category', category);
     if (subcategory) query = query.eq('subcategory', subcategory);
     if (difficulty) query = query.eq('difficulty', difficulty);
@@ -55,6 +58,7 @@ export async function GET(request: NextRequest) {
       language: language || 'none',
       curriculum_level: curriculumLevel || 'none',
       exam_board: examBoard || 'none',
+      tier: tier || 'none',
       category: category || 'none',
       subcategory: subcategory || 'none',
       difficulty: difficulty || 'none',

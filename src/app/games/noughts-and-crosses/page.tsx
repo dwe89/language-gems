@@ -51,7 +51,10 @@ export default function UnifiedNoughtsAndCrossesPage() {
             curriculumLevel: (assignment.curriculum_level as 'KS2' | 'KS3' | 'KS4' | 'KS5') || 'KS3',
             categoryId: assignment.vocabulary_criteria?.category || 'basics_core_language',
             subcategoryId: assignment.vocabulary_criteria?.subcategory || 'greetings_introductions',
-            theme: assignment.game_config?.theme || 'classic'
+            theme: assignment.game_config?.theme || 'classic',
+            // KS4-specific parameters
+            examBoard: assignment.exam_board as 'AQA' | 'edexcel',
+            tier: assignment.tier as 'foundation' | 'higher'
           };
 
           // Transform vocabulary for TicTacToe format
@@ -139,8 +142,10 @@ export default function UnifiedNoughtsAndCrossesPage() {
       const cat = searchParams?.get('cat');
       const subcat = searchParams?.get('subcat');
       const theme = searchParams?.get('theme') || 'default';
+      const examBoard = searchParams?.get('examBoard') as 'AQA' | 'edexcel';
+      const tier = searchParams?.get('tier') as 'foundation' | 'higher';
 
-      console.log('📋 [Noughts&Crosses] URL Parameters:', { lang, level, cat, subcat, theme });
+      console.log('📋 [Noughts&Crosses] URL Parameters:', { lang, level, cat, subcat, theme, examBoard, tier });
 
       if (lang && level && cat) {
         try {
@@ -148,7 +153,10 @@ export default function UnifiedNoughtsAndCrossesPage() {
             language: lang,
             curriculumLevel: level,
             categoryId: cat,
-            subcategoryId: subcat || undefined
+            subcategoryId: subcat || undefined,
+            // KS4-specific parameters
+            examBoard: examBoard || undefined,
+            tier: tier || undefined
           };
 
           console.log('🚀 [Noughts&Crosses] Auto-loading game with config:', config);

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { BookOpen, Volume2, Lightbulb, Eye, EyeOff, Target, Star, Zap } from 'lucide-react';
 import { ModeComponent } from '../types';
 import { getPlaceholderText } from '../utils/answerValidation';
@@ -26,6 +26,16 @@ export const LearnMode: React.FC<LearnModeProps> = ({
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [showTranslation, setShowTranslation] = useState(false);
+  const lastPlayedWordRef = useRef<string | null>(null);
+
+  // DEBUG: Add comprehensive logging
+  console.log('🔍 LearnMode render:', {
+    currentWordIndex: gameState.currentWordIndex,
+    currentWordId: gameState.currentWord?.id,
+    currentWordSpanish: gameState.currentWord?.spanish,
+    totalWords: gameState.totalWords,
+    timestamp: Date.now()
+  });
 
   useEffect(() => {
     // Focus input when word changes
@@ -35,18 +45,28 @@ export const LearnMode: React.FC<LearnModeProps> = ({
     // Reset translation visibility for new word
     setShowTranslation(false);
 
-    // Auto-play audio when new word appears
+    // Auto-play audio when new word appears (but avoid playing same word multiple times)
     if (gameState.currentWord?.audio_url) {
-      const timer = setTimeout(() => {
-        playPronunciation(
-          gameState.currentWord?.spanish || gameState.currentWord?.word || '',
-          'es',
-          gameState.currentWord || undefined
-        );
-      }, 500); // Small delay to let the UI settle
-      return () => clearTimeout(timer);
+      const currentWordKey = `${gameState.currentWord.id}`;
+      
+      if (lastPlayedWordRef.current !== currentWordKey) {
+        lastPlayedWordRef.current = currentWordKey;
+        
+        const timer = setTimeout(() => {
+          // Double-check the word hasn't changed while we were waiting
+          if (lastPlayedWordRef.current === currentWordKey && gameState.currentWord) {
+            console.log('🔊 Playing audio for word:', gameState.currentWord.spanish);
+            playPronunciation(
+              gameState.currentWord?.spanish || gameState.currentWord?.word || '',
+              'es',
+              gameState.currentWord || undefined
+            );
+          }
+        }, 500); // Small delay to let the UI settle
+        return () => clearTimeout(timer);
+      }
     }
-  }, [gameState.currentWordIndex, gameState.currentWord, playPronunciation]);
+  }, [gameState.currentWord, playPronunciation]); // Removed currentWordIndex from dependencies
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && userAnswer.trim()) {
@@ -85,12 +105,15 @@ export const LearnMode: React.FC<LearnModeProps> = ({
         <div className="flex-1 p-8 flex flex-col justify-center items-center">
           <div className="max-w-2xl mx-auto w-full space-y-7"> {/* Increased spacing */}
             {/* Word display card */}
-            <motion.div
-              key={gameState.currentWordIndex}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className={cardClasses}
-            >
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={gameState.currentWordIndex}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+                className={cardClasses}
+              >
               <div className="text-center space-y-6">
                 <div className="text-4xl text-blue-500"> {/* Brighter icon color */}
                   <BookOpen className="h-12 w-12 mx-auto" />
@@ -157,6 +180,7 @@ export const LearnMode: React.FC<LearnModeProps> = ({
                 </div>
               </div>
             </motion.div>
+            </AnimatePresence>
 
             {/* Practice input */}
             <div className={cardClasses}> {/* Reusing cardClasses for consistency */}
@@ -305,12 +329,15 @@ export const LearnMode: React.FC<LearnModeProps> = ({
         </motion.div>
 
         {/* Word display */}
-        <motion.div
-          key={gameState.currentWordIndex}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className={cardClasses}
-        >
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={gameState.currentWordIndex}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+            className={cardClasses}
+          >
           <div className="text-center space-y-6">
             <div className="text-6xl">
               <BookOpen className={`h-16 w-16 mx-auto ${isAdventureMode ? 'text-blue-300' : 'text-blue-500'}`} />
@@ -392,7 +419,8 @@ export const LearnMode: React.FC<LearnModeProps> = ({
               )}
             </div>
           </div>
-      </motion.div>
+        </motion.div>
+        </AnimatePresence>
 
         {/* Example sentence */}
         {gameState.currentWord?.example_sentence && (

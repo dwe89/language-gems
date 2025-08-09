@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import Head from 'next/head';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useUnifiedAuth } from '../../../hooks/useUnifiedAuth';
 import HangmanGameWrapper from './components/HangmanGameWrapper';
@@ -471,10 +472,17 @@ export default function HangmanPage() {
 
   if (gameStarted && gameConfig) {
   return (
-    // Remove 'fixed inset-0 w-full h-full'. HangmanGameWrapper will handle the full-screen fixed positioning.
-    // You might want a simple, unstyled div here or nothing if HangmanGameWrapper handles everything.
-    // A simple div ensures the InGameConfigPanel can also be rendered within this context.
-    <div className="relative w-full h-full">
+    <>
+      <Head>
+        <title>Hangman Game | GCSE Vocabulary Practice | Language Gems</title>
+        <meta name="description" content="Play Hangman with GCSE Spanish, French, and German vocabulary. Test your spelling and vocabulary knowledge with this classic word guessing game." />
+        <meta name="keywords" content="Hangman game, GCSE vocabulary, Spanish hangman, French hangman, German hangman, spelling practice, vocabulary games, language learning" />
+        <link rel="canonical" href="https://languagegems.com/games/hangman" />
+      </Head>
+      {/* Remove 'fixed inset-0 w-full h-full'. HangmanGameWrapper will handle the full-screen fixed positioning.
+      You might want a simple, unstyled div here or nothing if HangmanGameWrapper handles everything.
+      A simple div ensures the InGameConfigPanel can also be rendered within this context. */}
+      <div className="relative w-full h-full">
       <HangmanGameWrapper
         settings={{
           difficulty: gameConfig.config.curriculumLevel === 'KS4' ? 'hard' : 'medium',
@@ -508,6 +516,7 @@ export default function HangmanPage() {
         onClose={handleCloseConfigPanel}
       />
     </div>
+    </>
   );
 }
 

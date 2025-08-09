@@ -124,6 +124,7 @@ export interface GameResult {
   accuracy: number;
   timeSpent: number;
   correctAnswers: number;
+  incorrectAnswers: number;
   totalWords: number;
   wordsLearned: string[];
   wordsStruggling: string[];

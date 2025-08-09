@@ -42,6 +42,9 @@ export interface UnifiedSelectionConfig {
   categoryId: string;
   subcategoryId?: string;
   customMode?: boolean;
+  // KS4-specific fields
+  examBoard?: 'AQA' | 'edexcel';
+  tier?: 'foundation' | 'higher';
 }
 
 export interface UnifiedCategorySelectorProps {
@@ -51,6 +54,7 @@ export interface UnifiedCategorySelectorProps {
   supportedLanguages?: string[];
   showCustomMode?: boolean;
   title?: string;
+  presetConfig?: UnifiedSelectionConfig;
 }
 
 // Language options with country flags
@@ -165,7 +169,8 @@ export default function UnifiedCategorySelector({
   gameName,
   supportedLanguages = ['es', 'fr', 'de'],
   showCustomMode = true,
-  title
+  title,
+  presetConfig
 }: UnifiedCategorySelectorProps) {
   const { isDemo } = useDemoAuth();
   const [step, setStep] = useState<'language' | 'curriculum' | 'category' | 'subcategory'>('language');
@@ -173,6 +178,22 @@ export default function UnifiedCategorySelector({
   const [selectedCurriculumLevel, setSelectedCurriculumLevel] = useState<'KS2' | 'KS3' | 'KS4' | 'KS5'>('KS3');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedSubcategory, setSelectedSubcategory] = useState<string>('');
+
+  // Apply preset config if provided
+  useEffect(() => {
+    if (presetConfig) {
+      console.log('✅ Applying preset config to UnifiedCategorySelector:', presetConfig);
+      setSelectedLanguage(presetConfig.language || '');
+      setSelectedCurriculumLevel(presetConfig.curriculumLevel || 'KS3');
+      setSelectedCategory(presetConfig.categoryId || '');
+      setSelectedSubcategory(presetConfig.subcategoryId || '');
+
+      // Auto-complete selection if all required fields are present
+      if (presetConfig.language && presetConfig.curriculumLevel && presetConfig.categoryId) {
+        onSelectionComplete(presetConfig);
+      }
+    }
+  }, [presetConfig, onSelectionComplete]);
 
   // Filter languages based on supported languages
   const availableLanguages = AVAILABLE_LANGUAGES.filter(lang =>

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Head from 'next/head';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useAuth } from '../../../components/auth/AuthProvider';
 import MemoryGameMain from './components/MemoryGameMain';
@@ -211,7 +212,14 @@ export default function UnifiedMemoryGamePage() {
     const legacyDifficulty = gameConfig.config.curriculumLevel === 'KS4' ? 'hard' : 'medium';
 
     return (
-      <div className="memory-game-container">
+      <>
+        <Head>
+          <title>Memory Match Game | GCSE Language Learning | Language Gems</title>
+          <meta name="description" content="Test your memory with our GCSE language learning Memory Match game. Match vocabulary pairs in Spanish, French, and German. Perfect for improving language recall." />
+          <meta name="keywords" content="Memory Match game, GCSE language games, Spanish memory game, French memory game, German memory game, vocabulary matching, language learning games" />
+          <link rel="canonical" href="https://languagegems.com/games/memory-game" />
+        </Head>
+        <div className="memory-game-container">
         <MemoryGameMain
           language={legacyLanguage}
           topic={legacyTopic}
@@ -234,6 +242,7 @@ export default function UnifiedMemoryGamePage() {
           onClose={handleCloseConfigPanel}
         />
       </div>
+      </>
     );
   }
 

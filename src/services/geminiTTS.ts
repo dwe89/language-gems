@@ -190,6 +190,80 @@ export class GeminiTTSService {
   }
 
   /**
+   * Generate audio for Edexcel listening assessments (simplified - no intro)
+   */
+  async generateEdexcelListeningAudio(
+    questionNumber: number,
+    mainText: string,
+    config: GeminiTTSConfig,
+    filename: string,
+    isMultiSpeaker: boolean = false,
+    speakers?: MultiSpeakerConfig['speakers']
+  ): Promise<string> {
+    try {
+      console.log(`🎵 Generating Edexcel listening audio for Question ${questionNumber}`);
+
+      // Generate main content audio directly (no introduction)
+      let audioBuffer: Buffer;
+
+      if (isMultiSpeaker && speakers) {
+        // Check if we have more than 2 speakers (Gemini Flash TTS limitation)
+        if (speakers.length > 2) {
+          console.log(`⚠️ Multi-speaker content has ${speakers.length} speakers, but Gemini Flash TTS only supports 2. Falling back to single-speaker mode.`);
+          // Use single-speaker generation as fallback
+          const audioResult = await this.generateSingleSpeakerContentOnly(mainText, config);
+          audioBuffer = Buffer.from(audioResult, 'base64');
+        } else {
+          // Use multi-speaker generation (2 speakers only)
+          const audioResult = await this.generateMultiSpeakerContentOnly(mainText, { speakers });
+          audioBuffer = Buffer.from(audioResult, 'base64');
+        }
+      } else {
+        // Single-speaker generation
+        const audioResult = await this.generateSingleSpeakerContentOnly(mainText, config);
+        audioBuffer = Buffer.from(audioResult, 'base64');
+      }
+
+      console.log(`📊 Audio buffer size: ${audioBuffer.length} bytes`);
+
+      // Create WAV file with proper headers
+      const wavBuffer = this.createWavFile(audioBuffer);
+
+      // Upload to Supabase Storage
+      const storagePath = `exam-audio/${filename}`;
+      const { data, error } = await getSupabaseAdmin().storage
+        .from(this.bucketName)
+        .upload(storagePath, wavBuffer, {
+          contentType: 'audio/wav',
+          cacheControl: '3600',
+          upsert: true
+        });
+
+      if (error) {
+        throw new Error(`Failed to upload to Supabase Storage: ${error.message}`);
+      }
+
+      // Get public URL
+      const { data: urlData } = getSupabaseAdmin().storage
+        .from(this.bucketName)
+        .getPublicUrl(storagePath);
+
+      console.log(`✅ Edexcel listening audio generated and uploaded: ${urlData.publicUrl}`);
+      return urlData.publicUrl;
+
+    } catch (error: any) {
+      console.error(`❌ Error generating Edexcel listening audio for Question ${questionNumber}:`, error);
+
+      if (error.response) {
+        console.error('Gemini API Error Response Details:', JSON.stringify(error.response, null, 2));
+      } else if (error.status) { // For errors that might be plain HTTP errors
+        console.error(`HTTP Status Code: ${error.status}`);
+      }
+      throw error;
+    }
+  }
+
+  /**
    * Generate audio for AQA listening assessments (simplified - no intro)
    */
   async generateAQAListeningAudio(
@@ -677,11 +751,26 @@ export class GeminiTTSService {
     // Create VERY slow speech for language learners by wrapping in SSML
     let processedText = text;
 
-    // Add SSML for very slow speech rate if pace is slow or very_slow
-    if (config.pace === 'slow' || config.pace === 'very_slow') {
-      const speechRate = config.pace === 'very_slow' ? '0.5' : '0.7'; // Much slower rates
-      processedText = `<speak><prosody rate="${speechRate}">${text}</prosody></speak>`;
-      console.log(`🐌 Using VERY slow speech rate: ${speechRate} for language learners`);
+    // Add SSML for very slow speech rate if pace is slow or very_slow, or if speechRate is specified
+    if (config.pace === 'slow' || config.pace === 'very_slow' || config.speechRate) {
+      let speechRate = '0.7'; // Default slow rate
+
+      if (config.speechRate) {
+        speechRate = config.speechRate.toString();
+      } else if (config.pace === 'very_slow') {
+        speechRate = '0.5';
+      }
+
+      // For dictation, add pauses between words
+      if (config.style && config.style.includes('dictation')) {
+        // Add pauses between words for dictation
+        const wordsWithPauses = text.split(' ').join(' <break time="0.5s"/> ');
+        processedText = `<speak><prosody rate="${speechRate}">${wordsWithPauses}</prosody></speak>`;
+        console.log(`🎯 Using dictation speech rate: ${speechRate} with word pauses`);
+      } else {
+        processedText = `<speak><prosody rate="${speechRate}">${text}</prosody></speak>`;
+        console.log(`🐌 Using VERY slow speech rate: ${speechRate} for language learners`);
+      }
     }
 
     const requestConfig = {
@@ -744,10 +833,20 @@ export class GeminiTTSService {
 
     // Add SSML for very slow speech rate for language learners
     let processedText = text;
+    let speechRate = '0.6'; // Default for multi-speaker
 
-    // Wrap the entire content in slow speech SSML
-    processedText = `<speak><prosody rate="0.6">${text}</prosody></speak>`;
-    console.log(`🐌 Using VERY slow speech rate: 0.6 for multi-speaker language learning content`);
+    // Check if this is dictation content
+    if (config.style && config.style.includes('dictation')) {
+      speechRate = '0.4'; // Even slower for dictation
+      // Add pauses between words for dictation
+      const wordsWithPauses = text.split(' ').join(' <break time="0.5s"/> ');
+      processedText = `<speak><prosody rate="${speechRate}">${wordsWithPauses}</prosody></speak>`;
+      console.log(`🎯 Using dictation speech rate: ${speechRate} with word pauses for multi-speaker`);
+    } else {
+      // Wrap the entire content in slow speech SSML
+      processedText = `<speak><prosody rate="${speechRate}">${text}</prosody></speak>`;
+      console.log(`🐌 Using VERY slow speech rate: ${speechRate} for multi-speaker language learning content`);
+    }
 
     const requestConfig = {
       contents: [{

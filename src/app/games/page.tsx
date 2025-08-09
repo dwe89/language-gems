@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useRef } from 'react'; // Added useRef
+import Head from 'next/head';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -413,6 +414,14 @@ export default function GamesPage() {
       theme: selection.theme || 'default'
     });
 
+    // Add KS4-specific parameters if present
+    if (selection.examBoard) {
+      params.set('examBoard', selection.examBoard);
+    }
+    if (selection.tier) {
+      params.set('tier', selection.tier);
+    }
+
     const url = `${selectedGameForSetup.path}?${params.toString()}`;
     console.log('🚀 Navigating to:', url);
     router.push(url);
@@ -499,7 +508,14 @@ export default function GamesPage() {
   }
 
   return (
-    <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 min-h-screen">
+    <>
+      <Head>
+        <title>GCSE Language Learning Games | Spanish, French & German Games | Language Gems</title>
+        <meta name="description" content="15+ interactive GCSE language learning games for Spanish, French, and German. Vocabulary games, grammar practice, and MFL teaching resources for UK schools." />
+        <meta name="keywords" content="GCSE Spanish games, GCSE French games, GCSE German games, MFL teaching resources, language learning games, vocabulary games, grammar games" />
+        <link rel="canonical" href="https://languagegems.com/games" />
+      </Head>
+      <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 min-h-screen">
       <div className="max-w-7xl mx-auto px-4 py-8">
         <header className="mb-8">
           <div className="flex items-center mb-2">
@@ -758,5 +774,6 @@ export default function GamesPage() {
       
       <Footer />
     </div>
+    </>
   );
 }

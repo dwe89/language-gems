@@ -1,10 +1,11 @@
 'use client';
 
 import Link from 'next/link';
+import Head from 'next/head';
 import { useState } from 'react';
 import { 
   Users, MessageCircle, Heart, Star, Trophy, 
-  Calendar, MapPin, ExternalLink, Quote,
+  Calendar, MapPin, ExternalLink, Quote, Clock,
   Facebook, Twitter, Instagram, Youtube,
   BookOpen, Gamepad2, Award, Globe
 } from 'lucide-react';
@@ -144,7 +145,14 @@ export default function CommunityPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+    <>
+      <Head>
+        <title>MFL Teacher Community | Language Learning Network | Language Gems</title>
+        <meta name="description" content="Join the Language Gems teacher community. Share MFL teaching resources, get GCSE language learning tips, and connect with other educators using our platform." />
+        <meta name="keywords" content="MFL teacher community, language teacher network, GCSE teaching support, MFL teaching resources, teacher collaboration" />
+        <link rel="canonical" href="https://languagegems.com/community" />
+      </Head>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
       {/* Header */}
       <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-16">
         <div className="container mx-auto px-4 text-center">
@@ -412,5 +420,6 @@ export default function CommunityPage() {
 
       <Footer />
     </div>
+    </>
   );
 }

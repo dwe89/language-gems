@@ -217,7 +217,7 @@ export const VocabMasterGameEngine: React.FC<VocabMasterGameEngineProps> = ({
 
     // Generate exercise data for the initial word
     generateExerciseData(firstWord, initialGameMode);
-  }, [config, generateMultipleChoiceOptions, generateExerciseData]);
+  }, []); // Remove config from dependencies to prevent re-initialization during game
 
   // Audio playback
   const playPronunciation = useCallback(async (
@@ -243,77 +243,201 @@ export const VocabMasterGameEngine: React.FC<VocabMasterGameEngineProps> = ({
     const responseTime = Date.now() - questionStartTime;
     setCurrentResponseTime(responseTime);
 
-    // Convert new cloze format to legacy format for validation
-    let sentenceData: ClozeExercise | null = null;
-    if (gameState.currentExerciseData?.cloze) {
-      const clozeData = gameState.currentExerciseData.cloze;
-      sentenceData = {
-        sentence: clozeData.sourceSentence,
-        blankedSentence: clozeData.blankedSentence,
-        correctAnswer: clozeData.targetWord,
-        position: clozeData.wordPosition
-      };
-    }
+    console.log('🎯 HANDLE ANSWER CALLED:', {
+      answer,
+      responseTime
+    });
 
-    const validation = validateGameAnswer(answer, gameState.gameMode, gameState.currentWord, sentenceData);
+    setGameState(prev => {
+      console.log('🔄 STATE UPDATE - BEFORE:', {
+        currentWordIndex: prev.currentWordIndex,
+        currentWord: prev.currentWord?.spanish,
+        showAnswer: prev.showAnswer
+      });
 
-    // Log word attempt for analytics (if callback provided)
-    if (onWordAttempt && gameState.currentWord) {
-      const word = gameState.currentWord.spanish || gameState.currentWord.word || '';
-      const translation = gameState.currentWord.english || gameState.currentWord.translation || '';
-      const masteryLevel = validation.isCorrect ? 3 : 1; // Simple mastery calculation
-
-      onWordAttempt(
-        word,
-        translation,
-        answer,
-        validation.isCorrect,
-        responseTime,
-        gameState.gameMode,
-        masteryLevel,
-        gameState.currentWord.id // Pass the vocabulary ID for spaced repetition
-      );
-    }
-
-    // If translation was shown, don't count as correct or incorrect - just neutral
-    const shouldCountAnswer = !gameState.translationShown;
-    const isCorrectForScoring = validation.isCorrect && shouldCountAnswer;
-
-    setGameState(prev => ({
-      ...prev,
-      isCorrect: validation.isCorrect,
-      showAnswer: true,
-      feedback: gameState.translationShown
-        ? 'Translation was shown - practice more!'
-        : validation.isCorrect
-          ? 'Correct!'
-          : `Incorrect. The answer is: ${getCorrectAnswer()}`,
-      score: isCorrectForScoring ? prev.score + (isAdventureMode ? GEM_TYPES[prev.currentGemType].points : 10) : prev.score,
-      correctAnswers: isCorrectForScoring ? prev.correctAnswers + 1 : prev.correctAnswers,
-      incorrectAnswers: shouldCountAnswer && !validation.isCorrect ? prev.incorrectAnswers + 1 : prev.incorrectAnswers,
-      streak: isCorrectForScoring ? prev.streak + 1 : shouldCountAnswer ? 0 : prev.streak,
-      maxStreak: isCorrectForScoring ? Math.max(prev.maxStreak, prev.streak + 1) : prev.maxStreak
-    }));
-
-    // Play sound effects for correct/incorrect answers
-    if (config.audioEnabled) {
-      if (validation.isCorrect) {
-        audioFeedbackService.playCorrectSound();
-      } else {
-        audioFeedbackService.playErrorSound();
+      // Convert new cloze format to legacy format for validation
+      let sentenceData: ClozeExercise | null = null;
+      if (prev.currentExerciseData?.cloze) {
+        const clozeData = prev.currentExerciseData.cloze;
+        sentenceData = {
+          sentence: clozeData.sourceSentence,
+          blankedSentence: clozeData.blankedSentence,
+          correctAnswer: clozeData.targetWord,
+          position: clozeData.wordPosition
+        };
       }
-    }
 
-    // Adventure mode gamification
-    if (isAdventureMode && validation.isCorrect) {
-      await handleGemCollection(validation.isCorrect, responseTime);
-    }
+      const validation = validateGameAnswer(answer, prev.gameMode, prev.currentWord, sentenceData);
 
-    // Auto-advance to next word after a brief delay
-    setTimeout(() => {
-      nextWord();
-    }, 1000); // 1 second delay to show any brief feedback
-  }, [gameState.gameMode, gameState.currentWord, gameState.currentExerciseData, isAdventureMode, questionStartTime]);
+      // Log word attempt for analytics (if callback provided)
+      if (onWordAttempt && prev.currentWord) {
+        const word = prev.currentWord.spanish || prev.currentWord.word || '';
+        const translation = prev.currentWord.english || prev.currentWord.translation || '';
+        const masteryLevel = validation.isCorrect ? 3 : 1;
+
+        onWordAttempt(
+          word,
+          translation,
+          answer,
+          validation.isCorrect,
+          responseTime,
+          prev.gameMode,
+          masteryLevel,
+          prev.currentWord.id
+        );
+      }
+
+      // If translation was shown, don't count as correct or incorrect - just neutral
+      const shouldCountAnswer = !prev.translationShown;
+      const isCorrectForScoring = validation.isCorrect && shouldCountAnswer;
+
+      // Get correct answer for this mode
+      const correctAnswer = (() => {
+        if (!prev.currentWord) return '';
+        switch (prev.gameMode) {
+          case 'dictation':
+            return prev.currentWord.spanish || prev.currentWord.word || '';
+          case 'listening':
+            return prev.currentWord.english || prev.currentWord.translation || '';
+          default:
+            return prev.currentWord.english || prev.currentWord.translation || '';
+        }
+      })();
+
+      // Play sound effects for correct/incorrect answers
+      if (config.audioEnabled) {
+        if (validation.isCorrect) {
+          audioFeedbackService.playCorrectSound();
+        } else {
+          audioFeedbackService.playErrorSound();
+        }
+      }
+
+      // Adventure mode gamification - handle inline
+      let updatedGemsCollected = prev.gemsCollected;
+      let updatedGemType = prev.currentGemType;
+      
+      if (isAdventureMode && validation.isCorrect) {
+        const gemType = (() => {
+          if (prev.streak >= 10) return 'legendary';
+          if (prev.streak >= 5) return 'epic';
+          if (responseTime < 2000) return 'rare';
+          if (responseTime < 4000) return 'uncommon';
+          return 'common';
+        })();
+        
+        const points = GEM_TYPES[gemType].points;
+        setTotalXP(prevXP => prevXP + points);
+        setXpGained(points);
+        setShowXPGain(true);
+        setTimeout(() => setShowXPGain(false), 2000);
+
+        if (config.audioEnabled) {
+          audioFeedbackService.playGemCollectionSound(gemType);
+        }
+
+        updatedGemsCollected = prev.gemsCollected + 1;
+        updatedGemType = gemType;
+      }
+
+      const newState = {
+        ...prev,
+        isCorrect: validation.isCorrect,
+        showAnswer: true,
+        feedback: prev.translationShown
+          ? 'Translation was shown - practice more!'
+          : validation.isCorrect
+            ? 'Correct!'
+            : `Incorrect. The answer is: ${correctAnswer}`,
+        score: isCorrectForScoring ? prev.score + (isAdventureMode ? GEM_TYPES[prev.currentGemType].points : 10) : prev.score,
+        correctAnswers: isCorrectForScoring ? prev.correctAnswers + 1 : prev.correctAnswers,
+        incorrectAnswers: shouldCountAnswer && !validation.isCorrect ? prev.incorrectAnswers + 1 : prev.incorrectAnswers,
+        streak: isCorrectForScoring ? prev.streak + 1 : shouldCountAnswer ? 0 : prev.streak,
+        maxStreak: isCorrectForScoring ? Math.max(prev.maxStreak, prev.streak + 1) : prev.maxStreak,
+        gemsCollected: updatedGemsCollected,
+        currentGemType: updatedGemType
+      };
+
+      console.log('🔄 STATE UPDATE - AFTER:', {
+        currentWordIndex: newState.currentWordIndex,
+        currentWord: newState.currentWord?.spanish,
+        showAnswer: newState.showAnswer,
+        isCorrect: newState.isCorrect
+      });
+
+      // Schedule word advancement in a separate timeout to avoid race conditions
+      setTimeout(() => {
+        console.log('⏰ ADVANCING TO NEXT WORD...');
+        setGameState(nextPrev => {
+          // CRITICAL: Use the exact same currentWordIndex from the previous state
+          // to prevent any race conditions or state resets
+          const nextIndex = nextPrev.currentWordIndex + 1;
+
+          console.log('🔄 WORD ADVANCEMENT:', {
+            currentIndex: nextPrev.currentWordIndex,
+            nextIndex,
+            totalWords: config.vocabulary.length,
+            currentWord: nextPrev.currentWord?.spanish,
+            nextWord: config.vocabulary[nextIndex]?.spanish
+          });
+
+          if (nextIndex >= config.vocabulary.length) {
+            // Game complete
+            const wordsAttempted = nextPrev.currentWordIndex + 1;
+            const result: GameResult = {
+              score: nextPrev.score,
+              accuracy: wordsAttempted > 0 ? (nextPrev.correctAnswers / wordsAttempted) * 100 : 0,
+              timeSpent: Math.floor((Date.now() - nextPrev.startTime.getTime()) / 1000),
+              correctAnswers: nextPrev.correctAnswers,
+              incorrectAnswers: nextPrev.incorrectAnswers,
+              totalWords: wordsAttempted,
+              wordsLearned: nextPrev.wordsLearned,
+              wordsStruggling: nextPrev.wordsStruggling,
+              gemsCollected: nextPrev.gemsCollected,
+              maxStreak: nextPrev.maxStreak
+            };
+
+            onGameComplete(result);
+            return nextPrev;
+          }
+
+          // Move to next word
+          const nextWord = config.vocabulary[nextIndex];
+          const newOptions = generateMultipleChoiceOptions(nextWord, config.vocabulary);
+
+          // Reset question start time for response time tracking
+          setQuestionStartTime(Date.now());
+
+          // Generate exercise data for the new word
+          generateExerciseData(nextWord, nextPrev.gameMode);
+
+          setUserAnswer('');
+
+          const nextState = {
+            ...nextPrev,
+            currentWordIndex: nextIndex,
+            currentWord: nextWord,
+            showAnswer: false,
+            isCorrect: null,
+            feedback: '',
+            translationShown: false,
+            speedModeTimeLeft: nextPrev.gameMode === 'speed' ? calculateWordTime(nextWord) : nextPrev.speedModeTimeLeft,
+            multipleChoiceOptions: newOptions
+          };
+
+          console.log('🎯 FINAL NEXT WORD STATE:', {
+            currentWordIndex: nextState.currentWordIndex,
+            currentWord: nextState.currentWord?.spanish,
+            showAnswer: nextState.showAnswer
+          });
+
+          return nextState;
+        });
+      }, 1000);
+
+      return newState;
+    });
+  }, [questionStartTime, onWordAttempt, config, isAdventureMode, onGameComplete, generateMultipleChoiceOptions, generateExerciseData]);
 
   // Speed mode timer
   useEffect(() => {
@@ -392,53 +516,11 @@ export const VocabMasterGameEngine: React.FC<VocabMasterGameEngineProps> = ({
     setTimeout(() => setShowXPGain(false), 2000);
   }, []);
 
-  // Move to next word
+  // Simple next word handler for manual advancement
   const nextWord = useCallback(() => {
-    const nextIndex = gameState.currentWordIndex + 1;
-
-    if (nextIndex >= config.vocabulary.length) {
-      // Game complete
-      const wordsAttempted = gameState.currentWordIndex + 1; // Actual words attempted
-      const result: GameResult = {
-        score: gameState.score,
-        accuracy: wordsAttempted > 0 ? (gameState.correctAnswers / wordsAttempted) * 100 : 0,
-        timeSpent: Math.floor((Date.now() - gameState.startTime.getTime()) / 1000),
-        correctAnswers: gameState.correctAnswers,
-        totalWords: wordsAttempted, // Use actual words attempted, not total vocabulary length
-        wordsLearned: gameState.wordsLearned,
-        wordsStruggling: gameState.wordsStruggling,
-        gemsCollected: gameState.gemsCollected,
-        maxStreak: gameState.maxStreak
-      };
-
-      onGameComplete(result);
-      return;
-    }
-
-    // Move to next word
-    const nextWord = config.vocabulary[nextIndex];
-    const newOptions = generateMultipleChoiceOptions(nextWord, config.vocabulary);
-
-    // Reset question start time for response time tracking
-    setQuestionStartTime(Date.now());
-
-    setGameState(prev => ({
-      ...prev,
-      currentWordIndex: nextIndex,
-      currentWord: nextWord,
-      showAnswer: false,
-      isCorrect: null,
-      feedback: '',
-      translationShown: false, // Reset translation shown flag
-      speedModeTimeLeft: prev.gameMode === 'speed' ? calculateWordTime(nextWord) : prev.speedModeTimeLeft,
-      multipleChoiceOptions: newOptions
-    }));
-
-    // Generate exercise data for the new word
-    generateExerciseData(nextWord, gameState.gameMode);
-
-    setUserAnswer('');
-  }, [gameState, config.vocabulary, onGameComplete, generateExerciseData]);
+    // For compatibility, we can just submit an empty answer to trigger advancement
+    handleAnswer('');
+  }, [handleAnswer]);
 
   // Handle mode-specific interactions
   const handleModeSpecificAction = useCallback((action: string, data?: any) => {

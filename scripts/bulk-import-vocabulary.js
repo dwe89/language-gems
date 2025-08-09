@@ -102,12 +102,13 @@ async function importVocabularyBatch(vocabularyData) {
       try {
         const itemNumber = i + index + 1;
         
-        // Check for duplicates first
+        // Check for duplicates first (word + language + part_of_speech)
         const { data: existing, error: duplicateCheckError } = await supabase
           .from('centralized_vocabulary')
           .select('id')
           .eq('word', item.word)
           .eq('language', item.language.toLowerCase())
+          .eq('part_of_speech', item.part_of_speech || '')
           .limit(1);
         
         if (duplicateCheckError) {
@@ -136,7 +137,14 @@ async function importVocabularyBatch(vocabularyData) {
           example_translation: item.example_translation || null,
           gender: item.gender || null,
           article: item.article || null,
-          base_word: item.base_word || null
+          base_word: item.base_word || null,
+          // KS4 specific fields (display_word is auto-generated, so excluded)
+          word_type: item.word_type || null,
+          tier: item.tier || null,
+          is_required: item.is_required === true || item.is_required === 'true' || item.is_required === 'True',
+          exam_board_code: item.exam_board_code || null,
+          theme_name: item.theme_name || null,
+          unit_name: item.unit_name || null
         };
         
         // Insert into database
@@ -209,7 +217,9 @@ async function main() {
     console.log('Example: node scripts/bulk-import-vocabulary.js vocabtoupload.csv');
     console.log('');
     console.log('Expected CSV format:');
-    console.log('word,translation,language,category,subcategory,part_of_speech,curriculum_level,example_sentence,example_translation,gender,article,base_word');
+    console.log('language,part_of_speech,word,translation,word_type,gender,article,display_word,example_sentence,example_translation,exam_board_code,theme_name,unit_name,tier,is_required,curriculum_level');
+    console.log('');
+    console.log('Note: This script supports both KS3 and KS4 vocabulary formats.');
     console.log('');
     process.exit(1);
   }

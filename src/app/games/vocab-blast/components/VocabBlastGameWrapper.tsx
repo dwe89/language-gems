@@ -82,6 +82,9 @@ export default function VocabBlastGameWrapper(props: VocabBlastGameWrapperProps)
     language: mapLanguage(props.settings.language),
     categoryId: mapCategory(props.settings.category),
     subcategoryId: props.settings.subcategory,
+    curriculumLevel: props.settings.curriculumLevel,
+    examBoard: props.settings.examBoard,
+    tier: props.settings.tier,
     limit: 100, // Get more words for variety
     randomize: true,
     hasAudio: false, // Audio not required for vocab blast

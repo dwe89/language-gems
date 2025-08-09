@@ -16,6 +16,10 @@ interface HangmanGameWrapperProps {
     customWords?: string[];
     subcategory?: string; // Add subcategory to the interface
     categoryVocabulary?: any[]; // From the category selection system
+    // KS4-specific parameters
+    curriculumLevel?: string;
+    examBoard?: 'AQA' | 'edexcel';
+    tier?: 'foundation' | 'higher';
   };
   onBackToMenu: () => void;
   onGameEnd?: (result: 'win' | 'lose') => void;
@@ -110,6 +114,9 @@ export default function HangmanGameWrapper(props: HangmanGameWrapperProps) {
     language: mapLanguage(props.settings.language),
     categoryId: mapCategory(props.settings.category),
     subcategoryId: props.settings.subcategory,
+    curriculumLevel: props.settings.curriculumLevel,
+    examBoard: props.settings.examBoard,
+    tier: props.settings.tier,
     limit: 100,
     randomize: true,
     hasAudio: true,

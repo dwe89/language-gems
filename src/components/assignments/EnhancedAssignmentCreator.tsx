@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Gem, Trophy, BookOpen, Eye, ArrowRight, ArrowLeft, CheckCircle,
   AlertCircle, Gamepad2, ClipboardList, X, Headphones, PenTool, Mic, Award, Info,
-  FileText, Target
+  FileText, Target, GraduationCap
 } from 'lucide-react';
 import { useAuth } from '../auth/AuthProvider';
 import { supabaseBrowser } from '../auth/AuthProvider';
@@ -47,6 +47,9 @@ interface VocabularyConfig {
   wordCount?: number;
   difficulty?: string;
   curriculumLevel?: 'KS3' | 'KS4'; // Added this as per your usage
+  // KS4-specific parameters
+  examBoard?: 'AQA' | 'edexcel';
+  tier?: 'foundation' | 'higher';
 }
 
 interface SentenceConfig {
@@ -1133,6 +1136,57 @@ export default function EnhancedAssignmentCreator({
             }
           </p>
         </div>
+
+        {/* KS4 Exam Board and Tier Selection */}
+        {assignmentDetails.curriculum_level === 'KS4' && gameConfig.selectedGames.length > 0 && (
+          <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl p-6 border border-indigo-100">
+            <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+              <div className="w-6 h-6 bg-indigo-100 rounded-lg flex items-center justify-center mr-2">
+                <GraduationCap className="h-4 w-4 text-indigo-600" />
+              </div>
+              GCSE Configuration
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Exam Board Selection */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-800 mb-2">Exam Board</label>
+                <select
+                  value={gameConfig.vocabularyConfig.examBoard || 'AQA'}
+                  onChange={(e) => setGameConfig(prev => ({
+                    ...prev,
+                    vocabularyConfig: {
+                      ...prev.vocabularyConfig,
+                      examBoard: e.target.value as 'AQA' | 'edexcel'
+                    }
+                  }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
+                >
+                  <option value="AQA">AQA</option>
+                  <option value="edexcel">Edexcel</option>
+                </select>
+              </div>
+
+              {/* Tier Selection */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-800 mb-2">Tier</label>
+                <select
+                  value={gameConfig.vocabularyConfig.tier || 'foundation'}
+                  onChange={(e) => setGameConfig(prev => ({
+                    ...prev,
+                    vocabularyConfig: {
+                      ...prev.vocabularyConfig,
+                      tier: e.target.value as 'foundation' | 'higher'
+                    }
+                  }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
+                >
+                  <option value="foundation">Foundation Tier (Grades 1-5)</option>
+                  <option value="higher">Higher Tier (Grades 4-9)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Games Content Configuration */}

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Head from 'next/head';
 import { useAuth } from '../../components/auth/AuthProvider';
 import CurriculumNavigator from '../../components/freebies/CurriculumNavigator';
 import FreebiesNavTabs from '../../components/freebies/FreebiesNavTabs';
@@ -274,7 +275,14 @@ export default function ResourcesPage() {
   });
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <>
+      <Head>
+        <title>Educational Resources | GCSE Language Learning Materials | Language Gems</title>
+        <meta name="description" content="Premium GCSE language learning resources, worksheets, and materials for Spanish, French, and German. Download high-quality educational content for KS3 and KS4 students." />
+        <meta name="keywords" content="GCSE language resources, Spanish worksheets, French learning materials, German education resources, KS3 language learning, KS4 MFL resources, language teaching materials" />
+        <link rel="canonical" href="https://languagegems.com/resources" />
+      </Head>
+      <div className="min-h-screen bg-slate-50">
       <div className="bg-white border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex items-center justify-between">
@@ -503,6 +511,7 @@ export default function ResourcesPage() {
       {/* Cart Sidebar */}
       <CartSidebar />
     </div>
+    </>
   );
 } 
 

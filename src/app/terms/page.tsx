@@ -1,9 +1,15 @@
-'use client';
-
 import React from 'react';
+import { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowLeft, FileText, Scale } from 'lucide-react';
 import Footer from '../../components/layout/Footer';
+import { generateMetadata as createMetadata } from '../../components/seo/SEOWrapper';
+
+export const metadata: Metadata = createMetadata({
+  title: 'Terms of Service | Language Gems Educational Platform',
+  description: 'Terms of service for Language Gems educational platform. Review our policies for using our GCSE language learning games and teaching resources.',
+  canonical: '/terms'
+});
 
 export default function TermsOfServicePage() {
   return (

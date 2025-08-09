@@ -225,6 +225,7 @@ export default function ReadingComprehensionPage() {
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>('');
   const [selectedCurriculumLevel, setSelectedCurriculumLevel] = useState<string>(''); // New state for curriculum level
   const [selectedExamBoard, setSelectedExamBoard] = useState<string>(''); // New state for exam board
+  const [selectedTier, setSelectedTier] = useState<string>(''); // New state for tier
   const [selectedThemeTopic, setSelectedThemeTopic] = useState<string>(''); // New state for theme/topic
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -350,6 +351,7 @@ export default function ReadingComprehensionPage() {
       language: selectedLanguage,
       ...(selectedCurriculumLevel && { curriculumLevel: selectedCurriculumLevel }),
       ...(selectedExamBoard && { examBoard: selectedExamBoard }),
+      ...(selectedTier && { tier: selectedTier }),
       ...(selectedThemeTopic && { themeTopic: selectedThemeTopic }),
       // Only add category and subcategory if KS4 is NOT selected
       ...(selectedCurriculumLevel !== 'ks4' && selectedCategory && { category: selectedCategory }),
@@ -429,6 +431,7 @@ export default function ReadingComprehensionPage() {
                   value={selectedExamBoard}
                   onChange={(e) => {
                     setSelectedExamBoard(e.target.value);
+                    setSelectedTier(''); // Reset tier when exam board changes
                     setSelectedThemeTopic(''); // Reset theme/topic when exam board changes
                   }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -436,6 +439,24 @@ export default function ReadingComprehensionPage() {
                   <option value="">All Boards</option>
                   <option value="aqa">AQA</option>
                   <option value="edexcel">Edexcel</option>
+                </select>
+              </div>
+            )}
+
+            {/* Tier Filter (visible only for KS4) */}
+            {selectedCurriculumLevel === 'ks4' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Tier
+                </label>
+                <select
+                  value={selectedTier}
+                  onChange={(e) => setSelectedTier(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">All Tiers</option>
+                  <option value="foundation">Foundation Tier (Grades 1-5)</option>
+                  <option value="higher">Higher Tier (Grades 4-9)</option>
                 </select>
               </div>
             )}

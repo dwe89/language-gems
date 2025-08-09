@@ -134,7 +134,7 @@ export const GameCompletionScreen: React.FC<GameCompletionScreenProps> = ({
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-red-300">Incorrect Answers</span>
-                  <span className="text-red-300 font-semibold">{(result.totalWords || 0) - (result.correctAnswers || 0)}</span>
+                  <span className="text-red-300 font-semibold">{result.incorrectAnswers || 0}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-white/80">Average Time per Word</span>

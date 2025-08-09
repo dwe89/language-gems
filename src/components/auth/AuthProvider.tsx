@@ -11,7 +11,7 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   isLoading: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: string | null }>;
+  signIn: (email: string, password: string) => Promise<{ error: string | null; user?: User | null }>;
   signOut: () => Promise<void>;
   refreshSession: () => Promise<void>;
   userRole: string | null;
@@ -356,9 +356,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const signIn = async (email: string, password: string): Promise<{ error: string | null }> => {
+  const signIn = async (email: string, password: string): Promise<{ error: string | null; user?: User | null }> => {
     try {
-      const { error } = await supabaseBrowser.auth.signInWithPassword({
+      const { data, error } = await supabaseBrowser.auth.signInWithPassword({
         email,
         password,
       });
@@ -367,7 +367,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { error: error.message };
       }
       
-      return { error: null };
+      return { error: null, user: data.user };
     } catch (err) {
       return { error: 'An unexpected error occurred' };
     }

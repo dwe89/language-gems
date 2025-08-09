@@ -85,7 +85,7 @@ export default function GameSettings({ onStartGame }: GameSettingsProps) {
     categoryId: selectedCategory,
     subcategoryId: selectedSubcategory,
     difficultyLevel: 'beginner',
-    curriculumLevel: 'KS3',
+    curriculumLevel: 'KS3', // TODO: Make this configurable for KS4 support
     limit: 50,
     randomize: true
   });

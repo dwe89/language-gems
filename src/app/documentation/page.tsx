@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Head from 'next/head';
 import { useState } from 'react';
 import { 
   BookOpen, Gamepad2, Users, Settings, BarChart3, 
@@ -123,7 +124,14 @@ export default function DocumentationPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+    <>
+      <Head>
+        <title>Teacher Documentation | MFL Platform Guide | Language Gems</title>
+        <meta name="description" content="Comprehensive documentation for Language Gems educational platform. MFL teacher guides, GCSE language learning best practices, and platform features for Spanish, French, and German." />
+        <meta name="keywords" content="MFL teaching resources, Language Gems documentation, GCSE language teaching, teacher guides, MFL platform guide" />
+        <link rel="canonical" href="https://languagegems.com/documentation" />
+      </Head>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
       {/* Header */}
       <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-16">
         <div className="container mx-auto px-4">
@@ -374,5 +382,6 @@ export default function DocumentationPage() {
 
       <Footer />
     </div>
+    </>
   );
 }

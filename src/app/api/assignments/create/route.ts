@@ -29,6 +29,9 @@ interface CreateAssignmentRequest {
     customListId?: string;
     difficulty?: string;
     wordCount?: number;
+    // KS4-specific parameters
+    examBoard?: string;
+    tier?: string;
   };
 
   // Game configuration
@@ -169,6 +172,8 @@ export async function POST(request: NextRequest) {
         vocabulary_selection_type: body.vocabularySelection.type, // Set the correct vocabulary selection type
         vocabulary_count: body.vocabularySelection.wordCount || 10,
         curriculum_level: body.curriculumLevel || 'KS3',
+        exam_board: body.vocabularySelection.examBoard,
+        tier: body.vocabularySelection.tier,
         created_by: user.id, // Use 'created_by' not 'teacher_id'
         status: 'active',
         game_config: assignmentConfig, // Store full config in game_config field
@@ -226,6 +231,14 @@ async function populateVocabularyList(
     // Apply language filter first (most important)
     if (criteria.language) {
       query = query.eq('language', criteria.language);
+    }
+
+    // Apply KS4-specific filters first
+    if (criteria.examBoard) {
+      query = query.eq('exam_board_code', criteria.examBoard);
+    }
+    if (criteria.tier) {
+      query = query.eq('tier', criteria.tier);
     }
 
     // Apply filters based on criteria type using centralized_vocabulary schema
