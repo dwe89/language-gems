@@ -4,9 +4,11 @@ import React, { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../../../components/auth/AuthProvider';
 import DetectiveListeningGameWrapper from './components/DetectiveListeningGameWrapper';
+import DetectiveListeningAssignmentWrapper from './components/DetectiveListeningAssignmentWrapper';
 import GameAssignmentWrapper from '../../../components/games/templates/GameAssignmentWrapper';
 import UnifiedGameLauncher from '../../../components/games/UnifiedGameLauncher';
 import { UnifiedSelectionConfig, UnifiedVocabularyItem } from '../../../hooks/useUnifiedVocabulary';
+import AssignmentModeHandler, { AssignmentLoadingScreen, AssignmentErrorScreen } from '../../../utils/assignmentModeHandler';
 
 export default function UnifiedDetectiveListeningPage() {
   const { user } = useAuth();
@@ -14,6 +16,13 @@ export default function UnifiedDetectiveListeningPage() {
   const searchParams = useSearchParams();
   const assignmentId = searchParams?.get('assignment');
   const mode = searchParams?.get('mode');
+
+  console.log('🎯 [Detective Listening] URL params [DEBUG-v3]:', {
+    assignmentId,
+    mode,
+    searchParams: searchParams?.toString(),
+    timestamp: new Date().toISOString()
+  });
 
   // ALWAYS initialize hooks first to prevent "more hooks than previous render" error
   const [gameStarted, setGameStarted] = useState(false);
@@ -33,57 +42,82 @@ export default function UnifiedDetectiveListeningPage() {
     router.push('/student-dashboard/assignments');
   };
 
-  // Assignment mode: wrap with GameAssignmentWrapper (after all hooks are initialized)
+  console.log('🎯 [Detective Listening] Assignment mode check [DEBUG-v6]:', {
+    assignmentId,
+    mode,
+    hasUser: !!user,
+    userId: user?.id,
+    searchParams: searchParams?.toString(),
+    timestamp: new Date().toISOString()
+  });
+
+  // If assignment mode, use the assignment wrapper directly
   if (assignmentId && mode === 'assignment' && user) {
     return (
-      <GameAssignmentWrapper
+      <DetectiveListeningAssignmentWrapper assignmentId={assignmentId} />
+    );
+  }
+
+  // Use assignment mode handler for all cases
+  if (user) {
+    return (
+      <AssignmentModeHandler
         assignmentId={assignmentId}
+        mode={mode}
+        userId={user.id}
         gameId="detective-listening"
-        studentId={user.id}
-        onAssignmentComplete={handleAssignmentComplete}
-        onBackToAssignments={handleBackToAssignments}
-        onBackToMenu={() => router.push('/games/detective-listening')}
       >
-        {({ assignment, vocabulary, onProgressUpdate, onGameComplete }) => {
-          // Convert assignment vocabulary to unified config format
-          const assignmentConfig: UnifiedSelectionConfig = {
-            language: assignment.vocabulary_criteria?.language || 'spanish',
-            curriculumLevel: (assignment.curriculum_level as 'KS2' | 'KS3' | 'KS4' | 'KS5') || 'KS3',
-            categoryId: assignment.vocabulary_criteria?.category || 'basics_core_language',
-            subcategoryId: assignment.vocabulary_criteria?.subcategory || 'greetings_introductions'
+        {({ isAssignmentMode, settings, loading, error }) => {
+          console.log('🎯 [Detective Listening] Assignment handler result:', {
+            isAssignmentMode,
+            hasSettings: !!settings,
+            loading,
+            error,
+            timestamp: new Date().toISOString()
+          });
+
+          if (loading) {
+            return <AssignmentLoadingScreen />;
+          }
+
+          if (error) {
+            return <AssignmentErrorScreen error={error} onRetry={() => window.location.reload()} />;
+          }
+
+          if (!settings) {
+            return <div>No settings available</div>;
+          }
+
+          // Convert settings to the format expected by DetectiveListeningGameWrapper
+          const gameSettings = {
+            caseType: settings.category || 'basics_core_language',
+            language: settings.language || 'spanish',
+            difficulty: settings.difficulty || 'medium',
+            category: settings.category || 'basics_core_language',
+            subcategory: settings.subcategory || 'greetings_introductions',
+            curriculumLevel: settings.curriculumLevel || 'KS3',
+            examBoard: settings.examBoard,
+            tier: settings.tier
           };
 
           return (
             <DetectiveListeningGameWrapper
-              config={assignmentConfig}
-              vocabulary={vocabulary}
+              settings={gameSettings}
+              assignmentId={isAssignmentMode ? assignmentId : undefined}
+              userId={user.id}
               onBackToMenu={() => router.push('/games/detective-listening')}
-              onGameComplete={(result) => {
-                console.log('Detective Listening assignment ended:', result);
-                const gameProgress = {
-                  assignmentId: assignmentId,
-                  gameId: 'detective-listening',
-                  studentId: user.id,
-                  wordsCompleted: result.wordsCompleted || 0,
-                  totalWords: vocabulary.length,
-                  score: result.score || 0,
-                  maxScore: vocabulary.length * 100,
-                  timeSpent: result.timeSpent || 0,
-                  accuracy: result.accuracy || 0,
-                  completedAt: new Date(),
-                  sessionData: {
-                    gameResult: result,
-                    config: assignmentConfig,
-                    vocabulary: vocabulary
-                  }
-                };
-                onGameComplete(gameProgress);
+              onGameEnd={(result) => {
+                console.log('Detective Listening game ended:', result);
+                if (isAssignmentMode) {
+                  // TODO: Handle assignment completion
+                  console.log('Assignment mode game completed');
+                }
+                router.push('/games/detective-listening');
               }}
-              assignmentMode={true}
             />
           );
         }}
-      </GameAssignmentWrapper>
+      </AssignmentModeHandler>
     );
   }
 
@@ -172,3 +206,5 @@ export default function UnifiedDetectiveListeningPage() {
   // Fallback
   return null;
 }
+
+

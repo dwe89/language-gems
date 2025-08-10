@@ -8,6 +8,7 @@ interface AssignmentProgressRequest {
   completed: boolean;
   timeSpent: number; // in seconds
   score: number; // percentage
+  studentId?: string; // For demo users
   metadata?: {
     matches: number;
     attempts: number;
@@ -36,16 +37,35 @@ export async function POST(request: NextRequest) {
       }
     );
     
-    // Verify authentication
+    // Verify authentication (allow demo users)
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     console.log('Progress API - Auth check:', { user: user?.id, authError });
-    if (authError || !user) {
-      console.log('Progress API - Authentication failed:', authError);
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
 
     const body: AssignmentProgressRequest = await request.json();
-    const { assignmentId, completed, timeSpent, score, metadata } = body;
+    const { assignmentId, completed, timeSpent, score, metadata, studentId } = body;
+
+    // Determine the actual user ID (authenticated user or demo user)
+    let actualUserId = user?.id;
+
+    // If no authenticated user but studentId is provided, check if it's a demo user
+    if (!user && studentId) {
+      // Check if this is a known demo user
+      const { data: demoUser } = await supabase
+        .from('demo_users')
+        .select('id')
+        .or(`id.eq.${studentId},demo_user_id.eq.${studentId}`)
+        .single();
+
+      if (demoUser) {
+        actualUserId = studentId;
+        console.log('Progress API - Using demo user:', studentId);
+      }
+    }
+
+    if (!actualUserId) {
+      console.log('Progress API - No valid user (authenticated or demo)');
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
     // Verify the assignment exists and user has access
     const { data: assignment, error: assignmentError } = await supabase
@@ -61,37 +81,41 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if user is a student in the class
-    const { data: enrollment } = await supabase
-      .from('class_enrollments')
-      .select('student_id')
-      .eq('class_id', assignment.class_id)
-      .eq('student_id', user.id)
-      .single();
-    
-    if (!enrollment) {
-      return NextResponse.json(
-        { error: 'Access denied - not enrolled in this class' },
-        { status: 403 }
-      );
+    // Check if user is a student in the class (skip for demo users)
+    if (user) {
+      const { data: enrollment } = await supabase
+        .from('class_enrollments')
+        .select('student_id')
+        .eq('class_id', assignment.class_id)
+        .eq('student_id', actualUserId)
+        .single();
+
+      if (!enrollment) {
+        return NextResponse.json(
+          { error: 'Access denied - not enrolled in this class' },
+          { status: 403 }
+        );
+      }
     }
 
     // Update or create assignment progress in the main table
     const progressData = {
       assignment_id: assignmentId,
-      student_id: user.id,
+      student_id: actualUserId,
       status: completed ? 'completed' : 'in_progress',
-      score: score,
-      accuracy: accuracy || score, // Use provided accuracy or fallback to score
-      attempts: metadata?.attempts || 1,
-      time_spent: timeSpent,
+      best_score: score,
+      best_accuracy: accuracy || score, // Use provided accuracy or fallback to score
+      attempts_count: metadata?.attempts || 1,
+      total_time_spent: timeSpent,
       updated_at: new Date().toISOString(),
       ...(completed && { completed_at: new Date().toISOString() })
     };
 
     const { data: updatedProgress, error: progressError } = await supabase
-      .from('assignment_progress')
-      .upsert([progressData])
+      .from('enhanced_assignment_progress')
+      .upsert([progressData], {
+        onConflict: 'assignment_id,student_id'
+      })
       .select()
       .single();
 
@@ -107,7 +131,7 @@ export async function POST(request: NextRequest) {
     if (gameId) {
       const gameProgressData = {
         assignment_id: assignmentId,
-        student_id: user.id,
+        student_id: actualUserId,
         game_id: gameId,
         status: completed ? 'completed' : 'in_progress',
         score: score,
@@ -135,7 +159,7 @@ export async function POST(request: NextRequest) {
     // Create game session record
     if (metadata) {
       const gameSessionData = {
-        student_id: user.id,
+        student_id: actualUserId,
         assignment_id: assignmentId,
         game_type: metadata.gameType,
         session_data: {

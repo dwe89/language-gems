@@ -118,6 +118,7 @@ export default function AssignmentDetailsPage() {
               'memory-game': 'memory-game',
               'memory-match': 'memory-game', // Standardize to memory-game
               'vocab-blast': 'vocab-blast',
+              'vocab-master': 'vocab-master', // ✅ VocabMaster assignment support
               'word-blast': 'word-blast', // Keep separate - different games
               'hangman': 'hangman',
               'noughts-and-crosses': 'noughts-and-crosses',
@@ -130,7 +131,14 @@ export default function AssignmentDetailsPage() {
               'verb-quest': 'verb-quest',
               'word-scramble': 'word-scramble',
               'word-guesser': 'word-scramble', // Word guesser uses word scramble logic
-              'sentence-towers': 'sentence-towers',
+              'memory-game': 'memory-game', // ✅ Memory Game assignment support
+              'hangman': 'hangman', // ✅ Hangman assignment support
+              'word-blast': 'word-blast', // ✅ Word Blast assignment support
+              'speed-builder': 'speed-builder', // ✅ Speed Builder assignment support
+              'sentence-towers': 'sentence-towers', // ✅ Sentence Towers assignment support
+              'conjugation-duel': 'conjugation-duel', // ✅ Conjugation Duel assignment support
+              'case-file-translator': 'case-file-translator', // ✅ Case File Translator assignment support
+              'lava-temple-word-restore': 'lava-temple-word-restore', // ✅ Lava Temple assignment support
               'sentence-builder': 'speed-builder', // Legacy mapping
             };
 
@@ -173,6 +181,7 @@ export default function AssignmentDetailsPage() {
               'memory-game': 'memory-game',
               'memory-match': 'memory-game',
               'vocab-blast': 'vocab-blast',
+              'vocab-master': 'vocab-master', // ✅ VocabMaster assignment support
               'word-blast': 'word-blast',
               'hangman': 'hangman',
               'noughts-and-crosses': 'noughts-and-crosses',
@@ -186,7 +195,14 @@ export default function AssignmentDetailsPage() {
               'word-scramble': 'word-scramble',
               'word-guesser': 'word-scramble',
               'sentence-towers': 'sentence-towers',
-              'sentence-builder': 'speed-builder'
+              'sentence-builder': 'speed-builder',
+              'memory-game': 'memory-game', // ✅ Memory Game assignment support
+              'hangman': 'hangman', // ✅ Hangman assignment support
+              'word-blast': 'word-blast', // ✅ Word Blast assignment support
+              'speed-builder': 'speed-builder', // ✅ Speed Builder assignment support
+              'conjugation-duel': 'conjugation-duel', // ✅ Conjugation Duel assignment support
+              'case-file-translator': 'case-file-translator', // ✅ Case File Translator assignment support
+              'lava-temple-word-restore': 'lava-temple-word-restore', // ✅ Lava Temple assignment support
             };
 
             const gamePath = gamePathMap[gameType] || 'memory-game';

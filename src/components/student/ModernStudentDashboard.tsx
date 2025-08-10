@@ -11,6 +11,7 @@ import {
   CheckCircle, AlertCircle, TrendingUp
 } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '../auth/AuthProvider';
 
 import { useSupabase } from '../supabase/SupabaseProvider';
@@ -204,7 +205,7 @@ export default function ModernStudentDashboard({
   initialView = 'home'
 }: ModernStudentDashboardProps) {
   const { user } = useAuth();
-
+  const router = useRouter();
   const { supabase } = useSupabase();
   
   // State
@@ -338,6 +339,7 @@ export default function ModernStudentDashboard({
       console.error('Error loading student data:', error);
       // Set fallback data with proper level calculation
       const { level, xpToNext } = calculateLevelFromXP(0);
+
       setStudentStats({
         level,
         xp: 0,
@@ -378,7 +380,7 @@ export default function ModernStudentDashboard({
       // Check which assignments have submissions by the current user
       const assignmentIds = assignmentNotifications?.map(a => a.id) || [];
       const { data: userSubmissions } = assignmentIds.length > 0 ? await supabase
-        .from('assignment_submissions')
+        .from('enhanced_assignment_progress')
         .select('assignment_id')
         .eq('student_id', user.id)
         .in('assignment_id', assignmentIds) : { data: [] };
@@ -432,7 +434,27 @@ export default function ModernStudentDashboard({
     try {
       setAssignmentsLoading(true);
 
-      // Get ALL assignments, not just those with submissions
+      // Get student's class enrollments first
+      const { data: enrollments, error: enrollmentError } = await supabase
+        .from('class_enrollments')
+        .select('class_id')
+        .eq('student_id', user.id);
+
+      if (enrollmentError) {
+        console.error('Error fetching enrollments:', enrollmentError);
+        setAssignments([]);
+        return;
+      }
+
+      // If student has no enrollments, return empty assignments
+      if (!enrollments || enrollments.length === 0) {
+        setAssignments([]);
+        return;
+      }
+
+      const classIds = enrollments.map(e => e.class_id);
+
+      // Get assignments for student's classes only
       const { data: assignmentData, error } = await supabase
         .from('assignments')
         .select(`
@@ -444,8 +466,10 @@ export default function ModernStudentDashboard({
           due_date,
           points,
           game_type,
-          max_attempts
+          max_attempts,
+          class_id
         `)
+        .in('class_id', classIds)
         .order('due_date', { ascending: true });
 
       if (error) {
@@ -457,8 +481,8 @@ export default function ModernStudentDashboard({
       // Get submissions for this student separately
       const assignmentIds = assignmentData?.map(a => a.id) || [];
       const { data: submissionData } = assignmentIds.length > 0 ? await supabase
-        .from('assignment_submissions')
-        .select('assignment_id, status, score, progress, attempts, submitted_at')
+        .from('enhanced_assignment_progress')
+        .select('assignment_id, status, best_score, best_accuracy, attempts_count, completed_at')
         .eq('student_id', user.id)
         .in('assignment_id', assignmentIds) : { data: [] };
 
@@ -1035,9 +1059,9 @@ export default function ModernStudentDashboard({
                 <EnhancedAssignmentCard
                   key={assignment.id}
                   assignment={assignment}
-                  onStart={(id) => console.log('Start assignment:', id)}
-                  onContinue={(id) => console.log('Continue assignment:', id)}
-                  onReview={(id) => console.log('Review assignment:', id)}
+                  onStart={(id) => router.push(`/student-dashboard/assignments/${id}`)}
+                  onContinue={(id) => router.push(`/student-dashboard/assignments/${id}`)}
+                  onReview={(id) => router.push(`/student-dashboard/assignments/${id}`)}
                 />
                 ))
               )}

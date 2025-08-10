@@ -1,37 +1,93 @@
 import { createClient } from '../../../../lib/supabase-server';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
-import { generateUsername as createUsername } from '../../../../lib/utils';
 
-function generateUsername(name: string) {
-  // Format: FirstName + Last Initial (e.g., BobS from Bob Smith)
-  const nameParts = name.trim().split(/\s+/);
+function generateScopedUsername(firstName: string, lastName: string, schoolInitials: string, existingUsernames: Set<string>) {
+  // Create base username: firstnamel (e.g., johns) - all lowercase
+  const baseUsername = `${firstName.toLowerCase()}${lastName.charAt(0).toLowerCase()}`;
+  let finalUsername = baseUsername;
+  let suffix = 0;
   
-  if (nameParts.length === 1) {
-    // If just one name, use it as is
-    const firstName = nameParts[0];
-    // Capitalize first letter, lowercase the rest
-    return firstName.charAt(0).toUpperCase() + firstName.slice(1).toLowerCase();
+  // Check if username exists and add suffix if needed
+  while (existingUsernames.has(finalUsername)) {
+    suffix++;
+    finalUsername = baseUsername + suffix;
   }
   
-  // Get first name and capitalize first letter
-  const firstName = nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1).toLowerCase();
-  // Get last name initial and make it uppercase
-  const lastInitial = nameParts[nameParts.length - 1][0].toUpperCase();
-  
-  // Combine to create the username format FirstNameLastInitial
-  return firstName + lastInitial;
+  // Add to existing usernames to prevent duplicates in this batch
+  existingUsernames.add(finalUsername);
+  return finalUsername;
 }
 
 function generatePassword() {
-  // Generate a random password
-  const length = 8;
-  const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let password = '';
-  for (let i = 0; i < length; i++) {
-    password += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return password;
+  // Arrays for gem-based password generation
+const adjectives = [
+  'Good', 'New', 'Old', 'Pure', 'Dark', 'Cool', 'Full', 'Soft', 'Warm',
+  'Cold', 'Hot', 'Long', 'Deep', 'Sweet', 'Dry', 'Wet', 'Fine', 'Grey',
+  'True', 'Rich', 'High', 'Low', 'Nice', 'Bold', 'Wise',
+  'Flat', 'Dull', 'Open', 'Live', 'Real', 'Last', 'Safe', 'Fresh', 'Hard',
+  'Pure', 'Pink', 'Blue', 'Red', 'Gold', 'Silver', 'Red', 'Green', 'Yellow', 'Orange', 
+  'Purple', 'Indigo', 'Violet', 'Black', 'White', 'Gray', 'Brown', 'Tan', 'Beige', 
+  'Cyan', 'Magenta', 'Lime', 'Olive', 'Maroon', 'Navy', 'Teal', 'Aqua', 'Fuchsia', 
+  'Rose', 'Lavender',
+];
+  
+const gems = [
+  'Stone', 'Rock', 'Jewel', 'Sparkle', 'Crystal', 'Bead', 'Charm', 'Glow',
+  'Amber', 'Garnet', 'Quartz', 'Onyx', 'Turquoise', 'Amethyst', 'Glass',
+  'Coral', 'Pearl', 'Diamond', 'Ruby', 'Topaz', 'Opal', 'Jade', 'Sapphire',
+  'Emerald', 'Treasure', 'Fossil', 'Pebble', 'Chip', 'Shard', 'Glitter', 'Glimmer',
+  'Gemstone', 'Mineral', 'Ore', 'Vein', 'Nugget', 'Dust', 'Deposit', 'Mine',
+  'Cave', 'Fragment', 'Element', 'Piece', 'Bit', 'Speck', 'Spot', 'Mark',
+  'Dot', 'Ring', 'Orb', 'Sphere', 'Drop', 'Teardrop', 'Amulet', 'Talisman',
+  'Pendant', 'Necklace', 'Bracelet', 'Earring', 'Crown', 'Scepter', 'Coin',
+  'Token', 'Medal', 'Award', 'Prize', 'Trophy', 'Ribbon', 'Badge', 'Emblem',
+  'Seal', 'Symbol', 'Light', 'Fire', 'Ember', 'Glimmer', 'Flash',
+  'Shine', 'Luster', 'Facet', 'Cut', 'Carat', 'Clarity', 'Colour', 
+  'Platinum', 'Metal', 'Ore', 'Deposit', 'Mine', 'Fragment'
+];
+  
+  // Pick random adjective and gem
+  const adjective = adjectives[Math.floor(Math.random() * adjectives.length)];
+  const gem = gems[Math.floor(Math.random() * gems.length)];
+  
+  // Generate random number between 10 and 99
+  const number = Math.floor(Math.random() * 90) + 10;
+  
+  return `${adjective}${gem}${number}`.toLowerCase();
+}
+
+// Process students in batches to avoid timeouts
+const BATCH_SIZE = 5;
+
+// Configure route settings
+export const maxDuration = 60; // 60 seconds timeout for bulk operations
+
+interface StudentResult {
+  name: string;
+  username: string;
+  password: string;
+  userId: string;
+}
+
+interface StudentError {
+  name: string;
+  error: string;
+}
+
+interface BatchResult {
+  student: {
+    name: string;
+    firstName: string;
+    lastName: string;
+    displayName: string;
+    username: string;
+    password: string;
+    email: string;
+  };
+  authUser?: any;
+  error?: string;
+  success: boolean;
 }
 
 export async function POST(request: Request) {
@@ -83,10 +139,22 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Class not found or unauthorized' }, { status: 403 });
     }
 
-    const results = [];
-    const errors = [];
+    // Get existing usernames to avoid conflicts
+    const { data: existingProfiles, error: profilesError } = await adminClient
+      .from('user_profiles')
+      .select('username')
+      .not('username', 'is', null);
 
-    // Process each student
+    if (profilesError) {
+      return NextResponse.json({ error: 'Failed to check existing usernames' }, { status: 500 });
+    }
+
+    const existingUsernames = new Set(existingProfiles?.map(p => p.username) || []);
+    const results: StudentResult[] = [];
+    const errors: StudentError[] = [];
+
+    // Validate and prepare student data first
+    const validStudents = [];
     for (const studentInput of students) {
       try {
         const name = typeof studentInput === 'string' ? studentInput.trim() : studentInput.name?.trim();
@@ -107,92 +175,164 @@ export async function POST(request: Request) {
         const lastName = nameParts.slice(1).join(' ');
         const displayName = `${firstName} ${lastName}`;
         
-        // Generate username scoped to school
-        const username = await supabase.rpc('generate_student_username_scoped', {
-          p_first_name: firstName,
-          p_last_name: lastName,
-          p_school_initials: schoolInitials
-        });
-        
-        if (username.error) {
-          errors.push({ name, error: 'Failed to generate username' });
-          continue;
-        }
-        
-        const password = await supabase.rpc('generate_student_password');
-        if (password.error || !password.data) {
-          errors.push({ name, error: `Failed to generate password: ${password.error?.message || 'No password returned'}` });
-          continue;
-        }
+        // Generate username and password client-side
+        const username = generateScopedUsername(firstName, lastName, schoolInitials, existingUsernames);
+        const password = generatePassword();
         
         // Create unique email with timestamp to avoid duplicates
         const baseEmail = `${firstName.toLowerCase()}.${lastName.toLowerCase().replace(/\s+/g, '')}`;
-        const uniqueId = Date.now() + Math.floor(Math.random() * 1000); // timestamp + random number
+        const uniqueId = Date.now() + Math.floor(Math.random() * 1000);
         const email = `${baseEmail}.${uniqueId}@student.languagegems.com`;
         
-        // Create auth user
-        const { data: authUser, error: authError } = await adminClient.auth.admin.createUser({
-          email,
-          password: password.data,
-          email_confirm: true,
-          user_metadata: {
-            name: displayName,
-            role: 'student',
-            username: username.data
-          }
+        validStudents.push({
+          name,
+          firstName,
+          lastName,
+          displayName,
+          username,
+          password,
+          email
         });
-        
-        if (authError) {
-          errors.push({ name, error: authError.message });
-          continue;
-        }
-        
-        // Update the user profile with student-specific information
-        // The handle_new_user trigger already created a basic profile, so we need to update it
-        const { error: profileError } = await adminClient
-          .from('user_profiles')
-          .update({
-            username: username.data,
-            teacher_id: user.id,
-            initial_password: password.data,
-            school_initials: schoolInitials
-          })
-          .eq('user_id', authUser.user.id);
-        
-        if (profileError) {
-          console.error('Profile update error for', name, ':', profileError);
-          errors.push({ name, error: `Profile update failed: ${profileError.message}` });
-          continue;
-        }
-        
-        // Enroll in class
-        const { error: enrollError } = await adminClient
-          .from('class_enrollments')
-          .insert({
-            class_id: classId,
-            student_id: authUser.user.id,
-            enrolled_at: new Date().toISOString(),
-            status: 'active'
-          });
-        
-        if (enrollError) {
-          errors.push({ name, error: enrollError.message });
-          continue;
-        }
-        
-        // Success!
-        results.push({
-          name: displayName,
-          username: username.data,
-          password: password.data,
-          userId: authUser.user.id
-        });
-        
       } catch (error: any) {
         errors.push({ 
           name: typeof studentInput === 'string' ? studentInput : studentInput.name || 'Unknown', 
           error: error.message 
         });
+      }
+    }
+
+    // Process students in batches to avoid timeouts
+    for (let i = 0; i < validStudents.length; i += BATCH_SIZE) {
+      const batch = validStudents.slice(i, i + BATCH_SIZE);
+      
+      console.log(`Processing batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(validStudents.length / BATCH_SIZE)}: ${batch.length} students`);
+      
+      // Process batch in parallel where possible
+      const batchPromises = batch.map(async (student): Promise<BatchResult> => {
+        try {
+          // Create auth user
+          const { data: authUser, error: authError } = await adminClient.auth.admin.createUser({
+            email: student.email,
+            password: student.password,
+            email_confirm: true,
+            user_metadata: {
+              name: student.displayName,
+              role: 'student',
+              username: student.username
+            }
+          });
+          
+          if (authError) {
+            throw new Error(authError.message);
+          }
+          
+          return {
+            student,
+            authUser: authUser.user,
+            success: true
+          };
+        } catch (error: any) {
+          return {
+            student,
+            error: error.message,
+            success: false
+          };
+        }
+      });
+
+      const batchResults = await Promise.all(batchPromises);
+      
+      // Collect successful auth users for batch profile updates
+      const successfulUsers = batchResults.filter(result => result.success);
+      const failedUsers = batchResults.filter(result => !result.success);
+      
+      console.log(`Batch ${Math.floor(i / BATCH_SIZE) + 1} results: ${successfulUsers.length} successful, ${failedUsers.length} failed`);
+      
+      // Add failed users to errors
+      failedUsers.forEach(result => {
+        errors.push({ 
+          name: result.student.name, 
+          error: result.error || 'Unknown error occurred'
+        });
+      });
+
+      if (successfulUsers.length > 0) {
+        // Update profiles in batch - use update instead of upsert since handle_new_user trigger already created profiles
+        const profilePromises = successfulUsers.map(result => 
+          adminClient
+            .from('user_profiles')
+            .update({
+              username: result.student.username,
+              teacher_id: user.id,
+              initial_password: result.student.password,
+              school_initials: schoolInitials
+            })
+            .eq('user_id', result.authUser!.id)
+        );
+
+        const profileResults = await Promise.all(profilePromises);
+        
+        // Check if any profile updates failed
+        const failedProfileUpdates = profileResults.filter(result => result.error);
+        if (failedProfileUpdates.length > 0) {
+          console.error('Some profile updates failed:', failedProfileUpdates);
+          // Add failed users to errors but continue with enrollments for successful ones
+          failedProfileUpdates.forEach((result, index) => {
+            const correspondingUser = successfulUsers[profileResults.indexOf(result)];
+            if (correspondingUser) {
+              errors.push({ 
+                name: correspondingUser.student.name, 
+                error: `Profile update failed: ${result.error?.message || 'Unknown error'}` 
+              });
+            }
+          });
+        }
+
+        // Only process enrollments for users whose profiles were successfully updated
+        const successfulProfileUsers = successfulUsers.filter((user, index) => {
+          const profileResult = profileResults[index];
+          return !profileResult.error;
+        });
+
+        if (successfulProfileUsers.length > 0) {
+          // Batch insert class enrollments
+          const enrollments = successfulProfileUsers.map(result => ({
+            class_id: classId,
+            student_id: result.authUser!.id,
+            enrolled_at: new Date().toISOString(),
+            status: 'active'
+          }));
+
+          const { error: enrollError } = await adminClient
+            .from('class_enrollments')
+            .insert(enrollments);
+
+          if (enrollError) {
+            console.error('Batch enrollment error:', enrollError);
+            successfulProfileUsers.forEach(result => {
+              errors.push({ 
+                name: result.student.name, 
+                error: `Enrollment failed: ${enrollError.message}` 
+              });
+            });
+          } else {
+            // Add successful results only for users who completed the entire process
+            successfulProfileUsers.forEach(result => {
+              results.push({
+                name: result.student.displayName,
+                username: result.student.username,
+                password: result.student.password,
+                userId: result.authUser!.id
+              });
+            });
+          }
+        }
+      }
+
+      // Add a delay between batches to prevent rate limiting
+      if (i + BATCH_SIZE < validStudents.length) {
+        console.log('Waiting 500ms before next batch...');
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
     }
 

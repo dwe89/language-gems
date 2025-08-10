@@ -38,7 +38,6 @@ type Student = {
   id: string;
   name: string;
   username: string;
-  progress: number;
   joined_date: string;
   last_active: string;
 };
@@ -185,7 +184,6 @@ export default function ClassDetailPage({ params }: { params: { classId: string 
                 id: enrollment.student_id,
                 name: profile?.display_name || 'Unknown',
                 username: profile?.username || '',
-                progress: 0, // TODO: Calculate real progress from assignments/vocabulary
                 joined_date: enrollment.enrolled_at,
                 last_active: lastActivity ? lastActivity.toISOString() : enrollment.enrolled_at,
               };

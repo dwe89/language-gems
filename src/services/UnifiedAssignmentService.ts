@@ -285,25 +285,31 @@ export class UnifiedAssignmentService implements AssignmentService {
       // Update assignment progress
       if (progressData.assignmentId) {
         await this.supabase
-          .from('assignment_progress')
+          .from('enhanced_assignment_progress')
           .upsert({
             assignment_id: progressData.assignmentId,
             student_id: progressData.studentId,
-            score: progressData.score,
-            accuracy: progressData.accuracy,
-            attempts: progressData.attempts,
-            time_spent: progressData.timeSpent,
+            best_score: progressData.score,
+            best_accuracy: progressData.accuracy,
+            attempts_count: progressData.attempts,
+            total_time_spent: progressData.timeSpent,
             status: progressData.status === 'completed' ? 'completed' : 'in_progress',
             completed_at: progressData.completedAt?.toISOString(),
             updated_at: new Date().toISOString(),
-            metrics: {
+            progress_data: {
               wordsAttempted: progressData.wordsAttempted,
               wordsCorrect: progressData.wordsCorrect,
               wordsLearned: progressData.wordsLearned,
               currentStreak: progressData.currentStreak,
               bestStreak: progressData.bestStreak,
               gameMetrics: progressData.gameMetrics
-            }
+            },
+            words_mastered: progressData.wordsLearned || 0,
+            words_attempted: progressData.wordsAttempted || 0,
+            words_correct: progressData.wordsCorrect || 0,
+            current_streak: progressData.currentStreak || 0
+          }, {
+            onConflict: 'assignment_id,student_id'
           });
       }
 

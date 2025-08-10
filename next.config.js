@@ -11,6 +11,10 @@ const config = {
     ignoreBuildErrors: true,
   },
   distDir: '.next',
+  // Increase API route timeout for bulk operations
+  experimental: {
+    proxyTimeout: 120000, // 2 minutes
+  },
   // Allow student subdomain for development
   async headers() {
     return [

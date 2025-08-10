@@ -59,13 +59,21 @@ export default function NoughtsAndCrossesAssignmentWrapper({
       onBackToMenu={handleBackToMenu}
     >
       {({ assignment, vocabulary, onProgressUpdate, onGameComplete }) => {
+        // Get language from assignment vocabulary criteria or vocabulary items
+        const assignmentLanguage = assignment.vocabulary_criteria?.language || vocabulary[0]?.language || 'spanish';
+
+        // Convert language codes to game format
+        const gameLanguage = assignmentLanguage === 'fr' ? 'french' :
+                            assignmentLanguage === 'de' ? 'german' :
+                            assignmentLanguage === 'es' ? 'spanish' : 'spanish';
+
         return (
           <TicTacToeGameWrapper
             settings={{
               difficulty: 'medium',
               category: vocabulary[0]?.category || 'assignment',
               subcategory: vocabulary[0]?.subcategory || 'assignment',
-              language: 'spanish',
+              language: gameLanguage,
               theme: 'default',
               playerMark: 'X',
               computerMark: 'O'

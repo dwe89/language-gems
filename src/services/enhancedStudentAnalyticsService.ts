@@ -234,14 +234,14 @@ export class EnhancedStudentAnalyticsService {
         id,
         title,
         status,
-        assignment_submissions!inner(
+        enhanced_assignment_progress!inner(
           id,
           status,
-          score,
-          submitted_at
+          best_score,
+          completed_at
         )
       `)
-      .eq('assignment_submissions.student_id', studentId);
+      .eq('enhanced_assignment_progress.student_id', studentId);
 
     // Get ALL game session data for accurate metrics
     const { data: sessions } = await this.supabase
@@ -258,7 +258,7 @@ export class EnhancedStudentAnalyticsService {
     // Calculate metrics from actual data
     const totalAssignments = assignments?.length || 0;
     const completedAssignments = assignments?.filter(a =>
-      a.assignment_submissions.some(s => s.status === 'completed')
+      a.enhanced_assignment_progress.some(s => s.status === 'completed')
     ).length || 0;
 
     // Calculate total XP from all sessions

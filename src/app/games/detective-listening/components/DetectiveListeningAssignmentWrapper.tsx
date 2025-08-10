@@ -81,22 +81,28 @@ export default function DetectiveListeningAssignmentWrapper({
           onBackToAssignments={handleBackToAssignments}
           onBackToMenu={handleBackToMenu}
         >
-          {({ assignment, vocabulary, onProgressUpdate, onGameComplete }) => (
-            <DetectiveListeningGame
-              settings={{
-                caseType: 'assignment', // Special assignment mode
-                language: 'es', // Default to Spanish, could be dynamic
-                difficulty: 'normal'
-              }}
-              onBackToMenu={handleBackToMenu}
-              assignmentMode={{
-                assignment,
-                vocabulary,
-                onProgressUpdate,
-                onGameComplete
-              }}
-            />
-          )}
+          {({ assignment, vocabulary, onProgressUpdate, onGameComplete }) => {
+            // Get language from assignment vocabulary criteria or vocabulary items
+            const assignmentLanguage = assignment.vocabulary_criteria?.language || vocabulary[0]?.language || 'es';
+
+            return (
+              <DetectiveListeningGame
+                settings={{
+                  caseType: 'assignment', // Special assignment mode
+                  language: assignmentLanguage, // Use assignment language
+                  difficulty: 'normal'
+                }}
+
+                onBackToMenu={handleBackToMenu}
+                assignmentMode={{
+                  assignment,
+                  vocabulary,
+                  onProgressUpdate,
+                  onGameComplete
+                }}
+              />
+            );
+          }}
         </GameAssignmentWrapper>
       </div>
     </div>

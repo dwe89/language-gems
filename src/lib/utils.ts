@@ -36,7 +36,7 @@ export function generateUsername(fullName: string, suffix?: number): string {
     username += suffix;
   }
   
-  return username;
+  return username.toLowerCase();
 }
 
 /**

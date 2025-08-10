@@ -276,7 +276,7 @@ function TeacherDashboard({ username }: { username: string }) {
               </div>
             </div>
             
-            <Link href="/dashboard/classes/new" className="w-full group relative px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-105 overflow-hidden text-center inline-block">
+            <Link href="/dashboard/classes" className="w-full group relative px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-105 overflow-hidden text-center inline-block">
               <div className="relative flex items-center justify-center">
                 <Plus className="h-4 w-4 mr-2" />
                 Create Your First Class

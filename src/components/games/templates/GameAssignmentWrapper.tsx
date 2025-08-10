@@ -70,19 +70,43 @@ export interface GameAssignmentWrapperProps {
 
 // Custom hook for assignment vocabulary loading
 export const useAssignmentVocabulary = (assignmentId: string) => {
+  console.log('🔧 [HOOK] useAssignmentVocabulary called [DEBUG-v2]:', {
+    assignmentId,
+    timestamp: new Date().toISOString()
+  });
+
   const [assignment, setAssignment] = useState<AssignmentData | null>(null);
   const [vocabulary, setVocabulary] = useState<StandardVocabularyItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    console.log('🔄 [HOOK EFFECT] useEffect triggered [DEBUG-v3]:', {
+      assignmentId,
+      hasAssignmentId: !!assignmentId,
+      timestamp: new Date().toISOString()
+    });
+
     const fetchAssignmentData = async () => {
+      console.log('🔄 [HOOK LOAD] Starting loadAssignmentData [DEBUG-v3]:', {
+        assignmentId,
+        timestamp: new Date().toISOString()
+      });
       try {
         setLoading(true);
         setError(null);
 
         // Use Supabase client directly instead of API route
         const supabase = createBrowserClient();
+
+        // Check authentication status
+        const { data: { session }, error: authError } = await supabase.auth.getSession();
+        console.log('🔐 [AUTH] Authentication status [DEBUG-v2]:', {
+          hasSession: !!session,
+          userId: session?.user?.id,
+          authError: authError?.message,
+          timestamp: new Date().toISOString()
+        });
 
         // Get assignment data
         const { data: assignmentData, error: assignmentError } = await supabase
@@ -102,6 +126,14 @@ export const useAssignmentVocabulary = (assignmentId: string) => {
           `)
           .eq('id', assignmentId)
           .single();
+
+        console.log('📋 [ASSIGNMENT] Assignment query result:', {
+          assignmentId,
+          found: !!assignmentData,
+          error: assignmentError?.message,
+          vocabularyAssignmentListId: assignmentData?.vocabulary_assignment_list_id,
+          vocabularyCriteria: assignmentData?.vocabulary_criteria
+        });
 
         if (assignmentError) {
           throw new Error(`Failed to load assignment: ${assignmentError.message}`);
@@ -126,8 +158,8 @@ export const useAssignmentVocabulary = (assignmentId: string) => {
         let vocabularyData: any[] = [];
         let vocabularyError: any = null;
 
+        // Try list-based approach first if vocabulary_assignment_list_id exists
         if (assignmentData.vocabulary_assignment_list_id) {
-          // List-based assignment: fetch from vocabulary_assignment_items
           const { data, error } = await supabase
             .from('vocabulary_assignment_items')
             .select(`
@@ -153,10 +185,26 @@ export const useAssignmentVocabulary = (assignmentId: string) => {
 
           vocabularyData = data || [];
           vocabularyError = error;
-        } else if (assignmentData.vocabulary_criteria) {
+
+          console.log('📋 [LIST-BASED] List-based approach result:', {
+            dataCount: vocabularyData.length,
+            error: vocabularyError?.message,
+            hasAssignmentListId: !!assignmentData.vocabulary_assignment_list_id
+          });
+        }
+
+        // If list-based approach failed or returned no data, try criteria-based approach
+        console.log('🔍 [FALLBACK CHECK] Checking fallback conditions:', {
+          vocabularyDataLength: vocabularyData?.length || 0,
+          hasVocabularyCriteria: !!assignmentData.vocabulary_criteria,
+          vocabularyCriteria: assignmentData.vocabulary_criteria
+        });
+
+        if ((!vocabularyData || vocabularyData.length === 0) && assignmentData.vocabulary_criteria) {
           // Category-based assignment: fetch directly from centralized_vocabulary
           const criteria = assignmentData.vocabulary_criteria;
-          console.log('Loading category-based vocabulary with criteria:', criteria);
+          console.log('🔄 [FALLBACK] List-based approach returned empty, trying criteria-based approach');
+          console.log('🔍 [FALLBACK] Loading category-based vocabulary with criteria:', criteria);
 
           let query = supabase
             .from('centralized_vocabulary')
@@ -193,6 +241,12 @@ export const useAssignmentVocabulary = (assignmentId: string) => {
 
           const { data, error } = await query;
 
+          console.log('🔍 [FALLBACK] Criteria-based query result:', {
+            dataCount: data?.length || 0,
+            error: error?.message,
+            sampleData: data?.slice(0, 2)
+          });
+
           // Transform to match the list-based format
           vocabularyData = data?.map((item: any) => ({
             order_position: 1,
@@ -205,9 +259,17 @@ export const useAssignmentVocabulary = (assignmentId: string) => {
           throw new Error(`Failed to load vocabulary: ${vocabularyError.message}`);
         }
 
-        console.log(`[SERVER] GameAssignmentWrapper - Loaded ${vocabularyData.length} vocabulary items for assignment ${assignmentId}`);
+        console.log(`✅ [SERVER] GameAssignmentWrapper - Final result: ${vocabularyData.length} vocabulary items for assignment ${assignmentId}`);
+        console.log('🔍 [SERVER] Final vocabulary data sample:', vocabularyData.slice(0, 2));
 
         if (!vocabularyData || vocabularyData.length === 0) {
+          console.error('❌ [SERVER] No vocabulary found after both list-based and criteria-based approaches');
+          console.error('🔍 [SERVER] Assignment data:', {
+            assignmentId,
+            hasVocabularyAssignmentListId: !!assignmentData.vocabulary_assignment_list_id,
+            hasVocabularyCriteria: !!assignmentData.vocabulary_criteria,
+            vocabularyCriteria: assignmentData.vocabulary_criteria
+          });
           throw new Error('No vocabulary found for this assignment');
         }
 
@@ -236,7 +298,13 @@ export const useAssignmentVocabulary = (assignmentId: string) => {
         setAssignment(transformedAssignment);
         setVocabulary(transformedVocabulary);
       } catch (err) {
-        console.error('Error loading assignment:', err);
+        console.error('❌ [HOOK ERROR] Error loading assignment [DEBUG-v2]:', {
+          error: err,
+          message: err instanceof Error ? err.message : 'Unknown error',
+          stack: err instanceof Error ? err.stack : undefined,
+          assignmentId,
+          timestamp: new Date().toISOString()
+        });
         setError(err instanceof Error ? err.message : 'Failed to load assignment');
       } finally {
         setLoading(false);
@@ -261,6 +329,13 @@ export default function GameAssignmentWrapper({
   onBackToMenu,
   children
 }: GameAssignmentWrapperProps) {
+  console.log('🚀 [WRAPPER] GameAssignmentWrapper called [DEBUG-v2]:', {
+    assignmentId,
+    gameId,
+    studentId,
+    timestamp: new Date().toISOString()
+  });
+
   const { user } = useAuth();
   const router = useRouter();
   const supabase = createBrowserClient();
@@ -348,6 +423,14 @@ export default function GameAssignmentWrapper({
 
   // Game completion handler
   const handleGameComplete = async (finalProgress: GameProgress) => {
+    console.log('🎯 [DEBUG] handleGameComplete CALLED with assignment ID:', {
+      assignmentIdFromProps: assignmentId,
+      assignmentIdFromProgress: finalProgress.assignmentId,
+      gameId,
+      studentId: studentId || user?.id,
+      timestamp: new Date().toISOString()
+    });
+    
     try {
       // Save final progress to database
       const progressData = {
@@ -358,8 +441,24 @@ export default function GameAssignmentWrapper({
       };
 
       console.log('GameAssignmentWrapper - Game completed:', gameId, 'Progress:', finalProgress);
+      console.log('GameAssignmentWrapper - Raw values:', {
+        score: finalProgress.score,
+        accuracy: finalProgress.accuracy,
+        scoreType: typeof finalProgress.score,
+        accuracyType: typeof finalProgress.accuracy
+      });
 
-      // Update individual game progress
+      // Update individual game progress with safeguards
+      const safeGameScore = Math.min(Math.max(finalProgress.score || 0, 0), 999999);
+      const safeGameAccuracy = Math.min(Math.max(finalProgress.accuracy || 0, 0), 100);
+
+      console.log('GameAssignmentWrapper - Safe values for game progress:', {
+        originalScore: finalProgress.score,
+        safeGameScore,
+        originalAccuracy: finalProgress.accuracy,
+        safeGameAccuracy
+      });
+      
       const { error: gameProgressError } = await supabase
         .from('assignment_game_progress')
         .upsert({
@@ -367,9 +466,9 @@ export default function GameAssignmentWrapper({
           student_id: studentId,
           game_id: gameId,
           status: 'completed',
-          score: finalProgress.score || 0,
+          score: safeGameScore,
           max_score: finalProgress.maxScore || 100,
-          accuracy: finalProgress.accuracy || 0,
+          accuracy: safeGameAccuracy,
           words_completed: finalProgress.wordsCompleted || 0,
           total_words: finalProgress.totalWords || vocabulary.length,
           time_spent: Math.floor((Date.now() - startTime) / 1000),
@@ -406,6 +505,22 @@ export default function GameAssignmentWrapper({
           console.log('All games completed! Marking assignment as complete.');
 
           // Update overall assignment progress
+          // Add safeguards to prevent numeric overflow
+          const safeScore = Math.min(Math.max(finalProgress.score || 0, 0), 99999.99);
+          const safeAccuracy = Math.min(Math.max(finalProgress.accuracy || 0, 0), 999.99);
+          
+          console.log('GameAssignmentWrapper - Saving assignment progress:', {
+            score: finalProgress.score,
+            safeScore,
+            accuracy: finalProgress.accuracy,
+            safeAccuracy,
+            wordsCompleted: finalProgress.wordsCompleted,
+            assignmentId,
+            studentId,
+            studentIdType: typeof studentId,
+            userFromAuth: user?.id
+          });
+
           const { error: assignmentProgressError } = await supabase
             .from('enhanced_assignment_progress')
             .upsert({
@@ -418,10 +533,12 @@ export default function GameAssignmentWrapper({
                 completedGames: completedGames,
                 totalGames: assignmentGames.length
               },
-              best_score: finalProgress.score,
-              best_accuracy: finalProgress.accuracy,
-              words_mastered: finalProgress.wordsCompleted,
+              best_score: safeScore,
+              best_accuracy: safeAccuracy,
+              words_mastered: finalProgress.wordsCompleted || 0,
               session_count: completedGames.length
+            }, {
+              onConflict: 'assignment_id,student_id'
             });
 
           if (assignmentProgressError) {
@@ -568,14 +685,17 @@ export const recordAssignmentProgress = async (
         assignmentId,
         gameId,
         studentId,
-        status: progressData.completedAt ? 'completed' : 'in_progress',
+        completed: !!progressData.completedAt,
         score: progressData.score,
         accuracy: progressData.accuracy,
         timeSpent: progressData.timeSpent,
         wordsCompleted: progressData.wordsCompleted || 0,
         totalWords: progressData.totalWords || 0,
         sessionData: progressData.sessionData || {},
-        completedAt: progressData.completedAt
+        metadata: {
+          gameType: gameId,
+          attempts: 1
+        }
       })
     });
 

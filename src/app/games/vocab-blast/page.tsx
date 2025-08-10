@@ -5,7 +5,7 @@ import Head from 'next/head';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useUnifiedAuth } from '../../../hooks/useUnifiedAuth';
 import VocabBlastGameWrapper from './components/VocabBlastGameWrapper';
-import GameAssignmentWrapper from '../../../components/games/templates/GameAssignmentWrapper';
+import VocabBlastAssignmentWrapper from './components/VocabBlastAssignmentWrapper';
 import UnifiedGameLauncher from '../../../components/games/UnifiedGameLauncher';
 import { UnifiedSelectionConfig, UnifiedVocabularyItem, loadVocabulary } from '../../../hooks/useUnifiedVocabulary';
 import InGameConfigPanel from '../../../components/games/InGameConfigPanel';
@@ -61,69 +61,16 @@ export default function VocabBlastPage() {
     router.push('/student-dashboard/assignments');
   };
 
-  // Assignment mode: wrap with GameAssignmentWrapper
+  // Assignment mode: use dedicated assignment wrapper
   if (assignmentId && mode === 'assignment' && user) {
     return (
-      <GameAssignmentWrapper
+      <VocabBlastAssignmentWrapper
         assignmentId={assignmentId}
-        gameId="vocab-blast"
         studentId={user.id}
         onAssignmentComplete={handleAssignmentComplete}
         onBackToAssignments={handleBackToAssignments}
         onBackToMenu={() => router.push('/games/vocab-blast')}
-      >
-        {({ assignment, vocabulary, onProgressUpdate, onGameComplete }) => {
-          // Convert assignment to VocabBlast settings format
-          const gameSettings: VocabBlastGameSettings = {
-            difficulty: assignment.game_config?.difficulty || 'medium',
-            category: assignment.vocabulary_criteria?.category || 'basics_core_language',
-            language: assignment.vocabulary_criteria?.language || 'spanish',
-            theme: assignment.game_config?.theme || 'classic',
-            subcategory: assignment.vocabulary_criteria?.subcategory || 'greetings_introductions',
-            timeLimit: assignment.game_config?.timeLimit || 120,
-            mode: 'categories' as const,
-            customWords: undefined,
-            // KS4-specific parameters
-            curriculumLevel: assignment.curriculum_level,
-            examBoard: assignment.exam_board as 'AQA' | 'edexcel',
-            tier: assignment.tier as 'foundation' | 'higher'
-          };
-
-          return (
-            <ThemeProvider themeId={gameSettings.theme}>
-              <VocabBlastGameWrapper
-                settings={gameSettings}
-                onBackToMenu={() => router.push('/games/vocab-blast')}
-                onGameEnd={(result) => {
-                  console.log('VocabBlast assignment ended:', result);
-                  const gameProgress = {
-                    assignmentId: assignmentId,
-                    gameId: 'vocab-blast',
-                    studentId: user.id,
-                    wordsCompleted: result.wordsLearned || 0,
-                    totalWords: vocabulary.length,
-                    score: result.score || 0,
-                    maxScore: vocabulary.length * 100,
-                    timeSpent: result.timeSpent || 0,
-                    accuracy: result.accuracy || 0,
-                    completedAt: new Date(),
-                    sessionData: {
-                      gameResult: result,
-                      settings: gameSettings,
-                      vocabulary: vocabulary
-                    }
-                  };
-                  onGameComplete(gameProgress);
-                }}
-                assignmentId={assignmentId}
-                userId={user.id}
-                isAssignmentMode={true}
-                categoryVocabulary={vocabulary}
-              />
-            </ThemeProvider>
-          );
-        }}
-      </GameAssignmentWrapper>
+      />
     );
   }
 

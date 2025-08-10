@@ -91,15 +91,18 @@ export async function POST(request: NextRequest) {
     // Update assignment progress if this was part of an assignment
     if (assignmentMode && results.assignmentId) {
       await supabase
-        .from('assignment_progress')
+        .from('enhanced_assignment_progress')
         .upsert({
           assignment_id: results.assignmentId,
           student_id: userId,
-          score: results.score,
-          accuracy: (results.correctAnswers / results.totalQuestions) * 100,
-          time_spent: results.timeSpent,
-          completed: true,
+          best_score: results.score,
+          best_accuracy: (results.correctAnswers / results.totalQuestions) * 100,
+          total_time_spent: results.timeSpent,
+          status: 'completed',
+          completed_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
+        }, {
+          onConflict: 'assignment_id,student_id'
         });
     }
 

@@ -7,7 +7,7 @@ import { supabaseBrowser } from '../../../../components/auth/AuthProvider';
 import TicTacToeGameThemed from './TicTacToeGameThemed';
 
 interface TicTacToeGameWrapperProps {
-  settings: {
+  settings?: {
     difficulty: string;
     category: string;
     subcategory?: string;
@@ -39,6 +39,17 @@ export default function TicTacToeGameWrapper(props: TicTacToeGameWrapperProps) {
     totalQuestions: 0
   });
 
+  // Provide default settings if not passed
+  const settings = props.settings || {
+    difficulty: 'medium',
+    category: 'general',
+    subcategory: 'general',
+    language: 'spanish',
+    theme: 'default',
+    playerMark: 'X',
+    computerMark: 'O'
+  };
+
   // Map language codes
   const mapLanguage = (language: string): string => {
     const languageMap: Record<string, string> = {
@@ -52,12 +63,12 @@ export default function TicTacToeGameWrapper(props: TicTacToeGameWrapperProps) {
 
   // Use modern vocabulary hook
   const { vocabulary: vocabularyWords, loading: isLoading, error } = useGameVocabulary({
-    language: mapLanguage(props.settings.language),
-    categoryId: props.settings.category,
-    subcategoryId: props.settings.subcategory,
-    curriculumLevel: props.settings.curriculumLevel,
-    examBoard: props.settings.examBoard,
-    tier: props.settings.tier,
+    language: mapLanguage(settings.language),
+    categoryId: settings.category,
+    subcategoryId: settings.subcategory,
+    curriculumLevel: settings.curriculumLevel,
+    examBoard: settings.examBoard,
+    tier: settings.tier,
     limit: 50,
     randomize: true
   });
@@ -113,7 +124,7 @@ export default function TicTacToeGameWrapper(props: TicTacToeGameWrapperProps) {
     const formatted = vocabularyWords.map(word => ({
       word: word.word,
       translation: word.translation,
-      difficulty: word.difficulty_level || 'beginner',
+      difficulty: 'medium', // Default difficulty since GameVocabularyWord doesn't have difficulty_level
       audio_url: word.audio_url,
       // Add audio playback function
       playAudio: () => {
@@ -208,7 +219,7 @@ export default function TicTacToeGameWrapper(props: TicTacToeGameWrapperProps) {
           <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-white mx-auto mb-4"></div>
           <p className="text-white text-xl">Loading vocabulary...</p>
           <p className="text-white/80 text-sm mt-2">
-            {props.settings.language} • {props.settings.category} • {props.settings.difficulty}
+            {settings.language} • {settings.category} • {settings.difficulty}
           </p>
         </div>
       </div>
@@ -221,7 +232,7 @@ export default function TicTacToeGameWrapper(props: TicTacToeGameWrapperProps) {
         <div className="text-center">
           <p className="text-white text-xl mb-4">⚠️ {error}</p>
           <button
-            onClick={() => loadVocabulary()}
+            onClick={() => window.location.reload()}
             className="bg-white text-black px-6 py-2 rounded-lg font-semibold hover:bg-gray-200 transition-colors mr-4"
           >
             Retry
@@ -239,11 +250,13 @@ export default function TicTacToeGameWrapper(props: TicTacToeGameWrapperProps) {
 
   return (
     <TicTacToeGameThemed
-      {...props}
-      vocabularyWords={getFormattedVocabulary()}
+      settings={settings}
+      onBackToMenu={props.onBackToMenu}
       onGameEnd={handleEnhancedGameEnd}
+      vocabularyWords={getFormattedVocabulary()}
       gameSessionId={gameSessionId}
       isAssignmentMode={!!props.assignmentId}
+      onOpenSettings={props.onOpenSettings}
       gameService={gameService}
       userId={props.userId}
     />

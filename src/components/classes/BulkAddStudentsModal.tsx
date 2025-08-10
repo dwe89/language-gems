@@ -154,8 +154,8 @@ export function BulkAddStudentsModal({
           id: student.userId,
           name: student.name,
           username: student.username,
-          progress: 0,
-          joined_date: new Date().toISOString()
+          joined_date: new Date().toISOString(),
+          last_active: new Date().toISOString()
         })));
       }
     } catch (error) {

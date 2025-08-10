@@ -133,15 +133,15 @@ export default function VocabularyMiningPage() {
           .from('assignments')
           .select(`
             id, title, description, due_date, points, game_type,
-            assignment_submissions!left(id, completed_at, score)
+            enhanced_assignment_progress!left(id, completed_at, best_score, status)
           `)
           .eq('class_id', user.id) // This would need proper class membership logic
           .order('due_date', { ascending: true });
 
         if (!assignmentsError && assignmentsData) {
           setAssignments(assignmentsData);
-          const pending = assignmentsData.filter(a => !a.assignment_submissions?.length).length;
-          const completed = assignmentsData.filter(a => a.assignment_submissions?.length > 0).length;
+          const pending = assignmentsData.filter(a => !a.enhanced_assignment_progress?.length || a.enhanced_assignment_progress[0]?.status === 'not_started').length;
+          const completed = assignmentsData.filter(a => a.enhanced_assignment_progress?.length > 0 && a.enhanced_assignment_progress[0]?.status === 'completed').length;
 
           setQuickStats(prev => ({
             ...prev,
@@ -395,9 +395,13 @@ export default function VocabularyMiningPage() {
                       <div className="flex items-center justify-between mb-2">
                         <h4 className="font-medium text-white">{assignment.title}</h4>
                         <div className="flex items-center space-x-2">
-                          {assignment.assignment_submissions?.length > 0 ? (
+                          {assignment.enhanced_assignment_progress?.length > 0 && assignment.enhanced_assignment_progress[0]?.status === 'completed' ? (
                             <span className="bg-green-500 text-white px-2 py-1 rounded-full text-xs">
                               Completed
+                            </span>
+                          ) : assignment.enhanced_assignment_progress?.length > 0 && assignment.enhanced_assignment_progress[0]?.status === 'in_progress' ? (
+                            <span className="bg-yellow-500 text-white px-2 py-1 rounded-full text-xs">
+                              In Progress
                             </span>
                           ) : (
                             <span className="bg-red-500 text-white px-2 py-1 rounded-full text-xs">
@@ -416,7 +420,7 @@ export default function VocabularyMiningPage() {
                           href={`/student-dashboard/assignments/${assignment.id}`}
                           className="bg-indigo-600 text-white px-3 py-1 rounded text-sm hover:bg-indigo-700"
                         >
-                          {assignment.assignment_submissions?.length > 0 ? 'View Results' : 'Start Assignment'}
+                          {assignment.enhanced_assignment_progress?.length > 0 && assignment.enhanced_assignment_progress[0]?.status === 'completed' ? 'View Results' : 'Start Assignment'}
                         </Link>
                       </div>
                     </div>

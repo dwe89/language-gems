@@ -217,7 +217,7 @@ const AssignmentCard = ({
           {assignment.status === 'completed' && (
             <div className="text-xs text-green-600 bg-green-50 p-2 rounded">
               <div className="flex justify-between">
-                <span>Best Score: {Math.round(assignment.progress.bestScore)}%</span>
+                <span>Best Score: {Math.round(assignment.progress.bestScore)} pts</span>
                 <span>Accuracy: {Math.round(assignment.progress.bestAccuracy)}%</span>
               </div>
               <div className="flex justify-between mt-1">
@@ -235,7 +235,7 @@ const AssignmentCard = ({
           {assignment.status === 'in-progress' && (
             <div className="text-xs text-blue-600 bg-blue-50 p-2 rounded">
               <div className="flex justify-between">
-                <span>Current Score: {Math.round(assignment.progress.bestScore)}%</span>
+                <span>Current Score: {Math.round(assignment.progress.bestScore)} pts</span>
                 <span>Attempts: {assignment.progress.attemptsCount}</span>
               </div>
               <div className="text-xs text-blue-500 mt-1">
@@ -334,27 +334,18 @@ function AssignmentsPageContent() {
           .in('class_id', classIds)
           .order('created_at', { ascending: false });
 
-        // Fetch assignment progress using the new game-based completion system
+        // Fetch assignment progress using enhanced_assignment_progress table
         const { data: assignmentProgress, error: progressError } = await supabase
-          .from('assignment_completion_status')
-          .select(`
-            assignment_id,
-            status,
-            completed_games,
-            total_games,
-            last_completed_at
-          `)
-          .eq('student_id', user.id);
-
-        // Also fetch enhanced assignment progress for additional details
-        const { data: enhancedProgress, error: enhancedProgressError } = await supabase
           .from('enhanced_assignment_progress')
           .select(`
             assignment_id,
+            status,
             best_score,
             best_accuracy,
-            attempts_count,
-            total_time_spent
+            total_time_spent,
+            completed_at,
+            session_count,
+            progress_data
           `)
           .eq('student_id', user.id);
 
@@ -372,28 +363,17 @@ function AssignmentsPageContent() {
           // Continue without progress data rather than failing completely
         }
 
-        if (enhancedProgressError) {
-          logError('Error fetching enhanced assignment progress:', enhancedProgressError);
-          // Continue without enhanced progress data
-        }
-
         // Skip class names for now to avoid permission issues
         // TODO: Get class names through a different approach or API endpoint
         const classNameMap = new Map();
 
         console.log('Fetched assignments:', assignments);
         console.log('Fetched assignment progress:', assignmentProgress);
-        console.log('Fetched enhanced progress:', enhancedProgress);
 
-        // Create maps for quick lookup
+        // Create map for quick lookup using enhanced_assignment_progress as single source
         const progressMap = new Map();
         assignmentProgress?.forEach(progress => {
           progressMap.set(progress.assignment_id, progress);
-        });
-
-        const enhancedProgressMap = new Map();
-        enhancedProgress?.forEach(progress => {
-          enhancedProgressMap.set(progress.assignment_id, progress);
         });
 
         // Transform assignments to match our type
@@ -433,14 +413,13 @@ function AssignmentsPageContent() {
 
           // Get progress data for this assignment
           const progress = progressMap.get(assignment.id);
-          const enhancedProgressData = enhancedProgressMap.get(assignment.id);
 
-          // Determine status based on game completion
+          // Determine status based on assignment completion
           let status: 'not-started' | 'in-progress' | 'completed' = 'not-started';
           if (progress) {
             if (progress.status === 'completed') {
               status = 'completed';
-            } else if (progress.completed_games > 0) {
+            } else if (progress.status === 'in_progress' || progress.best_score > 0) {
               status = 'in-progress';
             }
           }
@@ -459,14 +438,15 @@ function AssignmentsPageContent() {
             type: assignment.game_type,
             curriculum_level: (assignment.curriculum_level || assignment.game_config?.curriculumLevel) as 'KS3' | 'KS4',
             vocabulary_count: assignment.vocabulary_count || assignment.vocabulary_criteria?.wordCount || assignment.game_config?.gameConfig?.vocabularyConfig?.wordCount,
-            progress: progress || enhancedProgressData ? {
-              bestScore: enhancedProgressData?.best_score || 0,
-              bestAccuracy: enhancedProgressData?.best_accuracy || 0,
-              completedAt: progress?.last_completed_at || null,
-              attemptsCount: enhancedProgressData?.attempts_count || 0,
-              totalTimeSpent: enhancedProgressData?.total_time_spent || 0,
-              completedGames: progress?.completed_games || 0,
-              totalGames: progress?.total_games || gameCount
+            progress: progress ? {
+              bestScore: progress.best_score || 0,
+              bestAccuracy: progress.best_accuracy || 0,
+              completedAt: progress.completed_at || null,
+              attemptsCount: progress.attempts_count || 0,
+              totalTimeSpent: progress.total_time_spent || 0,
+              completedGames: progress.session_count || 0,
+              totalGames: gameCount,
+              sessionData: progress.progress_data || {}
             } : null
           };
         });

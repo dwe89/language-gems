@@ -454,11 +454,23 @@ export default function AssignmentProgressTracker({
         };
       });
 
+      // Create submission-like objects for analysis functions
+      const submissionsForAnalysis = assignments.map(assignment => {
+        const progress = progressMap.get(assignment.id);
+        return {
+          assignment_id: assignment.id,
+          assignment: assignment,
+          best_score: progress?.best_score || 0,
+          completed_at: progress?.completed_at,
+          status: progress?.status || 'not_started'
+        };
+      }).filter(s => s.best_score > 0 || s.completed_at); // Only include submissions with some progress
+
       // Calculate actual weekly progress from submissions
-      const weeklyProgress = await calculateWeeklyProgress(submissions);
+      const weeklyProgress = await calculateWeeklyProgress(submissionsForAnalysis);
 
       // Calculate strongest subjects and improvement areas from actual data
-      const subjectAnalysis = await analyzeSubjectPerformance(submissions);
+      const subjectAnalysis = await analyzeSubjectPerformance(submissionsForAnalysis);
 
       setProgressMetrics({
         totalAssignments: assignments.length,
@@ -466,7 +478,7 @@ export default function AssignmentProgressTracker({
         averageScore,
         totalTimeSpent: Math.round(totalTimeSpent / 60), // Convert seconds to minutes
         totalXpEarned,
-        currentStreak: await calculateCurrentStreak(user.id),
+        currentStreak: await calculateCurrentStreak(studentId),
         weeklyProgress,
         strongestSubjects: subjectAnalysis.strongest,
         improvementAreas: subjectAnalysis.needsImprovement
@@ -568,7 +580,6 @@ export default function AssignmentProgressTracker({
             <ProgressMetricsCard
               title="Total XP Earned"
               value={progressMetrics.totalXpEarned.toLocaleString()}
-              change={12}
               icon={Gem}
               color="bg-blue-500"
             />
@@ -576,7 +587,6 @@ export default function AssignmentProgressTracker({
             <ProgressMetricsCard
               title="Current Streak"
               value={`${progressMetrics.currentStreak} days`}
-              change={2}
               icon={Star}
               color="bg-orange-500"
             />
@@ -584,7 +594,6 @@ export default function AssignmentProgressTracker({
             <ProgressMetricsCard
               title="Assignments Done"
               value={progressMetrics.completedAssignments}
-              change={8}
               icon={CheckCircle}
               color="bg-green-500"
             />
@@ -592,7 +601,6 @@ export default function AssignmentProgressTracker({
             <ProgressMetricsCard
               title="Average Score"
               value={`${progressMetrics.averageScore}%`}
-              change={5}
               icon={Trophy}
               color="bg-purple-500"
             />

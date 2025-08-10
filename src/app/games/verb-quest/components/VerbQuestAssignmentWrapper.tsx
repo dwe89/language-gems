@@ -71,23 +71,22 @@ export default function VerbQuestAssignmentWrapper({ assignmentId }: VerbQuestAs
 
   const handleGameComplete = async (results: any) => {
     try {
-      // Record completion in database
-      await fetch('/api/assignment-progress', {
+      // Record completion in database using standardized API
+      await fetch('/api/assignments/progress', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          assignment_id: assignmentId,
-          game_id: 'verb-quest',
-          status: 'completed',
+          assignmentId: assignmentId,
+          gameId: 'verb-quest',
+          completed: true,
           score: results.score || 0,
-          max_score: results.maxScore || 100,
           accuracy: results.accuracy || 0,
-          words_completed: results.questsCompleted || 0,
-          total_words: results.totalQuests || 10,
-          time_spent: results.timeSpent || 0,
-          session_data: results
+          timeSpent: results.timeSpent || 0,
+          wordsCompleted: results.questsCompleted || 0,
+          totalWords: results.totalQuests || 10,
+          sessionData: results
         }),
       });
 

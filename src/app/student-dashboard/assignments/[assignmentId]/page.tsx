@@ -15,11 +15,21 @@ const mapGameTypeToPath = (gameType: string | null): string => {
     // Direct mappings for existing games
     'memory-game': 'memory-game',
     'vocab-blast': 'vocab-blast',
+    'vocab-master': 'vocab-master', // ✅ VocabMaster assignment support
     'hangman': 'hangman',
     'noughts-and-crosses': 'noughts-and-crosses',
     'speed-builder': 'speed-builder',
     'vocabulary-mining': 'vocabulary-mining',
     'detective-listening': 'detective-listening',
+    'word-scramble': 'word-scramble', // ✅ Word Scramble assignment support
+    'memory-game': 'memory-game', // ✅ Memory Game assignment support
+    'hangman': 'hangman', // ✅ Hangman assignment support
+    'word-blast': 'word-blast', // ✅ Word Blast assignment support
+    'speed-builder': 'speed-builder', // ✅ Speed Builder assignment support
+    'sentence-towers': 'sentence-towers', // ✅ Sentence Towers assignment support
+    'conjugation-duel': 'conjugation-duel', // ✅ Conjugation Duel assignment support
+    'case-file-translator': 'case-file-translator', // ✅ Case File Translator assignment support
+    'lava-temple-word-restore': 'lava-temple-word-restore', // ✅ Lava Temple assignment support
 
     // Legacy mappings for potential mismatches
     'quiz': 'memory-game', // Fallback for quiz to memory game
@@ -95,8 +105,8 @@ export default function StudentAssignmentDetailPage() {
 
         // Get assignment completion status for this student
         const { data: assignmentProgress, error: progressError } = await supabase
-          .from('assignment_progress')
-          .select('status, score, accuracy, time_spent, completed_at')
+          .from('enhanced_assignment_progress')
+          .select('status, best_score, best_accuracy, total_time_spent, completed_at')
           .eq('assignment_id', assignmentId)
           .eq('student_id', user.id)
           .single();
@@ -202,9 +212,9 @@ export default function StudentAssignmentDetailPage() {
             description: gameInfo.description,
             type: 'game',
             completed: isCompleted,
-            score: assignmentProgress?.score || 0,
-            accuracy: assignmentProgress?.accuracy || 0,
-            timeSpent: assignmentProgress?.time_spent || 0,
+            score: assignmentProgress?.best_score || 0,
+            accuracy: assignmentProgress?.best_accuracy || 0,
+            timeSpent: assignmentProgress?.total_time_spent || 0,
             completedAt: assignmentProgress?.completed_at
           }];
         }

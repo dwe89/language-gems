@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { ArrowLeft, Play, Clock, Users, Trophy, Sparkles } from 'lucide-react';
+import { ArrowLeft, Play, Clock, Users, Trophy, Sparkles, Target, Headphones, Zap, Crown, Shuffle } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../../../components/auth/AuthProvider';
 import { createBrowserClient } from '../../../lib/supabase-client';
@@ -33,15 +33,55 @@ interface Assignment {
   class_name?: string;
 }
 
-// Game metadata mapping
+// Game metadata mapping - only games with confirmed assignment support
 const GAME_INFO: Record<string, Omit<Game, 'id'> & { assignmentSupported: boolean }> = {
-  'vocabulary-mining': {
-    name: 'Vocabulary Mining',
-    description: 'Mine rare vocabulary gems through intelligent spaced repetition and adaptive learning',
-    path: '/games/vocabulary-mining',
-    icon: <Sparkles className="w-6 h-6" />,
+  'noughts-and-crosses': {
+    name: 'Tic-Tac-Toe Vocabulary',
+    description: 'Strategic tic-tac-toe with vocabulary questions',
+    path: '/games/noughts-and-crosses',
+    icon: <Target className="w-6 h-6" />,
+    difficulty: 'Beginner',
+    estimatedTime: '3-8 min',
+    category: 'Vocabulary',
+    assignmentSupported: true // ✅ Assignment support implemented
+  },
+  'detective-listening': {
+    name: 'Detective Listening',
+    description: 'Solve cases by listening to radio transmissions and identifying evidence',
+    path: '/games/detective-listening',
+    icon: <Headphones className="w-6 h-6" />,
+    difficulty: 'Intermediate',
+    estimatedTime: '8-15 min',
+    category: 'Listening',
+    assignmentSupported: true // ✅ Assignment support implemented
+  },
+  'vocab-blast': {
+    name: 'Vocab Blast',
+    description: 'Fast-paced vocabulary action with themed adventures',
+    path: '/games/vocab-blast',
+    icon: <Zap className="w-6 h-6" />,
+    difficulty: 'Intermediate',
+    estimatedTime: '5-12 min',
+    category: 'Vocabulary',
+    assignmentSupported: true // ✅ Assignment support implemented
+  },
+  'vocab-master': {
+    name: 'VocabMaster',
+    description: 'Comprehensive vocabulary learning with multiple game modes',
+    path: '/games/vocab-master',
+    icon: <Crown className="w-6 h-6" />,
     difficulty: 'Adaptive',
-    estimatedTime: '10-15 min',
+    estimatedTime: '10-20 min',
+    category: 'Vocabulary',
+    assignmentSupported: true // ✅ Assignment support implemented
+  },
+  'word-scramble': {
+    name: 'Word Scramble',
+    description: 'Unscramble letters to form vocabulary words',
+    path: '/games/word-scramble',
+    icon: <Shuffle className="w-6 h-6" />,
+    difficulty: 'Beginner',
+    estimatedTime: '4-8 min',
     category: 'Vocabulary',
     assignmentSupported: true // ✅ Assignment support implemented
   },
@@ -50,121 +90,82 @@ const GAME_INFO: Record<string, Omit<Game, 'id'> & { assignmentSupported: boolea
     description: 'Match vocabulary words with their translations in this classic memory game',
     path: '/games/memory-game',
     icon: <Trophy className="w-6 h-6" />,
-    difficulty: 'Easy',
+    difficulty: 'Beginner',
     estimatedTime: '5-10 min',
-    category: 'Memory',
-    assignmentSupported: true
+    category: 'Vocabulary',
+    assignmentSupported: true // ✅ Assignment support implemented
   },
   'hangman': {
     name: 'Hangman',
-    description: 'Guess the vocabulary words letter by letter in this classic word game',
+    description: 'Classic word guessing game with vocabulary practice',
     path: '/games/hangman',
     icon: <Users className="w-6 h-6" />,
-    difficulty: 'Medium',
-    estimatedTime: '8-12 min',
-    category: 'Spelling',
-    assignmentSupported: false // TODO: Add assignment support
-  },
-  'vocab-blast': {
-    name: 'Vocab Blast',
-    description: 'Click-to-pop vocabulary translation game with themed modes',
-    path: '/games/vocab-blast',
-    icon: <Play className="w-6 h-6" />,
-    difficulty: 'Medium',
-    estimatedTime: '6-10 min',
+    difficulty: 'Beginner',
+    estimatedTime: '3-7 min',
     category: 'Vocabulary',
-    assignmentSupported: true // ✅ Assignment support already implemented
+    assignmentSupported: true // ✅ Assignment support implemented
   },
-  'noughts-and-crosses': {
-    name: 'Noughts and Crosses',
-    description: 'Classic tic-tac-toe with vocabulary matching challenges',
-    path: '/games/noughts-and-crosses',
-    icon: <Trophy className="w-6 h-6" />,
-    difficulty: 'Easy',
-    estimatedTime: '3-5 min',
-    category: 'Strategy',
-    assignmentSupported: true // ✅ Assignment support already implemented
-  },
-  'word-scramble': {
-    name: 'Word Scramble',
-    description: 'Unscramble letters to form vocabulary words',
-    path: '/games/word-scramble',
-    icon: <Users className="w-6 h-6" />,
-    difficulty: 'Medium',
-    estimatedTime: '5-8 min',
-    category: 'Spelling',
-    assignmentSupported: true // ✅ Assignment support already implemented
+  'word-blast': {
+    name: 'Word Blast',
+    description: 'Launch rockets by selecting correct translations',
+    path: '/games/word-blast',
+    icon: <Play className="w-6 h-6" />,
+    difficulty: 'Beginner',
+    estimatedTime: '5-12 min',
+    category: 'Vocabulary',
+    assignmentSupported: true // ✅ Assignment support implemented
   },
   'speed-builder': {
     name: 'Speed Builder',
-    description: 'Drag and drop words to build sentences before time runs out',
+    description: 'Build sentences by dragging words into the correct order',
     path: '/games/speed-builder',
     icon: <Clock className="w-6 h-6" />,
-    difficulty: 'Medium',
-    estimatedTime: '8-12 min',
+    difficulty: 'Intermediate',
+    estimatedTime: '5-10 min',
     category: 'Grammar',
-    assignmentSupported: true // ✅ Assignment support already implemented
+    assignmentSupported: true // ✅ Assignment support implemented
   },
   'sentence-towers': {
     name: 'Sentence Towers',
-    description: 'Build towers by answering vocabulary questions correctly',
+    description: 'Stack sentence components to build towering grammatical structures',
     path: '/games/sentence-towers',
     icon: <Trophy className="w-6 h-6" />,
-    difficulty: 'Medium',
-    estimatedTime: '10-15 min',
-    category: 'Vocabulary',
+    difficulty: 'Intermediate',
+    estimatedTime: '6-12 min',
+    category: 'Grammar',
     assignmentSupported: true // ✅ Assignment support implemented
   },
   'conjugation-duel': {
     name: 'Conjugation Duel',
-    description: 'Battle opponents by conjugating verbs correctly in epic duels',
+    description: 'Epic verb conjugation battles in different arenas and leagues',
     path: '/games/conjugation-duel',
     icon: <Users className="w-6 h-6" />,
-    difficulty: 'Hard',
-    estimatedTime: '12-18 min',
+    difficulty: 'Intermediate',
+    estimatedTime: '10-20 min',
     category: 'Grammar',
     assignmentSupported: true // ✅ Assignment support implemented
   },
-  'detective-listening': {
-    name: 'Detective Listening',
-    description: 'Solve cases by listening to radio transmissions and identifying vocabulary',
-    path: '/games/detective-listening',
-    icon: <Users className="w-6 h-6" />,
-    difficulty: 'Medium',
-    estimatedTime: '8-12 min',
-    category: 'Listening',
-    assignmentSupported: true // ✅ Assignment support implemented
-  },
-  'word-guesser': {
-    name: 'Word Guesser',
-    description: 'Guess words based on definitions and clues',
-    path: '/games/word-guesser',
-    icon: <Users className="w-6 h-6" />,
-    difficulty: 'Medium',
-    estimatedTime: '6-10 min',
-    category: 'Vocabulary',
-    assignmentSupported: true // ✅ Assignment support already implemented
-  },
-  'gem-collector': {
-    name: 'Gem Collector',
-    description: 'Collect gems by translating words correctly',
-    path: '/games/gem-collector',
+  'case-file-translator': {
+    name: 'Case File Translator',
+    description: 'Translate case files and evidence to solve mysteries',
+    path: '/games/case-file-translator',
     icon: <Sparkles className="w-6 h-6" />,
-    difficulty: 'Easy',
-    estimatedTime: '5-8 min',
-    category: 'Vocabulary',
-    assignmentSupported: false // TODO: Add assignment support
-  },
-  'verb-quest': {
-    name: 'Verb Quest',
-    description: 'Embark on an RPG adventure to master verb conjugations',
-    path: '/games/verb-quest',
-    icon: <Trophy className="w-6 h-6" />,
-    difficulty: 'Hard',
-    estimatedTime: '15-20 min',
+    difficulty: 'Intermediate',
+    estimatedTime: '8-15 min',
     category: 'Grammar',
-    assignmentSupported: false // TODO: Add assignment support
+    assignmentSupported: true // ✅ Assignment support implemented
+  },
+  'lava-temple-word-restore': {
+    name: 'Lava Temple: Word Restore',
+    description: 'Restore ancient stone tablets by filling in missing words',
+    path: '/games/lava-temple-word-restore',
+    icon: <Sparkles className="w-6 h-6" />,
+    difficulty: 'Intermediate',
+    estimatedTime: '8-15 min',
+    category: 'Grammar',
+    assignmentSupported: true // ✅ Assignment support implemented
   }
+  // All games with confirmed assignment support are now included
 };
 
 export default function MultiGamePage() {

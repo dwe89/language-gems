@@ -20,7 +20,6 @@ type StudentProps = {
     id: string;
     name: string;
     username: string;
-    progress: number;
     joined_date: string;
     last_active: string;
   };
@@ -226,19 +225,8 @@ export function StudentCard({ student, classId, onStudentDeleted }: StudentProps
               </div>
             </div>
             
-            {/* Progress and stats */}
+            {/* Stats */}
             <div className="space-y-4">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-slate-600 font-medium">Learning Progress</span>
-                <span className="text-slate-900 font-bold text-lg">{student.progress}%</span>
-              </div>
-              <div className="w-full bg-slate-200/80 rounded-full h-3 overflow-hidden shadow-inner">
-                <div 
-                  className="h-full bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 rounded-full transition-all duration-700 ease-out shadow-sm"
-                  style={{ width: `${student.progress}%` }}
-                ></div>
-              </div>
-              
               <div className="pt-3 border-t border-slate-100 space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center text-slate-500 text-sm">

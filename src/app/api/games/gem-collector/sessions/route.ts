@@ -136,7 +136,7 @@ export async function POST(request: NextRequest) {
     // Update assignment progress if this is an assignment
     if (body.assignmentId && body.sessionType === 'assignment') {
       const { error: progressError } = await supabase
-        .from('assignment_progress')
+        .from('enhanced_assignment_progress')
         .upsert({
           assignment_id: body.assignmentId,
           student_id: user.id,
@@ -154,6 +154,8 @@ export async function POST(request: NextRequest) {
           },
           status: body.completedSentences >= body.totalSentences ? 'completed' : 'in_progress',
           completed_at: body.completedSentences >= body.totalSentences ? body.endedAt : null
+        }, {
+          onConflict: 'assignment_id,student_id'
         });
 
       if (progressError) {

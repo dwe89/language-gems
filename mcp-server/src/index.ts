@@ -616,14 +616,14 @@ async function handleCreateAssignment(args: any) {
       assignment_id: assignment.id,
       student_id: student.student_id,
       status: 'not_started',
-      score: 0,
-      accuracy: 0,
-      time_spent: 0,
-      completed: false,
+      best_score: 0,
+      best_accuracy: 0,
+      total_time_spent: 0,
+      attempts_count: 0,
     }));
 
     await supabase
-      .from('assignment_progress')
+      .from('enhanced_assignment_progress')
       .insert(progressRecords);
   }
 
@@ -670,16 +670,18 @@ async function handleUpdateAssignmentProgress(args: any) {
   const validatedArgs = UpdateProgressSchema.parse(args);
   
   const { data, error } = await supabase
-    .from('assignment_progress')
+    .from('enhanced_assignment_progress')
     .upsert({
       assignment_id: validatedArgs.assignment_id,
       student_id: validatedArgs.student_id,
-      score: validatedArgs.score,
-      accuracy: validatedArgs.accuracy,
-      time_spent: validatedArgs.time_spent,
-      completed: validatedArgs.completed,
-      session_data: validatedArgs.session_data,
+      best_score: validatedArgs.score,
+      best_accuracy: validatedArgs.accuracy,
+      total_time_spent: validatedArgs.time_spent,
+      status: validatedArgs.completed ? 'completed' : 'in_progress',
+      progress_data: validatedArgs.session_data,
       updated_at: new Date().toISOString(),
+    }, {
+      onConflict: 'assignment_id,student_id'
     })
     .select()
     .single();
@@ -708,7 +710,7 @@ async function handleGetAssignmentAnalytics(args: any) {
 
   // Get progress data
   const { data: progress } = await supabase
-    .from('assignment_progress')
+    .from('enhanced_assignment_progress')
     .select(`
       *,
       user_profiles!student_id(first_name, last_name)
@@ -1331,14 +1333,14 @@ async function handleCreateAQAReadingAssignment(args: any) {
       assignment_id: assignment.id,
       student_id: sid,
       status: 'not_started',
-      score: 0,
-      accuracy: 0,
-      time_spent: 0,
-      completed: false,
+      best_score: 0,
+      best_accuracy: 0,
+      total_time_spent: 0,
+      attempts_count: 0,
     }));
 
     await supabase
-      .from('assignment_progress')
+      .from('enhanced_assignment_progress')
       .insert(progressRecords);
   }
 
@@ -1811,15 +1813,18 @@ async function handleSaveReadingComprehensionResult(args: any) {
   // Update assignment progress if this was part of an assignment
   if (assignment_id) {
     await supabase
-      .from('assignment_progress')
+      .from('enhanced_assignment_progress')
       .upsert({
         assignment_id,
         student_id,
-        score: score_percentage,
-        accuracy: (correct_answers / total_questions) * 100,
-        time_spent: time_spent_seconds,
-        completed: true,
+        best_score: score_percentage,
+        best_accuracy: (correct_answers / total_questions) * 100,
+        total_time_spent: time_spent_seconds,
+        status: 'completed',
+        completed_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
+      }, {
+        onConflict: 'assignment_id,student_id'
       });
   }
 

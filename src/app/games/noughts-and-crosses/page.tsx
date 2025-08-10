@@ -5,7 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useUnifiedAuth } from '../../../hooks/useUnifiedAuth';
 import { ThemeProvider } from './components/ThemeProvider';
 import TicTacToeGameWrapper from './components/TicTacToeGameWrapper';
-import GameAssignmentWrapper from '../../../components/games/templates/GameAssignmentWrapper';
+import NoughtsAndCrossesAssignmentWrapper from './components/NoughtsAssignmentWrapper';
+import UniversalGameWrapper from '../../../utils/universalGameWrapper';
 import UnifiedGameLauncher from '../../../components/games/UnifiedGameLauncher';
 import { UnifiedSelectionConfig, UnifiedVocabularyItem, loadVocabulary } from '../../../hooks/useUnifiedVocabulary';
 import { useAudio } from './hooks/useAudio';
@@ -24,6 +25,14 @@ export default function UnifiedNoughtsAndCrossesPage() {
   const assignmentId = searchParams?.get('assignment');
   const mode = searchParams?.get('mode');
 
+  console.log('🎯 [Noughts] Assignment mode check [DEBUG-v2]:', {
+    assignmentId,
+    mode,
+    hasUser: !!user,
+    userId: user?.id,
+    timestamp: new Date().toISOString()
+  });
+
   // Assignment mode handlers
   const handleAssignmentComplete = () => {
     router.push('/student-dashboard/assignments');
@@ -33,57 +42,105 @@ export default function UnifiedNoughtsAndCrossesPage() {
     router.push('/student-dashboard/assignments');
   };
 
-  // Assignment mode: wrap with GameAssignmentWrapper (after all hooks are initialized)
-  if (assignmentId && mode === 'assignment' && user) {
-    return (
-      <GameAssignmentWrapper
-        assignmentId={assignmentId}
-        gameId="noughts-and-crosses"
-        studentId={user.id}
-        onAssignmentComplete={handleAssignmentComplete}
-        onBackToAssignments={handleBackToAssignments}
-        onBackToMenu={() => router.push('/games/noughts-and-crosses')}
-      >
-        {({ assignment, vocabulary, onProgressUpdate, onGameComplete }) => {
-          // Convert assignment vocabulary to unified config format
-          const assignmentConfig: UnifiedSelectionConfig = {
-            language: assignment.vocabulary_criteria?.language || 'spanish',
-            curriculumLevel: (assignment.curriculum_level as 'KS2' | 'KS3' | 'KS4' | 'KS5') || 'KS3',
-            categoryId: assignment.vocabulary_criteria?.category || 'basics_core_language',
-            subcategoryId: assignment.vocabulary_criteria?.subcategory || 'greetings_introductions',
-            theme: assignment.game_config?.theme || 'classic',
-            // KS4-specific parameters
-            examBoard: assignment.exam_board as 'AQA' | 'edexcel',
-            tier: assignment.tier as 'foundation' | 'higher'
-          };
+  // If assignment mode, use the assignment wrapper directly
+  // Wait for auth to load before making the decision
+  if (assignmentId && mode === 'assignment') {
+    if (isLoading) {
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading assignment...</p>
+          </div>
+        </div>
+      );
+    }
 
-          // Transform vocabulary for TicTacToe format
-          const transformedVocabulary = vocabulary.map(item => ({
-            id: item.id,
-            word: item.word,
-            translation: item.translation,
-            language: item.language,
-            part_of_speech: item.part_of_speech,
-            difficulty: 'medium' as const,
-            category: item.category || 'general'
-          }));
-
-          return (
-            <ThemeProvider theme={assignmentConfig.theme}>
-              <TicTacToeGameWrapper
-                config={assignmentConfig}
-                vocabulary={transformedVocabulary}
-                theme={assignmentConfig.theme}
-                onBackToMenu={() => router.push('/games/noughts-and-crosses')}
-                onGameComplete={onGameComplete}
-                assignmentMode={true}
-              />
-            </ThemeProvider>
-          );
-        }}
-      </GameAssignmentWrapper>
-    );
+    if (user) {
+      return (
+        <NoughtsAndCrossesAssignmentWrapper assignmentId={assignmentId} />
+      );
+    }
   }
+
+  // Use universal game wrapper for regular mode
+  return (
+    <UniversalGameWrapper gameId="noughts-and-crosses">
+      {({ settings, isAssignmentMode, assignmentId: assignmentIdFromWrapper, userId, loading, error }) => {
+        console.log('🎯 [Noughts] Universal wrapper result:', {
+          isAssignmentMode,
+          hasSettings: !!settings,
+          loading,
+          error,
+          timestamp: new Date().toISOString()
+        });
+
+        if (loading) {
+          return (
+            <div className="flex items-center justify-center min-h-screen">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500 mx-auto"></div>
+                <p className="mt-4 text-lg">Loading assignment...</p>
+              </div>
+            </div>
+          );
+        }
+
+        if (error) {
+          return (
+            <div className="flex items-center justify-center min-h-screen">
+              <div className="text-center">
+                <h2 className="text-2xl font-bold text-red-600 mb-4">Error Loading Assignment</h2>
+                <p className="text-gray-600 mb-4">{error}</p>
+                <button
+                  onClick={() => window.location.reload()}
+                  className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                >
+                  Try Again
+                </button>
+              </div>
+            </div>
+          );
+        }
+
+        if (!settings) {
+          return <div>No settings available</div>;
+        }
+
+        // Convert settings to the format expected by TicTacToeGameWrapper
+        const gameSettings = {
+          language: settings.language || 'spanish',
+          difficulty: settings.difficulty || 'medium',
+          category: settings.category || 'basics_core_language',
+          subcategory: settings.subcategory || 'greetings_introductions',
+          curriculumLevel: settings.curriculumLevel || 'KS3',
+          examBoard: settings.examBoard,
+          tier: settings.tier,
+          theme: settings.theme || 'classic',
+          timeLimit: settings.timeLimit || 120
+        };
+
+        return (
+          <ThemeProvider theme={gameSettings.theme}>
+            <TicTacToeGameWrapper
+              settings={gameSettings}
+              assignmentId={assignmentIdFromWrapper}
+              userId={userId}
+              onBackToMenu={() => router.push('/games/noughts-and-crosses')}
+              onGameEnd={(result) => {
+                console.log('Noughts and Crosses game ended:', result);
+                if (isAssignmentMode) {
+                  // TODO: Handle assignment completion
+                  console.log('Assignment mode game completed');
+                }
+                router.push('/games/noughts-and-crosses');
+              }}
+            />
+          </ThemeProvider>
+        );
+      }}
+    </UniversalGameWrapper>
+  );
 
   // Game state management
   const [gameStarted, setGameStarted] = useState(false);

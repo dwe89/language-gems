@@ -1,9 +1,9 @@
 // Utility functions for generating student credentials
 
 export function generatePassword(): string {
-  // Generate a random password
+  // Generate a random password (lowercase only)
   const length = 8;
-  const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
   let password = '';
   for (let i = 0; i < length; i++) {
     password += chars.charAt(Math.floor(Math.random() * chars.length));

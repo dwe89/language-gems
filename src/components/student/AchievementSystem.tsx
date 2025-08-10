@@ -421,12 +421,12 @@ export default function AchievementSystem({
     }
   };
 
-  // Simulate new achievement unlock
+  // Show achievement notifications only for actually unlocked achievements
   useEffect(() => {
     if (showNotifications && achievements.length > 0) {
       const timer = setTimeout(() => {
-        const streakAchievement = achievements.find(a => a.id === '2');
-        if (streakAchievement) {
+        const streakAchievement = achievements.find(a => a.id === '2' && a.unlocked);
+        if (streakAchievement && streakAchievement.unlocked) {
           setNewAchievement(streakAchievement);
         }
       }, 2000);

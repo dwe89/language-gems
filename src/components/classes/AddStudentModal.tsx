@@ -21,8 +21,8 @@ export type AddStudentModalProps = {
     id: string;
     name: string;
     username: string;
-    progress: number;
     joined_date: string;
+    last_active: string;
   }) => void;
 };
 
@@ -88,8 +88,8 @@ export function AddStudentModal({
           id: s.userId,
           name: s.name,
           username: s.username,
-          progress: 0,
           joined_date: new Date().toISOString(),
+          last_active: new Date().toISOString(),
         });
         
         // Reset form

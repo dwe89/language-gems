@@ -117,7 +117,7 @@ export class StudentDataVerificationService {
     if (error && error.code !== 'PGRST116') {
       // Try alternative assignment tables if main one fails
       const { data: altData } = await this.supabase
-        .from('assignment_submissions')
+        .from('enhanced_assignment_progress')
         .select('*')
         .eq('student_id', studentId);
       return altData || [];
