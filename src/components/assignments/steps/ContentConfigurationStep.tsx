@@ -2,9 +2,28 @@
 
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Settings, Gamepad2, FileCheck } from 'lucide-react';
+import { Settings, Gamepad2, FileCheck, BookOpen } from 'lucide-react';
 import { StepProps } from '../types/AssignmentTypes';
-import SmartAssignmentConfig from '../SmartAssignmentConfig';
+
+import CurriculumContentSelector from '../CurriculumContentSelector';
+
+interface ContentConfig {
+  type: 'KS3' | 'KS4' | 'custom';
+  language: 'spanish' | 'french' | 'german';
+  categories?: string[];
+  subcategories?: string[];
+  examBoard?: 'AQA' | 'Edexcel';
+  tier?: 'foundation' | 'higher';
+  themes?: string[];
+  units?: string[];
+  // Legacy KS4 fields (for backward compatibility)
+  topics?: string[];
+  customCategories?: string[];
+  customSubcategories?: string[];
+  customVocabulary?: string;
+  customSentences?: string;
+  customPhrases?: string;
+}
 
 export default function ContentConfigurationStep({
   gameConfig,
@@ -12,8 +31,15 @@ export default function ContentConfigurationStep({
   assessmentConfig,
   setAssessmentConfig,
   onStepComplete,
+  assignmentDetails
 }: StepProps) {
   const [activeTab, setActiveTab] = useState<'games' | 'assessments'>('games');
+  const [contentConfig, setContentConfig] = useState<ContentConfig>({
+    type: assignmentDetails?.curriculum_level || 'KS3',
+    language: 'spanish',
+    categories: [],
+    subcategories: []
+  });
 
   // Check if step is completed
   useEffect(() => {
@@ -35,20 +61,23 @@ export default function ContentConfigurationStep({
       const hasGrammarGames = gameConfig.selectedGames.some(gameId => grammarGameIds.includes(gameId));
 
       if (hasVocabGames) {
-        // Check if vocabulary config has a source selected
+        // Check if vocabulary config has a source selected and language is set
         gameConfigComplete = gameConfigComplete &&
           gameConfig.vocabularyConfig.source !== '' &&
-          (gameConfig.vocabularyConfig.language || '') !== '';
+          (gameConfig.vocabularyConfig.language || contentConfig.language) !== '';
       }
       if (hasSentenceGames) {
-        // Check if sentence config has a source selected
+        // Check if sentence config has a source selected and theme/topic if required
         gameConfigComplete = gameConfigComplete &&
-          gameConfig.sentenceConfig.source !== '';
+          gameConfig.sentenceConfig.source !== '' &&
+          (gameConfig.sentenceConfig.source === 'custom' ||
+           (gameConfig.sentenceConfig.source === 'theme' && !!gameConfig.sentenceConfig.theme) ||
+           (gameConfig.sentenceConfig.source === 'topic' && !!gameConfig.sentenceConfig.topic));
       }
       if (hasGrammarGames) {
         // Check if grammar config has language and at least one verb type and tense
         gameConfigComplete = gameConfigComplete &&
-          gameConfig.grammarConfig.language !== '' &&
+          gameConfig.grammarConfig.language &&
           gameConfig.grammarConfig.verbTypes.length > 0 &&
           gameConfig.grammarConfig.tenses.length > 0;
       }
@@ -77,6 +106,15 @@ export default function ContentConfigurationStep({
 
   const hasGames = gameConfig.selectedGames.length > 0;
   const hasAssessments = assessmentConfig.selectedAssessments.length > 0;
+
+  // Define game types for different configurations
+  const vocabGameIds = ['vocabulary-mining', 'memory-game', 'hangman', 'word-blast', 'noughts-and-crosses', 'word-scramble', 'vocab-blast', 'detective-listening'];
+  const sentenceGameIds = ['speed-builder', 'sentence-towers', 'sentence-builder'];
+  const grammarGameIds = ['conjugation-duel', 'verb-quest'];
+
+  const hasVocabGames = gameConfig.selectedGames.some(gameId => vocabGameIds.includes(gameId));
+  const hasSentenceGames = gameConfig.selectedGames.some(gameId => sentenceGameIds.includes(gameId));
+  const hasGrammarGames = gameConfig.selectedGames.some(gameId => grammarGameIds.includes(gameId));
 
   return (
     <motion.div
@@ -116,253 +154,372 @@ export default function ContentConfigurationStep({
         </div>
       )}
 
-      {/* Content */}
+      {/* Unified Content Configuration */}
       <div className="min-h-[400px]">
-        {/* Games Configuration */}
-        {((hasGames && !hasAssessments) || (hasGames && hasAssessments && activeTab === 'games')) && (
+        {(hasGames || hasAssessments) && (
           <div className="space-y-6">
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <div className="flex items-center mb-2">
-                <Settings className="h-5 w-5 text-blue-600 mr-2" />
-                <h3 className="text-lg font-semibold text-gray-900">Game Content Configuration</h3>
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6">
+              <div className="flex items-center mb-3">
+                <BookOpen className="h-6 w-6 text-blue-600 mr-3" />
+                <h3 className="text-xl font-semibold text-gray-900">Content Configuration</h3>
               </div>
-              <p className="text-sm text-gray-600">Configure the content settings for your selected games.</p>
+              <p className="text-sm text-gray-600 mb-4">
+                Configure the vocabulary and content for your assignment based on curriculum level
+              </p>
+
+              {/* Language Selection */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Target Language *
+                </label>
+                <div className="grid grid-cols-3 gap-3">
+                  {['spanish', 'french', 'german'].map((lang) => (
+                    <button
+                      key={lang}
+                      type="button"
+                      onClick={() => {
+                        const newContentConfig = { ...contentConfig, language: lang as 'spanish' | 'french' | 'german' };
+                        setContentConfig(newContentConfig);
+                        
+                        // Update game config with selected language
+                        if (hasGames) {
+                          setGameConfig(prev => ({
+                            ...prev,
+                            vocabularyConfig: {
+                              ...prev.vocabularyConfig,
+                              language: lang as 'spanish' | 'french' | 'german'
+                            }
+                          }));
+                        }
+                        
+                        // Update assessment config with selected language
+                        if (hasAssessments) {
+                          setAssessmentConfig(prev => ({
+                            ...prev,
+                            generalLanguage: lang as 'spanish' | 'french' | 'german'
+                          }));
+                        }
+                      }}
+                      className={`p-3 rounded-lg text-center transition-all duration-200 border-2 ${
+                        contentConfig.language === lang
+                          ? 'border-blue-500 bg-blue-50 text-blue-700'
+                          : 'border-gray-200 hover:border-gray-300 text-gray-700'
+                      }`}
+                    >
+                      <div className="font-medium capitalize">{lang}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <CurriculumContentSelector
+                curriculumLevel={assignmentDetails?.curriculum_level || 'KS3'}
+                language={contentConfig.language}
+                onConfigChange={(config) => {
+                  setContentConfig(config);
+
+                  // Update both game and assessment configs based on the unified content config
+                  if (hasGames) {
+                    setGameConfig(prev => ({
+                      ...prev,
+                      vocabularyConfig: {
+                        ...prev.vocabularyConfig,
+                        source: 'category',
+                        // For KS4, use themes/units; for others, use categories/subcategories
+                        categories: config.type === 'KS4' ? config.themes : config.categories,
+                        subcategories: config.type === 'KS4' ? config.units : config.subcategories,
+                        category: config.type === 'KS4' ? (config.themes?.[0] || '') : (config.categories?.[0] || ''),
+                        subcategory: config.type === 'KS4' ? (config.units?.[0] || '') : (config.subcategories?.[0] || ''),
+                        curriculumLevel: config.type === 'custom' ? 'KS3' : config.type,
+                        examBoard: config.examBoard,
+                        tier: config.tier,
+                        language: config.language === 'spanish' ? 'es' : config.language === 'french' ? 'fr' : 'de',
+                        // Store KS4-specific data
+                        themes: config.themes,
+                        units: config.units
+                      }
+                    }));
+                  }
+
+                  if (hasAssessments) {
+                    setAssessmentConfig(prev => ({
+                      ...prev,
+                      assessmentCategory: config.type === 'KS4' ? (config.themes?.[0] || '') : (config.categories?.[0] || ''),
+                      assessmentSubcategory: config.type === 'KS4' ? (config.units?.[0] || '') : (config.subcategories?.[0] || ''),
+                      generalLevel: config.type === 'custom' ? 'KS3' : config.type,
+                      generalExamBoard: config.examBoard || 'General',
+                      generalLanguage: config.language
+                    }));
+                  }
+                }}
+                initialConfig={contentConfig}
+              />
             </div>
 
-            <SmartAssignmentConfig
-              selectedGames={gameConfig.selectedGames}
-              vocabularyConfig={gameConfig.vocabularyConfig}
-              sentenceConfig={gameConfig.sentenceConfig}
-              grammarConfig={gameConfig.grammarConfig}
-              onVocabularyChange={(config) => setGameConfig(prev => ({ ...prev, vocabularyConfig: config }))}
-              onSentenceChange={(config) => setGameConfig(prev => ({ ...prev, sentenceConfig: config }))}
-              onGrammarChange={(config) => setGameConfig(prev => ({ ...prev, grammarConfig: config }))}
-            />
-          </div>
-        )}
+            {/* Sentence Configuration (for sentence games) */}
+            {hasSentenceGames && (
+              <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-6">
+                <div className="flex items-center mb-3">
+                  <FileCheck className="h-6 w-6 text-green-600 mr-3" />
+                  <h3 className="text-xl font-semibold text-gray-900">Sentence Configuration</h3>
+                </div>
+                <p className="text-sm text-gray-600 mb-4">
+                  Configure sentence sources for games like Speed Builder and Sentence Towers
+                </p>
 
-        {/* Assessment Configuration */}
-        {((hasAssessments && !hasGames) || (hasAssessments && hasGames && activeTab === 'assessments')) && (
-          <div className="space-y-6">
-            <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
-              <div className="flex items-center mb-2">
-                <FileCheck className="h-5 w-5 text-indigo-600 mr-2" />
-                <h3 className="text-lg font-semibold text-gray-900">Assessment Configuration</h3>
-              </div>
-              <p className="text-sm text-gray-600">Configure content categories and settings for each assessment.</p>
-            </div>
-
-            {/* Enhanced assessment configuration */}
-            <div className="space-y-4">
-              {assessmentConfig.selectedAssessments.map((assessment, index) => (
-                <div key={assessment.id} className="bg-white border border-indigo-200 rounded-lg p-6">
-                  <div className="flex items-center mb-4">
-                    <div className="w-8 h-8 bg-indigo-600 text-white rounded-lg flex items-center justify-center text-sm font-bold mr-3">
-                      {index + 1}
-                    </div>
+                <div className="space-y-6">
+                  {/* Sentence Source */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <h5 className="font-semibold text-gray-900">{assessment.name}</h5>
-                      <p className="text-sm text-gray-600">{assessment.estimatedTime} • {assessment.skills?.join(', ') || 'Assessment skills'}</p>
-                    </div>
-                  </div>
-
-                  {/* Assessment-specific configuration */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Language */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Language</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Sentence Source
+                      </label>
                       <select
-                        value={assessment.instanceConfig?.language || assessmentConfig.generalLanguage}
-                        onChange={(e) => {
-                          const updatedAssessments = assessmentConfig.selectedAssessments.map(a =>
-                            a.id === assessment.id
-                              ? { ...a, instanceConfig: { ...a.instanceConfig, language: e.target.value as any } }
-                              : a
-                          );
-                          setAssessmentConfig(prev => ({ ...prev, selectedAssessments: updatedAssessments }));
-                        }}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        value={gameConfig.sentenceConfig.source}
+                        onChange={(e) => setGameConfig(prev => ({
+                          ...prev,
+                          sentenceConfig: {
+                            ...prev.sentenceConfig,
+                            source: e.target.value as '' | 'custom' | 'theme' | 'topic' | 'create',
+                            // Reset dependent fields when source changes
+                            theme: '',
+                            topic: ''
+                          }
+                        }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                       >
-                        <option value="spanish">Spanish</option>
-                        <option value="french">French</option>
-                        <option value="german">German</option>
+                        <option value="">Select sentence source...</option>
+                        <option value="theme">By Theme</option>
+                        <option value="topic">By Topic</option>
+                        <option value="custom">Custom Sentences</option>
                       </select>
                     </div>
 
-                    {/* Difficulty */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Difficulty</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Difficulty Level
+                      </label>
                       <select
-                        value={assessment.instanceConfig?.difficulty || assessmentConfig.generalDifficulty}
-                        onChange={(e) => {
-                          const updatedAssessments = assessmentConfig.selectedAssessments.map(a =>
-                            a.id === assessment.id
-                              ? { ...a, instanceConfig: { ...a.instanceConfig, difficulty: e.target.value as any } }
-                              : a
-                          );
-                          setAssessmentConfig(prev => ({ ...prev, selectedAssessments: updatedAssessments }));
-                        }}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        value={gameConfig.sentenceConfig.difficulty}
+                        onChange={(e) => setGameConfig(prev => ({
+                          ...prev,
+                          sentenceConfig: { ...prev.sentenceConfig, difficulty: e.target.value }
+                        }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                       >
-                        <option value="foundation">Foundation</option>
-                        <option value="higher">Higher</option>
-                      </select>
-                    </div>
-
-                    {/* Category */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
-                      <select
-                        value={assessment.instanceConfig?.category || ''}
-                        onChange={(e) => {
-                          const updatedAssessments = assessmentConfig.selectedAssessments.map(a =>
-                            a.id === assessment.id
-                              ? { ...a, instanceConfig: { ...a.instanceConfig, category: e.target.value, subcategory: '' } }
-                              : a
-                          );
-                          setAssessmentConfig(prev => ({ ...prev, selectedAssessments: updatedAssessments }));
-                        }}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                      >
-                        <option value="">Select category...</option>
-                        <option value="identity-relationships">Identity and relationships</option>
-                        <option value="local-national-international">Local, national, international and global areas of interest</option>
-                        <option value="current-future-study-work">Current and future study and employment</option>
-                        <option value="family-friends">Family and friends</option>
-                        <option value="technology-social-media">Technology and social media</option>
-                        <option value="free-time-activities">Free-time activities</option>
-                        <option value="customs-festivals">Customs, festivals and celebrations</option>
-                        <option value="home-town-region">Home, town, neighbourhood and region</option>
-                        <option value="environment">Environment</option>
-                        <option value="travel-tourism">Travel and tourism</option>
-                        <option value="school-college">School/college and future plans</option>
-                        <option value="jobs-career">Jobs, career choices and ambitions</option>
-                      </select>
-                    </div>
-
-                    {/* Subcategory */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Subcategory</label>
-                      <select
-                        value={assessment.instanceConfig?.subcategory || ''}
-                        onChange={(e) => {
-                          const updatedAssessments = assessmentConfig.selectedAssessments.map(a =>
-                            a.id === assessment.id
-                              ? { ...a, instanceConfig: { ...a.instanceConfig, subcategory: e.target.value } }
-                              : a
-                          );
-                          setAssessmentConfig(prev => ({ ...prev, selectedAssessments: updatedAssessments }));
-                        }}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                        disabled={!assessment.instanceConfig?.category}
-                      >
-                        <option value="">Select subcategory...</option>
-                        {assessment.instanceConfig?.category === 'identity-relationships' && (
-                          <>
-                            <option value="self-family-friends">Self, family and friends</option>
-                            <option value="relationships-choices">Relationships and choices</option>
-                            <option value="role-models">Role models</option>
-                          </>
-                        )}
-                        {assessment.instanceConfig?.category === 'local-national-international' && (
-                          <>
-                            <option value="local-areas-interest">Local areas of interest</option>
-                            <option value="national-areas-interest">National areas of interest</option>
-                            <option value="global-areas-interest">Global areas of interest</option>
-                          </>
-                        )}
-                        {assessment.instanceConfig?.category === 'current-future-study-work' && (
-                          <>
-                            <option value="current-study">Current study</option>
-                            <option value="future-aspirations">Future aspirations, study and work</option>
-                            <option value="jobs-career-choices">Jobs, career choices and ambitions</option>
-                          </>
-                        )}
+                        <option value="beginner">Beginner</option>
+                        <option value="intermediate">Intermediate</option>
+                        <option value="advanced">Advanced</option>
                       </select>
                     </div>
                   </div>
 
-                  {/* Additional settings */}
-                  <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {/* Theme/Topic Selection */}
+                  {gameConfig.sentenceConfig.source === 'theme' && (
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Time Limit (min)</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Select Theme
+                      </label>
+                      <select
+                        value={gameConfig.sentenceConfig.theme || ''}
+                        onChange={(e) => setGameConfig(prev => ({
+                          ...prev,
+                          sentenceConfig: { ...prev.sentenceConfig, theme: e.target.value }
+                        }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      >
+                        <option value="">Select theme...</option>
+                        <option value="family">Family & Relationships</option>
+                        <option value="school">School & Education</option>
+                        <option value="hobbies">Hobbies & Free Time</option>
+                        <option value="food">Food & Drink</option>
+                        <option value="travel">Travel & Transport</option>
+                        <option value="home">Home & Local Area</option>
+                        <option value="work">Work & Future Plans</option>
+                        <option value="health">Health & Lifestyle</option>
+                      </select>
+                    </div>
+                  )}
+
+                  {gameConfig.sentenceConfig.source === 'topic' && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Select Topic
+                      </label>
+                      <select
+                        value={gameConfig.sentenceConfig.topic || ''}
+                        onChange={(e) => setGameConfig(prev => ({
+                          ...prev,
+                          sentenceConfig: { ...prev.sentenceConfig, topic: e.target.value }
+                        }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      >
+                        <option value="">Select topic...</option>
+                        <option value="introducing-yourself">Introducing Yourself</option>
+                        <option value="daily-routine">Daily Routine</option>
+                        <option value="describing-people">Describing People</option>
+                        <option value="shopping">Shopping</option>
+                        <option value="weather">Weather</option>
+                        <option value="directions">Asking for Directions</option>
+                        <option value="restaurant">At the Restaurant</option>
+                        <option value="holidays">Holidays & Vacations</option>
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Sentence Count */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Number of Sentences
+                      </label>
                       <input
                         type="number"
                         min="5"
-                        max="120"
-                        value={assessment.instanceConfig?.timeLimit || assessmentConfig.generalTimeLimit}
-                        onChange={(e) => {
-                          const updatedAssessments = assessmentConfig.selectedAssessments.map(a =>
-                            a.id === assessment.id
-                              ? { ...a, instanceConfig: { ...a.instanceConfig, timeLimit: parseInt(e.target.value) } }
-                              : a
-                          );
-                          setAssessmentConfig(prev => ({ ...prev, selectedAssessments: updatedAssessments }));
-                        }}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        max="50"
+                        value={gameConfig.sentenceConfig.sentenceCount}
+                        onChange={(e) => setGameConfig(prev => ({
+                          ...prev,
+                          sentenceConfig: { ...prev.sentenceConfig, sentenceCount: parseInt(e.target.value) }
+                        }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                       />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Max Attempts</label>
-                      <input
-                        type="number"
-                        min="1"
-                        max="5"
-                        value={assessment.instanceConfig?.maxAttempts || assessmentConfig.generalMaxAttempts}
-                        onChange={(e) => {
-                          const updatedAssessments = assessmentConfig.selectedAssessments.map(a =>
-                            a.id === assessment.id
-                              ? { ...a, instanceConfig: { ...a.instanceConfig, maxAttempts: parseInt(e.target.value) } }
-                              : a
-                          );
-                          setAssessmentConfig(prev => ({ ...prev, selectedAssessments: updatedAssessments }));
-                        }}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                      />
-                    </div>
-
-                    <div className="flex items-center">
-                      <input
-                        type="checkbox"
-                        id={`autograde-${assessment.id}`}
-                        checked={assessment.instanceConfig?.autoGrade ?? assessmentConfig.generalAutoGrade}
-                        onChange={(e) => {
-                          const updatedAssessments = assessmentConfig.selectedAssessments.map(a =>
-                            a.id === assessment.id
-                              ? { ...a, instanceConfig: { ...a.instanceConfig, autoGrade: e.target.checked } }
-                              : a
-                          );
-                          setAssessmentConfig(prev => ({ ...prev, selectedAssessments: updatedAssessments }));
-                        }}
-                        className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 h-4 w-4"
-                      />
-                      <label htmlFor={`autograde-${assessment.id}`} className="ml-2 text-sm text-gray-700">Auto-grade</label>
-                    </div>
-
-                    <div className="flex items-center">
-                      <input
-                        type="checkbox"
-                        id={`feedback-${assessment.id}`}
-                        checked={assessment.instanceConfig?.feedbackEnabled ?? assessmentConfig.generalFeedbackEnabled}
-                        onChange={(e) => {
-                          const updatedAssessments = assessmentConfig.selectedAssessments.map(a =>
-                            a.id === assessment.id
-                              ? { ...a, instanceConfig: { ...a.instanceConfig, feedbackEnabled: e.target.checked } }
-                              : a
-                          );
-                          setAssessmentConfig(prev => ({ ...prev, selectedAssessments: updatedAssessments }));
-                        }}
-                        className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 h-4 w-4"
-                      />
-                      <label htmlFor={`feedback-${assessment.id}`} className="ml-2 text-sm text-gray-700">Show feedback</label>
                     </div>
                   </div>
                 </div>
-              ))}
-            </div>
+              </div>
+            )}
+
+            {/* Grammar Configuration (for grammar games) */}
+            {hasGrammarGames && (
+              <div className="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-lg p-6">
+                <div className="flex items-center mb-3">
+                  <Settings className="h-6 w-6 text-purple-600 mr-3" />
+                  <h3 className="text-xl font-semibold text-gray-900">Grammar Configuration</h3>
+                </div>
+                <p className="text-sm text-gray-600 mb-4">
+                  Configure grammar settings for games like Conjugation Duel and Verb Quest
+                </p>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Language */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Language
+                    </label>
+                    <select
+                      value={gameConfig.grammarConfig.language}
+                      onChange={(e) => setGameConfig(prev => ({
+                        ...prev,
+                        grammarConfig: { ...prev.grammarConfig, language: e.target.value as 'spanish' | 'french' | 'german' }
+                      }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                    >
+                      <option value="spanish">Spanish</option>
+                      <option value="french">French</option>
+                      <option value="german">German</option>
+                    </select>
+                  </div>
+
+                  {/* Verb Count */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Number of Verbs
+                    </label>
+                    <input
+                      type="number"
+                      min="5"
+                      max="50"
+                      value={gameConfig.grammarConfig.verbCount}
+                      onChange={(e) => setGameConfig(prev => ({
+                        ...prev,
+                        grammarConfig: { ...prev.grammarConfig, verbCount: parseInt(e.target.value) }
+                      }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                    />
+                  </div>
+
+                  {/* Verb Types */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Verb Types
+                    </label>
+                    <div className="space-y-2">
+                      {['regular', 'irregular', 'stem-changing'].map((type) => (
+                        <label key={type} className="flex items-center">
+                          <input
+                            type="checkbox"
+                            checked={gameConfig.grammarConfig.verbTypes.includes(type as 'regular' | 'irregular' | 'stem-changing')}
+                            onChange={(e) => {
+                              const verbTypes = e.target.checked
+                                ? [...gameConfig.grammarConfig.verbTypes, type as 'regular' | 'irregular' | 'stem-changing']
+                                : gameConfig.grammarConfig.verbTypes.filter(t => t !== type);
+                              setGameConfig(prev => ({
+                                ...prev,
+                                grammarConfig: { ...prev.grammarConfig, verbTypes }
+                              }));
+                            }}
+                            className="rounded border-gray-300 text-purple-600 focus:ring-purple-500 h-4 w-4"
+                          />
+                          <span className="ml-2 text-sm text-gray-700 capitalize">{type}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Difficulty */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Difficulty Level
+                    </label>
+                    <select
+                      value={gameConfig.grammarConfig.difficulty}
+                      onChange={(e) => setGameConfig(prev => ({
+                        ...prev,
+                        grammarConfig: { ...prev.grammarConfig, difficulty: e.target.value as 'beginner' | 'intermediate' | 'advanced' }
+                      }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                    >
+                      <option value="beginner">Beginner</option>
+                      <option value="intermediate">Intermediate</option>
+                      <option value="advanced">Advanced</option>
+                    </select>
+                  </div>
+
+                  {/* Tenses */}
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Tenses
+                    </label>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                      {['present', 'preterite', 'imperfect', 'future', 'conditional', 'subjunctive'].map((tense) => (
+                        <label key={tense} className="flex items-center">
+                          <input
+                            type="checkbox"
+                            checked={gameConfig.grammarConfig.tenses.includes(tense as 'present' | 'preterite' | 'imperfect' | 'future' | 'conditional' | 'subjunctive')}
+                            onChange={(e) => {
+                              const tenses = e.target.checked
+                                ? [...gameConfig.grammarConfig.tenses, tense as 'present' | 'preterite' | 'imperfect' | 'future' | 'conditional' | 'subjunctive']
+                                : gameConfig.grammarConfig.tenses.filter(t => t !== tense);
+                              setGameConfig(prev => ({
+                                ...prev,
+                                grammarConfig: { ...prev.grammarConfig, tenses }
+                              }));
+                            }}
+                            className="rounded border-gray-300 text-purple-600 focus:ring-purple-500 h-4 w-4"
+                          />
+                          <span className="ml-2 text-sm text-gray-700 capitalize">{tense}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
+
+
 
         {/* No activities selected */}
         {!hasGames && !hasAssessments && (
@@ -380,17 +537,35 @@ export default function ContentConfigurationStep({
       {(hasGames || hasAssessments) && (
         <div className="bg-gray-50 p-4 rounded-lg">
           <h4 className="text-sm font-semibold text-gray-800 mb-2">Configuration Summary</h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-            {hasGames && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+            {hasVocabGames && (
               <div>
-                <span className="text-gray-600">Games:</span>
-                <span className="ml-2 font-medium text-purple-600">{gameConfig.selectedGames.length} configured</span>
+                <span className="text-gray-600">Vocabulary:</span>
+                <span className="ml-2 font-medium text-blue-600">
+                  {gameConfig.vocabularyConfig.source ? '✓ Configured' : '⚠ Needs setup'}
+                </span>
+              </div>
+            )}
+            {hasSentenceGames && (
+              <div>
+                <span className="text-gray-600">Sentences:</span>
+                <span className="ml-2 font-medium text-green-600">
+                  {gameConfig.sentenceConfig.source ? '✓ Configured' : '⚠ Needs setup'}
+                </span>
+              </div>
+            )}
+            {hasGrammarGames && (
+              <div>
+                <span className="text-gray-600">Grammar:</span>
+                <span className="ml-2 font-medium text-purple-600">
+                  {gameConfig.grammarConfig.verbTypes.length > 0 && gameConfig.grammarConfig.tenses.length > 0 ? '✓ Configured' : '⚠ Needs setup'}
+                </span>
               </div>
             )}
             {hasAssessments && (
               <div>
                 <span className="text-gray-600">Assessments:</span>
-                <span className="ml-2 font-medium text-purple-600">{assessmentConfig.selectedAssessments.length} configured</span>
+                <span className="ml-2 font-medium text-indigo-600">{assessmentConfig.selectedAssessments.length} configured</span>
               </div>
             )}
           </div>

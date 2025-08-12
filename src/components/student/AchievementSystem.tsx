@@ -87,8 +87,8 @@ const AchievementNotification: React.FC<AchievementNotificationProps> = ({
               <p className="font-semibold text-gray-800">{achievement.title}</p>
               <p className="text-sm text-gray-600">{achievement.description}</p>
               <div className="flex items-center space-x-2 mt-2">
-                <span className="text-xs font-medium text-blue-600">
-                  +{achievement.points} XP
+                <span className="text-xs font-medium text-purple-600">
+                  +{Math.floor(achievement.points / 10)} Gems
                 </span>
                 <span className={`text-xs px-2 py-1 rounded-full ${
                   achievement.rarity === 'legendary' ? 'bg-purple-100 text-purple-800' :
@@ -400,15 +400,15 @@ export default function AchievementSystem({
       },
       {
         id: '7',
-        title: 'XP Legend',
-        description: 'Earn 2000 total XP',
+        title: 'Gem Legend',
+        description: 'Collect 200 total gems',
         icon: Crown,
         category: 'special',
         tier: 'diamond',
         points: 500,
-        progress: Math.min(totalXP, 2000),
-        maxProgress: 2000,
-        unlocked: totalXP >= 2000,
+        progress: Math.min(Math.floor(totalXP / 10), 200),
+        maxProgress: 200,
+        unlocked: Math.floor(totalXP / 10) >= 200,
         rarity: 'legendary'
       }
     ];

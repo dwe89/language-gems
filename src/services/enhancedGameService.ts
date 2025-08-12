@@ -68,7 +68,7 @@ export interface EnhancedGameSession {
 export interface WordPerformanceLog {
   id?: string;
   session_id: string;
-  vocabulary_id?: number;
+  vocabulary_id?: string; // Changed from number to string for UUID support
 
   // Word details
   word_text: string;
@@ -98,6 +98,8 @@ export interface WordPerformanceLog {
 
   // Metadata
   context_data: Record<string, any>;
+  language?: string;
+  curriculum_level?: string;
   timestamp: Date;
 }
 
@@ -722,17 +724,51 @@ export class EnhancedGameService {
   // =====================================================
 
   async getStudentProfile(studentId: string): Promise<StudentGameProfile | null> {
+    // student_game_profiles table removed - use user_profiles instead
     const { data, error } = await this.supabase
-      .from('student_game_profiles')
+      .from('user_profiles')
       .select('*')
-      .eq('student_id', studentId)
+      .eq('user_id', studentId)
       .single();
 
     if (error && error.code !== 'PGRST116') {
-      throw new Error(`Failed to get student profile: ${error.message}`);
+      console.warn(`Student profile not found in user_profiles: ${error.message}`);
+      return null;
     }
 
-    return data;
+    // Map user_profiles data to StudentGameProfile format
+    return data ? {
+      id: data.id,
+      student_id: studentId,
+      total_xp: 0, // Will be calculated from gem_events
+      current_level: 1,
+      xp_to_next_level: 100,
+      current_streak: 0,
+      longest_streak: 0,
+      last_activity_date: new Date(),
+      total_games_played: 0,
+      total_time_played: 0,
+      favorite_game_type: null,
+      total_achievements: 0,
+      rare_achievements: 0,
+      epic_achievements: 0,
+      legendary_achievements: 0,
+      words_learned: 0,
+      accuracy_average: 0,
+      improvement_rate: 0,
+      friends_count: 0,
+      challenges_won: 0,
+      challenges_lost: 0,
+      preferred_difficulty: 'intermediate',
+      preferred_language_pair: 'english_spanish',
+      notification_preferences: {},
+      avatar_url: null,
+      display_name: data.display_name,
+      title: null,
+      badge_showcase: [],
+      created_at: data.created_at,
+      updated_at: data.updated_at
+    } : null;
   }
 
   async createStudentProfile(studentId: string): Promise<StudentGameProfile> {
@@ -762,64 +798,49 @@ export class EnhancedGameService {
       badge_showcase: []
     };
 
-    const { data, error } = await this.supabase
-      .from('student_game_profiles')
-      .insert(profile)
-      .select()
-      .single();
-
-    if (error) {
-      throw new Error(`Failed to create student profile: ${error.message}`);
-    }
-
-    return data;
+    // student_game_profiles table removed - return default profile without database insertion
+    return {
+      id: studentId,
+      student_id: studentId,
+      total_xp: 0,
+      current_level: 1,
+      xp_to_next_level: 100,
+      current_streak: 0,
+      longest_streak: 0,
+      last_activity_date: new Date(),
+      total_games_played: 0,
+      total_time_played: 0,
+      favorite_game_type: null,
+      total_achievements: 0,
+      rare_achievements: 0,
+      epic_achievements: 0,
+      legendary_achievements: 0,
+      words_learned: 0,
+      accuracy_average: 0,
+      improvement_rate: 0,
+      friends_count: 0,
+      challenges_won: 0,
+      challenges_lost: 0,
+      preferred_difficulty: 'intermediate',
+      preferred_language_pair: 'english_spanish',
+      notification_preferences: {},
+      avatar_url: null,
+      display_name: null,
+      title: null,
+      badge_showcase: [],
+      created_at: new Date(),
+      updated_at: new Date()
+    };
   }
 
   async updateStudentProfile(studentId: string, sessionData: Partial<EnhancedGameSession>): Promise<void> {
-    let profile = await this.getStudentProfile(studentId);
+    // student_game_profiles table removed - profile updates now handled by gems system
+    // Student profile data is calculated dynamically from:
+    // - gem_events (for XP and achievements)
+    // - enhanced_game_sessions (for game statistics)
+    // - vocabulary_gem_collection (for learning progress)
 
-    if (!profile) {
-      profile = await this.createStudentProfile(studentId);
-    }
-
-    // Calculate updates based on session data
-    const updates: Partial<StudentGameProfile> = {
-      total_games_played: profile.total_games_played + 1,
-      total_time_played: profile.total_time_played + (sessionData.duration_seconds || 0),
-      last_activity_date: new Date()
-    };
-
-    // Update accuracy average
-    if (sessionData.accuracy_percentage !== undefined) {
-      const newAccuracy = (profile.accuracy_average * profile.total_games_played + sessionData.accuracy_percentage) / (profile.total_games_played + 1);
-      updates.accuracy_average = Math.round(newAccuracy * 100) / 100;
-    }
-
-    // Update words learned
-    if (sessionData.unique_words_practiced) {
-      updates.words_learned = profile.words_learned + sessionData.unique_words_practiced;
-    }
-
-    // Update streak
-    const today = new Date().toDateString();
-    const lastActivity = new Date(profile.last_activity_date).toDateString();
-    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toDateString();
-
-    if (lastActivity === yesterday) {
-      updates.current_streak = profile.current_streak + 1;
-      updates.longest_streak = Math.max(profile.longest_streak, updates.current_streak);
-    } else if (lastActivity !== today) {
-      updates.current_streak = 1;
-    }
-
-    const { error } = await this.supabase
-      .from('student_game_profiles')
-      .update(updates)
-      .eq('student_id', studentId);
-
-    if (error) {
-      throw new Error(`Failed to update student profile: ${error.message}`);
-    }
+    console.log('Student profile update skipped - using gems-first system for all tracking');
   }
 
   async addXPToStudent(studentId: string, xpAmount: number): Promise<void> {

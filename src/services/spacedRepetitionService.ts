@@ -262,13 +262,42 @@ export class SpacedRepetitionService {
     responseTime: number = 0
   ): Promise<{ gemType: string; upgraded: boolean; points: number }> {
     try {
-      // Get existing progress
-      const { data: existingData } = await this.supabase
+      // 🔍 INSTRUMENTATION: Log SRS updateProgress call
+      console.log('🔍 [SRS PROGRESS] Starting updateProgress:', {
+        userId,
+        vocabularyId,
+        vocabularyIdType: typeof vocabularyId,
+        correct,
+        responseTime
+      });
+
+      // Get existing progress - handle both UUID and integer vocabulary IDs
+      let query = this.supabase
         .from('vocabulary_gem_collection')
         .select('*')
-        .eq('student_id', userId)
-        .eq('vocabulary_item_id', vocabularyId)
-        .single();
+        .eq('student_id', userId);
+
+      // Check if vocabularyId is UUID (contains hyphens) or integer
+      if (typeof vocabularyId === 'string' && vocabularyId.includes('-')) {
+        // UUID format - use centralized_vocabulary_id
+        query = query.eq('centralized_vocabulary_id', vocabularyId);
+      } else {
+        // Integer format - use legacy vocabulary_item_id
+        query = query.eq('vocabulary_item_id', vocabularyId);
+      }
+
+      const { data: existingData } = await query.single();
+
+      // 🔍 INSTRUMENTATION: Log existing entry lookup result
+      console.log('🔍 [SRS PROGRESS] Existing entry lookup:', {
+        existingDataFound: !!existingData,
+        existingData: existingData ? {
+          id: existingData.id,
+          total_encounters: existingData.total_encounters,
+          correct_encounters: existingData.correct_encounters,
+          last_encountered_at: existingData.last_encountered_at
+        } : null
+      });
 
       // Convert boolean to quality score
       const quality = this.convertToQuality(
@@ -319,41 +348,63 @@ export class SpacedRepetitionService {
         updatedData.easeFactor
       );
 
-      // Update or insert progress
-      await this.supabase
-        .from('vocabulary_gem_collection')
-        .upsert({
-          student_id: userId,
-          vocabulary_item_id: vocabularyId,
-          total_encounters: (existingData?.total_encounters || 0) + 1,
-          correct_encounters: (existingData?.correct_encounters || 0) + (quality >= 3 ? 1 : 0),
-          current_streak: quality >= 3 ? (existingData?.current_streak || 0) + 1 : 0,
-          best_streak: quality >= 3 
-            ? Math.max(existingData?.best_streak || 0, (existingData?.current_streak || 0) + 1)
-            : existingData?.best_streak || 0,
-          last_encountered_at: new Date().toISOString(),
-          next_review_at: updatedData.nextReview.toISOString(),
-          spaced_repetition_interval: updatedData.interval,
-          spaced_repetition_ease_factor: updatedData.easeFactor,
-          mastery_level: masteryLevel,
-          difficulty_rating: this.calculateDifficulty(updatedData.easeFactor, responseTime)
-        });
+      // Update or insert progress - handle both UUID and integer vocabulary IDs
+      const upsertData: any = {
+        student_id: userId,
+        total_encounters: (existingData?.total_encounters || 0) + 1,
+        correct_encounters: (existingData?.correct_encounters || 0) + (quality >= 3 ? 1 : 0),
+        current_streak: quality >= 3 ? (existingData?.current_streak || 0) + 1 : 0,
+        best_streak: quality >= 3
+          ? Math.max(existingData?.best_streak || 0, (existingData?.current_streak || 0) + 1)
+          : existingData?.best_streak || 0,
+        last_encountered_at: new Date().toISOString(),
+        next_review_at: updatedData.nextReview.toISOString(),
+        spaced_repetition_interval: updatedData.interval,
+        spaced_repetition_ease_factor: updatedData.easeFactor,
+        mastery_level: masteryLevel,
+        difficulty_rating: this.calculateDifficulty(updatedData.easeFactor, responseTime)
+      };
 
-      // TODO: Update simplified progress table - needs mapping from UUID to integer ID
-      // The user_vocabulary_progress table uses integer vocabulary_id while centralized_vocabulary uses UUID
-      // For now, we'll rely on vocabulary_gem_collection which properly uses UUID
-      /*
-      await this.supabase
-        .from('user_vocabulary_progress')
-        .upsert({
-          user_id: userId,
-          vocabulary_id: vocabularyId, // This would need to be converted from UUID to integer
-          times_seen: (existingData?.total_encounters || 0) + 1,
-          times_correct: (existingData?.correct_encounters || 0) + (quality >= 3 ? 1 : 0),
-          last_seen: new Date().toISOString(),
-          is_learned: masteryLevel >= 3 // Consider learned at mastery level 3+
-        });
-      */
+      // Add vocabulary ID to the appropriate field
+      if (typeof vocabularyId === 'string' && vocabularyId.includes('-')) {
+        // UUID format - use centralized_vocabulary_id
+        upsertData.centralized_vocabulary_id = vocabularyId;
+      } else {
+        // Integer format - use legacy vocabulary_item_id
+        upsertData.vocabulary_item_id = vocabularyId;
+      }
+
+      // 🔍 INSTRUMENTATION: Log upsert data
+      console.log('🔍 [SRS PROGRESS] Upserting vocabulary_gem_collection:', {
+        upsertData,
+        isNewEntry: !existingData,
+        qualityScore: quality,
+        masteryLevel
+      });
+
+      // Upsert the progress - use appropriate conflict resolution
+      let upsertOptions: any;
+      if (typeof vocabularyId === 'string' && vocabularyId.includes('-')) {
+        // UUID format - use centralized_vocabulary_id conflict resolution
+        upsertOptions = { onConflict: 'student_id,centralized_vocabulary_id' };
+      } else {
+        // Integer format - use legacy vocabulary_item_id conflict resolution
+        upsertOptions = { onConflict: 'student_id,vocabulary_item_id' };
+      }
+
+      const { data: upsertResult, error: upsertError } = await this.supabase
+        .from('vocabulary_gem_collection')
+        .upsert(upsertData, upsertOptions)
+        .select();
+
+      // 🔍 INSTRUMENTATION: Log upsert result
+      console.log('🔍 [SRS PROGRESS] Upsert result:', {
+        success: !upsertError,
+        error: upsertError?.message,
+        upsertResult: upsertResult ? upsertResult[0] : null
+      });
+
+      // Legacy user_vocabulary_progress table removed - using gems-first system only
 
       return {
         gemType: newGemType,
@@ -420,36 +471,32 @@ export class SpacedRepetitionService {
     weeklyProgress: number;
   }> {
     try {
-      const [gemData, progressData] = await Promise.all([
-        this.supabase
-          .from('vocabulary_gem_collection')
-          .select('*')
-          .eq('student_id', userId),
-        this.supabase
-          .from('user_vocabulary_progress')
-          .select('*')
-          .eq('user_id', userId)
-      ]);
+      // Use only gems-first system for user stats
+      const { data: gems, error: gemError } = await this.supabase
+        .from('vocabulary_gem_collection')
+        .select('*')
+        .eq('student_id', userId);
 
-      const gems = gemData.data || [];
-      const progress = progressData.data || [];
+      if (gemError) throw gemError;
 
-      const reviewsDue = gems.filter(g => 
+      const gemData = gems || [];
+
+      const reviewsDue = gemData.filter(g =>
         new Date(g.next_review_at) <= new Date()
       ).length;
 
-      const learnedWords = progress.filter(p => p.is_learned).length;
-      const currentStreak = Math.max(...(gems.map(g => g.current_streak) || [0]));
-      
-      // Calculate weekly progress
+      const learnedWords = gemData.filter(g => g.mastery_level >= 3).length;
+      const currentStreak = Math.max(...(gemData.map(g => g.current_streak) || [0]));
+
+      // Calculate weekly progress using gems-first system
       const weekAgo = new Date();
       weekAgo.setDate(weekAgo.getDate() - 7);
-      const weeklyProgress = progress.filter(p => 
-        new Date(p.last_seen) > weekAgo
+      const weeklyProgress = gemData.filter(g =>
+        new Date(g.last_encountered_at) > weekAgo
       ).length;
 
       return {
-        totalWords: gems.length,
+        totalWords: gemData.length,
         learnedWords,
         reviewsDue,
         currentStreak,

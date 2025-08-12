@@ -26,7 +26,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 // Initialize a single Supabase browser client instance with unified cookie configuration
 export const supabaseBrowser = createClient();
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+export function AuthProvider({ children }: { ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -75,9 +75,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     } catch (error: any) {
       if (error.name === 'AbortError') {
-        console.warn('Profile fetch timed out for user:', userId);
+        
       } else {
-        console.error('Error fetching user profile:', error);
+        
       }
     }
     
@@ -95,15 +95,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const devAdminEmail = "danieletienne89@gmail.com";
       
       if (currentUser.email === adminEmail || currentUser.email === devAdminEmail) {
-        console.log('Setting admin role for email:', currentUser.email);
         const result = { role: 'admin', hasSubscription: true };
-        console.log('getUserData returning for admin:', result);
         return result;
       }
 
       // First check metadata
       let role = currentUser.user_metadata?.role;
-      console.log('Role from user_metadata:', role);
       
       // If no role in metadata, check user_profiles table
       if (!role) {
@@ -114,10 +111,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           .single();
           
         if (profileError && profileError.code !== 'PGRST116') {
-          console.error('Error fetching user profile:', profileError);
+          
         } else if (profileData) {
           role = profileData.role;
-          console.log('Role from user_profiles:', role);
         }
       }
 
@@ -132,10 +128,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       
       const result = { role, hasSubscription };
-      console.log('getUserData returning:', result);
       return result;
     } catch (error) {
-      console.error('Error getting user data:', error);
+      
       return { role: null, hasSubscription: false };
     }
   };
@@ -143,30 +138,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Function to update auth state safely
   const updateAuthState = useCallback(async (currentSession: Session | null) => {
     try {
-      console.log('updateAuthState called with session:', !!currentSession);
       setSession(currentSession);
       setUser(currentSession?.user || null);
 
       // Get complete user data if we have a user
       if (currentSession?.user) {
-        console.log('Getting user data for:', currentSession.user.email);
         const userData = await getUserData(currentSession.user);
-        console.log('Setting user role in state:', userData.role);
-        console.log('Setting subscription status:', userData.hasSubscription);
         setUserRole(userData.role);
         setHasSubscription(userData.hasSubscription);
         currentUserId.current = currentSession.user.id;
       } else {
-        console.log('No user session, clearing auth state');
         setUserRole(null);
         setHasSubscription(false);
         currentUserId.current = null;
       }
       
       setIsLoading(false);
-      console.log('updateAuthState completed');
     } catch (error) {
-      console.error('Error updating auth state:', error);
+      
       setSession(currentSession);
       setUser(currentSession?.user || null);
       setUserRole(null);
@@ -178,7 +167,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Function to refresh the session
   const refreshSession = useCallback(async () => {
     if (isLoading) {
-      console.log('Auth still loading, skipping refresh');
       return;
     }
 
@@ -186,13 +174,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { data: { session: refreshedSession }, error } = await supabaseBrowser.auth.getSession();
       
       if (error) {
-        console.error('Error refreshing session:', error);
         return;
       }
 
       await updateAuthState(refreshedSession);
     } catch (error) {
-      console.error('Exception during session refresh:', error);
+      
     }
   }, [isLoading]);
 
@@ -204,13 +191,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    console.log('Starting auth initialization...');
     isInitializing.current = true;
 
     // Optional warning if initialization takes a long time, but with a shorter timeout
     authTimeout.current = setTimeout(() => {
       if (mounted && isInitializing.current) {
-        console.warn('Authentication initialization is taking longer than expected (>3s)');
         // Force completion if it's been too long
         setIsLoading(false);
         isInitializing.current = false;
@@ -220,14 +205,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Get the current session
     const initializeAuth = async () => {
       try {
-        console.log('🔍 Fetching current session...');
-        console.log('🍪 Current cookies:', document.cookie);
-
         // Normal session check
         const { data: { session: currentSession }, error } = await supabaseBrowser.auth.getSession();
 
         if (error) {
-          console.error('❌ Error getting session:', error);
           if (mounted) {
             setIsLoading(false);
             isInitializing.current = false;
@@ -238,13 +219,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return;
         }
 
-        console.log('📊 Session fetched:', {
-          hasSession: !!currentSession,
-          userId: currentSession?.user?.id,
-          email: currentSession?.user?.email,
-          accessToken: currentSession?.access_token ? 'present' : 'missing'
-        });
-
         if (mounted) {
           // Clear the timeout since we're about to complete
           if (authTimeout.current) {
@@ -253,10 +227,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
           await updateAuthState(currentSession);
           isInitializing.current = false;
-          console.log('Auth initialization completed successfully');
         }
       } catch (error) {
-        console.error('Error initializing auth:', error);
         if (mounted) {
           setIsLoading(false);
           isInitializing.current = false;
@@ -274,8 +246,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       async (event: any, currentSession: Session | null) => {
         if (!mounted) return;
         
-        console.log('Auth state change event:', event, 'Session:', !!currentSession);
-        
         try {
           // Only process auth changes if not in initial loading state
           if (!isInitializing.current) {
@@ -291,7 +261,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             isInitializing.current = false;
           }
         } catch (error) {
-          console.error('Error in auth state change handler:', error);
           setIsLoading(false);
         }
       }
@@ -337,7 +306,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       clearTimeout(timeoutId);
       
       if (error) {
-        console.error('Error signing out:', error);
       }
       
       // Force a hard redirect to home page and prevent back navigation
@@ -347,9 +315,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }, 100);
     } catch (error: any) {
       if (error.name === 'AbortError') {
-        console.warn('Sign out timed out, forcing redirect');
       } else {
-        console.error('Exception signing out:', error);
       }
       // If there's an error, still try to redirect
       window.location.replace('/');
@@ -388,4 +354,4 @@ export const useAuth = () => {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-}; 
+};

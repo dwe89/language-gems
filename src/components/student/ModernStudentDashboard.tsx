@@ -26,6 +26,9 @@ import AssignmentProgressTracker from './AssignmentProgressTracker';
 import FSRSPersonalizedInsights from './FSRSPersonalizedInsights';
 import { UnifiedStudentDashboardService, DashboardMetrics } from '../../services/unifiedStudentDashboardService';
 import { UnifiedVocabularyService, VocabularyStats } from '../../services/unifiedVocabularyService';
+import GemsProgressCard from '../dashboard/GemsProgressCard';
+import DailyGemsGoal from './DailyGemsGoal';
+import { GemsAnalyticsService } from '../../services/analytics/GemsAnalyticsService';
 
 // =====================================================
 // TYPES AND INTERFACES
@@ -213,6 +216,7 @@ export default function ModernStudentDashboard({
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [studentStats, setStudentStats] = useState<StudentStats | null>(null);
   const [dashboardMetrics, setDashboardMetrics] = useState<DashboardMetrics | null>(null);
+  const [gemsAnalytics, setGemsAnalytics] = useState<any>(null);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [dismissedNotifications, setDismissedNotifications] = useState<Set<string>>(() => {
@@ -232,20 +236,11 @@ export default function ModernStudentDashboard({
   const [dashboardService] = useState(() => new UnifiedStudentDashboardService(supabase));
   const [vocabularyService] = useState(() => new UnifiedVocabularyService(supabase));
 
-  // Level calculation function (exponential growth)
+  // Level calculation function (consistent with GemsAnalyticsService - 1000 XP per level)
   const calculateLevelFromXP = (totalXP: number) => {
-    let level = 1;
-    let xpRequired = 100;
-    let totalXpForLevel = 0;
-
-    while (totalXpForLevel + xpRequired <= totalXP) {
-      totalXpForLevel += xpRequired;
-      level++;
-      xpRequired = Math.floor(100 * Math.pow(1.5, level - 1));
-    }
-
-    const xpForNextLevel = Math.floor(100 * Math.pow(1.5, level - 1));
-    const xpToNext = xpForNextLevel - (totalXP - totalXpForLevel);
+    const level = Math.floor(totalXP / 1000) + 1;
+    const xpToNext = 1000 - (totalXP % 1000);
+    const xpForNextLevel = 1000;
 
     return { level, xpToNext, xpForNextLevel };
   };
@@ -316,18 +311,65 @@ export default function ModernStudentDashboard({
 
       const totalXP = xpSummary?.reduce((sum, session) => sum + (session.xp_earned || 0), 0) || 0;
 
+      // Load gems analytics
+      const gemsService = new GemsAnalyticsService();
+      const gemsData = await gemsService.getStudentGemsAnalytics(user.id);
+      setGemsAnalytics(gemsData);
+
       // Calculate level from XP
       const { level, xpToNext } = calculateLevelFromXP(totalXP);
 
-      // Set student stats using unified metrics and basic profile data
+      // Get actual assignment counts for this student's classes only
+      let totalAssignments = 0;
+      let completedAssignments = 0;
+
+      try {
+        // Get student's class enrollments
+        const { data: enrollments } = await supabase
+          .from('class_enrollments')
+          .select('class_id')
+          .eq('student_id', user.id);
+
+        if (enrollments && enrollments.length > 0) {
+          const classIds = enrollments.map(e => e.class_id);
+
+          // Get assignments for student's classes only (security: class-filtered)
+          const { data: assignmentData } = await supabase
+            .from('assignments')
+            .select('id')
+            .in('class_id', classIds);
+
+          totalAssignments = assignmentData?.length || 0;
+
+          // Get completed assignments for this student only
+          if (totalAssignments > 0) {
+            const assignmentIds = assignmentData?.map(a => a.id) || [];
+            const { data: completedData } = await supabase
+              .from('enhanced_assignment_progress')
+              .select('assignment_id')
+              .eq('student_id', user.id)
+              .eq('status', 'completed')
+              .in('assignment_id', assignmentIds);
+
+            completedAssignments = completedData?.length || 0;
+          }
+        }
+      } catch (error) {
+        console.error('Error loading assignment counts:', error);
+        // Fallback to 0 if there's an error
+        totalAssignments = 0;
+        completedAssignments = 0;
+      }
+
+      // Set student stats using unified metrics and actual assignment data
       setStudentStats({
         level,
         xp: totalXP,
         xpToNext,
         streak: Math.round(unifiedMetrics.consistencyScore / 14.3), // Convert to days
         achievements: 0, // TODO: Get from achievements table
-        totalAssignments: unifiedMetrics.totalWordsTracked, // Use vocabulary words as "assignments"
-        completedAssignments: unifiedMetrics.masteredWords,
+        totalAssignments, // Actual assignments for student's classes only
+        completedAssignments, // Actual completed assignments for this student
         strongWords: unifiedMetrics.masteredWords,
         weakWords: unifiedMetrics.strugglingWords,
         vocabularyAccuracy: unifiedMetrics.overallAccuracy
@@ -369,13 +411,29 @@ export default function ModernStudentDashboard({
         .order('achieved_at', { ascending: false })
         .limit(5);
 
-      // Get assignment notifications - assignments due in the future
-      const { data: assignmentNotifications } = await supabase
-        .from('assignments')
-        .select('id, title, due_date')
-        .gte('due_date', new Date().toISOString())
-        .order('due_date', { ascending: true })
-        .limit(3);
+      // Get assignment notifications - assignments due in the future (class-filtered for security)
+      let assignmentNotifications: any[] = [];
+
+      // First get student's class enrollments
+      const { data: enrollments } = await supabase
+        .from('class_enrollments')
+        .select('class_id')
+        .eq('student_id', user.id);
+
+      if (enrollments && enrollments.length > 0) {
+        const classIds = enrollments.map(e => e.class_id);
+
+        // Only get assignments from classes the student is enrolled in
+        const { data: notifications } = await supabase
+          .from('assignments')
+          .select('id, title, due_date')
+          .in('class_id', classIds) // Security: class-filtered
+          .gte('due_date', new Date().toISOString())
+          .order('due_date', { ascending: true })
+          .limit(3);
+
+        assignmentNotifications = notifications || [];
+      }
 
       // Check which assignments have submissions by the current user
       const assignmentIds = assignmentNotifications?.map(a => a.id) || [];
@@ -527,12 +585,19 @@ export default function ModernStudentDashboard({
     }
   };
 
-  // Load assignments when view changes to assignments
+  // Load assignments when component mounts and when view changes to assignments
+  useEffect(() => {
+    if (user?.id) {
+      loadAssignments();
+    }
+  }, [user?.id]);
+
+  // Refresh assignments when view changes to assignments (for real-time updates)
   useEffect(() => {
     if (currentView === 'assignments' && user?.id) {
       loadAssignments();
     }
-  }, [currentView, user?.id]);
+  }, [currentView]);
 
   // Navigation items
   const navigationItems: NavigationItem[] = [
@@ -547,7 +612,7 @@ export default function ModernStudentDashboard({
       id: 'assignments',
       label: 'Assignments',
       icon: BookOpen,
-      badge: assignments.filter(a => a.status === 'active' || a.status === 'pending').length,
+      badge: assignments.filter(a => a.status === 'not_started' || a.status === 'in_progress').length,
       color: 'bg-gradient-to-r from-green-500 to-green-600',
       description: 'Current and upcoming tasks'
     },
@@ -594,16 +659,16 @@ export default function ModernStudentDashboard({
               </span>
             </div>
             <div className="text-sm text-blue-100">
-              {loading ? 'Loading...' : `${studentStats?.xpToNext || 100} XP to next level`}
+              {loading ? 'Loading...' : `${gemsAnalytics?.totalGems || 0} Language Gems collected`}
             </div>
           </div>
         </div>
         
-        {/* XP Progress Bar */}
+        {/* Level Progress Bar */}
         <div className="mt-4">
           <div className="flex items-center justify-between text-sm mb-2">
-            <span>Experience Points</span>
-            <span>{loading ? '...' : (studentStats?.xp || 0).toLocaleString()} XP</span>
+            <span>Level Progress</span>
+            <span>{loading ? '...' : `${studentStats?.xpToNext || 100} XP to Level ${(studentStats?.level || 1) + 1}`}</span>
           </div>
           <div className="w-full bg-white/20 rounded-full h-3">
             <motion.div
@@ -647,14 +712,36 @@ export default function ModernStudentDashboard({
           isLoading={loading}
         />
         <StatCard
-          title="Total XP"
-          value={loading ? '...' : (studentStats?.xp || 0).toLocaleString()}
-          subtitle="Experience earned"
-          icon={Zap}
-          color="bg-gradient-to-r from-blue-500 to-purple-500"
+          title="Language Gems"
+          value={loading ? '...' : (gemsAnalytics?.totalGems || 0).toLocaleString()}
+          subtitle="Gems collected"
+          icon={Gem}
+          color="bg-gradient-to-r from-purple-500 to-pink-500"
           isLoading={loading}
         />
       </div>
+
+      {/* Gems Progress Card */}
+      {gemsAnalytics && (
+        <GemsProgressCard
+          totalGems={gemsAnalytics.totalGems}
+          gemsByRarity={gemsAnalytics.gemsByRarity}
+          totalXP={gemsAnalytics.totalXP}
+          currentLevel={gemsAnalytics.currentLevel}
+          xpToNextLevel={gemsAnalytics.xpToNextLevel}
+          className="mb-6"
+        />
+      )}
+
+      {/* Daily Gems Goal */}
+      {gemsAnalytics && (
+        <DailyGemsGoal
+          dailyGoal={20} // Default daily goal of 20 gems
+          gemsEarnedToday={gemsAnalytics.gemsEarnedToday || 0}
+          gemsByRarityToday={gemsAnalytics.gemsByRarityToday || {}}
+          className="mb-6"
+        />
+      )}
 
       {/* FSRS Personalized Learning Insights - Temporarily disabled for debugging */}
       {/* <FSRSPersonalizedInsights className="mb-6" /> */}
@@ -1117,7 +1204,7 @@ export default function ModernStudentDashboard({
                 Welcome back, {user?.user_metadata?.first_name || user?.user_metadata?.name || user?.email?.split('@')[0] || 'Student'}!
               </h1>
               <p className="text-gray-600 mt-1">
-                Level {studentStats?.level || 1} • {studentStats?.xp || 0} XP • {studentStats?.streak || 0} day streak
+                Level {studentStats?.level || 1} • {gemsAnalytics?.totalGems || 0} Gems • {studentStats?.streak || 0} day streak
               </p>
             </div>
 
@@ -1145,7 +1232,16 @@ export default function ModernStudentDashboard({
                     className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50"
                   >
                     <div className="p-4 border-b border-gray-200">
-                      <h3 className="font-semibold text-gray-900">Notifications</h3>
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-semibold text-gray-900">Notifications</h3>
+                        <button
+                          onClick={() => setShowNotifications(false)}
+                          className="p-1 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                          title="Close notifications"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
                     </div>
                     <div className="max-h-64 overflow-y-auto">
                       {visibleNotifications.length === 0 ? (

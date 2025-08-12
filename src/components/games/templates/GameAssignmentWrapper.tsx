@@ -7,6 +7,8 @@ import { useAuth } from '../../auth/AuthProvider';
 import { createBrowserClient } from '../../../lib/supabase-client';
 import { useGlobalAudioContext } from '../../../hooks/useGlobalAudioContext';
 import { createAudio, getAudioUrl } from '../../../utils/audioUtils';
+import { EnhancedGameSessionService } from '../../../services/rewards/EnhancedGameSessionService';
+// RewardEngine removed - games should handle individual vocabulary interactions
 
 // Standard interfaces for assignment integration
 export interface StandardVocabularyItem {
@@ -164,7 +166,7 @@ export const useAssignmentVocabulary = (assignmentId: string) => {
             .from('vocabulary_assignment_items')
             .select(`
               order_position,
-              centralized_vocabulary:centralized_vocabulary(
+              centralized_vocabulary!vocabulary_assignment_items_centralized_vocabulary_id_fkey(
                 id,
                 word,
                 translation,
@@ -411,6 +413,8 @@ export default function GameAssignmentWrapper({
   });
 
   const [startTime] = useState(Date.now());
+  const [gemSessionService] = useState(() => new EnhancedGameSessionService(supabase));
+  // Session ID will be managed by individual games using EnhancedGameSessionService
 
   // Update progress handler
   const handleProgressUpdate = (progress: Partial<GameProgress>) => {
@@ -475,79 +479,217 @@ export default function GameAssignmentWrapper({
           attempts_count: 1,
           completed_at: new Date().toISOString(),
           session_data: finalProgress.sessionData || {}
+        }, {
+          onConflict: 'assignment_id,student_id,game_id',
+          ignoreDuplicates: false
         });
 
       if (gameProgressError) {
         console.error('Error updating game progress:', gameProgressError);
       } else {
         console.log('Individual game progress saved successfully');
+
+        // Integrate with gem system for assignment games
+        try {
+          const sessionId = await gemSessionService.startGameSession({
+            student_id: studentId,
+            assignment_id: assignmentId,
+            game_type: gameId,
+            session_mode: 'assignment',
+            final_score: finalProgress.score || 0,
+            accuracy_percentage: finalProgress.accuracy || 0,
+            completion_percentage: 100, // Assignment game is completed
+            words_attempted: finalProgress.totalWords || vocabulary.length,
+            words_correct: finalProgress.wordsCompleted || 0,
+            unique_words_practiced: finalProgress.wordsCompleted || 0,
+            duration_seconds: Math.floor((Date.now() - startTime) / 1000),
+            session_data: finalProgress.sessionData || {}
+          });
+
+          console.log('🔮 Started gem session for assignment game:', sessionId);
+
+          // Gems should be recorded by individual games during vocabulary interactions
+          // For games not yet updated to use recordWordAttempt(), create a helper function
+
+          // Make vocabulary interaction recorder available to games
+          if (typeof window !== 'undefined') {
+            (window as any).recordVocabularyInteraction = async (
+              wordText: string,
+              translationText: string,
+              wasCorrect: boolean,
+              responseTimeMs: number,
+              hintUsed: boolean = false,
+              streakCount: number = 1
+            ) => {
+              if (gemSessionService && sessionId) {
+                // Try to resolve centralized_vocabulary UUID from the assignment vocabulary list
+                const normalize = (s: string) => (s || '').toString().trim().toLowerCase();
+                const wt = normalize(wordText);
+                const tt = normalize(translationText);
+                let resolvedVocabId: string | undefined = undefined;
+
+                // 🔍 INSTRUMENTATION: Log vocabulary ID resolution attempt
+                console.log('🔍 [VOCAB ID RESOLUTION] Attempting to resolve vocabulary ID:', {
+                  wordText,
+                  translationText,
+                  normalizedWord: wt,
+                  normalizedTranslation: tt,
+                  vocabularyListLength: vocabulary.length,
+                  firstVocabItem: vocabulary[0] ? {
+                    id: (vocabulary[0] as any).id,
+                    word: (vocabulary[0] as any).word || (vocabulary[0] as any).spanish,
+                    translation: (vocabulary[0] as any).translation || (vocabulary[0] as any).english
+                  } : null
+                });
+
+                try {
+                  // Find exact match by word or translation
+                  const match = vocabulary.find((v) => {
+                    const vw = normalize((v as any).word || (v as any).spanish || '');
+                    const vt = normalize((v as any).translation || (v as any).english || '');
+                    return (vw && vw === wt) || (vt && vt === tt);
+                  });
+                  if (match && (match as any).id) {
+                    resolvedVocabId = (match as any).id;
+                  }
+
+                  // 🔍 INSTRUMENTATION: Log resolution result
+                  console.log('🔍 [VOCAB ID RESOLUTION] Resolution result:', {
+                    matchFound: !!match,
+                    resolvedVocabId,
+                    matchedItem: match ? {
+                      id: (match as any).id,
+                      word: (match as any).word || (match as any).spanish,
+                      translation: (match as any).translation || (match as any).english
+                    } : null
+                  });
+                } catch (e) {
+                  console.warn('Failed to resolve vocabulary ID from assignment list:', e);
+                }
+
+                await gemSessionService.recordWordAttempt(sessionId, gameId, {
+                  vocabularyId: resolvedVocabId, // Use UUID when we can resolve it
+                  wordText,
+                  translationText,
+                  responseTimeMs,
+                  wasCorrect,
+                  hintUsed,
+                  streakCount,
+                  masteryLevel: 1, // Default mastery level
+                  maxGemRarity: 'rare', // Default max rarity to prevent grinding
+                  gameMode: 'assignment'
+                });
+              }
+            };
+          }
+
+          // End the gem session
+          await gemSessionService.endGameSession(sessionId, {
+            student_id: studentId || user?.id || '',
+            assignment_id: assignmentId,
+            game_type: gameId,
+            session_mode: 'assignment',
+            final_score: finalProgress.score || 0,
+            accuracy_percentage: finalProgress.accuracy || 0,
+            completion_percentage: 100,
+            words_attempted: finalProgress.totalWords || vocabulary.length,
+            words_correct: finalProgress.wordsCompleted || 0,
+            unique_words_practiced: finalProgress.wordsCompleted || 0,
+            duration_seconds: Math.floor((Date.now() - startTime) / 1000),
+            session_data: finalProgress.sessionData || {}
+          });
+
+          console.log('🔮 Gem session completed for assignment game');
+
+        } catch (gemError) {
+          console.error('Error with gem system for assignment game:', gemError);
+          // Continue with assignment tracking even if gems fail
+        }
       }
 
       // Check if all games in the assignment are completed
       const { data: allGameProgress, error: checkError } = await supabase
         .from('assignment_game_progress')
-        .select('game_id, status')
+        .select('game_id, status, score, total_words, words_completed, time_spent')
         .eq('assignment_id', assignmentId)
         .eq('student_id', studentId);
 
       if (!checkError && allGameProgress && assignment) {
-        // Get the list of games from assignment config
-        const assignmentGames = assignment.game_config?.selectedGames || [];
+        // Get the list of games from assignment config - fix the path
+        const assignmentGames = assignment.game_config?.gameConfig?.selectedGames || assignment.game_config?.selectedGames || [];
         const completedGames = allGameProgress.filter(g => g.status === 'completed').map(g => g.game_id);
 
-        console.log('Assignment games:', assignmentGames);
-        console.log('Completed games:', completedGames);
+        console.log('🎮 Assignment games from config:', assignmentGames);
+        console.log('✅ Completed games:', completedGames);
+        console.log('📊 Progress:', `${completedGames.length}/${assignmentGames.length} games completed`);
 
         // Check if all games are completed
-        const allGamesCompleted = assignmentGames.every((gameId: string) => completedGames.includes(gameId));
+        const allGamesCompleted = assignmentGames.length > 0 && assignmentGames.every((gameId: string) => completedGames.includes(gameId));
 
-        if (allGamesCompleted) {
-          console.log('All games completed! Marking assignment as complete.');
+        // Calculate cumulative score and stats from all completed games
+        const totalScore = allGameProgress.reduce((sum, game) => sum + (game.score || 0), 0);
+        const totalWords = allGameProgress.reduce((sum, game) => sum + (game.total_words || 0), 0);
+        const totalCorrect = allGameProgress.reduce((sum, game) => sum + (game.words_completed || 0), 0);
+        const totalTimeSpent = allGameProgress.reduce((sum, game) => sum + (game.time_spent || 0), 0);
+        const cumulativeAccuracy = totalWords > 0 ? (totalCorrect / totalWords) * 100 : 0;
 
-          // Update overall assignment progress
-          // Add safeguards to prevent numeric overflow
-          const safeScore = Math.min(Math.max(finalProgress.score || 0, 0), 99999.99);
-          const safeAccuracy = Math.min(Math.max(finalProgress.accuracy || 0, 0), 999.99);
-          
-          console.log('GameAssignmentWrapper - Saving assignment progress:', {
-            score: finalProgress.score,
-            safeScore,
-            accuracy: finalProgress.accuracy,
-            safeAccuracy,
-            wordsCompleted: finalProgress.wordsCompleted,
-            assignmentId,
-            studentId,
-            studentIdType: typeof studentId,
-            userFromAuth: user?.id
+        const safeScore = Math.min(Math.max(totalScore, 0), 99999.99);
+        const safeAccuracy = Math.min(Math.max(cumulativeAccuracy, 0), 999.99);
+
+        const assignmentStatus = allGamesCompleted ? 'completed' : 'in_progress';
+        const completedAt = allGamesCompleted ? new Date().toISOString() : null;
+
+        console.log(`🎯 Assignment status: ${assignmentStatus} (${completedGames.length}/${assignmentGames.length} games completed)`);
+
+        console.log('GameAssignmentWrapper - Saving assignment progress:', {
+          status: assignmentStatus,
+          currentGameScore: finalProgress.score,
+          cumulativeScore: totalScore,
+          safeScore,
+          currentGameAccuracy: finalProgress.accuracy,
+          cumulativeAccuracy,
+          safeAccuracy,
+          totalWords,
+          totalCorrect,
+          totalTimeSpent,
+          assignmentId,
+          studentId,
+          completedGames: completedGames.length,
+          totalGames: assignmentGames.length
+        });
+
+        const { error: assignmentProgressError } = await supabase
+          .from('enhanced_assignment_progress')
+          .upsert({
+            assignment_id: assignmentId,
+            student_id: studentId,
+            status: assignmentStatus,
+            completed_at: completedAt,
+            attempts_count: completedGames.length,
+            total_time_spent: totalTimeSpent,
+            progress_data: {
+              ...finalProgress,
+              completedGames: completedGames,
+              totalGames: assignmentGames.length,
+              cumulativeScore: totalScore,
+              cumulativeAccuracy: cumulativeAccuracy
+            },
+            best_score: safeScore,
+            best_accuracy: safeAccuracy,
+            words_mastered: totalCorrect,
+            session_count: completedGames.length
+          }, {
+            onConflict: 'assignment_id,student_id'
           });
 
-          const { error: assignmentProgressError } = await supabase
-            .from('enhanced_assignment_progress')
-            .upsert({
-              assignment_id: assignmentId,
-              student_id: studentId,
-              status: 'completed',
-              completed_at: new Date().toISOString(),
-              progress_data: {
-                ...finalProgress,
-                completedGames: completedGames,
-                totalGames: assignmentGames.length
-              },
-              best_score: safeScore,
-              best_accuracy: safeAccuracy,
-              words_mastered: finalProgress.wordsCompleted || 0,
-              session_count: completedGames.length
-            }, {
-              onConflict: 'assignment_id,student_id'
-            });
-
-          if (assignmentProgressError) {
-            console.error('Error updating assignment progress:', assignmentProgressError);
-          } else {
-            console.log('Overall assignment marked as complete');
-          }
+        if (assignmentProgressError) {
+          console.error('Error updating assignment progress:', assignmentProgressError);
         } else {
-          console.log(`Assignment progress: ${completedGames.length}/${assignmentGames.length} games completed`);
+          if (allGamesCompleted) {
+            console.log('🎉 Overall assignment marked as COMPLETE!');
+          } else {
+            console.log('📝 Assignment progress updated - still IN PROGRESS');
+          }
         }
       }
 

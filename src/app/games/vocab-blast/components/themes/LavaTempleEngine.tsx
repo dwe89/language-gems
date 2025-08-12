@@ -26,6 +26,8 @@ interface TempleTablet {
   lavaProximity: number;
   size: number;
   spawnTime: number;
+  // Add a property to track if the tablet has been 'answered'
+  isAnswered: boolean;
 }
 
 export default function LavaTempleEngine({
@@ -55,7 +57,42 @@ export default function LavaTempleEngine({
     return shuffled.slice(0, decoyCount);
   };
 
-  // Spawn temple tablets
+  // Enhanced collision detection for tablets
+  const checkTabletCollisions = (tablets: TempleTablet[]): TempleTablet[] => {
+    const minDistance = 140; // Minimum distance between tablets
+    const screenWidth = typeof window !== 'undefined' ? window.innerWidth : 1200;
+
+    return tablets.map((tablet, index) => {
+      let adjustedX = tablet.x;
+      let adjustedY = tablet.y;
+      let collisionCount = 0;
+
+      // Check against all other tablets
+      tablets.forEach((otherTablet, otherIndex) => {
+        if (index !== otherIndex) {
+          const distance = Math.sqrt(
+            Math.pow(tablet.x - otherTablet.x, 2) + Math.pow(tablet.y - otherTablet.y, 2)
+          );
+
+          if (distance < minDistance) {
+            collisionCount++;
+            // Move tablet away from collision
+            const angle = Math.atan2(tablet.y - otherTablet.y, tablet.x - otherTablet.x);
+            const pushDistance = minDistance + (collisionCount * 25);
+
+            adjustedX = Math.max(100, Math.min(screenWidth - 100,
+              otherTablet.x + Math.cos(angle) * pushDistance
+            ));
+            adjustedY = otherTablet.y + Math.sin(angle) * pushDistance;
+          }
+        }
+      });
+
+      return { ...tablet, x: adjustedX, y: adjustedY };
+    });
+  };
+
+  // Spawn temple tablets with enhanced positioning
   const spawnTempleTablets = () => {
     if (!currentWord || isPaused || !gameActive) return;
 
@@ -64,28 +101,38 @@ export default function LavaTempleEngine({
     const shuffledOptions = allOptions.sort(() => 0.5 - Math.random());
 
     const stoneTypes: ('granite' | 'marble' | 'obsidian')[] = ['granite', 'marble', 'obsidian'];
-
     const screenWidth = typeof window !== 'undefined' ? window.innerWidth : 1200;
 
-    // Create tablets with collision detection
+    // Create tablets with enhanced collision detection
     const newTablets: TempleTablet[] = [];
+    const columnWidth = (screenWidth - 200) / Math.max(shuffledOptions.length, 3);
 
     shuffledOptions.forEach((translation, index) => {
-      let position = { x: 0, y: -100 - (index * 150) }; // Stagger vertically
+      // Use column-based positioning for better distribution
+      const baseX = 100 + (index * columnWidth) + (Math.random() * 60 - 30);
+      const baseY = -100 - (index * 120) - (Math.random() * 50);
+
+      let position = { x: baseX, y: baseY };
       let attempts = 0;
 
-      // Find non-overlapping position
-      do {
-        position.x = Math.random() * (screenWidth - 200) + 100;
+      // Fine-tune position to avoid overlaps
+      while (attempts < 40) {
+        const overlapping = newTablets.some(tablet => {
+          const distance = Math.sqrt(
+            Math.pow(position.x - tablet.x, 2) + Math.pow(position.y - tablet.y, 2)
+          );
+          return distance < 140;
+        });
+
+        if (!overlapping) break;
+
+        // Adjust position
+        position.x = Math.max(100, Math.min(screenWidth - 100,
+          baseX + (Math.random() * 100 - 50)
+        ));
+        position.y = baseY + (Math.random() * 80 - 40);
         attempts++;
-      } while (
-        attempts < 50 &&
-        newTablets.some(tablet => {
-          const distance = Math.sqrt(Math.pow(position.x - tablet.x, 2) + Math.pow(position.y - tablet.y, 2));
-          const minDistance = 120; // Minimum distance between tablets
-          return distance < minDistance;
-        })
-      );
+      }
 
       newTablets.push({
         id: `tablet-${currentWord.id}-${index}-${Date.now()}`,
@@ -93,29 +140,30 @@ export default function LavaTempleEngine({
         isCorrect: translation === currentWord.translation,
         x: position.x,
         y: position.y,
-        speed: 0.8 + Math.random() * 0.6,
+        speed: 0.6 + Math.random() * 0.4, // More consistent speed
         stoneType: stoneTypes[Math.floor(Math.random() * stoneTypes.length)],
-        crackLevel: Math.random() * 0.3,
+        crackLevel: Math.random() * 0.2, // Start with less cracking
         lavaProximity: 0,
-        size: Math.random() * 0.3 + 0.8,
-        spawnTime: Date.now()
+        size: Math.random() * 0.2 + 0.9, // More consistent sizing
+        spawnTime: Date.now(),
+        isAnswered: false // Initialize as not answered
       });
     });
 
-    setTempleTablets(newTablets);
+    setTempleTablets(checkTabletCollisions(newTablets));
   };
 
-  // Update tablet positions and lava level
+  // Update tablet positions with collision avoidance
   const updateTablets = () => {
     if (isPaused || !gameActive) return;
 
     const screenHeight = typeof window !== 'undefined' ? window.innerHeight : 1000;
 
-    // Slowly increase lava level
-    setLavaLevel(prev => Math.min(prev + 0.2, screenHeight * 0.7));
+    // Slowly increase lava level (slightly slower)
+    setLavaLevel(prev => Math.min(prev + 0.15, screenHeight * 0.7));
 
-    setTempleTablets(prev =>
-      prev.map(tablet => {
+    setTempleTablets(prev => {
+      const updatedTablets = prev.map(tablet => {
         const newY = tablet.y + tablet.speed;
         const lavaProximity = Math.max(0, (screenHeight - lavaLevel - newY) / 200);
 
@@ -123,25 +171,24 @@ export default function LavaTempleEngine({
           ...tablet,
           y: newY,
           lavaProximity,
-          crackLevel: Math.min(tablet.crackLevel + (lavaProximity * 0.01), 1)
+          crackLevel: Math.min(tablet.crackLevel + (lavaProximity * 0.008), 1) // Slower cracking
         };
-      }).filter(tablet => {
-        // Remove tablets only after 10 seconds timeout
-        const timeElapsed = Date.now() - tablet.spawnTime;
-        if (timeElapsed > 10000) {
-          // Trigger wrong answer for timeout
-          if (tablet.isCorrect) {
-            setTimeout(() => onIncorrectAnswer(), 0);
-          }
-          return false;
-        }
-        return true;
-      })
-    );
+      });
+
+      // Apply collision detection to moving tablets
+      return checkTabletCollisions(updatedTablets);
+    });
   };
 
   // Handle tablet click
   const handleTabletClick = (tablet: TempleTablet) => {
+    // Only process if the tablet hasn't been answered yet
+    if (tablet.isAnswered) return;
+
+    setTempleTablets(prev => 
+        prev.map(t => t.id === tablet.id ? { ...t, isAnswered: true } : t)
+    );
+
     if (tablet.isCorrect) {
       onCorrectAnswer(currentWord);
       createTempleExplosion(tablet.x, tablet.y, 'treasure');
@@ -154,8 +201,10 @@ export default function LavaTempleEngine({
       setLavaLevel(prev => Math.min(prev + 30, window.innerHeight * 0.8));
     }
 
-    // Remove clicked tablet
-    setTempleTablets(prev => prev.filter(t => t.id !== tablet.id));
+    // Remove clicked tablet AFTER particles/effects are created
+    setTimeout(() => {
+        setTempleTablets(prev => prev.filter(t => t.id !== tablet.id));
+    }, 500); // Small delay to allow particle animation to start
   };
 
   // Create temple explosion effect
@@ -202,22 +251,29 @@ export default function LavaTempleEngine({
     return () => clearInterval(emberInterval);
   }, [gameActive, isPaused]);
 
-  // Animation loop
+  // Animation loop with error handling
   useEffect(() => {
     const animate = () => {
-      updateTablets();
-      
-      // Update ember positions
-      setEmberEffects(prev => 
-        prev.map(ember => ({
-          ...ember,
-          x: ember.x + ember.vx,
-          y: ember.y + ember.vy,
-          life: ember.life - 0.01
-        })).filter(ember => ember.life > 0 && ember.y > -50)
-      );
+      try {
+        if (gameActive && !isPaused) {
+          updateTablets();
 
-      animationRef.current = requestAnimationFrame(animate);
+          // Update ember positions
+          setEmberEffects(prev =>
+            prev.map(ember => ({
+              ...ember,
+              x: ember.x + ember.vx,
+              y: ember.y + ember.vy,
+              life: ember.life - 0.01
+            })).filter(ember => ember.life > 0 && ember.y > -50)
+          );
+        }
+        animationRef.current = requestAnimationFrame(animate);
+      } catch (error) {
+        console.error('Animation error in Lava Temple Engine:', error);
+        // Continue animation even if there's an error
+        animationRef.current = requestAnimationFrame(animate);
+      }
     };
 
     if (gameActive) {
@@ -227,6 +283,7 @@ export default function LavaTempleEngine({
     return () => {
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
+        animationRef.current = undefined;
       }
     };
   }, [gameActive, isPaused]);
@@ -306,14 +363,14 @@ export default function LavaTempleEngine({
             key={tablet.id}
             initial={{ opacity: 0, scale: 0, x: tablet.x, y: tablet.y }}
             animate={{
-              opacity: 1,
-              scale: tablet.size,
+              opacity: tablet.isAnswered ? 0 : 1, // Fade out if answered
+              scale: tablet.isAnswered ? 0 : tablet.size, // Shrink if answered
               x: tablet.x,
               y: tablet.y
             }}
             exit={{ opacity: 0, scale: 0 }}
             onClick={() => handleTabletClick(tablet)}
-            className="absolute cursor-pointer transition-all duration-200 hover:scale-110 select-none"
+            className={`absolute cursor-pointer transition-all duration-200 hover:scale-110 select-none ${tablet.isAnswered ? 'pointer-events-none' : ''}`}
           >
             <div className="relative">
               {/* Realistic Stone/Rock Design */}

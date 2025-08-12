@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { EnhancedGameService } from '../../../../services/enhancedGameService';
 import { useGameVocabulary } from '../../../../hooks/useGameVocabulary';
 import { supabaseBrowser } from '../../../../components/auth/AuthProvider';
+import { RewardEngine } from '../../../../services/rewards/RewardEngine';
 import TicTacToeGameThemed from './TicTacToeGameThemed';
 
 interface TicTacToeGameWrapperProps {
@@ -20,6 +21,14 @@ interface TicTacToeGameWrapperProps {
     examBoard?: 'AQA' | 'edexcel';
     tier?: 'foundation' | 'higher';
   };
+  vocabulary?: Array<{
+    id: string;
+    word: string;
+    translation: string;
+    category?: string;
+    subcategory?: string;
+    audio_url?: string;
+  }>; // Assignment vocabulary with UUIDs
   onBackToMenu: () => void;
   onGameEnd: (result: { outcome: 'win' | 'loss' | 'tie'; wordsLearned: number; perfectGame?: boolean }) => void;
   assignmentId?: string | null;
@@ -61,8 +70,8 @@ export default function TicTacToeGameWrapper(props: TicTacToeGameWrapperProps) {
     return languageMap[language] || 'es';
   };
 
-  // Use modern vocabulary hook
-  const { vocabulary: vocabularyWords, loading: isLoading, error } = useGameVocabulary({
+  // Use assignment vocabulary if provided, otherwise use modern vocabulary hook
+  const { vocabulary: hookVocabulary, loading: isLoading, error } = useGameVocabulary({
     language: mapLanguage(settings.language),
     categoryId: settings.category,
     subcategoryId: settings.subcategory,
@@ -70,8 +79,12 @@ export default function TicTacToeGameWrapper(props: TicTacToeGameWrapperProps) {
     examBoard: settings.examBoard,
     tier: settings.tier,
     limit: 50,
-    randomize: true
+    randomize: true,
+    enabled: !props.vocabulary // Disable hook if assignment vocabulary is provided
   });
+
+  // Use assignment vocabulary if available, otherwise use hook vocabulary
+  const vocabularyWords = props.vocabulary || hookVocabulary;
 
   // Initialize game service
   useEffect(() => {
@@ -122,6 +135,7 @@ export default function TicTacToeGameWrapper(props: TicTacToeGameWrapperProps) {
   // Transform vocabulary words to the format expected by TicTacToeGameThemed
   const getFormattedVocabulary = () => {
     const formatted = vocabularyWords.map(word => ({
+      id: word.id, // ✅ CRITICAL: Include UUID for vocabulary tracking
       word: word.word,
       translation: word.translation,
       difficulty: 'medium', // Default difficulty since GameVocabularyWord doesn't have difficulty_level
@@ -177,12 +191,8 @@ export default function TicTacToeGameWrapper(props: TicTacToeGameWrapperProps) {
           ? (sessionStats.totalGamesWon / sessionStats.totalGamesPlayed) * 100
           : 0;
 
-        // Calculate XP based on performance
-        const baseXP = sessionStats.totalCorrectAnswers * 8; // 8 XP per correct answer
-        const accuracyBonus = Math.round(accuracy * 0.2); // Bonus for accuracy
-        const winBonus = sessionStats.totalGamesWon * 15; // 15 XP per game won
-        const streakBonus = sessionStats.totalWordsLearned * 3; // 3 XP per word learned
-        const totalXP = baseXP + accuracyBonus + winBonus + streakBonus;
+        // XP will be calculated by the gems system based on actual vocabulary interactions
+        // Remove game-specific XP calculation to follow gems-first architecture
 
         await gameService.endGameSession(gameSessionId, {
           student_id: props.userId,
@@ -193,8 +203,6 @@ export default function TicTacToeGameWrapper(props: TicTacToeGameWrapperProps) {
           words_correct: sessionStats.totalCorrectAnswers,
           unique_words_practiced: sessionStats.totalWordsLearned,
           duration_seconds: sessionDuration,
-          xp_earned: totalXP,
-          bonus_xp: accuracyBonus + winBonus + streakBonus,
           session_data: {
             sessionStats,
             totalSessionTime: sessionDuration,
@@ -205,7 +213,7 @@ export default function TicTacToeGameWrapper(props: TicTacToeGameWrapperProps) {
           }
         });
 
-        console.log('Noughts and crosses game session ended successfully with XP:', totalXP);
+        console.log('Noughts and crosses game session ended successfully. XP will be calculated by gems system.');
       } catch (error) {
         console.error('Failed to end noughts and crosses game session:', error);
       }

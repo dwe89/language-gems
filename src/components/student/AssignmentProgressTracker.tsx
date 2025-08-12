@@ -378,20 +378,38 @@ export default function AssignmentProgressTracker({
     try {
       setLoading(true);
 
-      // Get ALL assignments first
-      const { data: assignmentData, error } = await supabase
-        .from('assignments')
-        .select(`
-          id,
-          title,
-          game_type,
-          points
-        `);
+      // Get assignments for student's classes only (security: class-filtered)
+      let assignmentData: any[] = [];
 
-      if (error) {
-        console.error('Error loading assignment progress:', error);
-        return;
+      // First get student's class enrollments
+      const { data: enrollments } = await supabase
+        .from('class_enrollments')
+        .select('class_id')
+        .eq('student_id', studentId);
+
+      if (enrollments && enrollments.length > 0) {
+        const classIds = enrollments.map(e => e.class_id);
+
+        // Only get assignments from classes the student is enrolled in
+        const { data: assignments, error } = await supabase
+          .from('assignments')
+          .select(`
+            id,
+            title,
+            game_type,
+            points
+          `)
+          .in('class_id', classIds); // Security: class-filtered
+
+        if (error) {
+          console.error('Error loading assignment progress:', error);
+          return;
+        }
+
+        assignmentData = assignments || [];
       }
+
+
 
       // Get progress for this student - using enhanced_assignment_progress table
       const assignmentIds = assignmentData?.map(a => a.id) || [];

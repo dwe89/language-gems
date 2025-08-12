@@ -751,11 +751,8 @@ export class EnhancedStudentAnalyticsService {
   }
 
   private async getMotivationalMetrics(studentId: string, dateRange?: { from: string; to: string }): Promise<MotivationalMetrics> {
-    const { data: profile } = await this.supabase
-      .from('student_game_profiles')
-      .select('*')
-      .eq('student_id', studentId)
-      .single();
+    // student_game_profiles table removed - calculate from gems system
+    const profile = null; // Will calculate from gem_events and enhanced_game_sessions
 
     const { data: sessions } = await this.supabase
       .from('enhanced_game_sessions')

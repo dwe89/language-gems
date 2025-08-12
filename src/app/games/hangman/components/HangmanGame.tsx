@@ -267,7 +267,7 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
           totalGuesses: guessedLetters.length,
           timeSpent: timer,
           currentWord: word,
-          vocabularyId: currentVocabItem?.id ? parseInt(currentVocabItem.id) : undefined,
+          vocabularyId: currentVocabItem?.id, // Use UUID directly, not parseInt
           wrongGuesses: wrongGuesses
         });
       }
@@ -320,7 +320,7 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
           totalGuesses: guessedLetters.length,
           timeSpent: timer,
           currentWord: word,
-          vocabularyId: currentVocabItem?.id ? parseInt(currentVocabItem.id) : undefined,
+          vocabularyId: currentVocabItem?.id, // Use UUID directly, not parseInt
           wrongGuesses: wrongGuesses
         });
       }

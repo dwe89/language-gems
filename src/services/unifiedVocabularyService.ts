@@ -54,7 +54,7 @@ export class UnifiedVocabularyService {
         fsrs_difficulty,
         fsrs_stability,
         fsrs_retrievability,
-        centralized_vocabulary!inner(
+        centralized_vocabulary!vocabulary_gem_collection_vocabulary_item_id_fkey(
           id,
           word,
           translation,

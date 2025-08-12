@@ -1,12 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../../components/auth/AuthProvider';
-import GameAssignmentWrapper, {
-  GameProgress,
-  calculateStandardScore
-} from '../../../../components/games/templates/GameAssignmentWrapper';
+import GameAssignmentWrapper from '../../../../components/games/templates/GameAssignmentWrapper';
 import VocabBlastGameWrapper from './VocabBlastGameWrapper';
 
 interface VocabBlastAssignmentWrapperProps {
@@ -81,22 +77,19 @@ export default function VocabBlastAssignmentWrapper({
                 language: vocabulary[0]?.language || 'spanish',
                 theme: selectedTheme,
                 subcategory: vocabulary[0]?.subcategory || 'assignment',
-                timeLimit: 120, // 2 minutes default
                 mode: 'categories' as const,
                 customWords: vocabulary.map(v => v.word)
               }}
             onBackToMenu={onBackToMenu}
             onGameEnd={(result) => {
-              // Calculate score based on result
-              const { score, accuracy, maxScore } = calculateStandardScore(
-                result.correctAnswers || 0,
-                result.totalAttempts || vocabulary.length,
-                result.timeSpent || 120,
-                result.score
-              );
+              // Use gems-first scoring: 10 XP per correct answer
+              const correctAnswers = result.correctAnswers || 0;
+              const score = correctAnswers * 10;
+              const accuracy = result.totalAttempts ? (correctAnswers / result.totalAttempts) * 100 : 0;
+              const maxScore = vocabulary.length * 10;
 
               onProgressUpdate({
-                wordsCompleted: result.correctAnswers || 0,
+                wordsCompleted: correctAnswers,
                 totalWords: vocabulary.length,
                 score,
                 maxScore,

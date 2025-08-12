@@ -27,6 +27,8 @@ interface DataPacket {
   direction: 'left' | 'right';
   targetY: number;
   spawnTime: number;
+  // Add a property to track if the packet has been 'answered'
+  isAnswered: boolean;
 }
 
 export default function TokyoNightsEngine({
@@ -55,6 +57,37 @@ export default function TokyoNightsEngine({
     return shuffled.slice(0, decoyCount);
   };
 
+  // Enhanced collision detection utility
+  const checkCollisions = (packets: DataPacket[]): DataPacket[] => {
+    const minDistance = 120; // Minimum distance between packets
+    const screenHeight = typeof window !== 'undefined' ? window.innerHeight : 800;
+
+    return packets.map((packet, index) => {
+      let adjustedY = packet.y;
+      let collisionCount = 0;
+
+      // Check against all other packets
+      packets.forEach((otherPacket, otherIndex) => {
+        if (index !== otherIndex) {
+          const distance = Math.sqrt(
+            Math.pow(packet.x - otherPacket.x, 2) + Math.pow(packet.y - otherPacket.y, 2)
+          );
+
+          if (distance < minDistance) {
+            collisionCount++;
+            // Move packet to avoid collision
+            const angle = Math.atan2(packet.y - otherPacket.y, packet.x - otherPacket.x);
+            adjustedY = Math.max(120, Math.min(screenHeight - 200,
+              otherPacket.y + Math.sin(angle) * minDistance
+            ));
+          }
+        }
+      });
+
+      return { ...packet, y: adjustedY };
+    });
+  };
+
   // Spawn data packets with side-to-side movement
   const spawnDataPackets = () => {
     if (!currentWord || isPaused || !gameActive) return;
@@ -64,23 +97,41 @@ export default function TokyoNightsEngine({
     const shuffledOptions = allOptions.sort(() => 0.5 - Math.random());
 
     const screenWidth = typeof window !== 'undefined' ? window.innerWidth : 1200;
+    const screenHeight = typeof window !== 'undefined' ? window.innerHeight : 800;
 
-    // Create packets with collision detection
+    // Create packets with enhanced collision detection
     const newPackets: DataPacket[] = [];
+    const usedPositions: { x: number; y: number }[] = [];
 
     shuffledOptions.forEach((translation, index) => {
       const direction = Math.random() > 0.5 ? 'left' : 'right';
       const startX = direction === 'left' ? -200 : screenWidth + 200;
 
-      // Find non-overlapping Y position
-      let targetY = 120 + Math.random() * 300;
+      // Find non-overlapping Y position with grid-based approach
+      let targetY = 120;
       let attempts = 0;
+      const gridSize = 100; // Grid spacing for better distribution
 
-      while (
-        attempts < 30 &&
-        newPackets.some(packet => Math.abs(targetY - packet.targetY) < 80)
-      ) {
-        targetY = 120 + Math.random() * 300;
+      while (attempts < 50) {
+        const gridRow = Math.floor(attempts / 5);
+        const gridCol = attempts % 5;
+        targetY = 120 + (gridRow * gridSize) + (gridCol * 20);
+
+        // Ensure within screen bounds
+        if (targetY > screenHeight - 200) {
+          targetY = 120 + Math.random() * 200;
+        }
+
+        // Check if position is free
+        const isFree = !usedPositions.some(pos =>
+          Math.abs(targetY - pos.y) < 80
+        );
+
+        if (isFree) {
+          usedPositions.push({ x: startX, y: targetY });
+          break;
+        }
+
         attempts++;
       }
 
@@ -90,27 +141,29 @@ export default function TokyoNightsEngine({
         isCorrect: translation === currentWord.translation,
         x: startX,
         y: targetY,
-        speed: 1.2 + Math.random() * 0.8, // Slower speed for longer visibility
+        speed: 1.0 + Math.random() * 0.6, // More consistent speed
         glitchEffect: Math.random() > 0.7,
         hackProgress: 0,
-        size: Math.random() * 0.3 + 0.8,
+        size: Math.random() * 0.2 + 0.9, // More consistent sizing
         direction,
         targetY,
-        spawnTime: Date.now()
+        spawnTime: Date.now(),
+        isAnswered: false // Initialize as not answered
       });
     });
 
-    setDataPackets(newPackets);
+    // Apply final collision detection pass
+    setDataPackets(checkCollisions(newPackets));
   };
 
-  // Update packet positions with side-to-side movement
+  // Update packet positions with side-to-side movement and collision avoidance
   const updatePackets = () => {
     if (isPaused || !gameActive) return;
 
     const screenWidth = typeof window !== 'undefined' ? window.innerWidth : 1200;
 
-    setDataPackets(prev =>
-      prev.map(packet => {
+    setDataPackets(prev => {
+      const updatedPackets = prev.map(packet => {
         let newX = packet.x;
 
         // Move horizontally based on direction
@@ -126,23 +179,22 @@ export default function TokyoNightsEngine({
           glitchEffect: Math.random() > 0.95 ? !packet.glitchEffect : packet.glitchEffect,
           hackProgress: packet.hackProgress + 0.01
         };
-      }).filter(packet => {
-        // Remove packets only after 10 seconds timeout
-        const timeElapsed = Date.now() - packet.spawnTime;
-        if (timeElapsed > 10000) {
-          // Trigger wrong answer for timeout
-          if (packet.isCorrect) {
-            setTimeout(() => onIncorrectAnswer(), 0);
-          }
-          return false;
-        }
-        return true;
-      })
-    );
+      });
+
+      // Apply collision detection to moving packets
+      return checkCollisions(updatedPackets);
+    });
   };
 
   // Handle packet click
   const handlePacketClick = (packet: DataPacket) => {
+    // Only process if the packet hasn't been answered yet
+    if (packet.isAnswered) return;
+
+    setDataPackets(prev => 
+        prev.map(p => p.id === packet.id ? { ...p, isAnswered: true } : p)
+    );
+
     if (packet.isCorrect) {
       setHackingEffect(true);
       onCorrectAnswer(currentWord);
@@ -155,8 +207,10 @@ export default function TokyoNightsEngine({
       createErrorGlitch(packet.x, packet.y);
     }
 
-    // Remove clicked packet
-    setDataPackets(prev => prev.filter(p => p.id !== packet.id));
+    // Remove clicked packet AFTER particles/effects are created
+    setTimeout(() => {
+        setDataPackets(prev => prev.filter(p => p.id !== packet.id));
+    }, 500); // Small delay to allow particle animation to start
   };
 
   // Create hack success particles
@@ -202,11 +256,19 @@ export default function TokyoNightsEngine({
     }, 800);
   };
 
-  // Animation loop
+  // Animation loop with error handling
   useEffect(() => {
     const animate = () => {
-      updatePackets();
-      animationRef.current = requestAnimationFrame(animate);
+      try {
+        if (gameActive && !isPaused) {
+          updatePackets();
+        }
+        animationRef.current = requestAnimationFrame(animate);
+      } catch (error) {
+        console.error('Animation error in Tokyo Nights Engine:', error);
+        // Continue animation even if there's an error
+        animationRef.current = requestAnimationFrame(animate);
+      }
     };
 
     if (gameActive) {
@@ -216,14 +278,19 @@ export default function TokyoNightsEngine({
     return () => {
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
+        animationRef.current = undefined;
       }
     };
   }, [gameActive, isPaused]);
 
-  // Spawn packets when current word changes
+  // Spawn packets when current word changes with error handling
   useEffect(() => {
-    if (currentWord && gameActive) {
-      spawnDataPackets();
+    try {
+      if (currentWord && gameActive) {
+        spawnDataPackets();
+      }
+    } catch (error) {
+      console.error('Error spawning data packets:', error);
     }
   }, [currentWord, gameActive]);
 
@@ -302,16 +369,17 @@ export default function TokyoNightsEngine({
             key={packet.id}
             initial={{ opacity: 0, scale: 0, x: packet.x, y: packet.y }}
             animate={{
-              opacity: 1,
-              scale: packet.size,
+              opacity: packet.isAnswered ? 0 : 1, // Fade out if answered
+              scale: packet.isAnswered ? 0 : packet.size, // Shrink if answered
               x: packet.x,
               y: packet.y
             }}
             exit={{ opacity: 0, scale: 0 }}
             onClick={() => handlePacketClick(packet)}
+            // Disable pointer events if already answered, to prevent multiple clicks
             className={`absolute cursor-pointer transition-all duration-200 hover:scale-110 select-none ${
               packet.glitchEffect ? 'animate-pulse' : ''
-            }`}
+            } ${packet.isAnswered ? 'pointer-events-none' : ''}`}
           >
             <div className="relative">
               {/* Professional Cyberpunk Drone */}

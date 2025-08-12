@@ -31,6 +31,8 @@ import { AnswerInterface } from './AnswerInterface';
 // Import utilities and constants
 import { GEM_TYPES, getWordProperty, calculateXPForLevel, GameModeType } from '../utils/gameConstants';
 import { validateAnswer } from '../utils/answerValidation';
+import { RewardEngine, type GemRarity } from '../../../../services/rewards/RewardEngine';
+import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
 
 // =====================================================
 // TYPES
@@ -474,26 +476,17 @@ export default function VocabularyMiningGame({
 
   // initializeGame function is now provided by useGameLogic hook
 
-  const determineGemType = async (word: VocabularyWord): Promise<'common' | 'uncommon' | 'rare' | 'epic' | 'legendary'> => {
+  const determineGemType = async (word: VocabularyWord, responseTime: number = 3000, hintUsed: boolean = false): Promise<'common' | 'uncommon' | 'rare' | 'epic' | 'legendary'> => {
     if (!user || !supabase) return 'common';
 
     try {
       // Use word.id directly as UUID (from centralized_vocabulary)
       const vocabularyId = word.id;
 
-      // Debug authentication before querying
-      const { data: { session: debugSession } } = await supabase.auth.getSession();
-      console.log('🔍 Auth debug for determineGemType:', {
-        userId: user.id,
-        sessionUserId: debugSession?.user?.id,
-        hasValidSession: !!debugSession,
-        vocabularyId
-      });
-
       // Get user's progress for this word from vocabulary_gem_collection
       const { data: progressData, error: progressError } = await supabase
         .from('vocabulary_gem_collection')
-        .select('correct_encounters, mastery_level')
+        .select('correct_encounters, mastery_level, max_gem_rarity')
         .eq('student_id', user.id)
         .eq('vocabulary_item_id', vocabularyId);
 
@@ -504,20 +497,18 @@ export default function VocabularyMiningGame({
 
       const progress = progressData && progressData.length > 0 ? progressData[0] : null;
 
-      if (!progress) {
-        // First time seeing this word
-        return 'common';
-      }
+      // Use RewardEngine to calculate gem rarity
+      const rarity = RewardEngine.calculateGemRarity('vocabulary-mining', {
+        responseTimeMs: responseTime,
+        streakCount: gameState.streak,
+        hintUsed,
+        isTypingMode: gameState.gameMode === 'typing',
+        isDictationMode: false,
+        masteryLevel: progress?.mastery_level || 0,
+        maxGemRarity: progress?.max_gem_rarity as GemRarity || 'rare'
+      });
 
-      // Progressive gem system based on correct encounters
-      const correctAnswers = progress.correct_encounters || 0;
-
-      if (correctAnswers >= 4) return 'legendary';  // 4+ correct reviews
-      if (correctAnswers >= 3) return 'epic';       // 3rd correct review
-      if (correctAnswers >= 2) return 'rare';       // 2nd correct review
-      if (correctAnswers >= 1) return 'uncommon';   // 1st correct review
-
-      return 'common'; // First exposure or no correct answers yet
+      return rarity;
     } catch (error) {
       console.error('Error determining gem type:', error);
       return 'common';
@@ -604,21 +595,13 @@ export default function VocabularyMiningGame({
       if (isCorrect) {
         // For demo users, simulate gem progression without database lookup
         const newGemType = user && !isDemo
-          ? await determineGemType(gameState.currentWord)
+          ? await determineGemType(gameState.currentWord, responseTime, gameState.isAnswerRevealed)
           : simulateDemoGemType(gameState.currentWord, isCorrect);
 
         const upgraded = newGemType !== previousGemType;
 
-        // Calculate points based on gem type
-        const gemPointValues = {
-          common: 10,
-          uncommon: 25,
-          rare: 50,
-          epic: 100,
-          legendary: 200
-        };
-
-        const points = gemPointValues[newGemType];
+        // Calculate points using RewardEngine
+        const points = RewardEngine.getXPValue(newGemType);
 
         // Update game state and XP
         setGameState(prev => ({
@@ -917,7 +900,7 @@ export default function VocabularyMiningGame({
     }
 
     const nextWordData = vocabulary[nextIndex];
-    const gemType = await determineGemType(nextWordData);
+    const gemType = await determineGemType(nextWordData, 3000, false); // Default values for new word
 
     setGameState(prev => ({
       ...prev,

@@ -72,6 +72,7 @@ function vocabularyToVocabularyItem(word: CentralizedVocabularyWord): Vocabulary
   const commonDistractors = generateDistractors(word.translation, word.category);
   
   return {
+    id: word.id, // ✅ CRITICAL: Include UUID for vocabulary tracking
     audio: word.audio_url || `${word.word.toLowerCase().replace(/\s+/g, '_')}.mp3`,
     correct: word.translation,
     distractors: commonDistractors,

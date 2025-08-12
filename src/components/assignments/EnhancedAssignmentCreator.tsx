@@ -14,6 +14,7 @@ import { EnhancedAssignmentService, AssignmentCreationData } from '../../service
 import MultiGameSelector from './MultiGameSelector';
 import SmartAssignmentConfig from './SmartAssignmentConfig';
 import DatabaseCategorySelector from './DatabaseCategorySelector';
+import CurriculumContentSelector from './CurriculumContentSelector';
 
 // Import step components
 import AssignmentDetailsStep from './steps/AssignmentDetailsStep';
@@ -50,6 +51,22 @@ interface VocabularyConfig {
   // KS4-specific parameters
   examBoard?: 'AQA' | 'edexcel';
   tier?: 'foundation' | 'higher';
+}
+
+interface ContentConfig {
+  type: 'KS3' | 'KS4' | 'custom';
+  language: 'spanish' | 'french' | 'german';
+  // KS3 Configuration
+  categories?: string[];
+  subcategories?: string[];
+  // KS4 Configuration
+  examBoard?: 'AQA' | 'Edexcel';
+  tier?: 'foundation' | 'higher';
+  themes?: string[];
+  topics?: string[];
+  // Custom Configuration
+  customCategories?: string[];
+  customSubcategories?: string[];
 }
 
 interface SentenceConfig {
@@ -307,6 +324,14 @@ export default function EnhancedAssignmentCreator({
     assessmentSubcategory: '',
   });
 
+  // --- New Unified Content Configuration State ---
+  const [contentConfig, setContentConfig] = useState<ContentConfig>({
+    type: 'KS3',
+    language: 'spanish',
+    categories: [],
+    subcategories: []
+  });
+
   // --- UI States ---
   const [currentStep, setCurrentStep] = useState(0);
   const [selectedClasses, setSelectedClasses] = useState<string[]>(classId ? [classId] : []);
@@ -538,6 +563,12 @@ export default function EnhancedAssignmentCreator({
 
   // Handler for creating the final assignment
   const handleCreateAssignment = async () => {
+    // Prevent multiple simultaneous assignment creations
+    if (loading) {
+      console.warn('Assignment creation already in progress, ignoring duplicate request');
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
@@ -1189,66 +1220,59 @@ export default function EnhancedAssignmentCreator({
         )}
       </div>
 
-      {/* Games Content Configuration */}
-      {gameConfig.selectedGames.length > 0 && (
+      {/* Unified Content Configuration */}
+      {(gameConfig.selectedGames.length > 0 || assessmentConfig.selectedAssessments.length > 0) && (
         <div className="max-w-6xl mx-auto">
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
             <h4 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
-              <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
-                <Gamepad2 className="h-5 w-5 text-purple-600" />
+              <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                <BookOpen className="h-5 w-5 text-blue-600" />
               </div>
-              Game Content Configuration
+              Content Configuration
             </h4>
-            <SmartAssignmentConfig
-              selectedGames={gameConfig.selectedGames}
-              vocabularyConfig={gameConfig.vocabularyConfig}
-              sentenceConfig={gameConfig.sentenceConfig}
-              grammarConfig={gameConfig.grammarConfig}
-              onVocabularyChange={handleVocabularyConfigChange}
-              onSentenceChange={handleSentenceConfigChange}
-              onGrammarChange={handleGrammarConfigChange}
+            <p className="text-gray-600 mb-8">
+              Configure the vocabulary and content for your assignment based on curriculum level
+            </p>
+
+            <CurriculumContentSelector
+              curriculumLevel={assignmentDetails.curriculum_level || 'KS3'}
+              language={gameConfig.vocabularyConfig?.language as 'spanish' | 'french' | 'german' || 'spanish'}
+              onConfigChange={(config) => {
+                setContentConfig(config);
+                // Update both game and assessment configs based on the unified content config
+                if (gameConfig.selectedGames.length > 0) {
+                  setGameConfig(prev => ({
+                    ...prev,
+                    vocabularyConfig: {
+                      ...prev.vocabularyConfig,
+                      source: 'category',
+                      categories: config.categories,
+                      subcategories: config.subcategories,
+                      category: config.categories?.[0] || '',
+                      subcategory: config.subcategories?.[0] || '',
+                      curriculumLevel: config.type === 'custom' ? 'KS3' : config.type,
+                      examBoard: config.examBoard,
+                      tier: config.tier
+                    }
+                  }));
+                }
+                if (assessmentConfig.selectedAssessments.length > 0) {
+                  setAssessmentConfig(prev => ({
+                    ...prev,
+                    assessmentCategory: config.categories?.[0] || '',
+                    assessmentSubcategory: config.subcategories?.[0] || '',
+                    generalLevel: config.type === 'custom' ? 'KS3' : config.type,
+                    generalExamBoard: config.examBoard || 'General'
+                  }));
+                }
+              }}
+              initialConfig={contentConfig}
             />
           </div>
         </div>
       )}
 
-      {/* Assessment Content Configuration */}
-      {assessmentConfig.selectedAssessments.length > 0 && (
-        <div className="max-w-6xl mx-auto">
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-            <h4 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
-              <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center mr-3">
-                <ClipboardList className="h-5 w-5 text-indigo-600" />
-              </div>
-              Assessment Content Configuration
-            </h4>
 
-            {/* Note: Language, Difficulty, Time Limit were moved to ActivitiesSelectionStep for general settings */}
-
-            {/* Category and Subcategory Selection using DatabaseCategorySelector */}
-            <div className="border-t border-gray-100 pt-6">
-              <h5 className="text-lg font-semibold text-gray-900 mb-3">Content Categories (Optional)</h5>
-              <p className="text-sm text-gray-600 mb-6">Select specific vocabulary categories and topics for your assessments</p>
-
-              <DatabaseCategorySelector
-                language={assessmentConfig.generalLanguage === 'spanish' ? 'es' : assessmentConfig.generalLanguage === 'french' ? 'fr' : 'de'}
-                curriculumLevel={assignmentDetails.curriculum_level} // Use global curriculum level
-                selectedCategories={assessmentConfig.assessmentCategory ? [assessmentConfig.assessmentCategory] : []}
-                selectedSubcategories={assessmentConfig.assessmentSubcategory ? [assessmentConfig.assessmentSubcategory] : []}
-                onChange={(categories, subcategories) => {
-                  setAssessmentConfig(prev => ({
-                    ...prev,
-                    assessmentCategory: categories[0] || '',
-                    assessmentSubcategory: subcategories[0] || ''
-                  }));
-                }}
-                maxSelections={1} // Assuming only one category/subcategory for assessments
-                filterForReadingComprehension={assessmentConfig.selectedAssessments.some(assessment => assessment.type === 'reading-comprehension')}
-              />
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Show message if no activities selected */}
       {gameConfig.selectedGames.length === 0 && assessmentConfig.selectedAssessments.length === 0 && (

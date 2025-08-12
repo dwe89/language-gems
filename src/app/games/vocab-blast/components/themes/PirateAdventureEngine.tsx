@@ -29,6 +29,8 @@ interface PirateShip {
   targetY: number;
   firing: boolean;
   spawnTime: number;
+  // Add a property to track if the ship has been 'answered'
+  isAnswered: boolean;
 }
 
 interface CannonBall {
@@ -67,13 +69,16 @@ export default function PirateAdventureEngine({
     return shuffled.slice(0, decoyCount);
   };
 
-  // Check for collisions between ships
+  // Enhanced collision detection for ships
   const checkCollisions = (ships: PirateShip[]): PirateShip[] => {
-    const minDistance = 150; // Minimum distance between ships
+    const minDistance = 180; // Increased minimum distance between ships
+    const screenHeight = typeof window !== 'undefined' ? window.innerHeight : 800;
+    const waterLevel = screenHeight * 0.4;
 
     return ships.map((ship, index) => {
       let adjustedX = ship.x;
       let adjustedY = ship.y;
+      let collisionCount = 0;
 
       // Check against all other ships
       ships.forEach((otherShip, otherIndex) => {
@@ -83,10 +88,15 @@ export default function PirateAdventureEngine({
           );
 
           if (distance < minDistance) {
-            // Move ship away from collision
+            collisionCount++;
+            // Move ship away from collision with better positioning
             const angle = Math.atan2(ship.y - otherShip.y, ship.x - otherShip.x);
-            adjustedX = otherShip.x + Math.cos(angle) * minDistance;
-            adjustedY = otherShip.y + Math.sin(angle) * minDistance;
+            const pushDistance = minDistance + (collisionCount * 20);
+
+            adjustedX = otherShip.x + Math.cos(angle) * pushDistance;
+            adjustedY = Math.max(waterLevel, Math.min(screenHeight - 100,
+              otherShip.y + Math.sin(angle) * pushDistance
+            ));
           }
         }
       });
@@ -95,7 +105,7 @@ export default function PirateAdventureEngine({
     });
   };
 
-  // Spawn pirate ships with side-to-side movement
+  // Spawn pirate ships with enhanced positioning
   const spawnPirateShips = () => {
     if (!currentWord || isPaused || !gameActive) return;
 
@@ -106,24 +116,42 @@ export default function PirateAdventureEngine({
     const screenWidth = typeof window !== 'undefined' ? window.innerWidth : 1200;
     const screenHeight = typeof window !== 'undefined' ? window.innerHeight : 800;
 
-    // Create ships with collision detection
+    // Create ships with enhanced collision detection
     const newShips: PirateShip[] = [];
     const waterLevel = screenHeight * 0.4; // Water starts at 60% down the screen
+    const usedLanes: number[] = [];
 
     shuffledOptions.forEach((translation, index) => {
       const direction = Math.random() > 0.5 ? 'left' : 'right';
       const startX = direction === 'left' ? -200 : screenWidth + 200;
 
-      // Find non-overlapping Y position
-      let targetY = waterLevel + Math.random() * 200;
+      // Use lane-based positioning for better distribution
+      let targetY = waterLevel;
       let attempts = 0;
+      const laneHeight = 80;
+      const maxLanes = Math.floor(200 / laneHeight);
 
-      while (
-        attempts < 30 &&
-        newShips.some(ship => Math.abs(targetY - ship.targetY) < 100)
-      ) {
-        targetY = waterLevel + Math.random() * 200;
+      while (attempts < 50) {
+        const laneIndex = Math.floor(attempts / 5) % maxLanes;
+        const laneY = waterLevel + (laneIndex * laneHeight) + (Math.random() * 20);
+
+        // Check if lane is available
+        const laneOccupied = usedLanes.some(usedLane =>
+          Math.abs(laneY - usedLane) < laneHeight * 0.8
+        );
+
+        if (!laneOccupied) {
+          targetY = laneY;
+          usedLanes.push(laneY);
+          break;
+        }
+
         attempts++;
+      }
+
+      // Fallback to random positioning if lanes are full
+      if (attempts >= 50) {
+        targetY = waterLevel + Math.random() * 200;
       }
 
       newShips.push({
@@ -132,14 +160,15 @@ export default function PirateAdventureEngine({
         isCorrect: translation === currentWord.translation,
         x: startX,
         y: targetY,
-        speed: 1 + Math.random() * 3, // Slower speed for longer visibility
+        speed: 0.8 + Math.random() * 1.2, // More consistent speed
         sailsUp: Math.random() > 0.3,
         sinkingProgress: 0,
-        size: Math.random() * 0.3 + 0.8,
+        size: Math.random() * 0.2 + 0.9, // More consistent sizing
         direction,
         targetY,
         firing: false,
-        spawnTime: Date.now()
+        spawnTime: Date.now(),
+        isAnswered: false // Initialize as not answered
       });
     });
 
@@ -166,28 +195,17 @@ export default function PirateAdventureEngine({
           x: newX,
           sailsUp: Math.random() > 0.98 ? !ship.sailsUp : ship.sailsUp
         };
-      }).filter(ship => {
-        // Remove ships only after 10 seconds timeout
-        const timeElapsed = Date.now() - ship.spawnTime;
-        if (timeElapsed > 10000) {
-          // Trigger wrong answer for timeout
-          if (ship.isCorrect) {
-            setTimeout(() => onIncorrectAnswer(), 0);
-          }
-          return false;
-        }
-        return true;
       })
     );
   };
 
   // Handle ship click (cannon fire)
   const handleShipClick = (ship: PirateShip) => {
-    if (ship.firing) return; // Prevent double clicks
+    if (ship.firing || ship.isAnswered) return; // Prevent double clicks
 
-    // Trigger firing animation
+    // Mark ship as answered
     setPirateShips(prev =>
-      prev.map(s => s.id === ship.id ? { ...s, firing: true } : s)
+      prev.map(s => s.id === ship.id ? { ...s, firing: true, isAnswered: true } : s)
     );
 
     // Create cannon ball effect
@@ -201,16 +219,15 @@ export default function PirateAdventureEngine({
       if (ship.isCorrect) {
         onCorrectAnswer(currentWord);
         createExplosion(ship.x, ship.y, 'treasure');
-        
-        // Remove clicked ship immediately after correct answer
-        setPirateShips(prev => prev.filter(s => s.id !== ship.id));
       } else {
         onIncorrectAnswer();
         createExplosion(ship.x, ship.y, 'miss');
-        
-        // Remove clicked ship immediately after incorrect answer
-        setPirateShips(prev => prev.filter(s => s.id !== ship.id));
       }
+      
+      // Remove clicked ship after effects
+      setTimeout(() => {
+        setPirateShips(prev => prev.filter(s => s.id !== ship.id));
+      }, 500);
     }, 300);
   };
 
@@ -272,17 +289,20 @@ export default function PirateAdventureEngine({
     }, 1500);
   };
 
-  // Animation loop
+  // Animation loop with error handling
   useEffect(() => {
     const animate = () => {
-      updateShips();
-
-      // Spawn new ships periodically if we have fewer than 3 ships
-      if (pirateShips.length < 3 && Math.random() < 0.02) {
-        spawnPirateShips();
+      try {
+        if (gameActive && !isPaused) {
+          updateShips();
+          // Removed automatic ship spawning - ships should only spawn when currentWord changes
+        }
+        animationRef.current = requestAnimationFrame(animate);
+      } catch (error) {
+        console.error('Animation error in Pirate Adventure Engine:', error);
+        // Continue animation even if there's an error
+        animationRef.current = requestAnimationFrame(animate);
       }
-
-      animationRef.current = requestAnimationFrame(animate);
     };
 
     if (gameActive) {
@@ -292,6 +312,7 @@ export default function PirateAdventureEngine({
     return () => {
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
+        animationRef.current = undefined;
       }
     };
   }, [gameActive, isPaused, pirateShips.length]);
@@ -331,14 +352,14 @@ export default function PirateAdventureEngine({
             key={ship.id}
             initial={{ opacity: 0, scale: 0, x: ship.x, y: ship.y }}
             animate={{
-              opacity: 1,
-              scale: ship.size,
+              opacity: ship.isAnswered ? 0 : 1, // Fade out if answered
+              scale: ship.isAnswered ? 0 : ship.size, // Shrink if answered
               x: ship.x,
               y: ship.y
             }}
             exit={{ opacity: 0, scale: 0 }}
             onClick={() => handleShipClick(ship)}
-            className="absolute cursor-pointer transition-all duration-200 hover:scale-110 select-none"
+            className={`absolute cursor-pointer transition-all duration-200 hover:scale-110 select-none ${ship.isAnswered ? 'pointer-events-none' : ''}`}
           >
             <div className="relative">
               {/* Proper Pirate Ship Design */}

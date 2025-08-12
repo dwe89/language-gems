@@ -432,26 +432,25 @@ export class CompetitionService {
 
   async getStudentProfile(studentId: string): Promise<StudentProfile | null> {
     try {
+      // student_game_profiles table removed - use user_profiles instead
       const { data: profile, error } = await this.supabase
-        .from('student_game_profiles')
-        .select(`
-          *,
-          user_profiles(
-            display_name
-          )
-        `)
-        .eq('student_id', studentId)
+        .from('user_profiles')
+        .select('user_id, display_name')
+        .eq('user_id', studentId)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.warn('Student profile not found:', error);
+        return null;
+      }
       if (!profile) return null;
 
-      // Get recent achievements
+      // Get recent achievements (achievements table still exists)
       const { data: achievements } = await this.supabase
-        .from('student_achievements')
-        .select('id, title, icon_name, earned_at')
+        .from('achievements')
+        .select('id, achievement_key, game_type, created_at')
         .eq('student_id', studentId)
-        .order('earned_at', { ascending: false })
+        .order('created_at', { ascending: false })
         .limit(5);
 
       return {

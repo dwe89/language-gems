@@ -109,12 +109,10 @@ function ConjugationDuelAssignmentGame({
 
   // Update progress when stats change
   React.useEffect(() => {
-    const { score, accuracy, maxScore } = calculateStandardScore(
-      correctConjugations,
-      Math.max(verbsCompleted, 1),
-      Date.now(),
-      200 // Higher base points for conjugation challenges
-    );
+    // Use gems-first scoring: 10 XP per correct conjugation
+    const score = correctConjugations * 10;
+    const accuracy = verbsCompleted > 0 ? (correctConjugations / verbsCompleted) * 100 : 0;
+    const maxScore = totalVerbs * 10;
 
     onProgressUpdate({
       wordsCompleted: verbsCompleted,
@@ -149,13 +147,10 @@ function ConjugationDuelAssignmentGame({
     if (currentVerbIndex < verbs.length - 1) {
       setCurrentVerbIndex(currentVerbIndex + 1);
     } else {
-      // Assignment complete
-      const { score, accuracy, maxScore } = calculateStandardScore(
-        newCorrectConjugations,
-        newVerbsCompleted,
-        Date.now(),
-        200
-      );
+      // Assignment complete - use gems-first scoring
+      const score = newCorrectConjugations * 10;
+      const accuracy = newVerbsCompleted > 0 ? (newCorrectConjugations / newVerbsCompleted) * 100 : 0;
+      const maxScore = totalVerbs * 10;
 
       onGameComplete({
         assignmentId: assignment.id,

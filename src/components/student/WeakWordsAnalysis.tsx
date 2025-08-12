@@ -238,6 +238,7 @@ export default function WeakWordsAnalysis() {
           }
         ],
         summary: {
+          totalWords: stats.totalWords,
           weakWordsCount: weakWords.length,
           strongWordsCount: strongWords.length,
           averageAccuracy: stats.averageAccuracy

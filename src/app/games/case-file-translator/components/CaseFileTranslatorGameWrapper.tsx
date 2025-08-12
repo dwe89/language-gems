@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { EnhancedGameService } from '../../../../services/enhancedGameService';
 import { supabaseBrowser } from '../../../../components/auth/AuthProvider';
+import { RewardEngine } from '../../../../services/rewards/RewardEngine';
 import CaseFileTranslatorGame from './CaseFileTranslatorGame';
 
 interface CaseFileTranslatorGameWrapperProps {
@@ -100,12 +101,13 @@ export default function CaseFileTranslatorGameWrapper(props: CaseFileTranslatorG
           ? sessionStats.totalResponseTime / sessionStats.totalQuestions
           : 0;
 
-        // Calculate XP based on performance
-        const baseXP = sessionStats.correctAnswers * 15; // 15 XP per correct translation
-        const accuracyBonus = Math.round(accuracy * 0.4); // Bonus for accuracy
-        const speedBonus = averageResponseTime < 30000 ? 30 : averageResponseTime < 60000 ? 15 : 0; // Speed bonus
-        const caseBonus = sessionStats.totalQuestions >= 10 ? 35 : 0; // Bonus for completing full case
-        const totalXP = baseXP + accuracyBonus + speedBonus + caseBonus;
+        // Use gems-first system: XP calculated from individual vocabulary interactions
+        // Remove conflicting XP calculation - gems system handles all scoring through recordWordAttempt()
+        const totalXP = sessionStats.correctAnswers * 10; // 10 XP per correct translation (gems-first)
+
+        if (averageResponseTime < 20000) {
+          totalXP += RewardEngine.getXPValue('epic'); // Speed bonus for Case File
+        }
 
         await gameService.endGameSession(gameSessionId, {
           student_id: props.userId,
@@ -117,7 +119,7 @@ export default function CaseFileTranslatorGameWrapper(props: CaseFileTranslatorG
           unique_words_practiced: sessionStats.translationAttempts.length,
           duration_seconds: sessionDuration,
           xp_earned: totalXP,
-          bonus_xp: accuracyBonus + speedBonus + caseBonus,
+          bonus_xp: 0, // No bonus XP in gems-first system
           session_data: {
             sessionStats,
             totalSessionTime: sessionDuration,

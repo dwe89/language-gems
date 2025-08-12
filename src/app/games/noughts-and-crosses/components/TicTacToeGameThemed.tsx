@@ -7,6 +7,7 @@ import { Brain, ArrowLeft, Volume2, VolumeX, Settings } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useAudio } from '../hooks/useAudio';
 import { EnhancedGameService } from '../../../../services/enhancedGameService';
+import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
 import { useUnifiedSpacedRepetition } from '../../../../hooks/useUnifiedSpacedRepetition';
 
 // Theme animations
@@ -564,6 +565,12 @@ export default function TicTacToeGame({
   const [wordsLearned, setWordsLearned] = useState(0);
   const [correctAnswers, setCorrectAnswers] = useState(0);
   const [totalQuestions, setTotalQuestions] = useState(0);
+
+  // Cumulative counters that persist across rounds (don't get reset)
+  const [cumulativeCorrectAnswers, setCumulativeCorrectAnswers] = useState(0);
+  const [cumulativeTotalQuestions, setCumulativeTotalQuestions] = useState(0);
+  const [cumulativeWordsLearned, setCumulativeWordsLearned] = useState(0);
+
   const [gameStartTime, setGameStartTime] = useState<Date | null>(null);
   const [questionStartTime, setQuestionStartTime] = useState<number>(0);
   const [storyDismissed, setStoryDismissed] = useState(false);
@@ -619,8 +626,19 @@ export default function TicTacToeGame({
   const generateVocabularyQuestion = () => {
     const vocabulary = getVocabulary();
     if (vocabulary.length === 0) return null;
-    
+
     const randomWord = vocabulary[Math.floor(Math.random() * vocabulary.length)];
+
+    // 🔍 INSTRUMENTATION: Log vocabulary word selection
+    console.log('🔍 [QUESTION GEN] Selected vocabulary word:', {
+      randomWord,
+      hasId: !!(randomWord as any).id,
+      idValue: (randomWord as any).id,
+      idType: typeof (randomWord as any).id,
+      vocabularyLength: vocabulary.length,
+      isAssignmentMode: !!vocabularyWords?.length
+    });
+
     const wrongOptions = generateWrongOptions(randomWord.translation, vocabulary);
     
     // Create 4 options: 1 correct + 3 wrong, then shuffle
@@ -628,6 +646,7 @@ export default function TicTacToeGame({
     const correctIndex = options.indexOf(randomWord.translation);
     
     const question = {
+      id: (randomWord as any).id, // Include UUID for vocabulary tracking
       word: randomWord.word,
       translation: randomWord.translation,
       options: options,
@@ -680,6 +699,7 @@ export default function TicTacToeGame({
     setCurrentQuestion(question);
     setPendingMove(index);
     setTotalQuestions(prev => prev + 1);
+    setCumulativeTotalQuestions(prev => prev + 1); // Track cumulative questions
     setQuestionStartTime(Date.now());
     setShowVocabQuestion(true);
   };
@@ -729,39 +749,102 @@ export default function TicTacToeGame({
       }
     }
 
-    // Noughts and Crosses is a luck-based game - log word exposure only (not performance)
-    if (gameService && gameSessionId && !isAssignmentMode) {
+    // Record vocabulary interaction using gems-first system
+    if (gameService && gameSessionId) {
       try {
-        gameService.logWordPerformance({
-          session_id: gameSessionId,
-          vocabulary_id: currentQuestion.id ? parseInt(currentQuestion.id) : undefined,
-          word_text: currentQuestion.word,
-          translation_text: currentQuestion.translation,
-          language_pair: `${settings.language === 'spanish' ? 'es' : settings.language === 'french' ? 'fr' : 'en'}_english`,
-          attempt_number: 1,
-          response_time_ms: Math.round(responseTime * 1000),
-          was_correct: isCorrect,
-          confidence_level: 3, // Neutral confidence for luck-based games
-          difficulty_level: 'beginner',
-          hint_used: false,
-          power_up_active: undefined,
-          streak_count: correctAnswers + (isCorrect ? 1 : 0),
-          previous_attempts: 0,
-          mastery_level: 1, // Neutral mastery for luck-based games
-          error_type: isCorrect ? undefined : 'incorrect_selection',
-          grammar_concept: 'vocabulary_exposure',
-          error_details: undefined,
-          context_data: {
-            gameType: 'noughts-and-crosses',
-            isLuckBased: true, // Flag to indicate this is exposure tracking only
-            gameState: board.join(''),
-            totalQuestions: totalQuestions + 1,
-            correctAnswers: correctAnswers + (isCorrect ? 1 : 0)
-          },
-          timestamp: new Date()
+        // 🔍 INSTRUMENTATION: Log vocabulary tracking details
+        console.log('🔍 [VOCAB TRACKING] Starting vocabulary tracking for word:', {
+          questionId: currentQuestion.id,
+          questionIdType: typeof currentQuestion.id,
+          word: currentQuestion.word,
+          translation: currentQuestion.translation,
+          isCorrect,
+          gameSessionId,
+          responseTimeMs: Math.round(responseTime * 1000)
         });
+
+        // Use EnhancedGameSessionService for gems-first vocabulary tracking
+        const sessionService = new EnhancedGameSessionService();
+        const gemEvent = await sessionService.recordWordAttempt(gameSessionId, 'noughts-and-crosses', {
+          vocabularyId: currentQuestion.id, // Use UUID directly, not parseInt
+          wordText: currentQuestion.word,
+          translationText: currentQuestion.translation,
+          responseTimeMs: Math.round(responseTime * 1000),
+          wasCorrect: isCorrect,
+          hintUsed: false, // No hints in noughts-and-crosses
+          streakCount: correctAnswers + (isCorrect ? 1 : 0),
+          masteryLevel: 1, // Default mastery level for luck-based games
+          maxGemRarity: 'common', // Cap at common for luck-based games
+          gameMode: 'multiple_choice',
+          difficultyLevel: 'beginner'
+        });
+
+        // 🔍 INSTRUMENTATION: Log gem event result
+        console.log('🔍 [VOCAB TRACKING] Gem event result:', {
+          gemEventExists: !!gemEvent,
+          gemEvent: gemEvent ? {
+            rarity: gemEvent.rarity,
+            xpValue: gemEvent.xpValue,
+            vocabularyId: gemEvent.vocabularyId,
+            wordText: gemEvent.wordText
+          } : null,
+          wasCorrect: isCorrect
+        });
+
+        // Show gem feedback if correct and gem was awarded
+        if (gemEvent && isCorrect) {
+          console.log(`🔮 Noughts & Crosses earned ${gemEvent.rarity} gem (${gemEvent.xpValue} XP) for "${currentQuestion.word}"`);
+        }
+
+        // Also log to word_performance_logs for legacy compatibility (non-assignment mode only)
+        if (!isAssignmentMode) {
+          await gameService.logWordPerformance({
+            session_id: gameSessionId,
+            vocabulary_id: currentQuestion.id ? parseInt(currentQuestion.id) : undefined,
+            word_text: currentQuestion.word,
+            translation_text: currentQuestion.translation,
+            language_pair: `${settings.language === 'spanish' ? 'es' : settings.language === 'french' ? 'fr' : 'en'}_english`,
+            attempt_number: 1,
+            response_time_ms: Math.round(responseTime * 1000),
+            was_correct: isCorrect,
+            confidence_level: 3, // Neutral confidence for luck-based games
+            difficulty_level: 'beginner',
+            hint_used: false,
+            power_up_active: undefined,
+            streak_count: correctAnswers + (isCorrect ? 1 : 0),
+            previous_attempts: 0,
+            mastery_level: 1, // Neutral mastery for luck-based games
+            error_type: isCorrect ? undefined : 'incorrect_selection',
+            grammar_concept: 'vocabulary_exposure',
+            error_details: undefined,
+            context_data: {
+              gameType: 'noughts-and-crosses',
+              isLuckBased: true, // Flag to indicate this is exposure tracking only
+              gameState: board.join(''),
+              totalQuestions: totalQuestions + 1,
+              correctAnswers: correctAnswers + (isCorrect ? 1 : 0)
+            },
+            timestamp: new Date()
+          });
+        }
       } catch (error) {
-        console.error('Failed to log word exposure:', error);
+        console.error('Failed to record vocabulary interaction:', error);
+      }
+    }
+
+    // Record vocabulary interaction for assignment mode
+    if (isAssignmentMode && typeof window !== 'undefined' && (window as any).recordVocabularyInteraction) {
+      try {
+        await (window as any).recordVocabularyInteraction(
+          currentQuestion.word,
+          currentQuestion.translation,
+          isCorrect,
+          Math.round(responseTime * 1000), // responseTimeMs
+          false, // hintUsed
+          correctAnswers + (isCorrect ? 1 : 0) // streakCount
+        );
+      } catch (error) {
+        console.error('Failed to record vocabulary interaction for assignment:', error);
       }
     }
 
@@ -770,6 +853,10 @@ export default function TicTacToeGame({
       playSFX('correct-answer');
       setWordsLearned(prev => prev + 1);
       setCorrectAnswers(prev => prev + 1);
+
+      // Track cumulative stats
+      setCumulativeCorrectAnswers(prev => prev + 1);
+      setCumulativeWordsLearned(prev => prev + 1);
       
       // Play audio for the vocabulary word
       if (currentQuestion.playAudio) {
@@ -796,6 +883,7 @@ export default function TicTacToeGame({
         const newQuestion = generateVocabularyQuestion();
         setCurrentQuestion(newQuestion);
         setTotalQuestions(prev => prev + 1);
+        setCumulativeTotalQuestions(prev => prev + 1); // Track cumulative questions for retry
         setShowVocabQuestion(true);
         return;
       } else {
@@ -825,6 +913,163 @@ export default function TicTacToeGame({
     }
   };
 
+  // Minimax algorithm with alpha-beta pruning for intelligent AI
+  const minimax = (
+    board: CellContent[], 
+    depth: number, 
+    isMaximizing: boolean, 
+    alpha: number = -Infinity, 
+    beta: number = Infinity
+  ): { score: number; move?: number } => {
+    const computerMark = settings.computerMark as 'X' | 'O';
+    const playerMark = settings.playerMark as 'X' | 'O';
+    
+    const result = checkWinner(board);
+    
+    // Terminal states
+    if (result.winner === computerMark) return { score: 10 - depth };
+    if (result.winner === playerMark) return { score: depth - 10 };
+    if (board.every(cell => cell !== null)) return { score: 0 };
+    
+    const availableMoves = board
+      .map((cell, index) => cell === null ? index : null)
+      .filter(val => val !== null) as number[];
+    
+    if (isMaximizing) {
+      let maxScore = -Infinity;
+      let bestMove = availableMoves[0];
+      
+      for (const move of availableMoves) {
+        const newBoard = [...board];
+        newBoard[move] = computerMark;
+        
+        const { score } = minimax(newBoard, depth + 1, false, alpha, beta);
+        
+        if (score > maxScore) {
+          maxScore = score;
+          bestMove = move;
+        }
+        
+        alpha = Math.max(alpha, score);
+        if (beta <= alpha) break; // Alpha-beta pruning
+      }
+      
+      return { score: maxScore, move: bestMove };
+    } else {
+      let minScore = Infinity;
+      let bestMove = availableMoves[0];
+      
+      for (const move of availableMoves) {
+        const newBoard = [...board];
+        newBoard[move] = playerMark;
+        
+        const { score } = minimax(newBoard, depth + 1, true, alpha, beta);
+        
+        if (score < minScore) {
+          minScore = score;
+          bestMove = move;
+        }
+        
+        beta = Math.min(beta, score);
+        if (beta <= alpha) break; // Alpha-beta pruning
+      }
+      
+      return { score: minScore, move: bestMove };
+    }
+  };
+
+  // Enhanced AI with strategic patterns and fork detection
+  const getStrategicMove = (board: CellContent[]): number | null => {
+    const computerMark = settings.computerMark as 'X' | 'O';
+    const playerMark = settings.playerMark as 'X' | 'O';
+    
+    const availableCells = board
+      .map((cell, index) => cell === null ? index : null)
+      .filter(val => val !== null) as number[];
+    
+    // Helper to check if a move creates a fork (two ways to win)
+    const createsFork = (testBoard: CellContent[], mark: 'X' | 'O', position: number): boolean => {
+      const newBoard = [...testBoard];
+      newBoard[position] = mark;
+      
+      let winningMoves = 0;
+      for (const pos of availableCells) {
+        if (pos === position) continue;
+        const testBoard2 = [...newBoard];
+        testBoard2[pos] = mark;
+        if (checkWinner(testBoard2).winner === mark) {
+          winningMoves++;
+        }
+      }
+      return winningMoves >= 2;
+    };
+    
+    // 1. Win immediately if possible
+    for (const pos of availableCells) {
+      const testBoard = [...board];
+      testBoard[pos] = computerMark;
+      if (checkWinner(testBoard).winner === computerMark) {
+        return pos;
+      }
+    }
+    
+    // 2. Block opponent's winning move
+    for (const pos of availableCells) {
+      const testBoard = [...board];
+      testBoard[pos] = playerMark;
+      if (checkWinner(testBoard).winner === playerMark) {
+        return pos;
+      }
+    }
+    
+    // 3. Create a fork
+    for (const pos of availableCells) {
+      if (createsFork(board, computerMark, pos)) {
+        return pos;
+      }
+    }
+    
+    // 4. Block opponent's fork
+    for (const pos of availableCells) {
+      if (createsFork(board, playerMark, pos)) {
+        return pos;
+      }
+    }
+    
+    // 5. Take center if available
+    if (availableCells.includes(4)) {
+      return 4;
+    }
+    
+    // 6. Take opposite corner if opponent is in corner
+    const corners = [0, 2, 6, 8];
+    const oppositeCorners = { 0: 8, 2: 6, 6: 2, 8: 0 };
+    
+    for (const corner of corners) {
+      if (board[corner] === playerMark) {
+        const opposite = oppositeCorners[corner as keyof typeof oppositeCorners];
+        if (availableCells.includes(opposite)) {
+          return opposite;
+        }
+      }
+    }
+    
+    // 7. Take any corner
+    const availableCorners = corners.filter(pos => availableCells.includes(pos));
+    if (availableCorners.length > 0) {
+      return availableCorners[Math.floor(Math.random() * availableCorners.length)];
+    }
+    
+    // 8. Take any side
+    const sides = [1, 3, 5, 7];
+    const availableSides = sides.filter(pos => availableCells.includes(pos));
+    if (availableSides.length > 0) {
+      return availableSides[Math.floor(Math.random() * availableSides.length)];
+    }
+    
+    return null;
+  };
+
   const makeComputerMove = (currentBoard = board) => {
     const availableCells = currentBoard
       .map((cell, index) => cell === null ? index : null)
@@ -832,97 +1077,27 @@ export default function TicTacToeGame({
     
     if (availableCells.length === 0) return;
     
-    // Enhanced AI Logic
     const computerMark = settings.computerMark as 'X' | 'O';
-    const playerMark = settings.playerMark as 'X' | 'O';
-    
-    // Helper function to check if a move creates a winning line
-    const checkWinMove = (board: CellContent[], mark: 'X' | 'O', position: number): boolean => {
-      const testBoard = [...board];
-      testBoard[position] = mark;
-      const result = checkWinner(testBoard);
-      return result.winner === mark;
-    };
-    
-    // Helper function to check if a move blocks opponent from winning
-    const checkBlockMove = (board: CellContent[], playerMark: 'X' | 'O', position: number): boolean => {
-      const testBoard = [...board];
-      testBoard[position] = playerMark;
-      const result = checkWinner(testBoard);
-      return result.winner === playerMark;
-    };
-    
     let bestMove: number;
     
-    // Difficulty-based AI
+    // Difficulty-based AI with much smarter logic
     if (settings.difficulty === 'advanced') {
-      // 1. Try to win
-      const winMove = availableCells.find(pos => checkWinMove(currentBoard, computerMark, pos));
-      if (winMove !== undefined) {
-        bestMove = winMove;
-      } else {
-        // 2. Block player from winning
-        const blockMove = availableCells.find(pos => checkBlockMove(currentBoard, playerMark, pos));
-        if (blockMove !== undefined) {
-          bestMove = blockMove;
-        } else {
-          // 3. Take center if available
-          if (availableCells.includes(4)) {
-            bestMove = 4;
-          } else {
-            // 4. Take corners
-            const corners = [0, 2, 6, 8].filter(pos => availableCells.includes(pos));
-            if (corners.length > 0) {
-              bestMove = corners[Math.floor(Math.random() * corners.length)];
-            } else {
-              // 5. Take any available
-              bestMove = availableCells[Math.floor(Math.random() * availableCells.length)];
-            }
-          }
-        }
-      }
+      // Use minimax for perfect play
+      const result = minimax(currentBoard, 0, true);
+      bestMove = result.move ?? availableCells[0];
     } else if (settings.difficulty === 'intermediate') {
-      // 70% smart moves, 30% random
-      if (Math.random() < 0.7) {
-        // Try to win first
-        const winMove = availableCells.find(pos => checkWinMove(currentBoard, computerMark, pos));
-        if (winMove !== undefined) {
-          bestMove = winMove;
-        } else {
-          // Block player sometimes
-          const blockMove = availableCells.find(pos => checkBlockMove(currentBoard, playerMark, pos));
-          if (blockMove !== undefined && Math.random() < 0.8) {
-            bestMove = blockMove;
-          } else {
-            // Take center or corner
-            if (availableCells.includes(4)) {
-              bestMove = 4;
-            } else {
-              const corners = [0, 2, 6, 8].filter(pos => availableCells.includes(pos));
-              if (corners.length > 0) {
-                bestMove = corners[Math.floor(Math.random() * corners.length)];
-              } else {
-                bestMove = availableCells[Math.floor(Math.random() * availableCells.length)];
-              }
-            }
-          }
-        }
+      // 85% strategic moves, 15% random for some unpredictability
+      if (Math.random() < 0.85) {
+        const strategicMove = getStrategicMove(currentBoard);
+        bestMove = strategicMove ?? availableCells[Math.floor(Math.random() * availableCells.length)];
       } else {
-        // Random move
         bestMove = availableCells[Math.floor(Math.random() * availableCells.length)];
       }
     } else {
-      // Beginner: 40% smart moves, 60% random
-      if (Math.random() < 0.4) {
-        const winMove = availableCells.find(pos => checkWinMove(currentBoard, computerMark, pos));
-        if (winMove !== undefined) {
-          bestMove = winMove;
-        } else if (Math.random() < 0.5) {
-          const blockMove = availableCells.find(pos => checkBlockMove(currentBoard, playerMark, pos));
-          bestMove = blockMove !== undefined ? blockMove : availableCells[Math.floor(Math.random() * availableCells.length)];
-        } else {
-          bestMove = availableCells[Math.floor(Math.random() * availableCells.length)];
-        }
+      // Beginner: 60% strategic moves, 40% random (much smarter than before)
+      if (Math.random() < 0.6) {
+        const strategicMove = getStrategicMove(currentBoard);
+        bestMove = strategicMove ?? availableCells[Math.floor(Math.random() * availableCells.length)];
       } else {
         bestMove = availableCells[Math.floor(Math.random() * availableCells.length)];
       }
@@ -971,10 +1146,10 @@ export default function TicTacToeGame({
 
       onGameEnd({
         outcome: gameWinner === 'X' ? 'win' : gameWinner === 'tie' ? 'tie' : 'loss',
-        wordsLearned,
+        wordsLearned: cumulativeWordsLearned, // Use cumulative stats
         perfectGame,
-        correctAnswers,
-        totalQuestions,
+        correctAnswers: cumulativeCorrectAnswers, // Use cumulative stats
+        totalQuestions: cumulativeTotalQuestions, // Use cumulative stats
         timeSpent
       });
     }, 2000);

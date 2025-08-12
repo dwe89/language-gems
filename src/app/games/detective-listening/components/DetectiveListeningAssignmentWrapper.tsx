@@ -6,10 +6,9 @@ import { useAuth } from '../../../../components/auth/AuthProvider';
 import GameAssignmentWrapper, {
   StandardVocabularyItem,
   AssignmentData,
-  GameProgress,
-  calculateStandardScore
+  GameProgress
 } from '../../../../components/games/templates/GameAssignmentWrapper';
-import DetectiveListeningGame from './DetectiveListeningGame';
+import DetectiveListeningGameWrapper from './DetectiveListeningGameWrapper';
 
 interface DetectiveListeningAssignmentWrapperProps {
   assignmentId: string;
@@ -86,19 +85,27 @@ export default function DetectiveListeningAssignmentWrapper({
             const assignmentLanguage = assignment.vocabulary_criteria?.language || vocabulary[0]?.language || 'es';
 
             return (
-              <DetectiveListeningGame
+              <DetectiveListeningGameWrapper
                 settings={{
                   caseType: 'assignment', // Special assignment mode
                   language: assignmentLanguage, // Use assignment language
-                  difficulty: 'normal'
+                  difficulty: 'normal',
+                  category: vocabulary[0]?.category || 'assignment',
+                  subcategory: vocabulary[0]?.subcategory || 'assignment'
                 }}
-
+                vocabulary={vocabulary} // Pass assignment vocabulary with UUIDs
+                assignmentId={assignmentId}
+                userId={user?.id}
                 onBackToMenu={handleBackToMenu}
-                assignmentMode={{
-                  assignment,
-                  vocabulary,
-                  onProgressUpdate,
-                  onGameComplete
+                onGameEnd={(result) => {
+                  console.log('Detective Listening assignment game ended:', result);
+                  // Handle assignment completion through the wrapper
+                  onGameComplete({
+                    correctAnswers: result.correctAnswers,
+                    totalQuestions: result.totalEvidence,
+                    timeSpent: result.timeSpent || 0,
+                    score: Math.round((result.correctAnswers / result.totalEvidence) * 100)
+                  });
                 }}
               />
             );

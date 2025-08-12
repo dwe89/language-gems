@@ -584,6 +584,8 @@ export default function UnifiedVocabMasterWrapper({ searchParams = {} }: Props) 
             audioEnabled: gameConfig.enableAudio ?? true,
             assignmentMode: false
           }}
+          gameSessionId={gameSessionId}
+          gameService={gameService}
           onGameComplete={(results: GameResult) => {
             // Pass the results in the format expected by GameCompletionScreen
             const completionResults = {

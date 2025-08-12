@@ -61,7 +61,7 @@ export default function VocabularyReviewPage() {
           fsrs_retrievability,
           fsrs_difficulty,
           fsrs_stability,
-          centralized_vocabulary!inner(
+          centralized_vocabulary!vocabulary_gem_collection_vocabulary_item_id_fkey(
             word,
             translation,
             category,

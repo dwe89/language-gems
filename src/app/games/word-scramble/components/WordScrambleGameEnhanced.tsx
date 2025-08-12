@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import { createClient } from '@supabase/supabase-js';
 import { EnhancedGameService } from 'gems/services/enhancedGameService';
+import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
 import { createAudio } from '@/utils/audioUtils';
 import { useGameVocabulary, GameVocabularyWord } from '../../../../hooks/useGameVocabulary';
 import { useUnifiedSpacedRepetition } from '../../../../hooks/useUnifiedSpacedRepetition';
@@ -454,6 +455,7 @@ export default function WordScrambleGameEnhanced({
     // Priority 1: Use provided category vocabulary (for assignment mode)
     if (categoryVocabulary && categoryVocabulary.length > 0) {
       return categoryVocabulary.map(item => ({
+        id: item.id, // Include UUID for vocabulary tracking
         word: item.word,
         hint: `Translation: ${item.translation}`,
         difficulty: 0.6,
@@ -465,6 +467,7 @@ export default function WordScrambleGameEnhanced({
     // Priority 2: Use modern vocabulary system
     if (gameVocabulary && gameVocabulary.length > 0) {
       return gameVocabulary.map(item => ({
+        id: item.id, // Include UUID for vocabulary tracking
         word: item.word,
         hint: `Translation: ${item.translation}`,
         difficulty: 0.6,
@@ -505,12 +508,9 @@ export default function WordScrambleGameEnhanced({
         const accuracy = result.stats.wordsCompleted > 0 ?
           (result.stats.perfectWords / result.stats.wordsCompleted) * 100 : 0;
 
-        // Calculate XP based on performance
-        const baseXP = result.stats.wordsCompleted * 18; // 18 XP per word completed
-        const accuracyBonus = Math.round(accuracy * 0.5); // Bonus for accuracy
-        const streakBonus = result.stats.streak * 3; // Bonus for streak
-        const perfectBonus = result.stats.perfectWords * 10; // Bonus for perfect words
-        const totalXP = baseXP + accuracyBonus + streakBonus + perfectBonus;
+        // Use gems-first system: XP calculated from individual vocabulary interactions
+        // Remove conflicting XP calculation - gems system handles all scoring
+        const totalXP = result.stats.wordsCompleted * 10; // 10 XP per word (gems-first)
 
         await gameService.endGameSession(gameSessionId, {
           student_id: userId,
@@ -522,7 +522,7 @@ export default function WordScrambleGameEnhanced({
           unique_words_practiced: result.stats.wordsCompleted,
           duration_seconds: Math.floor((Date.now() - wordStartTime) / 1000),
           xp_earned: totalXP,
-          bonus_xp: accuracyBonus + streakBonus + perfectBonus,
+          bonus_xp: 0, // No bonus XP in gems-first system
           session_data: {
             gameMode: settings.gameMode,
             difficulty: settings.difficulty,
@@ -710,37 +710,84 @@ export default function WordScrambleGameEnhanced({
       avgSolveTime: (prev.avgSolveTime * prev.wordsCompleted + solveTime) / (prev.wordsCompleted + 1)
     }));
 
-    // Log word performance for analytics
+    // Record vocabulary interaction using gems-first system
     if (gameService && gameSessionId) {
-      gameService.logWordPerformance({
-        session_id: gameSessionId,
-        vocabulary_id: currentWordData.id ? parseInt(currentWordData.id) : undefined,
-        word_text: currentWordData.word,
-        translation_text: currentWordData.translation || '',
-        language_pair: `${settings.language}_english`,
-        attempt_number: 1,
-        response_time_ms: Math.round(solveTime * 1000),
-        was_correct: true,
-        confidence_level: isPerfect ? 5 : solveTime < 10 ? 4 : solveTime < 20 ? 3 : 2,
-        difficulty_level: settings.difficulty,
-        hint_used: false,
-        streak_count: gameStats.streak + 1,
-        previous_attempts: 0,
-        mastery_level: isPerfect ? 2 : 1,
-        grammar_concept: 'word_reconstruction',
-        context_data: {
-          gameType: 'word-scramble',
-          gameMode: settings.gameMode,
-          scrambledWord: scrambledLetters.join(''),
-          letterPlacementAccuracy: 100, // Since answer was correct
-          solveTime: solveTime,
-          isPerfect: isPerfect,
-          pointsEarned: points
-        },
-        timestamp: new Date()
-      }).catch(error => {
-        console.error('Failed to log word performance:', error);
-      });
+      try {
+        // 🔍 INSTRUMENTATION: Log vocabulary tracking details
+        console.log('🔍 [VOCAB TRACKING] Starting vocabulary tracking for word:', {
+          wordId: currentWordData.id,
+          wordIdType: typeof currentWordData.id,
+          word: currentWordData.word,
+          translation: currentWordData.translation,
+          isCorrect: true,
+          gameSessionId,
+          responseTimeMs: Math.round(solveTime * 1000)
+        });
+
+        // Use EnhancedGameSessionService for gems-first vocabulary tracking
+        const sessionService = new EnhancedGameSessionService();
+        const gemEvent = await sessionService.recordWordAttempt(gameSessionId, 'word-scramble', {
+          vocabularyId: currentWordData.id, // Use UUID directly, not parseInt
+          wordText: currentWordData.word,
+          translationText: currentWordData.translation || '',
+          responseTimeMs: Math.round(solveTime * 1000),
+          wasCorrect: true,
+          hintUsed: showHint || isVowelRevealed || showWordLength, // Any hints used
+          streakCount: gameStats.streak + 1,
+          masteryLevel: isPerfect ? 2 : 1, // Higher mastery for perfect words
+          maxGemRarity: isPerfect ? 'epic' : 'rare', // Better gems for perfect performance
+          gameMode: 'word_reconstruction',
+          difficultyLevel: settings.difficulty
+        });
+
+        // Show gem feedback if gem was awarded
+        if (gemEvent) {
+          console.log(`🔮 Word Scramble earned ${gemEvent.rarity} gem (${gemEvent.xpValue} XP) for "${currentWordData.word}"`);
+        }
+
+        // Also record vocabulary interaction for assignment mode
+        if (isAssignmentMode && typeof window !== 'undefined' && (window as any).recordVocabularyInteraction) {
+          await (window as any).recordVocabularyInteraction(
+            currentWordData.word,
+            currentWordData.translation || '',
+            true, // wasCorrect
+            Math.round(solveTime * 1000), // responseTimeMs
+            showHint || isVowelRevealed || showWordLength, // hintUsed
+            gameStats.streak + 1 // streakCount
+          );
+        }
+
+        // Also log to word_performance_logs for legacy compatibility
+        await gameService.logWordPerformance({
+          session_id: gameSessionId,
+          vocabulary_id: currentWordData.id ? parseInt(currentWordData.id) : undefined,
+          word_text: currentWordData.word,
+          translation_text: currentWordData.translation || '',
+          language_pair: `${settings.language}_english`,
+          attempt_number: 1,
+          response_time_ms: Math.round(solveTime * 1000),
+          was_correct: true,
+          confidence_level: isPerfect ? 5 : solveTime < 10 ? 4 : solveTime < 20 ? 3 : 2,
+          difficulty_level: settings.difficulty,
+          hint_used: showHint || isVowelRevealed || showWordLength,
+          streak_count: gameStats.streak + 1,
+          previous_attempts: 0,
+          mastery_level: isPerfect ? 2 : 1,
+          grammar_concept: 'word_reconstruction',
+          context_data: {
+            gameType: 'word-scramble',
+            gameMode: settings.gameMode,
+            scrambledWord: scrambledLetters.join(''),
+            letterPlacementAccuracy: 100, // Since answer was correct
+            solveTime: solveTime,
+            isPerfect: isPerfect,
+            pointsEarned: points
+          },
+          timestamp: new Date()
+        });
+      } catch (error) {
+        console.error('Failed to record vocabulary interaction:', error);
+      }
     }
 
     // Combo system
@@ -880,26 +927,57 @@ export default function WordScrambleGameEnhanced({
         }
       }
 
-      // Wrong answer - log performance for analytics
+      // Record incorrect vocabulary interaction using gems-first system
       if (gameService && gameSessionId && currentWordData) {
         const attemptTime = (Date.now() - wordStartTime) / 1000;
-        gameService.logWordPerformance({
-          session_id: gameSessionId,
-          vocabulary_id: currentWordData.id ? parseInt(currentWordData.id) : undefined,
-          word_text: currentWordData.word,
-          translation_text: currentWordData.translation || '',
-          language_pair: `${settings.language}_english`,
-          attempt_number: 1,
-          response_time_ms: Math.round(attemptTime * 1000),
-          was_correct: false,
-          confidence_level: 1, // Low confidence for wrong answer
-          difficulty_level: settings.difficulty,
-          hint_used: false,
-          streak_count: 0,
-          previous_attempts: 0,
-          mastery_level: 0,
-          error_type: 'letter_placement',
-          grammar_concept: 'word_reconstruction',
+
+        try {
+          // Use EnhancedGameSessionService for gems-first vocabulary tracking
+          const sessionService = new EnhancedGameSessionService();
+          const gemEvent = await sessionService.recordWordAttempt(gameSessionId, 'word-scramble', {
+            vocabularyId: currentWordData.id, // Use UUID directly, not parseInt
+            wordText: currentWordData.word,
+            translationText: currentWordData.translation || '',
+            responseTimeMs: Math.round(attemptTime * 1000),
+            wasCorrect: false,
+            hintUsed: showHint || isVowelRevealed || showWordLength, // Any hints used
+            streakCount: 0, // Reset streak on incorrect answer
+            masteryLevel: 0, // Low mastery for incorrect answers
+            maxGemRarity: 'common', // Lower gem rarity for incorrect attempts
+            gameMode: 'word_reconstruction',
+            difficultyLevel: settings.difficulty
+          });
+
+          // Record vocabulary interaction for assignment mode
+          if (isAssignmentMode && typeof window !== 'undefined' && (window as any).recordVocabularyInteraction) {
+            await (window as any).recordVocabularyInteraction(
+              currentWordData.word,
+              currentWordData.translation || '',
+              false, // wasCorrect
+              Math.round(attemptTime * 1000), // responseTimeMs
+              showHint || isVowelRevealed || showWordLength, // hintUsed
+              0 // streakCount (reset on incorrect)
+            );
+          }
+
+          // Also log to word_performance_logs for legacy compatibility
+          await gameService.logWordPerformance({
+            session_id: gameSessionId,
+            vocabulary_id: currentWordData.id ? parseInt(currentWordData.id) : undefined,
+            word_text: currentWordData.word,
+            translation_text: currentWordData.translation || '',
+            language_pair: `${settings.language}_english`,
+            attempt_number: 1,
+            response_time_ms: Math.round(attemptTime * 1000),
+            was_correct: false,
+            confidence_level: 1, // Low confidence for wrong answer
+            difficulty_level: settings.difficulty,
+            hint_used: showHint || isVowelRevealed || showWordLength,
+            streak_count: 0,
+            previous_attempts: 0,
+            mastery_level: 0,
+            error_type: 'letter_placement',
+            grammar_concept: 'word_reconstruction',
           error_details: {
             gameMode: settings.gameMode,
             attemptedAnswer: userAnswer,

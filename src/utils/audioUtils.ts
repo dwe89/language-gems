@@ -15,13 +15,11 @@
 export function getAudioUrl(audioPath: string): string {
   // If we're not in a browser environment, return the original path
   if (typeof window === 'undefined') {
-    console.log('🎵 getAudioUrl: Not in browser environment, returning original path:', audioPath);
     return audioPath;
   }
 
   // If the path is already absolute (starts with http/https), return as-is
   if (audioPath.startsWith('http://') || audioPath.startsWith('https://')) {
-    console.log('🎵 getAudioUrl: Already absolute URL, returning as-is:', audioPath);
     return audioPath;
   }
 
@@ -31,8 +29,6 @@ export function getAudioUrl(audioPath: string): string {
   const currentHostname = window.location.hostname;
   const protocol = window.location.protocol;
   const port = window.location.port ? `:${window.location.port}` : '';
-
-  console.log('🎵 getAudioUrl: Current hostname:', currentHostname, 'Path:', normalizedPath);
 
   // --- Define your main domain base for development and production ---
   // For local development, your main domain is typically 'localhost' or '127.0.0.1' with a port.
@@ -49,7 +45,6 @@ export function getAudioUrl(audioPath: string): string {
   // If the current origin EXACTLY matches the main domain's origin, use a relative path.
   // This covers `http://localhost:3001` or `https://www.languagegems.com`
   if (currentOrigin === mainDomainOrigin) {
-    console.log('🎵 getAudioUrl: Currently on main domain, using relative path:', normalizedPath);
     return normalizedPath;
   }
 
@@ -57,7 +52,6 @@ export function getAudioUrl(audioPath: string): string {
   // This is for production environments where the main domain is not 'localhost'.
   if (currentHostname.endsWith(`.${MAIN_DOMAIN_BASE}`) && !currentHostname.includes('localhost')) {
     const finalUrl = `${protocol}//${MAIN_DOMAIN_BASE}${port}${normalizedPath}`;
-    console.log(`🎵 getAudioUrl: Production subdomain detected (${currentHostname}), constructing absolute URL to main domain: ${finalUrl}`);
     return finalUrl;
   }
 
@@ -65,13 +59,11 @@ export function getAudioUrl(audioPath: string): string {
   // this means it's a development subdomain and we *must* construct an absolute URL to the main development domain.
   if (currentHostname.includes('localhost') && currentHostname !== MAIN_DOMAIN_BASE && currentHostname !== '127.0.0.1') {
       const finalUrl = `${protocol}//${MAIN_DOMAIN_BASE}${port}${normalizedPath}`;
-      console.log(`🎵 getAudioUrl: Localhost subdomain detected (${currentHostname}), constructing absolute URL to main domain: ${finalUrl}`);
       return finalUrl;
   }
 
   // Fallback: If none of the above, return the normalized path.
   // This might catch unusual configurations or cases where a relative path is implicitly desired.
-  console.log('🎵 getAudioUrl: Fallback - returning normalized path:', normalizedPath);
   return normalizedPath;
 }
 

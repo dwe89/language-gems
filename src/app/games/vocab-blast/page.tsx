@@ -19,9 +19,9 @@ export interface VocabBlastGameSettings {
   language: string;
   theme: string;
   subcategory?: string;
-  timeLimit: number;
   mode: 'categories' | 'custom';
   customWords?: string[];
+  timeLimit?: number;
   // KS4-specific parameters
   curriculumLevel?: string;
   examBoard?: 'AQA' | 'edexcel';
@@ -279,10 +279,11 @@ export default function VocabBlastPage() {
         <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 mb-6 max-w-md mx-auto">
           <h4 className="text-white font-semibold mb-3 text-center">How to Play</h4>
           <div className="text-white/80 text-sm space-y-2">
-            <p>• Click on vocabulary gems as they appear</p>
-            <p>• Type or click the correct translation</p>
-            <p>• Build combos for bonus points</p>
-            <p>• Complete as many words as possible before time runs out</p>
+            <p>• Click on vocabulary items as they appear</p>
+            <p>• Choose the correct translation at your own pace</p>
+            <p>• Build combos for higher scores</p>
+            <p>• Win by reaching score, word, or combo targets</p>
+            <p>• Don't let your lives reach zero!</p>
           </div>
         </div>
       </UnifiedGameLauncher>
@@ -300,7 +301,6 @@ export default function VocabBlastPage() {
                 gameConfig.config.language === 'fr' ? 'french' :
                 gameConfig.config.language === 'de' ? 'german' : 'spanish',
       theme: gameConfig.theme,
-      timeLimit: 60,
       mode: 'categories' as const
     };
 

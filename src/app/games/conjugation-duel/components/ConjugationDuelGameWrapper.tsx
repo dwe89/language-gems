@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { EnhancedGameService } from '../../../../services/enhancedGameService';
+import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
 import { supabaseBrowser } from '../../../../components/auth/AuthProvider';
 import BattleArena from './BattleArena';
 
@@ -107,13 +108,9 @@ export default function ConjugationDuelGameWrapper(props: ConjugationDuelGameWra
           return acc;
         }, {} as Record<string, number>);
 
-        // Calculate XP based on performance
-        const baseXP = sessionStats.correctConjugations * 12; // 12 XP per correct conjugation
-        const accuracyBonus = Math.round(accuracy * 0.8); // Bonus for accuracy
-        const speedBonus = averageResponseTime < 5000 ? 60 : averageResponseTime < 8000 ? 30 : 0; // Speed bonus
-        const duelBonus = sessionStats.duelsWon * 25; // Bonus for each duel won
-        const masteryBonus = Object.values(tenseMasteryScores).filter(score => score >= 80).length * 15; // Mastery bonus
-        const totalXP = baseXP + accuracyBonus + speedBonus + duelBonus + masteryBonus;
+        // Use gems-first system: XP calculated from individual vocabulary interactions
+        // Remove conflicting XP calculation - gems system handles all scoring through recordWordAttempt()
+        const totalXP = sessionStats.correctConjugations * 10; // 10 XP per correct conjugation (gems-first)
 
         await gameService.endGameSession(gameSessionId, {
           student_id: props.userId,
@@ -126,7 +123,7 @@ export default function ConjugationDuelGameWrapper(props: ConjugationDuelGameWra
           duration_seconds: sessionDuration,
           average_response_time_ms: averageResponseTime,
           xp_earned: totalXP,
-          bonus_xp: accuracyBonus + speedBonus + duelBonus + masteryBonus,
+          bonus_xp: 0, // No bonus XP in gems-first system
           session_data: {
             sessionStats,
             totalSessionTime: sessionDuration,
@@ -202,6 +199,36 @@ export default function ConjugationDuelGameWrapper(props: ConjugationDuelGameWra
   ) => {
     if (gameService && gameSessionId) {
       try {
+        // Record vocabulary interaction using gems-first system
+        const sessionService = new EnhancedGameSessionService();
+        const gemEvent = await sessionService.recordWordAttempt(gameSessionId, 'conjugation-duel', {
+          vocabularyId: undefined, // Conjugation-duel uses dynamic verbs
+          wordText: verb,
+          translationText: correctAnswer,
+          responseTimeMs: responseTime,
+          wasCorrect: isCorrect,
+          hintUsed: false, // No hints in conjugation-duel
+          streakCount: sessionStats.correctConjugations,
+          masteryLevel: isCorrect ? 2 : 0, // Higher mastery for correct conjugations
+          maxGemRarity: 'epic', // Allow epic gems for verb mastery
+          gameMode: 'verb_conjugation',
+          difficultyLevel: 'intermediate',
+          contextData: {
+            verb,
+            tense,
+            person,
+            userAnswer,
+            correctAnswer,
+            conjugationType: `${tense}_${person}`,
+            gameType: 'conjugation-duel'
+          }
+        });
+
+        // Show gem feedback if gem was awarded
+        if (gemEvent && isCorrect) {
+          console.log(`🔮 Conjugation Duel earned ${gemEvent.rarity} gem (${gemEvent.xpValue} XP) for "${verb}" (${tense})`);
+        }
+
         await gameService.logWordPerformance({
           session_id: gameSessionId,
           word_id: `${verb}-${tense}-${person}`,

@@ -40,15 +40,7 @@ export function useVocabularyByCategory({
   examBoard,
   tier
 }: UseVocabularyFiltersParams) {
-  console.log('🔥🔥🔥 VOCABULARY HOOK CALLED 🔥🔥🔥', {
-    language,
-    categoryId,
-    subcategoryId,
-    difficultyLevel,
-    curriculumLevel,
-    examBoard,
-    tier
-  });
+
 
   const [vocabulary, setVocabulary] = useState<VocabularyItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -56,19 +48,10 @@ export function useVocabularyByCategory({
 
   useEffect(() => {
     if (!language) {
-      console.log('useVocabularyByCategory: No language provided');
       return;
     }
 
     const fetchVocabulary = async () => {
-      console.log('useVocabularyByCategory: Starting fetch with params:', {
-        language,
-        categoryId,
-        subcategoryId,
-        difficultyLevel,
-        curriculumLevel
-      });
-
       setLoading(true);
       setError(null);
 
@@ -97,24 +80,20 @@ export function useVocabularyByCategory({
             };
 
             const themeName = themeMapping[categoryId] || categoryId;
-            console.log('Adding KS4 theme filter:', categoryId, '->', themeName);
             query = query.like('theme_name', `%${themeName}%`);
           }
 
           // For KS4, subcategoryId is the unit_name
           if (subcategoryId) {
-            console.log('Adding KS4 unit filter:', subcategoryId);
             query = query.like('unit_name', `%${subcategoryId}%`);
           }
         } else {
           // For KS3 and other levels, use category and subcategory fields
           if (categoryId) {
-            console.log('Adding category filter:', categoryId);
             query = query.eq('category', categoryId);
           }
 
           if (subcategoryId) {
-            console.log('Adding subcategory filter:', subcategoryId);
             query = query.eq('subcategory', subcategoryId);
           }
         }
@@ -134,22 +113,12 @@ export function useVocabularyByCategory({
         // Add KS4-specific filters
         if (curriculumLevel === 'KS4') {
           if (examBoard) {
-            console.log('Adding KS4 exam board filter:', examBoard);
             query = query.eq('exam_board_code', examBoard);
           }
           if (tier) {
-            console.log('Adding KS4 tier filter:', tier);
             query = query.like('tier', `%${tier}%`);
           }
         }
-
-        console.log('🔍 About to execute query with filters:', {
-          language,
-          categoryId,
-          subcategoryId,
-          curriculumLevel,
-          difficultyLevel
-        });
 
         const { data, error: fetchError } = await query.limit(10000);
 
@@ -157,8 +126,6 @@ export function useVocabularyByCategory({
           console.error('❌ Database query error:', fetchError);
           throw fetchError;
         }
-
-        console.log('✅ Fetched vocabulary:', data?.length || 0, 'items for language:', language, 'category:', categoryId, 'subcategory:', subcategoryId);
         
         setVocabulary(data || []);
       } catch (err) {

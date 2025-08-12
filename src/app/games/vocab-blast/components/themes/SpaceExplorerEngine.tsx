@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GameVocabularyWord } from '../../../../../hooks/useGameVocabulary';
 
@@ -28,6 +28,8 @@ interface SpaceComet {
   velocityX: number;
   velocityY: number;
   spawnTime: number;
+  // Add a property to track if the comet has been 'answered'
+  isAnswered: boolean;
 }
 
 export default function SpaceExplorerEngine({
@@ -42,23 +44,51 @@ export default function SpaceExplorerEngine({
   const [spaceComets, setSpaceComets] = useState<SpaceComet[]>([]);
   const [starField, setStarField] = useState<any[]>([]);
   const [cosmicParticles, setCosmicParticles] = useState<any[]>([]);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null); // Corrected type here
   const animationRef = useRef<number>();
+
+  // State to store actual screen dimensions dynamically
+  const [screenWidth, setScreenWidth] = useState(0);
+  const [screenHeight, setScreenHeight] = useState(0);
+
+  // Effect to update screen dimensions on mount and resize
+  useEffect(() => {
+    const updateDimensions = () => {
+      if (typeof window !== 'undefined') {
+        setScreenWidth(window.innerWidth);
+        setScreenHeight(window.innerHeight);
+      }
+    };
+
+    updateDimensions(); // Set initial dimensions
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('resize', updateDimensions);
+    }
+
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('resize', updateDimensions);
+      }
+    };
+  }, []); // Empty dependency array means this runs once on mount and cleans up on unmount
 
   // Initialize star field
   useEffect(() => {
-    const stars = Array.from({ length: 100 }, (_, i) => ({
-      id: i,
-      x: Math.random() * window.innerWidth,
-      y: Math.random() * window.innerHeight,
-      size: Math.random() * 3 + 1,
-      twinkle: Math.random() * 2 + 1
-    }));
-    setStarField(stars);
-  }, []);
+    if (screenWidth > 0 && screenHeight > 0) { // Ensure screen dimensions are known
+      const stars = Array.from({ length: 100 }, (_, i) => ({
+        id: i,
+        x: Math.random() * screenWidth,
+        y: Math.random() * screenHeight,
+        size: Math.random() * 3 + 1,
+        twinkle: Math.random() * 2 + 1
+      }));
+      setStarField(stars);
+    }
+  }, [screenWidth, screenHeight]); // Re-initialize if screen size changes
 
   // Generate decoy translations
-  const generateDecoys = (correctTranslation: string): string[] => {
+  const generateDecoys = useCallback((correctTranslation: string): string[] => {
     const otherWords = vocabulary
       .filter(word => word.translation !== correctTranslation)
       .map(word => word.translation);
@@ -66,117 +96,71 @@ export default function SpaceExplorerEngine({
     const decoyCount = difficulty === 'beginner' ? 3 : difficulty === 'intermediate' ? 4 : 5;
     const shuffled = otherWords.sort(() => 0.5 - Math.random());
     return shuffled.slice(0, decoyCount);
-  };
+  }, [vocabulary, difficulty]); // Depend on vocabulary and difficulty
 
-  // Spawn space comets with diagonal movement
-  const spawnSpaceComets = () => {
-    if (!currentWord || isPaused || !gameActive) return;
+  // Enhanced collision detection for comets
+  const checkCometCollisions = useCallback((comets: SpaceComet[]): SpaceComet[] => {
+    if (screenWidth === 0 || screenHeight === 0) return comets; // Don't process until dimensions are known
 
-    const decoys = generateDecoys(currentWord.translation);
-    const allOptions = [currentWord.translation, ...decoys];
-    const shuffledOptions = allOptions.sort(() => 0.5 - Math.random());
+    const minDistance = 180; // Minimum distance between comets (can be adjusted)
+    const viewportPadding = 20; // How close to the edge comets are allowed to be pushed by collisions
 
-    const screenWidth = typeof window !== 'undefined' ? window.innerWidth : 1200;
-    const screenHeight = typeof window !== 'undefined' ? window.innerHeight : 800;
+    let adjustedComets = [...comets];
+    let iterations = 0;
+    const maxIterations = 10; // Increased iterations for more stable collision resolution
 
-    // Create comets with collision detection
-    const newComets: SpaceComet[] = [];
+    do {
+      let collidedInIteration = false;
+      for (let i = 0; i < adjustedComets.length; i++) {
+        for (let j = i + 1; j < adjustedComets.length; j++) {
+          const comet1 = adjustedComets[i];
+          const comet2 = adjustedComets[j];
 
-    shuffledOptions.forEach((translation, index) => {
-      // Random diagonal angles (45-135 degrees and 225-315 degrees)
-      const angle = Math.random() > 0.5
-        ? (Math.PI / 4) + (Math.random() * Math.PI / 2)  // 45-135 degrees
-        : (5 * Math.PI / 4) + (Math.random() * Math.PI / 2); // 225-315 degrees
+          // Skip collision detection if either comet has been answered
+          if (comet1.isAnswered || comet2.isAnswered) continue; 
 
-      const speed = 2.5 + Math.random() * 1.5; // Faster speed as requested
-      const velocityX = Math.cos(angle) * speed;
-      const velocityY = Math.sin(angle) * speed;
+          const distance = Math.sqrt(
+            Math.pow(comet1.x - comet2.x, 2) + Math.pow(comet1.y - comet2.y, 2)
+          );
 
-      // Find non-overlapping starting position
-      let startX, startY;
-      let attempts = 0;
+          if (distance < minDistance) {
+            collidedInIteration = true;
 
-      do {
-        if (Math.random() > 0.5) {
-          startX = Math.random() > 0.5 ? -100 : screenWidth + 100;
-          startY = Math.random() * screenHeight;
-        } else {
-          startX = Math.random() * screenWidth;
-          startY = Math.random() > 0.5 ? -100 : screenHeight + 100;
-        }
-        attempts++;
-      } while (
-        attempts < 30 &&
-        newComets.some(comet => {
-          const distance = Math.sqrt(Math.pow(startX - comet.x, 2) + Math.pow(startY - comet.y, 2));
-          return distance < 150; // Minimum distance between comets
-        })
-      );
+            const overlap = minDistance - distance;
+            const angle = Math.atan2(comet1.y - comet2.y, comet1.x - comet2.x);
 
-      newComets.push({
-        id: `comet-${currentWord.id}-${index}-${Date.now()}`,
-        translation,
-        isCorrect: translation === currentWord.translation,
-        x: startX,
-        y: startY,
-        speed,
-        trailLength: Math.random() * 50 + 30,
-        glowIntensity: Math.random() * 0.5 + 0.5,
-        size: Math.random() * 0.3 + 0.8,
-        rotation: Math.random() * 360,
-        velocityX,
-        velocityY,
-        spawnTime: Date.now()
-      });
-    });
+            // Push each comet away by half the overlap along the collision axis
+            const pushX = Math.cos(angle) * (overlap / 2);
+            const pushY = Math.sin(angle) * (overlap / 2);
 
-    setSpaceComets(newComets);
-  };
-
-  // Update comet positions with diagonal movement
-  const updateComets = () => {
-    if (isPaused || !gameActive) return;
-
-    const screenWidth = typeof window !== 'undefined' ? window.innerWidth : 1200;
-    const screenHeight = typeof window !== 'undefined' ? window.innerHeight : 800;
-
-    setSpaceComets(prev =>
-      prev.map(comet => ({
-        ...comet,
-        x: comet.x + comet.velocityX,
-        y: comet.y + comet.velocityY,
-        glowIntensity: Math.sin(Date.now() * 0.01 + comet.x * 0.01) * 0.3 + 0.7
-      })).filter(comet => {
-        // Remove comets only after 10 seconds timeout
-        const timeElapsed = Date.now() - comet.spawnTime;
-        if (timeElapsed > 10000) {
-          // Trigger wrong answer for timeout
-          if (comet.isCorrect) {
-            setTimeout(() => onIncorrectAnswer(), 0);
+            // Apply push, then clamp immediately within the viewport + a small margin
+            adjustedComets[i] = {
+              ...comet1,
+              x: Math.max(viewportPadding, Math.min(screenWidth - viewportPadding, comet1.x + pushX)),
+              y: Math.max(viewportPadding, Math.min(screenHeight - viewportPadding, comet1.y + pushY))
+            };
+            adjustedComets[j] = {
+              ...comet2,
+              x: Math.max(viewportPadding, Math.min(screenWidth - viewportPadding, comet2.x - pushX)),
+              y: Math.max(viewportPadding, Math.min(screenHeight - viewportPadding, comet2.y - pushY))
+            };
           }
-          return false;
         }
-        return true;
-      })
-    );
-  };
+      }
+      iterations++;
+      if (!collidedInIteration) break; // If no collisions in an iteration, we're done
+    } while (iterations < maxIterations);
 
-  // Handle comet click
-  const handleCometClick = (comet: SpaceComet) => {
-    if (comet.isCorrect) {
-      onCorrectAnswer(currentWord);
-      createCosmicExplosion(comet.x, comet.y, 'success');
-    } else {
-      onIncorrectAnswer();
-      createCosmicExplosion(comet.x, comet.y, 'error');
-    }
+    // Final clamp to ensure they stay within a reasonable visible range after all pushes
+    return adjustedComets.map(comet => ({
+      ...comet,
+      x: Math.max(-viewportPadding, Math.min(screenWidth + viewportPadding, comet.x)),
+      y: Math.max(-viewportPadding, Math.min(screenHeight + viewportPadding, comet.y))
+    }));
+  }, [screenWidth, screenHeight]); // Depend on screen dimensions
 
-    // Remove clicked comet
-    setSpaceComets(prev => prev.filter(c => c.id !== comet.id));
-  };
-
-  // Create cosmic explosion effect
-  const createCosmicExplosion = (x: number, y: number, type: 'success' | 'error') => {
+  // Create cosmic explosion effect (MOVED THIS UP)
+  const createCosmicExplosion = useCallback((x: number, y: number, type: 'success' | 'error') => {
     const particleCount = type === 'success' ? 20 : 10;
     const newParticles = Array.from({ length: particleCount }, (_, i) => ({
       id: `cosmic-particle-${Date.now()}-${i}`,
@@ -195,13 +179,168 @@ export default function SpaceExplorerEngine({
     setTimeout(() => {
       setCosmicParticles(prev => prev.filter(p => !newParticles.some(np => np.id === p.id)));
     }, 2000);
-  };
+  }, []);
 
-  // Animation loop
+  // Handle comet click (NOW createCosmicExplosion IS DEFINED)
+  const handleCometClick = useCallback((comet: SpaceComet) => {
+    // Only process if the comet hasn't been answered yet
+    if (comet.isAnswered) return; 
+
+    setSpaceComets(prev => 
+        prev.map(c => c.id === comet.id ? { ...c, isAnswered: true } : c)
+    );
+
+    if (comet.isCorrect) {
+      onCorrectAnswer(currentWord);
+      createCosmicExplosion(comet.x, comet.y, 'success');
+    } else {
+      onIncorrectAnswer();
+      createCosmicExplosion(comet.x, comet.y, 'error');
+    }
+
+    // Remove clicked comet AFTER particles/effects are created
+    // This delay allows exit animation to play
+    setTimeout(() => {
+        setSpaceComets(prev => prev.filter(c => c.id !== comet.id));
+    }, 500); // Small delay to allow particle animation to start
+  }, [onCorrectAnswer, onIncorrectAnswer, currentWord, createCosmicExplosion]); // Dependency array is correct
+
+  // Spawn space comets with enhanced positioning
+  const spawnSpaceComets = useCallback(() => {
+    if (!currentWord || isPaused || !gameActive || screenWidth === 0 || screenHeight === 0) return;
+
+    const decoys = generateDecoys(currentWord.translation);
+    const allOptions = [currentWord.translation, ...decoys];
+    const shuffledOptions = allOptions.sort(() => 0.5 - Math.random());
+
+    const newComets: SpaceComet[] = [];
+    const minSpawnDistance = 350; // Increased from 250 for more initial separation
+
+    shuffledOptions.forEach((translation, index) => {
+      // Initialize startX and startY to a default numerical value
+      let startX: number = 0; 
+      let startY: number = 0;
+      let validPositionFound = false;
+      let attempts = 0;
+
+      // Define entry points slightly outside the screen, always aiming inwards
+      // We'll choose a side (top, right, bottom, left) and a random point along that side
+      // Then ensure the initial velocity points roughly towards the screen center.
+
+      const entryBuffer = 100; // How far off-screen they start
+      const targetCenterX = screenWidth / 2; // Not used directly in loop, but conceptual
+      const targetCenterY = screenHeight / 2; // Not used directly in loop, but conceptual
+
+      while (!validPositionFound && attempts < 100) { // Limit attempts to avoid infinite loops
+        const entrySide = Math.floor(Math.random() * 4); // 0: Top, 1: Right, 2: Bottom, 3: Left
+
+        switch (entrySide) {
+          case 0: // Top edge
+            startX = Math.random() * screenWidth;
+            startY = -entryBuffer;
+            break;
+          case 1: // Right edge
+            startX = screenWidth + entryBuffer;
+            startY = Math.random() * screenHeight;
+            break;
+          case 2: // Bottom edge
+            startX = Math.random() * screenWidth;
+            startY = screenHeight + entryBuffer;
+            break;
+          case 3: // Left edge
+            startX = -entryBuffer;
+            startY = Math.random() * screenHeight;
+            break;
+        }
+
+        // Check distance from existing new comets
+        let tooClose = false;
+        for (const existingComet of newComets) {
+          const distance = Math.sqrt(Math.pow(startX - existingComet.x, 2) + Math.pow(startY - existingComet.y, 2));
+          if (distance < minSpawnDistance) {
+            tooClose = true;
+            break;
+          }
+        }
+
+        if (!tooClose) {
+          validPositionFound = true;
+        }
+        attempts++;
+      }
+
+      // If a valid position isn't found after many attempts, just place it randomly
+      if (!validPositionFound) {
+        // Ensure startX and startY are assigned even if validPositionFound remains false
+        startX = Math.random() * screenWidth;
+        startY = -entryBuffer; // Default to top if all attempts fail
+        console.warn('Could not find non-overlapping spawn position for comet. Defaulting.');
+      }
+
+      // Determine initial velocity to move towards the center-ish area
+      const targetX = (screenWidth * 0.2) + (Math.random() * (screenWidth * 0.6)); // Aim for 20%-80% width
+      const targetY = (screenHeight * 0.2) + (Math.random() * (screenHeight * 0.6)); // Aim for 20%-80% height
+      
+      const angleToTarget = Math.atan2(targetY - startY, targetX - startX);
+      const baseSpeed = difficulty === 'beginner' ? 1.0 : difficulty === 'intermediate' ? 1.5 : 2.0;
+      const speed = baseSpeed + (Math.random() * 0.5); // Add slight variation
+
+      const velocityX = Math.cos(angleToTarget) * speed;
+      const velocityY = Math.sin(angleToTarget) * speed;
+
+      newComets.push({
+        id: `comet-${currentWord.id}-${index}-${Date.now()}`,
+        translation,
+        isCorrect: translation === currentWord.translation,
+        x: startX,
+        y: startY,
+        speed,
+        trailLength: Math.random() * 30 + 40,
+        glowIntensity: Math.random() * 0.3 + 0.7,
+        size: Math.random() * 0.2 + 0.9,
+        rotation: Math.random() * 360,
+        velocityX,
+        velocityY,
+        spawnTime: Date.now(),
+        isAnswered: false // Initialize as not answered
+      });
+    });
+
+    setSpaceComets(checkCometCollisions(newComets));
+  }, [currentWord, isPaused, gameActive, screenWidth, screenHeight, generateDecoys, checkCometCollisions, difficulty]);
+
+  // Update comet positions (NO LONGER FILTERING BY POSITION HERE)
+  const updateComets = useCallback(() => {
+    if (isPaused || !gameActive || screenWidth === 0 || screenHeight === 0) return;
+
+    setSpaceComets(prev => {
+      // We no longer filter by position here. Comets will persist until answered.
+      const updatedComets = prev.map(comet => ({
+        ...comet,
+        x: comet.x + comet.velocityX,
+        y: comet.y + comet.velocityY,
+        glowIntensity: Math.sin(Date.now() * 0.005 + comet.x * 0.005) * 0.3 + 0.7,
+        rotation: comet.rotation + 0.5
+      }));
+
+      // Apply collision detection to moving comets (excluding already answered ones)
+      return checkCometCollisions(updatedComets);
+    });
+  }, [isPaused, gameActive, screenWidth, screenHeight, checkCometCollisions]);
+
+  // Animation loop with error handling
   useEffect(() => {
     const animate = () => {
-      updateComets();
-      animationRef.current = requestAnimationFrame(animate);
+      try {
+        if (gameActive && !isPaused) {
+          updateComets();
+        }
+        animationRef.current = requestAnimationFrame(animate); // CORRECTED TYPO
+      } catch (error) {
+        console.error('Animation error in Space Explorer Engine:', error);
+        // Continue animation even if there's an error
+        animationRef.current = requestAnimationFrame(animate);
+      }
     };
 
     if (gameActive) {
@@ -211,16 +350,17 @@ export default function SpaceExplorerEngine({
     return () => {
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
+        animationRef.current = undefined;
       }
     };
-  }, [gameActive, isPaused]);
+  }, [gameActive, isPaused, updateComets]);
 
-  // Spawn comets when current word changes
+  // Spawn comets when current word changes (and screen dimensions are known)
   useEffect(() => {
-    if (currentWord && gameActive) {
+    if (currentWord && gameActive && screenWidth > 0 && screenHeight > 0) { // Only spawn if dimensions are known
       spawnSpaceComets();
     }
-  }, [currentWord, gameActive]);
+  }, [currentWord, gameActive, screenWidth, screenHeight, spawnSpaceComets]);
 
   return (
     <div
@@ -282,15 +422,17 @@ export default function SpaceExplorerEngine({
             key={comet.id}
             initial={{ opacity: 0, scale: 0, x: comet.x, y: comet.y, rotate: comet.rotation }}
             animate={{
-              opacity: 1,
-              scale: comet.size,
+              opacity: comet.isAnswered ? 0 : 1, // Fade out if answered
+              scale: comet.isAnswered ? 0 : comet.size, // Shrink if answered
               x: comet.x,
               y: comet.y,
               rotate: comet.rotation
             }}
             exit={{ opacity: 0, scale: 0 }}
             onClick={() => handleCometClick(comet)}
-            className="absolute cursor-pointer transition-all duration-200 hover:scale-110 select-none"
+            // Disable pointer events if already answered, to prevent multiple clicks
+            className={`absolute cursor-pointer transition-all duration-200 hover:scale-110 select-none ${comet.isAnswered ? 'pointer-events-none' : ''}`}
+            style={{ x: comet.x, y: comet.y }} // Explicitly setting for Framer Motion
           >
             <div className="relative">
               {/* Realistic Comet Design */}
@@ -374,24 +516,6 @@ export default function SpaceExplorerEngine({
           />
         ))}
       </AnimatePresence>
-
-      {/* Space Station (player) */}
-      <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2">
-        <motion.div
-          animate={{
-            y: [0, -10, 0],
-            rotate: [0, 2, -2, 0]
-          }}
-          transition={{
-            duration: 4,
-            repeat: Infinity
-          }}
-          className="text-6xl"
-        >
-          🛸
-        </motion.div>
-        <div className="text-center text-purple-200 font-bold text-sm mt-2">Space Station</div>
-      </div>
     </div>
   );
 }

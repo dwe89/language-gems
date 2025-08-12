@@ -89,41 +89,76 @@ export async function POST(
       );
     }
 
-    // Create game session record directly (this is the main progress tracking)
+    // Create assignment progress record using the proper assignment progress tables
     if (body.gameSession) {
-      const gameSessionData = {
-        student_id: user.id,
+      // First, update the main assignment progress
+      const assignmentProgressData = {
         assignment_id: assignmentId,
-        game_type: assignment.type || 'vocabulary-mining',
-        session_mode: 'assignment',
-        session_data: body.gameSession.sessionData,
-        vocabulary_practiced: body.gameSession.vocabularyPracticed,
-        score: body.score || 0,
-        max_score: body.score || 0,
-        accuracy_percentage: body.accuracy || 0,
+        student_id: user.id,
+        status: body.status || 'completed',
+        best_score: body.score || 0,
+        best_accuracy: body.accuracy || 0,
         words_attempted: body.gameSession.wordsAttempted || 0,
         words_correct: body.gameSession.wordsCorrect || 0,
-        time_spent_seconds: body.timeSpent || 0,
-        status: body.status || 'completed',
-        ended_at: body.status === 'completed' ? new Date().toISOString() : null
+        total_time_spent: body.timeSpent || 0,
+        session_count: 1,
+        progress_data: body.gameSession.sessionData || {},
+        ...(body.status === 'completed' && { completed_at: new Date().toISOString() }),
+        updated_at: new Date().toISOString()
       };
 
-      const { data: gameSession, error: sessionError } = await supabase
-        .from('game_sessions')
-        .insert(gameSessionData)
+      const { data: assignmentProgress, error: assignmentProgressError } = await supabase
+        .from('enhanced_assignment_progress')
+        .upsert(assignmentProgressData, {
+          onConflict: 'assignment_id,student_id'
+        })
         .select()
         .single();
 
-      if (sessionError) {
-        console.error('Error creating game session:', {
-          error: sessionError,
-          message: sessionError.message,
-          details: sessionError.details,
-          hint: sessionError.hint,
-          code: sessionError.code
+      if (assignmentProgressError) {
+        console.error('Error updating assignment progress:', assignmentProgressError);
+        return NextResponse.json(
+          { error: 'Failed to update assignment progress', details: assignmentProgressError.message },
+          { status: 500 }
+        );
+      }
+
+      // Then, update the individual game progress
+      const gameProgressData = {
+        assignment_id: assignmentId,
+        student_id: user.id,
+        game_id: assignment.type || 'memory-game',
+        status: body.status || 'completed',
+        score: body.score || 0,
+        max_score: body.score || 100,
+        accuracy: body.accuracy || 0,
+        words_completed: body.gameSession.wordsCorrect || 0,
+        total_words: body.gameSession.wordsAttempted || 0,
+        time_spent: body.timeSpent || 0,
+        attempts_count: 1,
+        session_data: body.gameSession.sessionData || {},
+        ...(body.status === 'completed' && { completed_at: new Date().toISOString() }),
+        updated_at: new Date().toISOString()
+      };
+
+      const { data: gameProgress, error: gameProgressError } = await supabase
+        .from('assignment_game_progress')
+        .upsert(gameProgressData, {
+          onConflict: 'assignment_id,student_id,game_id'
+        })
+        .select()
+        .single();
+
+      if (gameProgressError) {
+        console.error('Error updating game progress:', {
+          error: gameProgressError,
+          message: gameProgressError.message,
+          details: gameProgressError.details,
+          hint: gameProgressError.hint,
+          code: gameProgressError.code
         });
         return NextResponse.json(
-          { error: 'Failed to create game session', details: sessionError.message },
+          { error: 'Failed to update game progress', details: gameProgressError.message },
           { status: 500 }
         );
       }
@@ -156,7 +191,8 @@ export async function POST(
 
       return NextResponse.json({
         success: true,
-        gameSession: gameSession
+        assignmentProgress: assignmentProgress,
+        gameProgress: gameProgress
       });
     } else {
       return NextResponse.json({
@@ -247,12 +283,19 @@ export async function GET(
       );
     }
 
-    // Get game sessions for this assignment
-    const { data: gameSessions, error: sessionsError } = await supabase
-      .from('game_sessions')
+    // Get assignment progress from the proper assignment tables
+    const { data: assignmentProgress, error: assignmentProgressError } = await supabase
+      .from('enhanced_assignment_progress')
       .select('*')
       .eq('assignment_id', assignmentId)
-      .order('created_at', { ascending: false });
+      .order('updated_at', { ascending: false });
+
+    // Get individual game progress for this assignment
+    const { data: gameProgress, error: gameProgressError } = await supabase
+      .from('assignment_game_progress')
+      .select('*')
+      .eq('assignment_id', assignmentId)
+      .order('updated_at', { ascending: false });
 
     // Get vocabulary progress for this assignment
     const { data: vocabularyProgress, error: vocabError } = await supabase
@@ -262,7 +305,8 @@ export async function GET(
 
     return NextResponse.json({
       success: true,
-      gameSessions: gameSessions || [],
+      assignmentProgress: assignmentProgress || [],
+      gameProgress: gameProgress || [],
       vocabularyProgress: vocabularyProgress || []
     });
 

@@ -66,7 +66,7 @@ export default function VocabularyProgressPage() {
         .from('vocabulary_gem_collection')
         .select(`
           *,
-          centralized_vocabulary!inner(
+          centralized_vocabulary!vocabulary_gem_collection_vocabulary_item_id_fkey(
             category,
             curriculum_level
           )

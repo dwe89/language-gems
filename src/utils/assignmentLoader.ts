@@ -35,7 +35,6 @@ export async function loadAssignmentData(assignmentId: string): Promise<{
   assignment: AssignmentData;
   vocabulary: StandardVocabularyItem[];
 }> {
-  console.log('🔄 [LOADER] Loading assignment data:', { assignmentId });
   
   const supabase = createBrowserClient();
 
@@ -56,29 +55,23 @@ export async function loadAssignmentData(assignmentId: string): Promise<{
     .single();
 
   if (assignmentError) {
-    console.error('❌ [LOADER] Assignment error:', assignmentError);
     throw new Error(`Failed to load assignment: ${assignmentError.message}`);
   }
 
   if (!assignmentData) {
-    console.error('❌ [LOADER] Assignment not found');
     throw new Error('Assignment not found');
   }
-
-  console.log('✅ [LOADER] Assignment loaded:', assignmentData);
 
   // Load vocabulary data
   let vocabularyData: StandardVocabularyItem[] = [];
 
   // Try list-based approach first
   if (assignmentData.vocabulary_assignment_list_id) {
-    console.log('🔄 [LOADER] Loading list-based vocabulary');
-    
     const { data, error } = await supabase
       .from('vocabulary_assignment_list_items')
       .select(`
         order_position,
-        centralized_vocabulary (
+        centralized_vocabulary!vocabulary_assignment_list_items_centralized_vocabulary_id_fkey (
           id,
           word,
           translation,
@@ -100,16 +93,11 @@ export async function loadAssignmentData(assignmentId: string): Promise<{
       vocabularyData = data
         .map((item: any) => item.centralized_vocabulary)
         .filter(Boolean);
-      console.log('✅ [LOADER] List-based vocabulary loaded:', vocabularyData.length, 'items');
-    } else {
-      console.warn('⚠️ [LOADER] List-based vocabulary failed:', error);
     }
   }
 
   // If list-based approach failed or returned no data, try criteria-based approach
   if (vocabularyData.length === 0 && assignmentData.vocabulary_criteria) {
-    console.log('🔄 [LOADER] Loading criteria-based vocabulary');
-    
     const criteria = assignmentData.vocabulary_criteria;
     let query = supabase
       .from('centralized_vocabulary')
@@ -148,21 +136,12 @@ export async function loadAssignmentData(assignmentId: string): Promise<{
 
     if (!error && data) {
       vocabularyData = data;
-      console.log('✅ [LOADER] Criteria-based vocabulary loaded:', vocabularyData.length, 'items');
-    } else {
-      console.warn('⚠️ [LOADER] Criteria-based vocabulary failed:', error);
     }
   }
 
   if (vocabularyData.length === 0) {
-    console.error('❌ [LOADER] No vocabulary found');
     throw new Error('No vocabulary found for this assignment');
   }
-
-  console.log('✅ [LOADER] Assignment data loaded successfully:', {
-    assignment: assignmentData.title,
-    vocabularyCount: vocabularyData.length
-  });
 
   return {
     assignment: assignmentData,

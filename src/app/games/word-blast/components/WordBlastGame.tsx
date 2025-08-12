@@ -14,6 +14,7 @@ import {
 import confetti from 'canvas-confetti';
 import { EnhancedGameService } from '../../../../services/enhancedGameService';
 import { useUnifiedSpacedRepetition } from '../../../../hooks/useUnifiedSpacedRepetition';
+import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
 import UnifiedSentenceCategorySelector, { SentenceSelectionConfig } from '../../../../components/games/UnifiedSentenceCategorySelector';
 import WordBlastEngine from './WordBlastEngine';
 import InGameConfigPanel from '../../../../components/games/InGameConfigPanel';
@@ -319,6 +320,44 @@ export default function WordBlastGame({
         wordsCollected: prev.wordsCollected + 1
       };
 
+      // Record vocabulary interaction using gems-first system
+      if (gameSessionId && currentChallenge) {
+        try {
+          // 🔍 INSTRUMENTATION: Log vocabulary tracking details
+          console.log('🔍 [VOCAB TRACKING] Starting vocabulary tracking for challenge:', {
+            challengeId: currentChallenge.id,
+            challengeIdType: typeof currentChallenge.id,
+            spanish: currentChallenge.spanish,
+            english: currentChallenge.english,
+            isCorrect: true,
+            gameSessionId,
+            responseTimeMs: responseTime
+          });
+
+          const sessionService = new EnhancedGameSessionService();
+          const gemEvent = await sessionService.recordSentenceAttempt(gameSessionId, 'word-blast', {
+            sentenceId: currentChallenge.id, // ✅ FIXED: Use challenge ID for sentence-based tracking
+            sourceText: currentChallenge.spanish,
+            targetText: currentChallenge.english,
+            responseTimeMs: responseTime,
+            wasCorrect: true,
+            hintUsed: false, // No hints in word-blast
+            streakCount: newCombo,
+            masteryLevel: 1, // Default mastery for action games
+            maxGemRarity: 'rare', // Cap at rare for fast-paced games
+            gameMode: 'word_matching',
+            difficultyLevel: selectedConfig?.difficulty || 'medium'
+          });
+
+          // Show gem feedback if gem was awarded
+          if (gemEvent) {
+            console.log(`🔮 Word Blast earned ${gemEvent.rarity} gem (${gemEvent.xpValue} XP) for "${currentChallenge.spanish}"`);
+          }
+        } catch (error) {
+          console.error('Failed to record vocabulary interaction:', error);
+        }
+      }
+
       // Record word practice with FSRS system
       if (!assignmentMode && currentChallenge) {
         try {
@@ -403,6 +442,57 @@ export default function WordBlastGame({
     
     setLives(prev => Math.max(0, prev - 1));
     
+    // Record incorrect vocabulary interaction using gems-first system
+    if (gameSessionId && currentChallenge) {
+      try {
+        // 🔍 INSTRUMENTATION: Log vocabulary tracking details for incorrect answer
+        console.log('🔍 [VOCAB TRACKING] Starting vocabulary tracking for incorrect challenge:', {
+          challengeId: currentChallenge.id,
+          challengeIdType: typeof currentChallenge.id,
+          spanish: currentChallenge.spanish,
+          english: currentChallenge.english,
+          isCorrect: false,
+          gameSessionId,
+          responseTimeMs: responseTime
+        });
+
+        const sessionService = new EnhancedGameSessionService();
+        const gemEvent = await sessionService.recordSentenceAttempt(gameSessionId, 'word-blast', {
+          sentenceId: currentChallenge.id, // ✅ FIXED: Use challenge ID for sentence-based tracking
+          sourceText: currentChallenge.spanish,
+          targetText: currentChallenge.english,
+          responseTimeMs: responseTime,
+          wasCorrect: false,
+          hintUsed: false, // No hints in word-blast
+          streakCount: 0, // Reset streak on incorrect
+          masteryLevel: 0, // Low mastery for incorrect answers
+          maxGemRarity: 'common', // Cap at common for incorrect answers
+          gameMode: 'word_matching',
+          difficultyLevel: selectedConfig?.difficulty || 'medium'
+        });
+
+        // 🔍 INSTRUMENTATION: Log gem event result for incorrect answer
+        console.log('🔍 [VOCAB TRACKING] Gem event result (incorrect):', {
+          gemEventExists: !!gemEvent,
+          gemEvent: gemEvent ? {
+            rarity: gemEvent.rarity,
+            xpValue: gemEvent.xpValue,
+            vocabularyId: gemEvent.vocabularyId,
+            wordText: gemEvent.wordText
+          } : null,
+          wasCorrect: false
+        });
+      } catch (error) {
+        console.error('Failed to record vocabulary interaction:', error);
+      }
+    } else {
+      console.log('🔍 [SRS UPDATE] Skipping SRS update for incorrect answer:', {
+        hasCurrentChallenge: !!currentChallenge,
+        hasGameSessionId: !!gameSessionId,
+        gameSessionId
+      });
+    }
+
     // Record word practice with FSRS system for incorrect answer
     if (!assignmentMode && currentChallenge) {
       try {

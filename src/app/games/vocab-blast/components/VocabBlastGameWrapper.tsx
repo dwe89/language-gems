@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { EnhancedGameService } from '../../../../services/enhancedGameService';
 import { useGameVocabulary, GameVocabularyWord } from '../../../../hooks/useGameVocabulary';
 import { supabaseBrowser } from '../../../../components/auth/AuthProvider';
+import { RewardEngine } from '../../../../services/rewards/RewardEngine';
 import { VocabBlastGameSettings } from '../page';
 import VocabBlastGame from './VocabBlastGame';
 
@@ -157,7 +158,7 @@ export default function VocabBlastGameWrapper(props: VocabBlastGameWrapperProps)
         session_data: {
           settings: props.settings,
           vocabularyCount: gameVocabulary.length,
-          timeLimit: props.settings.timeLimit
+          timeLimit: props.settings.timeLimit || 60
         }
       });
       setGameSessionId(sessionId);
@@ -219,7 +220,7 @@ export default function VocabBlastGameWrapper(props: VocabBlastGameWrapperProps)
             context_data: {
               gameType: 'vocab-blast',
               theme: props.settings.theme,
-              timeLimit: props.settings.timeLimit,
+              timeLimit: props.settings.timeLimit || 60,
               gameOutcome: result.outcome,
               clickAccuracy: wordAttempt.isCorrect
             },
@@ -238,14 +239,15 @@ export default function VocabBlastGameWrapper(props: VocabBlastGameWrapperProps)
       try {
         const accuracy = result.accuracy || (result.wordsLearned > 0 ? (result.wordsLearned / (result.totalAttempts || gameVocabulary.length)) * 100 : 0);
         const finalScore = result.score;
-        const actualTimeSpent = result.timeSpent || props.settings.timeLimit;
+        const actualTimeSpent = result.timeSpent || props.settings.timeLimit || 60; // Default to 60 seconds
 
-        // Calculate XP based on performance
-        const baseXP = (result.correctAnswers || 0) * 12; // 12 XP per correct answer
-        const accuracyBonus = Math.round(accuracy * 0.4); // Bonus for accuracy
-        const speedBonus = actualTimeSpent < 60 ? 30 : actualTimeSpent < 120 ? 20 : 0; // Speed bonus
-        const comboBonus = result.detailedStats?.maxCombo ? result.detailedStats.maxCombo * 5 : 0; // Combo bonus
-        const totalXP = baseXP + accuracyBonus + speedBonus + comboBonus;
+        // Use gems-first system: XP calculated from individual vocabulary interactions
+        // Remove conflicting XP calculation - gems system handles all scoring through recordWordAttempt()
+        let totalXP = (result.correctAnswers || 0) * 10; // 10 XP per correct answer (gems-first)
+
+        if (actualTimeSpent < 60) {
+          totalXP += RewardEngine.getXPValue('legendary'); // Speed demon bonus
+        }
 
         await gameService.endGameSession(gameSessionId, {
           student_id: props.userId,
@@ -257,7 +259,7 @@ export default function VocabBlastGameWrapper(props: VocabBlastGameWrapperProps)
           unique_words_practiced: result.wordsLearned,
           duration_seconds: actualTimeSpent,
           xp_earned: totalXP,
-          bonus_xp: accuracyBonus + speedBonus + comboBonus,
+          bonus_xp: 0, // No bonus XP in gems-first system
           session_data: {
             outcome: result.outcome,
             finalScore: result.score,

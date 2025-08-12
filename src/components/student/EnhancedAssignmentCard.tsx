@@ -324,8 +324,8 @@ export default function EnhancedAssignmentCard({
             </div>
             <div className="flex items-center justify-end space-x-1 mt-1">
               <Gem className="h-3 w-3 text-blue-500" />
-              <span className="text-xs text-blue-600 font-medium">
-                {assignment.xpReward} XP
+              <span className="text-xs text-purple-600 font-medium">
+                {Math.floor(assignment.xpReward / 10)} Gems
               </span>
             </div>
           </div>

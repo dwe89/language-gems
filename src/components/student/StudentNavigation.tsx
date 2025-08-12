@@ -53,7 +53,7 @@ export default function StudentNavigation() {
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
-  const { user, signOut } = useAuth();
+  const { user, signOut } = useAuth(); // Assuming 'user' object contains level and points
 
   useEffect(() => {
     setIsMounted(true);
@@ -79,13 +79,18 @@ export default function StudentNavigation() {
     return null;
   }
 
+  // Define default values or ensure user object has these properties
+  // You'll need to adjust these based on the actual structure of your 'user' object
+  const userLevel = user?.user_metadata?.level || 1; // Assuming 'level' is in user_metadata, default to 1
+  const userPoints = user?.user_metadata?.points || 0; // Assuming 'points' is in user_metadata, default to 0
+
   return (
     <header className="bg-gradient-to-r from-purple-600 via-pink-500 to-orange-400 shadow-lg relative z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link 
-            href="/student-dashboard" 
+          <Link
+            href="/student-dashboard"
             className="flex items-center space-x-3 group"
           >
             <motion.div
@@ -134,11 +139,13 @@ export default function StudentNavigation() {
                 <div className="hidden sm:flex items-center space-x-3 bg-white/20 rounded-full px-4 py-2 backdrop-blur-sm">
                   <div className="flex items-center space-x-1">
                     <Star className="h-4 w-4 text-yellow-300" />
-                    <span className="text-white font-semibold text-sm">Level 12</span>
+                    {/* Dynamically display user level */}
+                    <span className="text-white font-semibold text-sm">Level {userLevel}</span>
                   </div>
                   <div className="flex items-center space-x-1">
                     <Zap className="h-4 w-4 text-blue-300" />
-                    <span className="text-white font-semibold text-sm">250</span>
+                    {/* Dynamically display user points */}
+                    <span className="text-white font-semibold text-sm">{userPoints}</span>
                   </div>
                 </div>
 
@@ -182,15 +189,15 @@ export default function StudentNavigation() {
               {navItems.map((item) => {
                 const Icon = item.icon;
                 const active = isActive(item.href);
-                
+
                 return (
                   <Link
                     key={item.name}
                     href={item.href}
                     onClick={() => setMobileMenuOpen(false)}
                     className={`flex items-center space-x-3 px-4 py-3 rounded-xl transition-all ${
-                      active 
-                        ? 'bg-white/20 text-white' 
+                      active
+                        ? 'bg-white/20 text-white'
                         : 'text-white/80 hover:text-white hover:bg-white/10'
                     }`}
                   >
@@ -202,7 +209,7 @@ export default function StudentNavigation() {
                   </Link>
                 );
               })}
-              
+
               {user && (
                 <button
                   onClick={handleLogout}

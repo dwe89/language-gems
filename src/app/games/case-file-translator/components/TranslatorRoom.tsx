@@ -7,6 +7,7 @@ import { createClient } from '@supabase/supabase-js';
 import { VOCABULARY_CATEGORIES } from '../../../../components/games/ModernCategorySelector';
 import { StandardVocabularyItem, AssignmentData, GameProgress } from '../../../../components/games/templates/GameAssignmentWrapper';
 import { EnhancedGameService } from '../../../../services/enhancedGameService';
+import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
 import { useUnifiedSpacedRepetition } from '../../../../hooks/useUnifiedSpacedRepetition';
 
 const supabase = createClient(
@@ -266,8 +267,10 @@ export default function TranslatorRoom({
 
         // Record practice for each significant word in the sentence
         for (const word of sourceWords.slice(0, 3)) { // Limit to first 3 words to avoid spam
+          // Create a safe ID by hashing the word to avoid special characters
+          const wordHash = btoa(word).replace(/[^a-zA-Z0-9]/g, '').substring(0, 8);
           const wordData = {
-            id: `case-file-${currentSentence.id}-${word}`,
+            id: `case-file-${currentSentence.id}-${wordHash}`,
             word: word,
             translation: currentSentence.english_translation, // Full translation as context
             language: language === 'spanish' ? 'es' : language === 'french' ? 'fr' : 'en'
@@ -317,30 +320,32 @@ export default function TranslatorRoom({
       }
     }
 
-    // Log word-level performance if game service is available
-    if (gameService && gameSessionId) {
+    // Record sentence translation attempt using new gems system
+    if (gameSessionId) {
       try {
-        await gameService.logWordPerformance({
-          session_id: gameSessionId,
-          word_id: currentSentence.id,
-          word: currentSentence.source_sentence,
-          translation: currentSentence.english_translation,
-          is_correct: correct,
-          response_time_ms: responseTime,
-          attempts: 1, // Each sentence is attempted once
-          error_type: correct ? undefined : 'translation_accuracy',
-          grammar_concept: 'translation_skills',
-          error_details: correct ? undefined : {
-            userTranslation: userTranslation.trim(),
-            correctTranslation: currentSentence.english_translation,
-            translationType: 'sentence_translation',
+        const sessionService = new EnhancedGameSessionService();
+        await sessionService.recordSentenceAttempt(gameSessionId, 'case-file-translator', {
+          sentenceId: currentSentence.id, // ✅ FIXED: Use sentence ID for sentence-based tracking
+          sourceText: currentSentence.source_sentence,
+          targetText: currentSentence.english_translation,
+          responseTimeMs: responseTime,
+          wasCorrect: correct,
+          hintUsed: false,
+          streakCount: correctTranslations,
+          masteryLevel: correct ? 2 : 0,
+          maxGemRarity: 'epic', // Allow epic gems for translation work
+          gameMode: 'sentence_translation',
+          difficultyLevel: currentSentence.complexity_score > 3 ? 'advanced' : 'intermediate',
+          contextData: {
             caseContext: currentSentence.case_context,
             wordCount: currentSentence.word_count,
-            complexityScore: currentSentence.complexity_score
+            complexityScore: currentSentence.complexity_score,
+            userTranslation: userTranslation.trim(),
+            translationType: 'sentence_translation'
           }
         });
       } catch (error) {
-        console.error('Failed to log translation performance:', error);
+        console.error('Error recording word attempt:', error);
       }
     }
 

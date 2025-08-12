@@ -19,6 +19,7 @@ import { HTML5Backend } from 'react-dnd-html5-backend';
 import { SoundProvider, useSound, SoundControls } from './SoundManager';
 import { EnhancedGameService } from '../../../../services/enhancedGameService';
 import { useUnifiedSpacedRepetition } from '../../../../hooks/useUnifiedSpacedRepetition';
+import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
 
 // Types
 interface WordItem {
@@ -890,23 +891,76 @@ const GemSpeedBuilderInternal: React.FC<{
       const responseTime = wordPlacementStartTime > 0 ? Date.now() - wordPlacementStartTime : 0;
       const isCorrect = word.correctPosition === targetIndex;
 
-      // Log word placement performance
+      // Record vocabulary interaction using gems-first system
+      if (gameSessionId) {
+        try {
+          const sessionService = new EnhancedGameSessionService();
+          const gemEvent = await sessionService.recordWordAttempt(gameSessionId, 'speed-builder', {
+            vocabularyId: word.id, // Use UUID directly, not parseInt
+            wordText: word.text,
+            translationText: word.translation || word.text,
+            responseTimeMs: responseTime,
+            wasCorrect: isCorrect,
+            hintUsed: false, // No hints in speed-builder
+            streakCount: stats.streak,
+            masteryLevel: isCorrect ? 2 : 0, // Higher mastery for correct placements
+            maxGemRarity: 'rare', // Cap at rare for sentence building
+            gameMode: 'sentence_building',
+            difficultyLevel: 'intermediate',
+            contextData: {
+              placedPosition: targetIndex,
+              correctPosition: word.correctPosition,
+              sentenceContext: currentSentence?.text,
+              wordPlacementSpeed: responseTime > 0 ? 1000 / responseTime : 0,
+              gameType: 'gem-speed-builder',
+              sentenceIndex: currentSentenceIndex,
+              totalSentences: availableSentences.length
+            }
+          });
+
+          // Show gem feedback if gem was awarded
+          if (gemEvent && isCorrect) {
+            console.log(`🔮 Speed Builder earned ${gemEvent.rarity} gem (${gemEvent.xpValue} XP) for "${word.text}"`);
+          }
+        } catch (error) {
+          console.error('Failed to record vocabulary interaction:', error);
+        }
+      }
+
+      // Log word placement performance (legacy system)
       gameService.logWordPerformance({
         session_id: gameSessionId,
-        word_id: word.id,
-        word: word.text,
-        translation: word.translation || word.text,
-        is_correct: isCorrect,
+        vocabulary_id: parseInt(word.id) || 0, // Convert string to number
+        word_text: word.text,
+        translation_text: word.translation || word.text,
+        language_pair: 'spanish_english',
+        attempt_number: 1,
         response_time_ms: responseTime,
-        attempts: 1, // Each drop is one attempt
+        was_correct: isCorrect,
+        confidence_level: isCorrect ? 5 : 2,
+        difficulty_level: 'intermediate',
+        hint_used: false,
+        power_up_active: undefined,
+        streak_count: 0,
+        previous_attempts: 0,
+        mastery_level: isCorrect ? 3 : 1,
         error_type: isCorrect ? undefined : 'word_placement_error',
         grammar_concept: 'sentence_building',
-        error_details: isCorrect ? undefined : {
+        error_details: isCorrect ? {} : {
           placedPosition: targetIndex,
           correctPosition: word.correctPosition,
           sentenceContext: currentSentence?.text,
           wordPlacementSpeed: responseTime > 0 ? 1000 / responseTime : 0
-        }
+        },
+        context_data: {
+          gameType: 'gem-speed-builder',
+          sentenceIndex: currentSentenceIndex,
+          totalSentences: availableSentences.length,
+          placedPosition: targetIndex,
+          correctPosition: word.correctPosition,
+          gameMode: 'speed'
+        },
+        timestamp: new Date()
       }).catch(error => {
         console.error('Failed to log word placement performance:', error);
       });

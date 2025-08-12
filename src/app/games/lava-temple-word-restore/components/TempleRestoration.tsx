@@ -7,6 +7,7 @@ import { GameConfig } from './LavaTempleWordRestoreGame';
 import { EnhancedGameService } from '../../../../services/enhancedGameService';
 import { createAudio } from '@/utils/audioUtils';
 import { useUnifiedSpacedRepetition } from '../../../../hooks/useUnifiedSpacedRepetition';
+import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -132,13 +133,25 @@ export default function TempleRestoration({
           .eq('is_active', true)
           .eq('is_public', true);
 
-        // Add category filter
-        if (gameConfig.category) {
-          query = query.eq('category', gameConfig.category);
-        }
+        // Map assignment categories to sentence table categories
+        const categoryMapping: Record<string, string> = {
+          'food': 'basics_core_language',
+          'family': 'basics_core_language',
+          'school': 'basics_core_language',
+          'hobbies': 'basics_core_language',
+          'assignment': 'basics_core_language' // Default for assignments
+        };
 
-        // Add subcategory filter if specified
-        if (gameConfig.subcategory) {
+        // Use mapped category or default to basics_core_language
+        const mappedCategory = gameConfig.category ?
+          (categoryMapping[gameConfig.category] || 'basics_core_language') :
+          'basics_core_language';
+
+        query = query.eq('category', mappedCategory);
+
+        // For subcategory, if it's 'assignment' or not found, don't filter by subcategory
+        // This allows broader sentence selection for assignments
+        if (gameConfig.subcategory && gameConfig.subcategory !== 'assignment') {
           query = query.eq('subcategory', gameConfig.subcategory);
         }
 
@@ -342,7 +355,42 @@ export default function TempleRestoration({
         }
       }
 
-      // Log word-level performance for each gap if game service is available
+      // Record sentence interaction using gems-first system
+      if (gameSessionId && correctOption?.option_text) {
+        try {
+          const sessionService = new EnhancedGameSessionService();
+          const gemEvent = await sessionService.recordSentenceAttempt(gameSessionId, 'lava-temple', {
+            sentenceId: currentSentence.id, // ✅ FIXED: Use sentence ID for sentence-based tracking
+            sourceText: currentSentence.source_sentence,
+            targetText: currentSentence.english_translation || currentSentence.source_sentence,
+            responseTimeMs: responseTime,
+            wasCorrect: isGapCorrect,
+            hintUsed: currentSentence.temple_context ? true : false, // Context clues count as hints
+            streakCount: correctAnswers,
+            masteryLevel: isGapCorrect ? 2 : 0, // Higher mastery for correct gap fills
+            maxGemRarity: 'epic', // Allow epic gems for reading comprehension
+            gameMode: 'fill_in_blank',
+            difficultyLevel: gameConfig.difficulty,
+            contextData: {
+              gapIndex,
+              selectedWord,
+              correctWord: correctOption.option_text,
+              sentenceContext: currentSentence.source_sentence,
+              templeContext: currentSentence.temple_context,
+              gameType: 'lava-temple-word-restore'
+            }
+          });
+
+          // Show gem feedback if gem was awarded
+          if (gemEvent && isGapCorrect) {
+            console.log(`🔮 Lava Temple earned ${gemEvent.rarity} gem (${gemEvent.xpValue} XP) for "${correctOption.option_text}"`);
+          }
+        } catch (error) {
+          console.error('Failed to record vocabulary interaction:', error);
+        }
+      }
+
+      // Log word-level performance for each gap if game service is available (legacy system)
       if (gameService && gameSessionId) {
         try {
           await gameService.logWordPerformance({

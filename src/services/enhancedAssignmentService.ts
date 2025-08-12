@@ -226,7 +226,9 @@ export class EnhancedAssignmentService {
           vocabularyListId = newVocabList.id;
 
           // Populate vocabulary list
-          await this.populateVocabularyList(vocabularyListId, vocabularySelection);
+          if (vocabularyListId) {
+            await this.populateVocabularyList(vocabularyListId, vocabularySelection);
+          }
         }
       } catch (error) {
         console.error('Error creating vocabulary list:', error);
@@ -327,31 +329,125 @@ export class EnhancedAssignmentService {
   }
 
   private mapSubcategoryToCategory(subcategory: string): string {
-    // Map subcategories to their parent categories
+    // Map subcategories to their parent categories based on ACTUAL database structure
     const subcategoryMap: { [key: string]: string } = {
       // basics_core_language
       'colours': 'basics_core_language',
+      'common_adverbs': 'basics_core_language',
+      'common_irregular_verbs': 'basics_core_language',
+      'common_phrases': 'basics_core_language',
+      'common_regular_verbs': 'basics_core_language',
+      'comparatives_superlatives': 'basics_core_language',
+      'conjunctions': 'basics_core_language',
+      'days': 'basics_core_language',
+      'demonstratives': 'basics_core_language',
+      'general_prepositions': 'basics_core_language',
+      'greetings_core_language': 'basics_core_language',
+      'greetings_introductions': 'basics_core_language',
+      'months': 'basics_core_language',
       'numbers_1_30': 'basics_core_language',
       'numbers_40_100': 'basics_core_language',
-      'days_of_week': 'basics_core_language',
-      'months': 'basics_core_language',
-      'common_adverbs': 'basics_core_language',
+      'numbers_beyond_100': 'basics_core_language',
+      'object_descriptions': 'basics_core_language',
+      'opinions': 'basics_core_language',
+      'ordinal_numbers': 'basics_core_language',
       'pronouns': 'basics_core_language',
+      'qualifiers_intensifiers': 'basics_core_language',
       'question_words': 'basics_core_language',
+      'reflexive_verbs': 'basics_core_language',
+      'shapes': 'basics_core_language',
+      'telling_time': 'basics_core_language',
+      'time_sequencers': 'basics_core_language',
+
+      // clothes_shopping
+      'clothes_accessories': 'clothes_shopping',
+
+      // daily_life
+      'daily_routine': 'daily_life',
+
+      // food_drink
+      'food_drink_vocabulary': 'food_drink',
+      'meals': 'food_drink',
+      'ordering_cafes_restaurants': 'food_drink',
+
+      // free_time_leisure
+      'hobbies_interests': 'free_time_leisure',
+      'hobbies_interests_1st_person': 'free_time_leisure',
+      'social_activities': 'free_time_leisure',
+      'sports_ball_games': 'free_time_leisure',
+      'sports_indoor': 'free_time_leisure',
+      'sports_outdoor': 'free_time_leisure',
+
+      // general_concepts
+      'materials': 'general_concepts',
+      'measurements_quantities': 'general_concepts',
+
+      // health_lifestyle
+      'at_the_doctors': 'health_lifestyle',
+      'healthy_living': 'health_lifestyle',
+      'parts_of_body': 'health_lifestyle', // ✅ FIXED: This was incorrectly mapped to basics_core_language
+
+      // holidays_travel_culture
+      'accommodation': 'holidays_travel_culture',
+      'countries': 'holidays_travel_culture',
+      'festivals_celebrations': 'holidays_travel_culture',
+      'holiday_activities': 'holidays_travel_culture',
+      'nationalities': 'holidays_travel_culture',
+      'transport': 'holidays_travel_culture',
+      'travel_destinations_types': 'holidays_travel_culture',
+      'weathers': 'holidays_travel_culture',
+
+      // home_local_area
+      'chores': 'home_local_area',
+      'directions': 'home_local_area',
+      'directions_prepositions': 'home_local_area',
+      'furniture': 'home_local_area',
+      'household_items': 'home_local_area',
+      'house_rooms': 'home_local_area',
+      'places_in_town': 'home_local_area',
 
       // identity_personal_life
       'family_friends': 'identity_personal_life',
-      'physical_description': 'identity_personal_life',
-      'personality_character': 'identity_personal_life',
+      'feelings_emotions': 'identity_personal_life',
+      'personal_information': 'identity_personal_life',
+      'pets': 'identity_personal_life',
+      'physical_personality_descriptions': 'identity_personal_life',
       'relationships': 'identity_personal_life',
 
-      // home_local_area
-      'house_rooms': 'home_local_area',
-      'furniture_household': 'home_local_area',
-      'places_in_town': 'home_local_area',
-      'directions': 'home_local_area',
+      // nature_environment
+      'environmental_issues': 'nature_environment',
+      'farm_animals': 'nature_environment',
+      'insects_bugs': 'nature_environment',
+      'landscapes_features': 'nature_environment',
+      'plants': 'nature_environment',
+      'sea_animals': 'nature_environment',
+      'seasons': 'nature_environment',
+      'wild_animals': 'nature_environment',
 
-      // Add more mappings as needed...
+      // school_jobs_future
+      'adjective': 'school_jobs_future', // Note: This seems like a data error in the DB
+      'classroom_objects': 'school_jobs_future',
+      'future_ambitions': 'school_jobs_future',
+      'learning_work_verbs': 'school_jobs_future',
+      'professions_jobs': 'school_jobs_future',
+      'qualities_skills': 'school_jobs_future',
+      'school_life': 'school_jobs_future',
+      'school_rules': 'school_jobs_future',
+      'school_subjects': 'school_jobs_future',
+
+      // social_global_issues
+      'current_affairs_world_events': 'social_global_issues',
+      'global_problems_solutions': 'social_global_issues',
+      'human_rights': 'social_global_issues',
+      'social_issues': 'social_global_issues',
+
+      // technology_media
+      'film': 'technology_media',
+      'internet_digital_devices': 'technology_media',
+      'mobile_phones_social_media': 'technology_media',
+      'music': 'technology_media',
+      'online_safety': 'technology_media',
+      'tv': 'technology_media'
     };
 
     return subcategoryMap[subcategory] || 'basics_core_language';

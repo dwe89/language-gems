@@ -9,6 +9,12 @@ export interface VocabularyConfig {
   subcategory?: string; // Keep for backward compatibility
   theme?: string;
   topic?: string;
+  // KS4 specific fields
+  themes?: string[]; // Support multiple themes for KS4
+  units?: string[]; // Support multiple units for KS4
+  examBoard?: 'AQA' | 'Edexcel';
+  tier?: 'foundation' | 'higher';
+  // Other fields
   customListId?: string;
   customList?: any;
   wordCount?: number;
@@ -93,6 +99,7 @@ export interface AssignmentDetails {
   maxAttempts: number;
   showResults: boolean;
   randomizeOrder: boolean;
+  curriculum_level?: 'KS3' | 'KS4';
 }
 
 export interface AssignmentStep {

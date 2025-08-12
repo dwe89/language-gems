@@ -175,7 +175,6 @@ export class SimpleStudentDataService {
    */
   async getStudentAnalyticsData(teacherId: string): Promise<SimpleStudentData[]> {
     try {
-      console.log(`Fetching student data for teacher: ${teacherId}`);
       
       // Get all students for this teacher
       const { data: students, error: studentsError } = await supabase
@@ -185,16 +184,14 @@ export class SimpleStudentDataService {
         .eq('role', 'student');
 
       if (studentsError) {
-        console.error('Error fetching students:', studentsError);
+        
         return [];
       }
 
       if (!students || students.length === 0) {
-        console.log('No students found for teacher');
+        
         return [];
       }
-
-      console.log(`Found ${students.length} students`);
 
       const studentData: SimpleStudentData[] = [];
 
@@ -231,12 +228,11 @@ export class SimpleStudentDataService {
           .order('created_at', { ascending: false });
 
         if (sessionsError) {
-          console.error(`Error fetching sessions for student ${studentId}:`, sessionsError);
+          
           continue;
         }
 
         const sessions = gameSessions || [];
-        console.log(`Student ${student.display_name}: ${sessions.length} sessions`);
 
         // Calculate metrics
         const totalSessions = sessions.length;
@@ -327,11 +323,10 @@ export class SimpleStudentDataService {
         });
       }
 
-      console.log(`Processed ${studentData.length} students with analytics data`);
       return studentData;
 
     } catch (error) {
-      console.error('Error in getStudentAnalyticsData:', error);
+      
       return [];
     }
   }
@@ -403,7 +398,7 @@ export class SimpleStudentDataService {
       };
 
     } catch (error) {
-      console.error('Error calculating learning patterns:', error);
+      
       return {
         peakLearningTime: 'Error loading data',
         averageSessionDuration: 0,
@@ -417,13 +412,11 @@ export class SimpleStudentDataService {
    */
   async getClassAnalytics(teacherId: string): Promise<SimpleClassAnalytics[]> {
     try {
-      console.log(`Fetching class analytics for teacher: ${teacherId}`);
       
       // Get student data first
       const studentData = await this.getStudentAnalyticsData(teacherId);
       
       if (studentData.length === 0) {
-        console.log('No student data available for class analytics');
         return [];
       }
 
@@ -466,13 +459,11 @@ export class SimpleStudentDataService {
         engagement_score: Math.min(100, Math.round(engagementScore)),
         common_struggles: commonStruggles
       };
-
-      console.log(`Class analytics: ${totalStudents} students, ${atRiskStudents} at risk, ${Math.round(averagePerformance)}% avg performance`);
       
       return [classAnalytics];
 
     } catch (error) {
-      console.error('Error in getClassAnalytics:', error);
+      
       return [];
     }
   }
@@ -507,7 +498,7 @@ export class SimpleStudentDataService {
         } : null
       };
     } catch (error) {
-      console.error('Error in getDebugSummary:', error);
+      
       return { error: error instanceof Error ? error.message : 'Unknown error' };
     }
   }

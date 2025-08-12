@@ -53,34 +53,35 @@ export default function VocabularyPracticePage() {
       setLoading(true);
       
       try {
+        // Use gems-first system instead of legacy user_vocabulary_progress
         let query = supabase
-          .from('user_vocabulary_progress')
+          .from('vocabulary_gem_collection')
           .select(`
             id,
-            vocabulary_id,
-            times_seen,
-            times_correct,
-            is_learned,
-            last_seen,
-            vocabulary(
+            vocabulary_item_id,
+            total_encounters,
+            correct_encounters,
+            mastery_level,
+            last_encountered_at,
+            centralized_vocabulary!inner(
               id,
-              spanish,
-              english,
-              theme,
-              topic,
-              difficulty_level
+              word,
+              translation,
+              category,
+              subcategory,
+              language
             )
           `)
-          .eq('user_id', user.id);
-        
+          .eq('student_id', user.id);
+
         // If a specific item ID was passed, only practice that item
         if (specificItem) {
-          query = query.eq('vocabulary_id', specificItem);
+          query = query.eq('vocabulary_item_id', specificItem);
         } else {
-          // Otherwise, prioritize items that need practice (not learned or low accuracy)
-          query = query.or(`is_learned.eq.false,times_seen.lt.5`);
+          // Otherwise, prioritize items that need practice (mastery level < 3 or low encounters)
+          query = query.or(`mastery_level.lt.3,total_encounters.lt.5`);
         }
-        
+
         // Limit to 20 items for a practice session
         const { data, error } = await query.limit(20);
         
@@ -90,33 +91,33 @@ export default function VocabularyPracticePage() {
         }
         
         if (data.length === 0) {
-          // If no items found that match criteria, get any items
+          // If no items found that match criteria, get any items from gems system
           const { data: anyItems, error: anyError } = await supabase
-            .from('user_vocabulary_progress')
+            .from('vocabulary_gem_collection')
             .select(`
               id,
-              vocabulary_id,
-              times_seen,
-              times_correct,
-              is_learned,
-              last_seen,
-              vocabulary(
+              vocabulary_item_id,
+              total_encounters,
+              correct_encounters,
+              mastery_level,
+              last_encountered_at,
+              centralized_vocabulary!inner(
                 id,
-                spanish,
-                english,
-                theme,
-                topic,
-                difficulty_level
+                word,
+                translation,
+                category,
+                subcategory,
+                language
               )
             `)
-            .eq('user_id', user.id)
+            .eq('student_id', user.id)
             .limit(20);
-            
+
           if (anyError) {
             console.error('Error fetching any practice items:', anyError);
             return;
           }
-          
+
           processItems(anyItems);
         } else {
           processItems(data);
@@ -129,21 +130,21 @@ export default function VocabularyPracticePage() {
     };
     
     const processItems = (items) => {
-      // Format items for practice
+      // Format items for practice using gems-first data structure
       const processedItems = items.map(item => ({
         progressId: item.id,
-        itemId: item.vocabulary_id,
-        term: item.vocabulary.spanish,
-        translation: item.vocabulary.english,
-        exampleSentence: '', // Not available in vocabulary table
-        exampleTranslation: '', // Not available in vocabulary table
-        imageUrl: undefined, // Not available in vocabulary table
-        audioUrl: undefined, // Not available in vocabulary table
-        proficiencyLevel: item.is_learned ? 5 : (item.times_seen > 0 ? Math.min(Math.floor((item.times_correct / item.times_seen) * 5) + 1, 5) : 1),
-        correctAnswers: item.times_correct,
-        incorrectAnswers: (item.times_seen || 0) - (item.times_correct || 0)
+        itemId: item.vocabulary_item_id,
+        term: item.centralized_vocabulary.word,
+        translation: item.centralized_vocabulary.translation,
+        exampleSentence: '', // Not available in centralized_vocabulary table
+        exampleTranslation: '', // Not available in centralized_vocabulary table
+        imageUrl: undefined, // Not available in centralized_vocabulary table
+        audioUrl: undefined, // Not available in centralized_vocabulary table
+        proficiencyLevel: item.mastery_level || 1,
+        correctAnswers: item.correct_encounters || 0,
+        incorrectAnswers: (item.total_encounters || 0) - (item.correct_encounters || 0)
       }));
-      
+
       // Shuffle the items
       const shuffledItems = [...processedItems].sort(() => Math.random() - 0.5);
       setPracticeItems(shuffledItems);

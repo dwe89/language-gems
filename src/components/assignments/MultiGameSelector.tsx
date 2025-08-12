@@ -16,7 +16,9 @@ import {
   Castle,
   Layers,
   FileText,
-  Flame
+  Flame,
+  Sword,
+  Pickaxe
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -192,6 +194,42 @@ const AVAILABLE_GAMES: GameOption[] = [
     estimatedTime: '8-15 min',
     features: ['Fill-in-the-blank', 'Temple theme', 'Word restoration'],
     type: 'sentence'
+  },
+  {
+    id: 'sentence-builder',
+    name: 'Sentence Builder',
+    description: 'Construct sentences by selecting and arranging words in the correct order',
+    icon: <Building2 className="h-5 w-5" />,
+    color: 'from-emerald-500 to-green-500',
+    category: 'grammar',
+    difficulty: 'intermediate',
+    estimatedTime: '6-12 min',
+    features: ['Sentence construction', 'Word ordering', 'Grammar practice'],
+    type: 'sentence'
+  },
+  {
+    id: 'verb-quest',
+    name: 'Verb Quest',
+    description: 'Embark on an epic RPG adventure to master verb conjugations',
+    icon: <Sword className="h-5 w-5" />,
+    color: 'from-violet-500 to-purple-500',
+    category: 'grammar',
+    difficulty: 'advanced',
+    estimatedTime: '12-20 min',
+    features: ['RPG adventure', 'Verb conjugation', 'Character progression'],
+    type: 'sentence'
+  },
+  {
+    id: 'vocabulary-mining',
+    name: 'Vocabulary Mining',
+    description: 'Mine for vocabulary gems in underground caverns',
+    icon: <Pickaxe className="h-5 w-5" />,
+    color: 'from-stone-500 to-gray-600',
+    category: 'vocabulary',
+    difficulty: 'beginner',
+    estimatedTime: '5-10 min',
+    features: ['Mining theme', 'Gem collection', 'Progressive difficulty'],
+    type: 'vocabulary'
   }
 ];
 

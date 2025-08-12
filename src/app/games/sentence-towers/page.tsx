@@ -15,6 +15,8 @@ import { useSounds } from './hooks/useSounds';
 import { useAuth } from '../../../components/auth/AuthProvider';
 import { useSupabase } from '../../../components/supabase/SupabaseProvider';
 import { EnhancedGameService } from '../../../services/enhancedGameService';
+import { RewardEngine } from '../../../services/rewards/RewardEngine';
+import { EnhancedGameSessionService } from '../../../services/rewards/EnhancedGameSessionService';
 import GameAssignmentWrapper from '../../../components/games/templates/GameAssignmentWrapper';
 import { useUnifiedSpacedRepetition } from '../../../hooks/useUnifiedSpacedRepetition';
 
@@ -673,12 +675,9 @@ function ImprovedSentenceTowersGame({
         device_info: {}
       };
 
-      // Calculate XP based on performance
-      const baseXP = gameState.blocksPlaced * 20; // 20 XP per block placed
-      const accuracyBonus = Math.round(gameState.accuracy * 100 * 0.3); // Bonus for accuracy
-      const heightBonus = gameState.maxHeight * 5; // Bonus for tower height
-      const streakBonus = gameState.streak * 2; // Bonus for streak
-      const totalXP = baseXP + accuracyBonus + heightBonus + streakBonus;
+      // Use gems-first system: XP calculated from individual vocabulary interactions
+      // Remove conflicting XP calculation - gems system handles all scoring through recordWordAttempt()
+      const totalXP = gameState.blocksPlaced * 10; // 10 XP per block placed (gems-first)
 
       // Start and immediately end the session with the service
       const sessionId = await enhancedGameService.startGameSession(sessionData);
@@ -966,37 +965,31 @@ function ImprovedSentenceTowersGame({
       }
     }
 
-    // Log word performance for analytics
-    if (enhancedGameService && user) {
+    // Record word attempt using new gems system
+    if (gameSessionId && user) {
       const responseTime = (Date.now() - questionStartTime) / 1000;
-      enhancedGameService.logWordPerformance({
-        session_id: gameSessionId || 'fallback-session',
-        vocabulary_id: option.id ? parseInt(option.id) : undefined,
-        word_text: option.word,
-        translation_text: option.translation,
-        language_pair: `${config.language}_english`,
-        attempt_number: 1,
-        response_time_ms: Math.round(responseTime * 1000),
-        was_correct: true,
-        confidence_level: responseTime < 3 ? 5 : responseTime < 6 ? 4 : responseTime < 10 ? 3 : 2,
-        difficulty_level: settings.difficulty,
-        hint_used: false,
-        streak_count: gameState.streak + 1,
-        previous_attempts: 0,
-        mastery_level: isTypingMode ? 2 : 1, // Higher mastery for typing mode
-        grammar_concept: 'sentence_building',
-        context_data: {
-          gameType: 'sentence-towers',
-          gameMode: isTypingMode ? 'typing' : 'multiple-choice',
-          towerHeight: gameState.currentHeight,
-          blockPosition: gameState.blocksPlaced + 1,
-          multiplier: gameState.multiplier,
-          doublePoints: isTypingMode
-        },
-        timestamp: new Date()
-      }).catch(error => {
-        console.error('Failed to log word performance:', error);
-      });
+      try {
+        const sessionService = new EnhancedGameSessionService();
+        await sessionService.recordWordAttempt(gameSessionId, 'sentence-towers', {
+          vocabularyId: option.id || `sentence-${option.word}`,
+          wordText: option.word,
+          translationText: option.translation,
+          responseTimeMs: Math.round(responseTime * 1000),
+          wasCorrect: true,
+          hintUsed: false,
+          streakCount: gameState.streak + 1,
+          difficultyLevel: settings.difficulty,
+          gameMode: isTypingMode ? 'typing' : 'multiple_choice',
+          contextData: {
+            towerHeight: gameState.currentHeight,
+            blockPosition: gameState.blocksPlaced + 1,
+            multiplier: gameState.multiplier,
+            doublePoints: isTypingMode
+          }
+        });
+      } catch (error) {
+        console.error('Error recording word attempt:', error);
+      }
     }
 
     setVocabulary(prev =>
@@ -1124,43 +1117,33 @@ function ImprovedSentenceTowersGame({
       }
     }
 
-    // Log word performance for analytics if we have the incorrect option
-    if (enhancedGameService && user && incorrectOption && currentTargetWord) {
+    // Record incorrect word attempt using new gems system
+    if (gameSessionId && user && incorrectOption && currentTargetWord) {
       const responseTime = (Date.now() - questionStartTime) / 1000;
-      enhancedGameService.logWordPerformance({
-        session_id: 'temp-session', // Will be replaced with actual session ID when available
-        vocabulary_id: currentTargetWord.id ? parseInt(currentTargetWord.id) : undefined,
-        word_text: currentTargetWord.word,
-        translation_text: currentTargetWord.translation,
-        language_pair: `${config.language}_english`,
-        attempt_number: 1,
-        response_time_ms: Math.round(responseTime * 1000),
-        was_correct: false,
-        confidence_level: 1, // Low confidence for wrong answer
-        difficulty_level: settings.difficulty,
-        hint_used: false,
-        streak_count: 0,
-        previous_attempts: 0,
-        mastery_level: 0,
-        error_type: 'incorrect_selection',
-        grammar_concept: 'sentence_building',
-        error_details: {
-          correctAnswer: currentTargetWord.word,
-          selectedAnswer: incorrectOption.word,
-          gameMode: isTypingMode ? 'typing' : 'multiple-choice',
-          towerHeight: gameState.currentHeight
-        },
-        context_data: {
-          gameType: 'sentence-towers',
-          gameMode: isTypingMode ? 'typing' : 'multiple-choice',
-          towerHeight: gameState.currentHeight,
-          blockPosition: gameState.blocksPlaced + 1,
-          multiplier: gameState.multiplier
-        },
-        timestamp: new Date()
-      }).catch(error => {
-        console.error('Failed to log word performance:', error);
-      });
+      try {
+        const sessionService = new EnhancedGameSessionService();
+        await sessionService.recordWordAttempt(gameSessionId, 'sentence-towers', {
+          vocabularyId: currentTargetWord.id || `sentence-${currentTargetWord.word}`,
+          wordText: currentTargetWord.word,
+          translationText: currentTargetWord.translation,
+          responseTimeMs: Math.round(responseTime * 1000),
+          wasCorrect: false,
+          hintUsed: false,
+          streakCount: 0,
+          difficultyLevel: settings.difficulty,
+          gameMode: isTypingMode ? 'typing' : 'multiple_choice',
+          contextData: {
+            correctAnswer: currentTargetWord.word,
+            selectedAnswer: incorrectOption.word,
+            towerHeight: gameState.currentHeight,
+            blockPosition: gameState.blocksPlaced + 1,
+            multiplier: gameState.multiplier,
+            errorType: 'incorrect_selection'
+          }
+        });
+      } catch (error) {
+        console.error('Error recording word attempt:', error);
+      }
     }
 
     // Play wrong answer sound

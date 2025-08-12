@@ -274,14 +274,14 @@ export default function VocabMasterLauncher() {
     if (!user) return;
 
     try {
-      // Get user progress stats
+      // Get user progress stats from gems-first system
       const { data: progressData } = await supabase
-        .from('user_vocabulary_progress')
-        .select('*')
-        .eq('user_id', user.id);
+        .from('vocabulary_gem_collection')
+        .select('mastery_level, current_streak, last_encountered_at')
+        .eq('student_id', user.id);
 
-      const totalLearned = progressData?.filter(p => p.is_learned).length || 0;
-      const currentStreak = await calculateCurrentStreak();
+      const totalLearned = progressData?.filter(p => p.mastery_level >= 3).length || 0;
+      const currentStreak = Math.max(...(progressData?.map(p => p.current_streak || 0) || [0]));
       const weeklyProgress = await calculateWeeklyProgress();
 
       setUserStats(prev => ({
@@ -318,16 +318,16 @@ export default function VocabMasterLauncher() {
   const calculateWeeklyProgress = async (): Promise<number> => {
     if (!user) return 0;
 
-    // Calculate progress towards weekly goal
+    // Calculate progress towards weekly goal using gems-first system
     const weekStart = new Date();
     weekStart.setDate(weekStart.getDate() - weekStart.getDay());
 
     try {
       const { data } = await supabase
-        .from('user_vocabulary_progress')
+        .from('vocabulary_gem_collection')
         .select('id')
-        .eq('user_id', user.id)
-        .gte('updated_at', weekStart.toISOString());
+        .eq('student_id', user.id)
+        .gte('last_encountered_at', weekStart.toISOString());
 
       return Math.min((data?.length || 0), userStats.weeklyGoal);
     } catch {
@@ -470,14 +470,14 @@ export default function VocabMasterLauncher() {
     }
 
     try {
-      // Get words with no progress or very little exposure
+      // Get words with no progress or very little exposure using gems-first system
       const { data: progressData } = await supabase
-        .from('user_vocabulary_progress')
-        .select('vocabulary_id, times_seen')
-        .eq('user_id', user.id);
+        .from('vocabulary_gem_collection')
+        .select('vocabulary_item_id, total_encounters')
+        .eq('student_id', user.id);
 
-      const progressMap = new Map(progressData?.map(p => [p.vocabulary_id, p.times_seen]) || []);
-      
+      const progressMap = new Map(progressData?.map(p => [p.vocabulary_item_id, p.total_encounters]) || []);
+
       const newWords = vocabulary
         .filter(word => !progressMap.has(word.id) || (progressMap.get(word.id) || 0) < 3)
         .sort(() => Math.random() - 0.5)
@@ -519,16 +519,16 @@ export default function VocabMasterLauncher() {
     }
 
     try {
-      // Get words with low success rate (< 70%)
+      // Get words with low success rate (< 70%) using gems-first system
       const { data: progressData } = await supabase
-        .from('user_vocabulary_progress')
-        .select('vocabulary_id, times_seen, times_correct')
-        .eq('user_id', user.id)
-        .gt('times_seen', 2);
+        .from('vocabulary_gem_collection')
+        .select('vocabulary_item_id, total_encounters, correct_encounters')
+        .eq('student_id', user.id)
+        .gt('total_encounters', 2);
 
       const weakWordIds = progressData
-        ?.filter(p => (p.times_correct / p.times_seen) < 0.7)
-        .map(p => p.vocabulary_id) || [];
+        ?.filter(p => (p.correct_encounters / p.total_encounters) < 0.7)
+        .map(p => p.vocabulary_item_id) || [];
 
       const weakWords = vocabulary
         .filter(word => weakWordIds.includes(word.id))

@@ -961,12 +961,9 @@ async function handleEndGameSession(args: any) {
 }
 
 async function updateStudentProfile(studentId: string, stats: any) {
-  // Update or create student game profile
-  const { data: profile } = await supabase
-    .from('student_game_profiles')
-    .select('*')
-    .eq('student_id', studentId)
-    .single();
+  // student_game_profiles table removed - skip profile updates
+  // Profile data is now calculated dynamically from gems system
+  console.log('Student profile update skipped - using gems-first system');
 
   const updateData: any = {
     student_id: studentId,
@@ -1045,12 +1042,8 @@ async function handleGetCrossGameLeaderboard(args: any) {
 async function handleGetStudentAnalytics(args: any) {
   const { student_id, time_period = 'all_time' } = args;
 
-  // Get student profile
-  const { data: profile } = await supabase
-    .from('student_game_profiles')
-    .select('*')
-    .eq('student_id', student_id)
-    .single();
+  // student_game_profiles table removed - calculate profile from gems system
+  const profile = null; // Will be calculated from gem_events and enhanced_game_sessions
 
   // Get recent game sessions
   const { data: sessions } = await supabase
@@ -1140,11 +1133,8 @@ async function handleGetClassAnalytics(args: any) {
 
   const studentIds = classStudents?.map(cs => cs.student_id) || [];
 
-  // Get student profiles
-  const { data: profiles } = await supabase
-    .from('student_game_profiles')
-    .select('*')
-    .in('student_id', studentIds);
+  // student_game_profiles table removed - skip profile queries
+  const profiles = []; // Profiles will be calculated from gems system
 
   // Get recent game sessions
   const { data: sessions } = await supabase

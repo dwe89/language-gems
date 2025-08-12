@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { EnhancedGameService } from '../../../../services/enhancedGameService';
 import { supabaseBrowser } from '../../../../components/auth/AuthProvider';
+import { RewardEngine } from '../../../../services/rewards/RewardEngine';
 import WordBlastGame from './WordBlastGame';
 import { GameStats, SentenceChallenge } from '../types';
 
@@ -99,14 +100,9 @@ export default function WordBlastGameWrapper(props: WordBlastGameWrapperProps) {
           ? sessionStats.totalResponseTime / sessionStats.explosiveWordMatches
           : 0;
 
-        // Calculate XP based on performance
-        const baseXP = sessionStats.correctMatches * 18; // 18 XP per correct match
-        const accuracyBonus = Math.round(accuracy * 1.2); // Accuracy bonus
-        const comboBonus = sessionStats.blastCombos * 35; // 35 XP per combo
-        const chainBonus = sessionStats.chainReactions * 25; // 25 XP per chain reaction
-        const speedBonus = averageResponseTime < 3000 ? 80 : averageResponseTime < 5000 ? 40 : 0; // Speed bonus
-        const explosiveBonus = sessionStats.explosiveWordMatches * 5; // Explosive matching bonus
-        const totalXP = baseXP + accuracyBonus + comboBonus + chainBonus + speedBonus + explosiveBonus;
+        // Use gems-first system: XP calculated from individual vocabulary interactions
+        // Remove conflicting XP calculation - gems system handles all scoring through recordWordAttempt()
+        const totalXP = sessionStats.correctMatches * 10; // 10 XP per correct match (gems-first)
 
         await gameService.endGameSession(gameSessionId, {
           student_id: props.userId,
@@ -119,7 +115,7 @@ export default function WordBlastGameWrapper(props: WordBlastGameWrapperProps) {
           duration_seconds: sessionDuration,
           average_response_time_ms: averageResponseTime,
           xp_earned: totalXP,
-          bonus_xp: accuracyBonus + comboBonus + chainBonus + speedBonus + explosiveBonus,
+          bonus_xp: 0, // No bonus XP in gems-first system
           session_data: {
             sessionStats,
             totalSessionTime: sessionDuration,

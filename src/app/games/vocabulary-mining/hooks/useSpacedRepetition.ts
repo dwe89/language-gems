@@ -114,7 +114,7 @@ export const useSpacedRepetition = (supabase: SupabaseClient | null, userId: str
           next_review_at,
           spaced_repetition_ease_factor,
           mastery_level,
-          centralized_vocabulary (
+          centralized_vocabulary!vocabulary_gem_collection_vocabulary_item_id_fkey (
             id,
             spanish,
             english,

@@ -9,8 +9,7 @@ import WordScrambleGameEnhanced from './WordScrambleGameEnhanced';
 import GameAssignmentWrapper, {
   StandardVocabularyItem,
   AssignmentData,
-  GameProgress,
-  calculateStandardScore
+  GameProgress
 } from '../../../../components/games/templates/GameAssignmentWrapper';
 import { ArrowLeft, Clock, Target, Award, BookOpen, Shuffle } from 'lucide-react';
 
@@ -89,21 +88,19 @@ export default function WordScrambleAssignmentWrapper({
 
         const handleGameEnd = (result: { won: boolean; score: number; stats: any }) => {
           try {
-            // Calculate final progress using standard scoring
-            const { score, accuracy, maxScore } = calculateStandardScore(
-              result.stats?.perfectWords || 0,
-              vocabulary.length,
-              result.stats?.totalTime || 0,
-              50 // Base points per word for Word Scramble
-            );
+            // Use gems-first scoring: 10 XP per word completed
+            const wordsCompleted = result.stats?.wordsCompleted || 0;
+            const score = wordsCompleted * 10;
+            const accuracy = vocabulary.length > 0 ? (wordsCompleted / vocabulary.length) * 100 : 0;
+            const maxScore = vocabulary.length * 10;
 
             // Update assignment progress
             onProgressUpdate({
-              wordsCompleted: result.stats?.wordsCompleted || 0,
+              wordsCompleted,
               totalWords: vocabulary.length,
-              score: score,
-              maxScore: maxScore,
-              accuracy: accuracy,
+              score,
+              maxScore,
+              accuracy,
               timeSpent: result.stats?.totalTime || 0
             });
 
@@ -112,11 +109,11 @@ export default function WordScrambleAssignmentWrapper({
               assignmentId: assignment.id,
               gameId: 'word-scramble',
               studentId: user.id,
-              wordsCompleted: result.stats?.wordsCompleted || 0,
+              wordsCompleted,
               totalWords: vocabulary.length,
-              score: score,
-              maxScore: maxScore,
-              accuracy: accuracy,
+              score,
+              maxScore,
+              accuracy,
               timeSpent: result.stats?.totalTime || 0,
               completedAt: new Date(),
               sessionData: { result, stats: result.stats }

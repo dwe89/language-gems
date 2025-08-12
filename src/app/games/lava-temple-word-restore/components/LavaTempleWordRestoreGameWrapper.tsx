@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { EnhancedGameService } from '../../../../services/enhancedGameService';
 import { supabaseBrowser } from '../../../../components/auth/AuthProvider';
+import { RewardEngine } from '../../../../services/rewards/RewardEngine';
 import LavaTempleWordRestoreGame, { GameConfig } from './LavaTempleWordRestoreGame';
 
 interface LavaTempleWordRestoreGameWrapperProps {
@@ -96,13 +97,9 @@ export default function LavaTempleWordRestoreGameWrapper(props: LavaTempleWordRe
           ? sessionStats.totalResponseTime / sessionStats.totalAttempts
           : 0;
 
-        // Calculate XP based on performance
-        const baseXP = sessionStats.correctAnswers * 20; // 20 XP per correct gap fill
-        const accuracyBonus = Math.round(accuracy * 0.5); // Bonus for accuracy
-        const speedBonus = averageResponseTime < 15000 ? 40 : averageResponseTime < 30000 ? 20 : 0; // Speed bonus
-        const templeBonus = sessionStats.tabletsRestored * 25; // Bonus for each tablet restored
-        const contextBonus = sessionStats.contextCluesUsed > 0 ? 15 : 0; // Bonus for using context clues
-        const totalXP = baseXP + accuracyBonus + speedBonus + templeBonus + contextBonus;
+        // Use gems-first system: XP calculated from individual vocabulary interactions
+        // Remove conflicting XP calculation - gems system handles all scoring through recordWordAttempt()
+        const totalXP = sessionStats.correctAnswers * 10; // 10 XP per correct gap fill (gems-first)
 
         await gameService.endGameSession(gameSessionId, {
           student_id: props.userId,
@@ -114,7 +111,7 @@ export default function LavaTempleWordRestoreGameWrapper(props: LavaTempleWordRe
           unique_words_practiced: sessionStats.gapFillAttempts.length,
           duration_seconds: sessionDuration,
           xp_earned: totalXP,
-          bonus_xp: accuracyBonus + speedBonus + templeBonus + contextBonus,
+          bonus_xp: 0, // No bonus XP in gems-first system
           session_data: {
             sessionStats,
             totalSessionTime: sessionDuration,

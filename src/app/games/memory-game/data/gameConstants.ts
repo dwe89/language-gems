@@ -28,4 +28,6 @@ export interface Card {
   isImage: boolean;
   vocabularyId?: number;
   firstAttemptTime?: Date;
+  word?: string;
+  translation?: string;
 }

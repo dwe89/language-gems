@@ -1,4 +1,5 @@
 export interface VocabularyItem {
+  id?: string; // UUID for vocabulary tracking
   audio: string;
   correct: string;
   distractors: string[];
@@ -15,6 +16,7 @@ export interface GameData {
 
 export interface Evidence {
   id: string;
+  vocabularyId?: string; // UUID for vocabulary tracking
   audio: string;
   correct: string;
   options: string[];

@@ -14,6 +14,8 @@ import AchievementNotification from '../../../../components/ui/AchievementNotifi
 import { audioFeedbackService } from '../../../../services/audioFeedbackService';
 import { achievementService, Achievement } from '../../../../services/achievementService';
 import { GEM_TYPES } from '../../vocabulary-mining/utils/gameConstants';
+import { RewardEngine, type GemRarity } from '../../../../services/rewards/RewardEngine';
+import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
 
 // Import mode components
 import { DictationMode } from '../modes/DictationMode';
@@ -67,6 +69,8 @@ interface VocabMasterGameEngineProps {
   onGameComplete: (result: GameResult) => void;
   onExit: () => void;
   isAdventureMode?: boolean;
+  gameSessionId?: string | null;
+  gameService?: any;
   onWordAttempt?: (
     word: string,
     translation: string,
@@ -84,6 +88,8 @@ export const VocabMasterGameEngine: React.FC<VocabMasterGameEngineProps> = ({
   onGameComplete,
   onExit,
   isAdventureMode = false,
+  gameSessionId,
+  gameService,
   onWordAttempt
 }) => {
   // Core game state
@@ -313,31 +319,34 @@ export const VocabMasterGameEngine: React.FC<VocabMasterGameEngineProps> = ({
         }
       }
 
-      // Adventure mode gamification - handle inline
+      // Adventure mode gamification - use new RewardEngine
       let updatedGemsCollected = prev.gemsCollected;
       let updatedGemType = prev.currentGemType;
-      
+
       if (isAdventureMode && validation.isCorrect) {
-        const gemType = (() => {
-          if (prev.streak >= 10) return 'legendary';
-          if (prev.streak >= 5) return 'epic';
-          if (responseTime < 2000) return 'rare';
-          if (responseTime < 4000) return 'uncommon';
-          return 'common';
-        })();
-        
-        const points = GEM_TYPES[gemType].points;
+        // Use RewardEngine for consistent gem calculation
+        const gemRarity = RewardEngine.calculateGemRarity('vocab-master', {
+          responseTimeMs: responseTime,
+          streakCount: prev.streak,
+          hintUsed: prev.translationShown,
+          isTypingMode: prev.gameMode === 'typing',
+          isDictationMode: prev.gameMode === 'dictation',
+          masteryLevel: prev.currentWord?.masteryLevel || 0,
+          maxGemRarity: prev.currentWord?.maxGemRarity as GemRarity || 'legendary'
+        });
+
+        const points = RewardEngine.getXPValue(gemRarity);
         setTotalXP(prevXP => prevXP + points);
         setXpGained(points);
         setShowXPGain(true);
         setTimeout(() => setShowXPGain(false), 2000);
 
         if (config.audioEnabled) {
-          audioFeedbackService.playGemCollectionSound(gemType);
+          audioFeedbackService.playGemCollectionSound(gemRarity);
         }
 
         updatedGemsCollected = prev.gemsCollected + 1;
-        updatedGemType = gemType;
+        updatedGemType = gemRarity as GemType;
       }
 
       const newState = {
@@ -476,37 +485,88 @@ export const VocabMasterGameEngine: React.FC<VocabMasterGameEngineProps> = ({
     }
   }, [gameState.gameMode, gameState.currentWord]);
 
-  // Gem collection logic
-  const handleGemCollection = useCallback(async (isCorrect: boolean, responseTime: number) => {
+  // Enhanced gem collection logic using RewardEngine
+  const handleGemCollection = useCallback(async (isCorrect: boolean, responseTime: number, hintUsed: boolean = false) => {
     if (!isCorrect) return;
 
-    // Determine gem type based on performance
-    const gemType = determineGemType(responseTime, gameState.streak);
-    const points = GEM_TYPES[gemType].points;
+    // Use RewardEngine to determine gem rarity
+    const gemRarity = RewardEngine.calculateGemRarity('vocab-master', {
+      responseTimeMs: responseTime,
+      streakCount: gameState.streak,
+      hintUsed,
+      isTypingMode: gameState.gameMode === 'typing',
+      isDictationMode: gameState.gameMode === 'dictation',
+      masteryLevel: gameState.currentWord?.masteryLevel || 0,
+      maxGemRarity: gameState.currentWord?.maxGemRarity as GemRarity || 'legendary'
+    });
+
+    const points = RewardEngine.getXPValue(gemRarity);
 
     // Update game state
     setGameState(prev => ({
       ...prev,
-      currentGemType: gemType,
+      currentGemType: gemRarity as GemType,
       gemsCollected: prev.gemsCollected + 1
     }));
 
-    // Add XP
+    // Add XP with new system
     addXP(points);
 
     // Play gem sound
     if (config.audioEnabled) {
-      audioFeedbackService.playGemCollectionSound(gemType);
+      audioFeedbackService.playGemCollectionSound(gemRarity);
     }
-  }, [gameState.streak, config.audioEnabled]);
 
-  const determineGemType = useCallback((responseTime: number, streak: number): GemType => {
-    if (streak >= 10) return 'legendary';
-    if (streak >= 5) return 'epic';
-    if (responseTime < 2000) return 'rare';
-    if (responseTime < 4000) return 'uncommon';
-    return 'common';
-  }, []);
+    // Record gem event if we have a session service
+    if (gameSessionId) {
+      try {
+        // 🔍 INSTRUMENTATION: Log vocabulary tracking details
+        console.log('🔍 [VOCAB TRACKING] Starting vocabulary tracking for word:', {
+          wordId: gameState.currentWord?.id,
+          wordIdType: typeof gameState.currentWord?.id,
+          word: gameState.currentWord?.spanish || gameState.currentWord?.word || '',
+          translation: gameState.currentWord?.english || gameState.currentWord?.translation || '',
+          isCorrect,
+          gameSessionId,
+          responseTimeMs: responseTime
+        });
+
+        const sessionService = new EnhancedGameSessionService();
+        const gemEvent = await sessionService.recordWordAttempt(gameSessionId, 'vocab-master', {
+          vocabularyId: gameState.currentWord?.id,
+          wordText: gameState.currentWord?.spanish || gameState.currentWord?.word || '',
+          translationText: gameState.currentWord?.english || gameState.currentWord?.translation || '',
+          responseTimeMs: responseTime,
+          wasCorrect: isCorrect,
+          hintUsed,
+          streakCount: gameState.streak,
+          masteryLevel: gameState.currentWord?.masteryLevel || 0,
+          maxGemRarity: gameState.currentWord?.maxGemRarity as GemRarity || 'legendary',
+          gameMode: gameState.gameMode,
+          difficultyLevel: config.difficulty
+        });
+
+        // 🔍 INSTRUMENTATION: Log gem event result
+        console.log('🔍 [VOCAB TRACKING] Gem event result:', {
+          gemEventExists: !!gemEvent,
+          gemEvent: gemEvent ? {
+            rarity: gemEvent.rarity,
+            xpValue: gemEvent.xpValue,
+            vocabularyId: gemEvent.vocabularyId,
+            wordText: gemEvent.wordText
+          } : null,
+          wasCorrect: isCorrect
+        });
+      } catch (error) {
+        console.error('Failed to record vocabulary interaction:', error);
+      }
+    } else {
+      console.log('🔍 [SRS UPDATE] Skipping SRS update - no gameSessionId provided:', {
+        hasGameSessionId: !!gameSessionId,
+        gameSessionId
+      });
+    }
+  }, [gameState.streak, gameState.gameMode, gameState.currentWord, config.audioEnabled, config.difficulty]);
 
   const addXP = useCallback((points: number) => {
     setTotalXP(prev => prev + points);

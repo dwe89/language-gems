@@ -18,6 +18,14 @@ interface DetectiveListeningGameWrapperProps {
     examBoard?: 'AQA' | 'edexcel';
     tier?: 'foundation' | 'higher';
   };
+  vocabulary?: Array<{
+    id: string;
+    word: string;
+    translation: string;
+    category?: string;
+    subcategory?: string;
+    audio_url?: string;
+  }>; // Assignment vocabulary with UUIDs
   onBackToMenu: () => void;
   onGameEnd: (result: {
     correctAnswers: number;
@@ -52,8 +60,8 @@ export default function DetectiveListeningGameWrapper(props: DetectiveListeningG
     return languageMap[language] || 'es';
   };
 
-  // Use modern vocabulary hook for evidence generation
-  const { vocabulary: vocabularyWords, loading: isLoading, error } = useGameVocabulary({
+  // Use modern vocabulary hook for evidence generation (only if no assignment vocabulary provided)
+  const { vocabulary: hookVocabulary, loading: isLoading, error } = useGameVocabulary({
     language: mapLanguage(props.settings.language),
     categoryId: props.settings.category || props.settings.caseType,
     subcategoryId: props.settings.subcategory,
@@ -61,20 +69,59 @@ export default function DetectiveListeningGameWrapper(props: DetectiveListeningG
     examBoard: props.settings.examBoard,
     tier: props.settings.tier,
     limit: 20,
-    randomize: true
+    randomize: true,
+    enabled: !props.vocabulary // Only fetch if no assignment vocabulary provided
   });
+
+  // Use assignment vocabulary if available, otherwise use hook vocabulary
+  const vocabularyWords = props.vocabulary || hookVocabulary;
+
+  // Debug vocabulary state
+  useEffect(() => {
+    console.log('🔍 [VOCABULARY DEBUG] State update:', {
+      hasPropsVocabulary: !!props.vocabulary,
+      propsVocabularyLength: props.vocabulary?.length || 0,
+      hasHookVocabulary: !!hookVocabulary,
+      hookVocabularyLength: hookVocabulary?.length || 0,
+      finalVocabularyLength: vocabularyWords?.length || 0,
+      isLoading,
+      error: error,
+      settings: props.settings
+    });
+  }, [props.vocabulary, hookVocabulary, vocabularyWords, isLoading, error]);
 
   // Initialize game service
   useEffect(() => {
+    console.log('🔍 [DETECTIVE SESSION] Initializing game service:', {
+      hasUserId: !!props.userId,
+      userId: props.userId,
+      userIdType: typeof props.userId
+    });
+
     if (props.userId) {
       const service = new EnhancedGameService(supabaseBrowser);
       setGameService(service);
+      console.log('🔍 [DETECTIVE SESSION] Game service created successfully');
+    } else {
+      console.log('🔍 [DETECTIVE SESSION] Cannot create game service - no userId provided');
     }
   }, [props.userId]);
 
   // Start game session when vocabulary is loaded
   useEffect(() => {
+    // 🔍 INSTRUMENTATION: Debug session initialization
+    console.log('🔍 [DETECTIVE SESSION] Session initialization check:', {
+      hasGameService: !!gameService,
+      hasUserId: !!props.userId,
+      vocabularyCount: vocabularyWords.length,
+      hasGameSessionId: !!gameSessionId,
+      gameSessionId,
+      isLoading,
+      error: error
+    });
+
     if (gameService && props.userId && vocabularyWords.length > 0 && !gameSessionId) {
+      console.log('🔍 [DETECTIVE SESSION] Starting game session...');
       startGameSession();
     }
   }, [gameService, props.userId, vocabularyWords, gameSessionId]);
@@ -87,9 +134,22 @@ export default function DetectiveListeningGameWrapper(props: DetectiveListeningG
   }, []);
 
   const startGameSession = async () => {
-    if (!gameService || !props.userId) return;
+    console.log('🔍 [DETECTIVE SESSION] startGameSession called:', {
+      hasGameService: !!gameService,
+      hasUserId: !!props.userId,
+      userId: props.userId
+    });
+
+    if (!gameService || !props.userId) {
+      console.log('🔍 [DETECTIVE SESSION] Cannot start session - missing requirements:', {
+        hasGameService: !!gameService,
+        hasUserId: !!props.userId
+      });
+      return;
+    }
 
     try {
+      console.log('🔍 [DETECTIVE SESSION] Creating game session...');
       const startTime = new Date();
       const sessionId = await gameService.startGameSession({
         student_id: props.userId,
@@ -106,9 +166,9 @@ export default function DetectiveListeningGameWrapper(props: DetectiveListeningG
       });
       setGameSessionId(sessionId);
       setSessionStartTime(startTime);
-      console.log('Detective Listening game session started:', sessionId);
+      console.log('🔍 [DETECTIVE SESSION] Game session created successfully:', sessionId);
     } catch (error) {
-      console.error('Failed to start detective listening game session:', error);
+      console.error('🔍 [DETECTIVE SESSION] Failed to start detective listening game session:', error);
     }
   };
 
@@ -123,12 +183,9 @@ export default function DetectiveListeningGameWrapper(props: DetectiveListeningG
           ? sessionStats.totalResponseTime / sessionStats.totalEvidence
           : 0;
 
-        // Calculate XP based on performance
-        const baseXP = sessionStats.correctAnswers * 12; // 12 XP per correct evidence
-        const accuracyBonus = Math.round(accuracy * 0.3); // Bonus for accuracy
-        const speedBonus = averageResponseTime < 5000 ? 20 : averageResponseTime < 10000 ? 10 : 0; // Speed bonus
-        const caseBonus = sessionStats.totalEvidence >= 10 ? 25 : 0; // Bonus for completing full case
-        const totalXP = baseXP + accuracyBonus + speedBonus + caseBonus;
+        // Use gems-first system: XP calculated from individual vocabulary interactions
+        // Remove conflicting XP calculation - gems system handles all scoring
+        const totalXP = sessionStats.correctAnswers * 10; // 10 XP per correct word (gems-first)
 
         await gameService.endGameSession(gameSessionId, {
           student_id: props.userId,
@@ -140,7 +197,7 @@ export default function DetectiveListeningGameWrapper(props: DetectiveListeningG
           unique_words_practiced: sessionStats.evidenceCollected.length,
           duration_seconds: sessionDuration,
           xp_earned: totalXP,
-          bonus_xp: accuracyBonus + speedBonus + caseBonus,
+          bonus_xp: 0, // No bonus XP in gems-first system
           session_data: {
             sessionStats,
             totalSessionTime: sessionDuration,

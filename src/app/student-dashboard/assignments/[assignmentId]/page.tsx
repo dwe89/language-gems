@@ -519,7 +519,7 @@ export default function StudentAssignmentDetailPage() {
                         <Star className="h-4 w-4 text-yellow-500" />
                         <div>
                           <span className="text-gray-500">Score:</span>
-                          <span className="font-bold text-green-700 ml-1">{activity.score}%</span>
+                          <span className="font-bold text-green-700 ml-1">{activity.score} XP</span>
                         </div>
                       </div>
                     )}

@@ -2,14 +2,15 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
+import {
   Trophy, Star, Zap, Crown, Medal, Award, Target,
   TrendingUp, Users, Calendar, BarChart3, Gamepad2,
   ChevronRight, ExternalLink, Download, RefreshCw,
-  Flame, Gift, Sparkles, ArrowUp, ArrowDown
+  Flame, Gift, Sparkles, ArrowUp, ArrowDown, Gem
 } from 'lucide-react';
 import { useAuth } from '../auth/AuthProvider';
 import { useSupabase } from '../supabase/SupabaseProvider';
+import { GemsAnalyticsService } from '../../services/analytics/GemsAnalyticsService';
 
 // =====================================================
 // TYPES AND INTERFACES
@@ -75,6 +76,8 @@ interface GamificationMetrics {
   total_active_students: number;
   average_level: number;
   total_xp_earned_today: number;
+  total_gems_earned_today: number;
+  gems_by_rarity_today: Record<string, number>;
   achievements_unlocked_today: number;
   current_streak_leaders: {
     student_name: string;
@@ -92,14 +95,18 @@ export default function GamificationAnalytics() {
   const { user } = useAuth();
   const { supabase } = useSupabase();
   
+  // Services
+  const [gemsAnalyticsService] = useState(() => new GemsAnalyticsService());
+
   // State management
   const [xpProgressions, setXpProgressions] = useState<XPProgressionData[]>([]);
   const [achievements, setAchievements] = useState<AchievementData[]>([]);
   const [competitions, setCompetitions] = useState<CompetitionData[]>([]);
   const [metrics, setMetrics] = useState<GamificationMetrics | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'xp' | 'achievements' | 'competitions'>('xp');
+  const [activeTab, setActiveTab] = useState<'gems' | 'achievements' | 'competitions'>('gems');
   const [timeFilter, setTimeFilter] = useState('this_week');
+  const [gemsData, setGemsData] = useState<any>(null);
 
   // Load data on component mount
   useEffect(() => {
@@ -273,7 +280,7 @@ export default function GamificationAnalytics() {
     try {
       const { data: sessions, error } = await supabase
         .from('enhanced_game_sessions')
-        .select('student_id, xp_earned, created_at')
+        .select('student_id, xp_earned, gems_total, gems_by_rarity, created_at')
         .limit(200);
 
       if (error || !sessions) {
@@ -281,6 +288,8 @@ export default function GamificationAnalytics() {
           total_active_students: 0,
           average_level: 0,
           total_xp_earned_today: 0,
+          total_gems_earned_today: 0,
+          gems_by_rarity_today: { common: 0, uncommon: 0, rare: 0, epic: 0, legendary: 0 },
           achievements_unlocked_today: 0,
           current_streak_leaders: [],
           engagement_score: 0,
@@ -290,17 +299,31 @@ export default function GamificationAnalytics() {
 
       const uniqueStudents = new Set(sessions.map(s => s.student_id)).size;
       const totalXP = sessions.reduce((sum, s) => sum + (s.xp_earned || 0), 0);
-      
-      // Calculate today's XP
+      const totalGems = sessions.reduce((sum, s) => sum + (s.gems_total || 0), 0);
+
+      // Calculate today's metrics
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const todaysSessions = sessions.filter(s => new Date(s.created_at) >= today);
       const todaysXP = todaysSessions.reduce((sum, s) => sum + (s.xp_earned || 0), 0);
+      const todaysGems = todaysSessions.reduce((sum, s) => sum + (s.gems_total || 0), 0);
+
+      // Calculate today's gems by rarity
+      const gemsToday = { common: 0, uncommon: 0, rare: 0, epic: 0, legendary: 0 };
+      todaysSessions.forEach(session => {
+        if (session.gems_by_rarity) {
+          Object.entries(session.gems_by_rarity).forEach(([rarity, count]) => {
+            gemsToday[rarity as keyof typeof gemsToday] += count as number;
+          });
+        }
+      });
 
       return {
         total_active_students: uniqueStudents,
         average_level: uniqueStudents > 0 ? Math.floor(totalXP / uniqueStudents / 100) + 1 : 0,
         total_xp_earned_today: todaysXP,
+        total_gems_earned_today: todaysGems,
+        gems_by_rarity_today: gemsToday,
         achievements_unlocked_today: Math.floor(todaysXP / 100),
         current_streak_leaders: [],
         engagement_score: Math.min(10, uniqueStudents),
@@ -460,6 +483,84 @@ export default function GamificationAnalytics() {
               ))}
             </tbody>
           </table>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderGemsAnalytics = () => (
+    <div className="space-y-6">
+      {/* Gems Overview Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-6 rounded-xl text-white">
+          <div className="flex items-center space-x-3">
+            <Gem className="h-8 w-8" />
+            <div>
+              <div className="text-2xl font-bold">{metrics?.total_gems_earned_today || 0}</div>
+              <div className="text-blue-100">Gems Today</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-gradient-to-r from-green-500 to-teal-600 p-6 rounded-xl text-white">
+          <div className="flex items-center space-x-3">
+            <Crown className="h-8 w-8" />
+            <div>
+              <div className="text-2xl font-bold">{metrics?.gems_by_rarity_today?.legendary || 0}</div>
+              <div className="text-green-100">Legendary Gems</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-gradient-to-r from-purple-500 to-pink-600 p-6 rounded-xl text-white">
+          <div className="flex items-center space-x-3">
+            <Star className="h-8 w-8" />
+            <div>
+              <div className="text-2xl font-bold">{metrics?.gems_by_rarity_today?.epic || 0}</div>
+              <div className="text-purple-100">Epic Gems</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-gradient-to-r from-orange-500 to-red-600 p-6 rounded-xl text-white">
+          <div className="flex items-center space-x-3">
+            <Flame className="h-8 w-8" />
+            <div>
+              <div className="text-2xl font-bold">{metrics?.gems_by_rarity_today?.rare || 0}</div>
+              <div className="text-orange-100">Rare Gems</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Gems Distribution Chart */}
+      <div className="bg-white rounded-xl shadow-lg p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-6">Gem Rarity Distribution</h3>
+        <div className="space-y-4">
+          {Object.entries(metrics?.gems_by_rarity_today || {}).map(([rarity, count]) => {
+            const total = Object.values(metrics?.gems_by_rarity_today || {}).reduce((sum, c) => sum + c, 0);
+            const percentage = total > 0 ? (count / total) * 100 : 0;
+
+            return (
+              <div key={rarity} className="flex items-center space-x-4">
+                <div className="w-20 text-sm font-medium capitalize">{rarity}</div>
+                <div className="flex-1 bg-gray-200 rounded-full h-4">
+                  <div
+                    className={`h-4 rounded-full ${
+                      rarity === 'legendary' ? 'bg-gradient-to-r from-yellow-400 to-yellow-600' :
+                      rarity === 'epic' ? 'bg-gradient-to-r from-purple-500 to-pink-600' :
+                      rarity === 'rare' ? 'bg-gradient-to-r from-orange-500 to-red-600' :
+                      rarity === 'uncommon' ? 'bg-gradient-to-r from-green-500 to-teal-600' :
+                      'bg-gradient-to-r from-gray-400 to-gray-600'
+                    }`}
+                    style={{ width: `${percentage}%` }}
+                  />
+                </div>
+                <div className="w-16 text-sm text-gray-600">{count}</div>
+                <div className="w-12 text-xs text-gray-500">{percentage.toFixed(1)}%</div>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>
@@ -685,7 +786,7 @@ export default function GamificationAnalytics() {
           </div>
           <div>
             <h2 className="text-2xl font-bold text-gray-900">Gamification Analytics</h2>
-            <p className="text-gray-600">XP progression, achievements, and competition tracking</p>
+            <p className="text-gray-600">Gems collection, achievements, and competition tracking</p>
           </div>
         </div>
         
@@ -715,7 +816,7 @@ export default function GamificationAnalytics() {
         <div className="border-b border-gray-200">
           <nav className="flex space-x-8 px-6">
             {[
-              { key: 'xp', label: 'XP Progression', icon: Zap },
+              { key: 'gems', label: 'Gems Analytics', icon: Gem },
               { key: 'achievements', label: 'Achievements', icon: Award },
               { key: 'competitions', label: 'Competitions', icon: Trophy }
             ].map((tab) => {
@@ -739,7 +840,7 @@ export default function GamificationAnalytics() {
         </div>
 
         <div className="p-6">
-          {activeTab === 'xp' && renderXPProgressions()}
+          {activeTab === 'gems' && renderGemsAnalytics()}
           {activeTab === 'achievements' && renderAchievements()}
           {activeTab === 'competitions' && renderCompetitions()}
         </div>

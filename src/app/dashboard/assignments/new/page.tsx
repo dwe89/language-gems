@@ -152,7 +152,7 @@ const AVAILABLE_GAMES = [
   },
   {
     id: 'vocab-blast',
-    name: 'Vocab-Blast',
+    name: 'Vocab Blast',
     description: 'Click vocabulary gems to pop and translate them quickly',
     icon: <Zap className="text-yellow-500" size={20} />,
     category: 'vocabulary',
@@ -301,21 +301,21 @@ export default function NewAssignmentPage() {
       'future_ambitions',
       'qualities_for_jobs'
     ],
-    'free_time_entertainment': [
+    'free_time_leisure': [
       'hobbies_interests',
       'sports',
-      'music_instruments',
-      'tv_films_books',
-      'social_activities',
-      'technology_social_media'
+      'social_activities'
     ],
-    'travel_holidays': [
+    'holidays_travel_culture': [
       'countries',
-      'holiday_activities',
+      'nationalities',
       'transport',
+      'travel_phrases',
       'accommodation',
+      'holiday_activities',
       'weather_seasons',
-      'tourist_attractions'
+      'spanish_speaking_countries_traditions',
+      'festivals_celebrations'
     ],
     'health_lifestyle': [
       'body_parts',
@@ -325,13 +325,33 @@ export default function NewAssignmentPage() {
       'exercise_fitness',
       'medical_emergencies'
     ],
-    'shopping_money': [
+    'clothes_shopping': [
       'clothes_accessories',
-      'shopping_phrases_prices',
-      'money_currency',
-      'shops_services',
-      'online_shopping',
-      'consumer_rights'
+      'shopping_phrases_prices'
+    ],
+    'food_drink': [
+      'meals',
+      'food_drink_vocabulary',
+      'ordering_cafes_restaurants',
+      'shopping_for_food'
+    ],
+    'technology_media': [
+      'mobile_phones_social_media',
+      'internet_digital_devices',
+      'tv',
+      'film',
+      'music'
+    ],
+    'nature_environment': [
+      'animals',
+      'plants',
+      'environmental_problems'
+    ],
+    'social_global_issues': [
+      'social_issues',
+      'human_rights',
+      'global_problems_solutions',
+      'current_affairs_world_events'
     ]
   };
 

@@ -182,7 +182,6 @@ export default function UnifiedCategorySelector({
   // Apply preset config if provided
   useEffect(() => {
     if (presetConfig) {
-      console.log('✅ Applying preset config to UnifiedCategorySelector:', presetConfig);
       setSelectedLanguage(presetConfig.language || '');
       setSelectedCurriculumLevel(presetConfig.curriculumLevel || 'KS3');
       setSelectedCategory(presetConfig.categoryId || '');
@@ -202,11 +201,6 @@ export default function UnifiedCategorySelector({
 
   // Get categories for current curriculum level
   const currentCategories = getCategoriesByCurriculum(selectedCurriculumLevel);
-
-  // Debug logging
-  console.log('UnifiedCategorySelector - Current curriculum level:', selectedCurriculumLevel);
-  console.log('UnifiedCategorySelector - Current categories:', currentCategories.length, currentCategories.map(c => c.id));
-  console.log('UnifiedCategorySelector - Is demo:', isDemo);
 
   // Get current category data
   const currentCategory = currentCategories.find(cat => cat.id === selectedCategory);
@@ -482,28 +476,23 @@ const CurriculumSelection: React.FC<{
             }`}
           >
             <div className="relative z-10">
-              <div className="flex items-center justify-center mb-4">
-                {/* This was already correct as level.icon already holds JSX */}
-                {level.icon}
-                {level.comingSoon && (
-                  <Lock className="h-5 w-5 ml-2 text-white/80" />
-                )}
-              </div>
-              <h3 className="text-xl font-bold mb-2">{level.name}</h3>
-              <p className="text-white/90 text-sm mb-2">{level.description}</p>
-              <p className="text-white/70 text-xs">{level.ageRange}</p>
-              <div className="mt-4 flex items-center justify-center text-white/80 group-hover:text-white transition-colors">
-                <span className="text-sm font-medium">
-                  {level.comingSoon ? 'Coming Soon' : 'Select Level'}
-                </span>
-                {!level.comingSoon && (
-                  <ArrowRight className="h-4 w-4 ml-2" />
-                )}
-              </div>
+              {/* This was already correct as level.icon already holds JSX */}
+              {level.icon}
+              {level.comingSoon && (
+                <Lock className="h-5 w-5 ml-2 text-white/80" />
+              )}
             </div>
-            {!level.comingSoon && (
-              <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            )}
+            <h3 className="text-xl font-bold mb-2">{level.name}</h3>
+            <p className="text-white/90 text-sm mb-2">{level.description}</p>
+            <p className="text-white/70 text-xs">{level.ageRange}</p>
+            <div className="mt-4 flex items-center justify-center text-white/80 group-hover:text-white transition-colors">
+              <span className="text-sm font-medium">
+                {level.comingSoon ? 'Coming Soon' : 'Select Level'}
+              </span>
+              {!level.comingSoon && (
+                <ArrowRight className="h-4 w-4 ml-2" />
+              )}
+            </div>
           </motion.button>
         ))}
       </div>
@@ -512,14 +501,16 @@ const CurriculumSelection: React.FC<{
 };
 
 // Category Selection Component
-const CategorySelection: React.FC<{
+interface CategorySelectionProps {
   // Ensure this type matches the actual categories being passed (KS3_CATEGORIES/KS4_CATEGORIES)
   // and that their 'icon' property is React.ElementType
   categories: Category[]; // Using the updated Category interface defined above
   onSelect: (categoryId: string) => void;
   onCustomMode?: () => void;
   isDemoRestricted: (categoryId: string) => boolean;
-}> = ({ categories, onSelect, onCustomMode, isDemoRestricted }) => (
+}
+
+const CategorySelection: React.FC<CategorySelectionProps> = ({ categories, onSelect, onCustomMode, isDemoRestricted }) => (
   <motion.div
     key="category"
     initial={{ opacity: 0, y: 20 }}
@@ -537,8 +528,6 @@ const CategorySelection: React.FC<{
       {categories.map((category, index) => {
         const isRestricted = isDemoRestricted(category.id);
         const IconComponent = category.icon; // Get the component reference
-
-        console.log('Rendering category:', category.id, 'isRestricted:', isRestricted);
 
         return (
           <motion.div
@@ -560,30 +549,24 @@ const CategorySelection: React.FC<{
               }`}
             >
               <div className="relative z-10">
-                <div className="flex items-center justify-between mb-4">
-                  {/* FIX IS HERE: Render the component directly */}
-                  <IconComponent className="h-8 w-8" />
-                  {isRestricted && (
-                    <Lock className="h-5 w-5 text-white/80" />
-                  )}
-                </div>
-                <h3 className="text-lg font-bold mb-2 text-left">{category.displayName}</h3>
-                <p className="text-white/90 text-sm text-left mb-3">
-                  {category.subcategories.length} topics available
-                </p>
-                <div className="flex items-center justify-between">
-                  <span className="text-white/70 text-xs">
-                    {category.subcategories.length} topics
-                  </span>
-                  {!isRestricted && (
-                    <ArrowRight className="h-4 w-4 text-white/80 group-hover:text-white transition-colors" />
-                  )}
-                </div>
+                {/* FIX IS HERE: Render the component directly */}
+                <IconComponent className="h-8 w-8" />
+                {isRestricted && (
+                  <Lock className="h-5 w-5 text-white/80" />
+                )}
               </div>
-
-              {!isRestricted && (
-                <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              )}
+              <h3 className="text-lg font-bold mb-2 text-left">{category.displayName}</h3>
+              <p className="text-white/90 text-sm text-left mb-3">
+                {category.subcategories.length} topics available
+              </p>
+              <div className="flex items-center justify-between">
+                <span className="text-white/70 text-xs">
+                  {category.subcategories.length} topics
+                </span>
+                {!isRestricted && (
+                  <ArrowRight className="h-4 w-4 text-white/80 group-hover:text-white transition-colors" />
+                )}
+              </div>
             </motion.button>
 
             {isRestricted && (

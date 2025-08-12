@@ -3,7 +3,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { createClient } from '@supabase/supabase-js';
-import { EnhancedGameService } from 'gems/services/enhancedGameService';
+import { EnhancedGameService } from '../../../../services/enhancedGameService';
+import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
+import { RewardEngine } from '../../../../services/rewards/RewardEngine';
 import { useAuth } from '../../../../components/auth/AuthProvider';
 import { useUnifiedAuth } from '../../../../hooks/useUnifiedAuth';
 import { WordPair } from './CustomWordsModal';
@@ -322,11 +324,9 @@ export default function MemoryGameMain({
         const accuracy = totalAttempts > 0 ? (totalMatches / totalAttempts) * 100 : 0;
         const finalScore = Math.round(accuracy);
 
-        // Calculate XP based on performance
-        const baseXP = totalMatches * 10; // 10 XP per match
-        const accuracyBonus = Math.round(accuracy * 0.5); // Bonus for accuracy
-        const speedBonus = timeSpent < 60 ? 20 : timeSpent < 120 ? 10 : 0; // Speed bonus
-        const totalXP = baseXP + accuracyBonus + speedBonus;
+        // Use gems-first system: XP calculated from individual vocabulary interactions
+        // Remove conflicting XP calculation - gems system handles all scoring through recordWordAttempt()
+        const totalXP = totalMatches * 10; // 10 XP per match (gems-first)
 
         await gameService.endGameSession(gameSessionId, {
           student_id: userId || user!.id,
@@ -338,7 +338,7 @@ export default function MemoryGameMain({
           unique_words_practiced: vocabularyProgress.size,
           duration_seconds: timeSpent,
           xp_earned: totalXP,
-          bonus_xp: accuracyBonus + speedBonus,
+          bonus_xp: 0, // No bonus XP in gems-first system
           session_data: {
             matches: totalMatches,
             attempts: totalAttempts,
@@ -684,39 +684,31 @@ export default function MemoryGameMain({
             }
           }
 
-          // Legacy word performance logging (for analytics)
-          if (gameService && gameSessionId && !isDemo && !isAssignmentMode) {
+          // Record word attempt using new gems system (exposure only for memory game)
+          if (gameSessionId && !isDemo && !isAssignmentMode) {
             try {
-              gameService.logWordPerformance({
-                session_id: gameSessionId,
-                vocabulary_id: firstCard.vocabularyId,
-                word_text: firstCard.word,
-                translation_text: firstCard.translation,
-                language_pair: `${language === 'spanish' ? 'es' : language === 'french' ? 'fr' : 'en'}_english`,
-                attempt_number: 1,
-                response_time_ms: Math.round(responseTime * 1000),
-                was_correct: true, // Always true for matched pairs
-                confidence_level: 3, // Neutral confidence for luck-based games
-                difficulty_level: 'beginner',
-                hint_used: false,
-                power_up_active: undefined,
-                streak_count: matches + 1,
-                previous_attempts: 0,
-                mastery_level: 1, // Neutral mastery for luck-based games
-                error_type: undefined,
-                grammar_concept: 'vocabulary_exposure',
-                error_details: undefined,
-                context_data: {
-                  gameType: 'memory-match',
-                  isLuckBased: true, // Flag to indicate this is exposure tracking only
+              const sessionService = new EnhancedGameSessionService();
+              await sessionService.recordWordAttempt(gameSessionId, 'memory-game', {
+                vocabularyId: firstCard.vocabularyId,
+                wordText: firstCard.word,
+                translationText: firstCard.translation,
+                responseTimeMs: Math.round(responseTime * 1000),
+                wasCorrect: true, // Always true for matched pairs
+                hintUsed: false,
+                streakCount: matches + 1,
+                difficultyLevel: 'beginner',
+                gameMode: 'memory_match',
+                contextData: {
+                  isLuckBased: true, // Flag for exposure tracking
                   pairId: firstCard.pairId,
                   totalMatches: matches + 1,
-                  totalCards: cards.length
-                },
-                timestamp: now
+                  totalCards: cards.length,
+                  gridSize: `${gridSize}x${gridSize}`,
+                  theme: selectedTheme
+                }
               });
             } catch (error) {
-              console.error('Failed to log word exposure:', error);
+              console.error('Error recording word attempt:', error);
             }
           }
 

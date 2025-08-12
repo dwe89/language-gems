@@ -13,6 +13,7 @@ import { useAuth } from '../auth/AuthProvider';
 import { useSupabase } from '../supabase/SupabaseProvider';
 import { EnhancedGameService } from '../../services/enhancedGameService';
 import { EnhancedAssignmentService, ClassPerformanceMetrics } from '../../services/enhancedAssignmentService';
+import { GemsAnalyticsService } from '../../services/analytics/GemsAnalyticsService';
 import EnhancedAnalyticsDashboard from '../analytics/EnhancedAnalyticsDashboard';
 
 // =====================================================
@@ -79,6 +80,7 @@ export default function EnhancedTeacherDashboard({
   // Services
   const [gameService] = useState(() => new EnhancedGameService(supabase));
   const [assignmentService] = useState(() => new EnhancedAssignmentService(supabase));
+  const [gemsAnalyticsService] = useState(() => new GemsAnalyticsService());
   
   // State
   const [currentView, setCurrentView] = useState(initialView);
@@ -89,6 +91,7 @@ export default function EnhancedTeacherDashboard({
   const [refreshing, setRefreshing] = useState(false);
   const [selectedClass, setSelectedClass] = useState<string | null>(null);
   const [notifications, setNotifications] = useState<any[]>([]);
+  const [gemsAnalytics, setGemsAnalytics] = useState<any>(null);
 
   // =====================================================
   // DATA LOADING

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GameVocabularyWord } from '../../../../hooks/useGameVocabulary';
 import TokyoNightsEngine from './themes/TokyoNightsEngine';
@@ -84,9 +84,33 @@ function DefaultEngine({
   const [particles, setParticles] = useState<any[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
   const animationRef = useRef<number>();
+  const [screenWidth, setScreenWidth] = useState(0); // State to store screen width
+  const [screenHeight, setScreenHeight] = useState(0); // State to store screen height
+
+  // Effect to update screen dimensions on mount and resize
+  useEffect(() => {
+    const updateDimensions = () => {
+      if (typeof window !== 'undefined') {
+        setScreenWidth(window.innerWidth);
+        setScreenHeight(window.innerHeight);
+      }
+    };
+
+    updateDimensions(); // Set initial dimensions
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('resize', updateDimensions);
+    }
+
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('resize', updateDimensions);
+      }
+    };
+  }, []); // Empty dependency array means this runs once on mount and cleans up on unmount
 
   // Generate decoy words
-  const generateDecoys = (correctTranslation: string): string[] => {
+  const generateDecoys = useCallback((correctTranslation: string): string[] => {
     const otherWords = vocabulary
       .filter(word => word.translation !== correctTranslation)
       .map(word => word.translation);
@@ -95,48 +119,121 @@ function DefaultEngine({
     const decoyCount = difficulty === 'beginner' ? 3 : difficulty === 'intermediate' ? 4 : 5;
     const shuffled = otherWords.sort(() => 0.5 - Math.random());
     return shuffled.slice(0, decoyCount);
-  };
+  }, [vocabulary, difficulty]); // Depend on vocabulary and difficulty
 
-  // Spawn new vocab objects
-  const spawnVocabObjects = () => {
-    if (!currentWord || isPaused || !gameActive) return;
+  // Enhanced collision detection for vocab objects
+  const checkObjectCollisions = useCallback((objects: VocabObject[]): VocabObject[] => {
+    if (screenWidth === 0) return objects; // Don't process until screenWidth is known
+
+    const minDistance = 180; // Increased minimum distance to give more room
+    const padding = 50; // Padding from screen edges
+
+    let adjustedObjects = [...objects];
+    let iterations = 0;
+    const maxIterations = 5; // Prevent infinite loops
+
+    do {
+      let collidedInIteration = false;
+      for (let i = 0; i < adjustedObjects.length; i++) {
+        for (let j = i + 1; j < adjustedObjects.length; j++) {
+          const obj1 = adjustedObjects[i];
+          const obj2 = adjustedObjects[j];
+
+          const distance = Math.sqrt(
+            Math.pow(obj1.x - obj2.x, 2) + Math.pow(obj1.y - obj2.y, 2)
+          );
+
+          if (distance < minDistance) {
+            collidedInIteration = true;
+
+            // Calculate overlap
+            const overlap = minDistance - distance;
+
+            // Determine push direction (prioritize horizontal separation)
+            const angle = Math.atan2(obj1.y - obj2.y, obj1.x - obj2.x);
+            const dx = Math.cos(angle) * (overlap / 2);
+            const dy = Math.sin(angle) * (overlap / 2);
+
+            // Apply half the push to each object to separate them
+            adjustedObjects[i] = {
+              ...obj1,
+              x: Math.max(padding, Math.min(screenWidth - padding, obj1.x + dx)),
+              y: obj1.y + dy // Let Y movement continue, mainly focus on X for initial spread
+            };
+            adjustedObjects[j] = {
+              ...obj2,
+              x: Math.max(padding, Math.min(screenWidth - padding, obj2.x - dx)),
+              y: obj2.y - dy
+            };
+          }
+        }
+      }
+      iterations++;
+      if (!collidedInIteration) break; // If no collisions in an iteration, we're done
+    } while (iterations < maxIterations);
+
+    // Final boundary check after all collision adjustments
+    return adjustedObjects.map(obj => ({
+      ...obj,
+      x: Math.max(padding, Math.min(screenWidth - padding, obj.x)),
+      y: Math.max(-100, Math.min(screenHeight + 100, obj.y)) // Ensure it's not too high up either
+    }));
+  }, [screenWidth, screenHeight]); // Depend on screenWidth for accurate calculations
+
+  // Spawn new vocab objects with enhanced positioning
+  const spawnVocabObjects = useCallback(() => {
+    if (!currentWord || isPaused || !gameActive || screenWidth === 0) return;
 
     const decoys = generateDecoys(currentWord.translation);
     const allOptions = [currentWord.translation, ...decoys];
     const shuffledOptions = allOptions.sort(() => 0.5 - Math.random());
 
-    const screenWidth = typeof window !== 'undefined' ? window.innerWidth : 1200;
+    const padding = 100; // Consistent padding from the sides
+    const usableWidth = screenWidth - (padding * 2);
+    const columnWidth = usableWidth / shuffledOptions.length;
 
-    const newObjects: VocabObject[] = shuffledOptions.map((translation, index) => ({
-      id: `${currentWord.id}-${index}-${Date.now()}`,
-      word: currentWord.word,
-      translation,
-      isCorrect: translation === currentWord.translation,
-      x: Math.random() * (screenWidth - 200) + 100,
-      y: -100,
-      speed: difficulty === 'beginner' ? 1 : difficulty === 'intermediate' ? 1.5 : 2,
-      rotation: Math.random() * 360,
-      scale: 1
-    }));
+    const newObjects: VocabObject[] = shuffledOptions.map((translation, index) => {
+      // Use column-based positioning for better distribution
+      const baseX = padding + (index * columnWidth) + (columnWidth / 2); // Center in column
+      const finalX = Math.max(padding, Math.min(screenWidth - padding, baseX + (Math.random() * 40 - 20))); // Smaller random offset
 
-    setVocabObjects(newObjects);
-  };
+      return {
+        id: `${currentWord.id}-${index}-${Date.now()}`,
+        word: currentWord.word,
+        translation,
+        isCorrect: translation === currentWord.translation,
+        x: finalX,
+        y: -100 - (Math.random() * 50), // Slight vertical stagger, starting off-screen
+        speed: difficulty === 'beginner' ? 0.8 : difficulty === 'intermediate' ? 1.2 : 1.6,
+        rotation: Math.random() * 360,
+        scale: 1
+      };
+    });
 
-  // Update object positions
-  const updateObjects = () => {
-    if (isPaused || !gameActive) return;
+    setVocabObjects(checkObjectCollisions(newObjects));
+  }, [currentWord, isPaused, gameActive, screenWidth, generateDecoys, checkObjectCollisions, difficulty]);
 
-    setVocabObjects(prev =>
-      prev.map(obj => ({
+  // Update object positions with collision avoidance
+  const updateObjects = useCallback(() => {
+    if (isPaused || !gameActive || screenHeight === 0) return;
+
+    setVocabObjects(prev => {
+      // Filter objects that are off the bottom of the screen
+      const livingObjects = prev.filter(obj => obj.y < (screenHeight + 100));
+
+      const updatedObjects = livingObjects.map(obj => ({
         ...obj,
         y: obj.y + obj.speed,
         rotation: obj.rotation + 1
-      })).filter(obj => obj.y < (typeof window !== 'undefined' ? window.innerHeight + 100 : 1000))
-    );
-  };
+      }));
+
+      // Apply collision detection to moving objects
+      return checkObjectCollisions(updatedObjects);
+    });
+  }, [isPaused, gameActive, screenHeight, checkObjectCollisions]);
 
   // Handle object click
-  const handleObjectClick = (obj: VocabObject) => {
+  const handleObjectClick = useCallback((obj: VocabObject) => {
     if (obj.isCorrect) {
       onCorrectAnswer(currentWord);
       // Create success particles
@@ -149,10 +246,10 @@ function DefaultEngine({
 
     // Remove clicked object
     setVocabObjects(prev => prev.filter(o => o.id !== obj.id));
-  };
+  }, [onCorrectAnswer, onIncorrectAnswer, currentWord]);
 
   // Create particle effects
-  const createParticles = (x: number, y: number, type: 'success' | 'error') => {
+  const createParticles = useCallback((x: number, y: number, type: 'success' | 'error') => {
     const particleCount = 10;
     const newParticles = Array.from({ length: particleCount }, (_, i) => ({
       id: `particle-${Date.now()}-${i}`,
@@ -171,13 +268,21 @@ function DefaultEngine({
     setTimeout(() => {
       setParticles(prev => prev.filter(p => !newParticles.some(np => np.id === p.id)));
     }, 1000);
-  };
+  }, []);
 
-  // Animation loop
+  // Animation loop with error handling
   useEffect(() => {
     const animate = () => {
-      updateObjects();
-      animationRef.current = requestAnimationFrame(animate);
+      try {
+        if (gameActive && !isPaused) {
+          updateObjects();
+        }
+        animationRef.current = requestAnimationFrame(animate);
+      } catch (error) {
+        console.error('Animation error in Default Engine:', error);
+        // Continue animation even if there's an error
+        animationRef.current = requestAnimationFrame(animate);
+      }
     };
 
     if (gameActive) {
@@ -187,16 +292,17 @@ function DefaultEngine({
     return () => {
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
+        animationRef.current = undefined;
       }
     };
-  }, [gameActive, isPaused]);
+  }, [gameActive, isPaused, updateObjects]); // Added updateObjects to dependencies
 
-  // Spawn objects when current word changes
+  // Spawn objects when current word changes (and screen dimensions are known)
   useEffect(() => {
-    if (currentWord && gameActive) {
+    if (currentWord && gameActive && screenWidth > 0) { // Only spawn if screenWidth is known
       spawnVocabObjects();
     }
-  }, [currentWord, gameActive]);
+  }, [currentWord, gameActive, screenWidth, spawnVocabObjects]);
 
   return (
     <div
@@ -234,6 +340,7 @@ function DefaultEngine({
             exit={{ opacity: 0, scale: 0 }}
             onClick={() => handleObjectClick(obj)}
             className="absolute cursor-pointer transition-all duration-200 hover:scale-110 select-none bg-gradient-to-r from-blue-500 to-cyan-500 text-white border-3 border-blue-300 shadow-2xl shadow-blue-400/80 rounded-xl px-6 py-3 font-bold backdrop-blur-sm bg-opacity-95"
+            style={{ x: obj.x, y: obj.y }} // Explicitly set x, y for motion to pick up, and for correct initial placement before animation
           >
             <div className="flex items-center gap-3">
               <span className="text-2xl drop-shadow-lg">💎</span>

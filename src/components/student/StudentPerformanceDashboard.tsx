@@ -243,9 +243,9 @@ export default function StudentPerformanceDashboard({
             isLoading={loading}
           />
           <MetricCard
-            title="Total XP"
-            value={overview.totalXP.toLocaleString()}
-            subtitle="Experience points earned"
+            title="Language Gems"
+            value={overview.totalGems?.toLocaleString() || '0'}
+            subtitle="Gems collected"
             icon={<Zap className="h-6 w-6 text-white" />}
             color="bg-gradient-to-r from-blue-500 to-purple-500"
             trend={motivationalMetrics.motivationScore > 75 ? 15 : motivationalMetrics.motivationScore > 50 ? 5 : -2}
@@ -587,10 +587,10 @@ export default function StudentPerformanceDashboard({
             color="bg-gradient-to-r from-green-500 to-teal-500"
           />
           <MetricCard
-            title="XP from Achievements"
-            value={achievements.reduce((sum, a) => sum + a.xpReward, 0)}
-            icon={<Zap className="h-6 w-6 text-white" />}
-            color="bg-gradient-to-r from-blue-500 to-indigo-500"
+            title="Gems from Achievements"
+            value={achievements.reduce((sum, a) => sum + Math.floor(a.xpReward / 10), 0)}
+            icon={<Gem className="h-6 w-6 text-white" />}
+            color="bg-gradient-to-r from-purple-500 to-pink-500"
           />
         </div>
 
@@ -629,7 +629,7 @@ export default function StudentPerformanceDashboard({
                       <span className={`text-xs px-2 py-1 rounded-full ${getRarityBadgeColor(achievement.rarity)}`}>
                         {achievement.rarity}
                       </span>
-                      <span className="text-sm font-medium text-blue-600">+{achievement.xpReward} XP</span>
+                      <span className="text-sm font-medium text-purple-600">+{Math.floor(achievement.xpReward / 10)} Gems</span>
                     </div>
 
                     <p className="text-xs text-gray-500 mt-2">
@@ -665,7 +665,7 @@ export default function StudentPerformanceDashboard({
 
                   <h4 className="font-medium text-gray-900">{reward.streakLength} Day Streak</h4>
                   <p className="text-sm text-gray-600 mt-1">{reward.reward}</p>
-                  <p className="text-sm font-medium text-blue-600 mt-2">+{reward.xpBonus} XP</p>
+                  <p className="text-sm font-medium text-purple-600 mt-2">+{Math.floor(reward.xpBonus / 10)} Gems</p>
 
                   {reward.achieved ? (
                     <span className="inline-block mt-2 text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">

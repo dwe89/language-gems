@@ -41,8 +41,7 @@ export interface UnifiedGameLauncherProps {
 
 /**
  * Unified Game Launcher Component
- * 
- * This component provides a standardized way for all games to:
+ * * This component provides a standardized way for all games to:
  * 1. Show the unified category selector
  * 2. Load vocabulary based on selection
  * 3. Validate vocabulary before starting
@@ -63,7 +62,6 @@ export default function UnifiedGameLauncher({
   supportsThemes = false,
   defaultTheme = 'default'
 }: UnifiedGameLauncherProps) {
-  console.log(`🎯 [${gameName}] UnifiedGameLauncher component rendering`);
   const searchParams = useSearchParams();
   const { user, isLoading, isDemo } = useUnifiedAuth();
   const [selectedConfig, setSelectedConfig] = useState<UnifiedSelectionConfig | null>(null);
@@ -76,24 +74,18 @@ export default function UnifiedGameLauncher({
 
   // Test if useEffect works at all
   useEffect(() => {
-    console.log(`🧪 [${gameName}] Basic useEffect test - this should always run`);
   });
 
   // Ensure we're on the client side
   useEffect(() => {
-    console.log(`🖥️ [${gameName}] Client-side hydration complete`);
     setIsClient(true);
   }, [gameName]);
 
   // Check for URL parameters and auto-start game
   useEffect(() => {
-    console.log(`🔧 [${gameName}] useEffect triggered - isClient:`, isClient, 'urlParamsChecked:', urlParamsChecked);
     if (!isClient) return;
     const checkUrlParams = async () => {
-      console.log(`🚀 [${gameName}] checkUrlParams called - urlParamsChecked:`, urlParamsChecked, 'selectedConfig:', !!selectedConfig, 'auth:', { isLoading, user: !!user, isDemo });
-
       if (urlParamsChecked || selectedConfig || !searchParams) {
-        console.log(`⏭️ [${gameName}] Skipping URL param check - already checked or config exists or no searchParams`);
         return;
       }
 
@@ -107,18 +99,7 @@ export default function UnifiedGameLauncher({
       const examBoard = searchParams?.get('examBoard') as 'AQA' | 'edexcel';
       const tier = searchParams?.get('tier') as 'foundation' | 'higher';
 
-      console.log(`🔍 [${gameName}] Checking URL params:`, { lang, level, cat, subcat, theme, examBoard, tier });
-      console.log(`🔍 [${gameName}] URL param validation:`, {
-        hasLang: !!lang,
-        hasLevel: !!level,
-        hasCat: !!cat,
-        hasSubcat: !!subcat,
-        subcatValue: subcat
-      });
-
       if (lang && level && cat && subcat) {
-        console.log(`✅ [${gameName}] Found URL parameters, auto-starting game...`);
-
         const config: UnifiedSelectionConfig = {
           language: lang,
           curriculumLevel: level,
@@ -133,8 +114,6 @@ export default function UnifiedGameLauncher({
         setSelectedConfig(config);
         setSelectedTheme(theme);
         setShowSelector(false);
-      } else {
-        console.log(`❌ [${gameName}] Missing required URL parameters:`, { lang, level, cat, subcat });
       }
 
       setUrlParamsChecked(true);
@@ -161,15 +140,11 @@ export default function UnifiedGameLauncher({
   // Auto-start game when vocabulary is loaded from URL parameters
   useEffect(() => {
     if (selectedConfig && !showSelector && vocabulary.length > 0 && !loading && !error && urlParamsChecked) {
-      console.log(`🚀 [${gameName}] Auto-starting game with vocabulary:`, vocabulary.length);
-
       // Validate vocabulary
       const validation = validateVocabularyForGame(vocabulary, minVocabularyRequired);
       if (validation.isValid) {
         // Auto-start the game
         onGameStart(selectedConfig, vocabulary, supportsThemes ? selectedTheme : undefined);
-      } else {
-        console.log(`❌ [${gameName}] Vocabulary validation failed:`, validation.message);
       }
     }
   }, [selectedConfig, showSelector, vocabulary, loading, error, urlParamsChecked, gameName, minVocabularyRequired, onGameStart, supportsThemes, selectedTheme]);

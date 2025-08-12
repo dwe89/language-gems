@@ -8,8 +8,9 @@ import { VOCABULARY_CATEGORIES } from '../../../../components/games/ModernCatego
 import { useAudioManager } from '../hooks/useAudioManager';
 import { createAudio } from '@/utils/audioUtils';
 import { Evidence } from '../types';
-import { StandardVocabularyItem, AssignmentData, GameProgress, calculateStandardScore } from '../../../../components/games/templates/GameAssignmentWrapper';
+import { StandardVocabularyItem, AssignmentData, GameProgress } from '../../../../components/games/templates/GameAssignmentWrapper';
 import { EnhancedGameService } from '../../../../services/enhancedGameService';
+import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
 import { useUnifiedSpacedRepetition } from '../../../../hooks/useUnifiedSpacedRepetition';
 
 interface AssignmentMode {
@@ -92,7 +93,7 @@ export default function DetectiveRoom({
   });
 
   // Use assignment vocabulary if available, otherwise use category vocabulary
-  const vocabulary = assignmentMode ? assignmentMode.vocabulary : categoryVocabulary;
+  const vocabulary = assignmentMode ? assignmentMode.vocabulary : vocabularyWords || categoryVocabulary;
 
   const { playEvidence, isPlaying } = useAudioManager();
 
@@ -102,6 +103,14 @@ export default function DetectiveRoom({
 
   // Initialize evidence list from vocabulary
   useEffect(() => {
+    console.log('🔍 [EVIDENCE DEBUG] Vocabulary effect triggered:', {
+      hasVocabulary: !!vocabulary,
+      vocabularyLength: vocabulary?.length || 0,
+      vocabulary: vocabulary?.slice(0, 3), // Log first 3 items for debugging
+      assignmentMode: !!assignmentMode,
+      vocabularyWords: vocabularyWords?.slice(0, 3) // Log first 3 from wrapper
+    });
+
     if (vocabulary && vocabulary.length > 0) {
       // Create distractors from other vocabulary items
       const createDistractors = (correctTranslation: string, allVocab: any[]) => {
@@ -125,7 +134,8 @@ export default function DetectiveRoom({
       const evidence: Evidence[] = vocabulary.slice(0, 10).map((item, index) => {
         const distractors = createDistractors(item.translation, vocabulary);
         return {
-          id: `evidence-${index}`,
+          id: item.id || `evidence-${index}`, // Use actual vocabulary ID as evidence ID
+          vocabularyId: item.id, // ✅ CRITICAL: Include UUID for vocabulary tracking
           audio: item.audio_url || `detective_${item.word}.mp3`, // Use actual audio URL if available
           correct: item.translation,
           options: [item.translation, ...distractors].sort(() => Math.random() - 0.5),
@@ -278,7 +288,7 @@ export default function DetectiveRoom({
 
         // Another small delay then play the evidence audio
         setTimeout(async () => {
-          await playEvidence(currentEvidence.audio, currentEvidence.word);
+          await playEvidence(currentEvidence.audio);
           if (!isPlaying) {
             setReplayCount(prev => prev + 1);
           }
@@ -296,14 +306,29 @@ export default function DetectiveRoom({
     const isCorrect = answer === currentEvidence.correct;
     const responseTime = evidenceStartTime > 0 ? Date.now() - evidenceStartTime : 0;
 
+    // 🔍 INSTRUMENTATION: Log Detective Listening vocabulary tracking details
+    console.log('🔍 [DETECTIVE LISTENING] Starting vocabulary tracking:', {
+      currentEvidence: {
+        id: currentEvidence.id,
+        vocabularyId: currentEvidence.vocabularyId,
+        word: currentEvidence.word,
+        correct: currentEvidence.correct
+      },
+      isCorrect,
+      responseTime,
+      gameService: !!gameService,
+      gameSessionId,
+      hasVocabularyId: !!currentEvidence.vocabularyId
+    });
+
     // Update total response time
     setTotalResponseTime(prev => prev + responseTime);
 
-    // Record word practice with FSRS system
+    // Record word practice with FSRS system (for non-assignment mode)
     if (!assignmentMode && currentEvidence) {
       try {
         const wordData = {
-          id: currentEvidence.id || `${currentEvidence.word || currentEvidence.correct}-${currentEvidence.correct}`,
+          id: currentEvidence.vocabularyId || currentEvidence.id, // Use vocabulary ID for FSRS
           word: currentEvidence.word || currentEvidence.correct,
           translation: currentEvidence.correct,
           language: mapLanguageForVocab(language)
@@ -337,12 +362,58 @@ export default function DetectiveRoom({
       }
     }
 
-    // Log word-level performance if game service is available
-    if (gameService && gameSessionId) {
+    // Record vocabulary interaction using gems-first system
+    if (gameSessionId) {
       try {
+        // 🔍 INSTRUMENTATION: Log SRS update details
+        console.log('🔍 [SRS UPDATE] Starting SRS progress update:', {
+          gameSessionId,
+          vocabularyId: currentEvidence.vocabularyId,
+          vocabularyIdType: typeof currentEvidence.vocabularyId,
+          wasCorrect: isCorrect,
+          responseTimeMs: responseTime,
+          wordText: currentEvidence.word || currentEvidence.correct,
+          translationText: currentEvidence.correct
+        });
+
+        // Use EnhancedGameSessionService for gems-first vocabulary tracking
+        const sessionService = new EnhancedGameSessionService();
+        const gemEvent = await sessionService.recordWordAttempt(gameSessionId, 'detective-listening', {
+          vocabularyId: currentEvidence.vocabularyId, // ✅ FIXED: Use evidence vocabulary ID
+          wordText: currentEvidence.word || currentEvidence.correct,
+          translationText: currentEvidence.correct,
+          responseTimeMs: responseTime,
+          wasCorrect: isCorrect,
+          hintUsed: replayCount > 0, // Replays count as hints
+          streakCount: gameProgress.correctAnswers + (isCorrect ? 1 : 0), // Current streak
+          masteryLevel: 1, // Default mastery level for evidence
+          maxGemRarity: 'rare', // Cap at rare to prevent grinding
+          gameMode: 'listening',
+          difficultyLevel: 'beginner'
+        });
+
+        // 🔍 INSTRUMENTATION: Log gem event result
+        console.log('🔍 [VOCAB TRACKING] Gem event result:', {
+          gemEventExists: !!gemEvent,
+          gemEvent: gemEvent ? {
+            rarity: gemEvent.rarity,
+            xpValue: gemEvent.xpValue,
+            vocabularyId: gemEvent.vocabularyId,
+            wordText: gemEvent.wordText
+          } : null,
+          wasCorrect: isCorrect
+        });
+
+        // Show gem feedback if correct and gem was awarded
+        if (gemEvent && isCorrect) {
+          console.log(`🔮 Detective earned ${gemEvent.rarity} gem (${gemEvent.xpValue} XP) for "${currentEvidence.word || currentEvidence.correct}"`);
+        }
+
+        // Also log to word_performance_logs for legacy compatibility (temporarily disabled)
+        /*
         await gameService.logWordPerformance({
           session_id: gameSessionId,
-          vocabulary_id: undefined, // Evidence ID not mapped to vocabulary ID
+          vocabulary_id: currentEvidence.vocabularyId, // ✅ FIXED: Use evidence vocabulary ID
           word_text: currentEvidence.word || currentEvidence.correct,
           translation_text: currentEvidence.correct,
           language_pair: `${mapLanguageForVocab(language)}_english`,
@@ -374,9 +445,15 @@ export default function DetectiveRoom({
           },
           timestamp: new Date()
         });
+        */
       } catch (error) {
         console.error('Failed to log word performance:', error);
       }
+    } else {
+      console.log('🔍 [SRS UPDATE] Skipping SRS update - no gameSessionId provided:', {
+        hasGameSessionId: !!gameSessionId,
+        gameSessionId
+      });
     }
 
     // Play feedback sound effect
@@ -410,14 +487,28 @@ export default function DetectiveRoom({
       }));
     }
 
+    // Record vocabulary interaction for assignment mode
+    if (assignmentMode && typeof window !== 'undefined' && (window as any).recordVocabularyInteraction) {
+      try {
+        await (window as any).recordVocabularyInteraction(
+          currentEvidence.word || currentEvidence.correct,
+          currentEvidence.correct,
+          isCorrect,
+          responseTime,
+          replayCount > 0, // hintUsed
+          gameProgress.correctAnswers + (isCorrect ? 1 : 0) // streakCount
+        );
+      } catch (error) {
+        console.error('Failed to record vocabulary interaction for assignment:', error);
+      }
+    }
+
     // Update assignment progress if in assignment mode
     if (assignmentMode) {
-      const { score, accuracy, maxScore } = calculateStandardScore(
-        newCorrectAnswers,
-        wordsCompleted,
-        Date.now(),
-        120
-      );
+      // Use gems-first scoring: 10 XP per correct word
+      const score = newCorrectAnswers * 10;
+      const accuracy = wordsCompleted > 0 ? (newCorrectAnswers / wordsCompleted) * 100 : 0;
+      const maxScore = evidenceList.length * 10;
 
       assignmentMode.onProgressUpdate({
         wordsCompleted,
@@ -448,13 +539,10 @@ export default function DetectiveRoom({
         const totalWords = evidenceList.length;
 
         if (assignmentMode) {
-          // Assignment mode completion
-          const { score, accuracy, maxScore } = calculateStandardScore(
-            finalCorrectAnswers,
-            totalWords,
-            Date.now(),
-            120 // Base points for detective work
-          );
+          // Assignment mode completion - use gems-first scoring
+          const score = finalCorrectAnswers * 10; // 10 XP per correct word
+          const accuracy = totalWords > 0 ? (finalCorrectAnswers / totalWords) * 100 : 0;
+          const maxScore = totalWords * 10;
 
           assignmentMode.onGameComplete({
             assignmentId: assignmentMode.assignment.id,
