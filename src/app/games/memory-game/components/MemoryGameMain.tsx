@@ -57,8 +57,7 @@ export default function MemoryGameMain({
   onOpenSettings,
   audioManager: externalAudioManager
 }: MemoryGameMainProps) {
-  const { user } = useAuth();
-  const { user: unifiedUser, isDemo } = useUnifiedAuth();
+  const { user, isLoading, isDemo } = useUnifiedAuth();
 
   // Initialize FSRS spaced repetition system
   const { recordWordPractice, algorithm } = useUnifiedSpacedRepetition('memory-game');

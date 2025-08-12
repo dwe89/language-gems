@@ -10,7 +10,7 @@ import AssignmentErrorScreen from '../../../components/ui/AssignmentErrorScreen'
 import UniversalGameWrapper from '../../../utils/universalGameWrapper';
 
 export default function UnifiedDetectiveListeningPage() {
-  const { user, isLoading, isDemo } = useUnifiedAuth();
+  const { user, isLoading, isDemo } = useUnifiedAuth(); // already standardized
   const router = useRouter();
   const searchParams = useSearchParams();
   const assignmentId = searchParams?.get('assignment');

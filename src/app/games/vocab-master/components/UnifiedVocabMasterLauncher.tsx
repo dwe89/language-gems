@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAuth } from '../../../../components/auth/AuthProvider';
+import { useUnifiedAuth } from '../../../../hooks/useUnifiedAuth';
 import { useSupabase } from '../../../../components/supabase/SupabaseProvider';
 import { SpacedRepetitionService } from '../../../../services/spacedRepetitionService';
 import {
@@ -170,7 +170,7 @@ interface UnifiedVocabMasterLauncherProps {
 }
 
 export default function UnifiedVocabMasterLauncher({ onGameStart, onBack, presetConfig, onFilterChange }: UnifiedVocabMasterLauncherProps) {
-  const { user } = useAuth();
+  const { user, isLoading, isDemo } = useUnifiedAuth();
   const { supabase } = useSupabase();
 
   // Dynamic filter state - the core of the new single-page experience
@@ -229,7 +229,8 @@ export default function UnifiedVocabMasterLauncher({ onGameStart, onBack, preset
 
   // Game state management
   const [selectedTheme, setSelectedTheme] = useState<'mastery' | 'adventure'>('mastery');
-  const [isLoading, setIsLoading] = useState(false);
+  // If you need a local loading state, use a different variable name
+  const [localLoading, setLocalLoading] = useState(false);
   const [selectedMode, setSelectedMode] = useState('');
   const [showSettings, setShowSettings] = useState(false);
   const [showPracticeMethodSelector, setShowPracticeMethodSelector] = useState(false);
@@ -569,7 +570,7 @@ export default function UnifiedVocabMasterLauncher({ onGameStart, onBack, preset
 
   // Start game session
   const startGameSession = async (modeId: string) => {
-    setIsLoading(true);
+  setLocalLoading(true);
     setSelectedMode(modeId);
 
     try {
@@ -605,7 +606,7 @@ export default function UnifiedVocabMasterLauncher({ onGameStart, onBack, preset
       onGameStart(modeId, vocabularySubset, gameConfig);
     } catch (error) {
       console.error('Error starting game session:', error);
-      setIsLoading(false);
+  setLocalLoading(false);
       setSelectedMode('');
     }
   };

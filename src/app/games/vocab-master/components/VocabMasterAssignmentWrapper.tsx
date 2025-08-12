@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { useAuth } from '../../../../components/auth/AuthProvider';
+import { useUnifiedAuth } from '../../../../hooks/useUnifiedAuth';
 import GameAssignmentWrapper, { GameProgress } from '../../../../components/games/templates/GameAssignmentWrapper';
 import { VocabMasterGameEngine } from './VocabMasterGameEngine';
 import { VocabularyWord, GameResult } from '../types';
@@ -47,7 +47,7 @@ export default function VocabMasterAssignmentWrapper({
   onBackToAssignments,
   onBackToMenu
 }: VocabMasterAssignmentWrapperProps) {
-  const { user } = useAuth();
+  const { user, isLoading, isDemo } = useUnifiedAuth();
 
   if (!user) {
     return (

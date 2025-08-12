@@ -15,7 +15,7 @@
         "SUPABASE_SERVICE_ROLE_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhldHN2cGZ1bmF6d2tvbnRkcGRoIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTczOTgyMzAwMiwiZXhwIjoyMDU1Mzk5MDAyfQ.m40XgEXpqK613HUfx8kx-liXMGGMNBIus759th80wns",
         "NODE_ENV": "production"
       },
-      "disabled": false,
+      "disabled": true,
       "autoApprove": [
         "create_assignment",
         "get_assignment",

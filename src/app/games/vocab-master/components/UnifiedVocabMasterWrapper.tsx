@@ -32,8 +32,7 @@ interface Props {
 }
 
 export default function UnifiedVocabMasterWrapper({ searchParams = {} }: Props) {
-  const { user } = useAuth();
-  const { user: unifiedUser, isDemo } = useUnifiedAuth();
+  const { user, isLoading, isDemo } = useUnifiedAuth();
   const { supabase } = useSupabase();
 
   // Game state - start with launcher since we skip category selection
@@ -145,14 +144,14 @@ export default function UnifiedVocabMasterWrapper({ searchParams = {} }: Props) 
     console.log('🔧 VocabMaster service initialization:', {
       hasSupabase: !!supabase,
       hasUser: !!user,
-      hasUnifiedUser: !!unifiedUser,
-      userId: user?.id || unifiedUser?.id,
+  hasUnifiedUser: !!user,
+  userId: user?.id,
       isDemo
     });
 
     // Always allow demo mode or when supabase is available
     if (supabase || isDemo) {
-      const userId = user?.id || unifiedUser?.id;
+  const userId = user?.id;
 
       // Handle demo mode - don't initialize services that require real user IDs
       if (isDemo || !userId || userId === 'demo-user-id') {
@@ -177,7 +176,7 @@ export default function UnifiedVocabMasterWrapper({ searchParams = {} }: Props) 
       setGameService(null);
       setSpacedRepetitionService(null);
     }
-  }, [supabase, user, unifiedUser, isDemo]);
+  }, [supabase, user, isDemo]);
 
   // Handle category selection complete
   const handleSelectionComplete = async (config: UnifiedSelectionConfig, vocabData: UnifiedVocabularyItem[]) => {
@@ -225,7 +224,7 @@ export default function UnifiedVocabMasterWrapper({ searchParams = {} }: Props) 
     setVocabulary(vocabularySubset);
     console.log('✅ VocabMaster vocabulary set:', vocabularySubset.length, 'items');
 
-    const userId = user?.id || unifiedUser?.id;
+  const userId = user?.id;
 
     // Handle demo mode
     if (isDemo || !gameService || userId === 'demo-user-id') {
@@ -386,8 +385,8 @@ export default function UnifiedVocabMasterWrapper({ searchParams = {} }: Props) 
       });
 
       // Update spaced repetition if vocabulary ID is available
-      if (vocabularyId && spacedRepetitionService && (user || unifiedUser)) {
-        const userId = user?.id || unifiedUser?.id;
+  if (vocabularyId && spacedRepetitionService && user) {
+  const userId = user?.id;
         if (userId) {
           try {
             console.log('🔄 Updating spaced repetition for word:', word, 'ID:', vocabularyId);

@@ -103,7 +103,7 @@ export default function CaseFileTranslatorGameWrapper(props: CaseFileTranslatorG
 
         // Use gems-first system: XP calculated from individual vocabulary interactions
         // Remove conflicting XP calculation - gems system handles all scoring through recordWordAttempt()
-        const totalXP = sessionStats.correctAnswers * 10; // 10 XP per correct translation (gems-first)
+        let totalXP = sessionStats.correctAnswers * 10; // 10 XP per correct translation (gems-first)
 
         if (averageResponseTime < 20000) {
           totalXP += RewardEngine.getXPValue('epic'); // Speed bonus for Case File

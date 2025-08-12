@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Head from 'next/head';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useAuth } from '../../../components/auth/AuthProvider';
+import { useUnifiedAuth } from '../../../hooks/useUnifiedAuth';
 import MemoryGameMain from './components/MemoryGameMain';
 import { WordPair } from './components/CustomWordsModal';
 import GameAssignmentWrapper, {
@@ -19,7 +19,7 @@ import { useGameAudio } from '../../../hooks/useGlobalAudioContext';
 import './styles.css';
 
 export default function UnifiedMemoryGamePage() {
-  const { user } = useAuth();
+  const { user, isLoading, isDemo } = useUnifiedAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const assignmentId = searchParams?.get('assignment');

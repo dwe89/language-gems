@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAuth } from '../../../../components/auth/AuthProvider';
+import { useUnifiedAuth } from '../../../../hooks/useUnifiedAuth';
 import { useSupabase } from '../../../../components/supabase/SupabaseProvider';
 import { SpacedRepetitionService } from '../../../../services/spacedRepetitionService';
 import { 
@@ -127,7 +127,7 @@ const LEARNING_MODES: LearningMode[] = [
 ];
 
 export default function VocabMasterLauncher() {
-  const { user } = useAuth();
+  const { user, isLoading, isDemo } = useUnifiedAuth();
   const { supabase } = useSupabase();
   const [gameSession, setGameSession] = useState<GameSession | null>(null);
   const [vocabulary, setVocabulary] = useState<VocabularyWord[]>([]);
@@ -139,7 +139,8 @@ export default function VocabMasterLauncher() {
     weeklyProgress: 0
   });
   const [selectedMode, setSelectedMode] = useState<string>('');
-  const [isLoading, setIsLoading] = useState(false);
+  // If you need a local loading state, use a different variable name
+  const [localLoading, setLocalLoading] = useState(false);
   const [isLoadingVocabulary, setIsLoadingVocabulary] = useState(true);
   const [showSettings, setShowSettings] = useState(false);
   const [weakWordsCount, setWeakWordsCount] = useState<number>(0);
@@ -357,7 +358,7 @@ export default function VocabMasterLauncher() {
       return;
     }
 
-    setIsLoading(true);
+  setLocalLoading(true);
     setSelectedMode(modeId);
 
     try {
@@ -458,7 +459,7 @@ export default function VocabMasterLauncher() {
         config: settings
       });
     } finally {
-      setIsLoading(false);
+  setLocalLoading(false);
     }
   };
 
