@@ -21,7 +21,7 @@ export default function VocabBlastAssignmentWrapper({
   onBackToMenu
 }: VocabBlastAssignmentWrapperProps) {
   const { user } = useAuth();
-  const [selectedTheme, setSelectedTheme] = useState('space');
+
 
   if (!user) {
     return (
@@ -43,34 +43,11 @@ export default function VocabBlastAssignmentWrapper({
       onBackToAssignments={onBackToAssignments}
       onBackToMenu={onBackToMenu}
     >
-      {({ assignment, vocabulary, onProgressUpdate, onGameComplete, gameSessionId }) => {
+      {({ assignment, vocabulary, onProgressUpdate, onGameComplete, gameSessionId, selectedTheme }) => {
         console.log('Vocab Blast Assignment - Vocabulary loaded:', vocabulary.length, 'items');
 
         return (
-          <div className="min-h-screen">
-            {/* Simple Theme Selector */}
-            <div className="bg-black/20 backdrop-blur-sm border-b border-white/20 p-3">
-              <div className="container mx-auto flex items-center justify-between">
-                <div className="text-white">
-                  <span className="text-sm font-medium">{vocabulary.length} words</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-white text-sm">Theme:</span>
-                  <select
-                    value={selectedTheme}
-                    onChange={(e) => setSelectedTheme(e.target.value)}
-                    className="bg-white/20 text-white border border-white/30 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
-                  >
-                    <option value="tokyo" className="text-gray-800">🌃 Neon Hack</option>
-                    <option value="pirate" className="text-gray-800">🏴‍☠️ Cannon Clash</option>
-                    <option value="space" className="text-gray-800">🚀 Comet Catch</option>
-                    <option value="temple" className="text-gray-800">🔥 Rising Lava</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            <VocabBlastGameWrapper
+          <VocabBlastGameWrapper
               settings={{
                 difficulty: 'medium',
                 category: vocabulary[0]?.category || 'assignment',
@@ -116,7 +93,6 @@ export default function VocabBlastAssignmentWrapper({
             userId={studentId}
             isAssignmentMode={true}
           />
-          </div>
         );
       }}
     </GameAssignmentWrapper>

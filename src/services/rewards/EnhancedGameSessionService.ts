@@ -475,8 +475,8 @@ export class EnhancedGameSessionService {
   }
   
   /**
-   * ✅ SIMPLIFIED: Direct vocabulary update bypassing FSRS service layer
-   * This ensures wasCorrect value reaches the database unchanged
+   * ✅ FSRS-AWARE: Direct vocabulary update with time-gated progression
+   * This ensures wasCorrect value reaches the database unchanged AND respects FSRS learning/review phases
    */
   private async updateVocabularyDirectly(
     studentId: string,
@@ -491,6 +491,27 @@ export class EnhancedGameSessionService {
 
       // Determine if this is a UUID (centralized) or integer (legacy)
       const isUUID = vocabIdString.includes('-');
+
+      // ✅ FSRS TIME-GATED PROGRESSION: Check if word is due for review
+      const canProgress = await this.checkIfWordCanProgress(studentId, vocabIdString, isUUID);
+
+      if (!canProgress.allowed) {
+        console.log('⏰ [FSRS GATE] Word not due for review, treating as practice:', {
+          vocabularyId: vocabIdString,
+          reason: canProgress.reason,
+          nextReviewAt: canProgress.nextReviewAt
+        });
+
+        // For words not due for review, we can still log the practice but don't update FSRS
+        // This prevents "cramming" from accelerating long-term progression
+        return;
+      }
+
+      console.log('✅ [FSRS GATE] Word is due for review, allowing progression:', {
+        vocabularyId: vocabIdString,
+        phase: canProgress.phase,
+        state: canProgress.state
+      });
 
       // Call atomic function directly with unmodified wasCorrect value
       const { data, error } = await this.supabase.rpc('update_vocabulary_gem_collection_atomic', {
@@ -511,11 +532,116 @@ export class EnhancedGameSessionService {
       console.log('✅ [DIRECT UPDATE] Vocabulary updated successfully:', {
         vocabularyId: vocabIdString,
         wasCorrect,
-        studentId
+        studentId,
+        phase: canProgress.phase
       });
 
     } catch (error) {
       console.error('Error updating vocabulary directly:', error);
+    }
+  }
+
+  /**
+   * ✅ FSRS TIME-GATED PROGRESSION: Check if a word can progress based on FSRS rules
+   * Learning phase: Rapid progression allowed (short intervals)
+   * Review phase: Only when due (respects next_review_at)
+   */
+  private async checkIfWordCanProgress(
+    studentId: string,
+    vocabularyId: string,
+    isUUID: boolean
+  ): Promise<{
+    allowed: boolean;
+    reason: string;
+    phase: 'learning' | 'review' | 'new';
+    state: string;
+    nextReviewAt?: string;
+  }> {
+    try {
+      // Get current word state
+      const { data: wordData, error } = await this.supabase
+        .from('vocabulary_gem_collection')
+        .select('fsrs_state, next_review_at, fsrs_review_count')
+        .eq('student_id', studentId)
+        .eq(isUUID ? 'centralized_vocabulary_id' : 'vocabulary_item_id', vocabularyId)
+        .single();
+
+      if (error || !wordData) {
+        // New word - always allow progression
+        return {
+          allowed: true,
+          reason: 'New word - first encounter',
+          phase: 'new',
+          state: 'new'
+        };
+      }
+
+      const now = new Date();
+      const nextReview = wordData.next_review_at ? new Date(wordData.next_review_at) : null;
+      const state = wordData.fsrs_state || 'new';
+      const reviewCount = wordData.fsrs_review_count || 0;
+
+      // LEARNING PHASE: Allow rapid progression (short intervals)
+      if (state === 'learning' || state === 'new' || reviewCount < 3) {
+        return {
+          allowed: true,
+          reason: 'Learning phase - rapid progression allowed',
+          phase: 'learning',
+          state,
+          nextReviewAt: wordData.next_review_at
+        };
+      }
+
+      // RELEARNING PHASE: Allow progression (getting back on track)
+      if (state === 'relearning') {
+        return {
+          allowed: true,
+          reason: 'Relearning phase - recovery progression allowed',
+          phase: 'learning',
+          state,
+          nextReviewAt: wordData.next_review_at
+        };
+      }
+
+      // REVIEW PHASE: Only allow if due for review
+      if (state === 'review') {
+        if (!nextReview || now >= nextReview) {
+          return {
+            allowed: true,
+            reason: 'Review phase - word is due for review',
+            phase: 'review',
+            state,
+            nextReviewAt: wordData.next_review_at
+          };
+        } else {
+          return {
+            allowed: false,
+            reason: 'Review phase - word not yet due for review',
+            phase: 'review',
+            state,
+            nextReviewAt: wordData.next_review_at
+          };
+        }
+      }
+
+      // Default: allow progression
+      return {
+        allowed: true,
+        reason: 'Unknown state - allowing progression',
+        phase: 'review',
+        state,
+        nextReviewAt: wordData.next_review_at
+      };
+
+    } catch (error) {
+      console.error('Error checking word progression eligibility:', error);
+      // On error, allow progression to avoid blocking legitimate practice
+      return {
+        allowed: true,
+        reason: 'Error checking eligibility - allowing progression',
+        phase: 'review',
+        state: 'unknown'
+      };
     }
   }
 

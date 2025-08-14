@@ -219,28 +219,31 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
 
           // ✅ UNIFIED: Record successful word completion
           if (gameSessionId && currentVocabItem?.id) {
-            try {
-              const sessionService = new EnhancedGameSessionService();
-              const gemEvent = await sessionService.recordWordAttempt(gameSessionId, 'hangman', {
-                vocabularyId: currentVocabItem.id,
-                wordText: word,
-                translationText: currentVocabItem.translation || word,
-                responseTimeMs: timer * 1000,
-                wasCorrect: true,
-                hintUsed: false,
-                streakCount: 0,
-                masteryLevel: 1,
-                maxGemRarity: 'common', // Luck-based game
-                gameMode: 'word_completion',
-                difficultyLevel: settings.difficulty
-              });
+            const recordGemAttempt = async () => {
+              try {
+                const sessionService = new EnhancedGameSessionService();
+                const gemEvent = await sessionService.recordWordAttempt(gameSessionId, 'hangman', {
+                  vocabularyId: currentVocabItem.id,
+                  wordText: word,
+                  translationText: currentVocabItem.translation || word,
+                  responseTimeMs: timer * 1000,
+                  wasCorrect: true,
+                  hintUsed: false,
+                  streakCount: 0,
+                  masteryLevel: 1,
+                  maxGemRarity: 'common', // Luck-based game
+                  gameMode: 'word_completion',
+                  difficultyLevel: settings.difficulty
+                });
 
-              if (gemEvent) {
-                console.log(`✅ Hangman gem awarded: ${gemEvent.rarity} (${gemEvent.xpValue} XP)`);
+                if (gemEvent) {
+                  console.log(`✅ Hangman gem awarded: ${gemEvent.rarity} (${gemEvent.xpValue} XP)`);
+                }
+              } catch (error) {
+                console.error('Error recording vocabulary attempt for hangman:', error);
               }
-            } catch (error) {
-              console.error('Error recording vocabulary attempt for hangman:', error);
-            }
+            };
+            recordGemAttempt();
           }
         } catch (error) {
           console.error('Error setting up FSRS recording for hangman:', error);

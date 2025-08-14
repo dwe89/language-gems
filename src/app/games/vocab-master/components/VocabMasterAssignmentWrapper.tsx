@@ -126,7 +126,7 @@ export default function VocabMasterAssignmentWrapper({
         return (
           <VocabMasterGameEngine
             config={{
-              mode: selectedMode === 'adventure' ? 'adventure' : 'learn_new', // Use selected mode
+              mode: 'learn_new', // Always use learn_new as the base mode
               vocabulary: gameVocabulary,
               audioEnabled: true,
               assignmentMode: true,
@@ -179,7 +179,7 @@ export default function VocabMasterAssignmentWrapper({
               });
             }}
             onExit={handleBackToAssignments}
-            isAdventureMode={false} // Assignments use clean UI
+            isAdventureMode={selectedMode === 'adventure'} // Use selected mode
           />
         );
       }}

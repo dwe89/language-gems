@@ -1537,3 +1537,6 @@ export const GemSpeedBuilder: React.FC<{
       <GemSpeedBuilderInternal {...props} />
     </SoundProvider>
   );
+};
+
+export default GemSpeedBuilder;

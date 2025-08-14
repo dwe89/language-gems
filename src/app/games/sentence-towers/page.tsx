@@ -18,7 +18,7 @@ import { EnhancedGameService } from '../../../services/enhancedGameService';
 import { RewardEngine } from '../../../services/rewards/RewardEngine';
 import { EnhancedGameSessionService } from '../../../services/rewards/EnhancedGameSessionService';
 import GameAssignmentWrapper from '../../../components/games/templates/GameAssignmentWrapper';
-import { useUnifiedSpacedRepetition } from '../../../hooks/useUnifiedSpacedRepetition';
+import { FSRSService } from '../../../services/fsrsService';
 
 // Enhanced Types
 interface TowerBlock {
@@ -495,14 +495,15 @@ function ImprovedSentenceTowersGame({
   const { supabase } = useSupabase();
 
   // Initialize FSRS spaced repetition system
-  const { recordWordPractice, algorithm } = useUnifiedSpacedRepetition('sentence-towers');
+  const [fsrsService, setFsrsService] = useState<FSRSService | null>(null);
   const [enhancedGameService, setEnhancedGameService] = useState<EnhancedGameService | null>(null);
   const [gameSessionId, setGameSessionId] = useState<string | null>(null);
 
-  // Initialize Enhanced Game Service
+  // Initialize Enhanced Game Service and FSRS Service
   useEffect(() => {
     if (supabase) {
       setEnhancedGameService(new EnhancedGameService(supabase));
+      setFsrsService(new FSRSService(supabase));
     }
   }, [supabase]);
 
@@ -940,21 +941,27 @@ function ImprovedSentenceTowersGame({
         confidence = Math.max(0.1, Math.min(0.95, confidence));
 
         // Record practice with FSRS
-        const fsrsResult = await recordWordPractice(
-          wordData,
-          true, // Correct answer
-          responseTime,
-          confidence
-        );
+        if (fsrsService && user?.id) {
+          try {
+            const fsrsResult = await fsrsService.updateProgress(
+              user.id,
+              option.id,
+              true, // Correct answer
+              responseTime,
+              confidence
+            );
 
-        if (fsrsResult) {
-          console.log(`FSRS recorded for ${option.word} (${isTypingMode ? 'typing' : 'selection'}):`, {
-            algorithm: fsrsResult.algorithm,
-            points: fsrsResult.points,
-            nextReview: fsrsResult.nextReviewDate,
-            interval: fsrsResult.interval,
-            masteryLevel: fsrsResult.masteryLevel
-          });
+            if (fsrsResult) {
+              console.log(`FSRS recorded for ${option.word} (${isTypingMode ? 'typing' : 'selection'}):`, {
+                nextReview: fsrsResult.nextReviewDate,
+                interval: fsrsResult.interval,
+                difficulty: fsrsResult.card.difficulty,
+                stability: fsrsResult.card.stability
+              });
+            }
+          } catch (error) {
+            console.error('Error recording FSRS practice:', error);
+          }
         }
       } catch (error) {
         console.error('Error recording FSRS practice:', error);
@@ -1094,19 +1101,27 @@ function ImprovedSentenceTowersGame({
         const responseTime = (Date.now() - questionStartTime);
 
         // Record failed attempt with FSRS
-        const fsrsResult = await recordWordPractice(
-          wordData,
-          false, // Incorrect answer
-          responseTime,
-          0.2 // Low confidence for incorrect answers
-        );
+        if (fsrsService && user?.id) {
+          try {
+            const fsrsResult = await fsrsService.updateProgress(
+              user.id,
+              currentTargetWord.id,
+              false, // Incorrect answer
+              responseTime,
+              0.2 // Low confidence for incorrect answers
+            );
 
-        if (fsrsResult) {
-          console.log(`FSRS recorded failed attempt for ${currentTargetWord.word}:`, {
-            algorithm: fsrsResult.algorithm,
-            nextReview: fsrsResult.nextReviewDate,
-            interval: fsrsResult.interval
-          });
+            if (fsrsResult) {
+              console.log(`FSRS recorded failed attempt for ${currentTargetWord.word}:`, {
+                nextReview: fsrsResult.nextReviewDate,
+                interval: fsrsResult.interval,
+                difficulty: fsrsResult.card.difficulty,
+                stability: fsrsResult.card.stability
+              });
+            }
+          } catch (error) {
+            console.error('Error recording FSRS failed practice:', error);
+          }
         }
       } catch (error) {
         console.error('Error recording FSRS failed practice:', error);
