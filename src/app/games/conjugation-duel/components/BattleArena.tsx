@@ -6,7 +6,6 @@ import { useGameStore } from '../../../../store/gameStore';
 import { useBattle } from '../../../../hooks/useBattle';
 import { useBattleAudio } from '../../../../hooks/useBattleAudio';
 import { EnhancedGameService } from '../../../../services/enhancedGameService';
-import { useUnifiedSpacedRepetition } from '../../../../hooks/useUnifiedSpacedRepetition';
 import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
 import HealthBar from './HealthBar';
 import CharacterSprite from './CharacterSprite';
@@ -26,7 +25,7 @@ interface BattleArenaProps {
     verb: string,
     tense: string,
     person: string,
-    userAnswer: string,
+    answer: string,
     correctAnswer: string,
     isCorrect: boolean,
     responseTime: number
@@ -47,7 +46,6 @@ export default function BattleArena({
   onConjugationComplete
 }: BattleArenaProps) {
   // Initialize FSRS spaced repetition system
-  const { recordWordPractice, algorithm } = useUnifiedSpacedRepetition('conjugation-duel');
 
   const {
     battleState,
@@ -139,24 +137,6 @@ export default function BattleArena({
         confidence = Math.max(0.1, Math.min(0.95, confidence));
 
         // Record practice with FSRS
-        recordWordPractice(
-          wordData,
-          isCorrect,
-          responseTime,
-          confidence
-        ).then(fsrsResult => {
-          if (fsrsResult) {
-            console.log(`FSRS recorded for conjugation "${question.verb?.infinitive}" (${question.tense}):`, {
-              algorithm: fsrsResult.algorithm,
-              points: fsrsResult.points,
-              nextReview: fsrsResult.nextReviewDate,
-              interval: fsrsResult.interval,
-              masteryLevel: fsrsResult.masteryLevel
-            });
-          }
-        }).catch(error => {
-          console.error('Error recording FSRS conjugation practice:', error);
-        });
       } catch (error) {
         console.error('Error setting up FSRS recording for conjugation:', error);
       }

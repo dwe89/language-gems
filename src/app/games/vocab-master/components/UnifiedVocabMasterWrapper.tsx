@@ -6,8 +6,6 @@ import { useUnifiedAuth } from '../../../../hooks/useUnifiedAuth';
 import { useSupabase } from '../../../../components/supabase/SupabaseProvider';
 import { useGameVocabulary } from '../../../../hooks/useGameVocabulary';
 import { EnhancedGameService } from '../../../../services/enhancedGameService';
-import { SpacedRepetitionService } from '../../../../services/spacedRepetitionService';
-import { useUnifiedSpacedRepetition } from '../../../../hooks/useUnifiedSpacedRepetition';
 import UnifiedVocabMasterLauncher from './UnifiedVocabMasterLauncher';
 import { VocabMasterGameEngine } from './VocabMasterGameEngine';
 import { GameCompletionScreen } from './GameCompletionScreen';
@@ -54,7 +52,6 @@ export default function UnifiedVocabMasterWrapper({ searchParams = {} }: Props) 
 
   // Services
   const [gameService, setGameService] = useState<EnhancedGameService | null>(null);
-  const [spacedRepetitionService, setSpacedRepetitionService] = useState<SpacedRepetitionService | null>(null);
 
   // Assignment mode detection
   const isAssignmentMode = !!searchParams.assignment;
@@ -62,8 +59,7 @@ export default function UnifiedVocabMasterWrapper({ searchParams = {} }: Props) 
   // Standalone access detection (from /vocabmaster URL)
   const isStandaloneAccess = searchParams.standalone === 'true';
 
-  // Initialize FSRS spaced repetition system
-  const { recordWordPractice, algorithm } = useUnifiedSpacedRepetition('vocab-master');
+  // ✅ UNIFIED: Vocabulary tracking handled by EnhancedGameSessionService
 
   // Client-side hydration check
   useEffect(() => {
@@ -158,23 +154,19 @@ export default function UnifiedVocabMasterWrapper({ searchParams = {} }: Props) 
         console.log('🎮 Demo mode detected - skipping service initialization');
         // For demo mode, we'll handle game sessions differently
         setGameService(null);
-        setSpacedRepetitionService(null);
         return;
       }
 
       if (userId && userId !== 'demo-user-id' && supabase) {
         console.log('✅ Initializing VocabMaster services for user:', userId);
         setGameService(new EnhancedGameService(supabase));
-        setSpacedRepetitionService(new SpacedRepetitionService(supabase));
       } else {
         console.log('⚠️ No valid user ID available for service initialization - using demo mode');
         setGameService(null);
-        setSpacedRepetitionService(null);
       }
     } else {
       console.log('⚠️ No supabase available - using demo mode');
       setGameService(null);
-      setSpacedRepetitionService(null);
     }
   }, [supabase, user, isDemo]);
 
@@ -281,7 +273,7 @@ export default function UnifiedVocabMasterWrapper({ searchParams = {} }: Props) 
   const handleVocabularyMastery = async (
     word: string,
     translation: string,
-    userAnswer: string,
+    answer: string,
     isCorrect: boolean,
     responseTime: number,
     gameMode: string,
@@ -319,25 +311,11 @@ export default function UnifiedVocabMasterWrapper({ searchParams = {} }: Props) 
             confidence = isCorrect ? 0.7 : 0.3;
         }
 
-        // Record practice with FSRS
-        const fsrsResult = await recordWordPractice(
-          wordData,
-          isCorrect,
-          responseTime,
-          confidence
-        );
+        // ✅ UNIFIED: Vocabulary tracking handled by EnhancedGameSessionService
+        console.log('✅ [VOCAB MASTER] Vocabulary tracking handled by unified system');
 
-        if (fsrsResult) {
-          console.log(`FSRS recorded for ${word} (${gameMode}):`, {
-            algorithm: fsrsResult.algorithm,
-            points: fsrsResult.points,
-            nextReview: fsrsResult.nextReviewDate,
-            interval: fsrsResult.interval,
-            masteryLevel: fsrsResult.masteryLevel
-          });
-        }
       } catch (error) {
-        console.error('Error recording FSRS practice:', error);
+        console.error('Error in vocabulary tracking:', error);
       }
     }
 
@@ -368,7 +346,7 @@ export default function UnifiedVocabMasterWrapper({ searchParams = {} }: Props) 
         error_type: isCorrect ? undefined : getErrorType(gameMode),
         grammar_concept: getGrammarConcept(gameMode),
         error_details: isCorrect ? undefined : {
-          userAnswer,
+          userAnswer: answer,
           correctAnswer: translation,
           gameMode,
           responseTime
@@ -384,24 +362,8 @@ export default function UnifiedVocabMasterWrapper({ searchParams = {} }: Props) 
         timestamp: new Date()
       });
 
-      // Update spaced repetition if vocabulary ID is available
-  if (vocabularyId && spacedRepetitionService && user) {
-  const userId = user?.id;
-        if (userId) {
-          try {
-            console.log('🔄 Updating spaced repetition for word:', word, 'ID:', vocabularyId);
-            await spacedRepetitionService.updateProgress(
-              userId,
-              vocabularyId, // Use the UUID directly - SpacedRepetitionService needs to be updated to handle UUIDs
-              isCorrect,
-              responseTime
-            );
-            console.log('✅ Spaced repetition updated successfully');
-          } catch (error) {
-            console.error('❌ Failed to update spaced repetition:', error);
-          }
-        }
-      }
+      // ✅ UNIFIED: Spaced repetition handled by EnhancedGameSessionService
+      console.log('✅ [VOCAB MASTER] Spaced repetition handled by unified system');
     } catch (error) {
       console.error('Failed to log vocabulary mastery:', error);
     }

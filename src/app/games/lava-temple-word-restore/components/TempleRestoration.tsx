@@ -6,7 +6,6 @@ import { createClient } from '@supabase/supabase-js';
 import { GameConfig } from './LavaTempleWordRestoreGame';
 import { EnhancedGameService } from '../../../../services/enhancedGameService';
 import { createAudio } from '@/utils/audioUtils';
-import { useUnifiedSpacedRepetition } from '../../../../hooks/useUnifiedSpacedRepetition';
 import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
 
 const supabase = createClient(
@@ -50,7 +49,6 @@ export default function TempleRestoration({
   gameService
 }: TempleRestorationProps) {
   // Initialize FSRS spaced repetition system
-  const { recordWordPractice, algorithm } = useUnifiedSpacedRepetition('lava-temple-word-restore');
 
   const [sentences, setSentences] = useState<any[]>([]);
   const [currentSentence, setCurrentSentence] = useState<any>(null);
@@ -334,12 +332,6 @@ export default function TempleRestoration({
           const confidence = Math.min(0.95, baseConfidence + contextBonus);
 
           // Record practice with FSRS
-          const fsrsResult = await recordWordPractice(
-            wordData,
-            isGapCorrect,
-            responseTime,
-            confidence
-          );
 
           if (fsrsResult) {
             console.log(`FSRS recorded for gap ${gapIndex} (${correctOption.option_text}):`, {

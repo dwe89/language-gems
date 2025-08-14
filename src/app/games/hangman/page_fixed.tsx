@@ -207,7 +207,7 @@ export default function HangmanPage() {
                           <div className="text-2xl">🔥</div>
                         </div>
                         <div className="text-2xl font-bold text-orange-600">
-                          {gameStats.streak}
+                          {streak}
                         </div>
                         <div className="text-sm text-gray-500">Current Streak</div>
                       </div>

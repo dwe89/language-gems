@@ -114,7 +114,7 @@ export const GemUI: React.FC<GemUIProps> = ({
             className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 backdrop-blur-sm rounded-xl p-3 border border-yellow-500/30 flex items-center space-x-2"
           >
             <Star className="text-yellow-500" size={20} />
-            <span className="text-2xl font-bold text-white">{gameStats.score.toLocaleString()}</span>
+            <span className="text-2xl font-bold text-white">{score.toLocaleString()}</span>
           </motion.div>
 
           {/* Timer */}

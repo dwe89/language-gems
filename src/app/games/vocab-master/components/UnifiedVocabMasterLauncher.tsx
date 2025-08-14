@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUnifiedAuth } from '../../../../hooks/useUnifiedAuth';
 import { useSupabase } from '../../../../components/supabase/SupabaseProvider';
-import { SpacedRepetitionService } from '../../../../services/spacedRepetitionService';
+
 import {
   ArrowRight, Shuffle, Target, Brain, Headphones, BookOpen,
   TrendingUp, Clock, Settings, Play, Lightbulb, Zap,

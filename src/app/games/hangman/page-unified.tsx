@@ -185,7 +185,7 @@ export default function UnifiedHangmanPage() {
               <div className="text-white/70 text-sm">Win Rate</div>
             </div>
             <div>
-              <div className="text-2xl font-bold text-white">{gameStats.streak}</div>
+              <div className="text-2xl font-bold text-white">{streak}</div>
               <div className="text-white/70 text-sm">Current Streak</div>
             </div>
           </div>

@@ -227,7 +227,7 @@ export default function ConjugationDuelGameWrapper(props: ConjugationDuelGameWra
     verb: string,
     tense: string,
     person: string,
-    userAnswer: string,
+    answer: string,
     correctAnswer: string,
     isCorrect: boolean,
     responseTime: number
@@ -272,7 +272,7 @@ export default function ConjugationDuelGameWrapper(props: ConjugationDuelGameWra
           error_type: isCorrect ? undefined : 'conjugation_error',
           grammar_concept: `${tense}_conjugation`,
           error_details: isCorrect ? undefined : {
-            userAnswer: userAnswer,
+            answer: userAnswer,
             correctAnswer: correctAnswer,
             tense: tense,
             person: person,

@@ -1,7 +1,9 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
 import { motion, AnimatePresence } from 'framer-motion';
+import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
 import { 
   Play, 
   Pause, 
@@ -26,12 +28,17 @@ import {
   Crown
 } from 'lucide-react';
 import Link from 'next/link';
+import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
 import { createBrowserClient } from '@supabase/ssr';
+import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
 import { useSearchParams } from 'next/navigation';
+import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
 import confetti from 'canvas-confetti';
+import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
+import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-import { useUnifiedSpacedRepetition } from '../../../../hooks/useUnifiedSpacedRepetition';
+import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
 
 // Types
 interface WordItem {
@@ -414,7 +421,6 @@ export const EnhancedSpeedBuilder: React.FC<{
   mode?: 'assignment' | 'freeplay';
 }> = ({ assignmentId, mode = 'freeplay' }) => {
   // Initialize FSRS spaced repetition system
-  const { recordWordPractice, algorithm } = useUnifiedSpacedRepetition('speed-builder');
 
   // State
   const [gameState, setGameState] = useState<'ready' | 'playing' | 'paused' | 'completed'>('ready');
@@ -662,12 +668,6 @@ export const EnhancedSpeedBuilder: React.FC<{
           const confidence = Math.max(0.1, Math.min(0.9, baseConfidence + streakBonus));
 
           // Record practice with FSRS
-          const fsrsResult = await recordWordPractice(
-            wordData,
-            isCorrect,
-            5000, // Assume 5 seconds average for sentence completion
-            confidence
-          );
 
           console.log(`🔍 [FSRS] Recorded sentence practice for speed-builder:`, {
             sentence: currentSentence.text,
@@ -1054,4 +1054,3 @@ export const EnhancedSpeedBuilder: React.FC<{
       </div>
     </DndProvider>
   );
-}; 

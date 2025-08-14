@@ -4,7 +4,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getRandomVerb, getRandomPronoun, generateWrongAnswers, getVerbConjugation } from './VerbDataEnhanced';
 import { Character } from './Character';
-import { useUnifiedSpacedRepetition } from '../../../../hooks/useUnifiedSpacedRepetition';
 import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
 
 interface BattleProps {
@@ -31,7 +30,7 @@ interface BattleProps {
     verb: string,
     tense: string,
     person: string,
-    userAnswer: string,
+    answer: string,
     correctAnswer: string,
     isCorrect: boolean,
     responseTime: number,
@@ -52,7 +51,6 @@ interface BattleQuestion {
 
 export default function Battle({ enemy, region, character, onBattleEnd, soundEnabled, onVerbConjugation }: BattleProps) {
   // Initialize FSRS spaced repetition system
-  const { recordWordPractice, algorithm } = useUnifiedSpacedRepetition('verb-quest');
 
   const [enemyHealth, setEnemyHealth] = useState(enemy.health);
   const [playerHealth, setPlayerHealth] = useState(character.stats.health);
@@ -157,12 +155,6 @@ export default function Battle({ enemy, region, character, onBattleEnd, soundEna
           const confidence = Math.max(0.1, Math.min(0.95, baseConfidence + speedBonus + difficultyBonus + levelBonus));
 
           // Record practice with FSRS
-          const fsrsResult = await recordWordPractice(
-            wordData,
-            isCorrect,
-            responseTime,
-            confidence
-          );
 
           console.log(`🔍 [FSRS] Recorded verb-quest conjugation for ${currentQuestion.verb.infinitive}:`, {
             tense: currentQuestion.tense,

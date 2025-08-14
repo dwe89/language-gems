@@ -61,7 +61,7 @@ interface VocabularyWord {
 interface GameState {
   currentWordIndex: number;
   currentWord: VocabularyWord | null;
-  userAnswer: string;
+  answer: string;
   selectedChoice: number | null;
   showAnswer: boolean;
   isCorrect: boolean | null;
@@ -588,15 +588,6 @@ export default function VocabularyMiningGame({
 
       // Only record progress to database for authenticated users
       if (user && !isDemo) {
-        await recordWordPractice(gameState.currentWord, isCorrect, responseTime);
-      }
-
-      // Update gem type and show collection animation (for correct answers)
-      if (isCorrect) {
-        // For demo users, simulate gem progression without database lookup
-        const newGemType = user && !isDemo
-          ? await determineGemType(gameState.currentWord, responseTime, gameState.isAnswerRevealed)
-          : simulateDemoGemType(gameState.currentWord, isCorrect);
 
         const upgraded = newGemType !== previousGemType;
 
@@ -906,7 +897,7 @@ export default function VocabularyMiningGame({
       ...prev,
       currentWordIndex: nextIndex,
       currentWord: nextWordData,
-      userAnswer: '',
+      answer: '',
       selectedChoice: null,
       showAnswer: false,
       isCorrect: null,
@@ -1014,11 +1005,6 @@ export default function VocabularyMiningGame({
     // Handle gem collection and progress tracking for authenticated users
     if (user && !isDemo && gameState.currentWord) {
       try {
-        const result = await spacedRepetition.recordWordPractice(
-          gameState.currentWord,
-          knew,
-          responseTime
-        );
 
         if (result) {
           // Update XP and gem stats
@@ -1444,4 +1430,3 @@ export default function VocabularyMiningGame({
       />
     </div>
   );
-}

@@ -18,7 +18,6 @@ import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { SoundProvider, useSound, SoundControls } from './SoundManager';
 import { EnhancedGameService } from '../../../../services/enhancedGameService';
-import { useUnifiedSpacedRepetition } from '../../../../hooks/useUnifiedSpacedRepetition';
 import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
 
 // Types
@@ -447,7 +446,6 @@ const GemSpeedBuilderInternal: React.FC<{
   gameService?: EnhancedGameService | null;
 }> = ({ assignmentId, mode = 'freeplay', theme, topic, tier, vocabularyList, onGameComplete, sentenceConfig, onOpenSettings, onBackToMenu, gameSessionId, gameService }) => {
   // Initialize FSRS spaced repetition system
-  const { recordWordPractice, algorithm } = useUnifiedSpacedRepetition('speed-builder');
 
   // Sound system
   const { playSound, stopMusic } = useSound();
@@ -1007,12 +1005,6 @@ const GemSpeedBuilderInternal: React.FC<{
               const confidence = Math.min(0.95, baseConfidence + streakBonus + speedBonus);
 
               // Record practice with FSRS
-              const fsrsResult = await recordWordPractice(
-                wordData,
-                true, // Correct placement
-                averageWordTime,
-                confidence
-              );
 
               if (fsrsResult) {
                 console.log(`FSRS recorded for word "${word.text}" in sentence:`, {
@@ -1545,4 +1537,3 @@ export const GemSpeedBuilder: React.FC<{
       <GemSpeedBuilderInternal {...props} />
     </SoundProvider>
   );
-};

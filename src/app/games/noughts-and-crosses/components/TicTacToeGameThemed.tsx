@@ -8,7 +8,6 @@ import confetti from 'canvas-confetti';
 import { useAudio } from '../hooks/useAudio';
 import { EnhancedGameService } from '../../../../services/enhancedGameService';
 import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
-import { useUnifiedSpacedRepetition } from '../../../../hooks/useUnifiedSpacedRepetition';
 
 // Theme animations
 import ClassicAnimation from './themes/ClassicAnimation';
@@ -545,8 +544,7 @@ export default function TicTacToeGame({
   gameService,
   userId
 }: TicTacToeGameProps) {
-  // Initialize FSRS spaced repetition system
-  const { recordWordPractice, algorithm } = useUnifiedSpacedRepetition('noughts-and-crosses');
+
 
   const { themeClasses } = useTheme();
 
@@ -760,31 +758,25 @@ export default function TicTacToeGame({
 
         console.log('🔍 [FSRS DEBUG] Word data being passed to FSRS:', wordData);
 
-        // Only proceed with FSRS if we have a valid vocabulary ID
-        if (!vocabularyId) {
-          console.error('🚨 [FSRS ERROR] Skipping FSRS - no vocabulary ID available');
-        } else {
-          // Calculate confidence for luck-based game (lower confidence due to guessing)
-          const baseConfidence = isCorrect ? 0.4 : 0.2; // Lower confidence for multiple choice
-          const speedBonus = responseTime < 3 ? 0.1 : responseTime < 5 ? 0.05 : 0;
-          const confidence = Math.max(0.1, Math.min(0.6, baseConfidence + speedBonus)); // Cap at 0.6 for luck-based
+        // Use EnhancedGameSessionService for unified vocabulary tracking
+        if (vocabularyId && gameSessionId) {
+          const sessionService = new EnhancedGameSessionService();
+          const gemEvent = await sessionService.recordWordAttempt(gameSessionId, 'noughts-and-crosses', {
+            vocabularyId: vocabularyId,
+            wordText: currentQuestion.word,
+            translationText: currentQuestion.translation,
+            responseTimeMs: responseTime * 1000,
+            wasCorrect: isCorrect,
+            hintUsed: false,
+            streakCount: correctAnswers,
+            masteryLevel: 1,
+            maxGemRarity: 'common', // Luck-based game
+            gameMode: 'multiple_choice',
+            difficultyLevel: 'beginner'
+          });
 
-          // Record practice with FSRS (works in both assignment and free play modes)
-          const fsrsResult = await recordWordPractice(
-            wordData,
-            isCorrect,
-            responseTime * 1000, // Convert to milliseconds
-            confidence
-          );
-
-          if (fsrsResult) {
-            console.log(`FSRS recorded for noughts-and-crosses "${currentQuestion.word}":`, {
-              algorithm: fsrsResult.algorithm,
-              points: fsrsResult.points,
-              nextReview: fsrsResult.nextReviewDate,
-              interval: fsrsResult.interval,
-              masteryLevel: fsrsResult.masteryLevel
-            });
+          if (gemEvent) {
+            console.log(`✅ Noughts and Crosses gem awarded: ${gemEvent.rarity} (${gemEvent.xpValue} XP)`);
           }
         }
       } catch (error) {

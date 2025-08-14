@@ -13,7 +13,6 @@ import { useAuth } from '../../../../components/auth/AuthProvider';
 import { useSupabase } from '../../../../components/supabase/SupabaseProvider';
 import { EnhancedGameService } from '../../../../services/enhancedGameService';
 import { StandardVocabularyItem } from '../../../../components/games/templates/GameAssignmentWrapper';
-import { useUnifiedSpacedRepetition } from '../../../../hooks/useUnifiedSpacedRepetition';
 import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
 
 // Enhanced Types
@@ -86,7 +85,6 @@ export function SentenceTowersMainGame({
   isFullscreen = false
 }: SentenceTowersMainGameProps) {
   // Initialize FSRS spaced repetition system
-  const { recordWordPractice, algorithm } = useUnifiedSpacedRepetition('sentence-towers');
 
   // Game state
   const [gameState, setGameState] = useState<GameState>({
@@ -288,12 +286,6 @@ export function SentenceTowersMainGame({
       const confidence = Math.max(0.1, Math.min(0.95, baseConfidence + speedBonus + difficultyBonus));
 
       // Record practice with FSRS
-      const fsrsResult = await recordWordPractice(
-        wordData,
-        isCorrect,
-        responseTime,
-        confidence
-      );
 
       console.log(`🔍 [FSRS] Recorded sentence-towers practice for ${currentTargetWord.word}:`, {
         isCorrect,

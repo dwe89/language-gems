@@ -16,7 +16,6 @@ import { achievementService, Achievement } from '../../../../services/achievemen
 import { GEM_TYPES } from '../../vocabulary-mining/utils/gameConstants';
 import { RewardEngine, type GemRarity } from '../../../../services/rewards/RewardEngine';
 import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
-import { useUnifiedSpacedRepetition } from '../../../../hooks/useUnifiedSpacedRepetition';
 
 // Import mode components
 import { DictationMode } from '../modes/DictationMode';
@@ -75,7 +74,7 @@ interface VocabMasterGameEngineProps {
   onWordAttempt?: (
     word: string,
     translation: string,
-    userAnswer: string,
+    answer: string,
     isCorrect: boolean,
     responseTime: number,
     gameMode: string,
@@ -93,14 +92,13 @@ export const VocabMasterGameEngine: React.FC<VocabMasterGameEngineProps> = ({
   gameService,
   onWordAttempt
 }) => {
-  // Initialize FSRS spaced repetition system
-  const { recordWordPractice, algorithm } = useUnifiedSpacedRepetition('vocab-master');
+
   // Core game state
   const [gameState, setGameState] = useState<GameState>(() => ({
     currentWordIndex: 0,
     currentWord: config.vocabulary[0] || null,
     currentExerciseData: null,
-    userAnswer: '',
+    answer: '',
     selectedChoice: null,
     showAnswer: false,
     isCorrect: null,
@@ -386,15 +384,28 @@ export const VocabMasterGameEngine: React.FC<VocabMasterGameEngineProps> = ({
             } else if (config.assignmentMode) {
               console.log('⚠️ [VOCAB MASTER] Assignment mode but no recordVocabularyInteraction function available');
             } else {
-              // Only record FSRS directly when NOT in assignment mode
-              // (In assignment mode, GameAssignmentWrapper handles FSRS recording)
-              console.log('🔍 [FSRS] Recording practice directly (non-assignment mode)...');
-              const fsrsResult = await recordWordPractice(
-                wordData,
-                validation.isCorrect,
-                responseTime,
-                confidence
-              );
+              // ✅ UNIFIED: Record vocabulary attempt directly (non-assignment mode)
+              console.log('🔍 [VOCAB MASTER] Recording vocabulary attempt directly...');
+              if (gameSessionId) {
+                const sessionService = new EnhancedGameSessionService();
+                const gemEvent = await sessionService.recordWordAttempt(gameSessionId, 'vocab-master', {
+                  vocabularyId: wordData.id,
+                  wordText: wordData.word,
+                  translationText: wordData.translation,
+                  responseTimeMs: responseTime,
+                  wasCorrect: validation.isCorrect,
+                  hintUsed: false,
+                  streakCount: gameState.streak,
+                  masteryLevel: 1,
+                  maxGemRarity: 'rare',
+                  gameMode: config.mode,
+                  difficultyLevel: 'intermediate'
+                });
+
+                if (gemEvent) {
+                  console.log(`✅ Vocab Master gem awarded: ${gemEvent.rarity} (${gemEvent.xpValue} XP)`);
+                }
+              }
 
               console.log(`🔍 [FSRS] Recorded practice for ${wordData.word}:`, {
                 isCorrect: validation.isCorrect,

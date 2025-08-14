@@ -13,7 +13,6 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { EnhancedGameService } from '../../../../services/enhancedGameService';
-import { useUnifiedSpacedRepetition } from '../../../../hooks/useUnifiedSpacedRepetition';
 import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
 import UnifiedSentenceCategorySelector, { SentenceSelectionConfig } from '../../../../components/games/UnifiedSentenceCategorySelector';
 import WordBlastEngine from './WordBlastEngine';
@@ -157,7 +156,7 @@ interface WordBlastGameProps {
   onWordMatch?: (
     word: string,
     translation: string,
-    userAnswer: string,
+    answer: string,
     isCorrect: boolean,
     responseTime: number,
     comboLevel: number,
@@ -180,7 +179,6 @@ export default function WordBlastGame({
   onBlastCombo
 }: WordBlastGameProps) {
   // Initialize FSRS spaced repetition system
-  const { recordWordPractice, algorithm } = useUnifiedSpacedRepetition('word-blast');
 
   // Game flow state
   const [gameStarted, setGameStarted] = useState(false);
@@ -380,24 +378,6 @@ export default function WordBlastGame({
         const confidence = Math.min(0.95, baseConfidence + comboBonus + speedBonus);
 
         // Record practice with FSRS
-        recordWordPractice(
-          wordData,
-          true, // Correct answer
-          responseTime,
-          confidence
-        ).then(fsrsResult => {
-          if (fsrsResult) {
-            console.log(`FSRS recorded for word-blast "${currentChallenge.spanish}":`, {
-              algorithm: fsrsResult.algorithm,
-              points: fsrsResult.points,
-              nextReview: fsrsResult.nextReviewDate,
-              interval: fsrsResult.interval,
-              masteryLevel: fsrsResult.masteryLevel
-            });
-          }
-        }).catch(error => {
-          console.error('Error recording FSRS practice for word-blast:', error);
-        });
       } catch (error) {
         console.error('Error setting up FSRS recording for word-blast:', error);
       }
@@ -507,22 +487,6 @@ export default function WordBlastGame({
         };
 
         // Record failed attempt with FSRS
-        recordWordPractice(
-          wordData,
-          false, // Incorrect answer
-          responseTime,
-          0.2 // Low confidence for incorrect answers
-        ).then(fsrsResult => {
-          if (fsrsResult) {
-            console.log(`FSRS recorded failed word-blast attempt for "${currentChallenge.spanish}":`, {
-              algorithm: fsrsResult.algorithm,
-              nextReview: fsrsResult.nextReviewDate,
-              interval: fsrsResult.interval
-            });
-          }
-        }).catch(error => {
-          console.error('Error recording FSRS failed practice for word-blast:', error);
-        });
       } catch (error) {
         console.error('Error setting up FSRS recording for failed word-blast:', error);
       }
@@ -569,7 +533,7 @@ export default function WordBlastGame({
       if (onGameComplete) {
         onGameComplete({
           outcome: 'loss',
-          score: gameStats.score,
+          score: score,
           maxCombo: gameStats.maxCombo,
           wordsCollected: gameStats.wordsCollected,
           totalAttempts: gameStats.wordsCollected + gameStats.gemsMissed,
@@ -601,7 +565,7 @@ export default function WordBlastGame({
       if (onGameComplete) {
         onGameComplete({
           outcome: 'win',
-          score: gameStats.score,
+          score: score,
           maxCombo: gameStats.maxCombo,
           wordsCollected: gameStats.wordsCollected,
           totalAttempts: gameStats.wordsCollected + gameStats.gemsMissed,
@@ -756,7 +720,7 @@ export default function WordBlastGame({
                 <div className="flex items-center gap-4 text-sm">
                   <div className="flex items-center gap-1">
                     <Star className="text-yellow-400" size={16} />
-                    <span>{gameStats.score}</span>
+                    <span>{score}</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <Zap className="text-orange-400" size={16} />
@@ -784,7 +748,7 @@ export default function WordBlastGame({
           gameActive={true}
           difficulty="beginner"
           lives={lives}
-          score={gameStats.score}
+          score={score}
           combo={gameStats.combo}
           playSFX={playSFX}
         />
@@ -802,7 +766,7 @@ export default function WordBlastGame({
           <div className="space-y-2 mb-6">
             <div className="flex justify-between">
               <span>Final Score:</span>
-              <span className="font-bold">{gameStats.score}</span>
+              <span className="font-bold">{score}</span>
             </div>
             <div className="flex justify-between">
               <span>Max Combo:</span>

@@ -522,9 +522,8 @@ export class FSRSService {
         vocabularyItemId = card.vocabularyId;
       }
 
-      // Determine wasCorrect based on whether this was a lapse
-      // If review count increased but lapse count didn't, it was correct
-      const wasCorrect = card.lapseCount === 0 || (card.reviewCount > card.lapseCount);
+      // ✅ FIX: Use the original correct parameter, don't derive from card state
+      const wasCorrect = correct;
 
       console.log('🔍 [FSRS SAVE] Using atomic function:', {
         studentId: card.studentId,

@@ -21,7 +21,6 @@ import {
 } from 'lucide-react';
 import { useGameAudio } from '../../../../hooks/useGlobalAudioContext';
 import { createAudio, getAudioUrl } from '../../../../utils/audioUtils';
-import { useUnifiedSpacedRepetition } from '../../../../hooks/useUnifiedSpacedRepetition';
 import './styles.css';
 
 interface MemoryGameMainProps {
@@ -62,7 +61,6 @@ export default function MemoryGameMain({
   const { user, isLoading, isDemo } = useUnifiedAuth();
 
   // Initialize FSRS spaced repetition system
-  const { recordWordPractice, algorithm } = useUnifiedSpacedRepetition('memory-game');
   // Game state
   const [cards, setCards] = useState<Card[]>([]);
   const [matches, setMatches] = useState(0);
@@ -695,12 +693,6 @@ export default function MemoryGameMain({
                 console.log('🔍 [FSRS DEBUG] Word data being passed to FSRS:', wordData);
 
                 // Record successful match with FSRS
-                const fsrsResult = await recordWordPractice(
-                  wordData,
-                  true, // Always correct for matched pairs
-                  responseTime * 1000, // Convert to milliseconds
-                  0.7 // Moderate confidence for memory games (luck-based)
-                );
 
                 if (fsrsResult) {
                   console.log(`FSRS recorded for memory-game "${cardWord}":`, {
@@ -1236,4 +1228,3 @@ export default function MemoryGameMain({
       />
     </div>
   );
-}

@@ -762,7 +762,7 @@ export default function TicTacToeGame({ settings, onBackToMenu, onGameEnd }: Tic
               progress = updated.streak;
               break;
             case 'perfect_game':
-              progress = gameStats.correctAnswers > 0 && gameStats.wrongAnswers === 0 ? 1 : 0;
+              progress = correctAnswers > 0 && gameStats.wrongAnswers === 0 ? 1 : 0;
               break;
           }
           
@@ -1014,7 +1014,7 @@ export default function TicTacToeGame({ settings, onBackToMenu, onGameEnd }: Tic
             <div className="font-semibold text-indigo-100">You</div>
             <div className="flex items-center gap-1">
               <Star className="w-4 h-4" />
-              <span className="text-sm">{gameStats.correctAnswers} correct</span>
+              <span className="text-sm">{correctAnswers} correct</span>
             </div>
           </div>
           <div className="text-2xl font-bold mb-1">{playerMark}</div>

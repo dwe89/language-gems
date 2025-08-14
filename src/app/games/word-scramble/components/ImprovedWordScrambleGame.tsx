@@ -4,7 +4,6 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, RotateCcw, Lightbulb, Volume2 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
-import { useUnifiedSpacedRepetition } from '../../../../hooks/useUnifiedSpacedRepetition';
 import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
 
 // Type definitions
@@ -183,8 +182,7 @@ export default function WordScrambleGame({
   difficulty = 'medium',
   onProgressUpdate
 }: WordScrambleGameProps) {
-  // Initialize FSRS spaced repetition system
-  const { recordWordPractice, algorithm } = useUnifiedSpacedRepetition('word-scramble');
+
   const [currentWordData, setCurrentWordData] = useState<GameVocabularyWord | null>(null);
   const [scrambledLetters, setScrambledLetters] = useState<string[]>([]);
   const [selectedLetters, setSelectedLetters] = useState<number[]>([]);
@@ -254,7 +252,7 @@ export default function WordScrambleGame({
       if (onGameComplete) {
         onGameComplete({
           won: true,
-          score: gameStats.score,
+          score: score,
           stats: gameStats,
           wordsCompleted: completedWordIds.size,
           totalWords: remainingWords.length
@@ -263,7 +261,7 @@ export default function WordScrambleGame({
       if (onGameEnd) {
         onGameEnd({
           won: true,
-          score: gameStats.score,
+          score: score,
           stats: gameStats
         });
       }
@@ -371,16 +369,30 @@ export default function WordScrambleGame({
           // Calculate confidence for word scramble game (higher confidence than luck-based games)
           const baseConfidence = isCorrect ? 0.7 : 0.3; // Higher confidence for skill-based game
           const speedBonus = solveTime < 5 ? 0.1 : solveTime < 10 ? 0.05 : 0;
-          const streakBonus = gameStats.streak > 3 ? 0.05 : 0;
+          const streakBonus = streak > 3 ? 0.05 : 0;
           const confidence = Math.max(0.1, Math.min(0.9, baseConfidence + speedBonus + streakBonus));
 
-          // Record practice with FSRS (works in both assignment and free play modes)
-          const fsrsResult = await recordWordPractice(
-            wordData,
-            isCorrect,
-            solveTime * 1000, // Convert to milliseconds
-            confidence
-          );
+          // ✅ UNIFIED: Record vocabulary attempt
+          if (gameSessionId) {
+            const sessionService = new EnhancedGameSessionService();
+            const gemEvent = await sessionService.recordWordAttempt(gameSessionId, 'word-scramble', {
+              vocabularyId: wordData.id,
+              wordText: wordData.word,
+              translationText: wordData.translation,
+              responseTimeMs: solveTime * 1000,
+              wasCorrect: isCorrect,
+              hintUsed: false,
+              streakCount: streak,
+              masteryLevel: 1,
+              maxGemRarity: 'rare',
+              gameMode: 'scramble',
+              difficultyLevel: difficulty
+            });
+
+            if (gemEvent) {
+              console.log(`✅ Word Scramble gem awarded: ${gemEvent.rarity} (${gemEvent.xpValue} XP)`);
+            }
+          }
 
           if (fsrsResult) {
             console.log(`FSRS recorded for ${currentWordData.word}:`, {
@@ -424,9 +436,9 @@ export default function WordScrambleGame({
                 responseTimeMs: Math.round(solveTime * 1000),
                 wasCorrect: isCorrect,
                 hintUsed: gameStats.hintsUsed > 0, // Track if hints were used this session
-                streakCount: gameStats.streak + (isCorrect ? 1 : 0),
+                streakCount: streak + (isCorrect ? 1 : 0),
                 masteryLevel: isCorrect ? 2 : 1, // Higher mastery for skill-based game
-                maxGemRarity: isCorrect ? (gameStats.streak > 5 ? 'rare' : 'uncommon') : 'common',
+                maxGemRarity: isCorrect ? (streak > 5 ? 'rare' : 'uncommon') : 'common',
                 gameMode: 'word_scramble',
                 difficultyLevel: difficulty
               });
@@ -451,7 +463,7 @@ export default function WordScrambleGame({
       soundManager.current.play('correct');
       createParticleEffect('success');
 
-      const points = Math.floor(Math.max(30, currentWordData!.word.length * 10) * (1 + gameStats.streak * 0.1));
+      const points = Math.floor(Math.max(30, currentWordData!.word.length * 10) * (1 + streak * 0.1));
 
       setGameStats(prev => ({
         ...prev,
@@ -493,7 +505,7 @@ export default function WordScrambleGame({
                           (powerUp === 'reveal_vowels' && isVowelRevealed) ||
                           (powerUp === 'show_length' && showWordLength);
     
-    if (isUsedForWord || gameStats.score < POWER_UPS[powerUp].cost) return;
+    if (isUsedForWord || score < POWER_UPS[powerUp].cost) return;
 
     setGameStats(prev => ({ 
       ...prev, 
@@ -548,7 +560,7 @@ export default function WordScrambleGame({
         }
         break;
     }
-  }, [gameStats.score, currentWordData, scrambleWord, usedRevealLetter, isVowelRevealed, showWordLength, selectedLetters, scrambledLetters]);
+  }, [score, currentWordData, scrambleWord, usedRevealLetter, isVowelRevealed, showWordLength, selectedLetters, scrambledLetters]);
 
   // Skip word
   const skipWord = useCallback(() => {
@@ -580,7 +592,7 @@ export default function WordScrambleGame({
           {/* Final Stats */}
           <div className="grid grid-cols-2 gap-4 mb-6">
             <div className="bg-white/5 rounded-lg p-3">
-              <div className="text-2xl font-bold text-yellow-300">{gameStats.score.toLocaleString()}</div>
+              <div className="text-2xl font-bold text-yellow-300">{score.toLocaleString()}</div>
               <div className="text-xs text-white/70">Final Score</div>
             </div>
             <div className="bg-white/5 rounded-lg p-3">
@@ -661,11 +673,11 @@ export default function WordScrambleGame({
         {/* Stats Bar */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           <div className="bg-gradient-to-br from-blue-500/20 to-blue-600/20 backdrop-blur-sm rounded-lg p-3 text-center text-white border border-blue-400/30">
-            <div className="text-xl font-bold text-yellow-300">{gameStats.score.toLocaleString()}</div>
+            <div className="text-xl font-bold text-yellow-300">{score.toLocaleString()}</div>
             <div className="text-xs text-white/70">Score</div>
           </div>
           <div className="bg-gradient-to-br from-green-500/20 to-green-600/20 backdrop-blur-sm rounded-lg p-3 text-center text-white border border-green-400/30">
-            <div className="text-xl font-bold">{gameStats.streak}</div>
+            <div className="text-xl font-bold">{streak}</div>
             <div className="text-xs text-white/70">Streak</div>
           </div>
           <div className="bg-gradient-to-br from-orange-500/20 to-orange-600/20 backdrop-blur-sm rounded-lg p-3 text-center text-white border border-orange-400/30">
@@ -740,7 +752,7 @@ export default function WordScrambleGame({
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
               {Object.entries(POWER_UPS).map(([key, powerUp]) => {
                 const powerUpKey = key as PowerUp;
-                const canAfford = gameStats.score >= powerUp.cost;
+                const canAfford = score >= powerUp.cost;
                 const isUsedForWord = (powerUpKey === 'reveal_letter' && usedRevealLetter) ||
                                       (powerUpKey === 'reveal_vowels' && isVowelRevealed) ||
                                       (powerUpKey === 'show_length' && showWordLength);

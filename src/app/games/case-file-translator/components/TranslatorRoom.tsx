@@ -8,7 +8,6 @@ import { VOCABULARY_CATEGORIES } from '../../../../components/games/ModernCatego
 import { StandardVocabularyItem, AssignmentData, GameProgress } from '../../../../components/games/templates/GameAssignmentWrapper';
 import { EnhancedGameService } from '../../../../services/enhancedGameService';
 import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
-import { useUnifiedSpacedRepetition } from '../../../../hooks/useUnifiedSpacedRepetition';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -62,7 +61,6 @@ export default function TranslatorRoom({
   gameService
 }: TranslatorRoomProps) {
   // Initialize FSRS spaced repetition system
-  const { recordWordPractice, algorithm } = useUnifiedSpacedRepetition('case-file-translator');
 
   const [currentSentenceIndex, setCurrentSentenceIndex] = useState(0);
   const [sentences, setSentences] = useState<TranslationSentence[]>([]);
@@ -298,12 +296,6 @@ export default function TranslatorRoom({
           confidence = Math.max(0.1, Math.min(0.95, confidence));
 
           // Record practice with FSRS
-          const fsrsResult = await recordWordPractice(
-            wordData,
-            correct,
-            responseTime,
-            confidence
-          );
 
           if (fsrsResult) {
             console.log(`FSRS recorded for case-file word "${word}":`, {

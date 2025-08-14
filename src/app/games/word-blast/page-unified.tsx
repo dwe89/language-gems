@@ -226,7 +226,7 @@ export default function UnifiedWordBlastGame() {
           {/* Game Stats */}
           <div className="flex items-center space-x-6 text-white">
             <div className="text-center">
-              <div className="text-2xl font-bold">{gameStats.score}</div>
+              <div className="text-2xl font-bold">{score}</div>
               <div className="text-xs opacity-80">SCORE</div>
             </div>
             <div className="text-center">

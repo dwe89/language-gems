@@ -11,7 +11,6 @@ import { Evidence } from '../types';
 import { StandardVocabularyItem, AssignmentData, GameProgress } from '../../../../components/games/templates/GameAssignmentWrapper';
 import { EnhancedGameService } from '../../../../services/enhancedGameService';
 import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
-import { useUnifiedSpacedRepetition } from '../../../../hooks/useUnifiedSpacedRepetition';
 
 interface AssignmentMode {
   assignment: AssignmentData;
@@ -43,8 +42,7 @@ export default function DetectiveRoom({
   gameService,
   vocabularyWords
 }: DetectiveRoomProps) {
-  // Initialize FSRS spaced repetition system
-  const { recordWordPractice, algorithm } = useUnifiedSpacedRepetition('detective-listening');
+
 
   const [currentEvidenceIndex, setCurrentEvidenceIndex] = useState(0);
   const [evidenceList, setEvidenceList] = useState<Evidence[]>([]);
@@ -330,18 +328,12 @@ export default function DetectiveRoom({
     // Record vocabulary interaction using gems-first system
     if (gameSessionId) {
       try {
-        // 🔍 INSTRUMENTATION: Log SRS update details with answer validation
-        console.log('🔍 [DETECTIVE LISTENING] Starting vocabulary tracking:', {
-          gameSessionId,
+        // 🔍 SINGLE SYSTEM: Only EnhancedGameSessionService handles vocabulary tracking
+        console.log('🔍 [DETECTIVE LISTENING] Recording vocabulary attempt:', {
           vocabularyId: currentEvidence.vocabularyId,
-          vocabularyIdType: typeof currentEvidence.vocabularyId,
           wasCorrect: isCorrect,
-          responseTimeMs: responseTime,
-          wordText: currentEvidence.word || currentEvidence.correct,
-          translationText: currentEvidence.correct,
-          userAnswer: userAnswer,
-          correctAnswer: currentEvidence.correct,
-          answersMatch: userAnswer?.toLowerCase().trim() === currentEvidence.correct?.toLowerCase().trim()
+          answer: answer,
+          correctAnswer: currentEvidence.correct
         });
 
         // Use EnhancedGameSessionService for gems-first vocabulary tracking
@@ -358,7 +350,7 @@ export default function DetectiveRoom({
           maxGemRarity: 'rare', // Cap at rare to prevent grinding
           gameMode: 'listening',
           difficultyLevel: 'beginner'
-        }, false); // ✅ FIXED: Let EnhancedGameSessionService handle FSRS recording
+        }); // ✅ SINGLE SYSTEM: Only EnhancedGameSessionService handles all vocabulary tracking
 
         // 🔍 INSTRUMENTATION: Log gem event result
         console.log('🔍 [VOCAB TRACKING] Gem event result:', {

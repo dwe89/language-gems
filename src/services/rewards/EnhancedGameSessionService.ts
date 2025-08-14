@@ -209,26 +209,20 @@ export class EnhancedGameSessionService {
       if (attempt.vocabularyId && !skipSpacedRepetition) {
         const studentId = await this.getSessionStudentId(sessionId);
 
-        // 🔍 INSTRUMENTATION: Log SRS update details with full attempt object
-        console.log('🔍 [SRS UPDATE] Starting SRS progress update:', {
-          studentId,
+        // Update FSRS for vocabulary tracking
+        console.log('🔍 [ENHANCED SESSION] FSRS update:', {
           vocabularyId: attempt.vocabularyId,
-          vocabularyIdType: typeof attempt.vocabularyId,
-          wasCorrect: attempt.wasCorrect,
-          wasCorrectType: typeof attempt.wasCorrect,
-          responseTimeMs: attempt.responseTimeMs,
-          sessionId,
-          fullAttemptObject: attempt
+          wasCorrect: attempt.wasCorrect
         });
 
-        await this.updateSRSProgress(
+        await this.updateVocabularyDirectly(
           studentId,
           attempt.vocabularyId,
           attempt.wasCorrect,
           attempt.responseTimeMs
         );
 
-        console.log('🔍 [SRS UPDATE] SRS progress update completed successfully');
+        console.log('✅ [ENHANCED SESSION] FSRS update completed');
       }
 
       // Only award gems for correct answers in non-assessment modes
@@ -480,29 +474,62 @@ export class EnhancedGameSessionService {
     }
   }
   
-  private async updateSRSProgress(
+  /**
+   * ✅ SIMPLIFIED: Direct vocabulary update bypassing FSRS service layer
+   * This ensures wasCorrect value reaches the database unchanged
+   */
+  private async updateVocabularyDirectly(
     studentId: string,
     vocabularyId: string | number,
     wasCorrect: boolean,
     responseTimeMs: number
   ): Promise<void> {
     try {
-      // Convert vocabularyId to string for consistency
+      // Convert vocabularyId to appropriate format
       const vocabIdString = vocabularyId?.toString();
       if (!vocabIdString) return;
 
-      // Use FSRS service instead of legacy SpacedRepetitionService
-      const { FSRSService } = await import('../fsrsService');
-      const fsrs = new FSRSService(this.supabase);
-      await fsrs.updateProgress(
-        studentId,
-        vocabIdString,
+      // Determine if this is a UUID (centralized) or integer (legacy)
+      const isUUID = vocabIdString.includes('-');
+
+      // Call atomic function directly with unmodified wasCorrect value
+      const { data, error } = await this.supabase.rpc('update_vocabulary_gem_collection_atomic', {
+        p_student_id: studentId,
+        p_vocabulary_item_id: isUUID ? null : vocabIdString, // UUID format for both
+        p_centralized_vocabulary_id: isUUID ? vocabIdString : null,
+        p_was_correct: wasCorrect, // ✅ DIRECT: No transformation, no derivation
+        p_response_time_ms: responseTimeMs,
+        p_hint_used: false,
+        p_streak_count: 0
+      });
+
+      if (error) {
+        console.error('Error in direct vocabulary update:', error);
+        throw error;
+      }
+
+      console.log('✅ [DIRECT UPDATE] Vocabulary updated successfully:', {
+        vocabularyId: vocabIdString,
         wasCorrect,
-        responseTimeMs
-      );
+        studentId
+      });
+
     } catch (error) {
-      console.error('Error updating FSRS progress:', error);
+      console.error('Error updating vocabulary directly:', error);
     }
+  }
+
+  /**
+   * @deprecated Legacy method - replaced by updateVocabularyDirectly
+   */
+  private async updateSRSProgress(
+    studentId: string,
+    vocabularyId: string | number,
+    wasCorrect: boolean,
+    responseTimeMs: number
+  ): Promise<void> {
+    // Redirect to new direct method
+    return this.updateVocabularyDirectly(studentId, vocabularyId, wasCorrect, responseTimeMs);
   }
   
   private async updateStudentProfileXP(studentId: string, xpAmount: number): Promise<void> {

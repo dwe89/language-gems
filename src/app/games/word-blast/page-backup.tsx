@@ -257,7 +257,7 @@ export default function GemWordBlastGame() {
   const handleTimeUp = () => {
     if (gameState === 'playing') {
       setGameState('timeout');
-      if (gameStats.score > 0) {
+      if (score > 0) {
         triggerConfetti();
       }
     }
@@ -583,7 +583,7 @@ export default function GemWordBlastGame() {
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
                     <div>
                       <div className="text-3xl font-bold text-yellow-500">
-                        {gameStats.score.toLocaleString()}
+                        {score.toLocaleString()}
                       </div>
                       <div className="text-slate-400">Score</div>
                     </div>

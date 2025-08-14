@@ -255,7 +255,7 @@ class GemBlastScene extends Phaser.Scene {
   }
 
   private spawnGems(time: number) {
-    const spawnDelay = Math.max(300, 200 - (this.gameStats.score / 50));
+    const spawnDelay = Math.max(300, 200 - (this.score / 50));
     
     if (time - this.lastGemSpawn > spawnDelay && this.fallingGems.length < this.gameSettings.maxGems) {
       this.createNewGem();
@@ -368,7 +368,7 @@ class GemBlastScene extends Phaser.Scene {
     const baseScore = 100;
     const comboBonus = this.combo * 25;
     const score = baseScore + comboBonus;
-    this.gameStats.score += score;
+    this.score += score;
     
     // Create success effect
     this.createSuccessEffect(gem.x, gem.y);
