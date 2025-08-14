@@ -15,12 +15,12 @@ import {
 
 // Proficiency level labels and colors - Professional styling
 const proficiencyLevels = [
-  { level: 0, label: 'Unknown', color: 'bg-gray-100 border border-gray-300', textColor: 'text-gray-700' },
-  { level: 1, label: 'Seen', color: 'bg-red-50 border border-red-200', textColor: 'text-red-700' },
-  { level: 2, label: 'Recognized', color: 'bg-orange-50 border border-orange-200', textColor: 'text-orange-700' },
-  { level: 3, label: 'Practiced', color: 'bg-blue-50 border border-blue-200', textColor: 'text-blue-700' },
-  { level: 4, label: 'Mastered', color: 'bg-green-50 border border-green-200', textColor: 'text-green-700' },
-  { level: 5, label: 'Expert', color: 'bg-purple-50 border border-purple-200', textColor: 'text-purple-700' },
+  { level: 0, label: 'New discovery', color: 'bg-yellow-100 border border-yellow-300', textColor: 'text-yellow-800' },
+  { level: 1, label: 'Common gem', color: 'bg-gray-50 border border-gray-200', textColor: 'text-gray-700' },
+  { level: 2, label: 'Uncommon gem', color: 'bg-green-50 border border-green-200', textColor: 'text-green-700' },
+  { level: 3, label: 'Rare gem', color: 'bg-blue-50 border border-blue-200', textColor: 'text-blue-700' },
+  { level: 4, label: 'Epic gem', color: 'bg-purple-50 border border-purple-200', textColor: 'text-purple-700' },
+  { level: 5, label: 'Legendary gem', color: 'bg-orange-50 border border-orange-200', textColor: 'text-orange-700' },
 ];
 
 export default function VocabularyDashboard() {
@@ -411,9 +411,34 @@ export default function VocabularyDashboard() {
                       {item.translation}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${proficiencyLevels[item.masteryLevel].color} ${proficiencyLevels[item.masteryLevel].textColor}`}>
-                        {proficiencyLevels[item.masteryLevel].label}
-                      </span>
+                      {(() => {
+                        // Special handling for mastery level 0
+                        if (item.masteryLevel === 0) {
+                          // If they have 0 correct encounters, they need practice
+                          if (item.correctEncounters === 0) {
+                            return (
+                              <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 border border-red-300 text-red-800">
+                                Needs practice
+                              </span>
+                            );
+                          } else {
+                            // They have correct encounters, so it's a new discovery
+                            return (
+                              <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 border border-yellow-300 text-yellow-800">
+                                New discovery
+                              </span>
+                            );
+                          }
+                        }
+
+                        // Regular mastery levels
+                        const level = proficiencyLevels[item.masteryLevel] || proficiencyLevels[0];
+                        return (
+                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${level.color} ${level.textColor}`}>
+                            {level.label}
+                          </span>
+                        );
+                      })()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {item.totalEncounters > 0 ? (
@@ -435,13 +460,13 @@ export default function VocabularyDashboard() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <Link
-                        href={`/student-dashboard/vocabulary/practice?item=${item.vocabularyItemId}`}
+                        href={`/student-dashboard/vocabulary/practice?item=${item.actualVocabularyId}`}
                         className="text-indigo-600 hover:text-indigo-900 mr-3"
                       >
                         Practice
                       </Link>
                       <Link
-                        href={`/student-dashboard/vocabulary/detail?item=${item.vocabularyItemId}`}
+                        href={`/student-dashboard/vocabulary/detail?item=${item.actualVocabularyId}`}
                         className="text-gray-600 hover:text-gray-900"
                       >
                         Details

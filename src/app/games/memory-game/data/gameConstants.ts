@@ -26,7 +26,7 @@ export interface Card {
   matched: boolean;
   pairId: number;
   isImage: boolean;
-  vocabularyId?: number;
+  vocabularyId?: string; // UUID for FSRS compatibility
   firstAttemptTime?: Date;
   word?: string;
   translation?: string;

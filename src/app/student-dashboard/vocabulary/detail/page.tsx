@@ -80,31 +80,76 @@ export default function VocabularyDetailPage() {
       setLoading(true);
       setError(null);
 
-      const { data, error: queryError } = await supabase
+      // Get vocabulary gem collection record using both ID systems
+      // First try with centralized_vocabulary_id, then with vocabulary_item_id
+      let gemData = null;
+      let gemError = null;
+
+      // Try centralized vocabulary ID first
+      const { data: centralizedData, error: centralizedError } = await supabase
         .from('vocabulary_gem_collection')
-        .select(`
-          *,
-          centralized_vocabulary!inner(
-            id,
-            word,
-            translation,
-            language,
-            category,
-            subcategory,
-            curriculum_level,
-            part_of_speech,
-            example_sentence,
-            example_translation,
-            audio_url
-          )
-        `)
+        .select('*')
         .eq('student_id', user!.id)
-        .eq('vocabulary_item_id', itemId)
+        .eq('centralized_vocabulary_id', itemId)
+        .maybeSingle();
+
+      if (centralizedData) {
+        gemData = centralizedData;
+      } else {
+        // Try legacy vocabulary_item_id
+        const { data: legacyData, error: legacyError } = await supabase
+          .from('vocabulary_gem_collection')
+          .select('*')
+          .eq('student_id', user!.id)
+          .eq('vocabulary_item_id', itemId)
+          .maybeSingle();
+
+        if (legacyData) {
+          gemData = legacyData;
+        } else {
+          gemError = legacyError || centralizedError || new Error('Vocabulary record not found');
+        }
+      }
+
+      if (gemError) {
+        console.error('Error loading vocabulary gem collection:', gemError);
+        throw gemError;
+      }
+
+      if (!gemData) {
+        console.error('No vocabulary gem collection record found for:', { itemId, userId: user!.id });
+        throw new Error('Vocabulary record not found. This word may not have been practiced yet.');
+      }
+
+      // Get vocabulary details using the appropriate ID
+      const vocabularyId = gemData.vocabulary_item_id || gemData.centralized_vocabulary_id;
+      const { data: vocabularyData, error: vocabError } = await supabase
+        .from('centralized_vocabulary')
+        .select(`
+          id,
+          word,
+          translation,
+          language,
+          category,
+          subcategory,
+          curriculum_level,
+          part_of_speech,
+          example_sentence,
+          example_translation,
+          audio_url
+        `)
+        .eq('id', vocabularyId)
         .single();
 
-      if (queryError) {
-        throw queryError;
+      if (vocabError) {
+        throw vocabError;
       }
+
+      // Combine the data
+      const data = {
+        ...gemData,
+        centralized_vocabulary: vocabularyData
+      };
 
       if (data) {
         const detail: VocabularyDetail = {

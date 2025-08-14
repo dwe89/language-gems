@@ -31,6 +31,7 @@ import { useSearchParams } from 'next/navigation';
 import confetti from 'canvas-confetti';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
+import { useUnifiedSpacedRepetition } from '../../../../hooks/useUnifiedSpacedRepetition';
 
 // Types
 interface WordItem {
@@ -412,6 +413,9 @@ export const EnhancedSpeedBuilder: React.FC<{
   assignmentId?: string;
   mode?: 'assignment' | 'freeplay';
 }> = ({ assignmentId, mode = 'freeplay' }) => {
+  // Initialize FSRS spaced repetition system
+  const { recordWordPractice, algorithm } = useUnifiedSpacedRepetition('speed-builder');
+
   // State
   const [gameState, setGameState] = useState<'ready' | 'playing' | 'paused' | 'completed'>('ready');
   const [currentSentence, setCurrentSentence] = useState<SentenceData | null>(null);
@@ -640,7 +644,47 @@ export const EnhancedSpeedBuilder: React.FC<{
   // Check if sentence is completed correctly
   const checkSentenceCompletion = (words: (WordItem | null)[]) => {
     const isCorrect = words.every((word, index) => word?.index === index);
-    
+
+    // Record FSRS practice for the completed sentence
+    if (currentSentence) {
+      (async () => {
+        try {
+          const wordData = {
+            id: currentSentence.id || `speed-builder-${currentSentence.text}`,
+            word: currentSentence.text,
+            translation: currentSentence.translatedText || currentSentence.text,
+            language: currentSentence.language || 'es'
+          };
+
+          // Calculate confidence based on accuracy and streak
+          const baseConfidence = isCorrect ? 0.8 : 0.2;
+          const streakBonus = Math.min(stats.streak * 0.05, 0.15); // Up to 15% bonus for streak
+          const confidence = Math.max(0.1, Math.min(0.9, baseConfidence + streakBonus));
+
+          // Record practice with FSRS
+          const fsrsResult = await recordWordPractice(
+            wordData,
+            isCorrect,
+            5000, // Assume 5 seconds average for sentence completion
+            confidence
+          );
+
+          console.log(`🔍 [FSRS] Recorded sentence practice for speed-builder:`, {
+            sentence: currentSentence.text,
+            isCorrect,
+            confidence,
+            fsrsResult: fsrsResult ? {
+              due: fsrsResult.due,
+              stability: fsrsResult.stability,
+              difficulty: fsrsResult.difficulty
+            } : null
+          });
+        } catch (error) {
+          console.error('Error recording FSRS practice for speed builder:', error);
+        }
+      })();
+    }
+
     if (isCorrect) {
       setStats(prev => ({
         ...prev,

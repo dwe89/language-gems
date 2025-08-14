@@ -62,18 +62,64 @@ export default function VocabularyProgressPage() {
       setError(null);
 
       // Get vocabulary collection data
-      const { data: vocabData, error: vocabError } = await supabase
+      const { data: gemData, error: gemError } = await supabase
         .from('vocabulary_gem_collection')
         .select(`
-          *,
-          centralized_vocabulary!vocabulary_gem_collection_vocabulary_item_id_fkey(
-            category,
-            curriculum_level
-          )
+          *
         `)
         .eq('student_id', user!.id);
 
+      if (gemError) throw gemError;
+
+      if (!gemData || gemData.length === 0) {
+        // Set empty progress data structure
+        setProgressData({
+          totalWords: 0,
+          masteredWords: 0,
+          learningWords: 0,
+          newWords: 0,
+          averageAccuracy: 0,
+          totalPracticeTime: 0,
+          currentStreak: 0,
+          wordsThisWeek: 0,
+          weeklyProgress: [],
+          categoryProgress: []
+        });
+        setLoading(false);
+        return;
+      }
+
+      // Get vocabulary details for all records using both ID systems
+      const vocabularyIds = gemData
+        .map(item => item.vocabulary_item_id || item.centralized_vocabulary_id)
+        .filter(Boolean);
+
+      const { data: vocabularyData, error: vocabError } = await supabase
+        .from('centralized_vocabulary')
+        .select('id, category, curriculum_level')
+        .in('id', vocabularyIds);
+
       if (vocabError) throw vocabError;
+
+      // Create a map for quick vocabulary lookup
+      const vocabularyMap = new Map(
+        vocabularyData?.map(vocab => [vocab.id, vocab]) || []
+      );
+
+      // Combine gem data with vocabulary details
+      const vocabData = gemData
+        .map(gem => {
+          const vocabularyId = gem.vocabulary_item_id || gem.centralized_vocabulary_id;
+          const vocabulary = vocabularyMap.get(vocabularyId);
+
+          if (!vocabulary) return null;
+
+          return {
+            ...gem,
+            centralized_vocabulary: vocabulary
+          };
+        })
+        .filter(Boolean);
 
       // Get recent game sessions for weekly progress
       const { data: sessionsData, error: sessionsError } = await supabase

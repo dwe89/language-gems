@@ -255,8 +255,8 @@ export default function TranslatorRoom({
     const correct = checkTranslation(userTranslation, currentSentence.english_translation);
     const responseTime = translationStartTime > 0 ? Date.now() - translationStartTime : 0;
 
-    // Record translation practice with FSRS system
-    if (!assignmentMode && currentSentence) {
+    // Record translation practice with FSRS system (works in both assignment and free play modes)
+    if (currentSentence) {
       try {
         // Extract key words from the sentence for FSRS tracking
         const sourceWords = currentSentence.source_sentence
@@ -336,6 +336,7 @@ export default function TranslatorRoom({
           maxGemRarity: 'epic', // Allow epic gems for translation work
           gameMode: 'sentence_translation',
           difficultyLevel: currentSentence.complexity_score > 3 ? 'advanced' : 'intermediate',
+          skipSpacedRepetition: true, // Skip SRS - FSRS is handling spaced repetition
           contextData: {
             caseContext: currentSentence.case_context,
             wordCount: currentSentence.word_count,

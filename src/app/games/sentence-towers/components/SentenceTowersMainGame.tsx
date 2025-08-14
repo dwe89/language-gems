@@ -13,6 +13,8 @@ import { useAuth } from '../../../../components/auth/AuthProvider';
 import { useSupabase } from '../../../../components/supabase/SupabaseProvider';
 import { EnhancedGameService } from '../../../../services/enhancedGameService';
 import { StandardVocabularyItem } from '../../../../components/games/templates/GameAssignmentWrapper';
+import { useUnifiedSpacedRepetition } from '../../../../hooks/useUnifiedSpacedRepetition';
+import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
 
 // Enhanced Types
 interface TowerBlock {
@@ -78,11 +80,14 @@ interface SentenceTowersMainGameProps {
   isFullscreen?: boolean;
 }
 
-export function SentenceTowersMainGame({ 
-  onBackToMenu, 
-  assignmentMode, 
-  isFullscreen = false 
+export function SentenceTowersMainGame({
+  onBackToMenu,
+  assignmentMode,
+  isFullscreen = false
 }: SentenceTowersMainGameProps) {
+  // Initialize FSRS spaced repetition system
+  const { recordWordPractice, algorithm } = useUnifiedSpacedRepetition('sentence-towers');
+
   // Game state
   const [gameState, setGameState] = useState<GameState>({
     status: 'ready',
@@ -253,6 +258,81 @@ export function SentenceTowersMainGame({
       generateWordOptions();
     }
   }, [gameVocabulary, generateWordOptions, gameState.status]);
+
+  // Start game function
+  const startGame = () => {
+    setGameState(prev => ({ ...prev, status: 'playing' }));
+    setQuestionStartTime(Date.now());
+  };
+
+  // Handle word option selection
+  const handleSelectOption = useCallback(async (option: WordOption) => {
+    if (!currentTargetWord) return;
+
+    const responseTime = Date.now() - questionStartTime;
+    const isCorrect = option.isCorrect;
+
+    // Record word practice with FSRS system
+    try {
+      const wordData = {
+        id: currentTargetWord.id || `sentence-towers-${currentTargetWord.word}`,
+        word: currentTargetWord.word,
+        translation: currentTargetWord.translation,
+        language: 'es' // Assuming Spanish
+      };
+
+      // Calculate confidence based on response time and game difficulty
+      const baseConfidence = isCorrect ? 0.7 : 0.3;
+      const speedBonus = responseTime < 5000 ? 0.1 : responseTime < 10000 ? 0.05 : 0;
+      const difficultyBonus = settings.difficulty === 'hard' ? 0.1 : settings.difficulty === 'medium' ? 0.05 : 0;
+      const confidence = Math.max(0.1, Math.min(0.95, baseConfidence + speedBonus + difficultyBonus));
+
+      // Record practice with FSRS
+      const fsrsResult = await recordWordPractice(
+        wordData,
+        isCorrect,
+        responseTime,
+        confidence
+      );
+
+      console.log(`🔍 [FSRS] Recorded sentence-towers practice for ${currentTargetWord.word}:`, {
+        isCorrect,
+        confidence,
+        responseTime,
+        fsrsResult: fsrsResult ? {
+          due: fsrsResult.due,
+          stability: fsrsResult.stability,
+          difficulty: fsrsResult.difficulty
+        } : null
+      });
+    } catch (error) {
+      console.error('Error recording FSRS practice for sentence-towers:', error);
+    }
+
+    // Update game state
+    setGameState(prev => ({
+      ...prev,
+      score: prev.score + (isCorrect ? 10 : 0),
+      streak: isCorrect ? prev.streak + 1 : 0,
+      wordsCompleted: prev.wordsCompleted + 1,
+      accuracy: (prev.wordsCompleted * prev.accuracy + (isCorrect ? 1 : 0)) / (prev.wordsCompleted + 1)
+    }));
+
+    // Show feedback
+    setFeedbackVisible(isCorrect ? 'correct' : 'incorrect');
+    setTimeout(() => setFeedbackVisible(null), 1500);
+
+    // Mark word as completed and generate next word
+    setGameVocabulary(prev => prev.map(word =>
+      word.id === currentTargetWord.id ? { ...word, correct: true } : word
+    ));
+
+    // Generate next word after delay
+    setTimeout(() => {
+      generateWordOptions();
+      setQuestionStartTime(Date.now());
+    }, 1500);
+  }, [currentTargetWord, questionStartTime, settings.difficulty, recordWordPractice]);
 
   return (
     <div className={`${isFullscreen ? 'fixed inset-0 z-50' : 'min-h-screen'} bg-gradient-to-br from-slate-900 via-purple-900 to-indigo-900 text-white overflow-hidden`}>

@@ -74,7 +74,7 @@ export default function UnifiedMemoryGamePage() {
         onBackToAssignments={handleBackToAssignments}
         onBackToMenu={() => router.push('/games/memory-game')}
       >
-        {({ assignment, vocabulary, onProgressUpdate, onGameComplete }) => {
+        {({ assignment, vocabulary, onProgressUpdate, onGameComplete, gameSessionId }) => {
           // Transform vocabulary to WordPair format for Memory Game
           const wordPairs: WordPair[] = vocabulary.map((vocab: StandardVocabularyItem) => ({
             id: vocab.id,
@@ -100,6 +100,7 @@ export default function UnifiedMemoryGamePage() {
               assignmentId={assignmentId}
               userId={user.id}
               audioManager={audioManager}
+              gameSessionId={gameSessionId}
             />
           );
         }}

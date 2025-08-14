@@ -5,6 +5,7 @@ import { EnhancedGameService } from '../../../../services/enhancedGameService';
 import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
 import { supabaseBrowser } from '../../../../components/auth/AuthProvider';
 import BattleArena from './BattleArena';
+import { useGameStore } from '../../../../store/gameStore';
 
 interface ConjugationDuelGameWrapperProps {
   language?: string;
@@ -26,6 +27,7 @@ interface ConjugationDuelGameWrapperProps {
 }
 
 export default function ConjugationDuelGameWrapper(props: ConjugationDuelGameWrapperProps) {
+  const { startBattle, setPlayerStats, playerStats, battleState, leagues, verbs } = useGameStore();
   const [gameSessionId, setGameSessionId] = useState<string | null>(null);
   const [gameService, setGameService] = useState<EnhancedGameService | null>(null);
   const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
@@ -58,6 +60,39 @@ export default function ConjugationDuelGameWrapper(props: ConjugationDuelGameWra
       startGameSession();
     }
   }, [gameService, props.userId, gameSessionId]);
+
+  // Initialize battle when opponent/league are provided
+  useEffect(() => {
+    // Only run if opponent, league, and data are present and not already set
+    const leagueId = (props.league as string) || 'bronze_arena';
+    const hasLeagues = Array.isArray(leagues) && leagues.length > 0;
+    const hasVerbs = verbs && Object.keys(verbs).length > 0;
+    if (!props.opponent || !props.league || !hasLeagues || !hasVerbs) {
+      console.log('Conjugation Duel: missing data', {
+        opponent: props.opponent,
+        league: props.league,
+        leagues,
+        verbs
+      });
+      return;
+    }
+    // Only update if currentLeague is not already set to leagueId
+    if (playerStats.currentLeague !== leagueId) {
+      setPlayerStats({ currentLeague: leagueId });
+    }
+    // Only start battle if not already in battle
+    if (!battleState.isInBattle) {
+      startBattle({
+        id: props.opponent.name.toLowerCase().replace(/\s+/g, '_'),
+        name: props.opponent.name,
+        sprite: 'training_dummy.png',
+        health: 120,
+        difficulty: props.opponent.difficulty === 'hard' ? 3 : props.opponent.difficulty === 'easy' ? 1 : 2,
+        weapons: ['practice_sword'],
+        description: 'Challenge opponent'
+      } as any);
+    }
+  }, [props.opponent, props.league, playerStats.currentLeague, setPlayerStats, startBattle, battleState.isInBattle, leagues, verbs]);
 
   // End session when component unmounts
   useEffect(() => {
@@ -212,16 +247,7 @@ export default function ConjugationDuelGameWrapper(props: ConjugationDuelGameWra
           masteryLevel: isCorrect ? 2 : 0, // Higher mastery for correct conjugations
           maxGemRarity: 'epic', // Allow epic gems for verb mastery
           gameMode: 'verb_conjugation',
-          difficultyLevel: 'intermediate',
-          contextData: {
-            verb,
-            tense,
-            person,
-            userAnswer,
-            correctAnswer,
-            conjugationType: `${tense}_${person}`,
-            gameType: 'conjugation-duel'
-          }
+          difficultyLevel: 'intermediate'
         });
 
         // Show gem feedback if gem was awarded
@@ -231,12 +257,18 @@ export default function ConjugationDuelGameWrapper(props: ConjugationDuelGameWra
 
         await gameService.logWordPerformance({
           session_id: gameSessionId,
-          word_id: `${verb}-${tense}-${person}`,
-          word: verb,
-          translation: correctAnswer,
-          is_correct: isCorrect,
+          // leave vocabulary ids undefined for dynamic verbs
+          word_text: verb,
+          translation_text: correctAnswer,
+          language_pair: props.language === 'french' ? 'english_french' : props.language === 'german' ? 'english_german' : 'english_spanish',
+          attempt_number: 1,
           response_time_ms: responseTime,
-          attempts: 1,
+          was_correct: isCorrect,
+          difficulty_level: 'intermediate',
+          hint_used: false,
+          streak_count: sessionStats.correctConjugations,
+          previous_attempts: 0,
+          mastery_level: isCorrect ? 2 : 0,
           error_type: isCorrect ? undefined : 'conjugation_error',
           grammar_concept: `${tense}_conjugation`,
           error_details: isCorrect ? undefined : {
@@ -246,7 +278,17 @@ export default function ConjugationDuelGameWrapper(props: ConjugationDuelGameWra
             person: person,
             verb: verb,
             responseTime: responseTime
-          }
+          },
+          context_data: {
+            verb,
+            tense,
+            person,
+            userAnswer,
+            correctAnswer,
+            conjugationType: `${tense}_${person}`,
+            gameType: 'conjugation-duel'
+          },
+          timestamp: new Date()
         });
 
         // Update session stats

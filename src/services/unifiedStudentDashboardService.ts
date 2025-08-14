@@ -98,10 +98,12 @@ export class UnifiedStudentDashboardService {
   }
 
   private async getVocabularyGems(studentId: string) {
-    const { data, error } = await this.supabase
+    // Get all vocabulary gem collection records for the student
+    const { data: gemData, error: gemError } = await this.supabase
       .from('vocabulary_gem_collection')
       .select(`
         vocabulary_item_id,
+        centralized_vocabulary_id,
         total_encounters,
         correct_encounters,
         mastery_level,
@@ -109,19 +111,46 @@ export class UnifiedStudentDashboardService {
         fsrs_stability,
         fsrs_retrievability,
         next_review_at,
-        last_encountered_at,
-        centralized_vocabulary!inner(
-          word,
-          translation,
-          category,
-          curriculum_level,
-          language
-        )
+        last_encountered_at
       `)
       .eq('student_id', studentId);
 
-    if (error) throw error;
-    return data || [];
+    if (gemError) throw gemError;
+    if (!gemData || gemData.length === 0) return [];
+
+    // Get vocabulary details for all records using both ID systems
+    const vocabularyIds = gemData
+      .map(item => item.vocabulary_item_id || item.centralized_vocabulary_id)
+      .filter(Boolean);
+
+    const { data: vocabularyData, error: vocabError } = await this.supabase
+      .from('centralized_vocabulary')
+      .select('id, word, translation, category, curriculum_level, language')
+      .in('id', vocabularyIds);
+
+    if (vocabError) throw vocabError;
+
+    // Create a map for quick vocabulary lookup
+    const vocabularyMap = new Map(
+      vocabularyData?.map(vocab => [vocab.id, vocab]) || []
+    );
+
+    // Combine gem data with vocabulary details
+    const combinedData = gemData
+      .map(gem => {
+        const vocabularyId = gem.vocabulary_item_id || gem.centralized_vocabulary_id;
+        const vocabulary = vocabularyMap.get(vocabularyId);
+
+        if (!vocabulary) return null;
+
+        return {
+          ...gem,
+          centralized_vocabulary: vocabulary
+        };
+      })
+      .filter(Boolean);
+
+    return combinedData;
   }
 
   private async getRecentPerformance(studentId: string, days: number) {

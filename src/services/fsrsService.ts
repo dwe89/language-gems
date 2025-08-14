@@ -202,7 +202,7 @@ export class FSRSService {
     const newReviewCount = card.reviewCount + 1;
     const newLapseCount = card.lapseCount + (grade === FSRS_GRADES.AGAIN ? 1 : 0);
 
-    return {
+    const updatedCard = {
       ...card,
       difficulty: newDifficulty,
       stability: newStability,
@@ -213,6 +213,18 @@ export class FSRSService {
       lastReview: new Date(),
       updatedAt: new Date()
     };
+
+    // 🔍 INSTRUMENTATION: Debug card vocabulary ID preservation
+    console.log('🔍 [FSRS CALC] calculateMemoryState result:', {
+      inputCardVocabId: card.vocabularyId,
+      inputCardStudentId: card.studentId,
+      outputCardVocabId: updatedCard.vocabularyId,
+      outputCardStudentId: updatedCard.studentId,
+      hasVocabId: !!updatedCard.vocabularyId,
+      hasStudentId: !!updatedCard.studentId
+    });
+
+    return updatedCard;
   }
 
   /**
@@ -277,25 +289,67 @@ export class FSRSService {
    */
   async getOrCreateCard(studentId: string, vocabularyId: string): Promise<FSRSCard> {
     try {
-      // Try to get existing card from vocabulary_gem_collection
-      const { data: existingCard } = await this.supabase
+      // 🔍 INSTRUMENTATION: Debug getOrCreateCard input
+      console.log('🔍 [FSRS GET] getOrCreateCard called with:', {
+        studentId,
+        vocabularyId,
+        vocabularyIdType: typeof vocabularyId,
+        hasVocabId: !!vocabularyId,
+        hasStudentId: !!studentId
+      });
+
+      // Try to get existing card from vocabulary_gem_collection using both ID systems
+      // First try centralized vocabulary ID
+      let existingCard = null;
+
+      const { data: centralizedData } = await this.supabase
         .from('vocabulary_gem_collection')
         .select('*')
         .eq('student_id', studentId)
-        .eq('vocabulary_item_id', vocabularyId)
-        .single();
+        .eq('centralized_vocabulary_id', vocabularyId)
+        .maybeSingle();
+
+      if (centralizedData) {
+        existingCard = centralizedData;
+      } else {
+        // Try legacy vocabulary_item_id
+        const { data: legacyData } = await this.supabase
+          .from('vocabulary_gem_collection')
+          .select('*')
+          .eq('student_id', studentId)
+          .eq('vocabulary_item_id', vocabularyId)
+          .maybeSingle();
+
+        existingCard = legacyData;
+      }
 
       if (existingCard) {
         // Convert existing SM-2 data to FSRS format
         return this.convertSM2ToFSRS(existingCard);
       } else {
         // Create new FSRS card
-        return this.createNewCard(studentId, vocabularyId);
+        console.log('🔍 [FSRS GET] No existing card found, creating new card');
+        const newCard = this.createNewCard(studentId, vocabularyId);
+        console.log('🔍 [FSRS GET] New card created:', {
+          vocabularyId: newCard.vocabularyId,
+          studentId: newCard.studentId,
+          hasVocabId: !!newCard.vocabularyId,
+          hasStudentId: !!newCard.studentId
+        });
+        return newCard;
       }
     } catch (error) {
-      console.error('Error getting/creating FSRS card:', error);
+      console.error('🚨 [FSRS GET] Error getting/creating FSRS card:', error);
       // Return default new card on error
-      return this.createNewCard(studentId, vocabularyId);
+      console.log('🔍 [FSRS GET] Error occurred, creating fallback card');
+      const fallbackCard = this.createNewCard(studentId, vocabularyId);
+      console.log('🔍 [FSRS GET] Fallback card created:', {
+        vocabularyId: fallbackCard.vocabularyId,
+        studentId: fallbackCard.studentId,
+        hasVocabId: !!fallbackCard.vocabularyId,
+        hasStudentId: !!fallbackCard.studentId
+      });
+      return fallbackCard;
     }
   }
 
@@ -333,6 +387,9 @@ export class FSRSService {
       state = 'review';
     }
 
+    // Handle both ID systems - prioritize centralized_vocabulary_id
+    const vocabularyId = sm2Data.centralized_vocabulary_id || sm2Data.vocabulary_item_id;
+
     return {
       difficulty,
       stability,
@@ -341,7 +398,7 @@ export class FSRSService {
       reviewCount: repetitions,
       lapseCount: sm2Data.incorrect_encounters || 0,
       state,
-      vocabularyId: sm2Data.vocabulary_item_id,
+      vocabularyId,
       studentId: sm2Data.student_id,
       createdAt: sm2Data.first_learned_at ? new Date(sm2Data.first_learned_at) : now,
       updatedAt: now
@@ -381,6 +438,16 @@ export class FSRSService {
     confidence?: number
   ): Promise<FSRSReviewResult> {
     try {
+      // 🔍 INSTRUMENTATION: Debug vocabulary ID received by FSRS
+      console.log('🔍 [FSRS SERVICE] updateProgress called with:', {
+        studentId,
+        vocabularyId,
+        vocabularyIdType: typeof vocabularyId,
+        vocabularyIdValue: vocabularyId,
+        correct,
+        responseTime,
+        confidence
+      });
       // Get or create FSRS card
       const card = await this.getOrCreateCard(studentId, vocabularyId);
 
@@ -427,58 +494,104 @@ export class FSRSService {
 
   /**
    * Save FSRS card data to database
-   * Updates the vocabulary_gem_collection table with FSRS data
+   * Updates the vocabulary_gem_collection table with FSRS data using atomic operations
    */
   private async saveCard(card: FSRSCard, nextReviewDate: Date): Promise<void> {
     try {
-      // Prepare data for vocabulary_gem_collection table
-      const cardData = {
-        student_id: card.studentId,
-        vocabulary_item_id: card.vocabularyId,
+      // 🔍 INSTRUMENTATION: Debug saveCard input
+      console.log('🔍 [FSRS SAVE] saveCard called with:', {
+        cardVocabId: card.vocabularyId,
+        cardStudentId: card.studentId,
+        cardVocabIdType: typeof card.vocabularyId,
+        cardStudentIdType: typeof card.studentId,
+        hasVocabId: !!card.vocabularyId,
+        hasStudentId: !!card.studentId,
+        cardKeys: Object.keys(card)
+      });
 
-        // FSRS-specific fields (will be added by migration)
-        fsrs_difficulty: card.difficulty,
-        fsrs_stability: card.stability,
-        fsrs_retrievability: card.retrievability,
-        fsrs_last_review: card.lastReview.toISOString(),
-        fsrs_review_count: card.reviewCount,
-        fsrs_lapse_count: card.lapseCount,
-        fsrs_state: card.state,
+      // Use atomic function to prevent race conditions
+      // CRITICAL: This prevents the negative values bug
+      let vocabularyItemId = null;
+      let centralizedVocabularyId = null;
 
-        // Legacy fields for backward compatibility
-        total_encounters: card.reviewCount,
-        correct_encounters: card.reviewCount - card.lapseCount,
-        incorrect_encounters: card.lapseCount,
-        last_encountered_at: card.lastReview.toISOString(),
-        next_review_at: nextReviewDate.toISOString(),
+      if (typeof card.vocabularyId === 'string' && card.vocabularyId.includes('-')) {
+        // UUID format - use centralized_vocabulary_id
+        centralizedVocabularyId = card.vocabularyId;
+      } else {
+        // Integer format - use legacy vocabulary_item_id
+        vocabularyItemId = card.vocabularyId;
+      }
 
-        // Convert FSRS data back to SM-2 format for compatibility
-        spaced_repetition_interval: Math.round(card.stability),
-        spaced_repetition_ease_factor: Math.max(1.3, Math.min(3.0, 4.0 - (card.difficulty / 10) * 2.7)),
+      // Determine wasCorrect based on whether this was a lapse
+      // If review count increased but lapse count didn't, it was correct
+      const wasCorrect = card.lapseCount === 0 || (card.reviewCount > card.lapseCount);
 
-        // Update mastery level based on FSRS state
-        mastery_level: this.calculateMasteryLevel(card),
+      console.log('🔍 [FSRS SAVE] Using atomic function:', {
+        studentId: card.studentId,
+        vocabularyItemId,
+        centralizedVocabularyId,
+        wasCorrect,
+        reviewCount: card.reviewCount,
+        lapseCount: card.lapseCount
+      });
 
-        // Update timestamps
-        updated_at: new Date().toISOString()
-      };
-
-      // Upsert the card data with proper conflict resolution
-      const { error } = await this.supabase
-        .from('vocabulary_gem_collection')
-        .upsert(cardData, {
-          onConflict: 'student_id,vocabulary_item_id',
-          ignoreDuplicates: false
-        });
+      // Use atomic database function to prevent race conditions
+      const { data, error } = await this.supabase.rpc('update_vocabulary_gem_collection_atomic', {
+        p_student_id: card.studentId,
+        p_vocabulary_item_id: vocabularyItemId,
+        p_centralized_vocabulary_id: centralizedVocabularyId,
+        p_was_correct: wasCorrect
+      });
 
       if (error) {
-        console.error('FSRS saveCard error:', error);
-        console.error('Card data:', cardData);
+        console.error('FSRS saveCard atomic function error:', error);
         throw error;
       }
 
+      // Now update FSRS-specific fields in a separate operation
+      // The atomic function returns a single object, not an array
+      if (data) {
+        const recordId = data.id;
+        
+        const fsrsData = {
+          algorithm_version: 'fsrs',
+          fsrs_difficulty: card.difficulty,
+          fsrs_stability: card.stability,
+          fsrs_retrievability: card.retrievability,
+          fsrs_last_review: card.lastReview.toISOString(),
+          fsrs_review_count: card.reviewCount,
+          fsrs_lapse_count: card.lapseCount,
+          fsrs_state: card.state,
+          next_review_at: nextReviewDate.toISOString(),
+          spaced_repetition_interval: Math.max(1, Math.min(365, Math.round(card.stability))),
+          spaced_repetition_ease_factor: Math.max(1.3, Math.min(3.0, 4.0 - (card.difficulty / 10) * 2.7)),
+          mastery_level: this.calculateMasteryLevel(card),
+          updated_at: new Date().toISOString()
+        };
+
+        const { error: fsrsError } = await this.supabase
+          .from('vocabulary_gem_collection')
+          .update(fsrsData)
+          .eq('id', recordId);
+
+        if (fsrsError) {
+          console.error('FSRS saveCard FSRS data update error:', fsrsError);
+          // Don't throw here - the base data was saved successfully
+        }
+      }
+
+      console.log('✅ FSRS card saved successfully using atomic function:', {
+        vocabularyId: card.vocabularyId,
+        studentId: card.studentId,
+        state: card.state,
+        difficulty: card.difficulty,
+        stability: card.stability,
+        lapseCount: card.lapseCount,
+        reviewCount: card.reviewCount
+      });
+
     } catch (error) {
-      console.error('Error saving FSRS card:', error);
+      console.error('Error in FSRS saveCard:', error);
       throw error;
     }
   }
@@ -487,16 +600,54 @@ export class FSRSService {
    * Calculate mastery level based on FSRS card state
    */
   private calculateMasteryLevel(card: FSRSCard): number {
-    // Map FSRS state and metrics to mastery level (0-5)
-    if (card.state === 'new') return 0;
-    if (card.state === 'learning') return 1;
-    if (card.state === 'relearning') return 2;
+    // SIMPLIFIED PROGRESSION SYSTEM:
+    // Level 0: "New discovery" - First correct answer (reviewCount = 1, lapseCount = 0)
+    // Level 1: "Common gem" - Second correct answer or basic performance
+    // Level 2: "Uncommon gem" - Consistent performance (3+ reviews)
+    // Level 3: "Rare gem" - Strong performance (high stability)
+    // Level 4: "Epic gem" - Excellent performance
+    // Level 5: "Legendary gem" - Mastered
 
-    // For review state, use stability and difficulty
-    if (card.stability >= 30 && card.difficulty <= 3) return 5; // Mastered
-    if (card.stability >= 14 && card.difficulty <= 5) return 4; // Advanced
-    if (card.stability >= 7 && card.difficulty <= 7) return 3;  // Intermediate
-    return 2; // Basic
+    // Convert to numbers to handle any type issues
+    const reviewCount = Number(card.reviewCount);
+    const lapseCount = Number(card.lapseCount);
+    const stability = Number(card.stability);
+    const difficulty = Number(card.difficulty);
+
+    // Words that haven't been answered correctly yet
+    if (card.state === 'new') {
+      return 0; // Use 0 instead of -1 (database constraint doesn't allow negative)
+    }
+
+    if (card.state === 'learning' && lapseCount > 0) {
+      return 0; // Wrong first attempt - use 0 instead of -1
+    }
+
+    // EXPLICIT CHECK: First correct answer = "New discovery" (Level 0)
+    if (reviewCount === 1 && lapseCount === 0) {
+      return 0; // ✅ NEW DISCOVERY - First correct answer
+    }
+
+    // Relearning after lapses
+    if (card.state === 'relearning') {
+      return 0; // Back to discovery after forgetting
+    }
+
+    // Progressive mastery based on review count and stability
+    if (stability >= 30 && difficulty <= 3) {
+      return 5; // Legendary - Mastered
+    }
+    if (stability >= 14 && difficulty <= 5) {
+      return 4; // Epic - Advanced
+    }
+    if (stability >= 7 && difficulty <= 7) {
+      return 3;  // Rare - Intermediate
+    }
+    if (reviewCount >= 3) {
+      return 2;  // Uncommon - Consistent (3+ reviews)
+    }
+
+    return 1; // Common gem - Basic review level
   }
 
   /**

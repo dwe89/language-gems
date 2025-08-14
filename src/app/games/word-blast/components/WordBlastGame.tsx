@@ -306,12 +306,14 @@ export default function WordBlastGame({
   };
 
   // Enhanced correct answer handler with analytics
-  const handleCorrectAnswer = (points: number) => {
+  const handleCorrectAnswer = async (points: number) => {
     const responseTime = wordStartTime > 0 ? Date.now() - wordStartTime : 0;
     const currentChallenge = challenges[currentChallengeIndex];
     
+    // Update game stats first
+    let newCombo = 0;
     setGameStats(prev => {
-      const newCombo = prev.combo + 1;
+      newCombo = prev.combo + 1;
       const newStats = {
         ...prev,
         score: prev.score + points,
@@ -319,124 +321,124 @@ export default function WordBlastGame({
         maxCombo: Math.max(prev.maxCombo, newCombo),
         wordsCollected: prev.wordsCollected + 1
       };
-
-      // Record vocabulary interaction using gems-first system
-      if (gameSessionId && currentChallenge) {
-        try {
-          // 🔍 INSTRUMENTATION: Log vocabulary tracking details
-          console.log('🔍 [VOCAB TRACKING] Starting vocabulary tracking for challenge:', {
-            challengeId: currentChallenge.id,
-            challengeIdType: typeof currentChallenge.id,
-            spanish: currentChallenge.spanish,
-            english: currentChallenge.english,
-            isCorrect: true,
-            gameSessionId,
-            responseTimeMs: responseTime
-          });
-
-          const sessionService = new EnhancedGameSessionService();
-          const gemEvent = await sessionService.recordSentenceAttempt(gameSessionId, 'word-blast', {
-            sentenceId: currentChallenge.id, // ✅ FIXED: Use challenge ID for sentence-based tracking
-            sourceText: currentChallenge.spanish,
-            targetText: currentChallenge.english,
-            responseTimeMs: responseTime,
-            wasCorrect: true,
-            hintUsed: false, // No hints in word-blast
-            streakCount: newCombo,
-            masteryLevel: 1, // Default mastery for action games
-            maxGemRarity: 'rare', // Cap at rare for fast-paced games
-            gameMode: 'word_matching',
-            difficultyLevel: selectedConfig?.difficulty || 'medium'
-          });
-
-          // Show gem feedback if gem was awarded
-          if (gemEvent) {
-            console.log(`🔮 Word Blast earned ${gemEvent.rarity} gem (${gemEvent.xpValue} XP) for "${currentChallenge.spanish}"`);
-          }
-        } catch (error) {
-          console.error('Failed to record vocabulary interaction:', error);
-        }
-      }
-
-      // Record word practice with FSRS system
-      if (!assignmentMode && currentChallenge) {
-        try {
-          const wordData = {
-            id: `word-blast-${currentChallenge.english}`,
-            word: currentChallenge.spanish,
-            translation: currentChallenge.english,
-            language: selectedConfig?.language === 'spanish' ? 'es' : selectedConfig?.language === 'french' ? 'fr' : 'en'
-          };
-
-          // Calculate confidence based on combo level and response time
-          const baseConfidence = 0.7; // Good confidence for word matching
-          const comboBonus = Math.min(newCombo * 0.05, 0.2); // Up to 20% bonus for combos
-          const speedBonus = responseTime < 2000 ? 0.1 : responseTime < 4000 ? 0.05 : 0;
-          const confidence = Math.min(0.95, baseConfidence + comboBonus + speedBonus);
-
-          // Record practice with FSRS
-          recordWordPractice(
-            wordData,
-            true, // Correct answer
-            responseTime,
-            confidence
-          ).then(fsrsResult => {
-            if (fsrsResult) {
-              console.log(`FSRS recorded for word-blast "${currentChallenge.spanish}":`, {
-                algorithm: fsrsResult.algorithm,
-                points: fsrsResult.points,
-                nextReview: fsrsResult.nextReviewDate,
-                interval: fsrsResult.interval,
-                masteryLevel: fsrsResult.masteryLevel
-              });
-            }
-          }).catch(error => {
-            console.error('Error recording FSRS practice for word-blast:', error);
-          });
-        } catch (error) {
-          console.error('Error setting up FSRS recording for word-blast:', error);
-        }
-      }
-
-      // Log word match performance
-      if (onWordMatch && currentChallenge) {
-        onWordMatch(
-          currentChallenge.english,
-          currentChallenge.spanish,
-          currentChallenge.spanish, // Assuming correct answer
-          true,
-          responseTime,
-          newCombo
-        );
-      }
-
-      // Check for chain reaction
-      if (newCombo > 1) {
-        setCurrentChainLength(prev => prev + 1);
-        setWordsInCurrentChain(prev => [...prev, currentChallenge?.english || '']);
-        
-        if (newCombo >= 3 && onChainReaction) {
-          onChainReaction(newCombo, wordsInCurrentChain, points * newCombo);
-        }
-      } else {
-        setCurrentChainLength(1);
-        setWordsInCurrentChain([currentChallenge?.english || '']);
-      }
-
-      // Log blast combo
-      if (onBlastCombo) {
-        onBlastCombo(newCombo, points * newCombo, false);
-      }
-
       return newStats;
     });
+
+    // Record vocabulary interaction using gems-first system (moved outside state setter)
+    if (gameSessionId && currentChallenge) {
+      try {
+        // 🔍 INSTRUMENTATION: Log vocabulary tracking details
+        console.log('🔍 [VOCAB TRACKING] Starting vocabulary tracking for challenge:', {
+          challengeId: currentChallenge.id,
+          challengeIdType: typeof currentChallenge.id,
+          spanish: currentChallenge.spanish,
+          english: currentChallenge.english,
+          isCorrect: true,
+          gameSessionId,
+          responseTimeMs: responseTime
+        });
+
+        const sessionService = new EnhancedGameSessionService();
+        const gemEvent = await sessionService.recordSentenceAttempt(gameSessionId, 'word-blast', {
+          sentenceId: currentChallenge.id, // ✅ FIXED: Use challenge ID for sentence-based tracking
+          sourceText: currentChallenge.spanish,
+          targetText: currentChallenge.english,
+          responseTimeMs: responseTime,
+          wasCorrect: true,
+          hintUsed: false, // No hints in word-blast
+          streakCount: newCombo,
+          masteryLevel: 1, // Default mastery for action games
+          maxGemRarity: 'rare', // Cap at rare for fast-paced games
+          gameMode: 'word_matching',
+          difficultyLevel: selectedConfig?.difficulty || 'medium',
+          skipSpacedRepetition: true // Skip SRS - FSRS is handling spaced repetition
+        });
+
+        // Show gem feedback if gem was awarded
+        if (gemEvent) {
+          console.log(`🔮 Word Blast earned ${gemEvent.rarity} gem (${gemEvent.xpValue} XP) for "${currentChallenge.spanish}"`);
+        }
+      } catch (error) {
+        console.error('Failed to record vocabulary interaction:', error);
+      }
+    }
+
+    // Record word practice with FSRS system (works in both assignment and free play modes)
+    if (currentChallenge) {
+      try {
+        const wordData = {
+          id: `word-blast-${currentChallenge.english}`,
+          word: currentChallenge.spanish,
+          translation: currentChallenge.english,
+          language: selectedConfig?.language === 'spanish' ? 'es' : selectedConfig?.language === 'french' ? 'fr' : 'en'
+        };
+
+        // Calculate confidence based on combo level and response time
+        const baseConfidence = 0.7; // Good confidence for word matching
+        const comboBonus = Math.min(newCombo * 0.05, 0.2); // Up to 20% bonus for combos
+        const speedBonus = responseTime < 2000 ? 0.1 : responseTime < 4000 ? 0.05 : 0;
+        const confidence = Math.min(0.95, baseConfidence + comboBonus + speedBonus);
+
+        // Record practice with FSRS
+        recordWordPractice(
+          wordData,
+          true, // Correct answer
+          responseTime,
+          confidence
+        ).then(fsrsResult => {
+          if (fsrsResult) {
+            console.log(`FSRS recorded for word-blast "${currentChallenge.spanish}":`, {
+              algorithm: fsrsResult.algorithm,
+              points: fsrsResult.points,
+              nextReview: fsrsResult.nextReviewDate,
+              interval: fsrsResult.interval,
+              masteryLevel: fsrsResult.masteryLevel
+            });
+          }
+        }).catch(error => {
+          console.error('Error recording FSRS practice for word-blast:', error);
+        });
+      } catch (error) {
+        console.error('Error setting up FSRS recording for word-blast:', error);
+      }
+    }
+
+    // Log word match performance
+    if (onWordMatch && currentChallenge) {
+      onWordMatch(
+        currentChallenge.english,
+        currentChallenge.spanish,
+        currentChallenge.spanish, // Assuming correct answer
+        true,
+        responseTime,
+        newCombo
+      );
+    }
+
+    // Check for chain reaction
+    if (newCombo > 1) {
+      setCurrentChainLength(prev => prev + 1);
+      setWordsInCurrentChain(prev => [...prev, currentChallenge?.english || '']);
+      
+      if (newCombo >= 3 && onChainReaction) {
+        onChainReaction(newCombo, wordsInCurrentChain, points * newCombo);
+      }
+    } else {
+      setCurrentChainLength(1);
+      setWordsInCurrentChain([currentChallenge?.english || '']);
+    }
+
+    // Log blast combo
+    if (onBlastCombo) {
+      onBlastCombo(newCombo, points * newCombo, false);
+    }
 
     const soundMapping = THEME_SOUND_MAPPING[selectedTheme as keyof typeof THEME_SOUND_MAPPING];
     playSFX(soundMapping.correct);
   };
 
   // Enhanced incorrect answer handler with analytics
-  const handleIncorrectAnswer = () => {
+  const handleIncorrectAnswer = async () => {
     const responseTime = wordStartTime > 0 ? Date.now() - wordStartTime : 0;
     const currentChallenge = challenges[currentChallengeIndex];
     
@@ -468,7 +470,8 @@ export default function WordBlastGame({
           masteryLevel: 0, // Low mastery for incorrect answers
           maxGemRarity: 'common', // Cap at common for incorrect answers
           gameMode: 'word_matching',
-          difficultyLevel: selectedConfig?.difficulty || 'medium'
+          difficultyLevel: selectedConfig?.difficulty || 'medium',
+          skipSpacedRepetition: true // Skip SRS - FSRS is handling spaced repetition
         });
 
         // 🔍 INSTRUMENTATION: Log gem event result for incorrect answer
@@ -493,8 +496,8 @@ export default function WordBlastGame({
       });
     }
 
-    // Record word practice with FSRS system for incorrect answer
-    if (!assignmentMode && currentChallenge) {
+    // Record word practice with FSRS system for incorrect answer (works in both assignment and free play modes)
+    if (currentChallenge) {
       try {
         const wordData = {
           id: `word-blast-${currentChallenge.english}`,

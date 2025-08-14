@@ -53,27 +53,61 @@ export default function VocabularyReviewPage() {
       setLoading(true);
       setError(null);
 
-      const { data, error: queryError } = await supabase
+      // Get all vocabulary gem collection records for review
+      const { data: gemData, error: gemError } = await supabase
         .from('vocabulary_gem_collection')
         .select(`
           vocabulary_item_id,
+          centralized_vocabulary_id,
           next_review_at,
           fsrs_retrievability,
           fsrs_difficulty,
-          fsrs_stability,
-          centralized_vocabulary!vocabulary_gem_collection_vocabulary_item_id_fkey(
-            word,
-            translation,
-            category,
-            curriculum_level
-          )
+          fsrs_stability
         `)
         .eq('student_id', user!.id)
         .filter('fsrs_difficulty', 'not.is', 'null')
         .not('next_review_at', 'is', null)
         .order('next_review_at', { ascending: true });
 
-      if (queryError) throw queryError;
+      if (gemError) throw gemError;
+
+      if (!gemData || gemData.length === 0) {
+        setWords([]);
+        setLoading(false);
+        return;
+      }
+
+      // Get vocabulary details for all records using both ID systems
+      const vocabularyIds = gemData
+        .map(item => item.vocabulary_item_id || item.centralized_vocabulary_id)
+        .filter(Boolean);
+
+      const { data: vocabularyData, error: vocabError } = await supabase
+        .from('centralized_vocabulary')
+        .select('id, word, translation, category, curriculum_level')
+        .in('id', vocabularyIds);
+
+      if (vocabError) throw vocabError;
+
+      // Create a map for quick vocabulary lookup
+      const vocabularyMap = new Map(
+        vocabularyData?.map(vocab => [vocab.id, vocab]) || []
+      );
+
+      // Combine gem data with vocabulary details
+      const data = gemData
+        .map(gem => {
+          const vocabularyId = gem.vocabulary_item_id || gem.centralized_vocabulary_id;
+          const vocabulary = vocabularyMap.get(vocabularyId);
+
+          if (!vocabulary) return null;
+
+          return {
+            ...gem,
+            centralized_vocabulary: vocabulary
+          };
+        })
+        .filter(Boolean);
 
       const now = new Date();
       const processedWords: ReviewWord[] = (data || []).map(item => {

@@ -125,16 +125,12 @@ export async function POST(request: NextRequest) {
 
       // Get sentences based on assignment configuration
       let sentenceQuery = supabase
-        .from('sentence_translations')
+        .from('sentences')
         .select(`
-          *,
-          sentence_segments (
-            *,
-            sentence_segment_options (*)
-          )
+          *
         `)
-        .eq('target_language', language)
-        .eq('curriculum_tier', curriculumTier)
+        .eq('source_language', language)
+        .eq('curriculum_level', curriculumTier)
         .order('complexity_score', { ascending: true });
 
       // Apply assignment-specific filters
@@ -144,16 +140,18 @@ export async function POST(request: NextRequest) {
         sentenceQuery = sentenceQuery.eq('difficulty_level', difficulty);
       }
 
-      if (assignment.game_config?.theme) {
-        sentenceQuery = sentenceQuery.eq('theme', assignment.game_config.theme);
+      if (assignment.game_config?.category) {
+        sentenceQuery = sentenceQuery.eq('category', assignment.game_config.category);
       } else if (theme) {
-        sentenceQuery = sentenceQuery.eq('theme', theme);
+        // Support legacy theme parameter for backwards compatibility
+        sentenceQuery = sentenceQuery.eq('category', theme);
       }
 
-      if (assignment.game_config?.topic) {
-        sentenceQuery = sentenceQuery.eq('topic', assignment.game_config.topic);
+      if (assignment.game_config?.subcategory) {
+        sentenceQuery = sentenceQuery.eq('subcategory', assignment.game_config.subcategory);
       } else if (topic) {
-        sentenceQuery = sentenceQuery.eq('topic', topic);
+        // Support legacy topic parameter for backwards compatibility
+        sentenceQuery = sentenceQuery.eq('subcategory', topic);
       }
 
       const { data: sentenceData, error: sentenceError } = await sentenceQuery.limit(count);
@@ -168,26 +166,24 @@ export async function POST(request: NextRequest) {
     } else {
       // Free play mode - get sentences based on user preferences
       let sentenceQuery = supabase
-        .from('sentence_translations')
+        .from('sentences')
         .select(`
-          *,
-          sentence_segments (
-            *,
-            sentence_segment_options (*)
-          )
+          *
         `)
-        .eq('target_language', language)
+        .eq('source_language', language)
         .eq('difficulty_level', difficulty)
-        .eq('curriculum_tier', curriculumTier)
+        .eq('curriculum_level', curriculumTier)
         .eq('is_public', true)
         .order('complexity_score', { ascending: true });
 
       if (theme) {
-        sentenceQuery = sentenceQuery.eq('theme', theme);
+        // Support legacy theme parameter for backwards compatibility
+        sentenceQuery = sentenceQuery.eq('category', theme);
       }
 
       if (topic) {
-        sentenceQuery = sentenceQuery.eq('topic', topic);
+        // Support legacy topic parameter for backwards compatibility  
+        sentenceQuery = sentenceQuery.eq('subcategory', topic);
       }
 
       const { data: sentenceData, error: sentenceError } = await sentenceQuery.limit(count);

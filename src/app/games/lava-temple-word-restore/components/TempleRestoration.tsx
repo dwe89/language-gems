@@ -371,6 +371,7 @@ export default function TempleRestoration({
             maxGemRarity: 'epic', // Allow epic gems for reading comprehension
             gameMode: 'fill_in_blank',
             difficultyLevel: gameConfig.difficulty,
+            skipSpacedRepetition: true, // Skip SRS - FSRS is handling spaced repetition
             contextData: {
               gapIndex,
               selectedWord,

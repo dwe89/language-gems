@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../../../components/auth/AuthProvider';
 import GameAssignmentWrapper from '../../../components/games/templates/GameAssignmentWrapper';
@@ -11,6 +11,7 @@ import ConjugationDuelGameWrapper from './components/ConjugationDuelGameWrapper'
 import UnifiedGameLauncher from '../../../components/games/UnifiedGameLauncher';
 import { UnifiedSelectionConfig, UnifiedVocabularyItem } from '../../../hooks/useUnifiedVocabulary';
 import Link from 'next/link';
+import { useGameStore } from '../../../store/gameStore';
 
 type GameState = 'language-select' | 'league-select' | 'opponent-select' | 'battle' | 'results';
 
@@ -20,6 +21,34 @@ export default function ConjugationDuelPage() {
   const searchParams = useSearchParams();
   const assignmentId = searchParams?.get('assignment');
   const mode = searchParams?.get('mode');
+
+  // Load leagues and verbs data into the store
+  const { loadLeagues, loadVerbs } = useGameStore();
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadData = async () => {
+      try {
+        const [leaguesRes, verbsRes] = await Promise.all([
+          fetch('/data/leagues.json'),
+          fetch('/data/verbs.json')
+        ]);
+        const leaguesJson = await leaguesRes.json();
+        const verbsJson = await verbsRes.json();
+        if (!cancelled) {
+          // leagues.json has shape { leagues: [...] }
+          loadLeagues(leaguesJson.leagues);
+          loadVerbs(verbsJson);
+        }
+      } catch (e) {
+        console.error('Failed to load Conjugation Duel data:', e);
+      }
+    };
+    loadData();
+    return () => {
+      cancelled = true;
+    };
+  }, [loadLeagues, loadVerbs]);
 
   // If assignment mode, use GameAssignmentWrapper
   if (assignmentId && mode === 'assignment') {
@@ -222,12 +251,12 @@ export default function ConjugationDuelPage() {
         <div className="min-h-screen">
           <BackButton />
           <LeagueSelection
-            language={selectedLanguage}
+            selectedLanguage={selectedLanguage}
             onLeagueSelect={(league) => {
               setSelectedLeague(league);
               setGameState('opponent-select');
             }}
-            onBack={handleBackToMenu}
+            onBackToLanguages={handleBackToMenu}
           />
         </div>
       );
@@ -239,8 +268,7 @@ export default function ConjugationDuelPage() {
         <div className="min-h-screen">
           <BackButton />
           <OpponentSelection
-            language={selectedLanguage}
-            league={selectedLeague}
+            leagueId={selectedLeague}
             onOpponentSelect={(opponent) => {
               setSelectedOpponent(opponent);
               setGameState('battle');
@@ -270,7 +298,7 @@ export default function ConjugationDuelPage() {
                 setGameState('results');
               }
             }}
-            assignmentId={assignmentId}
+            assignmentId={assignmentId || undefined}
             userId={user?.id}
           />
         </div>

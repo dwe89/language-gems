@@ -39,6 +39,7 @@ interface MemoryGameMainProps {
   curriculumLevel?: 'KS3' | 'KS4';
   onOpenSettings?: () => void;
   audioManager?: any;
+  gameSessionId?: string | null;
 }
 
 export default function MemoryGameMain({
@@ -55,7 +56,8 @@ export default function MemoryGameMain({
   subcategory,
   curriculumLevel = 'KS3',
   onOpenSettings,
-  audioManager: externalAudioManager
+  audioManager: externalAudioManager,
+  gameSessionId: assignmentGameSessionId
 }: MemoryGameMainProps) {
   const { user, isLoading, isDemo } = useUnifiedAuth();
 
@@ -118,6 +120,9 @@ export default function MemoryGameMain({
   const [gameService, setGameService] = useState<EnhancedGameService | null>(null);
   const [gameSessionId, setGameSessionId] = useState<string | null>(null);
 
+  // Use assignment gameSessionId when in assignment mode, otherwise use own session
+  const effectiveGameSessionId = isAssignmentMode ? assignmentGameSessionId : gameSessionId;
+
   // Modern vocabulary integration - only use for non-assignment mode
   const { vocabulary: gameVocabulary, loading: vocabularyLoading } = useGameVocabulary({
     language: language === 'spanish' ? 'es' : language === 'french' ? 'fr' : 'en',
@@ -129,10 +134,10 @@ export default function MemoryGameMain({
     enabled: !isAssignmentMode // Disable vocabulary fetching in assignment mode
   });
 
-  // Initialize Supabase client and game service (skip in assignment mode)
+  // Initialize Supabase client and game service (skip in assignment mode to avoid RLS issues)
   useEffect(() => {
     if (isAssignmentMode) {
-      console.log('Assignment mode: Skipping EnhancedGameService initialization');
+      console.log('Assignment mode: Skipping EnhancedGameService initialization - using wrapper session management');
       return;
     }
 
@@ -146,19 +151,20 @@ export default function MemoryGameMain({
     }
   }, [userId, user?.id, isAssignmentMode]);
 
-  // Start game session when game service is ready and game starts
+  // Start game session when game service is ready and game starts (only for free play mode)
   useEffect(() => {
-    if (gameService && (userId || user?.id) && !isDemo && startTime && !gameSessionId) {
+    if (gameService && (userId || user?.id) && !isDemo && startTime && !gameSessionId && !isAssignmentMode) {
       startGameSession();
     }
-  }, [gameService, userId, user?.id, startTime, gameSessionId]);
+  }, [gameService, userId, user?.id, startTime, gameSessionId, isAssignmentMode]);
 
   const startGameSession = async () => {
     if (!gameService || !(userId || user?.id) || isDemo) return;
 
     // Skip session creation in assignment mode to avoid RLS issues
+    // Assignment mode uses GameAssignmentWrapper session management
     if (isAssignmentMode) {
-      console.log('Assignment mode: Skipping game session creation');
+      console.log('Assignment mode: Skipping game session creation - using wrapper session management');
       return;
     }
 
@@ -317,8 +323,8 @@ export default function MemoryGameMain({
     console.log('saveAssignmentProgress called:', { isAssignmentMode, assignmentId, timeSpent, totalMatches, totalAttempts });
     console.log('vocabularyProgress:', vocabularyProgress);
 
-    // End enhanced game session
-    if (gameService && gameSessionId && (userId || user?.id) && !isDemo) {
+    // End enhanced game session (only for free play mode - assignment mode handled by wrapper)
+    if (gameService && effectiveGameSessionId && (userId || user?.id) && !isDemo && !isAssignmentMode) {
       try {
         const accuracy = totalAttempts > 0 ? (totalMatches / totalAttempts) * 100 : 0;
         const finalScore = Math.round(accuracy);
@@ -327,7 +333,7 @@ export default function MemoryGameMain({
         // Remove conflicting XP calculation - gems system handles all scoring through recordWordAttempt()
         const totalXP = totalMatches * 10; // 10 XP per match (gems-first)
 
-        await gameService.endGameSession(gameSessionId, {
+        await gameService.endGameSession(effectiveGameSessionId!, {
           student_id: userId || user!.id,
           final_score: finalScore,
           accuracy_percentage: accuracy,
@@ -415,23 +421,27 @@ export default function MemoryGameMain({
     
     // Determine number of pairs based on difficulty or custom words
     if (currentCustomWords && currentCustomWords.length > 0) {
-      // Use all custom words
+      // Use all custom words (preserve vocabulary ID for FSRS tracking)
       wordPairs = currentCustomWords.map(pair => {
         if (pair.type === 'image') {
           return {
             term: pair.term,
             translation: pair.translation,
-            isImage: true
+            isImage: true,
+            id: pair.id, // ✅ Preserve vocabulary ID for FSRS
+            vocabulary_id: pair.id // ✅ Legacy compatibility
           };
         } else {
           return {
             term: pair.term,
             translation: pair.translation,
-            isImage: false
+            isImage: false,
+            id: pair.id, // ✅ Preserve vocabulary ID for FSRS
+            vocabulary_id: pair.id // ✅ Legacy compatibility
           };
         }
       });
-      
+
       totalPairs = wordPairs.length;
     } else {
       // Determine number of pairs based on difficulty
@@ -650,62 +660,125 @@ export default function MemoryGameMain({
           const responseTime = firstCard.firstAttemptTime ?
             (now.getTime() - firstCard.firstAttemptTime.getTime()) / 1000 : 0;
 
-          // Record word practice with FSRS system
-          if (!isDemo && !isAssignmentMode) {
+          // Prepare card data for tracking
+          const vocabularyId = firstCard.vocabularyId;
+          const cardWord = firstCard.word || firstCard.value;
+          const cardTranslation = firstCard.translation || 'translation';
+
+          // Record word practice with FSRS system (works in both assignment and free play modes)
+          if (!isDemo) {
             try {
-              // Record practice for both words in the matched pair
-              const wordData = {
-                id: firstCard.vocabularyId || `${firstCard.word}-${firstCard.translation}`,
-                word: firstCard.word,
-                translation: firstCard.translation,
-                language: language === 'spanish' ? 'es' : language === 'french' ? 'fr' : 'en'
-              };
+              // 🔍 INSTRUMENTATION: Debug vocabulary ID passing
+              console.log('🔍 [FSRS DEBUG] Memory Game card data:', {
+                firstCardVocabularyId: firstCard.vocabularyId,
+                firstCardVocabularyIdType: typeof firstCard.vocabularyId,
+                firstCardWord: firstCard.word,
+                firstCardTranslation: firstCard.translation,
+                firstCardValue: firstCard.value
+              });
 
-              // Record successful match with FSRS
-              const fsrsResult = await recordWordPractice(
-                wordData,
-                true, // Always correct for matched pairs
-                responseTime * 1000, // Convert to milliseconds
-                0.7 // Moderate confidence for memory games (luck-based)
-              );
-
-              if (fsrsResult) {
-                console.log(`FSRS recorded for ${firstCard.word}:`, {
-                  algorithm: fsrsResult.algorithm,
-                  points: fsrsResult.points,
-                  nextReview: fsrsResult.nextReviewDate,
-                  interval: fsrsResult.interval,
-                  masteryLevel: fsrsResult.masteryLevel
+              if (!vocabularyId) {
+                console.error('🚨 [FSRS ERROR] No vocabulary ID found for memory card:', {
+                  firstCard,
+                  firstCardKeys: Object.keys(firstCard)
                 });
+                console.log('🔍 [FSRS DEBUG] Skipping FSRS - no vocabulary ID available');
+              } else {
+                // Record practice for both words in the matched pair
+                const wordData = {
+                  id: vocabularyId,
+                  word: cardWord,
+                  translation: cardTranslation,
+                  language: language === 'spanish' ? 'es' : language === 'french' ? 'fr' : 'en'
+                };
+
+                console.log('🔍 [FSRS DEBUG] Word data being passed to FSRS:', wordData);
+
+                // Record successful match with FSRS
+                const fsrsResult = await recordWordPractice(
+                  wordData,
+                  true, // Always correct for matched pairs
+                  responseTime * 1000, // Convert to milliseconds
+                  0.7 // Moderate confidence for memory games (luck-based)
+                );
+
+                if (fsrsResult) {
+                  console.log(`FSRS recorded for memory-game "${cardWord}":`, {
+                    algorithm: fsrsResult.algorithm,
+                    points: fsrsResult.points,
+                    nextReview: fsrsResult.nextReviewDate,
+                    interval: fsrsResult.interval,
+                    masteryLevel: fsrsResult.masteryLevel
+                  });
+                }
               }
             } catch (error) {
               console.error('Error recording FSRS practice:', error);
             }
           }
 
-          // Record word attempt using new gems system (exposure only for memory game)
-          if (gameSessionId && !isDemo && !isAssignmentMode) {
+          // Record word attempt using gems system
+          if (!isDemo) {
             try {
-              const sessionService = new EnhancedGameSessionService();
-              await sessionService.recordWordAttempt(gameSessionId, 'memory-game', {
+              // 🔍 INSTRUMENTATION: Log vocabulary tracking details
+              console.log('🔍 [VOCAB TRACKING] Starting vocabulary tracking for memory match:', {
                 vocabularyId: firstCard.vocabularyId,
-                wordText: firstCard.word,
-                translationText: firstCard.translation,
-                responseTimeMs: Math.round(responseTime * 1000),
-                wasCorrect: true, // Always true for matched pairs
-                hintUsed: false,
-                streakCount: matches + 1,
-                difficultyLevel: 'beginner',
+                vocabularyIdType: typeof firstCard.vocabularyId,
+                word: cardWord,
+                translation: cardTranslation,
+                wasCorrect: true,
                 gameMode: 'memory_match',
-                contextData: {
-                  isLuckBased: true, // Flag for exposure tracking
-                  pairId: firstCard.pairId,
-                  totalMatches: matches + 1,
-                  totalCards: cards.length,
-                  gridSize: `${gridSize}x${gridSize}`,
-                  theme: selectedTheme
-                }
+                isAssignmentMode
               });
+
+              if (isAssignmentMode && typeof window !== 'undefined' && (window as any).recordVocabularyInteraction) {
+                // Use GameAssignmentWrapper's vocabulary interaction recorder for assignment mode
+                await (window as any).recordVocabularyInteraction(
+                  cardWord,
+                  cardTranslation,
+                  true, // wasCorrect
+                  Math.round(responseTime * 1000), // responseTimeMs
+                  false, // hintUsed
+                  matches + 1 // streakCount
+                );
+
+                console.log('🔍 [VOCAB TRACKING] Used assignment wrapper recordVocabularyInteraction');
+                console.log(`🔮 Memory Game earned gem for "${cardWord}" (assignment mode)`);
+              } else if (effectiveGameSessionId && !isAssignmentMode) {
+                // Use direct EnhancedGameSessionService for free play mode
+                const sessionService = new EnhancedGameSessionService();
+                const gemEvent = await sessionService.recordWordAttempt(effectiveGameSessionId, 'memory-game', {
+                  vocabularyId: firstCard.vocabularyId,
+                  wordText: cardWord,
+                  translationText: cardTranslation,
+                  responseTimeMs: Math.round(responseTime * 1000),
+                  wasCorrect: true, // Always true for matched pairs
+                  hintUsed: false,
+                  streakCount: matches + 1,
+                  difficultyLevel: 'beginner',
+                  gameMode: 'memory_match',
+                  maxGemRarity: 'common' // Cap at common for luck-based games
+                }, true); // Skip spaced repetition - FSRS handles it
+
+                // 🔍 INSTRUMENTATION: Log gem event result
+                console.log('🔍 [VOCAB TRACKING] Gem event result:', {
+                  gemEventExists: !!gemEvent,
+                  gemEvent: gemEvent ? {
+                    rarity: gemEvent.rarity,
+                    xpValue: gemEvent.xpValue,
+                    vocabularyId: gemEvent.vocabularyId,
+                    wordText: gemEvent.wordText
+                  } : null,
+                  wasCorrect: true
+                });
+
+                // Show gem feedback if gem was awarded
+                if (gemEvent) {
+                  console.log(`🔮 Memory Game earned ${gemEvent.rarity} gem (${gemEvent.xpValue} XP) for "${cardWord}"`);
+                }
+              } else {
+                console.log('🔍 [VOCAB TRACKING] Skipped - no session or assignment wrapper available');
+              }
             } catch (error) {
               console.error('Error recording word attempt:', error);
             }
@@ -774,35 +847,10 @@ export default function MemoryGameMain({
         const responseTime = firstCard.firstAttemptTime ?
           (now.getTime() - firstCard.firstAttemptTime.getTime()) / 1000 : 0;
 
-        // Record failed match with FSRS system (for learning purposes)
-        if (!isDemo && !isAssignmentMode) {
-          try {
-            const wordData = {
-              id: firstCard.vocabularyId || `${firstCard.word}-${firstCard.translation}`,
-              word: firstCard.word,
-              translation: firstCard.translation,
-              language: language === 'spanish' ? 'es' : language === 'french' ? 'fr' : 'en'
-            };
-
-            // Record failed attempt with FSRS (helps with difficulty assessment)
-            const fsrsResult = await recordWordPractice(
-              wordData,
-              false, // Incorrect match
-              responseTime * 1000, // Convert to milliseconds
-              0.3 // Lower confidence for failed matches
-            );
-
-            if (fsrsResult) {
-              console.log(`FSRS recorded failed match for ${firstCard.word}:`, {
-                algorithm: fsrsResult.algorithm,
-                nextReview: fsrsResult.nextReviewDate,
-                interval: fsrsResult.interval
-              });
-            }
-          } catch (error) {
-            console.error('Error recording FSRS failed practice:', error);
-          }
-        }
+        // ❌ REMOVED: No FSRS tracking for failed matches in Memory Game
+        // Memory games are luck-based, not knowledge-based
+        // Only successful matches should be tracked for positive reinforcement
+        console.log('🎮 [MEMORY GAME] Failed match - no tracking (luck-based game)');
 
         // Track vocabulary progress for assignment mode
         if (isAssignmentMode) {

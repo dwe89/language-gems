@@ -28,9 +28,10 @@ interface SpeedBuilderGameWrapperProps {
   tier?: string;
   vocabularyList?: any[];
   sentenceConfig?: any;
+  gameSessionId?: string | null;
   onOpenSettings?: () => void;
   onBackToMenu?: () => void;
-  onGameEnd: (result: { 
+  onGameEnd: (result: {
     score: number;
     accuracy: number;
     timeSpent: number;
@@ -46,6 +47,9 @@ interface SpeedBuilderGameWrapperProps {
 export default function SpeedBuilderGameWrapper(props: SpeedBuilderGameWrapperProps) {
   const [gameSessionId, setGameSessionId] = useState<string | null>(null);
   const [gameService, setGameService] = useState<EnhancedGameService | null>(null);
+
+  // Use assignment gameSessionId when provided, otherwise use own session
+  const effectiveGameSessionId = props.assignmentId ? props.gameSessionId : gameSessionId;
   const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
   const [sessionStats, setSessionStats] = useState({
     totalWordsPlaced: 0,
@@ -68,12 +72,12 @@ export default function SpeedBuilderGameWrapper(props: SpeedBuilderGameWrapperPr
     }
   }, [props.userId]);
 
-  // Start game session when service is ready
+  // Start game session when service is ready (only for free play mode)
   useEffect(() => {
-    if (gameService && props.userId && !gameSessionId) {
+    if (gameService && props.userId && !gameSessionId && !props.assignmentId) {
       startGameSession();
     }
-  }, [gameService, props.userId, gameSessionId]);
+  }, [gameService, props.userId, gameSessionId, props.assignmentId]);
 
   // End session when component unmounts
   useEffect(() => {
@@ -109,7 +113,7 @@ export default function SpeedBuilderGameWrapper(props: SpeedBuilderGameWrapperPr
   };
 
   const endGameSession = async () => {
-    if (gameService && gameSessionId && props.userId && sessionStartTime) {
+    if (gameService && gameSessionId && props.userId && sessionStartTime && !props.assignmentId) {
       try {
         const sessionDuration = Math.floor((Date.now() - sessionStartTime.getTime()) / 1000);
         const accuracy = sessionStats.totalWordsPlaced > 0
@@ -123,7 +127,7 @@ export default function SpeedBuilderGameWrapper(props: SpeedBuilderGameWrapperPr
         // Remove conflicting XP calculation - gems system handles all scoring through recordWordAttempt()
         const totalXP = sessionStats.correctWordsPlaced * 10; // 10 XP per correct word placement (gems-first)
 
-        await gameService.endGameSession(gameSessionId, {
+        await gameService.endGameSession(effectiveGameSessionId!, {
           student_id: props.userId,
           final_score: Math.round(accuracy * 10), // Scale accuracy to score
           accuracy_percentage: accuracy,
@@ -173,8 +177,10 @@ export default function SpeedBuilderGameWrapper(props: SpeedBuilderGameWrapperPr
       }
     });
 
-    // End the session
-    await endGameSession();
+    // End the session (only for free play mode - assignment mode handled by wrapper)
+    if (!props.assignmentId) {
+      await endGameSession();
+    }
 
     // Call the original game end handler
     props.onGameEnd({
@@ -204,7 +210,7 @@ export default function SpeedBuilderGameWrapper(props: SpeedBuilderGameWrapperPr
     <GemSpeedBuilder
       {...props}
       onGameComplete={handleEnhancedGameEnd}
-      gameSessionId={gameSessionId}
+      gameSessionId={effectiveGameSessionId}
       gameService={gameService}
     />
   );

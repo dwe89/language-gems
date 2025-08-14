@@ -47,6 +47,7 @@ interface GameState {
   timeLeft: number;
   wordsCompleted: number;
   totalWords: number;
+  needsVocabularyReset?: boolean;
 }
 
 interface WordOption {
@@ -323,7 +324,7 @@ export default function SentenceTowersPage() {
         onBackToAssignments={handleBackToAssignments}
         onBackToMenu={() => router.push('/games/sentence-towers')}
       >
-        {({ assignment, vocabulary, onProgressUpdate, onGameComplete }) => {
+        {({ assignment, vocabulary, onProgressUpdate, onGameComplete, gameSessionId }) => {
           // Convert assignment vocabulary to game format
           const gameVocabulary = vocabulary.map(item => ({
             id: item.id,
@@ -774,21 +775,16 @@ function ImprovedSentenceTowersGame({
 
     const unusedWords = vocabulary.filter(word => !word.correct);
 
-    // If we've used all words, reset the vocabulary to continue playing
+    // If we've used all words, mark for reset (handled by separate useEffect)
     if (unusedWords.length === 0) {
-      const resetVocabulary = gameVocabulary.map((word, index) => ({
-        id: word.id || `word-${index}`,
-        word: word.word,
-        translation: word.translation,
-        difficulty: word.difficulty_level === 'beginner' ? 1 :
-                   word.difficulty_level === 'intermediate' ? 3 :
-                   word.difficulty_level === 'advanced' ? 5 : 2,
-        correct: false
-      }));
-      setVocabulary(resetVocabulary);
-      // Use the reset vocabulary for this round
-      const resetWords = resetVocabulary;
-      const shuffled = [...resetWords].sort(() => Math.random() - 0.5);
+      // Signal that vocabulary needs to be reset
+      setGameState(prev => ({ ...prev, needsVocabularyReset: true }));
+      return;
+    }
+
+    // Use the current unused words - simple case when we have enough words
+    if (unusedWords.length >= 4) {
+      const shuffled = [...unusedWords].sort(() => Math.random() - 0.5);
       const targetWord = shuffled[0];
       
       setCurrentTargetWord({
@@ -838,8 +834,8 @@ function ImprovedSentenceTowersGame({
                    word.difficulty_level === 'advanced' ? 5 : 2,
         correct: false
       }));
-      const shuffled = [...fullVocab].sort(() => Math.random() - 0.5);
-      const targetWord = shuffled[0];
+      const shuffledFullVocab = [...fullVocab].sort(() => Math.random() - 0.5);
+      const targetWord = shuffledFullVocab[0];
       
       setCurrentTargetWord({
         id: targetWord.id,
@@ -853,7 +849,7 @@ function ImprovedSentenceTowersGame({
       setQuestionStartTime(Date.now());
       
       // Improved distractor selection
-      const incorrectOptions = selectBestDistractors(targetWord, shuffled.slice(1), 3);
+      const incorrectOptions = selectBestDistractors(targetWord, shuffledFullVocab.slice(1), 3);
       const allOptions = [targetWord, ...incorrectOptions].sort(() => Math.random() - 0.5);
       
       setWordOptions(allOptions.map(word => ({
@@ -866,8 +862,8 @@ function ImprovedSentenceTowersGame({
       return;
     }
     
-    const shuffled = [...targetWords].sort(() => Math.random() - 0.5);
-    const targetWord = shuffled[0];
+    const shuffledTargetWords = [...targetWords].sort(() => Math.random() - 0.5);
+    const targetWord = shuffledTargetWords[0];
     
     setCurrentTargetWord({
       id: targetWord.id,
@@ -881,7 +877,7 @@ function ImprovedSentenceTowersGame({
     setQuestionStartTime(Date.now());
     
     // Always ensure 4 options by selecting 3 incorrect ones with improved logic
-    const remainingWords = shuffled.slice(1);
+    const remainingWords = shuffledTargetWords.slice(1);
     const incorrectOptions = selectBestDistractors(targetWord, remainingWords, 3);
 
     // If we don't have enough incorrect options from filtered words, add from all words
@@ -920,7 +916,7 @@ function ImprovedSentenceTowersGame({
     sounds.playCorrectAnswer();
 
     // Record word practice with FSRS system
-    if (!assignmentMode && option) {
+    if (option) {
       try {
         const wordData = {
           id: option.id || `${option.word}-${option.translation}`,
@@ -1086,7 +1082,7 @@ function ImprovedSentenceTowersGame({
   // Enhanced incorrect answer handling
   const handleIncorrectAnswer = useCallback(async (incorrectOption?: WordOption) => {
     // Record word practice with FSRS system for incorrect answer
-    if (!assignmentMode && currentTargetWord) {
+    if (currentTargetWord) {
       try {
         const wordData = {
           id: currentTargetWord.id || `${currentTargetWord.word}-${currentTargetWord.translation}`,
@@ -1310,8 +1306,13 @@ function ImprovedSentenceTowersGame({
     setVocabulary(resetVocabulary);
     generateWordOptions();
 
-    // Start game session for analytics
-    if (enhancedGameService && user) {
+    // Use assignment's gameSessionId or create new session for free play
+    if (assignmentMode && gameSessionId) {
+      // Use assignment's gameSessionId
+      setGameSessionId(gameSessionId);
+      console.log('Sentence Towers using assignment game session:', gameSessionId);
+    } else if (enhancedGameService && user && !assignmentMode) {
+      // Create new session for free play mode only
       try {
         const sessionId = await enhancedGameService.startGameSession({
           student_id: user.id,
@@ -1391,12 +1392,31 @@ function ImprovedSentenceTowersGame({
     };
   }, []);
 
+  // Handle vocabulary reset when all words are used
+  useEffect(() => {
+    if (gameState.needsVocabularyReset && gameVocabulary.length > 0) {
+      const resetVocabulary = gameVocabulary.map((word, index) => ({
+        id: word.id || `word-${index}`,
+        word: word.word,
+        translation: word.translation,
+        difficulty: word.difficulty_level === 'beginner' ? 1 :
+                   word.difficulty_level === 'intermediate' ? 3 :
+                   word.difficulty_level === 'advanced' ? 5 : 2,
+        correct: false
+      }));
+      setVocabulary(resetVocabulary);
+
+      // Clear the reset flag and regenerate options
+      setGameState(prev => ({ ...prev, needsVocabularyReset: false }));
+    }
+  }, [gameState.needsVocabularyReset, gameVocabulary]);
+
   // Initialize word options
   useEffect(() => {
-    if (gameState.status === 'playing' && wordOptions.length === 0) {
+    if (gameState.status === 'playing' && wordOptions.length === 0 && !gameState.needsVocabularyReset) {
       generateWordOptions();
     }
-  }, [gameState.status, wordOptions.length, generateWordOptions]);
+  }, [gameState.status, wordOptions.length, gameState.needsVocabularyReset, generateWordOptions]);
 
   return (
     <div className={`min-h-screen relative overflow-hidden ${screenShake ? 'animate-pulse' : ''}`}>

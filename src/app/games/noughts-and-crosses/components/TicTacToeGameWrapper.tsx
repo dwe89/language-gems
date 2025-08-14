@@ -33,12 +33,16 @@ interface TicTacToeGameWrapperProps {
   onGameEnd: (result: { outcome: 'win' | 'loss' | 'tie'; wordsLearned: number; perfectGame?: boolean }) => void;
   assignmentId?: string | null;
   userId?: string;
+  gameSessionId?: string | null;
   onOpenSettings?: () => void;
 }
 
 export default function TicTacToeGameWrapper(props: TicTacToeGameWrapperProps) {
   const [gameSessionId, setGameSessionId] = useState<string | null>(null);
   const [gameService, setGameService] = useState<EnhancedGameService | null>(null);
+
+  // Use assignment gameSessionId when provided, otherwise use own session
+  const effectiveGameSessionId = props.assignmentId ? props.gameSessionId : gameSessionId;
   const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
   const [sessionStats, setSessionStats] = useState({
     totalGamesPlayed: 0,
@@ -94,19 +98,21 @@ export default function TicTacToeGameWrapper(props: TicTacToeGameWrapperProps) {
     }
   }, [props.userId]);
 
-  // Start game session when vocabulary is loaded
+  // Start game session when vocabulary is loaded (only for free play mode)
   useEffect(() => {
-    if (gameService && props.userId && vocabularyWords.length > 0 && !gameSessionId) {
+    if (gameService && props.userId && vocabularyWords.length > 0 && !gameSessionId && !props.assignmentId) {
       startGameSession();
     }
-  }, [gameService, props.userId, vocabularyWords, gameSessionId]);
+  }, [gameService, props.userId, vocabularyWords, gameSessionId, props.assignmentId]);
 
-  // End session when component unmounts (user leaves the game)
+  // End session when component unmounts (user leaves the game) - only for free play mode
   useEffect(() => {
     return () => {
-      endGameSession();
+      if (!props.assignmentId) {
+        endGameSession();
+      }
     };
-  }, []);
+  }, [props.assignmentId]);
 
   const startGameSession = async () => {
     if (!gameService || !props.userId) return;
@@ -179,9 +185,9 @@ export default function TicTacToeGameWrapper(props: TicTacToeGameWrapperProps) {
     props.onGameEnd(result);
   };
 
-  // End the session when the user leaves the game
+  // End the session when the user leaves the game (only for free play mode)
   const endGameSession = async () => {
-    if (gameService && gameSessionId && props.userId && sessionStartTime) {
+    if (gameService && gameSessionId && props.userId && sessionStartTime && !props.assignmentId) {
       try {
         const sessionDuration = Math.floor((Date.now() - sessionStartTime.getTime()) / 1000);
         const accuracy = sessionStats.totalQuestions > 0
@@ -194,7 +200,7 @@ export default function TicTacToeGameWrapper(props: TicTacToeGameWrapperProps) {
         // XP will be calculated by the gems system based on actual vocabulary interactions
         // Remove game-specific XP calculation to follow gems-first architecture
 
-        await gameService.endGameSession(gameSessionId, {
+        await gameService.endGameSession(effectiveGameSessionId!, {
           student_id: props.userId,
           final_score: Math.round(winRate),
           accuracy_percentage: accuracy,
@@ -262,7 +268,7 @@ export default function TicTacToeGameWrapper(props: TicTacToeGameWrapperProps) {
       onBackToMenu={props.onBackToMenu}
       onGameEnd={handleEnhancedGameEnd}
       vocabularyWords={getFormattedVocabulary()}
-      gameSessionId={gameSessionId}
+      gameSessionId={effectiveGameSessionId}
       isAssignmentMode={!!props.assignmentId}
       onOpenSettings={props.onOpenSettings}
       gameService={gameService}

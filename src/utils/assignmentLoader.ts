@@ -161,7 +161,8 @@ export function createGameSettings(assignment: AssignmentData, vocabulary: Stand
     examBoard: assignment.exam_board,
     tier: assignment.tier,
     difficulty: assignment.game_config?.difficulty || 'medium',
-    theme: assignment.game_config?.theme || 'classic',
+    sentenceCategory: assignment.game_config?.category || 'basics_core_language',
+    sentenceSubcategory: assignment.game_config?.subcategory || 'greetings_introductions',
     timeLimit: assignment.game_config?.timeLimit || 120,
     vocabulary: vocabulary
   };

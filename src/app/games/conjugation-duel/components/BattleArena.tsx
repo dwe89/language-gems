@@ -7,6 +7,7 @@ import { useBattle } from '../../../../hooks/useBattle';
 import { useBattleAudio } from '../../../../hooks/useBattleAudio';
 import { EnhancedGameService } from '../../../../services/enhancedGameService';
 import { useUnifiedSpacedRepetition } from '../../../../hooks/useUnifiedSpacedRepetition';
+import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
 import HealthBar from './HealthBar';
 import CharacterSprite from './CharacterSprite';
 
@@ -161,6 +162,38 @@ export default function BattleArena({
       }
     }
 
+    // Record gem event for conjugation practice
+    if (gameSessionId && battleState.currentQuestion) {
+      (async () => {
+        try {
+          const question = battleState.currentQuestion;
+          if (!question) return;
+
+          const sessionService = new EnhancedGameSessionService();
+          const gemEvent = await sessionService.recordWordAttempt(gameSessionId, 'conjugation-duel', {
+            vocabularyId: `${question.verb?.infinitive || 'unknown'}-${question.tense}-${question.pronoun}`,
+            wordText: question.verb?.infinitive || 'unknown',
+            translationText: question.correctAnswer,
+            responseTimeMs: responseTime,
+            wasCorrect: isCorrect,
+            hintUsed: false,
+            streakCount: 0, // Default streak count
+            masteryLevel: isCorrect ? 2 : 0,
+            maxGemRarity: 'epic', // Allow epic gems for conjugation mastery
+            gameMode: 'conjugation',
+            difficultyLevel: question.tense === 'subjunctive' || question.tense === 'conditional' ? 'advanced' : 'intermediate'
+          }, true); // Skip spaced repetition - FSRS is handling it
+
+          // Show gem feedback if gem was awarded
+          if (gemEvent && isCorrect) {
+            console.log(`🔮 Conjugation Duel earned ${gemEvent.rarity} gem (${gemEvent.xpValue} XP) for "${question.verb?.infinitive}" (${question.tense})`);
+          }
+        } catch (error) {
+          console.error('Failed to record conjugation gem event:', error);
+        }
+      })();
+    }
+
     // Log conjugation performance if callback is available
     if (onConjugationComplete && battleState.currentQuestion) {
       const question = battleState.currentQuestion;
@@ -179,7 +212,20 @@ export default function BattleArena({
   };
 
   if (!battleState.isInBattle || !battleState.currentOpponent || !battleState.currentQuestion) {
-    return null;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-900 via-orange-900 to-yellow-900">
+        <div className="text-center">
+          <h2 className="text-3xl font-bold text-yellow-300 mb-4">Conjugation Duel Cannot Start</h2>
+          <p className="text-lg text-white mb-6">Missing or invalid data. Please check that you have selected a valid league and opponent, and that verb data is loaded.</p>
+          <button
+            className="bg-white text-red-600 px-6 py-3 rounded-lg hover:bg-gray-100 transition-colors"
+            onClick={onBackToMenu}
+          >
+            Back to Menu
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (

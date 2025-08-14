@@ -84,7 +84,7 @@ export default function VocabMasterAssignmentWrapper({
       onBackToAssignments={handleBackToAssignments}
       onBackToMenu={handleBackToMenu}
     >
-      {({ assignment, vocabulary, onProgressUpdate, onGameComplete }) => {
+      {({ assignment, vocabulary, onProgressUpdate, onGameComplete, gameSessionId }) => {
         console.log('VocabMaster Assignment - Vocabulary loaded:', vocabulary.length, 'items');
 
         // Transform vocabulary to the format expected by VocabMasterGameEngine
@@ -110,7 +110,9 @@ export default function VocabMasterAssignmentWrapper({
               audioEnabled: true,
               assignmentMode: true,
               assignmentTitle: assignment.title,
-              assignmentId: assignment.id
+              assignmentId: assignment.id,
+              gameSessionId: gameSessionId,
+              userId: user.id
             }}
             onGameComplete={(results: GameResult) => {
               console.log('VocabMaster game completed with results:', results);

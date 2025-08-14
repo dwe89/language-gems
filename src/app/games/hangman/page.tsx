@@ -172,7 +172,7 @@ export default function HangmanPage() {
           onBackToAssignments={handleBackToAssignments}
           onBackToMenu={() => router.push('/games/hangman')}
         >
-          {({ assignment, vocabulary, onProgressUpdate, onGameComplete }) => {
+          {({ assignment, vocabulary, onProgressUpdate, onGameComplete, gameSessionId }) => {
             // Transform vocabulary to the format expected by HangmanGameWrapper
             const gameVocabulary = vocabulary.map(item => item.word);
 
@@ -193,6 +193,7 @@ export default function HangmanPage() {
                   categoryVocabulary: vocabulary
                 }}
                 isAssignmentMode={true}
+                gameSessionId={gameSessionId}
                 onBackToMenu={() => router.push('/games/hangman')}
                 onGameEnd={(result) => {
                   // Calculate score based on result

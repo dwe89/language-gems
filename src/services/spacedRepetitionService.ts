@@ -57,6 +57,9 @@ export class SpacedRepetitionService {
       easeFactor + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02))
     );
 
+    // 🔒 SAFETY: Cap ease factor to prevent exponential growth
+    easeFactor = Math.min(3.0, Math.max(1.0, easeFactor));
+
     // Calculate new interval based on SM-2 algorithm
     if (quality < 3) {
       // Reset for poor performance (incorrect answer)
@@ -75,6 +78,9 @@ export class SpacedRepetitionService {
         interval = Math.round(interval * easeFactor);
       }
     }
+
+    // 🔒 SAFETY: Cap interval to prevent impossible future dates
+    interval = Math.min(365, Math.max(1, interval)); // Between 1 day and 1 year
 
     // Calculate next review date
     const nextReview = new Date();

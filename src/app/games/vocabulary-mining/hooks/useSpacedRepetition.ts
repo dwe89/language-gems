@@ -106,35 +106,65 @@ export const useSpacedRepetition = (supabase: SupabaseClient | null, userId: str
 
     try {
       const now = new Date().toISOString();
-      
-      const { data, error } = await supabase
+
+      // Get all vocabulary gem collection records for review
+      const { data: gemData, error: gemError } = await supabase
         .from('vocabulary_gem_collection')
         .select(`
           vocabulary_item_id,
+          centralized_vocabulary_id,
           next_review_at,
           spaced_repetition_ease_factor,
-          mastery_level,
-          centralized_vocabulary!vocabulary_gem_collection_vocabulary_item_id_fkey (
-            id,
-            spanish,
-            english,
-            theme,
-            topic,
-            part_of_speech,
-            example_sentence,
-            example_translation,
-            audio_url
-          )
+          mastery_level
         `)
         .eq('student_id', userId)
         .lte('next_review_at', now)
         .order('next_review_at', { ascending: true })
         .limit(limit);
 
-      if (error) {
-        console.error('Error fetching words for review:', error);
+      if (gemError) {
+        console.error('Error fetching words for review:', gemError);
         return [];
       }
+
+      if (!gemData || gemData.length === 0) return [];
+
+      // Get vocabulary details for all records using both ID systems
+      const vocabularyIds = gemData
+        .map(item => item.vocabulary_item_id || item.centralized_vocabulary_id)
+        .filter(Boolean);
+
+      if (vocabularyIds.length === 0) return [];
+
+      const { data: vocabularyData, error: vocabError } = await supabase
+        .from('centralized_vocabulary')
+        .select('id, word as spanish, translation as english, category as theme, subcategory as topic, part_of_speech, example_sentence, example_translation, audio_url')
+        .in('id', vocabularyIds);
+
+      if (vocabError) {
+        console.error('Error fetching vocabulary details:', vocabError);
+        return [];
+      }
+
+      // Create a map for quick vocabulary lookup
+      const vocabularyMap = new Map(
+        vocabularyData?.map(vocab => [vocab.id, vocab]) || []
+      );
+
+      // Combine gem data with vocabulary details
+      const data = gemData
+        .map(gem => {
+          const vocabularyId = gem.vocabulary_item_id || gem.centralized_vocabulary_id;
+          const vocabulary = vocabularyMap.get(vocabularyId);
+
+          if (!vocabulary) return null;
+
+          return {
+            ...gem,
+            centralized_vocabulary: vocabulary
+          };
+        })
+        .filter(Boolean);
 
       // Transform the data to match VocabularyWord interface
       return data.map(item => ({

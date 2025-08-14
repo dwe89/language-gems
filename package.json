@@ -31,7 +31,14 @@
     "generate-dictation-papers": "tsx scripts/generate-dictation-papers.ts",
     "populate-aqa-writing-assessments": "tsx scripts/populate-aqa-writing-assessments.ts",
     "populate-sentences": "tsx scripts/populate-sentences.ts",
-    "populate-word-restore": "tsx scripts/populate-word-restore-sentences.ts"
+    "populate-word-restore": "tsx scripts/populate-word-restore-sentences.ts",
+    "console-ninja:setup": "node scripts/console-ninja-integration-demo.js --setup",
+    "console-ninja:monitor": "node scripts/console-ninja-realtime-monitor.js --monitor",
+    "console-ninja:test": "node scripts/console-ninja-realtime-monitor.js --test",
+    "console-ninja:single": "node scripts/console-ninja-realtime-monitor.js --test",
+    "console-ninja:export": "node scripts/console-ninja-data-exporter.js",
+    "console-ninja:capture": "node scripts/capture-console-ninja.js",
+    "console-ninja:capture-real": "node scripts/console-ninja-capture-real.js"
   },
   "dependencies": {
     "@aws-sdk/client-polly": "^3.848.0",

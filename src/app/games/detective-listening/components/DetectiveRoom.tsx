@@ -324,56 +324,24 @@ export default function DetectiveRoom({
     // Update total response time
     setTotalResponseTime(prev => prev + responseTime);
 
-    // Record word practice with FSRS system (for non-assignment mode)
-    if (!assignmentMode && currentEvidence) {
-      try {
-        const wordData = {
-          id: currentEvidence.vocabularyId || currentEvidence.id, // Use vocabulary ID for FSRS
-          word: currentEvidence.word || currentEvidence.correct,
-          translation: currentEvidence.correct,
-          language: mapLanguageForVocab(language)
-        };
-
-        // Calculate confidence based on response time and replay count
-        const baseConfidence = isCorrect ? 0.6 : 0.2; // Lower base for listening games
-        const replayPenalty = replayCount * 0.1; // Reduce confidence for replays
-        const timeFactor = responseTime > 10000 ? 0.1 : responseTime > 5000 ? 0.05 : 0; // Penalty for slow responses
-        const confidence = Math.max(0.1, baseConfidence - replayPenalty - timeFactor);
-
-        // Record practice with FSRS
-        const fsrsResult = await recordWordPractice(
-          wordData,
-          isCorrect,
-          responseTime,
-          confidence
-        );
-
-        if (fsrsResult) {
-          console.log(`FSRS recorded for ${currentEvidence.word || currentEvidence.correct}:`, {
-            algorithm: fsrsResult.algorithm,
-            points: fsrsResult.points,
-            nextReview: fsrsResult.nextReviewDate,
-            interval: fsrsResult.interval,
-            masteryLevel: fsrsResult.masteryLevel
-          });
-        }
-      } catch (error) {
-        console.error('Error recording FSRS practice:', error);
-      }
-    }
+    // ✅ REMOVED: Direct FSRS call to prevent double recording
+    // EnhancedGameSessionService.recordWordAttempt() will handle FSRS recording
 
     // Record vocabulary interaction using gems-first system
     if (gameSessionId) {
       try {
-        // 🔍 INSTRUMENTATION: Log SRS update details
-        console.log('🔍 [SRS UPDATE] Starting SRS progress update:', {
+        // 🔍 INSTRUMENTATION: Log SRS update details with answer validation
+        console.log('🔍 [DETECTIVE LISTENING] Starting vocabulary tracking:', {
           gameSessionId,
           vocabularyId: currentEvidence.vocabularyId,
           vocabularyIdType: typeof currentEvidence.vocabularyId,
           wasCorrect: isCorrect,
           responseTimeMs: responseTime,
           wordText: currentEvidence.word || currentEvidence.correct,
-          translationText: currentEvidence.correct
+          translationText: currentEvidence.correct,
+          userAnswer: userAnswer,
+          correctAnswer: currentEvidence.correct,
+          answersMatch: userAnswer?.toLowerCase().trim() === currentEvidence.correct?.toLowerCase().trim()
         });
 
         // Use EnhancedGameSessionService for gems-first vocabulary tracking
@@ -390,7 +358,7 @@ export default function DetectiveRoom({
           maxGemRarity: 'rare', // Cap at rare to prevent grinding
           gameMode: 'listening',
           difficultyLevel: 'beginner'
-        });
+        }, false); // ✅ FIXED: Let EnhancedGameSessionService handle FSRS recording
 
         // 🔍 INSTRUMENTATION: Log gem event result
         console.log('🔍 [VOCAB TRACKING] Gem event result:', {

@@ -354,6 +354,85 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
         const newScore = calculateScore();
         setScore(newScore);
 
+        // FSRS Recording for successful completion
+        console.log('🎯 [HANGMAN WIN] Starting FSRS recording for word:', word);
+        try {
+          const currentVocabItem = vocabulary?.find(v => v.word.toLowerCase() === word.toLowerCase());
+          const wordData = {
+            id: currentVocabItem?.id || `hangman-${word}`,
+            word: word,
+            translation: currentVocabItem?.translation || word, // Use translation if available
+            language: settings.language === 'spanish' ? 'es' : settings.language === 'french' ? 'fr' : 'en'
+          };
+
+          console.log('🎯 [HANGMAN WIN] Word data prepared:', wordData);
+
+          // Calculate confidence based on performance
+          const correctGuessCount = newGuessedLetters.filter(letter => word.toLowerCase().includes(letter)).length;
+          const totalGuessCount = newGuessedLetters.length;
+          const accuracy = totalGuessCount > 0 ? correctGuessCount / totalGuessCount : 1;
+          const timeBonus = timer < 60 ? 0.1 : timer < 120 ? 0.05 : 0; // Bonus for quick completion
+          const mistakesPenalty = wrongGuesses * 0.1; // Penalty for wrong guesses
+          const confidence = Math.max(0.1, Math.min(0.95, accuracy + timeBonus - mistakesPenalty));
+
+          console.log('🎯 [HANGMAN WIN] Confidence calculated:', confidence, {
+            accuracy,
+            timeBonus,
+            mistakesPenalty,
+            timer,
+            wrongGuesses
+          });
+
+          // Record successful word completion with FSRS
+          console.log('🎯 [HANGMAN WIN] Calling recordWordPractice...');
+          recordWordPractice(
+            wordData,
+            true, // Successful completion
+            timer * 1000, // Convert to milliseconds
+            confidence
+          ).then(fsrsResult => {
+            console.log('🎯 [HANGMAN WIN] FSRS result received:', fsrsResult);
+            if (fsrsResult) {
+              console.log(`✅ FSRS recorded for hangman word "${word}":`, {
+                algorithm: fsrsResult.algorithm,
+                points: fsrsResult.points,
+                nextReview: fsrsResult.nextReviewDate,
+                interval: fsrsResult.interval,
+                masteryLevel: fsrsResult.masteryLevel
+              });
+
+              // Record gem in assignment mode
+              if (isAssignmentMode && (window as any).recordVocabularyInteraction) {
+                console.log('🔮 [HANGMAN WIN] Recording gem for assignment mode...');
+                try {
+                  (window as any).recordVocabularyInteraction(
+                    word, // Pass the actual word text, not the ID
+                    wordData.translation, // Pass the translation text
+                    true, // correct
+                    timer * 1000, // responseTime in ms
+                    hints < 3, // hintUsed - true if any hints were used
+                    1 // streakCount
+                  ).then((gemResult: any) => {
+                    console.log('🔮 [HANGMAN WIN] Gem recorded successfully:', gemResult);
+                  }).catch((gemError: any) => {
+                    console.error('❌ Error recording gem:', gemError);
+                  });
+                } catch (gemError) {
+                  console.error('❌ Error calling recordVocabularyInteraction:', gemError);
+                }
+              } else if (isAssignmentMode) {
+                console.log('⚠️ [HANGMAN WIN] Assignment mode but no recordVocabularyInteraction function available');
+              }
+            } else {
+              console.log('⚠️ FSRS result was null or undefined');
+            }
+          }).catch(error => {
+            console.error('❌ Error recording FSRS practice for hangman:', error);
+          });
+        } catch (error) {
+          console.error('❌ Error setting up FSRS recording for hangman:', error);
+        }
+
         // Play audio for the completed word
         if (settings.playAudio) {
           setTimeout(() => {
@@ -390,6 +469,81 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
       if (wrongGuesses + 1 >= MAX_ATTEMPTS) {
         playSFX('defeat'); // Use passed-in playSFX
         setGameStatus('lost');
+
+        // FSRS Recording for failed completion
+        console.log('🎯 [HANGMAN LOSE] Starting FSRS recording for word:', word);
+        try {
+          const currentVocabItem = vocabulary?.find(v => v.word.toLowerCase() === word.toLowerCase());
+          const wordData = {
+            id: currentVocabItem?.id || `hangman-${word}`,
+            word: word,
+            translation: currentVocabItem?.translation || word, // Use translation if available
+            language: settings.language === 'spanish' ? 'es' : settings.language === 'french' ? 'fr' : 'en'
+          };
+
+          console.log('🎯 [HANGMAN LOSE] Word data prepared:', wordData);
+
+          // Calculate confidence based on performance (lower for failed attempts)
+          const correctGuessCount = newGuessedLetters.filter(letter => word.toLowerCase().includes(letter)).length;
+          const totalGuessCount = newGuessedLetters.length;
+          const accuracy = totalGuessCount > 0 ? correctGuessCount / totalGuessCount : 0;
+          const confidence = Math.max(0.1, Math.min(0.4, accuracy * 0.5)); // Much lower confidence for failed attempts
+
+          console.log('🎯 [HANGMAN LOSE] Confidence calculated:', confidence, {
+            accuracy,
+            timer,
+            wrongGuesses: wrongGuesses + 1
+          });
+
+          // Record failed word attempt with FSRS
+          console.log('🎯 [HANGMAN LOSE] Calling recordWordPractice...');
+          recordWordPractice(
+            wordData,
+            false, // Failed completion
+            timer * 1000, // Convert to milliseconds
+            confidence
+          ).then(fsrsResult => {
+            console.log('🎯 [HANGMAN LOSE] FSRS result received:', fsrsResult);
+            if (fsrsResult) {
+              console.log(`✅ FSRS recorded for hangman word "${word}" (failed):`, {
+                algorithm: fsrsResult.algorithm,
+                points: fsrsResult.points,
+                nextReview: fsrsResult.nextReviewDate,
+                interval: fsrsResult.interval,
+                masteryLevel: fsrsResult.masteryLevel
+              });
+
+              // Record gem in assignment mode (for failed attempts too)
+              if (isAssignmentMode && (window as any).recordVocabularyInteraction) {
+                console.log('🔮 [HANGMAN LOSE] Recording gem for assignment mode...');
+                try {
+                  (window as any).recordVocabularyInteraction(
+                    word, // Pass the actual word text, not the ID
+                    wordData.translation, // Pass the translation text
+                    false, // incorrect
+                    timer * 1000, // responseTime in ms
+                    hints < 3, // hintUsed - true if any hints were used
+                    1 // streakCount
+                  ).then((gemResult: any) => {
+                    console.log('🔮 [HANGMAN LOSE] Gem recorded successfully:', gemResult);
+                  }).catch((gemError: any) => {
+                    console.error('❌ Error recording gem (lose):', gemError);
+                  });
+                } catch (gemError) {
+                  console.error('❌ Error calling recordVocabularyInteraction (lose):', gemError);
+                }
+              } else if (isAssignmentMode) {
+                console.log('⚠️ [HANGMAN LOSE] Assignment mode but no recordVocabularyInteraction function available');
+              }
+            } else {
+              console.log('⚠️ FSRS result was null or undefined (lose)');
+            }
+          }).catch(error => {
+            console.error('❌ Error recording FSRS practice for hangman (lose):', error);
+          });
+        } catch (error) {
+          console.error('❌ Error setting up FSRS recording for hangman (lose):', error);
+        }
       }
     }
   };

@@ -173,10 +173,12 @@ export class UnifiedWordSelectionService {
     limit: number
   ): Promise<SelectedWord[]> {
     try {
-      let query = this.supabase
+      // Get all vocabulary gem collection records for struggling words
+      let gemQuery = this.supabase
         .from('vocabulary_gem_collection')
         .select(`
           vocabulary_item_id,
+          centralized_vocabulary_id,
           mastery_level,
           next_review_at,
           fsrs_difficulty,
@@ -184,24 +186,53 @@ export class UnifiedWordSelectionService {
           fsrs_retrievability,
           total_encounters,
           correct_encounters,
-          max_gem_rarity,
-          centralized_vocabulary!vocabulary_gem_collection_vocabulary_item_id_fkey(
-            id, word, translation, language, category, subcategory,
-            part_of_speech, audio_url, example_sentence
-          )
+          max_gem_rarity
         `)
         .eq('student_id', studentId)
         .gte('total_encounters', 3) // Must have been encountered multiple times
         .lt('correct_encounters::float / total_encounters::float', 0.6) // Less than 60% accuracy
         .order('correct_encounters::float / total_encounters::float', { ascending: true })
-        .limit(limit);
-      
-      query = this.applyFilters(query, filters);
-      
-      const { data, error } = await query;
-      if (error) throw error;
-      
-      return (data || []).map(item => this.mapToSelectedWord(item, 'struggling'));
+        .limit(limit * 2); // Get more to filter
+
+      const { data: gemData, error: gemError } = await gemQuery;
+      if (gemError) throw gemError;
+      if (!gemData || gemData.length === 0) return [];
+
+      // Get vocabulary details for all records using both ID systems
+      const vocabularyIds = gemData
+        .map(item => item.vocabulary_item_id || item.centralized_vocabulary_id)
+        .filter(Boolean);
+
+      if (vocabularyIds.length === 0) return [];
+
+      const { data: vocabularyData, error: vocabError } = await this.supabase
+        .from('centralized_vocabulary')
+        .select('id, word, translation, language, category, subcategory, part_of_speech, audio_url, example_sentence')
+        .in('id', vocabularyIds);
+
+      if (vocabError) throw vocabError;
+
+      // Create a map for quick vocabulary lookup
+      const vocabularyMap = new Map(
+        vocabularyData?.map(vocab => [vocab.id, vocab]) || []
+      );
+
+      // Combine gem data with vocabulary details
+      const data = gemData
+        .map(gem => {
+          const vocabularyId = gem.vocabulary_item_id || gem.centralized_vocabulary_id;
+          const vocabulary = vocabularyMap.get(vocabularyId);
+
+          if (!vocabulary) return null;
+
+          return {
+            ...gem,
+            centralized_vocabulary: vocabulary
+          };
+        })
+        .filter(Boolean);
+
+      return data.slice(0, limit).map(item => this.mapToSelectedWord(item, 'struggling'));
     } catch (error) {
       console.error('Error fetching struggling words:', error);
       return [];
@@ -217,14 +248,26 @@ export class UnifiedWordSelectionService {
     limit: number
   ): Promise<SelectedWord[]> {
     try {
+      // First, get all vocabulary IDs the student has encountered (both systems)
+      const { data: encounteredData, error: encounteredError } = await this.supabase
+        .from('vocabulary_gem_collection')
+        .select('vocabulary_item_id, centralized_vocabulary_id')
+        .eq('student_id', studentId);
+
+      if (encounteredError) throw encounteredError;
+
+      const encounteredIds = new Set(
+        encounteredData?.flatMap(item => [
+          item.vocabulary_item_id,
+          item.centralized_vocabulary_id
+        ]).filter(Boolean) || []
+      );
+
       let query = this.supabase
         .from('centralized_vocabulary')
         .select('*')
-        .not('id', 'in', 
-          `(SELECT vocabulary_item_id FROM vocabulary_gem_collection WHERE student_id = '${studentId}')`
-        )
-        .limit(limit);
-      
+        .limit(limit * 3); // Get more to filter out encountered ones
+
       // Apply vocabulary filters
       if (filters.language) {
         query = query.eq('language', filters.language);
@@ -238,11 +281,16 @@ export class UnifiedWordSelectionService {
       if (filters.curriculumLevel) {
         query = query.eq('curriculum_level', filters.curriculumLevel);
       }
-      
+
       const { data, error } = await query;
       if (error) throw error;
-      
-      return (data || []).map(item => ({
+
+      // Filter out words the student has already encountered
+      const newWords = (data || [])
+        .filter(item => !encounteredIds.has(item.id))
+        .slice(0, limit);
+
+      return newWords.map(item => ({
         id: item.id,
         word: item.word,
         translation: item.translation,
@@ -274,22 +322,63 @@ export class UnifiedWordSelectionService {
     excludeIds: number[]
   ): Promise<SelectedWord[]> {
     try {
-      let query = this.supabase
+      // Get all vocabulary gem collection records for the student
+      let gemQuery = this.supabase
         .from('vocabulary_gem_collection')
         .select(`
           vocabulary_item_id,
+          centralized_vocabulary_id,
           mastery_level,
           total_encounters,
           correct_encounters,
-          max_gem_rarity,
-          centralized_vocabulary!vocabulary_gem_collection_vocabulary_item_id_fkey(
-            id, word, translation, language, category, subcategory,
-            part_of_speech, audio_url, example_sentence
-          )
+          max_gem_rarity
         `)
         .eq('student_id', studentId)
-        .not('vocabulary_item_id', 'in', `(${excludeIds.join(',')})`)
         .limit(limit * 2); // Get more to randomize
+
+      // Exclude specific IDs if provided
+      if (excludeIds.length > 0) {
+        gemQuery = gemQuery.not('vocabulary_item_id', 'in', `(${excludeIds.join(',')})`)
+                          .not('centralized_vocabulary_id', 'in', `(${excludeIds.join(',')})`);
+      }
+
+      const { data: gemData, error: gemError } = await gemQuery;
+      if (gemError) throw gemError;
+      if (!gemData || gemData.length === 0) return [];
+
+      // Get vocabulary details for all records using both ID systems
+      const vocabularyIds = gemData
+        .map(item => item.vocabulary_item_id || item.centralized_vocabulary_id)
+        .filter(Boolean);
+
+      if (vocabularyIds.length === 0) return [];
+
+      const { data: vocabularyData, error: vocabError } = await this.supabase
+        .from('centralized_vocabulary')
+        .select('id, word, translation, language, category, subcategory, part_of_speech, audio_url, example_sentence')
+        .in('id', vocabularyIds);
+
+      if (vocabError) throw vocabError;
+
+      // Create a map for quick vocabulary lookup
+      const vocabularyMap = new Map(
+        vocabularyData?.map(vocab => [vocab.id, vocab]) || []
+      );
+
+      // Combine gem data with vocabulary details
+      const data = gemData
+        .map(gem => {
+          const vocabularyId = gem.vocabulary_item_id || gem.centralized_vocabulary_id;
+          const vocabulary = vocabularyMap.get(vocabularyId);
+
+          if (!vocabulary) return null;
+
+          return {
+            ...gem,
+            centralized_vocabulary: vocabulary
+          };
+        })
+        .filter(Boolean);
       
       query = this.applyFilters(query, filters);
       

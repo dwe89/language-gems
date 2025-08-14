@@ -44,7 +44,7 @@ export default function WordBlastAssignmentWrapper({
       onBackToAssignments={handleBackToAssignments}
       onBackToMenu={handleBackToMenu}
     >
-      {({ assignment, vocabulary, onProgressUpdate, onGameComplete }) => {
+      {({ assignment, vocabulary, onProgressUpdate, onGameComplete, gameSessionId }) => {
         console.log('Word Blast Assignment - Vocabulary loaded:', vocabulary.length, 'items');
 
         // Transform vocabulary to the format expected by word-blast
@@ -57,48 +57,57 @@ export default function WordBlastAssignmentWrapper({
           category: 'noun'
         }));
 
-        // Create a simplified Word Blast assignment interface
+        const handleGameComplete = (result: any) => {
+          // Calculate standardized progress metrics
+          const correctAnswers = result.correctAnswers || 0;
+          const totalAttempts = result.totalAttempts || vocabulary.length;
+          const score = correctAnswers * 10; // 10 points per correct answer
+          const accuracy = totalAttempts > 0 ? (correctAnswers / totalAttempts) * 100 : 0;
+          const maxScore = vocabulary.length * 10;
+
+          // Update assignment progress
+          onProgressUpdate({
+            wordsCompleted: correctAnswers,
+            totalWords: vocabulary.length,
+            score,
+            maxScore,
+            accuracy,
+            timeSpent: result.timeSpent || 0
+          });
+
+          // Complete the assignment
+          onGameComplete({
+            assignmentId: assignment.id,
+            gameId: 'word-blast',
+            studentId: user.id,
+            wordsCompleted: correctAnswers,
+            totalWords: vocabulary.length,
+            score,
+            maxScore,
+            accuracy,
+            timeSpent: result.timeSpent || 0,
+            completedAt: new Date(),
+            sessionData: { result }
+          });
+        };
+
+        // Import and use the actual WordBlastGame component
+        const WordBlastGame = require('./WordBlastGame').default;
+
         return (
-          <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900">
-            <div className="container mx-auto px-4 py-8">
-              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 mb-6">
-                <h1 className="text-2xl font-bold text-white mb-2">
-                  Word Blast Assignment
-                </h1>
-                <p className="text-white/80">
-                  Assignment: {assignment.title}
-                </p>
-                <p className="text-white/60 text-sm">
-                  Vocabulary words: {vocabulary.length}
-                </p>
-              </div>
-              
-              <div className="text-center text-white">
-                <p className="text-lg mb-4">Word Blast assignment mode coming soon!</p>
-                <p className="text-sm text-white/80 mb-6">
-                  This assignment contains {vocabulary.length} vocabulary words to practice.
-                </p>
-                
-                <div className="space-y-4">
-                  <button
-                    onClick={handleBackToAssignments}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
-                  >
-                    Back to Assignments
-                  </button>
-                  
-                  <div>
-                    <button
-                      onClick={handleBackToMenu}
-                      className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
-                    >
-                      Play Regular Word Blast
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          <WordBlastGame
+            gameSessionId={gameSessionId}
+            userId={user.id}
+            assignmentMode={true}
+            assignmentConfig={{
+              assignmentId: assignment.id,
+              assignmentTitle: assignment.title,
+              vocabulary: gameVocabulary,
+              onProgressUpdate
+            }}
+            onGameComplete={handleGameComplete}
+            onBackToMenu={handleBackToAssignments}
+          />
         );
       }}
     </GameAssignmentWrapper>

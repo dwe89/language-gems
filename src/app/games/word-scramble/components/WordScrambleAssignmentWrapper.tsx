@@ -5,7 +5,7 @@
 
 import React, { useState } from 'react';
 import { useAuth } from '../../../../components/auth/AuthProvider';
-import WordScrambleGameEnhanced from './WordScrambleGameEnhanced';
+import ImprovedWordScrambleGame from './ImprovedWordScrambleGame';
 import GameAssignmentWrapper, {
   StandardVocabularyItem,
   AssignmentData,
@@ -65,7 +65,7 @@ export default function WordScrambleAssignmentWrapper({
       onBackToAssignments={handleBackToAssignments}
       onBackToMenu={onBackToMenu}
     >
-      {({ assignment, vocabulary, onProgressUpdate, onGameComplete }) => {
+      {({ assignment, vocabulary, onProgressUpdate, onGameComplete, gameSessionId }) => {
         // Transform vocabulary to format expected by Word Scramble Game
         const categoryVocabulary = vocabulary.map((vocab: StandardVocabularyItem) => ({
           id: vocab.id,
@@ -125,21 +125,18 @@ export default function WordScrambleAssignmentWrapper({
         };
 
         return (
-          <WordScrambleGameEnhanced
-            settings={{
-              difficulty: assignment.game_config?.difficulty || 'medium',
-              category: assignment.vocabulary_criteria?.category || 'custom',
-              language: vocabulary[0]?.language || 'spanish',
-              gameMode: assignment.game_config?.gameMode || 'classic',
-              subcategory: assignment.vocabulary_criteria?.subcategory,
-              curriculumLevel: (assignment.curriculum_level as 'KS3' | 'KS4') || 'KS3'
-            }}
-            onBackToMenu={onBackToMenu || (() => {})}
-            onGameEnd={handleGameEnd}
-            categoryVocabulary={categoryVocabulary}
-            assignmentId={assignmentId}
-            userId={user.id}
+          <ImprovedWordScrambleGame
+            vocabulary={categoryVocabulary}
             isAssignmentMode={true}
+            assignmentId={assignmentId}
+            assignmentTitle={assignment.title}
+            userId={user.id}
+            gameSessionId={gameSessionId || undefined} // Pass game session ID for tracking
+            onBackToMenu={onBackToMenu || (() => {})}
+            onGameComplete={handleGameEnd}
+            onProgressUpdate={onProgressUpdate}
+            language={vocabulary[0]?.language || 'es'}
+            difficulty={assignment.game_config?.difficulty as 'easy' | 'medium' | 'hard' || 'medium'}
           />
         );
       }}

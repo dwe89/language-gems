@@ -23,9 +23,9 @@ export interface VocabularyConfig {
 }
 
 export interface SentenceConfig {
-  source: 'theme' | 'topic' | 'custom' | 'create' | '';
-  theme?: string;
-  topic?: string;
+  source: 'category' | 'subcategory' | 'custom' | 'create' | '';
+  category?: string;
+  subcategory?: string;
   customSetId?: string;
   customSet?: any;
   sentenceCount?: number;

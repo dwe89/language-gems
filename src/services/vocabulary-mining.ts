@@ -31,20 +31,60 @@ export class VocabularyMiningService {
    * Get student's gem collection
    */
   async getGemCollection(studentId: string): Promise<GemCollection[]> {
-    const { data, error } = await this.supabase
+    // Get all vocabulary gem collection records for the student
+    const { data: gemData, error: gemError } = await this.supabase
       .from('vocabulary_gem_collection')
-      .select(`
-        *,
-        vocabulary_items (
-          id, term, translation, gem_type, gem_color,
-          frequency_score, curriculum_tags, topic_tags, theme_tags,
-          image_url, audio_url, example_sentence, example_translation, notes
-        )
-      `)
+      .select('*')
       .eq('student_id', studentId)
       .order('last_encountered_at', { ascending: false });
 
-    if (error) throw error;
+    if (gemError) throw gemError;
+    if (!gemData || gemData.length === 0) return [];
+
+    // Get vocabulary details for all records using both ID systems
+    const vocabularyIds = gemData
+      .map(item => item.vocabulary_item_id || item.centralized_vocabulary_id)
+      .filter(Boolean);
+
+    if (vocabularyIds.length === 0) return [];
+
+    // Try to get vocabulary from centralized_vocabulary first
+    const { data: centralizedVocab, error: centralizedError } = await this.supabase
+      .from('centralized_vocabulary')
+      .select('id, word as term, translation, category as gem_type, subcategory as gem_color, audio_url, example_sentence, example_translation')
+      .in('id', vocabularyIds);
+
+    // If centralized vocabulary fails, try legacy vocabulary_items table
+    let vocabularyData = centralizedVocab;
+    if (centralizedError || !centralizedVocab || centralizedVocab.length === 0) {
+      const { data: legacyVocab, error: legacyError } = await this.supabase
+        .from('vocabulary_items')
+        .select('id, term, translation, gem_type, gem_color, frequency_score, curriculum_tags, topic_tags, theme_tags, image_url, audio_url, example_sentence, example_translation, notes')
+        .in('id', vocabularyIds);
+
+      if (legacyError) throw legacyError;
+      vocabularyData = legacyVocab;
+    }
+
+    // Create a map for quick vocabulary lookup
+    const vocabularyMap = new Map(
+      vocabularyData?.map(vocab => [vocab.id, vocab]) || []
+    );
+
+    // Combine gem data with vocabulary details
+    const data = gemData
+      .map(gem => {
+        const vocabularyId = gem.vocabulary_item_id || gem.centralized_vocabulary_id;
+        const vocabulary = vocabularyMap.get(vocabularyId);
+
+        if (!vocabulary) return null;
+
+        return {
+          ...gem,
+          vocabulary_items: vocabulary
+        };
+      })
+      .filter(Boolean);
     
     return data?.map(item => ({
       id: item.id,
@@ -160,12 +200,12 @@ export class VocabularyMiningService {
     // Determine performance quality
     const performanceQuality = determinePerformanceQuality(wasCorrect, responseTime, hintsUsed);
 
-    // Update gem collection using the database function
-    const { error: updateError } = await this.supabase.rpc('update_gem_collection', {
+    // Update gem collection using the race-condition-safe database function
+    const { error: updateError } = await this.supabase.rpc('update_vocabulary_gem_collection_atomic', {
       p_student_id: studentId,
       p_vocabulary_item_id: vocabularyItemId,
       p_was_correct: wasCorrect,
-      p_response_time: responseTime
+      p_response_time_ms: responseTime
     });
 
     if (updateError) throw updateError;
@@ -259,21 +299,62 @@ export class VocabularyMiningService {
    * Get items needing review for spaced repetition
    */
   async getItemsForReview(studentId: string, limit = 20): Promise<GemCollection[]> {
-    const { data, error } = await this.supabase
+    // Get all vocabulary gem collection records needing review
+    const { data: gemData, error: gemError } = await this.supabase
       .from('vocabulary_gem_collection')
-      .select(`
-        *,
-        vocabulary_items (
-          id, term, translation, gem_type, gem_color,
-          image_url, audio_url, example_sentence, example_translation
-        )
-      `)
+      .select('*')
       .eq('student_id', studentId)
       .lte('next_review_at', new Date().toISOString())
       .order('next_review_at', { ascending: true })
       .limit(limit);
 
-    if (error) throw error;
+    if (gemError) throw gemError;
+    if (!gemData || gemData.length === 0) return [];
+
+    // Get vocabulary details for all records using both ID systems
+    const vocabularyIds = gemData
+      .map(item => item.vocabulary_item_id || item.centralized_vocabulary_id)
+      .filter(Boolean);
+
+    if (vocabularyIds.length === 0) return [];
+
+    // Try to get vocabulary from centralized_vocabulary first
+    const { data: centralizedVocab, error: centralizedError } = await this.supabase
+      .from('centralized_vocabulary')
+      .select('id, word as term, translation, category as gem_type, subcategory as gem_color, audio_url, example_sentence, example_translation')
+      .in('id', vocabularyIds);
+
+    // If centralized vocabulary fails, try legacy vocabulary_items table
+    let vocabularyData = centralizedVocab;
+    if (centralizedError || !centralizedVocab || centralizedVocab.length === 0) {
+      const { data: legacyVocab, error: legacyError } = await this.supabase
+        .from('vocabulary_items')
+        .select('id, term, translation, gem_type, gem_color, image_url, audio_url, example_sentence, example_translation')
+        .in('id', vocabularyIds);
+
+      if (legacyError) throw legacyError;
+      vocabularyData = legacyVocab;
+    }
+
+    // Create a map for quick vocabulary lookup
+    const vocabularyMap = new Map(
+      vocabularyData?.map(vocab => [vocab.id, vocab]) || []
+    );
+
+    // Combine gem data with vocabulary details
+    const data = gemData
+      .map(gem => {
+        const vocabularyId = gem.vocabulary_item_id || gem.centralized_vocabulary_id;
+        const vocabulary = vocabularyMap.get(vocabularyId);
+
+        if (!vocabulary) return null;
+
+        return {
+          ...gem,
+          vocabulary_items: vocabulary
+        };
+      })
+      .filter(Boolean);
     
     return data?.map(item => ({
       id: item.id,

@@ -1,0 +1,25 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "chrome",
+            "name": "Launch Chrome for Next.js",
+            "request": "launch",
+            "url": "http://localhost:3000",
+            "webRoot": "${workspaceFolder}",
+            "sourceMaps": true,
+            "userDataDir": false,
+            "runtimeArgs": ["--disable-web-security", "--disable-features=VizDisplayCompositor"],
+            "trace": true
+        },
+        {
+            "type": "chrome",
+            "name": "Attach to Chrome",
+            "request": "attach",
+            "port": 9222,
+            "webRoot": "${workspaceFolder}",
+            "sourceMaps": true,
+            "trace": true
+        }
+    ]
+}

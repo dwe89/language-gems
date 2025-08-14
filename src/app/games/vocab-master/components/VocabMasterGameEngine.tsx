@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Volume2, Gem, Lightbulb, Sparkles, Flame, Target, Star, Zap } from 'lucide-react';
 import { GameState, GameConfig, VocabularyWord, GameMode, GameResult, MultipleChoiceOption, ClozeExercise } from '../types';
 import { AudioManager } from '../utils/audioUtils';
@@ -16,6 +16,7 @@ import { achievementService, Achievement } from '../../../../services/achievemen
 import { GEM_TYPES } from '../../vocabulary-mining/utils/gameConstants';
 import { RewardEngine, type GemRarity } from '../../../../services/rewards/RewardEngine';
 import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
+import { useUnifiedSpacedRepetition } from '../../../../hooks/useUnifiedSpacedRepetition';
 
 // Import mode components
 import { DictationMode } from '../modes/DictationMode';
@@ -92,6 +93,8 @@ export const VocabMasterGameEngine: React.FC<VocabMasterGameEngineProps> = ({
   gameService,
   onWordAttempt
 }) => {
+  // Initialize FSRS spaced repetition system
+  const { recordWordPractice, algorithm } = useUnifiedSpacedRepetition('vocab-master');
   // Core game state
   const [gameState, setGameState] = useState<GameState>(() => ({
     currentWordIndex: 0,
@@ -125,6 +128,11 @@ export const VocabMasterGameEngine: React.FC<VocabMasterGameEngineProps> = ({
     translationShown: false,
     multipleChoiceOptions: []
   }));
+
+  // Guard against duplicate answer processing
+  const lastProcessedAnswer = useRef<string>('');
+  const lastAnswerKey = useRef<string>('');
+  const lastAdvancementKey = useRef<string>('');
 
   // UI state
   const [userAnswer, setUserAnswer] = useState('');
@@ -248,10 +256,30 @@ export const VocabMasterGameEngine: React.FC<VocabMasterGameEngineProps> = ({
   const handleAnswer = useCallback(async (answer: string) => {
     const responseTime = Date.now() - questionStartTime;
     setCurrentResponseTime(responseTime);
+    
+    // Create unique identifier for this answer attempt
+    const answerKey = `${gameState.currentWordIndex}-${answer}-${responseTime}`;
+    
+    // Prevent duplicate processing of the same answer
+    if (lastProcessedAnswer.current === answerKey) {
+      console.log('⚠️ [HANDLE ANSWER] Duplicate answer detected, skipping ALL processing:', answerKey);
+      return;
+    }
+
+    console.log('🔍 [HANDLE ANSWER] Processing new answer:', {
+      answerKey,
+      lastProcessedAnswer: lastProcessedAnswer.current,
+      currentWordIndex: gameState.currentWordIndex,
+      currentCorrectAnswers: gameState.correctAnswers,
+      currentIncorrectAnswers: gameState.incorrectAnswers
+    });
+
+    lastProcessedAnswer.current = answerKey;
 
     console.log('🎯 HANDLE ANSWER CALLED:', {
       answer,
-      responseTime
+      responseTime,
+      answerKey
     });
 
     setGameState(prev => {
@@ -260,6 +288,12 @@ export const VocabMasterGameEngine: React.FC<VocabMasterGameEngineProps> = ({
         currentWord: prev.currentWord?.spanish,
         showAnswer: prev.showAnswer
       });
+
+      // Prevent double execution - if answer is already shown, don't process again
+      if (prev.showAnswer) {
+        console.log('⚠️ [HANDLE ANSWER] Answer already shown, skipping duplicate execution');
+        return prev;
+      }
 
       // Convert new cloze format to legacy format for validation
       let sentenceData: ClozeExercise | null = null;
@@ -274,6 +308,15 @@ export const VocabMasterGameEngine: React.FC<VocabMasterGameEngineProps> = ({
       }
 
       const validation = validateGameAnswer(answer, prev.gameMode, prev.currentWord, sentenceData);
+
+      console.log('🎯 [VALIDATION RESULT]:', {
+        answer,
+        currentWord: prev.currentWord?.spanish || prev.currentWord?.word,
+        expectedAnswer: prev.currentWord?.english || prev.currentWord?.translation,
+        isCorrect: validation.isCorrect,
+        gameMode: prev.gameMode,
+        translationShown: prev.translationShown
+      });
 
       // Log word attempt for analytics (if callback provided)
       if (onWordAttempt && prev.currentWord) {
@@ -295,6 +338,82 @@ export const VocabMasterGameEngine: React.FC<VocabMasterGameEngineProps> = ({
 
       // If translation was shown, don't count as correct or incorrect - just neutral
       const shouldCountAnswer = !prev.translationShown;
+
+      // Record FSRS practice for this word (works in both assignment and free play modes)
+      if (prev.currentWord && shouldCountAnswer) {
+        (async () => {
+          try {
+            const wordData = {
+              id: prev.currentWord?.id || `vocab-master-${prev.currentWord?.spanish || prev.currentWord?.word}`,
+              word: prev.currentWord?.spanish || prev.currentWord?.word || '',
+              translation: prev.currentWord?.english || prev.currentWord?.translation || '',
+              language: 'es' // Assuming Spanish for vocab master
+            };
+
+            // Calculate confidence based on response time, streak, and hints
+            const baseConfidence = validation.isCorrect ? 0.7 : 0.3;
+            const streakBonus = Math.min(prev.streak * 0.05, 0.2); // Up to 20% bonus for streak
+            const hintPenalty = prev.translationShown ? 0.2 : 0; // 20% penalty for showing translation
+            const timeFactor = responseTime > 10000 ? 0.1 : responseTime > 5000 ? 0.05 : 0; // Penalty for slow responses
+            const confidence = Math.max(0.1, Math.min(0.9, baseConfidence + streakBonus - hintPenalty - timeFactor));
+
+            // Record gem in assignment mode (GameAssignmentWrapper handles both FSRS and gem recording)
+            if (config.assignmentMode && (window as any).recordVocabularyInteraction) {
+              // Prevent duplicate calls with a unique key
+              const answerKey = `${gameState.currentWordIndex}-${wordData.word}-${responseTime}`;
+              if (lastAnswerKey.current !== answerKey) {
+                lastAnswerKey.current = answerKey;
+                console.log('🔮 [VOCAB MASTER] Recording gem for assignment mode...', answerKey);
+                try {
+                  (window as any).recordVocabularyInteraction(
+                    wordData.word, // Pass the actual word text
+                    wordData.translation, // Pass the translation text
+                    validation.isCorrect, // correct/incorrect
+                    responseTime, // responseTime in ms
+                    prev.translationShown, // hintUsed - true if translation was shown
+                    1 // streakCount
+                  ).then((gemResult: any) => {
+                    console.log('🔮 [VOCAB MASTER] Gem recorded successfully:', gemResult);
+                  }).catch((gemError: any) => {
+                    console.error('❌ Error recording gem (vocab master):', gemError);
+                  });
+                } catch (gemError) {
+                  console.error('❌ Error calling recordVocabularyInteraction (vocab master):', gemError);
+                }
+              } else {
+                console.log('🔮 [VOCAB MASTER] Skipping duplicate gem recording for:', answerKey);
+              }
+            } else if (config.assignmentMode) {
+              console.log('⚠️ [VOCAB MASTER] Assignment mode but no recordVocabularyInteraction function available');
+            } else {
+              // Only record FSRS directly when NOT in assignment mode
+              // (In assignment mode, GameAssignmentWrapper handles FSRS recording)
+              console.log('🔍 [FSRS] Recording practice directly (non-assignment mode)...');
+              const fsrsResult = await recordWordPractice(
+                wordData,
+                validation.isCorrect,
+                responseTime,
+                confidence
+              );
+
+              console.log(`🔍 [FSRS] Recorded practice for ${wordData.word}:`, {
+                isCorrect: validation.isCorrect,
+                confidence,
+                responseTime,
+                fsrsResult: fsrsResult ? {
+                  success: fsrsResult.success,
+                  algorithm: fsrsResult.algorithm,
+                  nextReviewDate: fsrsResult.nextReviewDate,
+                  interval: fsrsResult.interval,
+                  masteryLevel: fsrsResult.masteryLevel
+                } : null
+              });
+            }
+          } catch (error) {
+            console.error('Error recording FSRS practice for vocab master:', error);
+          }
+        })();
+      }
       const isCorrectForScoring = validation.isCorrect && shouldCountAnswer;
 
       // Get correct answer for this mode
@@ -319,20 +438,20 @@ export const VocabMasterGameEngine: React.FC<VocabMasterGameEngineProps> = ({
         }
       }
 
-      // Adventure mode gamification - use new RewardEngine
+      // Gem collection for ALL modes (not just adventure) - use new RewardEngine
       let updatedGemsCollected = prev.gemsCollected;
       let updatedGemType = prev.currentGemType;
+      let gemRarity: any = 'common';
 
-      if (isAdventureMode && validation.isCorrect) {
+      if (validation.isCorrect && shouldCountAnswer) {
         // Use RewardEngine for consistent gem calculation
-        const gemRarity = RewardEngine.calculateGemRarity('vocab-master', {
+        gemRarity = RewardEngine.calculateGemRarity('vocab-master', {
           responseTimeMs: responseTime,
           streakCount: prev.streak,
           hintUsed: prev.translationShown,
           isTypingMode: prev.gameMode === 'typing',
           isDictationMode: prev.gameMode === 'dictation',
-          masteryLevel: prev.currentWord?.masteryLevel || 0,
-          maxGemRarity: prev.currentWord?.maxGemRarity as GemRarity || 'legendary'
+          masteryLevel: prev.currentWord?.mastery_level || 0,
         });
 
         const points = RewardEngine.getXPValue(gemRarity);
@@ -374,9 +493,70 @@ export const VocabMasterGameEngine: React.FC<VocabMasterGameEngineProps> = ({
         isCorrect: newState.isCorrect
       });
 
+      // Record gem in database immediately with correct gem data
+      if (shouldCountAnswer && validation.isCorrect) {
+        // Handle assignment mode gem recording
+        if (config.assignmentMode && (window as any).recordVocabularyInteraction) {
+          const answerKey = `${prev.currentWordIndex}-${prev.currentWord?.spanish || prev.currentWord?.word}-${responseTime}`;
+          if (lastAnswerKey.current !== answerKey) {
+            lastAnswerKey.current = answerKey;
+            console.log('🔮 [VOCAB MASTER] Recording gem for assignment mode...', answerKey);
+            try {
+              (window as any).recordVocabularyInteraction(
+                prev.currentWord?.spanish || prev.currentWord?.word || '',
+                prev.currentWord?.english || prev.currentWord?.translation || '',
+                validation.isCorrect,
+                responseTime,
+                prev.translationShown,
+                1
+              ).then((gemResult: any) => {
+                console.log('🔮 [VOCAB MASTER] Gem recorded successfully:', gemResult);
+              }).catch((gemError: any) => {
+                console.error('❌ Error recording gem (vocab master):', gemError);
+              });
+            } catch (gemError) {
+              console.error('❌ Error calling recordVocabularyInteraction (vocab master):', gemError);
+            }
+          }
+        }
+        
+        // Handle non-assignment mode gem recording
+        else if (gameSessionId && !config.assignmentMode) {
+          console.log('🔍 [GEM COLLECTION] Recording gem in session service...');
+          setTimeout(async () => {
+            try {
+              const sessionService = new EnhancedGameSessionService();
+              const gemEvent = await sessionService.recordWordAttempt(gameSessionId, 'vocab-master', {
+                vocabularyId: prev.currentWord?.id,
+                wordText: prev.currentWord?.spanish || prev.currentWord?.word || '',
+                translationText: prev.currentWord?.english || prev.currentWord?.translation || '',
+                responseTimeMs: responseTime,
+                wasCorrect: validation.isCorrect,
+                hintUsed: prev.translationShown,
+                streakCount: prev.streak,
+                masteryLevel: prev.currentWord?.mastery_level || 0,
+                maxGemRarity: 'legendary' as GemRarity,
+                gameMode: prev.gameMode
+              }, true);
+              
+              console.log('🔍 [VOCAB TRACKING] Gem recorded successfully:', gemEvent);
+            } catch (error) {
+              console.error('Failed to record vocabulary interaction:', error);
+            }
+          }, 100); // Small delay to ensure state is updated
+        }
+      }
+
       // Schedule word advancement in a separate timeout to avoid race conditions
       setTimeout(() => {
-        console.log('⏰ ADVANCING TO NEXT WORD...');
+        const advancementKey = `${gameState.currentWordIndex}-${Date.now()}`;
+        if (lastAdvancementKey.current === advancementKey) {
+          console.log('⚠️ [WORD ADVANCEMENT] Duplicate advancement detected, skipping:', advancementKey);
+          return;
+        }
+        lastAdvancementKey.current = advancementKey;
+
+        console.log('⏰ ADVANCING TO NEXT WORD...', advancementKey);
         setGameState(nextPrev => {
           // CRITICAL: Use the exact same currentWordIndex from the previous state
           // to prevent any race conditions or state resets
@@ -446,7 +626,7 @@ export const VocabMasterGameEngine: React.FC<VocabMasterGameEngineProps> = ({
 
       return newState;
     });
-  }, [questionStartTime, onWordAttempt, config, isAdventureMode, onGameComplete, generateMultipleChoiceOptions, generateExerciseData]);
+  }, [questionStartTime, onWordAttempt, config, isAdventureMode, onGameComplete, generateMultipleChoiceOptions, generateExerciseData, gameState.currentWordIndex]);
 
   // Speed mode timer
   useEffect(() => {
@@ -486,88 +666,6 @@ export const VocabMasterGameEngine: React.FC<VocabMasterGameEngineProps> = ({
   }, [gameState.gameMode, gameState.currentWord]);
 
   // Enhanced gem collection logic using RewardEngine
-  const handleGemCollection = useCallback(async (isCorrect: boolean, responseTime: number, hintUsed: boolean = false) => {
-    if (!isCorrect) return;
-
-    // Use RewardEngine to determine gem rarity
-    const gemRarity = RewardEngine.calculateGemRarity('vocab-master', {
-      responseTimeMs: responseTime,
-      streakCount: gameState.streak,
-      hintUsed,
-      isTypingMode: gameState.gameMode === 'typing',
-      isDictationMode: gameState.gameMode === 'dictation',
-      masteryLevel: gameState.currentWord?.masteryLevel || 0,
-      maxGemRarity: gameState.currentWord?.maxGemRarity as GemRarity || 'legendary'
-    });
-
-    const points = RewardEngine.getXPValue(gemRarity);
-
-    // Update game state
-    setGameState(prev => ({
-      ...prev,
-      currentGemType: gemRarity as GemType,
-      gemsCollected: prev.gemsCollected + 1
-    }));
-
-    // Add XP with new system
-    addXP(points);
-
-    // Play gem sound
-    if (config.audioEnabled) {
-      audioFeedbackService.playGemCollectionSound(gemRarity);
-    }
-
-    // Record gem event if we have a session service
-    if (gameSessionId) {
-      try {
-        // 🔍 INSTRUMENTATION: Log vocabulary tracking details
-        console.log('🔍 [VOCAB TRACKING] Starting vocabulary tracking for word:', {
-          wordId: gameState.currentWord?.id,
-          wordIdType: typeof gameState.currentWord?.id,
-          word: gameState.currentWord?.spanish || gameState.currentWord?.word || '',
-          translation: gameState.currentWord?.english || gameState.currentWord?.translation || '',
-          isCorrect,
-          gameSessionId,
-          responseTimeMs: responseTime
-        });
-
-        const sessionService = new EnhancedGameSessionService();
-        const gemEvent = await sessionService.recordWordAttempt(gameSessionId, 'vocab-master', {
-          vocabularyId: gameState.currentWord?.id,
-          wordText: gameState.currentWord?.spanish || gameState.currentWord?.word || '',
-          translationText: gameState.currentWord?.english || gameState.currentWord?.translation || '',
-          responseTimeMs: responseTime,
-          wasCorrect: isCorrect,
-          hintUsed,
-          streakCount: gameState.streak,
-          masteryLevel: gameState.currentWord?.masteryLevel || 0,
-          maxGemRarity: gameState.currentWord?.maxGemRarity as GemRarity || 'legendary',
-          gameMode: gameState.gameMode,
-          difficultyLevel: config.difficulty
-        });
-
-        // 🔍 INSTRUMENTATION: Log gem event result
-        console.log('🔍 [VOCAB TRACKING] Gem event result:', {
-          gemEventExists: !!gemEvent,
-          gemEvent: gemEvent ? {
-            rarity: gemEvent.rarity,
-            xpValue: gemEvent.xpValue,
-            vocabularyId: gemEvent.vocabularyId,
-            wordText: gemEvent.wordText
-          } : null,
-          wasCorrect: isCorrect
-        });
-      } catch (error) {
-        console.error('Failed to record vocabulary interaction:', error);
-      }
-    } else {
-      console.log('🔍 [SRS UPDATE] Skipping SRS update - no gameSessionId provided:', {
-        hasGameSessionId: !!gameSessionId,
-        gameSessionId
-      });
-    }
-  }, [gameState.streak, gameState.gameMode, gameState.currentWord, config.audioEnabled, config.difficulty]);
-
   const addXP = useCallback((points: number) => {
     setTotalXP(prev => prev + points);
     setXpGained(points);

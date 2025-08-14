@@ -54,73 +54,144 @@ export default function VocabularyPracticePage() {
       
       try {
         // Use gems-first system instead of legacy user_vocabulary_progress
-        let query = supabase
+        let gemQuery = supabase
           .from('vocabulary_gem_collection')
           .select(`
             id,
             vocabulary_item_id,
+            centralized_vocabulary_id,
             total_encounters,
             correct_encounters,
             mastery_level,
-            last_encountered_at,
-            centralized_vocabulary!inner(
-              id,
-              word,
-              translation,
-              category,
-              subcategory,
-              language
-            )
+            last_encountered_at
           `)
           .eq('student_id', user.id);
 
         // If a specific item ID was passed, only practice that item
         if (specificItem) {
-          query = query.eq('vocabulary_item_id', specificItem);
+          gemQuery = gemQuery.or(`vocabulary_item_id.eq.${specificItem},centralized_vocabulary_id.eq.${specificItem}`);
         } else {
           // Otherwise, prioritize items that need practice (mastery level < 3 or low encounters)
-          query = query.or(`mastery_level.lt.3,total_encounters.lt.5`);
+          gemQuery = gemQuery.or(`mastery_level.lt.3,total_encounters.lt.5`);
         }
 
-        // Limit to 20 items for a practice session
-        const { data, error } = await query.limit(20);
-        
-        if (error) {
-          console.error('Error fetching practice items:', error);
+        const { data: gemData, error: gemError } = await gemQuery;
+        if (gemError) throw gemError;
+
+        if (!gemData || gemData.length === 0) {
+          setWords([]);
+          setLoading(false);
           return;
         }
-        
-        if (data.length === 0) {
+
+        // Get vocabulary details for all records using both ID systems
+        const vocabularyIds = gemData
+          .map(item => item.vocabulary_item_id || item.centralized_vocabulary_id)
+          .filter(Boolean);
+
+        const { data: vocabularyData, error: vocabError } = await supabase
+          .from('centralized_vocabulary')
+          .select('id, word, translation, category, subcategory, language')
+          .in('id', vocabularyIds);
+
+        if (vocabError) throw vocabError;
+
+        // Create a map for quick vocabulary lookup
+        const vocabularyMap = new Map(
+          vocabularyData?.map(vocab => [vocab.id, vocab]) || []
+        );
+
+        // Combine gem data with vocabulary details
+        const combinedData = gemData
+          .map(gem => {
+            const vocabularyId = gem.vocabulary_item_id || gem.centralized_vocabulary_id;
+            const vocabulary = vocabularyMap.get(vocabularyId);
+
+            if (!vocabulary) return null;
+
+            return {
+              ...gem,
+              centralized_vocabulary: vocabulary
+            };
+          })
+          .filter(Boolean);
+
+        // Transform the combined data into the expected format
+        const practiceData = combinedData.map(item => ({
+          id: item.id,
+          vocabulary_item_id: item.vocabulary_item_id || item.centralized_vocabulary_id,
+          total_encounters: item.total_encounters,
+          correct_encounters: item.correct_encounters,
+          mastery_level: item.mastery_level,
+          last_encountered_at: item.last_encountered_at,
+          centralized_vocabulary: item.centralized_vocabulary
+        }));
+
+        // Limit to 20 items for a practice session
+        const limitedData = practiceData.slice(0, 20);
+
+        if (limitedData.length === 0) {
           // If no items found that match criteria, get any items from gems system
-          const { data: anyItems, error: anyError } = await supabase
+          const { data: fallbackGemData, error: fallbackGemError } = await supabase
             .from('vocabulary_gem_collection')
             .select(`
               id,
               vocabulary_item_id,
+              centralized_vocabulary_id,
               total_encounters,
               correct_encounters,
               mastery_level,
-              last_encountered_at,
-              centralized_vocabulary!inner(
-                id,
-                word,
-                translation,
-                category,
-                subcategory,
-                language
-              )
+              last_encountered_at
             `)
             .eq('student_id', user.id)
             .limit(20);
 
-          if (anyError) {
-            console.error('Error fetching any practice items:', anyError);
+          if (fallbackGemError) {
+            console.error('Error fetching any practice items:', fallbackGemError);
             return;
           }
 
-          processItems(anyItems);
+          if (!fallbackGemData || fallbackGemData.length === 0) {
+            setWords([]);
+            setLoading(false);
+            return;
+          }
+
+          // Get vocabulary details for fallback data
+          const fallbackVocabularyIds = fallbackGemData
+            .map(item => item.vocabulary_item_id || item.centralized_vocabulary_id)
+            .filter(Boolean);
+
+          const { data: fallbackVocabularyData, error: fallbackVocabError } = await supabase
+            .from('centralized_vocabulary')
+            .select('id, word, translation, category, subcategory, language')
+            .in('id', fallbackVocabularyIds);
+
+          if (fallbackVocabError) throw fallbackVocabError;
+
+          // Create a map for quick vocabulary lookup
+          const fallbackVocabularyMap = new Map(
+            fallbackVocabularyData?.map(vocab => [vocab.id, vocab]) || []
+          );
+
+          // Combine fallback gem data with vocabulary details
+          const fallbackCombinedData = fallbackGemData
+            .map(gem => {
+              const vocabularyId = gem.vocabulary_item_id || gem.centralized_vocabulary_id;
+              const vocabulary = fallbackVocabularyMap.get(vocabularyId);
+
+              if (!vocabulary) return null;
+
+              return {
+                ...gem,
+                centralized_vocabulary: vocabulary
+              };
+            })
+            .filter(Boolean);
+
+          processItems(fallbackCombinedData);
         } else {
-          processItems(data);
+          processItems(limitedData);
         }
       } catch (error) {
         console.error('Error in practice items fetching:', error);
@@ -133,7 +204,7 @@ export default function VocabularyPracticePage() {
       // Format items for practice using gems-first data structure
       const processedItems = items.map(item => ({
         progressId: item.id,
-        itemId: item.vocabulary_item_id,
+        itemId: item.vocabulary_item_id || item.centralized_vocabulary_id,
         term: item.centralized_vocabulary.word,
         translation: item.centralized_vocabulary.translation,
         exampleSentence: '', // Not available in centralized_vocabulary table

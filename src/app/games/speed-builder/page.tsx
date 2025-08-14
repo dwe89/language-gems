@@ -69,7 +69,7 @@ export default function SpeedBuilderPage() {
         onBackToAssignments={handleBackToAssignments}
         onBackToMenu={() => router.push('/games/speed-builder')}
       >
-        {({ assignment, vocabulary, onProgressUpdate, onGameComplete }) => {
+        {({ assignment, vocabulary, onProgressUpdate, onGameComplete, gameSessionId }) => {
           // Convert assignment vocabulary to sentence config format
           const assignmentConfig: SentenceSelectionConfig = {
             language: assignment.vocabulary_selection?.language || 'spanish',
@@ -129,6 +129,7 @@ export default function SpeedBuilderPage() {
                 assignmentId={assignmentId}
                 userId={user.id}
                 sentenceConfig={assignmentConfig}
+                gameSessionId={gameSessionId}
                 onOpenSettings={() => {}}
                 onGameEnd={(result) => {
                   console.log('Speed Builder assignment ended:', result);

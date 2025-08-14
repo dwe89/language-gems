@@ -133,24 +133,57 @@ export class EnhancedGameSessionService {
         return null;
       }
 
-      // Award gem for correct sentence
-      const gemEvent = await this.rewardEngine.awardGem(
-        await this.getSessionStudentId(sessionId),
+      // Create gem event using RewardEngine (same pattern as recordWordAttempt)
+      const gemEvent = RewardEngine.createGemEvent(
         gameType,
         {
-          vocabularyId: attempt.sentenceId,
-          wordText: attempt.sourceText,
-          translationText: attempt.targetText,
           responseTimeMs: attempt.responseTimeMs,
-          wasCorrect: attempt.wasCorrect,
-          hintUsed: attempt.hintUsed,
           streakCount: attempt.streakCount,
+          hintUsed: attempt.hintUsed,
+          isTypingMode: attempt.gameMode === 'typing',
+          isDictationMode: attempt.gameMode === 'dictation',
           masteryLevel: attempt.masteryLevel || 1,
-          maxGemRarity: attempt.maxGemRarity || 'rare',
-          gameMode: attempt.gameMode || 'sentence_based',
-          difficultyLevel: attempt.difficultyLevel || 'intermediate'
-        }
+          maxGemRarity: attempt.maxGemRarity || 'rare'
+        },
+        {
+          id: attempt.sentenceId,
+          word: attempt.sourceText,
+          translation: attempt.targetText
+        },
+        attempt.gameMode || 'sentence_based',
+        attempt.difficultyLevel || 'intermediate'
       );
+
+      // Store gem event in database (same pattern as recordWordAttempt)
+      const insertData: any = {
+        session_id: sessionId,
+        student_id: (await this.getSessionStudentId(sessionId)),
+        gem_rarity: gemEvent.rarity,
+        xp_value: gemEvent.xpValue,
+        word_text: gemEvent.wordText,
+        translation_text: gemEvent.translationText,
+        response_time_ms: gemEvent.responseTimeMs,
+        streak_count: gemEvent.streakCount,
+        hint_used: gemEvent.hintUsed,
+        game_type: gemEvent.gameType,
+        game_mode: gemEvent.gameMode,
+        difficulty_level: gemEvent.difficultyLevel
+      };
+
+      // Handle both UUID and integer sentence IDs
+      if (typeof gemEvent.vocabularyId === 'string' && gemEvent.vocabularyId.includes('-')) {
+        // UUID format - use centralized_vocabulary_id
+        insertData.centralized_vocabulary_id = gemEvent.vocabularyId;
+      } else if (gemEvent.vocabularyId) {
+        // Integer format - use legacy vocabulary_id
+        insertData.vocabulary_id = parseInt(gemEvent.vocabularyId.toString());
+      }
+
+      await this.supabase
+        .from('gem_events')
+        .insert(insertData);
+
+      return gemEvent;
 
       return gemEvent;
     } catch (error) {
@@ -165,12 +198,39 @@ export class EnhancedGameSessionService {
   async recordWordAttempt(
     sessionId: string,
     gameType: string,
-    attempt: WordAttempt
+    attempt: WordAttempt,
+    skipSpacedRepetition: boolean = false
   ): Promise<GemEvent | null> {
     try {
       // Always log the word performance
       await this.logWordPerformance(sessionId, attempt);
-      
+
+      // ✅ UPDATE FSRS FOR ALL ANSWERS (both correct and incorrect)
+      if (attempt.vocabularyId && !skipSpacedRepetition) {
+        const studentId = await this.getSessionStudentId(sessionId);
+
+        // 🔍 INSTRUMENTATION: Log SRS update details with full attempt object
+        console.log('🔍 [SRS UPDATE] Starting SRS progress update:', {
+          studentId,
+          vocabularyId: attempt.vocabularyId,
+          vocabularyIdType: typeof attempt.vocabularyId,
+          wasCorrect: attempt.wasCorrect,
+          wasCorrectType: typeof attempt.wasCorrect,
+          responseTimeMs: attempt.responseTimeMs,
+          sessionId,
+          fullAttemptObject: attempt
+        });
+
+        await this.updateSRSProgress(
+          studentId,
+          attempt.vocabularyId,
+          attempt.wasCorrect,
+          attempt.responseTimeMs
+        );
+
+        console.log('🔍 [SRS UPDATE] SRS progress update completed successfully');
+      }
+
       // Only award gems for correct answers in non-assessment modes
       if (!attempt.wasCorrect) {
         return null;
@@ -225,36 +285,10 @@ export class EnhancedGameSessionService {
       await this.supabase
         .from('gem_events')
         .insert(insertData);
-      
-      // Update SRS data if vocabulary ID is available
-      if (attempt.vocabularyId) {
-        const studentId = await this.getSessionStudentId(sessionId);
 
-        // 🔍 INSTRUMENTATION: Log SRS update details
-        console.log('🔍 [SRS UPDATE] Starting SRS progress update:', {
-          studentId,
-          vocabularyId: attempt.vocabularyId,
-          vocabularyIdType: typeof attempt.vocabularyId,
-          wasCorrect: attempt.wasCorrect,
-          responseTimeMs: attempt.responseTimeMs,
-          sessionId
-        });
-
-        await this.updateSRSProgress(
-          studentId,
-          attempt.vocabularyId,
-          attempt.wasCorrect,
-          attempt.responseTimeMs
-        );
-
-        console.log('🔍 [SRS UPDATE] SRS progress update completed successfully');
-      } else {
-        console.log('🔍 [SRS UPDATE] Skipping SRS update - no vocabularyId provided');
-      }
-      
       // Cache gem event for session summary
       this.gemEvents.push(gemEvent);
-      
+
       return gemEvent;
     } catch (error) {
       console.error('Error recording word attempt:', error);
@@ -457,17 +491,17 @@ export class EnhancedGameSessionService {
       const vocabIdString = vocabularyId?.toString();
       if (!vocabIdString) return;
 
-      // Instantiate the SpacedRepetitionService (singleton import was not available)
-      const { SpacedRepetitionService } = await import('../spacedRepetitionService');
-      const srs = new SpacedRepetitionService(this.supabase);
-      await srs.updateProgress(
+      // Use FSRS service instead of legacy SpacedRepetitionService
+      const { FSRSService } = await import('../fsrsService');
+      const fsrs = new FSRSService(this.supabase);
+      await fsrs.updateProgress(
         studentId,
         vocabIdString,
         wasCorrect,
         responseTimeMs
       );
     } catch (error) {
-      console.error('Error updating SRS progress:', error);
+      console.error('Error updating FSRS progress:', error);
     }
   }
   

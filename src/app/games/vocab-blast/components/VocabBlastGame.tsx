@@ -260,8 +260,8 @@ export default function VocabBlastGame({
 
       const responseTime = Date.now() - currentWordStartTime;
 
-      // Record word practice with FSRS system
-      if (!isAssignmentMode) {
+      // Record word practice with FSRS system (works in both assignment and free play modes)
+      if (word) {
         try {
           const wordData = {
             id: word.id || `${word.word}-${word.translation}`,
@@ -298,8 +298,9 @@ export default function VocabBlastGame({
         }
       }
 
-      // Record vocabulary interaction using gems-first system
-      if (gameSessionId) {
+      // Only record gems directly if NOT in assignment mode
+      // In assignment mode, the wrapper handles gem recording to avoid duplicates
+      if (gameSessionId && !isAssignmentMode) {
         try {
           // 🔍 INSTRUMENTATION: Log vocabulary tracking details
           console.log('🔍 [VOCAB TRACKING] Starting vocabulary tracking for word:', {
@@ -324,7 +325,8 @@ export default function VocabBlastGame({
             masteryLevel: 1, // Default mastery for action games
             maxGemRarity: 'rare', // Cap at rare for fast-paced games
             gameMode: 'action_click',
-            difficultyLevel: settings.difficulty
+            difficultyLevel: settings.difficulty,
+            skipSpacedRepetition: true // Skip SRS - FSRS is handling spaced repetition
           });
 
           // 🔍 INSTRUMENTATION: Log gem event result
@@ -346,6 +348,8 @@ export default function VocabBlastGame({
         } catch (error) {
           console.error('Failed to record vocabulary interaction:', error);
         }
+      } else if (isAssignmentMode) {
+        console.log('🔍 [VOCAB TRACKING] Skipping direct gem recording - assignment mode (wrapper will handle gems)');
       } else {
         console.log('🔍 [SRS UPDATE] Skipping SRS update - no gameSessionId provided:', {
           hasGameSessionId: !!gameSessionId,
@@ -412,8 +416,8 @@ export default function VocabBlastGame({
 
       const responseTime = Date.now() - currentWordStartTime;
 
-      // Record word practice with FSRS system for incorrect answer
-      if (!isAssignmentMode && currentWord) {
+      // Record word practice with FSRS system for incorrect answer (works in both assignment and free play modes)
+      if (currentWord) {
         try {
           const wordData = {
             id: currentWord.id || `${currentWord.word}-${currentWord.translation}`,
@@ -442,56 +446,7 @@ export default function VocabBlastGame({
         }
       }
 
-      // Record incorrect vocabulary interaction using gems-first system
-      if (currentWord && gameSessionId) {
-        try {
-          // 🔍 INSTRUMENTATION: Log vocabulary tracking details for incorrect answer
-          console.log('🔍 [VOCAB TRACKING] Starting vocabulary tracking for incorrect word:', {
-            wordId: currentWord.id,
-            wordIdType: typeof currentWord.id,
-            word: currentWord.word,
-            translation: currentWord.translation,
-            isCorrect: false,
-            gameSessionId,
-            responseTimeMs: responseTime
-          });
-
-          const sessionService = new EnhancedGameSessionService();
-          const gemEvent = await sessionService.recordWordAttempt(gameSessionId, 'vocab-blast', {
-            vocabularyId: currentWord.id, // Use UUID directly, not parseInt
-            wordText: currentWord.word,
-            translationText: currentWord.translation,
-            responseTimeMs: responseTime,
-            wasCorrect: false,
-            hintUsed: false, // No hints in vocab-blast
-            streakCount: 0, // Reset streak on incorrect
-            masteryLevel: 0, // Low mastery for incorrect answers
-            maxGemRarity: 'common', // Cap at common for incorrect answers
-            gameMode: 'action_click',
-            difficultyLevel: settings.difficulty
-          });
-
-          // 🔍 INSTRUMENTATION: Log gem event result for incorrect answer
-          console.log('🔍 [VOCAB TRACKING] Gem event result (incorrect):', {
-            gemEventExists: !!gemEvent,
-            gemEvent: gemEvent ? {
-              rarity: gemEvent.rarity,
-              xpValue: gemEvent.xpValue,
-              vocabularyId: gemEvent.vocabularyId,
-              wordText: gemEvent.wordText
-            } : null,
-            wasCorrect: false
-          });
-        } catch (error) {
-          console.error('Failed to record vocabulary interaction:', error);
-        }
-      } else {
-        console.log('🔍 [SRS UPDATE] Skipping SRS update for incorrect answer:', {
-          hasCurrentWord: !!currentWord,
-          hasGameSessionId: !!gameSessionId,
-          gameSessionId
-        });
-      }
+      // FSRS now handles incorrect answer tracking above - no duplicate legacy system needed
 
       // Record vocabulary interaction for assignment mode
       if (isAssignmentMode && currentWord && typeof window !== 'undefined' && (window as any).recordVocabularyInteraction) {

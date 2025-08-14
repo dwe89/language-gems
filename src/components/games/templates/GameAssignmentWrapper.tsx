@@ -67,6 +67,7 @@ export interface GameAssignmentWrapperProps {
     vocabulary: StandardVocabularyItem[];
     onProgressUpdate: (progress: Partial<GameProgress>) => void;
     onGameComplete: (finalProgress: GameProgress) => void;
+    gameSessionId: string | null;
   }) => React.ReactNode;
 }
 
@@ -414,7 +415,121 @@ export default function GameAssignmentWrapper({
 
   const [startTime] = useState(Date.now());
   const [gemSessionService] = useState(() => new EnhancedGameSessionService(supabase));
-  // Session ID will be managed by individual games using EnhancedGameSessionService
+  const [gemSessionId, setGemSessionId] = useState<string | null>(null);
+
+  // Initialize gem session when vocabulary is loaded
+  useEffect(() => {
+    if (vocabulary.length > 0 && (studentId || user?.id) && !gemSessionId) {
+      initializeGemSession();
+    }
+  }, [vocabulary.length, studentId, user?.id, gemSessionId]);
+
+  const initializeGemSession = async () => {
+    try {
+      const sessionId = await gemSessionService.startGameSession({
+        student_id: studentId || user?.id || '',
+        assignment_id: assignmentId,
+        game_type: gameId,
+        session_mode: 'assignment',
+        max_score_possible: 100,
+        session_data: {
+          vocabularyCount: vocabulary.length,
+          assignmentTitle: assignment?.title
+        }
+      });
+
+      setGemSessionId(sessionId);
+      console.log('🔮 [WRAPPER] Gem session started for assignment:', sessionId);
+
+      // Make vocabulary interaction recorder available to games immediately
+      if (typeof window !== 'undefined') {
+        (window as any).recordVocabularyInteraction = async (
+          wordText: string,
+          translationText: string,
+          wasCorrect: boolean,
+          responseTimeMs: number,
+          hintUsed: boolean = false,
+          streakCount: number = 1
+        ) => {
+          const callId = Math.random().toString(36).substr(2, 9);
+          console.log(`🔮 [WRAPPER] recordVocabularyInteraction called [${callId}]:`, {
+            wordText,
+            wasCorrect,
+            gameId,
+            timestamp: new Date().toISOString()
+          });
+          if (gemSessionService && sessionId) {
+            // Try to resolve centralized_vocabulary UUID from the assignment vocabulary list
+            const normalize = (s: string) => (s || '').toString().trim().toLowerCase();
+            const wt = normalize(wordText);
+            const tt = normalize(translationText);
+            let resolvedVocabId: string | undefined = undefined;
+
+            // 🔍 INSTRUMENTATION: Log vocabulary ID resolution attempt
+            console.log('🔍 [VOCAB ID RESOLUTION] Attempting to resolve vocabulary ID:', {
+              wordText,
+              translationText,
+              normalizedWord: wt,
+              normalizedTranslation: tt,
+              vocabularyListLength: vocabulary.length,
+              firstVocabItem: vocabulary[0] ? {
+                id: (vocabulary[0] as any).id,
+                word: (vocabulary[0] as any).word || (vocabulary[0] as any).spanish,
+                translation: (vocabulary[0] as any).translation || (vocabulary[0] as any).english
+              } : null
+            });
+
+            try {
+              // Find exact match by word or translation
+              const match = vocabulary.find((v) => {
+                const vw = normalize((v as any).word || (v as any).spanish || '');
+                const vt = normalize((v as any).translation || (v as any).english || '');
+                return (vw && vw === wt) || (vt && vt === tt);
+              });
+              if (match && (match as any).id) {
+                resolvedVocabId = (match as any).id;
+              }
+
+              // 🔍 INSTRUMENTATION: Log resolution result
+              console.log('🔍 [VOCAB ID RESOLUTION] Resolution result:', {
+                matchFound: !!match,
+                resolvedVocabId,
+                matchedItem: match ? {
+                  id: (match as any).id,
+                  word: (match as any).word || (match as any).spanish,
+                  translation: (match as any).translation || (match as any).english
+                } : null
+              });
+            } catch (e) {
+              console.warn('Failed to resolve vocabulary ID from assignment list:', e);
+            }
+
+            const gemEvent = await gemSessionService.recordWordAttempt(sessionId, gameId, {
+              vocabularyId: resolvedVocabId, // Use UUID when we can resolve it
+              wordText,
+              translationText,
+              responseTimeMs,
+              wasCorrect,
+              hintUsed,
+              streakCount,
+              masteryLevel: 1, // Default mastery level
+              maxGemRarity: 'common', // Cap at common for luck-based games like memory
+              gameMode: 'assignment'
+            });
+
+            // Show gem feedback if gem was awarded
+            if (gemEvent && wasCorrect) {
+              console.log(`🔮 ${gameId} earned ${gemEvent.rarity} gem (${gemEvent.xpValue} XP) for "${wordText}"`);
+            }
+          }
+        };
+
+        console.log('🔮 [WRAPPER] recordVocabularyInteraction function set up for assignment games');
+      }
+    } catch (error) {
+      console.error('🔮 [WRAPPER] Failed to initialize gem session:', error);
+    }
+  };
 
   // Update progress handler
   const handleProgressUpdate = (progress: Partial<GameProgress>) => {
@@ -463,148 +578,61 @@ export default function GameAssignmentWrapper({
         safeGameAccuracy
       });
       
-      const { error: gameProgressError } = await supabase
-        .from('assignment_game_progress')
-        .upsert({
-          assignment_id: assignmentId,
-          student_id: studentId,
-          game_id: gameId,
-          status: 'completed',
-          score: safeGameScore,
-          max_score: finalProgress.maxScore || 100,
-          accuracy: safeGameAccuracy,
-          words_completed: finalProgress.wordsCompleted || 0,
-          total_words: finalProgress.totalWords || vocabulary.length,
-          time_spent: Math.floor((Date.now() - startTime) / 1000),
-          attempts_count: 1,
-          completed_at: new Date().toISOString(),
-          session_data: finalProgress.sessionData || {}
-        }, {
-          onConflict: 'assignment_id,student_id,game_id',
-          ignoreDuplicates: false
-        });
-
-      if (gameProgressError) {
-        console.error('Error updating game progress:', gameProgressError);
-      } else {
-        console.log('Individual game progress saved successfully');
-
-        // Integrate with gem system for assignment games
-        try {
-          const sessionId = await gemSessionService.startGameSession({
+      // Save assignment progress to database
+      try {
+        const { error: gameProgressError } = await supabase
+          .from('assignment_game_progress')
+          .upsert({
+            assignment_id: assignmentId,
             student_id: studentId,
-            assignment_id: assignmentId,
-            game_type: gameId,
-            session_mode: 'assignment',
-            final_score: finalProgress.score || 0,
-            accuracy_percentage: finalProgress.accuracy || 0,
-            completion_percentage: 100, // Assignment game is completed
-            words_attempted: finalProgress.totalWords || vocabulary.length,
-            words_correct: finalProgress.wordsCompleted || 0,
-            unique_words_practiced: finalProgress.wordsCompleted || 0,
-            duration_seconds: Math.floor((Date.now() - startTime) / 1000),
+            game_id: gameId,
+            status: 'completed',
+            score: safeGameScore,
+            max_score: finalProgress.maxScore || 100,
+            accuracy: safeGameAccuracy,
+            words_completed: finalProgress.wordsCompleted || 0,
+            total_words: finalProgress.totalWords || vocabulary.length,
+            time_spent: Math.floor((Date.now() - startTime) / 1000),
+            attempts_count: 1,
+            completed_at: new Date().toISOString(),
             session_data: finalProgress.sessionData || {}
+          }, {
+            onConflict: 'assignment_id,student_id,game_id',
+            ignoreDuplicates: false
           });
 
-          console.log('🔮 Started gem session for assignment game:', sessionId);
+        if (gameProgressError) {
+          console.error('Error updating game progress:', gameProgressError);
+        } else {
+          console.log('Individual game progress saved successfully');
 
-          // Gems should be recorded by individual games during vocabulary interactions
-          // For games not yet updated to use recordWordAttempt(), create a helper function
+          // Integrate with gem system for assignment games
+          if (gemSessionId) {
+            try {
+              // End the existing gem session
+              await gemSessionService.endGameSession(gemSessionId, {
+                student_id: studentId || user?.id || '',
+                assignment_id: assignmentId,
+                game_type: gameId,
+                session_mode: 'assignment',
+                final_score: finalProgress.score || 0,
+                accuracy_percentage: finalProgress.accuracy || 0,
+                completion_percentage: 100,
+                words_attempted: finalProgress.totalWords || vocabulary.length,
+                words_correct: finalProgress.wordsCompleted || 0,
+                unique_words_practiced: finalProgress.wordsCompleted || 0,
+                duration_seconds: Math.floor((Date.now() - startTime) / 1000),
+                session_data: finalProgress.sessionData || {}
+              });
 
-          // Make vocabulary interaction recorder available to games
-          if (typeof window !== 'undefined') {
-            (window as any).recordVocabularyInteraction = async (
-              wordText: string,
-              translationText: string,
-              wasCorrect: boolean,
-              responseTimeMs: number,
-              hintUsed: boolean = false,
-              streakCount: number = 1
-            ) => {
-              if (gemSessionService && sessionId) {
-                // Try to resolve centralized_vocabulary UUID from the assignment vocabulary list
-                const normalize = (s: string) => (s || '').toString().trim().toLowerCase();
-                const wt = normalize(wordText);
-                const tt = normalize(translationText);
-                let resolvedVocabId: string | undefined = undefined;
-
-                // 🔍 INSTRUMENTATION: Log vocabulary ID resolution attempt
-                console.log('🔍 [VOCAB ID RESOLUTION] Attempting to resolve vocabulary ID:', {
-                  wordText,
-                  translationText,
-                  normalizedWord: wt,
-                  normalizedTranslation: tt,
-                  vocabularyListLength: vocabulary.length,
-                  firstVocabItem: vocabulary[0] ? {
-                    id: (vocabulary[0] as any).id,
-                    word: (vocabulary[0] as any).word || (vocabulary[0] as any).spanish,
-                    translation: (vocabulary[0] as any).translation || (vocabulary[0] as any).english
-                  } : null
-                });
-
-                try {
-                  // Find exact match by word or translation
-                  const match = vocabulary.find((v) => {
-                    const vw = normalize((v as any).word || (v as any).spanish || '');
-                    const vt = normalize((v as any).translation || (v as any).english || '');
-                    return (vw && vw === wt) || (vt && vt === tt);
-                  });
-                  if (match && (match as any).id) {
-                    resolvedVocabId = (match as any).id;
-                  }
-
-                  // 🔍 INSTRUMENTATION: Log resolution result
-                  console.log('🔍 [VOCAB ID RESOLUTION] Resolution result:', {
-                    matchFound: !!match,
-                    resolvedVocabId,
-                    matchedItem: match ? {
-                      id: (match as any).id,
-                      word: (match as any).word || (match as any).spanish,
-                      translation: (match as any).translation || (match as any).english
-                    } : null
-                  });
-                } catch (e) {
-                  console.warn('Failed to resolve vocabulary ID from assignment list:', e);
-                }
-
-                await gemSessionService.recordWordAttempt(sessionId, gameId, {
-                  vocabularyId: resolvedVocabId, // Use UUID when we can resolve it
-                  wordText,
-                  translationText,
-                  responseTimeMs,
-                  wasCorrect,
-                  hintUsed,
-                  streakCount,
-                  masteryLevel: 1, // Default mastery level
-                  maxGemRarity: 'rare', // Default max rarity to prevent grinding
-                  gameMode: 'assignment'
-                });
-              }
-            };
+              console.log('🔮 [WRAPPER] Gem session completed for assignment game');
+            } catch (error) {
+              console.error('🔮 [WRAPPER] Failed to end gem session:', error);
+            }
           }
-
-          // End the gem session
-          await gemSessionService.endGameSession(sessionId, {
-            student_id: studentId || user?.id || '',
-            assignment_id: assignmentId,
-            game_type: gameId,
-            session_mode: 'assignment',
-            final_score: finalProgress.score || 0,
-            accuracy_percentage: finalProgress.accuracy || 0,
-            completion_percentage: 100,
-            words_attempted: finalProgress.totalWords || vocabulary.length,
-            words_correct: finalProgress.wordsCompleted || 0,
-            unique_words_practiced: finalProgress.wordsCompleted || 0,
-            duration_seconds: Math.floor((Date.now() - startTime) / 1000),
-            session_data: finalProgress.sessionData || {}
-          });
-
-          console.log('🔮 Gem session completed for assignment game');
-
-        } catch (gemError) {
-          console.error('Error with gem system for assignment game:', gemError);
-          // Continue with assignment tracking even if gems fail
         }
+      } catch (err) {
+        console.error('Error updating assignment progress:', err);
       }
 
       // Check if all games in the assignment are completed
@@ -788,7 +816,8 @@ export default function GameAssignmentWrapper({
           assignment,
           vocabulary,
           onProgressUpdate: handleProgressUpdate,
-          onGameComplete: handleGameComplete
+          onGameComplete: handleGameComplete,
+          gameSessionId: gemSessionId
         })}
       </div>
     </div>

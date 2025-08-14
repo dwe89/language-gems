@@ -27,6 +27,7 @@ interface VocabBlastGameWrapperProps {
   isAssignmentMode?: boolean;
   categoryVocabulary?: any[]; // Assignment vocabulary
   onOpenSettings?: () => void; // Optional settings callback
+  gameSessionId?: string | null;
 }
 
 // Language mapping function
@@ -69,6 +70,9 @@ export default function VocabBlastGameWrapper(props: VocabBlastGameWrapperProps)
   // Enhanced game service integration
   const [gameService, setGameService] = useState<EnhancedGameService | null>(null);
   const [gameSessionId, setGameSessionId] = useState<string | null>(null);
+
+  // Use assignment gameSessionId when provided, otherwise use own session
+  const effectiveGameSessionId = props.assignmentId ? props.gameSessionId : gameSessionId;
 
   // Initialize game service
   useEffect(() => {
@@ -138,12 +142,12 @@ export default function VocabBlastGameWrapper(props: VocabBlastGameWrapperProps)
     }
   }, [vocabulary, vocabularyLoading, props.categoryVocabulary]);
 
-  // Start game session when vocabulary is loaded
+  // Start game session when vocabulary is loaded (only for free play mode)
   useEffect(() => {
-    if (gameService && props.userId && gameVocabulary.length > 0 && !gameSessionId) {
+    if (gameService && props.userId && gameVocabulary.length > 0 && !gameSessionId && !props.assignmentId) {
       startGameSession();
     }
-  }, [gameService, props.userId, gameVocabulary, gameSessionId]);
+  }, [gameService, props.userId, gameVocabulary, gameSessionId, props.assignmentId]);
 
   const startGameSession = async () => {
     if (!gameService || !props.userId) return;
@@ -188,13 +192,13 @@ export default function VocabBlastGameWrapper(props: VocabBlastGameWrapperProps)
     detailedStats?: any;
   }) => {
     // Log word-level performance data if available
-    if (gameService && gameSessionId && result.detailedStats?.wordAttempts) {
+    if (gameService && effectiveGameSessionId && result.detailedStats?.wordAttempts) {
       try {
         for (const wordAttempt of result.detailedStats.wordAttempts) {
           const vocabularyItem = gameVocabulary.find(v => v.word.toLowerCase() === wordAttempt.word.toLowerCase());
 
           await gameService.logWordPerformance({
-            session_id: gameSessionId,
+            session_id: effectiveGameSessionId!,
             vocabulary_id: vocabularyItem?.id ? parseInt(vocabularyItem.id) : undefined,
             word_text: wordAttempt.word,
             translation_text: wordAttempt.translation,
@@ -234,8 +238,8 @@ export default function VocabBlastGameWrapper(props: VocabBlastGameWrapperProps)
       }
     }
 
-    // End game session if it exists
-    if (gameService && gameSessionId && props.userId) {
+    // End game session if it exists (only for free play mode - assignment mode handled by wrapper)
+    if (gameService && effectiveGameSessionId && props.userId && !props.assignmentId) {
       try {
         const accuracy = result.accuracy || (result.wordsLearned > 0 ? (result.wordsLearned / (result.totalAttempts || gameVocabulary.length)) * 100 : 0);
         const finalScore = result.score;
@@ -249,7 +253,7 @@ export default function VocabBlastGameWrapper(props: VocabBlastGameWrapperProps)
           totalXP += RewardEngine.getXPValue('legendary'); // Speed demon bonus
         }
 
-        await gameService.endGameSession(gameSessionId, {
+        await gameService.endGameSession(effectiveGameSessionId!, {
           student_id: props.userId,
           final_score: finalScore,
           accuracy_percentage: accuracy,
@@ -360,7 +364,7 @@ export default function VocabBlastGameWrapper(props: VocabBlastGameWrapperProps)
       vocabulary={gameVocabulary}
       onBackToMenu={props.onBackToMenu}
       onGameEnd={handleEnhancedGameEnd}
-      gameSessionId={gameSessionId}
+      gameSessionId={effectiveGameSessionId}
       isAssignmentMode={props.isAssignmentMode}
       onOpenSettings={props.onOpenSettings}
     />

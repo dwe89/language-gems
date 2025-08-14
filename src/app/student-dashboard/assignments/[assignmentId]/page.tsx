@@ -149,7 +149,16 @@ export default function StudentAssignmentDetailPage() {
           'word-guesser': { name: 'Word Guesser', description: 'Guess words based on definitions and clues' },
           'sentence-towers': { name: 'Sentence Towers', description: 'Build towers by constructing sentences' },
           'sentence-builder': { name: 'Sentence Builder', description: 'Drag and drop words to build sentences' },
-          'word-association': { name: 'Word Association', description: 'Connect related words and concepts' }
+          'word-association': { name: 'Word Association', description: 'Connect related words and concepts' },
+          'detective-listening': { name: 'Detective Listening', description: 'Listen and translate audio clues' }, 
+          'case-file-translator': { name: 'Case File Translator', description: 'Translate words to solve mysteries' },
+          'lava-temple-word-restore': { name: 'Lava Temple Word Restore', description: 'Restore words in a temple setting' },
+          'verb-quest': { name: 'Verb Quest', description: 'Embark on quests to master verb conjugations' },
+          'vocab-master': { name: 'Vocab Master', description: 'Master vocabulary through spaced repetition' },
+          'noughts-and-crosses': { name: 'Noughts & Crosses', description: 'Strategic gameplay with vocabulary questions' }
+      
+    
+          
         };
 
         let games: any[] = [];

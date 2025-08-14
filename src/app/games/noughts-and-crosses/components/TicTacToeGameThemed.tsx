@@ -645,8 +645,11 @@ export default function TicTacToeGame({
     const options = [randomWord.translation, ...wrongOptions].sort(() => 0.5 - Math.random());
     const correctIndex = options.indexOf(randomWord.translation);
     
+    // Ensure vocabulary ID is properly preserved
+    const vocabularyId = (randomWord as any).id || randomWord.id;
+
     const question = {
-      id: (randomWord as any).id, // Include UUID for vocabulary tracking
+      id: vocabularyId, // Include UUID for vocabulary tracking
       word: randomWord.word,
       translation: randomWord.translation,
       options: options,
@@ -656,6 +659,16 @@ export default function TicTacToeGame({
       playAudio: (randomWord as any).playAudio, // Include playAudio function if available
       vocabularyWord: randomWord // Include full vocabulary word for audio playback
     };
+
+    // 🔍 INSTRUMENTATION: Debug question creation
+    console.log('🔍 [QUESTION CREATE] Question object created:', {
+      questionId: question.id,
+      questionIdType: typeof question.id,
+      randomWordId: (randomWord as any).id,
+      randomWordIdType: typeof (randomWord as any).id,
+      vocabularyId,
+      vocabularyIdType: typeof vocabularyId
+    });
     
     return question;
   };
@@ -712,45 +725,78 @@ export default function TicTacToeGame({
     const isCorrect = selectedIndex === currentQuestion.correctIndex;
     const responseTime = (Date.now() - questionStartTime) / 1000;
 
-    // Record word practice with FSRS system
-    if (!isAssignmentMode && currentQuestion) {
+    // Record word practice with FSRS system (for both assignment and free play modes)
+    // BUT ONLY if this is NOT a retry question to avoid double recording
+    if (currentQuestion && !(currentQuestion as any).isRetryQuestion) {
       try {
+        // 🔍 INSTRUMENTATION: Debug vocabulary ID passing
+        console.log('🔍 [FSRS DEBUG] Current question data:', {
+          currentQuestionId: currentQuestion.id,
+          currentQuestionIdType: typeof currentQuestion.id,
+          currentQuestionWord: currentQuestion.word,
+          currentQuestionTranslation: currentQuestion.translation
+        });
+
+        // Ensure vocabulary ID is properly preserved - use multiple fallbacks
+        const vocabularyId = currentQuestion.id ||
+                           (currentQuestion as any).vocabularyId ||
+                           (currentQuestion.vocabularyWord as any)?.id ||
+                           null;
+
+        if (!vocabularyId) {
+          console.error('🚨 [FSRS ERROR] No vocabulary ID found for word:', {
+            currentQuestion,
+            currentQuestionKeys: Object.keys(currentQuestion),
+            vocabularyWord: (currentQuestion as any).vocabularyWord
+          });
+        }
+
         const wordData = {
-          id: currentQuestion.id || `noughts-${currentQuestion.word}`,
+          id: vocabularyId,
           word: currentQuestion.word,
           translation: currentQuestion.translation,
           language: settings.language === 'spanish' ? 'es' : settings.language === 'french' ? 'fr' : 'en'
         };
 
-        // Calculate confidence for luck-based game (lower confidence due to guessing)
-        const baseConfidence = isCorrect ? 0.4 : 0.2; // Lower confidence for multiple choice
-        const speedBonus = responseTime < 3 ? 0.1 : responseTime < 5 ? 0.05 : 0;
-        const confidence = Math.max(0.1, Math.min(0.6, baseConfidence + speedBonus)); // Cap at 0.6 for luck-based
+        console.log('🔍 [FSRS DEBUG] Word data being passed to FSRS:', wordData);
 
-        // Record practice with FSRS
-        const fsrsResult = await recordWordPractice(
-          wordData,
-          isCorrect,
-          responseTime * 1000, // Convert to milliseconds
-          confidence
-        );
+        // Only proceed with FSRS if we have a valid vocabulary ID
+        if (!vocabularyId) {
+          console.error('🚨 [FSRS ERROR] Skipping FSRS - no vocabulary ID available');
+        } else {
+          // Calculate confidence for luck-based game (lower confidence due to guessing)
+          const baseConfidence = isCorrect ? 0.4 : 0.2; // Lower confidence for multiple choice
+          const speedBonus = responseTime < 3 ? 0.1 : responseTime < 5 ? 0.05 : 0;
+          const confidence = Math.max(0.1, Math.min(0.6, baseConfidence + speedBonus)); // Cap at 0.6 for luck-based
 
-        if (fsrsResult) {
-          console.log(`FSRS recorded for noughts-and-crosses "${currentQuestion.word}":`, {
-            algorithm: fsrsResult.algorithm,
-            points: fsrsResult.points,
-            nextReview: fsrsResult.nextReviewDate,
-            interval: fsrsResult.interval,
-            masteryLevel: fsrsResult.masteryLevel
-          });
+          // Record practice with FSRS (works in both assignment and free play modes)
+          const fsrsResult = await recordWordPractice(
+            wordData,
+            isCorrect,
+            responseTime * 1000, // Convert to milliseconds
+            confidence
+          );
+
+          if (fsrsResult) {
+            console.log(`FSRS recorded for noughts-and-crosses "${currentQuestion.word}":`, {
+              algorithm: fsrsResult.algorithm,
+              points: fsrsResult.points,
+              nextReview: fsrsResult.nextReviewDate,
+              interval: fsrsResult.interval,
+              masteryLevel: fsrsResult.masteryLevel
+            });
+          }
         }
       } catch (error) {
         console.error('Error recording FSRS practice for noughts-and-crosses:', error);
       }
+    } else if ((currentQuestion as any).isRetryQuestion) {
+      console.log('🔍 [FSRS SKIP] Skipping FSRS recording for retry question to avoid double counting');
     }
 
     // Record vocabulary interaction using gems-first system
-    if (gameService && gameSessionId) {
+    // ONLY for non-retry questions to avoid double recording
+    if (gameService && gameSessionId && !(currentQuestion as any).isRetryQuestion) {
       try {
         // 🔍 INSTRUMENTATION: Log vocabulary tracking details
         console.log('🔍 [VOCAB TRACKING] Starting vocabulary tracking for word:', {
@@ -763,37 +809,44 @@ export default function TicTacToeGame({
           responseTimeMs: Math.round(responseTime * 1000)
         });
 
-        // Use EnhancedGameSessionService for gems-first vocabulary tracking
-        const sessionService = new EnhancedGameSessionService();
-        const gemEvent = await sessionService.recordWordAttempt(gameSessionId, 'noughts-and-crosses', {
-          vocabularyId: currentQuestion.id, // Use UUID directly, not parseInt
-          wordText: currentQuestion.word,
-          translationText: currentQuestion.translation,
-          responseTimeMs: Math.round(responseTime * 1000),
-          wasCorrect: isCorrect,
-          hintUsed: false, // No hints in noughts-and-crosses
-          streakCount: correctAnswers + (isCorrect ? 1 : 0),
-          masteryLevel: 1, // Default mastery level for luck-based games
-          maxGemRarity: 'common', // Cap at common for luck-based games
-          gameMode: 'multiple_choice',
-          difficultyLevel: 'beginner'
-        });
+        // Only record gems directly if NOT in assignment mode
+        // In assignment mode, the wrapper handles gem recording to avoid duplicates
+        if (!isAssignmentMode) {
+          // Use EnhancedGameSessionService for gems-first vocabulary tracking
+          // Skip spaced repetition since FSRS is already handling it
+          const sessionService = new EnhancedGameSessionService();
+          const gemEvent = await sessionService.recordWordAttempt(gameSessionId, 'noughts-and-crosses', {
+            vocabularyId: currentQuestion.id, // Use UUID directly, not parseInt
+            wordText: currentQuestion.word,
+            translationText: currentQuestion.translation,
+            responseTimeMs: Math.round(responseTime * 1000),
+            wasCorrect: isCorrect,
+            hintUsed: false, // No hints in noughts-and-crosses
+            streakCount: correctAnswers + (isCorrect ? 1 : 0),
+            masteryLevel: 1, // Default mastery level for luck-based games
+            maxGemRarity: 'common', // Cap at common for luck-based games
+            gameMode: 'multiple_choice',
+            difficultyLevel: 'beginner'
+          }, true); // Skip spaced repetition - FSRS handles it
 
-        // 🔍 INSTRUMENTATION: Log gem event result
-        console.log('🔍 [VOCAB TRACKING] Gem event result:', {
-          gemEventExists: !!gemEvent,
-          gemEvent: gemEvent ? {
-            rarity: gemEvent.rarity,
-            xpValue: gemEvent.xpValue,
-            vocabularyId: gemEvent.vocabularyId,
-            wordText: gemEvent.wordText
-          } : null,
-          wasCorrect: isCorrect
-        });
+          // 🔍 INSTRUMENTATION: Log gem event result
+          console.log('🔍 [VOCAB TRACKING] Gem event result:', {
+            gemEventExists: !!gemEvent,
+            gemEvent: gemEvent ? {
+              rarity: gemEvent.rarity,
+              xpValue: gemEvent.xpValue,
+              vocabularyId: gemEvent.vocabularyId,
+              wordText: gemEvent.wordText
+            } : null,
+            wasCorrect: isCorrect
+          });
 
-        // Show gem feedback if correct and gem was awarded
-        if (gemEvent && isCorrect) {
-          console.log(`🔮 Noughts & Crosses earned ${gemEvent.rarity} gem (${gemEvent.xpValue} XP) for "${currentQuestion.word}"`);
+          // Show gem feedback if correct and gem was awarded
+          if (gemEvent && isCorrect) {
+            console.log(`🔮 Noughts & Crosses earned ${gemEvent.rarity} gem (${gemEvent.xpValue} XP) for "${currentQuestion.word}"`);
+          }
+        } else {
+          console.log('🔍 [VOCAB TRACKING] Skipping direct gem recording - assignment mode (wrapper will handle gems)');
         }
 
         // Also log to word_performance_logs for legacy compatibility (non-assignment mode only)
@@ -830,22 +883,17 @@ export default function TicTacToeGame({
       } catch (error) {
         console.error('Failed to record vocabulary interaction:', error);
       }
+    } else if ((currentQuestion as any).isRetryQuestion) {
+      console.log('🔍 [GEM SKIP] Skipping gem recording for retry question to avoid double counting');
     }
 
-    // Record vocabulary interaction for assignment mode
-    if (isAssignmentMode && typeof window !== 'undefined' && (window as any).recordVocabularyInteraction) {
-      try {
-        await (window as any).recordVocabularyInteraction(
-          currentQuestion.word,
-          currentQuestion.translation,
-          isCorrect,
-          Math.round(responseTime * 1000), // responseTimeMs
-          false, // hintUsed
-          correctAnswers + (isCorrect ? 1 : 0) // streakCount
-        );
-      } catch (error) {
-        console.error('Failed to record vocabulary interaction for assignment:', error);
-      }
+    // Skip assignment wrapper recording since FSRS already handles vocabulary tracking
+    // The assignment wrapper's recordVocabularyInteraction calls the same atomic database function
+    // that FSRS uses, causing double counting. FSRS is now the primary system.
+    if (isAssignmentMode && !(currentQuestion as any).isRetryQuestion) {
+      console.log('🔍 [ASSIGNMENT SKIP] Skipping assignment wrapper recording - FSRS already handled vocabulary tracking');
+    } else if ((currentQuestion as any).isRetryQuestion) {
+      console.log('🔍 [ASSIGNMENT SKIP] Skipping assignment recording for retry question to avoid double counting');
     }
 
     if (isCorrect) {
@@ -879,8 +927,12 @@ export default function TicTacToeGame({
       
       // Wrong answer - computer gets a turn or player tries again depending on difficulty
       if (settings.difficulty === 'beginner') {
-        // Give player another chance on beginner
+        // Give player another chance on beginner - but mark it as a retry question
         const newQuestion = generateVocabularyQuestion();
+        if (newQuestion) {
+          // Mark as retry to prevent double FSRS recording
+          (newQuestion as any).isRetryQuestion = true;
+        }
         setCurrentQuestion(newQuestion);
         setTotalQuestions(prev => prev + 1);
         setCumulativeTotalQuestions(prev => prev + 1); // Track cumulative questions for retry

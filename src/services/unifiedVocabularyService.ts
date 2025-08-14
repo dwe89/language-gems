@@ -12,7 +12,8 @@ export interface VocabularyStats {
 
 export interface VocabularyItem {
   id: string;
-  vocabularyItemId: string;
+  vocabularyItemId: string | null; // Can be null for centralized vocabulary
+  actualVocabularyId: string; // The actual vocabulary ID to use for queries
   word: string;
   translation: string;
   category: string;
@@ -41,11 +42,13 @@ export class UnifiedVocabularyService {
     items: VocabularyItem[];
     stats: VocabularyStats;
   }> {
-    const { data: rawData, error } = await this.supabase
+    // Get all vocabulary gem collection records for the student
+    const { data: gemData, error: gemError } = await this.supabase
       .from('vocabulary_gem_collection')
       .select(`
         id,
         vocabulary_item_id,
+        centralized_vocabulary_id,
         total_encounters,
         correct_encounters,
         mastery_level,
@@ -53,22 +56,62 @@ export class UnifiedVocabularyService {
         next_review_at,
         fsrs_difficulty,
         fsrs_stability,
-        fsrs_retrievability,
-        centralized_vocabulary!vocabulary_gem_collection_vocabulary_item_id_fkey(
-          id,
-          word,
-          translation,
-          category,
-          subcategory,
-          curriculum_level,
-          language
-        )
+        fsrs_retrievability
       `)
       .eq('student_id', studentId);
 
-    if (error) {
-      throw error;
+    if (gemError) {
+      throw gemError;
     }
+
+    if (!gemData || gemData.length === 0) {
+      return {
+        items: [],
+        stats: {
+          totalWords: 0,
+          masteredWords: 0,
+          strugglingWords: 0,
+          overdueWords: 0,
+          averageAccuracy: 0,
+          memoryStrength: 0,
+          wordsReadyForReview: 0
+        }
+      };
+    }
+
+    // Get vocabulary details for all records using both ID systems
+    const vocabularyIds = gemData
+      .map(item => item.vocabulary_item_id || item.centralized_vocabulary_id)
+      .filter(Boolean);
+
+    const { data: vocabularyData, error: vocabError } = await this.supabase
+      .from('centralized_vocabulary')
+      .select('id, word, translation, category, subcategory, curriculum_level, language')
+      .in('id', vocabularyIds);
+
+    if (vocabError) {
+      throw vocabError;
+    }
+
+    // Create a map for quick vocabulary lookup
+    const vocabularyMap = new Map(
+      vocabularyData?.map(vocab => [vocab.id, vocab]) || []
+    );
+
+    // Combine gem data with vocabulary details
+    const rawData = gemData
+      .map(gem => {
+        const vocabularyId = gem.vocabulary_item_id || gem.centralized_vocabulary_id;
+        const vocabulary = vocabularyMap.get(vocabularyId);
+
+        if (!vocabulary) return null;
+
+        return {
+          ...gem,
+          centralized_vocabulary: vocabulary
+        };
+      })
+      .filter(Boolean);
 
     const now = new Date();
     const today = new Date();
@@ -88,7 +131,8 @@ export class UnifiedVocabularyService {
 
       return {
         id: item.id,
-        vocabularyItemId: item.vocabulary_item_id,
+        vocabularyItemId: item.vocabulary_item_id || item.centralized_vocabulary_id, // Use either ID system
+        actualVocabularyId: item.vocabulary_item_id || item.centralized_vocabulary_id, // The actual vocabulary ID for queries
         word: item.centralized_vocabulary.word,
         translation: item.centralized_vocabulary.translation,
         category: item.centralized_vocabulary.category,

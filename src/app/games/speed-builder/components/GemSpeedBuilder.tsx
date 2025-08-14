@@ -893,38 +893,30 @@ const GemSpeedBuilderInternal: React.FC<{
 
       // Record vocabulary interaction using gems-first system
       if (gameSessionId) {
-        try {
-          const sessionService = new EnhancedGameSessionService();
-          const gemEvent = await sessionService.recordWordAttempt(gameSessionId, 'speed-builder', {
-            vocabularyId: word.id, // Use UUID directly, not parseInt
-            wordText: word.text,
-            translationText: word.translation || word.text,
-            responseTimeMs: responseTime,
-            wasCorrect: isCorrect,
-            hintUsed: false, // No hints in speed-builder
-            streakCount: stats.streak,
-            masteryLevel: isCorrect ? 2 : 0, // Higher mastery for correct placements
-            maxGemRarity: 'rare', // Cap at rare for sentence building
-            gameMode: 'sentence_building',
-            difficultyLevel: 'intermediate',
-            contextData: {
-              placedPosition: targetIndex,
-              correctPosition: word.correctPosition,
-              sentenceContext: currentSentence?.text,
-              wordPlacementSpeed: responseTime > 0 ? 1000 / responseTime : 0,
-              gameType: 'gem-speed-builder',
-              sentenceIndex: currentSentenceIndex,
-              totalSentences: availableSentences.length
+        (async () => {
+          try {
+            const sessionService = new EnhancedGameSessionService();
+            const gemEvent = await sessionService.recordWordAttempt(gameSessionId, 'speed-builder', {
+              vocabularyId: word.id, // Use UUID directly, not parseInt
+              wordText: word.text,
+              translationText: word.translation || word.text,
+              responseTimeMs: responseTime,
+              wasCorrect: isCorrect,
+              hintUsed: false, // No hints in speed-builder
+              streakCount: stats.streak,
+              masteryLevel: isCorrect ? 2 : 0, // Higher mastery for correct placements
+              maxGemRarity: 'rare', // Cap at rare for sentence building
+              gameMode: 'sentence_building',
+              difficultyLevel: 'intermediate',
+              skipSpacedRepetition: true, // Skip SRS - FSRS is handling spaced repetition
+            });
+            if (gemEvent) {
+              console.log('Gem event:', gemEvent);
             }
-          });
-
-          // Show gem feedback if gem was awarded
-          if (gemEvent && isCorrect) {
-            console.log(`🔮 Speed Builder earned ${gemEvent.rarity} gem (${gemEvent.xpValue} XP) for "${word.text}"`);
+          } catch (err) {
+            console.error('Error recording gem event:', err);
           }
-        } catch (error) {
-          console.error('Failed to record vocabulary interaction:', error);
-        }
+        })();
       }
 
       // Log word placement performance (legacy system)
@@ -992,8 +984,8 @@ const GemSpeedBuilderInternal: React.FC<{
     setShowSentenceResult(true);
 
     if (isCorrect) {
-      // Record word practice with FSRS system for each correctly placed word
-      if (!assignmentId && currentSentence) {
+      // Record word practice with FSRS system for each correctly placed word (works in both assignment and free play modes)
+      if (currentSentence) {
         try {
           const sentenceCompletionTime = Date.now() - (sentenceStartTime || Date.now());
           const averageWordTime = sentenceCompletionTime / wordsArray.length;
@@ -1553,4 +1545,4 @@ export const GemSpeedBuilder: React.FC<{
       <GemSpeedBuilderInternal {...props} />
     </SoundProvider>
   );
-}; 
+};

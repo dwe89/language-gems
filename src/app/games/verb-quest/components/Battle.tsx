@@ -4,6 +4,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getRandomVerb, getRandomPronoun, generateWrongAnswers, getVerbConjugation } from './VerbDataEnhanced';
 import { Character } from './Character';
+import { useUnifiedSpacedRepetition } from '../../../../hooks/useUnifiedSpacedRepetition';
+import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
 
 interface BattleProps {
   enemy: {
@@ -49,6 +51,9 @@ interface BattleQuestion {
 }
 
 export default function Battle({ enemy, region, character, onBattleEnd, soundEnabled, onVerbConjugation }: BattleProps) {
+  // Initialize FSRS spaced repetition system
+  const { recordWordPractice, algorithm } = useUnifiedSpacedRepetition('verb-quest');
+
   const [enemyHealth, setEnemyHealth] = useState(enemy.health);
   const [playerHealth, setPlayerHealth] = useState(character.stats.health);
   const [currentQuestion, setCurrentQuestion] = useState<BattleQuestion | null>(null);
@@ -132,6 +137,50 @@ export default function Battle({ enemy, region, character, onBattleEnd, soundEna
 
     const isCorrect = answer === currentQuestion.correctAnswer;
     const responseTime = questionStartTime > 0 ? Date.now() - questionStartTime : 0;
+
+    // Record verb conjugation practice with FSRS system
+    if (currentQuestion) {
+      (async () => {
+        try {
+          const wordData = {
+            id: `${currentQuestion.verb.infinitive}-${currentQuestion.tense}-${currentQuestion.pronoun}`,
+            word: currentQuestion.verb.infinitive,
+            translation: currentQuestion.verb.english,
+            language: 'es' // Assuming Spanish
+          };
+
+          // Calculate confidence based on response time, enemy difficulty, and character level
+          const baseConfidence = isCorrect ? 0.8 : 0.2;
+          const speedBonus = responseTime < 5000 ? 0.1 : responseTime < 10000 ? 0.05 : 0;
+          const difficultyBonus = enemy.difficulty === 'hard' ? 0.1 : enemy.difficulty === 'medium' ? 0.05 : 0;
+          const levelBonus = character.stats.level > 5 ? 0.05 : 0;
+          const confidence = Math.max(0.1, Math.min(0.95, baseConfidence + speedBonus + difficultyBonus + levelBonus));
+
+          // Record practice with FSRS
+          const fsrsResult = await recordWordPractice(
+            wordData,
+            isCorrect,
+            responseTime,
+            confidence
+          );
+
+          console.log(`🔍 [FSRS] Recorded verb-quest conjugation for ${currentQuestion.verb.infinitive}:`, {
+            tense: currentQuestion.tense,
+            pronoun: currentQuestion.pronoun,
+            isCorrect,
+            confidence,
+            responseTime,
+            fsrsResult: fsrsResult ? {
+              due: fsrsResult.due,
+              stability: fsrsResult.stability,
+              difficulty: fsrsResult.difficulty
+            } : null
+          });
+        } catch (error) {
+          console.error('Error recording FSRS practice for verb-quest:', error);
+        }
+      })();
+    }
 
     // Log verb conjugation performance if callback is available
     if (onVerbConjugation && currentQuestion) {

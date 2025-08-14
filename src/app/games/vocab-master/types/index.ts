@@ -117,6 +117,8 @@ export interface GameConfig {
   assignmentTitle?: string;
   assignmentId?: string;
   enableAudio?: boolean;
+  gameSessionId?: string | null;
+  userId?: string;
 }
 
 export interface GameResult {

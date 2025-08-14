@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { EnhancedGameService } from '../../../../services/enhancedGameService';
 import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
 import { useGameVocabulary, transformVocabularyForGame } from '../../../../hooks/useGameVocabulary';
@@ -28,6 +28,7 @@ interface HangmanGameWrapperProps {
   assignmentId?: string | null;
   userId?: string;
   isAssignmentMode?: boolean;
+  gameSessionId?: string | null;
   playSFX?: (soundName: string) => void;
   onOpenSettings?: () => void;
 }
@@ -95,6 +96,9 @@ export default function HangmanGameWrapper(props: HangmanGameWrapperProps) {
   // Enhanced game service integration
   const [gameService, setGameService] = useState<EnhancedGameService | null>(null);
   const [gameSessionId, setGameSessionId] = useState<string | null>(null);
+
+  // Use assignment gameSessionId when provided, otherwise use own session
+  const effectiveGameSessionId = props.isAssignmentMode ? props.gameSessionId : gameSessionId;
   const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
   const [sessionStats, setSessionStats] = useState({
     totalWordsAttempted: 0,
@@ -110,7 +114,8 @@ export default function HangmanGameWrapper(props: HangmanGameWrapperProps) {
     }
   }, [props.userId]);
 
-  // Use the unified vocabulary hook - disable if we have assignment vocabulary
+  // Use the unified vocabulary hook - always call but conditionally enable
+  const hasAssignmentVocabulary = props.settings.categoryVocabulary && props.settings.categoryVocabulary.length > 0;
   const { vocabulary, loading: isLoading, error } = useGameVocabulary({
     language: mapLanguage(props.settings.language),
     categoryId: mapCategory(props.settings.category),
@@ -121,7 +126,7 @@ export default function HangmanGameWrapper(props: HangmanGameWrapperProps) {
     limit: 100,
     randomize: true,
     hasAudio: true,
-    enabled: !props.settings.categoryVocabulary || props.settings.categoryVocabulary.length === 0
+    enabled: !hasAssignmentVocabulary
   });
 
   console.log('🎯 HangmanGameWrapper - Settings received:', {
@@ -145,6 +150,14 @@ export default function HangmanGameWrapper(props: HangmanGameWrapperProps) {
   });
   console.log('🎯 HangmanGameWrapper - vocabulary from hook:', vocabulary?.length || 0, 'words');
 
+  // Debug: Check assignment vocabulary status
+  console.log('🎯 HangmanGameWrapper - Assignment vocabulary check:', {
+    hasAssignmentVocabulary,
+    assignmentVocabLength: props.settings.categoryVocabulary?.length || 0,
+    hookVocabLength: vocabulary?.length || 0,
+    willUseFallback: !hasAssignmentVocabulary && (!vocabulary || vocabulary.length === 0)
+  });
+
 
 
 
@@ -162,7 +175,7 @@ export default function HangmanGameWrapper(props: HangmanGameWrapperProps) {
   // Process vocabulary from the hook (only if no assignment vocabulary)
   useEffect(() => {
     // Skip if we have assignment vocabulary
-    if (props.settings.categoryVocabulary && props.settings.categoryVocabulary.length > 0) {
+    if (hasAssignmentVocabulary) {
       return;
     }
 
@@ -210,18 +223,18 @@ export default function HangmanGameWrapper(props: HangmanGameWrapperProps) {
     });
 
     setVocabularyPool(organizedVocabulary);
-  }, [vocabulary, props.settings.language, props.settings.category, props.settings.categoryVocabulary]);
+  }, [vocabulary, props.settings.language, props.settings.category, hasAssignmentVocabulary]);
 
-  // Start game session when vocabulary is loaded
+  // Start game session when vocabulary is loaded (only for free play mode)
   useEffect(() => {
-    if (gameService && props.userId && Object.keys(vocabularyPool).length > 0 && !gameSessionId) {
+    if (gameService && props.userId && Object.keys(vocabularyPool).length > 0 && !gameSessionId && !props.isAssignmentMode) {
       startGameSession();
     }
-  }, [gameService, props.userId, vocabularyPool, gameSessionId]);
+  }, [gameService, props.userId, vocabularyPool, gameSessionId, props.isAssignmentMode]);
 
-  // End the session when the user leaves the game
+  // End the session when the user leaves the game (only for free play mode)
   const endGameSession = async () => {
-    if (gameService && gameSessionId && props.userId && sessionStartTime) {
+    if (gameService && gameSessionId && props.userId && sessionStartTime && !props.isAssignmentMode) {
       try {
         const sessionDuration = Math.floor((Date.now() - sessionStartTime.getTime()) / 1000);
         const accuracy = sessionStats.totalWordsAttempted > 0 ?
@@ -231,7 +244,7 @@ export default function HangmanGameWrapper(props: HangmanGameWrapperProps) {
         // Remove conflicting XP calculation - gems system handles all scoring through recordWordAttempt()
         const totalXP = sessionStats.totalWordsCorrect * 10; // 10 XP per word (gems-first)
 
-        await gameService.endGameSession(gameSessionId, {
+        await gameService.endGameSession(effectiveGameSessionId!, {
           student_id: props.userId,
           final_score: sessionStats.totalScore,
           accuracy_percentage: accuracy,
@@ -265,6 +278,43 @@ export default function HangmanGameWrapper(props: HangmanGameWrapperProps) {
       endGameSession();
     };
   }, [endGameSession]);
+
+  // Transform vocabulary to the format expected by HangmanGame (memoized to prevent infinite re-rendering)
+  // MOVED HERE: This must be before any conditional returns to maintain hook order
+  const gameVocabulary = useMemo(() => {
+    // Priority 1: Use assignment vocabulary if provided
+    if (hasAssignmentVocabulary) {
+      return props.settings.categoryVocabulary?.map(item => ({
+        id: item.id || Math.random().toString(),
+        word: item.word,
+        translation: item.translation || item.english || '',
+        category: item.category || props.settings.category,
+        subcategory: item.subcategory || props.settings.subcategory,
+        difficulty_level: item.difficulty_level || 'beginner'
+      })) || [];
+    }
+    // Priority 2: Use vocabulary from hook
+    else if (vocabulary && vocabulary.length > 0) {
+      return vocabulary.map(item => ({
+        id: item.id,
+        word: item.word,
+        translation: item.translation,
+        category: item.category,
+        subcategory: item.subcategory,
+        difficulty_level: item.difficulty_level || 'beginner'
+      }));
+    }
+    // Priority 3: Fallback words for testing
+    else {
+      return [
+        { id: '1', word: 'casa', translation: 'house', category: props.settings.category, subcategory: props.settings.subcategory, difficulty_level: 'beginner' },
+        { id: '2', word: 'gato', translation: 'cat', category: props.settings.category, subcategory: props.settings.subcategory, difficulty_level: 'beginner' },
+        { id: '3', word: 'agua', translation: 'water', category: props.settings.category, subcategory: props.settings.subcategory, difficulty_level: 'beginner' },
+        { id: '4', word: 'sol', translation: 'sun', category: props.settings.category, subcategory: props.settings.subcategory, difficulty_level: 'beginner' },
+        { id: '5', word: 'libro', translation: 'book', category: props.settings.category, subcategory: props.settings.subcategory, difficulty_level: 'beginner' }
+      ];
+    }
+  }, [hasAssignmentVocabulary, props.settings.categoryVocabulary, vocabulary, props.settings.category, props.settings.subcategory]);
 
   const startGameSession = async () => {
     if (!gameService || !props.userId) return;
@@ -351,45 +401,6 @@ export default function HangmanGameWrapper(props: HangmanGameWrapperProps) {
     );
   }
 
-  // Transform vocabulary to the format expected by HangmanGame
-  let gameVocabulary: GameVocabularyWord[] = [];
-
-  // Priority 1: Use assignment vocabulary if provided
-  if (props.settings.categoryVocabulary && props.settings.categoryVocabulary.length > 0) {
-    console.log('🎯 HangmanGameWrapper - Using assignment vocabulary:', props.settings.categoryVocabulary.length, 'words');
-    gameVocabulary = props.settings.categoryVocabulary.map(item => ({
-      id: item.id || Math.random().toString(),
-      word: item.word,
-      translation: item.translation || item.english || '',
-      category: item.category || props.settings.category,
-      subcategory: item.subcategory || props.settings.subcategory,
-      difficulty_level: item.difficulty_level || 'beginner'
-    }));
-  }
-  // Priority 2: Use vocabulary from hook
-  else if (vocabulary && vocabulary.length > 0) {
-    console.log('🎯 HangmanGameWrapper - Using vocabulary from hook:', vocabulary.length, 'words');
-    gameVocabulary = vocabulary.map(item => ({
-      id: item.id,
-      word: item.word,
-      translation: item.translation,
-      category: item.category,
-      subcategory: item.subcategory,
-      difficulty_level: item.difficulty_level
-    }));
-  }
-  // Priority 3: Fallback words for testing
-  else {
-    console.log('🎯 HangmanGameWrapper - No vocabulary available, using fallback words');
-    gameVocabulary = [
-      { id: '1', word: 'casa', translation: 'house', category: props.settings.category, subcategory: props.settings.subcategory, difficulty_level: 'beginner' },
-      { id: '2', word: 'gato', translation: 'cat', category: props.settings.category, subcategory: props.settings.subcategory, difficulty_level: 'beginner' },
-      { id: '3', word: 'agua', translation: 'water', category: props.settings.category, subcategory: props.settings.subcategory, difficulty_level: 'beginner' },
-      { id: '4', word: 'sol', translation: 'sun', category: props.settings.category, subcategory: props.settings.subcategory, difficulty_level: 'beginner' },
-      { id: '5', word: 'libro', translation: 'book', category: props.settings.category, subcategory: props.settings.subcategory, difficulty_level: 'beginner' }
-    ];
-  }
-
   console.log('🎯 HangmanGameWrapper - Passing vocabulary to game:', gameVocabulary.length, 'words');
 
   // Enhanced game completion handler for individual words
@@ -412,7 +423,7 @@ export default function HangmanGameWrapper(props: HangmanGameWrapperProps) {
     setSessionStats(newStats);
 
     // Log word performance if we have the necessary data
-    if (gameService && gameSessionId && gameStats?.currentWord) {
+    if (gameService && effectiveGameSessionId && gameStats?.currentWord) {
       try {
         const responseTime = gameStats.timeSpent || 0;
         const accuracy = gameStats.totalGuesses ?
@@ -421,7 +432,7 @@ export default function HangmanGameWrapper(props: HangmanGameWrapperProps) {
 
         // Record word attempt using new gems system (exposure-based for hangman)
         const sessionService = new EnhancedGameSessionService();
-        await sessionService.recordWordAttempt(gameSessionId, 'hangman', {
+        await sessionService.recordWordAttempt(effectiveGameSessionId!, 'hangman', {
           vocabularyId: gameStats.vocabularyId,
           wordText: gameStats.currentWord,
           translationText: '', // Translation not available in hangman context
@@ -486,6 +497,8 @@ export default function HangmanGameWrapper(props: HangmanGameWrapperProps) {
       onGameEnd={handleEnhancedGameEnd}
       isAssignmentMode={props.isAssignmentMode}
       playSFX={props.playSFX || (() => {})}
+      gameSessionId={effectiveGameSessionId || undefined}
+      userId={props.userId}
     />
   );
 }

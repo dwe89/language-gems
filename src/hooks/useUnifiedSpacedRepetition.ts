@@ -70,12 +70,23 @@ export const useUnifiedSpacedRepetition = (gameType: string) => {
     setIsProcessing(true);
 
     try {
+      console.log('🔍 [FSRS Hook] recordWordPractice called:', {
+        word,
+        correct,
+        responseTime,
+        confidence,
+        userId: user.id
+      });
+
       // Determine which algorithm to use
       const useAlgorithm = await determineAlgorithm(user.id, word.id);
+      console.log('🔍 [FSRS Hook] Algorithm determined:', useAlgorithm);
 
       if (useAlgorithm === 'fsrs') {
+        console.log('🔍 [FSRS Hook] Calling recordWithFSRS...');
         return await recordWithFSRS(word, correct, responseTime, confidence);
       } else {
+        console.log('🔍 [FSRS Hook] Calling recordWithSM2...');
         return await recordWithSM2(word, correct, responseTime);
       }
 
@@ -102,17 +113,34 @@ export const useUnifiedSpacedRepetition = (gameType: string) => {
    */
   const determineAlgorithm = async (userId: string, vocabularyId: string): Promise<'sm2' | 'fsrs'> => {
     try {
-      // Check if word already has data in vocabulary_gem_collection
-      const { data: existingData } = await supabaseBrowser
+      // Check if word already has data in vocabulary_gem_collection using both ID systems
+      // Try centralized vocabulary ID first
+      let existingData = null;
+
+      const { data: centralizedData } = await supabaseBrowser
         .from('vocabulary_gem_collection')
         .select('algorithm_version, fsrs_difficulty')
         .eq('student_id', userId)
-        .eq('vocabulary_item_id', vocabularyId)
-        .single();
+        .eq('centralized_vocabulary_id', vocabularyId)
+        .maybeSingle();
+
+      if (centralizedData) {
+        existingData = centralizedData;
+      } else {
+        // Try legacy vocabulary_item_id
+        const { data: legacyData } = await supabaseBrowser
+          .from('vocabulary_gem_collection')
+          .select('algorithm_version, fsrs_difficulty')
+          .eq('student_id', userId)
+          .eq('vocabulary_item_id', vocabularyId)
+          .maybeSingle();
+
+        existingData = legacyData;
+      }
 
       if (existingData) {
-        // Use existing algorithm or default to FSRS
-        return existingData.algorithm_version || 'fsrs';
+        // Always use FSRS for better spaced repetition (migrate from SM-2)
+        return 'fsrs';
       } else {
         // New word - use FSRS
         return 'fsrs';
@@ -133,6 +161,16 @@ export const useUnifiedSpacedRepetition = (gameType: string) => {
     confidence?: number
   ): Promise<UnifiedSpacedRepetitionResult> => {
     try {
+      console.log('🔍 [FSRS Hook] recordWithFSRS called:', {
+        word,
+        wordId: word.id,
+        wordIdType: typeof word.id,
+        correct,
+        responseTime,
+        confidence,
+        userId: user!.id
+      });
+
       const result = await fsrsService.updateProgress(
         user!.id,
         word.id,
@@ -140,6 +178,8 @@ export const useUnifiedSpacedRepetition = (gameType: string) => {
         responseTime,
         confidence
       );
+
+      console.log('🔍 [FSRS Hook] FSRS service result:', result);
 
       // Calculate points based on FSRS metrics
       const points = calculateFSRSPoints(result.card, correct);

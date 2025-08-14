@@ -51,9 +51,9 @@ interface VocabularyConfig {
 }
 
 interface SentenceConfig {
-  source: 'theme' | 'topic' | 'custom' | 'create' | '';
-  theme?: string;
-  topic?: string;
+  source: 'category' | 'subcategory' | 'custom' | 'create' | '';
+  category?: string;
+  subcategory?: string;
   customSetId?: string;
   customSet?: any;
   sentenceCount?: number;
@@ -330,24 +330,24 @@ function SentenceConfigSection({ config, onChange }: {
           className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-green-500 focus:border-transparent"
         >
           <option value="">Choose source...</option>
-          <option value="theme">📚 Theme-based sentences</option>
-          <option value="topic">🎯 Topic-based sentences</option>
+          <option value="category">📚 Category-based sentences</option>
+          <option value="subcategory">🎯 Subcategory-based sentences</option>
           <option value="custom">📝 Custom sentence set</option>
           <option value="create">➕ Create new sentence set</option>
         </select>
       </div>
 
-      {config.source === 'theme' && (
+      {config.source === 'category' && (
         <ThemeSelector 
-          value={config.theme || ''} 
-          onChange={(theme) => onChange({...config, theme})}
+          value={config.category || ''} 
+          onChange={(category) => onChange({...config, category})}
         />
       )}
 
-      {config.source === 'topic' && (
+      {config.source === 'subcategory' && (
         <TopicSelector 
-          value={config.topic || ''} 
-          onChange={(topic) => onChange({...config, topic})}
+          value={config.subcategory || ''} 
+          onChange={(subcategory) => onChange({...config, subcategory})}
         />
       )}
 
@@ -384,25 +384,43 @@ function SentenceConfigSection({ config, onChange }: {
 
 // Supporting Components
 function ThemeSelector({ value, onChange }: { value: string; onChange: (value: string) => void }) {
-  const themes = [
-    'Communication and the world around us',
-    'People and lifestyle', 
-    'Popular culture',
-    'Business and work',
-    'Education and learning'
-  ];
+  const [categories, setCategories] = React.useState<string[]>([]);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch('/api/sentences/categories');
+        if (response.ok) {
+          const data = await response.json();
+          setCategories(data.categories || []);
+        } else {
+          console.error('Failed to fetch categories');
+        }
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-2">Select Theme</label>
+      <label className="block text-sm font-medium text-gray-700 mb-2">Select Category</label>
       <select 
         value={value} 
         onChange={(e) => onChange(e.target.value)} 
         className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+        disabled={loading}
       >
-        <option value="">Choose theme...</option>
-        {themes.map(theme => (
-          <option key={theme} value={theme}>{theme}</option>
+        <option value="">Choose category...</option>
+        {categories.map(category => (
+          <option key={category} value={category}>
+            {category.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+          </option>
         ))}
       </select>
     </div>
@@ -410,18 +428,28 @@ function ThemeSelector({ value, onChange }: { value: string; onChange: (value: s
 }
 
 function TopicSelector({ value, onChange }: { value: string; onChange: (value: string) => void }) {
-  const topics = [
-    'Identity and relationships',
-    'Education and work',
-    'Free time activities',
-    'Healthy living and lifestyle',
-    'Environment and where people live',
-    'Customs, festivals and celebrations',
-    'Weather and seasons',
-    'Family and friends',
-    'Food and drink',
-    'Travel and transport'
-  ];
+  const [subcategories, setSubcategories] = React.useState<string[]>([]);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const fetchSubcategories = async () => {
+      try {
+        const response = await fetch('/api/sentences/subcategories');
+        if (response.ok) {
+          const data = await response.json();
+          setSubcategories(data.subcategories || []);
+        } else {
+          console.error('Failed to fetch subcategories');
+        }
+      } catch (error) {
+        console.error('Error fetching subcategories:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSubcategories();
+  }, []);
 
   return (
     <div>
@@ -430,10 +458,13 @@ function TopicSelector({ value, onChange }: { value: string; onChange: (value: s
         value={value} 
         onChange={(e) => onChange(e.target.value)} 
         className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+        disabled={loading}
       >
         <option value="">Choose topic...</option>
-        {topics.map(topic => (
-          <option key={topic} value={topic}>{topic}</option>
+        {subcategories.map(subcategory => (
+          <option key={subcategory} value={subcategory}>
+            {subcategory.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+          </option>
         ))}
       </select>
     </div>

@@ -43,7 +43,7 @@ export default function VocabBlastAssignmentWrapper({
       onBackToAssignments={onBackToAssignments}
       onBackToMenu={onBackToMenu}
     >
-      {({ assignment, vocabulary, onProgressUpdate, onGameComplete }) => {
+      {({ assignment, vocabulary, onProgressUpdate, onGameComplete, gameSessionId }) => {
         console.log('Vocab Blast Assignment - Vocabulary loaded:', vocabulary.length, 'items');
 
         return (
@@ -80,6 +80,7 @@ export default function VocabBlastAssignmentWrapper({
                 mode: 'categories' as const,
                 customWords: vocabulary.map(v => v.word)
               }}
+              gameSessionId={gameSessionId}
             onBackToMenu={onBackToMenu}
             onGameEnd={(result) => {
               // Use gems-first scoring: 10 XP per correct answer

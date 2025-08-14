@@ -37,7 +37,21 @@ interface FilterState {
 export default function VocabularyCategoriesAnalytics() {
   const { user } = useAuth();
   const { supabase } = useSupabase();
-  
+
+  console.log('🔍 [VOCAB CATEGORIES] Component loaded:', { user: user?.id, hasSupabase: !!supabase });
+
+  // Early return if no user
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Authentication Required</h3>
+          <p className="text-gray-600">Please log in to view vocabulary categories.</p>
+        </div>
+      </div>
+    );
+  }
+
   const [categories, setCategories] = useState<VocabularyCategory[]>([]);
   const [filteredCategories, setFilteredCategories] = useState<VocabularyCategory[]>([]);
   const [loading, setLoading] = useState(true);
@@ -59,8 +73,12 @@ export default function VocabularyCategoriesAnalytics() {
   });
 
   useEffect(() => {
+    console.log('🔍 [VOCAB CATEGORIES] useEffect triggered:', { userId: user?.id, hasUser: !!user });
     if (user?.id) {
+      console.log('🔍 [VOCAB CATEGORIES] Loading category data for user:', user.id);
       loadCategoryData();
+    } else {
+      console.log('🔍 [VOCAB CATEGORIES] No user ID available, skipping data load');
     }
   }, [user?.id]);
 
@@ -75,7 +93,7 @@ export default function VocabularyCategoriesAnalytics() {
       setLoading(true);
       setError(null);
 
-      // Get vocabulary data with performance metrics
+      // First, get vocabulary collection data without join
       const { data: vocabularyData, error: vocabError } = await supabase
         .from('vocabulary_gem_collection')
         .select(`
@@ -84,25 +102,61 @@ export default function VocabularyCategoriesAnalytics() {
           correct_encounters,
           mastery_level,
           last_encountered_at,
-          centralized_vocabulary!inner(
-            curriculum_level,
-            category,
-            subcategory,
-            exam_board_code,
-            theme_name
-          )
+          centralized_vocabulary_id
         `)
-        .eq('student_id', user.id);
+        .eq('student_id', user.id)
+        .not('centralized_vocabulary_id', 'is', null);
 
-      if (vocabError) throw vocabError;
+      if (vocabError) {
+        console.error('🔍 [VOCAB CATEGORIES] Supabase query error:', vocabError);
+        throw vocabError;
+      }
+
+      console.log('🔍 [VOCAB CATEGORIES] Raw vocabulary data:', vocabularyData);
+      console.log('🔍 [VOCAB CATEGORIES] Sample item structure:', vocabularyData?.[0]);
+
+      if (!vocabularyData || vocabularyData.length === 0) {
+        console.log('🔍 [VOCAB CATEGORIES] No vocabulary data found, setting empty state');
+        setCategories([]);
+        updateAvailableOptions([]);
+        return;
+      }
+
+      // Get unique vocabulary IDs
+      const vocabularyIds = [...new Set(vocabularyData.map(item => item.centralized_vocabulary_id).filter(Boolean))];
+      console.log('🔍 [VOCAB CATEGORIES] Fetching centralized vocabulary for IDs:', vocabularyIds);
+
+      // Fetch centralized vocabulary data
+      const { data: centralizedVocabData, error: centralizedError } = await supabase
+        .from('centralized_vocabulary')
+        .select('id, curriculum_level, category, subcategory, exam_board_code, theme_name')
+        .in('id', vocabularyIds);
+
+      if (centralizedError) {
+        console.error('🔍 [VOCAB CATEGORIES] Centralized vocabulary query error:', centralizedError);
+        throw centralizedError;
+      }
+
+      console.log('🔍 [VOCAB CATEGORIES] Centralized vocabulary data:', centralizedVocabData);
+
+      // Create a map for faster lookup
+      const vocabMap = new Map(centralizedVocabData?.map(v => [v.id, v]) || []);
 
       // Process and aggregate data by category/subcategory
       const categoryMap = new Map<string, VocabularyCategory>();
 
       vocabularyData?.forEach(item => {
-        const vocab = item.centralized_vocabulary;
-        const key = `${vocab.curriculum_level}-${vocab.category}-${vocab.subcategory}`;
+        // Look up the centralized vocabulary data using the ID
+        const vocab = vocabMap.get(item.centralized_vocabulary_id);
         
+        if (!vocab) {
+          console.warn('No centralized_vocabulary data for item:', item);
+          // Skip items without vocabulary data instead of crashing
+          return;
+        }
+
+        const key = `${vocab.curriculum_level}-${vocab.category}-${vocab.subcategory}`;
+
         if (!categoryMap.has(key)) {
           categoryMap.set(key, {
             curriculum_level: vocab.curriculum_level,
@@ -146,6 +200,8 @@ export default function VocabularyCategoriesAnalytics() {
           : 0
       }));
 
+      console.log('🔍 [VOCAB CATEGORIES] Processed categories:', processedCategories);
+
       setCategories(processedCategories);
       updateAvailableOptions(processedCategories);
 
@@ -160,8 +216,8 @@ export default function VocabularyCategoriesAnalytics() {
   const updateAvailableOptions = (data: VocabularyCategory[]) => {
     const categories = [...new Set(data.map(item => item.category))].sort();
     const subcategories = [...new Set(data.map(item => item.subcategory))].sort();
-    const themes = [...new Set(data.map(item => item.theme_name).filter(Boolean))].sort();
-    const examBoards = [...new Set(data.map(item => item.exam_board_code).filter(Boolean))].sort();
+    const themes = [...new Set(data.map(item => item.theme_name).filter(Boolean))].sort() as string[];
+    const examBoards = [...new Set(data.map(item => item.exam_board_code).filter(Boolean))].sort() as string[];
 
     setAvailableOptions({
       categories,
@@ -282,6 +338,7 @@ export default function VocabularyCategoriesAnalytics() {
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading vocabulary categories...</p>
+          <p className="text-xs text-gray-500 mt-2">User ID: {user?.id || 'No user'}</p>
         </div>
       </div>
     );
@@ -372,7 +429,7 @@ export default function VocabularyCategoriesAnalytics() {
               >
                 <option value="all">All Themes</option>
                 {getAvailableOptionsForCurrentFilter('theme').map(theme => (
-                  <option key={theme} value={theme}>{theme}</option>
+                  theme && <option key={theme} value={theme}>{theme}</option>
                 ))}
               </select>
             </div>
@@ -391,7 +448,7 @@ export default function VocabularyCategoriesAnalytics() {
             >
               <option value="all">All Categories</option>
               {getAvailableOptionsForCurrentFilter('category').map(category => (
-                <option key={category} value={category}>
+                category && <option key={category} value={category}>
                   {formatCategoryName(category)}
                 </option>
               ))}
@@ -411,7 +468,7 @@ export default function VocabularyCategoriesAnalytics() {
             >
               <option value="all">All Subcategories</option>
               {getAvailableOptionsForCurrentFilter('subcategory').map(subcategory => (
-                <option key={subcategory} value={subcategory}>
+                subcategory && <option key={subcategory} value={subcategory}>
                   {formatSubcategoryName(subcategory)}
                 </option>
               ))}
