@@ -6,6 +6,7 @@ import { useGameVocabulary } from '../../../../hooks/useGameVocabulary';
 import { supabaseBrowser } from '../../../../components/auth/AuthProvider';
 import { RewardEngine } from '../../../../services/rewards/RewardEngine';
 import TicTacToeGameThemed from './TicTacToeGameThemed';
+import UniversalThemeSelector from '../../../../components/games/UniversalThemeSelector';
 
 interface TicTacToeGameWrapperProps {
   settings?: {
@@ -40,6 +41,8 @@ interface TicTacToeGameWrapperProps {
 export default function TicTacToeGameWrapper(props: TicTacToeGameWrapperProps) {
   const [gameSessionId, setGameSessionId] = useState<string | null>(null);
   const [gameService, setGameService] = useState<EnhancedGameService | null>(null);
+  const [showThemeSelector, setShowThemeSelector] = useState(!props.settings?.theme);
+  const [selectedTheme, setSelectedTheme] = useState(props.settings?.theme || 'default');
 
   // Use assignment gameSessionId when provided, otherwise use own session
   const effectiveGameSessionId = props.assignmentId ? props.gameSessionId : gameSessionId;
@@ -262,9 +265,32 @@ export default function TicTacToeGameWrapper(props: TicTacToeGameWrapperProps) {
     );
   }
 
+  // Handle theme selection
+  const handleThemeSelect = (themeId: string) => {
+    setSelectedTheme(themeId);
+    setShowThemeSelector(false);
+  };
+
+  // Show theme selector if no theme is set
+  if (showThemeSelector) {
+    return (
+      <UniversalThemeSelector
+        onThemeSelect={handleThemeSelect}
+        gameTitle="Noughts and Crosses"
+        availableThemes={['default', 'tokyo', 'pirate', 'space', 'temple']}
+      />
+    );
+  }
+
+  // Update settings with selected theme
+  const settingsWithTheme = {
+    ...settings,
+    theme: selectedTheme
+  };
+
   return (
     <TicTacToeGameThemed
-      settings={settings}
+      settings={settingsWithTheme}
       onBackToMenu={props.onBackToMenu}
       onGameEnd={handleEnhancedGameEnd}
       vocabularyWords={getFormattedVocabulary()}

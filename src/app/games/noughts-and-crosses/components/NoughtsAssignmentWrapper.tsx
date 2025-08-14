@@ -68,7 +68,7 @@ export default function NoughtsAndCrossesAssignmentWrapper({
       onBackToAssignments={handleBackToAssignments}
       onBackToMenu={handleBackToMenu}
     >
-      {({ assignment, vocabulary, onProgressUpdate, onGameComplete, gameSessionId }) => {
+      {({ assignment, vocabulary, onProgressUpdate, onGameComplete, gameSessionId, selectedTheme }) => {
         // Get language from assignment vocabulary criteria or vocabulary items
         const assignmentLanguage = assignment.vocabulary_criteria?.language || vocabulary[0]?.language || 'spanish';
 
@@ -107,7 +107,7 @@ export default function NoughtsAndCrossesAssignmentWrapper({
                 category: vocabulary[0]?.category || 'assignment',
                 subcategory: vocabulary[0]?.subcategory || 'assignment',
                 language: gameLanguage,
-                theme: 'default',
+                theme: selectedTheme || 'default',
                 playerMark: 'X',
                 computerMark: 'O'
               }}

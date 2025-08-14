@@ -1,10 +1,11 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useUnifiedAuth } from '../../../../hooks/useUnifiedAuth';
 import GameAssignmentWrapper, { GameProgress } from '../../../../components/games/templates/GameAssignmentWrapper';
 import { VocabMasterGameEngine } from './VocabMasterGameEngine';
 import { VocabularyWord, GameResult } from '../types';
+import ModeSelectionModal from './ModeSelectionModal';
 
 interface VocabMasterAssignmentWrapperProps {
   assignmentId: string;
@@ -48,6 +49,26 @@ export default function VocabMasterAssignmentWrapper({
   onBackToMenu
 }: VocabMasterAssignmentWrapperProps) {
   const { user, isLoading, isDemo } = useUnifiedAuth();
+
+  // Mode selection state
+  const [showModeSelector, setShowModeSelector] = useState(true);
+  const [selectedMode, setSelectedMode] = useState<'mastery' | 'adventure'>('mastery');
+
+  // Handle mode selection
+  const handleModeSelect = (mode: 'mastery' | 'adventure') => {
+    setSelectedMode(mode);
+    setShowModeSelector(false);
+  };
+
+  // Show mode selector first
+  if (showModeSelector) {
+    console.log('🎯 [MODE SELECTOR] Showing mode selection modal');
+    return (
+      <ModeSelectionModal onModeSelect={handleModeSelect} />
+    );
+  }
+
+  console.log('🎯 [MODE SELECTOR] Mode selected:', selectedMode, 'showModeSelector:', showModeSelector);
 
   if (!user) {
     return (
@@ -105,7 +126,7 @@ export default function VocabMasterAssignmentWrapper({
         return (
           <VocabMasterGameEngine
             config={{
-              mode: 'learn_new', // Default mode for assignments
+              mode: selectedMode === 'adventure' ? 'adventure' : 'learn_new', // Use selected mode
               vocabulary: gameVocabulary,
               audioEnabled: true,
               assignmentMode: true,

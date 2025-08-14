@@ -10,6 +10,7 @@ import UnifiedVocabMasterLauncher from './UnifiedVocabMasterLauncher';
 import { VocabMasterGameEngine } from './VocabMasterGameEngine';
 import { GameCompletionScreen } from './GameCompletionScreen';
 import VocabMasterAssignmentWrapper from './VocabMasterAssignmentWrapper';
+import ModeSelectionModal from './ModeSelectionModal';
 import { VocabularyWord as VocabWord, GameResult } from '../types';
 import UnifiedGameLauncher from '../../../../components/games/UnifiedGameLauncher';
 import { UnifiedSelectionConfig, UnifiedVocabularyItem } from '../../../../hooks/useUnifiedVocabulary';
@@ -33,9 +34,15 @@ export default function UnifiedVocabMasterWrapper({ searchParams = {} }: Props) 
   const { user, isLoading, isDemo } = useUnifiedAuth();
   const { supabase } = useSupabase();
 
-  // Game state - start with launcher since we skip category selection
-  const [gameState, setGameState] = useState<'selector' | 'launcher' | 'playing' | 'complete'>('launcher');
+  // Assignment mode detection
+  const isAssignmentMode = !!searchParams.assignment;
+
+  // Game state - start with mode selection for assignments, launcher for free play
+  const [gameState, setGameState] = useState<'mode_selection' | 'launcher' | 'playing' | 'complete'>(
+    isAssignmentMode ? 'mode_selection' : 'launcher'
+  );
   const [selectedMode, setSelectedMode] = useState<string>('');
+  const [learningMode, setLearningMode] = useState<'mastery' | 'adventure'>('mastery');
   const [gameConfig, setGameConfig] = useState<Record<string, any>>({});
   const [gameResults, setGameResults] = useState<any>(null);
   const [gameSessionId, setGameSessionId] = useState<string | null>(null);
@@ -52,9 +59,6 @@ export default function UnifiedVocabMasterWrapper({ searchParams = {} }: Props) 
 
   // Services
   const [gameService, setGameService] = useState<EnhancedGameService | null>(null);
-
-  // Assignment mode detection
-  const isAssignmentMode = !!searchParams.assignment;
 
   // Standalone access detection (from /vocabmaster URL)
   const isStandaloneAccess = searchParams.standalone === 'true';
@@ -188,11 +192,17 @@ export default function UnifiedVocabMasterWrapper({ searchParams = {} }: Props) 
     setSelectedConfig(newConfig);
   }, []);
 
-  // Handle back to category selector
+  // Handle back to mode selection
   const handleBackToSelector = () => {
-    setGameState('selector');
+    setGameState('mode_selection');
     setSelectedConfig(null);
     setVocabulary([]);
+  };
+
+  // Handle mode selection
+  const handleModeSelect = (mode: 'mastery' | 'adventure') => {
+    setLearningMode(mode);
+    setGameState('launcher');
   };
 
   // Start game session
@@ -443,7 +453,7 @@ export default function UnifiedVocabMasterWrapper({ searchParams = {} }: Props) 
     if (gameState === 'playing') {
       setGameState('launcher');
     } else {
-      setGameState('selector');
+      setGameState('mode_selection');
     }
     setSelectedMode('');
     setGameConfig({});
@@ -470,7 +480,7 @@ export default function UnifiedVocabMasterWrapper({ searchParams = {} }: Props) 
         <div className="text-center">
           <p className="text-red-600 mb-4">Failed to load vocabulary: {vocabularyError}</p>
           <button
-            onClick={() => setGameState('selector')}
+            onClick={() => setGameState('mode_selection')}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             Try Again
@@ -507,6 +517,11 @@ export default function UnifiedVocabMasterWrapper({ searchParams = {} }: Props) 
   // Regular game mode
   return (
     <div>
+      {/* Mode Selection Modal */}
+      {gameState === 'mode_selection' && isAssignmentMode && (
+        <ModeSelectionModal onModeSelect={handleModeSelect} />
+      )}
+
       {gameState === 'launcher' && isClient && urlParamsProcessed && (
         <UnifiedVocabMasterLauncher
           onGameStart={handleGameStart}

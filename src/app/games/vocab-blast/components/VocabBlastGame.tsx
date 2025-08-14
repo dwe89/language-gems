@@ -9,6 +9,7 @@ import { useTheme } from '../../noughts-and-crosses/components/ThemeProvider';
 import { useAudio } from '../../vocab-blast/hooks/useAudio';
 import VocabBlastEngine from './VocabBlastEngine';
 import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
+import UniversalThemeSelector from '../../../../components/games/UniversalThemeSelector';
 
 interface VocabBlastGameProps {
   settings: VocabBlastGameSettings;
@@ -88,6 +89,10 @@ export default function VocabBlastGame({
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [musicStarted, setMusicStarted] = useState(false);
   const { playSFX, playThemeSFX, startBackgroundMusic, stopBackgroundMusic } = useAudio(soundEnabled);
+
+  // Theme selection state
+  const [showThemeSelector, setShowThemeSelector] = useState(!settings.theme || settings.theme === 'default');
+  const [selectedTheme, setSelectedTheme] = useState(settings.theme || 'default');
 
   // Initialize FSRS spaced repetition system
 

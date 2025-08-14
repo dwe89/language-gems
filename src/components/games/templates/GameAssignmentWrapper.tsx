@@ -8,6 +8,7 @@ import { createBrowserClient } from '../../../lib/supabase-client';
 import { useGlobalAudioContext } from '../../../hooks/useGlobalAudioContext';
 import { createAudio, getAudioUrl } from '../../../utils/audioUtils';
 import { EnhancedGameSessionService } from '../../../services/rewards/EnhancedGameSessionService';
+import UniversalThemeSelector from '../UniversalThemeSelector';
 // RewardEngine removed - games should handle individual vocabulary interactions
 
 // Standard interfaces for assignment integration
@@ -68,6 +69,7 @@ export interface GameAssignmentWrapperProps {
     onProgressUpdate: (progress: Partial<GameProgress>) => void;
     onGameComplete: (finalProgress: GameProgress) => void;
     gameSessionId: string | null;
+    selectedTheme?: string; // Add theme to child props
   }) => React.ReactNode;
 }
 
@@ -416,6 +418,11 @@ export default function GameAssignmentWrapper({
   const [startTime] = useState(Date.now());
   const [gemSessionService] = useState(() => new EnhancedGameSessionService(supabase));
   const [gemSessionId, setGemSessionId] = useState<string | null>(null);
+
+  // Theme selection state - only show for games that support themes
+  const THEMED_GAMES = ['noughts-and-crosses', 'vocab-blast', 'word-blast', 'hangman'];
+  const [showThemeSelector, setShowThemeSelector] = useState(THEMED_GAMES.includes(gameId));
+  const [selectedTheme, setSelectedTheme] = useState('default');
 
   // Initialize gem session when vocabulary is loaded
   useEffect(() => {
@@ -771,6 +778,28 @@ export default function GameAssignmentWrapper({
     );
   }
 
+  // Handle theme selection
+  const handleThemeSelect = (themeId: string) => {
+    setSelectedTheme(themeId);
+    setShowThemeSelector(false);
+  };
+
+  // Show theme selector for themed games
+  if (showThemeSelector) {
+    const gameTitle = gameId === 'noughts-and-crosses' ? 'Noughts and Crosses' :
+                     gameId === 'vocab-blast' ? 'Vocab Blast' :
+                     gameId === 'word-blast' ? 'Word Blast' :
+                     gameId === 'hangman' ? 'Hangman' : 'Game';
+
+    return (
+      <UniversalThemeSelector
+        onThemeSelect={handleThemeSelect}
+        gameTitle={gameTitle}
+        availableThemes={['default', 'tokyo', 'pirate', 'space', 'temple']}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700">
       {/* Assignment Header */}
@@ -817,7 +846,8 @@ export default function GameAssignmentWrapper({
           vocabulary,
           onProgressUpdate: handleProgressUpdate,
           onGameComplete: handleGameComplete,
-          gameSessionId: gemSessionId
+          gameSessionId: gemSessionId,
+          selectedTheme
         })}
       </div>
     </div>
