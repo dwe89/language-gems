@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Target, Gem, Star, Crown, Flame, Sparkles, CheckCircle } from 'lucide-react';
+import { Target, Gem, Star, Crown, Flame, Sparkles, CheckCircle, Lightbulb } from 'lucide-react';
 
 interface DailyGemsGoalProps {
   dailyGoal: number;
@@ -15,6 +15,7 @@ interface DailyGemsGoalProps {
 }
 
 const GEM_ICONS = {
+  new_discovery: Lightbulb,
   common: Gem,
   uncommon: Sparkles,
   rare: Flame,
@@ -23,6 +24,7 @@ const GEM_ICONS = {
 };
 
 const GEM_COLORS = {
+  new_discovery: 'text-yellow-600',
   common: 'text-gray-500',
   uncommon: 'text-green-500',
   rare: 'text-orange-500',

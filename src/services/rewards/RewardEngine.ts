@@ -3,7 +3,7 @@
  * Implements gems-first reward system with consistent rarity calculation
  */
 
-export type GemRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
+export type GemRarity = 'new_discovery' | 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
 
 export interface GemTypeInfo {
   name: string;
@@ -12,6 +12,8 @@ export interface GemTypeInfo {
   description: string;
   masteryLevel: number;
 }
+
+export type GemType = 'mastery' | 'activity';
 
 export interface GemEvent {
   rarity: GemRarity;
@@ -25,6 +27,7 @@ export interface GemEvent {
   gameType: string;
   gameMode?: string;
   difficultyLevel?: string;
+  gemType?: GemType;
 }
 
 export interface PerformanceContext {
@@ -35,6 +38,7 @@ export interface PerformanceContext {
   isDictationMode: boolean;
   masteryLevel?: number;
   maxGemRarity?: GemRarity;
+  isFirstTime?: boolean; // 🆕 DUAL-TRACK: Whether this is the first time learning this word
 }
 
 export interface GameTypeConfig {
@@ -54,41 +58,58 @@ export interface GameTypeConfig {
 
 // Unified gem type definitions (matches existing GEM_TYPES)
 export const GEM_TYPES: Record<GemRarity, GemTypeInfo> = {
+  new_discovery: {
+    name: 'New Discovery',
+    points: 5,
+    color: 'from-yellow-400 to-orange-500',
+    description: 'First correct answer - new vocabulary discovered!',
+    masteryLevel: 0
+  },
   common: {
     name: 'Common Gems',
     points: 10,
     color: 'from-blue-400 to-blue-600',
     description: 'Standard performance - everyday vocabulary gems',
-    masteryLevel: 0
+    masteryLevel: 1
   },
   uncommon: {
     name: 'Uncommon Gems',
     points: 25,
     color: 'from-green-400 to-green-600',
     description: 'Good performance - useful vocabulary gems',
-    masteryLevel: 1
+    masteryLevel: 2
   },
   rare: {
     name: 'Rare Gems',
     points: 50,
     color: 'from-purple-400 to-purple-600',
     description: 'Fast response - valuable vocabulary gems',
-    masteryLevel: 2
+    masteryLevel: 3
   },
   epic: {
     name: 'Epic Gems',
     points: 100,
     color: 'from-orange-400 to-orange-600',
     description: 'Streak performance - powerful vocabulary gems',
-    masteryLevel: 3
+    masteryLevel: 4
   },
   legendary: {
     name: 'Legendary Gems',
     points: 200,
     color: 'from-yellow-400 to-yellow-600',
     description: 'Exceptional mastery - legendary vocabulary gems',
-    masteryLevel: 4
+    masteryLevel: 5
   }
+};
+
+// Activity Gem XP values (immediate performance rewards)
+export const ACTIVITY_GEM_XP: Record<GemRarity, number> = {
+  new_discovery: 2, // Not typically used for activity gems
+  common: 2,        // Standard correct answer
+  uncommon: 3,      // Good performance
+  rare: 5,          // Fast response or streak bonus
+  epic: 5,          // High streak performance
+  legendary: 5      // Exceptional performance
 };
 
 // Game-specific configurations
@@ -160,10 +181,18 @@ export class RewardEngine {
     context: PerformanceContext
   ): GemRarity {
     const config = GAME_CONFIGS[gameType] || GAME_CONFIGS.default;
-    
-    // Start with base rarity
+
+    // 🆕 DUAL-TRACK FIX: Check if this is a first-time word discovery
+    if (context.isFirstTime) {
+      console.log('🆕 [REWARD ENGINE] First-time word detected - awarding New Discovery');
+      return 'new_discovery'; // Always award New Discovery for first correct answer
+    }
+
+    console.log('🔄 [REWARD ENGINE] Subsequent review - calculating performance-based rarity');
+
+    // Start with base rarity for subsequent reviews
     let rarity: GemRarity = 'common';
-    
+
     // If hint was used, cap at common
     if (context.hintUsed) {
       return this.capRarityByMastery('common', context.maxGemRarity);
@@ -200,7 +229,7 @@ export class RewardEngine {
    * Upgrade rarity by one tier
    */
   private static upgradeRarity(rarity: GemRarity): GemRarity {
-    const rarityOrder: GemRarity[] = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
+    const rarityOrder: GemRarity[] = ['new_discovery', 'common', 'uncommon', 'rare', 'epic', 'legendary'];
     const currentIndex = rarityOrder.indexOf(rarity);
     return rarityOrder[Math.min(currentIndex + 1, rarityOrder.length - 1)];
   }
@@ -209,23 +238,62 @@ export class RewardEngine {
    * Cap rarity based on mastery level
    */
   private static capRarityByMastery(
-    rarity: GemRarity, 
+    rarity: GemRarity,
     maxGemRarity?: GemRarity
   ): GemRarity {
     if (!maxGemRarity) return rarity;
-    
-    const rarityOrder: GemRarity[] = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
+
+    const rarityOrder: GemRarity[] = ['new_discovery', 'common', 'uncommon', 'rare', 'epic', 'legendary'];
     const rarityIndex = rarityOrder.indexOf(rarity);
     const maxIndex = rarityOrder.indexOf(maxGemRarity);
-    
+
     return rarityOrder[Math.min(rarityIndex, maxIndex)];
   }
   
   /**
-   * Get XP value for a gem rarity
+   * Get XP value for a gem rarity (Mastery Gems)
    */
   static getXPValue(rarity: GemRarity): number {
     return GEM_TYPES[rarity].points;
+  }
+
+  /**
+   * Get XP value for Activity Gems
+   */
+  static getActivityGemXP(rarity: GemRarity): number {
+    return ACTIVITY_GEM_XP[rarity];
+  }
+
+  /**
+   * Calculate Activity Gem rarity based on performance
+   * Activity Gems are immediate rewards with simpler logic
+   */
+  static calculateActivityGemRarity(
+    gameType: string,
+    context: PerformanceContext
+  ): GemRarity {
+    const config = GAME_CONFIGS[gameType] || GAME_CONFIGS.default;
+
+    // Start with common (standard correct answer)
+    let rarity: GemRarity = 'common';
+
+    // Performance bonuses for Activity Gems
+    if (context.streakCount >= 5) {
+      rarity = 'rare'; // Perfect streak bonus
+    } else if (context.responseTimeMs <= config.speedThresholds.fast) {
+      rarity = 'rare'; // Fast response bonus
+    } else if (context.responseTimeMs <= config.speedThresholds.normal && context.streakCount >= 2) {
+      rarity = 'uncommon'; // Good performance with some streak
+    }
+
+    // Mode bonuses (smaller than Mastery Gems)
+    if ((config.typingBonus && context.isTypingMode) ||
+        (config.dictationBonus && context.isDictationMode)) {
+      if (rarity === 'common') rarity = 'uncommon';
+      else if (rarity === 'uncommon') rarity = 'rare';
+    }
+
+    return rarity;
   }
   
   /**
@@ -240,11 +308,17 @@ export class RewardEngine {
       translation?: string;
     },
     gameMode?: string,
-    difficultyLevel?: string
+    difficultyLevel?: string,
+    gemType: GemType = 'mastery'
   ): GemEvent {
-    const rarity = this.calculateGemRarity(gameType, context);
-    const xpValue = this.getXPValue(rarity);
-    
+    const rarity = gemType === 'activity'
+      ? this.calculateActivityGemRarity(gameType, context)
+      : this.calculateGemRarity(gameType, context);
+
+    const xpValue = gemType === 'activity'
+      ? this.getActivityGemXP(rarity)
+      : this.getXPValue(rarity);
+
     return {
       rarity,
       xpValue,
@@ -256,8 +330,43 @@ export class RewardEngine {
       hintUsed: context.hintUsed,
       gameType,
       gameMode,
-      difficultyLevel
+      difficultyLevel,
+      gemType
     };
+  }
+
+  /**
+   * Create an Activity Gem event (immediate performance reward)
+   */
+  static createActivityGemEvent(
+    gameType: string,
+    context: PerformanceContext,
+    vocabularyData?: {
+      id?: number;
+      word?: string;
+      translation?: string;
+    },
+    gameMode?: string,
+    difficultyLevel?: string
+  ): GemEvent {
+    return this.createGemEvent(gameType, context, vocabularyData, gameMode, difficultyLevel, 'activity');
+  }
+
+  /**
+   * Create a Mastery Gem event (FSRS-driven vocabulary collection)
+   */
+  static createMasteryGemEvent(
+    gameType: string,
+    context: PerformanceContext,
+    vocabularyData?: {
+      id?: number;
+      word?: string;
+      translation?: string;
+    },
+    gameMode?: string,
+    difficultyLevel?: string
+  ): GemEvent {
+    return this.createGemEvent(gameType, context, vocabularyData, gameMode, difficultyLevel, 'mastery');
   }
   
   /**
@@ -272,6 +381,7 @@ export class RewardEngine {
    */
   static groupGemsByRarity(gemEvents: GemEvent[]): Record<GemRarity, number> {
     const counts: Record<GemRarity, number> = {
+      new_discovery: 0,
       common: 0,
       uncommon: 0,
       rare: 0,

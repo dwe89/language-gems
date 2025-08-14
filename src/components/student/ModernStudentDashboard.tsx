@@ -312,8 +312,10 @@ export default function ModernStudentDashboard({
       const totalXP = xpSummary?.reduce((sum, session) => sum + (session.xp_earned || 0), 0) || 0;
 
       // Load gems analytics
+      console.log('🔍 [DASHBOARD] Loading gems analytics for user:', user.id, user.email);
       const gemsService = new GemsAnalyticsService();
       const gemsData = await gemsService.getStudentGemsAnalytics(user.id);
+      console.log('📊 [DASHBOARD] Gems data loaded:', gemsData);
       setGemsAnalytics(gemsData);
 
       // Calculate level from XP
@@ -721,7 +723,7 @@ export default function ModernStudentDashboard({
         />
       </div>
 
-      {/* Gems Progress Card */}
+      {/* Gems Progress Card with Dual-Track System */}
       {gemsAnalytics && (
         <GemsProgressCard
           totalGems={gemsAnalytics.totalGems}
@@ -729,18 +731,54 @@ export default function ModernStudentDashboard({
           totalXP={gemsAnalytics.totalXP}
           currentLevel={gemsAnalytics.currentLevel}
           xpToNextLevel={gemsAnalytics.xpToNextLevel}
+          xpBreakdown={gemsAnalytics.xpBreakdown}
+          activityGemsToday={gemsAnalytics.activityGemsToday}
+          masteryGemsToday={gemsAnalytics.masteryGemsToday}
           className="mb-6"
         />
       )}
 
-      {/* Daily Gems Goal */}
+      {/* Daily Gems Goal with Dual-Track Info */}
       {gemsAnalytics && (
-        <DailyGemsGoal
-          dailyGoal={20} // Default daily goal of 20 gems
-          gemsEarnedToday={gemsAnalytics.gemsEarnedToday || 0}
-          gemsByRarityToday={gemsAnalytics.gemsByRarityToday || {}}
-          className="mb-6"
-        />
+        <div className="mb-6">
+          <DailyGemsGoal
+            dailyGoal={10} // Daily goal of 10 Mastery Gems (vocabulary learning focus)
+            gemsEarnedToday={gemsAnalytics.masteryGemsToday || 0} // Only count Mastery Gems
+            gemsByRarityToday={gemsAnalytics.gemsByRarityToday || {}} // Shows Mastery Gem rarities
+          />
+
+          {/* Today's Dual-Track Breakdown */}
+          <div className="mt-4 bg-white rounded-xl shadow-lg p-4">
+            <h4 className="font-semibold text-gray-900 mb-3">Today's Gem Breakdown</h4>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
+                <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg flex items-center justify-center">
+                  <Zap className="w-4 h-4 text-white" />
+                </div>
+                <div>
+                  <div className="font-semibold text-green-700">
+                    {gemsAnalytics.activityGemsToday || 0}
+                  </div>
+                  <div className="text-xs text-green-600">Activity Gems</div>
+                  <div className="text-xs text-gray-500">Performance rewards</div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 p-3 bg-purple-50 rounded-lg">
+                <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg flex items-center justify-center">
+                  <BookOpen className="w-4 h-4 text-white" />
+                </div>
+                <div>
+                  <div className="font-semibold text-purple-700">
+                    {gemsAnalytics.masteryGemsToday || 0}
+                  </div>
+                  <div className="text-xs text-purple-600">Mastery Gems</div>
+                  <div className="text-xs text-gray-500">Vocabulary collection</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* FSRS Personalized Learning Insights - Temporarily disabled for debugging */}

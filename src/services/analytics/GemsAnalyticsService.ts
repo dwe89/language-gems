@@ -6,6 +6,7 @@
 import { createBrowserClient } from '@supabase/ssr';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { type GemRarity } from '../rewards/RewardEngine';
+import { DualTrackAnalyticsService, type XPBreakdown } from '../rewards/DualTrackAnalyticsService';
 
 export interface StudentGemsAnalytics {
   studentId: string;
@@ -21,6 +22,10 @@ export interface StudentGemsAnalytics {
   averageGemsPerSession: number;
   favoriteGameType: string;
   recentSessions: GemsSessionSummary[];
+  // Dual-track system additions
+  xpBreakdown: XPBreakdown;
+  activityGemsToday: number;
+  masteryGemsToday: number;
 }
 
 export interface GemsSessionSummary {
@@ -55,12 +60,14 @@ export interface ClassGemsAnalytics {
 
 export class GemsAnalyticsService {
   private supabase: SupabaseClient;
-  
+  private dualTrackService: DualTrackAnalyticsService;
+
   constructor(supabaseClient?: SupabaseClient) {
     this.supabase = supabaseClient || createBrowserClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL || '',
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
     );
+    this.dualTrackService = new DualTrackAnalyticsService(this.supabase);
   }
   
   /**
@@ -86,27 +93,48 @@ export class GemsAnalyticsService {
         .order('started_at', { ascending: false });
       
       if (sessionsError) throw sessionsError;
-      
-      // Calculate totals
-      const totalGems = sessions?.reduce((sum, s) => sum + (s.gems_total || 0), 0) || 0;
+
+      // Get actual gem collection data
+      const { data: gemCollectionData, error: gemError } = await this.supabase
+        .from('vocabulary_gem_collection')
+        .select('mastery_level')
+        .eq('student_id', studentId);
+
+      if (gemError) throw gemError;
+
+      // Calculate totals from actual gem collection
+      const totalGems = gemCollectionData?.length || 0;
       const totalXP = sessions?.reduce((sum, s) => sum + (s.xp_earned || 0), 0) || 0;
-      
-      // Calculate gems by rarity
+
       const gemsByRarity: Record<GemRarity, number> = {
+        new_discovery: 0,
         common: 0,
         uncommon: 0,
         rare: 0,
         epic: 0,
         legendary: 0
       };
-      
-      sessions?.forEach(session => {
-        if (session.gems_by_rarity) {
-          Object.entries(session.gems_by_rarity).forEach(([rarity, count]) => {
-            gemsByRarity[rarity as GemRarity] += count as number;
-          });
+
+      // 💎 DUAL-TRACK FIX: Only count Mastery Gems for vocabulary collection
+      // Get Mastery Gems by rarity from gem_events (not session summaries)
+      const { data: masteryGemsData, error: masteryError } = await this.supabase
+        .from('gem_events')
+        .select('gem_rarity')
+        .eq('student_id', studentId)
+        .eq('gem_type', 'mastery');
+
+      if (masteryError) {
+        console.error('Error fetching mastery gems by rarity:', masteryError);
+      }
+
+      // Count only Mastery Gems for vocabulary collection display
+      masteryGemsData?.forEach(gem => {
+        if (gem.gem_rarity && gem.gem_rarity in gemsByRarity) {
+          gemsByRarity[gem.gem_rarity as GemRarity]++;
         }
       });
+
+      console.log('💎 [VOCABULARY COLLECTION] Mastery Gems by rarity:', gemsByRarity);
       
       // Calculate level (simplified - 1000 XP per level)
       const currentLevel = Math.floor(totalXP / 1000) + 1;
@@ -125,8 +153,9 @@ export class GemsAnalyticsService {
 
       const gemsEarnedToday = todaysSessions.reduce((sum, s) => sum + (s.gems_total || 0), 0);
 
-      // Today's gems by rarity
+      // 💎 DUAL-TRACK FIX: Today's Mastery Gems by rarity (vocabulary collection only)
       const gemsByRarityToday: Record<GemRarity, number> = {
+        new_discovery: 0,
         common: 0,
         uncommon: 0,
         rare: 0,
@@ -134,13 +163,25 @@ export class GemsAnalyticsService {
         legendary: 0
       };
 
-      todaysSessions.forEach(session => {
-        if (session.gems_by_rarity) {
-          Object.entries(session.gems_by_rarity).forEach(([rarity, count]) => {
-            gemsByRarityToday[rarity as GemRarity] += count as number;
-          });
+      // Get today's Mastery Gems only (not Activity Gems)
+      const { data: todaysMasteryGemsData, error: todaysMasteryError } = await this.supabase
+        .from('gem_events')
+        .select('gem_rarity')
+        .eq('student_id', studentId)
+        .eq('gem_type', 'mastery')
+        .gte('created_at', today.toISOString());
+
+      if (todaysMasteryError) {
+        console.error('Error fetching today\'s mastery gems:', todaysMasteryError);
+      }
+
+      todaysMasteryGemsData?.forEach(gem => {
+        if (gem.gem_rarity && gem.gem_rarity in gemsByRarityToday) {
+          gemsByRarityToday[gem.gem_rarity as GemRarity]++;
         }
       });
+
+      console.log('💎 [TODAY\'S VOCABULARY] Today\'s Mastery Gems by rarity:', gemsByRarityToday);
 
       const gemsThisWeek = sessions?.filter(s =>
         new Date(s.started_at) >= oneWeekAgo
@@ -173,6 +214,24 @@ export class GemsAnalyticsService {
         startedAt: session.started_at
       }));
       
+      console.log('🔍 [GEMS ANALYTICS] Loading analytics for student:', studentId);
+
+      // Get dual-track analytics
+      const xpBreakdown = await this.dualTrackService.getXPBreakdown(studentId);
+
+      // Get today's dual-track gem counts
+      const todaysActivityGems = await this.getTodaysActivityGems(studentId);
+      const todaysMasteryGemsCount = await this.getTodaysMasteryGems(studentId);
+
+      console.log('📊 [DUAL-TRACK] Analytics loaded:', {
+        studentId,
+        totalXP: xpBreakdown.totalXP,
+        masteryXP: xpBreakdown.masteryXP,
+        activityXP: xpBreakdown.activityXP,
+        activityGemsToday: todaysActivityGems,
+        masteryGemsToday: todaysMasteryGemsCount
+      });
+
       return {
         studentId,
         totalGems,
@@ -186,12 +245,67 @@ export class GemsAnalyticsService {
         gemsThisMonth,
         averageGemsPerSession,
         favoriteGameType,
-        recentSessions
+        recentSessions,
+        xpBreakdown,
+        activityGemsToday: todaysActivityGems,
+        masteryGemsToday: todaysMasteryGemsCount
       };
       
     } catch (error) {
       console.error('Error fetching student gems analytics:', error);
       throw error;
+    }
+  }
+
+  /**
+   * Get today's Activity Gem count for a student
+   */
+  private async getTodaysActivityGems(studentId: string): Promise<number> {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const { data, error } = await this.supabase
+        .from('gem_events')
+        .select('id')
+        .eq('student_id', studentId)
+        .eq('gem_type', 'activity')
+        .gte('created_at', `${today}T00:00:00.000Z`)
+        .lt('created_at', `${today}T23:59:59.999Z`);
+
+      if (error) {
+        console.error('Error fetching today\'s activity gems:', error);
+        return 0;
+      }
+
+      return data?.length || 0;
+    } catch (error) {
+      console.error('Error in getTodaysActivityGems:', error);
+      return 0;
+    }
+  }
+
+  /**
+   * Get today's Mastery Gem count for a student
+   */
+  private async getTodaysMasteryGems(studentId: string): Promise<number> {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const { data, error } = await this.supabase
+        .from('gem_events')
+        .select('id')
+        .eq('student_id', studentId)
+        .eq('gem_type', 'mastery')
+        .gte('created_at', `${today}T00:00:00.000Z`)
+        .lt('created_at', `${today}T23:59:59.999Z`);
+
+      if (error) {
+        console.error('Error fetching today\'s mastery gems:', error);
+        return 0;
+      }
+
+      return data?.length || 0;
+    } catch (error) {
+      console.error('Error in getTodaysMasteryGems:', error);
+      return 0;
     }
   }
   

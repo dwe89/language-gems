@@ -133,8 +133,12 @@ export class EnhancedGameSessionService {
         return null;
       }
 
-      // Create gem event using RewardEngine (same pattern as recordWordAttempt)
-      const gemEvent = RewardEngine.createGemEvent(
+      const studentId = await this.getSessionStudentId(sessionId);
+
+      // 🎯 DUAL-TRACK SYSTEM: For sentence-based games, award Activity Gems only
+      // (Sentences don't use FSRS progression like individual vocabulary words)
+      console.log('🎮 [DUAL-TRACK] Awarding Activity Gem for sentence completion');
+      const activityGemEvent = RewardEngine.createActivityGemEvent(
         gameType,
         {
           responseTimeMs: attempt.responseTimeMs,
@@ -154,38 +158,10 @@ export class EnhancedGameSessionService {
         attempt.difficultyLevel || 'intermediate'
       );
 
-      // Store gem event in database (same pattern as recordWordAttempt)
-      const insertData: any = {
-        session_id: sessionId,
-        student_id: (await this.getSessionStudentId(sessionId)),
-        gem_rarity: gemEvent.rarity,
-        xp_value: gemEvent.xpValue,
-        word_text: gemEvent.wordText,
-        translation_text: gemEvent.translationText,
-        response_time_ms: gemEvent.responseTimeMs,
-        streak_count: gemEvent.streakCount,
-        hint_used: gemEvent.hintUsed,
-        game_type: gemEvent.gameType,
-        game_mode: gemEvent.gameMode,
-        difficulty_level: gemEvent.difficultyLevel
-      };
+      // Store Activity Gem in database
+      await this.storeGemEvent(sessionId, studentId, activityGemEvent, 'activity');
 
-      // Handle both UUID and integer sentence IDs
-      if (typeof gemEvent.vocabularyId === 'string' && gemEvent.vocabularyId.includes('-')) {
-        // UUID format - use centralized_vocabulary_id
-        insertData.centralized_vocabulary_id = gemEvent.vocabularyId;
-      } else if (gemEvent.vocabularyId) {
-        // Integer format - use legacy vocabulary_id
-        insertData.vocabulary_id = parseInt(gemEvent.vocabularyId.toString());
-      }
-
-      await this.supabase
-        .from('gem_events')
-        .insert(insertData);
-
-      return gemEvent;
-
-      return gemEvent;
+      return activityGemEvent;
     } catch (error) {
       console.error('Error recording sentence attempt:', error);
       return null;
@@ -193,7 +169,9 @@ export class EnhancedGameSessionService {
   }
 
   /**
-   * Record a word attempt and award gem if correct
+   * Record a word attempt and award gems using dual-track system
+   * - Activity Gems: Always awarded for correct answers (immediate engagement)
+   * - Mastery Gems: Only awarded when FSRS allows progression (vocabulary collection)
    */
   async recordWordAttempt(
     sessionId: string,
@@ -229,9 +207,13 @@ export class EnhancedGameSessionService {
       if (!attempt.wasCorrect) {
         return null;
       }
-      
-      // Create gem event
-      const gemEvent = RewardEngine.createGemEvent(
+
+      const studentId = await this.getSessionStudentId(sessionId);
+      let lastGemEvent: GemEvent | null = null;
+
+      // 🎯 DUAL-TRACK SYSTEM: Always award Activity Gem for correct answers
+      console.log('🎮 [DUAL-TRACK] Awarding Activity Gem for correct answer');
+      const activityGemEvent = RewardEngine.createActivityGemEvent(
         gameType,
         {
           responseTimeMs: attempt.responseTimeMs,
@@ -250,46 +232,124 @@ export class EnhancedGameSessionService {
         attempt.gameMode,
         attempt.difficultyLevel
       );
-      
-      // Store gem event in database
-      const insertData: any = {
-        session_id: sessionId,
-        student_id: (await this.getSessionStudentId(sessionId)),
-        gem_rarity: gemEvent.rarity,
-        xp_value: gemEvent.xpValue,
-        word_text: gemEvent.wordText,
-        translation_text: gemEvent.translationText,
-        response_time_ms: gemEvent.responseTimeMs,
-        streak_count: gemEvent.streakCount,
-        hint_used: gemEvent.hintUsed,
-        game_type: gemEvent.gameType,
-        game_mode: gemEvent.gameMode,
-        difficulty_level: gemEvent.difficultyLevel
-      };
 
-      // Handle both UUID and integer vocabulary IDs
-      if (typeof gemEvent.vocabularyId === 'string' && gemEvent.vocabularyId.includes('-')) {
-        // UUID format - use centralized_vocabulary_id
-        insertData.centralized_vocabulary_id = gemEvent.vocabularyId;
-      } else if (gemEvent.vocabularyId) {
-        // Integer format - use legacy vocabulary_id
-        insertData.vocabulary_id = parseInt(gemEvent.vocabularyId.toString());
+      // Store Activity Gem in database
+      await this.storeGemEvent(sessionId, studentId, activityGemEvent, 'activity');
+      lastGemEvent = activityGemEvent;
+
+      // 💎 DUAL-TRACK SYSTEM: Conditionally award Mastery Gem based on FSRS progression
+      if (attempt.vocabularyId && !skipSpacedRepetition) {
+        const vocabIdString = attempt.vocabularyId?.toString();
+
+        // 🚨 SAFETY CHECK: Ensure vocabularyId is not empty
+        if (!vocabIdString || vocabIdString.trim() === '') {
+          console.error('🚨 [DUAL-TRACK] Empty vocabularyId detected:', {
+            vocabularyId: attempt.vocabularyId,
+            vocabIdString,
+            wordText: attempt.wordText,
+            gameType
+          });
+          return null;
+        }
+
+        const isUUID = vocabIdString?.includes('-') || false;
+
+        const canProgress = await this.checkIfWordCanProgress(studentId, vocabIdString, isUUID);
+
+        if (canProgress.allowed) {
+          console.log('💎 [DUAL-TRACK] FSRS allows progression - awarding Mastery Gem');
+          console.log('🔍 [DEBUG] canProgress data:', canProgress);
+          const isFirstTime = canProgress.phase === 'new';
+          console.log('🔍 [DEBUG] isFirstTime calculation:', { phase: canProgress.phase, isFirstTime });
+
+          const masteryGemEvent = RewardEngine.createMasteryGemEvent(
+            gameType,
+            {
+              responseTimeMs: attempt.responseTimeMs,
+              streakCount: attempt.streakCount,
+              hintUsed: attempt.hintUsed,
+              isTypingMode: attempt.gameMode === 'typing',
+              isDictationMode: attempt.gameMode === 'dictation',
+              masteryLevel: attempt.masteryLevel,
+              maxGemRarity: attempt.maxGemRarity,
+              isFirstTime: isFirstTime // 🆕 DUAL-TRACK: Detect first-time words
+            },
+            {
+              id: attempt.vocabularyId,
+              word: attempt.wordText,
+              translation: attempt.translationText
+            },
+            attempt.gameMode,
+            attempt.difficultyLevel
+          );
+
+          // Store Mastery Gem in database
+          await this.storeGemEvent(sessionId, studentId, masteryGemEvent, 'mastery');
+
+          // Return the Mastery Gem as the primary event (for backward compatibility)
+          lastGemEvent = masteryGemEvent;
+        } else {
+          console.log('⏰ [DUAL-TRACK] FSRS blocks progression - only Activity Gem awarded:', canProgress.reason);
+        }
       }
 
-      await this.supabase
-        .from('gem_events')
-        .insert(insertData);
+      // Cache gem event for session summary (use the last/most important gem event)
+      if (lastGemEvent) {
+        this.gemEvents.push(lastGemEvent);
+      }
 
-      // Cache gem event for session summary
-      this.gemEvents.push(gemEvent);
-
-      return gemEvent;
+      return lastGemEvent;
     } catch (error) {
       console.error('Error recording word attempt:', error);
       return null;
     }
   }
   
+  /**
+   * Store a gem event in the database with proper gem_type
+   */
+  private async storeGemEvent(
+    sessionId: string,
+    studentId: string,
+    gemEvent: GemEvent,
+    gemType: 'mastery' | 'activity'
+  ): Promise<void> {
+    const insertData: any = {
+      session_id: sessionId,
+      student_id: studentId,
+      gem_rarity: gemEvent.rarity,
+      xp_value: gemEvent.xpValue,
+      word_text: gemEvent.wordText,
+      translation_text: gemEvent.translationText,
+      response_time_ms: gemEvent.responseTimeMs,
+      streak_count: gemEvent.streakCount,
+      hint_used: gemEvent.hintUsed,
+      game_type: gemEvent.gameType,
+      game_mode: gemEvent.gameMode,
+      difficulty_level: gemEvent.difficultyLevel,
+      gem_type: gemType
+    };
+
+    // Handle both UUID and integer vocabulary IDs
+    if (typeof gemEvent.vocabularyId === 'string' && gemEvent.vocabularyId.includes('-')) {
+      // UUID format - use centralized_vocabulary_id
+      insertData.centralized_vocabulary_id = gemEvent.vocabularyId;
+    } else if (gemEvent.vocabularyId) {
+      // Integer format - use legacy vocabulary_id
+      insertData.vocabulary_id = parseInt(gemEvent.vocabularyId.toString());
+    }
+
+    await this.supabase
+      .from('gem_events')
+      .insert(insertData);
+
+    console.log(`✅ [DUAL-TRACK] ${gemType} gem stored:`, {
+      rarity: gemEvent.rarity,
+      xp: gemEvent.xpValue,
+      type: gemType
+    });
+  }
+
   /**
    * End game session with final statistics
    */
@@ -354,12 +414,15 @@ export class EnhancedGameSessionService {
     gameType: string,
     rarity: GemRarity,
     reason: string,
-    studentId?: string
+    studentId?: string,
+    gemType: 'mastery' | 'activity' = 'activity'
   ): Promise<void> {
     try {
       const student_id = studentId || await this.getSessionStudentId(sessionId);
-      const xpValue = RewardEngine.getXPValue(rarity);
-      
+      const xpValue = gemType === 'activity'
+        ? RewardEngine.getActivityGemXP(rarity)
+        : RewardEngine.getXPValue(rarity);
+
       await this.supabase
         .from('gem_events')
         .insert({
@@ -372,7 +435,8 @@ export class EnhancedGameSessionService {
           streak_count: 0,
           hint_used: false,
           game_type: gameType,
-          game_mode: 'bonus'
+          game_mode: 'bonus',
+          gem_type: gemType
         });
     } catch (error) {
       console.error('Error awarding bonus gem:', error);
@@ -487,7 +551,16 @@ export class EnhancedGameSessionService {
     try {
       // Convert vocabularyId to appropriate format
       const vocabIdString = vocabularyId?.toString();
-      if (!vocabIdString) return;
+
+      // 🚨 SAFETY CHECK: Ensure vocabularyId is not empty
+      if (!vocabIdString || vocabIdString.trim() === '') {
+        console.error('🚨 [VOCABULARY UPDATE] Empty vocabularyId detected:', {
+          vocabularyId,
+          vocabIdString,
+          studentId
+        });
+        return;
+      }
 
       // Determine if this is a UUID (centralized) or integer (legacy)
       const isUUID = vocabIdString.includes('-');
@@ -558,10 +631,10 @@ export class EnhancedGameSessionService {
     nextReviewAt?: string;
   }> {
     try {
-      // Get current word state
+      // Get current word state including encounter count
       const { data: wordData, error } = await this.supabase
         .from('vocabulary_gem_collection')
-        .select('fsrs_state, next_review_at, fsrs_review_count')
+        .select('fsrs_state, next_review_at, fsrs_review_count, total_encounters')
         .eq('student_id', studentId)
         .eq(isUUID ? 'centralized_vocabulary_id' : 'vocabulary_item_id', vocabularyId)
         .single();
@@ -580,49 +653,45 @@ export class EnhancedGameSessionService {
       const nextReview = wordData.next_review_at ? new Date(wordData.next_review_at) : null;
       const state = wordData.fsrs_state || 'new';
       const reviewCount = wordData.fsrs_review_count || 0;
+      const totalEncounters = wordData.total_encounters || 0;
 
-      // LEARNING PHASE: Allow rapid progression (short intervals)
-      if (state === 'learning' || state === 'new' || reviewCount < 3) {
+      // 🆕 DUAL-TRACK FIX: Use total_encounters to determine if truly first time
+      // Note: total_encounters is incremented BEFORE gem logic, so first encounter = 1
+      const isFirstEncounter = totalEncounters === 1;
+
+      // 🆕 DUAL-TRACK FIX: Correct Mastery Gem logic
+
+      // FIRST ENCOUNTER: Always award "New Discovery" Mastery Gem
+      if (isFirstEncounter) {
         return {
           allowed: true,
-          reason: 'Learning phase - rapid progression allowed',
-          phase: 'learning',
+          reason: 'New word - first encounter',
+          phase: 'new',
           state,
           nextReviewAt: wordData.next_review_at
         };
       }
 
-      // RELEARNING PHASE: Allow progression (getting back on track)
-      if (state === 'relearning') {
+      // SUBSEQUENT ENCOUNTERS: Only award Mastery Gem if review is due
+      if (!nextReview || now >= nextReview) {
         return {
           allowed: true,
-          reason: 'Relearning phase - recovery progression allowed',
-          phase: 'learning',
+          reason: 'Word is due for review',
+          phase: state === 'new' || state === 'learning' ? 'learning' : 'review',
+          state,
+          nextReviewAt: wordData.next_review_at
+        };
+      } else {
+        return {
+          allowed: false,
+          reason: 'Word not yet due for review',
+          phase: state === 'new' || state === 'learning' ? 'learning' : 'review',
           state,
           nextReviewAt: wordData.next_review_at
         };
       }
 
-      // REVIEW PHASE: Only allow if due for review
-      if (state === 'review') {
-        if (!nextReview || now >= nextReview) {
-          return {
-            allowed: true,
-            reason: 'Review phase - word is due for review',
-            phase: 'review',
-            state,
-            nextReviewAt: wordData.next_review_at
-          };
-        } else {
-          return {
-            allowed: false,
-            reason: 'Review phase - word not yet due for review',
-            phase: 'review',
-            state,
-            nextReviewAt: wordData.next_review_at
-          };
-        }
-      }
+      // Note: All other cases are handled above - this should not be reached
 
       // Default: allow progression
       return {

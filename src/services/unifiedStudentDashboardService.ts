@@ -2,6 +2,7 @@
 // Combines word_performance_logs (granular) + vocabulary_gem_collection (FSRS) for comprehensive insights
 
 import { SupabaseClient } from '@supabase/supabase-js';
+import { GemRarity } from './rewards/RewardEngine';
 
 export interface DashboardMetrics {
   // Overview Stats (from both systems)
@@ -60,6 +61,51 @@ export interface PriorityWord {
 
 export class UnifiedStudentDashboardService {
   constructor(private supabase: SupabaseClient) {}
+
+  /**
+   * Map mastery level to gem rarity
+   */
+  private static masteryLevelToGemRarity(masteryLevel: number): GemRarity {
+    switch (masteryLevel) {
+      case 0: return 'new_discovery';
+      case 1: return 'common';
+      case 2: return 'uncommon';
+      case 3: return 'rare';
+      case 4: return 'epic';
+      case 5: return 'legendary';
+      default: return 'new_discovery';
+    }
+  }
+
+  /**
+   * Get gem collection statistics by rarity
+   */
+  async getGemCollectionStats(studentId: string): Promise<Record<GemRarity, number>> {
+    const { data: gemData, error } = await this.supabase
+      .from('vocabulary_gem_collection')
+      .select('mastery_level')
+      .eq('student_id', studentId);
+
+    if (error) throw error;
+
+    const gemCounts: Record<GemRarity, number> = {
+      new_discovery: 0,
+      common: 0,
+      uncommon: 0,
+      rare: 0,
+      epic: 0,
+      legendary: 0
+    };
+
+    if (gemData) {
+      gemData.forEach(item => {
+        const rarity = UnifiedStudentDashboardService.masteryLevelToGemRarity(item.mastery_level || 0);
+        gemCounts[rarity]++;
+      });
+    }
+
+    return gemCounts;
+  }
 
   async getDashboardMetrics(studentId: string): Promise<DashboardMetrics> {
     // Run queries in parallel for performance

@@ -299,25 +299,28 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
 
           // ✅ UNIFIED: Record failed attempt
           if (gameSessionId && currentVocabItem?.id) {
-            try {
-              const sessionService = new EnhancedGameSessionService();
-              await sessionService.recordWordAttempt(gameSessionId, 'hangman', {
-                vocabularyId: currentVocabItem.id,
-                wordText: word,
-                translationText: currentVocabItem.translation || word,
-                responseTimeMs: timer * 1000,
-                wasCorrect: false,
-                hintUsed: false,
-                streakCount: 0,
-                masteryLevel: 1,
-                maxGemRarity: 'common',
-                gameMode: 'word_completion',
-                difficultyLevel: settings.difficulty
-              });
-              console.log(`✅ Hangman failed attempt recorded for "${word}"`);
-            } catch (error) {
-              console.error('Error recording vocabulary attempt for hangman:', error);
-            }
+            const recordFailedAttempt = async () => {
+              try {
+                const sessionService = new EnhancedGameSessionService();
+                await sessionService.recordWordAttempt(gameSessionId, 'hangman', {
+                  vocabularyId: currentVocabItem.id,
+                  wordText: word,
+                  translationText: currentVocabItem.translation || word,
+                  responseTimeMs: timer * 1000,
+                  wasCorrect: false,
+                  hintUsed: false,
+                  streakCount: 0,
+                  masteryLevel: 1,
+                  maxGemRarity: 'common',
+                  gameMode: 'word_completion',
+                  difficultyLevel: settings.difficulty
+                });
+                console.log(`✅ Hangman failed attempt recorded for "${word}"`);
+              } catch (error) {
+                console.error('Error recording vocabulary attempt for hangman:', error);
+              }
+            };
+            recordFailedAttempt();
           }
         } catch (error) {
           console.error('Error setting up vocabulary recording for failed hangman:', error);
@@ -1039,3 +1042,4 @@ export default function HangmanGame({ playSFX, ...props }: HangmanGameProps) { /
       <GameContent playSFX={playSFX} {...props} /> {/* <--- FIXED HERE */}
     </ThemeProvider>
   );
+}

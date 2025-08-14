@@ -736,8 +736,8 @@ export default function MemoryGameMain({
 
                 console.log('🔍 [VOCAB TRACKING] Used assignment wrapper recordVocabularyInteraction');
                 console.log(`🔮 Memory Game earned gem for "${cardWord}" (assignment mode)`);
-              } else if (effectiveGameSessionId && !isAssignmentMode) {
-                // Use direct EnhancedGameSessionService for free play mode
+              } else if (effectiveGameSessionId) {
+                // Use direct EnhancedGameSessionService for both assignment and free play modes
                 const sessionService = new EnhancedGameSessionService();
                 const gemEvent = await sessionService.recordWordAttempt(effectiveGameSessionId, 'memory-game', {
                   vocabularyId: firstCard.vocabularyId,

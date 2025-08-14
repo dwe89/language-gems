@@ -6,6 +6,59 @@ import { ArrowLeft, RotateCcw, Lightbulb, Volume2 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
 
+// Simple sound manager for audio feedback
+class SoundManager {
+  play(type: 'correct' | 'wrong' | 'powerup' | 'select') {
+    // Simple audio feedback - can be enhanced later
+    if (typeof window !== 'undefined') {
+      try {
+        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+        let frequency = 261.63; // Default C4
+        
+        switch (type) {
+          case 'correct':
+            frequency = 523.25; // C5
+            break;
+          case 'wrong':
+            frequency = 220.00; // A3
+            break;
+          case 'powerup':
+            frequency = 659.25; // E5
+            break;
+          case 'select':
+            frequency = 293.66; // D4
+            break;
+        }
+        
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.value = frequency;
+        oscillator.type = 'sine';
+        
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.3);
+      } catch (error) {
+        console.log('Audio not available');
+      }
+    }
+  }
+}
+
+// Enhanced letter component with animations
+
+// Particle system (using a simple confetti library if available)
+const confetti = (options: any) => {
+  // A dummy confetti function to prevent errors if the library isn't loaded
+  console.log('Confetti effect:', options.particleCount, 'particles');
+};
+
 // Type definitions
 type PowerUp = 'shuffle_letters' | 'reveal_vowels' | 'show_length' | 'reveal_letter';
 
@@ -50,46 +103,6 @@ const POWER_UPS = {
   reveal_vowels: { name: 'Vowels', icon: '🅰️', description: 'Highlight all vowels', cost: 30 },
   show_length: { name: 'Length', icon: '📏', description: 'Show word length', cost: 25 },
   reveal_letter: { name: 'Reveal Letter', icon: '🔍', description: 'Reveal one correct letter', cost: 35 }
-};
-
-// Sound system
-class SoundManager {
-  private sounds: { [key: string]: HTMLAudioElement } = {};
-
-  constructor() {
-    this.loadSounds();
-  }
-
-  private loadSounds() {
-    const soundFiles = {
-      correct: 'https://cdn.jsdelivr.net/gh/devdattagupta/sounds@main/correct.mp3',
-      wrong: 'https://cdn.jsdelivr.net/gh/devdattagupta/sounds@main/wrong.mp3',
-      powerup: 'https://cdn.jsdelivr.net/gh/devdattagupta/sounds@main/powerup.mp3',
-      select: 'https://cdn.jsdelivr.net/gh/devdattagupta/sounds@main/select.mp3',
-    };
-
-    Object.entries(soundFiles).forEach(([key, path]) => {
-      this.sounds[key] = new Audio(path);
-      this.sounds[key].volume = 0.4;
-    });
-  }
-
-  play(sound: string) {
-    if (this.sounds[sound]) {
-      this.sounds[sound].currentTime = 0;
-      this.sounds[sound].play().catch(() => {});
-    }
-  }
-}
-
-// Particle system (using a simple confetti library if available)
-const confetti = (options: any) => {
-  // A dummy confetti function to prevent errors if the library isn't loaded
-  if (typeof window !== 'undefined' && typeof window.confetti === 'function') {
-    (window.confetti as any)(options);
-  } else {
-    console.warn("Confetti library not available. Install https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js");
-  }
 };
 
 const createParticleEffect = (type: 'success' | 'powerup') => {
@@ -207,6 +220,9 @@ export default function WordScrambleGame({
   const [completedWordIds, setCompletedWordIds] = useState<Set<string>>(new Set());
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
   const [remainingWords, setRemainingWords] = useState<GameVocabularyWord[]>([]);
+
+  // Destructure commonly used values from gameStats
+  const { score, streak } = gameStats;
 
   // Refs
   const soundManager = useRef<SoundManager>(new SoundManager());
@@ -329,135 +345,43 @@ export default function WordScrambleGame({
     const solveTime = (Date.now() - wordStartTime) / 1000;
     const isCorrect = checkAnswer();
 
-    // Record word practice with FSRS system (for both assignment and free play modes)
-    if (currentWordData && userId) {
+    // Record vocabulary interaction using gems-first system
+    if (currentWordData && gameSessionId) {
       try {
-        // 🔍 INSTRUMENTATION: Debug vocabulary ID passing
-        console.log('🔍 [FSRS DEBUG] Current word data:', {
-          currentWordId: currentWordData.id,
-          currentWordIdType: typeof currentWordData.id,
-          currentWordWord: currentWordData.word,
-          currentWordTranslation: currentWordData.translation
+        // 🚨 DEBUG: Check vocabularyId before calling dual-track system
+        console.log('🔍 [WORD SCRAMBLE] About to record attempt:', {
+          vocabularyId: currentWordData.id,
+          vocabularyIdType: typeof currentWordData.id,
+          wordText: currentWordData.word,
+          currentWordData: currentWordData
         });
 
-        // Ensure vocabulary ID is properly preserved - use multiple fallbacks
-        const vocabularyId = currentWordData.id ||
-                           (currentWordData as any).vocabularyId ||
-                           (currentWordData as any).centralized_vocabulary_id ||
-                           null;
+        const sessionService = new EnhancedGameSessionService();
+        const gemEvent = await sessionService.recordWordAttempt(gameSessionId, 'word-scramble', {
+          vocabularyId: currentWordData.id,
+          wordText: currentWordData.word,
+          translationText: currentWordData.translation,
+          responseTimeMs: Math.round(solveTime * 1000),
+          wasCorrect: isCorrect,
+          hintUsed: gameStats.hintsUsed > 0,
+          streakCount: streak + (isCorrect ? 1 : 0),
+          masteryLevel: isCorrect ? 2 : 1,
+          maxGemRarity: isCorrect ? (streak > 5 ? 'rare' : 'uncommon') : 'common',
+          gameMode: 'word_scramble',
+          difficultyLevel: difficulty
+        });
 
-        if (!vocabularyId) {
-          console.error('🚨 [FSRS ERROR] No vocabulary ID found for word:', {
-            currentWordData,
-            currentWordDataKeys: Object.keys(currentWordData)
+        if (gemEvent) {
+          console.log('🔍 [VOCAB TRACKING] Gem awarded:', {
+            rarity: gemEvent.rarity,
+            xpValue: gemEvent.xpValue,
+            wordText: gemEvent.wordText
           });
-        }
-
-        const wordData = {
-          id: vocabularyId,
-          word: currentWordData.word,
-          translation: currentWordData.translation,
-          language: language === 'spanish' ? 'es' : language === 'french' ? 'fr' : language === 'german' ? 'de' : 'es'
-        };
-
-        console.log('🔍 [FSRS DEBUG] Word data being passed to FSRS:', wordData);
-
-        // Only proceed with FSRS if we have a valid vocabulary ID
-        if (!vocabularyId) {
-          console.error('🚨 [FSRS ERROR] Skipping FSRS - no vocabulary ID available');
-        } else {
-          // Calculate confidence for word scramble game (higher confidence than luck-based games)
-          const baseConfidence = isCorrect ? 0.7 : 0.3; // Higher confidence for skill-based game
-          const speedBonus = solveTime < 5 ? 0.1 : solveTime < 10 ? 0.05 : 0;
-          const streakBonus = streak > 3 ? 0.05 : 0;
-          const confidence = Math.max(0.1, Math.min(0.9, baseConfidence + speedBonus + streakBonus));
-
-          // ✅ UNIFIED: Record vocabulary attempt
-          if (gameSessionId) {
-            const sessionService = new EnhancedGameSessionService();
-            const gemEvent = await sessionService.recordWordAttempt(gameSessionId, 'word-scramble', {
-              vocabularyId: wordData.id,
-              wordText: wordData.word,
-              translationText: wordData.translation,
-              responseTimeMs: solveTime * 1000,
-              wasCorrect: isCorrect,
-              hintUsed: false,
-              streakCount: streak,
-              masteryLevel: 1,
-              maxGemRarity: 'rare',
-              gameMode: 'scramble',
-              difficultyLevel: difficulty
-            });
-
-            if (gemEvent) {
-              console.log(`✅ Word Scramble gem awarded: ${gemEvent.rarity} (${gemEvent.xpValue} XP)`);
-            }
-          }
-
-          if (fsrsResult) {
-            console.log(`FSRS recorded for ${currentWordData.word}:`, {
-              algorithm: fsrsResult.algorithm,
-              points: fsrsResult.points,
-              nextReview: fsrsResult.nextReviewDate,
-              interval: fsrsResult.interval,
-              masteryLevel: fsrsResult.masteryLevel
-            });
-          }
         }
       } catch (error) {
-        console.error('Error recording FSRS practice:', error);
+        console.error('Error recording vocabulary interaction:', error);
       }
-
-      // Record vocabulary interaction using gems-first system
-      if (gameSessionId) {
-        try {
-          // 🔍 INSTRUMENTATION: Log vocabulary tracking details
-          console.log('🔍 [VOCAB TRACKING] Starting vocabulary tracking for word:', {
-            wordId: currentWordData.id,
-            wordIdType: typeof currentWordData.id,
-            word: currentWordData.word,
-            translation: currentWordData.translation,
-            isCorrect: isCorrect,
-            gameSessionId,
-            responseTimeMs: solveTime * 1000
-          });
-
-          // Only record gems directly if NOT in assignment mode
-          // In assignment mode, the wrapper handles gem recording to avoid duplicates
-          if (!isAssignmentMode) {
-            try {
-              // Use EnhancedGameSessionService for gems-first vocabulary tracking
-              // Skip spaced repetition since FSRS is already handling it
-              const sessionService = new EnhancedGameSessionService();
-              const gemEvent = await sessionService.recordWordAttempt(gameSessionId, 'word-scramble', {
-                vocabularyId: currentWordData.id, // Use UUID directly
-                wordText: currentWordData.word,
-                translationText: currentWordData.translation,
-                responseTimeMs: Math.round(solveTime * 1000),
-                wasCorrect: isCorrect,
-                hintUsed: gameStats.hintsUsed > 0, // Track if hints were used this session
-                streakCount: streak + (isCorrect ? 1 : 0),
-                masteryLevel: isCorrect ? 2 : 1, // Higher mastery for skill-based game
-                maxGemRarity: isCorrect ? (streak > 5 ? 'rare' : 'uncommon') : 'common',
-                gameMode: 'word_scramble',
-                difficultyLevel: difficulty
-              });
-
-              if (gemEvent) {
-                console.log('🔍 [VOCAB TRACKING] Gem awarded:', {
-                  rarity: gemEvent.rarity,
-                  xpValue: gemEvent.xpValue,
-                  wordText: gemEvent.wordText
-                });
-              }
-            } catch (error) {
-              console.error('Error recording vocabulary interaction:', error);
-            }
-          }
-        } catch (error) {
-          console.error('Error in vocabulary tracking:', error);
-        }
-      }
+    }
 
     if (isCorrect) {
       soundManager.current.play('correct');
@@ -494,7 +418,7 @@ export default function WordScrambleGame({
       setSelectedLetters([]);
       setUserAnswer('');
     }
-  }, [gameState, userAnswer, checkAnswer, currentWordData, gameStats, initializeNewWord, wordStartTime, userId, language, recordWordPractice]);
+  }, [gameState, userAnswer, checkAnswer, currentWordData, gameStats, initializeNewWord, wordStartTime, userId, language, gameSessionId, isAssignmentMode, streak, difficulty]);
 
   // Power-up handlers
   const usePowerUp = useCallback((powerUp: PowerUp) => {
@@ -505,7 +429,7 @@ export default function WordScrambleGame({
                           (powerUp === 'reveal_vowels' && isVowelRevealed) ||
                           (powerUp === 'show_length' && showWordLength);
     
-    if (isUsedForWord || score < POWER_UPS[powerUp].cost) return;
+    if (isUsedForWord || gameStats.score < POWER_UPS[powerUp].cost) return;
 
     setGameStats(prev => ({ 
       ...prev, 

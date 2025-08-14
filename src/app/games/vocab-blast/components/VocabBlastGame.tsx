@@ -280,9 +280,8 @@ export default function VocabBlastGame({
         }
       }
 
-      // Only record gems directly if NOT in assignment mode
-      // In assignment mode, the wrapper handles gem recording to avoid duplicates
-      if (gameSessionId && !isAssignmentMode) {
+      // Record gems in both assignment and free play modes
+      if (gameSessionId) {
         try {
           // 🔍 INSTRUMENTATION: Log vocabulary tracking details
           console.log('🔍 [VOCAB TRACKING] Starting vocabulary tracking for word:', {
