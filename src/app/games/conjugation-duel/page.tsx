@@ -23,35 +23,79 @@ export default function ConjugationDuelPage() {
   const mode = searchParams?.get('mode');
 
   // Load leagues and verbs data into the store
-  const { loadLeagues, loadVerbs } = useGameStore();
+  const { loadLeagues, loadVerbs, leagues, verbs } = useGameStore();
+  const [dataLoaded, setDataLoaded] = useState(false);
+
+  // For assignment mode, we don't need static data - set loaded immediately
+  useEffect(() => {
+    if (assignmentId && mode === 'assignment') {
+      console.log('🎯 [CONJUGATION DUEL] Assignment mode detected - skipping static data loading', {
+        assignmentId,
+        mode,
+        message: 'Will use grammar database instead of static JSON files'
+      });
+      setDataLoaded(true);
+      return;
+    }
+  }, [assignmentId, mode]);
 
   useEffect(() => {
     let cancelled = false;
     const loadData = async () => {
       try {
+        // Skip static data loading for assignments - they use grammar database
+        if (assignmentId && mode === 'assignment') {
+          return; // Already handled in above useEffect
+        }
+
+        console.log('🎮 Conjugation Duel: Loading game data for free play...');
         const [leaguesRes, verbsRes] = await Promise.all([
           fetch('/data/leagues.json'),
           fetch('/data/verbs.json')
         ]);
+
+        if (!leaguesRes.ok || !verbsRes.ok) {
+          throw new Error(`Failed to fetch data: leagues ${leaguesRes.status}, verbs ${verbsRes.status}`);
+        }
+
         const leaguesJson = await leaguesRes.json();
         const verbsJson = await verbsRes.json();
+
         if (!cancelled) {
           // leagues.json has shape { leagues: [...] }
           loadLeagues(leaguesJson.leagues);
           loadVerbs(verbsJson);
+          setDataLoaded(true);
+          console.log('✅ Conjugation Duel: Game data loaded successfully', {
+            leaguesCount: leaguesJson.leagues?.length,
+            verbsKeys: Object.keys(verbsJson)
+          });
         }
       } catch (e) {
-        console.error('Failed to load Conjugation Duel data:', e);
+        console.error('❌ Failed to load Conjugation Duel data:', e);
       }
     };
     loadData();
     return () => {
       cancelled = true;
     };
-  }, [loadLeagues, loadVerbs]);
+  }, [loadLeagues, loadVerbs, assignmentId, mode]);
 
   // If assignment mode, use GameAssignmentWrapper
   if (assignmentId && mode === 'assignment') {
+    // Show loading state until game data is loaded
+    if (!dataLoaded) {
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-red-600 via-orange-600 to-yellow-700 flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-16 h-16 border-4 border-yellow-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-yellow-200 text-lg">Loading Conjugation Duel data...</p>
+            <p className="text-yellow-300 text-sm mt-2">Preparing leagues and verbs...</p>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <GameAssignmentWrapper
         assignmentId={assignmentId}
@@ -113,16 +157,25 @@ export default function ConjugationDuelPage() {
                                assignment.vocabulary_criteria?.language === 'french' ? 'french' :
                                assignment.vocabulary_criteria?.language === 'german' ? 'german' : 'spanish';
 
+          console.log('🎯 [CONJUGATION DUEL] Assignment grammar config:', {
+            fullGameConfig: assignment.game_config,
+            grammarConfig: assignment.game_config?.gameConfig?.grammarConfig,
+            gameLanguage,
+            vocabularyCount: vocabulary.length
+          });
+
           return (
             <div className="min-h-screen">
               <ConjugationDuelGameWrapper
                 language={gameLanguage}
-                league="assignment" // Special league for assignments
+                league="bronze_arena" // Use bronze arena for assignments
                 opponent={{ name: "Assignment Challenge", difficulty: "medium" }}
                 onBackToMenu={handleBackToAssignments}
                 onGameEnd={handleGameComplete}
                 assignmentId={assignment.id}
                 userId={user?.id}
+                assignmentVocabulary={vocabulary}
+                grammarConfig={assignment.game_config?.gameConfig?.grammarConfig}
               />
             </div>
           );

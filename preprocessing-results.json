@@ -1,0 +1,935 @@
+{
+  "exportedAt": "2025-08-15T16:33:30.666Z",
+  "summary": {
+    "totalProcessed": 1000,
+    "totalChanged": 90,
+    "changePercentage": "9.0",
+    "dryRun": false
+  },
+  "ruleApplications": {
+    "remove_grammatical_notes": 59,
+    "extract_primary_verb_form": 7,
+    "remove_gender_articles": 0,
+    "extract_primary_variant": 24,
+    "extract_masculine_singular": 0,
+    "clean_parenthetical_variants": 1,
+    "normalize_whitespace": 0
+  },
+  "changes": [
+    {
+      "id": "ff14436c-5b00-4e56-a66d-9ed6910e3ccc",
+      "originalWord": "Abendessen (nt)",
+      "cleanedWord": "Abendessen",
+      "appliedRules": [
+        "remove_grammatical_notes"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "cc71206d-7f4e-4b55-a37e-c666026f485c",
+      "originalWord": "Abendessen (nt)",
+      "cleanedWord": "Abendessen",
+      "appliedRules": [
+        "remove_grammatical_notes"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "bfb16d48-c4c4-4179-a94d-208fbd98d964",
+      "originalWord": "Abenteuer (nt)",
+      "cleanedWord": "Abenteuer",
+      "appliedRules": [
+        "remove_grammatical_notes"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "d809ef52-c088-4682-bb7f-9b1bf336a45a",
+      "originalWord": "Abenteuer (nt)",
+      "cleanedWord": "Abenteuer",
+      "appliedRules": [
+        "remove_grammatical_notes"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "2f475033-1a43-459e-a5e6-fe2f28503695",
+      "originalWord": "allein, alleine",
+      "cleanedWord": "allein",
+      "appliedRules": [
+        "extract_primary_variant"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "98fcbf92-3416-421a-863d-da52e9285638",
+      "originalWord": "alles (Andere)",
+      "cleanedWord": "alles",
+      "appliedRules": [
+        "remove_grammatical_notes"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "10ca4826-5e49-4695-9094-71c02e57bace",
+      "originalWord": "alles (Andere)",
+      "cleanedWord": "alles",
+      "appliedRules": [
+        "remove_grammatical_notes"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "decab42a-9292-4e16-8ac9-88682e8b3594",
+      "originalWord": "Alter (nt)",
+      "cleanedWord": "Alter",
+      "appliedRules": [
+        "remove_grammatical_notes"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "fe6b5afa-f8b2-4aff-95d3-dad4f23907f1",
+      "originalWord": "Alter (nt)",
+      "cleanedWord": "Alter",
+      "appliedRules": [
+        "remove_grammatical_notes"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "65c6e3bf-1af4-4909-985c-cff3f30872f0",
+      "originalWord": "Alter (nt)",
+      "cleanedWord": "Alter",
+      "appliedRules": [
+        "remove_grammatical_notes"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "1ac9e087-fc0f-4264-86a3-62d250fb313a",
+      "originalWord": "Alter (nt)",
+      "cleanedWord": "Alter",
+      "appliedRules": [
+        "remove_grammatical_notes"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "976c96d6-5c17-4393-903b-27cbc6747d09",
+      "originalWord": "amüsieren; sich acc. amüsieren",
+      "cleanedWord": "amüsieren",
+      "appliedRules": [
+        "extract_primary_verb_form"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "ac54c6b3-7fb9-420c-ad91-eb0d2dd6deb4",
+      "originalWord": "andere (r, s)",
+      "cleanedWord": "andere",
+      "appliedRules": [
+        "remove_grammatical_notes"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "b39989cb-e896-49bb-ae33-f1d16d172d9e",
+      "originalWord": "Angebot (nt)",
+      "cleanedWord": "Angebot",
+      "appliedRules": [
+        "remove_grammatical_notes"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "6583d8b7-cd0b-44aa-ba87-9faa35bb5d41",
+      "originalWord": "ankommen (in dat. + noun)",
+      "cleanedWord": "ankommen",
+      "appliedRules": [
+        "remove_grammatical_notes"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "f39a0994-725b-472c-970b-a54135a39529",
+      "originalWord": "anschauen, sich anschauen",
+      "cleanedWord": "anschauen",
+      "appliedRules": [
+        "extract_primary_variant"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "b03e6f81-ce68-42ce-8469-0f2159f85f29",
+      "originalWord": "anschauen, sich anschauen",
+      "cleanedWord": "anschauen",
+      "appliedRules": [
+        "extract_primary_variant"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "5498831d-8ec3-4a1a-80fb-f5d530533ff9",
+      "originalWord": "anschauen, sich anschauen",
+      "cleanedWord": "anschauen",
+      "appliedRules": [
+        "extract_primary_variant"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "9f9c2b84-508c-4fc4-9f6c-203db31c3788",
+      "originalWord": "anschauen, sich anschauen",
+      "cleanedWord": "anschauen",
+      "appliedRules": [
+        "extract_primary_variant"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "f70ce202-b5a6-48b2-9f3b-95ee74e94c97",
+      "originalWord": "anschauen, sich anschauen",
+      "cleanedWord": "anschauen",
+      "appliedRules": [
+        "extract_primary_variant"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "a9bb5f2a-ac51-4912-8a5e-cabbe8f04cec",
+      "originalWord": "anschauen, sich anschauen",
+      "cleanedWord": "anschauen",
+      "appliedRules": [
+        "extract_primary_variant"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "6b077add-3de6-4668-b2bc-d293c3cbb416",
+      "originalWord": "anschauen, sich anschauen",
+      "cleanedWord": "anschauen",
+      "appliedRules": [
+        "extract_primary_variant"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "0fa780ab-20e9-4517-a6b6-37c38199af52",
+      "originalWord": "ansehen, sich ansehen",
+      "cleanedWord": "ansehen",
+      "appliedRules": [
+        "extract_primary_variant"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "4321f826-f726-4847-8f05-1cdccf3d1a4e",
+      "originalWord": "ansehen, sich ansehen",
+      "cleanedWord": "ansehen",
+      "appliedRules": [
+        "extract_primary_variant"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "7cef0869-92d4-4e1d-ae65-7d2543948904",
+      "originalWord": "ansehen, sich ansehen",
+      "cleanedWord": "ansehen",
+      "appliedRules": [
+        "extract_primary_variant"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "888cea4b-51ec-4409-9c19-275d0c440ef4",
+      "originalWord": "ansehen, sich ansehen",
+      "cleanedWord": "ansehen",
+      "appliedRules": [
+        "extract_primary_variant"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "f84a0e0b-12df-4724-9432-9359531d7dde",
+      "originalWord": "ansehen, sich ansehen",
+      "cleanedWord": "ansehen",
+      "appliedRules": [
+        "extract_primary_variant"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "317f1476-fd03-40e2-9167-1ca5d15206b5",
+      "originalWord": "ansehen, sich ansehen",
+      "cleanedWord": "ansehen",
+      "appliedRules": [
+        "extract_primary_variant"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "7428389d-c75f-48c4-8246-8a7c4c651e5c",
+      "originalWord": "ansehen, sich ansehen",
+      "cleanedWord": "ansehen",
+      "appliedRules": [
+        "extract_primary_variant"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "861753c5-bc93-4aee-bde8-1a4b73670ea3",
+      "originalWord": "ansehen, sich ansehen",
+      "cleanedWord": "ansehen",
+      "appliedRules": [
+        "extract_primary_variant"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "1e6f861e-84ea-46ce-b07f-11f55f92642c",
+      "originalWord": "ansehen; sich dat. ansehen",
+      "cleanedWord": "ansehen",
+      "appliedRules": [
+        "extract_primary_verb_form"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "be3f03ee-3bcb-4eb0-8ad5-cd69e2b4a069",
+      "originalWord": "antworten (auf)",
+      "cleanedWord": "antworten",
+      "appliedRules": [
+        "remove_grammatical_notes"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "3fba7540-fde5-452f-bb70-a66da615cd86",
+      "originalWord": "antworten (auf + noun)",
+      "cleanedWord": "antworten",
+      "appliedRules": [
+        "remove_grammatical_notes"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "d22f4c26-e72b-452d-bc58-3e717f96e6b1",
+      "originalWord": "anziehen; sich acc. anziehen",
+      "cleanedWord": "anziehen",
+      "appliedRules": [
+        "extract_primary_verb_form"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "b024dcde-9d14-438c-855e-f940ec58e56d",
+      "originalWord": "arbeiten (an dat. + noun)",
+      "cleanedWord": "arbeiten",
+      "appliedRules": [
+        "remove_grammatical_notes"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "9f2afb72-0b88-4818-8432-f9fd35cfd7f6",
+      "originalWord": "(Arznei)mittel (nt)",
+      "cleanedWord": "(Arznei)mittel",
+      "appliedRules": [
+        "remove_grammatical_notes"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "e8308be3-8731-4bd2-8b27-6028c618709d",
+      "originalWord": "(Arznei)mittel (nt)",
+      "cleanedWord": "(Arznei)mittel",
+      "appliedRules": [
+        "remove_grammatical_notes"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "9d0874f7-d29d-4654-9f5b-c957ada14fe8",
+      "originalWord": "Auge (nt)",
+      "cleanedWord": "Auge",
+      "appliedRules": [
+        "remove_grammatical_notes"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "d3c98814-aa1c-45b4-adf2-f2ae6a851207",
+      "originalWord": "Auge (nt)",
+      "cleanedWord": "Auge",
+      "appliedRules": [
+        "remove_grammatical_notes"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "29615fe7-34a8-492e-aeff-cd8ce0b60977",
+      "originalWord": "Auge (nt)",
+      "cleanedWord": "Auge",
+      "appliedRules": [
+        "remove_grammatical_notes"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "ba23c3ce-1b85-4ec4-8025-a2ddc44a0d57",
+      "originalWord": "auskommen (mit)",
+      "cleanedWord": "auskommen",
+      "appliedRules": [
+        "remove_grammatical_notes"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "dc471a87-1b85-41fc-9fcb-02f3deef8e74",
+      "originalWord": "Ausland (nt); im / ins Ausland",
+      "cleanedWord": "Ausland",
+      "appliedRules": [
+        "extract_primary_verb_form",
+        "clean_parenthetical_variants"
+      ],
+      "confidence": 0.8
+    },
+    {
+      "id": "1de1e611-c1c9-4984-bc80-a3bec011954a",
+      "originalWord": "Auto (nt)",
+      "cleanedWord": "Auto",
+      "appliedRules": [
+        "remove_grammatical_notes"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "e180e150-4959-479f-9f05-efcc802da0a2",
+      "originalWord": "Auto (nt)",
+      "cleanedWord": "Auto",
+      "appliedRules": [
+        "remove_grammatical_notes"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "f75be6e1-d616-4283-a70c-d92b7da2a24f",
+      "originalWord": "Auto (nt)",
+      "cleanedWord": "Auto",
+      "appliedRules": [
+        "remove_grammatical_notes"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "1cfb6e28-f3cc-438f-b558-c92f36ea2072",
+      "originalWord": "Bad (nt)",
+      "cleanedWord": "Bad",
+      "appliedRules": [
+        "remove_grammatical_notes"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "b0f0a1a8-fbd7-4447-a334-04ab4ae1ad5b",
+      "originalWord": "Bad (nt)",
+      "cleanedWord": "Bad",
+      "appliedRules": [
+        "remove_grammatical_notes"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "ea113684-fa8c-4c8e-98b2-d95e0178613e",
+      "originalWord": "Bad (nt)",
+      "cleanedWord": "Bad",
+      "appliedRules": [
+        "remove_grammatical_notes"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "ff54fc5c-eb40-4a7c-9307-676a23d66e0f",
+      "originalWord": "Bargeld (nt)",
+      "cleanedWord": "Bargeld",
+      "appliedRules": [
+        "remove_grammatical_notes"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "2a59d320-1acf-4a9f-8e36-df763cd77a96",
+      "originalWord": "Bein (nt)",
+      "cleanedWord": "Bein",
+      "appliedRules": [
+        "remove_grammatical_notes"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "a1e568b0-33c6-4ccb-a98e-9c7065fa68f2",
+      "originalWord": "Beispiel; zum Beispiel, z.B.",
+      "cleanedWord": "Beispiel",
+      "appliedRules": [
+        "extract_primary_verb_form"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "aaf1f7a1-139a-499e-849c-76da538b7c55",
+      "originalWord": "beschäftigen; sich acc. beschäftigen mit + noun",
+      "cleanedWord": "beschäftigen",
+      "appliedRules": [
+        "extract_primary_verb_form"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "17763bd9-0f7d-4172-9cda-5e7db1b18f8d",
+      "originalWord": "besondere (r, s)",
+      "cleanedWord": "besondere",
+      "appliedRules": [
+        "remove_grammatical_notes"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "09a7df15-2b1e-429f-8ab3-0a2163fe855d",
+      "originalWord": "bestehen (auf dat. + noun) (aus + noun)",
+      "cleanedWord": "bestehen (auf dat. + noun)",
+      "appliedRules": [
+        "remove_grammatical_notes"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "93dbe1d1-9ded-4a23-b4b7-36fa45e5141b",
+      "originalWord": "Bett (nt)",
+      "cleanedWord": "Bett",
+      "appliedRules": [
+        "remove_grammatical_notes"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "e9f4ebbd-950a-4461-b416-e59b87929617",
+      "originalWord": "bewegen; sich acc. bewegen",
+      "cleanedWord": "bewegen",
+      "appliedRules": [
+        "extract_primary_verb_form"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "c2028695-ac37-4267-901d-7bf1a50ceec2",
+      "originalWord": "Bild (nt)",
+      "cleanedWord": "Bild",
+      "appliedRules": [
+        "remove_grammatical_notes"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "a907751b-de67-44dc-9584-0be876aab9ce",
+      "originalWord": "Bild (nt)",
+      "cleanedWord": "Bild",
+      "appliedRules": [
+        "remove_grammatical_notes"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "4de02d7c-0b56-432f-958b-1825284d44fb",
+      "originalWord": "Bild (nt)",
+      "cleanedWord": "Bild",
+      "appliedRules": [
+        "remove_grammatical_notes"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "6bf89252-8d40-450c-95fe-baa4991bcb49",
+      "originalWord": "bi(sexuell)",
+      "cleanedWord": "bi",
+      "appliedRules": [
+        "remove_grammatical_notes"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "ee12893f-4908-4ac3-a287-1b1dcf609a66",
+      "originalWord": "bitten (um)",
+      "cleanedWord": "bitten",
+      "appliedRules": [
+        "remove_grammatical_notes"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "64a455d5-09ea-4f3d-9af5-ad7d6ede03d8",
+      "originalWord": "bitte (schön)",
+      "cleanedWord": "bitte",
+      "appliedRules": [
+        "remove_grammatical_notes"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "2bb58a33-2198-4031-a054-ff01b88f2890",
+      "originalWord": "Boot (nt)",
+      "cleanedWord": "Boot",
+      "appliedRules": [
+        "remove_grammatical_notes"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "22ec75a4-b7c8-4ffe-bc7f-e78cf14ea65b",
+      "originalWord": "Boot (nt)",
+      "cleanedWord": "Boot",
+      "appliedRules": [
+        "remove_grammatical_notes"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "b4ccc19d-d7b6-49fe-aa5c-d6f72c22e1c4",
+      "originalWord": "Boot (nt)",
+      "cleanedWord": "Boot",
+      "appliedRules": [
+        "remove_grammatical_notes"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "bfd70c80-e0a0-4bee-bf76-c8087155a7c2",
+      "originalWord": "Brot (nt)",
+      "cleanedWord": "Brot",
+      "appliedRules": [
+        "remove_grammatical_notes"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "789398d2-fd50-48e4-8e6f-78a98557cd39",
+      "originalWord": "Brüder (pl)",
+      "cleanedWord": "Brüder",
+      "appliedRules": [
+        "remove_grammatical_notes"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "44489fe3-ec50-438e-83d5-c71bb6d33103",
+      "originalWord": "Brüder (pl)",
+      "cleanedWord": "Brüder",
+      "appliedRules": [
+        "remove_grammatical_notes"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "befbd03d-b100-4de1-9b6e-a692ba132f68",
+      "originalWord": "Buch (nt)",
+      "cleanedWord": "Buch",
+      "appliedRules": [
+        "remove_grammatical_notes"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "d168efae-3179-4219-ae57-4855e187be88",
+      "originalWord": "Buch (nt)",
+      "cleanedWord": "Buch",
+      "appliedRules": [
+        "remove_grammatical_notes"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "18afaa92-f331-46a1-a001-222a3df40463",
+      "originalWord": "Buch (nt)",
+      "cleanedWord": "Buch",
+      "appliedRules": [
+        "remove_grammatical_notes"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "e8852a8c-4e80-4d76-9670-ddc172bbaedf",
+      "originalWord": "Büro (nt)",
+      "cleanedWord": "Büro",
+      "appliedRules": [
+        "remove_grammatical_notes"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "88fde99a-feca-469e-9cf4-76652a3511c7",
+      "originalWord": "Büro (nt)",
+      "cleanedWord": "Büro",
+      "appliedRules": [
+        "remove_grammatical_notes"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "6725713a-0470-40d3-98ae-5736a7282d59",
+      "originalWord": "Büro (nt)",
+      "cleanedWord": "Büro",
+      "appliedRules": [
+        "remove_grammatical_notes"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "5eafe359-6601-43e6-8d6b-f9dff92a1690",
+      "originalWord": "Busse (pl)",
+      "cleanedWord": "Busse",
+      "appliedRules": [
+        "remove_grammatical_notes"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "1d43c1b6-049d-4747-beba-09a12f7b8877",
+      "originalWord": "Butterbrot (nt)",
+      "cleanedWord": "Butterbrot",
+      "appliedRules": [
+        "remove_grammatical_notes"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "56b0fe5b-10da-4d96-97d5-2d81684203ef",
+      "originalWord": "Café (nt)",
+      "cleanedWord": "Café",
+      "appliedRules": [
+        "remove_grammatical_notes"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "1790b7c3-f6b5-4454-b63d-bb0ad2528565",
+      "originalWord": "Café (nt)",
+      "cleanedWord": "Café",
+      "appliedRules": [
+        "remove_grammatical_notes"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "d2e6b003-bf71-48f5-89a7-14461941235c",
+      "originalWord": "Café (nt)",
+      "cleanedWord": "Café",
+      "appliedRules": [
+        "remove_grammatical_notes"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "094c1276-a85d-400a-a8dd-4492881ad676",
+      "originalWord": "Dach (nt)",
+      "cleanedWord": "Dach",
+      "appliedRules": [
+        "remove_grammatical_notes"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "8379e175-09fb-48b5-a063-9a550a20c955",
+      "originalWord": "danke (schön)",
+      "cleanedWord": "danke",
+      "appliedRules": [
+        "remove_grammatical_notes"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "c450b37d-9a21-49b9-964e-ebe40e7e6c3b",
+      "originalWord": "daran, dran",
+      "cleanedWord": "daran",
+      "appliedRules": [
+        "extract_primary_variant"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "6ab902fb-a282-4c9b-a576-5c049e26a8dd",
+      "originalWord": "daran, dran",
+      "cleanedWord": "daran",
+      "appliedRules": [
+        "extract_primary_variant"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "142fbe9f-05c0-4d67-8a72-e76fc8706af5",
+      "originalWord": "darauf, drauf",
+      "cleanedWord": "darauf",
+      "appliedRules": [
+        "extract_primary_variant"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "cca2eb7f-a2e2-41a7-876a-21d39b576273",
+      "originalWord": "darin, drin, drinnen",
+      "cleanedWord": "darin",
+      "appliedRules": [
+        "extract_primary_variant"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "b48d044a-8fcd-410a-886c-de2f4244b5eb",
+      "originalWord": "darin, drin, drinnen",
+      "cleanedWord": "darin",
+      "appliedRules": [
+        "extract_primary_variant"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "301351db-f9bb-4224-b166-c88a7b18d0c5",
+      "originalWord": "darüber, drüber",
+      "cleanedWord": "darüber",
+      "appliedRules": [
+        "extract_primary_variant"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "41fe6a24-3df8-47cc-bdb2-04a47e24db2d",
+      "originalWord": "darüber, drüber",
+      "cleanedWord": "darüber",
+      "appliedRules": [
+        "extract_primary_variant"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "cdd00359-b4fb-4a6c-9f32-742a033a3378",
+      "originalWord": "das Gute (nt)",
+      "cleanedWord": "das Gute",
+      "appliedRules": [
+        "remove_grammatical_notes"
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "b303cfd6-c85c-402b-9415-7000fe2c6b70",
+      "originalWord": "das Kilo(gramm), kg",
+      "cleanedWord": "das Kilo(gramm)",
+      "appliedRules": [
+        "extract_primary_variant"
+      ],
+      "confidence": 0.9
+    }
+  ],
+  "ruleDefinitions": [
+    {
+      "name": "remove_grammatical_notes",
+      "description": "Remove grammatical information in parentheses",
+      "examples": [
+        {
+          "before": "erzählen (von + noun)",
+          "after": "erzählen"
+        },
+        {
+          "before": "warten (auf acc. + noun)",
+          "after": "warten"
+        },
+        {
+          "before": "formar; formarse (en, como)",
+          "after": "formar; formarse"
+        }
+      ]
+    },
+    {
+      "name": "extract_primary_verb_form",
+      "description": "Extract primary verb from multiple forms with semicolons",
+      "examples": [
+        {
+          "before": "formar; formarse (en, como)",
+          "after": "formar"
+        },
+        {
+          "before": "amüsieren; sich acc. amüsieren",
+          "after": "amüsieren"
+        }
+      ]
+    },
+    {
+      "name": "remove_gender_articles",
+      "description": "Remove gender variants with articles",
+      "examples": [
+        {
+          "before": "le/la pilote",
+          "after": "pilote"
+        },
+        {
+          "before": "el/la estudiante",
+          "after": "estudiante"
+        },
+        {
+          "before": "der/die Lehrer",
+          "after": "Lehrer"
+        }
+      ]
+    },
+    {
+      "name": "extract_primary_variant",
+      "description": "Extract primary form from comma-separated variants",
+      "examples": [
+        {
+          "before": "parce que, parce qu'",
+          "after": "parce que"
+        },
+        {
+          "before": "allein, alleine",
+          "after": "allein"
+        }
+      ]
+    },
+    {
+      "name": "extract_masculine_singular",
+      "description": "Extract masculine singular from inflected forms",
+      "examples": [
+        {
+          "before": "vuestro, vuestra, vuestros, vuestras",
+          "after": "vuestro"
+        },
+        {
+          "before": "nuestro, nuestra, nuestros, nuestras",
+          "after": "nuestro"
+        }
+      ]
+    },
+    {
+      "name": "clean_parenthetical_variants",
+      "description": "Remove parenthetical verb variants",
+      "examples": [
+        {
+          "before": "(an)bieten",
+          "after": "anbieten"
+        },
+        {
+          "before": "(sich) waschen",
+          "after": "waschen"
+        }
+      ]
+    },
+    {
+      "name": "normalize_whitespace",
+      "description": "Normalize multiple spaces and trim",
+      "examples": [
+        {
+          "before": "word   with    spaces",
+          "after": "word with spaces"
+        }
+      ]
+    }
+  ]
+}

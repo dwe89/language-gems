@@ -1,0 +1,105 @@
+{
+  "randomSample": {
+    "totalSampled": 1000,
+    "languageDistribution": {
+      "es": 333,
+      "fr": 333,
+      "de": 334
+    },
+    "qualityScores": {
+      "overall": 100,
+      "byLanguage": {
+        "es": 100,
+        "fr": 100,
+        "de": 100
+      }
+    },
+    "cleanEntries": 995,
+    "problematicEntries": [
+      {
+        "word": "saß/sass",
+        "language": "de",
+        "issues": [
+          "contains_slash"
+        ],
+        "category": "unknown"
+      },
+      {
+        "word": "Fahrrad/Rad",
+        "language": "de",
+        "issues": [
+          "contains_slash"
+        ],
+        "category": "unknown"
+      },
+      {
+        "word": "Warum?",
+        "language": "de",
+        "issues": [
+          "contains_question_mark"
+        ],
+        "category": "basics_core_language"
+      },
+      {
+        "word": "Wie?",
+        "language": "de",
+        "issues": [
+          "contains_question_mark"
+        ],
+        "category": "basics_core_language"
+      },
+      {
+        "word": "Wann?",
+        "language": "de",
+        "issues": [
+          "contains_question_mark"
+        ],
+        "category": "basics_core_language"
+      }
+    ]
+  },
+  "patternAnalysis": {
+    "remainingPatterns": {},
+    "totalProblematic": 0,
+    "complexFormattingPercentage": 0
+  },
+  "crossLanguageValidation": {
+    "spanish": {
+      "total": 6812,
+      "clean": 954,
+      "percentage": 14
+    },
+    "french": {
+      "total": 6885,
+      "clean": 998,
+      "percentage": 14
+    },
+    "german": {
+      "total": 6590,
+      "clean": 946,
+      "percentage": 14
+    }
+  },
+  "quantitativeMetrics": {
+    "totalEntries": 20287,
+    "overallQualityPercentage": 100,
+    "complexFormattingPercentage": 0,
+    "targetsMet": {
+      "complexFormatting": true,
+      "overallQuality": true
+    }
+  },
+  "recommendations": {
+    "nextSteps": [
+      "Focus cleanup efforts on spanish vocabulary",
+      "Focus cleanup efforts on french vocabulary",
+      "Focus cleanup efforts on german vocabulary"
+    ],
+    "priorityIssues": [
+      "spanish quality at 14% needs improvement",
+      "french quality at 14% needs improvement",
+      "german quality at 14% needs improvement"
+    ],
+    "productionReadiness": "READY"
+  }
+}

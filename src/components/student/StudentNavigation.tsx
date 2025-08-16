@@ -17,7 +17,8 @@ import {
   Star,
   Zap,
   Home,
-  Edit
+  Edit,
+  Brain
 } from 'lucide-react';
 
 // Navigation items for student dashboard
@@ -39,6 +40,12 @@ const navItems = [
     href: '/games',
     icon: Gamepad2,
     description: 'Practice with fun games'
+  },
+  {
+    name: 'Grammar',
+    href: '/student-dashboard/grammar',
+    icon: Brain,
+    description: 'Track your conjugation mastery'
   },
   {
     name: 'Assessments',

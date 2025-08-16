@@ -1,0 +1,433 @@
+{
+  "complexFormatting": {
+    "total": 136,
+    "patterns": {
+      "semicolon_patterns": {
+        "count": 40,
+        "examples": [
+          "présenter; se présenter",
+          "défendre; défendre de",
+          "exprimer; s'exprimer",
+          "sentir; se sentir",
+          "sentir; se sentir",
+          "sentir; se sentir",
+          "sentir; se sentir",
+          "sentir; se sentir",
+          "les parole (f); paroles",
+          "grand; grand-"
+        ]
+      },
+      "parentheses_patterns": {
+        "count": 81,
+        "examples": [
+          "nouveaux (mpl)",
+          "tous (mpl)",
+          "appartenir (à)",
+          "(à) moi",
+          "les parole (f); paroles",
+          "sain(e)",
+          "les parole (f); paroles",
+          "mes (pl)",
+          "mon (m)",
+          "bref (m)"
+        ]
+      },
+      "comma_patterns": {
+        "count": 25,
+        "examples": [
+          "ça, cela",
+          "la, l' (f)",
+          "la, l' (f)",
+          "le, l' (m)",
+          "le, l' (m)",
+          "me, m'",
+          "de la, de l' (f)",
+          "que (?), qu' (?)",
+          "que, qu'",
+          "ce, cet (m), c'"
+        ]
+      },
+      "pipe_patterns": {
+        "count": 9,
+        "examples": [
+          "ris | ris !",
+          "suis | suis !",
+          "vois | vois !",
+          "cours | cours !",
+          "va | va !",
+          "fais | fais !; fais de + noun | fais de + noun !",
+          "faites | faites !; faites de | faites de !",
+          "connais | connais !",
+          "crois | crois !"
+        ]
+      },
+      "ellipsis_patterns": {
+        "count": 8,
+        "examples": [
+          "(ne…) pas",
+          "plus (…que)",
+          "plus (…que)",
+          "moins (…que)",
+          "moins (…que)",
+          "sois… !",
+          "soyez… !",
+          "¡Sé…!"
+        ]
+      }
+    },
+    "byLanguage": {
+      "fr": 134,
+      "es": 2
+    }
+  },
+  "lemmatizationGaps": {
+    "failedTests": [
+      {
+        "sentence": "Vivieron en Madrid ayer",
+        "language": "es",
+        "expected": [
+          "vivir",
+          "Madrid"
+        ],
+        "found": [
+          "vivir"
+        ],
+        "missingWords": [
+          "Madrid"
+        ]
+      },
+      {
+        "sentence": "Comemos pizza todos los días",
+        "language": "es",
+        "expected": [
+          "comer",
+          "pizza"
+        ],
+        "found": [
+          "comer"
+        ],
+        "missingWords": [
+          "pizza"
+        ]
+      },
+      {
+        "sentence": "Estudiaron mucho para el examen",
+        "language": "es",
+        "expected": [
+          "estudiar",
+          "examen"
+        ],
+        "found": [
+          "estudiar",
+          "parar"
+        ],
+        "missingWords": [
+          "examen"
+        ]
+      },
+      {
+        "sentence": "Escribimos cartas a nuestros amigos",
+        "language": "es",
+        "expected": [
+          "escribir",
+          "cartas",
+          "amigos"
+        ],
+        "found": [
+          "escribir",
+          "nuestro"
+        ],
+        "missingWords": [
+          "cartas",
+          "amigos"
+        ]
+      },
+      {
+        "sentence": "Nous mangeons du pain",
+        "language": "fr",
+        "expected": [
+          "manger",
+          "pain"
+        ],
+        "found": [],
+        "missingWords": [
+          "manger",
+          "pain"
+        ]
+      },
+      {
+        "sentence": "Il préfère le café",
+        "language": "fr",
+        "expected": [
+          "préférer",
+          "café"
+        ],
+        "found": [],
+        "missingWords": [
+          "préférer",
+          "café"
+        ]
+      },
+      {
+        "sentence": "Vous parlez français couramment",
+        "language": "fr",
+        "expected": [
+          "parler",
+          "français"
+        ],
+        "found": [
+          "parler"
+        ],
+        "missingWords": [
+          "français"
+        ]
+      },
+      {
+        "sentence": "Ils finissent leurs devoirs",
+        "language": "fr",
+        "expected": [
+          "finir",
+          "devoirs"
+        ],
+        "found": [
+          "finir"
+        ],
+        "missingWords": [
+          "devoirs"
+        ]
+      },
+      {
+        "sentence": "Elle choisit une robe rouge",
+        "language": "fr",
+        "expected": [
+          "choisir",
+          "robe",
+          "rouge"
+        ],
+        "found": [
+          "choisir"
+        ],
+        "missingWords": [
+          "robe",
+          "rouge"
+        ]
+      },
+      {
+        "sentence": "Wir essen Brot zum Frühstück",
+        "language": "de",
+        "expected": [
+          "essen",
+          "Brot",
+          "Frühstück"
+        ],
+        "found": [],
+        "missingWords": [
+          "essen",
+          "Brot",
+          "Frühstück"
+        ]
+      },
+      {
+        "sentence": "Sie trinken Wasser",
+        "language": "de",
+        "expected": [
+          "trinken",
+          "Wasser"
+        ],
+        "found": [],
+        "missingWords": [
+          "trinken",
+          "Wasser"
+        ]
+      },
+      {
+        "sentence": "Ich lese ein Buch",
+        "language": "de",
+        "expected": [
+          "lesen",
+          "Buch"
+        ],
+        "found": [
+          "lesen"
+        ],
+        "missingWords": [
+          "Buch"
+        ]
+      },
+      {
+        "sentence": "Du schreibst einen Brief",
+        "language": "de",
+        "expected": [
+          "schreiben",
+          "Brief"
+        ],
+        "found": [
+          "schreiben"
+        ],
+        "missingWords": [
+          "Brief"
+        ]
+      }
+    ],
+    "commonMissingPatterns": {
+      "es:Madrid": 1,
+      "es:pizza": 1,
+      "es:examen": 1,
+      "es:cartas": 1,
+      "es:amigos": 1,
+      "fr:manger": 1,
+      "fr:pain": 1,
+      "fr:préférer": 1,
+      "fr:café": 1,
+      "fr:français": 1,
+      "fr:devoirs": 1,
+      "fr:robe": 1,
+      "fr:rouge": 1,
+      "de:essen": 1,
+      "de:Brot": 1,
+      "de:Frühstück": 1,
+      "de:trinken": 1,
+      "de:Wasser": 1,
+      "de:Buch": 1,
+      "de:Brief": 1
+    }
+  },
+  "missingMWEs": {
+    "shouldExist": [
+      {
+        "phrase": "de nada",
+        "language": "es",
+        "frequency": 1,
+        "context": "politeness"
+      },
+      {
+        "phrase": "por supuesto",
+        "language": "es",
+        "frequency": 1,
+        "context": "agreement"
+      },
+      {
+        "phrase": "sin embargo",
+        "language": "es",
+        "frequency": 1,
+        "context": "contrast"
+      },
+      {
+        "phrase": "a menudo",
+        "language": "es",
+        "frequency": 1,
+        "context": "frequency"
+      },
+      {
+        "phrase": "en seguida",
+        "language": "es",
+        "frequency": 1,
+        "context": "time"
+      },
+      {
+        "phrase": "por lo tanto",
+        "language": "es",
+        "frequency": 1,
+        "context": "conclusion"
+      },
+      {
+        "phrase": "avoir besoin",
+        "language": "fr",
+        "frequency": 1,
+        "context": "modal expression"
+      },
+      {
+        "phrase": "tout de suite",
+        "language": "fr",
+        "frequency": 1,
+        "context": "time"
+      },
+      {
+        "phrase": "bien sûr",
+        "language": "fr",
+        "frequency": 1,
+        "context": "agreement"
+      },
+      {
+        "phrase": "en train de",
+        "language": "fr",
+        "frequency": 1,
+        "context": "progressive"
+      },
+      {
+        "phrase": "avoir envie",
+        "language": "fr",
+        "frequency": 1,
+        "context": "desire"
+      },
+      {
+        "phrase": "avoir l'air",
+        "language": "fr",
+        "frequency": 1,
+        "context": "appearance"
+      },
+      {
+        "phrase": "faire attention",
+        "language": "fr",
+        "frequency": 1,
+        "context": "caution"
+      },
+      {
+        "phrase": "avoir raison",
+        "language": "fr",
+        "frequency": 1,
+        "context": "correctness"
+      },
+      {
+        "phrase": "zum Beispiel",
+        "language": "de",
+        "frequency": 1,
+        "context": "example"
+      },
+      {
+        "phrase": "auf Wiedersehen",
+        "language": "de",
+        "frequency": 1,
+        "context": "farewell"
+      },
+      {
+        "phrase": "wie geht's",
+        "language": "de",
+        "frequency": 1,
+        "context": "greeting"
+      },
+      {
+        "phrase": "es tut mir leid",
+        "language": "de",
+        "frequency": 1,
+        "context": "apology"
+      },
+      {
+        "phrase": "zum Glück",
+        "language": "de",
+        "frequency": 1,
+        "context": "fortune"
+      },
+      {
+        "phrase": "auf jeden Fall",
+        "language": "de",
+        "frequency": 1,
+        "context": "certainty"
+      }
+    ],
+    "total": 20
+  },
+  "databaseIssues": {
+    "missingBaseWords": 5220,
+    "incorrectMWEClassifications": 448,
+    "duplicateEntries": 331,
+    "inconsistentTranslations": 0
+  },
+  "currentMetrics": {
+    "databaseQuality": 95,
+    "lemmatizationSuccess": 70,
+    "mweRecognition": 25,
+    "complexFormattingPercent": 13,
+    "overallScore": 67
+  }
+}

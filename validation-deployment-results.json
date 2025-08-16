@@ -1,0 +1,67 @@
+{
+  "categoryAApplied": 383,
+  "aiSuggestionsApplied": 219,
+  "lemmatizationTests": {
+    "passed": 0,
+    "failed": 8,
+    "examples": [
+      {
+        "sentence": "Prefiero ir al cine",
+        "before": 0,
+        "after": 25,
+        "improvement": 25
+      },
+      {
+        "sentence": "Hablo español muy bien",
+        "before": 0,
+        "after": 25,
+        "improvement": 25
+      },
+      {
+        "sentence": "Comemos pizza todos los días",
+        "before": 0,
+        "after": 20,
+        "improvement": 20
+      },
+      {
+        "sentence": "Vivieron en Madrid",
+        "before": 0,
+        "after": 0,
+        "improvement": 0
+      },
+      {
+        "sentence": "Me gusta comer chocolate",
+        "before": 0,
+        "after": 25,
+        "improvement": 25
+      },
+      {
+        "sentence": "Je parle français couramment",
+        "before": 0,
+        "after": 0,
+        "improvement": 0
+      },
+      {
+        "sentence": "Ich spreche Deutsch",
+        "before": 0,
+        "after": 0,
+        "improvement": 0
+      },
+      {
+        "sentence": "Nous mangeons du pain",
+        "before": 0,
+        "after": 0,
+        "improvement": 0
+      }
+    ]
+  },
+  "conjugationTests": {
+    "passed": 0,
+    "failed": 2
+  },
+  "finalAudit": {
+    "totalEntries": 1000,
+    "issuesRemaining": 727,
+    "improvementPercentage": 27
+  }
+}

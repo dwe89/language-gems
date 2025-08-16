@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { Gem, Sparkles, Crown, Flame, Star, Lightbulb, Zap, BookOpen, Trophy } from 'lucide-react';
+import { Gem, Sparkles, Crown, Flame, Star, Lightbulb, Zap, BookOpen, Trophy, Brain } from 'lucide-react';
 import { GEM_TYPES, type GemRarity } from '../../services/rewards/RewardEngine';
 import { type XPBreakdown } from '../../services/rewards/DualTrackAnalyticsService';
 
@@ -15,10 +15,11 @@ interface GemsProgressCardProps {
   currentLevel: number;
   xpToNextLevel: number;
   className?: string;
-  // Dual-track system props
-  xpBreakdown?: XPBreakdown;
+  // Triple-track system props
+  xpBreakdown?: XPBreakdown & { grammarXP?: number };
   activityGemsToday?: number;
   masteryGemsToday?: number;
+  grammarGemsToday?: number;
 }
 
 const GEM_ICONS: Record<GemRarity, React.ComponentType<any>> = {
@@ -39,13 +40,15 @@ export default function GemsProgressCard({
   className = '',
   xpBreakdown,
   activityGemsToday = 0,
-  masteryGemsToday = 0
+  masteryGemsToday = 0,
+  grammarGemsToday = 0
 }: GemsProgressCardProps) {
   const xpProgress = totalXP > 0 ? ((totalXP % 1000) / 1000) * 100 : 0; // Simplified level calculation
 
-  // Calculate percentages for dual-track display
+  // Calculate percentages for triple-track display
   const masteryPercentage = xpBreakdown && xpBreakdown.totalXP > 0 ? (xpBreakdown.masteryXP / xpBreakdown.totalXP) * 100 : 0;
   const activityPercentage = xpBreakdown && xpBreakdown.totalXP > 0 ? (xpBreakdown.activityXP / xpBreakdown.totalXP) * 100 : 0;
+  const grammarPercentage = xpBreakdown && xpBreakdown.totalXP > 0 && xpBreakdown.grammarXP ? (xpBreakdown.grammarXP / xpBreakdown.totalXP) * 100 : 0;
 
   return (
     <div className={`bg-white rounded-xl shadow-lg p-6 ${className}`}>
@@ -54,7 +57,7 @@ export default function GemsProgressCard({
         <div>
           <h3 className="text-xl font-bold text-gray-900">Language Gems</h3>
           <p className="text-gray-600">
-            {xpBreakdown ? 'Mastery & Activity Rewards' : 'Your vocabulary collection'}
+            {xpBreakdown ? 'Mastery, Activity & Grammar Rewards' : 'Your vocabulary collection'}
           </p>
         </div>
         <div className="text-right">
@@ -63,6 +66,7 @@ export default function GemsProgressCard({
           {xpBreakdown && (
             <div className="text-xs text-gray-400 mt-1">
               {xpBreakdown.totalMasteryGems} mastery + {xpBreakdown.totalActivityGems} activity
+              {grammarGemsToday > 0 && ` + ${grammarGemsToday} grammar today`}
             </div>
           )}
         </div>
@@ -91,11 +95,18 @@ export default function GemsProgressCard({
                 style={{ width: `${activityPercentage}%` }}
                 title={`Activity XP: ${xpBreakdown.activityXP}`}
               />
+              {grammarPercentage > 0 && (
+                <div
+                  className="bg-gradient-to-r from-orange-500 to-red-500 h-full transition-all duration-1000"
+                  style={{ width: `${grammarPercentage}%` }}
+                  title={`Grammar XP: ${xpBreakdown.grammarXP || 0}`}
+                />
+              )}
             </div>
           </div>
 
           {/* XP Type Breakdown */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className={`grid gap-3 ${grammarPercentage > 0 ? 'grid-cols-3' : 'grid-cols-2'}`}>
             <div className="flex items-center gap-2">
               <BookOpen className="w-4 h-4 text-purple-500" />
               <div>
@@ -114,6 +125,17 @@ export default function GemsProgressCard({
                 <div className="text-xs text-gray-500">Activity Gems</div>
               </div>
             </div>
+            {grammarPercentage > 0 && (
+              <div className="flex items-center gap-2">
+                <Brain className="w-4 h-4 text-orange-500" />
+                <div>
+                  <div className="text-sm font-medium text-orange-600">
+                    {(xpBreakdown.grammarXP || 0).toLocaleString()} XP
+                  </div>
+                  <div className="text-xs text-gray-500">Grammar Gems</div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

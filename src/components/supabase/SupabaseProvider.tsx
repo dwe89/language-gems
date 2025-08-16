@@ -20,6 +20,12 @@ export default function SupabaseProvider({
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {});
     
+    // Expose Supabase client globally for console testing
+    if (typeof window !== 'undefined') {
+      (window as any).supabase_client = supabase;
+      console.log('🔧 [SUPABASE] Client exposed globally for console testing');
+    }
+    
     return () => {
       subscription.unsubscribe();
     };

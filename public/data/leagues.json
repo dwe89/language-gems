@@ -36,7 +36,7 @@
         {
           "id": "training_dummy",
           "name": "Training Dummy",
-          "sprite": "training_dummy.png",
+          "sprite": "training-dummy.png",
           "health": 120,
           "difficulty": 2,
           "weapons": ["practice_sword"],

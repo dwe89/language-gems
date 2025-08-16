@@ -8,6 +8,11 @@ import { ArrowLeft } from 'lucide-react';
 import { supabaseBrowser } from '../../../../../components/auth/AuthProvider';
 import EnhancedAssignmentCreator from '../../../../../components/assignments/EnhancedAssignmentCreator';
 
+// Import test functions for development
+if (process.env.NODE_ENV === 'development') {
+  import('../../../../../utils/testGrammarSystem');
+}
+
 export default function EnhancedAssignmentPage() {
   const { user } = useAuth();
   const router = useRouter();

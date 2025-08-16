@@ -35,8 +35,16 @@ export interface SentenceConfig {
 
 export interface GrammarConfig {
   language: 'spanish' | 'french' | 'german';
-  verbTypes: ('regular' | 'irregular' | 'stem-changing')[];
-  tenses: ('present' | 'preterite' | 'imperfect' | 'future' | 'conditional' | 'subjunctive')[];
+  verbTypes: ('regular' | 'irregular' | 'stem-changing' | 'reflexive')[];
+  tenses: (
+    // Simple tenses
+    'present' | 'preterite' | 'imperfect' | 'future' | 'conditional' |
+    'present_subjunctive' | 'imperfect_subjunctive' |
+    // Compound tenses
+    'present_perfect' | 'past_perfect' | 'future_perfect' | 'conditional_perfect' |
+    'present_perfect_subjunctive' | 'past_perfect_subjunctive'
+  )[];
+  persons: ('yo' | 'tu' | 'el_ella_usted' | 'nosotros' | 'vosotros' | 'ellos_ellas_ustedes')[];
   difficulty: 'beginner' | 'intermediate' | 'advanced';
   verbCount?: number;
   focusAreas?: ('conjugation' | 'recognition' | 'translation')[];

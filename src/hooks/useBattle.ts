@@ -20,7 +20,7 @@ interface BattleQuestion {
   options: string[];
 }
 
-export const useBattle = (language: string = 'spanish') => {
+export const useBattle = (language: string = 'spanish', timeLimit: number = 10) => {
   const {
     battleState,
     setBattleState,
@@ -34,7 +34,7 @@ export const useBattle = (language: string = 'spanish') => {
     endBattle,
   } = useGameStore();
 
-  const [timeLeft, setTimeLeft] = useState(10);
+  const [timeLeft, setTimeLeft] = useState(timeLimit);
   const [isAnswering, setIsAnswering] = useState(false);
 
   // Get random verb based on current league requirements
@@ -361,8 +361,9 @@ export const useBattle = (language: string = 'spanish') => {
 
   }, [battleState, isAnswering, updateAccuracy, takeDamage, gainExperience, addBattleLog, endBattle, setBattleState, generateQuestion]);
 
-  // Timer effect
+  // Timer effect (only if timeLimit > 0)
   useEffect(() => {
+    if (timeLimit <= 0) return;
     if (!battleState.isInBattle || isAnswering || timeLeft <= 0) return;
 
     const timer = setTimeout(() => {
@@ -370,7 +371,7 @@ export const useBattle = (language: string = 'spanish') => {
     }, 1000);
 
     return () => clearTimeout(timer);
-  }, [battleState.isInBattle, isAnswering, timeLeft]);
+  }, [battleState.isInBattle, isAnswering, timeLeft, timeLimit]);
 
   // Time's up effect
   useEffect(() => {
@@ -384,9 +385,9 @@ export const useBattle = (language: string = 'spanish') => {
     if (battleState.isInBattle && !battleState.currentQuestion && !isAnswering) {
       const question = generateQuestion(language);
       setBattleState({ currentQuestion: question });
-      setTimeLeft(10);
+      setTimeLeft(timeLimit);
     }
-  }, [battleState.isInBattle, battleState.currentQuestion, isAnswering, generateQuestion, setBattleState, language]);
+  }, [battleState.isInBattle, battleState.currentQuestion, isAnswering, generateQuestion, setBattleState, language, timeLimit]);
 
   return {
     timeLeft,

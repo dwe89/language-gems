@@ -1,0 +1,1702 @@
+{
+  "totalEntries": 20266,
+  "languageDistribution": {
+    "fr": 757,
+    "es": 180,
+    "de": 63
+  },
+  "jsonApplicationStatus": {
+    "totalSuggestions": 240,
+    "appliedCount": 49,
+    "notAppliedCount": 1,
+    "examples": [
+      {
+        "id": "ac54c6b3-7fb9-420c-ad91-eb0d2dd6deb4",
+        "original": "andere (r, s)",
+        "suggested": "andere",
+        "current": "andere (r, s)",
+        "confidence": 0.6
+      }
+    ]
+  },
+  "remainingIssues": {
+    "complexFormatting": [
+      {
+        "id": "519ce29a-d7a3-42fe-bb55-11d6d0b02c11",
+        "word": "présenter; se présenter",
+        "language": "fr",
+        "translation": "to present; to introduce oneself"
+      },
+      {
+        "id": "84cb9b68-d001-4f0b-81a9-b5fd79b4faf2",
+        "word": "nouveaux (mpl)",
+        "language": "fr",
+        "translation": "new"
+      },
+      {
+        "id": "e18f9fc0-31d8-4523-a7ce-e8d785ded5de",
+        "word": "ça, cela",
+        "language": "fr",
+        "translation": "that, it"
+      },
+      {
+        "id": "2e32c3f4-f37a-4928-9705-e1e4cad2d4ab",
+        "word": "tous (mpl)",
+        "language": "fr",
+        "translation": "all, the whole, every"
+      },
+      {
+        "id": "73fa7cb1-287d-4b65-bcd8-e56d4741c8d6",
+        "word": "appartenir (à)",
+        "language": "fr",
+        "translation": "to belong (to)"
+      },
+      {
+        "id": "74017e43-7c97-4980-919e-fa96e30ac233",
+        "word": "défendre; défendre de",
+        "language": "fr",
+        "translation": "to defend; to forbid, ban"
+      },
+      {
+        "id": "aa2a399e-731b-4f1a-9ddd-b9b7e181208e",
+        "word": "exprimer; s'exprimer",
+        "language": "fr",
+        "translation": "to express; to express oneself"
+      },
+      {
+        "id": "c4d554d8-bc2e-458b-9119-ad15bb7e2e93",
+        "word": "(à) moi",
+        "language": "fr",
+        "translation": "(to) me (emph)"
+      },
+      {
+        "id": "9c36bd0c-15a7-4ed3-aa07-28ee9dd019cd",
+        "word": "sentir; se sentir",
+        "language": "fr",
+        "translation": "to smell; to feel"
+      },
+      {
+        "id": "232de52b-e1a7-4137-90ec-1902bf23dce4",
+        "word": "sentir; se sentir",
+        "language": "fr",
+        "translation": "to smell; to feel"
+      },
+      {
+        "id": "ac35564e-3e50-4916-bbac-1c2fa898da8c",
+        "word": "sentir; se sentir",
+        "language": "fr",
+        "translation": "to smell; to feel"
+      },
+      {
+        "id": "f8537ac9-d923-4461-9fc4-687efe8be9e9",
+        "word": "sentir; se sentir",
+        "language": "fr",
+        "translation": "to smell; to feel"
+      },
+      {
+        "id": "12e08a43-90f6-4b34-84b7-6130e520dfd2",
+        "word": "sentir; se sentir",
+        "language": "fr",
+        "translation": "to smell; to feel"
+      },
+      {
+        "id": "adf61df7-4d63-4ae0-ae8a-a7c6fcf54ace",
+        "word": "les parole (f); paroles",
+        "language": "fr",
+        "translation": "speech, word, speaking; lyrics"
+      },
+      {
+        "id": "bb898b3a-f338-43b4-aa9c-8418da449e30",
+        "word": "sain(e)",
+        "language": "fr",
+        "translation": "healthy"
+      },
+      {
+        "id": "1337460c-42b1-474e-8950-60510b5c8e7d",
+        "word": "grand; grand-",
+        "language": "fr",
+        "translation": "great, big, tall; grand-"
+      },
+      {
+        "id": "f9bb175c-6ada-403f-8816-7f8024cbade9",
+        "word": "les parole (f); paroles",
+        "language": "fr",
+        "translation": "speech, word, speaking; lyrics"
+      },
+      {
+        "id": "1231e366-1c41-4277-8668-a1b98a113480",
+        "word": "grand; grand-",
+        "language": "fr",
+        "translation": "great, big, tall; grand-"
+      },
+      {
+        "id": "0d5331f4-07cb-4310-bacd-fd56543d0e64",
+        "word": "mes (pl)",
+        "language": "fr",
+        "translation": "my"
+      },
+      {
+        "id": "ea9c94b1-029e-40eb-b132-570fdcfcf1ee",
+        "word": "mon (m)",
+        "language": "fr",
+        "translation": "my"
+      },
+      {
+        "id": "1d4f3087-f64a-481f-9727-e1e4b15ab33d",
+        "word": "bref (m)",
+        "language": "fr",
+        "translation": "brief"
+      },
+      {
+        "id": "e302ec3a-2e53-440c-b0f7-70ac652afc96",
+        "word": "brève (f)",
+        "language": "fr",
+        "translation": "brief"
+      },
+      {
+        "id": "8e356eed-29e4-462d-bcb4-23f11e16d5af",
+        "word": "la, l' (f)",
+        "language": "fr",
+        "translation": "the"
+      },
+      {
+        "id": "0e2cbadd-8f54-4e38-8fbb-4a42aacfa8d5",
+        "word": "la, l' (f)",
+        "language": "fr",
+        "translation": "her, it (obj)"
+      },
+      {
+        "id": "7284eecd-1448-45dc-b573-bf164f42cca8",
+        "word": "le, l' (m)",
+        "language": "fr",
+        "translation": "the"
+      },
+      {
+        "id": "0d9afcc0-b1ff-4f60-bf37-7168d186fe9d",
+        "word": "le, l' (m)",
+        "language": "fr",
+        "translation": "him, it (obj)"
+      },
+      {
+        "id": "cd9454d6-d649-4a36-80a2-82e64dde0e5d",
+        "word": "les (pl)",
+        "language": "fr",
+        "translation": "the"
+      },
+      {
+        "id": "9c8a1c8a-def0-48b5-a33a-79f2b82f2d84",
+        "word": "penser (à/de)",
+        "language": "fr",
+        "translation": "to think (of)"
+      },
+      {
+        "id": "ffa84697-fa64-4e93-94f8-810d1025d701",
+        "word": "quand (?)",
+        "language": "fr",
+        "translation": "when(?)"
+      },
+      {
+        "id": "22c6696a-b005-4f47-967e-5720c8b7fda7",
+        "word": "me, m'",
+        "language": "fr",
+        "translation": "me (obj) | to/for me (indirect obj) | myself (reflex)"
+      },
+      {
+        "id": "db1db3b3-91bc-41d4-b932-1a8f19f102a2",
+        "word": "réussir (à)",
+        "language": "fr",
+        "translation": "to succeed, pass (an exam)"
+      },
+      {
+        "id": "2b952540-102e-40b1-86c6-1c27338adab3",
+        "word": "réussir (à)",
+        "language": "fr",
+        "translation": "to succeed, pass (an exam)"
+      },
+      {
+        "id": "4cd5b626-4732-42ac-af1c-91cedf60cd23",
+        "word": "de la, de l' (f)",
+        "language": "fr",
+        "translation": "some (of the) (f)"
+      },
+      {
+        "id": "07537ba9-584e-4e94-80ce-43f414dab671",
+        "word": "qui (?)",
+        "language": "fr",
+        "translation": "who(?), that"
+      },
+      {
+        "id": "86756a2d-3d82-488e-8cbf-00653e26a279",
+        "word": "que (?), qu' (?)",
+        "language": "fr",
+        "translation": "what(?), that"
+      },
+      {
+        "id": "91982466-a2e7-4ec5-990f-73dca48239cb",
+        "word": "que, qu'",
+        "language": "fr",
+        "translation": "than, that"
+      },
+      {
+        "id": "e8b1de90-e4f6-4e96-99ea-7c846319e8c4",
+        "word": "ce, cet (m), c'",
+        "language": "fr",
+        "translation": "this, that, it"
+      },
+      {
+        "id": "2aa9fe93-4499-491e-9830-274fdf8392e7",
+        "word": "ces (pl)",
+        "language": "fr",
+        "translation": "these, those"
+      },
+      {
+        "id": "b12c6df0-d09e-4c27-acbd-e1f723022a8c",
+        "word": "cette (f)",
+        "language": "fr",
+        "translation": "this, that"
+      },
+      {
+        "id": "170d1021-0350-45c2-af3e-67e17c7d49c7",
+        "word": "il (m)",
+        "language": "fr",
+        "translation": "he, it (subj)"
+      },
+      {
+        "id": "5498740c-8ac0-47e3-ab7e-9784d3984c41",
+        "word": "ils (m, mixed gender)",
+        "language": "fr",
+        "translation": "they (subj)"
+      },
+      {
+        "id": "09f933c3-859a-4fbe-9ac8-05c475ae8d72",
+        "word": "se, s'",
+        "language": "fr",
+        "translation": "himself, herself, itself, oneself, ourselves (reflex)"
+      },
+      {
+        "id": "a8405308-44d1-4ecf-8e9f-c5363ff85044",
+        "word": "(ne…) pas",
+        "language": "fr",
+        "translation": "not, no"
+      },
+      {
+        "id": "a5290e4d-673e-45de-980b-e30dc8e57b14",
+        "word": "jouer (à/de)",
+        "language": "fr",
+        "translation": "to play (+ noun e.g. sport/instrument)"
+      },
+      {
+        "id": "4054641d-15b7-4c1f-8963-7fdcef1a69a7",
+        "word": "plus (…que)",
+        "language": "fr",
+        "translation": "more (...than (+ num)), adj + -er (...than)"
+      },
+      {
+        "id": "30b3b487-4820-4d20-8c2b-6f49fd036110",
+        "word": "plus (…que)",
+        "language": "fr",
+        "translation": "more (...than), adj + -er (...than)"
+      },
+      {
+        "id": "bfd68293-a09a-4f62-a1b9-fd1a804ccf58",
+        "word": "trouver; se trouver",
+        "language": "fr",
+        "translation": "to find; to be situated"
+      },
+      {
+        "id": "e112def6-e9fe-40b7-aec7-86a3f8bda62e",
+        "word": "frais (m)",
+        "language": "fr",
+        "translation": "fresh, cool"
+      },
+      {
+        "id": "2250a818-340e-469a-9a82-27e1ebc810d9",
+        "word": "basse (f)",
+        "language": "fr",
+        "translation": "low"
+      },
+      {
+        "id": "e66f736c-1f52-4c45-a906-7152b06f4396",
+        "word": "contre; par contre",
+        "language": "fr",
+        "translation": "against; however"
+      },
+      {
+        "id": "2604915d-5d52-4095-b74c-58e24578f58e",
+        "word": "enfant (mf)",
+        "language": "fr",
+        "translation": "child"
+      },
+      {
+        "id": "f27a8360-0f23-44be-b45e-9f21e1f88fbb",
+        "word": "enfant (mf)",
+        "language": "fr",
+        "translation": "child"
+      },
+      {
+        "id": "91f84195-39a7-4476-b24f-0e439214bb7b",
+        "word": "enfant (mf)",
+        "language": "fr",
+        "translation": "child"
+      },
+      {
+        "id": "84bed018-a25e-40a6-a2e7-b2299b69ce9a",
+        "word": "moins (…que)",
+        "language": "fr",
+        "translation": "less (…than); less, fewer (than + num)"
+      },
+      {
+        "id": "0444f8e8-114d-4c1a-b572-1661443ceae2",
+        "word": "moins (…que)",
+        "language": "fr",
+        "translation": "less (…than)"
+      },
+      {
+        "id": "c7b45f82-5669-46bd-800d-1d5cda26f09d",
+        "word": "lui (m, f)",
+        "language": "fr",
+        "translation": "to/for him, to/for her, to/for it (indirect obj)"
+      },
+      {
+        "id": "0bf143f4-0a34-4570-a1d7-cb86fffa3264",
+        "word": "inquiéter, s'inquiéter",
+        "language": "fr",
+        "translation": "to worry"
+      },
+      {
+        "id": "b06e3f0a-e529-49ad-b139-4095c97f46a2",
+        "word": "inquiet (m)",
+        "language": "fr",
+        "translation": "worried, anxious"
+      },
+      {
+        "id": "a535d996-2d7a-4d0a-8b2d-2702678c3ae8",
+        "word": "inquiète (f)",
+        "language": "fr",
+        "translation": "worried, anxious"
+      },
+      {
+        "id": "9879e3a4-5810-492f-884a-3a464385e8d9",
+        "word": "¿dónde?",
+        "language": "es",
+        "translation": "where?"
+      },
+      {
+        "id": "5f39c4f0-d93b-436e-9ef5-76c4b2524a4e",
+        "word": "enfant (mf)",
+        "language": "fr",
+        "translation": "child"
+      },
+      {
+        "id": "f5f6306c-368f-456f-9739-c0b41a221e51",
+        "word": "sois… !",
+        "language": "fr",
+        "translation": "be…! (sing informal)"
+      },
+      {
+        "id": "d6c2bf04-c4d5-4855-973a-0acd9407d2c6",
+        "word": "passer; se passer",
+        "language": "fr",
+        "translation": "to spend (time), take (an exam); to happen, take place"
+      },
+      {
+        "id": "f80f71db-dd9c-47c9-bd77-341f3423c655",
+        "word": "soyez… !",
+        "language": "fr",
+        "translation": "be…! (pl, sing formal)"
+      },
+      {
+        "id": "5c8efa13-f04b-47ab-86c6-3e5c0aa47c81",
+        "word": "s'identifier (à)",
+        "language": "fr",
+        "translation": "to identify (with), relate (to)"
+      },
+      {
+        "id": "3008bc4b-5570-487f-bb14-d3660475981d",
+        "word": "jouer (à/de)",
+        "language": "fr",
+        "translation": "to play (+ noun e.g. sport/instrument)"
+      },
+      {
+        "id": "62afdbf9-e0a3-4d3a-9e34-cc7e458e5cf7",
+        "word": "s'identifier (à)",
+        "language": "fr",
+        "translation": "to identify (with), relate (to)"
+      },
+      {
+        "id": "4ea30a2c-bdcc-4fd4-8a00-6489fa83533c",
+        "word": "s'identifier (à)",
+        "language": "fr",
+        "translation": "to identify (with), relate (to)"
+      },
+      {
+        "id": "9799db35-05ff-42a6-91f7-c030710e59d0",
+        "word": "bon (m)",
+        "language": "fr",
+        "translation": "good"
+      },
+      {
+        "id": "7ec6db33-9890-4044-a91a-1fe6a88bedc8",
+        "word": "nuire (à)",
+        "language": "fr",
+        "translation": "to harm"
+      },
+      {
+        "id": "ad67d721-e93b-4f43-99a6-148e41d3d334",
+        "word": "s'identifier (à)",
+        "language": "fr",
+        "translation": "to identify (with), relate (to)"
+      },
+      {
+        "id": "68470787-41da-48c7-ad00-797149a2e614",
+        "word": "s'identifier (à)",
+        "language": "fr",
+        "translation": "to identify (with), relate (to)"
+      },
+      {
+        "id": "50592afa-d336-4a6c-add0-58fc153c4e6a",
+        "word": "s'identifier (à)",
+        "language": "fr",
+        "translation": "to identify (with), relate (to)"
+      },
+      {
+        "id": "4d2d66c7-b2a5-4fd6-99cc-b2bbf4d21ebc",
+        "word": "s'identifier (à)",
+        "language": "fr",
+        "translation": "to identify (with), relate (to)"
+      },
+      {
+        "id": "2c4c0149-0a55-49bc-ba48-7f9693298419",
+        "word": "nos (pl)",
+        "language": "fr",
+        "translation": "our"
+      },
+      {
+        "id": "5d06700d-01ad-4def-a895-79153e9a0cc9",
+        "word": "bonne (f)",
+        "language": "fr",
+        "translation": "good"
+      },
+      {
+        "id": "4a6a012e-cd48-46c3-8ccc-e9e5c1381e9b",
+        "word": "notre (m, f)",
+        "language": "fr",
+        "translation": "our"
+      },
+      {
+        "id": "0b1befdd-6021-4759-a020-0b293754a938",
+        "word": "situer, se situer",
+        "language": "fr",
+        "translation": "to situate, locate"
+      },
+      {
+        "id": "dc15f642-51d3-48d2-a5e0-569bab7a6548",
+        "word": "situer, se situer",
+        "language": "fr",
+        "translation": "to situate, locate"
+      },
+      {
+        "id": "31adb78b-eae8-455e-9184-ea34db2ffec6",
+        "word": "faire; faire de + noun*",
+        "language": "fr",
+        "translation": "to do, make, go (on/for) + noun; to do + -ing, go + -ing, play + noun*"
+      },
+      {
+        "id": "3b366d6a-c7b3-4c11-ba18-b44474b3bb9b",
+        "word": "situer, se situer",
+        "language": "fr",
+        "translation": "to situate, locate"
+      },
+      {
+        "id": "37606256-5181-47aa-8d8c-f01a095fa73f",
+        "word": "situer, se situer",
+        "language": "fr",
+        "translation": "to situate, locate"
+      },
+      {
+        "id": "4cab280a-2a13-41ec-925d-297ca6473745",
+        "word": "situer, se situer",
+        "language": "fr",
+        "translation": "to situate, locate"
+      },
+      {
+        "id": "0e1f6dd5-1783-4293-bf60-d8e21731b1ab",
+        "word": "où (?)",
+        "language": "fr",
+        "translation": "where(?)"
+      },
+      {
+        "id": "7b9e0f7f-ce5c-4cc0-b316-dabcc7cf132e",
+        "word": "situer, se situer",
+        "language": "fr",
+        "translation": "to situate, locate"
+      },
+      {
+        "id": "1e78cbec-e7f5-4dd1-aab1-8c2c1f118f25",
+        "word": "situer, se situer",
+        "language": "fr",
+        "translation": "to situate, locate"
+      },
+      {
+        "id": "79780526-4a88-41e6-a96c-09837af55ca8",
+        "word": "nouveau/nouvel (m)",
+        "language": "fr",
+        "translation": "new"
+      },
+      {
+        "id": "6ae4a957-6d20-4a3f-975a-9d661449c850",
+        "word": "¡Sé…!",
+        "language": "es",
+        "translation": "Be…! (sing informal)"
+      },
+      {
+        "id": "feed55c1-f989-4128-9582-13051a1a4cfb",
+        "word": "compter (sur)",
+        "language": "fr",
+        "translation": "to count (on), intend"
+      },
+      {
+        "id": "5e47bf96-af36-4a75-95f8-6e7d2e518513",
+        "word": "nouvelle (f)",
+        "language": "fr",
+        "translation": "new"
+      },
+      {
+        "id": "0c8481f8-b1a1-4ca3-bcba-cd381dfe4fd3",
+        "word": "de, d'",
+        "language": "fr",
+        "translation": "indefinite article following a verb in negative or expression of quantity, partitive article following a verb in negative or expression of quantity"
+      },
+      {
+        "id": "7edd5d13-031b-4ca9-979d-73529440abf4",
+        "word": "des (pl)",
+        "language": "fr",
+        "translation": "plural indefinite article, some (of the)"
+      },
+      {
+        "id": "2f075276-22c3-4e1f-b42e-e544c3bd3045",
+        "word": "du, de l' (m)",
+        "language": "fr",
+        "translation": "some (of the) (m)"
+      },
+      {
+        "id": "ec8cab01-c550-4ca4-8722-ba62100d60ab",
+        "word": "un (m)",
+        "language": "fr",
+        "translation": "a, an"
+      },
+      {
+        "id": "9d299755-bef3-4d12-ba3c-d836f49d664e",
+        "word": "pareil (m)",
+        "language": "fr",
+        "translation": "same"
+      },
+      {
+        "id": "b266578f-30c1-4510-a8ca-8787eda4fe58",
+        "word": "(à) eux",
+        "language": "fr",
+        "translation": "(to) them (m, mixed gender) (emph)"
+      },
+      {
+        "id": "5f6c42c5-1b9f-4536-afb4-415764f0c3c3",
+        "word": "une (f)",
+        "language": "fr",
+        "translation": "a, an"
+      },
+      {
+        "id": "a9f2701a-6a88-4bd5-91ad-4690e98e30a7",
+        "word": "fais | fais !; fais de + noun | fais de + noun !",
+        "language": "fr",
+        "translation": "(I, you) do, make, go (on/for) + noun | do!, make!, go (on/for) + noun! (sing informal); (I, you) do + -ing, go + -ing, play + noun | do + -ing!, go + -ing!, play + noun! (sing informal)"
+      },
+      {
+        "id": "e8eeef09-7ba8-4b76-8615-6fa291f7a997",
+        "word": "faisais; faisais de",
+        "language": "fr",
+        "translation": "(I, you) used to do, used to make, used to go (on/for) + noun; (I, you) used to do + -ing, used to go + -ing, used to play + noun"
+      },
+      {
+        "id": "52bfc5c9-63ec-4731-9e6a-d1e297d3f47f",
+        "word": "faisait; faisait de",
+        "language": "fr",
+        "translation": "(she, he, it, one) used to do, used to make, used to go (on/for) + noun | (we) used to do, used to make, used to go (on/for) + noun; (she, he, it, one) used to do + -ing, used to go + -ing, used to play + noun | (we) used to do + -ing, used to go + -ing, used to play + noun"
+      },
+      {
+        "id": "d79956e4-5ebc-4974-ba0b-5505b248dd0a",
+        "word": "faisons; faisons de + noun",
+        "language": "fr",
+        "translation": "(we) do, make, go (on/for) + noun; (we) do + -ing, go + -ing, play + noun"
+      },
+      {
+        "id": "adea7df2-ec62-4e23-86e8-62bb17520a69",
+        "word": "fait; fait de + noun",
+        "language": "fr",
+        "translation": "(she, he, it, one) does, makes, goes (on/for) + noun | (we) do, make, go (on/for) + noun | did, made, went (on/for) + noun | (have, has) done, (have, has) made, (have, has) gone (on/for) + noun; (she, he, it, one) does + -ing, goes + -ing, plays + noun | (we) do + -ing, go + -ing, play + noun | did + -ing, went + -ing, played + noun | (have, has) done + -ing, (have, has) gone + -ing, (have, has) played + -ing"
+      },
+      {
+        "id": "06d6dfbf-c4c8-42a6-b8e3-fb056f63394b",
+        "word": "faites | faites !; faites de | faites de !",
+        "language": "fr",
+        "translation": "you (pl, sing formal) do, make, go (on/for) + noun | do!, make!, go (on/for) + noun! (pl, sing formal); you (pl, sing formal) do + -ing, go + -ing, play + noun | do + -ing!, go + -ing!, play + noun! (pl, sing formal)"
+      },
+      {
+        "id": "4fcf6e3b-5d63-4de0-8c2b-b9945b1de2e5",
+        "word": "font; font de",
+        "language": "fr",
+        "translation": "(they) do, make, go (on/for) + noun; (they) do + -ing, go + -ing, play + noun"
+      },
+      {
+        "id": "4f96a243-cf5f-4f77-9d49-ad6e8faf4714",
+        "word": "sa (f)",
+        "language": "fr",
+        "translation": "his, her, its, your"
+      },
+      {
+        "id": "46844b46-987c-4a14-a48f-96055bb4f03d",
+        "word": "ses (pl)",
+        "language": "fr",
+        "translation": "his, her, its, everyone's, ones, your"
+      },
+      {
+        "id": "c92b65dd-9d5b-4519-978f-109cb30052ff",
+        "word": "son (m)",
+        "language": "fr",
+        "translation": "his, her, its, your"
+      },
+      {
+        "id": "5fa74508-86a4-4c77-b533-a78851144dac",
+        "word": "leur (m, f)",
+        "language": "fr",
+        "translation": "their"
+      },
+      {
+        "id": "73059a8a-106e-4d9f-9ed4-b58385215f87",
+        "word": "leurs (pl)",
+        "language": "fr",
+        "translation": "their"
+      },
+      {
+        "id": "9a25ec84-1baf-4d9d-9070-298765868e07",
+        "word": "elles (f)",
+        "language": "fr",
+        "translation": "they (subj)"
+      },
+      {
+        "id": "39187405-e272-40a3-b481-fb9239e5eb05",
+        "word": "avant; avant initive",
+        "language": "fr",
+        "translation": "before; before + verb"
+      },
+      {
+        "id": "aa3a49a6-295c-49a2-919b-dbae09b0b577",
+        "word": "trouver; se trouver",
+        "language": "fr",
+        "translation": "to find; to be situated"
+      },
+      {
+        "id": "85b25d1e-c007-49f9-8c15-fc22f1af7ce0",
+        "word": "trouver; se trouver",
+        "language": "fr",
+        "translation": "to find; to be situated"
+      },
+      {
+        "id": "3df71912-9bd6-489d-8f72-fa6b7af52bb1",
+        "word": "trouver; se trouver",
+        "language": "fr",
+        "translation": "to find; to be situated"
+      },
+      {
+        "id": "eac6dc26-fff9-497e-bdb4-a35f8d6d74de",
+        "word": "trouver; se trouver",
+        "language": "fr",
+        "translation": "to find; to be situated"
+      },
+      {
+        "id": "68b8f9ba-7ac5-4200-9955-a0f93a47034e",
+        "word": "trouver; se trouver",
+        "language": "fr",
+        "translation": "to find; to be situated"
+      },
+      {
+        "id": "b7918a59-0aec-46e4-9d49-cb34fb6bb06a",
+        "word": "trouver; se trouver",
+        "language": "fr",
+        "translation": "to find; to be situated"
+      },
+      {
+        "id": "aa7e931b-cd97-440e-8579-ee990bf7c510",
+        "word": "trouver; se trouver",
+        "language": "fr",
+        "translation": "to find; to be situated"
+      },
+      {
+        "id": "63347579-c9df-402f-b8a9-cc893810788e",
+        "word": "commencer (à)",
+        "language": "fr",
+        "translation": "to start (to), begin (to)"
+      },
+      {
+        "id": "3f33c66d-bcd4-40bd-9b44-02eb589bc10a",
+        "word": "quel (?)",
+        "language": "fr",
+        "translation": "which(?), what(?)"
+      },
+      {
+        "id": "2a37a992-1e3c-4af6-bebd-26410687214d",
+        "word": "entendre; s'entendre (avec)",
+        "language": "fr",
+        "translation": "to hear; to get on (with)"
+      },
+      {
+        "id": "34fa3057-a128-4e57-813f-69334831f208",
+        "word": "entendre; s'entendre (avec)",
+        "language": "fr",
+        "translation": "to hear; to get on (with)"
+      },
+      {
+        "id": "e346014a-93ec-478b-9261-6af01cec3f77",
+        "word": "entendre; s'entendre (avec)",
+        "language": "fr",
+        "translation": "to hear; to get on (with)"
+      },
+      {
+        "id": "c7576de4-1436-4f07-938d-2159e3b9b54d",
+        "word": "entendre; s'entendre (avec)",
+        "language": "fr",
+        "translation": "to hear; to get on (with)"
+      },
+      {
+        "id": "7258fb91-cd4e-4df1-bb3f-5a07adf50dc3",
+        "word": "entendre; s'entendre (avec)",
+        "language": "fr",
+        "translation": "to hear; to get on (with)"
+      },
+      {
+        "id": "1f3e267b-8fd4-4a70-b534-059f2287f0f4",
+        "word": "beaucoup; beaucoup de",
+        "language": "fr",
+        "translation": "a lot; a lot of, many"
+      },
+      {
+        "id": "bfa7b025-f18d-4c30-b639-ee4b301e1fc6",
+        "word": "jeune; jeune (m)",
+        "language": "fr",
+        "translation": "young; young person"
+      },
+      {
+        "id": "a9735633-f374-4aee-bf0c-289ad3c1d109",
+        "word": "jeune; jeune (m)",
+        "language": "fr",
+        "translation": "young; young person"
+      },
+      {
+        "id": "9df2d9aa-c2ee-4995-ade3-0100446a6191",
+        "word": "appeler; s'appeler",
+        "language": "fr",
+        "translation": "to call; to be called"
+      }
+    ],
+    "missingBaseWords": [
+      {
+        "id": "d1322cdc-5317-4222-9172-ab0ae1898698",
+        "word": "bienvenido",
+        "language": "es"
+      },
+      {
+        "id": "13ef9b94-ff1f-433e-88fa-b9a17cab3948",
+        "word": "gafas",
+        "language": "es"
+      },
+      {
+        "id": "881c7433-1323-4b58-939d-54b47bca5ed2",
+        "word": "gastar",
+        "language": "es"
+      },
+      {
+        "id": "cfa49d5b-cf94-4de5-9ba0-db5c12dbd252",
+        "word": "gratis",
+        "language": "es"
+      },
+      {
+        "id": "05e97217-d5c0-4630-95bd-433745eb8302",
+        "word": "maths",
+        "language": "fr"
+      },
+      {
+        "id": "d4eb6ead-3b7f-45a1-b382-a73d0e7da8b7",
+        "word": "libre",
+        "language": "fr"
+      },
+      {
+        "id": "7b6d93c7-33b0-47c9-b958-bc5a52c2f9f7",
+        "word": "entonces",
+        "language": "es"
+      },
+      {
+        "id": "98dfd046-5444-4725-895d-cfe1cac3d618",
+        "word": "ocho",
+        "language": "es"
+      },
+      {
+        "id": "ac510c2f-aac9-43bf-9aff-d99fbd5b23f6",
+        "word": "grave",
+        "language": "es"
+      },
+      {
+        "id": "c2f2e825-28cb-468e-bc3d-3fbf4eb4463a",
+        "word": "deber",
+        "language": "es"
+      },
+      {
+        "id": "0790c5b3-f8e3-493a-b1b0-4ce96ba70eb6",
+        "word": "aunque",
+        "language": "es"
+      },
+      {
+        "id": "793c2a4f-03ed-4a38-9f43-d7922c633c98",
+        "word": "mientras",
+        "language": "es"
+      },
+      {
+        "id": "dc2ed972-6904-4688-9c1c-efbc5e1383d7",
+        "word": "mirar",
+        "language": "es"
+      },
+      {
+        "id": "8847398b-e2ab-4549-99c4-81a74d4149b7",
+        "word": "vine",
+        "language": "es"
+      },
+      {
+        "id": "9879e3a4-5810-492f-884a-3a464385e8d9",
+        "word": "¿dónde?",
+        "language": "es"
+      },
+      {
+        "id": "877ad364-1f4d-4c83-b5d3-5ba54c9c00a9",
+        "word": "vivir",
+        "language": "es"
+      },
+      {
+        "id": "ae3044b1-9a4a-47b3-96a3-4ee0fefd4e94",
+        "word": "correr",
+        "language": "es"
+      },
+      {
+        "id": "98c84a07-d25a-4f17-8f0c-9c005f10cec0",
+        "word": "pasear",
+        "language": "es"
+      },
+      {
+        "id": "33e864db-11e0-4be5-aa0e-e64181e98498",
+        "word": "leer",
+        "language": "es"
+      },
+      {
+        "id": "06a5e6eb-b530-4c81-b13e-a5205b38d640",
+        "word": "bailar",
+        "language": "es"
+      },
+      {
+        "id": "dd13844a-f2fb-4056-a748-b2d30dd89f73",
+        "word": "pintar",
+        "language": "es"
+      },
+      {
+        "id": "e55d8a06-bc16-4c8a-b774-33a8131d81d5",
+        "word": "cocinar",
+        "language": "es"
+      },
+      {
+        "id": "d7bc919b-4d63-471d-af8e-3b7b7848e1f5",
+        "word": "depender",
+        "language": "es"
+      },
+      {
+        "id": "d8db7527-302e-4bb9-87e5-c7d6763e91ab",
+        "word": "lleno",
+        "language": "es"
+      },
+      {
+        "id": "6f89518a-5898-4d2b-8522-6aaa2f63cf1b",
+        "word": "compartir",
+        "language": "es"
+      },
+      {
+        "id": "ea05ddf4-17a1-4ae8-9598-34cbbea915ef",
+        "word": "bloquear",
+        "language": "es"
+      },
+      {
+        "id": "6ecaa020-bde1-4234-9cf4-38c400fbf6ea",
+        "word": "seguir",
+        "language": "es"
+      },
+      {
+        "id": "39e5a2e0-aa2c-4584-ab62-f910d8ebe2c9",
+        "word": "publicar",
+        "language": "es"
+      },
+      {
+        "id": "63f3272a-9515-4424-a6bd-4869661908cd",
+        "word": "descargar",
+        "language": "es"
+      },
+      {
+        "id": "7fd21fec-c40f-4177-a3cb-4345853cdc5e",
+        "word": "subir",
+        "language": "es"
+      },
+      {
+        "id": "30f2a27f-667f-44ea-9367-dbf1f7e0647f",
+        "word": "navegar",
+        "language": "es"
+      },
+      {
+        "id": "5f274a57-4e66-4a50-bf6a-a80c7f25b8e6",
+        "word": "perfecto",
+        "language": "es"
+      },
+      {
+        "id": "c64878d5-d8f6-4f9b-a52a-754d8ad0f00b",
+        "word": "encima",
+        "language": "es"
+      }
+    ],
+    "incorrectMWE": [
+      {
+        "id": "84a5da8d-3403-4974-a24b-cab7ae5009c5",
+        "word": "l'exemple",
+        "language": "fr",
+        "is_mwe": false
+      },
+      {
+        "id": "d42dce2c-20b0-4d6b-b95b-672b621972dc",
+        "word": "l'homme",
+        "language": "fr",
+        "is_mwe": false
+      },
+      {
+        "id": "63eb149c-c011-47e9-8aad-be59103a8f9c",
+        "word": "l'homme",
+        "language": "fr",
+        "is_mwe": false
+      },
+      {
+        "id": "3058c494-be38-494c-abe4-89d339ce1e1a",
+        "word": "l'action",
+        "language": "fr",
+        "is_mwe": false
+      },
+      {
+        "id": "90408f00-b04d-436c-8a1d-e969b3203b6a",
+        "word": "l'activité",
+        "language": "fr",
+        "is_mwe": false
+      },
+      {
+        "id": "fe6060ea-54de-4272-8aef-c5b3194c0819",
+        "word": "l'activité",
+        "language": "fr",
+        "is_mwe": false
+      },
+      {
+        "id": "d1a93766-5d4e-428d-b18f-804e8af34410",
+        "word": "l'activité",
+        "language": "fr",
+        "is_mwe": false
+      },
+      {
+        "id": "aca2b323-59df-4399-a6f6-d01a8d1a982e",
+        "word": "l'activité",
+        "language": "fr",
+        "is_mwe": false
+      },
+      {
+        "id": "28aebc0a-0d7c-4dae-9f30-3e2ddd54b49b",
+        "word": "l'importance",
+        "language": "fr",
+        "is_mwe": false
+      },
+      {
+        "id": "99ac0861-46d0-4128-a7b7-4f453f04ee1e",
+        "word": "l'espoir",
+        "language": "fr",
+        "is_mwe": false
+      },
+      {
+        "id": "62e2bb24-47e6-4e97-bdf6-0926933e4eb7",
+        "word": "l'espoir",
+        "language": "fr",
+        "is_mwe": false
+      },
+      {
+        "id": "3d19df87-3aaa-4b3c-879a-faac737b01ec",
+        "word": "l'espoir",
+        "language": "fr",
+        "is_mwe": false
+      },
+      {
+        "id": "b3e7b854-a5d0-4d8a-8143-f0073cd6f3d3",
+        "word": "l'oreille",
+        "language": "fr",
+        "is_mwe": false
+      },
+      {
+        "id": "20d68596-71ef-43f5-b40f-39deea336ecc",
+        "word": "l'air",
+        "language": "fr",
+        "is_mwe": false
+      },
+      {
+        "id": "dbecc26e-d832-4bdf-95b2-d2fbf68e762c",
+        "word": "l'air",
+        "language": "fr",
+        "is_mwe": false
+      },
+      {
+        "id": "87c67e20-d6d0-4945-a9ce-c245261c1a05",
+        "word": "l'air",
+        "language": "fr",
+        "is_mwe": false
+      },
+      {
+        "id": "7060374d-3492-49f7-bee3-4a657289a323",
+        "word": "quelqu'un",
+        "language": "fr",
+        "is_mwe": false
+      },
+      {
+        "id": "1e108536-00e5-4e7c-8b29-68cf0d3d6524",
+        "word": "l'opinion",
+        "language": "fr",
+        "is_mwe": false
+      },
+      {
+        "id": "2a63d933-6a9b-4c78-afc2-825639028967",
+        "word": "l'œil",
+        "language": "fr",
+        "is_mwe": false
+      },
+      {
+        "id": "663cab64-3a63-4134-840c-efcedbfdb65f",
+        "word": "l'après-midi",
+        "language": "fr",
+        "is_mwe": false
+      },
+      {
+        "id": "f17b163c-9728-478f-9156-40439c70d35d",
+        "word": "l'offre",
+        "language": "fr",
+        "is_mwe": false
+      },
+      {
+        "id": "a7cd5add-5905-4391-ba13-759990f85a32",
+        "word": "l'offre",
+        "language": "fr",
+        "is_mwe": false
+      },
+      {
+        "id": "9b26fbf5-2f9e-429c-a838-b46c4b8f3092",
+        "word": "l'anniversaire",
+        "language": "fr",
+        "is_mwe": false
+      },
+      {
+        "id": "2dc633bd-5dc0-4daa-968c-b2f76bc9a67f",
+        "word": "l'anniversaire",
+        "language": "fr",
+        "is_mwe": false
+      },
+      {
+        "id": "624862da-c7f7-48b2-9efb-a8e290beb67d",
+        "word": "l'adolescent",
+        "language": "fr",
+        "is_mwe": false
+      },
+      {
+        "id": "fe3f86b6-7cb8-404b-88da-5fb3bc054954",
+        "word": "l'aéroport",
+        "language": "fr",
+        "is_mwe": false
+      },
+      {
+        "id": "f0d002a0-25a1-4378-ba1f-775c58c65299",
+        "word": "l'ambition",
+        "language": "fr",
+        "is_mwe": false
+      },
+      {
+        "id": "b5fdb586-287d-4e5b-ac1a-97a5b9db5137",
+        "word": "l'ambition",
+        "language": "fr",
+        "is_mwe": false
+      },
+      {
+        "id": "ea057c35-7a0f-42c5-b2ac-6da42f21dcdb",
+        "word": "l'appartement",
+        "language": "fr",
+        "is_mwe": false
+      },
+      {
+        "id": "095bf8de-263c-4f27-9af8-555e396aa189",
+        "word": "l'appartement",
+        "language": "fr",
+        "is_mwe": false
+      },
+      {
+        "id": "e59f9a4b-6640-488a-92b9-69613c02c9d9",
+        "word": "l'article",
+        "language": "fr",
+        "is_mwe": false
+      },
+      {
+        "id": "56181ec9-0f97-4126-9c18-c3b0d435b4c2",
+        "word": "l'employé",
+        "language": "fr",
+        "is_mwe": false
+      },
+      {
+        "id": "2a640092-6efb-4e5b-af0a-5487816e9b1b",
+        "word": "l'alcool",
+        "language": "fr",
+        "is_mwe": false
+      },
+      {
+        "id": "31f119b2-848e-440e-a91d-fe4128a0bc48",
+        "word": "l'exercice",
+        "language": "fr",
+        "is_mwe": false
+      },
+      {
+        "id": "aa8c7121-b79f-4385-96e7-e6abfcf07f8b",
+        "word": "l'avis",
+        "language": "fr",
+        "is_mwe": false
+      },
+      {
+        "id": "2f566d31-1783-4a7a-9161-b77ea571fd7b",
+        "word": "l'océan",
+        "language": "fr",
+        "is_mwe": false
+      },
+      {
+        "id": "32e6adf0-2b73-4284-87d3-9f4b2aa7e5eb",
+        "word": "l'auberge",
+        "language": "fr",
+        "is_mwe": false
+      },
+      {
+        "id": "4fec8aaa-b8be-4296-a17a-a23c93655e5d",
+        "word": "l'horreur",
+        "language": "fr",
+        "is_mwe": false
+      },
+      {
+        "id": "098e37aa-0dd1-42ca-a2fe-7b8a8a9685f5",
+        "word": "l'hôtel",
+        "language": "fr",
+        "is_mwe": false
+      },
+      {
+        "id": "22c637d3-0ca2-4f36-b251-ae6393d2af66",
+        "word": "l'abeille",
+        "language": "fr",
+        "is_mwe": false
+      },
+      {
+        "id": "523a8ca2-7037-49c7-a55d-6a2ebc54eafe",
+        "word": "l'araignée",
+        "language": "fr",
+        "is_mwe": false
+      },
+      {
+        "id": "83e2377c-74e4-41de-bbe6-8a18f1cee679",
+        "word": "l'ascenseur",
+        "language": "fr",
+        "is_mwe": false
+      },
+      {
+        "id": "8f1a898b-37b8-4f21-ba91-15dca8b9b8dd",
+        "word": "l'orage",
+        "language": "fr",
+        "is_mwe": false
+      }
+    ],
+    "total": 205
+  },
+  "randomSample": {
+    "sampleSize": 300,
+    "qualityScore": 96,
+    "examples": [
+      {
+        "word": "désolé",
+        "language": "fr",
+        "translation": "sorry",
+        "base_word": "désolé",
+        "is_mwe": false,
+        "score": 4,
+        "issues": []
+      },
+      {
+        "word": "améliorer",
+        "language": "fr",
+        "translation": "to improve",
+        "base_word": "améliorer",
+        "is_mwe": false,
+        "score": 4,
+        "issues": []
+      },
+      {
+        "word": "riche",
+        "language": "fr",
+        "translation": "rich",
+        "base_word": "riche",
+        "is_mwe": false,
+        "score": 4,
+        "issues": []
+      },
+      {
+        "word": "apprendre",
+        "language": "fr",
+        "translation": "to learn",
+        "base_word": "apprendre",
+        "is_mwe": false,
+        "score": 4,
+        "issues": []
+      },
+      {
+        "word": "gastar",
+        "language": "es",
+        "translation": "(to) spend (money) I spending (money)",
+        "base_word": null,
+        "is_mwe": false,
+        "score": 3,
+        "issues": [
+          "missing base_word"
+        ]
+      },
+      {
+        "word": "préférer",
+        "language": "fr",
+        "translation": "to prefer",
+        "base_word": "préférer",
+        "is_mwe": false,
+        "score": 4,
+        "issues": []
+      },
+      {
+        "word": "française",
+        "language": "fr",
+        "translation": "FR (female)",
+        "base_word": "française",
+        "is_mwe": false,
+        "score": 4,
+        "issues": []
+      },
+      {
+        "word": "lu",
+        "language": "fr",
+        "translation": "read | (has, have) read",
+        "base_word": "lu",
+        "is_mwe": false,
+        "score": 4,
+        "issues": []
+      },
+      {
+        "word": "mener",
+        "language": "fr",
+        "translation": "to lead",
+        "base_word": "mener",
+        "is_mwe": false,
+        "score": 4,
+        "issues": []
+      },
+      {
+        "word": "riche",
+        "language": "fr",
+        "translation": "rich",
+        "base_word": "riche",
+        "is_mwe": false,
+        "score": 4,
+        "issues": []
+      },
+      {
+        "word": "bienvenido",
+        "language": "es",
+        "translation": "welcome",
+        "base_word": null,
+        "is_mwe": false,
+        "score": 3,
+        "issues": [
+          "missing base_word"
+        ]
+      },
+      {
+        "word": "l'exemple",
+        "language": "fr",
+        "translation": "example",
+        "base_word": "l'exemple",
+        "is_mwe": false,
+        "score": 3,
+        "issues": [
+          "incorrect MWE classification"
+        ]
+      },
+      {
+        "word": "apprendre",
+        "language": "fr",
+        "translation": "to learn",
+        "base_word": "apprendre",
+        "is_mwe": false,
+        "score": 4,
+        "issues": []
+      },
+      {
+        "word": "petit",
+        "language": "fr",
+        "translation": "small, little",
+        "base_word": "petit",
+        "is_mwe": false,
+        "score": 4,
+        "issues": []
+      },
+      {
+        "word": "riche",
+        "language": "fr",
+        "translation": "rich",
+        "base_word": "riche",
+        "is_mwe": false,
+        "score": 4,
+        "issues": []
+      },
+      {
+        "word": "nécessaire",
+        "language": "fr",
+        "translation": "necessary, essential",
+        "base_word": "nécessaire",
+        "is_mwe": false,
+        "score": 4,
+        "issues": []
+      },
+      {
+        "word": "professionnel",
+        "language": "fr",
+        "translation": "professional",
+        "base_word": "professionnel",
+        "is_mwe": false,
+        "score": 4,
+        "issues": []
+      },
+      {
+        "word": "sortir",
+        "language": "fr",
+        "translation": "to go out",
+        "base_word": "sortir",
+        "is_mwe": false,
+        "score": 4,
+        "issues": []
+      },
+      {
+        "word": "inviter",
+        "language": "fr",
+        "translation": "to invite",
+        "base_word": "inviter",
+        "is_mwe": false,
+        "score": 4,
+        "issues": []
+      },
+      {
+        "word": "cultural",
+        "language": "es",
+        "translation": "cultural",
+        "base_word": "cultural",
+        "is_mwe": false,
+        "score": 4,
+        "issues": []
+      },
+      {
+        "word": "six",
+        "language": "fr",
+        "translation": "six",
+        "base_word": "six",
+        "is_mwe": false,
+        "score": 4,
+        "issues": []
+      },
+      {
+        "word": "dangereux",
+        "language": "fr",
+        "translation": "dangerous",
+        "base_word": "dangereux",
+        "is_mwe": false,
+        "score": 4,
+        "issues": []
+      },
+      {
+        "word": "faible",
+        "language": "fr",
+        "translation": "weak",
+        "base_word": "faible",
+        "is_mwe": false,
+        "score": 4,
+        "issues": []
+      },
+      {
+        "word": "riche",
+        "language": "fr",
+        "translation": "rich",
+        "base_word": "riche",
+        "is_mwe": false,
+        "score": 4,
+        "issues": []
+      },
+      {
+        "word": "l'activité",
+        "language": "fr",
+        "translation": "activity",
+        "base_word": "l'activité",
+        "is_mwe": false,
+        "score": 3,
+        "issues": [
+          "incorrect MWE classification"
+        ]
+      },
+      {
+        "word": "longtemps",
+        "language": "fr",
+        "translation": "a long time",
+        "base_word": "longtemps",
+        "is_mwe": false,
+        "score": 4,
+        "issues": []
+      },
+      {
+        "word": "odio",
+        "language": "es",
+        "translation": "I hate",
+        "base_word": "odio",
+        "is_mwe": false,
+        "score": 4,
+        "issues": []
+      },
+      {
+        "word": "religieux",
+        "language": "fr",
+        "translation": "religious",
+        "base_word": "religieux",
+        "is_mwe": false,
+        "score": 4,
+        "issues": []
+      },
+      {
+        "word": "soy",
+        "language": "es",
+        "translation": "(I) am",
+        "base_word": "soy",
+        "is_mwe": false,
+        "score": 4,
+        "issues": []
+      },
+      {
+        "word": "gafas",
+        "language": "es",
+        "translation": "glasses",
+        "base_word": null,
+        "is_mwe": false,
+        "score": 3,
+        "issues": [
+          "missing base_word"
+        ]
+      },
+      {
+        "word": "ser",
+        "language": "es",
+        "translation": "(to) be | being",
+        "base_word": "ser",
+        "is_mwe": false,
+        "score": 4,
+        "issues": []
+      },
+      {
+        "word": "social",
+        "language": "fr",
+        "translation": "social",
+        "base_word": "social",
+        "is_mwe": false,
+        "score": 4,
+        "issues": []
+      },
+      {
+        "word": "durer",
+        "language": "fr",
+        "translation": "to last",
+        "base_word": "durer",
+        "is_mwe": false,
+        "score": 4,
+        "issues": []
+      },
+      {
+        "word": "l'homme",
+        "language": "fr",
+        "translation": "man",
+        "base_word": "l'homme",
+        "is_mwe": false,
+        "score": 3,
+        "issues": [
+          "incorrect MWE classification"
+        ]
+      },
+      {
+        "word": "la crise",
+        "language": "fr",
+        "translation": "crisis",
+        "base_word": "crise",
+        "is_mwe": true,
+        "score": 4,
+        "issues": []
+      },
+      {
+        "word": "cru",
+        "language": "fr",
+        "translation": "believed | (have, has) believed",
+        "base_word": "cru",
+        "is_mwe": false,
+        "score": 4,
+        "issues": []
+      },
+      {
+        "word": "manger",
+        "language": "fr",
+        "translation": "to eat",
+        "base_word": "manger",
+        "is_mwe": false,
+        "score": 4,
+        "issues": []
+      },
+      {
+        "word": "présenter; se présenter",
+        "language": "fr",
+        "translation": "to present; to introduce oneself",
+        "base_word": "présenter; se présenter",
+        "is_mwe": true,
+        "score": 3,
+        "issues": [
+          "complex formatting"
+        ]
+      },
+      {
+        "word": "habituel",
+        "language": "fr",
+        "translation": "usual",
+        "base_word": "habituel",
+        "is_mwe": false,
+        "score": 4,
+        "issues": []
+      },
+      {
+        "word": "rencontrer",
+        "language": "fr",
+        "translation": "to meet (up)",
+        "base_word": "rencontrer",
+        "is_mwe": false,
+        "score": 4,
+        "issues": []
+      },
+      {
+        "word": "l'anniversaire",
+        "language": "fr",
+        "translation": "birthday",
+        "base_word": "l'anniversaire",
+        "is_mwe": false,
+        "score": 3,
+        "issues": [
+          "incorrect MWE classification"
+        ]
+      },
+      {
+        "word": "sauver",
+        "language": "fr",
+        "translation": "to save, rescue",
+        "base_word": "sauver",
+        "is_mwe": false,
+        "score": 4,
+        "issues": []
+      },
+      {
+        "word": "le échec",
+        "language": "fr",
+        "translation": "failure",
+        "base_word": "échec",
+        "is_mwe": true,
+        "score": 4,
+        "issues": []
+      },
+      {
+        "word": "prefiero",
+        "language": "es",
+        "translation": "I prefer",
+        "base_word": "prefiero",
+        "is_mwe": false,
+        "score": 4,
+        "issues": []
+      },
+      {
+        "word": "populaire",
+        "language": "fr",
+        "translation": "popular",
+        "base_word": "populaire",
+        "is_mwe": false,
+        "score": 4,
+        "issues": []
+      },
+      {
+        "word": "l'article",
+        "language": "fr",
+        "translation": "article",
+        "base_word": "l'article",
+        "is_mwe": false,
+        "score": 3,
+        "issues": [
+          "incorrect MWE classification"
+        ]
+      },
+      {
+        "word": "normalement",
+        "language": "fr",
+        "translation": "normally, usually",
+        "base_word": "normalement",
+        "is_mwe": false,
+        "score": 4,
+        "issues": []
+      },
+      {
+        "word": "sauver",
+        "language": "fr",
+        "translation": "to save, rescue",
+        "base_word": "sauver",
+        "is_mwe": false,
+        "score": 4,
+        "issues": []
+      },
+      {
+        "word": "la façon",
+        "language": "fr",
+        "translation": "way",
+        "base_word": "façon",
+        "is_mwe": true,
+        "score": 4,
+        "issues": []
+      },
+      {
+        "word": "le le mieux",
+        "language": "fr",
+        "translation": "the best",
+        "base_word": "le mieux",
+        "is_mwe": true,
+        "score": 4,
+        "issues": []
+      }
+    ]
+  }
+}

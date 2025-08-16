@@ -2,6 +2,7 @@ import './globals.css'
 import type { Metadata } from 'next'
 import { Inter, Cinzel, Pirata_One } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
+import Script from 'next/script'
 import ClientLayout from './components/ClientLayout'
 import { Suspense } from 'react'
 import { AuthProvider } from '../components/auth/AuthProvider'
@@ -126,6 +127,7 @@ export default function RootLayout({
           </AuthProvider>
         </SupabaseProvider>
         <Analytics />
+        <Script src="/console-tests.js" strategy="afterInteractive" />
       </body>
     </html>
   )

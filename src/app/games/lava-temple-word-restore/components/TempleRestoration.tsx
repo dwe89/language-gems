@@ -7,6 +7,7 @@ import { GameConfig } from './LavaTempleWordRestoreGame';
 import { EnhancedGameService } from '../../../../services/enhancedGameService';
 import { createAudio } from '@/utils/audioUtils';
 import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
+import { useDictationGame } from '../../../../hooks/useSentenceGame';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -48,7 +49,17 @@ export default function TempleRestoration({
   gameSessionId,
   gameService
 }: TempleRestorationProps) {
-  // Initialize FSRS spaced repetition system
+  // Initialize sentence game service for vocabulary tracking
+  const sentenceGame = useDictationGame(
+    gameSessionId || `lava-temple-${Date.now()}`,
+    gameConfig.language
+  );
+
+  console.log(`🎯 TempleRestoration: sentenceGame initialized:`, {
+    processSentence: typeof sentenceGame.processSentence,
+    sessionId: gameSessionId || `lava-temple-${Date.now()}`,
+    language: gameConfig.language
+  });
 
   const [sentences, setSentences] = useState<any[]>([]);
   const [currentSentence, setCurrentSentence] = useState<any>(null);
@@ -319,8 +330,11 @@ export default function TempleRestoration({
       // Record word practice with FSRS system for each gap
       if (correctOption?.option_text) {
         try {
+          // Don't use random UUID - this causes foreign key violations!
+          // Instead, try to find the actual vocabulary ID from the database
+          // For now, use null to avoid foreign key errors
           const wordData = {
-            id: `${currentSentence.id}-gap-${gapIndex}`,
+            id: null, // Will be handled by the service
             word: correctOption.option_text,
             translation: correctOption.option_text, // In fill-in-blank, word and translation are the same
             language: gameConfig.language === 'spanish' ? 'es' : gameConfig.language === 'french' ? 'fr' : 'de'
@@ -331,55 +345,80 @@ export default function TempleRestoration({
           const contextBonus = currentSentence.temple_context ? 0.1 : 0; // Bonus for context clues
           const confidence = Math.min(0.95, baseConfidence + contextBonus);
 
-          // Record practice with FSRS
-
-          if (fsrsResult) {
-            console.log(`FSRS recorded for gap ${gapIndex} (${correctOption.option_text}):`, {
-              algorithm: fsrsResult.algorithm,
-              points: fsrsResult.points,
-              nextReview: fsrsResult.nextReviewDate,
-              interval: fsrsResult.interval,
-              masteryLevel: fsrsResult.masteryLevel
+          // Record practice with FSRS using EnhancedGameSessionService
+          if (gameSessionId) {
+            const sessionService = new EnhancedGameSessionService();
+            const gemEvent = await sessionService.recordWordAttempt(gameSessionId, 'lava-temple-word-restore', {
+              vocabularyId: wordData.id,
+              wordText: wordData.word,
+              translationText: wordData.translation,
+              responseTimeMs: responseTime * 1000,
+              wasCorrect: isGapCorrect,
+              hintUsed: currentSentence.temple_context ? true : false,
+              streakCount: correctAnswers,
+              masteryLevel: isGapCorrect ? 2 : 0,
+              maxGemRarity: 'rare', // Fill-in-blank is skill-based
+              gameMode: 'fill_in_blank',
+              difficultyLevel: gameConfig.difficulty || 'intermediate'
             });
+
+            if (gemEvent) {
+              console.log(`✅ Lava Temple gem awarded for gap ${gapIndex} (${correctOption.option_text}): ${gemEvent.rarity} (${gemEvent.xpValue} XP)`);
+            }
           }
         } catch (error) {
           console.error('Error recording FSRS practice for gap:', error);
         }
       }
 
-      // Record sentence interaction using gems-first system
-      if (gameSessionId && correctOption?.option_text) {
+      // Process sentence with new vocabulary tracking system
+      if (isGapCorrect && currentSentence) {
         try {
-          const sessionService = new EnhancedGameSessionService();
-          const gemEvent = await sessionService.recordSentenceAttempt(gameSessionId, 'lava-temple', {
-            sentenceId: currentSentence.id, // ✅ FIXED: Use sentence ID for sentence-based tracking
-            sourceText: currentSentence.source_sentence,
-            targetText: currentSentence.english_translation || currentSentence.source_sentence,
-            responseTimeMs: responseTime,
-            wasCorrect: isGapCorrect,
-            hintUsed: currentSentence.temple_context ? true : false, // Context clues count as hints
-            streakCount: correctAnswers,
-            masteryLevel: isGapCorrect ? 2 : 0, // Higher mastery for correct gap fills
-            maxGemRarity: 'epic', // Allow epic gems for reading comprehension
-            gameMode: 'fill_in_blank',
-            difficultyLevel: gameConfig.difficulty,
-            skipSpacedRepetition: true, // Skip SRS - FSRS is handling spaced repetition
-            contextData: {
-              gapIndex,
-              selectedWord,
-              correctWord: correctOption.option_text,
-              sentenceContext: currentSentence.source_sentence,
-              templeContext: currentSentence.temple_context,
-              gameType: 'lava-temple-word-restore'
-            }
-          });
+          // Use multiple fallbacks for sentence text to avoid undefined
+          const sentenceText = currentSentence.complete_sentence ||
+                              currentSentence.source_sentence ||
+                              currentSentence.sentence ||
+                              'Unknown sentence';
 
-          // Show gem feedback if gem was awarded
-          if (gemEvent && isGapCorrect) {
-            console.log(`🔮 Lava Temple earned ${gemEvent.rarity} gem (${gemEvent.xpValue} XP) for "${correctOption.option_text}"`);
+          // Only process if we have a valid sentence
+          if (sentenceText && sentenceText !== 'Unknown sentence') {
+            console.log(`🎯 TempleRestoration: About to call sentenceGame.processSentence with "${sentenceText}"`);
+            try {
+              const result = await sentenceGame.processSentence(
+                sentenceText,
+                true, // Gap fill success counts as correct sentence understanding
+                responseTime,
+                currentSentence.temple_context ? true : false, // Context clues count as hints
+                currentSentence.id
+              );
+              console.log(`🎯 TempleRestoration: Got result from processSentence:`, result);
+
+              if (result) {
+                console.log(`🏛️ Lava Temple: Processed sentence "${sentenceText}"`);
+                console.log(`📊 Vocabulary matches: ${result.vocabularyMatches?.length || 0}`);
+                console.log(`💎 Gems awarded: ${result.totalGems || result.gemsAwarded || 0}`);
+                console.log(`⭐ XP earned: ${result.totalXP || result.xpEarned || 0}`);
+                console.log(`📈 Coverage: ${result.coveragePercentage || 0}%`);
+
+              // Log individual vocabulary matches with safe array check
+              if (result.gemsAwarded && Array.isArray(result.gemsAwarded)) {
+                result.gemsAwarded.forEach((gem, index) => {
+                  console.log(`  ${index + 1}. "${gem.word}" → ${gem.gemRarity} gem (+${gem.xpAwarded} XP)`);
+                });
+              } else if (result.vocabularyMatches && Array.isArray(result.vocabularyMatches)) {
+                result.vocabularyMatches.forEach((match, index) => {
+                  console.log(`  ${index + 1}. "${match.word}" → vocabulary match`);
+                });
+              }
+              } else {
+                console.log('🏛️ Lava Temple: No sentence processing result returned');
+              }
+            } catch (sentenceError) {
+              console.error('🚨 Error calling sentenceGame.processSentence:', sentenceError);
+            }
           }
         } catch (error) {
-          console.error('Failed to record vocabulary interaction:', error);
+          console.error('Error processing sentence with vocabulary tracking:', error);
         }
       }
 
@@ -388,12 +427,17 @@ export default function TempleRestoration({
         try {
           await gameService.logWordPerformance({
             session_id: gameSessionId,
-            word_id: `${currentSentence.id}-gap-${gapIndex}`,
-            word: correctOption?.option_text || '',
-            translation: correctOption?.option_text || '',
-            is_correct: isGapCorrect,
+            word_text: correctOption?.option_text || '',
+            translation_text: correctOption?.option_text || '',
+            language_pair: 'english_spanish', // Default for temple restoration
+            attempt_number: 1, // Each gap is attempted once per submission
             response_time_ms: responseTime,
-            attempts: 1, // Each gap is attempted once per submission
+            was_correct: isGapCorrect,
+            difficulty_level: gameConfig.difficulty || 'intermediate',
+            hint_used: currentSentence.temple_context ? true : false,
+            streak_count: correctAnswers,
+            previous_attempts: 0,
+            mastery_level: isGapCorrect ? 2 : 0,
             error_type: isGapCorrect ? undefined : 'fill_in_blank_error',
             grammar_concept: 'fill_in_blank_skills',
             error_details: isGapCorrect ? undefined : {

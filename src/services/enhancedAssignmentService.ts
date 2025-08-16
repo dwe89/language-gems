@@ -191,11 +191,22 @@ export class EnhancedAssignmentService {
     let vocabularyCriteria = {};
     let vocabularyCount = 10;
 
+    // Check if this is a grammar-based assignment
+    const isGrammarAssignment = assignmentData.config?.gameConfig?.selectedGames?.includes('conjugation-duel') &&
+                               assignmentData.config?.gameConfig?.grammarConfig;
+
+    console.log('📝 [ASSIGNMENT SERVICE] Assignment type check:', {
+      selectedGames: assignmentData.config?.gameConfig?.selectedGames,
+      hasGrammarConfig: !!assignmentData.config?.gameConfig?.grammarConfig,
+      isGrammarAssignment
+    });
+
     // Extract vocabulary configuration from game config (handle nested structure)
     const vocabularyConfig = assignmentData.config?.vocabularyConfig ||
                             assignmentData.config?.gameConfig?.vocabularyConfig;
 
-    if (vocabularyConfig && vocabularyConfig.source && vocabularyConfig.source !== 'custom' && vocabularyConfig.source !== '') {
+    // Only create vocabulary configuration for non-grammar assignments
+    if (vocabularyConfig && vocabularyConfig.source && vocabularyConfig.source !== 'custom' && vocabularyConfig.source !== '' && !isGrammarAssignment) {
       // Create vocabulary list based on configuration
       try {
         const vocabularySelection = this.transformVocabularyConfig(vocabularyConfig);
@@ -244,10 +255,10 @@ export class EnhancedAssignmentService {
         game_type: assignmentData.game_type,
         class_id: assignmentData.class_id,
         due_date: assignmentData.due_date ? new Date(assignmentData.due_date).toISOString() : null,
-        vocabulary_assignment_list_id: vocabularyListId,
-        vocabulary_selection_type: vocabularySelectionType,
-        vocabulary_criteria: vocabularyCriteria,
-        vocabulary_count: vocabularyCount,
+        vocabulary_assignment_list_id: isGrammarAssignment ? null : vocabularyListId,
+        vocabulary_selection_type: isGrammarAssignment ? null : vocabularySelectionType,
+        vocabulary_criteria: isGrammarAssignment ? null : vocabularyCriteria,
+        vocabulary_count: isGrammarAssignment ? 0 : vocabularyCount,
         created_by: teacherId,
         game_config: assignmentData.config,
         max_attempts: assignmentData.max_attempts,
@@ -271,7 +282,77 @@ export class EnhancedAssignmentService {
     // Create progress entries for all students in the class
     await this.initializeStudentProgress(assignment.id, assignmentData.class_id);
 
+    // Create grammar assignment record if this is a grammar-based assignment
+    await this.createGrammarAssignmentIfNeeded(assignment.id, assignmentData);
+
     return assignment.id;
+  }
+
+  // =====================================================
+  // GRAMMAR ASSIGNMENT HELPERS
+  // =====================================================
+
+  async createGrammarAssignmentIfNeeded(
+    assignmentId: string,
+    assignmentData: AssignmentCreationData
+  ): Promise<void> {
+    try {
+      // Check if this assignment has grammar configuration
+      const grammarConfig = assignmentData.config?.gameConfig?.grammarConfig;
+
+      if (!grammarConfig) {
+        console.log('📝 [ASSIGNMENT SERVICE] No grammar config found, skipping grammar assignment creation');
+        return;
+      }
+
+      // Check if assignment includes conjugation-duel game
+      const selectedGames = assignmentData.config?.gameConfig?.selectedGames || [];
+      const hasConjugationDuel = selectedGames.includes('conjugation-duel');
+
+      if (!hasConjugationDuel) {
+        console.log('📝 [ASSIGNMENT SERVICE] No conjugation-duel game selected, skipping grammar assignment creation');
+        return;
+      }
+
+      console.log('📝 [ASSIGNMENT SERVICE] Creating grammar assignment record:', {
+        assignmentId,
+        grammarConfig
+      });
+
+      // Map language names to database codes
+      const languageMap: Record<string, string> = {
+        'spanish': 'es',
+        'french': 'fr',
+        'german': 'de'
+      };
+
+      const grammarAssignmentData = {
+        assignment_id: assignmentId,
+        language: languageMap[grammarConfig.language] || 'es',
+        tenses: grammarConfig.tenses || ['present'],
+        persons: grammarConfig.persons || ['yo', 'tu', 'el_ella_usted'],
+        verb_types: grammarConfig.verbTypes || ['regular'],
+        difficulty: grammarConfig.difficulty || 'intermediate',
+        verb_count: grammarConfig.verbCount || 10,
+        include_reflexive: grammarConfig.verbTypes?.includes('reflexive') || false,
+        randomize_order: true
+      };
+
+      const { error: grammarError } = await this.supabase
+        .from('grammar_assignments')
+        .insert(grammarAssignmentData);
+
+      if (grammarError) {
+        console.error('❌ [ASSIGNMENT SERVICE] Error creating grammar assignment:', grammarError);
+        // Don't throw error - this is supplementary data
+      } else {
+        console.log('✅ [ASSIGNMENT SERVICE] Created grammar assignment record successfully');
+      }
+
+    } catch (error) {
+      console.error('❌ [ASSIGNMENT SERVICE] Error in createGrammarAssignmentIfNeeded:', error);
+      // Don't throw error - this is supplementary data
+    }
   }
 
   // =====================================================

@@ -69,6 +69,7 @@ export interface GameAssignmentWrapperProps {
     onProgressUpdate: (progress: Partial<GameProgress>) => void;
     onGameComplete: (finalProgress: GameProgress) => void;
     gameSessionId: string | null;
+    gameService?: EnhancedGameSessionService | null;
     selectedTheme?: string; // Add theme to child props
   }) => React.ReactNode;
 }
@@ -199,13 +200,38 @@ export const useAssignmentVocabulary = (assignmentId: string) => {
         }
 
         // If list-based approach failed or returned no data, try criteria-based approach
+        // Check if this is a grammar assignment
+        const isGrammarAssignment = assignmentData.game_config?.gameConfig?.selectedGames?.includes('conjugation-duel') &&
+                                   assignmentData.game_config?.gameConfig?.grammarConfig;
+
         console.log('🔍 [FALLBACK CHECK] Checking fallback conditions:', {
           vocabularyDataLength: vocabularyData?.length || 0,
           hasVocabularyCriteria: !!assignmentData.vocabulary_criteria,
-          vocabularyCriteria: assignmentData.vocabulary_criteria
+          vocabularyCriteria: assignmentData.vocabulary_criteria,
+          isGrammarAssignment
         });
 
-        if ((!vocabularyData || vocabularyData.length === 0) && assignmentData.vocabulary_criteria) {
+        // For grammar assignments, create placeholder vocabulary to avoid errors
+        if (isGrammarAssignment) {
+          console.log('🎯 [GRAMMAR] This is a grammar assignment - creating placeholder vocabulary');
+          vocabularyData = [{
+            order_position: 1,
+            centralized_vocabulary: {
+              id: 'grammar-placeholder',
+              word: 'grammar-verbs',
+              translation: 'Grammar verbs will be loaded from grammar system',
+              category: 'grammar',
+              subcategory: 'verbs',
+              part_of_speech: 'verb',
+              language: assignmentData.game_config?.gameConfig?.grammarConfig?.language || 'spanish',
+              audio_url: null,
+              word_type: 'grammar',
+              gender: null,
+              article: null,
+              display_word: 'Grammar System'
+            }
+          }];
+        } else if ((!vocabularyData || vocabularyData.length === 0) && assignmentData.vocabulary_criteria) {
           // Category-based assignment: fetch directly from centralized_vocabulary
           const criteria = assignmentData.vocabulary_criteria;
           console.log('🔄 [FALLBACK] List-based approach returned empty, trying criteria-based approach');
@@ -847,6 +873,7 @@ export default function GameAssignmentWrapper({
           onProgressUpdate: handleProgressUpdate,
           onGameComplete: handleGameComplete,
           gameSessionId: gemSessionId,
+          gameService: gemSessionService,
           selectedTheme
         })}
       </div>

@@ -330,18 +330,51 @@ export class EnhancedGameSessionService {
       gem_type: gemType
     };
 
-    // Handle both UUID and integer vocabulary IDs
-    if (typeof gemEvent.vocabularyId === 'string' && gemEvent.vocabularyId.includes('-')) {
-      // UUID format - use centralized_vocabulary_id
-      insertData.centralized_vocabulary_id = gemEvent.vocabularyId;
-    } else if (gemEvent.vocabularyId) {
-      // Integer format - use legacy vocabulary_id
-      insertData.vocabulary_id = parseInt(gemEvent.vocabularyId.toString());
+    // Handle vocabulary IDs with validation - skip foreign key fields if no valid ID
+    if (gemEvent.vocabularyId) {
+      if (typeof gemEvent.vocabularyId === 'string') {
+        // Check if it's a valid UUID format (contains hyphens and is 36 chars)
+        const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(gemEvent.vocabularyId);
+
+        if (isValidUUID) {
+          // Valid UUID format - use centralized_vocabulary_id
+          insertData.centralized_vocabulary_id = gemEvent.vocabularyId;
+        } else {
+          console.warn('🚨 Invalid vocabulary ID format (not a valid UUID):', gemEvent.vocabularyId);
+          // Don't include vocabulary ID to avoid foreign key errors
+        }
+      } else if (!isNaN(Number(gemEvent.vocabularyId))) {
+        // Integer format - use legacy vocabulary_id
+        insertData.vocabulary_id = parseInt(gemEvent.vocabularyId.toString());
+      } else {
+        console.warn('🚨 Invalid vocabulary ID format (not UUID or integer):', gemEvent.vocabularyId);
+        // Don't include vocabulary ID to avoid foreign key errors
+      }
+    } else {
+      console.log('💎 No vocabulary ID provided - storing gem without vocabulary reference');
+      // This is fine - we can store gems without vocabulary references
     }
 
-    await this.supabase
+    // Try insert first, handle conflicts gracefully
+    const { error: insertError } = await this.supabase
       .from('gem_events')
       .insert(insertData);
+
+    if (insertError) {
+      // If it's a conflict error, try upsert
+      if (insertError.code === '23505' || insertError.message?.includes('duplicate')) {
+        console.log('🔄 Gem event conflict detected, attempting upsert...');
+        const { error: upsertError } = await this.supabase
+          .from('gem_events')
+          .upsert(insertData, { onConflict: 'session_id,centralized_vocabulary_id,gem_type' });
+
+        if (upsertError) {
+          console.warn('🚨 Gem event upsert also failed:', upsertError);
+        }
+      } else {
+        console.warn('🚨 Gem event insert failed:', insertError);
+      }
+    }
 
     console.log(`✅ [DUAL-TRACK] ${gemType} gem stored:`, {
       rarity: gemEvent.rarity,
@@ -504,25 +537,35 @@ export class EnhancedGameSessionService {
 
       if (attempt.vocabularyId) {
         if (typeof attempt.vocabularyId === 'string') {
-          // UUID from centralized_vocabulary
-          centralizedVocabularyId = attempt.vocabularyId;
-        } else {
+          // Validate UUID format
+          const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(attempt.vocabularyId);
+
+          if (isValidUUID) {
+            // Valid UUID from centralized_vocabulary
+            centralizedVocabularyId = attempt.vocabularyId;
+          } else {
+            console.warn('🚨 Invalid vocabulary ID format in word performance logging:', attempt.vocabularyId);
+            // Continue without vocabulary ID to avoid database errors
+          }
+        } else if (!isNaN(Number(attempt.vocabularyId))) {
           // Integer from legacy vocabulary_items
           legacyVocabularyId = attempt.vocabularyId;
+        } else {
+          console.warn('🚨 Invalid vocabulary ID format (not UUID or integer):', attempt.vocabularyId);
         }
+      } else {
+        console.log('📝 No vocabulary ID provided - logging performance without vocabulary reference');
+        // This is fine - we can log performance without vocabulary references
       }
 
-      await this.supabase
-        .from('word_performance_logs')
-        .insert({
-          session_id: sessionId,
-          vocabulary_id: legacyVocabularyId, // Legacy integer ID
-          centralized_vocabulary_id: centralizedVocabularyId, // New UUID ID
-          word_text: attempt.wordText,
-          translation_text: attempt.translationText,
-          language_pair: 'english_spanish', // TODO: Make dynamic
-          attempt_number: 1,
-          response_time_ms: attempt.responseTimeMs,
+      // Try insert first, handle conflicts gracefully
+      const logData: any = {
+        session_id: sessionId,
+        word_text: attempt.wordText,
+        translation_text: attempt.translationText,
+        language_pair: 'english_spanish', // TODO: Make dynamic
+        attempt_number: 1,
+        response_time_ms: attempt.responseTimeMs,
           was_correct: attempt.wasCorrect,
           confidence_level: attempt.responseTimeMs < 2000 ? 5 :
                            attempt.responseTimeMs < 4000 ? 4 :
@@ -530,9 +573,42 @@ export class EnhancedGameSessionService {
           difficulty_level: attempt.difficultyLevel || 'medium',
           hint_used: attempt.hintUsed,
           streak_count: attempt.streakCount,
-          previous_attempts: 0,
-          mastery_level: attempt.masteryLevel || 0
-        });
+        was_correct: attempt.wasCorrect,
+        confidence_level: attempt.responseTimeMs < 2000 ? 5 : 3,
+        difficulty_level: attempt.difficultyLevel || 'medium',
+        hint_used: attempt.hintUsed,
+        streak_count: attempt.streakCount,
+        previous_attempts: 0,
+        mastery_level: attempt.masteryLevel || 0
+      };
+
+      // Only add vocabulary IDs if they're valid to avoid foreign key errors
+      if (legacyVocabularyId) {
+        logData.vocabulary_id = legacyVocabularyId;
+      }
+      if (centralizedVocabularyId) {
+        logData.centralized_vocabulary_id = centralizedVocabularyId;
+      }
+
+      const { error: logError } = await this.supabase
+        .from('word_performance_logs')
+        .insert(logData);
+
+      if (logError) {
+        // If it's a conflict error, try upsert
+        if (logError.code === '23505' || logError.message?.includes('duplicate')) {
+          console.log('🔄 Word performance log conflict detected, attempting upsert...');
+          const { error: upsertError } = await this.supabase
+            .from('word_performance_logs')
+            .upsert(logData, { onConflict: 'session_id,centralized_vocabulary_id,word_text' });
+
+          if (upsertError) {
+            console.warn('🚨 Word performance log upsert also failed:', upsertError);
+          }
+        } else {
+          console.warn('🚨 Word performance log insert failed:', logError);
+        }
+      }
     } catch (error) {
       console.error('Error logging word performance:', error);
     }

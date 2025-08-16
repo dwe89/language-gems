@@ -1,0 +1,59 @@
+{
+  "aiSuggestionsApplied": {
+    "highConfidence": 219,
+    "mediumConfidence": 18,
+    "lowConfidence": 0,
+    "total": 237
+  },
+  "rlsPoliciesFixed": true,
+  "lemmatizationIntegrated": true,
+  "endToEndTests": {
+    "passed": 5,
+    "failed": 2,
+    "examples": [
+      {
+        "sentence": "Prefiero ir al cine",
+        "coverage": 25,
+        "trackedWords": [
+          "preferir"
+        ]
+      },
+      {
+        "sentence": "Hablo español muy bien",
+        "coverage": 25,
+        "trackedWords": [
+          "hablar"
+        ]
+      },
+      {
+        "sentence": "Me gusta comer pizza",
+        "coverage": 50,
+        "trackedWords": [
+          "me gusta"
+        ]
+      },
+      {
+        "sentence": "Comemos en el restaurante",
+        "coverage": 25,
+        "trackedWords": [
+          "comer"
+        ]
+      },
+      {
+        "sentence": "Je parle français",
+        "coverage": 33,
+        "trackedWords": [
+          "parler"
+        ]
+      },
+      {
+        "sentence": "Ich spreche Deutsch",
+        "coverage": 33,
+        "trackedWords": [
+          "sprechen"
+        ]
+      }
+    ]
+  },
+  "finalDataQuality": 95
+}

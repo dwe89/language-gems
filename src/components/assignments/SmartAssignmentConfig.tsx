@@ -51,9 +51,9 @@ interface VocabularyConfig {
 }
 
 interface SentenceConfig {
-  source: 'category' | 'subcategory' | 'custom' | 'create' | '';
-  category?: string;
-  subcategory?: string;
+  source: 'theme' | 'topic' | 'custom' | 'create' | '';
+  theme?: string;
+  topic?: string;
   customSetId?: string;
   customSet?: any;
   sentenceCount?: number;
@@ -63,8 +63,16 @@ interface SentenceConfig {
 
 interface GrammarConfig {
   language: 'spanish' | 'french' | 'german';
-  verbTypes: ('regular' | 'irregular' | 'stem-changing')[];
-  tenses: ('present' | 'preterite' | 'imperfect' | 'future' | 'conditional' | 'subjunctive')[];
+  verbTypes: ('regular' | 'irregular' | 'stem-changing' | 'reflexive')[];
+  tenses: (
+    // Simple tenses
+    'present' | 'preterite' | 'imperfect' | 'future' | 'conditional' |
+    'present_subjunctive' | 'imperfect_subjunctive' |
+    // Compound tenses
+    'present_perfect' | 'past_perfect' | 'future_perfect' | 'conditional_perfect' |
+    'present_perfect_subjunctive' | 'past_perfect_subjunctive'
+  )[];
+  persons: ('yo' | 'tu' | 'el_ella_usted' | 'nosotros' | 'vosotros' | 'ellos_ellas_ustedes')[];
   difficulty: 'beginner' | 'intermediate' | 'advanced';
   verbCount?: number;
   focusAreas?: ('conjugation' | 'recognition' | 'translation')[];
@@ -324,30 +332,30 @@ function SentenceConfigSection({ config, onChange }: {
     <div className="space-y-6">
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-3">Content Source</label>
-        <select 
-          value={config.source} 
+        <select
+          value={config.source}
           onChange={(e) => onChange({...config, source: e.target.value as any})}
           className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-green-500 focus:border-transparent"
         >
           <option value="">Choose source...</option>
-          <option value="category">📚 Category-based sentences</option>
-          <option value="subcategory">🎯 Subcategory-based sentences</option>
+          <option value="theme">📚 Theme-based sentences</option>
+          <option value="topic">🎯 Topic-based sentences</option>
           <option value="custom">📝 Custom sentence set</option>
           <option value="create">➕ Create new sentence set</option>
         </select>
       </div>
 
-      {config.source === 'category' && (
-        <ThemeSelector 
-          value={config.category || ''} 
-          onChange={(category) => onChange({...config, category})}
+      {config.source === 'theme' && (
+        <ThemeSelector
+          value={config.theme || ''}
+          onChange={(theme) => onChange({...config, theme})}
         />
       )}
 
-      {config.source === 'subcategory' && (
-        <TopicSelector 
-          value={config.subcategory || ''} 
-          onChange={(subcategory) => onChange({...config, subcategory})}
+      {config.source === 'topic' && (
+        <TopicSelector
+          value={config.topic || ''}
+          onChange={(topic) => onChange({...config, topic})}
         />
       )}
 
@@ -720,6 +728,38 @@ function GrammarConfigSection({ config, onChange }: GrammarConfigSectionProps) {
                 }`}>
                   {tense.difficulty}
                 </div>
+              </div>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* Person/Pronoun Selection */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-3">
+          Persons/Pronouns
+        </label>
+        <div className="grid grid-cols-2 gap-3">
+          {[
+            { id: 'yo', name: 'Yo (I)', example: 'hablo' },
+            { id: 'tu', name: 'Tú (You)', example: 'hablas' },
+            { id: 'el_ella_usted', name: 'Él/Ella/Usted (He/She/You formal)', example: 'habla' },
+            { id: 'nosotros', name: 'Nosotros (We)', example: 'hablamos' },
+            { id: 'vosotros', name: 'Vosotros (You all)', example: 'habláis' },
+            { id: 'ellos_ellas_ustedes', name: 'Ellos/Ellas/Ustedes (They/You all)', example: 'hablan' }
+          ].map(person => (
+            <label key={person.id} className="flex items-start space-x-3 p-3 rounded-lg border hover:bg-gray-50">
+              <input
+                type="checkbox"
+                checked={config.persons?.includes(person.id as any) || false}
+                onChange={() => updateConfig({
+                  persons: toggleArrayItem(config.persons || [], person.id as any)
+                })}
+                className="mt-1 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+              />
+              <div className="flex-1">
+                <div className="font-medium text-gray-900">{person.name}</div>
+                <div className="text-xs text-gray-500 italic">e.g., {person.example}</div>
               </div>
             </label>
           ))}

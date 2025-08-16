@@ -82,8 +82,16 @@ interface SentenceConfig {
 
 interface GrammarConfig {
   language: 'spanish' | 'french' | 'german';
-  verbTypes: ('regular' | 'irregular' | 'stem-changing')[];
-  tenses: ('present' | 'preterite' | 'imperfect' | 'future' | 'conditional' | 'subjunctive')[];
+  verbTypes: ('regular' | 'irregular' | 'stem-changing' | 'reflexive')[];
+  tenses: (
+    // Simple tenses
+    'present' | 'preterite' | 'imperfect' | 'future' | 'conditional' |
+    'present_subjunctive' | 'imperfect_subjunctive' |
+    // Compound tenses
+    'present_perfect' | 'past_perfect' | 'future_perfect' | 'conditional_perfect' |
+    'present_perfect_subjunctive' | 'past_perfect_subjunctive'
+  )[];
+  persons: ('yo' | 'tu' | 'el_ella_usted' | 'nosotros' | 'vosotros' | 'ellos_ellas_ustedes')[];
   difficulty: 'beginner' | 'intermediate' | 'advanced';
   verbCount?: number;
   focusAreas?: ('conjugation' | 'recognition' | 'translation')[];
@@ -299,8 +307,8 @@ export default function EnhancedAssignmentCreator({
   const [gameConfig, setGameConfig] = useState<UnifiedGameConfig>({
     selectedGames: [],
     vocabularyConfig: { source: '', wordCount: 10, difficulty: 'intermediate', curriculumLevel: 'KS3' },
-    sentenceConfig: { source: '', sentenceCount: 10, difficulty: 'intermediate' },
-    grammarConfig: { language: 'spanish', verbTypes: ['regular'], tenses: ['present'], difficulty: 'beginner', verbCount: 10 },
+    sentenceConfig: { source: '', theme: '', topic: '', sentenceCount: 10, difficulty: 'intermediate' },
+    grammarConfig: { language: 'spanish', verbTypes: ['regular'], tenses: ['present'], persons: ['yo', 'tu', 'el_ella_usted'], difficulty: 'beginner', verbCount: 10 },
     difficulty: 'intermediate',
     timeLimit: 15,
     maxAttempts: 3,
@@ -472,7 +480,7 @@ export default function EnhancedAssignmentCreator({
         const gamesContentComplete =
           (!needsVocabulary || !!gameConfig.vocabularyConfig.source) &&
           (!needsSentences || !!gameConfig.sentenceConfig.source) &&
-          (!needsGrammar || (gameConfig.grammarConfig.verbTypes.length > 0 && gameConfig.grammarConfig.tenses.length > 0));
+          (!needsGrammar || (gameConfig.grammarConfig.verbTypes.length > 0 && gameConfig.grammarConfig.tenses.length > 0 && gameConfig.grammarConfig.persons.length > 0));
 
         // Assessments always require a language and difficulty set, and possibly categories
         const assessmentsContentComplete = assessmentConfig.selectedAssessments.length === 0 ||
@@ -1396,7 +1404,7 @@ export default function EnhancedAssignmentCreator({
                     )}
                     {gameConfig.grammarConfig.verbTypes.length > 0 && (
                       <div className="text-purple-900 mb-1">
-                        <span className="font-medium">Grammar:</span> {gameConfig.grammarConfig.language} - {gameConfig.grammarConfig.verbTypes.join(', ')} verbs, {gameConfig.grammarConfig.tenses.join(', ')} tenses
+                        <span className="font-medium">Grammar:</span> {gameConfig.grammarConfig.language} - {gameConfig.grammarConfig.verbTypes.join(', ')} verbs, {gameConfig.grammarConfig.tenses.join(', ')} tenses, {gameConfig.grammarConfig.persons.join(', ')} persons
                       </div>
                     )}
                   </div>

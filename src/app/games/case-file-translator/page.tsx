@@ -83,18 +83,41 @@ export default function CaseFileTranslatorPage() {
             router.push('/student-dashboard');
           };
 
-          // For sentence-based games like Case File Translator, we use the assignment's vocabulary criteria
-          // to configure the game rather than passing individual vocabulary items
+          // For sentence-based games like Case File Translator, we use the assignment's sentence configuration
+          // Extract sentence config from game_config
+          const gameConfig = assignment.game_config?.gameConfig || assignment.game_config || {};
+          const sentenceConfig = gameConfig.sentenceConfig || {};
+
+          // Map sentence config to legacy settings format
+          let caseType = 'basics_core_language'; // Default category
+          let subcategory = 'common_phrases'; // Default subcategory
+
+          if (sentenceConfig.source === 'topic' && sentenceConfig.topic) {
+            // For topic-based selection, use basics_core_language as category and topic as subcategory
+            caseType = 'basics_core_language';
+            subcategory = sentenceConfig.topic;
+          } else if (sentenceConfig.source === 'theme' && sentenceConfig.theme) {
+            // For theme-based selection, use theme as category
+            caseType = sentenceConfig.theme;
+            subcategory = undefined;
+          }
+
           const legacySettings = {
-            caseType: assignment.vocabulary_criteria?.category || 'assignment',
+            caseType,
             language: assignment.vocabulary_criteria?.language || 'spanish',
             curriculumLevel: (assignment.curriculum_level as string) || 'KS3',
-            subcategory: assignment.vocabulary_criteria?.subcategory || 'assignment',
-            difficulty: 'beginner', // Default difficulty
+            subcategory,
+            difficulty: sentenceConfig.difficulty || 'intermediate',
             // KS4-specific parameters
             examBoard: assignment.exam_board as 'AQA' | 'edexcel',
             tier: assignment.tier as 'foundation' | 'higher'
           };
+
+          console.log('🎯 Case File Translator assignment settings:', {
+            originalSentenceConfig: sentenceConfig,
+            mappedSettings: legacySettings,
+            assignmentId: assignment.id
+          });
 
           return (
             <div className="min-h-screen">

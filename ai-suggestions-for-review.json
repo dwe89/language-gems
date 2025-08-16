@@ -1,0 +1,4648 @@
+{
+  "exportedAt": "2025-08-15T16:45:52.597Z",
+  "totalSuggestions": 240,
+  "suggestions": [
+    {
+      "id": "a10c3662-fbcc-4600-832a-2a9f00e2c3df",
+      "originalWord": "abgeben",
+      "lemma": "abgeben",
+      "canonicalForm": "abgeben",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.92,
+      "reasoning": "German verb with prefix; base form is the infinitive; not a multiword expression.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "ecca1e1d-91dd-4e3a-9c49-e8130e9b1f87",
+      "originalWord": "abhängen",
+      "lemma": "abhängen",
+      "canonicalForm": " abhängen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.92,
+      "reasoning": "Verb with separable prefix; treated as a single word in base form.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "13809b4b-33db-48f6-b08d-fc3a47d887c0",
+      "originalWord": "abholen",
+      "lemma": "abholen",
+      "canonicalForm": "abholen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.92,
+      "reasoning": "Infinitive verb; no multiword expression.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "a75dc2f2-84e0-4f5d-af20-fa41c869747d",
+      "originalWord": "abnehmen",
+      "lemma": "abnehmen",
+      "canonicalForm": "abnehmen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.92,
+      "reasoning": "Infinitive verb; no multiword expression.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "2e426c26-fd92-4264-a4a3-cb1e533fc6aa",
+      "originalWord": "abnehmen",
+      "lemma": "abnehmen",
+      "canonicalForm": "abnehmen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.92,
+      "reasoning": "Infinitive verb; same as above.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "77ceb9c5-a45b-4cbd-b1d7-589d133babcd",
+      "originalWord": "abnehmen",
+      "lemma": "abnehmen",
+      "canonicalForm": "abnehmen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.92,
+      "reasoning": "Infinitive verb; same as above.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "ced7a043-71d6-4e6c-8e99-a8837dd667f7",
+      "originalWord": "abnehmen",
+      "lemma": "abnehmen",
+      "canonicalForm": "abnehmen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.92,
+      "reasoning": "Infinitive verb; same as above.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "beea1bb0-34a4-41b4-80e1-1d85025f8449",
+      "originalWord": "abnehmen",
+      "lemma": "abnehmen",
+      "canonicalForm": "abnehmen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.92,
+      "reasoning": "Infinitive verb; same as above with slightly different translation variants.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "13632d56-0e99-4293-b755-fcf551a6e65a",
+      "originalWord": "absolut",
+      "lemma": "absolut",
+      "canonicalForm": "absolut",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "adjective",
+      "confidence": 0.85,
+      "reasoning": "Adjective/adverb meaning absolute; base form is 'absolut'.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "21ec0b80-8179-4f5c-b1f8-173af48e44a6",
+      "originalWord": "acht",
+      "lemma": "acht",
+      "canonicalForm": "acht",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "adjective",
+      "confidence": 0.85,
+      "reasoning": "Numeral used as adjective; base form is 'acht'.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "79b3d2bc-0b2b-4c40-b586-ee2cdb89354b",
+      "originalWord": "acht",
+      "lemma": "acht",
+      "canonicalForm": "acht",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "adjective",
+      "confidence": 0.85,
+      "reasoning": "Numeral used as adjective; base form is 'acht'.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "f54f11ae-0d4d-4500-9547-560f9105e8db",
+      "originalWord": "acht",
+      "lemma": "acht",
+      "canonicalForm": "acht",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "adjective",
+      "confidence": 0.85,
+      "reasoning": "Numeral used as adjective; base form is 'acht'.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "549928b2-73dc-47ba-b6d1-12f1819b403b",
+      "originalWord": "akzeptieren",
+      "lemma": "akzeptieren",
+      "canonicalForm": "akzeptieren",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.92,
+      "reasoning": "Infinitive verb; standard dictionary form.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "d123b173-5afb-4b26-bb43-2ad32878fd0b",
+      "originalWord": "akzeptieren",
+      "lemma": "akzeptieren",
+      "canonicalForm": "akzeptieren",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.92,
+      "reasoning": "Infinitive verb; same as above.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "38bb1a6a-9069-4a6d-bc82-362a44ba6c06",
+      "originalWord": "alle",
+      "lemma": "alle",
+      "canonicalForm": "alle",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "pronoun",
+      "confidence": 0.85,
+      "reasoning": "Pronoun meaning everyone; base form is 'alle'.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "550dfe34-d290-4ce6-85e1-ce3058d953ae",
+      "originalWord": "alle",
+      "lemma": "alle",
+      "canonicalForm": "alle",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "pronoun",
+      "confidence": 0.85,
+      "reasoning": "Pronoun meaning everyone; base form is 'alle'.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "2f475033-1a43-459e-a5e6-fe2f28503695",
+      "originalWord": "allein, alleine",
+      "lemma": "allein",
+      "canonicalForm": "allein, alleine",
+      "isMWE": true,
+      "mweType": "collocation",
+      "componentWords": [
+        "allein",
+        "alleine"
+      ],
+      "partOfSpeech": "adverb",
+      "confidence": 0.9,
+      "reasoning": "Multiword expression meaning 'alone' with variant forms; treated as collocation.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "976c96d6-5c17-4393-903b-27cbc6747d09",
+      "originalWord": "amüsieren; sich acc. amüsieren",
+      "lemma": "amüsieren",
+      "canonicalForm": "amüsieren; sich acc. amüsieren",
+      "isMWE": true,
+      "mweType": "phrasal_verb",
+      "componentWords": [
+        "amüsieren",
+        "sich",
+        "acc",
+        "amüsieren"
+      ],
+      "partOfSpeech": "verb",
+      "confidence": 0.85,
+      "reasoning": "Phrasal verb with reflexive pronoun and accusative; multiword expression.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "20d2b6ee-79f5-45fe-9c03-59f67a510147",
+      "originalWord": "(an)bieten",
+      "lemma": "anbieten",
+      "canonicalForm": "(an)bieten",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.92,
+      "reasoning": "Separable-prefix verb; kept as single word in base form; parentheses are orthographic.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "c33bd6cd-3ed5-411a-928b-970857e9d925",
+      "originalWord": "anbieten",
+      "lemma": "anbieten",
+      "canonicalForm": "anbieten",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.92,
+      "reasoning": "Separable-prefix verb; base form is 'anbieten'.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "ac54c6b3-7fb9-420c-ad91-eb0d2dd6deb4",
+      "originalWord": "andere (r, s)",
+      "lemma": "andere",
+      "canonicalForm": "andere",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "adjective",
+      "confidence": 0.6,
+      "reasoning": "The form 'andere (r, s)' appears as a standalone adjective with inflection notes; not a clear multiword expression.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "1c49c346-a17c-452e-81e1-9ec82665ad53",
+      "originalWord": "anfangen",
+      "lemma": "anfangen",
+      "canonicalForm": "anfangen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.92,
+      "reasoning": "Infinitive form; no multiword expression.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "3b466a8b-059b-4454-a9ab-20fb0d914cb5",
+      "originalWord": "anfangen",
+      "lemma": "anfangen",
+      "canonicalForm": "anfangen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.92,
+      "reasoning": "Identical to previous entry; standard verb form.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "285dd15b-6650-4deb-8f86-b7ac81036f90",
+      "originalWord": "anhaben",
+      "lemma": "anhaben",
+      "canonicalForm": "anhaben",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.88,
+      "reasoning": "Base form of a separable-prefix verb; not a separate multiword expression.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "651d24a6-54a6-4017-81e4-640877a3ef04",
+      "originalWord": "anhaben",
+      "lemma": "anhaben",
+      "canonicalForm": "anhaben",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.88,
+      "reasoning": "Same as previous entry.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "bdcb2951-0714-4aa3-a28b-7152e32397b5",
+      "originalWord": "ankommen",
+      "lemma": "ankommen",
+      "canonicalForm": "ankommen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.88,
+      "reasoning": "Base form of the verb; not an MWE in isolation.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "c76cf444-fef3-416c-b0c5-63ee61f1f4e9",
+      "originalWord": "ankommen",
+      "lemma": "ankommen",
+      "canonicalForm": "ankommen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.88,
+      "reasoning": "Same as previous entry.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "6583d8b7-cd0b-44aa-ba87-9faa35bb5d41",
+      "originalWord": "ankommen (in dat. + noun)",
+      "lemma": "ankommen",
+      "canonicalForm": "ankommen (in dat. + noun)",
+      "isMWE": true,
+      "mweType": "phrasal_verb",
+      "componentWords": [
+        "ankommen",
+        "in",
+        "dat",
+        "noun"
+      ],
+      "partOfSpeech": "verb",
+      "confidence": 0.85,
+      "reasoning": "Clear phrasal verb with a prepositional/noun complement; canonical form preserves the full phrase.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "17d2200c-fa2a-4364-8044-a397f8c95a97",
+      "originalWord": "annehmen",
+      "lemma": "annehmen",
+      "canonicalForm": "annehmen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.9,
+      "reasoning": "Infinitive; not a listed multiword expression here.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "7a49c7f6-0d05-425b-948f-24f1e0cca33f",
+      "originalWord": "anrufen",
+      "lemma": "anrufen",
+      "canonicalForm": "anrufen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.92,
+      "reasoning": "Base form of a separable-prefix verb; not an MWE in isolation.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "5ffdeb64-d5e1-41a9-8b17-c7ede093d28f",
+      "originalWord": "anrufen",
+      "lemma": "anrufen",
+      "canonicalForm": "anrufen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.92,
+      "reasoning": "Same as previous entry.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "ef1b659e-ce2d-476b-8b6a-64ad0dcc6069",
+      "originalWord": "anrufen",
+      "lemma": "anrufen",
+      "canonicalForm": "anrufen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.92,
+      "reasoning": "Same as previous entry.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "6c66edfb-143d-4a33-a146-b6c722b847ee",
+      "originalWord": "anrufen",
+      "lemma": "anrufen",
+      "canonicalForm": "anrufen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.92,
+      "reasoning": "Same as previous entry; form remains the same.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "d1763bdf-2768-42b6-a365-61b01e3d3a83",
+      "originalWord": "anrufen",
+      "lemma": "anrufen",
+      "canonicalForm": "anrufen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.92,
+      "reasoning": "Same as previous entry; translation varies by sense but form unchanged.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "c8d0882c-752e-4725-bd83-314104ca8d58",
+      "originalWord": "anrufen",
+      "lemma": "anrufen",
+      "canonicalForm": "anrufen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.92,
+      "reasoning": "Same as previous entry.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "3ecfc245-39d4-4e72-82d7-9555a86f6efb",
+      "originalWord": "anrufen",
+      "lemma": "anrufen",
+      "canonicalForm": "anrufen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.92,
+      "reasoning": "Same as previous entry.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "cf1b543e-4148-4145-abdc-1f8f7e7c2dca",
+      "originalWord": "anrufen",
+      "lemma": "anrufen",
+      "canonicalForm": "anrufen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.92,
+      "reasoning": "Same as previous entry.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "f9cfd4d6-d8b6-4ead-b7f7-6d5b216eacf9",
+      "originalWord": "anschauen",
+      "lemma": "anschauen",
+      "canonicalForm": "anschauen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.88,
+      "reasoning": "Base verb; not a stand-alone multiword expression.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "f39a0994-725b-472c-970b-a54135a39529",
+      "originalWord": "anschauen, sich anschauen",
+      "lemma": "anschauen",
+      "canonicalForm": "anschauen, sich anschauen",
+      "isMWE": true,
+      "mweType": "phrasal_verb",
+      "componentWords": [
+        "anschauen",
+        "sich",
+        "anschauen"
+      ],
+      "partOfSpeech": "verb",
+      "confidence": 0.88,
+      "reasoning": "Phrasal verb with reflexive element; canonical form captures full expression.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "b03e6f81-ce68-42ce-8469-0f2159f85f29",
+      "originalWord": "anschauen, sich anschauen",
+      "lemma": "anschauen",
+      "canonicalForm": "anschauen, sich anschauen",
+      "isMWE": true,
+      "mweType": "phrasal_verb",
+      "componentWords": [
+        "anschauen",
+        "sich",
+        "anschauen"
+      ],
+      "partOfSpeech": "verb",
+      "confidence": 0.88,
+      "reasoning": "Same phrasal verb as above; included as a separate entry.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "5498831d-8ec3-4a1a-80fb-f5d530533ff9",
+      "originalWord": "anschauen, sich anschauen",
+      "lemma": "anschauen, sich anschauen",
+      "canonicalForm": "anschauen, sich anschauen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "unknown",
+      "confidence": 0.5,
+      "reasoning": "No reasoning provided",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "2be1b24d-681c-43c3-ad1a-9a604e3cadd5",
+      "originalWord": "arbeiten",
+      "lemma": "arbeiten",
+      "canonicalForm": "arbeiten",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.92,
+      "reasoning": "Base infinitive form; ordinary verb; not a multiword expression.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "305ada51-0862-4445-9c9d-2740155eaeca",
+      "originalWord": "arbeiten",
+      "lemma": "arbeiten",
+      "canonicalForm": "arbeiten",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.92,
+      "reasoning": "Same as entry 1; simple verb.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "b024dcde-9d14-438c-855e-f940ec58e56d",
+      "originalWord": "arbeiten (an dat. + noun)",
+      "lemma": "arbeiten",
+      "canonicalForm": "arbeiten (an dat. + noun)",
+      "isMWE": true,
+      "mweType": "phrasal_verb",
+      "componentWords": [
+        "arbeiten",
+        "an",
+        "dat",
+        "noun"
+      ],
+      "partOfSpeech": "verb",
+      "confidence": 0.92,
+      "reasoning": "Identified as a phrasal verb with a dative construction; surface form includes the parenthetical note.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "d878ed98-b2e4-441b-97bf-e30ded032325",
+      "originalWord": "Asien",
+      "lemma": "Asien",
+      "canonicalForm": "Asien",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "noun",
+      "confidence": 0.92,
+      "reasoning": "Proper noun; singular.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "3510521c-e152-4838-8eea-da6693de98e5",
+      "originalWord": "atmen",
+      "lemma": "atmen",
+      "canonicalForm": "atmen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.92,
+      "reasoning": "Infinitive form; basic verb.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "ab9b0713-6e2c-424c-8414-f2c0d6017d9c",
+      "originalWord": "aufbauen",
+      "lemma": "aufbauen",
+      "canonicalForm": "aufbauen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.92,
+      "reasoning": "Infinitive; separable prefix verb; treated as single word.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "8f0fd816-e614-4960-872a-32bf23342d9d",
+      "originalWord": "aufführen",
+      "lemma": "aufführen",
+      "canonicalForm": "aufführen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.92,
+      "reasoning": "Infinitive; separable prefix verb; handled as single word per rules.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "2d072d2d-e510-4928-91cd-2aad37f2ef77",
+      "originalWord": "aufführen",
+      "lemma": "aufführen",
+      "canonicalForm": "aufführen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.92,
+      "reasoning": "Same as entry 7.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "29fd9823-77a7-4c14-9e68-d15639e43cf6",
+      "originalWord": "aufführen",
+      "lemma": "aufführen",
+      "canonicalForm": "aufführen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.92,
+      "reasoning": "Same as entry 7.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "7cf1b68c-92d1-4bde-a96d-acfe7eb64a56",
+      "originalWord": "aufgeben",
+      "lemma": "aufgeben",
+      "canonicalForm": "aufgeben",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.92,
+      "reasoning": "Infinitive; separable verb; simple.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "9b2618a3-d34e-4982-ac1f-d98d4c2d5da9",
+      "originalWord": "aufgeben",
+      "lemma": "aufgeben",
+      "canonicalForm": "aufgeben",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.92,
+      "reasoning": "Same as entry 10.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "d1efd994-2074-4249-9471-cb7d0e43a99e",
+      "originalWord": "aufgeregt",
+      "lemma": "aufgeregt",
+      "canonicalForm": "aufgeregt",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "adjective",
+      "confidence": 0.92,
+      "reasoning": "Adjective; matches translation.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "5d3b1387-91b9-4812-bebd-0d83d4049163",
+      "originalWord": "aufhören",
+      "lemma": "aufhören",
+      "canonicalForm": "aufhören",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.92,
+      "reasoning": "Infinitive; standard verb.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "a2549221-f878-4c95-8e21-283cc3f85fc4",
+      "originalWord": "aufhören",
+      "lemma": "aufhören",
+      "canonicalForm": "aufhören",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.92,
+      "reasoning": "Same as entry 13.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "c67ea2a9-9b33-44af-83f5-eab506739080",
+      "originalWord": "aufladen",
+      "lemma": "aufladen",
+      "canonicalForm": "aufladen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.92,
+      "reasoning": "Infinitive; simple verb.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "01ca5719-9969-41ee-8763-11667a0e984c",
+      "originalWord": "aufmachen",
+      "lemma": "aufmachen",
+      "canonicalForm": "aufmachen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.92,
+      "reasoning": "Infinitive; separable prefix verb; treated as single.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "e1b5386e-bf9a-4a6c-af23-ef5680fc2a38",
+      "originalWord": "aufnehmen",
+      "lemma": "aufnehmen",
+      "canonicalForm": "aufnehmen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.92,
+      "reasoning": "Infinitive; common separable-prefix verb; treated as single form.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "a1d65ca3-7c6c-4c6b-85b5-0ae1826dfd7a",
+      "originalWord": "aufnehmen",
+      "lemma": "aufnehmen",
+      "canonicalForm": "aufnehmen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.92,
+      "reasoning": "Same as entry 17.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "3acfbdc3-5bea-49d4-a454-ae81269d1b85",
+      "originalWord": "aufnehmen",
+      "lemma": "aufnehmen",
+      "canonicalForm": "aufnehmen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.92,
+      "reasoning": "Same as entry 17.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "7dc82b40-70f7-494b-a522-20fa56714e24",
+      "originalWord": "aufpassen",
+      "lemma": "aufpassen",
+      "canonicalForm": "aufpassen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.92,
+      "reasoning": "Infinitive; separable prefix verb; treated as single word per rules.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "c028d005-ff7a-4f43-9f33-f0b22db06ae5",
+      "originalWord": "aufstehen",
+      "lemma": "aufstehen",
+      "canonicalForm": "aufstehen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.92,
+      "reasoning": "Infinitive German verb; not a multi-word expression; no contraction or separation needed.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "1d16ec53-be2a-440f-a2f3-94564c196e17",
+      "originalWord": "aufstehen",
+      "lemma": "aufstehen",
+      "canonicalForm": "aufstehen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.92,
+      "reasoning": "Infinitive German verb; not a multi-word expression; no contraction or separation needed.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "ef175061-cd3a-41fa-9fcf-0fecc2eed7e5",
+      "originalWord": "aufstehen",
+      "lemma": "aufstehen",
+      "canonicalForm": "aufstehen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.92,
+      "reasoning": "Infinitive German verb; not a multi-word expression; no contraction or separation needed.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "801d43ff-186c-4363-8d34-c1bf9e4e8974",
+      "originalWord": "auftreten",
+      "lemma": "auftreten",
+      "canonicalForm": "auftreten",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.92,
+      "reasoning": "Infinitive German verb; not a multi-word expression; no contraction or separation needed.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "b0e8087e-519c-4556-b324-eec3633bc4b1",
+      "originalWord": "auftreten",
+      "lemma": "auftreten",
+      "canonicalForm": "auftreten",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.92,
+      "reasoning": "Infinitive German verb; not a multi-word expression; no contraction or separation needed.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "f78decc8-2ba0-4aa3-a914-182085452a8d",
+      "originalWord": "auftreten",
+      "lemma": "auftreten",
+      "canonicalForm": "auftreten",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.92,
+      "reasoning": "Infinitive German verb; not a multi-word expression; no contraction or separation needed.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "516b9524-1f5d-453c-bb7e-e0124a08a2e6",
+      "originalWord": "August",
+      "lemma": "August",
+      "canonicalForm": "August",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "noun",
+      "confidence": 0.85,
+      "reasoning": "Proper noun (month name) treated as a singular noun; base form is itself.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "9480c1a1-6c7f-4753-b032-6d922aeadaf8",
+      "originalWord": "ausbilden",
+      "lemma": "ausbilden",
+      "canonicalForm": "ausbilden",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.92,
+      "reasoning": "Infinitive German verb; not a multi-word expression; no contraction or separation needed.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "cb8718b3-eb8a-4f63-b8bf-e3aa83911a48",
+      "originalWord": "ausbilden",
+      "lemma": "ausbilden",
+      "canonicalForm": "ausbilden",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.92,
+      "reasoning": "Infinitive German verb; not a multi-word expression; no contraction or separation needed.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "492d8146-c947-41c3-a7ed-92300d25d07d",
+      "originalWord": "ausbilden",
+      "lemma": "ausbilden",
+      "canonicalForm": "ausbilden",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.92,
+      "reasoning": "Infinitive German verb; not a multi-word expression; no contraction or separation needed.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "bbba9fa2-fbfe-4175-a5ab-5add889d601f",
+      "originalWord": "(aus)füllen",
+      "lemma": "ausfüllen",
+      "canonicalForm": "ausfüllen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.92,
+      "reasoning": "Infinitive German separable-verb; treated as a single word per guideline.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "352f4551-5bc8-4f76-935e-06a971172bbb",
+      "originalWord": "(aus)füllen",
+      "lemma": "ausfüllen",
+      "canonicalForm": "ausfüllen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.92,
+      "reasoning": "Infinitive German separable-verb; treated as a single word per guideline.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "b97bcb44-7413-4153-8457-f100da480c02",
+      "originalWord": "ausgeben",
+      "lemma": "ausgeben",
+      "canonicalForm": "ausgeben",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.93,
+      "reasoning": "Infinitive German verb; not a multi-word expression; no contraction or separation needed.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "06a746a7-0099-440b-833c-dcfa7dc46c76",
+      "originalWord": "ausgeben",
+      "lemma": "ausgeben",
+      "canonicalForm": "ausgeben",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.93,
+      "reasoning": "Infinitive German verb; not a multi-word expression; no contraction or separation needed.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "32460535-1499-4d5b-bcca-49a001d20b0f",
+      "originalWord": "ausgeben",
+      "lemma": "ausgeben",
+      "canonicalForm": "ausgeben",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.93,
+      "reasoning": "Infinitive German verb; not a multi-word expression; no contraction or separation needed.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "cbd57a2d-32c7-4fd9-b586-10334305d98c",
+      "originalWord": "ausgeben",
+      "lemma": "ausgeben",
+      "canonicalForm": "ausgeben",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.93,
+      "reasoning": "Infinitive German verb; not a multi-word expression; no contraction or separation needed.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "c889276f-55c6-4d6a-8fce-34bd4ed1a8b8",
+      "originalWord": "ausgeben",
+      "lemma": "ausgeben",
+      "canonicalForm": "ausgeben",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.93,
+      "reasoning": "Infinitive German verb; not a multi-word expression; no contraction or separation needed.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "ebb3151a-d510-46d7-a751-8134d2ca0453",
+      "originalWord": "ausgeben",
+      "lemma": "ausgehen",
+      "canonicalForm": "ausgehen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.92,
+      "reasoning": "Infinitive German verb; not a multi-word expression; no contraction or separation needed.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "dc471a87-1b85-41fc-9fcb-02f3deef8e74",
+      "originalWord": "Ausland (nt); im / ins Ausland",
+      "lemma": "Ausland",
+      "canonicalForm": "im Ausland",
+      "isMWE": true,
+      "mweType": "contraction",
+      "componentWords": [
+        "im",
+        "Ausland"
+      ],
+      "partOfSpeech": "adverb",
+      "confidence": 0.65,
+      "reasoning": "Multi-word contracted prepositional phrase used adverbially; treat as contraction MWE",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "643e8e47-f6b4-4e37-8a30-44046cf43d6f",
+      "originalWord": "aussehen",
+      "lemma": "aussehen",
+      "canonicalForm": "aussehen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Simple verb in base form (infinitive).",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "3a98128d-6972-4bee-8cf0-f86d4d6a632a",
+      "originalWord": "aussehen",
+      "lemma": "aussehen",
+      "canonicalForm": "aussehen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Simple verb in base form (infinitive).",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "2bc2cb9d-0c67-4522-818c-89dd3f145873",
+      "originalWord": "aussehen",
+      "lemma": "aussehen",
+      "canonicalForm": "aussehen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Simple verb in base form (infinitive).",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "d6df7f03-e163-4cff-a211-ceb7a4ac314e",
+      "originalWord": "aussehen",
+      "lemma": "aussehen",
+      "canonicalForm": "aussehen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Simple verb in base form (infinitive).",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "767a91fe-d374-4145-ba82-70ce96a301b3",
+      "originalWord": "aussehen",
+      "lemma": "aussehen",
+      "canonicalForm": "aussehen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Simple verb in base form (infinitive).",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "bae6f725-8625-418f-bdd3-628040913dec",
+      "originalWord": "aussehen",
+      "lemma": "aussehen",
+      "canonicalForm": "aussehen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Simple verb in base form (infinitive).",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "66ec9b57-c693-4095-bb16-816804998f8b",
+      "originalWord": "aussehen",
+      "lemma": "aussehen",
+      "canonicalForm": "aussehen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Simple verb in base form (infinitive).",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "4d8d6296-75e8-41a2-852c-249cb43f7263",
+      "originalWord": "aussehen",
+      "lemma": "aussehen",
+      "canonicalForm": "aussehen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Simple verb in base form (infinitive).",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "420fde6f-1af3-4c0a-91a3-588c0b01e707",
+      "originalWord": "aussehen",
+      "lemma": "aussehen",
+      "canonicalForm": "aussehen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Simple verb in base form (infinitive).",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "ba86d26c-2123-49a3-a0dd-8889f781988e",
+      "originalWord": "aussehen",
+      "lemma": "Australien",
+      "canonicalForm": "Australien",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "noun",
+      "confidence": 0.95,
+      "reasoning": "Proper noun; singular.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "6f42d814-db24-47e3-8151-32af741642d2",
+      "originalWord": "Australien",
+      "lemma": "auswählen",
+      "canonicalForm": "auswählen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Infinitive verb.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "fba4a7c7-0b6b-4c08-ba3b-976193f7faea",
+      "originalWord": "auswählen",
+      "lemma": "auswählen",
+      "canonicalForm": "auswählen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Infinitive verb.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "18929420-b758-4cd5-9c81-244d80519c58",
+      "originalWord": "auswählen",
+      "lemma": "anfangen",
+      "canonicalForm": "(aux) ... angefangen",
+      "isMWE": true,
+      "mweType": "phrasal_verb",
+      "componentWords": [
+        "aux",
+        "angefangen"
+      ],
+      "partOfSpeech": "verb",
+      "confidence": 0.75,
+      "reasoning": "Phrasal verb with auxiliary; base verb is anfangen; ellipsis kept in canonical form.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "d6f8cca4-5ce9-403d-956f-6b7014198d1b",
+      "originalWord": "(aux) ... angefangen",
+      "lemma": "beginnen",
+      "canonicalForm": "beginnen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.9,
+      "reasoning": "Past participle form shown; lemma is infinitive beginnen.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "fd87e4f8-7201-409c-b51a-3a694843f75e",
+      "originalWord": "(aux)…begonnen",
+      "lemma": "einladen",
+      "canonicalForm": "(aux) ... eingeladen",
+      "isMWE": true,
+      "mweType": "phrasal_verb",
+      "componentWords": [
+        "aux",
+        "eingeladen"
+      ],
+      "partOfSpeech": "verb",
+      "confidence": 0.78,
+      "reasoning": "Phrasal verb with auxiliary; base verb einzuladen; canonical form reflects auxiliary construction.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "ab31c9bc-6556-47b3-97ab-c6c8a6bac879",
+      "originalWord": "(aux) ... eingeladen",
+      "lemma": "einladen",
+      "canonicalForm": "(aux) ... eingeladen",
+      "isMWE": true,
+      "mweType": "phrasal_verb",
+      "componentWords": [
+        "aux",
+        "eingeladen"
+      ],
+      "partOfSpeech": "verb",
+      "confidence": 0.78,
+      "reasoning": "Phrasal verb with auxiliary; base verb einzuladen; canonical form reflects auxiliary construction.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "1d0f3fc7-9387-4b99-bfec-3286cd731b4c",
+      "originalWord": "(aux) ... eingeladen",
+      "lemma": "einladen",
+      "canonicalForm": "(aux) ... eingeladen",
+      "isMWE": true,
+      "mweType": "phrasal_verb",
+      "componentWords": [
+        "aux",
+        "eingeladen"
+      ],
+      "partOfSpeech": "verb",
+      "confidence": 0.78,
+      "reasoning": "Phrasal verb with auxiliary; base verb einzuladen; canonical form reflects auxiliary construction.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "a383a59f-049c-4281-be2b-863b4794c9de",
+      "originalWord": "(aux) ... eingeladen",
+      "lemma": "einladen",
+      "canonicalForm": "(aux) ... eingeladen",
+      "isMWE": true,
+      "mweType": "phrasal_verb",
+      "componentWords": [
+        "aux",
+        "eingeladen"
+      ],
+      "partOfSpeech": "verb",
+      "confidence": 0.78,
+      "reasoning": "Phrasal verb with auxiliary; base verb einzuladen; canonical form reflects auxiliary construction.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "c3f03d30-2f21-4f68-bad0-42d5a549f71e",
+      "originalWord": "(aux)…gebracht",
+      "lemma": "bringen",
+      "canonicalForm": "gebracht",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.92,
+      "reasoning": "Past participle 'gebracht' of the verb 'bringen'; base form is the infinitive 'bringen'.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "cb37493a-0ef4-4a20-a5cf-28866c90ff56",
+      "originalWord": "(aux)…gebrochen",
+      "lemma": "brechen",
+      "canonicalForm": "gebrochen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.9,
+      "reasoning": "Past participle 'gebrochen' of the verb 'brechen'.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "b16ce477-c521-4770-b15d-c5fd833d070b",
+      "originalWord": "(aux)…gedacht",
+      "lemma": "denken",
+      "canonicalForm": "gedacht",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.9,
+      "reasoning": "Past participle 'gedacht' of the verb 'denken'.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "363f2de3-d108-496d-bf79-781933513c05",
+      "originalWord": "(aux)…gegangen",
+      "lemma": "gehen",
+      "canonicalForm": "gegangen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.92,
+      "reasoning": "Past participle 'gegangen' of the verb 'gehen'.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "ab44b8e3-ba93-4b6e-b8c9-79cbbaa19518",
+      "originalWord": "(aux)…gegessen",
+      "lemma": "essen",
+      "canonicalForm": "gegessen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.92,
+      "reasoning": "Past participle 'gegessen' of the verb 'essen'.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "d96f1b9b-a92e-47d4-a10e-620223a1a44b",
+      "originalWord": "(aux) ... gekannt",
+      "lemma": "kennen",
+      "canonicalForm": "haben gekannt",
+      "isMWE": true,
+      "mweType": "phrasal_verb",
+      "componentWords": [
+        "aux",
+        "gekannt"
+      ],
+      "partOfSpeech": "verb",
+      "confidence": 0.88,
+      "reasoning": "Periphrastic perfect with auxiliary; treated as a phrasal verb (auxiliary + past participle).",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "1a7be012-faf4-4c3d-b682-6eb5545e928c",
+      "originalWord": "(aux)…gekannt",
+      "lemma": "kennen",
+      "canonicalForm": "gekannt",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.87,
+      "reasoning": "Past participle 'gekannt' of 'kennen'.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "d923c7be-af06-4701-9889-e48de09a8ad9",
+      "originalWord": "(aux) ... gelitten",
+      "lemma": "leisten",
+      "canonicalForm": "haben gekannt",
+      "isMWE": true,
+      "mweType": "phrasal_verb",
+      "componentWords": [
+        "aux",
+        "gelitten"
+      ],
+      "partOfSpeech": "verb",
+      "confidence": 0.88,
+      "reasoning": "Past participle with auxiliary; treated as phrasal verb (example corresponds to 'gelitten').",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "817de5c6-d2fe-4ff8-85db-d8e38f816630",
+      "originalWord": "(aux) ... gelitten",
+      "lemma": "leisten",
+      "canonicalForm": "haben gekannt",
+      "isMWE": true,
+      "mweType": "phrasal_verb",
+      "componentWords": [
+        "aux",
+        "gelitten"
+      ],
+      "partOfSpeech": "verb",
+      "confidence": 0.88,
+      "reasoning": "Duplicate entry adjusted to phrasal verb form for consistency with similar cases.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "0c05fb41-67d0-411b-be77-16a20466395b",
+      "originalWord": "(aux) ... gelitten",
+      "lemma": "leisten",
+      "canonicalForm": "haben gekannt",
+      "isMWE": true,
+      "mweType": "phrasal_verb",
+      "componentWords": [
+        "aux",
+        "gelitten"
+      ],
+      "partOfSpeech": "verb",
+      "confidence": 0.88,
+      "reasoning": "Alternative rendering of the same phrasal verb construct.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "a19272b5-6ee8-426a-863f-4aaf0e507ed8",
+      "originalWord": "(aux)…gemocht",
+      "lemma": "kennen",
+      "canonicalForm": "gekannt",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.88,
+      "reasoning": "Past participle 'gekannt' of 'kennen'.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "302830e0-8fef-44c1-bc34-6361a6c7a2b4",
+      "originalWord": "(aux) ... genannt",
+      "lemma": "mögen",
+      "canonicalForm": "mögen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.92,
+      "reasoning": "Past participle 'gemocht' of 'mögen'.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "ab5398cd-f24a-4d22-b300-0beb92202a44",
+      "originalWord": "(aux)…genannt",
+      "lemma": "nennen",
+      "canonicalForm": "nennen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.9,
+      "reasoning": "Past participle 'genannt' of 'nennen'.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "bf743993-6a5b-4ee5-914c-857f96b85b4b",
+      "originalWord": "(aux)…genommen",
+      "lemma": "nehmen",
+      "canonicalForm": "nehmen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.9,
+      "reasoning": "Past participle 'genommen' of 'nehmen'.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "b0420ea1-b2fc-43e7-a5fe-794c5b6a101d",
+      "originalWord": "(aux)…geöffnet",
+      "lemma": "öffnen",
+      "canonicalForm": "öffnen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.9,
+      "reasoning": "Past participle 'geöffnet' of 'öffnen'.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "ba9b5856-ae2e-4974-8a4e-53445b507b31",
+      "originalWord": "(aux)…geschlossen",
+      "lemma": "schließen",
+      "canonicalForm": "schließen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.9,
+      "reasoning": "Past participle 'geschlossen' of 'schließen'.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "3267fb11-9d1c-46b1-98ba-61943bd1de5d",
+      "originalWord": "(aux)…geschwommen",
+      "lemma": "schwimmen",
+      "canonicalForm": "schwimmen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.9,
+      "reasoning": "Past participle 'geschwommen' of 'schwimmen'.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "a7b15db1-ea24-44ca-812c-5e3f72a67604",
+      "originalWord": "(aux) ... gesessen",
+      "lemma": "sitzen",
+      "canonicalForm": "haben gesessen",
+      "isMWE": true,
+      "mweType": "phrasal_verb",
+      "componentWords": [
+        "aux",
+        "gesessen"
+      ],
+      "partOfSpeech": "verb",
+      "confidence": 0.87,
+      "reasoning": "Periphrastic perfect with auxiliary; treated as phrasal verb.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "58e4a954-1392-4146-8b07-b57301d42d0f",
+      "originalWord": "(aux)…gesessen",
+      "lemma": "sitzen",
+      "canonicalForm": "sitzen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.89,
+      "reasoning": "Past participle 'gesessen' (pp) of 'sitzen'.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "9f9e025a-87b2-4fa2-b508-40cb7ba01e07",
+      "originalWord": "(aux)…gestanden",
+      "lemma": "stehen",
+      "canonicalForm": "stehen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.9,
+      "reasoning": "Past participle 'gestanden' of 'stehen'.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "2a5346eb-9433-4d28-a153-3541acce59ca",
+      "originalWord": "(aux)…gestorben",
+      "lemma": "sterben",
+      "canonicalForm": "sterben",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.65,
+      "reasoning": "The form is a past participle with auxiliary; base infinitive is sterben; not a multiword expression.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "fe1f4137-fbe5-4715-a9b1-e06bb66f0e2f",
+      "originalWord": "(aux)…gewesen",
+      "lemma": "sein",
+      "canonicalForm": "sein",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.65,
+      "reasoning": "Gegebenenfalls als sein-Perfektform; base infinitive ist sein; not a multiword expression.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "39723e2c-f7e6-4e10-addc-b504714c0dc7",
+      "originalWord": "(aux)...gewonnen",
+      "lemma": "gewinnen",
+      "canonicalForm": "gewinnen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.65,
+      "reasoning": "Past participle gewonnen corresponds to infinitive gewinnen; not a multiword expression.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "bc021a27-1fc0-4d91-9f60-f333d2b23646",
+      "originalWord": "(aux)…gewusst",
+      "lemma": "wissen",
+      "canonicalForm": "wissen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.65,
+      "reasoning": "Past participle gewusst, base infinitive wissen.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "75b93bde-eaaf-4aa8-a88c-40b53c426f61",
+      "originalWord": "(aux)…gezogen",
+      "lemma": "ziehen",
+      "canonicalForm": "ziehen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.65,
+      "reasoning": "Past participle gezogen; base infinitive ziehen.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "7f68beef-d98b-4f12-9e8d-1be03955329b",
+      "originalWord": "(aux)…verloren",
+      "lemma": "verlieren",
+      "canonicalForm": "verlieren",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.65,
+      "reasoning": "Past participle verloren; base infinitive verlieren.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "cabf43c3-4e55-4b3c-b1a2-b58b25578878",
+      "originalWord": "babysitten",
+      "lemma": "babysitten",
+      "canonicalForm": "babysitten",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.9,
+      "reasoning": "Infinitive verb; straightforward base form.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "835be2cb-ec25-467b-9414-82fc30724441",
+      "originalWord": "bauen",
+      "lemma": "bauen",
+      "canonicalForm": "bauen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Infinitive verb; straightforward base form.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "4e66fe2a-e182-4182-820f-1284bddee657",
+      "originalWord": "bauen",
+      "lemma": "bauen",
+      "canonicalForm": "bauen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Infinitive verb; straightforward base form.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "478b392b-8b7c-4c29-adbd-47f9d46aba7a",
+      "originalWord": "bauen",
+      "lemma": "bauen",
+      "canonicalForm": "bauen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Infinitive verb; straightforward base form.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "0921db04-04da-47c1-918d-31ae28fd1d53",
+      "originalWord": "bauen",
+      "lemma": "bauen",
+      "canonicalForm": "bauen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Infinitive verb; straightforward base form.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "7521785c-3e3d-4f13-a51e-24c0f35bbf88",
+      "originalWord": "beantworten",
+      "lemma": "beantworten",
+      "canonicalForm": "beantworten",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Infinitive verb; straightforward base form.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "2a7731e0-ded6-4546-b66e-5f47b8b8a09a",
+      "originalWord": "beantworten",
+      "lemma": "beantworten",
+      "canonicalForm": "beantworten",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Infinitive verb; straightforward base form.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "7462689b-f775-490a-b96e-d3a7604d41aa",
+      "originalWord": "bedeuten",
+      "lemma": "bedeuten",
+      "canonicalForm": "bedeuten",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Infinitive verb; straightforward base form.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "61730fe2-96e2-48fc-b32c-02d94803977d",
+      "originalWord": "bedeuten",
+      "lemma": "bedeuten",
+      "canonicalForm": "bedeuten",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Infinitive verb; straightforward base form.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "9e24ac9f-bd0b-48f4-9b89-91010096ed0e",
+      "originalWord": "bedienen",
+      "lemma": "bedienen",
+      "canonicalForm": "bedienen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Infinitive verb; straightforward base form.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "698d09c8-3558-413f-bd40-e3b63b5016eb",
+      "originalWord": "bedienen",
+      "lemma": "bedienen",
+      "canonicalForm": "bedienen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Infinitive verb; straightforward base form.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "89d0b2a1-0376-4421-b885-4e95aca162e8",
+      "originalWord": "beeinflussen",
+      "lemma": "beeinflussen",
+      "canonicalForm": "beeinflussen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Infinitive verb; straightforward base form.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "9978a8be-9671-4486-ac55-42cb7eeed288",
+      "originalWord": "beenden",
+      "lemma": "beenden",
+      "canonicalForm": "beenden",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Infinitive verb; straightforward base form.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "e939bb05-7225-4b5c-a2c7-246306157cf8",
+      "originalWord": "beginnen",
+      "lemma": "beginnen",
+      "canonicalForm": "beginnen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Infinitive verb; straightforward base form.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "7c50cc11-d534-49d6-8a03-ff0493265970",
+      "originalWord": "beginnen",
+      "lemma": "beginnen",
+      "canonicalForm": "beginnen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Infinitive German verb; not a multi-word expression; plain verb.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "9eb88cbc-71be-446f-8d1b-8868c5db24e4",
+      "originalWord": "behaupten",
+      "lemma": "behaupten",
+      "canonicalForm": "behaupten",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Infinitive German verb; not a multi-word expression.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "fb61bafb-b9dc-4146-b23c-96b153aba280",
+      "originalWord": "behindert",
+      "lemma": "behindert",
+      "canonicalForm": "behindert",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "adjective",
+      "confidence": 0.8,
+      "reasoning": "Past participle used as adjective meaning 'disabled'; base form identical to the surface form.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "74883cc9-85e9-4fe9-b04d-1bd61dfecd14",
+      "originalWord": "behindert",
+      "lemma": "behindert",
+      "canonicalForm": "behindert",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "adjective",
+      "confidence": 0.8,
+      "reasoning": "Past participle used as adjective meaning 'disabled'; base form identical to the surface form.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "dd8a71d4-3151-4f3a-95b1-e396ce45d5e8",
+      "originalWord": "beide",
+      "lemma": "beide",
+      "canonicalForm": "beide",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "adjective",
+      "confidence": 0.8,
+      "reasoning": "Beide typically functions as an adjective/pronoun meaning 'both'; base form is 'beide'.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "f5eadfeb-4043-43d0-8edd-e3890c3511ed",
+      "originalWord": "beide",
+      "lemma": "beide",
+      "canonicalForm": "beide",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "adjective",
+      "confidence": 0.8,
+      "reasoning": "Beide typically functions as an adjective/pronoun meaning 'both'; base form is 'beide'.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "3171412f-9b70-49b3-b3c4-310773fc85f6",
+      "originalWord": "beinahe",
+      "lemma": "beinahe",
+      "canonicalForm": "beinahe",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "adverb",
+      "confidence": 0.9,
+      "reasoning": "Beinahe is an adverb meaning 'almost/nearly'.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "a1e568b0-33c6-4ccb-a98e-9c7065fa68f2",
+      "originalWord": "Beispiel; zum Beispiel, z.B.",
+      "lemma": "zum Beispiel",
+      "canonicalForm": "zum Beispiel",
+      "isMWE": true,
+      "mweType": "fixed_expression",
+      "componentWords": [
+        "zum",
+        "Beispiel"
+      ],
+      "partOfSpeech": "adverb",
+      "confidence": 0.75,
+      "reasoning": "Common fixed expression meaning 'for example'; multiword phrase; canonical form is the full phrase.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "cda506a4-9595-435f-825f-a9be84481b8d",
+      "originalWord": "bekannt",
+      "lemma": "bekannt",
+      "canonicalForm": "bekannt",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "adjective",
+      "confidence": 0.9,
+      "reasoning": "Adjective meaning 'well-known'; base form is 'bekannt'.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "c4503d08-ab76-4e6c-adae-0455e0992502",
+      "originalWord": "bekannt",
+      "lemma": "bekannt",
+      "canonicalForm": "bekannt",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "adjective",
+      "confidence": 0.9,
+      "reasoning": "Adjective meaning 'well-known'; base form is 'bekannt'.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "38ccd9db-6b38-49c7-bca9-07b47f5eafe8",
+      "originalWord": "bekommen",
+      "lemma": "bekommen",
+      "canonicalForm": "bekommen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Infinitive German verb; common verb; not an MWE.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "5f02b2b7-350e-46e0-83c3-78b5c87c03ed",
+      "originalWord": "bekommen",
+      "lemma": "bekommen",
+      "canonicalForm": "bekommen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Infinitive German verb; common verb; not an MWE.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "8fae1c11-3a18-4b93-997b-2b647d399a32",
+      "originalWord": "bekommen",
+      "lemma": "bekommen",
+      "canonicalForm": "bekommen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Infinitive German verb; common verb; not an MWE.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "95b3ca04-190c-41f5-b339-b15915c08a31",
+      "originalWord": "bekommen",
+      "lemma": "bekommen",
+      "canonicalForm": "bekommen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Infinitive German verb; common verb; not an MWE.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "cbf67878-81e1-4738-8dea-67b92516d81a",
+      "originalWord": "bekommen",
+      "lemma": "bekommen",
+      "canonicalForm": "bekommen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Infinitive German verb; common verb; not an MWE.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "2ca5c76e-bd39-4eeb-b289-a4f010182062",
+      "originalWord": "bekommen",
+      "lemma": "bekommen",
+      "canonicalForm": "bekommen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Infinitive German verb; common verb; not an MWE.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "2e28ab17-e17c-4489-b947-6213639cd5de",
+      "originalWord": "bekommen",
+      "lemma": "bekommen",
+      "canonicalForm": "bekommen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Infinitive German verb; common verb; not an MWE.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "bfcdcdb3-1bfb-4d60-b58d-b0150ce1bed7",
+      "originalWord": "bekommen",
+      "lemma": "bekommen",
+      "canonicalForm": "bekommen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Infinitive German verb; common verb; not an MWE.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "e86f8d92-7b32-4006-8628-4cecb99d5336",
+      "originalWord": "bekommen",
+      "lemma": "bekommen",
+      "canonicalForm": "bekommen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Infinitive German verb; common verb; not an MWE.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "a37c1309-e482-4f89-aa1d-fe024cae83c0",
+      "originalWord": "bekommen",
+      "lemma": "bekommen",
+      "canonicalForm": "bekommen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Infinitive German verb; common verb; not an MWE.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "abd2f67d-539d-45ea-be08-fa97280cc7d1",
+      "originalWord": "bekommen",
+      "lemma": "bekommen",
+      "canonicalForm": "bekommen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "German verb in infinitive; no multiword form or contraction.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "680277a8-937d-4c0d-87f4-06c90b72f304",
+      "originalWord": "bekommen",
+      "lemma": "bekommen",
+      "canonicalForm": "bekommen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "German verb in infinitive; no multiword form or contraction.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "b8c0d004-1540-46e2-8327-5ed864147d55",
+      "originalWord": "bekommen",
+      "lemma": "bekommen",
+      "canonicalForm": "bekommen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "German verb in infinitive; no multiword form or contraction.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "bcd3d427-4f74-4ee9-9ecf-567af277c5d5",
+      "originalWord": "beliebt",
+      "lemma": "beliebt",
+      "canonicalForm": "beliebt",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "adjective",
+      "confidence": 0.95,
+      "reasoning": "Base form of the adjective.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "a49a7e63-19bb-43f5-aae0-d1e3ae09a228",
+      "originalWord": "beliebt",
+      "lemma": "beliebt",
+      "canonicalForm": "beliebt",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "adjective",
+      "confidence": 0.95,
+      "reasoning": "Base form of the adjective.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "aa76be1b-9348-4c8b-b56b-5ba36f91e2ad",
+      "originalWord": "bemerken",
+      "lemma": "bemerken",
+      "canonicalForm": "bemerken",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Infinitive verb.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "1aceef9b-6030-4e00-80fa-d09a53382f08",
+      "originalWord": "bemerken",
+      "lemma": "bemerken",
+      "canonicalForm": "bemerken",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Infinitive verb.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "b705dffa-487e-42e2-b922-d067878b7005",
+      "originalWord": "benutzen",
+      "lemma": "benutzen",
+      "canonicalForm": "benutzen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Infinitive verb.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "df862c45-287f-47f8-bfee-f17638db89a3",
+      "originalWord": "beobachten",
+      "lemma": "beobachten",
+      "canonicalForm": "beobachten",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Infinitive verb.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "ab1e49ea-69ea-4b8c-90f0-ed2bafa062a4",
+      "originalWord": "beobachten",
+      "lemma": "beobachten",
+      "canonicalForm": "beobachten",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Infinitive verb.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "4a01c1af-649a-48fd-a8df-5ba97604aac4",
+      "originalWord": "bereit",
+      "lemma": "bereit",
+      "canonicalForm": "bereit",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "adjective",
+      "confidence": 0.95,
+      "reasoning": "Adjective in base form.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "455c73aa-81ba-4409-be65-0a4822f64aa9",
+      "originalWord": "bereit",
+      "lemma": "bereit",
+      "canonicalForm": "bereit",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "adjective",
+      "confidence": 0.95,
+      "reasoning": "Adjective in base form.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "99af42ed-cc3e-4b93-9bfc-fe6a6e47b036",
+      "originalWord": "berichten",
+      "lemma": "berichten",
+      "canonicalForm": "berichten",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Infinitive verb.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "c31484ff-6c24-4933-8dd8-a7aa3eb41b34",
+      "originalWord": "berühmt",
+      "lemma": "berühmt",
+      "canonicalForm": "berühmt",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "adjective",
+      "confidence": 0.95,
+      "reasoning": "Adjective in base form.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "f446e46c-c98a-4eb1-b691-64f9e323c256",
+      "originalWord": "berühmt",
+      "lemma": "berühmt",
+      "canonicalForm": "berühmt",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "adjective",
+      "confidence": 0.95,
+      "reasoning": "Adjective in base form.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "7228fffb-ead9-49dc-97dd-e2482f622d66",
+      "originalWord": "berühmt",
+      "lemma": "berühmt",
+      "canonicalForm": "berühmt",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "adjective",
+      "confidence": 0.95,
+      "reasoning": "Adjective in base form.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "7ce3cb7e-aaf1-45b8-89f4-0f9d2d8ac88e",
+      "originalWord": "berühmt",
+      "lemma": "berühmt",
+      "canonicalForm": "berühmt",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "adjective",
+      "confidence": 0.95,
+      "reasoning": "Adjective in base form.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "a23e7a9e-3c9f-45d5-bf4f-ff012fdf686c",
+      "originalWord": "berühmt",
+      "lemma": "berühmt",
+      "canonicalForm": "berühmt",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "adjective",
+      "confidence": 0.95,
+      "reasoning": "Adjective in base form.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "7170dbe2-7024-4fc8-8da5-149eb75f0c7e",
+      "originalWord": "berühmt",
+      "lemma": "beschäftigen",
+      "canonicalForm": "sich beschäftigen mit",
+      "isMWE": true,
+      "mweType": "phrasal_verb",
+      "componentWords": [
+        "sich",
+        "beschäftigen",
+        "mit",
+        "noun"
+      ],
+      "partOfSpeech": "verb",
+      "confidence": 0.85,
+      "reasoning": "Multiword expression meaning 'to be busy with'; includes reflexive pronoun and a prepositional complement.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "81fc52c1-0509-4aea-9540-7cc8aa65513d",
+      "originalWord": "besuchen",
+      "lemma": "besuchen",
+      "canonicalForm": "besuchen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Basic infinitive German verb; not marked as a multi-word expression.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "b035b1a9-1397-4dc5-90f3-2ae3f5e970f2",
+      "originalWord": "besuchen",
+      "lemma": "besuchen",
+      "canonicalForm": "besuchen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Basic infinitive German verb; not marked as a multi-word expression.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "806c2fea-1141-4443-8749-51749bcbb745",
+      "originalWord": "besuchen",
+      "lemma": "besuchen",
+      "canonicalForm": "besuchen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Basic infinitive German verb; not marked as a multi-word expression.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "06f02f97-3567-4dc4-ab7e-e7dfa74c49da",
+      "originalWord": "besuchen",
+      "lemma": "besuchen",
+      "canonicalForm": "besuchen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Basic infinitive German verb; not marked as a multi-word expression.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "afbd09b1-50f0-481a-9e85-71202e78361f",
+      "originalWord": "besuchen",
+      "lemma": "besuchen",
+      "canonicalForm": "besuchen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Basic infinitive German verb; not marked as a multi-word expression.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "fc4c49a3-4ae8-47d9-aeff-fb54748ff3e6",
+      "originalWord": "besuchen",
+      "lemma": "besuchen",
+      "canonicalForm": "besuchen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Basic infinitive German verb; not marked as a multi-word expression.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "fb969d2b-b21d-4b6b-a1c5-7ee14b98eafb",
+      "originalWord": "besuchen",
+      "lemma": "besuchen",
+      "canonicalForm": "besuchen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Basic infinitive German verb; not marked as a multi-word expression.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "e88c0807-cd82-462b-a99c-a6990f2c7c01",
+      "originalWord": "besuchen",
+      "lemma": "besuchen",
+      "canonicalForm": "besuchen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Basic infinitive German verb; not marked as a multi-word expression.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "50a78000-8137-4708-bfcd-1665e9445b7b",
+      "originalWord": "betrachten",
+      "lemma": "betrachten",
+      "canonicalForm": "betrachten",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.93,
+      "reasoning": "Simple verb; not marked as MWE.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "6f7bc161-15bc-4e20-9fa1-3c06a5ee6b36",
+      "originalWord": "betrunken",
+      "lemma": "betrunken",
+      "canonicalForm": "betrunken",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "adjective",
+      "confidence": 0.92,
+      "reasoning": "Past participle used as adjective; base form is treated as adjective here.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "e9f4ebbd-950a-4461-b416-e59b87929617",
+      "originalWord": "bewegen; sich acc. bewegen",
+      "lemma": "bewegen",
+      "canonicalForm": "bewegen; sich acc. bewegen",
+      "isMWE": true,
+      "mweType": "phrasal_verb",
+      "componentWords": [
+        "bewegen",
+        "sich",
+        "acc",
+        "bewegen"
+      ],
+      "partOfSpeech": "verb",
+      "confidence": 0.78,
+      "reasoning": "Explicitly marked as a phrasal verb; multi-word expression with reflexive and object marker.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "2334fe82-125d-4519-92a7-b8d4bf465664",
+      "originalWord": "beweisen",
+      "lemma": "beweisen",
+      "canonicalForm": "beweisen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.92,
+      "reasoning": "Simple verb; not marked as MWE.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "d6745607-09e9-45df-b51b-679181bc0c9e",
+      "originalWord": "bewusst",
+      "lemma": "bewusst",
+      "canonicalForm": "bewusst",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "adjective",
+      "confidence": 0.92,
+      "reasoning": "Adjective meaning conscious/aware.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "50de0675-8160-4848-aa85-92212d21c8c7",
+      "originalWord": "bewusst",
+      "lemma": "bewusst",
+      "canonicalForm": "bewusst",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "adjective",
+      "confidence": 0.92,
+      "reasoning": "Adjective meaning conscious/aware.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "e07514fa-8a8c-4008-b6ba-b0a933cc77d0",
+      "originalWord": "bezahlen",
+      "lemma": "bezahlen",
+      "canonicalForm": "bezahlen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.92,
+      "reasoning": "Simple verb; not marked as MWE.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "09c2c2cd-805c-4605-82df-3a3f519a4e5b",
+      "originalWord": "bezahlen",
+      "lemma": "bezahlen",
+      "canonicalForm": "bezahlen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.92,
+      "reasoning": "Simple verb; not marked as MWE.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "171b332e-cadc-4b77-bf1a-2641cbb45ee6",
+      "originalWord": "bezahlen",
+      "lemma": "bezahlen",
+      "canonicalForm": "bezahlen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.92,
+      "reasoning": "Simple verb; not marked as MWE.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "c0ad6fb9-1c96-4734-8af5-a053fb2a7a8c",
+      "originalWord": "bieten",
+      "lemma": "bieten",
+      "canonicalForm": "bieten",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.92,
+      "reasoning": "Infinitive verb; not a multi-word expression.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "07ce2315-c8f8-4783-82d2-949007f953e0",
+      "originalWord": "bilden",
+      "lemma": "bilden",
+      "canonicalForm": "bilden",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.92,
+      "reasoning": "Infinitive verb; not a multi-word expression.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "20f986e2-1ce7-47a5-a439-5bdd93d6f967",
+      "originalWord": "bisschen",
+      "lemma": "bisschen",
+      "canonicalForm": "bisschen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "adverb",
+      "confidence": 0.92,
+      "reasoning": "Adverb meaning 'a little'.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "0cfa6050-43ea-456e-86cd-7ba34a8165aa",
+      "originalWord": "bisschen",
+      "lemma": "bisschen",
+      "canonicalForm": "bisschen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "unknown",
+      "confidence": 0.5,
+      "reasoning": "No reasoning provided",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "6417736c-8135-4bd7-9f57-ca6148d56675",
+      "originalWord": "böse",
+      "lemma": "böse",
+      "canonicalForm": "böse",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "adjective",
+      "confidence": 0.92,
+      "reasoning": "Base form of the German adjective; not a verb or multi-word expression.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "65a5ae21-79ec-466c-8014-2a806dfa5f54",
+      "originalWord": "böse",
+      "lemma": "böse",
+      "canonicalForm": "böse",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "adjective",
+      "confidence": 0.92,
+      "reasoning": "Base form of the German adjective; not a verb or multi-word expression.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "acbf2884-6234-4331-b5c5-32c029b5efa8",
+      "originalWord": "böse",
+      "lemma": "böse",
+      "canonicalForm": "böse",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "adjective",
+      "confidence": 0.92,
+      "reasoning": "Base form of the German adjective; not a verb or multi-word expression.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "2fb62394-0b61-47f7-a48e-7f7b7700373c",
+      "originalWord": "böse",
+      "lemma": "böse",
+      "canonicalForm": "böse",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "adjective",
+      "confidence": 0.92,
+      "reasoning": "Base form of the German adjective; not a verb or multi-word expression.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "1a34a9f7-dabf-4df4-a14e-44a61c675e45",
+      "originalWord": "brachte",
+      "lemma": "bringen",
+      "canonicalForm": "bringen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Brachte is past tense of bringen; lemma/infinitive is bringen.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "5c8bc883-b1c7-4f92-b0a0-fb86c9acbd18",
+      "originalWord": "brachte",
+      "lemma": "bringen",
+      "canonicalForm": "bringen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Brachte is past tense of bringen; lemma/infinitive is bringen.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "fcc56ff9-c863-4298-8ac3-58f6c64323af",
+      "originalWord": "Brasilien",
+      "lemma": "Brasilien",
+      "canonicalForm": "Brasilien",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "noun",
+      "confidence": 0.98,
+      "reasoning": "Proper noun; singular form used as the country name in German.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "7b4dee23-da69-4187-811f-b0b575845628",
+      "originalWord": "brauchen",
+      "lemma": "brauchen",
+      "canonicalForm": "brauchen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Infinitive form; not a multi-word expression.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "37c2ad33-e6ad-4881-a913-0f3a105029d6",
+      "originalWord": "brauchen",
+      "lemma": "brauchen",
+      "canonicalForm": "brauchen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Infinitive form; not a multi-word expression.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "a21d0210-27d5-42d2-ba49-2d721a022ab6",
+      "originalWord": "brauchen",
+      "lemma": "brauchen",
+      "canonicalForm": "brauchen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Infinitive form; not a multi-word expression.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "0ac8a963-41a6-411d-a67b-5d99db8e7d24",
+      "originalWord": "brauchen",
+      "lemma": "brauchen",
+      "canonicalForm": "brauchen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Infinitive form; not a multi-word expression.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "800be581-30de-4c9d-8843-d71b1ccc25ea",
+      "originalWord": "brauchen",
+      "lemma": "brauchen",
+      "canonicalForm": "brauchen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Infinitive form; not a multi-word expression.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "625c7a59-b500-42a0-bc3f-4acbab5741a2",
+      "originalWord": "brauchen",
+      "lemma": "brauchen",
+      "canonicalForm": "brauchen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Infinitive form; not a multi-word expression.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "fccd5b88-6c93-4187-bc36-01ef277e1658",
+      "originalWord": "brauchen",
+      "lemma": "brauchen",
+      "canonicalForm": "brauchen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Infinitive form; not a multi-word expression.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "f215f28a-bd0c-4bf2-805a-555d2afeddfb",
+      "originalWord": "brauchen",
+      "lemma": "brauchen",
+      "canonicalForm": "brauchen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Infinitive form; not a multi-word expression.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "9f3a42a1-760c-403f-8687-d14d81c11423",
+      "originalWord": "brauchen",
+      "lemma": "brauchen",
+      "canonicalForm": "brauchen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Infinitive form; not a multi-word expression.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "2bde294e-4441-46f9-bb38-957413036525",
+      "originalWord": "brauchen",
+      "lemma": "brauchen",
+      "canonicalForm": "brauchen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Infinitive form; not a multi-word expression.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "45faa4ce-3541-4634-9057-f667b8034590",
+      "originalWord": "brauchen",
+      "lemma": "brauchen",
+      "canonicalForm": "brauchen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Infinitive form; not a multi-word expression.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "b953d019-49f7-4ec1-b005-98d1e71511ae",
+      "originalWord": "brauchen",
+      "lemma": "brauchen",
+      "canonicalForm": "brauchen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.92,
+      "reasoning": "German verb in base infinitive form; not an MWE.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "94b69465-8577-4f89-9dfb-a3b984e48c57",
+      "originalWord": "brauchen",
+      "lemma": "brauchen",
+      "canonicalForm": "brauchen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.92,
+      "reasoning": "German verb in base infinitive form; not an MWE.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "53f52eac-d48f-4f8f-8bab-b44f0bf3b029",
+      "originalWord": "brechen",
+      "lemma": "brechen",
+      "canonicalForm": "brechen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Infinitive form; common German verb.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "adfca456-c8b5-4978-ad6c-b0aff72f8a04",
+      "originalWord": "brechen",
+      "lemma": "brechen",
+      "canonicalForm": "brechen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Infinitive form; common German verb.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "166efdd2-09ba-4f24-92e9-d968f893aa52",
+      "originalWord": "brechen",
+      "lemma": "brechen",
+      "canonicalForm": "brechen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Infinitive form; common German verb.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "a4d2a54d-4c31-48ec-958c-841165dd394a",
+      "originalWord": "brechen",
+      "lemma": "brechen",
+      "canonicalForm": "brechen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Infinitive form; common German verb.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "dc6e41d6-d743-4fad-803c-fa02465d862d",
+      "originalWord": "brechen",
+      "lemma": "brechen",
+      "canonicalForm": "brechen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Infinitive form; common German verb.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "70c77b2f-3990-4537-a5af-bb595f5de2bd",
+      "originalWord": "breit",
+      "lemma": "breit",
+      "canonicalForm": "breit",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "adjective",
+      "confidence": 0.92,
+      "reasoning": "Base form of the adjective meaning 'wide/broad'.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "28af0ef3-2614-47ef-ab42-f21f98dd813c",
+      "originalWord": "breit",
+      "lemma": "breit",
+      "canonicalForm": "breit",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "adverb",
+      "confidence": 0.9,
+      "reasoning": "Adverbial sense 'broadly' associated with the same form.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "3dbda55b-a1c9-41ea-a431-de460949e9bd",
+      "originalWord": "brennen",
+      "lemma": "brechen",
+      "canonicalForm": "brechen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Infinitive form; common German verb.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "d9e5f5e7-cc6b-4745-bee8-8245cc81e330",
+      "originalWord": "brichst",
+      "lemma": "brechen",
+      "canonicalForm": "brechen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Infinitive form; common German verb.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "4469ebac-0bdb-42b4-af86-95adb1500bcd",
+      "originalWord": "brichst",
+      "lemma": "brechen",
+      "canonicalForm": "brechen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Infinitive form; common German verb.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "1860addf-8cf8-441f-ab00-2e0fa2e5f6cf",
+      "originalWord": "brichst",
+      "lemma": "brechen",
+      "canonicalForm": "brechen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Infinitive form; common German verb.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "a41faa25-9caf-4779-9bcf-1d6774ca90a3",
+      "originalWord": "brichst",
+      "lemma": "brechen",
+      "canonicalForm": "brechen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Infinitive form; common German verb.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "75c23e04-3837-4b11-94da-fd00652fc3c3",
+      "originalWord": "brichst",
+      "lemma": "brechen",
+      "canonicalForm": "brechen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Infinitive form; common German verb.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "31ce669b-a7b0-45cb-9af3-bc7f6b051ea8",
+      "originalWord": "brichst",
+      "lemma": "brechen",
+      "canonicalForm": "brechen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Infinitive form; common German verb.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "d07b7352-1637-4ab4-8c2e-ae2a46f2b12c",
+      "originalWord": "brichst",
+      "lemma": "brechen",
+      "canonicalForm": "brechen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Infinitive form; common German verb.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "ea119457-d5ce-4a98-b81f-9428d72b42d4",
+      "originalWord": "brichst",
+      "lemma": "brechen",
+      "canonicalForm": "brechen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Infinitive form; common German verb.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "a4dddff3-e690-42ff-8f38-eb85c9088a6c",
+      "originalWord": "bricht",
+      "lemma": "bruchst",
+      "canonicalForm": "brechen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Conjugated form of brechen; base lemma is 'brechen'.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "ef7ed711-341e-4330-82e3-08ef137f1ad7",
+      "originalWord": "bricht",
+      "lemma": "bruchst",
+      "canonicalForm": "brechen",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "verb",
+      "confidence": 0.95,
+      "reasoning": "Conjugated form of brechen; base lemma is 'brechen'.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "6150a660-f0a0-401e-8fd6-cada16853fb5",
+      "originalWord": "bricht",
+      "lemma": "bricht",
+      "canonicalForm": "bricht",
+      "isMWE": false,
+      "mweType": null,
+      "componentWords": null,
+      "partOfSpeech": "unknown",
+      "confidence": 0.5,
+      "reasoning": "No reasoning provided",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "301351db-f9bb-4224-b166-c88a7b18d0c5",
+      "originalWord": "darüber, drüber",
+      "lemma": "darüber",
+      "canonicalForm": "darüber, drüber",
+      "isMWE": true,
+      "mweType": "collocation",
+      "componentWords": [
+        "darüber",
+        "drüber"
+      ],
+      "partOfSpeech": "adverb",
+      "confidence": 0.7,
+      "reasoning": "The entry lists two variant spellings of the same adverb (darüber / drüber). Treated as an MWE pair rather than a productive fixed expression; not a single fixed phrase, but the dataset groups the forms together.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "41fe6a24-3df8-47cc-bdb2-04a47e24db2d",
+      "originalWord": "darüber, drüber",
+      "lemma": "darüber",
+      "canonicalForm": "darüber, drüber",
+      "isMWE": true,
+      "mweType": "collocation",
+      "componentWords": [
+        "darüber",
+        "drüber"
+      ],
+      "partOfSpeech": "adverb",
+      "confidence": 0.7,
+      "reasoning": " identical to the first entry; observed in dataset as an alias pair.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    },
+    {
+      "id": "b303cfd6-c85c-402b-9415-7000fe2c6b70",
+      "originalWord": "das Kilo(gramm), kg",
+      "lemma": "Kilogramm",
+      "canonicalForm": "das Kilogramm, kg",
+      "isMWE": true,
+      "mweType": "noun_phrase",
+      "componentWords": [
+        "das",
+        "Kilogramm",
+        "kg"
+      ],
+      "partOfSpeech": "noun",
+      "confidence": 0.75,
+      "reasoning": "Represents the noun phrase for the unit kilogram, with abbreviation kg; treated as an MWE noun_phrase due to the fixed unit notation.",
+      "humanReview": {
+        "decision": null,
+        "modifications": null,
+        "reviewerNotes": "",
+        "reviewedAt": null,
+        "reviewerId": null
+      }
+    }
+  ]
+}

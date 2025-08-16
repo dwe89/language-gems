@@ -2,12 +2,13 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, FileText, CheckCircle, Languages, Clock } from 'lucide-react';
+import { ArrowLeft, FileText, CheckCircle, Languages, Clock, Gem, Star } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 import { VOCABULARY_CATEGORIES } from '../../../../components/games/ModernCategorySelector';
 import { StandardVocabularyItem, AssignmentData, GameProgress } from '../../../../components/games/templates/GameAssignmentWrapper';
 import { EnhancedGameService } from '../../../../services/enhancedGameService';
 import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
+import { useTranslationGame } from '../../../../hooks/useSentenceGame';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -60,7 +61,11 @@ export default function TranslatorRoom({
   gameSessionId,
   gameService
 }: TranslatorRoomProps) {
-  // Initialize FSRS spaced repetition system
+  // Initialize sentence game service for vocabulary tracking
+  const sentenceGame = useTranslationGame(
+    gameSessionId || `case-file-${Date.now()}`,
+    language
+  );
 
   const [currentSentenceIndex, setCurrentSentenceIndex] = useState(0);
   const [sentences, setSentences] = useState<TranslationSentence[]>([]);
@@ -253,93 +258,30 @@ export default function TranslatorRoom({
     const correct = checkTranslation(userTranslation, currentSentence.english_translation);
     const responseTime = translationStartTime > 0 ? Date.now() - translationStartTime : 0;
 
-    // Record translation practice with FSRS system (works in both assignment and free play modes)
-    if (currentSentence) {
-      try {
-        // Extract key words from the sentence for FSRS tracking
-        const sourceWords = currentSentence.source_sentence
-          .toLowerCase()
-          .replace(/[.,!?;:]/g, '')
-          .split(' ')
-          .filter(word => word.length > 2); // Focus on meaningful words
+    // Process sentence with new vocabulary tracking system
+    try {
+      const result = await sentenceGame.processSentence(
+        currentSentence.source_sentence,
+        correct,
+        responseTime,
+        false, // hintUsed
+        currentSentence.id
+      );
 
-        // Record practice for each significant word in the sentence
-        for (const word of sourceWords.slice(0, 3)) { // Limit to first 3 words to avoid spam
-          // Create a safe ID by hashing the word to avoid special characters
-          const wordHash = btoa(word).replace(/[^a-zA-Z0-9]/g, '').substring(0, 8);
-          const wordData = {
-            id: `case-file-${currentSentence.id}-${wordHash}`,
-            word: word,
-            translation: currentSentence.english_translation, // Full translation as context
-            language: language === 'spanish' ? 'es' : language === 'french' ? 'fr' : 'en'
-          };
+      if (result) {
+        console.log(`🎯 Case File Translator: Processed sentence "${currentSentence.source_sentence}"`);
+        console.log(`📊 Vocabulary matches: ${result.vocabularyMatches.length}`);
+        console.log(`💎 Gems awarded: ${result.totalGems}`);
+        console.log(`⭐ XP earned: ${result.totalXP}`);
+        console.log(`📈 Coverage: ${result.coveragePercentage}%`);
 
-          // Calculate confidence based on translation accuracy and complexity
-          let confidence = 0.6; // Base confidence for translation tasks
-
-          if (correct) {
-            confidence += 0.2; // Bonus for correct translation
-
-            // Bonus for speed (translations should be thoughtful, not rushed)
-            if (responseTime > 10000 && responseTime < 60000) {
-              confidence += 0.1; // Sweet spot for translation time
-            }
-
-            // Bonus for sentence complexity
-            if (currentSentence.complexity_score && currentSentence.complexity_score > 3) {
-              confidence += 0.1; // Bonus for complex sentences
-            }
-          } else {
-            confidence = 0.2; // Lower confidence for incorrect translations
-          }
-
-          confidence = Math.max(0.1, Math.min(0.95, confidence));
-
-          // Record practice with FSRS
-
-          if (fsrsResult) {
-            console.log(`FSRS recorded for case-file word "${word}":`, {
-              algorithm: fsrsResult.algorithm,
-              points: fsrsResult.points,
-              nextReview: fsrsResult.nextReviewDate,
-              interval: fsrsResult.interval,
-              masteryLevel: fsrsResult.masteryLevel
-            });
-          }
-        }
-      } catch (error) {
-        console.error('Error recording FSRS practice for case-file-translator:', error);
-      }
-    }
-
-    // Record sentence translation attempt using new gems system
-    if (gameSessionId) {
-      try {
-        const sessionService = new EnhancedGameSessionService();
-        await sessionService.recordSentenceAttempt(gameSessionId, 'case-file-translator', {
-          sentenceId: currentSentence.id, // ✅ FIXED: Use sentence ID for sentence-based tracking
-          sourceText: currentSentence.source_sentence,
-          targetText: currentSentence.english_translation,
-          responseTimeMs: responseTime,
-          wasCorrect: correct,
-          hintUsed: false,
-          streakCount: correctTranslations,
-          masteryLevel: correct ? 2 : 0,
-          maxGemRarity: 'epic', // Allow epic gems for translation work
-          gameMode: 'sentence_translation',
-          difficultyLevel: currentSentence.complexity_score > 3 ? 'advanced' : 'intermediate',
-          skipSpacedRepetition: true, // Skip SRS - FSRS is handling spaced repetition
-          contextData: {
-            caseContext: currentSentence.case_context,
-            wordCount: currentSentence.word_count,
-            complexityScore: currentSentence.complexity_score,
-            userTranslation: userTranslation.trim(),
-            translationType: 'sentence_translation'
-          }
+        // Log individual vocabulary matches
+        result.gemsAwarded.forEach((gem, index) => {
+          console.log(`  ${index + 1}. "${gem.word}" → ${gem.gemRarity} gem (+${gem.xpAwarded} XP)`);
         });
-      } catch (error) {
-        console.error('Error recording word attempt:', error);
       }
+    } catch (error) {
+      console.error('Error processing sentence with vocabulary tracking:', error);
     }
 
     setIsCorrect(correct);
@@ -653,6 +595,35 @@ export default function TranslatorRoom({
                 <span>Accuracy: {Math.round((gameProgress.correctAnswers / (currentSentenceIndex + 1)) * 100) || 0}%</span>
               </div>
             </div>
+
+            {/* Vocabulary Intelligence Stats */}
+            {sentenceGame.hasProcessedSentences && (
+              <div className="bg-slate-800/60 backdrop-blur-sm border border-green-500/50 rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Gem className="h-5 w-5 text-green-400" />
+                  <span className="text-green-400 font-semibold">Intelligence Gathered</span>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-green-400 flex items-center justify-center gap-1">
+                      <Gem className="h-5 w-5" />
+                      {sentenceGame.totalGems}
+                    </div>
+                    <div className="text-xs text-green-300">Vocabulary Gems</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-yellow-400 flex items-center justify-center gap-1">
+                      <Star className="h-5 w-5" />
+                      {sentenceGame.totalXP}
+                    </div>
+                    <div className="text-xs text-yellow-300">Intelligence XP</div>
+                  </div>
+                </div>
+                <div className="text-xs text-slate-400 mt-2 text-center">
+                  Avg: {Math.round(sentenceGame.averageGemsPerSentence * 10) / 10} gems/case
+                </div>
+              </div>
+            )}
           </motion.div>
         </div>
 

@@ -3,6 +3,7 @@
 // Optimized for 11-16 year old students with invisible complexity
 
 import { SupabaseClient } from '@supabase/supabase-js';
+import { validateStudentId, validateVocabularyId, isValidUUID } from '../utils/uuidUtils';
 
 // ============================================================================
 // FSRS CORE INTERFACES
@@ -448,8 +449,12 @@ export class FSRSService {
         responseTime,
         confidence
       });
-      // Get or create FSRS card
-      const card = await this.getOrCreateCard(studentId, vocabularyId);
+      // Validate and normalize UUIDs
+      const validStudentId = validateStudentId(studentId);
+      const validVocabularyId = validateVocabularyId(vocabularyId);
+
+      // Get or create FSRS card using validated IDs
+      const card = await this.getOrCreateCard(validStudentId, validVocabularyId);
 
       // Convert game performance to FSRS grade
       const grade = this.convertGamePerformanceToGrade(
@@ -473,7 +478,7 @@ export class FSRSService {
       const studyTime = this.estimateStudyTime(updatedCard);
 
       // Save updated card to database
-      await this.saveCard(updatedCard, nextReviewDate);
+      await this.saveCard(updatedCard, nextReviewDate, correct);
 
       // Calculate algorithm confidence based on stability and retrievability
       const confidence_score = Math.min(1.0, updatedCard.stability * updatedCard.retrievability / 10);
@@ -496,7 +501,7 @@ export class FSRSService {
    * Save FSRS card data to database
    * Updates the vocabulary_gem_collection table with FSRS data using atomic operations
    */
-  private async saveCard(card: FSRSCard, nextReviewDate: Date): Promise<void> {
+  private async saveCard(card: FSRSCard, nextReviewDate: Date, correct: boolean): Promise<void> {
     try {
       // 🔍 INSTRUMENTATION: Debug saveCard input
       console.log('🔍 [FSRS SAVE] saveCard called with:', {

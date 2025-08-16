@@ -1,16 +1,14 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
 import { motion, AnimatePresence } from 'framer-motion';
-import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
-import { 
-  Play, 
-  Pause, 
-  RefreshCw, 
-  Star, 
-  CheckCircle2, 
-  Zap, 
+import {
+  Play,
+  Pause,
+  RefreshCw,
+  Star,
+  CheckCircle2,
+  Zap,
   Shuffle,
   Award,
   Settings,
@@ -28,17 +26,12 @@ import {
   Crown
 } from 'lucide-react';
 import Link from 'next/link';
-import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
 import { createBrowserClient } from '@supabase/ssr';
-import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
 import { useSearchParams } from 'next/navigation';
-import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
 import confetti from 'canvas-confetti';
-import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
-import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
+import { useMWEVocabularyTracking } from '../../../../hooks/useMWEVocabularyTracking';
 
 // Types
 interface WordItem {
@@ -462,6 +455,14 @@ export const EnhancedSpeedBuilder: React.FC<{
   );
   const searchParams = useSearchParams();
 
+  // Initialize MWE vocabulary tracking
+  const mweTracking = useMWEVocabularyTracking({
+    gameSessionId: sessionId || '',
+    gameType: 'speed-builder',
+    language: 'es',
+    maxGemRarity: 'rare'
+  });
+
   // Initialize game
   useEffect(() => {
     fetchSentences();
@@ -651,36 +652,45 @@ export const EnhancedSpeedBuilder: React.FC<{
   const checkSentenceCompletion = (words: (WordItem | null)[]) => {
     const isCorrect = words.every((word, index) => word?.index === index);
 
-    // Record FSRS practice for the completed sentence
-    if (currentSentence) {
+    // 🆕 MWE TRACKING: Record vocabulary practice for the completed sentence
+    if (currentSentence && sessionId) {
       (async () => {
         try {
-          const wordData = {
-            id: currentSentence.id || `speed-builder-${currentSentence.text}`,
-            word: currentSentence.text,
-            translation: currentSentence.translatedText || currentSentence.text,
-            language: currentSentence.language || 'es'
-          };
-
-          // Calculate confidence based on accuracy and streak
-          const baseConfidence = isCorrect ? 0.8 : 0.2;
-          const streakBonus = Math.min(stats.streak * 0.05, 0.15); // Up to 15% bonus for streak
-          const confidence = Math.max(0.1, Math.min(0.9, baseConfidence + streakBonus));
-
-          // Record practice with FSRS
-
-          console.log(`🔍 [FSRS] Recorded sentence practice for speed-builder:`, {
+          console.log('🔍 [MWE TRACKING] Processing sentence completion:', {
             sentence: currentSentence.text,
             isCorrect,
-            confidence,
-            fsrsResult: fsrsResult ? {
-              due: fsrsResult.due,
-              stability: fsrsResult.stability,
-              difficulty: fsrsResult.difficulty
-            } : null
+            sessionId
           });
+
+          // Calculate response time (estimate based on game duration)
+          const responseTimeMs = Math.max(1000, 30000 - (timeLeft * 1000 / 120)); // Estimate based on time spent
+
+          // Track vocabulary using MWE-aware parsing
+          const trackingResult = await mweTracking.trackSentenceVocabulary(
+            currentSentence.text,
+            isCorrect,
+            responseTimeMs,
+            {
+              streakCount: stats.streak,
+              masteryLevel: isCorrect ? 2 : 0,
+              gameMode: 'sentence_building',
+              difficultyLevel: 'intermediate'
+            }
+          );
+
+          console.log('✅ [MWE TRACKING] Sentence tracking result:', {
+            success: trackingResult.success,
+            vocabularyMatches: trackingResult.trackedVocabulary.length,
+            mweCount: trackingResult.trackedVocabulary.filter(v => v.is_mwe).length,
+            gemEvents: trackingResult.gemEvents.length,
+            coverage: trackingResult.parsingResult.coveragePercentage
+          });
+
+          if (trackingResult.errors.length > 0) {
+            console.warn('⚠️ [MWE TRACKING] Tracking errors:', trackingResult.errors);
+          }
         } catch (error) {
-          console.error('Error recording FSRS practice for speed builder:', error);
+          console.error('❌ [MWE TRACKING] Error tracking sentence vocabulary:', error);
         }
       })();
     }

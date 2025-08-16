@@ -7,8 +7,19 @@ import { useBattle } from '../../../../hooks/useBattle';
 import { useBattleAudio } from '../../../../hooks/useBattleAudio';
 import { EnhancedGameService } from '../../../../services/enhancedGameService';
 import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
+import { useConjugationDuel } from '../../../../hooks/useConjugationDuel';
 import HealthBar from './HealthBar';
 import CharacterSprite from './CharacterSprite';
+import { StandardVocabularyItem } from '../../../../components/games/templates/GameAssignmentWrapper';
+
+interface GrammarConfig {
+  language?: string;
+  tenses?: string[];
+  verbTypes?: string[];
+  difficulty?: string;
+  verbCount?: number;
+  persons?: string[]; // Add person/pronoun selection
+}
 
 interface BattleArenaProps {
   onBattleEnd: () => void;
@@ -21,6 +32,8 @@ interface BattleArenaProps {
   userId?: string;
   gameSessionId?: string | null;
   gameService?: EnhancedGameService | null;
+  assignmentVocabulary?: StandardVocabularyItem[];
+  grammarConfig?: GrammarConfig;
   onConjugationComplete?: (
     verb: string,
     tense: string,
@@ -43,18 +56,143 @@ export default function BattleArena({
   userId,
   gameSessionId,
   gameService,
+  assignmentVocabulary,
+  grammarConfig,
   onConjugationComplete
 }: BattleArenaProps) {
-  // Initialize FSRS spaced repetition system
+  console.log('🎯 [BATTLE ARENA] Initializing with grammar config:', grammarConfig);
+
+  // Validate grammar config is provided for assignments
+  if (assignmentId && !grammarConfig) {
+    throw new Error('❌ [BATTLE ARENA] Grammar config is required for assignments but was not provided');
+  }
+
+  // Memoize game configuration to prevent infinite re-renders
+  const gameConfig = React.useMemo(() => {
+    const gameLanguage = grammarConfig?.language || language;
+    const gameTenses = grammarConfig?.tenses || (assignmentId ? [] : ['present', 'preterite']);
+    const gamePersons = grammarConfig?.persons || (assignmentId ? [] : ['yo', 'tu', 'el_ella_usted', 'nosotros', 'vosotros', 'ellos_ellas_ustedes']);
+    const gameVerbTypes = grammarConfig?.verbTypes || (assignmentId ? [] : ['regular', 'irregular', 'stem_changing']);
+    const gameDifficulty = (grammarConfig?.difficulty ||
+      (opponent?.difficulty === 'hard' ? 'advanced' : opponent?.difficulty === 'easy' ? 'beginner' : 'intermediate')) as 'advanced' | 'beginner' | 'intermediate';
+    const gameVerbCount = grammarConfig?.verbCount || 10;
+
+    return {
+      gameLanguage,
+      gameTenses,
+      gamePersons,
+      gameVerbTypes,
+      gameDifficulty,
+      gameVerbCount
+    };
+  }, [
+    grammarConfig?.language,
+    grammarConfig?.tenses,
+    grammarConfig?.persons,
+    grammarConfig?.verbTypes,
+    grammarConfig?.difficulty,
+    grammarConfig?.verbCount,
+    language,
+    assignmentId,
+    opponent?.difficulty
+  ]);
+
+  console.log('🎯 [BATTLE ARENA] Final game configuration:', {
+    ...gameConfig,
+    isAssignment: !!assignmentId
+  });
+
+  // Validate configuration for assignments
+  if (assignmentId) {
+    if (!gameConfig.gameTenses || gameConfig.gameTenses.length === 0) {
+      throw new Error('❌ [BATTLE ARENA] Assignment must have at least one tense configured');
+    }
+    if (!gameConfig.gamePersons || gameConfig.gamePersons.length === 0) {
+      throw new Error('❌ [BATTLE ARENA] Assignment must have at least one person configured');
+    }
+  }
+
+  // Create stable fallback sessionId to prevent infinite re-renders
+  const stableSessionId = React.useMemo(() => {
+    return gameSessionId || `conjugation-duel-fallback-${Math.random().toString(36).substr(2, 9)}`;
+  }, [gameSessionId]);
+
+  // Use ref to store stable options and only update when necessary
+  const conjugationDuelOptionsRef = React.useRef<any>(null);
+
+  // Only update options if they've actually changed
+  const conjugationDuelOptions = React.useMemo(() => {
+    const newOptions = {
+      sessionId: stableSessionId,
+      language: (gameConfig.gameLanguage === 'spanish' ? 'es' : gameConfig.gameLanguage === 'french' ? 'fr' : 'de') as 'es' | 'fr' | 'de',
+      difficulty: gameConfig.gameDifficulty,
+      tenses: gameConfig.gameTenses,
+      persons: gameConfig.gamePersons,
+      verbTypes: gameConfig.gameVerbTypes,
+      challengeCount: gameConfig.gameVerbCount,
+      timeLimit: assignmentId ? 0 : 15, // Disable timer for assignments to prevent infinite loop
+      assignmentVocabulary: assignmentVocabulary,
+      assignmentId: assignmentId
+    };
+
+    // Only update if options have actually changed
+    if (!conjugationDuelOptionsRef.current ||
+        JSON.stringify(conjugationDuelOptionsRef.current) !== JSON.stringify(newOptions)) {
+      conjugationDuelOptionsRef.current = newOptions;
+    }
+
+    return conjugationDuelOptionsRef.current;
+  }, [
+    stableSessionId,
+    gameConfig.gameLanguage,
+    gameConfig.gameDifficulty,
+    JSON.stringify(gameConfig.gameTenses),
+    JSON.stringify(gameConfig.gamePersons),
+    JSON.stringify(gameConfig.gameVerbTypes),
+    gameConfig.gameVerbCount,
+    JSON.stringify(assignmentVocabulary),
+    assignmentId
+  ]);
+
+  // Initialize conjugation duel service for enhanced vocabulary tracking
+  const conjugationDuel = useConjugationDuel(conjugationDuelOptions);
+
+  // Auto-start the duel when component initializes and we have valid config
+  useEffect(() => {
+    if (!conjugationDuel.hasStarted && !conjugationDuel.isLoading && !conjugationDuel.error) {
+      console.log('🚀 [BATTLE ARENA] Auto-starting conjugation duel...');
+      conjugationDuel.startDuel();
+    }
+    // Only depend on hasStarted, isLoading, and error to avoid infinite loop
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [conjugationDuel.hasStarted, conjugationDuel.isLoading, conjugationDuel.error]);
+
+  // Log duel status for debugging
+  useEffect(() => {
+    console.log('🎯 [BATTLE ARENA] Conjugation duel state:', {
+      hasStarted: conjugationDuel.hasStarted,
+      isLoading: conjugationDuel.isLoading,
+      error: conjugationDuel.error,
+      currentChallenge: !!conjugationDuel.currentChallenge,
+      challengesCount: conjugationDuel.challenges.length
+    });
+  }, [conjugationDuel.hasStarted, conjugationDuel.isLoading, conjugationDuel.error, conjugationDuel.currentChallenge, conjugationDuel.challenges.length]);
 
   const {
     battleState,
     playerStats,
     leagues,
-    setBattleState
+    setBattleState,
+    takeDamage,
+    addBattleLog
   } = useGameStore();
 
-  const { timeLeft, isAnswering, submitAnswer } = useBattle(language);
+  // Pass timeLimit=0 for assignments to disable timer
+  const timeLimit = assignmentId ? 0 : 15;
+  const { timeLeft, isAnswering, submitAnswer } = useBattle(language, timeLimit);
+
+  // Show timer only if timeLimit > 0 (not in assignment mode)
+  const showTimer = timeLimit > 0;
   const { playSound, playMusic, stopMusic } = useBattleAudio();
 
   const battleLogRef = useRef<HTMLDivElement>(null);
@@ -99,104 +237,131 @@ export default function BattleArena({
     }
   }, [battleState, onBattleEnd, playSound]);
 
-  const handleAnswerClick = (answer: string) => {
-    if (isAnswering) return;
+  const handleAnswerClick = async (answer: string) => {
+    if (!conjugationDuel.currentChallenge || conjugationDuel.isLoading) return;
 
-    const isCorrect = answer === battleState.currentQuestion?.correctAnswer;
     const responseTime = conjugationStartTime > 0 ? Date.now() - conjugationStartTime : 0;
 
-    playSound(isCorrect ? 'correct_answer' : 'wrong_answer');
+    // Process the answer with the conjugation duel service
+    try {
+      const result = await conjugationDuel.submitAnswer(answer, responseTime, false);
 
-    if (isCorrect) {
-      playSound('sword_clash');
-    }
+      if (result) {
+        const isCorrect = result.isCorrect;
+        
+        playSound(isCorrect ? 'correct_answer' : 'wrong_answer');
 
-    // Record conjugation practice with FSRS system
-    if (!assignmentId && battleState.currentQuestion) {
-      try {
-        const question = battleState.currentQuestion;
-        const wordData = {
-          id: `${question.verb?.infinitive || 'unknown'}-${question.tense}-${question.pronoun}`,
-          word: question.verb?.infinitive || 'unknown',
-          translation: `${question.pronoun} ${question.correctAnswer}`, // Conjugated form as translation
-          language: language === 'spanish' ? 'es' : language === 'french' ? 'fr' : 'en'
-        };
-
-        // Calculate confidence based on conjugation accuracy and response time
-        let confidence = 0.8; // High base confidence for conjugation practice
-
-        // Adjust for response time (conjugations should be quick once learned)
-        if (responseTime < 3000) confidence += 0.1;
-        else if (responseTime > 8000) confidence -= 0.2;
-
-        // Adjust for tense complexity
-        if (question.tense === 'subjunctive' || question.tense === 'conditional') {
-          confidence += 0.1; // Bonus for complex tenses
+        if (isCorrect) {
+          playSound('sword_clash');
+          // Apply damage to opponent for correct answer
+          takeDamage('opponent', 20);
+        } else {
+          // Apply damage to player for wrong answer  
+          takeDamage('player', 15);
         }
 
-        confidence = Math.max(0.1, Math.min(0.95, confidence));
+        console.log(`⚔️ Conjugation Duel: Processed "${conjugationDuel.currentChallenge.infinitive}" conjugation`);
+        console.log(`✅ Correct: ${result.isCorrect}`);
+        console.log(`💎 Gem awarded: ${result.gemAwarded ? result.gemAwarded.rarity : 'none'}`);
+        console.log(`⭐ XP earned: ${result.gemAwarded?.xpValue || 0}`);
+        console.log(`🔥 Streak: ${result.streakCount}`);
 
-        // Record practice with FSRS
-      } catch (error) {
-        console.error('Error setting up FSRS recording for conjugation:', error);
-      }
-    }
+        if (result.gemAwarded) {
+          console.log(`🎯 Gem details: ${result.gemAwarded.rarity} gem (+${result.gemAwarded.xpValue} XP)`);
+        }
 
-    // Record gem event for conjugation practice
-    if (gameSessionId && battleState.currentQuestion) {
-      (async () => {
-        try {
-          const question = battleState.currentQuestion;
-          if (!question) return;
+        // Log conjugation performance if callback is available
+        if (onConjugationComplete) {
+          const challenge = conjugationDuel.currentChallenge;
+          onConjugationComplete(
+            challenge.infinitive,
+            challenge.tense,
+            challenge.person,
+            answer,
+            challenge.expectedAnswer,
+            isCorrect,
+            responseTime
+          );
+        }
 
-          const sessionService = new EnhancedGameSessionService();
-          const gemEvent = await sessionService.recordWordAttempt(gameSessionId, 'conjugation-duel', {
-            vocabularyId: `${question.verb?.infinitive || 'unknown'}-${question.tense}-${question.pronoun}`,
-            wordText: question.verb?.infinitive || 'unknown',
-            translationText: question.correctAnswer,
-            responseTimeMs: responseTime,
-            wasCorrect: isCorrect,
-            hintUsed: false,
-            streakCount: 0, // Default streak count
-            masteryLevel: isCorrect ? 2 : 0,
-            maxGemRarity: 'epic', // Allow epic gems for conjugation mastery
-            gameMode: 'conjugation',
-            difficultyLevel: question.tense === 'subjunctive' || question.tense === 'conditional' ? 'advanced' : 'intermediate'
-          }, true); // Skip spaced repetition - FSRS is handling it
+        // Add battle log entry
+        addBattleLog(
+          isCorrect 
+            ? `Correct! "${answer}" is the right conjugation!`
+            : `Wrong! The correct answer was "${result.expectedAnswer}"`
+        );
 
-          // Show gem feedback if gem was awarded
-          if (gemEvent && isCorrect) {
-            console.log(`🔮 Conjugation Duel earned ${gemEvent.rarity} gem (${gemEvent.xpValue} XP) for "${question.verb?.infinitive}" (${question.tense})`);
+        // Move to next challenge after a brief delay
+        setTimeout(() => {
+          if (!conjugationDuel.isComplete) {
+            conjugationDuel.nextChallenge();
+          } else {
+            // End the duel when all challenges are complete
+            setBattleState({ opponentHealth: 0 }); // Force victory
           }
-        } catch (error) {
-          console.error('Failed to record conjugation gem event:', error);
-        }
-      })();
+        }, 1500);
+      }
+    } catch (error) {
+      console.error('Error processing conjugation:', error);
+      playSound('wrong_answer');
     }
-
-    // Log conjugation performance if callback is available
-    if (onConjugationComplete && battleState.currentQuestion) {
-      const question = battleState.currentQuestion;
-      onConjugationComplete(
-        question.verb?.infinitive || 'unknown',
-        question.tense || 'present',
-        question.pronoun || 'yo',
-        answer,
-        question.correctAnswer,
-        isCorrect,
-        responseTime
-      );
-    }
-
-    submitAnswer(answer);
   };
 
-  if (!battleState.isInBattle || !battleState.currentOpponent || !battleState.currentQuestion) {
+  if (!battleState.isInBattle || !battleState.currentOpponent) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-900 via-orange-900 to-yellow-900">
         <div className="text-center">
           <h2 className="text-3xl font-bold text-yellow-300 mb-4">Conjugation Duel Cannot Start</h2>
-          <p className="text-lg text-white mb-6">Missing or invalid data. Please check that you have selected a valid league and opponent, and that verb data is loaded.</p>
+          <p className="text-lg text-white mb-6">Missing or invalid data. Please check that you have selected a valid league and opponent.</p>
+          <button
+            className="bg-white text-red-600 px-6 py-3 rounded-lg hover:bg-gray-100 transition-colors"
+            onClick={onBackToMenu}
+          >
+            Back to Menu
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Show loading while duel is starting
+  if (conjugationDuel.isLoading || (!conjugationDuel.hasStarted && !conjugationDuel.error)) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-900 via-orange-900 to-yellow-900">
+        <div className="text-center">
+          <h2 className="text-3xl font-bold text-yellow-300 mb-4">Preparing Conjugation Duel</h2>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-300 mx-auto mb-4"></div>
+          <p className="text-lg text-white mb-6">Loading verbs and generating challenges...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error if duel failed to start
+  if (conjugationDuel.error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-900 via-orange-900 to-yellow-900">
+        <div className="text-center">
+          <h2 className="text-3xl font-bold text-red-300 mb-4">Conjugation Duel Error</h2>
+          <p className="text-lg text-white mb-6">{conjugationDuel.error}</p>
+          <button
+            className="bg-white text-red-600 px-6 py-3 rounded-lg hover:bg-gray-100 transition-colors"
+            onClick={onBackToMenu}
+          >
+            Back to Menu
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Show message if no current challenge
+  if (!conjugationDuel.currentChallenge) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-900 via-orange-900 to-yellow-900">
+        <div className="text-center">
+          <h2 className="text-3xl font-bold text-yellow-300 mb-4">No Challenges Available</h2>
+          <p className="text-lg text-white mb-6">No conjugation challenges could be generated with the current configuration.</p>
           <button
             className="bg-white text-red-600 px-6 py-3 rounded-lg hover:bg-gray-100 transition-colors"
             onClick={onBackToMenu}
@@ -231,14 +396,14 @@ export default function BattleArena({
           <h2 className="text-2xl font-bold">{currentLeague?.name}</h2>
           <p className="text-sm opacity-80">Level {playerStats.level}</p>
         </div>
-        
-        <div className="text-center">
-          <div className={`text-3xl font-bold ${timeLeft <= 10 ? 'text-red-400 animate-pulse' : 'text-white'}`}>
-            {timeLeft}
+        {showTimer && (
+          <div className="text-center">
+            <div className={`text-3xl font-bold ${timeLeft <= 10 ? 'text-red-400 animate-pulse' : 'text-white'}`}> 
+              {timeLeft}
+            </div>
+            <p className="text-xs text-white/80">seconds</p>
           </div>
-          <p className="text-xs text-white/80">seconds</p>
-        </div>
-
+        )}
         <div className="text-white text-right">
           <p className="text-sm">XP: {playerStats.experience}</p>
           <p className="text-xs opacity-80">Accuracy: {playerStats.accuracy.toFixed(1)}%</p>
@@ -269,7 +434,7 @@ export default function BattleArena({
         <div className="w-1/3 flex flex-col justify-center p-6">
           <AnimatePresence mode="wait">
             <motion.div
-              key={`${battleState.currentQuestion.verb.infinitive}-${battleState.currentQuestion.pronoun}`}
+              key={`${conjugationDuel.currentChallenge.infinitive}-${conjugationDuel.currentChallenge.person}`}
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8 }}
@@ -281,38 +446,40 @@ export default function BattleArena({
                   Conjugate the verb:
                 </h3>
                 <div className="text-3xl font-bold text-blue-600 mb-2">
-                  {battleState.currentQuestion.verb.infinitive}
+                  {conjugationDuel.currentChallenge.infinitive}
                 </div>
                 <div className="text-sm text-gray-600 mb-4">
-                  ({battleState.currentQuestion.verb.english})
+                  ({conjugationDuel.currentChallenge.translation})
                 </div>
                 <div className="text-xl text-gray-800">
-                  <span className="font-semibold">{battleState.currentQuestion.pronoun}</span>
+                  <span className="font-semibold">{conjugationDuel.currentChallenge.person}</span>
                   <span className="mx-2">_______</span>
                 </div>
                 <div className="text-sm text-gray-500 mt-2">
-                  Tense: {battleState.currentQuestion.tense}
+                  Tense: {conjugationDuel.currentChallenge.tense}
                 </div>
               </div>
 
-              {/* Answer Options */}
-              <div className="grid grid-cols-2 gap-3">
-                {battleState.currentQuestion.options.map((option, index) => (
-                  <motion.button
-                    key={`${option}-${index}`}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => handleAnswerClick(option)}
-                    disabled={isAnswering}
-                    className={`p-4 rounded-lg font-medium transition-colors ${
-                      isAnswering 
-                        ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                        : 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl'
-                    }`}
-                  >
-                    {option}
-                  </motion.button>
-                ))}
+              {/* Answer Input */}
+              <div className="space-y-4">
+                <input
+                  type="text"
+                  placeholder="Type your conjugation here..."
+                  className="w-full p-4 text-lg border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none text-center"
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      const target = e.target as HTMLInputElement;
+                      if (target.value.trim()) {
+                        handleAnswerClick(target.value.trim());
+                        target.value = '';
+                      }
+                    }
+                  }}
+                  disabled={isAnswering}
+                />
+                <div className="text-center">
+                  <p className="text-sm text-gray-600">Press Enter to submit your answer</p>
+                </div>
               </div>
             </motion.div>
           </AnimatePresence>

@@ -712,7 +712,8 @@ export class EnhancedGameService {
       .insert(achievement);
 
     if (error) {
-      throw new Error(`Failed to award achievement: ${error.message}`);
+      console.error('Award achievement error:', error);
+      throw new Error(`Failed to award achievement: ${error.message || JSON.stringify(error)}`);
     }
 
     // Update student profile with XP and achievement count

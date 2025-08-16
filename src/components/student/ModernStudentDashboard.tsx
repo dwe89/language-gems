@@ -35,7 +35,7 @@ import { GemsAnalyticsService } from '../../services/analytics/GemsAnalyticsServ
 // =====================================================
 
 interface ModernStudentDashboardProps {
-  initialView?: 'home' | 'assignments' | 'vocabulary' | 'assessments' | 'achievements';
+  initialView?: 'home' | 'assignments' | 'vocabulary' | 'grammar' | 'assessments' | 'achievements';
 }
 
 interface NavigationItem {
@@ -626,6 +626,13 @@ export default function ModernStudentDashboard({
       description: 'View all your vocabulary progress'
     },
     {
+      id: 'grammar',
+      label: 'Grammar',
+      icon: Zap,
+      color: 'bg-gradient-to-r from-orange-500 to-red-500',
+      description: 'Track your conjugation mastery'
+    },
+    {
       id: 'assessments',
       label: 'Assessments',
       icon: BarChart3,
@@ -747,10 +754,10 @@ export default function ModernStudentDashboard({
             gemsByRarityToday={gemsAnalytics.gemsByRarityToday || {}} // Shows Mastery Gem rarities
           />
 
-          {/* Today's Dual-Track Breakdown */}
+          {/* Today's Triple-Track Breakdown */}
           <div className="mt-4 bg-white rounded-xl shadow-lg p-4">
             <h4 className="font-semibold text-gray-900 mb-3">Today's Gem Breakdown</h4>
-            <div className="grid grid-cols-2 gap-4">
+            <div className={`grid gap-4 ${gemsAnalytics.grammarGemsToday > 0 ? 'grid-cols-3' : 'grid-cols-2'}`}>
               <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
                 <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg flex items-center justify-center">
                   <Zap className="w-4 h-4 text-white" />
@@ -776,6 +783,21 @@ export default function ModernStudentDashboard({
                   <div className="text-xs text-gray-500">Vocabulary collection</div>
                 </div>
               </div>
+
+              {gemsAnalytics.grammarGemsToday > 0 && (
+                <div className="flex items-center gap-3 p-3 bg-orange-50 rounded-lg">
+                  <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-red-500 rounded-lg flex items-center justify-center">
+                    <Brain className="w-4 h-4 text-white" />
+                  </div>
+                  <div>
+                    <div className="font-semibold text-orange-700">
+                      {gemsAnalytics.grammarGemsToday || 0}
+                    </div>
+                    <div className="text-xs text-orange-600">Grammar Gems</div>
+                    <div className="text-xs text-gray-500">Conjugation mastery</div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -1220,6 +1242,41 @@ export default function ModernStudentDashboard({
                 <BarChart3 className="h-4 w-4" />
                 <span>View Full Analytics</span>
               </Link>
+            </div>
+          </div>
+        );
+      case 'grammar':
+        return (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-gray-900">Grammar Progress</h2>
+              <Link
+                href="/student-dashboard/grammar"
+                className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors flex items-center space-x-2"
+              >
+                <Zap className="h-4 w-4" />
+                <span>View Grammar Dashboard</span>
+              </Link>
+            </div>
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <p className="text-gray-600 mb-4">Track your conjugation mastery and grammar skills.</p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="text-center p-4 bg-orange-50 rounded-lg">
+                  <Zap className="h-8 w-8 text-orange-600 mx-auto mb-2" />
+                  <div className="text-lg font-semibold text-gray-900">Conjugations</div>
+                  <div className="text-sm text-gray-600">Practice verb forms</div>
+                </div>
+                <div className="text-center p-4 bg-red-50 rounded-lg">
+                  <Target className="h-8 w-8 text-red-600 mx-auto mb-2" />
+                  <div className="text-lg font-semibold text-gray-900">Accuracy</div>
+                  <div className="text-sm text-gray-600">Track your progress</div>
+                </div>
+                <div className="text-center p-4 bg-yellow-50 rounded-lg">
+                  <Crown className="h-8 w-8 text-yellow-600 mx-auto mb-2" />
+                  <div className="text-lg font-semibold text-gray-900">Grammar Gems</div>
+                  <div className="text-sm text-gray-600">Earn rewards</div>
+                </div>
+              </div>
             </div>
           </div>
         );

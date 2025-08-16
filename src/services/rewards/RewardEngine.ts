@@ -13,7 +13,7 @@ export interface GemTypeInfo {
   masteryLevel: number;
 }
 
-export type GemType = 'mastery' | 'activity';
+export type GemType = 'mastery' | 'activity' | 'grammar';
 
 export interface GemEvent {
   rarity: GemRarity;
@@ -28,6 +28,12 @@ export interface GemEvent {
   gameMode?: string;
   difficultyLevel?: string;
   gemType?: GemType;
+  // Grammar-specific fields
+  conjugationId?: string;
+  baseVerbId?: string;
+  tense?: string;
+  person?: string;
+  verbType?: 'regular' | 'irregular' | 'stem_changing';
 }
 
 export interface PerformanceContext {
@@ -39,6 +45,10 @@ export interface PerformanceContext {
   masteryLevel?: number;
   maxGemRarity?: GemRarity;
   isFirstTime?: boolean; // 🆕 DUAL-TRACK: Whether this is the first time learning this word
+  // Grammar-specific context
+  tense?: string;
+  verbType?: 'regular' | 'irregular' | 'stem_changing';
+  complexityScore?: number; // 1-5 difficulty rating
 }
 
 export interface GameTypeConfig {
@@ -112,6 +122,16 @@ export const ACTIVITY_GEM_XP: Record<GemRarity, number> = {
   legendary: 5      // Exceptional performance
 };
 
+// Grammar Gem XP values (conjugation mastery rewards)
+export const GRAMMAR_GEM_XP: Record<GemRarity, number> = {
+  new_discovery: 5,  // First correct conjugation of a verb
+  common: 8,         // Regular verb, simple tense
+  uncommon: 12,      // Irregular verb or complex tense
+  rare: 18,          // Fast conjugation or difficult verb
+  epic: 25,          // Perfect streak with complex grammar
+  legendary: 35      // Exceptional grammar mastery
+};
+
 // Game-specific configurations
 export const GAME_CONFIGS: Record<string, GameTypeConfig> = {
   'vocab-master': {
@@ -160,6 +180,14 @@ export const GAME_CONFIGS: Record<string, GameTypeConfig> = {
     speedThresholds: { fast: 2000, normal: 3000 },
     streakThresholds: { epic: 5, legendary: 10 },
     typingBonus: false,
+    dictationBonus: false
+  },
+  'conjugation-duel': {
+    name: 'Conjugation Duel',
+    baseResponseTime: 6000, // Grammar requires more thinking time
+    speedThresholds: { fast: 3000, normal: 6000 },
+    streakThresholds: { epic: 4, legendary: 8 }, // Grammar streaks are harder
+    typingBonus: true, // Always typing in conjugation
     dictationBonus: false
   },
   'default': {
@@ -265,6 +293,13 @@ export class RewardEngine {
   }
 
   /**
+   * Get XP value for Grammar Gems
+   */
+  static getGrammarGemXP(rarity: GemRarity): number {
+    return GRAMMAR_GEM_XP[rarity];
+  }
+
+  /**
    * Calculate Activity Gem rarity based on performance
    * Activity Gems are immediate rewards with simpler logic
    */
@@ -295,6 +330,73 @@ export class RewardEngine {
 
     return rarity;
   }
+
+  /**
+   * Calculate Grammar Gem rarity based on conjugation performance
+   * Grammar Gems reward grammatical skill demonstration
+   */
+  static calculateGrammarGemRarity(
+    gameType: string,
+    context: PerformanceContext
+  ): GemRarity {
+    const config = GAME_CONFIGS[gameType] || GAME_CONFIGS.default;
+
+    // Check if this is a first-time conjugation of this verb
+    if (context.isFirstTime) {
+      return 'new_discovery'; // First correct conjugation of any verb
+    }
+
+    // Start with base rarity based on verb type and tense complexity
+    let rarity: GemRarity = this.getBaseGrammarRarity(context);
+
+    // If hint was used, cap at common
+    if (context.hintUsed) {
+      return 'common';
+    }
+
+    // Speed-based upgrades (grammar requires more thinking time)
+    if (context.responseTimeMs <= config.speedThresholds.fast) {
+      rarity = this.upgradeRarity(rarity); // Fast grammar response is impressive
+    }
+
+    // Streak-based upgrades (grammar streaks are harder to maintain)
+    if (context.streakCount >= config.streakThresholds.legendary) {
+      rarity = 'legendary';
+    } else if (context.streakCount >= config.streakThresholds.epic) {
+      rarity = this.upgradeRarity(rarity);
+    }
+
+    // Complexity bonus - harder grammar gets better rewards
+    if (context.complexityScore && context.complexityScore >= 4) {
+      rarity = this.upgradeRarity(rarity); // Complex tenses/irregular verbs
+    }
+
+    return rarity;
+  }
+
+  /**
+   * Get base Grammar Gem rarity based on verb type and tense
+   */
+  private static getBaseGrammarRarity(context: PerformanceContext): GemRarity {
+    // Irregular verbs are inherently more difficult
+    if (context.verbType === 'irregular') {
+      return 'uncommon'; // Start higher for irregular verbs
+    }
+
+    // Stem-changing verbs are moderately difficult
+    if (context.verbType === 'stem_changing') {
+      return 'uncommon';
+    }
+
+    // Complex tenses deserve higher base rarity
+    const complexTenses = ['preterite', 'imperfect', 'conditional', 'subjunctive', 'future'];
+    if (context.tense && complexTenses.includes(context.tense.toLowerCase())) {
+      return 'uncommon';
+    }
+
+    // Regular verbs in simple tenses start at common
+    return 'common';
+  }
   
   /**
    * Create a gem event from performance data
@@ -309,15 +411,34 @@ export class RewardEngine {
     },
     gameMode?: string,
     difficultyLevel?: string,
-    gemType: GemType = 'mastery'
+    gemType: GemType = 'mastery',
+    grammarData?: {
+      conjugationId?: string;
+      baseVerbId?: string;
+      tense?: string;
+      person?: string;
+      verbType?: 'regular' | 'irregular' | 'stem_changing';
+    }
   ): GemEvent {
-    const rarity = gemType === 'activity'
-      ? this.calculateActivityGemRarity(gameType, context)
-      : this.calculateGemRarity(gameType, context);
+    let rarity: GemRarity;
+    let xpValue: number;
 
-    const xpValue = gemType === 'activity'
-      ? this.getActivityGemXP(rarity)
-      : this.getXPValue(rarity);
+    // Calculate rarity and XP based on gem type
+    switch (gemType) {
+      case 'activity':
+        rarity = this.calculateActivityGemRarity(gameType, context);
+        xpValue = this.getActivityGemXP(rarity);
+        break;
+      case 'grammar':
+        rarity = this.calculateGrammarGemRarity(gameType, context);
+        xpValue = this.getGrammarGemXP(rarity);
+        break;
+      case 'mastery':
+      default:
+        rarity = this.calculateGemRarity(gameType, context);
+        xpValue = this.getXPValue(rarity);
+        break;
+    }
 
     return {
       rarity,
@@ -331,7 +452,13 @@ export class RewardEngine {
       gameType,
       gameMode,
       difficultyLevel,
-      gemType
+      gemType,
+      // Grammar-specific fields
+      conjugationId: grammarData?.conjugationId,
+      baseVerbId: grammarData?.baseVerbId,
+      tense: grammarData?.tense,
+      person: grammarData?.person,
+      verbType: grammarData?.verbType
     };
   }
 
@@ -367,6 +494,38 @@ export class RewardEngine {
     difficultyLevel?: string
   ): GemEvent {
     return this.createGemEvent(gameType, context, vocabularyData, gameMode, difficultyLevel, 'mastery');
+  }
+
+  /**
+   * Create a Grammar Gem event (conjugation mastery reward)
+   */
+  static createGrammarGemEvent(
+    gameType: string,
+    context: PerformanceContext,
+    vocabularyData: {
+      id?: number;
+      word?: string;
+      translation?: string;
+    },
+    grammarData: {
+      conjugationId?: string;
+      baseVerbId?: string;
+      tense: string;
+      person: string;
+      verbType: 'regular' | 'irregular' | 'stem_changing';
+    },
+    gameMode?: string,
+    difficultyLevel?: string
+  ): GemEvent {
+    return this.createGemEvent(
+      gameType,
+      context,
+      vocabularyData,
+      gameMode,
+      difficultyLevel,
+      'grammar',
+      grammarData
+    );
   }
   
   /**

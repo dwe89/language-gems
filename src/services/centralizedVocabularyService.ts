@@ -55,6 +55,22 @@ export class CentralizedVocabularyService {
   constructor(private supabase: SupabaseClient) {}
 
   /**
+   * Convert language format from full name to database code
+   */
+  private convertLanguageFormat(language: string): string {
+    const languageMap: { [key: string]: string } = {
+      'spanish': 'es',
+      'french': 'fr',
+      'german': 'de',
+      'es': 'es',
+      'fr': 'fr',
+      'de': 'de'
+    };
+
+    return languageMap[language.toLowerCase()] || language;
+  }
+
+  /**
    * Get vocabulary words based on query parameters with caching
    */
   async getVocabulary(query: VocabularyQuery = {}): Promise<CentralizedVocabularyWord[]> {
@@ -74,7 +90,9 @@ export class CentralizedVocabularyService {
 
       // Apply filters
       if (query.language) {
-        supabaseQuery = supabaseQuery.eq('language', query.language);
+        const dbLanguage = this.convertLanguageFormat(query.language);
+        console.log(`🔍 CentralizedVocabularyService: Converting language "${query.language}" -> "${dbLanguage}"`);
+        supabaseQuery = supabaseQuery.eq('language', dbLanguage);
       }
       
       if (query.category) {
@@ -273,10 +291,13 @@ export class CentralizedVocabularyService {
    */
   async getCategoriesForLanguage(language: string): Promise<string[]> {
     try {
+      const dbLanguage = this.convertLanguageFormat(language);
+      console.log(`🔍 CentralizedVocabularyService.getCategoriesForLanguage: Converting language "${language}" -> "${dbLanguage}"`);
+
       const { data, error } = await this.supabase
         .from('centralized_vocabulary')
         .select('category')
-        .eq('language', language)
+        .eq('language', dbLanguage)
         .not('category', 'is', null);
 
       if (error) {
@@ -376,15 +397,18 @@ export class CentralizedVocabularyService {
       // Get language-specific counts
       const languageStats = await Promise.all(
         languages.map(async (language) => {
+          const dbLanguage = this.convertLanguageFormat(language);
+          console.log(`🔍 CentralizedVocabularyService.getStats: Converting language "${language}" -> "${dbLanguage}"`);
+
           const { count } = await this.supabase
             .from('centralized_vocabulary')
             .select('*', { count: 'exact', head: true })
-            .eq('language', language);
-          
+            .eq('language', dbLanguage);
+
           const { count: audioCount } = await this.supabase
             .from('centralized_vocabulary')
             .select('*', { count: 'exact', head: true })
-            .eq('language', language)
+            .eq('language', dbLanguage)
             .not('audio_url', 'is', null);
 
           return {

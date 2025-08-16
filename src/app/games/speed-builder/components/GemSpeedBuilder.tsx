@@ -19,6 +19,7 @@ import { HTML5Backend } from 'react-dnd-html5-backend';
 import { SoundProvider, useSound, SoundControls } from './SoundManager';
 import { EnhancedGameService } from '../../../../services/enhancedGameService';
 import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
+import { useSentenceGame } from '../../../../hooks/useSentenceGame';
 
 // Types
 interface WordItem {
@@ -445,7 +446,14 @@ const GemSpeedBuilderInternal: React.FC<{
   gameSessionId?: string | null;
   gameService?: EnhancedGameService | null;
 }> = ({ assignmentId, mode = 'freeplay', theme, topic, tier, vocabularyList, onGameComplete, sentenceConfig, onOpenSettings, onBackToMenu, gameSessionId, gameService }) => {
-  // Initialize FSRS spaced repetition system
+  // Initialize sentence game service for vocabulary tracking
+  const sentenceGame = useSentenceGame({
+    gameType: 'sentence_sprint',
+    sessionId: gameSessionId || `speed-builder-${Date.now()}`,
+    language: sentenceConfig?.language || 'es',
+    gameMode: 'completion',
+    difficultyLevel: tier === 'foundation' ? 'beginner' : tier === 'higher' ? 'advanced' : 'intermediate'
+  });
 
   // Sound system
   const { playSound, stopMusic } = useSound();
@@ -759,6 +767,13 @@ const GemSpeedBuilderInternal: React.FC<{
   // Start game session
   const startGame = async () => {
     // Use enhanced game service if available, otherwise fall back to legacy API
+    console.log('🔍 Speed Builder: Session check:', {
+      hasGameService: !!gameService,
+      hasGameSessionId: !!gameSessionId,
+      gameSessionId: gameSessionId,
+      gameServiceType: gameService?.constructor?.name
+    });
+
     if (gameService && gameSessionId) {
       console.log('Speed Builder: Using enhanced session tracking with session ID:', gameSessionId);
       setSessionId(gameSessionId);
@@ -1004,22 +1019,65 @@ const GemSpeedBuilderInternal: React.FC<{
               const speedBonus = averageWordTime < 2000 ? 0.1 : 0; // Bonus for fast completion
               const confidence = Math.min(0.95, baseConfidence + streakBonus + speedBonus);
 
-              // Record practice with FSRS
+              // Record practice with FSRS using EnhancedGameSessionService (only in free play mode)
+              if (!assignmentId && gameSessionId) {
+                try {
+                  const sessionService = new EnhancedGameSessionService();
+                  const gemEvent = await sessionService.recordWordAttempt(gameSessionId, 'speed-builder', {
+                    vocabularyId: wordData.id,
+                    wordText: word.text,
+                    translationText: word.text, // In sentence building, word is its own context
+                    responseTimeMs: averageWordTime,
+                    wasCorrect: true, // Always correct for completed sentences
+                    hintUsed: false,
+                    streakCount: stats.streak,
+                    masteryLevel: 1,
+                    maxGemRarity: 'common', // Sentence building is skill-based
+                    gameMode: 'sentence_building',
+                    difficultyLevel: 'intermediate'
+                  });
 
-              if (fsrsResult) {
-                console.log(`FSRS recorded for word "${word.text}" in sentence:`, {
-                  algorithm: fsrsResult.algorithm,
-                  points: fsrsResult.points,
-                  nextReview: fsrsResult.nextReviewDate,
-                  interval: fsrsResult.interval,
-                  masteryLevel: fsrsResult.masteryLevel
-                });
+                  if (gemEvent) {
+                    console.log(`✅ Speed Builder FSRS recorded for word "${word.text}": ${gemEvent.rarity} (${gemEvent.xpValue} XP)`);
+                  }
+                } catch (error) {
+                  console.error(`Error recording FSRS for word "${word.text}":`, error);
+                }
               }
             }
           }
         } catch (error) {
           console.error('Error recording FSRS practice for sentence:', error);
         }
+      }
+
+      // Process sentence with new vocabulary tracking system
+      try {
+        const completedSentence = wordsArray.map(w => w?.text || '').join(' ');
+        const responseTime = Date.now() - sentenceStartTime;
+
+        const result = await sentenceGame.processSentence(
+          completedSentence,
+          true, // Sentence is correct
+          responseTime,
+          false, // No hint used
+          currentSentence.id
+        );
+
+        if (result) {
+          console.log(`🏃‍♂️ Speed Builder: Processed sentence "${completedSentence}"`);
+          console.log(`📊 Vocabulary matches: ${result.vocabularyMatches.length}`);
+          console.log(`💎 Gems awarded: ${result.totalGems}`);
+          console.log(`⭐ XP earned: ${result.totalXP}`);
+          console.log(`📈 Coverage: ${result.coveragePercentage}%`);
+
+          // Log individual vocabulary matches
+          result.gemsAwarded.forEach((gem, index) => {
+            console.log(`  ${index + 1}. "${gem.word}" → ${gem.gemRarity} gem (+${gem.xpAwarded} XP)`);
+          });
+        }
+      } catch (error) {
+        console.error('Error processing sentence with vocabulary tracking:', error);
       }
 
       // Sentence is correct - celebrate and move to next
@@ -1031,7 +1089,7 @@ const GemSpeedBuilderInternal: React.FC<{
       const baseGemsEarned = wordsArray.length;
       const streakBonus = Math.min(stats.streak, 3);
       const totalGemsEarned = baseGemsEarned + streakBonus;
-      
+
       setStats(prev => ({
         ...prev,
         score: prev.score + (wordsArray.length * 10),
@@ -1040,7 +1098,7 @@ const GemSpeedBuilderInternal: React.FC<{
         highestStreak: Math.max(prev.highestStreak, prev.streak + 1),
         gemsCollected: prev.gemsCollected + totalGemsEarned
       }));
-      
+
       // Track sentence completion
       trackSentenceCompletion(true);
       

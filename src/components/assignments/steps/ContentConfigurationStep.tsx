@@ -41,6 +41,56 @@ export default function ContentConfigurationStep({
     subcategories: []
   });
 
+  // State for sentence configuration API data
+  const [sentenceCategories, setSentenceCategories] = useState<string[]>([]);
+  const [sentenceSubcategories, setSentenceSubcategories] = useState<string[]>([]);
+  const [loadingCategories, setLoadingCategories] = useState(false);
+  const [loadingSubcategories, setLoadingSubcategories] = useState(false);
+
+  // Load sentence categories from API
+  useEffect(() => {
+    const fetchCategories = async () => {
+      setLoadingCategories(true);
+      try {
+        const response = await fetch('/api/sentences/categories');
+        if (response.ok) {
+          const data = await response.json();
+          setSentenceCategories(data.categories || []);
+        } else {
+          console.error('Failed to fetch sentence categories');
+        }
+      } catch (error) {
+        console.error('Error fetching sentence categories:', error);
+      } finally {
+        setLoadingCategories(false);
+      }
+    };
+
+    fetchCategories();
+  }, []);
+
+  // Load sentence subcategories from API
+  useEffect(() => {
+    const fetchSubcategories = async () => {
+      setLoadingSubcategories(true);
+      try {
+        const response = await fetch('/api/sentences/subcategories');
+        if (response.ok) {
+          const data = await response.json();
+          setSentenceSubcategories(data.subcategories || []);
+        } else {
+          console.error('Failed to fetch sentence subcategories');
+        }
+      } catch (error) {
+        console.error('Error fetching sentence subcategories:', error);
+      } finally {
+        setLoadingSubcategories(false);
+      }
+    };
+
+    fetchSubcategories();
+  }, []);
+
   // Check if step is completed
   useEffect(() => {
     const hasGames = gameConfig.selectedGames.length > 0;
@@ -75,11 +125,12 @@ export default function ContentConfigurationStep({
            (gameConfig.sentenceConfig.source === 'topic' && !!gameConfig.sentenceConfig.topic));
       }
       if (hasGrammarGames) {
-        // Check if grammar config has language and at least one verb type and tense
+        // Check if grammar config has language, at least one verb type, tense, and person
         gameConfigComplete = gameConfigComplete &&
           gameConfig.grammarConfig.language &&
           gameConfig.grammarConfig.verbTypes.length > 0 &&
-          gameConfig.grammarConfig.tenses.length > 0;
+          gameConfig.grammarConfig.tenses.length > 0 &&
+          (gameConfig.grammarConfig.persons?.length || 0) > 0;
       }
     }
 
@@ -158,7 +209,9 @@ export default function ContentConfigurationStep({
       <div className="min-h-[400px]">
         {(hasGames || hasAssessments) && (
           <div className="space-y-6">
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6">
+            {/* Content Configuration (only for vocabulary and sentence games, not grammar games) */}
+            {(hasVocabGames || hasSentenceGames || hasAssessments) && (
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6">
               <div className="flex items-center mb-3">
                 <BookOpen className="h-6 w-6 text-blue-600 mr-3" />
                 <h3 className="text-xl font-semibold text-gray-900">Content Configuration</h3>
@@ -254,7 +307,8 @@ export default function ContentConfigurationStep({
                 }}
                 initialConfig={contentConfig}
               />
-            </div>
+              </div>
+            )}
 
             {/* Sentence Configuration (for sentence games) */}
             {hasSentenceGames && (
@@ -327,16 +381,16 @@ export default function ContentConfigurationStep({
                           sentenceConfig: { ...prev.sentenceConfig, theme: e.target.value }
                         }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                        disabled={loadingCategories}
                       >
-                        <option value="">Select theme...</option>
-                        <option value="family">Family & Relationships</option>
-                        <option value="school">School & Education</option>
-                        <option value="hobbies">Hobbies & Free Time</option>
-                        <option value="food">Food & Drink</option>
-                        <option value="travel">Travel & Transport</option>
-                        <option value="home">Home & Local Area</option>
-                        <option value="work">Work & Future Plans</option>
-                        <option value="health">Health & Lifestyle</option>
+                        <option value="">
+                          {loadingCategories ? 'Loading themes...' : 'Select theme...'}
+                        </option>
+                        {sentenceCategories.map(category => (
+                          <option key={category} value={category}>
+                            {category.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                          </option>
+                        ))}
                       </select>
                     </div>
                   )}
@@ -353,16 +407,16 @@ export default function ContentConfigurationStep({
                           sentenceConfig: { ...prev.sentenceConfig, topic: e.target.value }
                         }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                        disabled={loadingSubcategories}
                       >
-                        <option value="">Select topic...</option>
-                        <option value="introducing-yourself">Introducing Yourself</option>
-                        <option value="daily-routine">Daily Routine</option>
-                        <option value="describing-people">Describing People</option>
-                        <option value="shopping">Shopping</option>
-                        <option value="weather">Weather</option>
-                        <option value="directions">Asking for Directions</option>
-                        <option value="restaurant">At the Restaurant</option>
-                        <option value="holidays">Holidays & Vacations</option>
+                        <option value="">
+                          {loadingSubcategories ? 'Loading topics...' : 'Select topic...'}
+                        </option>
+                        {sentenceSubcategories.map(subcategory => (
+                          <option key={subcategory} value={subcategory}>
+                            {subcategory.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                          </option>
+                        ))}
                       </select>
                     </div>
                   )}
@@ -445,45 +499,72 @@ export default function ContentConfigurationStep({
                       Verb Types
                     </label>
                     <div className="space-y-2">
-                      {['regular', 'irregular', 'stem-changing'].map((type) => (
-                        <label key={type} className="flex items-center">
+                      {[
+                        { id: 'regular', name: 'Regular', description: 'Follow standard patterns' },
+                        { id: 'irregular', name: 'Irregular', description: 'Unique conjugation patterns' },
+                        { id: 'stem-changing', name: 'Stem-Changing', description: 'Change stem vowels' },
+                        { id: 'reflexive', name: 'Reflexive', description: 'Used with reflexive pronouns' }
+                      ].map((type) => (
+                        <label key={type.id} className="flex items-start space-x-2">
                           <input
                             type="checkbox"
-                            checked={gameConfig.grammarConfig.verbTypes.includes(type as 'regular' | 'irregular' | 'stem-changing')}
+                            checked={gameConfig.grammarConfig.verbTypes.includes(type.id as any)}
                             onChange={(e) => {
                               const verbTypes = e.target.checked
-                                ? [...gameConfig.grammarConfig.verbTypes, type as 'regular' | 'irregular' | 'stem-changing']
-                                : gameConfig.grammarConfig.verbTypes.filter(t => t !== type);
+                                ? [...gameConfig.grammarConfig.verbTypes, type.id as any]
+                                : gameConfig.grammarConfig.verbTypes.filter(t => t !== type.id);
                               setGameConfig(prev => ({
                                 ...prev,
                                 grammarConfig: { ...prev.grammarConfig, verbTypes }
                               }));
                             }}
-                            className="rounded border-gray-300 text-purple-600 focus:ring-purple-500 h-4 w-4"
+                            className="rounded border-gray-300 text-purple-600 focus:ring-purple-500 h-4 w-4 mt-1"
                           />
-                          <span className="ml-2 text-sm text-gray-700 capitalize">{type}</span>
+                          <div className="flex-1">
+                            <div className="text-sm font-medium text-gray-900">{type.name}</div>
+                            <div className="text-xs text-gray-500">{type.description}</div>
+                          </div>
                         </label>
                       ))}
                     </div>
                   </div>
 
-                  {/* Difficulty */}
-                  <div>
+                  {/* Person/Pronoun Selection */}
+                  <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Difficulty Level
+                      Persons/Pronouns
                     </label>
-                    <select
-                      value={gameConfig.grammarConfig.difficulty}
-                      onChange={(e) => setGameConfig(prev => ({
-                        ...prev,
-                        grammarConfig: { ...prev.grammarConfig, difficulty: e.target.value as 'beginner' | 'intermediate' | 'advanced' }
-                      }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                    >
-                      <option value="beginner">Beginner</option>
-                      <option value="intermediate">Intermediate</option>
-                      <option value="advanced">Advanced</option>
-                    </select>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                      {[
+                        { id: 'yo', name: 'Yo (I)', example: 'hablo' },
+                        { id: 'tu', name: 'Tú (You)', example: 'hablas' },
+                        { id: 'el_ella_usted', name: 'Él/Ella/Usted', example: 'habla' },
+                        { id: 'nosotros', name: 'Nosotros (We)', example: 'hablamos' },
+                        { id: 'vosotros', name: 'Vosotros', example: 'habláis' },
+                        { id: 'ellos_ellas_ustedes', name: 'Ellos/Ellas/Ustedes', example: 'hablan' }
+                      ].map((person) => (
+                        <label key={person.id} className="flex items-start space-x-2 p-2 rounded border hover:bg-gray-50">
+                          <input
+                            type="checkbox"
+                            checked={gameConfig.grammarConfig.persons?.includes(person.id as any) || false}
+                            onChange={(e) => {
+                              const persons = e.target.checked
+                                ? [...(gameConfig.grammarConfig.persons || []), person.id as any]
+                                : (gameConfig.grammarConfig.persons || []).filter(p => p !== person.id);
+                              setGameConfig(prev => ({
+                                ...prev,
+                                grammarConfig: { ...prev.grammarConfig, persons }
+                              }));
+                            }}
+                            className="rounded border-gray-300 text-purple-600 focus:ring-purple-500 h-4 w-4 mt-1"
+                          />
+                          <div className="flex-1">
+                            <div className="text-sm font-medium text-gray-900">{person.name}</div>
+                            <div className="text-xs text-gray-500 italic">e.g., {person.example}</div>
+                          </div>
+                        </label>
+                      ))}
+                    </div>
                   </div>
 
                   {/* Tenses */}
@@ -491,26 +572,90 @@ export default function ContentConfigurationStep({
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Tenses
                     </label>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                      {['present', 'preterite', 'imperfect', 'future', 'conditional', 'subjunctive'].map((tense) => (
-                        <label key={tense} className="flex items-center">
-                          <input
-                            type="checkbox"
-                            checked={gameConfig.grammarConfig.tenses.includes(tense as 'present' | 'preterite' | 'imperfect' | 'future' | 'conditional' | 'subjunctive')}
-                            onChange={(e) => {
-                              const tenses = e.target.checked
-                                ? [...gameConfig.grammarConfig.tenses, tense as 'present' | 'preterite' | 'imperfect' | 'future' | 'conditional' | 'subjunctive']
-                                : gameConfig.grammarConfig.tenses.filter(t => t !== tense);
-                              setGameConfig(prev => ({
-                                ...prev,
-                                grammarConfig: { ...prev.grammarConfig, tenses }
-                              }));
-                            }}
-                            className="rounded border-gray-300 text-purple-600 focus:ring-purple-500 h-4 w-4"
-                          />
-                          <span className="ml-2 text-sm text-gray-700 capitalize">{tense}</span>
-                        </label>
-                      ))}
+
+                    {/* Simple Tenses */}
+                    <div className="mb-4">
+                      <h4 className="text-sm font-medium text-gray-600 mb-2">Simple Tenses</h4>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                        {[
+                          { id: 'present', name: 'Present', level: 'beginner' },
+                          { id: 'preterite', name: 'Preterite', level: 'intermediate' },
+                          { id: 'imperfect', name: 'Imperfect', level: 'intermediate' },
+                          { id: 'future', name: 'Future', level: 'intermediate' },
+                          { id: 'conditional', name: 'Conditional', level: 'advanced' },
+                          { id: 'present_subjunctive', name: 'Present Subjunctive', level: 'advanced' },
+                          { id: 'imperfect_subjunctive', name: 'Imperfect Subjunctive', level: 'advanced' }
+                        ].map((tense) => (
+                          <label key={tense.id} className="flex items-start space-x-2 p-2 rounded border hover:bg-gray-50">
+                            <input
+                              type="checkbox"
+                              checked={gameConfig.grammarConfig.tenses.includes(tense.id as any)}
+                              onChange={(e) => {
+                                const tenses = e.target.checked
+                                  ? [...gameConfig.grammarConfig.tenses, tense.id as any]
+                                  : gameConfig.grammarConfig.tenses.filter(t => t !== tense.id);
+                                setGameConfig(prev => ({
+                                  ...prev,
+                                  grammarConfig: { ...prev.grammarConfig, tenses }
+                                }));
+                              }}
+                              className="rounded border-gray-300 text-purple-600 focus:ring-purple-500 h-4 w-4 mt-1"
+                            />
+                            <div className="flex-1">
+                              <div className="text-sm font-medium text-gray-900">{tense.name}</div>
+                              <div className={`text-xs px-1 py-0.5 rounded inline-block ${
+                                tense.level === 'beginner' ? 'bg-green-100 text-green-700' :
+                                tense.level === 'intermediate' ? 'bg-yellow-100 text-yellow-700' :
+                                'bg-red-100 text-red-700'
+                              }`}>
+                                {tense.level}
+                              </div>
+                            </div>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Compound Tenses */}
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-600 mb-2">Compound Tenses (Perfect)</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        {[
+                          { id: 'present_perfect', name: 'Present Perfect', example: 'he hablado', level: 'intermediate' },
+                          { id: 'past_perfect', name: 'Past Perfect', example: 'había hablado', level: 'advanced' },
+                          { id: 'future_perfect', name: 'Future Perfect', example: 'habré hablado', level: 'advanced' },
+                          { id: 'conditional_perfect', name: 'Conditional Perfect', example: 'habría hablado', level: 'advanced' },
+                          { id: 'present_perfect_subjunctive', name: 'Present Perfect Subjunctive', example: 'haya hablado', level: 'advanced' },
+                          { id: 'past_perfect_subjunctive', name: 'Past Perfect Subjunctive', example: 'hubiera hablado', level: 'advanced' }
+                        ].map((tense) => (
+                          <label key={tense.id} className="flex items-start space-x-2 p-2 rounded border hover:bg-gray-50">
+                            <input
+                              type="checkbox"
+                              checked={gameConfig.grammarConfig.tenses.includes(tense.id as any)}
+                              onChange={(e) => {
+                                const tenses = e.target.checked
+                                  ? [...gameConfig.grammarConfig.tenses, tense.id as any]
+                                  : gameConfig.grammarConfig.tenses.filter(t => t !== tense.id);
+                                setGameConfig(prev => ({
+                                  ...prev,
+                                  grammarConfig: { ...prev.grammarConfig, tenses }
+                                }));
+                              }}
+                              className="rounded border-gray-300 text-purple-600 focus:ring-purple-500 h-4 w-4 mt-1"
+                            />
+                            <div className="flex-1">
+                              <div className="text-sm font-medium text-gray-900">{tense.name}</div>
+                              <div className="text-xs text-gray-500 italic">e.g., {tense.example}</div>
+                              <div className={`text-xs px-1 py-0.5 rounded inline-block mt-1 ${
+                                tense.level === 'intermediate' ? 'bg-yellow-100 text-yellow-700' :
+                                'bg-red-100 text-red-700'
+                              }`}>
+                                {tense.level}
+                              </div>
+                            </div>
+                          </label>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -550,7 +695,7 @@ export default function ContentConfigurationStep({
               <div>
                 <span className="text-gray-600">Sentences:</span>
                 <span className="ml-2 font-medium text-green-600">
-                  {gameConfig.sentenceConfig.source ? '✓ Configured' : '⚠ Needs setup'}
+                  {(gameConfig.sentenceConfig.source && (gameConfig.sentenceConfig.theme || gameConfig.sentenceConfig.topic || gameConfig.sentenceConfig.customSetId)) ? '✓ Configured' : '⚠ Needs setup'}
                 </span>
               </div>
             )}
@@ -558,7 +703,7 @@ export default function ContentConfigurationStep({
               <div>
                 <span className="text-gray-600">Grammar:</span>
                 <span className="ml-2 font-medium text-purple-600">
-                  {gameConfig.grammarConfig.verbTypes.length > 0 && gameConfig.grammarConfig.tenses.length > 0 ? '✓ Configured' : '⚠ Needs setup'}
+                  {gameConfig.grammarConfig.verbTypes.length > 0 && gameConfig.grammarConfig.tenses.length > 0 && (gameConfig.grammarConfig.persons?.length || 0) > 0 ? '✓ Configured' : '⚠ Needs setup'}
                 </span>
               </div>
             )}

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { EnhancedGameService } from '../../../../services/enhancedGameService';
+import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
 import { supabaseBrowser } from '../../../../components/auth/AuthProvider';
 import { GemSpeedBuilder } from './GemSpeedBuilder';
 import { RewardEngine } from '../../../../services/rewards/RewardEngine';
@@ -29,6 +30,7 @@ interface SpeedBuilderGameWrapperProps {
   vocabularyList?: any[];
   sentenceConfig?: any;
   gameSessionId?: string | null;
+  gameService?: EnhancedGameSessionService | null;
   onOpenSettings?: () => void;
   onBackToMenu?: () => void;
   onGameEnd: (result: {
@@ -50,6 +52,9 @@ export default function SpeedBuilderGameWrapper(props: SpeedBuilderGameWrapperPr
 
   // Use assignment gameSessionId when provided, otherwise use own session
   const effectiveGameSessionId = props.assignmentId ? props.gameSessionId : gameSessionId;
+
+  // Use assignment gameService when provided, otherwise use own service
+  const effectiveGameService = props.assignmentId ? props.gameService : gameService;
   const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
   const [sessionStats, setSessionStats] = useState({
     totalWordsPlaced: 0,
@@ -74,10 +79,10 @@ export default function SpeedBuilderGameWrapper(props: SpeedBuilderGameWrapperPr
 
   // Start game session when service is ready (only for free play mode)
   useEffect(() => {
-    if (gameService && props.userId && !gameSessionId && !props.assignmentId) {
+    if (effectiveGameService && props.userId && !gameSessionId && !props.assignmentId) {
       startGameSession();
     }
-  }, [gameService, props.userId, gameSessionId, props.assignmentId]);
+  }, [effectiveGameService, props.userId, gameSessionId, props.assignmentId]);
 
   // End session when component unmounts
   useEffect(() => {
@@ -87,11 +92,11 @@ export default function SpeedBuilderGameWrapper(props: SpeedBuilderGameWrapperPr
   }, []);
 
   const startGameSession = async () => {
-    if (!gameService || !props.userId) return;
+    if (!effectiveGameService || !props.userId) return;
 
     try {
       const startTime = new Date();
-      const sessionId = await gameService.startGameSession({
+      const sessionId = await effectiveGameService.startGameSession({
         student_id: props.userId,
         assignment_id: props.assignmentId || undefined,
         game_type: 'speed-builder',
@@ -113,7 +118,7 @@ export default function SpeedBuilderGameWrapper(props: SpeedBuilderGameWrapperPr
   };
 
   const endGameSession = async () => {
-    if (gameService && gameSessionId && props.userId && sessionStartTime && !props.assignmentId) {
+    if (effectiveGameService && gameSessionId && props.userId && sessionStartTime && !props.assignmentId) {
       try {
         const sessionDuration = Math.floor((Date.now() - sessionStartTime.getTime()) / 1000);
         const accuracy = sessionStats.totalWordsPlaced > 0
@@ -127,7 +132,7 @@ export default function SpeedBuilderGameWrapper(props: SpeedBuilderGameWrapperPr
         // Remove conflicting XP calculation - gems system handles all scoring through recordWordAttempt()
         const totalXP = sessionStats.correctWordsPlaced * 10; // 10 XP per correct word placement (gems-first)
 
-        await gameService.endGameSession(effectiveGameSessionId!, {
+        await effectiveGameService.endGameSession(effectiveGameSessionId!, {
           student_id: props.userId,
           final_score: Math.round(accuracy * 10), // Scale accuracy to score
           accuracy_percentage: accuracy,
@@ -211,7 +216,7 @@ export default function SpeedBuilderGameWrapper(props: SpeedBuilderGameWrapperPr
       {...props}
       onGameComplete={handleEnhancedGameEnd}
       gameSessionId={effectiveGameSessionId}
-      gameService={gameService}
+      gameService={effectiveGameService}
     />
   );
 }

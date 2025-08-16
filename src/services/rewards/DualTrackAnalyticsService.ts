@@ -11,8 +11,10 @@ export interface XPBreakdown {
   totalXP: number;
   masteryXP: number;
   activityXP: number;
+  grammarXP?: number;
   totalMasteryGems: number;
   totalActivityGems: number;
+  totalGrammarGems?: number;
   totalGems: number;
 }
 
@@ -85,8 +87,10 @@ export class DualTrackAnalyticsService {
           totalXP: 0,
           masteryXP: 0,
           activityXP: 0,
+          grammarXP: 0,
           totalMasteryGems: 0,
           totalActivityGems: 0,
+          totalGrammarGems: 0,
           totalGems: 0
         };
       }
@@ -98,8 +102,10 @@ export class DualTrackAnalyticsService {
           totalXP: 0,
           masteryXP: 0,
           activityXP: 0,
+          grammarXP: 0,
           totalMasteryGems: 0,
           totalActivityGems: 0,
+          totalGrammarGems: 0,
           totalGems: 0
         };
       }
@@ -108,8 +114,10 @@ export class DualTrackAnalyticsService {
         totalXP: data.total_xp || 0,
         masteryXP: data.mastery_xp || 0,
         activityXP: data.activity_xp || 0,
+        grammarXP: data.grammar_xp || 0,
         totalMasteryGems: data.total_mastery_gems || 0,
         totalActivityGems: data.total_activity_gems || 0,
+        totalGrammarGems: data.total_grammar_gems || 0,
         totalGems: data.total_gems || 0
       };
 
@@ -121,8 +129,10 @@ export class DualTrackAnalyticsService {
         totalXP: 0,
         masteryXP: 0,
         activityXP: 0,
+        grammarXP: 0,
         totalMasteryGems: 0,
         totalActivityGems: 0,
+        totalGrammarGems: 0,
         totalGems: 0
       };
     }

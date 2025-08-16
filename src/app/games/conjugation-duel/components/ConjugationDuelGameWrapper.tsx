@@ -3,16 +3,27 @@
 import React, { useState, useEffect } from 'react';
 import { EnhancedGameService } from '../../../../services/enhancedGameService';
 import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
+import { ConjugationDuelService } from '../../../../services/ConjugationDuelService';
 import { supabaseBrowser } from '../../../../components/auth/AuthProvider';
 import BattleArena from './BattleArena';
 import { useGameStore } from '../../../../store/gameStore';
+import { StandardVocabularyItem } from '../../../../components/games/templates/GameAssignmentWrapper';
+
+interface GrammarConfig {
+  language?: string;
+  tenses?: string[];
+  verbTypes?: string[];
+  difficulty?: string;
+  verbCount?: number;
+  persons?: string[]; // Add person/pronoun selection
+}
 
 interface ConjugationDuelGameWrapperProps {
   language?: string;
   league?: string;
   opponent?: { name: string; difficulty: string };
   onBackToMenu: () => void;
-  onGameEnd: (result: { 
+  onGameEnd: (result: {
     score: number;
     accuracy: number;
     timeSpent: number;
@@ -24,6 +35,8 @@ interface ConjugationDuelGameWrapperProps {
   }) => void;
   assignmentId?: string;
   userId?: string;
+  assignmentVocabulary?: StandardVocabularyItem[];
+  grammarConfig?: GrammarConfig;
 }
 
 export default function ConjugationDuelGameWrapper(props: ConjugationDuelGameWrapperProps) {
@@ -61,21 +74,37 @@ export default function ConjugationDuelGameWrapper(props: ConjugationDuelGameWra
     }
   }, [gameService, props.userId, gameSessionId]);
 
-  // Initialize battle when opponent/league are provided
+    // Initialize battle when data is ready - but only once or when key props change
   useEffect(() => {
-    // Only run if opponent, league, and data are present and not already set
     const leagueId = (props.league as string) || 'bronze_arena';
-    const hasLeagues = Array.isArray(leagues) && leagues.length > 0;
-    const hasVerbs = verbs && Object.keys(verbs).length > 0;
+    
+    // In assignment mode, we don't need static leagues/verbs data since useConjugationDuel handles everything
+    const isAssignmentMode = !!props.grammarConfig;
+    const hasLeagues = isAssignmentMode || (Array.isArray(leagues) && leagues.length > 0);
+    const hasVerbs = isAssignmentMode || (verbs && Object.keys(verbs).length > 0);
+    
     if (!props.opponent || !props.league || !hasLeagues || !hasVerbs) {
       console.log('Conjugation Duel: missing data', {
         opponent: props.opponent,
         league: props.league,
         leagues,
-        verbs
+        verbs: verbs,
+        isAssignment: isAssignmentMode,
+        hasLeagues,
+        hasVerbs
       });
       return;
     }
+    
+    console.log('🎯 [CONJUGATION DUEL] Battle initialization ready:', {
+      isAssignmentMode,
+      opponent: props.opponent.name,
+      league: leagueId,
+      hasGrammarConfig: !!props.grammarConfig,
+      currentLeague: playerStats.currentLeague,
+      isInBattle: battleState.isInBattle
+    });
+    
     // Only update if currentLeague is not already set to leagueId
     if (playerStats.currentLeague !== leagueId) {
       setPlayerStats({ currentLeague: leagueId });
@@ -92,7 +121,8 @@ export default function ConjugationDuelGameWrapper(props: ConjugationDuelGameWra
         description: 'Challenge opponent'
       } as any);
     }
-  }, [props.opponent, props.league, playerStats.currentLeague, setPlayerStats, startBattle, battleState.isInBattle, leagues, verbs]);
+  // Only depend on props and state values, not functions that can change
+  }, [props.opponent?.name, props.league, props.grammarConfig, playerStats.currentLeague, battleState.isInBattle, leagues, verbs]);
 
   // End session when component unmounts
   useEffect(() => {
@@ -255,6 +285,38 @@ export default function ConjugationDuelGameWrapper(props: ConjugationDuelGameWra
           console.log(`🔮 Conjugation Duel earned ${gemEvent.rarity} gem (${gemEvent.xpValue} XP) for "${verb}" (${tense})`);
         }
 
+        // Record grammar practice attempt if this is a grammar assignment
+        if (props.grammarConfig) {
+          try {
+            // Create a separate ConjugationDuelService instance for grammar recording
+            const grammarService = new ConjugationDuelService(supabaseBrowser);
+
+            // Get student ID from session (use enhanced_game_sessions table)
+            const { data: session } = await supabaseBrowser.from('enhanced_game_sessions')
+              .select('student_id')
+              .eq('id', gameSessionId)
+              .single();
+
+            if (session?.student_id) {
+              await grammarService.recordGrammarPracticeAttempt(
+                session.student_id,
+                gameSessionId,  // Add session ID
+                props.assignmentId || null,
+                verb,
+                tense,
+                person,
+                answer,
+                correctAnswer,
+                isCorrect,
+                responseTime,
+                props.grammarConfig.language || 'spanish'
+              );
+            }
+          } catch (error) {
+            console.error('❌ [GRAMMAR] Error recording grammar practice:', error);
+          }
+        }
+
         await gameService.logWordPerformance({
           session_id: gameSessionId,
           // leave vocabulary ids undefined for dynamic verbs
@@ -272,7 +334,7 @@ export default function ConjugationDuelGameWrapper(props: ConjugationDuelGameWra
           error_type: isCorrect ? undefined : 'conjugation_error',
           grammar_concept: `${tense}_conjugation`,
           error_details: isCorrect ? undefined : {
-            answer: userAnswer,
+            answer: answer,
             correctAnswer: correctAnswer,
             tense: tense,
             person: person,
@@ -283,7 +345,7 @@ export default function ConjugationDuelGameWrapper(props: ConjugationDuelGameWra
             verb,
             tense,
             person,
-            userAnswer,
+            userAnswer: answer,
             correctAnswer,
             conjugationType: `${tense}_${person}`,
             gameType: 'conjugation-duel'
@@ -308,7 +370,7 @@ export default function ConjugationDuelGameWrapper(props: ConjugationDuelGameWra
             verb,
             tense,
             person,
-            userAnswer,
+            userAnswer: answer,
             correctAnswer,
             isCorrect,
             responseTime
@@ -337,6 +399,8 @@ export default function ConjugationDuelGameWrapper(props: ConjugationDuelGameWra
       onBattleEnd={handleEnhancedBattleEnd}
       gameSessionId={gameSessionId}
       gameService={gameService}
+      assignmentVocabulary={props.assignmentVocabulary}
+      grammarConfig={props.grammarConfig}
       onConjugationComplete={logConjugationPerformance}
     />
   );

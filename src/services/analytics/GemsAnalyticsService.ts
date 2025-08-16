@@ -22,10 +22,11 @@ export interface StudentGemsAnalytics {
   averageGemsPerSession: number;
   favoriteGameType: string;
   recentSessions: GemsSessionSummary[];
-  // Dual-track system additions
+  // Triple-track system additions
   xpBreakdown: XPBreakdown;
   activityGemsToday: number;
   masteryGemsToday: number;
+  grammarGemsToday: number;
 }
 
 export interface GemsSessionSummary {
@@ -219,17 +220,20 @@ export class GemsAnalyticsService {
       // Get dual-track analytics
       const xpBreakdown = await this.dualTrackService.getXPBreakdown(studentId);
 
-      // Get today's dual-track gem counts
+      // Get today's triple-track gem counts
       const todaysActivityGems = await this.getTodaysActivityGems(studentId);
       const todaysMasteryGemsCount = await this.getTodaysMasteryGems(studentId);
+      const todaysGrammarGemsCount = await this.getTodaysGrammarGems(studentId);
 
-      console.log('📊 [DUAL-TRACK] Analytics loaded:', {
+      console.log('📊 [TRIPLE-TRACK] Analytics loaded:', {
         studentId,
         totalXP: xpBreakdown.totalXP,
         masteryXP: xpBreakdown.masteryXP,
         activityXP: xpBreakdown.activityXP,
+        grammarXP: xpBreakdown.grammarXP,
         activityGemsToday: todaysActivityGems,
-        masteryGemsToday: todaysMasteryGemsCount
+        masteryGemsToday: todaysMasteryGemsCount,
+        grammarGemsToday: todaysGrammarGemsCount
       });
 
       return {
@@ -248,7 +252,8 @@ export class GemsAnalyticsService {
         recentSessions,
         xpBreakdown,
         activityGemsToday: todaysActivityGems,
-        masteryGemsToday: todaysMasteryGemsCount
+        masteryGemsToday: todaysMasteryGemsCount,
+        grammarGemsToday: todaysGrammarGemsCount
       };
       
     } catch (error) {
@@ -305,6 +310,32 @@ export class GemsAnalyticsService {
       return data?.length || 0;
     } catch (error) {
       console.error('Error in getTodaysMasteryGems:', error);
+      return 0;
+    }
+  }
+
+  /**
+   * Get today's Grammar Gem count for a student
+   */
+  private async getTodaysGrammarGems(studentId: string): Promise<number> {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const { data, error } = await this.supabase
+        .from('gem_events')
+        .select('id')
+        .eq('student_id', studentId)
+        .eq('gem_type', 'grammar')
+        .gte('created_at', `${today}T00:00:00.000Z`)
+        .lt('created_at', `${today}T23:59:59.999Z`);
+
+      if (error) {
+        console.error('Error fetching today\'s grammar gems:', error);
+        return 0;
+      }
+
+      return data?.length || 0;
+    } catch (error) {
+      console.error('Error in getTodaysGrammarGems:', error);
       return 0;
     }
   }
