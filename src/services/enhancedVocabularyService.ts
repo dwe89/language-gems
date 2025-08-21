@@ -22,13 +22,14 @@ export interface EnhancedVocabularyList {
   name: string;
   description: string;
   teacher_id: string;
-  language: 'spanish' | 'french' | 'german' | 'italian';
+  language: 'spanish' | 'french' | 'german';
   theme?: string;
   topic?: string;
   difficulty_level: 'beginner' | 'intermediate' | 'advanced';
   content_type: 'words' | 'sentences' | 'mixed';
   is_public: boolean;
   word_count: number;
+  folder_id?: string;
   items?: EnhancedVocabularyItem[];
   created_at: string;
   updated_at: string;

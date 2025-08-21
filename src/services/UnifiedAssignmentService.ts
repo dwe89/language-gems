@@ -170,56 +170,136 @@ export class UnifiedAssignmentService implements AssignmentService {
   }
 
   /**
-   * Get vocabulary from custom list
+   * Get vocabulary from custom list using hybrid reference system
    */
   private async getCustomListVocabulary(listId: string): Promise<VocabularyItem[]> {
     if (!listId) {
       return [];
     }
 
-    // First get the vocabulary assignment list
-    const { data: listItems, error } = await this.supabase
-      .from('vocabulary_assignment_lists')
-      .select('vocabulary_items')
-      .eq('id', listId)
-      .single();
+    try {
+      // Use the hybrid vocabulary loading from EnhancedAssignmentService
+      const { data: assignmentItems, error } = await this.supabase
+        .from('vocabulary_assignment_items')
+        .select(`
+          *,
+          centralized_vocabulary:centralized_vocabulary_id(*),
+          enhanced_vocabulary_item:enhanced_vocabulary_item_id(*)
+        `)
+        .eq('assignment_list_id', listId)
+        .order('order_position');
 
-    if (error) {
-      console.warn(`Custom list not found: ${error.message}`);
+      if (error) {
+        console.warn(`Error loading assignment vocabulary: ${error.message}`);
+        return [];
+      }
+
+      if (!assignmentItems || assignmentItems.length === 0) {
+        // Try fallback to legacy vocabulary_items array
+        return this.getLegacyVocabularyItems(listId);
+      }
+
+      // Transform hybrid vocabulary to unified format
+      return assignmentItems.map(item => {
+        if (item.centralized_vocabulary) {
+          // Centralized vocabulary format
+          return {
+            id: item.centralized_vocabulary.id.toString(),
+            word: item.centralized_vocabulary.word,
+            translation: item.centralized_vocabulary.translation,
+            language: item.centralized_vocabulary.language,
+            category: item.centralized_vocabulary.category,
+            subcategory: item.centralized_vocabulary.subcategory,
+            part_of_speech: item.centralized_vocabulary.part_of_speech,
+            difficulty_level: item.centralized_vocabulary.difficulty_level || 'intermediate',
+            curriculum_level: item.centralized_vocabulary.curriculum_level,
+            audio_url: item.centralized_vocabulary.audio_url,
+            image_url: item.centralized_vocabulary.image_url,
+            example_sentence: item.centralized_vocabulary.context_sentence,
+            example_translation: item.centralized_vocabulary.context_translation,
+            metadata: {}
+          };
+        } else if (item.enhanced_vocabulary_item) {
+          // Enhanced vocabulary format
+          return {
+            id: item.enhanced_vocabulary_item.id.toString(),
+            word: item.enhanced_vocabulary_item.term,
+            translation: item.enhanced_vocabulary_item.translation,
+            language: 'es', // Default, could be enhanced later
+            category: 'custom',
+            subcategory: 'user_created',
+            part_of_speech: item.enhanced_vocabulary_item.part_of_speech,
+            difficulty_level: item.enhanced_vocabulary_item.difficulty_level || 'intermediate',
+            curriculum_level: 'KS3', // Default for custom vocabulary
+            audio_url: item.enhanced_vocabulary_item.audio_url,
+            image_url: null,
+            example_sentence: item.enhanced_vocabulary_item.context_sentence,
+            example_translation: item.enhanced_vocabulary_item.context_translation,
+            metadata: {
+              notes: item.enhanced_vocabulary_item.notes,
+              tags: item.enhanced_vocabulary_item.tags
+            }
+          };
+        } else {
+          // Legacy vocabulary_id format - would need additional lookup
+          console.warn('Legacy vocabulary_id format not fully supported in hybrid system');
+          return null;
+        }
+      }).filter(Boolean) as VocabularyItem[];
+
+    } catch (error) {
+      console.error('Error in getCustomListVocabulary:', error);
       return [];
     }
+  }
 
-    if (!listItems || !listItems.vocabulary_items || listItems.vocabulary_items.length === 0) {
-      // Empty vocabulary list - return empty array to fall back to category-based vocabulary
+  /**
+   * Fallback method for legacy vocabulary_items array
+   */
+  private async getLegacyVocabularyItems(listId: string): Promise<VocabularyItem[]> {
+    try {
+      const { data: listItems, error } = await this.supabase
+        .from('vocabulary_assignment_lists')
+        .select('vocabulary_items')
+        .eq('id', listId)
+        .single();
+
+      if (error || !listItems?.vocabulary_items?.length) {
+        return [];
+      }
+
+      // Get vocabulary items by IDs from the old vocabulary table
+      const { data: vocabulary, error: vocabError } = await this.supabase
+        .from('vocabulary')
+        .select('*')
+        .in('id', listItems.vocabulary_items);
+
+      if (vocabError) {
+        console.warn(`Error loading legacy vocabulary: ${vocabError.message}`);
+        return [];
+      }
+
+      // Transform old vocabulary format to new format
+      return (vocabulary || []).map(item => ({
+        id: item.id.toString(),
+        word: item.spanish || item.french || item.german || item.italian || '',
+        translation: item.english || '',
+        language: item.spanish ? 'es' : item.french ? 'fr' : item.german ? 'de' : item.italian ? 'it' : 'es',
+        category: item.theme || 'general',
+        subcategory: item.topic || 'basic',
+        part_of_speech: item.part_of_speech || 'noun',
+        difficulty_level: 'intermediate',
+        curriculum_level: 'KS3',
+        audio_url: null,
+        image_url: null,
+        example_sentence: null,
+        example_translation: null,
+        metadata: {}
+      }));
+    } catch (error) {
+      console.error('Error in getLegacyVocabularyItems:', error);
       return [];
     }
-
-    // Get vocabulary items by IDs from the old vocabulary table
-    const { data: vocabulary, error: vocabError } = await this.supabase
-      .from('vocabulary')
-      .select('*')
-      .in('id', listItems.vocabulary_items);
-
-    if (vocabError) {
-      console.warn(`Error loading vocabulary: ${vocabError.message}`);
-      return [];
-    }
-
-    // Transform old vocabulary format to new format
-    return (vocabulary || []).map(item => ({
-      id: item.id,
-      word: item.spanish || item.french || item.german || item.italian || '',
-      translation: item.english || '',
-      language: item.spanish ? 'es' : item.french ? 'fr' : item.german ? 'de' : item.italian ? 'it' : 'es',
-      category: item.theme || 'general',
-      subcategory: item.topic || 'basic',
-      part_of_speech: item.part_of_speech || 'noun',
-      difficulty_level: 'intermediate',
-      audio_url: null,
-      image_url: null,
-      example_sentence: null,
-      example_translation: null
-    }));
   }
 
   /**

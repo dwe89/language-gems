@@ -43,7 +43,7 @@ const navItems = [
   },
   {
     name: 'Grammar',
-    href: '/student-dashboard/grammar',
+    href: '/grammar',
     icon: Brain,
     description: 'Track your conjugation mastery'
   },

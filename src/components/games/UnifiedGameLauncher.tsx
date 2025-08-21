@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, AlertCircle, Loader2 } from 'lucide-react';
+import { ArrowLeft, AlertCircle, Loader2, BookOpen, Gamepad2, Building2, Anchor, Rocket, Sun, Pencil } from 'lucide-react';
 import UnifiedCategorySelector, { UnifiedSelectionConfig } from './UnifiedCategorySelector';
 import { useUnifiedVocabulary, validateVocabularyForGame, UnifiedVocabularyItem } from '../../hooks/useUnifiedVocabulary';
 import { useUnifiedAuth } from '../../hooks/useUnifiedAuth';
@@ -17,11 +17,11 @@ export interface GameTheme {
 }
 
 export const GAME_THEMES: GameTheme[] = [
-  { id: 'default', name: 'Classic', icon: '🎮', accentColor: 'bg-blue-500' },
-  { id: 'tokyo', name: 'Tokyo Nights', icon: '🏙️', accentColor: 'bg-pink-600' },
-  { id: 'pirate', name: 'Pirate Adventure', icon: '🏴‍☠️', accentColor: 'bg-amber-600' },
-  { id: 'space', name: 'Space Explorer', icon: '🚀', accentColor: 'bg-purple-600' },
-  { id: 'temple', name: 'Lava Temple', icon: '🌋', accentColor: 'bg-orange-600' }
+  { id: 'default', name: 'Classic', icon: 'classic', accentColor: 'bg-blue-500' },
+  { id: 'tokyo', name: 'Tokyo Nights', icon: 'tokyo', accentColor: 'bg-pink-600' },
+  { id: 'pirate', name: 'Pirate Adventure', icon: 'pirate', accentColor: 'bg-amber-600' },
+  { id: 'space', name: 'Space Explorer', icon: 'space', accentColor: 'bg-purple-600' },
+  { id: 'temple', name: 'Lava Temple', icon: 'temple', accentColor: 'bg-orange-600' }
 ];
 
 export interface UnifiedGameLauncherProps {
@@ -182,6 +182,23 @@ export default function UnifiedGameLauncher({
     refetch();
   };
 
+  const themeIcon = (themeId: string) => {
+    switch (themeId) {
+      case 'default':
+        return <Gamepad2 className="h-6 w-6" />;
+      case 'tokyo':
+        return <Building2 className="h-6 w-6" />;
+      case 'pirate':
+        return <Anchor className="h-6 w-6" />;
+      case 'space':
+        return <Rocket className="h-6 w-6" />;
+      case 'temple':
+        return <Sun className="h-6 w-6" />;
+      default:
+        return <Gamepad2 className="h-6 w-6" />;
+    }
+  };
+
   // Show category selector
   if (showSelector) {
     return (
@@ -192,7 +209,7 @@ export default function UnifiedGameLauncher({
         onSelectionComplete={handleSelectionComplete}
         onBack={onBack}
         title={gameDescription ? `${gameName} - ${gameDescription}` : undefined}
-        presetConfig={selectedConfig}
+  presetConfig={selectedConfig || undefined}
       />
     );
   }

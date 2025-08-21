@@ -18,7 +18,6 @@ const AVAILABLE_GAMES = [
   { id: 'sentence-towers', name: 'Sentence Towers', estimatedTime: '6-12 min', features: ['Tower building', 'Complex grammar'] },
   { id: 'conjugation-duel', name: 'Conjugation Duel', estimatedTime: '10-20 min', features: ['Battle system', 'League progression'] },
   { id: 'sentence-builder', name: 'Sentence Builder', estimatedTime: '5-10 min', features: ['Fragment assembly', 'Grammar rules'] },
-  { id: 'verb-quest', name: 'Verb Quest', estimatedTime: '15-25 min', features: ['Adventure gameplay', 'World exploration'] },
   { id: 'detective-listening', name: 'Detective Listening', estimatedTime: '8-15 min', features: ['Audio comprehension', 'Detective theme'] }
 ];
 

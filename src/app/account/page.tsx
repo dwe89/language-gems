@@ -5,21 +5,28 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../components/auth/AuthProvider';
 import { supabaseBrowser } from '../../components/auth/AuthProvider';
+import DeleteAccountModal from '../../components/account/DeleteAccountModal';
 import { 
   User, ShoppingBag, Settings, Crown, ArrowRight, School, BookOpen, Users, 
   ClipboardList, TrendingUp, BellRing, Sparkles, Zap, Target, Award,
-  BarChart3, Calendar, Clock, Star, ChevronRight, Plus, Activity
+  BarChart3, Calendar, Clock, Star, ChevronRight, Plus, Activity, Trash2
 } from 'lucide-react';
 
 export default function AccountPage() {
   const { user, isLoading, userRole, hasSubscription, isAdmin, isTeacher, isStudent } = useAuth();
   const [schoolInfo, setSchoolInfo] = useState<{schoolCode: string, schoolInitials: string} | null>(null);
-  const [teacherStats, setTeacherStats] = useState({
+  const [teacherStats, setTeacherStats] = useState<{
+    totalClasses: number;
+    activeStudents: number;
+    assignmentsCreated: number;
+    recentStudentActivity: any[];
+  }>({
     totalClasses: 0,
     activeStudents: 0,
     assignmentsCreated: 0,
     recentStudentActivity: [] // To store actual recent student activity
   });
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const router = useRouter();
 
   // Redirect students to their dashboard - they shouldn't access the account page
@@ -73,30 +80,62 @@ export default function AccountPage() {
           .select('*', { count: 'exact' })
           .eq('teacher_id', user.id);
 
-        // Example: Fetch total active students associated with the teacher's classes
-        // This would require a join or a more complex query depending on your schema
-        const { count: studentsCount, error: studentsError } = await supabaseBrowser
-          .from('students_in_classes')
-          .select('*', { count: 'exact' })
-          .in('class_id', (await supabaseBrowser.from('classes').select('id').eq('teacher_id', user.id)).data.map(c => c.id));
+        // Fetch total active students associated with the teacher's classes
+        // First get the teacher's class IDs
+        const { data: teacherClasses, error: teacherClassesError } = await supabaseBrowser
+          .from('classes')
+          .select('id')
+          .eq('teacher_id', user.id);
 
-        // Example: Fetch total assignments created by the teacher
+        let studentsCount = 0;
+        let studentsError = null;
+
+        if (!teacherClassesError && teacherClasses && teacherClasses.length > 0) {
+          const classIds = teacherClasses.map(c => c.id);
+          const { count, error } = await supabaseBrowser
+            .from('class_enrollments')
+            .select('*', { count: 'exact' })
+            .in('class_id', classIds)
+            .eq('status', 'active');
+
+          studentsCount = count || 0;
+          studentsError = error;
+        }
+
+        // Fetch total assignments created by the teacher
         const { count: assignmentsCount, error: assignmentsError } = await supabaseBrowser
           .from('assignments')
           .select('*', { count: 'exact' })
-          .eq('creator_id', user.id);
+          .eq('created_by', user.id);
 
-        // Example: Fetch recent student activity (e.g., last 5 completed assignments)
-        const { data: recentActivityData, error: recentActivityError } = await supabaseBrowser
-          .from('student_assignment_completions') // Assuming a table for completed assignments
-          .select(`
-            student_id,
-            assignments(title),
-            completed_at
-          `)
-          .in('assignment_id', (await supabaseBrowser.from('assignments').select('id').eq('creator_id', user.id)).data.map(a => a.id)) // Only show for *this* teacher's assignments
-          .order('completed_at', { ascending: false })
-          .limit(5);
+        // Fetch recent student activity (e.g., last 5 completed assignments)
+        // First get the teacher's assignment IDs
+        const { data: teacherAssignments, error: teacherAssignmentsError } = await supabaseBrowser
+          .from('assignments')
+          .select('id')
+          .eq('created_by', user.id);
+
+  let recentActivityData: any[] = [];
+  let recentActivityError: any = null;
+
+        if (!teacherAssignmentsError && teacherAssignments && teacherAssignments.length > 0) {
+          const assignmentIds = teacherAssignments.map(a => a.id);
+          const { data, error } = await supabaseBrowser
+            .from('enhanced_assignment_progress')
+            .select(`
+              student_id,
+              assignment_id,
+              completed_at,
+              assignments!inner(title)
+            `)
+            .in('assignment_id', assignmentIds)
+            .not('completed_at', 'is', null)
+            .order('completed_at', { ascending: false })
+            .limit(5);
+
+          recentActivityData = data || [];
+          recentActivityError = error;
+        }
 
 
         setTeacherStats({
@@ -107,8 +146,10 @@ export default function AccountPage() {
         });
 
         if (classesError) console.error("Error fetching classes count:", classesError);
+        if (teacherClassesError) console.error("Error fetching teacher classes:", teacherClassesError);
         if (studentsError) console.error("Error fetching students count:", studentsError);
         if (assignmentsError) console.error("Error fetching assignments count:", assignmentsError);
+        if (teacherAssignmentsError) console.error("Error fetching teacher assignments:", teacherAssignmentsError);
         if (recentActivityError) console.error("Error fetching recent student activity:", recentActivityError);
 
 
@@ -195,6 +236,64 @@ export default function AccountPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Email verification notice */}
+        {user && !(user.email_confirmed_at || (user as any).confirmed_at) && (
+          <div className="mb-6 max-w-3xl mx-auto">
+            <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-lg flex items-start justify-between">
+              <div className="pr-4">
+                <h3 className="text-lg font-semibold text-yellow-800">Please verify your email</h3>
+                <p className="text-sm text-yellow-700">We sent a verification link to <span className="font-medium">{user.email}</span>. Click the link in your inbox to activate your account.</p>
+              </div>
+              <div className="flex items-center space-x-3">
+                <button
+                  onClick={async () => {
+                    try {
+                      const res = await fetch('/api/auth/resend-verification', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email: user.email })
+                      });
+
+                      const data = await res.json();
+                      if (!res.ok) {
+                        // eslint-disable-next-line no-console
+                        console.error('Resend failed', data);
+                        alert(data.error || 'Failed to resend verification email');
+                        return;
+                      }
+
+                      alert(data.message || 'Verification email sent');
+                    } catch (err) {
+                      // eslint-disable-next-line no-console
+                      console.error('Error resending verification', err);
+                      alert('Failed to resend verification email');
+                    }
+                  }}
+                  className="px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-blue-900 font-medium rounded-lg shadow-sm"
+                >
+                  Resend Email
+                </button>
+                <button
+                  onClick={async () => {
+                    // Refresh session/user metadata - call provider refresh
+                    try {
+                      // The useAuth provider exposes refreshSession; call via window to avoid TS import cycles
+                      // @ts-ignore
+                      const auth = (await import('../../components/auth/AuthProvider')).refreshSession;
+                      if (typeof auth === 'function') await auth();
+                    } catch (e) {
+                      // Fallback: reload the page to get updated session
+                      window.location.reload();
+                    }
+                  }}
+                  className="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg shadow-sm"
+                >
+                  I verified — refresh
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         {/* Hero Header */}
         <div className="relative overflow-hidden bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 rounded-2xl shadow-2xl p-8 mb-8">
           <div className="absolute inset-0 bg-black/10"></div>
@@ -401,6 +500,30 @@ export default function AccountPage() {
           })}
         </div>
 
+        {/* Danger Zone - Account Deletion */}
+        <div className="mt-8 bg-white rounded-xl shadow-lg p-6 border border-red-200">
+          <div className="flex items-start justify-between">
+            <div className="flex items-start space-x-4">
+              <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
+                <Trash2 className="h-6 w-6 text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-slate-800 mb-2">Danger Zone</h3>
+                <p className="text-slate-600 mb-4 max-w-md">
+                  Permanently delete your account and all associated data. This action cannot be undone.
+                </p>
+                <button
+                  onClick={() => setShowDeleteModal(true)}
+                  className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete Account
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Teaching Performance Stats */}
         {isTeacher && (
           <div className="mt-8 bg-gradient-to-r from-slate-50 to-blue-50 rounded-2xl shadow-lg p-8 border border-slate-200">
@@ -591,6 +714,15 @@ export default function AccountPage() {
           )}
         </div>
       </div>
+
+      {/* Delete Account Modal */}
+      {showDeleteModal && (
+        <DeleteAccountModal 
+          isOpen={showDeleteModal}
+          onClose={() => setShowDeleteModal(false)}
+          userType={isTeacher ? 'teacher' : 'student'}
+        />
+      )}
     </div>
   );
 }

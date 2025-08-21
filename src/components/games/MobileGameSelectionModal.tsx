@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X } from 'lucide-react';
+import { X, Gamepad2 } from 'lucide-react';
 import GameSelectionSidebar, { SelectionState } from './FilterSidebar'; // Import the sidebar component
 
 interface MobileGameSelectionModalProps {
@@ -94,7 +94,7 @@ export default function MobileGameSelectionModal({
                 />
               ) : (
                 <div className="text-center py-12">
-                  <div className="text-6xl mb-4">🎮</div>
+                  <Gamepad2 className="mx-auto h-14 w-14 text-gray-400 mb-4" />
                   <h3 className="text-xl font-bold text-gray-900 mb-2">
                     No Game Selected
                   </h3>

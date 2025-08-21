@@ -205,46 +205,134 @@ export class EnhancedAssignmentService {
     const vocabularyConfig = assignmentData.config?.vocabularyConfig ||
                             assignmentData.config?.gameConfig?.vocabularyConfig;
 
-    // Only create vocabulary configuration for non-grammar assignments
-    if (vocabularyConfig && vocabularyConfig.source && vocabularyConfig.source !== 'custom' && vocabularyConfig.source !== '' && !isGrammarAssignment) {
-      // Create vocabulary list based on configuration
+    // Handle vocabulary configuration for non-grammar assignments
+    if (vocabularyConfig && vocabularyConfig.source && vocabularyConfig.source !== '' && !isGrammarAssignment) {
+      console.log('📝 [ASSIGNMENT SERVICE] Processing vocabulary config:', vocabularyConfig);
       try {
-        const vocabularySelection = this.transformVocabularyConfig(vocabularyConfig);
-        vocabularySelectionType = vocabularySelection.type;
-        vocabularyCriteria = vocabularySelection;
-        vocabularyCount = vocabularyConfig.wordCount || 10;
+        if (vocabularyConfig.source === 'custom' && vocabularyConfig.customListId) {
+          console.log('📝 [ASSIGNMENT SERVICE] Using custom vocabulary path with listId:', vocabularyConfig.customListId);
+          // Handle custom vocabulary list from enhanced vocabulary system
+          const { data: customList, error: customListError } = await this.supabase
+            .from('enhanced_vocabulary_lists')
+            .select(`
+              id,
+              name,
+              description,
+              language,
+              word_count,
+              difficulty_level,
+              enhanced_vocabulary_items (
+                id,
+                term,
+                translation,
+                part_of_speech,
+                context_sentence,
+                context_translation,
+                difficulty_level,
+                notes,
+                tags
+              )
+            `)
+            .eq('id', vocabularyConfig.customListId)
+            .single();
 
-        // Create vocabulary assignment list
-        const { data: newVocabList, error: vocabListError } = await this.supabase
-          .from('vocabulary_assignment_lists')
-          .insert([{
-            name: `${assignmentData.title} - Vocabulary List`,
-            description: `Auto-generated vocabulary list for ${assignmentData.title}`,
-            teacher_id: teacherId,
-            theme: vocabularyConfig.theme || null,
-            topic: vocabularyConfig.topic || null,
-            difficulty_level: vocabularyConfig.difficulty || 'intermediate',
-            word_count: vocabularyCount,
-            vocabulary_items: [],
-            is_public: false
-          }])
-          .select()
-          .single();
+          if (customListError) {
+            console.error('Error fetching custom vocabulary list:', customListError);
+          } else if (customList) {
+            // Create vocabulary assignment list from custom list
+            const { data: newVocabList, error: vocabListError } = await this.supabase
+              .from('vocabulary_assignment_lists')
+              .insert([{
+                name: `${assignmentData.title} - ${customList.name}`,
+                description: `Custom vocabulary list: ${customList.description || customList.name}`,
+                teacher_id: teacherId,
+                theme: null,
+                topic: null,
+                difficulty_level: customList.difficulty_level || 'intermediate',
+                word_count: customList.word_count,
+                vocabulary_items: [],
+                is_public: false,
+                source_list_id: customList.id // Track the source
+              }])
+              .select()
+              .single();
 
-        if (vocabListError) {
-          console.error('Vocabulary list creation error:', vocabListError);
+            if (vocabListError) {
+              console.error('Vocabulary list creation error:', vocabListError);
+            } else {
+              vocabularyListId = newVocabList.id;
+              vocabularyCount = customList.word_count;
+              vocabularySelectionType = 'custom_list';
+              vocabularyCriteria = {
+                type: 'custom_list',
+                customListId: vocabularyConfig.customListId,
+                customListName: customList.name
+              };
+
+              // Create assignment items that directly reference the enhanced vocabulary items
+              if (customList.enhanced_vocabulary_items && customList.enhanced_vocabulary_items.length > 0) {
+                // Create assignment items that reference enhanced vocabulary items directly
+                const assignmentItems = customList.enhanced_vocabulary_items.map((item: any, index: number) => ({
+                  assignment_list_id: vocabularyListId,
+                  enhanced_vocabulary_item_id: item.id, // Direct reference to enhanced vocabulary
+                  order_position: index + 1,
+                  is_required: true
+                }));
+
+                const { error: itemsError } = await this.supabase
+                  .from('vocabulary_assignment_items')
+                  .insert(assignmentItems);
+
+                if (itemsError) {
+                  console.error('Error creating vocabulary assignment items:', itemsError);
+                } else {
+                  console.log(`Successfully created ${assignmentItems.length} vocabulary assignment items`);
+                }
+              }
+            }
+          }
         } else {
-          vocabularyListId = newVocabList.id;
+          // Handle standard vocabulary configuration (category, theme, topic)
+          console.log('📝 [ASSIGNMENT SERVICE] Using standard vocabulary path');
+          const vocabularySelection = this.transformVocabularyConfig(vocabularyConfig);
+          vocabularySelectionType = vocabularySelection.type;
+          vocabularyCriteria = vocabularySelection;
+          vocabularyCount = vocabularyConfig.wordCount || 10;
 
-          // Populate vocabulary list
-          if (vocabularyListId) {
-            await this.populateVocabularyList(vocabularyListId, vocabularySelection);
+          // Create vocabulary assignment list
+          const { data: newVocabList, error: vocabListError } = await this.supabase
+            .from('vocabulary_assignment_lists')
+            .insert([{
+              name: `${assignmentData.title} - Vocabulary List`,
+              description: `Auto-generated vocabulary list for ${assignmentData.title}`,
+              teacher_id: teacherId,
+              theme: vocabularyConfig.theme || null,
+              topic: vocabularyConfig.topic || null,
+              difficulty_level: vocabularyConfig.difficulty || 'intermediate',
+              word_count: vocabularyCount,
+              vocabulary_items: [],
+              is_public: false
+            }])
+            .select()
+            .single();
+
+          if (vocabListError) {
+            console.error('Vocabulary list creation error:', vocabListError);
+          } else {
+            vocabularyListId = newVocabList.id;
+
+            // Populate vocabulary list
+            if (vocabularyListId) {
+              await this.populateVocabularyList(vocabularyListId, vocabularySelection);
+            }
           }
         }
       } catch (error) {
         console.error('Error creating vocabulary list:', error);
       }
     }
+
+    // console.log('📝 [ASSIGNMENT SERVICE] About to create assignment with vocabulary_selection_type:', vocabularySelectionType);
 
     // Create the assignment
     const { data: assignment, error: assignmentError } = await this.supabase
@@ -951,6 +1039,73 @@ export class EnhancedAssignmentService {
     const dropoutPenalty = analytics.dropout_rate * 0.3;
 
     return Math.max(0, Math.min(100, completionWeight + attemptsWeight - dropoutPenalty));
+  }
+
+  /**
+   * Get vocabulary for an assignment using hybrid reference system
+   * Handles both centralized vocabulary and enhanced vocabulary items
+   */
+  async getAssignmentVocabulary(assignmentListId: string): Promise<any[]> {
+    try {
+      const { data: assignmentItems, error } = await this.supabase
+        .from('vocabulary_assignment_items')
+        .select(`
+          *,
+          centralized_vocabulary:centralized_vocabulary_id(*),
+          enhanced_vocabulary_item:enhanced_vocabulary_item_id(*)
+        `)
+        .eq('assignment_list_id', assignmentListId)
+        .order('order_position');
+
+      if (error) {
+        console.error('Error fetching assignment vocabulary:', error);
+        return [];
+      }
+
+      // Transform the data to a consistent format
+      return assignmentItems?.map(item => {
+        if (item.centralized_vocabulary) {
+          // Centralized vocabulary format
+          return {
+            id: item.centralized_vocabulary.id,
+            word: item.centralized_vocabulary.word,
+            translation: item.centralized_vocabulary.translation,
+            part_of_speech: item.centralized_vocabulary.part_of_speech,
+            context_sentence: item.centralized_vocabulary.context_sentence,
+            context_translation: item.centralized_vocabulary.context_translation,
+            difficulty_level: item.centralized_vocabulary.difficulty_level,
+            language: item.centralized_vocabulary.language,
+            source: 'centralized',
+            order_position: item.order_position
+          };
+        } else if (item.enhanced_vocabulary_item) {
+          // Enhanced vocabulary format
+          return {
+            id: item.enhanced_vocabulary_item.id,
+            word: item.enhanced_vocabulary_item.term,
+            translation: item.enhanced_vocabulary_item.translation,
+            part_of_speech: item.enhanced_vocabulary_item.part_of_speech,
+            context_sentence: item.enhanced_vocabulary_item.context_sentence,
+            context_translation: item.enhanced_vocabulary_item.context_translation,
+            difficulty_level: item.enhanced_vocabulary_item.difficulty_level,
+            notes: item.enhanced_vocabulary_item.notes,
+            tags: item.enhanced_vocabulary_item.tags,
+            source: 'custom',
+            order_position: item.order_position
+          };
+        } else {
+          // Legacy vocabulary_id format (fallback)
+          return {
+            id: item.vocabulary_id,
+            source: 'legacy',
+            order_position: item.order_position
+          };
+        }
+      }) || [];
+    } catch (error) {
+      console.error('Error in getAssignmentVocabulary:', error);
+      return [];
+    }
   }
 
   private async getWordDifficultyAnalysis(assignmentId: string): Promise<WordDifficultyData[]> {

@@ -1,0 +1,259 @@
+{
+  "timestamp": "2025-08-18T18:43:41.812Z",
+  "config": {
+    "baseUrl": "http://localhost:3001",
+    "concurrentUsers": 10,
+    "testDuration": 60,
+    "warmupRequests": 5,
+    "thresholds": {
+      "pageLoad": 3000,
+      "apiResponse": 500,
+      "dbQuery": 200,
+      "memoryUsage": 100
+    }
+  },
+  "metrics": {
+    "pageLoads": [
+      {
+        "page": "Teacher Dashboard",
+        "url": "/dashboard",
+        "avgLoadTime": 16.869066599999996,
+        "loadTimes": [
+          17.05099999999993,
+          18.408500000000004,
+          18.03129200000012,
+          15.74091599999997,
+          15.113624999999956
+        ],
+        "threshold": 3000,
+        "passed": true
+      },
+      {
+        "page": "Student Dashboard",
+        "url": "/student-dashboard",
+        "avgLoadTime": 107.57082480000004,
+        "loadTimes": [
+          471.2462499999999,
+          16.451708000000053,
+          15.730332999999973,
+          13.647707999999966,
+          20.778125000000273
+        ],
+        "threshold": 3000,
+        "passed": true
+      },
+      {
+        "page": "VocabMaster Game",
+        "url": "/games/vocab-master",
+        "avgLoadTime": 21.151958399999966,
+        "loadTimes": [
+          39.66270799999984,
+          15.272042000000056,
+          17.716499999999996,
+          15.84979199999998,
+          17.258749999999964
+        ],
+        "threshold": 3000,
+        "passed": true
+      },
+      {
+        "page": "Memory Game",
+        "url": "/games/memory-game",
+        "avgLoadTime": 94.15077499999998,
+        "loadTimes": [
+          392.38512500000024,
+          19.375666999999794,
+          18.646749999999884,
+          21.957124999999905,
+          18.389208000000053
+        ],
+        "threshold": 3000,
+        "passed": true
+      },
+      {
+        "page": "Assignment Creator",
+        "url": "/dashboard/assignments/create",
+        "avgLoadTime": 102.99384139999992,
+        "loadTimes": [
+          411.2152080000001,
+          22.580582999999933,
+          29.29758300000003,
+          25.99258299999974,
+          25.88324999999986
+        ],
+        "threshold": 3000,
+        "passed": true
+      }
+    ],
+    "apiResponses": [
+      {
+        "api": "Vocabulary API",
+        "url": "/api/vocabulary?language=es&limit=10",
+        "avgResponseTime": 60.067491699999934,
+        "responseTimes": [
+          75.9221249999996,
+          57.45199999999977,
+          46.09491600000001,
+          62.066291999999976,
+          56.80533400000013,
+          53.394832999999835,
+          51.7351249999997,
+          71.90054200000031,
+          61.86829200000011,
+          63.435457999999926
+        ],
+        "threshold": 500,
+        "passed": true
+      },
+      {
+        "api": "Game Sessions API",
+        "url": "/api/game-sessions",
+        "avgResponseTime": 10.815291500000011,
+        "responseTimes": [
+          12.8268750000002,
+          10.695416000000023,
+          10.575291000000107,
+          10.00041599999986,
+          11.120124999999916,
+          11.44866600000023,
+          9.540500000000065,
+          9.753166999999848,
+          10.860375000000204,
+          11.332083999999668
+        ],
+        "threshold": 500,
+        "passed": true
+      },
+      {
+        "api": "User Profile API",
+        "url": "/api/user/profile",
+        "avgResponseTime": 21.670928900000035,
+        "responseTimes": [
+          127.5854159999999,
+          27.147625000000517,
+          7.5604999999995925,
+          8.62750000000051,
+          8.749165999999605,
+          6.708458000000064,
+          7.224999999999454,
+          6.382625000000189,
+          9.435916000000361,
+          7.287083000000166
+        ],
+        "threshold": 500,
+        "passed": true
+      },
+      {
+        "api": "Analytics API",
+        "url": "/api/analytics/dashboard",
+        "avgResponseTime": 10.294008200000007,
+        "responseTimes": [
+          18.537500000000364,
+          9.446208000000297,
+          8.89599999999973,
+          8.252457999999933,
+          8.900125000000116,
+          10.992999999999483,
+          7.943583000000217,
+          10.177625000000262,
+          11.01641699999982,
+          8.777165999999852
+        ],
+        "threshold": 500,
+        "passed": true
+      },
+      {
+        "api": "Assignment Progress API",
+        "url": "/api/assignment-progress",
+        "avgResponseTime": 9.304054100000121,
+        "responseTimes": [
+          10.862250000000131,
+          10.547958000000108,
+          9.020125000000007,
+          8.082374999999956,
+          8.516000000000531,
+          9.907250000000204,
+          8.713792000000467,
+          7.518041000000267,
+          9.86858299999949,
+          10.004167000000052
+        ],
+        "threshold": 500,
+        "passed": true
+      }
+    ],
+    "dbQueries": [
+      {
+        "test": "User Lookup",
+        "avgQueryTime": 10.635558199999831,
+        "queryTimes": [
+          10.37762500000008,
+          12.753832999999759,
+          9.166000000000167,
+          9.952457999999751,
+          10.927874999999403
+        ],
+        "threshold": 200,
+        "passed": true
+      },
+      {
+        "test": "Vocabulary Query",
+        "avgQueryTime": 9.465549999999713,
+        "queryTimes": [
+          9.12395799999922,
+          11.257665999999517,
+          9.66083400000025,
+          8.61145899999974,
+          8.673832999999831
+        ],
+        "threshold": 200,
+        "passed": true
+      },
+      {
+        "test": "Assignment Query",
+        "avgQueryTime": 9.912608399999954,
+        "queryTimes": [
+          9.81329100000039,
+          9.815666999999848,
+          10.124374999999418,
+          9.140166999999565,
+          10.669542000000547
+        ],
+        "threshold": 200,
+        "passed": true
+      },
+      {
+        "test": "Progress Query",
+        "avgQueryTime": 10.50541659999999,
+        "queryTimes": [
+          9.23962500000016,
+          9.112041999999747,
+          11.324125000000095,
+          10.302749999999833,
+          12.548541000000114
+        ],
+        "threshold": 200,
+        "passed": true
+      }
+    ],
+    "memoryUsage": [
+      {
+        "rss": 0.125,
+        "heapUsed": 0.5982513427734375,
+        "heapTotal": 0,
+        "threshold": 100
+      }
+    ],
+    "concurrentUserResults": [
+      {
+        "totalUsers": 10,
+        "successfulUsers": 10,
+        "failedUsers": 0,
+        "totalTime": 869.0172080000002,
+        "successRate": 100
+      }
+    ],
+    "errors": []
+  },
+  "overallScore": 100
+}

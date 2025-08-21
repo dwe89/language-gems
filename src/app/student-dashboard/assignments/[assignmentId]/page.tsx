@@ -128,9 +128,11 @@ export default function StudentAssignmentDetailPage() {
           // Continue without game progress data
         }
 
-        // Check if this is a multi-game assignment
+        // Check if this is a multi-activity assignment (games, assessments, or skills)
         const isMultiGame = assignmentData.game_type === 'multi-game' ||
                            assignmentData.game_type === 'mixed-mode' ||
+                           assignmentData.game_type === 'skills' ||
+                           assignmentData.game_type === 'assessment' ||
                            (assignmentData.game_config?.multiGame && assignmentData.game_config?.selectedGames?.length > 1) ||
                            (assignmentData.game_config?.gameConfig?.selectedGames && assignmentData.game_config.gameConfig.selectedGames.length > 1);
         
@@ -163,6 +165,7 @@ export default function StudentAssignmentDetailPage() {
 
         let games: any[] = [];
         let assessments: any[] = [];
+        let skills: any[] = [];
 
         if (isMultiGame) {
           // Multi-game assignment - handle both old and new config structures
@@ -211,6 +214,31 @@ export default function StudentAssignmentDetailPage() {
               completedAt: assessmentProgress?.completed_at
             };
           });
+
+          // Extract skills from the assignment config
+          const selectedSkills = assignmentData.game_config?.skillsConfig?.selectedSkills || [];
+
+          skills = selectedSkills.map((skill: any) => {
+            // Find individual skill progress
+            const skillProgress = gameProgressData?.find(gp => gp.game_id === skill.id);
+            const isCompleted = skillProgress?.status === 'completed';
+
+            return {
+              id: skill.id,
+              name: skill.name,
+              description: `${skill.estimatedTime} • ${skill.skills?.join(', ') || 'Grammar'}`,
+              type: 'skill',
+              skillType: skill.type, // lesson, practice, quiz
+              category: skill.instanceConfig?.category,
+              topicIds: skill.instanceConfig?.topicIds,
+              language: skill.instanceConfig?.language,
+              completed: isCompleted,
+              score: skillProgress?.score || 0,
+              accuracy: skillProgress?.accuracy || 0,
+              timeSpent: skillProgress?.time_spent || 0,
+              completedAt: skillProgress?.completed_at
+            };
+          });
         } else {
           // Single game assignment - use overall assignment progress
           const gameInfo = gameNameMap[assignmentData.game_type] || { name: assignmentData.game_type, description: 'Language learning game' };
@@ -228,18 +256,20 @@ export default function StudentAssignmentDetailPage() {
           }];
         }
 
-        const allActivities = [...games, ...assessments];
+        const allActivities = [...games, ...assessments, ...skills];
         const completedActivities = allActivities.filter(a => a.completed).length;
         const overallProgress = allActivities.length > 0 ? Math.round((completedActivities / allActivities.length) * 100) : 0;
 
         console.log('Assignment progress calculation:', {
           totalGames: games.length,
           totalAssessments: assessments.length,
+          totalSkills: skills.length,
           totalActivities: allActivities.length,
           completedActivities,
           overallProgress,
           games: games.map(g => ({ id: g.id, name: g.name, completed: g.completed })),
-          assessments: assessments.map(a => ({ id: a.id, name: a.name, completed: a.completed }))
+          assessments: assessments.map(a => ({ id: a.id, name: a.name, completed: a.completed })),
+          skills: skills.map(s => ({ id: s.id, name: s.name, completed: s.completed }))
         });
 
         setAssignment({
@@ -250,12 +280,15 @@ export default function StudentAssignmentDetailPage() {
           isMultiGame,
           games,
           assessments,
+          skills,
           allActivities,
           totalGames: games.length,
           totalAssessments: assessments.length,
+          totalSkills: skills.length,
           totalActivities: allActivities.length,
           completedGames: games.filter(g => g.completed).length,
           completedAssessments: assessments.filter(a => a.completed).length,
+          completedSkills: skills.filter(s => s.completed).length,
           completedActivities,
           overallProgress
         });
@@ -329,6 +362,57 @@ export default function StudentAssignmentDetailPage() {
     }
 
     router.push(assessmentUrl);
+  };
+
+  const handlePlaySkill = async (skill: any) => {
+    const previewParam = isPreviewMode ? '&preview=true' : '';
+    const language = skill.language || 'spanish';
+    const languageCode = language === 'spanish' ? 'es' : language === 'french' ? 'fr' : 'de';
+
+    // Get the first topic ID for the skill
+    const topicId = skill.topicIds?.[0];
+    if (!topicId) {
+      alert('No topic configured for this skill activity.');
+      return;
+    }
+
+    try {
+      // Fetch the topic slug from the database using the topic ID
+      const { data: topicData, error } = await supabaseBrowser
+        .from('grammar_topics')
+        .select('slug')
+        .eq('id', topicId)
+        .single();
+
+      if (error || !topicData) {
+        console.error('Error fetching topic:', error);
+        alert('Topic not found. Please contact your teacher.');
+        return;
+      }
+
+      const topicSlug = topicData.slug;
+      let skillUrl = '';
+
+      switch (skill.skillType) {
+        case 'lesson':
+          skillUrl = `/grammar/${languageCode}/${skill.category}/${topicSlug}/lesson?assignment=${assignmentId}&mode=assignment${previewParam}`;
+          break;
+        case 'practice':
+          skillUrl = `/grammar/${languageCode}/${skill.category}/${topicSlug}/practice?assignment=${assignmentId}&mode=assignment${previewParam}`;
+          break;
+        case 'quiz':
+          skillUrl = `/grammar/${languageCode}/${skill.category}/${topicSlug}/quiz?assignment=${assignmentId}&mode=assignment${previewParam}`;
+          break;
+        default:
+          alert(`Skill type "${skill.skillType}" is not yet supported.`);
+          return;
+      }
+
+      router.push(skillUrl);
+    } catch (error) {
+      console.error('Error in handlePlaySkill:', error);
+      alert('Failed to load skill activity. Please try again.');
+    }
   };
 
   if (loading) {
@@ -502,9 +586,11 @@ export default function StudentAssignmentDetailPage() {
                     <span className={`ml-2 text-xs px-2 py-1 rounded-full font-medium ${
                       activity.type === 'game'
                         ? 'bg-blue-100 text-blue-700'
-                        : 'bg-purple-100 text-purple-700'
+                        : activity.type === 'assessment'
+                        ? 'bg-purple-100 text-purple-700'
+                        : 'bg-green-100 text-green-700'
                     }`}>
-                      {activity.type === 'game' ? 'GAME' : 'ASSESSMENT'}
+                      {activity.type === 'game' ? 'GAME' : activity.type === 'assessment' ? 'ASSESSMENT' : 'SKILL'}
                     </span>
                   </div>
                   <p className="text-gray-600 text-sm mb-4">{activity.description}</p>
@@ -566,19 +652,29 @@ export default function StudentAssignmentDetailPage() {
               )}
 
               <button
-                onClick={() => activity.type === 'game' ? handlePlayGame(activity.id) : handlePlayAssessment(activity)}
+                onClick={() => {
+                  if (activity.type === 'game') {
+                    handlePlayGame(activity.id);
+                  } else if (activity.type === 'assessment') {
+                    handlePlayAssessment(activity);
+                  } else if (activity.type === 'skill') {
+                    handlePlaySkill(activity);
+                  }
+                }}
                 className={`w-full py-3 px-4 rounded-lg font-medium transition-all duration-200 flex items-center justify-center transform hover:scale-105 ${
                   activity.completed
                     ? 'bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700 shadow-lg'
                     : activity.type === 'game'
                       ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:from-indigo-600 hover:to-purple-700 shadow-lg'
-                      : 'bg-gradient-to-r from-purple-500 to-pink-600 text-white hover:from-purple-600 hover:to-pink-700 shadow-lg'
+                      : activity.type === 'assessment'
+                      ? 'bg-gradient-to-r from-purple-500 to-pink-600 text-white hover:from-purple-600 hover:to-pink-700 shadow-lg'
+                      : 'bg-gradient-to-r from-green-500 to-teal-600 text-white hover:from-green-600 hover:to-teal-700 shadow-lg'
                 }`}
               >
                 <Play className="h-4 w-4 mr-2" />
                 {activity.completed
-                  ? (activity.type === 'game' ? 'Play Again' : 'Retake Assessment')
-                  : (activity.type === 'game' ? 'Start Game' : 'Start Assessment')
+                  ? (activity.type === 'game' ? 'Play Again' : activity.type === 'assessment' ? 'Retake Assessment' : 'Review Skill')
+                  : (activity.type === 'game' ? 'Start Game' : activity.type === 'assessment' ? 'Start Assessment' : 'Start Skill')
                 }
               </button>
             </div>

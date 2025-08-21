@@ -38,7 +38,12 @@
     "console-ninja:single": "node scripts/console-ninja-realtime-monitor.js --test",
     "console-ninja:export": "node scripts/console-ninja-data-exporter.js",
     "console-ninja:capture": "node scripts/capture-console-ninja.js",
-    "console-ninja:capture-real": "node scripts/console-ninja-capture-real.js"
+    "console-ninja:capture-real": "node scripts/console-ninja-capture-real.js",
+    "test:production": "node scripts/production-readiness-test.js",
+    "test:production:critical": "node scripts/production-readiness-test.js --mode=critical",
+    "test:production:full": "node scripts/production-readiness-test.js --mode=full",
+    "benchmark": "node scripts/performance-benchmark.js",
+    "benchmark:load": "node scripts/performance-benchmark.js --concurrent=50 --duration=120"
   },
   "dependencies": {
     "@aws-sdk/client-polly": "^3.848.0",

@@ -47,20 +47,21 @@ export function AddStudentModal({
     setError("");
 
     try {
-      // Get teacher's school initials from their profile or use default
-      let schoolInitials = "LG"; // Default fallback
+      // Get teacher's school code from their profile
+      let schoolCode = "LG"; // Default fallback
       
       if (user) {
         try {
           const response = await fetch('/api/user/profile');
           if (response.ok) {
             const profileData = await response.json();
+            // Use school_initials which now contains the actual school code
             if (profileData.school_initials) {
-              schoolInitials = profileData.school_initials;
+              schoolCode = profileData.school_initials;
             }
           }
         } catch (profileError) {
-          console.log('Could not fetch profile, using default school initials');
+          console.log('Could not fetch profile, using default school code');
         }
       }
 
@@ -72,7 +73,7 @@ export function AddStudentModal({
         body: JSON.stringify({
           students: [{ name: studentName.trim() }],
           classId,
-          schoolInitials, // Now included in the request
+          schoolInitials: schoolCode, // Now uses the actual school code from school_initials
         }),
       });
 

@@ -2,10 +2,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  BookOpen, GraduationCap, Target, ChevronRight, 
-  Check, Search, Filter, Sparkles
+import {
+  BookOpen, GraduationCap, Target, ChevronRight,
+  Check, Search, Filter, Sparkles, Plus
 } from 'lucide-react';
+import Link from 'next/link';
+import { useAuth } from '../auth/AuthProvider';
 import { supabaseBrowser } from '../auth/AuthProvider';
 import DatabaseCategorySelector from './DatabaseCategorySelector';
 import KS4ThemeUnitSelector from './KS4ThemeUnitSelector';
@@ -18,13 +20,13 @@ interface CurriculumContentSelectorProps {
 }
 
 interface ContentConfig {
-  type: 'KS3' | 'KS4' | 'custom';
+  type: 'KS3' | 'KS4' | 'custom' | 'my-vocabulary';
   language: 'spanish' | 'french' | 'german';
   // KS3 Configuration
   categories?: string[];
   subcategories?: string[];
   // KS4 Configuration
-  examBoard?: 'AQA' | 'Edexcel';
+  examBoard?: 'AQA' | 'Edexcel' | 'edexcel';
   tier?: 'foundation' | 'higher';
   themes?: string[];
   units?: string[];
@@ -36,6 +38,9 @@ interface ContentConfig {
   customVocabulary?: string;
   customSentences?: string;
   customPhrases?: string;
+  // My Vocabulary Configuration
+  customListId?: string;
+  customListName?: string;
 }
 
 export default function CurriculumContentSelector({
@@ -44,7 +49,13 @@ export default function CurriculumContentSelector({
   onConfigChange,
   initialConfig
 }: CurriculumContentSelectorProps) {
-  const [selectedType, setSelectedType] = useState<'KS3' | 'KS4' | 'custom'>(curriculumLevel);
+  console.log('🔧 [CURRICULUM SELECTOR] Component rendered with props:', {
+    curriculumLevel,
+    language,
+    hasOnConfigChange: !!onConfigChange,
+    initialConfig
+  });
+  const [selectedType, setSelectedType] = useState<'KS3' | 'KS4' | 'custom' | 'my-vocabulary'>(curriculumLevel);
   const [config, setConfig] = useState<ContentConfig>(
     initialConfig || {
       type: curriculumLevel,
@@ -56,6 +67,11 @@ export default function CurriculumContentSelector({
 
   // Update config when type changes (but don't trigger infinite re-renders)
   useEffect(() => {
+    // Don't override config for 'my-vocabulary' type - it's handled by the button click
+    if (selectedType === 'my-vocabulary') {
+      return;
+    }
+
     const newConfig: ContentConfig = {
       type: selectedType,
       language,
@@ -71,10 +87,9 @@ export default function CurriculumContentSelector({
     }
 
     setConfig(newConfig);
-    // Only call onConfigChange when selectedType actually changes, not on every render
+    // Don't call onConfigChange here to avoid infinite loops
+    // onConfigChange will be called by button clicks and other user interactions
   }, [selectedType, language]); // Removed onConfigChange from dependencies
-
-
 
   return (
     <div className="space-y-6">
@@ -87,7 +102,7 @@ export default function CurriculumContentSelector({
           Content Level
         </h3>
         
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-4 gap-3">
           <button
             type="button"
             onClick={() => {
@@ -155,13 +170,46 @@ export default function CurriculumContentSelector({
             }}
             className={`p-4 rounded-xl text-center transition-all duration-200 ${
               selectedType === 'custom'
-                ? 'bg-blue-500 text-white shadow-lg transform scale-105'
-                : 'bg-white text-gray-700 hover:bg-blue-50 border border-gray-200'
+                ? 'bg-orange-500 text-white shadow-lg transform scale-105'
+                : 'bg-white text-gray-700 hover:bg-orange-50 border border-gray-200'
             }`}
           >
             <Sparkles className="h-6 w-6 mx-auto mb-2" />
             <div className="font-semibold">Custom</div>
             <div className="text-xs opacity-80">Enter your own</div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              console.log('🎯 [CURRICULUM SELECTOR] My Lists clicked - BEFORE state change');
+              console.log('🎯 [CURRICULUM SELECTOR] Current selectedType:', selectedType);
+              console.log('🎯 [CURRICULUM SELECTOR] Current config:', config);
+
+              setSelectedType('my-vocabulary');
+              const newConfig: ContentConfig = {
+                type: 'my-vocabulary',
+                language,
+                customListId: ''
+              };
+              console.log('🎯 [CURRICULUM SELECTOR] NEW config being set:', newConfig);
+              setConfig(newConfig);
+
+              console.log('🎯 [CURRICULUM SELECTOR] About to call onConfigChange with:', newConfig);
+              console.log('🎯 [CURRICULUM SELECTOR] onConfigChange function:', onConfigChange);
+              console.log('🎯 [CURRICULUM SELECTOR] onConfigChange type:', typeof onConfigChange);
+              onConfigChange(newConfig);
+              console.log('🎯 [CURRICULUM SELECTOR] onConfigChange called successfully');
+            }}
+            className={`p-4 rounded-xl text-center transition-all duration-200 ${
+              selectedType === 'my-vocabulary'
+                ? 'bg-green-500 text-white shadow-lg transform scale-105'
+                : 'bg-white text-gray-700 hover:bg-green-50 border border-gray-200'
+            }`}
+          >
+            <BookOpen className="h-6 w-6 mx-auto mb-2" />
+            <div className="font-semibold">My Lists</div>
+            <div className="text-xs opacity-80">Your vocabulary</div>
           </button>
         </div>
       </div>
@@ -397,7 +445,233 @@ export default function CurriculumContentSelector({
             </div>
           </motion.div>
         )}
+
+        {selectedType === 'my-vocabulary' && (
+          <motion.div
+            key="my-vocabulary"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl p-6 border border-green-100"
+          >
+            <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+              <div className="w-6 h-6 bg-green-100 rounded-lg flex items-center justify-center mr-2">
+                <BookOpen className="h-4 w-4 text-green-600" />
+              </div>
+              My Vocabulary Lists
+            </h4>
+            <p className="text-gray-600 mb-6">
+              Select from your custom vocabulary lists created in Vocabulary Management
+            </p>
+
+            <CustomVocabularySelector
+              value={config.customListId || ''}
+              onChange={(customListId, customListName) => {
+                console.log('🎯 [CURRICULUM SELECTOR] Custom list selected:', customListId, customListName);
+                const newConfig = { ...config, customListId, customListName };
+                console.log('🎯 [CURRICULUM SELECTOR] Updated config:', newConfig);
+                setConfig(newConfig);
+                console.log('🎯 [CURRICULUM SELECTOR] About to call onConfigChange with custom list:', newConfig);
+                console.log('🎯 [CURRICULUM SELECTOR] onConfigChange function (custom):', onConfigChange);
+                onConfigChange(newConfig);
+                console.log('🎯 [CURRICULUM SELECTOR] onConfigChange called with custom list - DONE');
+              }}
+            />
+          </motion.div>
+        )}
       </AnimatePresence>
+    </div>
+  );
+}
+
+// Custom Vocabulary Selector Component
+function CustomVocabularySelector({
+  value,
+  onChange
+}: {
+  value: string;
+  onChange: (customListId: string, customListName?: string) => void;
+}) {
+  const { user } = useAuth();
+  const [customLists, setCustomLists] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [selectedListDetails, setSelectedListDetails] = useState<any>(null);
+  const supabase = supabaseBrowser;
+
+  // Load user's custom vocabulary lists
+  useEffect(() => {
+    if (!user) return;
+
+    const loadCustomLists = async () => {
+      setLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('enhanced_vocabulary_lists')
+          .select(`
+            id,
+            name,
+            description,
+            language,
+            word_count,
+            difficulty_level,
+            content_type,
+            created_at
+          `)
+          .eq('teacher_id', user.id)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        setCustomLists(data || []);
+      } catch (error) {
+        console.error('Error loading custom vocabulary lists:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadCustomLists();
+  }, [user]);
+
+  // Load selected list details
+  useEffect(() => {
+    if (!value) {
+      setSelectedListDetails(null);
+      return;
+    }
+
+    const loadListDetails = async () => {
+      try {
+        const { data: listData, error: listError } = await supabase
+          .from('enhanced_vocabulary_lists')
+          .select('*')
+          .eq('id', value)
+          .single();
+
+        if (listError) throw listError;
+
+        const { data: itemsData, error: itemsError } = await supabase
+          .from('enhanced_vocabulary_items')
+          .select('*')
+          .eq('list_id', value)
+          .limit(5); // Just get first 5 for preview
+
+        if (itemsError) throw itemsError;
+
+        setSelectedListDetails({
+          ...listData,
+          items: itemsData || []
+        });
+      } catch (error) {
+        console.error('Error loading list details:', error);
+      }
+    };
+
+    loadListDetails();
+  }, [value]);
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Select Your Custom Vocabulary List
+        </label>
+        <select
+          value={value}
+          onChange={(e) => {
+            const selectedList = customLists.find(list => list.id === e.target.value);
+            onChange(e.target.value, selectedList?.name);
+          }}
+          className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+          disabled={loading}
+        >
+          <option value="">
+            {loading ? 'Loading your vocabulary lists...' : 'Select a vocabulary list...'}
+          </option>
+          {customLists.map((list) => (
+            <option key={list.id} value={list.id}>
+              {list.name} ({list.word_count} words, {list.language})
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {customLists.length === 0 && !loading && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <div className="flex items-center">
+            <BookOpen className="h-5 w-5 text-yellow-600 mr-2" />
+            <div>
+              <p className="text-sm font-medium text-yellow-800">No custom vocabulary lists found</p>
+              <p className="text-sm text-yellow-700 mt-1">
+                Create vocabulary lists in the{' '}
+                <Link href="/dashboard/vocabulary" className="underline hover:text-yellow-900">
+                  Vocabulary Management
+                </Link>{' '}
+                section first.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {selectedListDetails && (
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+          <h4 className="font-medium text-green-900 mb-2">Selected List Preview</h4>
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="text-green-700">Name:</span>
+              <span className="font-medium text-green-900">{selectedListDetails.name}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-green-700">Language:</span>
+              <span className="font-medium text-green-900 capitalize">{selectedListDetails.language}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-green-700">Word Count:</span>
+              <span className="font-medium text-green-900">{selectedListDetails.word_count} words</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-green-700">Difficulty:</span>
+              <span className="font-medium text-green-900 capitalize">{selectedListDetails.difficulty_level}</span>
+            </div>
+
+            {selectedListDetails.items && selectedListDetails.items.length > 0 && (
+              <div className="mt-3 pt-3 border-t border-green-200">
+                <p className="text-sm font-medium text-green-900 mb-2">Sample Words:</p>
+                <div className="space-y-1">
+                  {selectedListDetails.items.slice(0, 3).map((item: any, index: number) => (
+                    <div key={index} className="text-sm text-green-800">
+                      <span className="font-medium">{item.term}</span> → {item.translation}
+                    </div>
+                  ))}
+                  {selectedListDetails.word_count > 3 && (
+                    <div className="text-sm text-green-600 italic">
+                      ...and {selectedListDetails.word_count - 3} more words
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      <div className="flex items-center justify-between">
+        <Link
+          href="/dashboard/vocabulary"
+          className="flex items-center text-sm text-green-600 hover:text-green-700"
+        >
+          <Plus className="h-4 w-4 mr-1" />
+          Manage Vocabulary Lists
+        </Link>
+
+        <Link
+          href="/vocabulary/new"
+          className="flex items-center text-sm text-blue-600 hover:text-blue-700"
+        >
+          <Plus className="h-4 w-4 mr-1" />
+          Create New List
+        </Link>
+      </div>
     </div>
   );
 }

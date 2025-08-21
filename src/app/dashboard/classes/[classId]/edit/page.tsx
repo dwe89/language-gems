@@ -9,28 +9,16 @@ import { useAuth } from '../../../../../components/auth/AuthProvider';
 import { supabaseBrowser } from '../../../../../components/auth/AuthProvider';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { 
-  ArrowLeft, Save, Loader2, Settings, BookOpen, Users, GraduationCap, ChevronRight, Sparkles
-} from 'lucide-react';
+import { ArrowLeft, Save, Loader2, Settings, BookOpen } from 'lucide-react';
 import { Button } from "../../../../../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../../../../components/ui/card";
 import { Label } from "../../../../../components/ui/label";
 import { Input } from "../../../../../components/ui/input";
-import { Textarea } from "../../../../../components/ui/textarea";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "../../../../../components/ui/select-components";
 
 // Define types
 type ClassData = {
   id: string;
   name: string;
-  description: string;
-  level: string;
   year_group: string;
   teacher_id: string;
 };
@@ -46,8 +34,6 @@ export default function EditClassPage({ params }: { params: { classId: string } 
   const [classData, setClassData] = useState<ClassData>({
     id: classId,
     name: '',
-    description: '',
-    level: 'beginner',
     year_group: '',
     teacher_id: ''
   });
@@ -81,11 +67,10 @@ export default function EditClassPage({ params }: { params: { classId: string } 
         }
         
         setClassData({
-          ...classDataResult,
+          id: classDataResult.id,
           name: classDataResult.name || '',
-          description: classDataResult.description || '',
-          level: classDataResult.level || 'beginner',
           year_group: classDataResult.year_group || '',
+          teacher_id: classDataResult.teacher_id || ''
         });
       } catch (error) {
         console.error('Error fetching class data:', error);
@@ -106,12 +91,7 @@ export default function EditClassPage({ params }: { params: { classId: string } 
     }));
   };
   
-  const handleSelectChange = (name: string, value: string) => {
-    setClassData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
+  
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -128,8 +108,6 @@ export default function EditClassPage({ params }: { params: { classId: string } 
         .from('classes')
         .update({
           name: classData.name,
-          description: classData.description,
-          level: classData.level,
           year_group: classData.year_group,
         })
         .eq('id', classId);
@@ -250,66 +228,7 @@ export default function EditClassPage({ params }: { params: { classId: string } 
                       className="mt-2 bg-white/80 border-slate-200 text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 rounded-xl h-12 text-lg"
                     />
                   </div>
-                  
-                  <div>
-                    <Label htmlFor="description" className="text-slate-700 font-medium text-base">Description</Label>
-                    <p className="text-sm text-slate-500 mt-1 mb-2">Help students understand what this class covers</p>
-                    <Textarea 
-                      id="description"
-                      name="description"
-                      value={classData.description}
-                      onChange={handleInputChange}
-                      placeholder="This class focuses on advanced conversational Spanish, cultural immersion, and literature analysis..."
-                      rows={4}
-                      className="mt-1 bg-white/80 border-slate-200 text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 rounded-xl text-base leading-relaxed"
-                    />
-                  </div>
-                </div>
-              </div>
 
-              {/* Class Details Section */}
-              <div className="border-t border-slate-200 pt-8">
-                <div className="flex items-center space-x-3 mb-6">
-                  <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-lg flex items-center justify-center">
-                    <GraduationCap className="h-4 w-4 text-white" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-slate-800">Class Details</h3>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <Label htmlFor="level" className="text-slate-700 font-medium text-base">Difficulty Level</Label>
-                    <p className="text-sm text-slate-500 mt-1 mb-2">Choose the appropriate skill level for your students</p>
-                    <Select 
-                      value={classData.level} 
-                      onValueChange={(value: string) => handleSelectChange('level', value)}
-                    >
-                      <SelectTrigger className="mt-1 bg-white/80 border-slate-200 text-slate-900 rounded-xl h-12 text-base">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="bg-white border-slate-200 shadow-lg rounded-xl">
-                        <SelectItem value="beginner" className="text-slate-900 focus:bg-slate-50 rounded-lg mx-1 my-0.5">
-                          <div className="flex items-center space-x-3">
-                            <div className="w-3 h-3 bg-green-400 rounded-full"></div>
-                            <span>Beginner</span>
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="intermediate" className="text-slate-900 focus:bg-slate-50 rounded-lg mx-1 my-0.5">
-                          <div className="flex items-center space-x-3">
-                            <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
-                            <span>Intermediate</span>
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="advanced" className="text-slate-900 focus:bg-slate-50 rounded-lg mx-1 my-0.5">
-                          <div className="flex items-center space-x-3">
-                            <div className="w-3 h-3 bg-red-400 rounded-full"></div>
-                            <span>Advanced</span>
-                          </div>
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
                   <div>
                     <Label htmlFor="year_group" className="text-slate-700 font-medium text-base">Year Group</Label>
                     <p className="text-sm text-slate-500 mt-1 mb-2">Academic year or grade level for this class</p>
@@ -324,6 +243,8 @@ export default function EditClassPage({ params }: { params: { classId: string } 
                   </div>
                 </div>
               </div>
+
+              
               
               {/* Action Buttons */}
               <div className="border-t border-slate-200 pt-8">

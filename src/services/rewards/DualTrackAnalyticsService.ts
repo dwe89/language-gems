@@ -77,7 +77,7 @@ export class DualTrackAnalyticsService {
         .from('student_consolidated_xp_analytics')
         .select('*')
         .eq('student_id', studentId)
-        .single();
+        .maybeSingle(); // Use maybeSingle() to handle 0 rows gracefully
 
       console.log('📊 [DUAL-TRACK] Raw analytics data:', { data, error });
 

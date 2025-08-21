@@ -156,10 +156,10 @@ export default function CompactAssignmentCreator({
     try {
       const { data, error } = await supabaseBrowser
         .from('enhanced_vocabulary_lists')
-        .select('id, name, word_count, language')
+        .select('id, name, word_count, language, content_type, difficulty_level, folder_id')
         .eq('teacher_id', user?.id)
         .order('created_at', { ascending: false });
-      
+
       if (!error) {
         setCustomLists(data || []);
       }
@@ -630,7 +630,7 @@ export default function CompactAssignmentCreator({
                           <div className="flex-1">
                             <div className="font-medium text-white">{list.name}</div>
                             <div className="text-sm text-purple-200">
-                              {list.word_count} words • {list.language}
+                              {list.word_count} items • {list.language} • {list.content_type} • {list.difficulty_level}
                             </div>
                           </div>
                         </label>

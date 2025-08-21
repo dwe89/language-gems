@@ -18,7 +18,12 @@ import {
   FileText,
   Flame,
   Sword,
-  Pickaxe
+  Pickaxe,
+  RefreshCw,
+  Target,
+  Gem,
+  Map,
+  Type
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -32,11 +37,10 @@ interface GameOption {
   difficulty: 'beginner' | 'intermediate' | 'advanced' | 'adaptive';
   estimatedTime: string;
   features: string[];
-  type: 'vocabulary' | 'sentence' | 'mixed';
+  type: 'vocabulary' | 'sentence' | 'mixed' | 'grammar';
 }
 
 const AVAILABLE_GAMES: GameOption[] = [
-  // Games with confirmed assignment support
   {
     id: 'noughts-and-crosses',
     name: 'Tic-Tac-Toe Vocabulary',
@@ -47,18 +51,6 @@ const AVAILABLE_GAMES: GameOption[] = [
     difficulty: 'beginner',
     estimatedTime: '3-8 min',
     features: ['Strategic gameplay', 'Quick questions', 'Competitive'],
-    type: 'vocabulary'
-  },
-  {
-    id: 'detective-listening',
-    name: 'Detective Listening',
-    description: 'Solve cases by listening to radio transmissions and identifying evidence',
-    icon: <Headphones className="h-5 w-5" />,
-    color: 'from-amber-600 to-yellow-500',
-    category: 'listening',
-    difficulty: 'intermediate',
-    estimatedTime: '8-15 min',
-    features: ['Audio comprehension', 'Detective theme', 'Evidence collection'],
     type: 'vocabulary'
   },
   {
@@ -133,8 +125,110 @@ const AVAILABLE_GAMES: GameOption[] = [
     features: ['Action gameplay', 'Visual effects', 'Score multipliers'],
     type: 'vocabulary'
   },
+  {
+    id: 'sentence-towers', // Now a vocabulary game
+    name: 'Word Towers',
+    description: 'Stack words by translating them correctly to build towering structures.',
+    icon: <Castle className="h-5 w-5" />,
+    color: 'from-amber-500 to-orange-500',
+    category: 'vocabulary', // Updated category
+    difficulty: 'intermediate',
+    estimatedTime: '6-12 min',
+    features: ['Tower building', 'Translation practice', 'Strategic thinking'],
+    type: 'vocabulary' // Updated type
+  },
 
-  // Grammar Games with Assignment Support
+  {
+    id: 'vocabulary-mining',
+    name: 'VocabMaster',
+    description: 'Mine rare vocabulary gems through spaced repetition and adaptive learning',
+    icon: <Pickaxe className="h-5 w-5" />,
+    color: 'from-yellow-500 to-amber-500',
+    category: 'vocabulary',
+    difficulty: 'adaptive',
+    estimatedTime: '10-20 min',
+    features: ['Gem collection', 'Spaced repetition', 'Adaptive difficulty'],
+    type: 'vocabulary'
+  },
+
+  {
+    id: 'word-association',
+    name: 'Word Association',
+    description: 'Connect related words and build vocabulary through associations',
+    icon: <RefreshCw className="h-5 w-5" />,
+    color: 'from-teal-400 to-emerald-500',
+    category: 'vocabulary',
+    difficulty: 'intermediate',
+    estimatedTime: '4-9 min',
+    features: ['Association chains', 'Contextual learning'],
+    type: 'vocabulary'
+  },
+
+  {
+    id: 'word-guesser',
+    name: 'Word Guesser',
+    description: 'Guess words from clues and context in this engaging challenge',
+    icon: <Target className="h-5 w-5" />,
+    color: 'from-red-400 to-pink-500',
+    category: 'vocabulary',
+    difficulty: 'intermediate',
+    estimatedTime: '5-12 min',
+    features: ['Context clues', 'Inference practice'],
+    type: 'vocabulary'
+  },
+
+  {
+    id: 'gem-collector',
+    name: 'Gem Collector',
+    description: 'Collect gems by answering vocabulary questions correctly',
+    icon: <Gem className="h-5 w-5" />,
+    color: 'from-amber-400 to-yellow-500',
+    category: 'vocabulary',
+    difficulty: 'beginner',
+    estimatedTime: '6-10 min',
+    features: ['Gem collection', 'Progression'],
+    type: 'vocabulary'
+  },
+
+  {
+    id: 'verb-quest',
+    name: 'Verb Quest',
+    description: 'Adventure through different worlds mastering verb conjugations',
+    icon: <Map className="h-5 w-5" />,
+    color: 'from-red-500 to-orange-500',
+    category: 'grammar',
+    difficulty: 'advanced',
+    estimatedTime: '15-25 min',
+    features: ['Adventure', 'Conjugation practice'],
+    type: 'grammar'
+  },
+
+  {
+    id: 'sentence-builder',
+    name: 'Sentence Builder',
+    description: 'Construct grammatically correct sentences from word fragments',
+    icon: <Type className="h-5 w-5" />,
+    color: 'from-indigo-500 to-violet-500',
+    category: 'grammar',
+    difficulty: 'intermediate',
+    estimatedTime: '5-10 min',
+    features: ['Fragment assembly', 'Grammar rules'],
+    type: 'sentence'
+  },
+
+  {
+    id: 'detective-listening',
+    name: 'Detective Listening',
+    description: 'Solve cases by listening to radio transmissions and identifying evidence',
+    icon: <Headphones className="h-5 w-5" />,
+    color: 'from-amber-600 to-yellow-500',
+    category: 'listening',
+    difficulty: 'intermediate',
+    estimatedTime: '8-15 min',
+  features: ['Audio comprehension', 'Detective theme', 'Evidence collection'],
+  type: 'mixed' // use 'mixed' to represent listening-focused activity
+  },
+
   {
     id: 'speed-builder',
     name: 'Speed Builder',
@@ -145,30 +239,6 @@ const AVAILABLE_GAMES: GameOption[] = [
     difficulty: 'intermediate',
     estimatedTime: '5-10 min',
     features: ['Drag & drop', 'Grammar focus', 'Sentence construction'],
-    type: 'sentence'
-  },
-  {
-    id: 'sentence-towers',
-    name: 'Sentence Towers',
-    description: 'Stack sentence components to build towering grammatical structures',
-    icon: <Castle className="h-5 w-5" />,
-    color: 'from-amber-500 to-orange-500',
-    category: 'grammar',
-    difficulty: 'intermediate',
-    estimatedTime: '6-12 min',
-    features: ['Tower building', 'Complex grammar', 'Strategic thinking'],
-    type: 'sentence'
-  },
-  {
-    id: 'conjugation-duel',
-    name: 'Conjugation Duel',
-    description: 'Epic verb conjugation battles in different arenas and leagues',
-    icon: <Layers className="h-5 w-5" />,
-    color: 'from-red-500 to-orange-500',
-    category: 'grammar',
-    difficulty: 'intermediate',
-    estimatedTime: '10-20 min',
-    features: ['Battle system', 'League progression', 'Real-time combat'],
     type: 'sentence'
   },
   {
@@ -195,42 +265,19 @@ const AVAILABLE_GAMES: GameOption[] = [
     features: ['Fill-in-the-blank', 'Temple theme', 'Word restoration'],
     type: 'sentence'
   },
+
   {
-    id: 'sentence-builder',
-    name: 'Sentence Builder',
-    description: 'Construct sentences by selecting and arranging words in the correct order',
-    icon: <Building2 className="h-5 w-5" />,
-    color: 'from-emerald-500 to-green-500',
+    id: 'conjugation-duel',
+    name: 'Conjugation Duel',
+    description: 'Epic verb conjugation battles in different arenas and leagues',
+    icon: <Layers className="h-5 w-5" />,
+    color: 'from-red-500 to-orange-500',
     category: 'grammar',
     difficulty: 'intermediate',
-    estimatedTime: '6-12 min',
-    features: ['Sentence construction', 'Word ordering', 'Grammar practice'],
-    type: 'sentence'
+    estimatedTime: '10-20 min',
+    features: ['Battle system', 'League progression', 'Real-time combat'],
+    type: 'grammar'
   },
-  {
-    id: 'verb-quest',
-    name: 'Verb Quest',
-    description: 'Embark on an epic RPG adventure to master verb conjugations',
-    icon: <Sword className="h-5 w-5" />,
-    color: 'from-violet-500 to-purple-500',
-    category: 'grammar',
-    difficulty: 'advanced',
-    estimatedTime: '12-20 min',
-    features: ['RPG adventure', 'Verb conjugation', 'Character progression'],
-    type: 'sentence'
-  },
-  {
-    id: 'vocabulary-mining',
-    name: 'Vocabulary Mining',
-    description: 'Mine for vocabulary gems in underground caverns',
-    icon: <Pickaxe className="h-5 w-5" />,
-    color: 'from-stone-500 to-gray-600',
-    category: 'vocabulary',
-    difficulty: 'beginner',
-    estimatedTime: '5-10 min',
-    features: ['Mining theme', 'Gem collection', 'Progressive difficulty'],
-    type: 'vocabulary'
-  }
 ];
 
 interface MultiGameSelectorProps {
@@ -253,6 +300,34 @@ export default function MultiGameSelector({
     }
   };
 
+  // Group games by their 'type'
+  const gamesByType = AVAILABLE_GAMES.reduce((acc, game) => {
+    // Correct the display name for 'sentence' to 'sentences'
+    const typeKey = game.type === 'sentence' ? 'sentences' : game.type;
+    if (!acc[typeKey]) {
+      acc[typeKey] = [];
+    }
+    acc[typeKey].push(game);
+    return acc;
+  }, {} as Record<string, GameOption[]>);
+
+  // Define the order of headings
+  const orderedTypes: ('vocabulary' | 'listening' | 'sentences' | 'grammar')[] = [
+    'vocabulary',
+    'listening',
+    'sentences',
+    'grammar'
+  ];
+
+  // Map type keys to user-friendly headings
+  const typeHeadings: Record<typeof orderedTypes[number], string> = {
+    'vocabulary': 'Vocabulary Learning',
+    'listening': 'Listening',
+    'sentences': 'Sentence Building',
+    'grammar': 'Grammar'
+  };
+
+
   return (
     <div className="space-y-6">
       <div className="text-center">
@@ -263,48 +338,62 @@ export default function MultiGameSelector({
         <p className="text-gray-600 mb-4">Select games for this assignment (up to {maxSelections} games)</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {AVAILABLE_GAMES.map((game) => {
-          const isSelected = selectedGames.includes(game.id);
-          const canSelect = selectedGames.length < maxSelections || isSelected;
-          
-          return (
-            <motion.div
-              key={game.id}
-              whileHover={canSelect ? { scale: 1.02 } : {}}
-              whileTap={canSelect ? { scale: 0.98 } : {}}
-              className={`relative p-6 rounded-xl border-2 transition-all cursor-pointer ${
-                isSelected
-                  ? 'border-indigo-500 bg-indigo-50 shadow-lg'
-                  : canSelect
-                  ? 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-md'
-                  : 'border-gray-200 bg-gray-50 opacity-50 cursor-not-allowed'
-              }`}
-              onClick={() => canSelect && toggleGameSelection(game.id)}
-            >
-              {isSelected && (
-                <div className="absolute top-3 right-3">
-                  <CheckCircle className="h-6 w-6 text-indigo-600" />
-                </div>
-              )}
+      {orderedTypes.map((typeKey) => {
+        const gamesInType = gamesByType[typeKey];
+        if (!gamesInType || gamesInType.length === 0) {
+          return null; // Don't render section if no games of this type exist
+        }
 
-              <div className={`w-12 h-12 rounded-lg bg-gradient-to-r ${game.color} flex items-center justify-center text-white mb-4`}>
-                {game.icon}
-              </div>
+        return (
+          <div key={typeKey} className="mb-8">
+            <h4 className="text-xl font-bold text-gray-800 mt-6 mb-4 capitalize">
+              {typeHeadings[typeKey]}
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {gamesInType.map((game) => {
+                const isSelected = selectedGames.includes(game.id);
+                const canSelect = selectedGames.length < maxSelections || isSelected;
+                
+                return (
+                  <motion.div
+                    key={game.id}
+                    whileHover={canSelect ? { scale: 1.02 } : {}}
+                    whileTap={canSelect ? { scale: 0.98 } : {}}
+                    className={`relative p-6 rounded-xl border-2 transition-all cursor-pointer ${
+                      isSelected
+                        ? 'border-indigo-500 bg-indigo-50 shadow-lg'
+                        : canSelect
+                        ? 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-md'
+                        : 'border-gray-200 bg-gray-50 opacity-50 cursor-not-allowed'
+                    }`}
+                    onClick={() => canSelect && toggleGameSelection(game.id)}
+                  >
+                    {isSelected && (
+                      <div className="absolute top-3 right-3">
+                        <CheckCircle className="h-6 w-6 text-indigo-600" />
+                      </div>
+                    )}
 
-              <h4 className="text-lg font-bold text-gray-800 mb-2">{game.name}</h4>
-              <p className="text-gray-600 text-sm mb-4">{game.description}</p>
+                    <div className={`w-12 h-12 rounded-lg bg-gradient-to-r ${game.color} flex items-center justify-center text-white mb-4`}>
+                      {game.icon}
+                    </div>
 
-              <div className="space-y-2 mb-4">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-500">Duration:</span>
-                  <span className="font-medium">{game.estimatedTime}</span>
-                </div>
-              </div>
-            </motion.div>
-          );
-        })}
-      </div>
+                    <h4 className="text-lg font-bold text-gray-800 mb-2">{game.name}</h4>
+                    <p className="text-gray-600 text-sm mb-4">{game.description}</p>
+
+                    <div className="space-y-2 mb-4">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-500">Duration:</span>
+                        <span className="font-medium">{game.estimatedTime}</span>
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
-} 
+}

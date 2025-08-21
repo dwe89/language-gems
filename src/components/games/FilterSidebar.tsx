@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, ArrowRight, ArrowLeft } from 'lucide-react';
+import { Play, ArrowRight, ArrowLeft, Gamepad2, Rocket, Anchor, Building2, Sun, BookOpen } from 'lucide-react';
 import ReactCountryFlag from 'react-country-flag';
 import { getCategoriesByCurriculum, type CurriculumLevel } from './KS4CategorySystem';
 import { Category, Subcategory, CURRICULUM_LEVELS_CONFIG } from './ModernCategorySelector';
@@ -46,35 +46,35 @@ const GAME_THEMES = [
     id: 'default',
     name: 'Classic',
     description: 'Clean and professional design',
-    preview: '🎯',
+    preview: 'classic',
     color: 'from-blue-500 to-indigo-600'
   },
   {
     id: 'tokyo-nights',
     name: 'Tokyo Nights',
     description: 'Neon cyberpunk aesthetic',
-    preview: '🌃',
+    preview: 'tokyo',
     color: 'from-pink-500 to-purple-600'
   },
   {
     id: 'pirate-adventure',
     name: 'Pirate Adventure',
     description: 'Swashbuckling maritime theme',
-    preview: '🏴‍☠️',
+    preview: 'pirate',
     color: 'from-amber-600 to-orange-700'
   },
   {
     id: 'space-explorer',
     name: 'Space Explorer',
     description: 'Futuristic space adventure',
-    preview: '🚀',
+    preview: 'space',
     color: 'from-indigo-500 to-blue-600'
   },
   {
     id: 'lava-temple',
     name: 'Lava Temple',
     description: 'Ancient temple with fiery elements',
-    preview: '🌋',
+    preview: 'temple',
     color: 'from-red-500 to-orange-600'
   }
 ];
@@ -528,7 +528,13 @@ export default function GameSelectionSidebar({
                           : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                       }`}
                     >
-                      <span className="text-2xl">{theme.preview}</span>
+                      <span className="text-2xl">
+                        {theme.preview === 'classic' && <Gamepad2 className="h-6 w-6" />}
+                        {theme.preview === 'tokyo' && <Building2 className="h-6 w-6" />}
+                        {theme.preview === 'pirate' && <Anchor className="h-6 w-6" />}
+                        {theme.preview === 'space' && <Rocket className="h-6 w-6" />}
+                        {theme.preview === 'temple' && <Sun className="h-6 w-6" />}
+                      </span>
                       <div className="text-left">
                         <div className="font-medium">{theme.name}</div>
                         <div className="text-sm text-gray-500">{theme.description}</div>

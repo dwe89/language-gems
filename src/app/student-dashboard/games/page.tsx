@@ -32,6 +32,7 @@ type Game = {
   isFeatured?: boolean;
   lastPlayed?: string;
   highScore?: number;
+  comingSoon?: boolean;
 };
 
 // Component to display a game card
@@ -99,16 +100,23 @@ const GameCard = ({ game, isSelected, isDisabled, onPlayNowClick }: {
         <p className="text-gray-600 text-sm mb-4 flex-grow">{game.description}</p>
 
         <div className="flex space-x-3 mt-auto">
-          <button
-            onClick={() => onPlayNowClick(game)}
-            className={`flex-1 text-white text-center py-2 rounded-lg font-medium transition-all transform
-              ${isSelected
-                ? 'bg-green-600 hover:bg-green-700'
-                : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 hover:scale-105'
-              }`}
-          >
-            {isSelected ? '🎮 Change Game' : '🎮 Play Now'}
-          </button>
+          {game.comingSoon ? (
+            <div className="flex-1 text-center py-2 rounded-lg font-medium text-gray-600 bg-gray-100 border border-gray-200 flex items-center justify-center space-x-2">
+              <Clock className="h-4 w-4 text-gray-600" />
+              <span>Coming soon</span>
+            </div>
+          ) : (
+            <button
+              onClick={() => onPlayNowClick(game)}
+              className={`flex-1 text-white text-center py-2 rounded-lg font-medium transition-all transform
+                ${isSelected
+                  ? 'bg-green-600 hover:bg-green-700'
+                  : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 hover:scale-105'
+                }`}
+            >
+              {isSelected ? (<><Gamepad2 className="inline-block h-4 w-4 mr-2"/>Change Game</>) : (<><Gamepad2 className="inline-block h-4 w-4 mr-2"/>Play Now</>)}
+            </button>
+          )}
         </div>
       </div>
     </motion.div>
@@ -661,7 +669,7 @@ export default function GamesPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                   {filteredGames.filter(game => game.id !== 'vocab-master').map((game) => {
                     const isSelected = selectedGameForSetup?.id === game.id;
-                    const isDisabled = selectedGameForSetup && !isSelected;
+                    const isDisabled = !!selectedGameForSetup && !isSelected;
 
                     return (
                       <GameCard

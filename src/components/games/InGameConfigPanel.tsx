@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Settings, X, Globe, BookOpen, Target, Palette } from 'lucide-react';
+import { Settings, X, Globe, BookOpen, Target, Palette, Gamepad2, Rocket, Anchor, Building2, Sun } from 'lucide-react';
 import ReactCountryFlag from 'react-country-flag';
 import { UnifiedSelectionConfig, loadVocabulary } from '../../hooks/useUnifiedVocabulary';
 
@@ -37,11 +37,11 @@ const CURRICULUM_LEVELS = [
 
 // Theme options
 const THEME_OPTIONS = [
-  { id: 'default', name: 'Classic', icon: '🎮', accentColor: 'bg-blue-500' },
-  { id: 'tokyo', name: 'Tokyo Nights', icon: '🏙️', accentColor: 'bg-pink-600' },
-  { id: 'pirate', name: 'Pirate Adventure', icon: '🏴‍☠️', accentColor: 'bg-amber-600' },
-  { id: 'space', name: 'Space Explorer', icon: '🚀', accentColor: 'bg-purple-600' },
-  { id: 'temple', name: 'Lava Temple', icon: '🌋', accentColor: 'bg-orange-600' }
+  { id: 'default', name: 'Classic', icon: 'classic', accentColor: 'bg-blue-500' },
+  { id: 'tokyo', name: 'Tokyo Nights', icon: 'tokyo', accentColor: 'bg-pink-600' },
+  { id: 'pirate', name: 'Pirate Adventure', icon: 'pirate', accentColor: 'bg-amber-600' },
+  { id: 'space', name: 'Space Explorer', icon: 'space', accentColor: 'bg-purple-600' },
+  { id: 'temple', name: 'Lava Temple', icon: 'temple', accentColor: 'bg-orange-600' }
 ];
 
 // Get categories based on curriculum level
@@ -94,7 +94,8 @@ export default function InGameConfigPanel({
       subcategoryId: undefined
     }));
     // Use optional chaining here
-    if (currentCategories.find(cat => cat.id === categoryId)?.subcategories.length > 0) {
+  const found = currentCategories.find(cat => cat.id === categoryId);
+  if (found && found.subcategories && found.subcategories.length > 0) {
       setActiveTab('category');
     } else if (supportsThemes) {
       setActiveTab('theme');
@@ -290,7 +291,7 @@ export default function InGameConfigPanel({
               </h3>
               <p className="text-gray-600 text-sm">Choose your visual style for the game.</p>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-4">
               {THEME_OPTIONS.map((theme) => (
                 <button
                   key={theme.id}
@@ -301,7 +302,13 @@ export default function InGameConfigPanel({
                       : 'bg-white border-gray-200 hover:bg-gray-50 hover:border-gray-300 text-gray-700'
                   }`}
                 >
-                  <div className="text-2xl mb-2">{theme.icon}</div>
+                  <div className="text-2xl mb-2">
+                    {theme.icon === 'classic' && <Gamepad2 className="h-6 w-6" />}
+                    {theme.icon === 'tokyo' && <Building2 className="h-6 w-6" />}
+                    {theme.icon === 'pirate' && <Anchor className="h-6 w-6" />}
+                    {theme.icon === 'space' && <Rocket className="h-6 w-6" />}
+                    {theme.icon === 'temple' && <Sun className="h-6 w-6" />}
+                  </div>
                   <div className="text-sm font-semibold text-center">{theme.name}</div>
                   {tempTheme === theme.id && (
                     <div className="absolute -top-1 -right-1 w-5 h-5 bg-white rounded-full flex items-center justify-center">

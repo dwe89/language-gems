@@ -6,7 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Gamepad2, Search, Building2, Rocket, Lock, Trophy, Target, BarChart3, Play, BookOpen, Users, Star } from 'lucide-react';
+import { Gamepad2, Search, Building2, Rocket, Lock, Trophy, Target, BarChart3, Play, BookOpen, Users, Star, Lightbulb, Clock } from 'lucide-react';
 import { useAuth } from '../../components/auth/AuthProvider';
 import { useDemoAuth } from '../../components/auth/DemoAuthProvider';
 import Footer from '../../components/layout/Footer';
@@ -76,7 +76,7 @@ const LoginRequiredGate = () => {
 
           {/* Game Preview Cards */}
           <div className="mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">🌟 Popular Games Waiting for You</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-6"><Star className="inline-block h-6 w-6 text-yellow-400 mr-2" />Popular Games Waiting for You</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="bg-white rounded-xl p-6 shadow-lg relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-bl from-blue-500 to-transparent opacity-20 rounded-bl-full"></div>
@@ -112,7 +112,7 @@ const LoginRequiredGate = () => {
 
           {/* Demo Video Section */}
           <div className="bg-white rounded-2xl p-8 shadow-xl mb-12">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">🎬 See LanguageGems in Action</h3>
+            <h3 className="text-xl font-bold text-gray-900 mb-4"><Play className="inline-block h-5 w-5 text-indigo-600 mr-2" />See LanguageGems in Action</h3>
             <div className="bg-gradient-to-br from-indigo-100 to-purple-100 rounded-xl p-12 flex items-center justify-center">
               <div className="text-center">
                 <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-lg mx-auto mb-4">
@@ -128,20 +128,21 @@ const LoginRequiredGate = () => {
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Link
               href="/auth/login"
-              className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all transform hover:scale-105 shadow-lg"
+              className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all transform hover:scale-105 shadow-lg flex items-center justify-center space-x-2"
             >
-              🚀 Sign In to Play Now
+              <Rocket className="h-5 w-5" />
+              <span>Sign In to Play Now</span>
             </Link>
             <Link
               href="/auth/signup"
               className="bg-white hover:bg-gray-50 text-indigo-600 px-8 py-4 rounded-xl font-semibold text-lg border-2 border-indigo-200 transition-all transform hover:scale-105"
             >
-              📝 Create Free Account
+              <span className="inline-flex items-center space-x-2"><BookOpen className="h-5 w-5" /><span>Create Free Account</span></span>
             </Link>
           </div>
 
           <p className="text-sm text-gray-500 mt-6">
-            🔒 <strong>Why do I need to sign in?</strong><br />
+            <Lock className="inline-block h-4 w-4 text-gray-600 mr-2" /> <strong>Why do I need to sign in?</strong><br />
             Games track your progress, award gems, integrate with teacher assignments, and provide personalized learning recommendations.
             This requires knowing who you are!
           </p>
@@ -170,6 +171,7 @@ type Game = {
   popular: boolean;
   languages: string[];
   path: string;
+  comingSoon?: boolean;
 };
 
 export default function GamesPage() {
@@ -339,6 +341,7 @@ export default function GamesPage() {
           thumbnail: '/images/games/verb-quest.jpg',
           category: 'grammar',
           popular: true,
+          comingSoon: true,
           languages: ['Spanish', 'French', 'German'],
           path: '/games/verb-quest'
         },
@@ -730,24 +733,34 @@ export default function GamesPage() {
                         <p className="text-gray-600 text-sm mb-4 flex-grow">{game.description}</p>
 
                         <div className="flex space-x-3 mt-auto">
-                          <button
-                            onClick={() => handlePlayNowClick(game)} // Changed click handler to one function for cleaner logic
-                            className={`flex-1 text-white text-center py-2 rounded-lg font-medium transition-all transform
-                              ${isSelected 
-                                ? 'bg-green-600 hover:bg-green-700' 
-                                : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 hover:scale-105'
-                              }`}
-                          >
-                            {isSelected ? '🎮 Change Game' : '🎮 Play Now'}
-                          </button>
+                          {game.comingSoon ? (
+                            <div className="flex-1 text-center py-2 rounded-lg font-medium text-gray-600 bg-gray-100 border border-gray-200 flex items-center justify-center space-x-2">
+                              <Clock className="h-4 w-4 text-gray-600" />
+                              <span>Coming soon</span>
+                            </div>
+                          ) : (
+                            <>
+                              <button
+                                onClick={() => handlePlayNowClick(game)} // Changed click handler to one function for cleaner logic
+                                className={`flex-1 text-white text-center py-2 rounded-lg font-medium transition-all transform
+                                  ${isSelected 
+                                    ? 'bg-green-600 hover:bg-green-700' 
+                                    : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 hover:scale-105'
+                                  }`}
+                              >
+                                {isSelected ? (<><Gamepad2 className="inline-block h-4 w-4 mr-2"/>Change Game</>) : (<><Gamepad2 className="inline-block h-4 w-4 mr-2"/>Play Now</>)}
+                              </button>
 
-                          {user?.user_metadata?.role === 'teacher' && (
-                            <Link
-                              href={`/dashboard/assignments/new?gameId=${game.id}`}
-                              className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-center py-2 rounded-lg font-medium transition-all transform hover:scale-105"
-                            >
-                              📚 Assign
-                            </Link>
+                              {user?.user_metadata?.role === 'teacher' && (
+                                <Link
+                                  href={`/dashboard/assignments/new?gameId=${game.id}`}
+                                  className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-center py-2 rounded-lg font-medium transition-all transform hover:scale-105 flex items-center justify-center space-x-2"
+                                >
+                                  <BookOpen className="h-4 w-4" />
+                                  <span>Assign</span>
+                                </Link>
+                              )}
+                            </>
                           )}
                         </div>
                       </div>

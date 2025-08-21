@@ -5,8 +5,10 @@ import { useAuth } from '../../../../components/auth/AuthProvider';
 import { useSupabase } from '../../../../components/supabase/SupabaseProvider';
 import { VocabularyMiningService } from '../../../../services/vocabulary-mining';
 import { ProgressDashboard } from '../../../../components/vocabulary-mining/ProgressDashboard';
-import { SpacedRepetitionAnalytics } from '../../../../components/vocabulary-mining/SpacedRepetitionAnalytics';
-import { SpacedRepetitionScheduler } from '../../../../components/vocabulary-mining/SpacedRepetitionScheduler';
+// The following components were part of the older "vocabulary-mining" feature
+// and have been sunset. Commenting out imports so the build doesn't fail.
+// import { SpacedRepetitionAnalytics } from '../../../../components/vocabulary-mining/SpacedRepetitionAnalytics';
+// import { SpacedRepetitionScheduler } from '../../../../components/vocabulary-mining/SpacedRepetitionScheduler';
 import { 
   TopicPerformance, 
   VocabularyAchievement, 
@@ -112,7 +114,13 @@ export default function VocabularyMiningProgressPage() {
         monthlyTrends.push({
           date: date.toISOString().split('T')[0],
           wordsLearned: weekGems.length,
-          accuracy: weekGems.length > 0 ? Math.round(weekGems.reduce((sum, gem) => sum + gem.accuracy, 0) / weekGems.length) : 0,
+          // Compute accuracy from correctEncounters / totalEncounters since GemCollection doesn't have an 'accuracy' field
+          accuracy: (function() {
+            if (weekGems.length === 0) return 0;
+            const totalCorrect = weekGems.reduce((sum, gem) => sum + (gem.correctEncounters || 0), 0);
+            const totalAttempts = weekGems.reduce((sum, gem) => sum + (gem.totalEncounters || 0), 0);
+            return totalAttempts > 0 ? Math.round((totalCorrect / totalAttempts) * 100) : 0;
+          })(),
           practiceTime: Math.round(Math.random() * 60 + 30) // Placeholder for practice time
         });
       }
@@ -368,14 +376,22 @@ export default function VocabularyMiningProgressPage() {
         {/* Analytics Tab */}
         {selectedView === 'analytics' && (
           <div className="space-y-6">
-            <SpacedRepetitionAnalytics studentId={user?.id} />
+            {/* SpacedRepetitionAnalytics has been temporarily disabled/sunset. */}
+            <div className="bg-white/5 p-6 rounded-lg border border-white/10 text-indigo-100">
+              <h3 className="text-lg font-semibold mb-2">Analytics (temporarily disabled)</h3>
+              <p className="text-sm text-indigo-200">The spaced repetition analytics component is currently disabled — it was part of the older vocabulary-mining feature. The code is commented out in this file so it can be restored later if needed.</p>
+            </div>
           </div>
         )}
 
         {/* Schedule Tab */}
         {selectedView === 'schedule' && (
           <div className="space-y-6">
-            <SpacedRepetitionScheduler studentId={user?.id} />
+            {/* SpacedRepetitionScheduler has been temporarily disabled/sunset. */}
+            <div className="bg-white/5 p-6 rounded-lg border border-white/10 text-indigo-100">
+              <h3 className="text-lg font-semibold mb-2">Schedule (temporarily disabled)</h3>
+              <p className="text-sm text-indigo-200">The spaced repetition scheduler is currently disabled. It has been commented out to prevent build errors while preserving the original code for later restoration.</p>
+            </div>
           </div>
         )}
       </div>

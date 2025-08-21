@@ -1,7 +1,10 @@
 'use client';
 
-import React, { useMemo } from 'react';
-import { BookOpen, FileText, Lightbulb, Upload } from 'lucide-react';
+import React, { useMemo, useState, useEffect } from 'react';
+import { BookOpen, FileText, Lightbulb, Upload, Plus } from 'lucide-react';
+import Link from 'next/link';
+import { useAuth } from '../auth/AuthProvider';
+import { supabaseBrowser } from '../auth/AuthProvider';
 import DatabaseCategorySelector from './DatabaseCategorySelector';
 
 // Game type definitions
@@ -480,26 +483,182 @@ function TopicSelector({ value, onChange }: { value: string; onChange: (value: s
 }
 
 function CustomVocabularySelector({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  const { user } = useAuth();
+  const [customLists, setCustomLists] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [selectedListDetails, setSelectedListDetails] = useState<any>(null);
+  const supabase = supabaseBrowser;
+
+  // Load user's custom vocabulary lists
+  useEffect(() => {
+    if (!user) return;
+
+    const loadCustomLists = async () => {
+      setLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('enhanced_vocabulary_lists')
+          .select(`
+            id,
+            name,
+            description,
+            language,
+            word_count,
+            difficulty_level,
+            content_type,
+            created_at
+          `)
+          .eq('teacher_id', user.id)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        setCustomLists(data || []);
+      } catch (error) {
+        console.error('Error loading custom vocabulary lists:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadCustomLists();
+  }, [user]);
+
+  // Load selected list details
+  useEffect(() => {
+    if (!value) {
+      setSelectedListDetails(null);
+      return;
+    }
+
+    const loadListDetails = async () => {
+      try {
+        const { data: listData, error: listError } = await supabase
+          .from('enhanced_vocabulary_lists')
+          .select('*')
+          .eq('id', value)
+          .single();
+
+        if (listError) throw listError;
+
+        const { data: itemsData, error: itemsError } = await supabase
+          .from('enhanced_vocabulary_items')
+          .select('*')
+          .eq('list_id', value)
+          .limit(5); // Just get first 5 for preview
+
+        if (itemsError) throw itemsError;
+
+        setSelectedListDetails({
+          ...listData,
+          items: itemsData || []
+        });
+      } catch (error) {
+        console.error('Error loading list details:', error);
+      }
+    };
+
+    loadListDetails();
+  }, [value]);
+
   return (
-    <div>
-      <label className="block text-sm font-medium text-gray-700 mb-2">Custom Vocabulary List</label>
-      <div className="space-y-3">
-        <select 
-          value={value} 
-          onChange={(e) => onChange(e.target.value)} 
+    <div className="space-y-4">
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Select Your Custom Vocabulary List
+        </label>
+        <select
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
           className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+          disabled={loading}
         >
-          <option value="">Select custom list...</option>
-          <option value="sample-1">Sample Vocabulary List 1</option>
-          <option value="sample-2">Sample Vocabulary List 2</option>
+          <option value="">
+            {loading ? 'Loading your vocabulary lists...' : 'Select a vocabulary list...'}
+          </option>
+          {customLists.map((list) => (
+            <option key={list.id} value={list.id}>
+              {list.name} ({list.word_count} words, {list.language})
+            </option>
+          ))}
         </select>
-        <button
-          type="button"
+      </div>
+
+      {customLists.length === 0 && !loading && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <div className="flex items-center">
+            <BookOpen className="h-5 w-5 text-yellow-600 mr-2" />
+            <div>
+              <p className="text-sm font-medium text-yellow-800">No custom vocabulary lists found</p>
+              <p className="text-sm text-yellow-700 mt-1">
+                Create vocabulary lists in the{' '}
+                <Link href="/dashboard/vocabulary" className="underline hover:text-yellow-900">
+                  Vocabulary Management
+                </Link>{' '}
+                section first.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {selectedListDetails && (
+        <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
+          <h4 className="font-medium text-indigo-900 mb-2">Selected List Preview</h4>
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="text-indigo-700">Name:</span>
+              <span className="font-medium text-indigo-900">{selectedListDetails.name}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-indigo-700">Language:</span>
+              <span className="font-medium text-indigo-900 capitalize">{selectedListDetails.language}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-indigo-700">Word Count:</span>
+              <span className="font-medium text-indigo-900">{selectedListDetails.word_count} words</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-indigo-700">Difficulty:</span>
+              <span className="font-medium text-indigo-900 capitalize">{selectedListDetails.difficulty_level}</span>
+            </div>
+
+            {selectedListDetails.items && selectedListDetails.items.length > 0 && (
+              <div className="mt-3 pt-3 border-t border-indigo-200">
+                <p className="text-sm font-medium text-indigo-900 mb-2">Sample Words:</p>
+                <div className="space-y-1">
+                  {selectedListDetails.items.slice(0, 3).map((item: any, index: number) => (
+                    <div key={index} className="text-sm text-indigo-800">
+                      <span className="font-medium">{item.term}</span> → {item.translation}
+                    </div>
+                  ))}
+                  {selectedListDetails.word_count > 3 && (
+                    <div className="text-sm text-indigo-600 italic">
+                      ...and {selectedListDetails.word_count - 3} more words
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      <div className="flex items-center justify-between">
+        <Link
+          href="/dashboard/vocabulary"
           className="flex items-center text-sm text-indigo-600 hover:text-indigo-700"
         >
+          <Plus className="h-4 w-4 mr-1" />
+          Create New Vocabulary List
+        </Link>
+
+        <Link
+          href="/vocabulary/new"
+          className="flex items-center text-sm text-green-600 hover:text-green-700"
+        >
           <Upload className="h-4 w-4 mr-1" />
-          Upload new vocabulary list
-        </button>
+          Quick Create
+        </Link>
       </div>
     </div>
   );

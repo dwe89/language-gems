@@ -50,14 +50,29 @@ export default function VocabularyDashboard() {
 
   // Fetch vocabulary progress for the current user
   useEffect(() => {
-    if (!user) return;
+    console.log('🔍 [VOCAB DASHBOARD] useEffect triggered:', {
+      hasUser: !!user,
+      userId: user?.id,
+      timestamp: new Date().toISOString()
+    });
+
+    if (!user) {
+      console.log('🔍 [VOCAB DASHBOARD] No user found, skipping vocabulary fetch');
+      return;
+    }
 
     const fetchVocabularyProgress = async () => {
+      console.log('🔍 [VOCAB DASHBOARD] Starting vocabulary fetch for user:', user.id);
       setLoading(true);
 
       try {
+        console.log('🔍 [VOCAB DASHBOARD] About to call vocabularyService.getVocabularyData');
         // Use unified vocabulary service for consistent data
         const { items, stats } = await vocabularyService.getVocabularyData(user.id);
+        console.log('🔍 [VOCAB DASHBOARD] vocabularyService.getVocabularyData completed:', {
+          itemsLength: items?.length || 0,
+          statsTotal: stats?.totalWords || 0
+        });
 
         setVocabularyItems(items);
         setStats(stats);
@@ -67,8 +82,15 @@ export default function VocabularyDashboard() {
         const uniqueThemes = [...new Set(items.map(item => item.category))];
         setThemes(uniqueThemes);
       } catch (error) {
-        console.error('Error in vocabulary data processing:', error);
+        console.error('🚨 [VOCAB DASHBOARD] Error in vocabulary data processing:', error);
+        console.error('🚨 [VOCAB DASHBOARD] Error details:', {
+          message: error?.message,
+          stack: error?.stack,
+          name: error?.name
+        });
+        setError('Failed to load vocabulary progress');
       } finally {
+        console.log('🔍 [VOCAB DASHBOARD] Finally block - setting loading to false');
         setLoading(false);
       }
     };

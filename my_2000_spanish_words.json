@@ -1,0 +1,602 @@
+[
+  {
+    "word": "gastar",
+    "translation": "(to) spend (money) I spending (money)",
+    "theme_name": "Popular culture",
+    "unit_name": "Free time activities"
+  },
+  {
+    "word": "bienvenido",
+    "translation": "welcome",
+    "theme_name": "Popular culture; Communication and the world around us",
+    "unit_name": "Free time activities; Travel and tourism"
+  },
+  {
+    "word": "gafas",
+    "translation": "glasses",
+    "theme_name": "Popular culture",
+    "unit_name": "Free time activities"
+  },
+  {
+    "word": "gratis",
+    "translation": "free (of charge)",
+    "theme_name": "Popular culture; Communication and the world around us",
+    "unit_name": "Free time activities; Media and technology"
+  },
+  {
+    "word": "entonces",
+    "translation": "then, so",
+    "theme_name": "General",
+    "unit_name": "General"
+  },
+  {
+    "word": "ocho",
+    "translation": "eight",
+    "theme_name": "General",
+    "unit_name": "General"
+  },
+  {
+    "word": "grave",
+    "translation": "serious, grave",
+    "theme_name": "Communication and the world around us; General",
+    "unit_name": "Environment and where people live; General"
+  },
+  {
+    "word": "deber",
+    "translation": "(to) have to, must | having to",
+    "theme_name": "Communication and the world around us; General",
+    "unit_name": "Environment and where people live; General"
+  },
+  {
+    "word": "vine",
+    "translation": "(I) came",
+    "theme_name": "General",
+    "unit_name": "General"
+  },
+  {
+    "word": "mirar",
+    "translation": "(to) look, watch | looking, watching",
+    "theme_name": "General",
+    "unit_name": "General"
+  },
+  {
+    "word": "mientras",
+    "translation": "while, whilst",
+    "theme_name": "General",
+    "unit_name": "General"
+  },
+  {
+    "word": "aunque",
+    "translation": "although, even though",
+    "theme_name": "General",
+    "unit_name": "General"
+  },
+  {
+    "word": "vivir",
+    "translation": "(to) live | living",
+    "theme_name": "Communication and the world around us; General",
+    "unit_name": "Environment and where people live; General"
+  },
+  {
+    "word": "¿dónde",
+    "translation": "where?",
+    "theme_name": "Communication and the world around us; General",
+    "unit_name": "Environment and where people live; General"
+  },
+  {
+    "word": "depender",
+    "translation": "(to) depend | depending",
+    "theme_name": "General",
+    "unit_name": "General"
+  },
+  {
+    "word": "lleno",
+    "translation": "full",
+    "theme_name": "General",
+    "unit_name": "General"
+  },
+  {
+    "word": "perfecto",
+    "translation": "perfecto",
+    "theme_name": "General",
+    "unit_name": "General"
+  },
+  {
+    "word": "encima",
+    "translation": "on top",
+    "theme_name": "General",
+    "unit_name": "General"
+  },
+  {
+    "word": "tres",
+    "translation": "three",
+    "theme_name": "General",
+    "unit_name": "General"
+  },
+  {
+    "word": "completamente",
+    "translation": "completely",
+    "theme_name": "General",
+    "unit_name": "General"
+  },
+  {
+    "word": "positivo",
+    "translation": "positive",
+    "theme_name": "General",
+    "unit_name": "General"
+  },
+  {
+    "word": "cerrado",
+    "translation": "closed",
+    "theme_name": "General",
+    "unit_name": "General"
+  },
+  {
+    "word": "encantar",
+    "translation": "(to) love, delight, be delightful to I loving, delighting, being delightful to",
+    "theme_name": "General",
+    "unit_name": "General"
+  },
+  {
+    "word": "quince",
+    "translation": "fifteen",
+    "theme_name": "General",
+    "unit_name": "General"
+  },
+  {
+    "word": "hola",
+    "translation": "hello, hi",
+    "theme_name": "General",
+    "unit_name": "General"
+  },
+  {
+    "word": "conmigo",
+    "translation": "with me",
+    "theme_name": "General",
+    "unit_name": "General"
+  },
+  {
+    "word": "reciente",
+    "translation": "recent",
+    "theme_name": "General",
+    "unit_name": "General"
+  },
+  {
+    "word": "imposible",
+    "translation": "impossible",
+    "theme_name": "General",
+    "unit_name": "General"
+  },
+  {
+    "word": "correcto",
+    "translation": "correct, suitable",
+    "theme_name": "General",
+    "unit_name": "General"
+  },
+  {
+    "word": "exacto",
+    "translation": "exact, true",
+    "theme_name": "General",
+    "unit_name": "General"
+  },
+  {
+    "word": "rápidamente",
+    "translation": "quickly",
+    "theme_name": "General",
+    "unit_name": "General"
+  },
+  {
+    "word": "excelente",
+    "translation": "excellent",
+    "theme_name": "General",
+    "unit_name": "General"
+  },
+  {
+    "word": "¡Vamos!",
+    "translation": "Come on! Let's go!",
+    "theme_name": "General",
+    "unit_name": "General"
+  },
+  {
+    "word": "lento",
+    "translation": "slow",
+    "theme_name": "General",
+    "unit_name": "General"
+  },
+  {
+    "word": "temprano",
+    "translation": "early",
+    "theme_name": "General",
+    "unit_name": "General"
+  },
+  {
+    "word": "sesenta",
+    "translation": "sixty",
+    "theme_name": "General",
+    "unit_name": "General"
+  },
+  {
+    "word": "falso",
+    "translation": "FALSE",
+    "theme_name": "General",
+    "unit_name": "General"
+  },
+  {
+    "word": "increíble",
+    "translation": "incredible, unbelievable",
+    "theme_name": "General",
+    "unit_name": "General"
+  },
+  {
+    "word": "normalmente",
+    "translation": "normally",
+    "theme_name": "General",
+    "unit_name": "General"
+  },
+  {
+    "word": "once",
+    "translation": "eleven",
+    "theme_name": "General",
+    "unit_name": "General"
+  },
+  {
+    "word": "vuestro",
+    "translation": "your (pl informal)",
+    "theme_name": "General",
+    "unit_name": "General"
+  },
+  {
+    "word": "salvar",
+    "translation": "(to) save, rescue | saving, rescuing",
+    "theme_name": "Communication and the world around us",
+    "unit_name": "Environment and where people live"
+  },
+  {
+    "word": "escribir",
+    "translation": "(to) write | writing",
+    "theme_name": "People and lifestyle; Popular culture",
+    "unit_name": "Education and work; Free time activities"
+  },
+  {
+    "word": "leer",
+    "translation": "(to) read | reading",
+    "theme_name": "People and lifestyle; Popular culture",
+    "unit_name": "Education and work; Celebrity culture; Free time activities"
+  },
+  {
+    "word": "pedir",
+    "translation": "(to) ask for | asking for",
+    "theme_name": "People and lifestyle; General",
+    "unit_name": "Education and work; General"
+  },
+  {
+    "word": "sacar",
+    "translation": "(to) take out, get, obtain | taking out, getting, obtaining",
+    "theme_name": "People and lifestyle; General",
+    "unit_name": "Education and work; General"
+  },
+  {
+    "word": "servir",
+    "translation": "(to) serve | serving",
+    "theme_name": "People and lifestyle",
+    "unit_name": "Education and work"
+  },
+  {
+    "word": "visitar",
+    "translation": "(to) visit | visiting",
+    "theme_name": "Communication and the world around us; General",
+    "unit_name": "Environment and where people live; Travel and tourism; General"
+  },
+  {
+    "word": "luego",
+    "translation": "then, later",
+    "theme_name": "General",
+    "unit_name": "General"
+  },
+  {
+    "word": "ninguno",
+    "translation": "no, not…any (m)",
+    "theme_name": "General",
+    "unit_name": "General"
+  },
+  {
+    "word": "molestar",
+    "translation": "(to) bother, annoy, upset, disturb I bothering, annoying, upsetting, disturbing; (to) be offended | being offended",
+    "theme_name": "General",
+    "unit_name": "General"
+  },
+  {
+    "word": "permitir",
+    "translation": "(to) allow, permit | allowing, permitting; (to) afford | affording",
+    "theme_name": "People and lifestyle; General",
+    "unit_name": "Education and work; Identity and relationships; General"
+  },
+  {
+    "word": "la vacaciones",
+    "translation": "holidays; on holiday",
+    "theme_name": "People and lifestyle; Communication and the world around us",
+    "unit_name": "Education and work; Travel and tourism"
+  },
+  {
+    "word": "caer",
+    "translation": "(to) fall | falling; (to) fall over | falling over",
+    "theme_name": "People and lifestyle; General",
+    "unit_name": "Healthy living and lifestyle; General"
+  },
+  {
+    "word": "lavar",
+    "translation": "(to) wash I washing; (to) have a wash | having a wash",
+    "theme_name": "People and lifestyle",
+    "unit_name": "Healthy living and lifestyle"
+  },
+  {
+    "word": "entrenar",
+    "translation": "(to) train | training; (to) train, go training | training, going training",
+    "theme_name": "People and lifestyle; Popular culture",
+    "unit_name": "Healthy living and lifestyle; Free time activities"
+  },
+  {
+    "word": "celebrar",
+    "translation": "(to) celebrate | celebrating; (to) hold (an event) | holding (an event)",
+    "theme_name": "People and lifestyle; Popular culture",
+    "unit_name": "Identity and relationships; Celebrity culture; Customs, festivals and celebrations; Free time activities"
+  },
+  {
+    "word": "separar",
+    "translation": "(to) separate I separating; (to) separate (of a couple) | separating (of a couple)",
+    "theme_name": "People and lifestyle; Popular culture; Communication and the world around us",
+    "unit_name": "Identity and relationships; Celebrity culture; Environment and where people live"
+  },
+  {
+    "word": "vestir",
+    "translation": "(to) dress | dressing; (to) get dressed | getting dressed",
+    "theme_name": "Popular culture; General",
+    "unit_name": "Celebrity culture; Customs, festivals and celebrations; General"
+  },
+  {
+    "word": "perder",
+    "translation": "(to) lose, miss | losing, missing; (to) get lost | getting lost",
+    "theme_name": "Popular culture; Communication and the world around us",
+    "unit_name": "Free time activities; Environment and where people live; Travel and tourism"
+  },
+  {
+    "word": "la vez",
+    "translation": "time (specific occurrence); sometimes",
+    "theme_name": "General",
+    "unit_name": "General"
+  },
+  {
+    "word": "llegar",
+    "translation": "(to) arrive I arriving; (to) manage to (+ verb), succeed in (+ verb) I managing (to) (+ verb), succeeding in (+ verb)",
+    "theme_name": "General",
+    "unit_name": "General"
+  },
+  {
+    "word": "menos (…que)",
+    "translation": "less (…than), fewer (…than); fewer than",
+    "theme_name": "General",
+    "unit_name": "General"
+  },
+  {
+    "word": "pondría",
+    "translation": "(I) would put (on); (I) would get, become",
+    "theme_name": "General",
+    "unit_name": "General"
+  },
+  {
+    "word": "poner",
+    "translation": "(to) put (on) I putting (on); (to) get, become (+ adjective) I getting, becoming (+ adjective)",
+    "theme_name": "General",
+    "unit_name": "General"
+  },
+  {
+    "word": "el fin",
+    "translation": "end; finally, at last",
+    "theme_name": "General",
+    "unit_name": "General"
+  },
+  {
+    "word": "la noche",
+    "translation": "night, evening; at night, in the evening; tonight",
+    "theme_name": "General",
+    "unit_name": "General"
+  },
+  {
+    "word": "la mañana",
+    "translation": "morning; in the morning",
+    "theme_name": "General",
+    "unit_name": "General"
+  },
+  {
+    "word": "la tarde",
+    "translation": "afternoon, evening; in the afternoon, in the evening",
+    "theme_name": "General",
+    "unit_name": "General"
+  },
+  {
+    "word": "abrir",
+    "translation": "(to) open, unwrap | opening, unwrapping; (to) open up | opening up",
+    "theme_name": "General",
+    "unit_name": "General"
+  },
+  {
+    "word": "acordar",
+    "translation": "(to) agree on, remind | agreeing on, reminding ; (to) remember | remembering",
+    "theme_name": "General",
+    "unit_name": "General"
+  },
+  {
+    "word": "afectar",
+    "translation": "(to) affect I affecting; (to) be moved | being moved",
+    "theme_name": "General",
+    "unit_name": "General"
+  },
+  {
+    "word": "contra",
+    "translation": "against, opposite; in opposition, against",
+    "theme_name": "General",
+    "unit_name": "General"
+  },
+  {
+    "word": "cambiar",
+    "translation": "(to) change | changing; (to) get changed | getting changed",
+    "theme_name": "People and lifestyle; General",
+    "unit_name": "Healthy living and lifestyle; General"
+  },
+  {
+    "word": "dejar",
+    "translation": "(to) let, leave I  letting, leaving; (to) stop (+ing) I stopping (+ing)",
+    "theme_name": "General",
+    "unit_name": "General"
+  },
+  {
+    "word": "dormir",
+    "translation": "(to) sleep | sleeping; (to) fall asleep | falling asleep",
+    "theme_name": "People and lifestyle; Popular culture",
+    "unit_name": "Healthy living and lifestyle; Free time activities"
+  },
+  {
+    "word": "el cambio",
+    "translation": "change; on the other hand, whereas",
+    "theme_name": "Communication and the world around us; General",
+    "unit_name": "Environment and where people live; General"
+  },
+  {
+    "word": "el momento",
+    "translation": "moment; at the moment",
+    "theme_name": "General",
+    "unit_name": "General"
+  },
+  {
+    "word": "la moda",
+    "translation": "fashion; in fashion, fashionable",
+    "theme_name": "People and lifestyle; Popular culture",
+    "unit_name": "Education and work; Celebrity culture; Free time activities"
+  },
+  {
+    "word": "parecer",
+    "translation": "(to) seem I seeming; (to) look like | looking like",
+    "theme_name": "People and lifestyle; General",
+    "unit_name": "Identity and relationships; General"
+  },
+  {
+    "word": "pintar",
+    "translation": "(to) paint I painting; (to) put on makeup | putting on makeup",
+    "theme_name": "People and lifestyle; Popular culture",
+    "unit_name": "Education and work; Customs, festivals and celebrations; Free time activities"
+  },
+  {
+    "word": "pondré",
+    "translation": "(I) will put (on); (I) will get, become | (I) am going to put (on); (I) am going to get, become",
+    "theme_name": "General",
+    "unit_name": "General"
+  },
+  {
+    "word": "preocupar",
+    "translation": "(to) worry, be a worry | worrying, being a worry; (to) worry about | worrying about",
+    "theme_name": "General",
+    "unit_name": "General"
+  },
+  {
+    "word": "quitar",
+    "translation": "(to) remove, take away | removing, taking away; (to) take off (clothes) | taking off (clothes)",
+    "theme_name": "General",
+    "unit_name": "General"
+  },
+  {
+    "word": "levantar",
+    "translation": "(to) raise | raising; (to) get up | getting up",
+    "theme_name": "People and lifestyle; Popular culture",
+    "unit_name": "Healthy living and lifestyle; Free time activities"
+  },
+  {
+    "word": "llamar",
+    "translation": "(to) call, name | calling, naming; (to) be called | being called",
+    "theme_name": "People and lifestyle; Popular culture; Communication and the world around us",
+    "unit_name": "Education and work; Identity and relationships; Celebrity culture; Free time activities; Media and technology"
+  },
+  {
+    "word": "puse",
+    "translation": "(I) put (on); (I) got, became",
+    "theme_name": "General",
+    "unit_name": "General"
+  },
+  {
+    "word": "quedar",
+    "translation": "(to) arrange to meet, remain, be left I arranging to meet, remaining, being left; (to) stay I staying",
+    "theme_name": "General",
+    "unit_name": "General"
+  },
+  {
+    "word": "volver",
+    "translation": "(to) go back, return | going back, returning; (to) do again | doing again",
+    "theme_name": "General",
+    "unit_name": "General"
+  },
+  {
+    "word": "sentir",
+    "translation": "(to) feel, sense | feeling, sensing; (to) feel (+ adj) | feeling (+ adj)",
+    "theme_name": "General",
+    "unit_name": "General"
+  },
+  {
+    "word": "mandar",
+    "translation": "(to) send, order | sending, ordering",
+    "theme_name": "People and lifestyle; Communication and the world around us",
+    "unit_name": "Education and work; Media and technology"
+  },
+  {
+    "word": "enseñar",
+    "translation": "(to) teach, show| teaching, showing",
+    "theme_name": "People and lifestyle",
+    "unit_name": "Education and work"
+  },
+  {
+    "word": "policía",
+    "translation": "police, police officer (m)",
+    "theme_name": "People and lifestyle",
+    "unit_name": "Education and work"
+  },
+  {
+    "word": "gritar",
+    "translation": "(to) shout | shouting",
+    "theme_name": "People and lifestyle",
+    "unit_name": "Education and work; Identity and relationships"
+  },
+  {
+    "word": "médico",
+    "translation": "doctor",
+    "theme_name": "People and lifestyle",
+    "unit_name": "Education and work; Healthy living and lifestyle"
+  },
+  {
+    "word": "estudiante",
+    "translation": "student",
+    "theme_name": "People and lifestyle",
+    "unit_name": "Education and work; Identity and relationships"
+  },
+  {
+    "word": "escritor",
+    "translation": "writer",
+    "theme_name": "People and lifestyle; Popular culture",
+    "unit_name": "Education and work; Celebrity culture"
+  },
+  {
+    "word": "viajar",
+    "translation": "(to) travel | travelling",
+    "theme_name": "People and lifestyle; Popular culture; Communication and the world around us",
+    "unit_name": "Education and work; Celebrity culture; Customs, festivals and celebrations; Free time activities; Travel and tourism"
+  },
+  {
+    "word": "trabajador",
+    "translation": "hardworking",
+    "theme_name": "People and lifestyle",
+    "unit_name": "Education and work; Identity and relationships"
+  },
+  {
+    "word": "organizar",
+    "translation": "(to) organise | organising",
+    "theme_name": "People and lifestyle; Popular culture; Communication and the world around us; General",
+    "unit_name": "Education and work; Free time activities; Environment and where people live; Travel and tourism; General"
+  }
+]

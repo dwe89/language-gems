@@ -1,0 +1,158 @@
+{
+  "vocabulary_sample": {
+    "total_categories": 10,
+    "total_words": 2000,
+    "categories": [
+      "identidad",
+      "familia",
+      "educacion",
+      "trabajo",
+      "tiempo_libre",
+      "tecnologia",
+      "comida",
+      "ropa",
+      "casa",
+      "transporte"
+    ],
+    "sample_words_per_category": {
+      "identidad": [
+        "responsable",
+        "trabajador",
+        "inteligente",
+        "divertido",
+        "amable"
+      ],
+      "familia": [
+        "padre",
+        "madre",
+        "hermano",
+        "hermana",
+        "abuelo"
+      ],
+      "educacion": [
+        "instituto",
+        "colegio",
+        "universidad",
+        "clase",
+        "aula"
+      ],
+      "trabajo": [
+        "médico",
+        "enfermero",
+        "profesor",
+        "ingeniero",
+        "abogado"
+      ],
+      "tiempo_libre": [
+        "fútbol",
+        "baloncesto",
+        "tenis",
+        "natación",
+        "ciclismo"
+      ],
+      "tecnologia": [
+        "ordenador",
+        "móvil",
+        "tablet",
+        "internet",
+        "wifi"
+      ],
+      "comida": [
+        "desayuno",
+        "almuerzo",
+        "cena",
+        "merienda",
+        "pan"
+      ],
+      "ropa": [
+        "camisa",
+        "camiseta",
+        "pantalón",
+        "falda",
+        "vestido"
+      ],
+      "casa": [
+        "casa",
+        "piso",
+        "habitación",
+        "salón",
+        "cocina"
+      ],
+      "transporte": [
+        "coche",
+        "autobús",
+        "tren",
+        "metro",
+        "avión"
+      ]
+    }
+  },
+  "manual_approach": {
+    "total_words": 2000,
+    "paragraphs_needed": 250,
+    "estimated_hours": 2.1,
+    "template_variations": 25,
+    "maintainability": "LOW - Hardcoded templates",
+    "scalability": "POOR - Linear time increase",
+    "quality_consistency": "MODERATE - Human variance",
+    "coverage_guarantee": "DIFFICULT - Manual tracking"
+  },
+  "api_approach": {
+    "total_words": 2000,
+    "api_calls_needed": 166,
+    "estimated_hours": 0.14,
+    "estimated_cost_usd": 1.99,
+    "maintainability": "HIGH - Configuration-driven",
+    "scalability": "EXCELLENT - Logarithmic scaling",
+    "quality_consistency": "HIGH - AI consistency",
+    "coverage_guarantee": "AUTOMATIC - Systematic verification"
+  },
+  "distribution_plan": {
+    "distribution": {
+      "Theme 1: Identity and relationships": 400,
+      "Theme 2: Local area, holiday, travel": 400,
+      "Theme 3: School": 200,
+      "Theme 4: Future aspirations, study, work": 200,
+      "Theme 5: International and global dimension": 400,
+      "Theme 6: Culture and lifestyle": 400,
+      "Additional categories": 400
+    },
+    "theme_mapping": {
+      "Theme 1: Identity and relationships": [
+        "identidad",
+        "familia"
+      ],
+      "Theme 2: Local area, holiday, travel": [
+        "transporte",
+        "casa"
+      ],
+      "Theme 3: School": [
+        "educacion"
+      ],
+      "Theme 4: Future aspirations, study, work": [
+        "trabajo"
+      ],
+      "Theme 5: International and global dimension": [
+        "tecnologia",
+        "comida"
+      ],
+      "Theme 6: Culture and lifestyle": [
+        "tiempo_libre",
+        "ropa"
+      ],
+      "Additional categories": [
+        "casa",
+        "transporte"
+      ]
+    },
+    "total_words": 2000,
+    "recommended_approach": "API-based with batch processing"
+  },
+  "recommendations": {
+    "best_approach": "API-based hybrid system",
+    "reason": "Optimal balance of quality, speed, and scalability",
+    "implementation_time": "2-3 hours setup + 1 hour generation",
+    "ongoing_cost": "$5-15 per 2000-word booklet",
+    "maintenance": "Minimal - configuration-driven"
+  }
+}

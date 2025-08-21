@@ -27,7 +27,16 @@ export default function AssignmentModeHandler({
   const [error, setError] = useState<string | null>(null);
   const [settings, setSettings] = useState<any>(null);
 
-  const isAssignmentMode = !!(assignmentId && mode === 'assignment');
+  // If assignmentId is present, we're in assignment mode regardless of mode parameter
+  const isAssignmentMode = !!assignmentId;
+
+  console.log('🎯 [ASSIGNMENT HANDLER] Mode detection:', {
+    assignmentId,
+    mode,
+    isAssignmentMode,
+    gameId,
+    timestamp: new Date().toISOString()
+  });
 
   useEffect(() => {
     if (isAssignmentMode && assignmentId) {

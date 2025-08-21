@@ -102,11 +102,23 @@ export const useAssignmentVocabulary = (assignmentId: string) => {
         setLoading(true);
         setError(null);
 
+        console.log('🔄 [HOOK LOAD] Step 1: Creating Supabase client');
         // Use Supabase client directly instead of API route
         const supabase = createBrowserClient();
+        console.log('🔄 [HOOK LOAD] Step 2: Supabase client created successfully');
 
+        console.log('🔄 [HOOK LOAD] Step 3: About to check authentication status');
         // Check authentication status
-        const { data: { session }, error: authError } = await supabase.auth.getSession();
+        let session, authError;
+        try {
+          const authResult = await supabase.auth.getSession();
+          session = authResult.data.session;
+          authError = authResult.error;
+          console.log('🔄 [HOOK LOAD] Step 4: Authentication check completed successfully');
+        } catch (error) {
+          console.error('🚨 [HOOK LOAD] Authentication check failed:', error);
+          authError = error;
+        }
         console.log('🔐 [AUTH] Authentication status [DEBUG-v2]:', {
           hasSession: !!session,
           userId: session?.user?.id,
@@ -195,8 +207,177 @@ export const useAssignmentVocabulary = (assignmentId: string) => {
           console.log('📋 [LIST-BASED] List-based approach result:', {
             dataCount: vocabularyData.length,
             error: vocabularyError?.message,
-            hasAssignmentListId: !!assignmentData.vocabulary_assignment_list_id
+            hasAssignmentListId: !!assignmentData.vocabulary_assignment_list_id,
+            rawData: data,
+            vocabularyData: vocabularyData
           });
+
+          // If no data from legacy system, try enhanced vocabulary lists
+          if (vocabularyData.length === 0) {
+            // Debug: Check authentication context
+            const { data: authUser } = await supabase.auth.getUser();
+            console.log('🔍 [AUTH DEBUG] Current user context:', {
+              userId: authUser?.user?.id,
+              email: authUser?.user?.email,
+              assignmentListId: assignmentData.vocabulary_assignment_list_id
+            });
+
+            // First get the source_list_id from the vocabulary_assignment_lists table
+            console.log('🔍 [QUERY DEBUG] About to query vocabulary_assignment_lists:', {
+              table: 'vocabulary_assignment_lists',
+              id: assignmentData.vocabulary_assignment_list_id,
+              userId: authUser?.user?.id
+            });
+
+            const { data: assignmentListData, error: assignmentListError } = await supabase
+              .from('vocabulary_assignment_lists')
+              .select('source_list_id')
+              .eq('id', assignmentData.vocabulary_assignment_list_id)
+              .limit(1);
+
+            console.log('🔍 [QUERY DEBUG] vocabulary_assignment_lists query result:', {
+              data: assignmentListData,
+              error: assignmentListError?.message,
+              errorDetails: assignmentListError
+            });
+
+            console.log('📋 [ENHANCED-LIST] Assignment list data:', {
+              assignmentListData,
+              hasData: !!assignmentListData,
+              dataLength: assignmentListData?.length,
+              firstItem: assignmentListData?.[0],
+              sourceListId: assignmentListData?.[0]?.source_list_id
+            });
+
+            if (assignmentListData?.[0]?.source_list_id) {
+            // Try enhanced vocabulary approach
+            console.log('📋 [ENHANCED-QUERY] About to query enhanced vocabulary items:', {
+              sourceListId: assignmentListData[0].source_list_id,
+              query: 'enhanced_vocabulary_items where list_id = ' + assignmentListData[0].source_list_id
+            });
+
+            // Try multiple query approaches to debug the issue
+            const sourceListId = assignmentListData[0].source_list_id;
+            
+            console.log('📋 [ENHANCED-QUERY] Debug query details:', {
+              sourceListId: sourceListId,
+              sourceListIdType: typeof sourceListId,
+              queryString: `list_id = ${sourceListId}`
+            });
+
+            // Test the RLS policy by checking if we can access the items
+            console.log('🔍 [RLS TEST] Testing RLS policy access...');
+            const { data: rlsTestData, error: rlsTestError } = await supabase
+                .from('enhanced_vocabulary_items')
+                .select('id, term, translation')
+                .eq('list_id', sourceListId)
+                .limit(5);
+
+            console.log('🔍 [RLS TEST] RLS policy test result:', {
+              hasData: !!rlsTestData,
+              dataLength: rlsTestData?.length || 0,
+              error: rlsTestError?.message,
+              errorDetails: rlsTestError,
+              sampleData: rlsTestData?.slice(0, 2)
+            });
+
+            // Test auth.uid() function directly
+            console.log('🔍 [AUTH UID TEST] Testing auth.uid() function...');
+            const { data: authUidData, error: authUidError } = await supabase
+                .rpc('get_current_user_id');
+
+            console.log('🔍 [AUTH UID TEST] auth.uid() test result:', {
+              authUid: authUidData,
+              error: authUidError?.message,
+              expectedUserId: '50153b2f-0ace-4be7-b542-12f0ec348005'
+            });
+
+            // First try the basic query
+            let { data: enhancedData, error: enhancedError } = await supabase
+                .from('enhanced_vocabulary_items')
+                .select(`
+                  id,
+                  term,
+                  translation,
+                  part_of_speech,
+                  difficulty_level,
+                  order_position,
+                  type,
+                  context_sentence,
+                  context_translation,
+                  audio_url,
+                  image_url,
+                  list_id
+                `)
+                .eq('list_id', sourceListId)
+                .order('order_position');
+
+            console.log('📋 [ENHANCED-QUERY] Enhanced vocabulary query result (basic):', {
+              hasData: !!enhancedData,
+              dataLength: enhancedData?.length || 0,
+              error: enhancedError?.message,
+              firstItem: enhancedData?.[0],
+              sourceListId: sourceListId
+            });
+
+            // If that didn't work, try without ordering
+            if (!enhancedData || enhancedData.length === 0) {
+              console.log('📋 [ENHANCED-QUERY] Trying query without ORDER BY...');
+              const { data: enhancedData2, error: enhancedError2 } = await supabase
+                  .from('enhanced_vocabulary_items')
+                  .select('*')
+                  .eq('list_id', sourceListId);
+
+              console.log('📋 [ENHANCED-QUERY] No ORDER BY result:', {
+                hasData: !!enhancedData2,
+                dataLength: enhancedData2?.length || 0,
+                error: enhancedError2?.message,
+                allData: enhancedData2
+              });
+
+              if (enhancedData2 && enhancedData2.length > 0) {
+                enhancedData = enhancedData2;
+                enhancedError = enhancedError2;
+              }
+            }              if (enhancedData && enhancedData.length > 0) {
+                // Transform enhanced vocabulary items to match expected format
+                vocabularyData = enhancedData.map(item => ({
+                  order_position: item.order_position,
+                  centralized_vocabulary: {
+                    id: item.id,
+                    word: item.term,
+                    translation: item.translation,
+                    category: null,
+                    subcategory: null,
+                    part_of_speech: item.part_of_speech,
+                    language: 'spanish', // Default to Spanish for now
+                    audio_url: item.audio_url,
+                    word_type: item.type,
+                    gender: null,
+                    article: null,
+                    display_word: item.term
+                  }
+                }));
+                vocabularyError = null;
+
+                console.log('📋 [ENHANCED-LIST] Enhanced list approach result:', {
+                  dataCount: vocabularyData.length,
+                  sourceListId: assignmentListData[0].source_list_id,
+                  items: vocabularyData.map(v => v.centralized_vocabulary?.word)
+                });
+              } else {
+                console.log('📋 [ENHANCED-LIST] Enhanced list approach failed:', {
+                  error: enhancedError?.message,
+                  sourceListId: assignmentListData?.[0]?.source_list_id
+                });
+              }
+            } else {
+              console.log('📋 [ENHANCED-LIST] No source_list_id found or assignment list error:', {
+                assignmentListError: assignmentListError?.message,
+                assignmentListId: assignmentData.vocabulary_assignment_list_id
+              });
+            }
+          }
         }
 
         // If list-based approach failed or returned no data, try criteria-based approach

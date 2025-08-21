@@ -1,535 +1,201 @@
-VM2613:1  Console Ninja extension is connected to Next.js browser, see https://tinyurl.com/2vt8jxzw for more info.
+VM680:1  Console Ninja extension is connected to Next.js browser, see https://tinyurl.com/2vt8jxzw for more info.
 react-dom.development.js:38560 Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
 SupabaseProvider.tsx:26 🔧 [SUPABASE] Client exposed globally for console testing
 SupabaseProvider.tsx:26 🔧 [SUPABASE] Client exposed globally for console testing
-console-tests.js:86 ✅ [GRAMMAR TEST INJECTOR] testAssignmentConfiguration is now available!
+testGrammarSystem.ts:562 🧪 [GRAMMAR TEST] Grammar system test functions loaded!
+testGrammarSystem.ts:563 📋 [GRAMMAR TEST] Available functions:
+testGrammarSystem.ts:564   - testGrammarSystemIntegration() - Test grammar verbs and conjugations
+testGrammarSystem.ts:565   - testCreateGrammarAssignment() - Test creating grammar assignments
+testGrammarSystem.ts:566   - testGrammarPracticeRecording() - Test recording practice attempts
+testGrammarSystem.ts:567   - testCompleteGrammarAssignmentFlow() - Test complete assignment flow
+testGrammarSystem.ts:568   - testSpecificAssignmentLoading(assignmentId) - Debug specific assignment
+testGrammarSystem.ts:569   - testGrammarDashboardData(studentId?) - Test grammar dashboard data
+testGrammarSystem.ts:570   - testGrammarPracticeFlow() - Test complete practice recording flow
+testGrammarSystem.ts:571   - testAssignmentConfiguration(assignmentId?) - Test assignment config loading
+testGrammarSystem.ts:787 🔧 [GRAMMAR TEST] Loading grammar test functions...
+console-tests.js:131 ✅ [GRAMMAR TEST INJECTOR] testAssignmentConfiguration is now available!
+console-tests.js:132 ✅ [GRAMMAR TEST INJECTOR] findRealAssignments is now available!
+script.debug.js:1 [Vercel Web Analytics] Debug mode is enabled by default in development. No requests will be sent to the server.
+script.debug.js:1 [Vercel Web Analytics] Running queued event pageview Object
+script.debug.js:1 [Vercel Web Analytics] Running queued event pageview Object
+script.debug.js:1 [Vercel Web Analytics] [pageview] http://localhost:3000/dashboard/assignments/new/enhanced Object
+script.debug.js:1 [Vercel Web Analytics] [pageview] http://localhost:3000/dashboard/assignments/new/enhanced Object
+testGrammarSystem.ts:799 ✅ [GRAMMAR TEST] All test functions are now available in browser console
+CurriculumContentSelector.tsx:179 🎯 [CURRICULUM SELECTOR] My Lists clicked - BEFORE state change
+CurriculumContentSelector.tsx:180 🎯 [CURRICULUM SELECTOR] Current selectedType: KS3
+CurriculumContentSelector.tsx:181 🎯 [CURRICULUM SELECTOR] Current config: Object
+CurriculumContentSelector.tsx:189 🎯 [CURRICULUM SELECTOR] NEW config being set: Object
+CurriculumContentSelector.tsx:192 🎯 [CURRICULUM SELECTOR] About to call onConfigChange with: Object
+CurriculumContentSelector.tsx:194 🎯 [CURRICULUM SELECTOR] onConfigChange called successfully
+CurriculumContentSelector.tsx:462 🎯 [CURRICULUM SELECTOR] Custom list selected: bdb594f2-f133-4c17-b5f2-812818afb9cf GCSE - Mi tiempo libre
+CurriculumContentSelector.tsx:464 🎯 [CURRICULUM SELECTOR] Updated config: Object
+CurriculumContentSelector.tsx:467 🎯 [CURRICULUM SELECTOR] onConfigChange called with custom list
+enhancedAssignmentService.ts:198 📝 [ASSIGNMENT SERVICE] Assignment type check: Object
+enhancedAssignmentService.ts:210 📝 [ASSIGNMENT SERVICE] Processing vocabulary config: Object
+enhancedAssignmentService.ts:296 📝 [ASSIGNMENT SERVICE] Using standard vocabulary path
+enhancedAssignmentService.ts:452 Transforming vocabulary config: Object
+enhancedAssignmentService.ts:694 Successfully populated vocabulary list with 10 items
+enhancedAssignmentService.ts:399 📝 [ASSIGNMENT SERVICE] No conjugation-duel game selected, skipping grammar assignment creation
+script.debug.js:1 [Vercel Web Analytics] [pageview] http://localhost:3000/dashboard/assignments Object
+hot-reloader-client.tsx:297 [Fast Refresh] rebuilding
+hot-reloader-client.tsx:74 [Fast Refresh] done in 585ms
+
+
+
+VM7174:1  Console Ninja extension is connected to Next.js browser, see https://tinyurl.com/2vt8jxzw for more info.
+main-app.js?v=1755712611333:1836 Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
+SupabaseProvider.tsx:26 🔧 [SUPABASE] Client exposed globally for console testing
+SupabaseProvider.tsx:26 🔧 [SUPABASE] Client exposed globally for console testing
+console-tests.js:131 ✅ [GRAMMAR TEST INJECTOR] testAssignmentConfiguration is now available!
+console-tests.js:132 ✅ [GRAMMAR TEST INJECTOR] findRealAssignments is now available!
 script.debug.js:1 [Vercel Web Analytics] Debug mode is enabled by default in development. No requests will be sent to the server.
 script.debug.js:1 [Vercel Web Analytics] Running queued event pageview {route: '/student-dashboard', path: '/student-dashboard'}
 script.debug.js:1 [Vercel Web Analytics] Running queued event pageview {route: '/student-dashboard', path: '/student-dashboard'}
-script.debug.js:1 [Vercel Web Analytics] [pageview] http://localhost:3000/student-dashboard {o: 'http://localhost:3000/student-dashboard', sv: '0.1.3', sdkn: '@vercel/analytics/next', sdkv: '1.5.0', ts: 1755367419583, …}
-script.debug.js:1 [Vercel Web Analytics] [pageview] http://localhost:3000/student-dashboard {o: 'http://localhost:3000/student-dashboard', sv: '0.1.3', sdkn: '@vercel/analytics/next', sdkv: '1.5.0', ts: 1755367419583, …}
+script.debug.js:1 [Vercel Web Analytics] [pageview] http://localhost:3000/student-dashboard {o: 'http://localhost:3000/student-dashboard', sv: '0.1.3', sdkn: '@vercel/analytics/next', sdkv: '1.5.0', ts: 1755712611941, …}
+script.debug.js:1 [Vercel Web Analytics] [pageview] http://localhost:3000/student-dashboard {o: 'http://localhost:3000/student-dashboard', sv: '0.1.3', sdkn: '@vercel/analytics/next', sdkv: '1.5.0', ts: 1755712611941, …}
 layout.tsx:43 Student dashboard accessed on main domain - allowing access without redirects
 layout.tsx:76 Student dashboard accessed on main domain - skipping production redirects
 layout.tsx:43 Student dashboard accessed on main domain - allowing access without redirects
-ModernStudentDashboard.tsx:315 🔍 [DASHBOARD] Loading gems analytics for user: 2af506e8-7d5c-44cd-9e68-e6f2816059c5 kirsty.bacon.1755195127678@student.languagegems.com
-ModernStudentDashboard.tsx:315 🔍 [DASHBOARD] Loading gems analytics for user: 2af506e8-7d5c-44cd-9e68-e6f2816059c5 kirsty.bacon.1755195127678@student.languagegems.com
-GemsAnalyticsService.ts:138 💎 [VOCABULARY COLLECTION] Mastery Gems by rarity: {new_discovery: 14, common: 0, uncommon: 0, rare: 0, epic: 0, …}
-GemsAnalyticsService.ts:185 💎 [TODAY'S VOCABULARY] Today's Mastery Gems by rarity: {new_discovery: 11, common: 0, uncommon: 0, rare: 0, epic: 0, …}
-GemsAnalyticsService.ts:218 🔍 [GEMS ANALYTICS] Loading analytics for student: 2af506e8-7d5c-44cd-9e68-e6f2816059c5
-DualTrackAnalyticsService.ts:74 🔍 [DUAL-TRACK] Fetching XP breakdown for student: 2af506e8-7d5c-44cd-9e68-e6f2816059c5
-GemsAnalyticsService.ts:138 💎 [VOCABULARY COLLECTION] Mastery Gems by rarity: {new_discovery: 14, common: 0, uncommon: 0, rare: 0, epic: 0, …}
+ModernStudentDashboard.tsx:412 🔍 [DASHBOARD] Loading gems analytics for user: 50153b2f-0ace-4be7-b542-12f0ec348005 alex.johnson.1755549969221@student.languagegems.com
+ModernStudentDashboard.tsx:412 🔍 [DASHBOARD] Loading gems analytics for user: 50153b2f-0ace-4be7-b542-12f0ec348005 alex.johnson.1755549969221@student.languagegems.com
+GemsAnalyticsService.ts:138 💎 [VOCABULARY COLLECTION] Mastery Gems by rarity: {new_discovery: 4, common: 0, uncommon: 0, rare: 0, epic: 0, …}
+GemsAnalyticsService.ts:185 💎 [TODAY'S VOCABULARY] Today's Mastery Gems by rarity: {new_discovery: 4, common: 0, uncommon: 0, rare: 0, epic: 0, …}
+GemsAnalyticsService.ts:218 🔍 [GEMS ANALYTICS] Loading analytics for student: 50153b2f-0ace-4be7-b542-12f0ec348005
+DualTrackAnalyticsService.ts:74 🔍 [DUAL-TRACK] Fetching XP breakdown for student: 50153b2f-0ace-4be7-b542-12f0ec348005
+GemsAnalyticsService.ts:138 💎 [VOCABULARY COLLECTION] Mastery Gems by rarity: {new_discovery: 4, common: 0, uncommon: 0, rare: 0, epic: 0, …}
 DualTrackAnalyticsService.ts:82 📊 [DUAL-TRACK] Raw analytics data: {data: {…}, error: null}
-DualTrackAnalyticsService.ts:124 ✅ [DUAL-TRACK] XP breakdown result: {totalXP: 509, masteryXP: 70, activityXP: 436, grammarXP: 3, totalMasteryGems: 14, …}
-GemsAnalyticsService.ts:185 💎 [TODAY'S VOCABULARY] Today's Mastery Gems by rarity: {new_discovery: 11, common: 0, uncommon: 0, rare: 0, epic: 0, …}
-GemsAnalyticsService.ts:218 🔍 [GEMS ANALYTICS] Loading analytics for student: 2af506e8-7d5c-44cd-9e68-e6f2816059c5
-DualTrackAnalyticsService.ts:74 🔍 [DUAL-TRACK] Fetching XP breakdown for student: 2af506e8-7d5c-44cd-9e68-e6f2816059c5
+DualTrackAnalyticsService.ts:124 ✅ [DUAL-TRACK] XP breakdown result: {totalXP: 38, masteryXP: 20, activityXP: 18, grammarXP: 0, totalMasteryGems: 4, …}
+GemsAnalyticsService.ts:185 💎 [TODAY'S VOCABULARY] Today's Mastery Gems by rarity: {new_discovery: 4, common: 0, uncommon: 0, rare: 0, epic: 0, …}
+GemsAnalyticsService.ts:218 🔍 [GEMS ANALYTICS] Loading analytics for student: 50153b2f-0ace-4be7-b542-12f0ec348005
+DualTrackAnalyticsService.ts:74 🔍 [DUAL-TRACK] Fetching XP breakdown for student: 50153b2f-0ace-4be7-b542-12f0ec348005
 DualTrackAnalyticsService.ts:82 📊 [DUAL-TRACK] Raw analytics data: {data: {…}, error: null}
-DualTrackAnalyticsService.ts:124 ✅ [DUAL-TRACK] XP breakdown result: {totalXP: 509, masteryXP: 70, activityXP: 436, grammarXP: 3, totalMasteryGems: 14, …}
-GemsAnalyticsService.ts:228 📊 [TRIPLE-TRACK] Analytics loaded: {studentId: '2af506e8-7d5c-44cd-9e68-e6f2816059c5', totalXP: 509, masteryXP: 70, activityXP: 436, grammarXP: 3, …}
-ModernStudentDashboard.tsx:318 📊 [DASHBOARD] Gems data loaded: {studentId: '2af506e8-7d5c-44cd-9e68-e6f2816059c5', totalGems: 20, gemsByRarity: {…}, totalXP: 676, currentLevel: 1, …}
-GemsAnalyticsService.ts:228 📊 [TRIPLE-TRACK] Analytics loaded: {studentId: '2af506e8-7d5c-44cd-9e68-e6f2816059c5', totalXP: 509, masteryXP: 70, activityXP: 436, grammarXP: 3, …}
-ModernStudentDashboard.tsx:318 📊 [DASHBOARD] Gems data loaded: {studentId: '2af506e8-7d5c-44cd-9e68-e6f2816059c5', totalGems: 20, gemsByRarity: {…}, totalXP: 676, currentLevel: 1, …}
-hot-reloader-client.tsx:297 [Fast Refresh] rebuilding
-hot-reloader-client.tsx:74 [Fast Refresh] done in 467ms
-script.debug.js:1 [Vercel Web Analytics] [pageview] http://localhost:3000/student-dashboard/assignments/ebf00092-a57c-4437-9cfd-b41c4d0fc39a {o: 'http://localhost:3000/student-dashboard/assignments/ebf00092-a57c-4437-9cfd-b41c4d0fc39a', sv: '0.1.3', sdkn: '@vercel/analytics/next', sdkv: '1.5.0', ts: 1755367429935, …}
-page.tsx:235 Assignment progress calculation: {totalGames: 1, totalAssessments: 0, totalActivities: 1, completedActivities: 0, overallProgress: 0, …}
-page.tsx:235 Assignment progress calculation: {totalGames: 1, totalAssessments: 0, totalActivities: 1, completedActivities: 0, overallProgress: 0, …}
-hot-reloader-client.tsx:297 [Fast Refresh] rebuilding
-hot-reloader-client.tsx:74 [Fast Refresh] done in 390ms
-page.tsx:33 🎮 Conjugation Duel: Loading game data...
-page.tsx:33 🎮 Conjugation Duel: Loading game data...
-script.debug.js:1 [Vercel Web Analytics] [pageview] http://localhost:3000/games/conjugation-duel?assignment=ebf00092-a57c-4437-9cfd-b41c4d0fc39a&mode=assignment {o: 'http://localhost:3000/games/conjugation-duel?assig…00092-a57c-4437-9cfd-b41c4d0fc39a&mode=assignment', sv: '0.1.3', sdkn: '@vercel/analytics/next', sdkv: '1.5.0', ts: 1755367432803, …}
-page.tsx:51 ✅ Conjugation Duel: Game data loaded successfully {leaguesCount: 8, verbsKeys: Array(3)}
-GameAssignmentWrapper.tsx:363 🚀 [WRAPPER] GameAssignmentWrapper called [DEBUG-v2]: {assignmentId: 'ebf00092-a57c-4437-9cfd-b41c4d0fc39a', gameId: 'conjugation-duel', studentId: '2af506e8-7d5c-44cd-9e68-e6f2816059c5', timestamp: '2025-08-16T18:03:52.809Z'}
-GameAssignmentWrapper.tsx:79 🔧 [HOOK] useAssignmentVocabulary called [DEBUG-v2]: {assignmentId: 'ebf00092-a57c-4437-9cfd-b41c4d0fc39a', timestamp: '2025-08-16T18:03:52.809Z'}
-GameAssignmentWrapper.tsx:363 🚀 [WRAPPER] GameAssignmentWrapper called [DEBUG-v2]: {assignmentId: 'ebf00092-a57c-4437-9cfd-b41c4d0fc39a', gameId: 'conjugation-duel', studentId: '2af506e8-7d5c-44cd-9e68-e6f2816059c5', timestamp: '2025-08-16T18:03:52.809Z'}
-GameAssignmentWrapper.tsx:79 🔧 [HOOK] useAssignmentVocabulary called [DEBUG-v2]: {assignmentId: 'ebf00092-a57c-4437-9cfd-b41c4d0fc39a', timestamp: '2025-08-16T18:03:52.810Z'}
-GameAssignmentWrapper.tsx:90 🔄 [HOOK EFFECT] useEffect triggered [DEBUG-v3]: {assignmentId: 'ebf00092-a57c-4437-9cfd-b41c4d0fc39a', hasAssignmentId: true, timestamp: '2025-08-16T18:03:52.810Z'}
-GameAssignmentWrapper.tsx:97 🔄 [HOOK LOAD] Starting loadAssignmentData [DEBUG-v3]: {assignmentId: 'ebf00092-a57c-4437-9cfd-b41c4d0fc39a', timestamp: '2025-08-16T18:03:52.810Z'}
+DualTrackAnalyticsService.ts:124 ✅ [DUAL-TRACK] XP breakdown result: {totalXP: 38, masteryXP: 20, activityXP: 18, grammarXP: 0, totalMasteryGems: 4, …}
+GemsAnalyticsService.ts:228 📊 [TRIPLE-TRACK] Analytics loaded: {studentId: '50153b2f-0ace-4be7-b542-12f0ec348005', totalXP: 38, masteryXP: 20, activityXP: 18, grammarXP: 0, …}
+ModernStudentDashboard.tsx:415 📊 [DASHBOARD] Gems data loaded: {studentId: '50153b2f-0ace-4be7-b542-12f0ec348005', totalGems: 6, gemsByRarity: {…}, totalXP: 38, currentLevel: 1, …}
+GemsAnalyticsService.ts:228 📊 [TRIPLE-TRACK] Analytics loaded: {studentId: '50153b2f-0ace-4be7-b542-12f0ec348005', totalXP: 38, masteryXP: 20, activityXP: 18, grammarXP: 0, …}
+ModernStudentDashboard.tsx:415 📊 [DASHBOARD] Gems data loaded: {studentId: '50153b2f-0ace-4be7-b542-12f0ec348005', totalGems: 6, gemsByRarity: {…}, totalXP: 38, currentLevel: 1, …}
+script.debug.js:1 [Vercel Web Analytics] [pageview] http://localhost:3000/student-dashboard/assignments/9f17757e-763d-4bd1-9ce3-ef2a58f745c1 {o: 'http://localhost:3000/student-dashboard/assignments/9f17757e-763d-4bd1-9ce3-ef2a58f745c1', sv: '0.1.3', sdkn: '@vercel/analytics/next', sdkv: '1.5.0', ts: 1755712617111, …}
+page.tsx:263 Assignment progress calculation: {totalGames: 1, totalAssessments: 0, totalSkills: 0, totalActivities: 1, completedActivities: 0, …}
+page.tsx:263 Assignment progress calculation: {totalGames: 1, totalAssessments: 0, totalSkills: 0, totalActivities: 1, completedActivities: 0, …}
+page.tsx:28 🎯 [Noughts] Assignment mode check [DEBUG-v2]: {assignmentId: '9f17757e-763d-4bd1-9ce3-ef2a58f745c1', mode: 'assignment', hasUser: true, userId: '50153b2f-0ace-4be7-b542-12f0ec348005', timestamp: '2025-08-20T17:56:59.407Z'}
+page.tsx:28 🎯 [Noughts] Assignment mode check [DEBUG-v2]: {assignmentId: '9f17757e-763d-4bd1-9ce3-ef2a58f745c1', mode: 'assignment', hasUser: true, userId: '50153b2f-0ace-4be7-b542-12f0ec348005', timestamp: '2025-08-20T17:56:59.408Z'}
+GameAssignmentWrapper.tsx:363 🚀 [WRAPPER] GameAssignmentWrapper called [DEBUG-v2]: {assignmentId: '9f17757e-763d-4bd1-9ce3-ef2a58f745c1', gameId: 'noughts-and-crosses', studentId: '50153b2f-0ace-4be7-b542-12f0ec348005', timestamp: '2025-08-20T17:56:59.408Z'}
+GameAssignmentWrapper.tsx:79 🔧 [HOOK] useAssignmentVocabulary called [DEBUG-v2]: {assignmentId: '9f17757e-763d-4bd1-9ce3-ef2a58f745c1', timestamp: '2025-08-20T17:56:59.409Z'}
+GameAssignmentWrapper.tsx:363 🚀 [WRAPPER] GameAssignmentWrapper called [DEBUG-v2]: {assignmentId: '9f17757e-763d-4bd1-9ce3-ef2a58f745c1', gameId: 'noughts-and-crosses', studentId: '50153b2f-0ace-4be7-b542-12f0ec348005', timestamp: '2025-08-20T17:56:59.409Z'}
+GameAssignmentWrapper.tsx:79 🔧 [HOOK] useAssignmentVocabulary called [DEBUG-v2]: {assignmentId: '9f17757e-763d-4bd1-9ce3-ef2a58f745c1', timestamp: '2025-08-20T17:56:59.409Z'}
+GameAssignmentWrapper.tsx:90 🔄 [HOOK EFFECT] useEffect triggered [DEBUG-v3]: {assignmentId: '9f17757e-763d-4bd1-9ce3-ef2a58f745c1', hasAssignmentId: true, timestamp: '2025-08-20T17:56:59.413Z'}
+GameAssignmentWrapper.tsx:97 🔄 [HOOK LOAD] Starting loadAssignmentData [DEBUG-v3]: {assignmentId: '9f17757e-763d-4bd1-9ce3-ef2a58f745c1', timestamp: '2025-08-20T17:56:59.414Z'}
 GameAssignmentWrapper.tsx:380 🎵 GameAssignmentWrapper: Initializing audio context for assignment games
 useGlobalAudioContext.ts:69 🎵 GlobalAudioContext: Initializing audio context...
 useGlobalAudioContext.ts:88 🎵 GlobalAudioContext: New AudioContext created.
 useGlobalAudioContext.ts:105 ✅ GlobalAudioContext: Audio context initialized successfully (and running if resumed)
-GameAssignmentWrapper.tsx:90 🔄 [HOOK EFFECT] useEffect triggered [DEBUG-v3]: {assignmentId: 'ebf00092-a57c-4437-9cfd-b41c4d0fc39a', hasAssignmentId: true, timestamp: '2025-08-16T18:03:52.819Z'}
-GameAssignmentWrapper.tsx:97 🔄 [HOOK LOAD] Starting loadAssignmentData [DEBUG-v3]: {assignmentId: 'ebf00092-a57c-4437-9cfd-b41c4d0fc39a', timestamp: '2025-08-16T18:03:52.819Z'}
+GameAssignmentWrapper.tsx:90 🔄 [HOOK EFFECT] useEffect triggered [DEBUG-v3]: {assignmentId: '9f17757e-763d-4bd1-9ce3-ef2a58f745c1', hasAssignmentId: true, timestamp: '2025-08-20T17:56:59.420Z'}
+GameAssignmentWrapper.tsx:97 🔄 [HOOK LOAD] Starting loadAssignmentData [DEBUG-v3]: {assignmentId: '9f17757e-763d-4bd1-9ce3-ef2a58f745c1', timestamp: '2025-08-20T17:56:59.420Z'}
 GameAssignmentWrapper.tsx:380 🎵 GameAssignmentWrapper: Initializing audio context for assignment games
+script.debug.js:1 [Vercel Web Analytics] [pageview] http://localhost:3000/games/noughts-and-crosses?assignment=9f17757e-763d-4bd1-9ce3-ef2a58f745c1&mode=assignment {o: 'http://localhost:3000/games/noughts-and-crosses?as…7757e-763d-4bd1-9ce3-ef2a58f745c1&mode=assignment', sv: '0.1.3', sdkn: '@vercel/analytics/next', sdkv: '1.5.0', ts: 1755712619420, …}
 GameAssignmentWrapper.tsx:382 🎵 GameAssignmentWrapper: Audio context initialized - games will handle their own music
-GameAssignmentWrapper.tsx:382 🎵 GameAssignmentWrapper: Audio context initialized - games will handle their own music
-GameAssignmentWrapper.tsx:363 🚀 [WRAPPER] GameAssignmentWrapper called [DEBUG-v2]: {assignmentId: 'ebf00092-a57c-4437-9cfd-b41c4d0fc39a', gameId: 'conjugation-duel', studentId: '2af506e8-7d5c-44cd-9e68-e6f2816059c5', timestamp: '2025-08-16T18:03:52.820Z'}
-GameAssignmentWrapper.tsx:79 🔧 [HOOK] useAssignmentVocabulary called [DEBUG-v2]: {assignmentId: 'ebf00092-a57c-4437-9cfd-b41c4d0fc39a', timestamp: '2025-08-16T18:03:52.820Z'}
-GameAssignmentWrapper.tsx:363 🚀 [WRAPPER] GameAssignmentWrapper called [DEBUG-v2]: {assignmentId: 'ebf00092-a57c-4437-9cfd-b41c4d0fc39a', gameId: 'conjugation-duel', studentId: '2af506e8-7d5c-44cd-9e68-e6f2816059c5', timestamp: '2025-08-16T18:03:52.820Z'}
-GameAssignmentWrapper.tsx:79 🔧 [HOOK] useAssignmentVocabulary called [DEBUG-v2]: {assignmentId: 'ebf00092-a57c-4437-9cfd-b41c4d0fc39a', timestamp: '2025-08-16T18:03:52.820Z'}
-GameAssignmentWrapper.tsx:380 🎵 GameAssignmentWrapper: Initializing audio context for assignment games
 GameAssignmentWrapper.tsx:382 🎵 GameAssignmentWrapper: Audio context initialized - games will handle their own music
 useGlobalAudioContext.ts:235 🎵 GlobalAudioContext: AudioContext state changed to: running
-GameAssignmentWrapper.tsx:363 🚀 [WRAPPER] GameAssignmentWrapper called [DEBUG-v2]: {assignmentId: 'ebf00092-a57c-4437-9cfd-b41c4d0fc39a', gameId: 'conjugation-duel', studentId: '2af506e8-7d5c-44cd-9e68-e6f2816059c5', timestamp: '2025-08-16T18:03:52.825Z'}
-GameAssignmentWrapper.tsx:79 🔧 [HOOK] useAssignmentVocabulary called [DEBUG-v2]: {assignmentId: 'ebf00092-a57c-4437-9cfd-b41c4d0fc39a', timestamp: '2025-08-16T18:03:52.826Z'}
-GameAssignmentWrapper.tsx:363 🚀 [WRAPPER] GameAssignmentWrapper called [DEBUG-v2]: {assignmentId: 'ebf00092-a57c-4437-9cfd-b41c4d0fc39a', gameId: 'conjugation-duel', studentId: '2af506e8-7d5c-44cd-9e68-e6f2816059c5', timestamp: '2025-08-16T18:03:52.826Z'}
-GameAssignmentWrapper.tsx:79 🔧 [HOOK] useAssignmentVocabulary called [DEBUG-v2]: {assignmentId: 'ebf00092-a57c-4437-9cfd-b41c4d0fc39a', timestamp: '2025-08-16T18:03:52.826Z'}
+GameAssignmentWrapper.tsx:363 🚀 [WRAPPER] GameAssignmentWrapper called [DEBUG-v2]: {assignmentId: '9f17757e-763d-4bd1-9ce3-ef2a58f745c1', gameId: 'noughts-and-crosses', studentId: '50153b2f-0ace-4be7-b542-12f0ec348005', timestamp: '2025-08-20T17:56:59.428Z'}
+GameAssignmentWrapper.tsx:79 🔧 [HOOK] useAssignmentVocabulary called [DEBUG-v2]: {assignmentId: '9f17757e-763d-4bd1-9ce3-ef2a58f745c1', timestamp: '2025-08-20T17:56:59.428Z'}
+GameAssignmentWrapper.tsx:363 🚀 [WRAPPER] GameAssignmentWrapper called [DEBUG-v2]: {assignmentId: '9f17757e-763d-4bd1-9ce3-ef2a58f745c1', gameId: 'noughts-and-crosses', studentId: '50153b2f-0ace-4be7-b542-12f0ec348005', timestamp: '2025-08-20T17:56:59.428Z'}
+GameAssignmentWrapper.tsx:79 🔧 [HOOK] useAssignmentVocabulary called [DEBUG-v2]: {assignmentId: '9f17757e-763d-4bd1-9ce3-ef2a58f745c1', timestamp: '2025-08-20T17:56:59.428Z'}
 GameAssignmentWrapper.tsx:380 🎵 GameAssignmentWrapper: Initializing audio context for assignment games
 GameAssignmentWrapper.tsx:382 🎵 GameAssignmentWrapper: Audio context initialized - games will handle their own music
-GameAssignmentWrapper.tsx:110 🔐 [AUTH] Authentication status [DEBUG-v2]: {hasSession: true, userId: '2af506e8-7d5c-44cd-9e68-e6f2816059c5', authError: undefined, timestamp: '2025-08-16T18:03:52.827Z'}
-GameAssignmentWrapper.tsx:110 🔐 [AUTH] Authentication status [DEBUG-v2]: {hasSession: true, userId: '2af506e8-7d5c-44cd-9e68-e6f2816059c5', authError: undefined, timestamp: '2025-08-16T18:03:52.828Z'}
-GameAssignmentWrapper.tsx:136 📋 [ASSIGNMENT] Assignment query result: {assignmentId: 'ebf00092-a57c-4437-9cfd-b41c4d0fc39a', found: true, error: undefined, vocabularyAssignmentListId: null, vocabularyCriteria: null}
-GameAssignmentWrapper.tsx:136 📋 [ASSIGNMENT] Assignment query result: {assignmentId: 'ebf00092-a57c-4437-9cfd-b41c4d0fc39a', found: true, error: undefined, vocabularyAssignmentListId: null, vocabularyCriteria: null}
-GameAssignmentWrapper.tsx:207 🔍 [FALLBACK CHECK] Checking fallback conditions: {vocabularyDataLength: 0, hasVocabularyCriteria: false, vocabularyCriteria: null, isGrammarAssignment: {…}}
-GameAssignmentWrapper.tsx:216 🎯 [GRAMMAR] This is a grammar assignment - creating placeholder vocabulary
-GameAssignmentWrapper.tsx:293 ✅ [SERVER] GameAssignmentWrapper - Final result: 1 vocabulary items for assignment ebf00092-a57c-4437-9cfd-b41c4d0fc39a
-GameAssignmentWrapper.tsx:294 🔍 [SERVER] Final vocabulary data sample: [{…}]
-GameAssignmentWrapper.tsx:363 🚀 [WRAPPER] GameAssignmentWrapper called [DEBUG-v2]: {assignmentId: 'ebf00092-a57c-4437-9cfd-b41c4d0fc39a', gameId: 'conjugation-duel', studentId: '2af506e8-7d5c-44cd-9e68-e6f2816059c5', timestamp: '2025-08-16T18:03:52.919Z'}
-GameAssignmentWrapper.tsx:79 🔧 [HOOK] useAssignmentVocabulary called [DEBUG-v2]: {assignmentId: 'ebf00092-a57c-4437-9cfd-b41c4d0fc39a', timestamp: '2025-08-16T18:03:52.920Z'}
-page.tsx:142 🎯 [CONJUGATION DUEL] Assignment grammar config: {fullGameConfig: {…}, grammarConfig: {…}, gameLanguage: 'spanish', vocabularyCount: 1}
-GameAssignmentWrapper.tsx:363 🚀 [WRAPPER] GameAssignmentWrapper called [DEBUG-v2]: {assignmentId: 'ebf00092-a57c-4437-9cfd-b41c4d0fc39a', gameId: 'conjugation-duel', studentId: '2af506e8-7d5c-44cd-9e68-e6f2816059c5', timestamp: '2025-08-16T18:03:52.920Z'}
-GameAssignmentWrapper.tsx:79 🔧 [HOOK] useAssignmentVocabulary called [DEBUG-v2]: {assignmentId: 'ebf00092-a57c-4437-9cfd-b41c4d0fc39a', timestamp: '2025-08-16T18:03:52.920Z'}
-page.tsx:142 🎯 [CONJUGATION DUEL] Assignment grammar config: {fullGameConfig: {…}, grammarConfig: {…}, gameLanguage: 'spanish', vocabularyCount: 1}
-GameAssignmentWrapper.tsx:380 🎵 GameAssignmentWrapper: Initializing audio context for assignment games
-GameAssignmentWrapper.tsx:363 🚀 [WRAPPER] GameAssignmentWrapper called [DEBUG-v2]: {assignmentId: 'ebf00092-a57c-4437-9cfd-b41c4d0fc39a', gameId: 'conjugation-duel', studentId: '2af506e8-7d5c-44cd-9e68-e6f2816059c5', timestamp: '2025-08-16T18:03:52.923Z'}
-GameAssignmentWrapper.tsx:79 🔧 [HOOK] useAssignmentVocabulary called [DEBUG-v2]: {assignmentId: 'ebf00092-a57c-4437-9cfd-b41c4d0fc39a', timestamp: '2025-08-16T18:03:52.923Z'}
-page.tsx:142 🎯 [CONJUGATION DUEL] Assignment grammar config: {fullGameConfig: {…}, grammarConfig: {…}, gameLanguage: 'spanish', vocabularyCount: 1}
-GameAssignmentWrapper.tsx:363 🚀 [WRAPPER] GameAssignmentWrapper called [DEBUG-v2]: {assignmentId: 'ebf00092-a57c-4437-9cfd-b41c4d0fc39a', gameId: 'conjugation-duel', studentId: '2af506e8-7d5c-44cd-9e68-e6f2816059c5', timestamp: '2025-08-16T18:03:52.923Z'}
-GameAssignmentWrapper.tsx:79 🔧 [HOOK] useAssignmentVocabulary called [DEBUG-v2]: {assignmentId: 'ebf00092-a57c-4437-9cfd-b41c4d0fc39a', timestamp: '2025-08-16T18:03:52.924Z'}
-page.tsx:142 🎯 [CONJUGATION DUEL] Assignment grammar config: {fullGameConfig: {…}, grammarConfig: {…}, gameLanguage: 'spanish', vocabularyCount: 1}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-useBattleAudio.ts:157 Attempting to play music. Enabled: true Music ref: true Already playing: false
-useBattleAudio.ts:160 Playing music...
-GameAssignmentWrapper.tsx:380 🎵 GameAssignmentWrapper: Initializing audio context for assignment games
-useBattleAudio.ts:170 Stopping music. Music ref: true Was playing: true
-useBattleAudio.ts:157 Attempting to play music. Enabled: true Music ref: true Already playing: false
-useBattleAudio.ts:160 Playing music...
-GameAssignmentWrapper.tsx:363 🚀 [WRAPPER] GameAssignmentWrapper called [DEBUG-v2]: {assignmentId: 'ebf00092-a57c-4437-9cfd-b41c4d0fc39a', gameId: 'conjugation-duel', studentId: '2af506e8-7d5c-44cd-9e68-e6f2816059c5', timestamp: '2025-08-16T18:03:52.937Z'}
-GameAssignmentWrapper.tsx:79 🔧 [HOOK] useAssignmentVocabulary called [DEBUG-v2]: {assignmentId: 'ebf00092-a57c-4437-9cfd-b41c4d0fc39a', timestamp: '2025-08-16T18:03:52.937Z'}
-page.tsx:142 🎯 [CONJUGATION DUEL] Assignment grammar config: {fullGameConfig: {…}, grammarConfig: {…}, gameLanguage: 'spanish', vocabularyCount: 1}
-GameAssignmentWrapper.tsx:363 🚀 [WRAPPER] GameAssignmentWrapper called [DEBUG-v2]: {assignmentId: 'ebf00092-a57c-4437-9cfd-b41c4d0fc39a', gameId: 'conjugation-duel', studentId: '2af506e8-7d5c-44cd-9e68-e6f2816059c5', timestamp: '2025-08-16T18:03:52.938Z'}
-GameAssignmentWrapper.tsx:79 🔧 [HOOK] useAssignmentVocabulary called [DEBUG-v2]: {assignmentId: 'ebf00092-a57c-4437-9cfd-b41c4d0fc39a', timestamp: '2025-08-16T18:03:52.938Z'}
-page.tsx:142 🎯 [CONJUGATION DUEL] Assignment grammar config: {fullGameConfig: {…}, grammarConfig: {…}, gameLanguage: 'spanish', vocabularyCount: 1}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
+GameAssignmentWrapper.tsx:110 🔐 [AUTH] Authentication status [DEBUG-v2]: {hasSession: true, userId: '50153b2f-0ace-4be7-b542-12f0ec348005', authError: undefined, timestamp: '2025-08-20T17:56:59.430Z'}
+GameAssignmentWrapper.tsx:110 🔐 [AUTH] Authentication status [DEBUG-v2]: {hasSession: true, userId: '50153b2f-0ace-4be7-b542-12f0ec348005', authError: undefined, timestamp: '2025-08-20T17:56:59.432Z'}
+GameAssignmentWrapper.tsx:136 📋 [ASSIGNMENT] Assignment query result: {assignmentId: '9f17757e-763d-4bd1-9ce3-ef2a58f745c1', found: true, error: undefined, vocabularyAssignmentListId: '092ef68c-f74b-4639-99fe-0ce0d218ec47', vocabularyCriteria: {…}}
+GameAssignmentWrapper.tsx:136 📋 [ASSIGNMENT] Assignment query result: {assignmentId: '9f17757e-763d-4bd1-9ce3-ef2a58f745c1', found: true, error: undefined, vocabularyAssignmentListId: '092ef68c-f74b-4639-99fe-0ce0d218ec47', vocabularyCriteria: {…}}
+GameAssignmentWrapper.tsx:195 📋 [LIST-BASED] List-based approach result: {dataCount: 10, error: undefined, hasAssignmentListId: true}
+GameAssignmentWrapper.tsx:207 🔍 [FALLBACK CHECK] Checking fallback conditions: {vocabularyDataLength: 10, hasVocabularyCriteria: true, vocabularyCriteria: {…}, isGrammarAssignment: false}
+GameAssignmentWrapper.tsx:293 ✅ [SERVER] GameAssignmentWrapper - Final result: 10 vocabulary items for assignment 9f17757e-763d-4bd1-9ce3-ef2a58f745c1
+GameAssignmentWrapper.tsx:294 🔍 [SERVER] Final vocabulary data sample: (2) [{…}, {…}]
+GameAssignmentWrapper.tsx:363 🚀 [WRAPPER] GameAssignmentWrapper called [DEBUG-v2]: {assignmentId: '9f17757e-763d-4bd1-9ce3-ef2a58f745c1', gameId: 'noughts-and-crosses', studentId: '50153b2f-0ace-4be7-b542-12f0ec348005', timestamp: '2025-08-20T17:56:59.681Z'}
+GameAssignmentWrapper.tsx:79 🔧 [HOOK] useAssignmentVocabulary called [DEBUG-v2]: {assignmentId: '9f17757e-763d-4bd1-9ce3-ef2a58f745c1', timestamp: '2025-08-20T17:56:59.682Z'}
+GameAssignmentWrapper.tsx:363 🚀 [WRAPPER] GameAssignmentWrapper called [DEBUG-v2]: {assignmentId: '9f17757e-763d-4bd1-9ce3-ef2a58f745c1', gameId: 'noughts-and-crosses', studentId: '50153b2f-0ace-4be7-b542-12f0ec348005', timestamp: '2025-08-20T17:56:59.682Z'}
+GameAssignmentWrapper.tsx:79 🔧 [HOOK] useAssignmentVocabulary called [DEBUG-v2]: {assignmentId: '9f17757e-763d-4bd1-9ce3-ef2a58f745c1', timestamp: '2025-08-20T17:56:59.682Z'}
 GameAssignmentWrapper.tsx:380 🎵 GameAssignmentWrapper: Initializing audio context for assignment games
 GameAssignmentWrapper.tsx:382 🎵 GameAssignmentWrapper: Audio context initialized - games will handle their own music
-GameAssignmentWrapper.tsx:382 🎵 GameAssignmentWrapper: Audio context initialized - games will handle their own music
-GameAssignmentWrapper.tsx:382 🎵 GameAssignmentWrapper: Audio context initialized - games will handle their own music
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-GameAssignmentWrapper.tsx:207 🔍 [FALLBACK CHECK] Checking fallback conditions: {vocabularyDataLength: 0, hasVocabularyCriteria: false, vocabularyCriteria: null, isGrammarAssignment: {…}}
-GameAssignmentWrapper.tsx:216 🎯 [GRAMMAR] This is a grammar assignment - creating placeholder vocabulary
-GameAssignmentWrapper.tsx:293 ✅ [SERVER] GameAssignmentWrapper - Final result: 1 vocabulary items for assignment ebf00092-a57c-4437-9cfd-b41c4d0fc39a
-GameAssignmentWrapper.tsx:294 🔍 [SERVER] Final vocabulary data sample: [{…}]
-GameAssignmentWrapper.tsx:363 🚀 [WRAPPER] GameAssignmentWrapper called [DEBUG-v2]: {assignmentId: 'ebf00092-a57c-4437-9cfd-b41c4d0fc39a', gameId: 'conjugation-duel', studentId: '2af506e8-7d5c-44cd-9e68-e6f2816059c5', timestamp: '2025-08-16T18:03:52.980Z'}
-GameAssignmentWrapper.tsx:79 🔧 [HOOK] useAssignmentVocabulary called [DEBUG-v2]: {assignmentId: 'ebf00092-a57c-4437-9cfd-b41c4d0fc39a', timestamp: '2025-08-16T18:03:52.980Z'}
-page.tsx:142 🎯 [CONJUGATION DUEL] Assignment grammar config: {fullGameConfig: {…}, grammarConfig: {…}, gameLanguage: 'spanish', vocabularyCount: 1}
-GameAssignmentWrapper.tsx:363 🚀 [WRAPPER] GameAssignmentWrapper called [DEBUG-v2]: {assignmentId: 'ebf00092-a57c-4437-9cfd-b41c4d0fc39a', gameId: 'conjugation-duel', studentId: '2af506e8-7d5c-44cd-9e68-e6f2816059c5', timestamp: '2025-08-16T18:03:52.981Z'}
-GameAssignmentWrapper.tsx:79 🔧 [HOOK] useAssignmentVocabulary called [DEBUG-v2]: {assignmentId: 'ebf00092-a57c-4437-9cfd-b41c4d0fc39a', timestamp: '2025-08-16T18:03:52.981Z'}
-page.tsx:142 🎯 [CONJUGATION DUEL] Assignment grammar config: {fullGameConfig: {…}, grammarConfig: {…}, gameLanguage: 'spanish', vocabularyCount: 1}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
+GameAssignmentWrapper.tsx:195 📋 [LIST-BASED] List-based approach result: {dataCount: 10, error: undefined, hasAssignmentListId: true}
+GameAssignmentWrapper.tsx:207 🔍 [FALLBACK CHECK] Checking fallback conditions: {vocabularyDataLength: 10, hasVocabularyCriteria: true, vocabularyCriteria: {…}, isGrammarAssignment: false}
+GameAssignmentWrapper.tsx:293 ✅ [SERVER] GameAssignmentWrapper - Final result: 10 vocabulary items for assignment 9f17757e-763d-4bd1-9ce3-ef2a58f745c1
+GameAssignmentWrapper.tsx:294 🔍 [SERVER] Final vocabulary data sample: (2) [{…}, {…}]
+GameAssignmentWrapper.tsx:363 🚀 [WRAPPER] GameAssignmentWrapper called [DEBUG-v2]: {assignmentId: '9f17757e-763d-4bd1-9ce3-ef2a58f745c1', gameId: 'noughts-and-crosses', studentId: '50153b2f-0ace-4be7-b542-12f0ec348005', timestamp: '2025-08-20T17:56:59.734Z'}
+GameAssignmentWrapper.tsx:79 🔧 [HOOK] useAssignmentVocabulary called [DEBUG-v2]: {assignmentId: '9f17757e-763d-4bd1-9ce3-ef2a58f745c1', timestamp: '2025-08-20T17:56:59.734Z'}
+GameAssignmentWrapper.tsx:363 🚀 [WRAPPER] GameAssignmentWrapper called [DEBUG-v2]: {assignmentId: '9f17757e-763d-4bd1-9ce3-ef2a58f745c1', gameId: 'noughts-and-crosses', studentId: '50153b2f-0ace-4be7-b542-12f0ec348005', timestamp: '2025-08-20T17:56:59.734Z'}
+GameAssignmentWrapper.tsx:79 🔧 [HOOK] useAssignmentVocabulary called [DEBUG-v2]: {assignmentId: '9f17757e-763d-4bd1-9ce3-ef2a58f745c1', timestamp: '2025-08-20T17:56:59.735Z'}
 GameAssignmentWrapper.tsx:380 🎵 GameAssignmentWrapper: Initializing audio context for assignment games
 GameAssignmentWrapper.tsx:382 🎵 GameAssignmentWrapper: Audio context initialized - games will handle their own music
-ConjugationDuelGameWrapper.tsx:136 Conjugation Duel game session started: 14a7ff26-660b-406a-9703-6a66bdd93897
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-GameAssignmentWrapper.tsx:475 🔮 [WRAPPER] Gem session started for assignment: 456457f7-d7dc-4e31-8e1f-b503e4526ac1
+GameAssignmentWrapper.tsx:475 🔮 [WRAPPER] Gem session started for assignment: fa22ca35-4958-4b37-a15d-11d850d187a8
 GameAssignmentWrapper.tsx:560 🔮 [WRAPPER] recordVocabularyInteraction function set up for assignment games
-GameAssignmentWrapper.tsx:363 🚀 [WRAPPER] GameAssignmentWrapper called [DEBUG-v2]: {assignmentId: 'ebf00092-a57c-4437-9cfd-b41c4d0fc39a', gameId: 'conjugation-duel', studentId: '2af506e8-7d5c-44cd-9e68-e6f2816059c5', timestamp: '2025-08-16T18:03:53.041Z'}
-GameAssignmentWrapper.tsx:79 🔧 [HOOK] useAssignmentVocabulary called [DEBUG-v2]: {assignmentId: 'ebf00092-a57c-4437-9cfd-b41c4d0fc39a', timestamp: '2025-08-16T18:03:53.042Z'}
-page.tsx:142 🎯 [CONJUGATION DUEL] Assignment grammar config: {fullGameConfig: {…}, grammarConfig: {…}, gameLanguage: 'spanish', vocabularyCount: 1}
-GameAssignmentWrapper.tsx:363 🚀 [WRAPPER] GameAssignmentWrapper called [DEBUG-v2]: {assignmentId: 'ebf00092-a57c-4437-9cfd-b41c4d0fc39a', gameId: 'conjugation-duel', studentId: '2af506e8-7d5c-44cd-9e68-e6f2816059c5', timestamp: '2025-08-16T18:03:53.042Z'}
-GameAssignmentWrapper.tsx:79 🔧 [HOOK] useAssignmentVocabulary called [DEBUG-v2]: {assignmentId: 'ebf00092-a57c-4437-9cfd-b41c4d0fc39a', timestamp: '2025-08-16T18:03:53.042Z'}
-page.tsx:142 🎯 [CONJUGATION DUEL] Assignment grammar config: {fullGameConfig: {…}, grammarConfig: {…}, gameLanguage: 'spanish', vocabularyCount: 1}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
+GameAssignmentWrapper.tsx:363 🚀 [WRAPPER] GameAssignmentWrapper called [DEBUG-v2]: {assignmentId: '9f17757e-763d-4bd1-9ce3-ef2a58f745c1', gameId: 'noughts-and-crosses', studentId: '50153b2f-0ace-4be7-b542-12f0ec348005', timestamp: '2025-08-20T17:56:59.752Z'}
+GameAssignmentWrapper.tsx:79 🔧 [HOOK] useAssignmentVocabulary called [DEBUG-v2]: {assignmentId: '9f17757e-763d-4bd1-9ce3-ef2a58f745c1', timestamp: '2025-08-20T17:56:59.752Z'}
+GameAssignmentWrapper.tsx:363 🚀 [WRAPPER] GameAssignmentWrapper called [DEBUG-v2]: {assignmentId: '9f17757e-763d-4bd1-9ce3-ef2a58f745c1', gameId: 'noughts-and-crosses', studentId: '50153b2f-0ace-4be7-b542-12f0ec348005', timestamp: '2025-08-20T17:56:59.752Z'}
+GameAssignmentWrapper.tsx:79 🔧 [HOOK] useAssignmentVocabulary called [DEBUG-v2]: {assignmentId: '9f17757e-763d-4bd1-9ce3-ef2a58f745c1', timestamp: '2025-08-20T17:56:59.752Z'}
 GameAssignmentWrapper.tsx:380 🎵 GameAssignmentWrapper: Initializing audio context for assignment games
 GameAssignmentWrapper.tsx:382 🎵 GameAssignmentWrapper: Audio context initialized - games will handle their own music
-useBattleAudio.ts:29 Loaded sword_clash.mp3
-useBattleAudio.ts:69 Loaded victory.mp3
-useBattleAudio.ts:49 Loaded correct_answer.mp3
-training_dummy.png:1  GET http://localhost:3000/images/battle/training_dummy.png 404 (Not Found)
-Image
-commitMount @ react-dom.development.js:35623
-commitHostComponentMount @ react-dom.development.js:21336
-commitLayoutEffectOnFiber @ react-dom.development.js:21494
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21488
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21577
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21407
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21488
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21577
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21407
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21407
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21488
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21488
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21488
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21488
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21407
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21407
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21488
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21488
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21488
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21407
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21407
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21407
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21577
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21577
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21407
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21418
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21407
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21407
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21407
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21407
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21418
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21407
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21407
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21577
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21407
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21488
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21577
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21577
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21407
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21418
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21407
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21407
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21407
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21407
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21418
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21407
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21407
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21577
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21407
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21577
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21577
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21407
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21418
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21407
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21418
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21407
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21407
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21407
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21418
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21407
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21407
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21577
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21407
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21488
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21407
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21552
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21518
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21577
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21407
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21577
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21407
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21577
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21407
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21577
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21407
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21577
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21407
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21488
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21488
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21577
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21577
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21418
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21407
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21577
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21418
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21407
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21407
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21418
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21407
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21577
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21577
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21577
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21577
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21577
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21577
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21407
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21418
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21407
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21407
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21407
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-commitLayoutEffectOnFiber @ react-dom.development.js:21407
-recursivelyTraverseLayoutEffects @ react-dom.development.js:22926
-useBattleAudio.ts:107 Loaded battle_theme.mp3
-useBattleAudio.ts:79 Loaded defeat.mp3
-useBattleAudio.ts:39 Loaded magic_cast.mp3
-useBattleAudio.ts:89 Loaded level_up.mp3
-useBattleAudio.ts:109 Started playing battle_theme.mp3
-useBattleAudio.ts:59 Loaded wrong_answer.mp3
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-useBattleAudio.ts:140 Attempting to play sound: correct_answer
-useBattleAudio.ts:141 Sound enabled: true
-useBattleAudio.ts:142 Available sounds: (7) ['sword_clash', 'magic_cast', 'correct_answer', 'wrong_answer', 'victory', 'defeat', 'level_up']
-useBattleAudio.ts:146 Playing sound: correct_answer
-useBattleAudio.ts:140 Attempting to play sound: sword_clash
-useBattleAudio.ts:141 Sound enabled: true
-useBattleAudio.ts:142 Available sounds: (7) ['sword_clash', 'magic_cast', 'correct_answer', 'wrong_answer', 'victory', 'defeat', 'level_up']
-useBattleAudio.ts:146 Playing sound: sword_clash
-EnhancedGameSessionService.ts:557 📝 No vocabulary ID provided - logging performance without vocabulary reference
-GameAssignmentWrapper.tsx:363 🚀 [WRAPPER] GameAssignmentWrapper called [DEBUG-v2]: {assignmentId: 'ebf00092-a57c-4437-9cfd-b41c4d0fc39a', gameId: 'conjugation-duel', studentId: '2af506e8-7d5c-44cd-9e68-e6f2816059c5', timestamp: '2025-08-16T18:03:59.048Z'}
-GameAssignmentWrapper.tsx:79 🔧 [HOOK] useAssignmentVocabulary called [DEBUG-v2]: {assignmentId: 'ebf00092-a57c-4437-9cfd-b41c4d0fc39a', timestamp: '2025-08-16T18:03:59.048Z'}
-page.tsx:142 🎯 [CONJUGATION DUEL] Assignment grammar config: {fullGameConfig: {…}, grammarConfig: {…}, gameLanguage: 'spanish', vocabularyCount: 1}
-GameAssignmentWrapper.tsx:363 🚀 [WRAPPER] GameAssignmentWrapper called [DEBUG-v2]: {assignmentId: 'ebf00092-a57c-4437-9cfd-b41c4d0fc39a', gameId: 'conjugation-duel', studentId: '2af506e8-7d5c-44cd-9e68-e6f2816059c5', timestamp: '2025-08-16T18:03:59.049Z'}
-GameAssignmentWrapper.tsx:79 🔧 [HOOK] useAssignmentVocabulary called [DEBUG-v2]: {assignmentId: 'ebf00092-a57c-4437-9cfd-b41c4d0fc39a', timestamp: '2025-08-16T18:03:59.049Z'}
-page.tsx:142 🎯 [CONJUGATION DUEL] Assignment grammar config: {fullGameConfig: {…}, grammarConfig: {…}, gameLanguage: 'spanish', vocabularyCount: 1}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
+GameAssignmentWrapper.tsx:363 🚀 [WRAPPER] GameAssignmentWrapper called [DEBUG-v2]: {assignmentId: '9f17757e-763d-4bd1-9ce3-ef2a58f745c1', gameId: 'noughts-and-crosses', studentId: '50153b2f-0ace-4be7-b542-12f0ec348005', timestamp: '2025-08-20T17:57:00.773Z'}
+GameAssignmentWrapper.tsx:79 🔧 [HOOK] useAssignmentVocabulary called [DEBUG-v2]: {assignmentId: '9f17757e-763d-4bd1-9ce3-ef2a58f745c1', timestamp: '2025-08-20T17:57:00.774Z'}
+GameAssignmentWrapper.tsx:363 🚀 [WRAPPER] GameAssignmentWrapper called [DEBUG-v2]: {assignmentId: '9f17757e-763d-4bd1-9ce3-ef2a58f745c1', gameId: 'noughts-and-crosses', studentId: '50153b2f-0ace-4be7-b542-12f0ec348005', timestamp: '2025-08-20T17:57:00.775Z'}
+GameAssignmentWrapper.tsx:79 🔧 [HOOK] useAssignmentVocabulary called [DEBUG-v2]: {assignmentId: '9f17757e-763d-4bd1-9ce3-ef2a58f745c1', timestamp: '2025-08-20T17:57:00.775Z'}
 GameAssignmentWrapper.tsx:380 🎵 GameAssignmentWrapper: Initializing audio context for assignment games
 GameAssignmentWrapper.tsx:382 🎵 GameAssignmentWrapper: Audio context initialized - games will handle their own music
 useGlobalAudioContext.ts:212 🎵 GlobalAudioContext: Removed initial user interaction listeners.
+TicTacToeGameThemed.tsx:631 🔍 [QUESTION GEN] Selected vocabulary word: {randomWord: {…}, hasId: true, idValue: '2f8037e4-64c4-494c-ac49-feaf775a974a', idType: 'string', vocabularyLength: 10, …}
+TicTacToeGameThemed.tsx:662 🔍 [QUESTION CREATE] Question object created: {questionId: '2f8037e4-64c4-494c-ac49-feaf775a974a', questionIdType: 'string', randomWordId: '2f8037e4-64c4-494c-ac49-feaf775a974a', randomWordIdType: 'string', vocabularyId: '2f8037e4-64c4-494c-ac49-feaf775a974a', …}
+TicTacToeGameThemed.tsx:731 🔍 [FSRS DEBUG] Current question data: {currentQuestionId: '2f8037e4-64c4-494c-ac49-feaf775a974a', currentQuestionIdType: 'string', currentQuestionWord: 'sábado', currentQuestionTranslation: 'Saturday'}
+TicTacToeGameThemed.tsx:759 🔍 [FSRS DEBUG] Word data being passed to FSRS: {id: '2f8037e4-64c4-494c-ac49-feaf775a974a', word: 'sábado', translation: 'Saturday', language: 'es'}
+EnhancedGameSessionService.ts:191 🔍 [ENHANCED SESSION] FSRS update: {vocabularyId: '2f8037e4-64c4-494c-ac49-feaf775a974a', wasCorrect: true}
+EnhancedGameSessionService.ts:659 ✅ [FSRS GATE] Word is due for review, allowing progression: {vocabularyId: '2f8037e4-64c4-494c-ac49-feaf775a974a', phase: 'new', state: 'new'}
+EnhancedGameSessionService.ts:681 ✅ [DIRECT UPDATE] Vocabulary updated successfully: {vocabularyId: '2f8037e4-64c4-494c-ac49-feaf775a974a', wasCorrect: true, studentId: '50153b2f-0ace-4be7-b542-12f0ec348005', phase: 'new'}
+EnhancedGameSessionService.ts:203 ✅ [ENHANCED SESSION] FSRS update completed
 EnhancedGameSessionService.ts:215 🎮 [DUAL-TRACK] Awarding Activity Gem for correct answer
-EnhancedGameSessionService.ts:354 💎 No vocabulary ID provided - storing gem without vocabulary reference
+EnhancedGameSessionService.ts:379 ✅ [DUAL-TRACK] activity gem stored: {rarity: 'rare', xp: 5, type: 'activity'}
+EnhancedGameSessionService.ts:260 💎 [DUAL-TRACK] FSRS allows progression - awarding Mastery Gem
+EnhancedGameSessionService.ts:261 🔍 [DEBUG] canProgress data: {allowed: true, reason: 'New word - first encounter', phase: 'new', state: 'new', nextReviewAt: '2025-08-22T17:57:06.777666+00:00'}
+EnhancedGameSessionService.ts:263 🔍 [DEBUG] isFirstTime calculation: {phase: 'new', isFirstTime: true}
+RewardEngine.ts:215 🆕 [REWARD ENGINE] First-time word detected - awarding New Discovery
+EnhancedGameSessionService.ts:379 ✅ [DUAL-TRACK] mastery gem stored: {rarity: 'new_discovery', xp: 5, type: 'mastery'}
+TicTacToeGameThemed.tsx:779 ✅ Noughts and Crosses gem awarded: new_discovery (5 XP)
+TicTacToeGameThemed.tsx:794 🔍 [VOCAB TRACKING] Starting vocabulary tracking for word: {questionId: '2f8037e4-64c4-494c-ac49-feaf775a974a', questionIdType: 'string', word: 'sábado', translation: 'Saturday', isCorrect: true, …}
+TicTacToeGameThemed.tsx:841 🔍 [VOCAB TRACKING] Skipping direct gem recording - assignment mode (wrapper will handle gems)
+TicTacToeGameThemed.tsx:886 🔍 [ASSIGNMENT SKIP] Skipping assignment wrapper recording - FSRS already handled vocabulary tracking
+TicTacToeGameThemed.tsx:631 🔍 [QUESTION GEN] Selected vocabulary word: {randomWord: {…}, hasId: true, idValue: '46d860a9-2eb9-4ccb-88af-8910306700ef', idType: 'string', vocabularyLength: 10, …}
+TicTacToeGameThemed.tsx:662 🔍 [QUESTION CREATE] Question object created: {questionId: '46d860a9-2eb9-4ccb-88af-8910306700ef', questionIdType: 'string', randomWordId: '46d860a9-2eb9-4ccb-88af-8910306700ef', randomWordIdType: 'string', vocabularyId: '46d860a9-2eb9-4ccb-88af-8910306700ef', …}
+TicTacToeGameThemed.tsx:731 🔍 [FSRS DEBUG] Current question data: {currentQuestionId: '46d860a9-2eb9-4ccb-88af-8910306700ef', currentQuestionIdType: 'string', currentQuestionWord: 'morado', currentQuestionTranslation: 'purple'}
+TicTacToeGameThemed.tsx:759 🔍 [FSRS DEBUG] Word data being passed to FSRS: {id: '46d860a9-2eb9-4ccb-88af-8910306700ef', word: 'morado', translation: 'purple', language: 'es'}
+EnhancedGameSessionService.ts:191 🔍 [ENHANCED SESSION] FSRS update: {vocabularyId: '46d860a9-2eb9-4ccb-88af-8910306700ef', wasCorrect: true}
+EnhancedGameSessionService.ts:659 ✅ [FSRS GATE] Word is due for review, allowing progression: {vocabularyId: '46d860a9-2eb9-4ccb-88af-8910306700ef', phase: 'new', state: 'new'}
+EnhancedGameSessionService.ts:681 ✅ [DIRECT UPDATE] Vocabulary updated successfully: {vocabularyId: '46d860a9-2eb9-4ccb-88af-8910306700ef', wasCorrect: true, studentId: '50153b2f-0ace-4be7-b542-12f0ec348005', phase: 'new'}
+EnhancedGameSessionService.ts:203 ✅ [ENHANCED SESSION] FSRS update completed
+EnhancedGameSessionService.ts:215 🎮 [DUAL-TRACK] Awarding Activity Gem for correct answer
 EnhancedGameSessionService.ts:379 ✅ [DUAL-TRACK] activity gem stored: {rarity: 'common', xp: 2, type: 'activity'}
-ConjugationDuelGameWrapper.tsx:268 🔮 Conjugation Duel earned common gem (2 XP) for "estudiar" (present)
-ConjugationDuelService.ts:1110 ✅ [GRAMMAR] Recorded practice attempt: {verb: 'estudiar', tense: 'present', person: 'él', isCorrect: true, responseTime: 6101}
-ConjugationDuelService.ts:1143 ✅ [GRAMMAR] Created grammar gem event: 3 XP
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-GameAssignmentWrapper.tsx:363 🚀 [WRAPPER] GameAssignmentWrapper called [DEBUG-v2]: {assignmentId: 'ebf00092-a57c-4437-9cfd-b41c4d0fc39a', gameId: 'conjugation-duel', studentId: '2af506e8-7d5c-44cd-9e68-e6f2816059c5', timestamp: '2025-08-16T18:04:01.049Z'}
-GameAssignmentWrapper.tsx:79 🔧 [HOOK] useAssignmentVocabulary called [DEBUG-v2]: {assignmentId: 'ebf00092-a57c-4437-9cfd-b41c4d0fc39a', timestamp: '2025-08-16T18:04:01.050Z'}
-page.tsx:142 🎯 [CONJUGATION DUEL] Assignment grammar config: {fullGameConfig: {…}, grammarConfig: {…}, gameLanguage: 'spanish', vocabularyCount: 1}
-GameAssignmentWrapper.tsx:363 🚀 [WRAPPER] GameAssignmentWrapper called [DEBUG-v2]: {assignmentId: 'ebf00092-a57c-4437-9cfd-b41c4d0fc39a', gameId: 'conjugation-duel', studentId: '2af506e8-7d5c-44cd-9e68-e6f2816059c5', timestamp: '2025-08-16T18:04:01.051Z'}
-GameAssignmentWrapper.tsx:79 🔧 [HOOK] useAssignmentVocabulary called [DEBUG-v2]: {assignmentId: 'ebf00092-a57c-4437-9cfd-b41c4d0fc39a', timestamp: '2025-08-16T18:04:01.051Z'}
-page.tsx:142 🎯 [CONJUGATION DUEL] Assignment grammar config: {fullGameConfig: {…}, grammarConfig: {…}, gameLanguage: 'spanish', vocabularyCount: 1}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-GameAssignmentWrapper.tsx:380 🎵 GameAssignmentWrapper: Initializing audio context for assignment games
-GameAssignmentWrapper.tsx:382 🎵 GameAssignmentWrapper: Audio context initialized - games will handle their own music
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}difficulty: "beginner"language: "spanish"persons: (3) ['yo', 'tu', 'el_ella_usted']tenses: ['present']verbCount: 10verbTypes: ['regular'][[Prototype]]: Object
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-GameAssignmentWrapper.tsx:363 🚀 [WRAPPER] GameAssignmentWrapper called [DEBUG-v2]: {assignmentId: 'ebf00092-a57c-4437-9cfd-b41c4d0fc39a', gameId: 'conjugation-duel', studentId: '2af506e8-7d5c-44cd-9e68-e6f2816059c5', timestamp: '2025-08-16T18:04:11.113Z'}
-GameAssignmentWrapper.tsx:79 🔧 [HOOK] useAssignmentVocabulary called [DEBUG-v2]: {assignmentId: 'ebf00092-a57c-4437-9cfd-b41c4d0fc39a', timestamp: '2025-08-16T18:04:11.114Z'}
-page.tsx:142 🎯 [CONJUGATION DUEL] Assignment grammar config: {fullGameConfig: {…}, grammarConfig: {…}, gameLanguage: 'spanish', vocabularyCount: 1}
-GameAssignmentWrapper.tsx:363 🚀 [WRAPPER] GameAssignmentWrapper called [DEBUG-v2]: {assignmentId: 'ebf00092-a57c-4437-9cfd-b41c4d0fc39a', gameId: 'conjugation-duel', studentId: '2af506e8-7d5c-44cd-9e68-e6f2816059c5', timestamp: '2025-08-16T18:04:11.115Z'}
-GameAssignmentWrapper.tsx:79 🔧 [HOOK] useAssignmentVocabulary called [DEBUG-v2]: {assignmentId: 'ebf00092-a57c-4437-9cfd-b41c4d0fc39a', timestamp: '2025-08-16T18:04:11.116Z'}
-page.tsx:142 🎯 [CONJUGATION DUEL] Assignment grammar config: {fullGameConfig: {…}, grammarConfig: {…}, gameLanguage: 'spanish', vocabularyCount: 1}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-GameAssignmentWrapper.tsx:380 🎵 GameAssignmentWrapper: Initializing audio context for assignment games
-GameAssignmentWrapper.tsx:382 🎵 GameAssignmentWrapper: Audio context initialized - games will handle their own music
-GameAssignmentWrapper.tsx:363 🚀 [WRAPPER] GameAssignmentWrapper called [DEBUG-v2]: {assignmentId: 'ebf00092-a57c-4437-9cfd-b41c4d0fc39a', gameId: 'conjugation-duel', studentId: '2af506e8-7d5c-44cd-9e68-e6f2816059c5', timestamp: '2025-08-16T18:04:13.113Z'}
-GameAssignmentWrapper.tsx:79 🔧 [HOOK] useAssignmentVocabulary called [DEBUG-v2]: {assignmentId: 'ebf00092-a57c-4437-9cfd-b41c4d0fc39a', timestamp: '2025-08-16T18:04:13.114Z'}
-page.tsx:142 🎯 [CONJUGATION DUEL] Assignment grammar config: {fullGameConfig: {…}, grammarConfig: {…}, gameLanguage: 'spanish', vocabularyCount: 1}
-GameAssignmentWrapper.tsx:363 🚀 [WRAPPER] GameAssignmentWrapper called [DEBUG-v2]: {assignmentId: 'ebf00092-a57c-4437-9cfd-b41c4d0fc39a', gameId: 'conjugation-duel', studentId: '2af506e8-7d5c-44cd-9e68-e6f2816059c5', timestamp: '2025-08-16T18:04:13.115Z'}
-GameAssignmentWrapper.tsx:79 🔧 [HOOK] useAssignmentVocabulary called [DEBUG-v2]: {assignmentId: 'ebf00092-a57c-4437-9cfd-b41c4d0fc39a', timestamp: '2025-08-16T18:04:13.116Z'}
-page.tsx:142 🎯 [CONJUGATION DUEL] Assignment grammar config: {fullGameConfig: {…}, grammarConfig: {…}, gameLanguage: 'spanish', vocabularyCount: 1}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-GameAssignmentWrapper.tsx:380 🎵 GameAssignmentWrapper: Initializing audio context for assignment games
-GameAssignmentWrapper.tsx:382 🎵 GameAssignmentWrapper: Audio context initialized - games will handle their own music
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}difficulty: "beginner"language: "spanish"persons: (3) ['yo', 'tu', 'el_ella_usted']tenses: ['present']verbCount: 10verbTypes: ['regular'][[Prototype]]: Object
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-GameAssignmentWrapper.tsx:363 🚀 [WRAPPER] GameAssignmentWrapper called [DEBUG-v2]: {assignmentId: 'ebf00092-a57c-4437-9cfd-b41c4d0fc39a', gameId: 'conjugation-duel', studentId: '2af506e8-7d5c-44cd-9e68-e6f2816059c5', timestamp: '2025-08-16T18:04:23.186Z'}
-GameAssignmentWrapper.tsx:79 🔧 [HOOK] useAssignmentVocabulary called [DEBUG-v2]: {assignmentId: 'ebf00092-a57c-4437-9cfd-b41c4d0fc39a', timestamp: '2025-08-16T18:04:23.187Z'}
-page.tsx:142 🎯 [CONJUGATION DUEL] Assignment grammar config: {fullGameConfig: {…}, grammarConfig: {…}, gameLanguage: 'spanish', vocabularyCount: 1}
-GameAssignmentWrapper.tsx:363 🚀 [WRAPPER] GameAssignmentWrapper called [DEBUG-v2]: {assignmentId: 'ebf00092-a57c-4437-9cfd-b41c4d0fc39a', gameId: 'conjugation-duel', studentId: '2af506e8-7d5c-44cd-9e68-e6f2816059c5', timestamp: '2025-08-16T18:04:23.187Z'}
-GameAssignmentWrapper.tsx:79 🔧 [HOOK] useAssignmentVocabulary called [DEBUG-v2]: {assignmentId: 'ebf00092-a57c-4437-9cfd-b41c4d0fc39a', timestamp: '2025-08-16T18:04:23.187Z'}
-page.tsx:142 🎯 [CONJUGATION DUEL] Assignment grammar config: {fullGameConfig: {…}, grammarConfig: {…}, gameLanguage: 'spanish', vocabularyCount: 1}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-GameAssignmentWrapper.tsx:380 🎵 GameAssignmentWrapper: Initializing audio context for assignment games
-GameAssignmentWrapper.tsx:382 🎵 GameAssignmentWrapper: Audio context initialized - games will handle their own music
-GameAssignmentWrapper.tsx:363 🚀 [WRAPPER] GameAssignmentWrapper called [DEBUG-v2]: {assignmentId: 'ebf00092-a57c-4437-9cfd-b41c4d0fc39a', gameId: 'conjugation-duel', studentId: '2af506e8-7d5c-44cd-9e68-e6f2816059c5', timestamp: '2025-08-16T18:04:25.191Z'}
-GameAssignmentWrapper.tsx:79 🔧 [HOOK] useAssignmentVocabulary called [DEBUG-v2]: {assignmentId: 'ebf00092-a57c-4437-9cfd-b41c4d0fc39a', timestamp: '2025-08-16T18:04:25.191Z'}
-page.tsx:142 🎯 [CONJUGATION DUEL] Assignment grammar config: {fullGameConfig: {…}, grammarConfig: {…}, gameLanguage: 'spanish', vocabularyCount: 1}
-GameAssignmentWrapper.tsx:363 🚀 [WRAPPER] GameAssignmentWrapper called [DEBUG-v2]: {assignmentId: 'ebf00092-a57c-4437-9cfd-b41c4d0fc39a', gameId: 'conjugation-duel', studentId: '2af506e8-7d5c-44cd-9e68-e6f2816059c5', timestamp: '2025-08-16T18:04:25.192Z'}
-GameAssignmentWrapper.tsx:79 🔧 [HOOK] useAssignmentVocabulary called [DEBUG-v2]: {assignmentId: 'ebf00092-a57c-4437-9cfd-b41c4d0fc39a', timestamp: '2025-08-16T18:04:25.192Z'}
-page.tsx:142 🎯 [CONJUGATION DUEL] Assignment grammar config: {fullGameConfig: {…}, grammarConfig: {…}, gameLanguage: 'spanish', vocabularyCount: 1}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-GameAssignmentWrapper.tsx:380 🎵 GameAssignmentWrapper: Initializing audio context for assignment games
-GameAssignmentWrapper.tsx:382 🎵 GameAssignmentWrapper: Audio context initialized - games will handle their own music
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-GameAssignmentWrapper.tsx:363 🚀 [WRAPPER] GameAssignmentWrapper called [DEBUG-v2]: {assignmentId: 'ebf00092-a57c-4437-9cfd-b41c4d0fc39a', gameId: 'conjugation-duel', studentId: '2af506e8-7d5c-44cd-9e68-e6f2816059c5', timestamp: '2025-08-16T18:04:35.269Z'}
-GameAssignmentWrapper.tsx:79 🔧 [HOOK] useAssignmentVocabulary called [DEBUG-v2]: {assignmentId: 'ebf00092-a57c-4437-9cfd-b41c4d0fc39a', timestamp: '2025-08-16T18:04:35.270Z'}
-page.tsx:142 🎯 [CONJUGATION DUEL] Assignment grammar config: {fullGameConfig: {…}, grammarConfig: {…}, gameLanguage: 'spanish', vocabularyCount: 1}
-GameAssignmentWrapper.tsx:363 🚀 [WRAPPER] GameAssignmentWrapper called [DEBUG-v2]: {assignmentId: 'ebf00092-a57c-4437-9cfd-b41c4d0fc39a', gameId: 'conjugation-duel', studentId: '2af506e8-7d5c-44cd-9e68-e6f2816059c5', timestamp: '2025-08-16T18:04:35.272Z'}
-GameAssignmentWrapper.tsx:79 🔧 [HOOK] useAssignmentVocabulary called [DEBUG-v2]: {assignmentId: 'ebf00092-a57c-4437-9cfd-b41c4d0fc39a', timestamp: '2025-08-16T18:04:35.273Z'}
-page.tsx:142 🎯 [CONJUGATION DUEL] Assignment grammar config: {fullGameConfig: {…}, grammarConfig: {…}, gameLanguage: 'spanish', vocabularyCount: 1}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-GameAssignmentWrapper.tsx:380 🎵 GameAssignmentWrapper: Initializing audio context for assignment games
-GameAssignmentWrapper.tsx:382 🎵 GameAssignmentWrapper: Audio context initialized - games will handle their own music
-GameAssignmentWrapper.tsx:363 🚀 [WRAPPER] GameAssignmentWrapper called [DEBUG-v2]: {assignmentId: 'ebf00092-a57c-4437-9cfd-b41c4d0fc39a', gameId: 'conjugation-duel', studentId: '2af506e8-7d5c-44cd-9e68-e6f2816059c5', timestamp: '2025-08-16T18:04:37.271Z'}
-GameAssignmentWrapper.tsx:79 🔧 [HOOK] useAssignmentVocabulary called [DEBUG-v2]: {assignmentId: 'ebf00092-a57c-4437-9cfd-b41c4d0fc39a', timestamp: '2025-08-16T18:04:37.271Z'}
-page.tsx:142 🎯 [CONJUGATION DUEL] Assignment grammar config: {fullGameConfig: {…}, grammarConfig: {…}, gameLanguage: 'spanish', vocabularyCount: 1}
-GameAssignmentWrapper.tsx:363 🚀 [WRAPPER] GameAssignmentWrapper called [DEBUG-v2]: {assignmentId: 'ebf00092-a57c-4437-9cfd-b41c4d0fc39a', gameId: 'conjugation-duel', studentId: '2af506e8-7d5c-44cd-9e68-e6f2816059c5', timestamp: '2025-08-16T18:04:37.272Z'}
-GameAssignmentWrapper.tsx:79 🔧 [HOOK] useAssignmentVocabulary called [DEBUG-v2]: {assignmentId: 'ebf00092-a57c-4437-9cfd-b41c4d0fc39a', timestamp: '2025-08-16T18:04:37.273Z'}
-page.tsx:142 🎯 [CONJUGATION DUEL] Assignment grammar config: {fullGameConfig: {…}, grammarConfig: {…}, gameLanguage: 'spanish', vocabularyCount: 1}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-GameAssignmentWrapper.tsx:380 🎵 GameAssignmentWrapper: Initializing audio context for assignment games
-GameAssignmentWrapper.tsx:382 🎵 GameAssignmentWrapper: Audio context initialized - games will handle their own music
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
-BattleArena.tsx:63 🎯 [BATTLE ARENA] Initializing with grammar config: {tenses: Array(1), persons: Array(3), language: 'spanish', verbCount: 10, verbTypes: Array(1), …}
+EnhancedGameSessionService.ts:260 💎 [DUAL-TRACK] FSRS allows progression - awarding Mastery Gem
+EnhancedGameSessionService.ts:261 🔍 [DEBUG] canProgress data: {allowed: true, reason: 'New word - first encounter', phase: 'new', state: 'new', nextReviewAt: '2025-08-22T17:57:12.85256+00:00'}
+EnhancedGameSessionService.ts:263 🔍 [DEBUG] isFirstTime calculation: {phase: 'new', isFirstTime: true}
+RewardEngine.ts:215 🆕 [REWARD ENGINE] First-time word detected - awarding New Discovery
+EnhancedGameSessionService.ts:379 ✅ [DUAL-TRACK] mastery gem stored: {rarity: 'new_discovery', xp: 5, type: 'mastery'}
+TicTacToeGameThemed.tsx:779 ✅ Noughts and Crosses gem awarded: new_discovery (5 XP)
+TicTacToeGameThemed.tsx:794 🔍 [VOCAB TRACKING] Starting vocabulary tracking for word: {questionId: '46d860a9-2eb9-4ccb-88af-8910306700ef', questionIdType: 'string', word: 'morado', translation: 'purple', isCorrect: true, …}
+TicTacToeGameThemed.tsx:841 🔍 [VOCAB TRACKING] Skipping direct gem recording - assignment mode (wrapper will handle gems)
+TicTacToeGameThemed.tsx:886 🔍 [ASSIGNMENT SKIP] Skipping assignment wrapper recording - FSRS already handled vocabulary tracking
+TicTacToeGameThemed.tsx:631 🔍 [QUESTION GEN] Selected vocabulary word: {randomWord: {…}, hasId: true, idValue: '920a5e32-b473-4025-9317-defbbcd309b9', idType: 'string', vocabularyLength: 10, …}
+TicTacToeGameThemed.tsx:662 🔍 [QUESTION CREATE] Question object created: {questionId: '920a5e32-b473-4025-9317-defbbcd309b9', questionIdType: 'string', randomWordId: '920a5e32-b473-4025-9317-defbbcd309b9', randomWordIdType: 'string', vocabularyId: '920a5e32-b473-4025-9317-defbbcd309b9', …}
+TicTacToeGameThemed.tsx:731 🔍 [FSRS DEBUG] Current question data: {currentQuestionId: '920a5e32-b473-4025-9317-defbbcd309b9', currentQuestionIdType: 'string', currentQuestionWord: 'dar', currentQuestionTranslation: 'to give'}
+TicTacToeGameThemed.tsx:759 🔍 [FSRS DEBUG] Word data being passed to FSRS: {id: '920a5e32-b473-4025-9317-defbbcd309b9', word: 'dar', translation: 'to give', language: 'es'}
+EnhancedGameSessionService.ts:191 🔍 [ENHANCED SESSION] FSRS update: {vocabularyId: '920a5e32-b473-4025-9317-defbbcd309b9', wasCorrect: true}
+EnhancedGameSessionService.ts:659 ✅ [FSRS GATE] Word is due for review, allowing progression: {vocabularyId: '920a5e32-b473-4025-9317-defbbcd309b9', phase: 'new', state: 'new'}
+EnhancedGameSessionService.ts:681 ✅ [DIRECT UPDATE] Vocabulary updated successfully: {vocabularyId: '920a5e32-b473-4025-9317-defbbcd309b9', wasCorrect: true, studentId: '50153b2f-0ace-4be7-b542-12f0ec348005', phase: 'new'}
+EnhancedGameSessionService.ts:203 ✅ [ENHANCED SESSION] FSRS update completed
+EnhancedGameSessionService.ts:215 🎮 [DUAL-TRACK] Awarding Activity Gem for correct answer
+EnhancedGameSessionService.ts:379 ✅ [DUAL-TRACK] activity gem stored: {rarity: 'rare', xp: 5, type: 'activity'}
+EnhancedGameSessionService.ts:260 💎 [DUAL-TRACK] FSRS allows progression - awarding Mastery Gem
+EnhancedGameSessionService.ts:261 🔍 [DEBUG] canProgress data: {allowed: true, reason: 'New word - first encounter', phase: 'new', state: 'new', nextReviewAt: '2025-08-22T17:57:17.49605+00:00'}
+EnhancedGameSessionService.ts:263 🔍 [DEBUG] isFirstTime calculation: {phase: 'new', isFirstTime: true}
+RewardEngine.ts:215 🆕 [REWARD ENGINE] First-time word detected - awarding New Discovery
+EnhancedGameSessionService.ts:379 ✅ [DUAL-TRACK] mastery gem stored: {rarity: 'new_discovery', xp: 5, type: 'mastery'}
+TicTacToeGameThemed.tsx:779 ✅ Noughts and Crosses gem awarded: new_discovery (5 XP)
+TicTacToeGameThemed.tsx:794 🔍 [VOCAB TRACKING] Starting vocabulary tracking for word: {questionId: '920a5e32-b473-4025-9317-defbbcd309b9', questionIdType: 'string', word: 'dar', translation: 'to give', isCorrect: true, …}
+TicTacToeGameThemed.tsx:841 🔍 [VOCAB TRACKING] Skipping direct gem recording - assignment mode (wrapper will handle gems)
+TicTacToeGameThemed.tsx:886 🔍 [ASSIGNMENT SKIP] Skipping assignment wrapper recording - FSRS already handled vocabulary tracking
+STI

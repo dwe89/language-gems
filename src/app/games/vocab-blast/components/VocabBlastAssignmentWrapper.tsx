@@ -58,6 +58,7 @@ export default function VocabBlastAssignmentWrapper({
                 customWords: vocabulary.map(v => v.word)
               }}
               gameSessionId={gameSessionId}
+              categoryVocabulary={vocabulary} // Pass the assignment vocabulary
             onBackToMenu={onBackToMenu}
             onGameEnd={(result) => {
               // Use gems-first scoring: 10 XP per correct answer

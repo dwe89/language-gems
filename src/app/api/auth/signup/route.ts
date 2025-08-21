@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
+import { createClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 
 export async function POST(request: NextRequest) {
@@ -37,10 +38,10 @@ export async function POST(request: NextRequest) {
       const words = schoolName.toLowerCase()
         .replace(/[^a-z0-9 ]/g, '')
         .split(' ')
-        .filter(word => !['the', 'school', 'college', 'academy', 'high', 'community', 'of', 'and'].includes(word));
+        .filter((word: string) => !['the', 'school', 'college', 'academy', 'high', 'community', 'of', 'and'].includes(word));
 
       schoolInitials = words.length > 1
-        ? words.slice(0, 4).map(w => w[0]).join('').toUpperCase()
+        ? words.slice(0, 4).map((w: string) => w[0]).join('').toUpperCase()
         : words[0]?.substring(0, 4).toUpperCase() || 'SCH';
 
       // Create school_codes entry
@@ -78,11 +79,17 @@ export async function POST(request: NextRequest) {
 
     // Update user profile (handle_new_user trigger already created basic profile)
     if (data.user) {
-      const { error: profileError } = await supabase
+      // Use admin client to bypass RLS policies since user isn't authenticated yet
+      const supabaseAdmin = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      );
+
+      const { error: profileError } = await supabaseAdmin
         .from('user_profiles')
         .update({
           subscription_type: 'free',
-          school_initials: schoolInitials
+          school_initials: schoolCode  // Store the actual selected school code in school_initials
         })
         .eq('user_id', data.user.id);
 

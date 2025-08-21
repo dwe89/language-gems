@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Gamepad2, FileCheck, Plus, X } from 'lucide-react';
+import { Gamepad2, FileCheck, Plus, X, Brain } from 'lucide-react';
 import { StepProps } from '../types/AssignmentTypes';
 import MultiGameSelector from '../MultiGameSelector';
 
@@ -66,22 +66,53 @@ const AVAILABLE_ASSESSMENTS = [
   }
 ];
 
+// Available skills activities - Grammar lessons, practice, and quizzes
+const AVAILABLE_SKILLS = [
+  {
+    id: 'grammar-lesson',
+    name: 'Grammar Lesson',
+    type: 'lesson',
+    estimatedTime: '15-25 minutes',
+    skills: ['Grammar'],
+    description: 'Interactive grammar lessons with explanations, examples, and conjugation tables'
+  },
+  {
+    id: 'grammar-practice',
+    name: 'Grammar Practice',
+    type: 'practice',
+    estimatedTime: '10-20 minutes',
+    skills: ['Grammar'],
+    description: 'Hands-on grammar practice with immediate feedback and hints'
+  },
+  {
+    id: 'grammar-quiz',
+    name: 'Grammar Quiz',
+    type: 'quiz',
+    estimatedTime: '10-15 minutes',
+    skills: ['Grammar'],
+    description: 'Grammar assessment with multiple question types and detailed explanations'
+  }
+];
+
 export default function ActivitiesSelectionStep({
   gameConfig,
   setGameConfig,
   assessmentConfig,
   setAssessmentConfig,
+  skillsConfig,
+  setSkillsConfig,
   onStepComplete,
 }: StepProps) {
-  const [activeTab, setActiveTab] = useState<'games' | 'assessments'>('games');
+  const [activeTab, setActiveTab] = useState<'games' | 'assessments' | 'skills'>('games');
 
   // Check if step is completed
   useEffect(() => {
     const hasGames = gameConfig.selectedGames.length > 0;
     const hasAssessments = assessmentConfig.selectedAssessments.length > 0;
-    const isCompleted = hasGames || hasAssessments;
+    const hasSkills = skillsConfig.selectedSkills.length > 0;
+    const isCompleted = hasGames || hasAssessments || hasSkills;
     onStepComplete('activities', isCompleted);
-  }, [gameConfig.selectedGames, assessmentConfig.selectedAssessments, onStepComplete]);
+  }, [gameConfig.selectedGames, assessmentConfig.selectedAssessments, skillsConfig.selectedSkills, onStepComplete]);
 
   const addAssessmentToBasket = (assessmentType: typeof AVAILABLE_ASSESSMENTS[0]) => {
     const instanceId = `${assessmentType.id}-${Date.now()}`;
@@ -111,6 +142,38 @@ export default function ActivitiesSelectionStep({
     setAssessmentConfig(prev => ({
       ...prev,
       selectedAssessments: prev.selectedAssessments.filter(a => a.id !== assessmentId)
+    }));
+  };
+
+  const addSkillToBasket = (skillType: typeof AVAILABLE_SKILLS[0]) => {
+    const newSkill = {
+      id: `${skillType.id}-${Date.now()}`,
+      type: skillType.type,
+      name: skillType.name,
+      estimatedTime: skillType.estimatedTime,
+      skills: skillType.skills,
+      instanceConfig: {
+        language: skillsConfig.generalLanguage || 'spanish',
+        category: '', // Will be set in configuration step
+        topicIds: [], // Will be set in configuration step
+        contentTypes: [skillType.type as 'lesson' | 'quiz' | 'practice'],
+        timeLimit: skillsConfig.generalTimeLimit || 20,
+        maxAttempts: skillsConfig.generalMaxAttempts || 3,
+        showHints: skillsConfig.generalShowHints ?? true,
+        randomizeQuestions: skillsConfig.generalRandomizeQuestions ?? false,
+      }
+    };
+
+    setSkillsConfig(prev => ({
+      ...prev,
+      selectedSkills: [...prev.selectedSkills, newSkill]
+    }));
+  };
+
+  const removeSkillFromBasket = (skillId: string) => {
+    setSkillsConfig(prev => ({
+      ...prev,
+      selectedSkills: prev.selectedSkills.filter(s => s.id !== skillId)
     }));
   };
 
@@ -150,6 +213,17 @@ export default function ActivitiesSelectionStep({
           <FileCheck className="h-4 w-4 mr-2" />
           Assessments ({assessmentConfig.selectedAssessments.length})
         </button>
+        <button
+          onClick={() => setActiveTab('skills')}
+          className={`flex-1 flex items-center justify-center px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+            activeTab === 'skills'
+              ? 'bg-white text-purple-600 shadow-sm'
+              : 'text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          <Brain className="h-4 w-4 mr-2" />
+          Skills ({skillsConfig.selectedSkills.length})
+        </button>
       </div>
 
       {/* Tab Content */}
@@ -166,7 +240,7 @@ export default function ActivitiesSelectionStep({
               }}
             />
           </div>
-        ) : (
+        ) : activeTab === 'assessments' ? (
           <div className="space-y-6">
             {/* Available Assessments */}
             <div>
@@ -229,13 +303,76 @@ export default function ActivitiesSelectionStep({
               </div>
             )}
           </div>
+        ) : (
+          <div className="space-y-6">
+            {/* Available Skills */}
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Available Skills Activities</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {AVAILABLE_SKILLS.map(skill => (
+                  <div key={skill.id} className="border border-gray-200 rounded-lg p-4 hover:border-purple-300 transition-colors">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-gray-900 mb-1">{skill.name}</h4>
+                        <p className="text-sm text-gray-600 mb-2">{skill.description}</p>
+                        <div className="flex items-center space-x-4 text-xs text-gray-500">
+                          <span>⏱️ {skill.estimatedTime}</span>
+                          <span>🎯 {skill.skills.join(', ')}</span>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => addSkillToBasket(skill)}
+                        className="flex items-center px-3 py-1 bg-purple-600 text-white rounded-md text-sm hover:bg-purple-700 transition-colors"
+                      >
+                        <Plus className="h-3 w-3 mr-1" />
+                        Add
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Selected Skills */}
+            {skillsConfig.selectedSkills.length > 0 && (
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  Selected Skills ({skillsConfig.selectedSkills.length})
+                </h3>
+                <div className="space-y-3">
+                  {skillsConfig.selectedSkills.map((skill, index) => (
+                    <div key={skill.id} className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center text-xs font-bold">
+                            {index + 1}
+                          </div>
+                          <div>
+                            <h4 className="font-semibold text-gray-900">{skill.name}</h4>
+                            <p className="text-sm text-gray-600">{skill.estimatedTime} • {skill.skills.join(', ')}</p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => removeSkillFromBasket(skill.id)}
+                          className="p-2 text-red-600 hover:text-red-800 hover:bg-red-100 rounded-lg transition-colors"
+                          title="Remove skill"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         )}
       </div>
 
       {/* Summary */}
       <div className="bg-gray-50 p-4 rounded-lg">
         <h4 className="text-sm font-semibold text-gray-800 mb-2">Selection Summary</h4>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
           <div>
             <span className="text-gray-600">Practice Games:</span>
             <span className="ml-2 font-medium text-purple-600">{gameConfig.selectedGames.length} selected</span>
@@ -244,9 +381,13 @@ export default function ActivitiesSelectionStep({
             <span className="text-gray-600">Assessments:</span>
             <span className="ml-2 font-medium text-purple-600">{assessmentConfig.selectedAssessments.length} selected</span>
           </div>
+          <div>
+            <span className="text-gray-600">Skills:</span>
+            <span className="ml-2 font-medium text-purple-600">{skillsConfig.selectedSkills.length} selected</span>
+          </div>
         </div>
-        {(gameConfig.selectedGames.length === 0 && assessmentConfig.selectedAssessments.length === 0) && (
-          <p className="text-sm text-amber-600 mt-2">⚠️ Please select at least one game or assessment to continue.</p>
+        {(gameConfig.selectedGames.length === 0 && assessmentConfig.selectedAssessments.length === 0 && skillsConfig.selectedSkills.length === 0) && (
+          <p className="text-sm text-amber-600 mt-2">⚠️ Please select at least one activity to continue.</p>
         )}
       </div>
     </motion.div>

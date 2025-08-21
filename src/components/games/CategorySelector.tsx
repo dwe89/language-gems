@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, ArrowLeft } from 'lucide-react';
+import { ArrowRight, ArrowLeft, BookOpen, Gamepad2, Target, Home, User, Clipboard } from 'lucide-react';
 import { KS3_SPANISH_CATEGORIES, Category, Subcategory } from '../../utils/categories';
 
 interface CategorySelectorProps {
@@ -204,6 +204,17 @@ export default function CategorySelector({ onCategorySelect, selectedLanguage = 
     return languageMap[selectedLanguage] || 'Spanish';
   };
 
+  const iconFromEmoji = (icon?: string) => {
+    if (!icon) return <BookOpen className="h-8 w-8 inline-block" />;
+    if (icon.includes('🎮')) return <Gamepad2 className="h-8 w-8 inline-block" />;
+    if (icon.includes('📚')) return <BookOpen className="h-8 w-8 inline-block" />;
+    if (icon.includes('📝')) return <Clipboard className="h-8 w-8 inline-block" />;
+    if (icon.includes('👤')) return <User className="h-8 w-8 inline-block" />;
+    if (icon.includes('🏠')) return <Home className="h-8 w-8 inline-block" />;
+    if (icon.includes('✈') || icon.includes('🚀')) return <Target className="h-8 w-8 inline-block" />;
+    return <BookOpen className="h-8 w-8 inline-block" />;
+  };
+
   if (showSubcategories && selectedCategory) {
     return (
       <div className="max-w-4xl mx-auto">
@@ -219,7 +230,7 @@ export default function CategorySelector({ onCategorySelect, selectedLanguage = 
 
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-slate-900 mb-2">
-            {selectedCategory.icon} {selectedCategory.displayName}
+            {iconFromEmoji(selectedCategory.icon)} {selectedCategory.displayName}
           </h1>
           <p className="text-slate-600">Choose a specific topic to practice in {getLanguageDisplay()}</p>
         </div>
@@ -233,7 +244,7 @@ export default function CategorySelector({ onCategorySelect, selectedLanguage = 
             className="bg-gradient-to-r from-purple-500 to-indigo-500 rounded-xl p-6 text-white cursor-pointer hover:shadow-lg transition-all transform hover:scale-105"
             onClick={handleAllCategoryClick}
           >
-            <div className="text-3xl mb-3">🎯</div>
+            <div className="text-3xl mb-3"><Target className="mx-auto h-8 w-8 text-white mb-3" /></div>
             <h3 className="text-xl font-semibold mb-2">All Topics</h3>
             <p className="text-purple-100 text-sm">Practice all vocabulary from this category</p>
             <div className="mt-4 flex items-center justify-between">
@@ -252,7 +263,7 @@ export default function CategorySelector({ onCategorySelect, selectedLanguage = 
               className="bg-white rounded-xl p-6 cursor-pointer hover:shadow-lg transition-all transform hover:scale-105 border border-slate-200"
               onClick={() => handleSubcategoryClick(subcategory)}
             >
-              <div className="text-2xl mb-3">📚</div>
+              <div className="text-2xl mb-3"><BookOpen className="mx-auto h-6 w-6 text-slate-700 mb-3" /></div>
               <h3 className="text-lg font-semibold text-slate-900 mb-2">
                 {subcategory.displayName}
               </h3>
@@ -291,7 +302,7 @@ export default function CategorySelector({ onCategorySelect, selectedLanguage = 
             className="bg-white rounded-xl p-6 cursor-pointer hover:shadow-lg transition-all transform hover:scale-105 border border-slate-200"
             onClick={() => handleCategoryClick(category)}
           >
-            <div className="text-4xl mb-4">{category.icon}</div>
+            <div className="text-4xl mb-4">{iconFromEmoji(category.icon)}</div>
             <h3 className="text-xl font-semibold text-slate-900 mb-3">
               {category.displayName}
             </h3>

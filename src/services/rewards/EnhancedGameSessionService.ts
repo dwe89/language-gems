@@ -713,7 +713,7 @@ export class EnhancedGameSessionService {
         .select('fsrs_state, next_review_at, fsrs_review_count, total_encounters')
         .eq('student_id', studentId)
         .eq(isUUID ? 'centralized_vocabulary_id' : 'vocabulary_item_id', vocabularyId)
-        .single();
+        .maybeSingle(); // Use maybeSingle() since new words won't have records
 
       if (error || !wordData) {
         // New word - always allow progression

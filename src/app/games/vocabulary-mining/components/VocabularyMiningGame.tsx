@@ -17,7 +17,7 @@ import { EnhancedGameService } from '../../../../services/enhancedGameService';
 import { useGameLogic } from '../hooks/useGameLogic';
 import { useUserProgress } from '../hooks/useUserProgress';
 import { useAudio } from '../hooks/useAudio';
-import { useSpacedRepetition } from '../hooks/useSpacedRepetition';
+// import { useSpacedRepetition } from '../hooks/useSpacedRepetition';
 import { useSessionSaving } from '../hooks/useSessionSaving';
 
 // Import UI components
@@ -220,7 +220,7 @@ export default function VocabularyMiningGame({
   const gameLogic = useGameLogic(vocabulary);
   const userProgress = useUserProgress(supabase, user?.id || null);
   const audioSystem = useAudio(soundEnabled);
-  const spacedRepetition = useSpacedRepetition(supabase, user?.id || null);
+  // const spacedRepetition = useSpacedRepetition(supabase, user?.id || null);
   const sessionSaving = useSessionSaving(supabase, user?.id || null, gameLogic.gameState, vocabulary, isDemo);
 
   // Extract refs and state from gameLogic hook
@@ -1430,3 +1430,4 @@ export default function VocabularyMiningGame({
       />
     </div>
   );
+}

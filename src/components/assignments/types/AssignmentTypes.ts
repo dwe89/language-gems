@@ -34,6 +34,7 @@ export interface SentenceConfig {
 }
 
 export interface GrammarConfig {
+  // Legacy conjugation-specific config (for backward compatibility)
   language: 'spanish' | 'french' | 'german';
   verbTypes: ('regular' | 'irregular' | 'stem-changing' | 'reflexive')[];
   tenses: (
@@ -48,6 +49,45 @@ export interface GrammarConfig {
   difficulty: 'beginner' | 'intermediate' | 'advanced';
   verbCount?: number;
   focusAreas?: ('conjugation' | 'recognition' | 'translation')[];
+
+  // New comprehensive grammar config
+  grammarType?: 'conjugation' | 'comprehensive';
+  selectedTopics?: string[]; // Grammar topic IDs
+  selectedContent?: string[]; // Grammar content IDs
+  contentTypes?: ('lesson' | 'quiz' | 'practice')[];
+  curriculumLevel?: 'KS3' | 'KS4';
+  difficultyFilter?: ('beginner' | 'intermediate' | 'advanced')[];
+  timeLimit?: number;
+  maxAttempts?: number;
+  showHints?: boolean;
+  randomizeQuestions?: boolean;
+}
+
+export interface SkillsConfig {
+  selectedSkills: Array<{
+    id: string;
+    type: string;
+    name: string;
+    estimatedTime: string;
+    skills: string[];
+    instanceConfig?: {
+      language?: 'spanish' | 'french' | 'german';
+      level?: 'KS3' | 'KS4';
+      category?: string;
+      topicIds?: string[];
+      contentTypes?: ('lesson' | 'quiz' | 'practice')[];
+      timeLimit?: number;
+      maxAttempts?: number;
+      showHints?: boolean;
+      randomizeQuestions?: boolean;
+    };
+  }>;
+  generalLanguage: 'spanish' | 'french' | 'german';
+  generalLevel: 'KS3' | 'KS4';
+  generalTimeLimit: number;
+  generalMaxAttempts: number;
+  generalShowHints: boolean;
+  generalRandomizeQuestions: boolean;
 }
 
 export interface AssessmentConfig {
@@ -125,6 +165,8 @@ export interface StepProps {
   setGameConfig: React.Dispatch<React.SetStateAction<UnifiedGameConfig>>;
   assessmentConfig: AssessmentConfig;
   setAssessmentConfig: React.Dispatch<React.SetStateAction<AssessmentConfig>>;
+  skillsConfig: SkillsConfig;
+  setSkillsConfig: React.Dispatch<React.SetStateAction<SkillsConfig>>;
   onStepComplete: (stepId: string, completed: boolean) => void;
   classes: Array<{ id: string; name: string; student_count: number }>;
   loading?: boolean;
