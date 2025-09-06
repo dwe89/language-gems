@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, FileText } from 'lucide-react';
+import { ArrowLeft, FileText, MessageSquare, User, Home, School, Gamepad2, Utensils, Shirt, Monitor, Heart, Plane, Briefcase, TreePine, PartyPopper, BookOpen, Building2, TrendingUp, Microscope } from 'lucide-react';
+import ReactCountryFlag from 'react-country-flag';
 
 
 interface Theme {
@@ -43,7 +44,7 @@ const TOPIC_CONFIGS = {
       id: 'basics-core-language',
       name: 'Basics & Core Language',
       description: 'Greetings, common phrases, numbers, classroom language, and more',
-      icon: '🗣️',
+      icon: <MessageSquare className="h-8 w-8 text-indigo-600" />,
       subcategories: [
         'Greetings & Introductions',
         'Common Phrases & Opinions',
@@ -57,7 +58,7 @@ const TOPIC_CONFIGS = {
       id: 'identity-personal-life',
       name: 'Identity & Personal Life',
       description: 'Personal information, family, friends, and pets',
-      icon: '👤',
+      icon: <User className="h-8 w-8 text-indigo-600" />,
       subcategories: [
         'Personal Information',
         'Family & Friends',
@@ -69,7 +70,7 @@ const TOPIC_CONFIGS = {
       id: 'home-local-area',
       name: 'Home & Local Area',
       description: 'House, local area, shops, and directions',
-      icon: '🏠',
+      icon: <Home className="h-8 w-8 text-indigo-600" />,
       subcategories: [
         'House, Rooms & Furniture',
         'Household Items & Chores',
@@ -83,7 +84,7 @@ const TOPIC_CONFIGS = {
       id: 'school-education',
       name: 'School & Education',
       description: 'School subjects, rules, objects, and routines',
-      icon: '🏫',
+      icon: <School className="h-8 w-8 text-indigo-600" />,
       subcategories: [
         'School Subjects & Timetable',
         'School Rules & Opinions',
@@ -95,7 +96,7 @@ const TOPIC_CONFIGS = {
       id: 'free-time-leisure',
       name: 'Free Time & Leisure',
       description: 'Hobbies, sports, music, and social activities',
-      icon: '🎲',
+      icon: <Gamepad2 className="h-8 w-8 text-indigo-600" />,
       subcategories: [
         'Hobbies & Interests',
         'Sports',
@@ -107,7 +108,7 @@ const TOPIC_CONFIGS = {
       id: 'food-drink',
       name: 'Food & Drink',
       description: 'Meals, food vocabulary, shopping, and eating out',
-      icon: '🍽️',
+      icon: <Utensils className="h-8 w-8 text-indigo-600" />,
       subcategories: [
         'Meals & Eating Habits',
         'Food & Drink Vocabulary',
@@ -119,7 +120,7 @@ const TOPIC_CONFIGS = {
       id: 'clothes-shopping',
       name: 'Clothes & Shopping',
       description: 'Clothes, accessories, and shopping phrases',
-      icon: '👗',
+      icon: <Shirt className="h-8 w-8 text-indigo-600" />,
       subcategories: [
         'Clothes & Accessories',
         'Shopping Phrases & Prices',
@@ -129,7 +130,7 @@ const TOPIC_CONFIGS = {
       id: 'technology-communication',
       name: 'Technology & Communication',
       description: 'Mobile phones, social media, and digital devices',
-      icon: '💻',
+      icon: <Monitor className="h-8 w-8 text-indigo-600" />,
       subcategories: [
         'Mobile Phones & Social Media',
         'Internet & Digital Devices',
@@ -139,11 +140,11 @@ const TOPIC_CONFIGS = {
       id: 'health-lifestyle',
       name: 'Health & Lifestyle',
       description: 'Body, illnesses, doctor, and healthy living',
-      icon: '🏥',
+      icon: <Heart className="h-8 w-8 text-indigo-600" />,
       subcategories: [
         'Parts of the Body',
         'Illnesses & Symptoms',
-        'At the Doctor’s',
+        'At the Doctors',
         'Healthy Living',
       ],
     },
@@ -151,7 +152,7 @@ const TOPIC_CONFIGS = {
       id: 'holidays-travel',
       name: 'Holidays & Travel',
       description: 'Countries, transport, accommodation, and weather',
-      icon: '✈️',
+      icon: <Plane className="h-8 w-8 text-indigo-600" />,
       subcategories: [
         'Countries & Nationalities',
         'Transport & Travel Phrases',
@@ -164,7 +165,7 @@ const TOPIC_CONFIGS = {
       id: 'jobs-future-plans',
       name: 'Jobs & Future Plans',
       description: 'Professions, ambitions, and job qualities',
-      icon: '💼',
+      icon: <Briefcase className="h-8 w-8 text-indigo-600" />,
       subcategories: [
         'Professions & Jobs',
         'Future Ambitions',
@@ -175,7 +176,7 @@ const TOPIC_CONFIGS = {
       id: 'nature-environment',
       name: 'Nature & Environment',
       description: 'Animals, weather, environmental problems, and global issues',
-      icon: '🌳',
+      icon: <TreePine className="h-8 w-8 text-indigo-600" />,
       subcategories: [
         'Animals & Plants',
         'Weather & Seasons',
@@ -187,26 +188,26 @@ const TOPIC_CONFIGS = {
       id: 'culture-festivals',
       name: 'Culture & Festivals',
       description: 'Traditions, festivals, and celebrations in Spanish-speaking countries',
-      icon: '🎉',
+      icon: <PartyPopper className="h-8 w-8 text-indigo-600" />,
       subcategories: [
         'Spanish-speaking Countries & Traditions',
         'Festivals & Celebrations (Christmas, Día de los Muertos, etc.)',
       ],
-    },
+    },,
   ],
   ks4: KS4_AQA_THEMES, // Now themes, not flat topics
   ks5: [
-    { id: 'literature', name: 'Literature', description: 'Literary analysis, authors, and critical thinking', icon: '📚', resourceCount: 6 },
-    { id: 'politics-society', name: 'Politics & Society', description: 'Government, social issues, and civic engagement', icon: '🏛️', resourceCount: 8 },
-    { id: 'business-economics', name: 'Business & Economics', description: 'Commerce, economics, and entrepreneurship', icon: '📈', resourceCount: 5 },
-    { id: 'science-technology', name: 'Science & Technology', description: 'Innovation, research, and technological advancement', icon: '🔬', resourceCount: 7 }
+    { id: 'literature', name: 'Literature', description: 'Literary analysis, authors, and critical thinking', icon: <BookOpen className="h-8 w-8 text-indigo-600" />, resourceCount: 6 },
+    { id: 'politics-society', name: 'Politics & Society', description: 'Government, social issues, and civic engagement', icon: <Building2 className="h-8 w-8 text-indigo-600" />, resourceCount: 8 },
+    { id: 'business-economics', name: 'Business & Economics', description: 'Commerce, economics, and entrepreneurship', icon: <TrendingUp className="h-8 w-8 text-indigo-600" />, resourceCount: 5 },
+    { id: 'science-technology', name: 'Science & Technology', description: 'Innovation, research, and technological advancement', icon: <Microscope className="h-8 w-8 text-indigo-600" />, resourceCount: 7 }
   ]
 };
 
 const LANGUAGE_CONFIGS = {
-  spanish: { name: 'Spanish', flag: '🇪🇸' },
-  french: { name: 'French', flag: '🇫🇷' },
-  german: { name: 'German', flag: '🇩🇪' }
+  spanish: { name: 'Spanish', countryCode: 'ES' },
+  french: { name: 'French', countryCode: 'FR' },
+  german: { name: 'German', countryCode: 'DE' }
 };
 
 interface PageProps {
@@ -277,8 +278,13 @@ export default function LanguageKeyStage({ params }: PageProps) {
           
           <div className="flex items-center justify-between">
             <div className="flex items-center">
-              <div className="w-16 h-16 bg-indigo-100 rounded-xl flex items-center justify-center text-2xl mr-6">
-                {languageConfig.flag}
+              <div className="w-16 h-16 bg-indigo-100 rounded-xl flex items-center justify-center mr-6">
+                <ReactCountryFlag 
+                  countryCode={languageConfig.countryCode} 
+                  svg 
+                  style={{ width: '2rem', height: '2rem' }} 
+                  className="rounded-full" 
+                />
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-slate-900">

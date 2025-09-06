@@ -324,25 +324,52 @@ export default function SentenceTowersPage() {
         onBackToAssignments={handleBackToAssignments}
         onBackToMenu={() => router.push('/games/sentence-towers')}
       >
-        {({ assignment, vocabulary, onProgressUpdate, onGameComplete, gameSessionId }) => {
-          // Convert assignment vocabulary to game format
-          const gameVocabulary = vocabulary.map(item => ({
-            id: item.id,
-            word: item.word,
-            translation: item.translation,
-            language: item.language || assignment.vocabulary_criteria?.language || 'spanish',
-            category: item.category || 'assignment',
-            subcategory: item.subcategory || 'assignment',
-            part_of_speech: item.part_of_speech || 'noun',
-            example_sentence_original: '', // Not available in StandardVocabularyItem
-            example_sentence_translation: '', // Not available in StandardVocabularyItem
-            difficulty_level: 'beginner' // Default difficulty for assignment mode
-          }));
+        {({ assignment, vocabulary, sentences, onProgressUpdate, onGameComplete, gameSessionId }) => {
+          console.log('🎮 [SENTENCE TOWERS] Game data received:', {
+            assignmentId: assignment?.id,
+            vocabularyCount: vocabulary?.length || 0,
+            sentencesCount: sentences?.length || 0,
+            hasSentences: !!sentences,
+            sentencesSample: sentences?.slice(0, 2),
+            vocabularySample: vocabulary?.slice(0, 2)
+          });
+          // Convert assignment data to game format - use sentences if available, otherwise vocabulary
+          const gameVocabulary = sentences && sentences.length > 0
+            ? sentences.map(item => ({
+                id: item.id,
+                word: item.source_sentence || item.sentence_original || item.original || item.text,
+                translation: item.english_translation || item.sentence_translation || item.translation || item.translation_text,
+                language: item.source_language || assignment.vocabulary_criteria?.language || 'spanish',
+                category: item.category || 'assignment',
+                subcategory: item.subcategory || 'assignment',
+                part_of_speech: 'sentence',
+                example_sentence_original: item.source_sentence || item.sentence_original || item.original || item.text,
+                example_sentence_translation: item.english_translation || item.sentence_translation || item.translation || item.translation_text,
+                difficulty_level: item.difficulty_level || 'intermediate'
+              }))
+            : vocabulary.map(item => ({
+                id: item.id,
+                word: item.word,
+                translation: item.translation,
+                language: item.language || assignment.vocabulary_criteria?.language || 'spanish',
+                category: item.category || 'assignment',
+                subcategory: item.subcategory || 'assignment',
+                part_of_speech: item.part_of_speech || 'noun',
+                example_sentence_original: '', // Not available in StandardVocabularyItem
+                example_sentence_translation: '', // Not available in StandardVocabularyItem
+                difficulty_level: 'beginner' // Default difficulty for assignment mode
+              }));
+
+          console.log('🎮 [SENTENCE TOWERS] Processed game vocabulary:', {
+            count: gameVocabulary.length,
+            usingSentences: sentences && sentences.length > 0,
+            sample: gameVocabulary.slice(0, 2)
+          });
 
           const handleGameComplete = (gameProgress: any) => {
             // Calculate standardized progress metrics
             const wordsCompleted = gameProgress.wordsCompleted || gameProgress.correctAnswers || 0;
-            const totalWords = vocabulary.length;
+            const totalWords = sentences && sentences.length > 0 ? sentences.length : vocabulary.length;
             const score = gameProgress.score || 0;
             const accuracy = totalWords > 0 ? (wordsCompleted / totalWords) * 100 : 0;
 
@@ -419,8 +446,8 @@ export default function SentenceTowersPage() {
   if (!gameStarted) {
     return (
       <UnifiedGameLauncher
-        gameName="Word Towers"
-        gameDescription="Build towers by stacking vocabulary blocks and creating words"
+        gameName="Sentence Towers"
+        gameDescription="Build towers by stacking vocabulary blocks and creating sentences"
         supportedLanguages={['es', 'fr', 'de']}
         showCustomMode={true}
         minVocabularyRequired={1}
@@ -968,15 +995,34 @@ function ImprovedSentenceTowersGame({
       }
     }
 
-    // Record word attempt using new gems system
+    // Record gem in assignment mode using GameAssignmentWrapper's system
+    if (typeof window !== 'undefined' && (window as any).recordVocabularyInteraction) {
+      console.log('🔮 [SENTENCE TOWERS] Recording gem for assignment mode (correct answer)...');
+      try {
+        const responseTime = (Date.now() - questionStartTime);
+        await (window as any).recordVocabularyInteraction(
+          option.word, // wordText
+          option.translation, // translationText
+          true, // wasCorrect
+          responseTime, // responseTimeMs
+          false, // hintUsed
+          gameState.streak + 1 // streakCount
+        );
+        console.log('🔮 [SENTENCE TOWERS] Gem recorded successfully for correct answer');
+      } catch (error) {
+        console.error('🔮 [SENTENCE TOWERS] Error recording gem:', error);
+      }
+    }
+
+    // Record sentence attempt using new gems system - this will parse sentences and award gems for individual vocabulary words
     if (gameSessionId && user) {
       const responseTime = (Date.now() - questionStartTime) / 1000;
       try {
         const sessionService = new EnhancedGameSessionService();
-        await sessionService.recordWordAttempt(gameSessionId, 'sentence-towers', {
-          vocabularyId: option.id || `sentence-${option.word}`,
-          wordText: option.word,
-          translationText: option.translation,
+        await sessionService.recordSentenceAttempt(gameSessionId, 'sentence-towers', {
+          sentenceId: option.id || `sentence-${Date.now()}`,
+          sourceText: option.word, // The full sentence in target language
+          targetText: option.translation, // The full sentence translation
           responseTimeMs: Math.round(responseTime * 1000),
           wasCorrect: true,
           hintUsed: false,
@@ -987,11 +1033,14 @@ function ImprovedSentenceTowersGame({
             towerHeight: gameState.currentHeight,
             blockPosition: gameState.blocksPlaced + 1,
             multiplier: gameState.multiplier,
-            doublePoints: isTypingMode
+            doublePoints: isTypingMode,
+            sentenceType: 'full_sentence'
           }
         });
+
+        console.log(`🔮 Sentence Towers recorded sentence: "${option.word}" -> parsed for individual vocabulary gems`);
       } catch (error) {
-        console.error('Error recording word attempt:', error);
+        console.error('Error recording sentence attempt:', error);
       }
     }
 
@@ -1128,15 +1177,34 @@ function ImprovedSentenceTowersGame({
       }
     }
 
-    // Record incorrect word attempt using new gems system
+    // Record gem in assignment mode using GameAssignmentWrapper's system
+    if (typeof window !== 'undefined' && (window as any).recordVocabularyInteraction) {
+      console.log('🔮 [SENTENCE TOWERS] Recording gem for assignment mode (incorrect answer)...');
+      try {
+        const responseTime = (Date.now() - questionStartTime);
+        await (window as any).recordVocabularyInteraction(
+          currentTargetWord.word, // wordText (the correct word)
+          currentTargetWord.translation, // translationText (the correct translation)
+          false, // wasCorrect
+          responseTime, // responseTimeMs
+          false, // hintUsed
+          0 // streakCount (reset on incorrect)
+        );
+        console.log('🔮 [SENTENCE TOWERS] Gem recorded successfully for incorrect answer');
+      } catch (error) {
+        console.error('🔮 [SENTENCE TOWERS] Error recording gem:', error);
+      }
+    }
+
+    // Record incorrect sentence attempt using new gems system
     if (gameSessionId && user && incorrectOption && currentTargetWord) {
       const responseTime = (Date.now() - questionStartTime) / 1000;
       try {
         const sessionService = new EnhancedGameSessionService();
-        await sessionService.recordWordAttempt(gameSessionId, 'sentence-towers', {
-          vocabularyId: currentTargetWord.id || `sentence-${currentTargetWord.word}`,
-          wordText: currentTargetWord.word,
-          translationText: currentTargetWord.translation,
+        await sessionService.recordSentenceAttempt(gameSessionId, 'sentence-towers', {
+          sentenceId: currentTargetWord.id || `sentence-${Date.now()}`,
+          sourceText: currentTargetWord.word, // The correct sentence
+          targetText: currentTargetWord.translation, // The correct translation
           responseTimeMs: Math.round(responseTime * 1000),
           wasCorrect: false,
           hintUsed: false,
@@ -1149,11 +1217,14 @@ function ImprovedSentenceTowersGame({
             towerHeight: gameState.currentHeight,
             blockPosition: gameState.blocksPlaced + 1,
             multiplier: gameState.multiplier,
-            errorType: 'incorrect_selection'
+            errorType: 'incorrect_selection',
+            sentenceType: 'full_sentence'
           }
         });
+
+        console.log(`❌ Sentence Towers recorded incorrect sentence: "${currentTargetWord.word}" (selected: "${incorrectOption.word}")`);
       } catch (error) {
-        console.error('Error recording word attempt:', error);
+        console.error('Error recording sentence attempt:', error);
       }
     }
 
@@ -1470,7 +1541,7 @@ function ImprovedSentenceTowersGame({
           
           <div>
             <h1 className="text-2xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-yellow-500">
-              Word Towers
+              Sentence Towers
             </h1>
           </div>
         </div>
@@ -1911,7 +1982,7 @@ function ImprovedSentenceTowersGame({
             >
               <div className="mb-8">
                 <h2 className="text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-yellow-500 mb-4">
-                  Word Towers
+                  Sentence Towers
                 </h2>
                 <p className="text-white/80 text-lg leading-relaxed">
                   Build the tallest tower possible! Answer translation questions correctly to add blocks. 

@@ -36,71 +36,32 @@ export default function UpgradePage() {
     {
       icon: Crown,
       title: 'Full Dashboard Access',
-      description: 'Complete access to teacher and student dashboards with all premium tools',
-      preview: '/images/features/dashboard-preview.png'
+      description: 'Complete access to teacher and student dashboards with all premium tools'
     },
     {
       icon: Users,
       title: 'Class Management',
-      description: 'Create unlimited classes, manage students, and track progress in real-time',
-      preview: '/images/features/class-management.png'
+      description: 'Create unlimited classes, manage students, and track progress in real-time'
     },
     {
       icon: FileText,
       title: 'Assignment System',
-      description: 'Create custom assignments, track submissions, and provide detailed feedback',
-      preview: '/images/features/assignments.png'
+      description: 'Create custom assignments, track submissions, and provide detailed feedback'
     },
     {
       icon: BarChart2,
       title: 'Advanced Analytics',
-      description: 'Detailed progress tracking, performance analytics, and custom reports',
-      preview: '/images/features/analytics.png'
+      description: 'Detailed progress tracking, performance analytics, and custom reports'
     },
     {
       icon: Gamepad2,
       title: 'Interactive Games',
-      description: '15+ premium learning games with customizable difficulty and topics',
-      preview: '/images/features/games.png'
+      description: '15+ premium learning games with customizable difficulty and topics'
     },
     {
       icon: BookOpen,
       title: 'Vocabulary Mining',
-      description: 'AI-powered vocabulary extraction from texts and automatic list generation',
-      preview: '/images/games/gem-collector.jpg'
-    }
-  ];
-
-  const advancedFeatures = [
-    {
-      icon: MessageSquare,
-      title: 'AI Conversation Practice',
-      description: 'Real-time conversations with AI tutors for speaking practice'
-    },
-    {
-      icon: Video,
-      title: 'Virtual Classrooms',
-      description: 'Integrated video calls and screen sharing for remote learning'
-    },
-    {
-      icon: Headphones,
-      title: 'Pronunciation Analysis',
-      description: 'AI-powered speech recognition and pronunciation feedback'
-    },
-    {
-      icon: Globe,
-      title: 'Multi-language Support',
-      description: 'Support for 12+ languages with native speaker audio'
-    },
-    {
-      icon: Award,
-      title: 'Certification System',
-      description: 'Generate certificates and track learning milestones'
-    },
-    {
-      icon: Target,
-      title: 'Adaptive Learning',
-      description: 'AI that adapts to each student\'s learning pace and style'
+      description: 'AI-powered vocabulary extraction from texts and automatic list generation'
     }
   ];
 
@@ -193,52 +154,54 @@ export default function UpgradePage() {
 
   const pricingPlans = [
     {
-      name: 'Teacher Starter',
-      price: '£29',
-      period: 'per month',
-      description: 'Perfect for individual teachers',
+      name: 'Basic Plan',
+      price: '£399',
+      period: '/year',
+      description: 'Perfect for smaller schools or departments focusing on core vocabulary acquisition and gamified practice.',
       features: [
-        'Up to 3 classes',
-        'Up to 90 students',
-        'Basic analytics',
-        'All core games',
-        'Assignment system',
-        'Email support'
+        'Access for all MFL teachers for classroom-wide, shared use',
+        'Access for all students for whole-class game play',
+        'Full Access to ALL Available Languages: French, Spanish, German',
+        '15+ Engaging Gamified Learning Activities',
+        'Professional Audio Integration',
+        'Built for Modern Classrooms: Responsive design, WCAG 2.1 AA accessibility'
       ],
       highlighted: false,
       comingSoon: true
     },
     {
-      name: 'Teacher Pro',
-      price: '£49',
-      period: 'per month',
-      description: 'For serious educators',
+      name: 'Standard Plan',
+      price: '£799',
+      period: '/year',
+      description: 'The ultimate value for most secondary schools with up to 750 students.',
       features: [
-        'Unlimited classes',
-        'Unlimited students',
-        'Advanced analytics',
-        'All premium games',
-        'Vocabulary mining',
-        'Priority support',
-        'Custom themes',
-        'Export capabilities'
+        'All Basic Plan Features (with individual logins enabled)',
+        'Unlimited Teacher Accounts: Full access for all MFL teachers',
+        'Individual Student Logins for up to 750 Students',
+        'Comprehensive Data Analysis Platform',
+        'Full Homework Setting Capability with automated marking',
+        'Fully Aligned Vocabulary: AQA/Edexcel GCSE specifications',
+        'Real-time Analytics & Insights',
+        'Multi-Game Assignment System',
+        'Custom Vocabulary Lists',
+        'Spaced Repetition & Gem Collection',
+        'Competition Features: School-wide leaderboards'
       ],
       highlighted: true,
       comingSoon: true
     },
     {
-      name: 'School License',
-      price: 'Custom',
-      period: 'pricing',
-      description: 'For schools and institutions',
+      name: 'Large School Plan',
+      price: '£1,199',
+      period: '/year',
+      description: 'Designed for larger secondary schools (over 750 students).',
       features: [
-        'Everything in Pro',
-        'Multiple teacher accounts',
-        'Admin dashboard',
-        'Custom branding',
-        'Integration support',
-        'Training sessions',
-        'Dedicated support'
+        'All Standard Plan Features',
+        'Individual Student Logins for Unlimited Students',
+        'Priority Email and Chat Support',
+        'Advanced Analytics & Custom Reports',
+        'Dedicated Onboarding Support',
+        'Strategic Partnership for feature requests and feedback'
       ],
       highlighted: false,
       comingSoon: true
@@ -365,36 +328,8 @@ export default function UpgradePage() {
                     <h3 className="text-xl font-bold text-slate-800">{feature.title}</h3>
                   </div>
                   <p className="text-slate-600 mb-6">{feature.description}</p>
-                  <div className="text-center">
-                    <div className="bg-slate-100 rounded-lg h-32 flex items-center justify-center mb-4">
-                      <Eye className="h-8 w-8 text-slate-400" />
-                      <span className="ml-2 text-slate-500">Preview Coming Soon</span>
-                    </div>
-                  </div>
                 </div>
               ))}
-            </div>
-
-            {/* Advanced Features */}
-            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-3xl p-12 text-white">
-              <div className="text-center mb-12">
-                <h2 className="text-3xl font-bold mb-4">Advanced Features</h2>
-                <p className="text-indigo-100 text-lg">Cutting-edge technology for modern language learning</p>
-              </div>
-              
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {advancedFeatures.map((feature, index) => (
-                  <div key={index} className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
-                    <div className="flex items-center mb-4">
-                      <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center mr-3">
-                        <feature.icon className="h-5 w-5 text-white" />
-                      </div>
-                      <h4 className="font-semibold">{feature.title}</h4>
-                    </div>
-                    <p className="text-indigo-100 text-sm">{feature.description}</p>
-                  </div>
-                ))}
-              </div>
             </div>
           </div>
         )}

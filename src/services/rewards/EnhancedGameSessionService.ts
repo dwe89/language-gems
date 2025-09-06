@@ -179,8 +179,35 @@ export class EnhancedGameSessionService {
     attempt: WordAttempt,
     skipSpacedRepetition: boolean = false
   ): Promise<GemEvent | null> {
+    const callId = Math.random().toString(36).substr(2, 9);
+
+    // 🔧 FIX: Validate input parameters
+    if (!sessionId || !gameType || !attempt) {
+      console.error(`🚨 [SESSION SERVICE] Invalid parameters [${callId}]:`, { sessionId, gameType, attempt });
+      return null;
+    }
+
+    // 🔧 FIX: Sanitize response time to ensure it's a valid number
+    if (attempt.responseTimeMs && (isNaN(attempt.responseTimeMs) || attempt.responseTimeMs < 0)) {
+      console.warn(`🚨 [SESSION SERVICE] Invalid response time [${callId}]: ${attempt.responseTimeMs}, setting to 0`);
+      attempt.responseTimeMs = 0;
+    }
+
+    console.log(`🔮 [SESSION SERVICE] recordWordAttempt called [${callId}]:`, {
+      sessionId,
+      gameType,
+      attempt: {
+        vocabularyId: attempt.vocabularyId,
+        wordText: attempt.wordText,
+        wasCorrect: attempt.wasCorrect,
+        responseTimeMs: attempt.responseTimeMs
+      },
+      skipSpacedRepetition
+    });
+
     try {
       // Always log the word performance
+      console.log(`🔮 [SESSION SERVICE] Logging word performance [${callId}]...`);
       await this.logWordPerformance(sessionId, attempt);
 
       // ✅ UPDATE FSRS FOR ALL ANSWERS (both correct and incorrect)
@@ -205,14 +232,18 @@ export class EnhancedGameSessionService {
 
       // Only award gems for correct answers in non-assessment modes
       if (!attempt.wasCorrect) {
+        console.log(`🔮 [SESSION SERVICE] Incorrect answer - no gems awarded [${callId}]`);
         return null;
       }
 
+      console.log(`🔮 [SESSION SERVICE] Getting student ID for session [${callId}]...`);
       const studentId = await this.getSessionStudentId(sessionId);
+      console.log(`🔮 [SESSION SERVICE] Student ID: ${studentId} [${callId}]`);
+
       let lastGemEvent: GemEvent | null = null;
 
       // 🎯 DUAL-TRACK SYSTEM: Always award Activity Gem for correct answers
-      console.log('🎮 [DUAL-TRACK] Awarding Activity Gem for correct answer');
+      console.log(`🎮 [DUAL-TRACK] Awarding Activity Gem for correct answer [${callId}]`);
       const activityGemEvent = RewardEngine.createActivityGemEvent(
         gameType,
         {
@@ -233,7 +264,14 @@ export class EnhancedGameSessionService {
         attempt.difficultyLevel
       );
 
+      console.log(`🔮 [SESSION SERVICE] Activity gem created [${callId}]:`, {
+        rarity: activityGemEvent.rarity,
+        xpValue: activityGemEvent.xpValue,
+        wordText: activityGemEvent.wordText
+      });
+
       // Store Activity Gem in database
+      console.log(`🔮 [SESSION SERVICE] Storing Activity Gem in database [${callId}]...`);
       await this.storeGemEvent(sessionId, studentId, activityGemEvent, 'activity');
       lastGemEvent = activityGemEvent;
 
@@ -296,11 +334,21 @@ export class EnhancedGameSessionService {
       // Cache gem event for session summary (use the last/most important gem event)
       if (lastGemEvent) {
         this.gemEvents.push(lastGemEvent);
+        console.log(`🔮 [SESSION SERVICE] Gem event cached for session summary [${callId}]:`, {
+          rarity: lastGemEvent.rarity,
+          xpValue: lastGemEvent.xpValue
+        });
       }
+
+      console.log(`🔮 [SESSION SERVICE] recordWordAttempt completed [${callId}]:`, {
+        returnedGemEvent: !!lastGemEvent,
+        gemRarity: lastGemEvent?.rarity,
+        gemXP: lastGemEvent?.xpValue
+      });
 
       return lastGemEvent;
     } catch (error) {
-      console.error('Error recording word attempt:', error);
+      console.error(`🔮 [SESSION SERVICE] Error recording word attempt [${callId}]:`, error);
       return null;
     }
   }
@@ -314,6 +362,19 @@ export class EnhancedGameSessionService {
     gemEvent: GemEvent,
     gemType: 'mastery' | 'activity'
   ): Promise<void> {
+    const storeId = Math.random().toString(36).substr(2, 9);
+    console.log(`💎 [STORE GEM] Starting to store gem event [${storeId}]:`, {
+      sessionId,
+      studentId,
+      gemType,
+      gemEvent: {
+        vocabularyId: gemEvent.vocabularyId,
+        wordText: gemEvent.wordText,
+        rarity: gemEvent.rarity,
+        xpValue: gemEvent.xpValue
+      }
+    });
+
     const insertData: any = {
       session_id: sessionId,
       student_id: studentId,
@@ -321,13 +382,14 @@ export class EnhancedGameSessionService {
       xp_value: gemEvent.xpValue,
       word_text: gemEvent.wordText,
       translation_text: gemEvent.translationText,
-      response_time_ms: gemEvent.responseTimeMs,
+      response_time_ms: Math.round(gemEvent.responseTimeMs || 0), // 🔧 FIX: Round to integer for database
       streak_count: gemEvent.streakCount,
       hint_used: gemEvent.hintUsed,
       game_type: gemEvent.gameType,
       game_mode: gemEvent.gameMode,
       difficulty_level: gemEvent.difficultyLevel,
       gem_type: gemType
+      // 🔧 FIXED: Use created_at (auto-timestamp) instead of earned_at
     };
 
     // Handle vocabulary IDs with validation - skip foreign key fields if no valid ID
@@ -355,32 +417,27 @@ export class EnhancedGameSessionService {
       // This is fine - we can store gems without vocabulary references
     }
 
-    // Try insert first, handle conflicts gracefully
-    const { error: insertError } = await this.supabase
+    console.log(`💎 [STORE GEM] Inserting into gem_events table [${storeId}]:`, insertData);
+
+    // Try insert into gem_events table
+    const { data, error: insertError } = await this.supabase
       .from('gem_events')
-      .insert(insertData);
+      .insert(insertData)
+      .select();
+
+    console.log(`💎 [STORE GEM] Database insert result [${storeId}]:`, {
+      success: !insertError,
+      error: insertError?.message,
+      errorCode: insertError?.code,
+      insertedData: data
+    });
 
     if (insertError) {
-      // If it's a conflict error, try upsert
-      if (insertError.code === '23505' || insertError.message?.includes('duplicate')) {
-        console.log('🔄 Gem event conflict detected, attempting upsert...');
-        const { error: upsertError } = await this.supabase
-          .from('gem_events')
-          .upsert(insertData, { onConflict: 'session_id,centralized_vocabulary_id,gem_type' });
-
-        if (upsertError) {
-          console.warn('🚨 Gem event upsert also failed:', upsertError);
-        }
-      } else {
-        console.warn('🚨 Gem event insert failed:', insertError);
-      }
+      console.error(`💎 [STORE GEM] Error storing gem event [${storeId}]:`, insertError);
+      // Don't throw error - log it but continue
+    } else {
+      console.log(`💎 [STORE GEM] Successfully stored ${gemType} gem [${storeId}]: ${gemEvent.rarity} (${gemEvent.xpValue} XP) for "${gemEvent.wordText}"`);
     }
-
-    console.log(`✅ [DUAL-TRACK] ${gemType} gem stored:`, {
-      rarity: gemEvent.rarity,
-      xp: gemEvent.xpValue,
-      type: gemType
-    });
   }
 
   /**
@@ -565,15 +622,14 @@ export class EnhancedGameSessionService {
         translation_text: attempt.translationText,
         language_pair: 'english_spanish', // TODO: Make dynamic
         attempt_number: 1,
-        response_time_ms: attempt.responseTimeMs,
-          was_correct: attempt.wasCorrect,
-          confidence_level: attempt.responseTimeMs < 2000 ? 5 :
-                           attempt.responseTimeMs < 4000 ? 4 :
-                           attempt.responseTimeMs < 6000 ? 3 : 2,
-          difficulty_level: attempt.difficultyLevel || 'medium',
-          hint_used: attempt.hintUsed,
-          streak_count: attempt.streakCount,
+        response_time_ms: Math.round(attempt.responseTimeMs || 0), // 🔧 FIX: Round to integer for database
         was_correct: attempt.wasCorrect,
+        confidence_level: (attempt.responseTimeMs || 0) < 2000 ? 5 :
+                         (attempt.responseTimeMs || 0) < 4000 ? 4 :
+                         (attempt.responseTimeMs || 0) < 6000 ? 3 : 2,
+        difficulty_level: attempt.difficultyLevel || 'medium',
+        hint_used: attempt.hintUsed,
+        streak_count: attempt.streakCount,
         confidence_level: attempt.responseTimeMs < 2000 ? 5 : 3,
         difficulty_level: attempt.difficultyLevel || 'medium',
         hint_used: attempt.hintUsed,
@@ -707,6 +763,17 @@ export class EnhancedGameSessionService {
     nextReviewAt?: string;
   }> {
     try {
+      // 🔧 FIX: Validate input parameters
+      if (!studentId || !vocabularyId) {
+        console.error('🚨 [FSRS GATE] Invalid parameters:', { studentId, vocabularyId });
+        return {
+          allowed: false,
+          reason: 'Invalid parameters',
+          phase: 'new',
+          state: 'error'
+        };
+      }
+
       // Get current word state including encounter count
       const { data: wordData, error } = await this.supabase
         .from('vocabulary_gem_collection')
@@ -715,7 +782,18 @@ export class EnhancedGameSessionService {
         .eq(isUUID ? 'centralized_vocabulary_id' : 'vocabulary_item_id', vocabularyId)
         .maybeSingle(); // Use maybeSingle() since new words won't have records
 
-      if (error || !wordData) {
+      if (error) {
+        console.error('🚨 [FSRS GATE] Database error:', error);
+        // Allow progression on database errors to avoid blocking gameplay
+        return {
+          allowed: true,
+          reason: 'Database error - allowing progression',
+          phase: 'new',
+          state: 'error'
+        };
+      }
+
+      if (!wordData) {
         // New word - always allow progression
         return {
           allowed: true,

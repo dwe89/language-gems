@@ -2,71 +2,67 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from '../../components/auth/AuthProvider';
 import { getNavigationItems } from '../../lib/featureFlags';
 import { LogOut, User, Settings, Gem } from 'lucide-react';
 import SmartAuthButtons from '../../components/SmartAuthButtons';
 
 export default function MainNavigation() {
-  console.log('MainNavigation component loaded!');
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
-  const { user, signOut, refreshSession, isLoading, userRole } = useAuth();
+  const { user, signOut, userRole, hasSubscription, isLoading } = useAuth();
   const router = useRouter();
 
-  const isActive = (path: string) => {
+  // Memoize navigation items to prevent recalculation
+  const navItems = useMemo(() => getNavigationItems(), []);
+
+  // Memoize isActive function
+  const isActive = useCallback((path: string) => {
     if (!pathname) return false;
     if (path === '/' && pathname === '/') return true;
     if (path !== '/' && pathname.startsWith(path)) return true;
     return false;
-  };
+  }, [pathname]);
 
-  const navItems = getNavigationItems();
-
-  // Handle user avatar click
-  const handleUserAvatarClick = () => {
+  // Memoize handlers to prevent recreating on every render
+  const handleUserAvatarClick = useCallback(() => {
     router.push('/account');
-  };
+  }, [router]);
 
-  // Handle logout
-  const handleLogout = async () => {
+  const handleLogout = useCallback(async () => {
     try {
       await signOut();
     } catch (error) {
       console.error('Logout error:', error);
     }
-  };
+  }, [signOut]);
+
+  const handleMobileMenuToggle = useCallback(() => {
+    setMobileMenuOpen(prev => !prev);
+  }, []);
+
+  const handleMobileMenuClose = useCallback(() => {
+    setMobileMenuOpen(false);
+  }, []);
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
-  // Periodically refresh session to keep auth state fresh
+  // Only log auth state changes when actually mounted and user state changes
   useEffect(() => {
-    if (user && !isLoading) {
-      const interval = setInterval(() => {
-        refreshSession();
-      }, 5 * 60 * 1000); // 5 minutes
-
-      return () => clearInterval(interval);
-    }
-  }, [user, isLoading, refreshSession]);
-
-  useEffect(() => {
-    const userState = {
-      isAuthenticated: !!user, 
+    if (!isMounted || isLoading) return;
+    
+    console.log('MainNavigation: Auth state updated', {
+      isAuthenticated: !!user,
       userId: user?.id,
       email: user?.email,
-      role: userRole  // Use userRole from AuthProvider instead of user_metadata
-    };
-    
-    // Only log if state actually changed
-    if (user !== null) {
-      console.log('Auth state changed in MainNavigation:', userState);
-    }
-  }, [user?.id, user?.email, userRole]); // Update dependency to use userRole
+      role: userRole,
+      hasSubscription
+    });
+  }, [isMounted, isLoading, user?.id, userRole, hasSubscription]); // Optimized dependencies
 
   return (
     <header className="bg-gradient-to-r from-blue-900 via-blue-800 to-teal-700 py-3 relative z-10">
@@ -126,7 +122,7 @@ export default function MainNavigation() {
           {/* Mobile Menu Button */}
           <div className="md:hidden">
             <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              onClick={handleMobileMenuToggle}
               className="text-white p-2"
             >
               <svg 
@@ -160,7 +156,7 @@ export default function MainNavigation() {
                           ? 'text-yellow-300 font-medium'
                           : 'hover:text-yellow-200'
                       }`}
-                      onClick={() => setMobileMenuOpen(false)}
+                      onClick={handleMobileMenuClose}
                     >
                       {item.name}
                       {item.comingSoon && (
@@ -180,7 +176,7 @@ export default function MainNavigation() {
                     <button
                       onClick={() => {
                         handleLogout();
-                        setMobileMenuOpen(false);
+                        handleMobileMenuClose();
                       }}
                       className="block w-full text-left text-white hover:text-yellow-200 transition-colors mt-3"
                     >

@@ -14,9 +14,10 @@ import Link from 'next/link';
 interface VocabularyCategory {
   curriculum_level: string;
   category: string;
-  subcategory: string;
+  subcategory: string | null;
   exam_board_code: string | null;
   theme_name: string | null;
+  unit_name: string | null;
   total_words: number;
   mastered_words: number;
   struggling_words: number;
@@ -28,7 +29,7 @@ interface VocabularyCategory {
 
 interface FilterState {
   curriculumLevel: 'all' | 'KS2' | 'KS3' | 'KS4' | 'KS5';
-  examBoard: 'all' | 'AQA' | 'Edexcel';
+  examBoard: 'all' | 'AQA' | 'edexcel';
   category: string;
   subcategory: string;
   theme: string;
@@ -129,7 +130,7 @@ export default function VocabularyCategoriesAnalytics() {
       // Fetch centralized vocabulary data
       const { data: centralizedVocabData, error: centralizedError } = await supabase
         .from('centralized_vocabulary')
-        .select('id, curriculum_level, category, subcategory, exam_board_code, theme_name')
+        .select('id, curriculum_level, category, subcategory, exam_board_code, theme_name, unit_name')
         .in('id', vocabularyIds);
 
       if (centralizedError) {
@@ -155,15 +156,20 @@ export default function VocabularyCategoriesAnalytics() {
           return;
         }
 
-        const key = `${vocab.curriculum_level}-${vocab.category}-${vocab.subcategory}`;
+        // For KS4 vocabulary, use theme_name/unit_name when category/subcategory are null
+        const displayCategory = vocab.category || vocab.theme_name || 'Unknown';
+        const displaySubcategory = vocab.subcategory || vocab.unit_name || 'Unknown';
+
+        const key = `${vocab.curriculum_level}-${displayCategory}-${displaySubcategory}`;
 
         if (!categoryMap.has(key)) {
           categoryMap.set(key, {
             curriculum_level: vocab.curriculum_level,
-            category: vocab.category,
-            subcategory: vocab.subcategory,
+            category: displayCategory,
+            subcategory: displaySubcategory,
             exam_board_code: vocab.exam_board_code,
             theme_name: vocab.theme_name,
+            unit_name: vocab.unit_name,
             total_words: 0,
             mastered_words: 0,
             struggling_words: 0,
@@ -214,8 +220,8 @@ export default function VocabularyCategoriesAnalytics() {
   };
 
   const updateAvailableOptions = (data: VocabularyCategory[]) => {
-    const categories = [...new Set(data.map(item => item.category))].sort();
-    const subcategories = [...new Set(data.map(item => item.subcategory))].sort();
+  const categories = [...new Set(data.map(item => item.category).filter(Boolean))].sort() as string[];
+  const subcategories = [...new Set(data.map(item => item.subcategory).filter(Boolean))].sort() as string[];
     const themes = [...new Set(data.map(item => item.theme_name).filter(Boolean))].sort() as string[];
     const examBoards = [...new Set(data.map(item => item.exam_board_code).filter(Boolean))].sort() as string[];
 
@@ -294,7 +300,7 @@ export default function VocabularyCategoriesAnalytics() {
       case 'category':
         return [...new Set(baseData.map(item => item.category))].sort();
       case 'subcategory':
-        return [...new Set(baseData.map(item => item.subcategory))].sort();
+  return [...new Set(baseData.map(item => item.subcategory).filter(Boolean))].sort() as string[];
       case 'theme':
         return [...new Set(baseData.map(item => item.theme_name).filter(Boolean))].sort();
       default:
@@ -320,6 +326,7 @@ export default function VocabularyCategoriesAnalytics() {
   };
 
   const formatCategoryName = (category: string) => {
+    if (!category) return 'General';
     return category
       .replace(/^KS\d+_/, '') // Remove KS prefix
       .replace(/_/g, ' ') // Replace underscores with spaces
@@ -327,9 +334,17 @@ export default function VocabularyCategoriesAnalytics() {
   };
 
   const formatSubcategoryName = (subcategory: string) => {
+    if (!subcategory) return 'General';
     return subcategory
       .replace(/_/g, ' ')
       .replace(/\b\w/g, l => l.toUpperCase());
+  };
+
+  const extractPrimaryUnit = (unitName: string) => {
+    if (!unitName) return '';
+    // Split by semicolon and take the last unit (usually the most specific)
+    const units = unitName.split(';').map(unit => unit.trim());
+    return units[units.length - 1];
   };
 
   if (loading) {
@@ -411,7 +426,7 @@ export default function VocabularyCategoriesAnalytics() {
               >
                 <option value="all">All Boards</option>
                 <option value="AQA">AQA</option>
-                <option value="Edexcel">Edexcel</option>
+                <option value="edexcel">Edexcel</option>
               </select>
             </div>
           )}
@@ -503,11 +518,17 @@ export default function VocabularyCategoriesAnalytics() {
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900">
-                      {formatSubcategoryName(category.subcategory)}
+                      {category.curriculum_level === 'KS4' && category.unit_name
+                        ? extractPrimaryUnit(category.unit_name)
+                        : formatSubcategoryName(category.subcategory ?? '')}
                     </h3>
                     <p className="text-sm text-gray-600">
-                      {formatCategoryName(category.category)} • {category.curriculum_level}
-                      {category.theme_name && ` • ${category.theme_name}`}
+                      {category.curriculum_level === 'KS4' && category.theme_name
+                        ? category.theme_name
+                        : formatCategoryName(category.category ?? '')
+                      } • {category.curriculum_level}
+                      {category.curriculum_level === 'KS4' && category.unit_name && ` • ${extractPrimaryUnit(category.unit_name)}`}
+                      {category.curriculum_level !== 'KS4' && category.theme_name && ` • ${category.theme_name}`}
                     </p>
                   </div>
                   
@@ -546,8 +567,8 @@ export default function VocabularyCategoriesAnalytics() {
                     }
                   </div>
                   
-                  <Link
-                    href={`/student-dashboard/games?category=${encodeURIComponent(category.category)}&subcategory=${encodeURIComponent(category.subcategory)}`}
+                    <Link
+                    href={`/student-dashboard/games?category=${encodeURIComponent(category.category)}&subcategory=${encodeURIComponent(category.subcategory ?? '')}`}
                     className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
                   >
                     <PlayCircle className="h-4 w-4" />

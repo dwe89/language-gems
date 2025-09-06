@@ -14,6 +14,8 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 export default function EnhancedAssignmentPage() {
+  console.log('🎯 [ENHANCED ASSIGNMENT PAGE] Component loaded');
+
   const { user } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();

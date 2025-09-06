@@ -758,25 +758,30 @@ export default function TicTacToeGame({
 
         console.log('🔍 [FSRS DEBUG] Word data being passed to FSRS:', wordData);
 
-        // Use EnhancedGameSessionService for unified vocabulary tracking
-        if (vocabularyId && gameSessionId) {
-          const sessionService = new EnhancedGameSessionService();
-          const gemEvent = await sessionService.recordWordAttempt(gameSessionId, 'noughts-and-crosses', {
-            vocabularyId: vocabularyId,
-            wordText: currentQuestion.word,
-            translationText: currentQuestion.translation,
-            responseTimeMs: responseTime * 1000,
-            wasCorrect: isCorrect,
-            hintUsed: false,
-            streakCount: correctAnswers,
-            masteryLevel: 1,
-            maxGemRarity: 'common', // Luck-based game
-            gameMode: 'multiple_choice',
-            difficultyLevel: 'beginner'
-          });
+        // 🚀 FAST GEM RECORDING: Lightweight gem recording without heavy FSRS
+        if (vocabularyId && gameSessionId && isCorrect) {
+          try {
+            const sessionService = new EnhancedGameSessionService();
+            // Record gem with minimal processing - skip FSRS to avoid delays
+            const gemEvent = await sessionService.recordWordAttempt(gameSessionId, 'noughts-and-crosses', {
+              vocabularyId: vocabularyId,
+              wordText: currentQuestion.word,
+              translationText: currentQuestion.translation,
+              responseTimeMs: responseTime * 1000,
+              wasCorrect: isCorrect,
+              hintUsed: false,
+              streakCount: correctAnswers,
+              masteryLevel: 1,
+              maxGemRarity: 'common',
+              gameMode: 'multiple_choice',
+              difficultyLevel: 'beginner'
+            }, true); // Skip FSRS = true for speed
 
-          if (gemEvent) {
-            console.log(`✅ Noughts and Crosses gem awarded: ${gemEvent.rarity} (${gemEvent.xpValue} XP)`);
+            if (gemEvent) {
+              console.log(`✅ [FAST] Gem awarded: ${gemEvent.rarity} (${gemEvent.xpValue} XP)`);
+            }
+          } catch (error) {
+            console.error('🚀 [FAST] Gem recording failed:', error);
           }
         }
       } catch (error) {
@@ -786,107 +791,49 @@ export default function TicTacToeGame({
       console.log('🔍 [FSRS SKIP] Skipping FSRS recording for retry question to avoid double counting');
     }
 
-    // Record vocabulary interaction using gems-first system
-    // ONLY for non-retry questions to avoid double recording
-    if (gameService && gameSessionId && !(currentQuestion as any).isRetryQuestion) {
+    // 🚀 FAST VOCABULARY TRACKING: Lightweight tracking without heavy analytics
+    if (gameService && gameSessionId && !(currentQuestion as any).isRetryQuestion && !isAssignmentMode) {
       try {
-        // 🔍 INSTRUMENTATION: Log vocabulary tracking details
-        console.log('🔍 [VOCAB TRACKING] Starting vocabulary tracking for word:', {
-          questionId: currentQuestion.id,
-          questionIdType: typeof currentQuestion.id,
-          word: currentQuestion.word,
-          translation: currentQuestion.translation,
-          isCorrect,
-          gameSessionId,
-          responseTimeMs: Math.round(responseTime * 1000)
+        // Only do essential word performance logging - skip complex analytics
+        await gameService.logWordPerformance({
+          session_id: gameSessionId,
+          vocabulary_id: currentQuestion.id ? parseInt(currentQuestion.id) : undefined,
+          word_text: currentQuestion.word,
+          translation_text: currentQuestion.translation,
+          language_pair: `${settings.language === 'spanish' ? 'es' : settings.language === 'french' ? 'fr' : 'en'}_english`,
+          attempt_number: 1,
+          response_time_ms: Math.round(responseTime * 1000),
+          was_correct: isCorrect,
+          confidence_level: 3,
+          difficulty_level: 'beginner',
+          hint_used: false,
+          streak_count: correctAnswers + (isCorrect ? 1 : 0),
+          previous_attempts: 0,
+          mastery_level: 1,
+          error_type: isCorrect ? undefined : 'incorrect_selection',
+          grammar_concept: 'vocabulary_exposure',
+          context_data: {
+            gameType: 'noughts-and-crosses',
+            isLuckBased: true,
+            gameState: board.join(''),
+            totalQuestions: totalQuestions + 1,
+            correctAnswers: correctAnswers + (isCorrect ? 1 : 0)
+          },
+          timestamp: new Date()
         });
-
-        // Only record gems directly if NOT in assignment mode
-        // In assignment mode, the wrapper handles gem recording to avoid duplicates
-        if (!isAssignmentMode) {
-          // Use EnhancedGameSessionService for gems-first vocabulary tracking
-          // Skip spaced repetition since FSRS is already handling it
-          const sessionService = new EnhancedGameSessionService();
-          const gemEvent = await sessionService.recordWordAttempt(gameSessionId, 'noughts-and-crosses', {
-            vocabularyId: currentQuestion.id, // Use UUID directly, not parseInt
-            wordText: currentQuestion.word,
-            translationText: currentQuestion.translation,
-            responseTimeMs: Math.round(responseTime * 1000),
-            wasCorrect: isCorrect,
-            hintUsed: false, // No hints in noughts-and-crosses
-            streakCount: correctAnswers + (isCorrect ? 1 : 0),
-            masteryLevel: 1, // Default mastery level for luck-based games
-            maxGemRarity: 'common', // Cap at common for luck-based games
-            gameMode: 'multiple_choice',
-            difficultyLevel: 'beginner'
-          }, true); // Skip spaced repetition - FSRS handles it
-
-          // 🔍 INSTRUMENTATION: Log gem event result
-          console.log('🔍 [VOCAB TRACKING] Gem event result:', {
-            gemEventExists: !!gemEvent,
-            gemEvent: gemEvent ? {
-              rarity: gemEvent.rarity,
-              xpValue: gemEvent.xpValue,
-              vocabularyId: gemEvent.vocabularyId,
-              wordText: gemEvent.wordText
-            } : null,
-            wasCorrect: isCorrect
-          });
-
-          // Show gem feedback if correct and gem was awarded
-          if (gemEvent && isCorrect) {
-            console.log(`🔮 Noughts & Crosses earned ${gemEvent.rarity} gem (${gemEvent.xpValue} XP) for "${currentQuestion.word}"`);
-          }
-        } else {
-          console.log('🔍 [VOCAB TRACKING] Skipping direct gem recording - assignment mode (wrapper will handle gems)');
-        }
-
-        // Also log to word_performance_logs for legacy compatibility (non-assignment mode only)
-        if (!isAssignmentMode) {
-          await gameService.logWordPerformance({
-            session_id: gameSessionId,
-            vocabulary_id: currentQuestion.id ? parseInt(currentQuestion.id) : undefined,
-            word_text: currentQuestion.word,
-            translation_text: currentQuestion.translation,
-            language_pair: `${settings.language === 'spanish' ? 'es' : settings.language === 'french' ? 'fr' : 'en'}_english`,
-            attempt_number: 1,
-            response_time_ms: Math.round(responseTime * 1000),
-            was_correct: isCorrect,
-            confidence_level: 3, // Neutral confidence for luck-based games
-            difficulty_level: 'beginner',
-            hint_used: false,
-            power_up_active: undefined,
-            streak_count: correctAnswers + (isCorrect ? 1 : 0),
-            previous_attempts: 0,
-            mastery_level: 1, // Neutral mastery for luck-based games
-            error_type: isCorrect ? undefined : 'incorrect_selection',
-            grammar_concept: 'vocabulary_exposure',
-            error_details: undefined,
-            context_data: {
-              gameType: 'noughts-and-crosses',
-              isLuckBased: true, // Flag to indicate this is exposure tracking only
-              gameState: board.join(''),
-              totalQuestions: totalQuestions + 1,
-              correctAnswers: correctAnswers + (isCorrect ? 1 : 0)
-            },
-            timestamp: new Date()
-          });
-        }
+        console.log('🚀 [FAST] Lightweight vocabulary tracking completed');
       } catch (error) {
-        console.error('Failed to record vocabulary interaction:', error);
+        console.error('🚀 [FAST] Vocabulary tracking failed:', error);
       }
-    } else if ((currentQuestion as any).isRetryQuestion) {
-      console.log('🔍 [GEM SKIP] Skipping gem recording for retry question to avoid double counting');
     }
 
-    // Skip assignment wrapper recording since FSRS already handles vocabulary tracking
-    // The assignment wrapper's recordVocabularyInteraction calls the same atomic database function
-    // that FSRS uses, causing double counting. FSRS is now the primary system.
-    if (isAssignmentMode && !(currentQuestion as any).isRetryQuestion) {
-      console.log('🔍 [ASSIGNMENT SKIP] Skipping assignment wrapper recording - FSRS already handled vocabulary tracking');
-    } else if ((currentQuestion as any).isRetryQuestion) {
-      console.log('🔍 [ASSIGNMENT SKIP] Skipping assignment recording for retry question to avoid double counting');
-    }
+    // 🔮 CRITICAL FIX: FSRS and Gem Recording are SEPARATE systems!
+    // - FSRS: Handles spaced repetition scheduling (when to review words)
+    // - Gem Recording: Handles reward system (awarding gems and XP)
+    // Both systems should run independently!
+
+    // 🚀 PERFORMANCE: Skip assignment wrapper gem recording too
+    console.log('🚀 [FAST] Skipping assignment wrapper gem recording for speed');
 
     if (isCorrect) {
       // Play correct answer sound

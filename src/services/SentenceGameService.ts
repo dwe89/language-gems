@@ -86,7 +86,10 @@ export class SentenceGameService {
         attempt.language
       );
 
-      console.log(`Found ${parsingResult.vocabularyMatches.length} vocabulary matches`);
+      // Reduced logging: Only log significant vocabulary discovery, not every sentence
+      if (parsingResult.vocabularyMatches.length > 0) {
+        console.log(`Found ${parsingResult.vocabularyMatches.length} vocabulary matches`);
+      }
 
       const result: SentenceGameResult = {
         vocabularyMatches: parsingResult.vocabularyMatches,
@@ -176,7 +179,10 @@ export class SentenceGameService {
         }
       }
 
-      console.log(`Sentence processing complete: ${result.totalGems} gems awarded, ${result.totalXP} XP`);
+      // Reduced logging: Only log significant processing results
+      if (result.totalGems > 0) {
+        console.log(`Sentence processing complete: ${result.totalGems} gems awarded, ${result.totalXP} XP`);
+      }
       return result;
 
     } catch (error) {

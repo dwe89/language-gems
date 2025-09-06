@@ -21,7 +21,10 @@ const AVAILABLE_GAMES = [
   { id: 'detective-listening', name: 'Detective Listening', estimatedTime: '8-15 min', features: ['Audio comprehension', 'Detective theme'] }
 ];
 
-const getGameById = (id: string) => AVAILABLE_GAMES.find(game => game.id === id) || { id, name: 'Unknown Game', estimatedTime: 'N/A', features: [] };
+const humanizeGameId = (id: string) =>
+  id.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+
+const getGameById = (id: string) => AVAILABLE_GAMES.find(game => game.id === id) || { id, name: humanizeGameId(id), estimatedTime: 'N/A', features: [] };
 
 export default function ReviewStep({
   assignmentDetails,

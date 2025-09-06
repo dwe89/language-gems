@@ -23,7 +23,8 @@ import {
   MoreVertical,
   Play,
   X,
-  ArrowLeft
+  ArrowLeft,
+
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -519,6 +520,7 @@ export default function VocabularyPage() {
             >
               Public Content
             </button>
+
           </div>
 
           {/* Filters */}

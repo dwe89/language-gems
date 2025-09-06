@@ -66,7 +66,7 @@ const GAME_INFO: Record<string, Omit<Game, 'id'> & { assignmentSupported: boolea
     assignmentSupported: true // ✅ Assignment support implemented
   },
   'vocab-master': {
-    name: 'VocabMaster',
+  name: 'Vocab Master',
     description: 'Comprehensive vocabulary learning with multiple game modes',
     path: '/games/vocab-master',
     icon: <Crown className="w-6 h-6" />,
@@ -218,23 +218,58 @@ export default function MultiGamePage() {
         return;
       }
 
-      // Transform assignment data
+      // Transform assignment data - classes may come back as an array from the join
+      const classesField = (assignmentData as any).classes;
+      const className = Array.isArray(classesField)
+        ? classesField[0]?.name ?? null
+        : classesField?.name ?? null;
+
       const assignmentWithClassName = {
         ...assignmentData,
-        class_name: assignmentData.classes?.name
+        class_name: className
       };
 
       setAssignment(assignmentWithClassName);
 
       // Extract games from assignment config
       const selectedGameIds = assignmentData.game_config?.selectedGames || [];
+
+      // Helper: normalize a game id/key for fuzzy matching
+      const normalize = (s: string | undefined) =>
+        (s || '')
+          .toString()
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/(^-|-$)/g, '');
+
+      // Resolve incoming gameId to a known GAME_INFO key when possible
+      // Small alias map for known variants/typos (normalized keys)
+      const ALIAS_MAP: Record<string, string> = {
+        'vocabulary-master': 'vocab-master',
+        'vocabmaster': 'vocab-master',
+        'vocab-master': 'vocab-master'
+      };
+
+      const resolveGameKey = (gameId: string) => {
+        if (GAME_INFO[gameId]) return gameId;
+        const norm = normalize(gameId);
+        // Check aliases first
+        if (ALIAS_MAP[norm]) return ALIAS_MAP[norm];
+        for (const key of Object.keys(GAME_INFO)) {
+          if (normalize(key) === norm) return key;
+        }
+        return gameId; // fallback to original
+      };
+
       const gameList: Game[] = selectedGameIds.map((gameId: string) => {
-        const gameInfo = GAME_INFO[gameId];
+        const resolvedKey = resolveGameKey(gameId);
+        const gameInfo = GAME_INFO[resolvedKey as keyof typeof GAME_INFO];
+
         if (!gameInfo) {
-          console.warn(`Unknown game ID: ${gameId}`);
+          console.warn(`Unknown game ID: ${gameId} (resolved as: ${resolvedKey})`);
           return {
             id: gameId,
-            name: gameId.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()),
+            name: gameId.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
             description: 'Language learning game',
             path: `/games/${gameId}`,
             icon: <Play className="w-6 h-6" />,
@@ -244,6 +279,8 @@ export default function MultiGamePage() {
             assignmentSupported: false
           };
         }
+
+        // If we matched a different key, keep the original id but reuse gameInfo
         return {
           id: gameId,
           ...gameInfo

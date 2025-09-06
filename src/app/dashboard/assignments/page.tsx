@@ -134,10 +134,45 @@ export default function AssignmentsPage() {
 
   const confirmDeleteAssignment = async () => {
     try {
+      const assignmentId = deleteConfirmation.assignmentId;
+
+      // Delete related records first to avoid foreign key constraint violations
+
+      // 1. Delete grammar practice attempts
+      await supabase
+        .from('grammar_practice_attempts')
+        .delete()
+        .eq('assignment_id', assignmentId);
+
+      // 2. Delete assignment game sessions
+      await supabase
+        .from('assignment_game_sessions')
+        .delete()
+        .eq('assignment_id', assignmentId);
+
+      // 3. Delete assignment progress
+      await supabase
+        .from('assignment_progress')
+        .delete()
+        .eq('assignment_id', assignmentId);
+
+      // 4. Delete student vocabulary assignment progress
+      await supabase
+        .from('student_vocabulary_assignment_progress')
+        .delete()
+        .eq('assignment_id', assignmentId);
+
+      // 5. Delete conjugations
+      await supabase
+        .from('conjugations')
+        .delete()
+        .eq('assignment_id', assignmentId);
+
+      // 6. Finally delete the assignment itself
       const { error } = await supabase
         .from('assignments')
         .delete()
-        .eq('id', deleteConfirmation.assignmentId)
+        .eq('id', assignmentId)
         .eq('created_by', user?.id);
 
       if (error) {
@@ -146,7 +181,7 @@ export default function AssignmentsPage() {
         return;
       }
 
-      setAssignments(assignments.filter(a => a.id !== deleteConfirmation.assignmentId));
+      setAssignments(assignments.filter(a => a.id !== assignmentId));
     } catch (error) {
       console.error('Error deleting assignment:', error);
       alert('Failed to delete assignment. Please try again.');

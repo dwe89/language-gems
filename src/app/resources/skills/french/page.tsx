@@ -1,6 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { ArrowLeft, BookOpen, Users, FileText } from 'lucide-react';
+import ReactCountryFlag from 'react-country-flag';
 
 const FRENCH_SKILLS = [
   {
@@ -49,7 +50,12 @@ export default function FrenchSkillsPage() {
               <ArrowLeft className="h-5 w-5 text-slate-600" />
             </Link>
             <div className="flex items-center gap-4">
-              <span className="text-6xl">🇫🇷</span>
+              <ReactCountryFlag
+                countryCode="FR"
+                svg
+                style={{ width: '4rem', height: '4rem' }}
+                className="rounded-lg"
+              />
               <div>
                 <h1 className="text-3xl font-bold text-slate-900">French Skills</h1>
                 <p className="text-slate-600 mt-2">Perfect your French with comprehensive learning resources</p>

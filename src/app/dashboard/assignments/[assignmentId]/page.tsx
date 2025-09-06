@@ -135,6 +135,7 @@ export default function AssignmentDetailsPage() {
               'hangman': 'hangman', // ✅ Hangman assignment support
               'word-blast': 'word-blast', // ✅ Word Blast assignment support
               'speed-builder': 'speed-builder', // ✅ Speed Builder assignment support
+              'word-towers': 'word-towers', // ✅ Word Towers assignment support
               'sentence-towers': 'sentence-towers', // ✅ Sentence Towers assignment support
               'conjugation-duel': 'conjugation-duel', // ✅ Conjugation Duel assignment support
               'case-file-translator': 'case-file-translator', // ✅ Case File Translator assignment support
@@ -194,6 +195,7 @@ export default function AssignmentDetailsPage() {
               'verb-quest': 'verb-quest',
               'word-scramble': 'word-scramble',
               'word-guesser': 'word-scramble',
+              'word-towers': 'word-towers',
               'sentence-towers': 'sentence-towers',
               'sentence-builder': 'speed-builder',
               'memory-game': 'memory-game', // ✅ Memory Game assignment support

@@ -26,6 +26,7 @@ const mapGameTypeToPath = (gameType: string | null): string => {
     'hangman': 'hangman', // ✅ Hangman assignment support
     'word-blast': 'word-blast', // ✅ Word Blast assignment support
     'speed-builder': 'speed-builder', // ✅ Speed Builder assignment support
+    'word-towers': 'word-towers', // ✅ Word Towers assignment support
     'sentence-towers': 'sentence-towers', // ✅ Sentence Towers assignment support
     'conjugation-duel': 'conjugation-duel', // ✅ Conjugation Duel assignment support
     'case-file-translator': 'case-file-translator', // ✅ Case File Translator assignment support

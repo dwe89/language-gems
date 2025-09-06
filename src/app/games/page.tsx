@@ -527,7 +527,7 @@ export default function GamesPage() {
             <span className="ml-3 bg-orange-500 text-white text-sm px-3 py-1 rounded-full font-bold">DEMO</span>
           </div>
           <p className="text-gray-600 max-w-2xl">
-            🎮 Engage with interactive games designed to make language learning fun and effective.
+            <Gamepad2 className="inline h-5 w-5 text-indigo-600 mr-2" /> Engage with interactive games designed to make language learning fun and effective.
             All games are available to teachers and students with an active account.
           </p>
 
@@ -545,7 +545,7 @@ export default function GamesPage() {
           {user && (
             <div className="mt-4 p-4 bg-gradient-to-r from-blue-100 to-indigo-100 rounded-xl border border-blue-200">
               <p className="text-blue-800">
-                <span className="font-bold">💡 Pro Tip:</span> As a teacher, you can assign any of these games to your students
+                <span className="font-bold"><Lightbulb className="inline h-4 w-4 text-blue-600 mr-1" /> Pro Tip:</span> As a teacher, you can assign any of these games to your students
                 from the assignments page.
               </p>
             </div>
@@ -615,7 +615,7 @@ export default function GamesPage() {
             onClick={() => setIsMobileModalOpen(true)}
             className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-4 px-6 rounded-lg transition-all transform hover:scale-105 flex items-center justify-center space-x-2"
           >
-            <span>🎮</span>
+            <Gamepad2 className="h-5 w-5" />
             <span>Select Content & Start Game</span>
           </button>
         </div>
@@ -670,7 +670,9 @@ export default function GamesPage() {
               </div>
             ) : filteredGames.length === 0 ? (
               <div className="text-center py-12">
-                <div className="text-6xl mb-4">🎮</div>
+                <div className="flex justify-center mb-4">
+                  <Gamepad2 className="h-16 w-16 text-gray-400" />
+                </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-2">No games found</h3>
                 <p className="text-gray-600">Try adjusting your search or category filters.</p>
               </div>

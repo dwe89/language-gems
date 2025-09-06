@@ -14,7 +14,9 @@ import {
   Brain,
   Zap,
   BookOpen,
-  MessageSquare
+  MessageSquare,
+  Trophy,
+  Flame
 } from 'lucide-react';
 
 interface CriticalInsight {
@@ -54,6 +56,7 @@ function ProactiveAIDashboard({ teacherId }: ProactiveAIDashboardProps) {
   const [studentData, setStudentData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [showAllInsights, setShowAllInsights] = useState(false);
 
   // Load real AI insights from API
   useEffect(() => {
@@ -234,7 +237,7 @@ function ProactiveAIDashboard({ teacherId }: ProactiveAIDashboardProps) {
         id: 'positive-performance',
         type: 'opportunity',
         priority: 'low',
-        title: `🎉 ${highPerformers} Student${highPerformers > 1 ? 's' : ''} Excelling`,
+        title: `<Trophy className="w-4 h-4" /> ${highPerformers} Student${highPerformers > 1 ? 's' : ''} Excelling`,
         description: `${highPerformers} of your students are achieving 75%+ accuracy rates. This demonstrates strong comprehension and engagement with the material.`,
         impact: 'Positive momentum in class performance',
         timeframe: 'Current',
@@ -250,7 +253,7 @@ function ProactiveAIDashboard({ teacherId }: ProactiveAIDashboardProps) {
         id: 'positive-engagement',
         type: 'opportunity',
         priority: 'low',
-        title: '🔥 100% Student Engagement',
+        title: '<Flame className="w-4 h-4" /> 100% Student Engagement',
         description: 'All your students have been active within the past week, showing excellent engagement with the platform.',
         impact: 'Strong class participation and consistency',
         timeframe: 'Past 7 days',
@@ -266,7 +269,7 @@ function ProactiveAIDashboard({ teacherId }: ProactiveAIDashboardProps) {
         id: 'positive-accuracy',
         type: 'opportunity',
         priority: 'low',
-        title: '⭐ Outstanding Class Average',
+        title: 'Outstanding Class Average',
         description: `Your class is maintaining an impressive ${Math.round(avgAccuracy)}% average accuracy rate, indicating excellent learning outcomes.`,
         impact: 'Strong foundational learning across all students',
         timeframe: 'Overall',
@@ -284,13 +287,13 @@ function ProactiveAIDashboard({ teacherId }: ProactiveAIDashboardProps) {
   const criticalInsights = useMemo(() =>
     insights.filter(insight =>
       insight.priority === 'urgent' || insight.priority === 'high'
-    ), [insights]
+    ).slice(0, 5), [insights] // Limit to 5 critical insights
   );
 
   const mediumInsights = useMemo(() =>
     insights.filter(insight =>
       insight.priority === 'medium'
-    ), [insights]
+    ).slice(0, 3), [insights] // Limit to 3 medium insights
   );
 
   // Generate positive insights when no critical issues exist
@@ -307,6 +310,12 @@ function ProactiveAIDashboard({ teacherId }: ProactiveAIDashboardProps) {
     ...mediumInsights,
     ...positiveInsights
   ], [criticalInsights, mediumInsights, positiveInsights]);
+
+  // Limit insights shown by default
+  const displayedInsights = useMemo(() => {
+    if (showAllInsights) return allInsights;
+    return allInsights.slice(0, 3); // Show only first 3 insights by default
+  }, [allInsights, showAllInsights]);
 
   if (isLoading) {
     return (
@@ -387,6 +396,28 @@ function ProactiveAIDashboard({ teacherId }: ProactiveAIDashboardProps) {
         ))}
       </div>
 
+      {/* Insights Summary */}
+      {allInsights.length > 0 && (
+        <div className="bg-gradient-to-r from-amber-50 to-orange-50 p-4 rounded-lg border border-amber-200 mb-6">
+          <div className="flex items-center gap-3 mb-2">
+            <AlertTriangle className="w-5 h-5 text-amber-600" />
+            <h3 className="text-lg font-semibold text-gray-900">
+              {criticalInsights.length > 0 ? 'Action Required' : 'Performance Summary'}
+            </h3>
+          </div>
+          <p className="text-gray-700 text-sm">
+            {criticalInsights.length > 0
+              ? `${criticalInsights.length} student${criticalInsights.length > 1 ? 's' : ''} need${criticalInsights.length === 1 ? 's' : ''} immediate attention. `
+              : 'Your class is performing well overall. '
+            }
+            {allInsights.length > 3
+              ? `${allInsights.length} total insights available.`
+              : `${allInsights.length} insight${allInsights.length > 1 ? 's' : ''} to review.`
+            }
+          </p>
+        </div>
+      )}
+
       {/* Critical Insights */}
       <div className="space-y-4">
         <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
@@ -400,7 +431,8 @@ function ProactiveAIDashboard({ teacherId }: ProactiveAIDashboardProps) {
         </h3>
 
         <AnimatePresence>
-          {allInsights.map((insight, index) => (
+          {displayedInsights.length > 0 ? (
+            displayedInsights.map((insight, index) => (
             <motion.div
               key={insight.id}
               initial={{ opacity: 0, x: -20 }}
@@ -416,7 +448,7 @@ function ProactiveAIDashboard({ teacherId }: ProactiveAIDashboardProps) {
                     <div className="flex items-center gap-2 mb-2">
                       <h4 className="text-lg font-semibold text-gray-900">{insight.title}</h4>
                       <span className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded-full">
-                        {Math.round(insight.confidence * 100)}% confidence
+                        {Math.round(insight.confidence)}% confidence
                       </span>
                     </div>
                     <p className="text-gray-700 mb-2">{insight.description}</p>
@@ -424,9 +456,9 @@ function ProactiveAIDashboard({ teacherId }: ProactiveAIDashboardProps) {
                       <strong>Impact:</strong> {insight.impact}
                     </p>
                     <div className="flex items-center gap-4 text-sm text-gray-500">
-                      <span>⏰ {insight.timeframe}</span>
+                      <span><Clock className="w-4 h-4" /> {insight.timeframe}</span>
                       {insight.studentsAffected && (
-                        <span>👥 {insight.studentsAffected} student{insight.studentsAffected > 1 ? 's' : ''}</span>
+                        <span><Users className="w-4 h-4" /> {insight.studentsAffected} student{insight.studentsAffected > 1 ? 's' : ''}</span>
                       )}
                     </div>
                   </div>
@@ -440,8 +472,37 @@ function ProactiveAIDashboard({ teacherId }: ProactiveAIDashboardProps) {
                 </button>
               </div>
             </motion.div>
-          ))}
+            ))
+          ) : (
+            <div className="text-center py-12 bg-gray-50 rounded-xl">
+              <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
+              <h4 className="text-lg font-semibold text-gray-900 mb-2">All Clear!</h4>
+              <p className="text-gray-600">No urgent insights at the moment. Your students are doing well!</p>
+            </div>
+          )}
         </AnimatePresence>
+
+        {/* Show More/Less Button */}
+        {allInsights.length > 3 && (
+          <div className="text-center mt-4">
+            <button
+              onClick={() => setShowAllInsights(!showAllInsights)}
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
+            >
+              {showAllInsights ? (
+                <>
+                  <ArrowRight className="w-4 h-4 rotate-90" />
+                  Show Less
+                </>
+              ) : (
+                <>
+                  <ArrowRight className="w-4 h-4 -rotate-90" />
+                  Show {allInsights.length - 3} More Insights
+                </>
+              )}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* AI Status */}

@@ -283,7 +283,7 @@ export class LemmatizationService {
         .select('word')
         .eq('word', word) // Using exact match - data should be normalized
         .eq('language', dbLanguage)
-        .single();
+        .maybeSingle(); // Use maybeSingle() to handle 0 or 1 rows gracefully
 
       if (!error && exactMatch) {
         // Only return as-is if it's likely a base form (infinitive, noun, etc.)

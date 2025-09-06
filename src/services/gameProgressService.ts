@@ -1,5 +1,9 @@
 import { SupabaseClient, createBrowserClient } from '@supabase/ssr';
 
+// Humanize dashed/underscored ids into Title Case fallbacks (e.g. 'vocab-master' -> 'Vocab Master')
+const humanizeGameId = (id?: string) =>
+  id ? id.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'Unknown Game';
+
 /**
  * Interface for game progress data
  */
@@ -187,6 +191,7 @@ export class GameProgressService {
         map[game.id] = game.name;
         return map;
       }, {} as Record<string, string>);
+
       
       // Format recent games
       const recentGames: GameSummary[] = progressData
@@ -194,7 +199,7 @@ export class GameProgressService {
         .map(p => ({
           id: p.id,
           gameId: p.game_id,
-          gameName: gameNameMap[p.game_id] || 'Unknown Game',
+          gameName: gameNameMap[p.game_id] || humanizeGameId(p.game_id),
           score: p.score || 0,
           playedAt: p.played_at,
           accuracy: p.accuracy,
@@ -207,7 +212,7 @@ export class GameProgressService {
         highestScore,
         averageScore,
         totalTimePlayed: totalTime,
-        mostPlayedGame: gameNameMap[mostPlayedGameId] || 'Unknown Game',
+  mostPlayedGame: gameNameMap[mostPlayedGameId] || humanizeGameId(mostPlayedGameId),
         recentGames
       });
 
@@ -216,7 +221,7 @@ export class GameProgressService {
         highestScore,
         averageScore,
         totalTimePlayed: totalTime,
-        mostPlayedGame: gameNameMap[mostPlayedGameId] || 'Unknown Game',
+  mostPlayedGame: gameNameMap[mostPlayedGameId] || humanizeGameId(mostPlayedGameId),
         recentGames
       };
     } catch (error) {
@@ -267,7 +272,7 @@ export class GameProgressService {
       const gameSummary = (data || []).map(p => ({
         id: p.id,
         gameId: p.game_id,
-        gameName: gameData?.name || 'Unknown Game',
+        gameName: gameData?.name || humanizeGameId(p.game_id),
         score: p.score || 0,
         playedAt: p.played_at,
         accuracy: p.accuracy,

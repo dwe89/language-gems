@@ -1067,11 +1067,11 @@ export default function ModernStudentDashboard({
             <span>Practice Weak Words</span>
           </Link>
           <Link
-            href="/student-dashboard/vocabulary/categories"
+            href="/student-dashboard/vocabulary/dashboard"
             className="bg-orange-600 text-white px-3 py-2 rounded-full text-sm hover:bg-orange-700 transition-colors flex items-center space-x-1"
           >
             <BarChart3 className="h-4 w-4" />
-            <span>Category Performance</span>
+            <span>Vocabulary Dashboard</span>
           </Link>
           <Link
             href="/student-dashboard/vocabulary/progress"
@@ -1103,11 +1103,11 @@ export default function ModernStudentDashboard({
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-bold text-gray-900">Vocabulary Progress</h2>
               <Link
-                href="/student-dashboard/vocabulary"
+                href="/student-dashboard/vocabulary/dashboard"
                 className="bg-blue-600 text-white px-4 py-2 rounded-full hover:bg-blue-700 transition-colors flex items-center space-x-2"
               >
                 <BookOpen className="h-4 w-4" />
-                <span>View All Words</span>
+                <span>Vocabulary Dashboard</span>
               </Link>
             </div>
 
@@ -1211,11 +1211,11 @@ export default function ModernStudentDashboard({
                   <span>Practice Weak Words</span>
                 </Link>
                 <Link
-                  href="/student-dashboard/vocabulary/categories"
+                  href="/student-dashboard/vocabulary/dashboard"
                   className="bg-orange-600 text-white px-4 py-3 rounded-full hover:bg-orange-700 transition-colors flex items-center space-x-2 shadow-sm"
                 >
                   <BarChart3 className="h-4 w-4" />
-                  <span>Category Performance</span>
+                  <span>Vocabulary Dashboard</span>
                 </Link>
                 <Link
                   href="/student-dashboard/vocabulary/progress"

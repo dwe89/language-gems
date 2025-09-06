@@ -1,12 +1,10 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useAuth } from '../../components/auth/AuthProvider';
-
-// Dynamically import navigations only when needed
-const MainNavigation = lazy(() => import('./MainNavigation'));
-const StudentNavigation = lazy(() => import('../../components/student/StudentNavigation'));
+import MainNavigation from './MainNavigation';
+import StudentNavigation from '../../components/student/StudentNavigation';
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -46,7 +44,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
     return <>{children}</>;
   }
 
-  // If user is a student, always show student navigation everywhere
+    // If user is a student, always show student navigation everywhere
   if (isStudent) {
     return (
       <>
@@ -61,9 +59,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   // For non-students (teachers, admins, visitors), show main navigation
   return (
     <>
-      <Suspense fallback={<div className="h-16 bg-white border-b"></div>}>
-        <MainNavigation />
-      </Suspense>
+      <MainNavigation />
       <main>{children}</main>
     </>
   );

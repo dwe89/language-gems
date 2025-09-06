@@ -857,22 +857,43 @@ Format as JSON:
     try {
       const insights: AIInsight[] = [];
 
+      // First, check for existing active insights to avoid duplicates
+      const { data: existingInsights } = await this.supabase
+        .from('ai_insights')
+        .select('student_id, class_id, insight_type, title')
+        .eq('teacher_id', teacherId)
+        .eq('status', 'active')
+        .gte('generated_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()); // Last 24 hours
+
+      const existingInsightKeys = new Set(
+        (existingInsights || []).map(insight =>
+          `${insight.insight_type}-${insight.student_id || insight.class_id}-${insight.title}`
+        )
+      );
+
       // Analyze at-risk students
       const atRiskStudents = studentData.filter(student => student.is_at_risk);
 
       for (const student of atRiskStudents.slice(0, 3)) { // Limit to top 3 most critical
         const riskScore = student.risk_factors.length;
         const priority = riskScore >= 3 ? 'urgent' : riskScore >= 2 ? 'high' : 'medium';
+        const title = `${student.student_name} needs attention`;
+        const insightKey = `at_risk_student-${student.student_id}-${title}`;
+
+        // Skip if we already have this insight
+        if (existingInsightKeys.has(insightKey)) {
+          continue;
+        }
 
         const insight: AIInsight = {
           teacher_id: teacherId,
           insight_type: 'at_risk_student',
           priority: priority as any,
           status: 'active',
-          title: `${student.student_name} needs attention`,
+          title,
           description: `Performance concerns: ${student.risk_factors.join(', ')}. Last active: ${new Date(student.last_active).toLocaleDateString()}`,
           recommendation: `Consider one-on-one support or targeted assignments focusing on ${student.risk_factors[0]?.toLowerCase()}`,
-          confidence_score: Math.min(0.95, 0.7 + (riskScore * 0.1)),
+          confidence_score: Math.min(0.95, 0.70 + (riskScore * 0.05)), // Store as decimal (0.70-0.95)
           student_id: student.student_id,
           generated_at: new Date(),
           expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
@@ -881,19 +902,27 @@ Format as JSON:
         insights.push(insight);
       }
 
-      // Analyze class-level trends
-      for (const classData of classAnalytics) {
-        if (classData.at_risk_students > classData.total_students * 0.3) {
+      // Analyze class-level trends (limit to 1 class insight to avoid overwhelming)
+      const classWithMostRisk = classAnalytics
+        .filter(classData => classData.at_risk_students > classData.total_students * 0.3)
+        .sort((a, b) => (b.at_risk_students / b.total_students) - (a.at_risk_students / a.total_students))[0];
+
+      if (classWithMostRisk) {
+        const title = `${classWithMostRisk.class_name} has high risk student count`;
+        const insightKey = `engagement_alert-${classWithMostRisk.class_id}-${title}`;
+
+        // Skip if we already have this insight
+        if (!existingInsightKeys.has(insightKey)) {
           const insight: AIInsight = {
             teacher_id: teacherId,
             insight_type: 'engagement_alert',
             priority: 'high',
             status: 'active',
-            title: `${classData.class_name} has high risk student count`,
-            description: `${classData.at_risk_students} out of ${classData.total_students} students are at risk. Common struggles: ${classData.common_struggles.join(', ')}`,
+            title,
+            description: `${classWithMostRisk.at_risk_students} out of ${classWithMostRisk.total_students} students are at risk. Common struggles: ${classWithMostRisk.common_struggles.join(', ')}`,
             recommendation: `Review class-wide teaching strategy and consider additional support materials`,
-            confidence_score: 0.85,
-            class_id: classData.class_id,
+            confidence_score: 0.85, // Store as decimal
+            class_id: classWithMostRisk.class_id,
             generated_at: new Date(),
             expires_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000) // 14 days
           };

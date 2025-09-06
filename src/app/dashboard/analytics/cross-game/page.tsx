@@ -59,7 +59,7 @@ const GAME_NAMES: Record<string, string> = {
   'word-guesser': 'Word Guesser',
   'vocab-blast': 'Vocab Blast',
   'word-blast': 'Word Blast',
-  'vocab-master': 'VocabMaster',
+  'vocab-master': 'Vocab Master',
   'vocabulary-mining': 'Vocabulary Mining',
   'detective-listening': 'Detective Listening',
   'speed-builder': 'Speed Builder',

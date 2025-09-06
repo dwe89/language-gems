@@ -151,6 +151,16 @@ export const EDEXCEL_VOCABULARY_CATEGORIES: Category[] = [
       { id: 'Social media and gaming', name: 'Social media and gaming', displayName: 'Social Media and Gaming', categoryId: 'edexcel_media_technology' },
       { id: 'TV and film', name: 'TV and film', displayName: 'TV and Film', categoryId: 'edexcel_media_technology' }
     ]
+  },
+  {
+    id: 'edexcel_cultural',
+    name: 'edexcel_cultural',
+    displayName: 'Cultural',
+    icon: Palette,
+    color: 'from-pink-600 to-rose-700',
+    subcategories: [
+      { id: 'Cultural and geographical', name: 'Cultural and geographical', displayName: 'Cultural and Geographical', categoryId: 'edexcel_cultural' }
+    ]
   }
 ];
 

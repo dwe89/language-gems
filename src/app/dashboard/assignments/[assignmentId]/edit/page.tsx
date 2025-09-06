@@ -167,11 +167,44 @@ export default function EditAssignmentPage() {
 
   const handleDelete = async () => {
     if (!assignment) return;
-    
+
     const confirmed = window.confirm('Are you sure you want to delete this assignment? This action cannot be undone.');
     if (!confirmed) return;
 
     try {
+      // Delete related records first to avoid foreign key constraint violations
+
+      // 1. Delete grammar practice attempts
+      await supabase
+        .from('grammar_practice_attempts')
+        .delete()
+        .eq('assignment_id', assignment.id);
+
+      // 2. Delete assignment game sessions
+      await supabase
+        .from('assignment_game_sessions')
+        .delete()
+        .eq('assignment_id', assignment.id);
+
+      // 3. Delete assignment progress
+      await supabase
+        .from('assignment_progress')
+        .delete()
+        .eq('assignment_id', assignment.id);
+
+      // 4. Delete student vocabulary assignment progress
+      await supabase
+        .from('student_vocabulary_assignment_progress')
+        .delete()
+        .eq('assignment_id', assignment.id);
+
+      // 5. Delete conjugations
+      await supabase
+        .from('conjugations')
+        .delete()
+        .eq('assignment_id', assignment.id);
+
+      // 6. Finally delete the assignment itself
       const { error: deleteError } = await supabase
         .from('assignments')
         .delete()

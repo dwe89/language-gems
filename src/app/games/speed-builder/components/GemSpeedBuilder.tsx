@@ -28,6 +28,7 @@ interface WordItem {
   index: number;
   correctPosition: number;
   translation?: string;
+  vocabularyId?: string | null; // UUID from centralized vocabulary
   correct?: boolean;
   gemType?: 'ruby' | 'sapphire' | 'emerald' | 'diamond' | 'amethyst' | 'topaz';
 }
@@ -58,6 +59,7 @@ interface GameStats {
   streak: number;
   highestStreak: number;
   totalWordsPlaced: number;
+  correctWordsPlaced: number; // Track correct words for accurate percentage calculation
   grammarErrors: Record<string, number>;
   powerUpsUsed: Record<string, number>;
   gemsCollected: number;
@@ -446,6 +448,9 @@ const GemSpeedBuilderInternal: React.FC<{
   gameSessionId?: string | null;
   gameService?: EnhancedGameService | null;
 }> = ({ assignmentId, mode = 'freeplay', theme, topic, tier, vocabularyList, onGameComplete, sentenceConfig, onOpenSettings, onBackToMenu, gameSessionId, gameService }) => {
+  // Initialize supabase client for vocabulary lookups
+  const supabase = createBrowserClient();
+  
   // Initialize sentence game service for vocabulary tracking
   const sentenceGame = useSentenceGame({
     gameType: 'sentence_sprint',
@@ -480,6 +485,7 @@ const GemSpeedBuilderInternal: React.FC<{
     streak: 0,
     highestStreak: 0,
     totalWordsPlaced: 0,
+    correctWordsPlaced: 0, // Initialize correct words counter
     grammarErrors: {},
     powerUpsUsed: {},
     gemsCollected: 0,
@@ -503,7 +509,6 @@ const GemSpeedBuilderInternal: React.FC<{
 
   
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const supabase = createBrowserClient();
 
   // Initialize game
   useEffect(() => {
@@ -695,20 +700,49 @@ const GemSpeedBuilderInternal: React.FC<{
 
 
   // Load a sentence for the game
-  const loadSentence = (sentence: SentenceData) => {
+  const loadSentence = async (sentence: SentenceData) => {
     console.log('Loading sentence:', sentence.text);
     setCurrentSentence(sentence);
     setShowSentenceResult(false); // Reset feedback state
     
     // Split sentence into words and assign gem types
-    const words = sentence.text.split(' ').map((word, index) => ({
-      id: `word-${sentence.id}-${index}`, // More unique IDs
-      text: word,
-      index,
-      correctPosition: index,
-      correct: false,
-      gemType: (['ruby', 'sapphire', 'emerald', 'amethyst', 'topaz', 'diamond'][index % 6] as 'ruby' | 'sapphire' | 'emerald' | 'amethyst' | 'topaz' | 'diamond')
-    }));
+    const words = await Promise.all(
+      sentence.text.split(' ').map(async (word, index) => {
+        // Try to find vocabulary ID for this word
+        let vocabularyId = null;
+        try {
+          // Clean the word for vocabulary lookup
+          const cleanWord = word.toLowerCase().replace(/[¿¡.,!?]/g, '');
+          
+          const { data: vocabData } = await supabase
+            .from('centralized_vocabulary')
+            .select('id')
+            .eq('word', cleanWord)
+            .eq('language', 'es')
+            .eq('should_track_for_fsrs', true)
+            .limit(1);
+          
+          if (vocabData && vocabData.length > 0) {
+            vocabularyId = vocabData[0].id;
+            console.log(`✅ Found vocabulary ID for "${word}": ${vocabularyId}`);
+          } else {
+            console.log(`⚠️ No vocabulary found for "${word}"`);
+          }
+        } catch (error) {
+          console.warn(`Failed to lookup vocabulary for "${word}":`, error);
+        }
+        
+        return {
+          id: vocabularyId || `fallback-${sentence.id}-${index}`, // Use vocabulary ID if found, fallback otherwise
+          text: word,
+          index,
+          correctPosition: index,
+          correct: false,
+          vocabularyId: vocabularyId || null, // 🔧 FIX: Only store valid UUID vocabulary IDs, null for fallbacks
+          gemType: (['ruby', 'sapphire', 'emerald', 'amethyst', 'topaz', 'diamond'][index % 6] as 'ruby' | 'sapphire' | 'emerald' | 'amethyst' | 'topaz' | 'diamond')
+        };
+      })
+    );
     
     console.log('Created words:', words);
     
@@ -909,72 +943,46 @@ const GemSpeedBuilderInternal: React.FC<{
         (async () => {
           try {
             const sessionService = new EnhancedGameSessionService();
+            
+            // Use the vocabulary ID if available, otherwise skip tracking
+            if (!word.vocabularyId) {
+              console.log(`⚠️ Skipping tracking for "${word.text}" - no vocabulary ID found`);
+              return;
+            }
+
             const gemEvent = await sessionService.recordWordAttempt(gameSessionId, 'speed-builder', {
-              vocabularyId: word.id, // Use UUID directly, not parseInt
+              vocabularyId: word.vocabularyId, // Use the actual vocabulary UUID
               wordText: word.text,
               translationText: word.translation || word.text,
-              responseTimeMs: responseTime,
+              responseTimeMs: Math.round(responseTime || 0), // 🔧 FIX: Ensure integer value
               wasCorrect: isCorrect,
               hintUsed: false, // No hints in speed-builder
               streakCount: stats.streak,
               masteryLevel: isCorrect ? 2 : 0, // Higher mastery for correct placements
               maxGemRarity: 'rare', // Cap at rare for sentence building
               gameMode: 'sentence_building',
-              difficultyLevel: 'intermediate',
-              skipSpacedRepetition: true, // Skip SRS - FSRS is handling spaced repetition
+              difficultyLevel: 'intermediate'
             });
             if (gemEvent) {
-              console.log('Gem event:', gemEvent);
+              console.log('✅ Speed Builder gem event recorded:', gemEvent);
             }
           } catch (err) {
-            console.error('Error recording gem event:', err);
+            console.error('❌ Error recording gem event (continuing gameplay):', err);
+            // Don't throw error - log it but continue gameplay
           }
         })();
       }
 
-      // Log word placement performance (legacy system)
-      gameService.logWordPerformance({
-        session_id: gameSessionId,
-        vocabulary_id: parseInt(word.id) || 0, // Convert string to number
-        word_text: word.text,
-        translation_text: word.translation || word.text,
-        language_pair: 'spanish_english',
-        attempt_number: 1,
-        response_time_ms: responseTime,
-        was_correct: isCorrect,
-        confidence_level: isCorrect ? 5 : 2,
-        difficulty_level: 'intermediate',
-        hint_used: false,
-        power_up_active: undefined,
-        streak_count: 0,
-        previous_attempts: 0,
-        mastery_level: isCorrect ? 3 : 1,
-        error_type: isCorrect ? undefined : 'word_placement_error',
-        grammar_concept: 'sentence_building',
-        error_details: isCorrect ? {} : {
-          placedPosition: targetIndex,
-          correctPosition: word.correctPosition,
-          sentenceContext: currentSentence?.text,
-          wordPlacementSpeed: responseTime > 0 ? 1000 / responseTime : 0
-        },
-        context_data: {
-          gameType: 'gem-speed-builder',
-          sentenceIndex: currentSentenceIndex,
-          totalSentences: availableSentences.length,
-          placedPosition: targetIndex,
-          correctPosition: word.correctPosition,
-          gameMode: 'speed'
-        },
-        timestamp: new Date()
-      }).catch(error => {
-        console.error('Failed to log word placement performance:', error);
-      });
+      // 🔧 FIX: Skip legacy performance logging to avoid UUID/integer conflicts
+      // The new EnhancedGameSessionService handles all performance tracking
+      console.log(`⚠️ Skipping legacy performance logging for "${word.text}" - handled by EnhancedGameSessionService`);
 
       // Update stats for rapid-fire metrics
       setStats(prev => ({
         ...prev,
         totalWordsPlaced: prev.totalWordsPlaced + 1,
-        accuracy: (prev.totalWordsPlaced * prev.accuracy + (isCorrect ? 100 : 0)) / (prev.totalWordsPlaced + 1)
+        correctWordsPlaced: prev.correctWordsPlaced + (isCorrect ? 1 : 0),
+        accuracy: ((prev.correctWordsPlaced + (isCorrect ? 1 : 0)) / (prev.totalWordsPlaced + 1)) * 100 // 🔧 FIX: Proper accuracy calculation
       }));
     }
 
@@ -997,88 +1005,15 @@ const GemSpeedBuilderInternal: React.FC<{
     setShowSentenceResult(true);
 
     if (isCorrect) {
-      // Record word practice with FSRS system for each correctly placed word (works in both assignment and free play modes)
-      if (currentSentence) {
-        try {
-          const sentenceCompletionTime = Date.now() - (sentenceStartTime || Date.now());
-          const averageWordTime = sentenceCompletionTime / wordsArray.length;
+      // Skip individual word FSRS recording for Speed Builder - this game focuses on sentence 
+      // construction skills rather than individual vocabulary memorization. The excessive
+      // database calls (one per word) were causing 10+ second delays in answer verification.
+      // Speed Builder should be fast-paced, so we prioritize gameplay flow over detailed tracking.
 
-          // Record each word as correctly practiced
-          for (const word of wordsArray) {
-            if (word) {
-              const wordData = {
-                id: `${currentSentence.id}-${word.text}`,
-                word: word.text,
-                translation: word.text, // In sentence building, word is its own context
-                language: sentenceConfig?.language === 'spanish' ? 'es' : sentenceConfig?.language === 'french' ? 'fr' : 'en'
-              };
-
-              // Calculate confidence based on sentence completion speed and streak
-              const baseConfidence = 0.7; // Good confidence for sentence building
-              const streakBonus = Math.min(stats.streak * 0.05, 0.2); // Up to 20% bonus for streaks
-              const speedBonus = averageWordTime < 2000 ? 0.1 : 0; // Bonus for fast completion
-              const confidence = Math.min(0.95, baseConfidence + streakBonus + speedBonus);
-
-              // Record practice with FSRS using EnhancedGameSessionService (only in free play mode)
-              if (!assignmentId && gameSessionId) {
-                try {
-                  const sessionService = new EnhancedGameSessionService();
-                  const gemEvent = await sessionService.recordWordAttempt(gameSessionId, 'speed-builder', {
-                    vocabularyId: wordData.id,
-                    wordText: word.text,
-                    translationText: word.text, // In sentence building, word is its own context
-                    responseTimeMs: averageWordTime,
-                    wasCorrect: true, // Always correct for completed sentences
-                    hintUsed: false,
-                    streakCount: stats.streak,
-                    masteryLevel: 1,
-                    maxGemRarity: 'common', // Sentence building is skill-based
-                    gameMode: 'sentence_building',
-                    difficultyLevel: 'intermediate'
-                  });
-
-                  if (gemEvent) {
-                    console.log(`✅ Speed Builder FSRS recorded for word "${word.text}": ${gemEvent.rarity} (${gemEvent.xpValue} XP)`);
-                  }
-                } catch (error) {
-                  console.error(`Error recording FSRS for word "${word.text}":`, error);
-                }
-              }
-            }
-          }
-        } catch (error) {
-          console.error('Error recording FSRS practice for sentence:', error);
-        }
-      }
-
-      // Process sentence with new vocabulary tracking system
-      try {
-        const completedSentence = wordsArray.map(w => w?.text || '').join(' ');
-        const responseTime = Date.now() - sentenceStartTime;
-
-        const result = await sentenceGame.processSentence(
-          completedSentence,
-          true, // Sentence is correct
-          responseTime,
-          false, // No hint used
-          currentSentence.id
-        );
-
-        if (result) {
-          console.log(`🏃‍♂️ Speed Builder: Processed sentence "${completedSentence}"`);
-          console.log(`📊 Vocabulary matches: ${result.vocabularyMatches.length}`);
-          console.log(`💎 Gems awarded: ${result.totalGems}`);
-          console.log(`⭐ XP earned: ${result.totalXP}`);
-          console.log(`📈 Coverage: ${result.coveragePercentage}%`);
-
-          // Log individual vocabulary matches
-          result.gemsAwarded.forEach((gem, index) => {
-            console.log(`  ${index + 1}. "${gem.word}" → ${gem.gemRarity} gem (+${gem.xpAwarded} XP)`);
-          });
-        }
-      } catch (error) {
-        console.error('Error processing sentence with vocabulary tracking:', error);
-      }
+      // Skip redundant sentence processing for Speed Builder - FSRS recording above is sufficient
+      // The sentence processing creates excessive logging and duplicate work since we already
+      // record each word individually with FSRS above. Speed Builder focuses on sentence construction
+      // skills rather than vocabulary discovery, so the word-level tracking is more appropriate.
 
       // Sentence is correct - celebrate and move to next
       playSound('correct');

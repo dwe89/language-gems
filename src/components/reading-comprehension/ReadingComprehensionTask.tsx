@@ -35,7 +35,7 @@ const KS3_SPANISH_CATEGORIES: KSCategory[] = [
     id: 'basics_core_language',
     name: 'basics_core_language',
     displayName: 'Basics & Core Language',
-    icon: '💬',
+    icon: 'MessageCircle',
     subcategories: [
       { id: 'greetings_introductions', name: 'greetings_introductions', displayName: 'Greetings & Introductions', categoryId: 'basics_core_language' },
       { id: 'common_phrases', name: 'common_phrases', displayName: 'Common Phrases', categoryId: 'basics_core_language' },
@@ -51,7 +51,7 @@ const KS3_SPANISH_CATEGORIES: KSCategory[] = [
     id: 'identity_personal_life',
     name: 'identity_personal_life',
     displayName: 'Identity & Personal Life',
-    icon: '👤',
+    icon: 'User',
     subcategories: [
       { id: 'personal_information', name: 'personal_information', displayName: 'Personal Information', categoryId: 'identity_personal_life' },
       { id: 'family_friends', name: 'family_friends', displayName: 'Family & Friends', categoryId: 'identity_personal_life' },
@@ -63,7 +63,7 @@ const KS3_SPANISH_CATEGORIES: KSCategory[] = [
     id: 'home_local_area',
     name: 'home_local_area',
     displayName: 'Home & Local Area',
-    icon: '🏠',
+    icon: 'Home',
     subcategories: [
       { id: 'house_rooms_furniture', name: 'house_rooms_furniture', displayName: 'House, Rooms & Furniture', categoryId: 'home_local_area' },
       { id: 'household_items_chores', name: 'household_items_chores', displayName: 'Household Items & Chores', categoryId: 'home_local_area' },
@@ -77,7 +77,7 @@ const KS3_SPANISH_CATEGORIES: KSCategory[] = [
     id: 'school_jobs_future',
     name: 'school_jobs_future',
     displayName: 'School, Jobs & Future Plans',
-    icon: '🎓',
+    icon: 'GraduationCap',
     subcategories: [
       { id: 'school_subjects', name: 'school_subjects', displayName: 'School Subjects', categoryId: 'school_jobs_future' },
       { id: 'school_rules', name: 'school_rules', displayName: 'School Rules', categoryId: 'school_jobs_future' },
@@ -92,7 +92,7 @@ const KS3_SPANISH_CATEGORIES: KSCategory[] = [
     id: 'free_time_leisure',
     name: 'free_time_leisure',
     displayName: 'Free Time & Leisure',
-    icon: '🎮',
+    icon: 'Gamepad2',
     subcategories: [
       { id: 'hobbies_interests', name: 'hobbies_interests', displayName: 'Hobbies & Interests', categoryId: 'free_time_leisure' },
       { id: 'sports', name: 'sports', displayName: 'Sports', categoryId: 'free_time_leisure' },
@@ -103,7 +103,7 @@ const KS3_SPANISH_CATEGORIES: KSCategory[] = [
     id: 'food_drink',
     name: 'food_drink',
     displayName: 'Food & Drink',
-    icon: '🍽️',
+    icon: 'Utensils',
     subcategories: [
       { id: 'meals', name: 'meals', displayName: 'Meals', categoryId: 'food_drink' },
       { id: 'food_drink_vocabulary', name: 'food_drink_vocabulary', displayName: 'Food & Drink Vocabulary', categoryId: 'food_drink' },
@@ -115,7 +115,7 @@ const KS3_SPANISH_CATEGORIES: KSCategory[] = [
     id: 'clothes_shopping',
     name: 'clothes_shopping',
     displayName: 'Clothes & Shopping',
-    icon: '👕',
+    icon: 'Shirt',
     subcategories: [
       { id: 'clothes_accessories', name: 'clothes_accessories', displayName: 'Clothes & Accessories', categoryId: 'clothes_shopping' },
       { id: 'shopping_phrases_prices', name: 'shopping_phrases_prices', displayName: 'Shopping Phrases & Prices', categoryId: 'clothes_shopping' }
@@ -125,7 +125,7 @@ const KS3_SPANISH_CATEGORIES: KSCategory[] = [
     id: 'technology_media',
     name: 'technology_media',
     displayName: 'Technology & Media',
-    icon: '📱',
+    icon: 'Smartphone',
     subcategories: [
       { id: 'mobile_phones_social_media', name: 'mobile_phones_social_media', displayName: 'Mobile Phones & Social Media', categoryId: 'technology_media' },
       { id: 'internet_digital_devices', name: 'internet_digital_devices', displayName: 'Internet & Digital Devices', categoryId: 'technology_media' },
@@ -138,7 +138,7 @@ const KS3_SPANISH_CATEGORIES: KSCategory[] = [
     id: 'health_lifestyle',
     name: 'health_lifestyle',
     displayName: 'Health & Lifestyle',
-    icon: '⚕️',
+    icon: 'HeartPulse',
     subcategories: [
       { id: 'parts_of_body', name: 'parts_of_body', displayName: 'Parts of the Body', categoryId: 'health_lifestyle' },
       { id: 'illnesses_symptoms', name: 'illnesses_symptoms', displayName: 'Illnesses & Symptoms', categoryId: 'health_lifestyle' },
@@ -150,7 +150,7 @@ const KS3_SPANISH_CATEGORIES: KSCategory[] = [
     id: 'holidays_travel_culture',
     name: 'holidays_travel_culture',
     displayName: 'Holidays, Travel & Culture',
-    icon: '✈️',
+    icon: 'Plane',
     subcategories: [
       { id: 'countries', name: 'countries', displayName: 'Countries', categoryId: 'holidays_travel_culture' },
       { id: 'nationalities', name: 'nationalities', displayName: 'Nationalities', categoryId: 'holidays_travel_culture' },
@@ -167,7 +167,7 @@ const KS3_SPANISH_CATEGORIES: KSCategory[] = [
     id: 'nature_environment',
     name: 'nature_environment',
     displayName: 'Nature & Environment',
-    icon: '🌿',
+    icon: 'Sprout',
     subcategories: [
       { id: 'animals', name: 'animals', displayName: 'Animals', categoryId: 'nature_environment' },
       { id: 'plants', name: 'plants', displayName: 'Plants', categoryId: 'nature_environment' },
@@ -178,7 +178,7 @@ const KS3_SPANISH_CATEGORIES: KSCategory[] = [
     id: 'social_global_issues',
     name: 'social_global_issues',
     displayName: 'Social & Global Issues',
-    icon: '🌍',
+    icon: 'Globe',
     subcategories: [
       { id: 'social_issues', name: 'social_issues', displayName: 'Social Issues', categoryId: 'social_global_issues' },
       { id: 'human_rights', name: 'human_rights', displayName: 'Human Rights', categoryId: 'social_global_issues' },
@@ -319,22 +319,23 @@ export default function ReadingComprehensionPage() {
   const getCategoryIcon = (category: string, isKS3: boolean = false): string => {
     if (isKS3) {
       const ks3Category = KS3_SPANISH_CATEGORIES.find(cat => cat.id === category);
-      return ks3Category ? ks3Category.icon : '📚'; // Fallback icon
+      return ks3Category ? ks3Category.icon : 'Book'; // Fallback icon
     }
     const icons: Record<string, string> = {
-      'food_drink': '🍽️',
-      'home_local_area': '🏛️',
-      'school_jobs_future': '🎓',
-      'identity_personal_life': '👨‍👩‍👧‍👦',
-      'free_time_leisure': '⚽',
-      'holidays_travel_culture': '✈️',
-      'nature_environment': '🌱',
-      'technology_media': '💻',
-      'basics_core_language': '�',
-      'health_lifestyle': '💪',
-      'social_global_issues': '🌍'
+      'food_drink': 'Utensils',
+      'home_local_area': 'Home',
+      'school_jobs_future': 'GraduationCap',
+      'identity_personal_life': 'User',
+      'free_time_leisure': 'Gamepad2',
+      'holidays_travel_culture': 'Plane',
+      'nature_environment': 'Sprout',
+      'technology_media': 'Smartphone',
+      'basics_core_language': 'MessageCircle',
+      'health_lifestyle': 'HeartPulse',
+      'clothes_shopping': 'Shirt',
+      'social_global_issues': 'Globe'
     };
-    return icons[category] || '📚';
+    return icons[category] || 'Book';
   };
 
   const getDifficultyColor = (difficulty: string): string => {
@@ -503,7 +504,7 @@ export default function ReadingComprehensionPage() {
                   <option value="">All categories</option>
                   {categories.map(category => (
                     <option key={category.id} value={category.id}>
-                      {getCategoryIcon(category.id, selectedCurriculumLevel === 'ks3')} {formatCategoryName(category.id, selectedCurriculumLevel === 'ks3')}
+                      {formatCategoryName(category.id, selectedCurriculumLevel === 'ks3')}
                     </option>
                   ))}
                 </select>

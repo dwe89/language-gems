@@ -133,10 +133,10 @@ export function validateAnswerEnhanced(
 
   // --- 1. Generate All Possible Correct Answer Variations ---
   
-  // Start by splitting answers with multiple delimiters: , ; / | or and
+  // Start by splitting answers with multiple delimiters: , ; / | I or and
   // This is where we need to adjust for the new patterns
   let baseAnswers = correctAnswer
-    .split(/[,|;\/]|\s+and\s+|\s+or\s+/i)
+    .split(/[,|;\/]|\s+I\s+|\s+and\s+|\s+or\s+/i)
     .flatMap(ans => {
         ans = ans.trim();
         if (ans.length === 0) return [];

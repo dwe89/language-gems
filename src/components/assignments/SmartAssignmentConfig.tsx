@@ -29,7 +29,7 @@ const GAME_TYPES: Record<string, Game> = {
 
   // Sentence Games
   'speed-builder': { id: 'speed-builder', name: 'Speed Builder', type: 'sentence' },
-  'sentence-towers': { id: 'sentence-towers', name: 'Word Towers', type: 'sentence' },
+  'sentence-towers': { id: 'sentence-towers', name: 'Sentence Towers', type: 'sentence' },
   'sentence-builder': { id: 'sentence-builder', name: 'Sentence Builder', type: 'sentence' },
 
   // Grammar Games

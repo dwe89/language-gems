@@ -20,6 +20,9 @@ export interface VocabularyConfig {
   wordCount?: number;
   difficulty?: string;
   curriculumLevel?: 'KS3' | 'KS4';
+  // New vocabulary options
+  useAllWords?: boolean;
+  shuffleWords?: boolean;
 }
 
 export interface SentenceConfig {

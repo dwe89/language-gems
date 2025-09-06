@@ -126,94 +126,16 @@ const AVAILABLE_GAMES: GameOption[] = [
     type: 'vocabulary'
   },
   {
-    id: 'sentence-towers', // Now a vocabulary game
+    id: 'word-towers',
     name: 'Word Towers',
     description: 'Stack words by translating them correctly to build towering structures.',
     icon: <Castle className="h-5 w-5" />,
     color: 'from-amber-500 to-orange-500',
-    category: 'vocabulary', // Updated category
+    category: 'vocabulary',
     difficulty: 'intermediate',
     estimatedTime: '6-12 min',
     features: ['Tower building', 'Translation practice', 'Strategic thinking'],
-    type: 'vocabulary' // Updated type
-  },
-
-  {
-    id: 'vocabulary-mining',
-    name: 'VocabMaster',
-    description: 'Mine rare vocabulary gems through spaced repetition and adaptive learning',
-    icon: <Pickaxe className="h-5 w-5" />,
-    color: 'from-yellow-500 to-amber-500',
-    category: 'vocabulary',
-    difficulty: 'adaptive',
-    estimatedTime: '10-20 min',
-    features: ['Gem collection', 'Spaced repetition', 'Adaptive difficulty'],
     type: 'vocabulary'
-  },
-
-  {
-    id: 'word-association',
-    name: 'Word Association',
-    description: 'Connect related words and build vocabulary through associations',
-    icon: <RefreshCw className="h-5 w-5" />,
-    color: 'from-teal-400 to-emerald-500',
-    category: 'vocabulary',
-    difficulty: 'intermediate',
-    estimatedTime: '4-9 min',
-    features: ['Association chains', 'Contextual learning'],
-    type: 'vocabulary'
-  },
-
-  {
-    id: 'word-guesser',
-    name: 'Word Guesser',
-    description: 'Guess words from clues and context in this engaging challenge',
-    icon: <Target className="h-5 w-5" />,
-    color: 'from-red-400 to-pink-500',
-    category: 'vocabulary',
-    difficulty: 'intermediate',
-    estimatedTime: '5-12 min',
-    features: ['Context clues', 'Inference practice'],
-    type: 'vocabulary'
-  },
-
-  {
-    id: 'gem-collector',
-    name: 'Gem Collector',
-    description: 'Collect gems by answering vocabulary questions correctly',
-    icon: <Gem className="h-5 w-5" />,
-    color: 'from-amber-400 to-yellow-500',
-    category: 'vocabulary',
-    difficulty: 'beginner',
-    estimatedTime: '6-10 min',
-    features: ['Gem collection', 'Progression'],
-    type: 'vocabulary'
-  },
-
-  {
-    id: 'verb-quest',
-    name: 'Verb Quest',
-    description: 'Adventure through different worlds mastering verb conjugations',
-    icon: <Map className="h-5 w-5" />,
-    color: 'from-red-500 to-orange-500',
-    category: 'grammar',
-    difficulty: 'advanced',
-    estimatedTime: '15-25 min',
-    features: ['Adventure', 'Conjugation practice'],
-    type: 'grammar'
-  },
-
-  {
-    id: 'sentence-builder',
-    name: 'Sentence Builder',
-    description: 'Construct grammatically correct sentences from word fragments',
-    icon: <Type className="h-5 w-5" />,
-    color: 'from-indigo-500 to-violet-500',
-    category: 'grammar',
-    difficulty: 'intermediate',
-    estimatedTime: '5-10 min',
-    features: ['Fragment assembly', 'Grammar rules'],
-    type: 'sentence'
   },
 
   {
@@ -263,6 +185,18 @@ const AVAILABLE_GAMES: GameOption[] = [
     difficulty: 'intermediate',
     estimatedTime: '8-15 min',
     features: ['Fill-in-the-blank', 'Temple theme', 'Word restoration'],
+    type: 'sentence'
+  },
+  {
+    id: 'sentence-towers',
+    name: 'Sentence Towers',
+    description: 'Build towering structures by translating complete sentences correctly.',
+    icon: <Building2 className="h-5 w-5" />,
+    color: 'from-purple-500 to-indigo-500',
+    category: 'grammar',
+    difficulty: 'intermediate',
+    estimatedTime: '8-15 min',
+    features: ['Sentence translation', 'Tower building', 'Complex structures'],
     type: 'sentence'
   },
 

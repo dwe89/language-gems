@@ -81,14 +81,16 @@ export default function SentenceTowersAssignmentWrapper({
         onBackToAssignments={handleBackToAssignments}
         onBackToMenu={handleBackToMenu}
       >
-        {({ assignment, vocabulary, onProgressUpdate, onGameComplete }) => {
-          console.log('Sentence Towers Assignment - Vocabulary loaded:', vocabulary.length, 'items');
+        {({ assignment, vocabulary, sentences, onProgressUpdate, onGameComplete }) => {
+          // Use sentences if available, otherwise fall back to vocabulary
+          const gameContent = sentences && sentences.length > 0 ? sentences : vocabulary;
+          console.log('Sentence Towers Assignment - Content loaded:', gameContent.length, 'items');
 
           return (
             <SentenceTowersMainGame
               onBackToMenu={handleBackToMenu}
               assignmentMode={{
-                vocabulary,
+                sentences: gameContent,
                 onProgressUpdate,
                 onGameComplete
               }}

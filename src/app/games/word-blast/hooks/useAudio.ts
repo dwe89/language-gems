@@ -3,7 +3,7 @@
 import { useRef, useEffect, useCallback } from 'react';
 import { createAudio, getAudioUrl } from '@/utils/audioUtils';
 
-interface AudioFiles {
+export interface AudioFiles {
   // Background themes
   themes: {
     'tokyo': string;

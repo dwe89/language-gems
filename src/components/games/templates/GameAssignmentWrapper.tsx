@@ -66,6 +66,7 @@ export interface GameAssignmentWrapperProps {
   children: (props: {
     assignment: AssignmentData;
     vocabulary: StandardVocabularyItem[];
+    sentences?: any[];
     onProgressUpdate: (progress: Partial<GameProgress>) => void;
     onGameComplete: (finalProgress: GameProgress) => void;
     gameSessionId: string | null;
@@ -74,15 +75,120 @@ export interface GameAssignmentWrapperProps {
   }) => React.ReactNode;
 }
 
+// Helper function to load sentences for sentence-based games
+const loadSentencesForAssignment = async (supabase: any, assignment: AssignmentData, setSentences: (sentences: any[]) => void) => {
+  try {
+    console.log('🔄 [SENTENCES] Loading sentences for assignment:', assignment.id);
+
+    // Get sentence configuration from assignment
+    const gameConfig = assignment.game_config;
+    const sentenceConfig = gameConfig?.gameConfig?.sentenceConfig || gameConfig?.sentenceConfig;
+
+    console.log('🔄 [SENTENCES] Assignment game config structure:', {
+      hasGameConfig: !!gameConfig,
+      gameConfigKeys: gameConfig ? Object.keys(gameConfig) : [],
+      sentenceConfig,
+      fullGameConfig: gameConfig
+    });
+
+    if (!sentenceConfig) {
+      console.log('🔄 [SENTENCES] No sentence config found, skipping sentence loading');
+      return;
+    }
+
+    console.log('🔄 [SENTENCES] Sentence config:', sentenceConfig);
+
+    // Build query based on sentence configuration
+    let query = supabase
+      .from('sentences')
+      .select('*')
+      .eq('is_active', true)
+      .eq('is_public', true);
+
+    // Apply language filter
+    const languageMap: { [key: string]: string } = { 'spanish': 'spanish', 'french': 'french', 'german': 'german' };
+    const dbLanguage = languageMap[sentenceConfig.language || 'spanish'] || 'spanish';
+    query = query.eq('source_language', dbLanguage);
+
+    // Apply filters based on source type
+    if (sentenceConfig.source === 'theme' && sentenceConfig.theme) {
+      query = query.eq('category', sentenceConfig.theme);
+      if (sentenceConfig.topic) {
+        query = query.eq('subcategory', sentenceConfig.topic);
+      }
+    } else if (sentenceConfig.source === 'category' && sentenceConfig.category) {
+      query = query.eq('category', sentenceConfig.category);
+      if (sentenceConfig.subcategory) {
+        query = query.eq('subcategory', sentenceConfig.subcategory);
+      }
+    } else if (sentenceConfig.source === 'topic' && sentenceConfig.topic) {
+      // Handle topic-based filtering - map common topics to their categories
+      const topicCategoryMap: { [key: string]: string } = {
+        'colours': 'basics_core_language',
+        'numbers': 'basics_core_language',
+        'days': 'basics_core_language',
+        'months': 'basics_core_language',
+        'greetings': 'basics_core_language',
+        'family': 'identity_personal_life',
+        'food': 'food_drink',
+        'animals': 'nature_environment',
+        'sports': 'free_time_leisure',
+        'school': 'school_jobs_future',
+        'travel': 'holidays_travel_culture',
+        'health': 'health_lifestyle',
+        'technology': 'technology_media'
+      };
+
+      const category = topicCategoryMap[sentenceConfig.topic] || 'basics_core_language';
+      query = query.eq('category', category).eq('subcategory', sentenceConfig.topic);
+    }
+
+    // Apply curriculum level if available
+    if (sentenceConfig.curriculumLevel) {
+      query = query.eq('curriculum_level', sentenceConfig.curriculumLevel);
+    }
+
+    // Limit results
+    const limit = sentenceConfig.sentenceCount || 20;
+    query = query.limit(limit);
+
+    const { data: sentenceData, error: sentenceError } = await query;
+
+    if (sentenceError) {
+      console.error('🚨 [SENTENCES] Error loading sentences:', sentenceError);
+      return;
+    }
+
+    console.log('✅ [SENTENCES] Loaded sentences:', sentenceData?.length || 0);
+    setSentences(sentenceData || []);
+
+  } catch (error) {
+    console.error('🚨 [SENTENCES] Error in loadSentencesForAssignment:', error);
+  }
+};
+
 // Custom hook for assignment vocabulary loading
-export const useAssignmentVocabulary = (assignmentId: string) => {
+export const useAssignmentVocabulary = (assignmentId: string, gameId?: string) => {
   console.log('🔧 [HOOK] useAssignmentVocabulary called [DEBUG-v2]:', {
     assignmentId,
+    gameId,
     timestamp: new Date().toISOString()
   });
 
   const [assignment, setAssignment] = useState<AssignmentData | null>(null);
   const [vocabulary, setVocabulary] = useState<StandardVocabularyItem[]>([]);
+  const [sentences, setSentences] = useState<any[]>([]);
+
+  // Debug vocabulary state changes
+  useEffect(() => {
+    console.log('📋 [VOCABULARY STATE] Vocabulary state changed:', {
+      vocabularyLength: vocabulary.length,
+      assignmentId,
+      gameId,
+      sampleVocabulary: vocabulary.slice(0, 2),
+      timestamp: new Date().toISOString()
+    });
+  }, [vocabulary, assignmentId, gameId]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -98,9 +204,12 @@ export const useAssignmentVocabulary = (assignmentId: string) => {
         assignmentId,
         timestamp: new Date().toISOString()
       });
+
       try {
         setLoading(true);
         setError(null);
+
+        console.log('🔍 [DEBUG] Assignment loading try block started');
 
         console.log('🔄 [HOOK LOAD] Step 1: Creating Supabase client');
         // Use Supabase client directly instead of API route
@@ -127,6 +236,7 @@ export const useAssignmentVocabulary = (assignmentId: string) => {
         });
 
         // Get assignment data
+        console.log('📋 [ASSIGNMENT] About to query assignment data...');
         const { data: assignmentData, error: assignmentError } = await supabase
           .from('assignments')
           .select(`
@@ -144,6 +254,8 @@ export const useAssignmentVocabulary = (assignmentId: string) => {
           `)
           .eq('id', assignmentId)
           .single();
+
+        console.log('📋 [ASSIGNMENT] Assignment query completed.');
 
         console.log('📋 [ASSIGNMENT] Assignment query result:', {
           assignmentId,
@@ -176,8 +288,22 @@ export const useAssignmentVocabulary = (assignmentId: string) => {
         let vocabularyData: any[] = [];
         let vocabularyError: any = null;
 
+        console.log('📋 [VOCABULARY LOAD] Starting vocabulary loading process:', {
+          assignmentId,
+          hasVocabularyAssignmentListId: !!assignmentData.vocabulary_assignment_list_id,
+          vocabularyAssignmentListId: assignmentData.vocabulary_assignment_list_id,
+          vocabularyCriteria: assignmentData.vocabulary_criteria
+        });
+
+        console.log('🔍 [DEBUG] About to check list-based approach condition:', {
+          hasVocabularyAssignmentListId: !!assignmentData.vocabulary_assignment_list_id,
+          vocabularyAssignmentListId: assignmentData.vocabulary_assignment_list_id,
+          listBasedDisabled: true
+        });
+
         // Try list-based approach first if vocabulary_assignment_list_id exists
         if (assignmentData.vocabulary_assignment_list_id) {
+          console.log('📋 [VOCABULARY LOAD] Using list-based approach...');
           const { data, error } = await supabase
             .from('vocabulary_assignment_items')
             .select(`
@@ -209,7 +335,9 @@ export const useAssignmentVocabulary = (assignmentId: string) => {
             error: vocabularyError?.message,
             hasAssignmentListId: !!assignmentData.vocabulary_assignment_list_id,
             rawData: data,
-            vocabularyData: vocabularyData
+            vocabularyData: vocabularyData,
+            assignmentId,
+            gameId
           });
 
           // If no data from legacy system, try enhanced vocabulary lists
@@ -382,7 +510,9 @@ export const useAssignmentVocabulary = (assignmentId: string) => {
 
         // If list-based approach failed or returned no data, try criteria-based approach
         // Check if this is a grammar assignment
-        const isGrammarAssignment = assignmentData.game_config?.gameConfig?.selectedGames?.includes('conjugation-duel') &&
+        // Check if this specific game is a grammar game (not the entire assignment)
+        const currentGameId = window.location.pathname.split('/').pop();
+        const isGrammarAssignment = currentGameId === 'conjugation-duel' &&
                                    assignmentData.game_config?.gameConfig?.grammarConfig;
 
         console.log('🔍 [FALLBACK CHECK] Checking fallback conditions:', {
@@ -412,59 +542,321 @@ export const useAssignmentVocabulary = (assignmentId: string) => {
               display_word: 'Grammar System'
             }
           }];
+        } else if ((!vocabularyData || vocabularyData.length === 0) && assignmentData.game_config?.gameConfig?.vocabularyConfig) {
+          // KS4 vocabulary config assignment: fetch from centralized_vocabulary using vocabulary config
+          const vocabConfig = assignmentData.game_config.gameConfig.vocabularyConfig;
+          console.log('🔄 [VOCAB CONFIG] Loading vocabulary using vocabularyConfig:', vocabConfig);
+
+          if (vocabConfig.curriculumLevel === 'KS4') {
+            console.log('📚 [KS4] Loading KS4 vocabulary with config:', {
+              examBoard: vocabConfig.examBoard,
+              tier: vocabConfig.tier,
+              subcategory: vocabConfig.subcategory,
+              language: vocabConfig.language
+            });
+
+            let query = supabase
+              .from('centralized_vocabulary')
+              .select(`
+                id,
+                word,
+                translation,
+                category,
+                subcategory,
+                part_of_speech,
+                language,
+                audio_url,
+                word_type,
+                gender,
+                article,
+                display_word,
+                exam_board_code,
+                tier,
+                curriculum_level,
+                theme_name,
+                unit_name
+              `);
+
+            // Apply KS4 filters using correct field names
+            query = query.eq('curriculum_level', 'KS4');
+
+            if (vocabConfig.language) {
+              // Use language code directly (es, fr, de)
+              query = query.eq('language', vocabConfig.language);
+            }
+
+            if (vocabConfig.examBoard) {
+              query = query.eq('exam_board_code', vocabConfig.examBoard);
+            }
+
+            if (vocabConfig.tier) {
+              // Map foundation tier to 'both' since foundation vocabulary is included in 'both'
+              const dbTier = vocabConfig.tier === 'foundation' ? 'both' : vocabConfig.tier;
+              query = query.eq('tier', dbTier);
+            }
+
+            // Match subcategory to unit_name (the assignment config uses subcategory but DB uses unit_name)
+            if (vocabConfig.subcategory) {
+              query = query.ilike('unit_name', `%${vocabConfig.subcategory}%`);
+            }
+
+            // Apply word count limit
+            if (vocabConfig.wordCount) {
+              query = query.limit(vocabConfig.wordCount);
+            }
+
+            const { data: ks4VocabData, error: ks4Error } = await query;
+
+            if (ks4Error) {
+              console.error('❌ [KS4] Error loading KS4 vocabulary:', ks4Error);
+            } else if (ks4VocabData && ks4VocabData.length > 0) {
+              console.log(`✅ [KS4] Successfully loaded ${ks4VocabData.length} KS4 vocabulary items`);
+              console.log('📝 [KS4] Sample vocabulary:', ks4VocabData.slice(0, 3).map(item => ({
+                word: item.word,
+                translation: item.translation,
+                unit_name: item.unit_name,
+                theme_name: item.theme_name
+              })));
+              // Handle shuffling and word count
+              let processedVocab = [...ks4VocabData];
+
+              // Shuffle if requested
+              if (vocabConfig.shuffleWords) {
+                console.log('🔀 [KS4] Shuffling vocabulary words...');
+                processedVocab = processedVocab.sort(() => Math.random() - 0.5);
+              }
+
+              // Apply word count limit after shuffling (if not using all words)
+              if (!vocabConfig.useAllWords && vocabConfig.wordCount && processedVocab.length > vocabConfig.wordCount) {
+                console.log(`✂️ [KS4] Limiting to ${vocabConfig.wordCount} words from ${processedVocab.length} available`);
+                processedVocab = processedVocab.slice(0, vocabConfig.wordCount);
+              }
+
+              console.log(`🎯 [KS4] Final vocabulary count: ${processedVocab.length} words`);
+
+              vocabularyData = processedVocab.map((item, index) => ({
+                order_position: index + 1,
+                centralized_vocabulary: item
+              }));
+            } else {
+              console.log('⚠️ [KS4] No KS4 vocabulary found with current criteria, trying fallback...');
+
+              // Fallback: try to get any vocabulary for the language and exam board
+              const { data: fallbackVocab, error: fallbackError } = await supabase
+                .from('centralized_vocabulary')
+                .select(`
+                  id,
+                  word,
+                  translation,
+                  category,
+                  subcategory,
+                  part_of_speech,
+                  language,
+                  audio_url,
+                  word_type,
+                  gender,
+                  article,
+                  display_word
+                `)
+                .eq('curriculum_level', 'KS4')
+                .eq('language', vocabConfig.language)
+                .eq('exam_board_code', vocabConfig.examBoard || 'AQA')
+                .limit(vocabConfig.wordCount || 10);
+
+              if (fallbackError) {
+                console.error('❌ [KS4 FALLBACK] Error loading fallback vocabulary:', fallbackError);
+              } else if (fallbackVocab && fallbackVocab.length > 0) {
+                console.log(`✅ [KS4 FALLBACK] Using ${fallbackVocab.length} fallback KS4 vocabulary items`);
+                vocabularyData = fallbackVocab.map((item, index) => ({
+                  order_position: index + 1,
+                  centralized_vocabulary: item
+                }));
+              }
+            }
+          } else {
+            console.log('⚠️ [VOCAB CONFIG] Not KS4 curriculum level, using basic fallback...');
+
+            const { data: fallbackVocab, error: fallbackError } = await supabase
+              .from('centralized_vocabulary')
+              .select(`
+                id,
+                word,
+                translation,
+                category,
+                subcategory,
+                part_of_speech,
+                language,
+                audio_url,
+                word_type,
+                gender,
+                article,
+                display_word
+              `)
+              .eq('language', vocabConfig.language === 'es' ? 'es' :
+                            vocabConfig.language === 'fr' ? 'fr' :
+                            vocabConfig.language === 'de' ? 'de' : 'es')
+              .limit(vocabConfig.wordCount || 10);
+
+            if (fallbackError) {
+              console.error('❌ [FALLBACK] Error loading fallback vocabulary:', fallbackError);
+            } else if (fallbackVocab && fallbackVocab.length > 0) {
+              console.log(`✅ [FALLBACK] Using ${fallbackVocab.length} fallback vocabulary items`);
+              vocabularyData = fallbackVocab.map((item, index) => ({
+                order_position: index + 1,
+                centralized_vocabulary: item
+              }));
+            }
+          }
         } else if ((!vocabularyData || vocabularyData.length === 0) && assignmentData.vocabulary_criteria) {
-          // Category-based assignment: fetch directly from centralized_vocabulary
+          // Category-based assignment: fetch from appropriate table based on source_table
           const criteria = assignmentData.vocabulary_criteria;
           console.log('🔄 [FALLBACK] List-based approach returned empty, trying criteria-based approach');
           console.log('🔍 [FALLBACK] Loading category-based vocabulary with criteria:', criteria);
-
-          let query = supabase
-            .from('centralized_vocabulary')
-            .select(`
-              id,
-              word,
-              translation,
-              category,
-              subcategory,
-              part_of_speech,
-              language,
-              audio_url,
-              word_type,
-              gender,
-              article,
-              display_word
-            `);
-
-          // Apply filters based on criteria
-          if (criteria.language) {
-            query = query.eq('language', criteria.language);
-          }
-          if (criteria.category) {
-            query = query.eq('category', criteria.category);
-          }
-          if (criteria.subcategory) {
-            query = query.eq('subcategory', criteria.subcategory);
-          }
-
-          // Apply word count limit
-          if (criteria.wordCount) {
-            query = query.limit(criteria.wordCount);
-          }
-
-          const { data, error } = await query;
-
-          console.log('🔍 [FALLBACK] Criteria-based query result:', {
-            dataCount: data?.length || 0,
-            error: error?.message,
-            sampleData: data?.slice(0, 2)
+          console.log('🔍 [DEBUG] Fallback conditions met:', {
+            vocabularyDataLength: vocabularyData?.length || 0,
+            hasVocabularyCriteria: !!assignmentData.vocabulary_criteria,
+            criteriaSourceTable: criteria.source_table,
+            criteriaCategory: criteria.category,
+            criteriaSubcategory: criteria.subcategory
           });
 
-          // Transform to match the list-based format
-          vocabularyData = data?.map((item: any) => ({
-            order_position: 1,
-            centralized_vocabulary: item
-          })) || [];
-          vocabularyError = error;
+          // Check if we should query sentences table instead of vocabulary
+          if (criteria.source_table === 'sentences') {
+            console.log('🔍 [FALLBACK] Querying sentences table based on source_table criteria');
+
+            let sentenceQuery = supabase
+              .from('sentences')
+              .select(`
+                id,
+                source_sentence,
+                english_translation,
+                category,
+                subcategory,
+                source_language,
+                difficulty_level,
+                curriculum_level,
+                case_context,
+                detective_prompt,
+                case_difficulty,
+                word_count,
+                complexity_score,
+                created_by,
+                is_active,
+                is_public,
+                created_at,
+                updated_at
+              `)
+              .eq('is_active', true)
+              .eq('is_public', true);
+
+            // Apply filters based on criteria
+            if (criteria.language) {
+              // Map language codes for sentences table
+              const languageMap: { [key: string]: string } = {
+                'spanish': 'spanish',
+                'es': 'spanish',
+                'french': 'french',
+                'fr': 'french',
+                'german': 'german',
+                'de': 'german'
+              };
+              const dbLanguage = languageMap[criteria.language] || 'spanish';
+              sentenceQuery = sentenceQuery.eq('source_language', dbLanguage);
+            }
+            if (criteria.category) {
+              sentenceQuery = sentenceQuery.eq('category', criteria.category);
+            }
+            if (criteria.subcategory) {
+              sentenceQuery = sentenceQuery.eq('subcategory', criteria.subcategory);
+            }
+
+            // Apply sentence count limit
+            if (criteria.limit || criteria.wordCount) {
+              sentenceQuery = sentenceQuery.limit(criteria.limit || criteria.wordCount);
+            }
+
+            const { data: sentenceData, error: sentenceError } = await sentenceQuery;
+
+            console.log('🔍 [FALLBACK] Sentences query result:', {
+              dataCount: sentenceData?.length || 0,
+              error: sentenceError?.message,
+              sampleData: sentenceData?.slice(0, 2)
+            });
+
+            if (sentenceData && sentenceData.length > 0) {
+              // Transform sentences to vocabulary format for compatibility
+              vocabularyData = sentenceData.map((sentence: any, index: number) => ({
+                order_position: index,
+                centralized_vocabulary: {
+                  id: sentence.id,
+                  word: sentence.source_sentence,
+                  translation: sentence.english_translation,
+                  category: sentence.category,
+                  subcategory: sentence.subcategory,
+                  part_of_speech: 'sentence',
+                  language: sentence.source_language,
+                  audio_url: null,
+                  word_type: 'sentence',
+                  gender: null,
+                  article: null,
+                  display_word: sentence.source_sentence,
+                  difficulty_level: sentence.difficulty_level,
+                  example_sentence_original: sentence.source_sentence,
+                  example_sentence_translation: sentence.english_translation
+                }
+              }));
+            }
+            vocabularyError = sentenceError;
+          } else {
+            // Default to centralized_vocabulary table
+            let query = supabase
+              .from('centralized_vocabulary')
+              .select(`
+                id,
+                word,
+                translation,
+                category,
+                subcategory,
+                part_of_speech,
+                language,
+                audio_url,
+                word_type,
+                gender,
+                article,
+                display_word
+              `);
+
+            // Apply filters based on criteria
+            if (criteria.language) {
+              query = query.eq('language', criteria.language);
+            }
+            if (criteria.category) {
+              query = query.eq('category', criteria.category);
+            }
+            if (criteria.subcategory) {
+              query = query.eq('subcategory', criteria.subcategory);
+            }
+
+            // Apply word count limit
+            if (criteria.wordCount) {
+              query = query.limit(criteria.wordCount);
+            }
+
+            const { data, error } = await query;
+
+            console.log('🔍 [FALLBACK] Criteria-based query result:', {
+              dataCount: data?.length || 0,
+              error: error?.message,
+              sampleData: data?.slice(0, 2)
+            });
+
+            // Transform to match the list-based format
+            vocabularyData = data?.map((item: any) => ({
+              order_position: 1,
+              centralized_vocabulary: item
+            })) || [];
+            vocabularyError = error;
+          }
         }
 
         if (vocabularyError) {
@@ -507,8 +899,39 @@ export const useAssignmentVocabulary = (assignmentId: string) => {
           order_position: item.order_position
         })) || [];
 
+        console.log('📋 [VOCABULARY TRANSFORM] Vocabulary transformation result:', {
+          originalVocabularyDataLength: vocabularyData?.length || 0,
+          transformedVocabularyLength: transformedVocabulary.length,
+          sampleOriginal: vocabularyData?.slice(0, 2),
+          sampleTransformed: transformedVocabulary.slice(0, 2),
+          assignmentId,
+          gameId
+        });
+
+        console.log('📋 [VOCABULARY TRANSFORM] About to set vocabulary state...');
         setAssignment(transformedAssignment);
         setVocabulary(transformedVocabulary);
+        console.log('📋 [VOCABULARY TRANSFORM] Vocabulary state set successfully!', {
+          newVocabularyLength: transformedVocabulary.length,
+          assignmentId,
+          gameId
+        });
+
+        // Load sentences for sentence-based games
+        const sentenceGameIds = ['sentence-towers', 'case-file-translator', 'lava-temple-word-restore', 'speed-builder'];
+        console.log('🔄 [SENTENCES] Checking sentence loading condition:', {
+          gameId,
+          sentenceGameIds,
+          shouldLoadSentences: gameId && sentenceGameIds.includes(gameId),
+          hasGameId: !!gameId
+        });
+
+        if (gameId && sentenceGameIds.includes(gameId)) {
+          console.log('🔄 [SENTENCES] Loading sentences for sentence-based game:', gameId);
+          await loadSentencesForAssignment(supabase, transformedAssignment, setSentences);
+        } else {
+          console.log('🔄 [SENTENCES] Skipping sentence loading - not a sentence-based game or no gameId');
+        }
       } catch (err) {
         console.error('❌ [HOOK ERROR] Error loading assignment [DEBUG-v2]:', {
           error: err,
@@ -528,7 +951,7 @@ export const useAssignmentVocabulary = (assignmentId: string) => {
     }
   }, [assignmentId]);
 
-  return { assignment, vocabulary, loading, error };
+  return { assignment, vocabulary, sentences, loading, error };
 };
 
 // Standard assignment wrapper component
@@ -552,7 +975,7 @@ export default function GameAssignmentWrapper({
   const router = useRouter();
   const supabase = createBrowserClient();
 
-  const { assignment, vocabulary, loading, error } = useAssignmentVocabulary(assignmentId);
+  const { assignment, vocabulary, sentences, loading, error } = useAssignmentVocabulary(assignmentId, gameId);
   const audioManager = useGlobalAudioContext();
 
   // Initialize audio context but DON'T start background music
@@ -633,10 +1056,30 @@ export default function GameAssignmentWrapper({
 
   // Initialize gem session when vocabulary is loaded
   useEffect(() => {
+    console.log('🔮 [WRAPPER] Gem session initialization check:', {
+      vocabularyLength: vocabulary.length,
+      hasStudentId: !!(studentId || user?.id),
+      studentId: studentId || user?.id,
+      gemSessionId,
+      shouldInitialize: vocabulary.length > 0 && (studentId || user?.id) && !gemSessionId,
+      vocabularySample: vocabulary.slice(0, 2),
+      assignmentId,
+      gameId
+    });
+
     if (vocabulary.length > 0 && (studentId || user?.id) && !gemSessionId) {
+      console.log('🔮 [WRAPPER] Conditions met - initializing gem session...');
       initializeGemSession();
     }
-  }, [vocabulary.length, studentId, user?.id, gemSessionId]);
+
+    // Cleanup function to remove window exposure only on unmount or gem session change
+    return () => {
+      if (typeof window !== 'undefined') {
+        delete (window as any).recordVocabularyInteraction;
+        console.log('🔮 [WRAPPER] recordVocabularyInteraction removed from window (cleanup)');
+      }
+    };
+  }, [vocabulary.length, studentId, user?.id, gemSessionId]); // 🔮 CRITICAL FIX: Must depend on vocabulary.length!
 
   const initializeGemSession = async () => {
     try {
@@ -718,6 +1161,7 @@ export default function GameAssignmentWrapper({
               console.warn('Failed to resolve vocabulary ID from assignment list:', e);
             }
 
+            console.log(`🔮 [WRAPPER] About to call gemSessionService.recordWordAttempt [${callId}]...`);
             const gemEvent = await gemSessionService.recordWordAttempt(sessionId, gameId, {
               vocabularyId: resolvedVocabId, // Use UUID when we can resolve it
               wordText,
@@ -731,14 +1175,33 @@ export default function GameAssignmentWrapper({
               gameMode: 'assignment'
             });
 
+            console.log(`🔮 [WRAPPER] gemSessionService.recordWordAttempt returned [${callId}]:`, {
+              gemEvent,
+              hasGemEvent: !!gemEvent,
+              wasCorrect,
+              wordText
+            });
+
             // Show gem feedback if gem was awarded
             if (gemEvent && wasCorrect) {
-              console.log(`🔮 ${gameId} earned ${gemEvent.rarity} gem (${gemEvent.xpValue} XP) for "${wordText}"`);
+              console.log(`🔮 ${gameId} earned ${gemEvent.rarity} gem (${gemEvent.xpValue} XP) for "${wordText}" [${callId}]`);
+            } else if (wasCorrect) {
+              console.log(`🔮 ${gameId} correct answer for "${wordText}" but no gem awarded [${callId}]`);
+            } else {
+              console.log(`🔮 ${gameId} incorrect answer for "${wordText}" - no gem awarded [${callId}]`);
             }
+
+            return gemEvent;
           }
         };
 
         console.log('🔮 [WRAPPER] recordVocabularyInteraction function set up for assignment games');
+
+        // Expose the function to window for games to use
+        if (typeof window !== 'undefined') {
+          (window as any).recordVocabularyInteraction = recordVocabularyInteraction;
+          console.log('🔮 [WRAPPER] recordVocabularyInteraction exposed to window');
+        }
       }
     } catch (error) {
       console.error('🔮 [WRAPPER] Failed to initialize gem session:', error);
@@ -1051,6 +1514,7 @@ export default function GameAssignmentWrapper({
         {children({
           assignment,
           vocabulary,
+          sentences,
           onProgressUpdate: handleProgressUpdate,
           onGameComplete: handleGameComplete,
           gameSessionId: gemSessionId,

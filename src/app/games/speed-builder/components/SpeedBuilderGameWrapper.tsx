@@ -15,6 +15,7 @@ interface GameStats {
   streak: number;
   highestStreak: number;
   totalWordsPlaced: number;
+  correctWordsPlaced: number; // Track correct words for accurate percentage calculation
   grammarErrors: Record<string, number>;
   powerUpsUsed: Record<string, number>;
   gemsCollected: number;
@@ -96,8 +97,10 @@ export default function SpeedBuilderGameWrapper(props: SpeedBuilderGameWrapperPr
 
     try {
       const startTime = new Date();
+      // Handle demo user ID by mapping to a valid UUID
+      const effectiveUserId = props.userId === 'demo-user-id' ? '388c67a4-2202-4214-86e8-3f20481e6cb6' : props.userId;
       const sessionId = await effectiveGameService.startGameSession({
-        student_id: props.userId,
+        student_id: effectiveUserId,
         assignment_id: props.assignmentId || undefined,
         game_type: 'speed-builder',
         session_mode: props.assignmentId ? 'assignment' : 'free_play',
@@ -132,8 +135,13 @@ export default function SpeedBuilderGameWrapper(props: SpeedBuilderGameWrapperPr
         // Remove conflicting XP calculation - gems system handles all scoring through recordWordAttempt()
         const totalXP = sessionStats.correctWordsPlaced * 10; // 10 XP per correct word placement (gems-first)
 
+        // Handle demo user ID by mapping to a valid UUID
+        const effectiveUserId = props.userId === 'demo-user-id' ? '388c67a4-2202-4214-86e8-3f20481e6cb6' : props.userId;
+
         await effectiveGameService.endGameSession(effectiveGameSessionId!, {
-          student_id: props.userId,
+          student_id: effectiveUserId,
+          game_type: 'speed-builder', // Required field
+          session_mode: props.assignmentId ? 'assignment' : 'free_play', // Required field
           final_score: Math.round(accuracy * 10), // Scale accuracy to score
           accuracy_percentage: accuracy,
           completion_percentage: 100,
@@ -216,7 +224,7 @@ export default function SpeedBuilderGameWrapper(props: SpeedBuilderGameWrapperPr
       {...props}
       onGameComplete={handleEnhancedGameEnd}
       gameSessionId={effectiveGameSessionId}
-      gameService={effectiveGameService}
+      gameService={null} // We're using EnhancedGameSessionService instead
     />
   );
 }

@@ -291,8 +291,8 @@ export default function ContentConfigurationStep({
     // Check game configuration completeness
     if (hasGames) {
       // Define vocabulary games by ID
-  const vocabGameIds = ['memory-game', 'hangman', 'word-blast', 'noughts-and-crosses', 'word-scramble', 'vocab-blast', 'detective-listening'];
-  const sentenceGameIds = ['speed-builder', 'sentence-towers'];
+  const vocabGameIds = ['memory-game', 'hangman', 'word-blast', 'noughts-and-crosses', 'word-scramble', 'vocab-blast', 'detective-listening', 'vocab-master', 'word-towers'];
+  const sentenceGameIds = ['speed-builder', 'case-file-translator', 'lava-temple-word-restore', 'sentence-towers'];
   const grammarGameIds = ['conjugation-duel'];
 
       const hasVocabGames = gameConfig.selectedGames.some(gameId => vocabGameIds.includes(gameId));
@@ -365,8 +365,8 @@ export default function ContentConfigurationStep({
   }) : true;
 
   // Define game types for different configurations
-  const vocabGameIds = ['memory-game', 'hangman', 'word-blast', 'noughts-and-crosses', 'word-scramble', 'vocab-blast', 'detective-listening'];
-  const sentenceGameIds = ['speed-builder', 'sentence-towers'];
+  const vocabGameIds = ['memory-game', 'hangman', 'word-blast', 'noughts-and-crosses', 'word-scramble', 'vocab-blast', 'detective-listening', 'vocab-master', 'word-towers'];
+  const sentenceGameIds = ['speed-builder', 'case-file-translator', 'lava-temple-word-restore', 'sentence-towers'];
   const grammarGameIds = ['conjugation-duel'];
 
   const hasVocabGames = gameConfig.selectedGames.some(gameId => vocabGameIds.includes(gameId));
@@ -563,6 +563,90 @@ export default function ContentConfigurationStep({
                 }}
                 initialConfig={contentConfig}
               />
+
+              {/* Vocabulary Options */}
+              {(() => {
+                const shouldShow = (contentConfig.type === 'KS4' || contentConfig.type === 'KS3') && (contentConfig.categories?.length > 0 || contentConfig.themes?.length > 0 || contentConfig.units?.length > 0);
+                console.log('🎯 [VOCAB OPTIONS] Should show vocabulary options?', {
+                  shouldShow,
+                  contentConfigType: contentConfig.type,
+                  categoriesLength: contentConfig.categories?.length,
+                  themesLength: contentConfig.themes?.length,
+                  unitsLength: contentConfig.units?.length,
+                  contentConfig
+                });
+                return shouldShow;
+              })() && (
+                <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <h4 className="text-sm font-semibold text-blue-900 mb-3">Vocabulary Options</h4>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Word Count Selection */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Number of Words
+                      </label>
+                      <select
+                        value={gameConfig.vocabularyConfig.wordCount || 10}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setGameConfig(prev => ({
+                            ...prev,
+                            vocabularyConfig: {
+                              ...prev.vocabularyConfig,
+                              wordCount: value === 'all' ? 999 : parseInt(value),
+                              useAllWords: value === 'all'
+                            }
+                          }));
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      >
+                        <option value="10">10 words</option>
+                        <option value="15">15 words</option>
+                        <option value="20">20 words</option>
+                        <option value="30">30 words</option>
+                        <option value="50">50 words</option>
+                        <option value="all">All words from selected {contentConfig.type === 'KS4' ? 'units' : 'categories'}</option>
+                      </select>
+                    </div>
+
+                    {/* Shuffle Option */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Word Selection
+                      </label>
+                      <select
+                        value={gameConfig.vocabularyConfig.shuffleWords ? 'shuffle' : 'order'}
+                        onChange={(e) => setGameConfig(prev => ({
+                          ...prev,
+                          vocabularyConfig: {
+                            ...prev.vocabularyConfig,
+                            shuffleWords: e.target.value === 'shuffle'
+                          }
+                        }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      >
+                        <option value="order">In order (as stored)</option>
+                        <option value="shuffle">Shuffled randomly</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Preview Info */}
+                  <div className="mt-3 text-xs text-blue-700">
+                    <strong>Selected:</strong> {
+                      contentConfig.type === 'KS4'
+                        ? `${contentConfig.themes?.length || 0} theme(s), ${contentConfig.units?.length || 0} unit(s)`
+                        : `${contentConfig.categories?.length || 0} category(ies), ${contentConfig.subcategories?.length || 0} subcategory(ies)`
+                    }
+                    {gameConfig.vocabularyConfig.wordCount === 999
+                      ? ' • Using all available words'
+                      : ` • Limited to ${gameConfig.vocabularyConfig.wordCount || 10} words`
+                    }
+                    {gameConfig.vocabularyConfig.shuffleWords && ' • Words will be shuffled'}
+                  </div>
+                </div>
+              )}
               </div>
             )}
 
@@ -579,7 +663,7 @@ export default function ContentConfigurationStep({
 
                 <div className="space-y-6">
                   {/* Sentence Source */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 gap-6">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Sentence Source
@@ -602,24 +686,6 @@ export default function ContentConfigurationStep({
                         <option value="theme">By Theme</option>
                         <option value="topic">By Topic</option>
                         <option value="custom">Custom Sentences</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Difficulty Level
-                      </label>
-                      <select
-                        value={gameConfig.sentenceConfig.difficulty}
-                        onChange={(e) => setGameConfig(prev => ({
-                          ...prev,
-                          sentenceConfig: { ...prev.sentenceConfig, difficulty: e.target.value }
-                        }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                      >
-                        <option value="beginner">Beginner</option>
-                        <option value="intermediate">Intermediate</option>
-                        <option value="advanced">Advanced</option>
                       </select>
                     </div>
                   </div>

@@ -453,7 +453,64 @@ export class EnhancedAssignmentService {
 
     console.log('Transforming vocabulary config:', vocabularyConfig);
 
-    // Check if we have a subcategory (most common case)
+    // Handle KS4 themes and units first (before subcategory check)
+    if (vocabularyConfig.curriculumLevel === 'KS4' && vocabularyConfig.subcategory) {
+      console.log('🎯 [ASSIGNMENT SERVICE] Processing KS4 theme/unit configuration');
+
+      // For KS4, we need to map the unit back to its theme
+      // The subcategory contains the unit name, we need to find its theme
+      const unitName = vocabularyConfig.subcategory;
+      let themeName = vocabularyConfig.category; // Try category first
+
+      // If category is empty, derive theme from unit name using database mapping
+      if (!themeName || themeName === '') {
+        // Map common Edexcel units to their themes
+        const edexcelUnitToTheme: Record<string, string> = {
+          'Social media and gaming': 'Media and technology',
+          'Music': 'Media and technology',
+          'TV and film': 'Media and technology',
+          'Family and friends': 'My personal world',
+          'Hobbies and interests': 'My personal world',
+          'Personal information': 'My personal world',
+          'Environmental issues': 'My neighborhood',
+          'Food and drink': 'My neighborhood',
+          'Mental wellbeing': 'My neighborhood',
+          'Physical wellbeing': 'My neighborhood',
+          'Places in town': 'My neighborhood',
+          'Shopping': 'My neighborhood',
+          'Transport': 'My neighborhood',
+          'Education': 'Studying and my future',
+          'Future plans': 'Studying and my future',
+          'Jobs and careers': 'Studying and my future',
+          'Accommodation': 'Travel and tourism',
+          'Directions': 'Travel and tourism',
+          'Holiday activities': 'Travel and tourism',
+          'Holiday destinations': 'Travel and tourism',
+          'Cultural and geographical': 'Cultural'
+        };
+
+        themeName = edexcelUnitToTheme[unitName] || 'General';
+      }
+
+      console.log('🎯 [ASSIGNMENT SERVICE] KS4 theme/unit mapping:', {
+        unit: unitName,
+        theme: themeName,
+        examBoard: vocabularyConfig.examBoard,
+        tier: vocabularyConfig.tier
+      });
+
+      return {
+        type: 'theme_based',
+        theme: themeName,
+        unit: unitName,
+        examBoard: vocabularyConfig.examBoard,
+        tier: vocabularyConfig.tier,
+        language: vocabularyConfig.language || 'es',
+        wordCount: vocabularyConfig.wordCount || 10
+      };
+    }
+
+    // Check if we have a subcategory (most common case for KS3)
     if (vocabularyConfig.subcategory && vocabularyConfig.subcategory !== '') {
       // Map subcategory to its parent category
       const category = this.mapSubcategoryToCategory(vocabularyConfig.subcategory);
@@ -649,9 +706,45 @@ export class EnhancedAssignmentService {
             query = query.eq('subcategory', criteria.subcategory);
           }
           break;
+
         case 'theme_based':
-          if (criteria.theme) {
-            query = query.eq('category', criteria.theme);
+          // Check if this is a KS4 theme-based query (has unit, examBoard, tier)
+          if (criteria.unit && criteria.examBoard && criteria.tier) {
+            console.log('🎯 [ASSIGNMENT SERVICE] Applying KS4 theme/unit filters (theme_based):', {
+              theme: criteria.theme,
+              unit: criteria.unit,
+              examBoard: criteria.examBoard,
+              tier: criteria.tier
+            });
+
+            // For KS4, filter by theme_name and unit_name
+            if (criteria.theme) {
+              query = query.eq('theme_name', criteria.theme);
+            }
+            if (criteria.unit) {
+              query = query.eq('unit_name', criteria.unit);
+            }
+            if (criteria.examBoard) {
+              const examBoardCode = criteria.examBoard === 'AQA' ? 'AQA' : 'edexcel';
+              query = query.eq('exam_board_code', examBoardCode);
+            }
+            if (criteria.tier) {
+              // Handle tier filtering: foundation should include 'both', higher should include 'both' and 'higher'
+              if (criteria.tier === 'foundation') {
+                query = query.eq('tier', 'both'); // Foundation tier gets 'both' words
+              } else if (criteria.tier === 'higher') {
+                query = query.in('tier', ['both', 'higher']); // Higher tier gets both 'both' and 'higher' words
+              } else {
+                query = query.eq('tier', criteria.tier); // Fallback for other tier values
+              }
+            }
+            // Always filter by KS4 curriculum level
+            query = query.eq('curriculum_level', 'KS4');
+          } else {
+            // Traditional theme-based query for non-KS4
+            if (criteria.theme) {
+              query = query.eq('category', criteria.theme);
+            }
           }
           break;
         case 'topic_based':

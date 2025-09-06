@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { Metadata } from 'next';
 import { GraduationCap, Award, Users, BookOpen, MessageCircle, Star, Shield, Target, Heart, Lightbulb, Globe, CheckCircle, Music, Brain, TrendingUp, BarChart2, Gamepad, Edit } from 'lucide-react'; // Added new icons
 import SEOWrapper from '../../components/seo/SEOWrapper';
@@ -124,9 +125,15 @@ export default function AboutPage() {
         
         <div className="container mx-auto relative z-10">
           <div className="max-w-4xl mx-auto text-center">
-            {/* Profile Icon */}
-            <div className="mx-auto w-32 h-32 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-full flex items-center justify-center mb-8 shadow-2xl">
-              <GraduationCap className="h-16 w-16 text-white" />
+            {/* Founder Photo */}
+            <div className="mx-auto w-32 h-32 mb-8 shadow-2xl rounded-full overflow-hidden">
+              <Image
+                src="/images/homepage/founder.jpg"
+                alt="Photo of founder, Daniel Etienne"
+                width={128}
+                height={128}
+                className="w-full h-full object-cover"
+              />
             </div>
             
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6">

@@ -42,7 +42,7 @@
       private supabase: SupabaseClient;
       private lemmatizationService: LemmatizationService;
       private vocabularyCache: Map<string, MWEVocabularyMatch[]> = new Map();
-      private cacheExpiry: number = 5 * 60 * 1000; // 5 minutes
+      private cacheExpiry: number = 15 * 60 * 1000; // 15 minutes (increased from 5 minutes)
       private lastCacheUpdate: number = 0;
     
       constructor(supabase: SupabaseClient) {
@@ -158,13 +158,14 @@
           if (unmatchedWords.length > 0) {
             // Create a map of word positions for accurate tracking
             const wordPositions = this.getWordPositions(normalizedSentence);
-            console.log(`🔍 Phase 2: Processing ${unmatchedWords.length} unmatched words for base word recognition`);
+            // Reduced logging: Only log when debugging base word recognition
+            // console.log(`🔍 Phase 2: Processing ${unmatchedWords.length} unmatched words for base word recognition`);
     
             for (const unmatchedWord of unmatchedWords) {
               // Skip basic words that don't need explicit recognition
               // This ensures articles, common pronouns etc. don't generate base_word matches
               if (this.isBasicWord(unmatchedWord, language)) {
-                console.log(`⏭️ Skipping basic word: "${unmatchedWord}"`);
+                // console.log(`⏭️ Skipping basic word: "${unmatchedWord}"`);
                 continue;
               }
     
@@ -202,12 +203,12 @@
                   });
                 }
               } else {
-                // Log why a match wasn't found (either not in DB, or it was an MWE)
-                if (vocabularyMatch && vocabularyMatch.is_mwe) {
-                    console.log(`ℹ️ Lemma "${lemmaToLookup}" found but is an MWE, skipping for single-word match.`);
-                } else {
-                    console.log(`❌ No base word match found for: "${unmatchedWord}" (lemma: "${lemmaToLookup}")`);
-                }
+                // Reduced logging: Only log when debugging specific word matching issues
+                // if (vocabularyMatch && vocabularyMatch.is_mwe) {
+                //     console.log(`ℹ️ Lemma "${lemmaToLookup}" found but is an MWE, skipping for single-word match.`);
+                // } else {
+                //     console.log(`❌ No base word match found for: "${unmatchedWord}" (lemma: "${lemmaToLookup}")`);
+                // }
               }
             }
           }
@@ -365,7 +366,8 @@
     
           // Convert language format if needed
           const dbLanguage = this.convertLanguageFormat(language);
-          console.log(`🔍 Looking up vocabulary for lemma: "${lemma}" (${language} -> ${dbLanguage})`);
+          // Reduced logging: Only log vocabulary lookups when debugging vocabulary issues
+          // console.log(`🔍 Looking up vocabulary for lemma: "${lemma}" (${language} -> ${dbLanguage})`);
     
           // Sanitize the lemma to prevent 406 errors
           const sanitizedLemma = lemma.trim().toLowerCase();
@@ -393,18 +395,24 @@
             .eq('word', sanitizedLemma) // Use exact match - words should be stored in lowercase
             .eq('language', dbLanguage)
             .eq('should_track_for_fsrs', true)
-            .limit(1);
+            .maybeSingle(); // 🔧 FIX: Use maybeSingle() instead of limit(1) to avoid 406 errors
     
           if (error) {
-            console.warn(`🚨 Database query error for lemma "${lemma}":`, error);
+            // 🔧 FIX: Handle 406 Not Acceptable errors gracefully
+            if (error.code === 'PGRST116' || error.message?.includes('406') || error.message?.includes('Not Acceptable')) {
+              // Reduced logging: Only warn about significant lookup failures, not common missing words
+              // console.warn(`⚠️ Vocabulary lookup failed for "${lemma}" (word not found in database) - continuing without tracking`);
+            } else {
+              console.warn(`🚨 Database query error for lemma "${lemma}":`, error);
+            }
             return null;
           }
     
-          if (!data || data.length === 0) {
+          if (!data) {
             return null;
           }
-    
-          const vocabData = data[0]; // Use first match
+
+          const vocabData = data; // 🔧 FIX: maybeSingle() returns object directly, not array
     
           return {
             id: vocabData.id,
@@ -449,7 +457,8 @@
         language: string = 'es',
         useLemmatization: boolean = false
       ): Promise<MWEVocabularyMatch[]> {
-        console.log(`🔍 findLongestMatches: Processing sentence "${sentence}" with ${vocabulary.length} vocab items (language: ${language}, useLemmatization: ${useLemmatization})`);
+        // Reduced logging - only log if performance debugging is needed
+        // console.log(`🔍 findLongestMatches: Processing sentence "${sentence}" with ${vocabulary.length} vocab items (language: ${language}, useLemmatization: ${useLemmatization})`);
         const matches: MWEVocabularyMatch[] = [];
         const words = sentence.split(' ');
         const used = new Array(words.length).fill(false);
@@ -464,7 +473,8 @@
           return b.word.length - a.word.length; // Then by character length
         });
     
-        console.log(`🔍 findLongestMatches: First 10 vocabulary items:`, sortedVocabulary.slice(0, 10).map(v => v.word));
+        // Removed excessive logging - only log when debugging vocabulary issues
+        // console.log(`🔍 findLongestMatches: First 10 vocabulary items:`, sortedVocabulary.slice(0, 10).map(v => v.word));
     
         for (const vocabItem of sortedVocabulary) {
           const vocabWords = vocabItem.word.split(' ');
@@ -637,7 +647,10 @@
     
         // Convert language format if needed
         const dbLanguage = this.convertLanguageFormat(language);
-        console.log(`🔍 Loading vocabulary for language: "${language}" -> "${dbLanguage}"`);
+        // Reduced logging - only log when cache is empty or expired
+        if (!this.vocabularyCache.has(language) || (now - this.lastCacheUpdate) >= this.cacheExpiry) {
+          console.log(`🔍 Loading vocabulary for language: "${language}" -> "${dbLanguage}"`);
+        }
     
         // Check cache validity (use original language as cache key)
         if (this.vocabularyCache.has(language) && (now - this.lastCacheUpdate) < this.cacheExpiry) {
@@ -668,7 +681,7 @@
             return [];
           }
     
-          console.log(`🔍 Retrieved ${(data || []).length} vocabulary items for language "${dbLanguage}"`);
+          // Only log cache updates, not every vocabulary retrieval
           if ((data || []).length === 0) {
             console.warn(`⚠️ No vocabulary found for language "${dbLanguage}" with should_track_for_fsrs=true`);
           }
@@ -691,9 +704,10 @@
           // Update cache
           this.vocabularyCache.set(language, vocabulary);
           this.lastCacheUpdate = now;
-    
-          console.log(`🔍 Cached ${vocabulary.length} vocabulary items. Sample words:`, vocabulary.slice(0, 5).map(v => v.word));
-    
+
+          // Only log significant cache updates
+          console.log(`🔍 Cached ${vocabulary.length} vocabulary items for "${language}"`);
+
           return vocabulary;
         } catch (error) {
           console.error('Error loading vocabulary for language:', language, error);

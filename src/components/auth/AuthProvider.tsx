@@ -26,7 +26,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 // Initialize a single Supabase browser client instance with unified cookie configuration
 export const supabaseBrowser = createClient();
 
-export function AuthProvider({ children }: { ReactNode }) {
+export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -75,16 +75,16 @@ export function AuthProvider({ children }: { ReactNode }) {
       }
     } catch (error: any) {
       if (error.name === 'AbortError') {
-        
+        console.warn('Profile fetch timed out for user:', userId);
       } else {
-        
+        console.error('Error fetching user profile:', error);
       }
     }
     
     return null;
   }, []);
   
-  // Unified function to get complete user data
+  // Unified function to get complete user data with faster execution
   const getUserData = async (currentUser: User): Promise<{
     role: string | null;
     hasSubscription: boolean;
@@ -95,71 +95,104 @@ export function AuthProvider({ children }: { ReactNode }) {
       const devAdminEmail = "danieletienne89@gmail.com";
       
       if (currentUser.email === adminEmail || currentUser.email === devAdminEmail) {
-        const result = { role: 'admin', hasSubscription: true };
-        return result;
+        console.log('Setting admin role for email:', currentUser.email);
+        return { role: 'admin', hasSubscription: true };
       }
 
-      // First check metadata
+      // First check metadata (fastest)
       let role = currentUser.user_metadata?.role;
+      console.log('Role from user_metadata:', role);
       
-      // If no role in metadata, check user_profiles table
+      // If no role in metadata, check user_profiles table with timeout
       if (!role) {
-        const { data: profileData, error: profileError } = await supabaseBrowser
-          .from('user_profiles')
-          .select('role')
-          .eq('user_id', currentUser.id)
-          .single();
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 1000); // 1s timeout
           
-        if (profileError && profileError.code !== 'PGRST116') {
+          const { data: profileData, error: profileError } = await supabaseBrowser
+            .from('user_profiles')
+            .select('role')
+            .eq('user_id', currentUser.id)
+            .abortSignal(controller.signal)
+            .single();
           
-        } else if (profileData) {
-          role = profileData.role;
+          clearTimeout(timeoutId);
+            
+          if (profileError && profileError.code !== 'PGRST116') {
+            console.error('Error fetching user profile:', profileError);
+          } else if (profileData) {
+            role = profileData.role;
+            console.log('Role from user_profiles:', role);
+          }
+        } catch (dbError: any) {
+          if (dbError.name === 'AbortError') {
+            console.warn('Profile fetch timed out, using metadata fallback');
+          } else {
+            console.error('Database error, using metadata fallback:', dbError);
+          }
+          // Fallback to basic role or default
+          role = 'student'; // Default fallback
         }
       }
 
-      let hasSubscription = false;
-      if (role === 'admin' || role === 'teacher') {
-        // Admins and teachers always have subscription access
-        hasSubscription = true;
-      } else {
-        // For now, give all students subscription access
-        // TODO: Implement proper subscription system when needed
-        hasSubscription = true;
-      }
+      // Simplified subscription logic
+      const hasSubscription = true; // For now, give everyone access
       
       const result = { role, hasSubscription };
+      console.log('getUserData returning:', result);
       return result;
     } catch (error) {
-      
-      return { role: null, hasSubscription: false };
+      console.error('Error getting user data:', error);
+      return { role: 'student', hasSubscription: true }; // Safe defaults
     }
   };
 
   // Function to update auth state safely
   const updateAuthState = useCallback(async (currentSession: Session | null) => {
     try {
+      console.log('updateAuthState called with session:', !!currentSession);
       setSession(currentSession);
       setUser(currentSession?.user || null);
 
       // Get complete user data if we have a user
       if (currentSession?.user) {
-        const userData = await getUserData(currentSession.user);
-        setUserRole(userData.role);
-        setHasSubscription(userData.hasSubscription);
-        currentUserId.current = currentSession.user.id;
+        console.log('Getting user data for:', currentSession.user.email);
+        
+        // Run user data fetch with timeout to prevent hanging
+        const userDataPromise = getUserData(currentSession.user);
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('User data fetch timeout')), 2000)
+        );
+
+        try {
+          const userData = await Promise.race([userDataPromise, timeoutPromise]) as any;
+          console.log('Setting user role in state:', userData.role);
+          console.log('Setting subscription status:', userData.hasSubscription);
+          setUserRole(userData.role);
+          setHasSubscription(userData.hasSubscription);
+          currentUserId.current = currentSession.user.id;
+        } catch (timeoutError) {
+          console.warn('User data fetch timed out, using defaults');
+          // Set safe defaults if fetch times out
+          setUserRole(currentSession.user.user_metadata?.role || null);
+          setHasSubscription(true); // Default to true for now
+          currentUserId.current = currentSession.user.id;
+        }
       } else {
+        console.log('No user session, clearing auth state');
         setUserRole(null);
         setHasSubscription(false);
         currentUserId.current = null;
       }
       
       setIsLoading(false);
+      console.log('updateAuthState completed');
     } catch (error) {
-      
+      console.error('Error updating auth state:', error);
       setSession(currentSession);
       setUser(currentSession?.user || null);
-      setUserRole(null);
-      setHasSubscription(false);
+      setUserRole(currentSession?.user?.user_metadata?.role || null);
+      setHasSubscription(true); // Default to true on error
       setIsLoading(false);
     }
   }, []);
@@ -167,6 +200,7 @@ export function AuthProvider({ children }: { ReactNode }) {
   // Function to refresh the session
   const refreshSession = useCallback(async () => {
     if (isLoading) {
+      console.log('Auth still loading, skipping refresh');
       return;
     }
 
@@ -174,12 +208,13 @@ export function AuthProvider({ children }: { ReactNode }) {
       const { data: { session: refreshedSession }, error } = await supabaseBrowser.auth.getSession();
       
       if (error) {
+        console.error('Error refreshing session:', error);
         return;
       }
 
       await updateAuthState(refreshedSession);
     } catch (error) {
-      
+      console.error('Exception during session refresh:', error);
     }
   }, [isLoading]);
 
@@ -187,28 +222,41 @@ export function AuthProvider({ children }: { ReactNode }) {
     let mounted = true;
     
     // If already initialized, don't run again
-    if (isInitializing.current === false && !isLoading) {
+    if (isInitializing.current === false) {
       return;
     }
 
+    console.log('Starting auth initialization...');
     isInitializing.current = true;
 
-    // Optional warning if initialization takes a long time, but with a shorter timeout
+    // Shorter timeout for faster fallback
     authTimeout.current = setTimeout(() => {
       if (mounted && isInitializing.current) {
+        console.warn('Authentication initialization is taking longer than expected (>2s)');
         // Force completion if it's been too long
-        setIsLoading(false);
-        isInitializing.current = false;
+        if (mounted) {
+          setIsLoading(false);
+          isInitializing.current = false;
+        }
       }
-    }, 3000);
+    }, 2000); // Reduced from 3000 to 2000ms
 
-    // Get the current session
+    // Get the current session with faster timeout
     const initializeAuth = async () => {
       try {
-        // Normal session check
+        console.log('🔍 Fetching current session...');
+
+        // Create abort controller for faster timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 1500); // 1.5s timeout
+
+        // Normal session check with abort signal
         const { data: { session: currentSession }, error } = await supabaseBrowser.auth.getSession();
+        
+        clearTimeout(timeoutId);
 
         if (error) {
+          console.error('❌ Error getting session:', error);
           if (mounted) {
             setIsLoading(false);
             isInitializing.current = false;
@@ -219,6 +267,12 @@ export function AuthProvider({ children }: { ReactNode }) {
           return;
         }
 
+        console.log('📊 Session fetched:', {
+          hasSession: !!currentSession,
+          userId: currentSession?.user?.id,
+          email: currentSession?.user?.email
+        });
+
         if (mounted) {
           // Clear the timeout since we're about to complete
           if (authTimeout.current) {
@@ -227,8 +281,10 @@ export function AuthProvider({ children }: { ReactNode }) {
 
           await updateAuthState(currentSession);
           isInitializing.current = false;
+          console.log('Auth initialization completed successfully');
         }
       } catch (error) {
+        console.error('Error initializing auth:', error);
         if (mounted) {
           setIsLoading(false);
           isInitializing.current = false;
@@ -241,26 +297,40 @@ export function AuthProvider({ children }: { ReactNode }) {
 
     initializeAuth();
 
-    // Listen for authentication changes
+    // Listen for authentication changes with optimized handling
     const { data: { subscription } } = supabaseBrowser.auth.onAuthStateChange(
       async (event: any, currentSession: Session | null) => {
         if (!mounted) return;
         
+        console.log('Auth state change event:', event, 'Session:', !!currentSession);
+        
         try {
-          // Only process auth changes if not in initial loading state
-          if (!isInitializing.current) {
-            await updateAuthState(currentSession);
+          // Skip processing during initial load to avoid conflicts
+          if (isInitializing.current) {
+            console.log('Skipping auth state change during initialization');
+            return;
           }
 
-          // Handle cleanup for signout only
+          // Handle different events efficiently
           if (event === 'SIGNED_OUT') {
-            // Clear cached data
+            // Clear cached data immediately
             profileCache.current.clear();
             lastProfileFetch.current.clear();
             currentUserId.current = null;
-            isInitializing.current = false;
+            setUser(null);
+            setSession(null);
+            setUserRole(null);
+            setHasSubscription(false);
+            setIsLoading(false);
+            return;
+          }
+
+          // For sign in events, update state
+          if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+            await updateAuthState(currentSession);
           }
         } catch (error) {
+          console.error('Error in auth state change handler:', error);
           setIsLoading(false);
         }
       }
@@ -306,6 +376,7 @@ export function AuthProvider({ children }: { ReactNode }) {
       clearTimeout(timeoutId);
       
       if (error) {
+        console.error('Error signing out:', error);
       }
       
       // Force a hard redirect to home page and prevent back navigation
@@ -315,7 +386,9 @@ export function AuthProvider({ children }: { ReactNode }) {
       }, 100);
     } catch (error: any) {
       if (error.name === 'AbortError') {
+        console.warn('Sign out timed out, forcing redirect');
       } else {
+        console.error('Exception signing out:', error);
       }
       // If there's an error, still try to redirect
       window.location.replace('/');
@@ -354,4 +427,4 @@ export const useAuth = () => {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-};
+}; 

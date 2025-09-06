@@ -13,7 +13,8 @@ import {
   Settings,
   LogOut,
   ChevronDown,
-  BarChart3
+  BarChart3,
+  Brain
 } from 'lucide-react';
 
 interface TeacherNavigationProps {
@@ -52,6 +53,12 @@ export default function TeacherNavigation({ children }: TeacherNavigationProps) 
       href: '/dashboard/assignments',
       icon: Users,
       description: 'Create and track assignments'
+    },
+    {
+      name: 'Vocabulary',
+      href: '/dashboard/vocabulary/analytics',
+      icon: Brain,
+      description: 'Vocabulary analytics and student progress'
     },
   ];
 

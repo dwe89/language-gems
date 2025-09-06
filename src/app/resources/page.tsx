@@ -16,7 +16,7 @@ import {
 import { useCart } from '../../contexts/CartContext';
 import Footer from '../../components/layout/Footer';
 import { CartSidebar } from '../../components/cart/CartSidebar';
-import { supabaseBrowser } from '../../components/auth/AuthProvider';
+
 import { Product } from '../../types/ecommerce';
 import { useSearchParams } from 'next/navigation';
 import { useRouter } from 'next/navigation';
@@ -51,19 +51,34 @@ export default function ResourcesPage() {
   }, []);
 
   const fetchProducts = async () => {
+    console.log('🔍 [RESOURCES] Starting to fetch products via API...');
     setLoading(true);
     try {
-      const { data, error } = await supabaseBrowser
-        .from('products')
-        .select('*')
-        .eq('is_active', true)
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      setProducts(data || []);
+      console.log('🔍 [RESOURCES] Calling /api/products endpoint...');
+      const response = await fetch('/api/products');
+
+      if (!response.ok) {
+        throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      console.log('🔍 [RESOURCES] API response:', result);
+
+      if (result.error) {
+        throw new Error(result.error);
+      }
+
+      const products = result.products || [];
+      console.log('✅ [RESOURCES] Successfully fetched', products.length, 'products via API');
+      setProducts(products);
+
     } catch (error) {
-      console.error('Error fetching products:', error);
+      console.error('❌ [RESOURCES] API request failed:', error);
+      // Set empty array so UI shows "No products available" instead of hanging
+      setProducts([]);
     } finally {
       setLoading(false);
+      console.log('🔍 [RESOURCES] Loading finished');
     }
   };
 
@@ -232,7 +247,9 @@ export default function ResourcesPage() {
 
       {products.length === 0 && (
         <div className="text-center py-12">
-          <div className="text-6xl mb-4">📚</div>
+          <div className="mb-4">
+            <BookOpen className="h-16 w-16 text-slate-400 mx-auto" />
+          </div>
           <h3 className="text-xl font-medium text-slate-600 mb-2">
             No worksheets found
           </h3>
@@ -272,6 +289,17 @@ export default function ResourcesPage() {
     const matchesCategory = !selectedCategory || hasTag(product, selectedCategory);
     const matchesExamBoard = !selectedExamBoard || hasTag(product, selectedExamBoard);
     return matchesSearch && matchesTag && matchesLanguage && matchesCategory && matchesExamBoard;
+  });
+
+  // Debug logging
+  console.log('🔍 [RESOURCES] Filter state:', {
+    searchTerm,
+    selectedTag,
+    selectedLanguage,
+    selectedCategory,
+    selectedExamBoard,
+    totalProducts: products.length,
+    filteredProducts: filteredProducts.length
   });
 
   return (
@@ -415,12 +443,14 @@ export default function ResourcesPage() {
             {/* Products Grid */}
             {filteredProducts.length === 0 ? (
               <div className="text-center py-12">
-                <div className="text-6xl mb-4">📚</div>
+                <div className="mb-4">
+                  <BookOpen className="h-16 w-16 text-slate-400 mx-auto" />
+                </div>
                 <h3 className="text-xl font-medium text-slate-600 mb-2">
                   {searchTerm || selectedTag ? 'No products found' : 'No products available'}
                 </h3>
                 <p className="text-slate-500">
-                  {searchTerm || selectedTag 
+                  {searchTerm || selectedTag
                     ? 'Try adjusting your search or filter criteria'
                     : 'Check back soon for new educational resources'
                   }
@@ -441,7 +471,7 @@ export default function ResourcesPage() {
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <span className="text-6xl">📚</span>
+                          <BookOpen className="h-16 w-16 text-slate-400" />
                         )}
                         <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                           <ExternalLink className="h-5 w-5 text-indigo-600" />

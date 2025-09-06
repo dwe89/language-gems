@@ -17,7 +17,7 @@ import { EnhancedGameSessionService } from '../../../../services/rewards/Enhance
 import UnifiedSentenceCategorySelector, { SentenceSelectionConfig } from '../../../../components/games/UnifiedSentenceCategorySelector';
 import WordBlastEngine from './WordBlastEngine';
 import InGameConfigPanel from '../../../../components/games/InGameConfigPanel';
-import { useAudio } from '../hooks/useAudio';
+import { useAudio, AudioFiles } from '../hooks/useAudio';
 import {
   SentenceChallenge,
   ThemeConfig,
@@ -414,7 +414,7 @@ export default function WordBlastGame({
     }
 
     const soundMapping = THEME_SOUND_MAPPING[selectedTheme as keyof typeof THEME_SOUND_MAPPING];
-    playSFX(soundMapping.correct);
+    playSFX(soundMapping.correct as 'gem' | 'wrong-answer' | 'defeat');
   };
 
   // Enhanced incorrect answer handler with analytics
@@ -521,7 +521,7 @@ export default function WordBlastGame({
     });
 
     const soundMapping = THEME_SOUND_MAPPING[selectedTheme as keyof typeof THEME_SOUND_MAPPING];
-    playSFX(soundMapping.incorrect);
+    playSFX(soundMapping.incorrect as 'gem' | 'wrong-answer' | 'defeat');
 
     // Check game over
     if (lives <= 1) {
@@ -533,7 +533,7 @@ export default function WordBlastGame({
       if (onGameComplete) {
         onGameComplete({
           outcome: 'loss',
-          score: score,
+          score: gameStats.score,
           maxCombo: gameStats.maxCombo,
           wordsCollected: gameStats.wordsCollected,
           totalAttempts: gameStats.wordsCollected + gameStats.gemsMissed,
@@ -565,7 +565,7 @@ export default function WordBlastGame({
       if (onGameComplete) {
         onGameComplete({
           outcome: 'win',
-          score: score,
+          score: gameStats.score,
           maxCombo: gameStats.maxCombo,
           wordsCollected: gameStats.wordsCollected,
           totalAttempts: gameStats.wordsCollected + gameStats.gemsMissed,
@@ -720,7 +720,7 @@ export default function WordBlastGame({
                 <div className="flex items-center gap-4 text-sm">
                   <div className="flex items-center gap-1">
                     <Star className="text-yellow-400" size={16} />
-                    <span>{score}</span>
+                    <span>{gameStats.score}</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <Zap className="text-orange-400" size={16} />
@@ -748,9 +748,9 @@ export default function WordBlastGame({
           gameActive={true}
           difficulty="beginner"
           lives={lives}
-          score={score}
+          score={gameStats.score}
           combo={gameStats.combo}
-          playSFX={playSFX}
+          playSFX={(sound: string) => playSFX(sound as 'gem' | 'wrong-answer' | 'defeat')}
         />
       </div>
     );

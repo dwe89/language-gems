@@ -26,7 +26,8 @@ const GAME_ICONS: Record<string, React.ReactNode> = {
   'word-scramble': <Gamepad2 className="w-5 h-5" />,
   'vocab-blast': <Star className="w-5 h-5" />,
   'word-guesser': <BookOpen className="w-5 h-5" />,
-  'noughts-crosses': <Trophy className="w-5 h-5" />
+  'noughts-crosses': <Trophy className="w-5 h-5" />,
+  'vocab-master': <Gem className="w-5 h-5" />
 };
 
 const GAME_COLORS: Record<string, string> = {
@@ -35,8 +36,11 @@ const GAME_COLORS: Record<string, string> = {
   'word-scramble': 'from-green-500 to-teal-600',
   'vocab-blast': 'from-yellow-500 to-orange-600',
   'word-guesser': 'from-pink-500 to-rose-600',
-  'noughts-crosses': 'from-red-500 to-pink-600'
+  'noughts-crosses': 'from-red-500 to-pink-600',
+  'vocab-master': 'from-yellow-600 to-yellow-400'
 };
+
+const humanizeGameId = (id: string) => id.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 
 function AssignmentCard({ assignment, onStartAssignment }: AssignmentCardProps) {
   const getStatusColor = (status: string) => {
@@ -219,6 +223,7 @@ export default function UnifiedStudentAssignmentDashboard() {
         'memory-game': '/games/memory-game',
         'word-scramble': '/games/word-scramble',
         'vocab-blast': '/games/vocab-blast',
+        'vocab-master': '/games/vocab-master',
         'word-guesser': '/games/word-guesser',
         'noughts-crosses': '/games/noughts-crosses',
         'vocabulary-mining': '/games/vocabulary-mining',
@@ -258,7 +263,7 @@ export default function UnifiedStudentAssignmentDashboard() {
       params.set('assignment', assignmentId);
       params.set('mode', 'assignment');
 
-      const gameUrl = `${gamePath}?${params.toString()}`;
+  const gameUrl = `${gamePath}?${params.toString()}`;
       console.log('🚀 Navigating to assignment game:', gameUrl);
       window.location.href = gameUrl;
 
@@ -270,6 +275,7 @@ export default function UnifiedStudentAssignmentDashboard() {
         'memory-game': '/games/memory-game/assignment',
         'word-scramble': '/games/word-scramble/assignment',
         'vocab-blast': '/games/vocab-blast/assignment',
+        'vocab-master': '/games/vocab-master/assignment',
         'word-guesser': '/games/word-guesser/assignment',
         'noughts-crosses': '/games/noughts-crosses/assignment'
       };

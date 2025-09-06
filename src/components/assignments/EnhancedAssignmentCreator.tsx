@@ -188,6 +188,7 @@ const GAME_NAMES: Record<string, string> = {
   'noughts-and-crosses': 'Tic-Tac-Toe Vocabulary',
   'word-scramble': 'Word Scramble',
   'vocab-blast': 'Vocab Blast',
+  'vocab-master': 'Vocab Master',
   'detective-listening': 'Detective Listening',
   'speed-builder': 'Speed Builder',
   'sentence-towers': 'Word Towers',
@@ -306,6 +307,8 @@ export default function EnhancedAssignmentCreator({
   onCancel?: () => void;
   templateId?: string;
 }) {
+  console.log('🎯 [ENHANCED ASSIGNMENT CREATOR] Component loaded');
+
   const { user } = useAuth();
   const [assignmentService] = useState(() => new EnhancedAssignmentService(supabaseBrowser));
 
@@ -508,8 +511,8 @@ export default function EnhancedAssignmentCreator({
       icon: <Gem className="h-5 w-5" />,
       completed: (() => {
         // Check game content completeness
-  const needsVocabulary = gameConfig.selectedGames.some(gameId => ['memory-game', 'hangman', 'word-blast', 'noughts-and-crosses', 'word-scramble', 'vocab-blast', 'detective-listening'].includes(gameId));
-  const needsSentences = gameConfig.selectedGames.some(gameId => ['speed-builder', 'sentence-towers'].includes(gameId));
+  const needsVocabulary = gameConfig.selectedGames.some(gameId => ['memory-game', 'hangman', 'word-blast', 'noughts-and-crosses', 'word-scramble', 'vocab-blast', 'detective-listening', 'vocab-master', 'word-towers'].includes(gameId));
+  const needsSentences = gameConfig.selectedGames.some(gameId => ['speed-builder', 'case-file-translator', 'lava-temple-word-restore', 'sentence-towers'].includes(gameId));
   const needsGrammar = gameConfig.selectedGames.some(gameId => ['conjugation-duel'].includes(gameId));
 
         const gamesContentComplete =
@@ -1626,6 +1629,14 @@ export default function EnhancedAssignmentCreator({
   };
 
   const renderStepContent = () => {
+    console.log('🎯 [ENHANCED ASSIGNMENT] Rendering step content:', {
+      currentStep,
+      stepId: assignmentSteps[currentStep]?.id,
+      assignmentDetails,
+      gameConfig,
+      selectedGames: gameConfig.selectedGames?.length || 0
+    });
+
     const stepProps = {
       assignmentDetails: {
         title: assignmentDetails.title || '',

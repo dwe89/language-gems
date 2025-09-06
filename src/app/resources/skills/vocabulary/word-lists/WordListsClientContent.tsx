@@ -74,8 +74,8 @@ export default function WordListsClientContent() {
                     />
                   </div>
                 ) : (
-                  <div className="h-48 w-full bg-indigo-50 flex items-center justify-center text-6xl">
-                    📚
+                  <div className="h-48 w-full bg-indigo-50 flex items-center justify-center">
+                    <BookOpen className="h-16 w-16 text-indigo-400" />
                   </div>
                 )}
               </Link>

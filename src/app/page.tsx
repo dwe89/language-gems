@@ -27,11 +27,15 @@ import {
   Lightbulb,
   Hourglass,
   Rocket,
-  GitCommit
+  GitCommit,
+  TrendingUp,
+  Smartphone
 } from 'lucide-react';
 import Footer from '../components/layout/Footer';
 import SEOWrapper from '../components/seo/SEOWrapper';
 import { getFAQSchema } from '../lib/seo/structuredData';
+import BetaBanner from '../components/beta/BetaBanner';
+import { useFeatureFlags } from '../lib/feature-flags';
 
 import { useAuth } from '../components/auth/AuthProvider';
 
@@ -86,7 +90,7 @@ function useTypewriter(texts, speed = 100) {
 }
 
 // Placeholder for founder photo - replace with a real image path
-const founderPhoto = "/images/placeholder-founder.jpg"; // Corrected to a local path
+const founderPhoto = "/images/homepage/founder.jpg"; // Corrected to a local path
 
 // Development timeline for "Building in Public" section
 const developmentTimeline = [
@@ -103,22 +107,41 @@ const developmentTimeline = [
     icon: GitCommit
   },
   {
-    date: "September 2025",
+    date: "November 2025",
     milestone: "Advanced AI features and personalized learning paths",
     status: "upcoming",
     icon: Brain
   },
   {
-    date: "October 2025",
-    milestone: "Mobile app launch and offline capabilities",
+    date: "January 2026",
+    milestone: "Teacher resources hub and automatic AI worksheet creator",
+    status: "upcoming",
+    icon: BookOpen
+  },
+  {
+    date: "March 2026",
+    milestone: "Enhanced student progress tracking and reporting tools",
+    status: "upcoming",
+    icon: TrendingUp
+  },
+  {
+    date: "May 2026",
+    milestone: "Website fully launched with complete feature set",
     status: "upcoming",
     icon: Rocket
+  },
+  {
+    date: "Q3 2026",
+    milestone: "Mobile app launch and offline capabilities",
+    status: "upcoming",
+    icon: Smartphone
   }
 ];
 
 export default function Home() {
   const { text: animatedText, color: textColor } = useTypewriter(heroTextVariations);
   const { user } = useAuth();
+  const { isBetaLaunch, betaConfig } = useFeatureFlags();
 
   // Auto-redirect logged-in students to their dashboard
   useEffect(() => {
@@ -303,9 +326,15 @@ export default function Home() {
   return (
     <SEOWrapper structuredData={faqStructuredData}>
       <div className="flex min-h-screen flex-col">
+        {/* Beta Banner */}
+        {isBetaLaunch && <BetaBanner variant="top" />}
+
         <main className="flex-grow">
-          {/* Hero Section */}
-          <div className="w-full relative min-h-[90vh] flex items-center justify-center overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+          {/* Hero Section - Beta Version */}
+          {isBetaLaunch ? (
+            <BetaBanner variant="hero" showStats={true} />
+          ) : (
+            <div className="w-full relative min-h-[90vh] flex items-center justify-center overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
             <div className="absolute inset-0 bg-[url('/images/homepage/subtle-pattern.svg')] opacity-5"></div>
 
             <div className="container mx-auto px-6 z-10 py-20">
@@ -352,12 +381,6 @@ export default function Home() {
                     transition={{ duration: 0.6, delay: 0.3 }}
                     className="flex flex-col sm:flex-row gap-4 mb-8 justify-center lg:justify-start"
                   >
-                    <Link href="/contact-sales" className="inline-flex items-center justify-center bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-xl px-8 py-4 text-lg shadow-lg hover:shadow-xl transform transition-all hover:scale-105">
-                      <Clock className="mr-2 h-5 w-5" />
-                      Book a Free Demo
-                      <ArrowRight className="ml-2 w-5 h-5" />
-                    </Link>
-
                     <Link href="/schools/pricing" className="inline-flex items-center justify-center bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-xl px-8 py-4 text-lg shadow-lg hover:shadow-xl transform transition-all hover:scale-105">
                       <Users className="mr-2 h-5 w-5" />
                       See Pricing
@@ -451,6 +474,7 @@ export default function Home() {
             <div className="absolute bottom-20 right-10 w-16 h-16 bg-gradient-to-br from-purple-200 to-pink-200 rounded-full opacity-60 animate-float-delayed"></div>
             <div className="absolute top-1/2 left-5 w-12 h-12 bg-gradient-to-br from-green-200 to-emerald-200 rounded-full opacity-60 animate-float-slow"></div>
           </div>
+          )}
 
           {/* New Section: Founder's Story */}
           <div className="py-20 bg-white">
@@ -462,7 +486,7 @@ export default function Home() {
                   transition={{ duration: 0.6 }}
                   className="text-3xl md:text-4xl font-bold text-slate-800 mb-4"
                 >
-                  The GCSE Language Platform Built by a Teacher.
+                  The Language Platform Built by a Teacher.
                 </motion.h2>
                 <motion.p
                   initial={{ opacity: 0, y: 20 }}
@@ -489,7 +513,7 @@ export default function Home() {
                 />
                 <div className="text-center md:text-left">
                   <p className="text-slate-700 text-lg mb-2 italic">
-                    "After 8 years teaching GCSE Spanish, I am tired of paying £2000+ annually for platforms my students found boring. So I built what we actually needed."
+                    "After 8 years teaching Modern Foreign Languages in UK schools, I became increasingly frustrated with expensive platforms that cost £2000+ annually but failed to engage my students. The games were outdated, the progress tracking was clunky, and my students simply weren't motivated to use them. As a passionate MFL teacher, I knew there had to be a better way - a platform that actually understood how teenagers learn languages and what makes learning fun. So I built Language Gems from the ground up with modern game design to create something that both teachers and students actually want to use."
                   </p>
                   <p className="text-slate-800 font-bold text-base">
                     - Daniel Etienne, Founder & MFL Teacher
@@ -521,27 +545,29 @@ export default function Home() {
                 </motion.p>
               </div>
 
-              <div className="max-w-4xl mx-auto space-y-8">
-                {developmentTimeline.map((item, index) => (
-                  <motion.div
-                    key={index}
-                    initial={{ opacity: 0, x: -20 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.6, delay: index * 0.1 }}
-                    className="flex items-start"
-                  >
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white flex-shrink-0 mt-1 mr-4 ${item.status === 'done' ? 'bg-green-500' :
-                        item.status === 'in-progress' ? 'bg-indigo-500 animate-pulse' :
-                          'bg-gray-400'
-                      }`}>
-                      <item.icon className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-gray-800 text-lg mb-1">{item.milestone}</p>
-                      <p className="text-gray-600 text-sm">{item.date}</p>
-                    </div>
-                  </motion.div>
-                ))}
+              <div className="max-w-6xl mx-auto">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  {developmentTimeline.map((item, index) => (
+                    <motion.div
+                      key={index}
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.6, delay: index * 0.1 }}
+                      className="flex items-start bg-white p-6 rounded-lg shadow-sm border border-slate-200"
+                    >
+                      <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white flex-shrink-0 mt-1 mr-4 ${item.status === 'done' ? 'bg-green-500' :
+                          item.status === 'in-progress' ? 'bg-indigo-500 animate-pulse' :
+                            'bg-gray-400'
+                        }`}>
+                        <item.icon className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-gray-800 text-lg mb-2">{item.milestone}</p>
+                        <p className="text-gray-600 text-sm font-medium">{item.date}</p>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
               </div>
 
               <motion.div

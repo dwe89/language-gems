@@ -8,6 +8,31 @@ import {
   Filter
 } from 'lucide-react';
 
+// Simple flag components
+const SpanishFlag = () => (
+  <svg width="20" height="15" viewBox="0 0 20 15" className="inline-block mr-2">
+    <rect width="20" height="5" fill="#AA151B"/>
+    <rect y="5" width="20" height="5" fill="#F1BF00"/>
+    <rect y="10" width="20" height="5" fill="#AA151B"/>
+  </svg>
+);
+
+const FrenchFlag = () => (
+  <svg width="20" height="15" viewBox="0 0 20 15" className="inline-block mr-2">
+    <rect width="6.67" height="15" fill="#002654"/>
+    <rect x="6.67" width="6.67" height="15" fill="#FFFFFF"/>
+    <rect x="13.33" width="6.67" height="15" fill="#ED2939"/>
+  </svg>
+);
+
+const GermanFlag = () => (
+  <svg width="20" height="15" viewBox="0 0 20 15" className="inline-block mr-2">
+    <rect width="20" height="5" fill="#000000"/>
+    <rect y="5" width="20" height="5" fill="#DD0000"/>
+    <rect y="10" width="20" height="5" fill="#FFCC00"/>
+  </svg>
+);
+
 // Define the Category and Subcategory interfaces based on user's provided structure
 interface KSCategory {
   id: string;
@@ -278,23 +303,23 @@ export default function ReadingComprehensionPage() {
   const getCategoryIcon = (category: string, isKS3: boolean = false): string => {
     if (isKS3) {
       const ks3Category = availableCategories.find(cat => cat.id === category);
-      return ks3Category ? ks3Category.icon : '📚'; // Fallback icon
+      return ks3Category ? ks3Category.icon : 'Book'; // Fallback icon
     }
     const icons: Record<string, string> = {
-      'food_drink': '🍽️',
-      'home_local_area': '🏠',
-      'school_jobs_future': '�',
-      'identity_personal_life': '👤',
-      'free_time_leisure': '🎮',
-      'holidays_travel_culture': '✈️',
-      'nature_environment': '🌿',
-      'technology_media': '📱',
-      'basics_core_language': '💬',
-      'health_lifestyle': '⚕️',
-      'clothes_shopping': '👕',
-      'social_global_issues': '🌍'
+      'food_drink': 'Utensils',
+      'home_local_area': 'Home',
+      'school_jobs_future': 'GraduationCap',
+      'identity_personal_life': 'User',
+      'free_time_leisure': 'Gamepad2',
+      'holidays_travel_culture': 'Plane',
+      'nature_environment': 'Sprout',
+      'technology_media': 'Smartphone',
+      'basics_core_language': 'MessageCircle',
+      'health_lifestyle': 'HeartPulse',
+      'clothes_shopping': 'Shirt',
+      'social_global_issues': 'Globe'
     };
-    return icons[category] || '📚';
+    return icons[category] || 'Book';
   };
 
   const handleStartSpecificTask = (taskId: string) => {
@@ -341,9 +366,15 @@ export default function ReadingComprehensionPage() {
                 onChange={(e) => setSelectedLanguage(e.target.value as 'spanish' | 'french' | 'german')}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                <option value="spanish">🇪🇸 Spanish</option>
-                <option value="french">🇫🇷 French</option>
-                <option value="german">🇩🇪 German</option>
+                <option value="spanish">
+                  <SpanishFlag /> Spanish
+                </option>
+                <option value="french">
+                  <FrenchFlag /> French
+                </option>
+                <option value="german">
+                  <GermanFlag /> German
+                </option>
               </select>
             </div>
 
@@ -433,7 +464,7 @@ export default function ReadingComprehensionPage() {
                   <option value="">All categories</option>
                   {categories.map(category => (
                     <option key={category.id} value={category.id}>
-                      {getCategoryIcon(category.id, selectedCurriculumLevel === 'ks3')} {formatCategoryName(category.id, selectedCurriculumLevel === 'ks3')}
+                      {formatCategoryName(category.id, selectedCurriculumLevel === 'ks3')}
                     </option>
                   ))}
                 </select>
@@ -521,9 +552,24 @@ export default function ReadingComprehensionPage() {
                         </h3>
                         <div className="flex items-center space-x-2 text-sm text-gray-600 mb-2">
                           <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                            {task.language === 'spanish' ? '🇪🇸 Spanish' :
-                             task.language === 'french' ? '🇫🇷 French' :
-                             task.language === 'german' ? '🇩🇪 German' : task.language}
+                            {task.language === 'spanish' ? (
+                              <>
+                                <SpanishFlag />
+                                <span className="ml-1">Spanish</span>
+                              </>
+                            ) : task.language === 'french' ? (
+                              <>
+                                <FrenchFlag />
+                                <span className="ml-1">French</span>
+                              </>
+                            ) : task.language === 'german' ? (
+                              <>
+                                <GermanFlag />
+                                <span className="ml-1">German</span>
+                              </>
+                            ) : (
+                              task.language
+                            )}
                           </span>
                           <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 capitalize">
                             {task.difficulty}

@@ -44,10 +44,10 @@ export default function AccountPage() {
       if (!user || !isTeacher) return;
 
       try {
-        // Get teacher's school initials from their profile
+        // Get teacher's school information from their profile
         const { data: profile, error: profileError } = await supabaseBrowser
           .from('user_profiles')
-          .select('school_initials')
+          .select('school_code, school_initials')
           .eq('user_id', user.id)
           .single();
 
@@ -56,20 +56,28 @@ export default function AccountPage() {
           return;
         }
 
-        // Get school code from school_codes table
-        const { data: schoolData, error: schoolError } = await supabaseBrowser
-          .from('school_codes')
-          .select('code, school_initials')
-          .eq('school_initials', profile.school_initials)
-          .single();
-
-        if (!schoolError && schoolData) {
+        // If user has a school_code, use it directly
+        if (profile.school_code) {
           setSchoolInfo({
-            schoolCode: schoolData.code,
-            schoolInitials: schoolData.school_initials
+            schoolCode: profile.school_code,
+            schoolInitials: profile.school_initials || profile.school_code
           });
-        } else {
-          console.error("Error fetching school data:", schoolError);
+        } else if (profile.school_initials) {
+          // Fallback: Get school code from school_codes table (for legacy users)
+          const { data: schoolData, error: schoolError } = await supabaseBrowser
+            .from('school_codes')
+            .select('code, school_initials')
+            .eq('school_initials', profile.school_initials)
+            .single();
+
+          if (!schoolError && schoolData) {
+            setSchoolInfo({
+              schoolCode: schoolData.code,
+              schoolInitials: schoolData.school_initials
+            });
+          } else {
+            console.error("Error fetching school data:", schoolError);
+          }
         }
 
         // --- Fetch Teacher-specific Stats ---
@@ -201,14 +209,23 @@ export default function AccountPage() {
     );
   }
 
-  // Define account sections, prioritizing Teacher Dashboard
+  // Define account sections, conditionally showing Teacher Dashboard based on subscription
   const accountSections = [
-    ...(isTeacher ? [{
+    // Only show Teacher Dashboard for teachers with active subscriptions
+    ...(isTeacher && hasSubscription ? [{
       title: 'Teacher Dashboard',
       description: 'Manage your classes, assignments, and student progress',
-      icon: School, // Changed to School icon for broader teacher context
+      icon: School,
       href: '/dashboard',
       color: 'from-indigo-500 to-blue-600'
+    }] : []),
+    // School Management for teachers with subscriptions
+    ...(isTeacher && hasSubscription ? [{
+      title: 'School Management',
+      description: 'Add teachers to your school and manage memberships',
+      icon: Users,
+      href: '/account/school',
+      color: 'from-green-500 to-emerald-600'
     }] : []),
     {
       title: 'My Orders',
@@ -224,13 +241,15 @@ export default function AccountPage() {
       href: '/account/settings',
       color: 'from-slate-500 to-slate-600'
     },
-    ...(hasSubscription ? [] : [{
+    // Show upgrade option for teachers without subscription
+    ...(isTeacher && !hasSubscription ? [{
       title: 'Upgrade to Premium',
-      description: 'Unlock advanced features and content for your students',
+      description: 'Unlock the Teacher Dashboard and advanced features for your students',
       icon: Crown,
       href: '/account/upgrade',
-      color: 'from-purple-500 to-pink-600'
-    }])
+      color: 'from-purple-500 to-pink-600',
+      featured: true
+    }] : [])
   ];
 
   return (
@@ -338,7 +357,7 @@ export default function AccountPage() {
               </div>
             </div>
             
-            {isTeacher && (
+            {isTeacher && hasSubscription && (
               <div className="hidden lg:block">
                 <Link
                   href="/dashboard"
@@ -350,11 +369,24 @@ export default function AccountPage() {
                 </Link>
               </div>
             )}
+
+            {isTeacher && !hasSubscription && (
+              <div className="hidden lg:block">
+                <Link
+                  href="/account/upgrade"
+                  className="group bg-gradient-to-r from-yellow-400 to-orange-400 hover:from-yellow-500 hover:to-orange-500 text-white px-8 py-4 rounded-xl transition-all duration-300 flex items-center space-x-3 shadow-lg hover:shadow-xl"
+                >
+                  <Crown className="h-6 w-6" />
+                  <span className="font-semibold">Upgrade to Premium</span>
+                  <ChevronRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                </Link>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Teacher Dashboard - Prominent Feature */}
-        {isTeacher && (
+        {/* Teacher Dashboard - Prominent Feature for Subscribed Teachers */}
+        {isTeacher && hasSubscription && (
           <div className="mb-8">
             <Link
               href="/dashboard"
@@ -362,7 +394,7 @@ export default function AccountPage() {
             >
               <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
               <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-16 translate-x-16"></div>
-              
+
               <div className="relative z-10 flex items-center justify-between">
                 <div className="flex items-center space-x-6">
                   <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
@@ -407,8 +439,75 @@ export default function AccountPage() {
           </div>
         )}
 
+        {/* Subscription Upgrade Section for Teachers without Premium */}
+        {isTeacher && !hasSubscription && (
+          <div className="mb-8">
+            <div className="relative overflow-hidden bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400 rounded-2xl shadow-xl p-8">
+              <div className="absolute inset-0 bg-black/10"></div>
+              <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-16 translate-x-16"></div>
+
+              <div className="relative z-10">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center">
+                      <Crown className="h-8 w-8 text-white" />
+                    </div>
+                    <div>
+                      <h2 className="text-2xl font-bold text-white mb-1">
+                        Upgrade to Premium
+                      </h2>
+                      <p className="text-white/90 text-lg">
+                        Unlock the Teacher Dashboard and advanced features
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                  <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 border border-white/30">
+                    <div className="flex items-center space-x-3 mb-2">
+                      <School className="h-5 w-5 text-white" />
+                      <span className="text-white font-medium">Teacher Dashboard</span>
+                    </div>
+                    <p className="text-white/80 text-sm">Full access to class management and analytics</p>
+                  </div>
+
+                  <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 border border-white/30">
+                    <div className="flex items-center space-x-3 mb-2">
+                      <Users className="h-5 w-5 text-white" />
+                      <span className="text-white font-medium">Unlimited Students</span>
+                    </div>
+                    <p className="text-white/80 text-sm">Add as many students as you need</p>
+                  </div>
+
+                  <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 border border-white/30">
+                    <div className="flex items-center space-x-3 mb-2">
+                      <BarChart3 className="h-5 w-5 text-white" />
+                      <span className="text-white font-medium">Advanced Analytics</span>
+                    </div>
+                    <p className="text-white/80 text-sm">Detailed progress tracking and insights</p>
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <Link
+                    href="/account/upgrade"
+                    className="bg-white hover:bg-gray-100 text-gray-900 px-8 py-4 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center shadow-lg hover:shadow-xl"
+                  >
+                    <Crown className="h-5 w-5 mr-2" />
+                    Start Premium Trial
+                  </Link>
+                  <button className="bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white px-8 py-4 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center border border-white/30">
+                    Learn More
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Quick Actions for Teachers */}
-        {isTeacher && (
+        {isTeacher && hasSubscription && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <Link
               href="/dashboard/classes"

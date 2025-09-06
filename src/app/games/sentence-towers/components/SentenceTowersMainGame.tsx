@@ -72,7 +72,7 @@ interface ParticleEffect {
 interface SentenceTowersMainGameProps {
   onBackToMenu?: () => void;
   assignmentMode?: {
-    vocabulary: StandardVocabularyItem[];
+    sentences: any[]; // Sentence data instead of vocabulary
     onProgressUpdate: (progress: any) => void;
     onGameComplete: (progress: any) => void;
   };
@@ -134,26 +134,26 @@ export function SentenceTowersMainGame({
   const { supabase } = useSupabase();
   const sounds = useSounds(soundEnabled);
 
-  // Use assignment vocabulary if provided, otherwise use hook
+  // Use assignment sentences if provided, otherwise use hook for vocabulary
   const vocabularyHook = useGameVocabulary({
     category: assignmentMode ? 'assignment' : 'basics_core_language',
     subcategory: assignmentMode ? 'assignment' : null,
     language: 'spanish',
-    limit: assignmentMode ? assignmentMode.vocabulary.length : 50
+    limit: assignmentMode ? assignmentMode.sentences?.length || 50 : 50
   });
 
-  // Set vocabulary based on mode
+  // Set sentences/vocabulary based on mode
   useEffect(() => {
     if (assignmentMode) {
-      // Transform assignment vocabulary to game format
-      const transformedVocab = assignmentMode.vocabulary.map((item, index) => ({
-        id: item.id || `word-${index}`,
-        word: item.word,
-        translation: item.translation,
+      // Transform assignment sentences to game format
+      const transformedSentences = assignmentMode.sentences?.map((item, index) => ({
+        id: item.id || `sentence-${index}`,
+        word: item.original || item.sentence_original || item.text || item.word,
+        translation: item.translation || item.sentence_translation || item.translation_text,
         difficulty_level: item.difficulty_level || 'intermediate',
         correct: false
-      }));
-      setGameVocabulary(transformedVocab);
+      })) || [];
+      setGameVocabulary(transformedSentences);
     } else if (vocabularyHook.vocabulary.length > 0) {
       setGameVocabulary(vocabularyHook.vocabulary.map(item => ({
         ...item,

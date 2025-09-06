@@ -76,7 +76,8 @@ export function useVocabularyByCategory({
               'edexcel_neighborhood': 'My neighborhood',
               'edexcel_studying_future': 'Studying and my future',
               'edexcel_travel_tourism': 'Travel and tourism',
-              'edexcel_media_technology': 'Media and technology'
+              'edexcel_media_technology': 'Media and technology',
+              'edexcel_cultural': 'Cultural'
             };
 
             const themeName = themeMapping[categoryId] || categoryId;

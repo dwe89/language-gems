@@ -38,6 +38,28 @@ interface CreateAssignmentRequest {
   gameConfig?: Record<string, any>;
 }
 
+// Transform vocabulary selection for KS4 assignments
+function transformVocabularySelection(vocabularySelection: any, curriculumLevel?: string): any {
+  console.log('🔄 [LEGACY API] Transforming vocabulary selection:', { vocabularySelection, curriculumLevel });
+
+  // Handle KS4 themes and units
+  if (curriculumLevel === 'KS4' && vocabularySelection.category && vocabularySelection.subcategory) {
+    console.log('🎯 [LEGACY API] Processing KS4 theme/unit configuration');
+    return {
+      type: 'theme_based',
+      theme: vocabularySelection.category, // theme stored in category field
+      unit: vocabularySelection.subcategory, // unit stored in subcategory field
+      examBoard: vocabularySelection.examBoard,
+      tier: vocabularySelection.tier,
+      language: vocabularySelection.language || 'es',
+      wordCount: vocabularySelection.wordCount || 10
+    };
+  }
+
+  // For non-KS4 or incomplete KS4 data, return as-is
+  return vocabularySelection;
+}
+
 const createClient = async () => {
   const cookieStore = await cookies();
   
@@ -177,7 +199,7 @@ export async function POST(request: NextRequest) {
         created_by: user.id, // Use 'created_by' not 'teacher_id'
         status: 'active',
         game_config: assignmentConfig, // Store full config in game_config field
-        vocabulary_criteria: body.vocabularySelection // Store vocabulary selection criteria
+        vocabulary_criteria: transformVocabularySelection(body.vocabularySelection, body.curriculumLevel) // Store transformed vocabulary selection criteria
       })
       .select()
       .single();
@@ -256,9 +278,45 @@ async function populateVocabularyList(
           query = query.eq('subcategory', criteria.subcategory);
         }
         break;
+
       case 'theme_based':
-        if (criteria.theme) {
-          query = query.eq('category', criteria.theme);
+        // Check if this is a KS4 theme-based query (has unit, examBoard, tier)
+        if (criteria.unit && criteria.examBoard && criteria.tier) {
+          console.log('🎯 [LEGACY API] Applying KS4 theme/unit filters (theme_based):', {
+            theme: criteria.theme,
+            unit: criteria.unit,
+            examBoard: criteria.examBoard,
+            tier: criteria.tier
+          });
+
+          // For KS4, filter by theme_name and unit_name
+          if (criteria.theme) {
+            query = query.eq('theme_name', criteria.theme);
+          }
+          if (criteria.unit) {
+            query = query.eq('unit_name', criteria.unit);
+          }
+          if (criteria.examBoard) {
+            const examBoardCode = criteria.examBoard === 'AQA' ? 'AQA' : 'edexcel';
+            query = query.eq('exam_board_code', examBoardCode);
+          }
+          if (criteria.tier) {
+            // Handle tier filtering: foundation should include 'both', higher should include 'both' and 'higher'
+            if (criteria.tier === 'foundation') {
+              query = query.eq('tier', 'both'); // Foundation tier gets 'both' words
+            } else if (criteria.tier === 'higher') {
+              query = query.in('tier', ['both', 'higher']); // Higher tier gets both 'both' and 'higher' words
+            } else {
+              query = query.eq('tier', criteria.tier); // Fallback for other tier values
+            }
+          }
+          // Always filter by KS4 curriculum level
+          query = query.eq('curriculum_level', 'KS4');
+        } else {
+          // Traditional theme-based query for non-KS4
+          if (criteria.theme) {
+            query = query.eq('category', criteria.theme);
+          }
         }
         break;
       case 'topic_based':

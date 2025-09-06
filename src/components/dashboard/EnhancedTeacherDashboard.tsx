@@ -14,6 +14,7 @@ import { useSupabase } from '../supabase/SupabaseProvider';
 import { EnhancedGameService } from '../../services/enhancedGameService';
 import { EnhancedAssignmentService, ClassPerformanceMetrics } from '../../services/enhancedAssignmentService';
 import { GemsAnalyticsService } from '../../services/analytics/GemsAnalyticsService';
+import TeacherVocabularyAnalyticsDashboard from '../teacher/TeacherVocabularyAnalyticsDashboard';
 import EnhancedAnalyticsDashboard from '../analytics/EnhancedAnalyticsDashboard';
 
 // =====================================================
@@ -490,6 +491,7 @@ export default function EnhancedTeacherDashboard({
                   { id: 'overview', label: 'Overview', icon: <BarChart3 className="h-4 w-4" /> },
                   { id: 'classes', label: 'Classes', icon: <Users className="h-4 w-4" /> },
                   { id: 'assignments', label: 'Assignments', icon: <BookOpen className="h-4 w-4" /> },
+                  { id: 'vocabulary', label: 'Vocabulary', icon: <Brain className="h-4 w-4" /> },
                   { id: 'analytics', label: 'Analytics', icon: <TrendingUp className="h-4 w-4" /> },
                   { id: 'students', label: 'Students', icon: <Users className="h-4 w-4" /> }
                 ].map((item) => (
@@ -550,6 +552,7 @@ export default function EnhancedTeacherDashboard({
                 <p className="text-gray-600">Enhanced assignment management interface coming soon...</p>
               </div>
             )}
+            {currentView === 'vocabulary' && <TeacherVocabularyAnalyticsDashboard classId={selectedClass || undefined} />}
             {currentView === 'students' && (
               <div className="text-center py-12">
                 <Users className="h-16 w-16 text-gray-400 mx-auto mb-4" />

@@ -51,6 +51,13 @@ export default function KS4ThemeUnitSelector({
 
         const examBoardCode = examBoard === 'AQA' ? 'AQA' : 'edexcel';
 
+        console.log('🔍 [KS4 THEME SELECTOR] Loading themes and units:', {
+          language,
+          examBoard,
+          examBoardCode,
+          curriculumLevel: 'KS4'
+        });
+
         const { data, error: queryError } = await supabaseBrowser
           .from('centralized_vocabulary')
           .select('theme_name, unit_name')
@@ -60,29 +67,103 @@ export default function KS4ThemeUnitSelector({
           .not('theme_name', 'is', null)
           .not('unit_name', 'is', null);
 
+        console.log('🔍 [KS4 THEME SELECTOR] Query result:', { data, queryError, dataLength: data?.length });
+
         if (queryError) {
           throw queryError;
         }
 
-        // Group units by theme
-        const themeMap = new Map<string, Set<string>>();
-        
-        data?.forEach(item => {
-          // Handle compound theme names (themes separated by semicolons)
-          const themeNames = item.theme_name.split(';').map((t: string) => t.trim());
-          const unitNames = item.unit_name.split(';').map((u: string) => u.trim());
+        // Normalize data to canonical structure
+        const canonicalThemeMap = new Map<string, Set<string>>();
 
-          themeNames.forEach((themeName: string) => {
-            if (!themeMap.has(themeName)) {
-              themeMap.set(themeName, new Set());
-            }
-            
-            // Add all units that appear with this theme
-            unitNames.forEach((unitName: string) => {
-              themeMap.get(themeName)?.add(unitName);
+        if (examBoard === 'AQA') {
+          // For AQA, use canonical structure
+          const AQA_CANONICAL_THEMES = [
+            'Communication and the world around us',
+            'People and lifestyle',
+            'Popular culture'
+          ];
+
+          const AQA_CANONICAL_UNITS = {
+            'Communication and the world around us': [
+              'Environment and where people live',
+              'Media and technology',
+              'Travel and tourism'
+            ],
+            'People and lifestyle': [
+              'Education and work',
+              'Healthy living and lifestyle',
+              'Identity and relationships'
+            ],
+            'Popular culture': [
+              'Celebrity culture',
+              'Customs, festivals and celebrations',
+              'Free time activities'
+            ]
+          };
+
+          // Initialize canonical structure
+          AQA_CANONICAL_THEMES.forEach(theme => {
+            canonicalThemeMap.set(theme, new Set());
+          });
+
+          // Map database data to canonical structure
+          const normalize = (s: string) => (s || '').toString().toLowerCase().replace(/[\s\-_,.;:()]+/g, ' ').trim();
+
+          data?.forEach(item => {
+            const themeNames = item.theme_name.split(';').map((t: string) => t.trim());
+            const unitNames = item.unit_name.split(';').map((u: string) => u.trim());
+
+            themeNames.forEach((themeName: string) => {
+              // Skip "General" themes as they're not part of canonical structure
+              if (themeName === 'General') return;
+
+              // Find matching canonical theme
+              const canonicalTheme = AQA_CANONICAL_THEMES.find(canonical =>
+                normalize(canonical) === normalize(themeName)
+              );
+
+              if (canonicalTheme) {
+                unitNames.forEach((unitName: string) => {
+                  // Skip "General" units
+                  if (unitName === 'General') return;
+
+                  // Find matching canonical unit for this theme
+                  const canonicalUnits = AQA_CANONICAL_UNITS[canonicalTheme as keyof typeof AQA_CANONICAL_UNITS];
+                  const canonicalUnit = canonicalUnits.find(canonical =>
+                    normalize(canonical) === normalize(unitName)
+                  );
+
+                  if (canonicalUnit) {
+                    canonicalThemeMap.get(canonicalTheme)?.add(canonicalUnit);
+                  }
+                });
+              }
             });
           });
+
+        } else {
+          // For Edexcel, use actual database themes and units directly
+          if (data && data.length > 0) {
+            data.forEach(item => {
+              if (!canonicalThemeMap.has(item.theme_name)) {
+                canonicalThemeMap.set(item.theme_name, new Set());
+              }
+              canonicalThemeMap.get(item.theme_name)!.add(item.unit_name);
+            });
+          }
+        }
+
+        console.log('🔍 [KS4 THEME SELECTOR] Final theme map:', {
+          examBoard,
+          themes: Array.from(canonicalThemeMap.entries()).map(([theme, units]) => ({
+            theme,
+            units: Array.from(units)
+          }))
         });
+
+        // Use canonical structure instead of raw database grouping
+        const themeMap = canonicalThemeMap;
 
         // Helper function to format display names
         const formatDisplayName = (text: string): string => {
@@ -103,10 +184,17 @@ export default function KS4ThemeUnitSelector({
           }))
         }));
 
-        // Sort themes and units
+        // Sort themes and units alphabetically
         themesData.sort((a, b) => a.displayName.localeCompare(b.displayName));
+
+        // Sort units within themes alphabetically
         themesData.forEach(theme => {
           theme.units.sort((a, b) => a.displayName.localeCompare(b.displayName));
+        });
+
+        console.log('🔍 [KS4 THEME SELECTOR] Final themes data:', {
+          themesCount: themesData.length,
+          themes: themesData.map(t => ({ name: t.name, unitsCount: t.units.length }))
         });
 
         setThemes(themesData);

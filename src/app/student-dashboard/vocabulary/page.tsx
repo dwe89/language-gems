@@ -246,8 +246,8 @@ export default function VocabularyDashboard() {
           <Calendar className="mr-2 h-5 w-5" /> Review Due Words
         </Link>
         
-        <Link href="/student-dashboard/vocabulary/progress" className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-md flex items-center">
-          <BarChart2 className="mr-2 h-5 w-5" /> View Progress
+        <Link href="/student-dashboard/vocabulary/dashboard" className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-md flex items-center">
+          <BarChart2 className="mr-2 h-5 w-5" /> Vocabulary Dashboard
         </Link>
 
         <Link href="/student-dashboard/vocabulary/analysis" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center">

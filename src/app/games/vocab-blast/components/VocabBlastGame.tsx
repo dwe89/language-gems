@@ -306,9 +306,8 @@ export default function VocabBlastGame({
             masteryLevel: 1, // Default mastery for action games
             maxGemRarity: 'rare', // Cap at rare for fast-paced games
             gameMode: 'action_click',
-            difficultyLevel: settings.difficulty,
-            skipSpacedRepetition: true // Skip SRS - FSRS is handling spaced repetition
-          });
+            difficultyLevel: settings.difficulty
+          }, true); // 🚀 FAST: Skip FSRS processing for instant feedback
 
           // 🔍 INSTRUMENTATION: Log gem event result
           console.log('🔍 [VOCAB TRACKING] Gem event result:', {

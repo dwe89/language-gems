@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, BookOpen, GraduationCap, Users, ChevronRight, ExternalLink } from 'lucide-react';
+import { ArrowLeft, BookOpen, GraduationCap, Users, ChevronRight, ExternalLink, Trophy } from 'lucide-react';
+import ReactCountryFlag from 'react-country-flag';
 
 interface PageProps {
   params: {
@@ -19,9 +20,9 @@ interface KeyStage {
 }
 
 const LANGUAGE_CONFIGS = {
-  spanish: { name: 'Spanish', flag: '🇪🇸' },
-  french: { name: 'French', flag: '🇫🇷' },
-  german: { name: 'German', flag: '🇩🇪' }
+  spanish: { name: 'Spanish', countryCode: 'ES' },
+  french: { name: 'French', countryCode: 'FR' },
+  german: { name: 'German', countryCode: 'DE' }
 };
 
 const KEY_STAGES: KeyStage[] = [
@@ -85,8 +86,13 @@ export default function LanguagePage({ params }: PageProps) {
 
           <div className="flex items-center justify-between">
             <div className="flex items-center">
-              <div className="w-16 h-16 bg-indigo-100 rounded-xl flex items-center justify-center text-2xl mr-6">
-                {languageConfig.flag}
+              <div className="w-16 h-16 bg-indigo-100 rounded-xl flex items-center justify-center mr-6">
+                <ReactCountryFlag 
+                  countryCode={languageConfig.countryCode} 
+                  svg 
+                  style={{ width: '2rem', height: '2rem' }} 
+                  className="rounded-full" 
+                />
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-slate-900">
@@ -115,10 +121,10 @@ export default function LanguagePage({ params }: PageProps) {
               >
                 {/* Card Header */}
                 <div className="h-32 bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center group-hover:scale-105 transition-transform duration-200 relative overflow-hidden">
-                  <div className="text-4xl">
-                    {keyStage.id === 'ks3' && '📚'}
-                    {keyStage.id === 'ks4' && '🎓'}
-                    {keyStage.id === 'ks5' && '🏆'}
+                  <div className="flex items-center justify-center">
+                    {keyStage.id === 'ks3' && <BookOpen className="h-12 w-12 text-indigo-600" />}
+                    {keyStage.id === 'ks4' && <GraduationCap className="h-12 w-12 text-indigo-600" />}
+                    {keyStage.id === 'ks5' && <Trophy className="h-12 w-12 text-indigo-600" />}
                   </div>
                   <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                     <ExternalLink className="h-5 w-5 text-indigo-600" />

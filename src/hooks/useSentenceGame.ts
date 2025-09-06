@@ -53,7 +53,8 @@ export function useSentenceGame(options: UseSentenceGameOptions) {
     setState(prev => ({ ...prev, isProcessing: true, error: null }));
 
     try {
-      console.log(`🎯 useSentenceGame: Creating attempt object...`);
+      // Reduced logging: Skip detailed attempt object logging
+      // console.log(`🎯 useSentenceGame: Creating attempt object...`);
 
       const attempt: SentenceGameAttempt = {
         sessionId: options.sessionId,
@@ -68,7 +69,7 @@ export function useSentenceGame(options: UseSentenceGameOptions) {
         difficultyLevel: options.difficultyLevel
       };
 
-      console.log(`🎯 useSentenceGame: About to call sentenceGameService.processSentenceAttempt with:`, attempt);
+      // console.log(`🎯 useSentenceGame: About to call sentenceGameService.processSentenceAttempt with:`, attempt);
       const result = await sentenceGameService.processSentenceAttempt(attempt);
       console.log(`🎯 useSentenceGame: Got result:`, result);
 

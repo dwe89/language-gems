@@ -1,6 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { ArrowLeft, FileText, Clock, Download, Target } from 'lucide-react';
+import ReactCountryFlag from 'react-country-flag';
 
 const FRENCH_EXAM_TOPICS = [
   {
@@ -81,7 +82,12 @@ export default function FrenchExamPracticePage() {
               <ArrowLeft className="h-5 w-5 text-slate-600" />
             </Link>
             <div className="flex items-center gap-4">
-              <span className="text-4xl">🇫🇷</span>
+              <ReactCountryFlag
+                countryCode="FR"
+                svg
+                style={{ width: '3rem', height: '3rem' }}
+                className="rounded-lg"
+              />
               <div>
                 <h1 className="text-3xl font-bold text-slate-900">French Exam Practice</h1>
                 <p className="text-slate-600 mt-2">Prepare for your French exams with targeted practice</p>

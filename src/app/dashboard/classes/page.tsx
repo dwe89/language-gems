@@ -35,6 +35,9 @@ export default function ClassesPage() {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [classScope, setClassScope] = useState<'my' | 'school'>('my');
+  const [hasSchoolAccess, setHasSchoolAccess] = useState(false);
+  const [schoolCode, setSchoolCode] = useState<string | null>(null);
 
   useEffect(() => {
     // Set a maximum loading timeout to prevent infinite loading
@@ -58,7 +61,7 @@ export default function ClassesPage() {
     }
 
     return () => clearTimeout(maxLoadingTimeout);
-  }, [user, authLoading]);
+  }, [user, authLoading, classScope]);
 
   const loadClasses = async () => {
     if (!user) {
@@ -70,15 +73,22 @@ export default function ClassesPage() {
       setLoading(true);
       setError(null);
 
-      console.log('Loading classes for user:', user.id);
+      console.log('Loading classes for user:', user.id, 'scope:', classScope);
 
-      // Query the database for classes created by this teacher
-      const { data: classesData, error: classesError } = await supabaseBrowser
-        .from('classes')
-        .select('*')
-        .eq('teacher_id', user.id);
+      // Use the new school-filtered endpoint
+      const response = await fetch(`/api/classes/school-filtered?scope=${classScope}`);
+      const data = await response.json();
 
-      console.log('Classes query result:', { classesData, classesError });
+      console.log('Classes API response:', data);
+
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to load classes');
+      }
+
+      // Update state with the response data
+      setClasses(data.classes || []);
+      setHasSchoolAccess(data.has_school_access);
+      setSchoolCode(data.school_code);
 
       if (classesError) {
         console.error('Classes query error:', classesError);
@@ -367,8 +377,11 @@ export default function ClassesPage() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50/30 to-purple-50/30 p-6">
       <div className="max-w-7xl mx-auto">
         <DashboardHeader
-          title="My Classes"
-          description="Manage your classes and track student progress"
+          title={classScope === 'my' ? 'My Classes' : 'School Classes'}
+          description={classScope === 'my'
+            ? 'Manage your classes and track student progress'
+            : `All classes in ${schoolCode || 'your school'}`
+          }
           icon={<BookOpen className="h-5 w-5 text-white" />}
         />
 
@@ -382,7 +395,7 @@ export default function ClassesPage() {
         {/* Controls Panel */}
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-200/60 shadow-lg p-6 mb-8">
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-            {/* Search and Filter */}
+            {/* Search and Scope Selector */}
             <div className="flex flex-1 max-w-2xl gap-3">
               <div className="relative flex-1">
                 <input
@@ -395,7 +408,31 @@ export default function ClassesPage() {
                 <Search className="absolute left-4 top-3.5 text-slate-400" size={18} />
               </div>
 
-
+              {/* Scope Selector */}
+              {hasSchoolAccess && (
+                <div className="flex bg-slate-100 rounded-xl p-1">
+                  <button
+                    onClick={() => setClassScope('my')}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                      classScope === 'my'
+                        ? 'bg-white text-indigo-600 shadow-sm'
+                        : 'text-slate-600 hover:text-slate-800'
+                    }`}
+                  >
+                    My Classes
+                  </button>
+                  <button
+                    onClick={() => setClassScope('school')}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                      classScope === 'school'
+                        ? 'bg-white text-indigo-600 shadow-sm'
+                        : 'text-slate-600 hover:text-slate-800'
+                    }`}
+                  >
+                    School Classes
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Create Class Button */}

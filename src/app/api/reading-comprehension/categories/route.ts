@@ -14,11 +14,11 @@ let categoriesCache: {
 } | null = null;
 
 
-
 const CACHE_DURATION = 7 * 24 * 60 * 60 * 1000; // 1 week in milliseconds
 
 // Helper function to format display names
-const formatDisplayName = (str: string): string => {
+const formatDisplayName = (str: string | null | undefined): string => {
+  if (!str) return 'Unknown';
   return str
     .split('_')
     .map(word => word.charAt(0).toUpperCase() + word.slice(1))
@@ -28,20 +28,20 @@ const formatDisplayName = (str: string): string => {
 // Helper function to get category icons
 const getCategoryIcon = (categoryId: string): string => {
   const icons: Record<string, string> = {
-    'clothes_shopping': '👕',
-    'daily_life': '🏃',
-    'food_drink': '🍽️',
-    'free_time_leisure': '🎮',
-    'health_lifestyle': '⚕️',
-    'holidays_travel_culture': '✈️',
-    'home_local_area': '🏠',
-    'identity_personal_life': '👤',
-    'nature_environment': '🌿',
-    'school_jobs_future': '🎓',
-    'social_global_issues': '🌍',
-    'technology_media': '📱'
+    'clothes_shopping': 'Shirt',
+    'daily_life': 'PersonStanding',
+    'food_drink': 'Utensils',
+    'free_time_leisure': 'Gamepad2',
+    'health_lifestyle': 'HeartPulse',
+    'holidays_travel_culture': 'Plane',
+    'home_local_area': 'Home',
+    'identity_personal_life': 'User',
+    'nature_environment': 'Sprout',
+    'school_jobs_future': 'GraduationCap',
+    'social_global_issues': 'Globe',
+    'technology_media': 'Smartphone'
   };
-  return icons[categoryId] || '📚';
+  return icons[categoryId] || 'Book';
 };
 
 async function loadCategoriesFromDatabase() {
@@ -125,7 +125,8 @@ async function loadCategoriesFromDatabase() {
       .from('centralized_vocabulary')
       .select('category, subcategory, theme_name')
       .eq('curriculum_level', 'KS4')
-      .not('theme_name', 'is', null);
+      .not('theme_name', 'is', null)
+      .not('subcategory', 'is', null);
 
     if (ks4Error) throw ks4Error;
 
@@ -140,7 +141,7 @@ async function loadCategoriesFromDatabase() {
 
     const formattedKS4Themes = Array.from(themeMap.entries()).map(([themeName, topicSet]) => ({
       name: themeName,
-      topics: Array.from(topicSet).map(topic => ({
+      topics: Array.from(topicSet).filter(topic => topic != null).map(topic => ({
         id: topic.toLowerCase().replace(/\s+/g, '_'),
         name: topic
       }))

@@ -21,6 +21,9 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../components/auth/AuthProvider';
 import { supabaseBrowser } from '../../components/auth/AuthProvider';
+import BetaDashboardWrapper, { BetaStatsCard, DashboardComingSoonCards } from '../../components/beta/BetaDashboardWrapper';
+import FeedbackWidget from '../../components/beta/FeedbackWidget';
+import { useFeatureFlags } from '../../lib/feature-flags';
 
 // The main page component that handles authentication and renders the dashboard
 export default function DashboardPage() {
@@ -60,13 +63,16 @@ export default function DashboardPage() {
 
   // Render the dashboard for authenticated teachers
   return (
-    <TeacherDashboard username={user?.user_metadata?.name || user?.email?.split('@')[0] || 'Teacher'} />
+    <BetaDashboardWrapper>
+      <TeacherDashboard username={user?.user_metadata?.name || user?.email?.split('@')[0] || 'Teacher'} />
+    </BetaDashboardWrapper>
   );
 }
 
 // The main dashboard content for teachers
 function TeacherDashboard({ username }: { username: string }) {
   const { user } = useAuth();
+  const { isBetaLaunch } = useFeatureFlags();
   const [helpWidgetVisible, setHelpWidgetVisible] = useState(false);
   const [stats, setStats] = useState({
     totalClasses: 0,
@@ -246,6 +252,21 @@ function TeacherDashboard({ username }: { username: string }) {
             href="/dashboard/leaderboards"
           />
         </div>
+
+        {/* Beta: Coming Soon Features */}
+        {isBetaLaunch && (
+          <div className="mt-16">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Coming Soon in Full Launch</h2>
+              <p className="text-gray-600">Advanced features currently in development</p>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <DashboardComingSoonCards.AdvancedAnalytics />
+              <DashboardComingSoonCards.AssignmentManagement />
+            </div>
+          </div>
+        )}
       </section>
 
       {/* Help Widget */}
@@ -286,6 +307,9 @@ function TeacherDashboard({ username }: { username: string }) {
           </div>
         </div>
       )}
+
+      {/* Beta Feedback Widget */}
+      <FeedbackWidget source="dashboard" />
     </div>
   );
 }

@@ -20,6 +20,10 @@ export interface VocabularyItem {
   subcategory: string;
   curriculumLevel: string;
   language: string;
+  themeName: string | null;
+  unitName: string | null;
+  examBoardCode: string | null;
+  tier: string | null;
   masteryLevel: number;
   totalEncounters: number;
   correctEncounters: number;
@@ -101,7 +105,7 @@ export class UnifiedVocabularyService {
     if (centralizedIds.length > 0) {
       const { data, error } = await this.supabase
         .from('centralized_vocabulary')
-        .select('id, word, translation, category, subcategory, curriculum_level, language')
+        .select('id, word, translation, category, subcategory, curriculum_level, language, theme_name, unit_name, exam_board_code, tier')
         .in('id', centralizedIds);
 
       if (error) throw error;
@@ -183,7 +187,8 @@ export class UnifiedVocabularyService {
       const isOverdue = nextReview ? nextReview < now : false;
       const isDueToday = nextReview ? nextReview <= today && nextReview >= now : false;
       const isMastered = (item.mastery_level || 0) >= 4;
-      const isStruggling = accuracy < 70 && item.total_encounters > 0;
+      // Improved struggling logic: only struggling if they've had multiple attempts and low accuracy
+      const isStruggling = accuracy < 70 && item.total_encounters >= 3;
 
       return {
         id: item.id,
@@ -195,6 +200,10 @@ export class UnifiedVocabularyService {
         subcategory: item.centralized_vocabulary.subcategory,
         curriculumLevel: item.centralized_vocabulary.curriculum_level,
         language: item.centralized_vocabulary.language,
+        themeName: item.centralized_vocabulary.theme_name,
+        unitName: item.centralized_vocabulary.unit_name,
+        examBoardCode: item.centralized_vocabulary.exam_board_code,
+        tier: item.centralized_vocabulary.tier,
         masteryLevel: item.mastery_level || 0,
         totalEncounters: item.total_encounters || 0,
         correctEncounters: item.correct_encounters || 0,

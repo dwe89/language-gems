@@ -17,7 +17,7 @@ This comprehensive manual testing checklist covers all critical user journeys an
 ### Test Data Preparation
 - [x] Create test teacher account
 - [x] Create test student accounts
-- [] Prepare test vocabulary lists
+- [NEEDS MORE TESTING] Prepare test vocabulary lists
 - [x] Set up test assignments
 
 ## 👨‍🏫 Teacher Journey Testing
@@ -51,28 +51,28 @@ This comprehensive manual testing checklist covers all critical user journeys an
   - Submit and verify class is created
   - Check class appears in classes list
 
-- [ ] **Manage Existing Classes**
+- [x] **Manage Existing Classes**
   - View classes list
   - Edit class details
   - Archive/delete class (if applicable)
   - Verify changes are reflected
 
 ### 3. Student Management
-- [ ] **Add Students to Class**
+- [x] **Add Students to Class**
   - Navigate to student management
   - Add individual students
   - Bulk add students (if available)
   - Generate student login credentials
   - Verify student passwords are generated correctly
 
-- [ ] **Student Password Management**
+- [x] **Student Password Management**
   - Generate new passwords for students
   - Verify password format (adjective/color + gem + number)
   - Test password distribution methods
   - Verify students can login with generated passwords
 
 ### 4. Assignment Creation & Management
-- [ ] **Create Single Game Assignment**
+- [x] **Create Single Game Assignment**
   - Navigate to assignment creator
   - Select single game mode
   - Choose game type (VocabMaster, Memory Match, etc.)
@@ -82,7 +82,7 @@ This comprehensive manual testing checklist covers all critical user journeys an
   - Assign to class
   - Verify assignment is created
 
-- [ ] **Create Multi-Game Assignment**
+- [x] **Create Multi-Game Assignment**
   - Select multi-game mode
   - Choose multiple games
   - Configure individual game settings
@@ -101,16 +101,15 @@ This comprehensive manual testing checklist covers all critical user journeys an
 #### A. Individual Game Type Assignments
 
 ##### Vocabulary Game Assignments
-- [ ] **VocabMaster Assignment**
+- [x] **VocabMaster Assignment**
   - Create assignment with VocabMaster game
   - Test vocabulary source selection (category/custom list)
   - Verify word count configuration (10-50 words)
-  - Test difficulty level settings
   - Check language selection (Spanish/French/German)
   - Verify mastery mode vs adventure mode options
   - Test assignment preview functionality
 
-- [ ] **Memory Match Assignment**
+- [x] **Memory Match Assignment**
   - Create Memory Match specific assignment
   - Test grid size configuration (4x4, 6x6)
   - Verify vocabulary pairing logic
