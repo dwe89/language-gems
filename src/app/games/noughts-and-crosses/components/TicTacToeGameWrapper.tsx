@@ -90,6 +90,25 @@ export default function TicTacToeGameWrapper(props: TicTacToeGameWrapperProps) {
     enabled: !props.vocabulary // Disable hook if assignment vocabulary is provided
   });
 
+  // Debug logging to see what vocabulary is being loaded
+  useEffect(() => {
+    console.log('🔍 [TicTacToe] Vocabulary loading debug:', {
+      settings: {
+        language: settings.language,
+        category: settings.category,
+        subcategory: settings.subcategory,
+        curriculumLevel: settings.curriculumLevel,
+        examBoard: settings.examBoard,
+        tier: settings.tier,
+      },
+      mappedLanguage: mapLanguage(settings.language),
+      hookVocabulary: hookVocabulary?.length || 0,
+      isLoading,
+      error,
+      assignmentVocabulary: props.vocabulary?.length || 0
+    });
+  }, [hookVocabulary, isLoading, error, settings]);
+
   // Use assignment vocabulary if available, otherwise use hook vocabulary
   const vocabularyWords = props.vocabulary || hookVocabulary;
 

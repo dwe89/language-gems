@@ -16,6 +16,7 @@ import UnifiedGameLauncher from '../../../components/games/UnifiedGameLauncher';
 import { UnifiedSelectionConfig, UnifiedVocabularyItem } from '../../../hooks/useUnifiedVocabulary';
 import InGameConfigPanel from '../../../components/games/InGameConfigPanel';
 import { useGameAudio } from '../../../hooks/useGlobalAudioContext';
+import { getGameCompatibility } from '../../../components/games/gameCompatibility';
 import './styles.css';
 
 export default function UnifiedMemoryGamePage() {
@@ -122,10 +123,15 @@ export default function UnifiedMemoryGamePage() {
 
   // Handle game start from unified launcher
   const handleGameStart = (config: UnifiedSelectionConfig, vocabulary: UnifiedVocabularyItem[]) => {
-    if (config.customMode && vocabulary.length > 0) {
-      // For custom mode, convert vocabulary to WordPair format
-      const customWordPairs = transformVocabularyForMemoryGame(vocabulary);
-      setCustomWords(customWordPairs);
+    // Always convert vocabulary to WordPair format if we have vocabulary
+    if (vocabulary.length > 0) {
+      const transformedWordPairs = transformVocabularyForMemoryGame(vocabulary);
+      setCustomWords(transformedWordPairs);
+      console.log('Transformed vocabulary for memory game:', {
+        originalCount: vocabulary.length,
+        transformedCount: transformedWordPairs.length,
+        sampleItems: transformedWordPairs.slice(0, 3)
+      });
     }
     
     setGameConfig({
@@ -182,11 +188,13 @@ export default function UnifiedMemoryGamePage() {
         gameDescription="Match vocabulary words with their translations by flipping cards"
         supportedLanguages={['es', 'fr', 'de']}
         showCustomMode={true}
-        minVocabularyRequired={1} // Can work with minimal vocabulary
+        minVocabularyRequired={8} // Memory game needs at least 8 words for 4 pairs
         onGameStart={handleGameStart}
         onBack={() => router.push('/games')}
         supportsThemes={false} // Memory game doesn't have themes like hangman/tic-tac-toe
         requiresAudio={false}
+        gameCompatibility={getGameCompatibility('memory-game') || undefined}
+        preferredContentType="vocabulary"
       >
         {/* Game-specific instructions */}
         <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 mb-6 max-w-md mx-auto">

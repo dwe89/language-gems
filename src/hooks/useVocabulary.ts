@@ -123,12 +123,50 @@ export function useVocabularyByCategory({
 
         const { data, error: fetchError } = await query.limit(10000);
 
+        console.log('🔍 [useVocabularyByCategory] Query debug:', {
+          language,
+          categoryId,
+          subcategoryId,
+          curriculumLevel,
+          examBoard,
+          tier,
+          resultCount: data?.length || 0,
+          error: fetchError,
+          sampleResults: data?.slice(0, 3)?.map(item => ({
+            category: item.category,
+            subcategory: item.subcategory,
+            word: item.word
+          }))
+        });
+
         if (fetchError) {
           console.error('❌ Database query error:', fetchError);
           throw fetchError;
         }
         
         setVocabulary(data || []);
+
+        // If no results found and we have both category and subcategory, try fallback to category only
+        if ((data?.length || 0) === 0 && categoryId && subcategoryId && curriculumLevel !== 'KS4') {
+          console.log('🔄 [useVocabularyByCategory] No results found, trying category only fallback');
+          
+          let fallbackQuery = supabaseBrowser
+            .from('centralized_vocabulary')
+            .select('*')
+            .eq('language', language)
+            .eq('category', categoryId);
+
+          const { data: fallbackData, error: fallbackError } = await fallbackQuery.limit(10000);
+          
+          if (!fallbackError && fallbackData && fallbackData.length > 0) {
+            console.log('✅ [useVocabularyByCategory] Fallback found results:', {
+              categoryOnly: categoryId,
+              resultCount: fallbackData.length,
+              availableSubcategories: [...new Set(fallbackData.map(item => item.subcategory).filter(Boolean))]
+            });
+            setVocabulary(fallbackData);
+          }
+        }
       } catch (err) {
         console.error('Error fetching vocabulary:', err);
         setError(err instanceof Error ? err.message : 'Failed to fetch vocabulary');

@@ -11,6 +11,7 @@ export interface FeatureFlags {
   shop: boolean;
   auth: boolean;
   assessments: boolean;
+  worksheets: boolean;
 }
 
 // Check if we're in development environment
@@ -39,6 +40,7 @@ export const getFeatureFlags = (userEmail?: string | null): FeatureFlags => {
       customLessons: true,
       progressTracking: true,
       assessments: true,
+      worksheets: true,
     };
   }
   
@@ -54,6 +56,7 @@ export const getFeatureFlags = (userEmail?: string | null): FeatureFlags => {
     customLessons: isDevelopment,
     progressTracking: isDevelopment,
     assessments: true, // Enable assessments for all users
+    worksheets: true, // Enable worksheets for all users
   };
 };
 
@@ -81,6 +84,13 @@ export const getNavigationItems = (isAuthenticated: boolean = false, userEmail?:
       enabled: flags.games,
       comingSoon: !flags.games,
       comingSoonPath: '/coming-soon/games'
+    },
+    {
+      name: 'Worksheets',
+      path: '/worksheets',
+      enabled: flags.worksheets,
+      comingSoon: !flags.worksheets,
+      comingSoonPath: '/coming-soon/worksheets'
     },
     {
       name: 'Assessments',

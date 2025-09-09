@@ -12,7 +12,8 @@ import {
   Users, 
   ChevronRight,
   Play,
-  Settings
+  Settings,
+  Target
 } from 'lucide-react';
 
 interface FeaturedVocabMasterCardProps {
@@ -181,8 +182,14 @@ export default function FeaturedVocabMasterCard({ onChooseContent }: FeaturedVoc
           <div className="mt-6 pt-6 border-t border-white/20">
             <div className="flex flex-wrap items-center justify-between gap-4 text-white/70 text-sm">
               <div className="flex items-center gap-6">
-                <span>🎯 Most Effective for Long-term Retention</span>
-                <span>📈 Proven Results in Vocabulary Mastery</span>
+                <div className="flex items-center gap-2">
+                  <Target className="h-4 w-4" />
+                  <span>Most Effective for Long-term Retention</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4" />
+                  <span>Proven Results in Vocabulary Mastery</span>
+                </div>
                 
               </div>
               <Link

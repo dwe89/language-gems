@@ -102,6 +102,14 @@ export default function GameSelectionSidebar({
     ? getCategoriesByCurriculum(selection.curriculumLevel, selection.examBoard || undefined)
     : [];
 
+  // Debug logging
+  console.log('🔍 FilterSidebar Debug:', {
+    curriculumLevel: selection.curriculumLevel,
+    examBoard: selection.examBoard,
+    categoriesCount: currentCategories.length,
+    categories: currentCategories.map(c => ({ id: c.id, name: c.displayName }))
+  });
+
   // Check if selection is complete
   const isSelectionComplete = selection.language &&
     selection.curriculumLevel &&

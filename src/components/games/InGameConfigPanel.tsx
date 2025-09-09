@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Settings, X, Globe, BookOpen, Target, Palette, Gamepad2, Rocket, Anchor, Building2, Sun } from 'lucide-react';
+import { Settings, X, Globe, BookOpen, Target, Palette, Gamepad2, Rocket, Anchor, Building2, Sun, ArrowRight, ArrowLeft, ChevronDown } from 'lucide-react';
 import ReactCountryFlag from 'react-country-flag';
 import { UnifiedSelectionConfig, loadVocabulary } from '../../hooks/useUnifiedVocabulary';
 
@@ -44,11 +44,22 @@ const THEME_OPTIONS = [
   { id: 'temple', name: 'Lava Temple', icon: 'temple', accentColor: 'bg-orange-600' }
 ];
 
-// Get categories based on curriculum level
+// Helper functions
 const getCategoriesByCurriculum = (level: 'KS2' | 'KS3' | 'KS4' | 'KS5') => {
   if (level === 'KS4') return KS4_CATEGORIES;
   if (level === 'KS3') return KS3_CATEGORIES;
   return [];
+};
+
+const getThemeIcon = (iconName: string) => {
+  switch (iconName) {
+    case 'classic': return <Gamepad2 className="h-6 w-6" />;
+    case 'tokyo': return <Building2 className="h-6 w-6" />;
+    case 'pirate': return <Anchor className="h-6 w-6" />;
+    case 'space': return <Rocket className="h-6 w-6" />;
+    case 'temple': return <Sun className="h-6 w-6" />;
+    default: return null;
+  }
 };
 
 export default function InGameConfigPanel({
@@ -66,18 +77,19 @@ export default function InGameConfigPanel({
   const [activeTab, setActiveTab] = useState<'language' | 'curriculum' | 'category' | 'theme'>(
     'language'
   );
+  const [vocabularySource, setVocabularySource] = useState<'curriculum' | 'custom'>('curriculum');
+  const [customWords, setCustomWords] = useState<string>('');
 
-  const availableLanguages = LANGUAGES.filter(lang => supportedLanguages.includes(lang.code));
-  const currentCategories = getCategoriesByCurriculum(tempConfig.curriculumLevel);
-  // Safely find currentCategory, it can be undefined
-  const currentCategory = currentCategories.find(cat => cat.id === tempConfig.categoryId);
+  const availableLanguages = useMemo(() => LANGUAGES.filter(lang => supportedLanguages.includes(lang.code)), [supportedLanguages]);
+  const currentCategories = useMemo(() => getCategoriesByCurriculum(tempConfig.curriculumLevel), [tempConfig.curriculumLevel]);
+  const currentCategory = useMemo(() => currentCategories.find(cat => cat.id === tempConfig.categoryId), [currentCategories, tempConfig.categoryId]);
 
-  const handleLanguageChange = (languageCode: string) => {
+  const handleLanguageChange = useCallback((languageCode: string) => {
     setTempConfig(prev => ({ ...prev, language: languageCode }));
     setActiveTab('curriculum');
-  };
+  }, []);
 
-  const handleCurriculumChange = (level: 'KS2' | 'KS3' | 'KS4' | 'KS5') => {
+  const handleCurriculumChange = useCallback((level: 'KS2' | 'KS3' | 'KS4' | 'KS5') => {
     setTempConfig(prev => ({
       ...prev,
       curriculumLevel: level,
@@ -85,70 +97,125 @@ export default function InGameConfigPanel({
       subcategoryId: undefined
     }));
     setActiveTab('category');
-  };
+  }, []);
 
-  const handleCategoryChange = (categoryId: string) => {
-    setTempConfig(prev => ({
-      ...prev,
-      categoryId,
-      subcategoryId: undefined
-    }));
-    // Use optional chaining here
-  const found = currentCategories.find(cat => cat.id === categoryId);
-  if (found && found.subcategories && found.subcategories.length > 0) {
-      setActiveTab('category');
-    } else if (supportsThemes) {
-      setActiveTab('theme');
-    }
-  };
+  const handleVocabularySourceChange = useCallback((source: 'curriculum' | 'custom') => {
+    setVocabularySource(source);
+    // Stay on the current tab to show the appropriate UI
+    // Don't auto-navigate - let user see the changes and navigate manually
+  }, []);
 
-  const handleSubcategoryChange = (subcategoryId: string) => {
-    setTempConfig(prev => ({ ...prev, subcategoryId }));
-    if (supportsThemes) {
-      setActiveTab('theme');
-    }
-  };
-
-  const handleThemeChange = (themeId: string) => {
-    setTempTheme(themeId);
-  };
-
-  const handleApplyChanges = async () => {
-    if (!tempConfig.language || !tempConfig.categoryId) return;
-
-    setLoading(true);
-    try {
-      console.log('🔄 Loading new vocabulary for config:', tempConfig);
-      const vocabulary = await loadVocabulary(tempConfig);
-
-      if (vocabulary && vocabulary.length > 0) {
-        console.log('✅ New vocabulary loaded, applying changes...');
-        onConfigChange(tempConfig, vocabulary, tempTheme);
-        onClose();
-      } else {
-        console.warn('⚠️ No vocabulary found for new configuration');
+  const handleCategoryChange = useCallback((categoryId: string) => {
+    setTempConfig(prev => {
+      const found = getCategoriesByCurriculum(prev.curriculumLevel).find(cat => cat.id === categoryId);
+      if (found && found.subcategories && found.subcategories.length > 0) {
+        return {
+          ...prev,
+          categoryId,
+          subcategoryId: found.subcategories[0]?.id // Auto-select first subcategory
+        };
       }
-    } catch (error) {
-      console.error('❌ Error loading new vocabulary:', error);
-    } finally {
-      setLoading(false);
+      return { ...prev, categoryId, subcategoryId: undefined };
+    });
+    setActiveTab('category');
+  }, []);
+
+  const handleSubcategoryChange = useCallback((subcategoryId: string) => {
+    setTempConfig(prev => ({ ...prev, subcategoryId }));
+  }, []);
+
+  const handleThemeChange = useCallback((themeId: string) => {
+    setTempTheme(themeId);
+  }, []);
+
+  const handleApplyChanges = useCallback(async () => {
+    if (!tempConfig.language) return;
+
+    // For custom vocabulary, we need different validation
+    if (vocabularySource === 'custom') {
+      if (!customWords.trim()) return;
+
+      setLoading(true);
+      try {
+        // Parse custom words and create vocabulary items
+        const words = customWords.split('\n').filter(word => word.trim());
+        const customVocabulary = words.map((word, index) => ({
+          id: `custom-${index}`,
+          word: word.trim(),
+          translation: word.trim(), // For hangman, we just need the word
+          language: tempConfig.language,
+          category: 'custom',
+          subcategory: 'custom',
+          part_of_speech: 'unknown',
+          difficulty_level: 'beginner'
+        }));
+
+        // Update config to indicate custom mode
+        const customConfig = {
+          ...tempConfig,
+          customMode: true,
+          categoryId: 'custom',
+          subcategoryId: 'custom'
+        };
+
+        onConfigChange(customConfig, customVocabulary, tempTheme);
+        onClose();
+      } catch (error) {
+        console.error('❌ Error processing custom vocabulary:', error);
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      // Original curriculum-based logic
+      if (!tempConfig.categoryId) return;
+      setLoading(true);
+      try {
+        const vocabulary = await loadVocabulary(tempConfig);
+        if (vocabulary && vocabulary.length > 0) {
+          onConfigChange(tempConfig, vocabulary, tempTheme);
+          onClose();
+        } else {
+          // TODO: Show a user-friendly error message
+          console.warn('⚠️ No vocabulary found for new configuration');
+        }
+      } catch (error) {
+        console.error('❌ Error loading new vocabulary:', error);
+      } finally {
+        setLoading(false);
+      }
     }
-  };
+  }, [tempConfig, tempTheme, vocabularySource, customWords, onConfigChange, onClose]);
 
-  const canApply = tempConfig.language && tempConfig.categoryId &&
-    (JSON.stringify(tempConfig) !== JSON.stringify(currentConfig) || tempTheme !== currentTheme);
+  const canApply = tempConfig.language &&
+    ((vocabularySource === 'curriculum' && tempConfig.categoryId) ||
+     (vocabularySource === 'custom' && customWords.trim())) &&
+    (JSON.stringify(tempConfig) !== JSON.stringify(currentConfig) ||
+     tempTheme !== currentTheme ||
+     vocabularySource === 'custom');
 
-  const tabs = [
-    { id: 'language', name: 'Language', icon: Globe },
-    { id: 'curriculum', name: 'Level', icon: BookOpen },
-    { id: 'category', name: 'Topic', icon: Target },
-  ];
+  const tabs = useMemo(() => {
+    const baseTabs = [
+      { id: 'language', name: 'Language', icon: Globe },
+      { id: 'curriculum', name: 'Level', icon: BookOpen },
+      { id: 'category', name: 'Topic', icon: Target },
+    ];
+    if (supportsThemes) {
+      baseTabs.push({ id: 'theme', name: 'Theme', icon: Palette });
+    }
+    return baseTabs;
+  }, [supportsThemes]);
 
-  if (supportsThemes) {
-    tabs.push({ id: 'theme', name: 'Theme', icon: Palette });
-  }
+  const getNextTab = useCallback((current: string) => {
+    const currentIndex = tabs.findIndex(tab => tab.id === current);
+    return tabs[currentIndex + 1]?.id;
+  }, [tabs]);
 
-  const renderTabContent = () => {
+  const getPrevTab = useCallback((current: string) => {
+    const currentIndex = tabs.findIndex(tab => tab.id === current);
+    return tabs[currentIndex - 1]?.id;
+  }, [tabs]);
+
+  const renderTabContent = useCallback(() => {
     switch (activeTab) {
       case 'language':
         return (
@@ -167,11 +234,7 @@ export default function InGameConfigPanel({
                   <ReactCountryFlag
                     countryCode={language.countryCode}
                     svg
-                    style={{
-                      width: '2.2rem',
-                      height: '2.2rem',
-                      borderRadius: '0.5rem'
-                    }}
+                    style={{ width: '2.2rem', height: '2.2rem', borderRadius: '0.5rem' }}
                   />
                 </div>
                 <div className={`font-semibold text-sm ${
@@ -180,7 +243,7 @@ export default function InGameConfigPanel({
                   {language.name}
                 </div>
                 {tempConfig.language === language.code && (
-                  <div className="absolute -top-1 -right-1 w-5 h-5 bg-indigo-500 rounded-full flex items-center justify-center">
+                  <div className="absolute -top-1 -right-1 w-5 h-5 bg-indigo-500 rounded-full flex items-center justify-center border-2 border-white">
                     <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
                   </div>
                 )}
@@ -212,7 +275,7 @@ export default function InGameConfigPanel({
                   {level.description}
                 </div>
                 {tempConfig.curriculumLevel === level.code && (
-                  <div className="absolute -top-1 -right-1 w-5 h-5 bg-purple-500 rounded-full flex items-center justify-center">
+                  <div className="absolute -top-1 -right-1 w-5 h-5 bg-purple-500 rounded-full flex items-center justify-center border-2 border-white">
                     <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
                   </div>
                 )}
@@ -222,106 +285,187 @@ export default function InGameConfigPanel({
         );
       case 'category':
         return (
-          <>
-            <div className="mb-4">
+          <div className="grid grid-cols-1 gap-6">
+            <div>
               <h3 className="text-xl font-bold text-gray-900 flex items-center mb-2">
                 <Target className="h-6 w-6 text-indigo-600 mr-2" />
-                Category
+                Vocabulary Source
               </h3>
-              <p className="text-gray-600 text-sm">Select a main topic for your vocabulary.</p>
+              <p className="text-gray-600 text-sm">Choose your vocabulary source.</p>
+
+              {/* Custom Vocabulary Option */}
+              <div className="mb-4">
+                <button
+                  onClick={() => handleVocabularySourceChange('custom')}
+                  className={`w-full flex items-center space-x-3 p-4 rounded-lg border-2 transition-all text-left ${
+                    vocabularySource === 'custom'
+                      ? 'border-purple-500 bg-purple-50 text-purple-700'
+                      : 'border-gray-200 hover:border-gray-300 text-gray-700'
+                  }`}
+                >
+                  <div className="h-5 w-5 flex-shrink-0 text-purple-600">✏️</div>
+                  <div>
+                    <div className="font-medium">Custom Vocabulary</div>
+                    <div className="text-sm opacity-75">Enter your own words</div>
+                  </div>
+                </button>
+
+                {/* Custom words input */}
+                {vocabularySource === 'custom' && (
+                  <div className="mt-3 p-4 bg-purple-50 rounded-lg border border-purple-200">
+                    <label className="block text-sm font-medium text-purple-900 mb-2">
+                      Enter your words (one per line):
+                    </label>
+                    <textarea
+                      value={customWords}
+                      onChange={(e) => setCustomWords(e.target.value)}
+                      className="w-full h-32 p-3 border border-purple-300 rounded-lg text-sm resize-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                      placeholder="casa&#10;perro&#10;gato&#10;escuela"
+                    />
+                    <p className="text-xs text-purple-600 mt-2">
+                      Enter one word per line. Perfect for practicing specific vocabulary!
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Curriculum Topics Option */}
+              <div>
+                <button
+                  onClick={() => handleVocabularySourceChange('curriculum')}
+                  className={`w-full flex items-center space-x-3 p-4 rounded-lg border-2 transition-all text-left mb-3 ${
+                    vocabularySource === 'curriculum'
+                      ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
+                      : 'border-gray-200 hover:border-gray-300 text-gray-700'
+                  }`}
+                >
+                  <BookOpen className="h-5 w-5 flex-shrink-0 text-indigo-600" />
+                  <div>
+                    <div className="font-medium">Curriculum Topics</div>
+                    <div className="text-sm opacity-75">Choose from organized vocabulary topics</div>
+                  </div>
+                </button>
+
+                {/* Show curriculum categories only when curriculum is selected */}
+                {vocabularySource === 'curriculum' && (
+                  <div className="relative overflow-hidden max-h-48 mt-4">
+                    <div className="grid grid-cols-1 gap-2 overflow-y-auto pr-2 custom-scrollbar max-h-48">
+                  {currentCategories.length > 0 ? (
+                    currentCategories.map((category) => {
+                      const IconComponent = category.icon;
+                      return (
+                        <button
+                          key={category.id}
+                          onClick={() => handleCategoryChange(category.id)}
+                          className={`flex items-center space-x-3 p-3 rounded-lg border transition-all text-left ${
+                            tempConfig.categoryId === category.id
+                              ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
+                              : 'border-gray-200 hover:border-gray-300 text-gray-700'
+                          }`}
+                        >
+                          <IconComponent className="h-5 w-5 flex-shrink-0" />
+                          <span className="font-medium">{category.displayName}</span>
+                        </button>
+                      );
+                    })
+                  ) : (
+                    <p className="text-gray-500 text-sm">No categories available for this curriculum level.</p>
+                  )}
+                </div>
+                {currentCategories.length > 4 && (
+                  <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
+                    <ChevronDown className="h-4 w-4 text-gray-400 animate-bounce" />
+                  </div>
+                )}
+                <div className="absolute bottom-0 inset-x-0 h-8 bg-gradient-to-t from-white to-transparent" />
+              </div>
+                )}
+              </div>
             </div>
-            <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
-              {currentCategories.length > 0 ? (
-                currentCategories.map((category) => {
-                  const IconComponent = category.icon;
-                  return (
-                    <button
-                      key={category.id}
-                      onClick={() => handleCategoryChange(category.id)}
-                      className={`flex items-center space-x-3 p-3 rounded-lg border transition-all text-left ${
-                        tempConfig.categoryId === category.id
-                          ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
-                          : 'border-gray-200 hover:border-gray-300 text-gray-700'
-                      }`}
-                    >
-                      <IconComponent className="h-5 w-5 flex-shrink-0" />
-                      <span className="font-medium">{category.displayName}</span>
-                    </button>
-                  );
-                })
-              ) : (
-                <p className="text-gray-500 text-sm">No categories available for this curriculum level.</p>
-              )}
-            </div>
-            {/* Safely check currentCategory and its subcategories before rendering */}
-            {currentCategory && currentCategory.subcategories && currentCategory.subcategories.length > 0 && (
-              <div className="mt-6">
+            {vocabularySource === 'curriculum' && currentCategory?.subcategories && currentCategory.subcategories.length > 0 && (
+              <div>
                 <h3 className="text-xl font-bold text-gray-900 flex items-center mb-2">
                   <Target className="h-6 w-6 text-indigo-600 mr-2" />
                   Subtopic
                 </h3>
                 <p className="text-gray-600 text-sm">Refine your topic selection.</p>
-                <div className="grid grid-cols-1 gap-2 max-h-40 overflow-y-auto pr-2 custom-scrollbar mt-4">
-                  {currentCategory.subcategories.map((subcategory) => (
-                    <button
-                      key={subcategory.id}
-                      onClick={() => handleSubcategoryChange(subcategory.id)}
-                      className={`flex items-center space-x-3 p-3 rounded-lg border transition-all text-left ${
-                        tempConfig.subcategoryId === subcategory.id
-                          ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
-                          : 'border-gray-200 hover:border-gray-300 text-gray-700'
-                      }`}
-                    >
-                      <span className="text-indigo-400">●</span>
-                      <span className="font-medium">{subcategory.displayName}</span>
-                    </button>
-                  ))}
+                <div className="relative overflow-hidden max-h-40 mt-4">
+                  <div className="grid grid-cols-1 gap-2 overflow-y-auto pr-2 custom-scrollbar max-h-40">
+                    {currentCategory.subcategories.map((subcategory) => (
+                      <button
+                        key={subcategory.id}
+                        onClick={() => handleSubcategoryChange(subcategory.id)}
+                        className={`flex items-center space-x-3 p-3 rounded-lg border transition-all text-left ${
+                          tempConfig.subcategoryId === subcategory.id
+                            ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
+                            : 'border-gray-200 hover:border-gray-300 text-gray-700'
+                        }`}
+                      >
+                        <span className="text-indigo-400">●</span>
+                        <span className="font-medium">{subcategory.displayName}</span>
+                      </button>
+                    ))}
+                  </div>
+                  {currentCategory.subcategories.length > 3 && (
+                    <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
+                      <ChevronDown className="h-4 w-4 text-gray-400 animate-bounce" />
+                    </div>
+                  )}
+                  <div className="absolute bottom-0 inset-x-0 h-8 bg-gradient-to-t from-white to-transparent" />
                 </div>
               </div>
             )}
-          </>
+          </div>
         );
       case 'theme':
         return (
-          <>
-            <div className="mb-4">
-              <h3 className="text-xl font-bold text-gray-900 flex items-center mb-2">
-                <Palette className="h-6 w-6 text-pink-600 mr-2" />
-                Theme
-              </h3>
-              <p className="text-gray-600 text-sm">Choose your visual style for the game.</p>
-            </div>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-4">
+          <div>
+            <h3 className="text-xl font-bold text-gray-900 flex items-center mb-2">
+              <Palette className="h-6 w-6 text-pink-600 mr-2" />
+              Theme
+            </h3>
+            <p className="text-gray-600 text-sm">Choose your visual style for the game.</p>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-4">
               {THEME_OPTIONS.map((theme) => (
                 <button
                   key={theme.id}
                   onClick={() => handleThemeChange(theme.id)}
                   className={`group relative flex flex-col items-center p-4 rounded-xl border-2 transition-all duration-200 hover:scale-105 ${
                     tempTheme === theme.id
-                      ? `${theme.accentColor} border-white text-white shadow-lg shadow-${theme.accentColor.split('-')[1]}-200/50`
+                      ? 'border-transparent text-white shadow-lg'
                       : 'bg-white border-gray-200 hover:bg-gray-50 hover:border-gray-300 text-gray-700'
-                  }`}
+                  } ${theme.accentColor}`}
                 >
                   <div className="text-2xl mb-2">
-                    {theme.icon === 'classic' && <Gamepad2 className="h-6 w-6" />}
-                    {theme.icon === 'tokyo' && <Building2 className="h-6 w-6" />}
-                    {theme.icon === 'pirate' && <Anchor className="h-6 w-6" />}
-                    {theme.icon === 'space' && <Rocket className="h-6 w-6" />}
-                    {theme.icon === 'temple' && <Sun className="h-6 w-6" />}
+                    {getThemeIcon(theme.icon)}
                   </div>
                   <div className="text-sm font-semibold text-center">{theme.name}</div>
                   {tempTheme === theme.id && (
-                    <div className="absolute -top-1 -right-1 w-5 h-5 bg-white rounded-full flex items-center justify-center">
+                    <div className="absolute -top-1 -right-1 w-5 h-5 bg-white rounded-full flex items-center justify-center border-2 border-current">
                       <div className="w-1.5 h-1.5 bg-current rounded-full"></div>
                     </div>
                   )}
                 </button>
               ))}
             </div>
-          </>
+          </div>
         );
       default:
         return null;
+    }
+  }, [activeTab, tempConfig, tempTheme, vocabularySource, customWords, availableLanguages, currentCategories, currentCategory, handleLanguageChange, handleCurriculumChange, handleCategoryChange, handleSubcategoryChange, handleThemeChange, handleVocabularySourceChange, setCustomWords]);
+
+  const canGoNext = () => {
+    switch (activeTab) {
+      case 'language': return !!tempConfig.language;
+      case 'curriculum': return !!tempConfig.curriculumLevel;
+      case 'category':
+        if (vocabularySource === 'custom') {
+          return !!customWords.trim();
+        }
+        return !!tempConfig.categoryId && (!currentCategory?.subcategories || currentCategory.subcategories.length === 0 || !!tempConfig.subcategoryId);
+      case 'theme': return true;
+      default: return false;
     }
   };
 
@@ -358,6 +502,7 @@ export default function InGameConfigPanel({
                 <button
                   onClick={onClose}
                   className="p-1.5 bg-white/20 hover:bg-white/30 rounded-xl transition-colors backdrop-blur-sm"
+                  aria-label="Close settings panel"
                 >
                   <X className="h-4 w-4 text-white" />
                 </button>
@@ -368,14 +513,13 @@ export default function InGameConfigPanel({
             <div className="flex bg-gray-50 border-b border-gray-100 p-2">
               {tabs.map((tab) => {
                 const TabIcon = tab.icon;
-                // Updated isDisabled logic to safely check currentCategory
-                const isDisabled = (tab.id === 'category' && (!tempConfig.language || !tempConfig.curriculumLevel)) ||
-                                   (tab.id === 'theme' && (!tempConfig.language || !tempConfig.curriculumLevel || !tempConfig.categoryId || (currentCategory && currentCategory.subcategories && currentCategory.subcategories.length > 0 && !tempConfig.subcategoryId)));
+                const isDisabled = (tab.id === 'curriculum' && !tempConfig.language) ||
+                                   (tab.id === 'category' && (!tempConfig.language || !tempConfig.curriculumLevel)) ||
+                                   (tab.id === 'theme' && (!tempConfig.language || !tempConfig.curriculumLevel || !tempConfig.categoryId));
                 return (
                   <button
                     key={tab.id}
-                    // Type assertion added here to resolve TypeScript error
-                    onClick={() => setActiveTab(tab.id as 'language' | 'curriculum' | 'category' | 'theme')}
+                    onClick={() => setActiveTab(tab.id as any)}
                     disabled={isDisabled}
                     className={`flex-1 flex items-center justify-center py-2 px-1 text-sm font-medium rounded-lg transition-all duration-200 focus:outline-none
                       ${activeTab === tab.id
@@ -392,30 +536,53 @@ export default function InGameConfigPanel({
               })}
             </div>
 
-            {/* Content - Tabbed */}
+            {/* Content & Action Buttons - Updated */}
             <div className="p-6 overflow-y-auto flex-grow custom-scrollbar">
               {renderTabContent()}
             </div>
-
-            {/* Footer */}
+            
+            {/* Footer with Navigation & Apply */}
             <div className="flex items-center justify-between p-5 border-t border-gray-100 bg-gradient-to-r from-gray-50 to-white rounded-b-3xl">
-              <button
-                onClick={onClose}
-                className="px-5 py-2.5 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-xl transition-all duration-200 font-medium text-sm"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleApplyChanges}
-                disabled={!canApply || loading}
-                className={`px-7 py-2.5 rounded-xl font-semibold transition-all duration-200 text-sm ${
-                  canApply && !loading
-                    ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700 shadow-lg hover:shadow-xl transform hover:scale-105'
-                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                }`}
-              >
-                {loading ? 'Loading...' : 'Apply Changes'}
-              </button>
+                {activeTab !== 'language' && (
+                    <button
+                        onClick={() => setActiveTab(getPrevTab(activeTab) as any)}
+                        className="flex items-center px-4 py-2.5 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-xl transition-all duration-200 font-medium text-sm"
+                    >
+                        <ArrowLeft className="h-4 w-4 mr-2" />
+                        Back
+                    </button>
+                )}
+                {activeTab === 'language' && (
+                  <button
+                    onClick={onClose}
+                    className="px-5 py-2.5 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-xl transition-all duration-200 font-medium text-sm"
+                  >
+                    Cancel
+                  </button>
+                )}
+                
+                {activeTab !== tabs[tabs.length - 1].id && canGoNext() && (
+                    <button
+                        onClick={() => setActiveTab(getNextTab(activeTab) as any)}
+                        className="flex items-center px-4 py-2.5 ml-auto rounded-xl font-semibold transition-all duration-200 text-sm bg-indigo-500 text-white hover:bg-indigo-600"
+                    >
+                        Next
+                        <ArrowRight className="h-4 w-4 ml-2" />
+                    </button>
+                )}
+                {activeTab === tabs[tabs.length - 1].id && (
+                    <button
+                        onClick={handleApplyChanges}
+                        disabled={!canApply || loading}
+                        className={`px-7 py-2.5 ml-auto rounded-xl font-semibold transition-all duration-200 text-sm ${
+                            canApply && !loading
+                                ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700 shadow-lg hover:shadow-xl transform hover:scale-105'
+                                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        }`}
+                    >
+                        {loading ? 'Loading...' : 'Apply Changes'}
+                    </button>
+                )}
             </div>
           </motion.div>
         </motion.div>

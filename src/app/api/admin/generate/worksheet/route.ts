@@ -263,13 +263,13 @@ Structure:
     let completion;
     try {
       completion = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
+        model: 'gpt-4.1-nano',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: `Generate the worksheet now. Follow the exact structure specified. Return ONLY valid JSON with no additional text or explanations.` }
         ],
-        temperature: 0.7,
-        max_tokens: 15000
+
+        max_completion_tokens: 20000
       });
     } catch (apiError: any) {
       console.error('OpenAI API Error Details:', {

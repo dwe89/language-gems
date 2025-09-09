@@ -1591,6 +1591,7 @@ function ImprovedSentenceTowersGame({
           <button
             onClick={() => setShowSettings(!showSettings)}
             className="p-2 md:p-3 bg-black/30 hover:bg-black/50 rounded-xl backdrop-blur-md border border-white/20 transition-all duration-300"
+            title="Game Settings"
           >
             <Settings className="h-4 w-4 md:h-5 md:w-5 text-white" />
           </button>
@@ -1598,9 +1599,10 @@ function ImprovedSentenceTowersGame({
           <button
             onClick={handleOpenConfigPanel}
             className="p-2 md:p-3 bg-black/30 hover:bg-black/50 rounded-xl backdrop-blur-md border border-white/20 transition-all duration-300"
-            title="Game Configuration"
+            title="Change Language, Level, Topic & Theme"
           >
-            ⚙️
+            <span className="text-sm md:text-base">🎯</span>
+            <span className="hidden md:inline ml-2">Game Config</span>
           </button>
         </div>
       </div>

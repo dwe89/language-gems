@@ -8,6 +8,7 @@ interface AssignmentModeHandlerProps {
   mode: string | null;
   userId: string;
   gameId: string;
+  searchParams?: any; // URL search params for reading category/subcategory
   children: (props: {
     isAssignmentMode: boolean;
     settings: any;
@@ -21,6 +22,7 @@ export default function AssignmentModeHandler({
   mode,
   userId,
   gameId,
+  searchParams,
   children
 }: AssignmentModeHandlerProps) {
   const [loading, setLoading] = useState(false);
@@ -61,15 +63,17 @@ export default function AssignmentModeHandler({
           setLoading(false);
         });
     } else {
-      // Not assignment mode, provide default settings
-      console.log('🎯 [ASSIGNMENT HANDLER] Not assignment mode, using default settings');
+      // Not assignment mode, use URL parameters if available, otherwise default settings
+      console.log('🎯 [ASSIGNMENT HANDLER] Not assignment mode, using URL settings');
       setSettings({
-        language: 'spanish',
-        category: 'basics_core_language',
-        subcategory: 'greetings_introductions',
-        curriculumLevel: 'KS3',
-        difficulty: 'medium',
-        theme: 'classic',
+        language: searchParams?.get('lang') === 'es' ? 'spanish' : 
+                  searchParams?.get('lang') === 'fr' ? 'french' :
+                  searchParams?.get('lang') === 'de' ? 'german' : 'spanish',
+        category: searchParams?.get('cat') || 'basics_core_language',
+        subcategory: searchParams?.get('subcat') || 'greetings_introductions',
+        curriculumLevel: searchParams?.get('level') || 'KS3',
+        difficulty: searchParams?.get('difficulty') || 'medium',
+        theme: searchParams?.get('theme') || 'classic',
         timeLimit: 120
       });
       setLoading(false);

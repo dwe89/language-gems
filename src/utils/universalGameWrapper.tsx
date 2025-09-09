@@ -38,17 +38,30 @@ export default function UniversalGameWrapper({
     timestamp: new Date().toISOString()
   });
 
-  // If no user, provide default settings
+  // If no user, provide default settings (but read from URL params if available)
   if (!user) {
     const defaultSettings = {
-      language: 'spanish',
-      category: 'basics_core_language',
-      subcategory: 'greetings_introductions',
-      curriculumLevel: 'KS3',
-      difficulty: 'medium',
-      theme: 'classic',
+      language: searchParams?.get('lang') === 'es' ? 'spanish' : 
+                searchParams?.get('lang') === 'fr' ? 'french' :
+                searchParams?.get('lang') === 'de' ? 'german' : 'spanish',
+      category: searchParams?.get('cat') || 'basics_core_language',
+      subcategory: searchParams?.get('subcat') || 'greetings_introductions',
+      curriculumLevel: searchParams?.get('level') || 'KS3',
+      difficulty: searchParams?.get('difficulty') || 'medium',
+      theme: searchParams?.get('theme') || 'classic',
       timeLimit: 120
     };
+
+    console.log(`🎯 [${gameId}] Default settings from URL:`, {
+      urlParams: {
+        lang: searchParams?.get('lang'),
+        cat: searchParams?.get('cat'),
+        subcat: searchParams?.get('subcat'),
+        level: searchParams?.get('level'),
+        theme: searchParams?.get('theme')
+      },
+      finalSettings: defaultSettings
+    });
 
     return (
       <>
@@ -69,6 +82,7 @@ export default function UniversalGameWrapper({
       mode={mode}
       userId={user.id}
       gameId={gameId}
+      searchParams={searchParams}
     >
       {({ isAssignmentMode, settings, loading, error }) => {
         console.log(`🎯 [${gameId}] Assignment handler result:`, {

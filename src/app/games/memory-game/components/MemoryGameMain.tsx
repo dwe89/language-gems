@@ -417,10 +417,35 @@ export default function MemoryGameMain({
     let totalPairs = 0;
     let wordPairs: any[] = [];
     
-    // Determine number of pairs based on difficulty or custom words
+    // First determine number of pairs based on difficulty
+    switch (currentDifficulty) {
+      case 'easy-1':
+        totalPairs = 3;
+        break;
+      case 'easy-2':
+        totalPairs = 4;
+        break;
+      case 'medium-1':
+        totalPairs = 5;
+        break;
+      case 'medium-2':
+        totalPairs = 6;
+        break;
+      case 'hard-2':
+        totalPairs = 8;
+        break;
+      case 'expert':
+        totalPairs = 10;
+        break;
+      default:
+        totalPairs = 6; // Default to medium
+        break;
+    }
+
+    // Then check for custom words and limit them to the determined pairs
     if (currentCustomWords && currentCustomWords.length > 0) {
-      // Use all custom words (preserve vocabulary ID for FSRS tracking)
-      wordPairs = currentCustomWords.map(pair => {
+      // Transform custom words and limit to totalPairs (preserve vocabulary ID for FSRS tracking)
+      const transformedWords = currentCustomWords.map(pair => {
         if (pair.type === 'image') {
           return {
             term: pair.term,
@@ -440,33 +465,9 @@ export default function MemoryGameMain({
         }
       });
 
-      totalPairs = wordPairs.length;
+      // Limit to the determined number of pairs
+      wordPairs = transformedWords.slice(0, totalPairs);
     } else {
-      // Determine number of pairs based on difficulty
-      switch (currentDifficulty) {
-        case 'easy-1':
-          totalPairs = 3;
-          break;
-        case 'easy-2':
-          totalPairs = 4;
-          break;
-        case 'medium-1':
-          totalPairs = 5;
-          break;
-        case 'medium-2':
-          totalPairs = 6;
-          break;
-        case 'hard-2':
-          totalPairs = 8;
-          break;
-        case 'expert':
-          totalPairs = 10;
-          break;
-        default:
-          totalPairs = 6; // Default to medium
-          break;
-      }
-
       // Priority 1: Use provided vocabulary (for assignment mode)
       console.log('Memory Game - providedVocabulary:', providedVocabulary?.length || 0, 'items');
       if (providedVocabulary && providedVocabulary.length > 0) {
@@ -1023,8 +1024,13 @@ export default function MemoryGameMain({
               </div>
             </div>
             {onOpenSettings && (
-              <button onClick={onOpenSettings} className="nav-btn">
+              <button
+                onClick={onOpenSettings}
+                className="nav-btn"
+                title="Change Language, Level, Topic & Theme"
+              >
                 <i className="fas fa-cog"></i>
+                <span className="hidden md:inline ml-2">Game Settings</span>
               </button>
             )}
             <button onClick={toggleFullscreen} className="nav-btn">

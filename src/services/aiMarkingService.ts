@@ -82,10 +82,10 @@ Format your response as JSON:
 
     try {
       const completion = await openai.chat.completions.create({
-        model: "gpt-4.1-nano-2025-04-14",
+        model: "gpt-5-nano",
         messages: [{ role: "user", content: prompt }],
-        temperature: 0.3,
-        max_tokens: 1000
+
+        max_completion_tokens: 1000
       });
 
       const result = JSON.parse(completion.choices[0].message.content || '{}');
@@ -164,10 +164,10 @@ Format as JSON:
 
     try {
       const completion = await openai.chat.completions.create({
-        model: "gpt-4.1-nano-2025-04-14",
+        model: "gpt-5-nano",
         messages: [{ role: "user", content: prompt }],
-        temperature: 0.3,
-        max_tokens: 1200
+
+        max_completion_tokens: 1200
       });
 
       const result = JSON.parse(completion.choices[0].message.content || '{}');
@@ -285,10 +285,10 @@ Format as JSON:
 
     try {
       const completion = await openai.chat.completions.create({
-        model: "gpt-4.1-nano-2025-04-14",
+        model: "gpt-5-nano",
         messages: [{ role: "user", content: prompt }],
-        temperature: 0.3,
-        max_tokens: 1500
+
+        max_completion_tokens: 1500
       });
 
       const result = JSON.parse(completion.choices[0].message.content || '{}');
@@ -345,10 +345,10 @@ Format as JSON:
 
     try {
       const completion = await openai.chat.completions.create({
-        model: "gpt-4.1-nano-2025-04-14",
+        model: "gpt-5-nano",
         messages: [{ role: "user", content: prompt }],
-        temperature: 0.3,
-        max_tokens: 800
+
+        max_completion_tokens: 800
       });
 
       const result = JSON.parse(completion.choices[0].message.content || '{}');

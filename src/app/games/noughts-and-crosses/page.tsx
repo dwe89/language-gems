@@ -117,7 +117,9 @@ export default function UnifiedNoughtsAndCrossesPage() {
           examBoard: settings.examBoard,
           tier: settings.tier,
           theme: settings.theme || 'classic',
-          timeLimit: settings.timeLimit || 120
+          timeLimit: settings.timeLimit || 120,
+          playerMark: 'X',
+          computerMark: 'O'
         };
 
         return (

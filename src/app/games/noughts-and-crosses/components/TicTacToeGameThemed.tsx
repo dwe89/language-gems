@@ -716,12 +716,22 @@ export default function TicTacToeGame({
   };
 
   const handleVocabAnswer = async (selectedIndex: number) => {
+    console.log('🎯 [VOCAB ANSWER] Starting handleVocabAnswer', {
+      selectedIndex,
+      correctIndex: currentQuestion?.correctIndex,
+      pendingMove,
+      currentPlayer,
+      gameState
+    });
+    
     setShowVocabQuestion(false);
 
     if (!currentQuestion || pendingMove === null) return;
 
     const isCorrect = selectedIndex === currentQuestion.correctIndex;
     const responseTime = (Date.now() - questionStartTime) / 1000;
+
+    console.log('🎯 [VOCAB ANSWER] Answer result:', { isCorrect, responseTime });
 
     // Record word practice with FSRS system (for both assignment and free play modes)
     // BUT ONLY if this is NOT a retry question to avoid double recording
@@ -763,7 +773,8 @@ export default function TicTacToeGame({
           try {
             const sessionService = new EnhancedGameSessionService();
             // Record gem with minimal processing - skip FSRS to avoid delays
-            const gemEvent = await sessionService.recordWordAttempt(gameSessionId, 'noughts-and-crosses', {
+            // Don't await - let this run in background to avoid blocking UI
+            sessionService.recordWordAttempt(gameSessionId, 'noughts-and-crosses', {
               vocabularyId: vocabularyId,
               wordText: currentQuestion.word,
               translationText: currentQuestion.translation,
@@ -775,11 +786,14 @@ export default function TicTacToeGame({
               maxGemRarity: 'common',
               gameMode: 'multiple_choice',
               difficultyLevel: 'beginner'
-            }, true); // Skip FSRS = true for speed
-
-            if (gemEvent) {
-              console.log(`✅ [FAST] Gem awarded: ${gemEvent.rarity} (${gemEvent.xpValue} XP)`);
-            }
+            }, true).then(gemEvent => {
+              if (gemEvent) {
+                console.log(`✅ [FAST] Gem awarded: ${gemEvent.rarity} (${gemEvent.xpValue} XP)`);
+              }
+              console.log('🚀 [FAST] Lightweight vocabulary tracking completed');
+            }).catch(error => {
+              console.error('🚀 [FAST] Gem recording failed:', error);
+            }); // Skip FSRS = true for speed
           } catch (error) {
             console.error('🚀 [FAST] Gem recording failed:', error);
           }
@@ -793,11 +807,10 @@ export default function TicTacToeGame({
 
     // 🚀 FAST VOCABULARY TRACKING: Lightweight tracking without heavy analytics
     if (gameService && gameSessionId && !(currentQuestion as any).isRetryQuestion && !isAssignmentMode) {
-      try {
-        // Only do essential word performance logging - skip complex analytics
-        await gameService.logWordPerformance({
+      // Only do essential word performance logging - skip complex analytics (non-blocking)
+      gameService.logWordPerformance({
           session_id: gameSessionId,
-          vocabulary_id: currentQuestion.id ? parseInt(currentQuestion.id) : undefined,
+          vocabulary_id: currentQuestion.id ? currentQuestion.id : undefined,
           word_text: currentQuestion.word,
           translation_text: currentQuestion.translation,
           language_pair: `${settings.language === 'spanish' ? 'es' : settings.language === 'french' ? 'fr' : 'en'}_english`,
@@ -820,11 +833,11 @@ export default function TicTacToeGame({
             correctAnswers: correctAnswers + (isCorrect ? 1 : 0)
           },
           timestamp: new Date()
+        }).then(() => {
+          console.log('🚀 [FAST] Lightweight vocabulary tracking completed');
+        }).catch(error => {
+          console.error('🚀 [FAST] Vocabulary tracking failed:', error);
         });
-        console.log('🚀 [FAST] Lightweight vocabulary tracking completed');
-      } catch (error) {
-        console.error('🚀 [FAST] Vocabulary tracking failed:', error);
-      }
     }
 
     // 🔮 CRITICAL FIX: FSRS and Gem Recording are SEPARATE systems!
@@ -859,13 +872,17 @@ export default function TicTacToeGame({
         }, 300);
       }
       
+      console.log('🎯 [VOCAB ANSWER] Correct answer - calling makeMove');
       makeMove(pendingMove);
     } else {
       // Play wrong answer sound
       playSFX('wrong-answer');
       
+      console.log('🎯 [VOCAB ANSWER] Wrong answer - checking difficulty');
+      
       // Wrong answer - computer gets a turn or player tries again depending on difficulty
       if (settings.difficulty === 'beginner') {
+        console.log('🎯 [VOCAB ANSWER] Beginner mode - giving another chance');
         // Give player another chance on beginner - but mark it as a retry question
         const newQuestion = generateVocabularyQuestion();
         if (newQuestion) {
@@ -879,15 +896,24 @@ export default function TicTacToeGame({
         return;
       } else {
         // Computer gets to make a move
+        console.log('🎯 [VOCAB ANSWER] Wrong answer - computer makes move');
         makeComputerMove();
       }
     }
     
+    console.log('🎯 [VOCAB ANSWER] Cleaning up question state');
     setPendingMove(null);
     setCurrentQuestion(null);
   };
 
   const makeMove = (index: number) => {
+    console.log('🎯 [MAKE MOVE] Starting makeMove', {
+      index,
+      currentPlayer,
+      gameState,
+      board: board.slice()
+    });
+
     const newBoard = [...board];
     newBoard[index] = currentPlayer;
     setBoard(newBoard);
@@ -896,10 +922,23 @@ export default function TicTacToeGame({
     if (result.winner) {
       handleGameEnd(result.winner, result.line);
     } else {
+      // Check if we need to make computer move BEFORE switching currentPlayer
+      const wasPlayerX = currentPlayer === 'X';
       setCurrentPlayer(currentPlayer === 'X' ? 'O' : 'X');
-      if (currentPlayer === 'X') {
+      
+      console.log('🎯 [MAKE MOVE] After player move', {
+        wasPlayerX,
+        newCurrentPlayer: currentPlayer === 'X' ? 'O' : 'X',
+        shouldMakeComputerMove: wasPlayerX
+      });
+      
+      if (wasPlayerX) {
         // After player's move, computer moves
-        setTimeout(() => makeComputerMove(newBoard), 1000);
+        console.log('🎯 [MAKE MOVE] Scheduling computer move in 1 second');
+        setTimeout(() => {
+          console.log('🎯 [MAKE MOVE] Timeout fired - calling makeComputerMove');
+          makeComputerMove(newBoard);
+        }, 1000);
       }
     }
   };
@@ -1062,11 +1101,25 @@ export default function TicTacToeGame({
   };
 
   const makeComputerMove = (currentBoard = board) => {
+    console.log('🤖 [COMPUTER MOVE] Starting computer move', {
+      currentBoard,
+      boardLength: currentBoard.length,
+      gameState,
+      currentPlayer,
+      computerMark: settings.computerMark,
+      playerMark: settings.playerMark
+    });
+
     const availableCells = currentBoard
       .map((cell, index) => cell === null ? index : null)
       .filter(val => val !== null) as number[];
     
-    if (availableCells.length === 0) return;
+    console.log('🤖 [COMPUTER MOVE] Available cells:', availableCells);
+    
+    if (availableCells.length === 0) {
+      console.log('🤖 [COMPUTER MOVE] No available cells, returning');
+      return;
+    }
     
     const computerMark = settings.computerMark as 'X' | 'O';
     let bestMove: number;
@@ -1094,6 +1147,12 @@ export default function TicTacToeGame({
       }
     }
     
+    console.log('🤖 [COMPUTER MOVE] Selected move:', {
+      bestMove,
+      computerMark,
+      difficulty: settings.difficulty
+    });
+    
     const newBoard = [...currentBoard];
     newBoard[bestMove] = computerMark;
     setBoard(newBoard);
@@ -1104,6 +1163,12 @@ export default function TicTacToeGame({
     } else {
       setCurrentPlayer('X');
     }
+    
+    console.log('🤖 [COMPUTER MOVE] Move completed', {
+      newBoard,
+      result,
+      newCurrentPlayer: 'X'
+    });
   };
 
   const handleGameEnd = (gameWinner: 'X' | 'O' | 'tie', line: number[]) => {

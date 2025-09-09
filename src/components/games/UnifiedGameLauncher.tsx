@@ -37,6 +37,14 @@ export interface UnifiedGameLauncherProps {
   requiresAudio?: boolean;
   supportsThemes?: boolean;
   defaultTheme?: string;
+  gameCompatibility?: {
+    supportsVocabulary: boolean;
+    supportsSentences: boolean;
+    supportsMixed: boolean;
+    minItems?: number;
+    maxItems?: number;
+  };
+  preferredContentType?: 'vocabulary' | 'sentences' | 'mixed';
 }
 
 /**
@@ -60,7 +68,9 @@ export default function UnifiedGameLauncher({
   customVocabulary,
   requiresAudio = false,
   supportsThemes = false,
-  defaultTheme = 'default'
+  defaultTheme = 'default',
+  gameCompatibility,
+  preferredContentType = 'vocabulary'
 }: UnifiedGameLauncherProps) {
   const searchParams = useSearchParams();
   const { user, isLoading, isDemo } = useUnifiedAuth();
@@ -86,6 +96,11 @@ export default function UnifiedGameLauncher({
     if (!isClient) return;
     const checkUrlParams = async () => {
       if (urlParamsChecked || selectedConfig || !searchParams) {
+        console.log(`🔍 [UnifiedGameLauncher - ${gameName}] URL params check skipped:`, {
+          urlParamsChecked,
+          hasSelectedConfig: !!selectedConfig,
+          hasSearchParams: !!searchParams
+        });
         return;
       }
 
@@ -99,7 +114,13 @@ export default function UnifiedGameLauncher({
       const examBoard = searchParams?.get('examBoard') as 'AQA' | 'edexcel';
       const tier = searchParams?.get('tier') as 'foundation' | 'higher';
 
+      console.log(`📋 [UnifiedGameLauncher - ${gameName}] URL Parameters:`, { 
+        lang, level, cat, subcat, theme, examBoard, tier 
+      });
+
       if (lang && level && cat && subcat) {
+        console.log(`✅ [UnifiedGameLauncher - ${gameName}] Found URL parameters, auto-starting game...`);
+        
         const config: UnifiedSelectionConfig = {
           language: lang,
           curriculumLevel: level,
@@ -111,9 +132,13 @@ export default function UnifiedGameLauncher({
           tier: tier || undefined
         };
 
+        console.log(`🚀 [UnifiedGameLauncher - ${gameName}] Auto-completing selection:`, config);
+        
         setSelectedConfig(config);
         setSelectedTheme(theme);
         setShowSelector(false);
+      } else {
+        console.log(`❌ [UnifiedGameLauncher - ${gameName}] Missing required URL parameters:`, { lang, level, cat, subcat });
       }
 
       setUrlParamsChecked(true);
@@ -139,12 +164,27 @@ export default function UnifiedGameLauncher({
 
   // Auto-start game when vocabulary is loaded from URL parameters
   useEffect(() => {
+    console.log(`🔄 [UnifiedGameLauncher - ${gameName}] Auto-start check:`, {
+      hasSelectedConfig: !!selectedConfig,
+      showSelector,
+      vocabularyCount: vocabulary.length,
+      loading,
+      error: !!error,
+      urlParamsChecked,
+      minVocabularyRequired
+    });
+
     if (selectedConfig && !showSelector && vocabulary.length > 0 && !loading && !error && urlParamsChecked) {
       // Validate vocabulary
       const validation = validateVocabularyForGame(vocabulary, minVocabularyRequired);
+      console.log(`🎯 [UnifiedGameLauncher - ${gameName}] Vocabulary validation:`, validation);
+      
       if (validation.isValid) {
+        console.log(`🚀 [UnifiedGameLauncher - ${gameName}] Auto-starting game with ${vocabulary.length} vocabulary items!`);
         // Auto-start the game
         onGameStart(selectedConfig, vocabulary, supportsThemes ? selectedTheme : undefined);
+      } else {
+        console.log(`❌ [UnifiedGameLauncher - ${gameName}] Vocabulary validation failed:`, validation.error);
       }
     }
   }, [selectedConfig, showSelector, vocabulary, loading, error, urlParamsChecked, gameName, minVocabularyRequired, onGameStart, supportsThemes, selectedTheme]);
@@ -209,7 +249,9 @@ export default function UnifiedGameLauncher({
         onSelectionComplete={handleSelectionComplete}
         onBack={onBack}
         title={gameDescription ? `${gameName} - ${gameDescription}` : undefined}
-  presetConfig={selectedConfig || undefined}
+        presetConfig={selectedConfig || undefined}
+        gameCompatibility={gameCompatibility}
+        preferredContentType={preferredContentType}
       />
     );
   }

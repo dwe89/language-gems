@@ -1316,9 +1316,11 @@ const GemSpeedBuilderInternal: React.FC<{
                 <button
                   onClick={onOpenSettings}
                   className="px-3 py-2 bg-white/10 hover:bg-white/20 rounded-lg border border-white/20 text-white transition-all"
-                  title="Settings"
+                  title="Change Language, Level, Topic & Theme"
                 >
-                  ⚙️
+                  <span className="text-sm mr-2">🎯</span>
+                  <span className="hidden md:inline">Game Settings</span>
+                  <span className="md:hidden">⚙️</span>
                 </button>
               )}
             </div>

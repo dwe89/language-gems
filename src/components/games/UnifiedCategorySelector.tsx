@@ -31,9 +31,14 @@ import {
   Calendar, // Could be used for Dates & Time categories if icons were in those
   Clipboard, // For Basics & Core Language
   User, // For Identity & Personal Life
-  Stethoscope // For Health & Lifestyle
+  Stethoscope, // For Health & Lifestyle
+  Pencil,
+  Folder,
+  Check
 } from 'lucide-react';
 import { useDemoAuth } from '../auth/DemoAuthProvider';
+import { VOCABULARY_CATEGORIES as KS3_CATEGORIES } from './ModernCategorySelector';
+import { KS4_VOCABULARY_CATEGORIES as KS4_CATEGORIES } from './KS4CategorySystem';
 
 // Types
 export interface UnifiedSelectionConfig {
@@ -42,9 +47,21 @@ export interface UnifiedSelectionConfig {
   categoryId: string;
   subcategoryId?: string;
   customMode?: boolean;
+  customContentType?: 'vocabulary' | 'sentences' | 'mixed';
+  customVocabulary?: CustomVocabularyItem[];
+  customListId?: string;
   // KS4-specific fields
   examBoard?: 'AQA' | 'edexcel';
   tier?: 'foundation' | 'higher';
+}
+
+export interface CustomVocabularyItem {
+  id: string;
+  term: string;
+  translation: string;
+  part_of_speech?: string;
+  context_sentence?: string;
+  context_translation?: string;
 }
 
 export interface UnifiedCategorySelectorProps {
@@ -55,6 +72,14 @@ export interface UnifiedCategorySelectorProps {
   showCustomMode?: boolean;
   title?: string;
   presetConfig?: UnifiedSelectionConfig;
+  preferredContentType?: 'vocabulary' | 'sentences' | 'mixed';
+  gameCompatibility?: {
+    supportsVocabulary: boolean;
+    supportsSentences: boolean;
+    supportsMixed: boolean;
+    minItems?: number;
+    maxItems?: number;
+  };
 }
 
 // Language options with country flags
@@ -151,8 +176,6 @@ export interface Subcategory {
 // If ModernCategorySelector.ts also uses the old string for icon,
 // you'll need to update that file with Lucide icons (as previously discussed)
 // and its Category interface.
-import { VOCABULARY_CATEGORIES as KS3_CATEGORIES } from './ModernCategorySelector';
-import { KS4_VOCABULARY_CATEGORIES as KS4_CATEGORIES } from './KS4CategorySystem';
 
 
 // Get categories based on curriculum level
@@ -170,14 +193,22 @@ export default function UnifiedCategorySelector({
   supportedLanguages = ['es', 'fr', 'de'],
   showCustomMode = true,
   title,
-  presetConfig
+  presetConfig,
+  preferredContentType = 'vocabulary',
+  gameCompatibility
 }: UnifiedCategorySelectorProps) {
   const { isDemo } = useDemoAuth();
-  const [step, setStep] = useState<'language' | 'curriculum' | 'category' | 'subcategory'>('language');
+  const [step, setStep] = useState<'language' | 'curriculum' | 'category' | 'subcategory' | 'custom'>('language');
   const [selectedLanguage, setSelectedLanguage] = useState<string>('');
   const [selectedCurriculumLevel, setSelectedCurriculumLevel] = useState<'KS2' | 'KS3' | 'KS4' | 'KS5'>('KS3');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedSubcategory, setSelectedSubcategory] = useState<string>('');
+
+  // Custom mode state
+  const [customContentType, setCustomContentType] = useState<'vocabulary' | 'sentences' | 'mixed'>(preferredContentType);
+  const [customVocabulary, setCustomVocabulary] = useState<CustomVocabularyItem[]>([]);
+  const [customInput, setCustomInput] = useState<string>('');
+  const [selectedCustomList, setSelectedCustomList] = useState<string>('');
 
   // Apply preset config if provided
   useEffect(() => {
@@ -260,13 +291,38 @@ export default function UnifiedCategorySelector({
   };
 
   const handleCustomMode = () => {
-    // For custom mode, we'll skip the vocabulary loading step
-    // and let the game handle custom vocabulary input
+    // Navigate to custom input step instead of completing immediately
+    setSelectedCategory('custom');
+    setStep('custom');
+  };
+
+  const handleCustomComplete = () => {
+    // Parse custom input if provided
+    let parsedVocabulary: CustomVocabularyItem[] = [];
+
+    if (customInput.trim()) {
+      const lines = customInput.trim().split('\n').filter(line => line.trim());
+      parsedVocabulary = lines.map((line, index) => {
+        const parts = line.split(/[-,\t]/).map(s => s.trim());
+        return {
+          id: `custom-${index}`,
+          term: parts[0] || line,
+          translation: parts[1] || '',
+          part_of_speech: parts[2] || undefined,
+          context_sentence: parts[3] || undefined,
+          context_translation: parts[4] || undefined
+        };
+      });
+    }
+
     onSelectionComplete({
       language: selectedLanguage,
       curriculumLevel: selectedCurriculumLevel,
       categoryId: 'custom',
-      customMode: true
+      customMode: true,
+      customContentType,
+      customVocabulary: parsedVocabulary.length > 0 ? parsedVocabulary : customVocabulary,
+      customListId: selectedCustomList || undefined
     });
   };
 
@@ -281,6 +337,10 @@ export default function UnifiedCategorySelector({
         setSelectedCurriculumLevel('KS3'); // Default back to KS3
         break;
       case 'subcategory':
+        setStep('category');
+        setSelectedCategory('');
+        break;
+      case 'custom':
         setStep('category');
         setSelectedCategory('');
         break;
@@ -324,9 +384,10 @@ export default function UnifiedCategorySelector({
           {/* Progress Indicator */}
           <div className="flex items-center justify-center mb-8">
             <div className="flex items-center space-x-4">
-              {['language', 'curriculum', 'category', 'subcategory'].map((stepName, index) => {
+              {['language', 'curriculum', 'category', step === 'custom' ? 'custom' : 'subcategory'].map((stepName, index) => {
                 const isActive = step === stepName;
-                const isCompleted = ['language', 'curriculum', 'category', 'subcategory'].indexOf(step) > index;
+                const stepOrder = ['language', 'curriculum', 'category', step === 'custom' ? 'custom' : 'subcategory'];
+                const isCompleted = stepOrder.indexOf(step) > index;
 
                 return (
                   <React.Fragment key={stepName}>
@@ -337,7 +398,7 @@ export default function UnifiedCategorySelector({
                           ? 'bg-green-500 text-white'
                           : 'bg-white/20 text-white/60'
                     }`}>
-                      {isCompleted ? '✓' : index + 1}
+                      {isCompleted ? <Check className="h-4 w-4" /> : stepName === 'custom' ? <Pencil className="h-4 w-4" /> : index + 1}
                     </div>
                     {index < 3 && (
                       <div className={`w-8 h-0.5 transition-all ${
@@ -382,6 +443,20 @@ export default function UnifiedCategorySelector({
                 onSelect={handleSubcategorySelect}
               />
             )}
+
+            {step === 'custom' && (
+              <CustomContentSelection
+                contentType={customContentType}
+                onContentTypeChange={setCustomContentType}
+                customInput={customInput}
+                onCustomInputChange={setCustomInput}
+                selectedCustomList={selectedCustomList}
+                onCustomListChange={setSelectedCustomList}
+                onComplete={handleCustomComplete}
+                gameCompatibility={gameCompatibility}
+                language={selectedLanguage}
+              />
+            )}
           </AnimatePresence>
         </div>
       </div>
@@ -402,13 +477,7 @@ const LanguageSelection: React.FC<{
     className="space-y-6"
   >
     <div className="text-center mb-8">
-      <div className="flex justify-center space-x-2 mb-4">
-        <ReactCountryFlag countryCode="ES" svg style={{ width: '1.5rem', height: '1.5rem' }} className="rounded-sm" />
-        <ReactCountryFlag countryCode="FR" svg style={{ width: '1.5rem', height: '1.5rem' }} className="rounded-sm" />
-        <ReactCountryFlag countryCode="DE" svg style={{ width: '1.5rem', height: '1.5rem' }} className="rounded-sm" />
-      </div>
       <h2 className="text-2xl font-bold text-white mb-2">Choose Your Language</h2>
-      <p className="text-white/80">Select the language you want to practice</p>
     </div>
 
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
@@ -587,21 +656,23 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({ categories, onSel
           onClick={onCustomMode}
           whileHover={{ scale: 1.02, y: -4 }}
           whileTap={{ scale: 0.98 }}
-          className="bg-gradient-to-br from-gray-600 to-gray-800 rounded-2xl p-6 text-white shadow-lg hover:shadow-xl transition-all duration-300 group relative overflow-hidden"
+          className="bg-gradient-to-br from-purple-600 to-indigo-700 rounded-2xl p-6 text-white shadow-lg hover:shadow-xl transition-all duration-300 group relative overflow-hidden border-2 border-purple-400/50"
         >
           <div className="relative z-10">
-            {/* FIX IS HERE: Render the Sparkles icon for custom mode */}
-            <Sparkles className="h-8 w-8 text-white mb-4" />
-            <h3 className="text-lg font-bold mb-2 text-left">Custom Vocabulary</h3>
+            <Pencil className="h-8 w-8 mb-3 mx-auto" />
+            <h3 className="text-lg font-bold mb-2 text-left">Custom Content</h3>
             <p className="text-white/90 text-sm text-left mb-3">
-              Create your own vocabulary list
+              Create your own vocabulary or sentences
             </p>
             <div className="flex items-center justify-between">
-              <span className="text-white/70 text-xs">Your words</span>
+              <span className="text-purple-200 text-xs font-medium">Personalized</span>
               <ArrowRight className="h-4 w-4 text-white/80 group-hover:text-white transition-colors" />
             </div>
           </div>
-          <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <div className="absolute top-2 right-2">
+            <Sparkles className="h-5 w-5 text-purple-200 animate-pulse" />
+          </div>
         </motion.button>
       )}
     </div>
@@ -655,6 +726,227 @@ const SubcategorySelection: React.FC<{
             <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           </motion.button>
         ))}
+      </div>
+    </motion.div>
+  );
+};
+
+// Custom Content Selection Component
+const CustomContentSelection: React.FC<{
+  contentType: 'vocabulary' | 'sentences' | 'mixed';
+  onContentTypeChange: (type: 'vocabulary' | 'sentences' | 'mixed') => void;
+  customInput: string;
+  onCustomInputChange: (input: string) => void;
+  selectedCustomList: string;
+  onCustomListChange: (listId: string) => void;
+  onComplete: () => void;
+  gameCompatibility?: {
+    supportsVocabulary: boolean;
+    supportsSentences: boolean;
+    supportsMixed: boolean;
+    minItems?: number;
+    maxItems?: number;
+  };
+  language: string;
+}> = ({
+  contentType,
+  onContentTypeChange,
+  customInput,
+  onCustomInputChange,
+  selectedCustomList,
+  onCustomListChange,
+  onComplete,
+  gameCompatibility,
+  language
+}) => {
+  const [activeTab, setActiveTab] = useState<'input' | 'lists' | 'upload'>('input');
+
+  const getContentTypeIcon = (type: 'vocabulary' | 'sentences' | 'mixed') => {
+    switch (type) {
+      case 'vocabulary': return '📝';
+      case 'sentences': return '💬';
+      case 'mixed': return '🔀';
+    }
+  };
+
+  const getContentTypeDescription = (type: 'vocabulary' | 'sentences' | 'mixed') => {
+    switch (type) {
+      case 'vocabulary': return 'Individual words with translations';
+      case 'sentences': return 'Complete sentences for practice';
+      case 'mixed': return 'Combination of words and sentences';
+    }
+  };
+
+  const isContentTypeSupported = (type: 'vocabulary' | 'sentences' | 'mixed') => {
+    if (!gameCompatibility) return true;
+    switch (type) {
+      case 'vocabulary': return gameCompatibility.supportsVocabulary;
+      case 'sentences': return gameCompatibility.supportsSentences;
+      case 'mixed': return gameCompatibility.supportsMixed;
+    }
+  };
+
+  const getInputPlaceholder = () => {
+    switch (contentType) {
+      case 'vocabulary':
+        return `casa - house
+perro - dog
+gato - cat
+libro - book`;
+      case 'sentences':
+        return `Hola, ¿cómo estás? - Hello, how are you?
+Me gusta la pizza - I like pizza
+¿Dónde está el baño? - Where is the bathroom?`;
+      case 'mixed':
+        return `casa - house
+Hola, ¿cómo estás? - Hello, how are you?
+perro - dog
+Me gusta la pizza - I like pizza`;
+    }
+  };
+
+  const canComplete = customInput.trim().length > 0 || selectedCustomList;
+
+  return (
+    <motion.div
+      key="custom"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      className="space-y-6"
+    >
+      <div className="text-center">
+        <Pencil className="h-16 w-16 mb-4 mx-auto text-white" />
+        <h2 className="text-2xl font-bold text-white mb-2">Create Custom Content</h2>
+        <p className="text-white/80">
+          Add your own vocabulary or sentences for personalized practice
+        </p>
+      </div>
+
+      {/* Content Type Selection */}
+      <div className="max-w-2xl mx-auto">
+        <h3 className="text-lg font-semibold text-white mb-4 text-center">Content Type</h3>
+        <div className="grid grid-cols-3 gap-3">
+          {(['vocabulary', 'sentences', 'mixed'] as const).map((type) => {
+            const isSupported = isContentTypeSupported(type);
+            const isSelected = contentType === type;
+
+            return (
+              <button
+                key={type}
+                onClick={() => isSupported && onContentTypeChange(type)}
+                disabled={!isSupported}
+                className={`p-4 rounded-xl border-2 transition-all ${
+                  isSelected
+                    ? 'border-white bg-white/20 text-white'
+                    : isSupported
+                      ? 'border-white/30 bg-white/10 text-white/80 hover:border-white/50 hover:bg-white/15'
+                      : 'border-white/10 bg-white/5 text-white/40 cursor-not-allowed'
+                }`}
+              >
+                <div className="text-2xl mb-2">{getContentTypeIcon(type)}</div>
+                <div className="font-medium capitalize">{type}</div>
+                <div className="text-xs mt-1 opacity-80">
+                  {getContentTypeDescription(type)}
+                </div>
+                {!isSupported && (
+                  <div className="text-xs mt-1 text-red-300">Not supported</div>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Tab Selection */}
+      <div className="max-w-2xl mx-auto">
+        <div className="flex bg-white/10 rounded-lg p-1">
+          {[
+            { id: 'input', label: 'Quick Input', icon: Pencil },
+            { id: 'lists', label: 'My Collections', icon: BookOpen },
+            { id: 'upload', label: 'Upload File', icon: Folder }
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as any)}
+              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${
+                activeTab === tab.id
+                  ? 'bg-white text-purple-900'
+                  : 'text-white/80 hover:text-white hover:bg-white/10'
+              }`}
+            >
+              <tab.icon className="h-4 w-4 mr-2" />
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Tab Content */}
+      <div className="max-w-2xl mx-auto">
+        {activeTab === 'input' && (
+          <div className="space-y-4">
+            <div>
+              <label className="block text-white font-medium mb-2">
+                Enter your {contentType} (one per line)
+              </label>
+              <textarea
+                value={customInput}
+                onChange={(e) => onCustomInputChange(e.target.value)}
+                placeholder={getInputPlaceholder()}
+                className="w-full h-48 p-4 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent resize-none"
+              />
+              <p className="text-white/60 text-sm mt-2">
+                Format: {contentType === 'vocabulary' ? 'Spanish word - English translation (optional for some games)' : 'Spanish sentence - English translation'}
+              </p>
+              <p className="text-white/50 text-xs mt-1">
+                💡 Tip: For games like Hangman, you can enter just the Spanish words without translations
+              </p>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'lists' && (
+          <div className="text-center py-8">
+            <BookOpen className="h-16 w-16 mb-4 mx-auto text-white" />
+            <h3 className="text-lg font-semibold text-white mb-2">My Collections</h3>
+            <p className="text-white/60 mb-4">Choose from your saved vocabulary collections</p>
+            <div className="text-white/40 text-sm">
+              Coming soon - integration with your saved vocabulary lists
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'upload' && (
+          <div className="text-center py-8">
+            <Folder className="h-16 w-16 mb-4 mx-auto text-white" />
+            <h3 className="text-lg font-semibold text-white mb-2">Upload File</h3>
+            <p className="text-white/60 mb-4">Upload a CSV or TXT file with your content</p>
+            <div className="text-white/40 text-sm">
+              Coming soon - file upload functionality
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Complete Button */}
+      <div className="text-center">
+        <button
+          onClick={onComplete}
+          disabled={!canComplete}
+          className={`px-8 py-3 rounded-xl font-bold text-lg transition-all ${
+            canComplete
+              ? 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105'
+              : 'bg-white/20 text-white/50 cursor-not-allowed'
+          }`}
+        >
+          Continue with Custom Content
+        </button>
+        {!canComplete && (
+          <p className="text-white/60 text-sm mt-2">
+            Please enter some {contentType} to continue
+          </p>
+        )}
       </div>
     </motion.div>
   );

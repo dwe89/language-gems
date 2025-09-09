@@ -6,7 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Gamepad2, Search, Building2, Rocket, Lock, Trophy, Target, BarChart3, Play, BookOpen, Users, Star, Lightbulb, Clock } from 'lucide-react';
+import { Gamepad2, Building2, Rocket, Lock, Trophy, Target, BarChart3, Play, BookOpen, Users, Star, Lightbulb, Clock } from 'lucide-react';
 import { useAuth } from '../../components/auth/AuthProvider';
 import { useDemoAuth } from '../../components/auth/DemoAuthProvider';
 import Footer from '../../components/layout/Footer';
@@ -15,6 +15,8 @@ import GameSelectionSidebar, { SelectionState } from '../../components/games/Fil
 import MobileGameSelectionModal from '../../components/games/MobileGameSelectionModal';
 import FeaturedVocabMasterCard from '../../components/games/FeaturedVocabMasterCard';
 import FSRSGameRecommendations from '../../components/games/FSRSGameRecommendations';
+import ReversedGameSelection from '../../components/games/ReversedGameSelection';
+import { UnifiedSelectionConfig } from '../../components/games/UnifiedCategorySelector';
 
 
 // Login Required Component
@@ -166,25 +168,26 @@ type Game = {
   name: string;
   description: string;
   thumbnail: string;
-  category: string; // Changed to single string for primary category
+  category: 'vocabulary' | 'sentences' | 'grammar'; // Updated to match ReversedGameSelection
   subcategories?: string[]; // New: for more specific categorization like 'sentences'
   popular: boolean;
   languages: string[];
   path: string;
   comingSoon?: boolean;
+  themes?: string[]; // Add themes support
 };
 
 export default function GamesPage() {
   const { user, isLoading } = useAuth();
   const { isDemo } = useDemoAuth();
   const router = useRouter();
-  const [searchQuery, setSearchQuery] = useState('');
   const [games, setGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('all'); // Renamed from 'filter' for clarity
   const [selectedGameForSetup, setSelectedGameForSetup] = useState<Game | null>(null);
   const [isMobileModalOpen, setIsMobileModalOpen] = useState(false);
   const [showFSRSRecommendations, setShowFSRSRecommendations] = useState(false);
+  const [useReversedFlow, setUseReversedFlow] = useState(false); // Toggle for new flow
   const [currentSelection, setCurrentSelection] = useState<SelectionState>({
     language: null,
     curriculumLevel: null,
@@ -218,7 +221,7 @@ export default function GamesPage() {
           thumbnail: '/images/games/vocabulary-mining.jpg',
           category: 'vocabulary',
           popular: true,
-          languages: ['English', 'Spanish', 'French', 'German'],
+          languages: ['es', 'fr', 'de'],
           path: '/games/vocab-master'
         },
         {
@@ -226,10 +229,10 @@ export default function GamesPage() {
           name: 'Sentence Sprint',
           description: 'Drag and drop words to build sentences correctly before time runs out.',
           thumbnail: '/images/games/speed-builder.jpg',
-          category: 'sentences', // Changed category
+          category: 'sentences',
           subcategories: ['sentences'],
           popular: true,
-          languages: ['English', 'Spanish', 'French', 'German'],
+          languages: ['es', 'fr', 'de'],
           path: '/games/speed-builder'
         },
         {
@@ -260,7 +263,8 @@ export default function GamesPage() {
           category: 'vocabulary',
           popular: true,
           languages: ['English', 'Spanish', 'French', 'German', 'Italian', 'Japanese'],
-          path: '/games/hangman'
+          path: '/games/hangman',
+          themes: ['default', 'tokyo', 'pirate', 'space', 'temple']
         },
         {
           id: 'memory-game',
@@ -448,6 +452,44 @@ export default function GamesPage() {
     }
   };
 
+  // Handler for reversed flow game start
+  const handleReversedGameStart = (gameId: string, config: UnifiedSelectionConfig, theme?: string) => {
+    const game = games.find(g => g.id === gameId);
+    if (!game) return;
+
+    // Construct URL with parameters (same format as original)
+    const params = new URLSearchParams({
+      lang: config.language,
+      level: config.curriculumLevel,
+      cat: config.categoryId,
+      subcat: config.subcategoryId || '',
+      theme: theme || 'default'
+    });
+
+    // Add KS4-specific parameters if present
+    if (config.examBoard) {
+      params.set('examBoard', config.examBoard);
+    }
+    if (config.tier) {
+      params.set('tier', config.tier);
+    }
+
+    // Add custom mode parameters if present
+    if (config.customMode) {
+      params.set('custom', 'true');
+      if (config.customContentType) {
+        params.set('customType', config.customContentType);
+      }
+      if (config.customVocabulary) {
+        params.set('customData', JSON.stringify(config.customVocabulary));
+      }
+    }
+
+    const url = `${game.path}?${params.toString()}`;
+    console.log('🔄 Reversed Flow Navigation to:', url);
+    router.push(url);
+  };
+
   // Handler for VocabMaster "Choose Content" button
   const handleVocabMasterChooseContent = () => {
     // Find VocabMaster game and set it as selected
@@ -466,15 +508,10 @@ export default function GamesPage() {
     }
   };
 
-  // Combined filtering logic for category filter, search query, and advanced filters
+  // Combined filtering logic for category filter and advanced filters
   const filteredGames = games.filter(game => {
     // Apply category filter
     const matchesCategory = selectedCategory === 'all' || game.category === selectedCategory || (game.subcategories && game.subcategories.includes(selectedCategory));
-
-    // Apply search query filter
-    const matchesSearch = searchQuery === '' ||
-      game.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      game.description.toLowerCase().includes(searchQuery.toLowerCase());
 
     // Apply advanced filters
     // Note: For now, we'll assume games don't have curriculum/category metadata
@@ -483,7 +520,7 @@ export default function GamesPage() {
     // when advanced filters are applied (this can be enhanced later)
     const matchesAdvancedFilters = true; // Placeholder - implement based on your game metadata
 
-    return matchesCategory && matchesSearch && matchesAdvancedFilters;
+    return matchesCategory && matchesAdvancedFilters;
   });
 
   // Check if selection is complete for desktop
@@ -527,8 +564,7 @@ export default function GamesPage() {
             <span className="ml-3 bg-orange-500 text-white text-sm px-3 py-1 rounded-full font-bold">DEMO</span>
           </div>
           <p className="text-gray-600 max-w-2xl">
-            <Gamepad2 className="inline h-5 w-5 text-indigo-600 mr-2" /> Engage with interactive games designed to make language learning fun and effective.
-            All games are available to teachers and students with an active account.
+            Engage with interactive games designed to make language learning fun and effective.
           </p>
 
           {/* Demo Banner */}
@@ -539,15 +575,6 @@ export default function GamesPage() {
                 showStats={true}
                 variant="compact"
               />
-            </div>
-          )}
-
-          {user && (
-            <div className="mt-4 p-4 bg-gradient-to-r from-blue-100 to-indigo-100 rounded-xl border border-blue-200">
-              <p className="text-blue-800">
-                <span className="font-bold"><Lightbulb className="inline h-4 w-4 text-blue-600 mr-1" /> Pro Tip:</span> As a teacher, you can assign any of these games to your students
-                from the assignments page.
-              </p>
             </div>
           )}
         </header>
@@ -579,18 +606,42 @@ export default function GamesPage() {
           </div>
         )}
 
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-          <div className="relative">
-            <Search className="h-5 w-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search games..."
-              className="pl-10 pr-4 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 w-full sm:w-80 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+                {/* Selection Flow Toggle */}
+        <div className="mb-8 flex justify-center">
+          <div className="bg-white rounded-xl p-2 shadow-lg border border-gray-200 flex gap-2">
+            <button
+              onClick={() => {
+                console.log('🎮 Switching to Game First flow');
+                setUseReversedFlow(false);
+              }}
+              className={`px-8 py-4 rounded-lg text-base font-medium transition-all flex items-center gap-2 ${
+                !useReversedFlow
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+              }`}
+            >
+              <Gamepad2 className="h-5 w-5" />
+              Game First
+            </button>
+            <button
+              onClick={() => {
+                console.log('📚 Switching to Content First flow');
+                setUseReversedFlow(true);
+              }}
+              className={`px-8 py-4 rounded-lg text-base font-medium transition-all flex items-center gap-2 ${
+                useReversedFlow
+                  ? 'bg-purple-600 text-white shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+              }`}
+            >
+              <BookOpen className="h-5 w-5" />
+              Content First
+            </button>
           </div>
+        </div>
 
+        {/* Filter Controls */}
+        <div className="flex justify-center items-center mb-6 gap-4">
           {/* Category filter boxes */}
           <div className="flex flex-wrap gap-2">
             {categories.map((category) => (
@@ -609,16 +660,25 @@ export default function GamesPage() {
           </div>
         </div>
 
-        {/* Mobile: Select Content Button */}
-        <div className="md:hidden mb-6">
-          <button
-            onClick={() => setIsMobileModalOpen(true)}
-            className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-4 px-6 rounded-lg transition-all transform hover:scale-105 flex items-center justify-center space-x-2"
-          >
-            <Gamepad2 className="h-5 w-5" />
-            <span>Select Content & Start Game</span>
-          </button>
-        </div>
+        {/* Conditional Rendering Based on Flow Selection */}
+        {useReversedFlow ? (
+          <ReversedGameSelection
+            games={games}
+            onGameStart={handleReversedGameStart}
+            onBack={() => setUseReversedFlow(false)}
+          />
+        ) : (
+          <>
+            {/* Mobile: Select Content Button */}
+            <div className="md:hidden mb-6">
+              <button
+                onClick={() => setIsMobileModalOpen(true)}
+                className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-4 px-6 rounded-lg transition-all transform hover:scale-105 flex items-center justify-center space-x-2"
+              >
+                <Gamepad2 className="h-5 w-5" />
+                <span>Select Content & Start Game</span>
+              </button>
+            </div>
 
         {/* Hybrid Layout: Desktop Sidebar + Mobile Full Width */}
         <div className="flex gap-8">
@@ -774,17 +834,19 @@ export default function GamesPage() {
           </div>
         </div>
 
-        {/* Mobile Modal */}
-        <MobileGameSelectionModal
-          isOpen={isMobileModalOpen}
-          onClose={() => setIsMobileModalOpen(false)}
-          onSelectionComplete={handleSelectionComplete}
-          selectedGame={selectedGameForSetup ? {
-            id: selectedGameForSetup.id,
-            name: selectedGameForSetup.name,
-            supportsThemes: selectedGameForSetup.id.includes('vocab-blast')
-          } : null}
-        />
+            {/* Mobile Modal */}
+            <MobileGameSelectionModal
+              isOpen={isMobileModalOpen}
+              onClose={() => setIsMobileModalOpen(false)}
+              onSelectionComplete={handleSelectionComplete}
+              selectedGame={selectedGameForSetup ? {
+                id: selectedGameForSetup.id,
+                name: selectedGameForSetup.name,
+                supportsThemes: selectedGameForSetup.id.includes('vocab-blast')
+              } : null}
+            />
+          </>
+        )}
       </div>
       
       <Footer />

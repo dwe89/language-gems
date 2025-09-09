@@ -325,10 +325,10 @@ export class AIInsightsService {
 
     try {
       const completion = await openai.chat.completions.create({
-        model: "gpt-4.1-nano-2025-04-14",
+        model: "gpt-4.1-nano",
         messages: [{ role: "user", content: prompt }],
-        temperature: 0.3,
-        max_tokens: 500
+
+        max_completion_tokens: 500
       });
 
       const result = JSON.parse(completion.choices[0].message.content || '{}');

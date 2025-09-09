@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react'; // Removed useRef as backgro
 import { ThemeProvider, useTheme } from './ThemeProvider';
 import confetti from 'canvas-confetti';
 import { motion } from 'framer-motion';
-import { Zap, Volume2, VolumeX } from 'lucide-react';
+import { Zap, Volume2, VolumeX, Settings } from 'lucide-react';
 import TokyoNightsAnimation from './themes/TokyoNightsAnimation';
 import LavaTempleAnimation from './themes/LavaTempleAnimation';
 import SpaceExplorerAnimation from './themes/SpaceExplorerAnimation';
@@ -127,6 +127,7 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
   const [showTokyoNightsModal, setShowTokyoNightsModal] = useState(false);
   const [showSpaceExplorerModal, setShowSpaceExplorerModal] = useState(false);
   const [showPirateAdventureModal, setShowPirateAdventureModal] = useState(false);
+  const [usedWords, setUsedWords] = useState<string[]>([]);
 
   // Helper functions for exact letter matching (no accent normalization)
   const isLetterGuessed = (letter: string, guessedLetters: string[]): boolean => {
@@ -140,31 +141,43 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
     return lowerWord.includes(lowerLetter);
   };
 
+  // Helper function to get a non-repeating word
+  const getRandomWordNoRepeats = (): string => {
+    let availableWords: string[] = [];
+
+    // Get available words based on settings
+    if (settings.customWords && settings.customWords.length > 0) {
+      availableWords = settings.customWords;
+    } else if (vocabulary && vocabulary.length > 0) {
+      availableWords = vocabulary.map(item => item.word || 'fallback');
+    } else {
+      return 'fallback';
+    }
+
+    // Filter out used words
+    const unusedWords = availableWords.filter(word => !usedWords.includes(word.toLowerCase()));
+
+    // If all words have been used, reset the used words list
+    if (unusedWords.length === 0) {
+      console.log('All words used, resetting word pool');
+      setUsedWords([]);
+      // Use all available words again
+      const randomIndex = Math.floor(Math.random() * availableWords.length);
+      return availableWords[randomIndex];
+    }
+
+    // Select a random unused word
+    const randomIndex = Math.floor(Math.random() * unusedWords.length);
+    return unusedWords[randomIndex];
+  };
+
   // Initialize game
   useEffect(() => {
-    const getRandomWord = () => {
-      // Check if we're using custom words
-      if (settings.customWords && settings.customWords.length > 0) {
-        const randomIndex = Math.floor(Math.random() * settings.customWords.length);
-        return settings.customWords[randomIndex];
-      }
-
-      // Use vocabulary from category selector if available
-      if (vocabulary && vocabulary.length > 0) {
-        console.log('Using vocabulary from category selector:', vocabulary.length, 'words');
-        const randomIndex = Math.floor(Math.random() * vocabulary.length);
-        const selectedItem = vocabulary[randomIndex];
-        // Use the word in the target language
-        return selectedItem.word || 'fallback';
-      }
-
-      // Fallback if no vocabulary is loaded
-      console.warn('No vocabulary available, using fallback word');
-      return 'fallback';
-    };
-
-    const newWord = getRandomWord().toLowerCase();
+    const newWord = getRandomWordNoRepeats().toLowerCase();
     setWord(newWord);
+    // Add the word to used words list
+    setUsedWords(prev => [...prev, newWord]);
+
     // Get unique letters excluding spaces and normalize for comparison
     const uniqueLetters = [...new Set(newWord.split('').filter((char: string) => char !== ' '))] as string[];
     setWordLetters(uniqueLetters);
@@ -184,6 +197,11 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
       if (timerInterval) clearInterval(timerInterval);
     };
   }, [settings, vocabulary]);
+
+  // Reset used words when vocabulary source changes
+  useEffect(() => {
+    setUsedWords([]);
+  }, [settings.customWords, vocabulary]);
 
   // Check win/lose conditions
   useEffect(() => {
@@ -500,29 +518,10 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
     setTimer(0);
     setScore(0);
 
-    const getRandomWord = () => {
-      // Check if we're using custom words
-      if (settings.customWords && settings.customWords.length > 0) {
-        const randomIndex = Math.floor(Math.random() * settings.customWords.length);
-        return settings.customWords[randomIndex];
-      }
-
-      // Use vocabulary from category selector if available
-      if (vocabulary && vocabulary.length > 0) {
-        console.log('Restart: Using vocabulary from category selector:', vocabulary.length, 'words');
-        const randomIndex = Math.floor(Math.random() * vocabulary.length);
-        const selectedItem = vocabulary[randomIndex];
-        // Use the word in the target language
-        return selectedItem.word || 'fallback';
-      }
-
-      // Fallback if no vocabulary is loaded
-      console.warn('No vocabulary available, using fallback word');
-      return 'fallback';
-    };
-
-    const newWord = getRandomWord().toLowerCase();
+    const newWord = getRandomWordNoRepeats().toLowerCase();
     setWord(newWord);
+    // Add the word to used words list
+    setUsedWords(prev => [...prev, newWord]);
     setWordLetters([...new Set(newWord.split('').filter((char: string) => char !== ' '))] as string[]);
 
     // Restart the timer
@@ -875,18 +874,32 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
 
         {/* Control buttons */}
         <div className="flex items-center space-x-1 md:space-x-2">
-          {/* Settings button */}
+          {/* Settings button - Enhanced visibility */}
           {onOpenSettings && (
-            <button
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => {
                 playSFX('button-click');
                 onOpenSettings();
               }}
-              className="p-1.5 md:p-2 rounded-full bg-gray-700 hover:bg-gray-600 text-white"
-              title="Settings"
+              className="relative px-3 md:px-4 py-2 md:py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-sm md:text-base font-semibold flex items-center gap-2 md:gap-3 transition-all duration-300 shadow-lg hover:shadow-xl border-2 border-white/20"
+              title="Customize your game: Change Language, Level, Topic & Theme"
             >
-              ⚙️
-            </button>
+              <Settings className="h-5 w-5 md:h-6 md:w-6" />
+              <span className="hidden md:inline">Game Settings</span>
+              <span className="md:hidden">Settings</span>
+              
+              {/* Optional: Add a small indicator if settings are default */}
+              {settings.language === 'english' && settings.theme === 'default' && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full border border-white"
+                  title="Try customizing your game settings!"
+                />
+              )}
+            </motion.button>
           )}
 
           {/* Music toggle button (now controls UI icon, actual music by parent) */}

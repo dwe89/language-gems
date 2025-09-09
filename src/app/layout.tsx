@@ -9,6 +9,7 @@ import { AuthProvider } from '../components/auth/AuthProvider'
 import { CartProvider } from '../contexts/CartContext'
 import SupabaseProvider from '../components/supabase/SupabaseProvider'
 import { ThemeProvider } from '../components/theme/ThemeProvider'
+import { ToastProvider } from '../components/ui/use-toast';
 import { StructuredData } from '../components/seo/SEOWrapper'
 import { getOrganizationSchema, getWebsiteSchema } from '../lib/seo/structuredData'
 
@@ -119,9 +120,11 @@ export default function RootLayout({
           <AuthProvider>
             <CartProvider>
               <ThemeProvider>
-                <Suspense fallback={<div>Loading...</div>}>
-                  <ClientLayout>{children}</ClientLayout>
-                </Suspense>
+                <ToastProvider>
+                  <Suspense fallback={<div>Loading...</div>}>
+                    <ClientLayout>{children}</ClientLayout>
+                  </Suspense>
+                </ToastProvider>
               </ThemeProvider>
             </CartProvider>
           </AuthProvider>

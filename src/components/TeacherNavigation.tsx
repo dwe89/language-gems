@@ -8,6 +8,7 @@ import {
   Home,
   BookOpen,
   Users,
+  FileText,
   Menu,
   X,
   Settings,
@@ -53,6 +54,12 @@ export default function TeacherNavigation({ children }: TeacherNavigationProps) 
       href: '/dashboard/assignments',
       icon: Users,
       description: 'Create and track assignments'
+    },
+    {
+      name: 'Worksheets',
+      href: '/worksheets',
+      icon: FileText,
+      description: 'AI-powered worksheet generator'
     },
     {
       name: 'Vocabulary',

@@ -10,7 +10,8 @@ import {
   Book,
   Sparkles,
   Lightbulb,
-  Mic
+  Mic,
+  Shirt
 } from 'lucide-react';
 
 // AQA Categories with proper theme -> unit mapping

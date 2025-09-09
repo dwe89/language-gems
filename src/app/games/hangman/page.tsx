@@ -295,18 +295,31 @@ export default function HangmanPage() {
 
   // Transform vocabulary for hangman game
   const transformVocabularyForHangman = (vocabulary: UnifiedVocabularyItem[]) => {
-    return vocabulary.map(item => ({
-      id: item.id,
-      word: item.word,
-      translation: item.translation,
-      language: item.language,
-      category: item.category,
-      subcategory: item.subcategory,
-      part_of_speech: item.part_of_speech,
-      example_sentence: item.example_sentence_original || '',
-      example_translation: item.example_sentence_translation || '',
-      difficulty_level: item.difficulty_level || 'beginner'
-    }));
+    return vocabulary.map(item => {
+      // For Hangman, we only need the Spanish word (first part before dash/comma)
+      // Handle cases where user entered "casa house" or "casa - house"
+      let spanishWord = item.word;
+      if (spanishWord.includes(' - ') || spanishWord.includes(' ')) {
+        // Split by dash first, then by space if no dash
+        const parts = spanishWord.includes(' - ')
+          ? spanishWord.split(' - ')
+          : spanishWord.split(' ');
+        spanishWord = parts[0].trim();
+      }
+
+      return {
+        id: item.id,
+        word: spanishWord, // Only the Spanish word for guessing
+        translation: item.translation,
+        language: item.language,
+        category: item.category,
+        subcategory: item.subcategory,
+        part_of_speech: item.part_of_speech,
+        example_sentence: item.example_sentence_original || '',
+        example_translation: item.example_sentence_translation || '',
+        difficulty_level: item.difficulty_level || 'beginner'
+      };
+    });
   };
 
   // Handle game start from unified launcher
@@ -356,6 +369,43 @@ export default function HangmanPage() {
       theme: theme || prev.theme
     } : null);
   };
+
+  // Auto-start game if URL parameters are present (from Content First flow)
+  useEffect(() => {
+    if (!gameStarted && !isAssignmentMode && searchParams) {
+      const lang = searchParams.get('lang');
+      const level = searchParams.get('level');
+      const cat = searchParams.get('cat');
+      const theme = searchParams.get('theme');
+      const custom = searchParams.get('custom');
+
+      // If we have the basic parameters, auto-start the game
+      if (lang && level && cat) {
+        console.log('🚀 [HANGMAN] Auto-starting from URL parameters:', {
+          lang, level, cat, theme, custom
+        });
+
+        const config: UnifiedSelectionConfig = {
+          language: lang as 'es' | 'fr' | 'de',
+          curriculumLevel: level as 'KS2' | 'KS3' | 'KS4' | 'KS5',
+          categoryId: cat,
+          subcategoryId: searchParams.get('subcat') || undefined,
+          examBoard: searchParams.get('examBoard') as 'AQA' | 'edexcel' || undefined,
+          tier: searchParams.get('tier') as 'foundation' | 'higher' || undefined,
+          customMode: custom === 'true',
+          customContentType: searchParams.get('customType') as 'vocabulary' | 'sentences' | 'mixed' || undefined,
+          customVocabulary: custom === 'true' && searchParams.get('customData')
+            ? JSON.parse(searchParams.get('customData')!)
+            : undefined
+        };
+
+        // Use a timeout to ensure the component is fully mounted
+        setTimeout(() => {
+          handleGameStart(config, [], theme || 'default');
+        }, 100);
+      }
+    }
+  }, [searchParams, gameStarted, isAssignmentMode]);
 
   // Load stats from localStorage
   useEffect(() => {

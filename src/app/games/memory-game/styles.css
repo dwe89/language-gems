@@ -41,35 +41,6 @@
   margin: 0;
 }
 
-/* Assignment title styles */
-.assignment-title {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-}
-
-.assignment-badge {
-  font-size: 0.8rem;
-  background-color: rgba(255, 255, 255, 0.2);
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-weight: 500;
-}
-
-.assignment-name {
-  font-size: 1.2rem;
-  font-weight: 600;
-  text-align: center;
-  line-height: 1.2;
-}
-
-.game-subtitle {
-  font-size: 0.9rem;
-  font-weight: 400;
-  opacity: 0.8;
-}
-
 .nav-btn {
   background-color: rgba(255, 255, 255, 0.2);
   color: white;
@@ -117,17 +88,23 @@
 .cards-container {
   width: 100%;
   max-width: 1000px;
-  aspect-ratio: 7/4;
+  /* Removed fixed aspect-ratio to allow dynamic grid sizing */
   margin: 0 auto;
+  min-height: 500px;
+  height: 70vh;
+  max-height: 600px;
+  display: flex;
+  flex-direction: column;
 }
 
 .cards-grid {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  grid-template-rows: repeat(4, 1fr);
   gap: 10px;
   height: 100%;
   width: 100%;
+  flex: 1;
+  transition: all 0.3s ease;
+  /* Grid template columns and rows are set dynamically via JavaScript inline styles */
 }
 
 /* Cards */
@@ -348,6 +325,11 @@
   .left-controls, .right-controls {
     width: 100%;
     justify-content: space-between;
+  }
+
+  .cards-container {
+    height: 60vh;
+    min-height: 400px;
   }
 
   .cards-grid {

@@ -44,6 +44,16 @@ export interface SentenceSelectionConfig {
   categoryId: string;
   subcategoryId?: string;
   customMode?: boolean;
+  customContentType?: 'vocabulary' | 'sentences' | 'mixed';
+  customSentences?: CustomSentenceItem[];
+  customListId?: string;
+}
+
+export interface CustomSentenceItem {
+  id: string;
+  sentence: string;
+  translation: string;
+  context?: string;
 }
 
 export interface UnifiedSentenceCategorySelectorProps {
@@ -53,6 +63,13 @@ export interface UnifiedSentenceCategorySelectorProps {
   supportedLanguages?: string[];
   showCustomMode?: boolean;
   title?: string;
+  gameCompatibility?: {
+    supportsVocabulary: boolean;
+    supportsSentences: boolean;
+    supportsMixed: boolean;
+    minItems?: number;
+    maxItems?: number;
+  };
 }
 
 // Language options with country flags
