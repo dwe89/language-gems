@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import {
   Play,
   RefreshCw,
@@ -9,7 +10,8 @@ import {
   Shield,
   Home,
   Volume2,
-  VolumeX
+  VolumeX,
+  Settings
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { EnhancedGameService } from '../../../../services/enhancedGameService';
@@ -164,6 +166,7 @@ interface WordBlastGameProps {
   ) => void;
   onChainReaction?: (chainLength: number, wordsInChain: string[], totalScore: number) => void;
   onBlastCombo?: (comboLevel: number, comboScore: number, comboBroken: boolean) => void;
+  onOpenSettings?: () => void;
 }
 
 export default function WordBlastGame({
@@ -176,7 +179,8 @@ export default function WordBlastGame({
   gameService,
   onWordMatch,
   onChainReaction,
-  onBlastCombo
+  onBlastCombo,
+  onOpenSettings
 }: WordBlastGameProps) {
   // Initialize FSRS spaced repetition system
 
@@ -632,6 +636,23 @@ export default function WordBlastGame({
                 >
                   {audioEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}
                 </button>
+
+                {onOpenSettings && (
+                  <motion.button
+                    onClick={() => {
+                      playSFX('button-click');
+                      onOpenSettings();
+                    }}
+                    className="relative px-3 md:px-4 py-2 md:py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-sm md:text-base font-semibold flex items-center gap-2 md:gap-3 transition-all duration-300 shadow-lg hover:shadow-xl border-2 border-white/20"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    title="Customize your game: Change Language, Level, Topic & Theme"
+                  >
+                    <Settings className="h-5 w-5 md:h-6 md:w-6" />
+                    <span className="hidden md:inline">Game Settings</span>
+                    <span className="md:hidden">Settings</span>
+                  </motion.button>
+                )}
               </div>
             </div>
           </div>

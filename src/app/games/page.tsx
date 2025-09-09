@@ -1,22 +1,17 @@
 'use client';
 
-import React, { useEffect, useState, useRef } from 'react'; // Added useRef
+import React, { useEffect, useState } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Gamepad2, Building2, Rocket, Lock, Trophy, Target, BarChart3, Play, BookOpen, Users, Star, Lightbulb, Clock } from 'lucide-react';
+import { Gamepad2, Building2, Rocket, Lock, Trophy, Target, BarChart3, Play, BookOpen, Users, Star, Clock } from 'lucide-react';
 import { useAuth } from '../../components/auth/AuthProvider';
 import { useDemoAuth } from '../../components/auth/DemoAuthProvider';
 import Footer from '../../components/layout/Footer';
 import DemoBanner from '../../components/demo/DemoBanner';
-import GameSelectionSidebar, { SelectionState } from '../../components/games/FilterSidebar';
-import MobileGameSelectionModal from '../../components/games/MobileGameSelectionModal';
 import FeaturedVocabMasterCard from '../../components/games/FeaturedVocabMasterCard';
-import FSRSGameRecommendations from '../../components/games/FSRSGameRecommendations';
-import ReversedGameSelection from '../../components/games/ReversedGameSelection';
-import { UnifiedSelectionConfig } from '../../components/games/UnifiedCategorySelector';
 
 
 // Login Required Component
@@ -168,7 +163,7 @@ type Game = {
   name: string;
   description: string;
   thumbnail: string;
-  category: 'vocabulary' | 'sentences' | 'grammar'; // Updated to match ReversedGameSelection
+  category: 'vocabulary' | 'sentences' | 'grammar' | 'spelling' | 'listening';
   subcategories?: string[]; // New: for more specific categorization like 'sentences'
   popular: boolean;
   languages: string[];
@@ -184,19 +179,6 @@ export default function GamesPage() {
   const [games, setGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('all'); // Renamed from 'filter' for clarity
-  const [selectedGameForSetup, setSelectedGameForSetup] = useState<Game | null>(null);
-  const [isMobileModalOpen, setIsMobileModalOpen] = useState(false);
-  const [showFSRSRecommendations, setShowFSRSRecommendations] = useState(false);
-  const [useReversedFlow, setUseReversedFlow] = useState(false); // Toggle for new flow
-  const [currentSelection, setCurrentSelection] = useState<SelectionState>({
-    language: null,
-    curriculumLevel: null,
-    categoryId: null,
-    subcategoryId: null,
-    theme: null
-  });
-
-  const sidebarRef = useRef<HTMLDivElement>(null); // Ref for the sidebar
 
 
   // Define your main categories
@@ -351,7 +333,7 @@ export default function GamesPage() {
         },
         {
           id: 'vocab-blast', // New game ID
-          name: 'Vocab-Blast', // New game name
+          name: 'Vocab Blast', // New game name
           description: 'Click vocabulary gems to pop and translate them quickly', // New game description
           thumbnail: '/images/games/vocab-blast.jpg', // New thumbnail
           category: 'vocabulary',
@@ -371,164 +353,25 @@ export default function GamesPage() {
     fetchGames();
   }, []);
 
-  // New function to handle deselecting a game
-  const handleDeselectGame = () => {
-    setSelectedGameForSetup(null);
-    setCurrentSelection({
-      language: null,
-      curriculumLevel: null,
-      categoryId: null,
-      subcategoryId: null,
-      theme: null
-    });
-  };
-
-  // Handler for game selection (desktop: select game, mobile: open modal)
+  // Simple handler for direct game navigation
   const handlePlayNowClick = (game: Game) => {
-    // If the same game is clicked again, deselect it.
-    if (selectedGameForSetup?.id === game.id) {
-        handleDeselectGame();
-        return;
-    }
-    
-    setSelectedGameForSetup(game);
-    // On mobile, open modal immediately
-    if (window.innerWidth < 768) {
-      setIsMobileModalOpen(true);
-    } else {
-      // On desktop, scroll to the sidebar to indicate next step
-      if (sidebarRef.current) {
-        sidebarRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    }
-  };
-
-  // Handler for selection changes (desktop sidebar)
-  const handleSelectionChange = (selection: SelectionState) => {
-    setCurrentSelection(selection);
-  };
-
-  // Handler for selection completion (both desktop and mobile)
-  const handleSelectionComplete = (selection: SelectionState) => {
-    if (!selectedGameForSetup) return;
-
-    // Construct URL with parameters
-    const params = new URLSearchParams({
-      lang: selection.language!,
-      level: selection.curriculumLevel!,
-      cat: selection.categoryId!,
-      subcat: selection.subcategoryId!,
-      theme: selection.theme || 'default'
-    });
-
-    // Add KS4-specific parameters if present
-    if (selection.examBoard) {
-      params.set('examBoard', selection.examBoard);
-    }
-    if (selection.tier) {
-      params.set('tier', selection.tier);
-    }
-
-    const url = `${selectedGameForSetup.path}?${params.toString()}`;
-    console.log('🚀 Navigating to:', url);
-    router.push(url);
-  };
-
-  // Handler for FSRS game recommendations
-  const handleFSRSGameSelect = (gameId: string, recommendedWords?: any[]) => {
-    // Find the game and navigate directly with FSRS parameters
-    const game = games.find(g => g.id === gameId);
-    if (game) {
-      // For FSRS recommendations, we can skip the selection process
-      // and go directly to the game with recommended words
-      const params = new URLSearchParams({
-        fsrs: 'true',
-        words: recommendedWords ? JSON.stringify(recommendedWords.slice(0, 20)) : '[]'
-      });
-
-      const url = `${game.path}?${params.toString()}`;
-      console.log('🧠 FSRS Navigation to:', url);
-      router.push(url);
-    }
-  };
-
-  // Handler for reversed flow game start
-  const handleReversedGameStart = (gameId: string, config: UnifiedSelectionConfig, theme?: string) => {
-    const game = games.find(g => g.id === gameId);
-    if (!game) return;
-
-    // Construct URL with parameters (same format as original)
-    const params = new URLSearchParams({
-      lang: config.language,
-      level: config.curriculumLevel,
-      cat: config.categoryId,
-      subcat: config.subcategoryId || '',
-      theme: theme || 'default'
-    });
-
-    // Add KS4-specific parameters if present
-    if (config.examBoard) {
-      params.set('examBoard', config.examBoard);
-    }
-    if (config.tier) {
-      params.set('tier', config.tier);
-    }
-
-    // Add custom mode parameters if present
-    if (config.customMode) {
-      params.set('custom', 'true');
-      if (config.customContentType) {
-        params.set('customType', config.customContentType);
-      }
-      if (config.customVocabulary) {
-        params.set('customData', JSON.stringify(config.customVocabulary));
-      }
-    }
-
-    const url = `${game.path}?${params.toString()}`;
-    console.log('🔄 Reversed Flow Navigation to:', url);
-    router.push(url);
+    console.log('🚀 Navigating directly to:', game.path);
+    router.push(game.path);
   };
 
   // Handler for VocabMaster "Choose Content" button
   const handleVocabMasterChooseContent = () => {
-    // Find VocabMaster game and set it as selected
-    const vocabMasterGame = games.find(game => game.id === 'vocab-master');
-    if (vocabMasterGame) {
-      setSelectedGameForSetup(vocabMasterGame);
-      // On mobile, open modal immediately
-      if (window.innerWidth < 768) {
-        setIsMobileModalOpen(true);
-      } else {
-        // On desktop, scroll to the sidebar
-        if (sidebarRef.current) {
-          sidebarRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-      }
-    }
+    // Navigate directly to VocabMaster
+    router.push('/games/vocab-master');
   };
 
-  // Combined filtering logic for category filter and advanced filters
+  // Combined filtering logic for category filter
   const filteredGames = games.filter(game => {
     // Apply category filter
     const matchesCategory = selectedCategory === 'all' || game.category === selectedCategory || (game.subcategories && game.subcategories.includes(selectedCategory));
 
-    // Apply advanced filters
-    // Note: For now, we'll assume games don't have curriculum/category metadata
-    // In a real implementation, you'd add these fields to the Game interface
-    // and filter based on them. For demo purposes, we'll show all games
-    // when advanced filters are applied (this can be enhanced later)
-    const matchesAdvancedFilters = true; // Placeholder - implement based on your game metadata
-
-    return matchesCategory && matchesAdvancedFilters;
+    return matchesCategory;
   });
-
-  // Check if selection is complete for desktop
-  const isSelectionComplete = currentSelection.language &&
-    currentSelection.curriculumLevel &&
-    currentSelection.categoryId &&
-    currentSelection.subcategoryId &&
-    (!selectedGameForSetup?.id.includes('vocab-blast') || currentSelection.theme);
 
   // If user is not authenticated and not in demo mode, show login gate
   if (!isLoading && !user && !isDemo) {
@@ -579,66 +422,7 @@ export default function GamesPage() {
           )}
         </header>
 
-        {/* FSRS Recommendations Section */}
-        {user && !isDemo && (
-          <div className="mb-8">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-gray-900 flex items-center">
-                <Target className="w-5 h-5 mr-2 text-blue-600" />
-                Personalized Recommendations
-              </h2>
-              <button
-                onClick={() => setShowFSRSRecommendations(!showFSRSRecommendations)}
-                className="text-blue-600 hover:text-blue-800 font-medium flex items-center space-x-1"
-              >
-                <span>{showFSRSRecommendations ? 'Hide' : 'Show'} Smart Recommendations</span>
-                <BarChart3 className="w-4 h-4" />
-              </button>
-            </div>
 
-            {showFSRSRecommendations && (
-              <FSRSGameRecommendations
-                onGameSelect={handleFSRSGameSelect}
-                timeAvailable={30}
-                maxRecommendations={6}
-              />
-            )}
-          </div>
-        )}
-
-                {/* Selection Flow Toggle */}
-        <div className="mb-8 flex justify-center">
-          <div className="bg-white rounded-xl p-2 shadow-lg border border-gray-200 flex gap-2">
-            <button
-              onClick={() => {
-                console.log('🎮 Switching to Game First flow');
-                setUseReversedFlow(false);
-              }}
-              className={`px-8 py-4 rounded-lg text-base font-medium transition-all flex items-center gap-2 ${
-                !useReversedFlow
-                  ? 'bg-indigo-600 text-white shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-              }`}
-            >
-              <Gamepad2 className="h-5 w-5" />
-              Game First
-            </button>
-            <button
-              onClick={() => {
-                console.log('📚 Switching to Content First flow');
-                setUseReversedFlow(true);
-              }}
-              className={`px-8 py-4 rounded-lg text-base font-medium transition-all flex items-center gap-2 ${
-                useReversedFlow
-                  ? 'bg-purple-600 text-white shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-              }`}
-            >
-              <BookOpen className="h-5 w-5" />
-              Content First
-            </button>
-          </div>
-        </div>
 
         {/* Filter Controls */}
         <div className="flex justify-center items-center mb-6 gap-4">
@@ -660,70 +444,8 @@ export default function GamesPage() {
           </div>
         </div>
 
-        {/* Conditional Rendering Based on Flow Selection */}
-        {useReversedFlow ? (
-          <ReversedGameSelection
-            games={games}
-            onGameStart={handleReversedGameStart}
-            onBack={() => setUseReversedFlow(false)}
-          />
-        ) : (
-          <>
-            {/* Mobile: Select Content Button */}
-            <div className="md:hidden mb-6">
-              <button
-                onClick={() => setIsMobileModalOpen(true)}
-                className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-4 px-6 rounded-lg transition-all transform hover:scale-105 flex items-center justify-center space-x-2"
-              >
-                <Gamepad2 className="h-5 w-5" />
-                <span>Select Content & Start Game</span>
-              </button>
-            </div>
-
-        {/* Hybrid Layout: Desktop Sidebar + Mobile Full Width */}
-        <div className="flex gap-8">
-          {/* Desktop: Game Selection Sidebar */}
-          <div ref={sidebarRef} className="hidden md:block w-80 flex-shrink-0"> {/* Added ref here */}
-            {selectedGameForSetup ? (
-              <>
-                <div className="p-6 bg-green-50 rounded-xl shadow-lg sticky top-6 text-center">
-                  <h3 className="font-bold text-lg text-gray-900 mb-2">Selected Game:</h3>
-                  <p className="text-lg font-bold text-green-600 mb-4">{selectedGameForSetup.name}</p>
-                  <button
-                    onClick={handleDeselectGame}
-                    className="w-full bg-green-200 hover:bg-green-300 text-green-800 font-bold py-2 px-6 rounded-lg transition-all"
-                  >
-                    Change Game
-                  </button>
-                </div>
-                <div className="mt-4">
-                  <GameSelectionSidebar
-                    onSelectionComplete={handleSelectionComplete}
-                    onSelectionChange={handleSelectionChange}
-                    selectedGame={{
-                      id: selectedGameForSetup.id,
-                      name: selectedGameForSetup.name,
-                      supportsThemes: selectedGameForSetup.id.includes('vocab-blast')
-                    }}
-                    className="sticky top-6"
-                  />
-                </div>
-              </>
-            ) : (
-              <div className="p-6 bg-white rounded-xl shadow-lg sticky top-6 text-center">
-                <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Gamepad2 className="h-8 w-8 text-indigo-600" />
-                </div>
-                <h3 className="font-bold text-lg text-gray-900 mb-2">Ready to Play?</h3>
-                <p className="text-gray-600 text-sm">
-                  Choose a game from the list to start configuring your learning adventure!
-                </p>
-              </div>
-            )}
-          </div>
-
-          {/* Games Grid */}
-          <div className="flex-1">
+        {/* Games Grid */}
+        <div className="w-full">
             {loading ? (
               <div className="flex items-center justify-center h-60">
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
@@ -737,28 +459,19 @@ export default function GamesPage() {
                 <p className="text-gray-600">Try adjusting your search or category filters.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {/* Featured VocabMaster Card */}
                 <FeaturedVocabMasterCard onChooseContent={handleVocabMasterChooseContent} />
 
                 {/* Regular Games (excluding VocabMaster since it's featured) */}
                 {filteredGames.filter(game => game.id !== 'vocab-master').map((game) => {
-                  const isSelected = selectedGameForSetup?.id === game.id;
-                  const isDisabled = selectedGameForSetup && !isSelected; // Dim other cards if one is selected
-
                   return (
                     <motion.div
                       key={game.id}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.3 }}
-                      className={`rounded-xl overflow-hidden border shadow-lg transition-all duration-300 flex flex-col
-                        ${isSelected
-                          ? 'bg-green-50 border-green-500 shadow-xl ring-2 ring-green-200'
-                          : isDisabled
-                          ? 'bg-white border-gray-200 opacity-50 pointer-events-none'
-                          : 'bg-white border-gray-200 hover:shadow-xl hover:-translate-y-1 hover:border-indigo-300'
-                        }`}
+                      className="rounded-xl overflow-hidden border shadow-lg transition-all duration-300 flex flex-col bg-white border-gray-200 hover:shadow-xl hover:-translate-y-1 hover:border-indigo-300"
                     >
                       <div className="h-40 relative overflow-hidden">
                         {/* Game thumbnail */}
@@ -803,14 +516,10 @@ export default function GamesPage() {
                           ) : (
                             <>
                               <button
-                                onClick={() => handlePlayNowClick(game)} // Changed click handler to one function for cleaner logic
-                                className={`flex-1 text-white text-center py-2 rounded-lg font-medium transition-all transform
-                                  ${isSelected 
-                                    ? 'bg-green-600 hover:bg-green-700' 
-                                    : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 hover:scale-105'
-                                  }`}
+                                onClick={() => handlePlayNowClick(game)}
+                                className="flex-1 text-white text-center py-2 rounded-lg font-medium transition-all transform bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 hover:scale-105"
                               >
-                                {isSelected ? (<><Gamepad2 className="inline-block h-4 w-4 mr-2"/>Change Game</>) : (<><Gamepad2 className="inline-block h-4 w-4 mr-2"/>Play Now</>)}
+                                <Gamepad2 className="inline-block h-4 w-4 mr-2"/>Play Now
                               </button>
 
                               {user?.user_metadata?.role === 'teacher' && (
@@ -831,24 +540,9 @@ export default function GamesPage() {
                 })}
               </div>
             )}
-          </div>
         </div>
-
-            {/* Mobile Modal */}
-            <MobileGameSelectionModal
-              isOpen={isMobileModalOpen}
-              onClose={() => setIsMobileModalOpen(false)}
-              onSelectionComplete={handleSelectionComplete}
-              selectedGame={selectedGameForSetup ? {
-                id: selectedGameForSetup.id,
-                name: selectedGameForSetup.name,
-                supportsThemes: selectedGameForSetup.id.includes('vocab-blast')
-              } : null}
-            />
-          </>
-        )}
       </div>
-      
+
       <Footer />
     </div>
     </>

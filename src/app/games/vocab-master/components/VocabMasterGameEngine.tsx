@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Volume2, Gem, Lightbulb, Sparkles, Flame, Target, Star, Zap } from 'lucide-react';
+import { Volume2, Gem, Lightbulb, Sparkles, Flame, Target, Star, Zap, Settings } from 'lucide-react';
 import { GameState, GameConfig, VocabularyWord, GameMode, GameResult, MultipleChoiceOption, ClozeExercise } from '../types';
 import { AudioManager } from '../utils/audioUtils';
 import { validateGameAnswer } from '../utils/answerValidation';
@@ -81,6 +81,7 @@ interface VocabMasterGameEngineProps {
     masteryLevel?: number,
     vocabularyId?: string
   ) => void;
+  onOpenSettings?: () => void;
 }
 
 export const VocabMasterGameEngine: React.FC<VocabMasterGameEngineProps> = ({
@@ -90,7 +91,8 @@ export const VocabMasterGameEngine: React.FC<VocabMasterGameEngineProps> = ({
   isAdventureMode = false,
   gameSessionId,
   gameService,
-  onWordAttempt
+  onWordAttempt,
+  onOpenSettings
 }) => {
 
   // Core game state
@@ -923,13 +925,26 @@ export const VocabMasterGameEngine: React.FC<VocabMasterGameEngineProps> = ({
             </div>
           </div>
 
-          {/* Right Side - Only the Dashboard button, stats are in sidebar */}
-          <button
-            onClick={onExit}
-            className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white px-6 py-2.5 rounded-2xl font-bold transition-all duration-300 shadow-lg shadow-cyan-500/30 border border-cyan-400/30 text-base" /* Adjusted padding/text size */
-          >
-            Dashboard
-          </button>
+          {/* Right Side - Settings and Dashboard buttons */}
+          <div className="flex items-center gap-3">
+            {onOpenSettings && (
+              <button
+                onClick={onOpenSettings}
+                className="relative px-3 md:px-4 py-2 md:py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-sm md:text-base font-semibold flex items-center gap-2 md:gap-3 transition-all duration-300 shadow-lg hover:shadow-xl border-2 border-white/20"
+                title="Customize your game: Change Language, Level, Topic & Theme"
+              >
+                <Settings className="h-5 w-5 md:h-6 md:w-6" />
+                <span className="hidden md:inline">Game Settings</span>
+                <span className="md:hidden">Settings</span>
+              </button>
+            )}
+            <button
+              onClick={onExit}
+              className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white px-6 py-2.5 rounded-2xl font-bold transition-all duration-300 shadow-lg shadow-cyan-500/30 border border-cyan-400/30 text-base"
+            >
+              Dashboard
+            </button>
+          </div>
         </div>
 
         <div className="relative z-10 flex gap-8 px-8 pb-8">

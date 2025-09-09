@@ -13,6 +13,7 @@ import VocabMasterAssignmentWrapper from './VocabMasterAssignmentWrapper';
 import ModeSelectionModal from './ModeSelectionModal';
 import { VocabularyWord as VocabWord, GameResult } from '../types';
 import UnifiedGameLauncher from '../../../../components/games/UnifiedGameLauncher';
+import InGameConfigPanel from '../../../../components/games/InGameConfigPanel';
 import { UnifiedSelectionConfig, UnifiedVocabularyItem } from '../../../../hooks/useUnifiedVocabulary';
 
 interface Props {
@@ -56,6 +57,9 @@ export default function UnifiedVocabMasterWrapper({ searchParams = {} }: Props) 
   // Track whether URL params have been processed to prevent premature rendering
   const [urlParamsProcessed, setUrlParamsProcessed] = useState(false);
   const [isClient, setIsClient] = useState(false);
+
+  // Config panel state
+  const [showConfigPanel, setShowConfigPanel] = useState(false);
 
   // Services
   const [gameService, setGameService] = useState<EnhancedGameService | null>(null);
@@ -461,6 +465,24 @@ export default function UnifiedVocabMasterWrapper({ searchParams = {} }: Props) 
     setGameSessionId(null);
   };
 
+  // Config panel handlers
+  const handleOpenConfigPanel = () => {
+    setShowConfigPanel(true);
+  };
+
+  const handleCloseConfigPanel = () => {
+    setShowConfigPanel(false);
+  };
+
+  const handleConfigChange = (config: UnifiedSelectionConfig, vocabulary: UnifiedVocabularyItem[], theme?: string) => {
+    setSelectedConfig(config);
+    setVocabulary(vocabulary);
+    if (theme) {
+      setGameConfig(prev => ({ ...prev, theme }));
+    }
+    setShowConfigPanel(false);
+  };
+
   // Loading state
   if (vocabularyLoading) {
     return (
@@ -601,6 +623,7 @@ export default function UnifiedVocabMasterWrapper({ searchParams = {} }: Props) 
           onExit={handleExit}
           isAdventureMode={gameConfig.theme === 'adventure' || gameConfig.gamificationEnabled === true}
           onWordAttempt={handleVocabularyMastery}
+          onOpenSettings={handleOpenConfigPanel}
         />
       )}
 

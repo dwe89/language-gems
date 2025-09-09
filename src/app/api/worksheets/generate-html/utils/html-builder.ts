@@ -1,6 +1,6 @@
 // HTML building utilities for worksheet generation
 
-import { baseStyles } from '../shared/base-styles';
+import { getBaseStyles } from '../shared/base-styles';
 
 export interface HTMLDocumentOptions {
   title: string;
@@ -23,7 +23,7 @@ export function createHTMLDocument(
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/lucide@latest/dist/umd/lucide.css">
     <style>
-        ${baseStyles}
+        ${getBaseStyles()}
         ${options.additionalStyles || ''}
     </style>
     ${options.additionalHead || ''}

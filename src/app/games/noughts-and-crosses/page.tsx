@@ -75,6 +75,18 @@ export default function UnifiedNoughtsAndCrossesPage() {
           timestamp: new Date().toISOString()
         });
 
+        // Config panel state management
+        const [showConfigPanel, setShowConfigPanel] = useState(false);
+
+        // Config panel handlers
+        const handleOpenConfigPanel = () => {
+          setShowConfigPanel(true);
+        };
+
+        const handleCloseConfigPanel = () => {
+          setShowConfigPanel(false);
+        };
+
         if (loading) {
           return (
             <div className="flex items-center justify-center min-h-screen">
@@ -137,6 +149,40 @@ export default function UnifiedNoughtsAndCrossesPage() {
                 }
                 router.push('/games/noughts-and-crosses');
               }}
+              onOpenSettings={handleOpenConfigPanel}
+            />
+
+            {/* In-game configuration panel */}
+            <InGameConfigPanel
+              currentConfig={{
+                language: gameSettings.language === 'spanish' ? 'es' :
+                         gameSettings.language === 'french' ? 'fr' :
+                         gameSettings.language === 'german' ? 'de' : 'es',
+                curriculumLevel: gameSettings.curriculumLevel,
+                category: gameSettings.category,
+                subcategory: gameSettings.subcategory,
+                examBoard: gameSettings.examBoard,
+                tier: gameSettings.tier
+              }}
+              onConfigChange={(config, vocabulary, theme) => {
+                // Handle config changes by reloading the page with new URL params
+                const params = new URLSearchParams();
+                params.set('lang', config.language);
+                params.set('level', config.curriculumLevel);
+                params.set('cat', config.category);
+                params.set('subcat', config.subcategory || '');
+                if (theme) params.set('theme', theme);
+                if (config.examBoard) params.set('examBoard', config.examBoard);
+                if (config.tier) params.set('tier', config.tier);
+
+                window.location.href = `/games/noughts-and-crosses?${params.toString()}`;
+              }}
+              supportedLanguages={['es', 'fr', 'de']}
+              supportsThemes={true}
+              currentTheme={gameSettings.theme}
+              isOpen={showConfigPanel}
+              onClose={handleCloseConfigPanel}
+              showCustomMode={false}
             />
           </ThemeProvider>
         );

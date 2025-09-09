@@ -13,6 +13,7 @@ interface WordBlastGameWrapperProps {
   assignmentMode?: boolean;
   assignmentConfig?: any;
   userId?: string;
+  onOpenSettings?: () => void;
 }
 
 export default function WordBlastGameWrapper(props: WordBlastGameWrapperProps) {

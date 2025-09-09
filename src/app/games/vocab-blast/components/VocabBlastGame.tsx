@@ -608,6 +608,23 @@ export default function VocabBlastGame({
               <span className="hidden sm:inline">{isPaused ? 'Resume' : 'Pause'}</span>
             </button>
 
+            {onOpenSettings && (
+              <motion.button
+                onClick={() => {
+                  playSFX('button-click');
+                  onOpenSettings();
+                }}
+                className="relative px-3 md:px-4 py-2 md:py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-sm md:text-base font-semibold flex items-center gap-2 md:gap-3 transition-all duration-300 shadow-lg hover:shadow-xl border-2 border-white/20"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                title="Customize your game: Change Language, Level, Topic & Theme"
+              >
+                <Settings className="h-5 w-5 md:h-6 md:w-6" />
+                <span className="hidden md:inline">Game Settings</span>
+                <span className="md:hidden">Settings</span>
+              </motion.button>
+            )}
+
             <button
               onClick={() => setSoundEnabled(!soundEnabled)}
               className="flex items-center gap-1 md:gap-2 bg-black/60 hover:bg-black/80 text-white px-3 py-2 md:px-4 rounded-lg transition-all duration-200 text-sm md:text-base border border-white/20"

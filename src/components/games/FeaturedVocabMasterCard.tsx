@@ -11,9 +11,7 @@ import {
   TrendingUp, 
   Users, 
   ChevronRight,
-  Play,
-  Settings,
-  Target
+  Play
 } from 'lucide-react';
 
 interface FeaturedVocabMasterCardProps {
@@ -23,18 +21,14 @@ interface FeaturedVocabMasterCardProps {
 export default function FeaturedVocabMasterCard({ onChooseContent }: FeaturedVocabMasterCardProps) {
   const router = useRouter();
 
-  const handleQuickStart = () => {
-    router.push('/student-dashboard/vocabmaster');
-  };
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
-      className="col-span-full mb-8"
+      className="col-span-full lg:col-span-2 mb-4"
     >
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-600 via-blue-600 to-indigo-700 p-8 shadow-2xl">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-600 via-blue-600 to-indigo-700 p-6 shadow-2xl">
         {/* Background Pattern */}
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-4 left-4 w-32 h-32 bg-white rounded-full blur-3xl"></div>
@@ -44,60 +38,58 @@ export default function FeaturedVocabMasterCard({ onChooseContent }: FeaturedVoc
 
         {/* Content */}
         <div className="relative z-10">
-          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
             {/* Left Content */}
             <div className="flex-1">
-              <div className="flex items-center gap-3 mb-4">
+              <div className="flex items-center gap-3 mb-3">
                 <div className="flex items-center gap-2">
-                  <Brain className="h-8 w-8 text-white" />
-                  <h2 className="text-3xl font-bold text-white">VocabMaster</h2>
+                  <Brain className="h-6 w-6 text-white" />
+                  <h2 className="text-2xl font-bold text-white">VocabMaster</h2>
                 </div>
-                <div className="bg-yellow-400 text-yellow-900 px-3 py-1 rounded-full text-sm font-bold">
+                <div className="bg-yellow-400 text-yellow-900 px-2 py-1 rounded-full text-xs font-bold">
                   RECOMMENDED
                 </div>
               </div>
 
-              <p className="text-xl text-white/90 mb-6 leading-relaxed max-w-2xl">
+              <p className="text-lg text-white/90 mb-4 leading-relaxed max-w-2xl">
                 Master vocabulary with intelligent spaced repetition, adaptive learning, and 8 engaging game modes. 
               </p>
 
               {/* Features */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
                 <div className="flex items-center gap-2 text-white/80">
-                  <TrendingUp className="h-5 w-5 text-green-300" />
-                  <span className="text-sm">Intelligent Spaced Repetition</span>
+                  <TrendingUp className="h-4 w-4 text-green-300" />
+                  <span className="text-xs">Intelligent Spaced Repetition</span>
                 </div>
                 <div className="flex items-center gap-2 text-white/80">
-                  <Sparkles className="h-5 w-5 text-purple-300" />
-                  <span className="text-sm">8 Learning Modes</span>
+                  <Sparkles className="h-4 w-4 text-purple-300" />
+                  <span className="text-xs">8 Learning Modes</span>
                 </div>
                 <div className="flex items-center gap-2 text-white/80">
-                  <Users className="h-5 w-5 text-blue-300" />
-                  <span className="text-sm">Teacher Recommended</span>
+                  <Users className="h-4 w-4 text-blue-300" />
+                  <span className="text-xs">Teacher Recommended</span>
                 </div>
               </div>
 
               {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row gap-4">
-                <motion.button
-                  onClick={handleQuickStart}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="flex items-center justify-center gap-2 bg-white text-purple-700 px-6 py-3 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transition-all duration-200"
-                >
-                  <Play className="h-5 w-5" />
-                  Quick Start
-                </motion.button>
-
+              <div className="flex flex-col sm:flex-row gap-3">
                 <motion.button
                   onClick={onChooseContent}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  className="flex items-center justify-center gap-2 bg-white/10 backdrop-blur-sm text-white border-2 border-white/20 px-6 py-3 rounded-xl font-semibold text-lg hover:bg-white/20 transition-all duration-200"
+                  className="flex items-center justify-center gap-2 bg-white text-purple-700 px-4 py-2 rounded-lg font-semibold text-base shadow-lg hover:shadow-xl transition-all duration-200"
                 >
-                  <Settings className="h-5 w-5" />
-                  Choose Content
+                  <Play className="h-4 w-4" />
+                  Play
                 </motion.button>
+
+                <Link
+                  href="/student-dashboard/vocabmaster"
+                  className="flex items-center gap-2 text-white/80 hover:text-white transition-colors px-4 py-2 rounded-lg hover:bg-white/10 transition-all duration-200"
+                >
+                  <span>Learn more</span>
+                  <ChevronRight className="h-4 w-4" />
+                </Link>
               </div>
             </div>
 
@@ -178,29 +170,6 @@ export default function FeaturedVocabMasterCard({ onChooseContent }: FeaturedVoc
             </div>
           </div>
 
-          {/* Bottom Stats */}
-          <div className="mt-6 pt-6 border-t border-white/20">
-            <div className="flex flex-wrap items-center justify-between gap-4 text-white/70 text-sm">
-              <div className="flex items-center gap-6">
-                <div className="flex items-center gap-2">
-                  <Target className="h-4 w-4" />
-                  <span>Most Effective for Long-term Retention</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4" />
-                  <span>Proven Results in Vocabulary Mastery</span>
-                </div>
-                
-              </div>
-              <Link
-                href="/student-dashboard/vocabmaster"
-                className="flex items-center gap-1 text-white/60 hover:text-white/80 transition-colors"
-              >
-                <span>Learn more</span>
-                <ChevronRight className="h-4 w-4" />
-              </Link>
-            </div>
-          </div>
         </div>
       </div>
     </motion.div>

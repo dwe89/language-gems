@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react'; // Removed useRef as backgroundMusicRef is gone
+import React, { useState, useEffect, useRef } from 'react'; // Removed useRef as backgroundMusicRef is gone
 import { ThemeProvider, useTheme } from './ThemeProvider';
 import confetti from 'canvas-confetti';
 import { motion } from 'framer-motion';
@@ -109,7 +109,7 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
   const [wrongGuesses, setWrongGuesses] = useState(0);
   const [gameStatus, setGameStatus] = useState<'playing' | 'won' | 'lost'>('playing');
   const [timer, setTimer] = useState(0);
-  const [timerInterval, setTimerInterval] = useState<NodeJS.Timeout | null>(null);
+  const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const [score, setScore] = useState(0);
   const [totalScore, setTotalScore] = useState(() => {
     return parseInt(localStorage.getItem('hangmanTotalScore') || '0', 10);
@@ -191,10 +191,10 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
       setTimer(prev => prev + 1);
     }, 1000);
 
-    setTimerInterval(interval);
+    timerIntervalRef.current = interval;
 
     return () => {
-      if (timerInterval) clearInterval(timerInterval);
+      if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
     };
   }, [settings, vocabulary]);
 
@@ -276,7 +276,7 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
       }
 
       // Stop timer
-      if (timerInterval) clearInterval(timerInterval);
+      if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
 
       // Trigger confetti
       setTimeout(() => {
@@ -346,7 +346,7 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
       }
 
       // Stop timer
-      if (timerInterval) clearInterval(timerInterval);
+      if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
 
       if (onGameEnd) {
         const currentVocabItem = vocabulary?.find(v => v.word.toLowerCase() === word.toLowerCase());
@@ -362,7 +362,16 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
         });
       }
     }
-  }, [guessedLetters, wordLetters, wrongGuesses, gameStatus, timerInterval, onGameEnd, playSFX, settings.playAudio, word]);
+  }, [guessedLetters, wordLetters, wrongGuesses, gameStatus, onGameEnd, playSFX, settings.playAudio, word]);
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current);
+      }
+    };
+  }, []);
 
   const handleLetterGuess = (letter: string) => {
     const lowerLetter = letter.toLowerCase();
@@ -525,11 +534,11 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
     setWordLetters([...new Set(newWord.split('').filter((char: string) => char !== ' '))] as string[]);
 
     // Restart the timer
-    if (timerInterval) clearInterval(timerInterval);
+    if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
     const interval = setInterval(() => {
       setTimer(prev => prev + 1);
     }, 1000);
-    setTimerInterval(interval);
+    timerIntervalRef.current = interval;
   };
 
   const calculateScore = () => {

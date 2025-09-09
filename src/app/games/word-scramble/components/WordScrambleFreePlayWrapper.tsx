@@ -13,6 +13,7 @@ interface WordScrambleFreePlayWrapperProps {
   difficulty: 'easy' | 'medium' | 'hard';
   onBackToMenu: () => void;
   onGameComplete: (result: any) => void;
+  onOpenSettings?: () => void;
 }
 
 export default function WordScrambleFreePlayWrapper({
@@ -21,7 +22,8 @@ export default function WordScrambleFreePlayWrapper({
   language,
   difficulty,
   onBackToMenu,
-  onGameComplete
+  onGameComplete,
+  onOpenSettings
 }: WordScrambleFreePlayWrapperProps) {
   const { user } = useAuth();
   const [gameSessionId, setGameSessionId] = useState<string | null>(null);
@@ -110,6 +112,7 @@ export default function WordScrambleFreePlayWrapper({
       difficulty={difficulty}
       onBackToMenu={onBackToMenu}
       onGameComplete={handleGameComplete}
+      onOpenSettings={onOpenSettings}
     />
   );
 }

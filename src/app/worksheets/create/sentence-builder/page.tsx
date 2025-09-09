@@ -16,7 +16,7 @@ import {
   Loader2
 } from 'lucide-react';
 import Link from 'next/link';
-import { UnifiedCategorySelector, UnifiedSelectionConfig } from '../../../../components/games/UnifiedCategorySelector';
+import UnifiedCategorySelector, { UnifiedSelectionConfig } from '../../../../components/games/UnifiedCategorySelector';
 
 export default function SentenceBuilderPage() {
   const [title, setTitle] = useState('Sentence Building Practice');

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, RotateCcw, Lightbulb, Volume2 } from 'lucide-react';
+import { ArrowLeft, RotateCcw, Lightbulb, Volume2, Settings } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
 
@@ -95,6 +95,7 @@ interface WordScrambleGameProps {
   language?: string;
   difficulty?: 'easy' | 'medium' | 'hard';
   onProgressUpdate?: (progress: any) => void;
+  onOpenSettings?: () => void;
 }
 
 // Power-up definitions (simplified)
@@ -193,7 +194,8 @@ export default function WordScrambleGame({
   userId,
   language = 'es',
   difficulty = 'medium',
-  onProgressUpdate
+  onProgressUpdate,
+  onOpenSettings
 }: WordScrambleGameProps) {
 
   const [currentWordData, setCurrentWordData] = useState<GameVocabularyWord | null>(null);
@@ -589,8 +591,20 @@ export default function WordScrambleGame({
             </h1>
           </div>
           
-          <div className="flex items-center gap-3 invisible"> {/* Spacer to align title */}
-            <motion.button className="px-4 py-2">⚙️</motion.button>
+          <div className="flex items-center gap-3">
+            {onOpenSettings && (
+              <motion.button
+                onClick={onOpenSettings}
+                className="relative px-3 md:px-4 py-2 md:py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-sm md:text-base font-semibold flex items-center gap-2 md:gap-3 transition-all duration-300 shadow-lg hover:shadow-xl border-2 border-white/20"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                title="Customize your game: Change Language, Level, Topic & Theme"
+              >
+                <Settings className="h-5 w-5 md:h-6 md:w-6" />
+                <span className="hidden md:inline">Game Settings</span>
+                <span className="md:hidden">Settings</span>
+              </motion.button>
+            )}
           </div>
         </div>
 
