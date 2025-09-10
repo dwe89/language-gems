@@ -166,9 +166,12 @@ export default function WordBlastPage() {
         gameName="Word Blast"
         gameDescription="Blast through sentence challenges and collect vocabulary gems"
         supportedLanguages={['es', 'fr', 'de']}
-        showCustomMode={false}
+        showCustomMode={true}
+        minVocabularyRequired={1}
         onGameStart={handleGameStart}
         onBack={() => router.push('/games')}
+        supportsThemes={false}
+        requiresAudio={false}
       />
     );
   }

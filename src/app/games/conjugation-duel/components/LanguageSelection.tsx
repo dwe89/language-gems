@@ -3,6 +3,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Globe, ArrowRight } from 'lucide-react';
+import FlagIcon from '@/components/ui/FlagIcon';
 
 interface Language {
   id: string;
@@ -20,21 +21,21 @@ const languages: Language[] = [
   {
     id: 'spanish',
     name: 'Spanish',
-    flag: '🇪🇸',
+    flag: 'ES',
     description: 'Master Spanish verb conjugations through epic battles',
     available: true
   },
   {
     id: 'french',
     name: 'French',
-    flag: '🇫🇷',
+    flag: 'FR',
     description: 'Conquer French verb forms in medieval arenas',
     available: true // Now available
   },
   {
     id: 'german',
     name: 'German',
-    flag: '🇩🇪',
+    flag: 'DE',
     description: 'Battle German verb conjugations in ancient castles',
     available: true // Now available
   }
@@ -81,8 +82,8 @@ export default function LanguageSelection({ onLanguageSelect }: LanguageSelectio
             >
               <div className="p-8 text-center">
                 {/* Flag */}
-                <div className="text-6xl mb-4">
-                  {language.flag}
+                <div className="mb-4 flex justify-center">
+                  <FlagIcon countryCode={language.flag} size="xl" />
                 </div>
 
                 {/* Language Name */}

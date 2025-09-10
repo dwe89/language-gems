@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Languages, Globe, FileText } from 'lucide-react';
+import FlagIcon from '@/components/ui/FlagIcon';
 
 interface LanguageSelectionProps {
   selectedCase: string;
@@ -14,15 +15,15 @@ const LANGUAGES = [
   {
     code: 'es',
     name: 'Spanish',
-    flag: '🇪🇸',
+    flag: 'ES',
     description: 'Intercept Spanish communications',
     difficulty: 'Beginner Friendly',
     color: 'from-red-500 to-yellow-500'
   },
   {
-    code: 'fr', 
+    code: 'fr',
     name: 'French',
-    flag: '🇫🇷',
+    flag: 'FR',
     description: 'Decode French transmissions',
     difficulty: 'Intermediate',
     color: 'from-blue-500 to-red-500'
@@ -30,7 +31,7 @@ const LANGUAGES = [
   {
     code: 'de',
     name: 'German',
-    flag: '🇩🇪', 
+    flag: 'DE',
     description: 'Translate German intelligence',
     difficulty: 'Advanced',
     color: 'from-red-600 to-yellow-400'
@@ -112,7 +113,9 @@ export default function LanguageSelection({ selectedCase, onLanguageSelect, onBa
                     <div className="bg-slate-800/90 backdrop-blur-sm rounded-lg p-6 h-full">
                       {/* Language flag and name */}
                       <div className="text-center mb-4">
-                        <div className="text-6xl mb-3">{language.flag}</div>
+                        <div className="mb-3 flex justify-center">
+                          <FlagIcon countryCode={language.flag} size="xl" />
+                        </div>
                         <h3 className="text-2xl font-bold text-white mb-1">{language.name}</h3>
                         <div className="text-amber-400 text-sm font-semibold">{language.difficulty}</div>
                       </div>

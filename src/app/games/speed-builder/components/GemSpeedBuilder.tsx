@@ -9,7 +9,12 @@ import {
   ArrowLeft,
   Crown,
   Play,
-  Home
+  Home,
+  Shuffle,
+  Lightbulb,
+  Sparkles,
+  Zap,
+  Target
 } from 'lucide-react';
 import { createBrowserClient } from '../../../../lib/supabase-client';
 
@@ -387,10 +392,10 @@ const GemPowerUpButton: React.FC<{
     >
       {/* Power-up icon */}
       <div className="text-xl">
-        {powerUp.type === 'shuffle' && '🔀'}
-        {powerUp.type === 'hint' && '💡'}
-        {powerUp.type === 'glow' && '✨'}
-        {powerUp.type === 'timeBoost' && '⚡'}
+        {powerUp.type === 'shuffle' && <Shuffle className="w-5 h-5" />}
+        {powerUp.type === 'hint' && <Lightbulb className="w-5 h-5" />}
+        {powerUp.type === 'glow' && <Sparkles className="w-5 h-5" />}
+        {powerUp.type === 'timeBoost' && <Zap className="w-5 h-5" />}
       </div>
       
       {/* Power-up name */}
@@ -492,10 +497,10 @@ const GemSpeedBuilderInternal: React.FC<{
     bonusMultiplier: 1
   });
   const [powerUps, setPowerUps] = useState<PowerUp[]>([
-    { id: 'shuffle', type: 'shuffle', active: false, cooldown: 0, description: 'Reshuffle words', icon: '🎲', gemCost: 3 },
-    { id: 'hint', type: 'hint', active: false, cooldown: 0, description: 'Highlight correct word', icon: '💡', gemCost: 5 },
-    { id: 'glow', type: 'glow', active: false, cooldown: 0, description: 'Show word positions', icon: '✨', gemCost: 4 },
-    { id: 'timeBoost', type: 'timeBoost', active: false, cooldown: 0, description: 'Add 30 seconds', icon: '⏰', gemCost: 6 }
+    { id: 'shuffle', type: 'shuffle', active: false, cooldown: 0, description: 'Reshuffle words', icon: 'Shuffle', gemCost: 3 },
+    { id: 'hint', type: 'hint', active: false, cooldown: 0, description: 'Highlight correct word', icon: 'Lightbulb', gemCost: 5 },
+    { id: 'glow', type: 'glow', active: false, cooldown: 0, description: 'Show word positions', icon: 'Sparkles', gemCost: 4 },
+    { id: 'timeBoost', type: 'timeBoost', active: false, cooldown: 0, description: 'Add 30 seconds', icon: 'Zap', gemCost: 6 }
   ]);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [availableSentences, setAvailableSentences] = useState<SentenceData[]>([]);
@@ -1318,9 +1323,9 @@ const GemSpeedBuilderInternal: React.FC<{
                   className="px-3 py-2 bg-white/10 hover:bg-white/20 rounded-lg border border-white/20 text-white transition-all"
                   title="Change Language, Level, Topic & Theme"
                 >
-                  <span className="text-sm mr-2">🎯</span>
+                  <Target className="w-4 h-4 mr-2 inline" />
                   <span className="hidden md:inline">Game Settings</span>
-                  <span className="md:hidden">⚙️</span>
+                  <Target className="w-4 h-4 md:hidden" />
                 </button>
               )}
             </div>
@@ -1376,8 +1381,9 @@ const GemSpeedBuilderInternal: React.FC<{
                 transition={{ delay: 0.1 }}
                 className="bg-white/5 backdrop-blur-lg rounded-xl p-4 flex-shrink-0"
               >
-                <h3 className="text-base font-bold text-center mb-3 text-white">
-                  ✨ Place words in order:
+                <h3 className="text-base font-bold text-center mb-3 text-white flex items-center justify-center gap-2">
+                  <Sparkles className="w-4 h-4" />
+                  Place words in order:
                 </h3>
                 <div className="flex flex-wrap justify-center gap-2 sm:gap-3">
                   {placedWords.map((word, index) => (

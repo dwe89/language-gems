@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { GameConfig } from './LavaTempleWordRestoreGame';
+import FlagIcon from '@/components/ui/FlagIcon';
 
 interface LanguageSelectionProps {
   gameConfig: GameConfig;
@@ -11,9 +12,9 @@ interface LanguageSelectionProps {
 }
 
 const LANGUAGES = [
-  { code: 'spanish', name: 'Spanish', flag: '🇪🇸', color: 'from-red-600 to-yellow-600' },
-  { code: 'french', name: 'French', flag: '🇫🇷', color: 'from-blue-600 to-red-600' },
-  { code: 'german', name: 'German', flag: '🇩🇪', color: 'from-black to-red-600' }
+  { code: 'spanish', name: 'Spanish', flag: 'ES', color: 'from-red-600 to-yellow-600' },
+  { code: 'french', name: 'French', flag: 'FR', color: 'from-blue-600 to-red-600' },
+  { code: 'german', name: 'German', flag: 'DE', color: 'from-black to-red-600' }
 ];
 
 const DIFFICULTIES = [
@@ -107,7 +108,9 @@ export default function LanguageSelection({
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                <div className="text-4xl mb-3">{lang.flag}</div>
+                <div className="mb-3 flex justify-center">
+                  <FlagIcon countryCode={lang.flag} size="lg" />
+                </div>
                 <h4 className="text-xl font-bold text-white mb-2">{lang.name}</h4>
                 <div className={`h-2 rounded-full bg-gradient-to-r ${lang.color} opacity-70`}></div>
               </motion.button>

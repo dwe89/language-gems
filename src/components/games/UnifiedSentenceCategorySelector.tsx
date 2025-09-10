@@ -605,6 +605,7 @@ export default function UnifiedSentenceCategorySelector({
               <CurriculumSelection
                 levels={CURRICULUM_LEVELS}
                 onSelect={handleCurriculumSelect}
+                onCustomMode={showCustomMode ? handleCustomMode : undefined}
                 selectedLanguage={selectedLanguage}
               />
             )}

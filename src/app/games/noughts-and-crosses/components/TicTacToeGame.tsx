@@ -652,6 +652,16 @@ export default function TicTacToeGame({ settings, onBackToMenu, onGameEnd }: Tic
         ...prev,
         totalWordsLearned: prev.totalWordsLearned + 1
       }));
+      
+      // Hide quiz and proceed to AI turn (only if answer was correct)
+      setShowQuiz(false);
+      setCurrentQuiz(null);
+      setIsPlayerTurn(false);
+      
+      // Make AI move if game is still playing
+      if (gameStatus === 'playing') {
+        makeAIMove();
+      }
     } else {
       sounds.wrong.play();
       
@@ -660,16 +670,16 @@ export default function TicTacToeGame({ settings, onBackToMenu, onGameEnd }: Tic
         ...prev,
         wrongAnswers: prev.wrongAnswers + 1
       }));
-    }
-    
-    // Hide quiz and proceed to AI turn
-    setShowQuiz(false);
-    setCurrentQuiz(null);
-    setIsPlayerTurn(false);
-    
-    // Make AI move if game is still playing
-    if (gameStatus === 'playing') {
-      makeAIMove();
+      
+      // For wrong answers, remove the player's mark from the board and let them try again
+      const newBoard = [...board];
+      newBoard[currentQuiz.cellIndex] = { mark: '', learned: false };
+      setBoard(newBoard);
+      
+      // Hide quiz but keep it as player's turn (give them another chance)
+      setShowQuiz(false);
+      setCurrentQuiz(null);
+      // Player keeps their turn - don't switch to AI turn
     }
   };
   
@@ -762,7 +772,7 @@ export default function TicTacToeGame({ settings, onBackToMenu, onGameEnd }: Tic
               progress = updated.streak;
               break;
             case 'perfect_game':
-              progress = correctAnswers > 0 && gameStats.wrongAnswers === 0 ? 1 : 0;
+              progress = gameStats.correctAnswers > 0 && gameStats.wrongAnswers === 0 ? 1 : 0;
               break;
           }
           
@@ -1014,7 +1024,7 @@ export default function TicTacToeGame({ settings, onBackToMenu, onGameEnd }: Tic
             <div className="font-semibold text-indigo-100">You</div>
             <div className="flex items-center gap-1">
               <Star className="w-4 h-4" />
-              <span className="text-sm">{correctAnswers} correct</span>
+              <span className="text-sm">{gameStats.correctAnswers} correct</span>
             </div>
           </div>
           <div className="text-2xl font-bold mb-1">{playerMark}</div>

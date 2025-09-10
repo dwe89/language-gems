@@ -312,7 +312,7 @@ export function SentenceTowersMainGame({
 
     // Show feedback
     setFeedbackVisible(isCorrect ? 'correct' : 'incorrect');
-    setTimeout(() => setFeedbackVisible(null), 1500);
+    setTimeout(() => setFeedbackVisible(null), 800);
 
     // Mark word as completed and generate next word
     setGameVocabulary(prev => prev.map(word =>
@@ -323,7 +323,7 @@ export function SentenceTowersMainGame({
     setTimeout(() => {
       generateWordOptions();
       setQuestionStartTime(Date.now());
-    }, 1500);
+    }, 800);
   }, [currentTargetWord, questionStartTime, settings.difficulty, recordWordPractice]);
 
   return (

@@ -37,6 +37,7 @@ export interface UnifiedGameLauncherProps {
   requiresAudio?: boolean;
   supportsThemes?: boolean;
   defaultTheme?: string;
+  disableUrlParams?: boolean; // Disable URL parameter auto-start
   gameCompatibility?: {
     supportsVocabulary: boolean;
     supportsSentences: boolean;
@@ -69,6 +70,7 @@ export default function UnifiedGameLauncher({
   requiresAudio = false,
   supportsThemes = false,
   defaultTheme = 'default',
+  disableUrlParams = false,
   gameCompatibility,
   preferredContentType = 'vocabulary'
 }: UnifiedGameLauncherProps) {
@@ -93,13 +95,14 @@ export default function UnifiedGameLauncher({
 
   // Check for URL parameters and auto-start game
   useEffect(() => {
-    if (!isClient) return;
+    if (!isClient || disableUrlParams) return;
     const checkUrlParams = async () => {
       if (urlParamsChecked || selectedConfig || !searchParams) {
         console.log(`🔍 [UnifiedGameLauncher - ${gameName}] URL params check skipped:`, {
           urlParamsChecked,
           hasSelectedConfig: !!selectedConfig,
-          hasSearchParams: !!searchParams
+          hasSearchParams: !!searchParams,
+          disableUrlParams
         });
         return;
       }
@@ -145,7 +148,7 @@ export default function UnifiedGameLauncher({
     };
 
     checkUrlParams();
-  }, [searchParams, urlParamsChecked, selectedConfig, gameName, defaultTheme, isClient, isLoading, user, isDemo]);
+  }, [searchParams, urlParamsChecked, selectedConfig, gameName, defaultTheme, isClient, isLoading, user, isDemo, disableUrlParams]);
 
   // Load vocabulary based on selected configuration
   const { 
@@ -159,7 +162,20 @@ export default function UnifiedGameLauncher({
     limit: 100, // Get plenty of vocabulary for variety
     randomize: true,
     hasAudio: requiresAudio,
-    customVocabulary: selectedConfig?.customMode ? customVocabulary : undefined
+    customVocabulary: selectedConfig?.customMode ? 
+      (selectedConfig.customVocabulary?.map(item => ({
+        id: item.id,
+        word: item.term,
+        translation: item.translation || '',
+        language: selectedConfig.language || 'es',
+        category: 'custom',
+        subcategory: undefined,
+        part_of_speech: item.part_of_speech,
+        example_sentence_original: item.context_sentence,
+        example_sentence_translation: item.context_translation,
+        difficulty_level: undefined,
+        audio_url: undefined
+      })) || customVocabulary) : undefined
   });
 
   // Auto-start game when vocabulary is loaded from URL parameters
@@ -184,7 +200,7 @@ export default function UnifiedGameLauncher({
         // Auto-start the game
         onGameStart(selectedConfig, vocabulary, supportsThemes ? selectedTheme : undefined);
       } else {
-        console.log(`❌ [UnifiedGameLauncher - ${gameName}] Vocabulary validation failed:`, validation.error);
+        console.log(`❌ [UnifiedGameLauncher - ${gameName}] Vocabulary validation failed:`, validation.message);
       }
     }
   }, [selectedConfig, showSelector, vocabulary, loading, error, urlParamsChecked, gameName, minVocabularyRequired, onGameStart, supportsThemes, selectedTheme]);
@@ -193,10 +209,11 @@ export default function UnifiedGameLauncher({
     setSelectedConfig(config);
     setShowSelector(false);
 
-    // If custom mode, show vocabulary input
-    if (config.customMode) {
+    // If custom mode but no custom vocabulary provided yet, show vocabulary input
+    if (config.customMode && (!config.customVocabulary || config.customVocabulary.length === 0)) {
       setShowCustomVocabInput(true);
     }
+    // If custom vocabulary is already provided, don't show the input screen
   };
 
   const handleBackToSelector = () => {

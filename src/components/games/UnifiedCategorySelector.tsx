@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ReactCountryFlag from 'react-country-flag';
+import FlagIcon from '@/components/ui/FlagIcon';
 import {
   ArrowLeft,
   ArrowRight,
@@ -34,9 +35,13 @@ import {
   Stethoscope, // For Health & Lifestyle
   Pencil,
   Folder,
-  Check
+  Check,
+  Type,
+  MessageSquare,
+  Shuffle
 } from 'lucide-react';
 import { useDemoAuth } from '../auth/DemoAuthProvider';
+import { supabaseBrowser } from '../auth/AuthProvider';
 import { VOCABULARY_CATEGORIES as KS3_CATEGORIES } from './ModernCategorySelector';
 import { KS4_VOCABULARY_CATEGORIES as KS4_CATEGORIES } from './KS4CategorySystem';
 
@@ -87,21 +92,21 @@ const AVAILABLE_LANGUAGES = [
   {
     code: 'es',
     name: 'Spanish',
-    icon: <ReactCountryFlag countryCode="ES" svg style={{ width: '2rem', height: '2rem' }} className="rounded-full shadow-lg" />,
+    icon: <FlagIcon countryCode="ES" size="lg" />,
     description: 'Learn Spanish vocabulary',
     color: 'from-red-500 to-yellow-500'
   },
   {
     code: 'fr',
     name: 'French',
-    icon: <ReactCountryFlag countryCode="FR" svg style={{ width: '2rem', height: '2rem' }} className="rounded-full shadow-lg" />,
+    icon: <FlagIcon countryCode="FR" size="lg" />,
     description: 'Master French language skills',
     color: 'from-blue-500 to-red-500'
   },
   {
     code: 'de',
     name: 'German',
-    icon: <ReactCountryFlag countryCode="DE" svg style={{ width: '2rem', height: '2rem' }} className="rounded-full shadow-lg" />,
+    icon: <FlagIcon countryCode="DE" size="lg" />,
     description: 'Build German language proficiency',
     color: 'from-gray-800 to-red-600'
   },
@@ -300,7 +305,8 @@ export default function UnifiedCategorySelector({
     // Parse custom input if provided
     let parsedVocabulary: CustomVocabularyItem[] = [];
 
-    if (customInput.trim()) {
+    // Only parse input vocabulary if no custom list is selected
+    if (customInput.trim() && !selectedCustomList) {
       const lines = customInput.trim().split('\n').filter(line => line.trim());
       parsedVocabulary = lines.map((line, index) => {
         const parts = line.split(/[-,\t]/).map(s => s.trim());
@@ -424,6 +430,7 @@ export default function UnifiedCategorySelector({
               <CurriculumSelection
                 levels={CURRICULUM_LEVELS}
                 onSelect={handleCurriculumSelect}
+                onCustomMode={showCustomMode ? handleCustomMode : undefined}
                 selectedLanguage={selectedLanguage}
               />
             )}
@@ -511,8 +518,9 @@ const LanguageSelection: React.FC<{
 const CurriculumSelection: React.FC<{
   levels: typeof CURRICULUM_LEVELS;
   onSelect: (level: 'KS2' | 'KS3' | 'KS4' | 'KS5') => void;
+  onCustomMode?: () => void;
   selectedLanguage: string;
-}> = ({ levels, onSelect, selectedLanguage }) => {
+}> = ({ levels, onSelect, onCustomMode, selectedLanguage }) => {
   const language = AVAILABLE_LANGUAGES.find(l => l.code === selectedLanguage);
 
   return (
@@ -531,6 +539,28 @@ const CurriculumSelection: React.FC<{
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+        {/* Custom Content Option - First */}
+        {onCustomMode && (
+          <motion.button
+            onClick={onCustomMode}
+            whileHover={{ scale: 1.02, y: -4 }}
+            whileTap={{ scale: 0.98 }}
+            className="bg-gradient-to-br from-yellow-500 to-orange-500 rounded-2xl p-6 text-white shadow-lg transition-all duration-300 group relative overflow-hidden hover:shadow-xl cursor-pointer"
+          >
+            <div className="relative z-10">
+              <Pencil className="h-8 w-8" />
+            </div>
+            <h3 className="text-xl font-bold mb-2">Custom Content</h3>
+            <p className="text-white/90 text-sm mb-2">Create your own vocabulary and content</p>
+            <p className="text-white/70 text-xs">Perfect for personalized learning</p>
+            <div className="mt-4 flex items-center justify-center text-white/80 group-hover:text-white transition-colors">
+              <span className="text-sm font-medium">Create Content</span>
+              <ArrowRight className="h-4 w-4 ml-2" />
+            </div>
+          </motion.button>
+        )}
+
+        {/* Standard Curriculum Levels */}
         {levels.map((level) => (
           <motion.button
             key={level.code}
@@ -763,9 +793,9 @@ const CustomContentSelection: React.FC<{
 
   const getContentTypeIcon = (type: 'vocabulary' | 'sentences' | 'mixed') => {
     switch (type) {
-      case 'vocabulary': return '📝';
-      case 'sentences': return '💬';
-      case 'mixed': return '🔀';
+      case 'vocabulary': return <Type className="h-8 w-8" />;
+      case 'sentences': return <MessageSquare className="h-8 w-8" />;
+      case 'mixed': return <Shuffle className="h-8 w-8" />;
     }
   };
 
@@ -844,7 +874,7 @@ Me gusta la pizza - I like pizza`;
                       : 'border-white/10 bg-white/5 text-white/40 cursor-not-allowed'
                 }`}
               >
-                <div className="text-2xl mb-2">{getContentTypeIcon(type)}</div>
+                <div className="mb-2 flex justify-center">{getContentTypeIcon(type)}</div>
                 <div className="font-medium capitalize">{type}</div>
                 <div className="text-xs mt-1 opacity-80">
                   {getContentTypeDescription(type)}
@@ -907,14 +937,12 @@ Me gusta la pizza - I like pizza`;
         )}
 
         {activeTab === 'lists' && (
-          <div className="text-center py-8">
-            <BookOpen className="h-16 w-16 mb-4 mx-auto text-white" />
-            <h3 className="text-lg font-semibold text-white mb-2">My Collections</h3>
-            <p className="text-white/60 mb-4">Choose from your saved vocabulary collections</p>
-            <div className="text-white/40 text-sm">
-              Coming soon - integration with your saved vocabulary lists
-            </div>
-          </div>
+          <CustomVocabularyLists
+            selectedListId={selectedCustomList}
+            onSelectList={onCustomListChange}
+            language={language}
+            contentType={contentType}
+          />
         )}
 
         {activeTab === 'upload' && (
@@ -949,5 +977,195 @@ Me gusta la pizza - I like pizza`;
         )}
       </div>
     </motion.div>
+  );
+};
+
+// Custom Vocabulary Lists Component
+const CustomVocabularyLists: React.FC<{
+  selectedListId: string;
+  onSelectList: (listId: string) => void;
+  language: string;
+  contentType: 'vocabulary' | 'sentences' | 'mixed';
+}> = ({ selectedListId, onSelectList, language, contentType }) => {
+  const [customLists, setCustomLists] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [selectedListDetails, setSelectedListDetails] = useState<any>(null);
+
+  // Load user's custom vocabulary lists
+  useEffect(() => {
+    const loadCustomLists = async () => {
+      setLoading(true);
+      try {
+        const supabase = supabaseBrowser;
+        const { data: user } = await supabase.auth.getUser();
+        
+        if (!user.user) {
+          setCustomLists([]);
+          return;
+        }
+
+        const { data, error } = await supabase
+          .from('enhanced_vocabulary_lists')
+          .select(`
+            id,
+            name,
+            description,
+            language,
+            word_count,
+            difficulty_level,
+            content_type,
+            created_at
+          `)
+          .eq('teacher_id', user.user.id)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        // Filter by language and content type if needed
+        const filteredLists = (data || []).filter((list: any) => {
+          if (language && language !== 'all' && list.language !== language) {
+            return false;
+          }
+          if (contentType !== 'mixed' && list.content_type && list.content_type !== contentType) {
+            return false;
+          }
+          return true;
+        });
+
+        setCustomLists(filteredLists);
+      } catch (error) {
+        console.error('Error loading custom lists:', error);
+        setCustomLists([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadCustomLists();
+  }, [language, contentType]);
+
+  // Load details for selected list
+  useEffect(() => {
+    if (!selectedListId) {
+      setSelectedListDetails(null);
+      return;
+    }
+
+    const loadListDetails = async () => {
+      try {
+        const supabase = supabaseBrowser;
+        const listData = customLists.find(list => list.id === selectedListId);
+        
+        if (!listData) return;
+
+        // Get first 5 items for preview
+        const { data: itemsData, error: itemsError } = await supabase
+          .from('enhanced_vocabulary_items')
+          .select('*')
+          .eq('list_id', selectedListId)
+          .limit(5);
+
+        if (itemsError) throw itemsError;
+
+        setSelectedListDetails({
+          ...listData,
+          items: itemsData || []
+        });
+      } catch (error) {
+        console.error('Error loading list details:', error);
+      }
+    };
+
+    loadListDetails();
+  }, [selectedListId, customLists]);
+
+  if (loading) {
+    return (
+      <div className="text-center py-8">
+        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-white mx-auto mb-4"></div>
+        <p className="text-white/80">Loading your vocabulary collections...</p>
+      </div>
+    );
+  }
+
+  if (customLists.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <BookOpen className="h-16 w-16 mb-4 mx-auto text-white/60" />
+        <h3 className="text-lg font-semibold text-white mb-2">No Collections Found</h3>
+        <p className="text-white/60 mb-4">You haven't created any vocabulary collections yet</p>
+        <div className="bg-white/10 rounded-lg p-4 max-w-md mx-auto">
+          <p className="text-white/80 text-sm">
+            Create vocabulary collections in the{' '}
+            <span className="text-white font-medium">Vocabulary Management</span> section
+            to use them in games.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <label className="block text-white font-medium mb-2">
+          Select a Vocabulary Collection
+        </label>
+        <select
+          value={selectedListId}
+          onChange={(e) => onSelectList(e.target.value)}
+          className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent"
+        >
+          <option value="">Choose a collection...</option>
+          {customLists.map((list) => (
+            <option key={list.id} value={list.id} className="bg-gray-800 text-white">
+              {list.name} ({list.word_count} words, {list.language})
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {selectedListDetails && (
+        <div className="bg-white/10 border border-white/20 rounded-lg p-4">
+          <h4 className="font-medium text-white mb-2">Collection Preview</h4>
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between text-white/80">
+              <span>Name:</span>
+              <span className="font-medium text-white">{selectedListDetails.name}</span>
+            </div>
+            <div className="flex justify-between text-white/80">
+              <span>Language:</span>
+              <span className="font-medium text-white capitalize">{selectedListDetails.language}</span>
+            </div>
+            <div className="flex justify-between text-white/80">
+              <span>Word Count:</span>
+              <span className="font-medium text-white">{selectedListDetails.word_count} words</span>
+            </div>
+            <div className="flex justify-between text-white/80">
+              <span>Difficulty:</span>
+              <span className="font-medium text-white capitalize">{selectedListDetails.difficulty_level}</span>
+            </div>
+
+            {selectedListDetails.items && selectedListDetails.items.length > 0 && (
+              <div className="mt-3 pt-3 border-t border-white/20">
+                <p className="text-sm font-medium text-white mb-2">Sample Words:</p>
+                <div className="space-y-1">
+                  {selectedListDetails.items.slice(0, 3).map((item: any, index: number) => (
+                    <div key={index} className="text-sm text-white/80">
+                      <span className="font-medium">{item.term}</span> → {item.translation}
+                    </div>
+                  ))}
+                  {selectedListDetails.word_count > 3 && (
+                    <div className="text-sm text-white/60 italic">
+                      ...and {selectedListDetails.word_count - 3} more words
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
   );
 };

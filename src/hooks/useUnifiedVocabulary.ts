@@ -56,6 +56,63 @@ export function useUnifiedVocabulary({
   const fetchVocabulary = async () => {
     // Handle custom vocabulary mode
     if (config?.customMode) {
+      // If custom list ID is provided, load from database
+      if (config.customListId) {
+        setLoading(true);
+        try {
+          const supabase = supabaseBrowser;
+          
+          // Load vocabulary items from the custom list
+          const { data: items, error } = await supabase
+            .from('enhanced_vocabulary_items')
+            .select(`
+              id,
+              term,
+              translation,
+              part_of_speech,
+              context_sentence,
+              context_translation,
+              difficulty_level
+            `)
+            .eq('list_id', config.customListId);
+
+          if (error) throw error;
+
+          if (!items || items.length === 0) {
+            setError('No vocabulary found in selected list');
+            setVocabulary([]);
+            return;
+          }
+
+          // Transform to unified format
+          const transformedVocabulary: UnifiedVocabularyItem[] = items.map(item => ({
+            id: item.id,
+            word: item.term,
+            translation: item.translation || '',
+            language: config.language || 'es',
+            category: 'custom',
+            subcategory: undefined,
+            part_of_speech: item.part_of_speech,
+            example_sentence_original: item.context_sentence,
+            example_sentence_translation: item.context_translation,
+            difficulty_level: item.difficulty_level,
+            audio_url: undefined
+          }));
+
+          setVocabulary(transformedVocabulary);
+          setLoading(false);
+          setError(null);
+          return;
+        } catch (err) {
+          const errorMessage = err instanceof Error ? err.message : 'Failed to load custom vocabulary list';
+          setError(errorMessage);
+          setVocabulary([]);
+          setLoading(false);
+          return;
+        }
+      }
+      
+      // If custom vocabulary array is provided
       if (customVocabulary && customVocabulary.length > 0) {
         setVocabulary(customVocabulary);
         setLoading(false);
@@ -235,6 +292,7 @@ export function useUnifiedVocabulary({
     config?.categoryId,
     config?.subcategoryId,
     config?.customMode,
+    config?.customListId,
     limit,
     randomize,
     hasAudio,

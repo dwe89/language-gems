@@ -281,39 +281,20 @@ export default function MemoryGameMain({
   
   // Helper to calculate grid columns based on number of cards
   const calculateGridLayout = (totalCards: number, difficulty: string) => {
-    // For custom words: create an appropriate grid layout
-    if (currentCustomWords && currentCustomWords.length > 0) {
-      const totalPairs = currentCustomWords.length;
-      
-      // For custom words, use grid layouts matching our difficulty patterns
-      if (totalPairs <= 3) return { cols: 3, rows: 2 }; // 3 pairs (6 cards) in 3x2
-      if (totalPairs <= 4) return { cols: 4, rows: 2 }; // 4 pairs (8 cards) in 4x2
-      if (totalPairs <= 5) return { cols: 5, rows: 2 }; // 5 pairs (10 cards) in 5x2
-      if (totalPairs <= 6) return { cols: 4, rows: 3 }; // 6 pairs (12 cards) in 4x3
-      if (totalPairs <= 8) return { cols: 4, rows: 4 }; // 8 pairs (16 cards) in 4x4
-      if (totalPairs <= 10) return { cols: 5, rows: 4 }; // 10 pairs (20 cards) in 5x4
-      
-      // For larger custom sets, calculate a reasonable square-ish layout
-      return { cols: Math.ceil(Math.sqrt(totalPairs * 2)), rows: Math.ceil(Math.sqrt(totalPairs * 2)) };
-    }
+    // Always calculate pairs from total cards to ensure consistency
+    const actualPairs = Math.floor(totalCards / 2);
     
-    // For predefined difficulty levels
-    switch (difficulty) {
-      case 'easy-1':
-        return { cols: 3, rows: 2 }; // 3 pairs (6 cards)
-      case 'easy-2':
-        return { cols: 4, rows: 2 }; // 4 pairs (8 cards)
-      case 'medium-1':
-        return { cols: 5, rows: 2 }; // 5 pairs (10 cards)
-      case 'medium-2':
-        return { cols: 4, rows: 3 }; // 6 pairs (12 cards)
-      case 'hard-2':
-        return { cols: 4, rows: 4 }; // 8 pairs (16 cards)
-      case 'expert':
-        return { cols: 5, rows: 4 }; // 10 pairs (20 cards)
-      default:
-        return { cols: 4, rows: 3 }; // Default to medium size
-    }
+    // Use the same grid layout logic for both custom and database modes
+    // This ensures consistent card sizing regardless of content source
+    if (actualPairs <= 3) return { cols: 3, rows: 2 }; // 3 pairs (6 cards) in 3x2
+    if (actualPairs <= 4) return { cols: 4, rows: 2 }; // 4 pairs (8 cards) in 4x2
+    if (actualPairs <= 5) return { cols: 5, rows: 2 }; // 5 pairs (10 cards) in 5x2
+    if (actualPairs <= 6) return { cols: 4, rows: 3 }; // 6 pairs (12 cards) in 4x3
+    if (actualPairs <= 8) return { cols: 4, rows: 4 }; // 8 pairs (16 cards) in 4x4
+    if (actualPairs <= 10) return { cols: 5, rows: 4 }; // 10 pairs (20 cards) in 5x4
+    
+    // For larger sets, calculate a reasonable square-ish layout
+    return { cols: Math.ceil(Math.sqrt(totalCards)), rows: Math.ceil(Math.sqrt(totalCards)) };
   };
   
   // Save assignment progress when game is completed
@@ -1014,13 +995,13 @@ export default function MemoryGameMain({
 
           <div className="right-controls">
             <div className="stats-group">
-              <div className="stat-item">
+              <div className="stat-item compact header-stat">
                 <i className="fas fa-star"></i>
-                <span>Matches: <span id="matchCount">{matches}</span></span>
+                <span className="stat-label">{matches}</span>
               </div>
-              <div className="stat-item">
+              <div className="stat-item compact header-stat">
                 <i className="fas fa-redo"></i>
-                <span>Attempts: <span id="attempts">{attempts}</span></span>
+                <span className="stat-label">{attempts}</span>
               </div>
             </div>
             {onOpenSettings && (
@@ -1077,24 +1058,32 @@ export default function MemoryGameMain({
       {/* Theme Modal */}
       {showThemeModal && (
         <>
-          <div className="modal-overlay" onClick={toggleThemeModal}></div>
-          <div className="modal" id="themeModal">
-            <div className="modal-content">
-              <h2 className="modal-title">Select Theme</h2>
-              <div className="theme-grid">
-                {THEMES.map((theme, index) => (
-                  <div 
-                    key={index}
-                    className={`theme-option ${selectedTheme.name === theme.name ? 'selected' : ''}`}
-                    onClick={() => selectTheme(theme)}
-                  >
-                    <img src={theme.path} alt={theme.name} />
-                    <div className="theme-name">{theme.name}</div>
-                  </div>
-                ))}
+          <div className="modern-modal-overlay" onClick={toggleThemeModal}></div>
+          <div className="modern-modal" role="dialog" aria-modal="true" aria-label="Select Theme">
+            <div className="modern-modal-content">
+              <div className="modern-modal-header">
+                <h2>Select Theme</h2>
+                <button className="modern-close-btn" onClick={toggleThemeModal} aria-label="Close theme selector">✕</button>
               </div>
-              <div className="modal-buttons">
-                <button onClick={toggleThemeModal} className="btn btn-secondary">Close</button>
+              <div className="modern-modal-body">
+                <div className="theme-grid">
+                  {THEMES.map((theme, index) => (
+                    <div
+                      key={index}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') selectTheme(theme); }}
+                      className={`theme-card ${selectedTheme.name === theme.name ? 'selected' : ''}`}
+                      onClick={() => selectTheme(theme)}
+                      style={{ backgroundImage: `url(${theme.path})` }}
+                    >
+                      <div className="theme-name">{theme.name}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="modern-modal-footer">
+                <button onClick={toggleThemeModal} className="apply-btn">Close</button>
               </div>
             </div>
           </div>
@@ -1183,32 +1172,40 @@ export default function MemoryGameMain({
       {/* Settings Modal */}
       {showSettingsModal && !isAssignmentMode && (
         <>
-          <div className="modal-overlay" onClick={toggleSettingsModal}></div>
-          <div className="modal" id="settingsModal">
-            <div className="modal-content">
-              <h2 className="modal-title">Grid Size Settings</h2>
-          
-              
-              <div className="settings-section">
-                <h3>Grid Size</h3>
-                <div className="settings-grid">
-                  {GRID_SIZES.map((diff: { code: string; name: string; pairs: number; grid: string }, index: number) => (
-                    <button 
-                      key={index} 
-                      className={`difficulty-option ${currentDifficulty === diff.code ? 'selected' : ''}`}
-                      onClick={() => handleDifficultyChange(diff.code)}
-                    >
-                      <div className="difficulty-option-info">
-                        <div>{diff.name}</div>
-                        <div className="difficulty-option-detail">{diff.pairs} pairs ({diff.grid})</div>
-                      </div>
-                    </button>
-                  ))}
+          <div className="modern-modal-overlay" onClick={toggleSettingsModal}>
+            <div className="modern-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="modern-modal-content">
+                <div className="modern-modal-header">
+                  <h2>Choose Grid Size</h2>
+                  <button className="modern-close-btn" onClick={toggleSettingsModal}>
+                    <i className="fas fa-times"></i>
+                  </button>
                 </div>
-              </div>
-              
-              <div className="modal-buttons">
-                <button onClick={toggleSettingsModal} className="btn btn-secondary">Apply</button>
+                
+                <div className="modern-modal-body">
+                  <div className="grid-options">
+                    {GRID_SIZES.map((diff: { code: string; name: string; pairs: number; grid: string }, index: number) => {
+                      const isSelected = currentDifficulty === diff.code;
+                      return (
+                        <button
+                          key={index}
+                          className={`grid-option ${isSelected ? 'selected' : ''}`}
+                          onClick={() => handleDifficultyChange(diff.code)}
+                        >
+                          <div className="option-info">
+                            <div className="option-name">{diff.name}</div>
+                            <div className="option-details">{diff.pairs} pairs • {diff.grid} grid</div>
+                          </div>
+                          {isSelected && <div className="check-icon"><i className="fas fa-check"></i></div>}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                
+                <div className="modern-modal-footer">
+                  <button onClick={toggleSettingsModal} className="apply-btn">Apply</button>
+                </div>
               </div>
             </div>
           </div>
