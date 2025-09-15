@@ -160,15 +160,15 @@ const AnimatedCrane = ({
 
   useEffect(() => {
     if (isLifting) {
-      setPhase('descending');
+      setPhase('descending'); // Crane starts moving IMMEDIATELY - no delay
       const sequence = async () => {
-        await new Promise(resolve => setTimeout(resolve, 800));
+        await new Promise(resolve => setTimeout(resolve, 400)); // More natural descending time
         setPhase('lifting');
-        await new Promise(resolve => setTimeout(resolve, 600));
+        await new Promise(resolve => setTimeout(resolve, 300)); // Good lifting time
         setPhase('moving');
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise(resolve => setTimeout(resolve, 500)); // Smooth moving time
         setPhase('dropping');
-        await new Promise(resolve => setTimeout(resolve, 400));
+        await new Promise(resolve => setTimeout(resolve, 200)); // Quick drop
         setPhase('idle');
         onComplete();
       };
@@ -183,7 +183,7 @@ const AnimatedCrane = ({
         animate={{
           x: phase === 'moving' ? 0 : phase === 'descending' || phase === 'lifting' ? -120 : 0
         }}
-        transition={{ duration: 0.8, ease: "easeInOut" }}
+        transition={{ duration: 0.4, ease: "easeInOut" }} // Natural movement speed - not too fast, not too slow
       >
         {/* Crane base and mast */}
         <div className="relative">
@@ -207,7 +207,7 @@ const AnimatedCrane = ({
                    phase === 'lifting' || phase === 'moving' ? 80 + (towerHeight * 17) : 
                    50 + (towerHeight * 17)
           }}
-          transition={{ duration: 0.6 }}
+          transition={{ duration: 0.3 }} // Natural cable extension speed
         />
         
         {/* Crane hook with word */}
@@ -218,7 +218,7 @@ const AnimatedCrane = ({
                 phase === 'lifting' || phase === 'moving' ? 86 + (towerHeight * 17) : 
                 56 + (towerHeight * 17)
           }}
-          transition={{ duration: 0.6 }}
+          transition={{ duration: 0.3 }} // Natural hook movement speed
         >
           {liftedWord && (phase === 'lifting' || phase === 'moving') && (
             <div className="absolute -bottom-10 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-3 py-2 rounded-lg text-sm whitespace-nowrap shadow-2xl border border-blue-800">
@@ -599,14 +599,13 @@ function ImprovedSentenceTowersGame({
   const [craneLifting, setCraneLifting] = useState(false);
   const [craneWord, setCraneWord] = useState('');
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [screenShake, setScreenShake] = useState(false);
   const [questionStartTime, setQuestionStartTime] = useState<number>(0);
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const effectIdRef = useRef(0);
 
-  // Constants for tower display
-  const VISIBLE_BLOCKS = 7; // Only show last 7 blocks
+  // Constants for tower display - increased for better gameplay experience
+  const VISIBLE_BLOCKS = 10; // Show last 10 blocks (increased from 7) for better tower height sense
 
   // Sound effects hook
   const sounds = useSounds(settings.soundEnabled);
@@ -633,11 +632,7 @@ function ImprovedSentenceTowersGame({
     }, 2000);
   }, []);
 
-  // Screen shake effect
-  const triggerScreenShake = useCallback(() => {
-    setScreenShake(true);
-    setTimeout(() => setScreenShake(false), 500);
-  }, []);
+
 
   // Enhanced timer with pause functionality
   useEffect(() => {
@@ -943,6 +938,48 @@ function ImprovedSentenceTowersGame({
     // Play correct answer sound
     sounds.playCorrectAnswer();
 
+    // 🚀 IMMEDIATE CRANE ANIMATION - Start crane immediately before any database calls
+    const responseTime = Date.now() - questionStartTime;
+    const speedBonus = responseTime < 3000 ? Math.floor((3000 - responseTime) / 100) * 5 : 0;
+
+    // Enhanced scoring with multipliers and speed bonuses
+    const basePoints = 10 + (option.difficulty * 5);
+    const streakBonus = Math.floor(gameState.streak / 3) * 5;
+    const levelBonus = gameState.currentLevel * 2;
+    const typingBonus = isTypingMode ? basePoints : 0; // Double points for typing mode
+    const totalPoints = Math.floor((basePoints + streakBonus + levelBonus + speedBonus + typingBonus) * gameState.multiplier);
+
+    const newBlock: TowerBlock = {
+      id: `block-${Date.now()}`,
+      type: getBlockType(option.difficulty),
+      word: option.word,
+      translation: option.translation,
+      points: totalPoints,
+      position: towerBlocks.length,
+      isShaking: false,
+      createdAt: Date.now(),
+      responseTime
+    };
+
+    // 🚀 START CRANE ANIMATION IMMEDIATELY
+    setCraneLifting(true);
+    setCraneWord(option.word);
+    sounds.playCraneMovement();
+    
+    // 📦 ADD BLOCK TO TOWER IMMEDIATELY - Same time as crane starts moving
+    setTowerBlocks(prev => [...prev, newBlock]);
+    
+    // Show speed bonus effect if applicable
+    if (speedBonus > 0) {
+      addParticleEffect('timebonus', { x: window.innerWidth / 2, y: window.innerHeight / 3 }, speedBonus);
+    }
+
+    // Show typing bonus effect if applicable
+    if (isTypingMode) {
+      addParticleEffect('combo', { x: window.innerWidth / 2, y: window.innerHeight / 4 }, 2);
+    }
+
+    // 📊 ALL DATABASE OPERATIONS HAPPEN IN BACKGROUND (don't block crane animation)
     // Record word practice with FSRS system
     if (option) {
       try {
@@ -952,8 +989,6 @@ function ImprovedSentenceTowersGame({
           translation: option.translation,
           language: config.language === 'spanish' ? 'es' : config.language === 'french' ? 'fr' : 'en'
         };
-
-        const responseTime = (Date.now() - questionStartTime);
 
         // Calculate confidence based on typing mode and response time
         let confidence = 0.8; // Base confidence for correct answers
@@ -1050,46 +1085,8 @@ function ImprovedSentenceTowersGame({
       )
     );
 
-    // Calculate response time and speed bonus
-    const responseTime = Date.now() - questionStartTime;
-    const speedBonus = responseTime < 3000 ? Math.floor((3000 - responseTime) / 100) * 5 : 0;
-
-    // Enhanced scoring with multipliers and speed bonuses
-    const basePoints = 10 + (option.difficulty * 5);
-    const streakBonus = Math.floor(gameState.streak / 3) * 5;
-    const levelBonus = gameState.currentLevel * 2;
-    const typingBonus = isTypingMode ? basePoints : 0; // Double points for typing mode
-    const totalPoints = Math.floor((basePoints + streakBonus + levelBonus + speedBonus + typingBonus) * gameState.multiplier);
-
-    const newBlock: TowerBlock = {
-      id: `block-${Date.now()}`,
-      type: getBlockType(option.difficulty),
-      word: option.word,
-      translation: option.translation,
-      points: totalPoints,
-      position: towerBlocks.length,
-      isShaking: false,
-      createdAt: Date.now(),
-      responseTime
-    };
-
-    // Trigger enhanced animations
-    setCraneLifting(true);
-    setCraneWord(option.word);
-    sounds.playCraneMovement();
-    
-    // Show speed bonus effect if applicable
-    if (speedBonus > 0) {
-      addParticleEffect('timebonus', { x: window.innerWidth / 2, y: window.innerHeight / 3 }, speedBonus);
-    }
-
-    // Show typing bonus effect if applicable
-    if (isTypingMode) {
-      addParticleEffect('combo', { x: window.innerWidth / 2, y: window.innerHeight / 4 }, 2);
-    }
-    
+    // 🎵 Play block placement sound and effects when crane would actually drop it
     setTimeout(() => {
-      setTowerBlocks(prev => [...prev, newBlock]);
       sounds.playBlockPlacement();
       addParticleEffect('success', { x: window.innerWidth / 2, y: window.innerHeight / 2 }, gameState.multiplier);
       
@@ -1102,7 +1099,7 @@ function ImprovedSentenceTowersGame({
       if (gameState.multiplier >= 2) {
         addParticleEffect('lightning', { x: window.innerWidth / 2, y: window.innerHeight / 4 }, gameState.multiplier);
       }
-    }, 1500);
+    }, 900); // Sound and effects still timed with crane drop
 
     // Update game state
     setGameState(prev => {
@@ -1137,6 +1134,41 @@ function ImprovedSentenceTowersGame({
 
   // Enhanced incorrect answer handling
   const handleIncorrectAnswer = useCallback(async (incorrectOption?: WordOption) => {
+    // 🚨 IMMEDIATE VISUAL/AUDIO FEEDBACK - No delay!
+    sounds.playWrongAnswer();
+    
+    // 🎨 Better visual feedback instead of screen shake
+    addParticleEffect('error', { x: window.innerWidth / 2, y: window.innerHeight / 2 }, 1);
+    addParticleEffect('destruction', { x: window.innerWidth / 2, y: window.innerHeight / 2 + 100 }, 1);
+    
+    // 🏗️ Handle tower falling immediately if enabled
+    if (settings.towerFalling && towerBlocks.length > 0) {
+      const fallCount = getDifficultySettings(settings.difficulty).fallCount;
+      const blocksToFall = Math.min(fallCount, towerBlocks.length);
+      const fallingIds = towerBlocks.slice(-blocksToFall).map(block => block.id);
+      
+      setFallingBlocks(fallingIds);
+      sounds.playBlockFalling();
+      
+      setTimeout(() => {
+        setTowerBlocks(prev => prev.filter(block => !fallingIds.includes(block.id)));
+        setFallingBlocks([]);
+        
+        setGameState(prev => ({
+          ...prev,
+          blocksFallen: prev.blocksFallen + blocksToFall,
+          currentHeight: prev.currentHeight - blocksToFall,
+          streak: 0,
+          multiplier: 1,
+          accuracy: prev.blocksPlaced > 0 ? (prev.blocksPlaced - (prev.blocksFallen + blocksToFall)) / prev.blocksPlaced : 1
+        }));
+      }, 1000);
+    } else {
+      // Reset streak/multiplier even if no blocks fall
+      setGameState(prev => ({ ...prev, streak: 0, multiplier: 1 }));
+    }
+
+    // 📊 ALL DATABASE OPERATIONS HAPPEN IN BACKGROUND (don't block feedback)
     // Record word practice with FSRS system for incorrect answer
     if (currentTargetWord) {
       try {
@@ -1227,40 +1259,7 @@ function ImprovedSentenceTowersGame({
         console.error('Error recording sentence attempt:', error);
       }
     }
-
-    // Play wrong answer sound
-    sounds.playWrongAnswer();
-
-    // Trigger screen shake effect
-    triggerScreenShake();
-    
-    if (settings.towerFalling && towerBlocks.length > 0) {
-      const fallCount = getDifficultySettings(settings.difficulty).fallCount;
-      const blocksToFall = Math.min(fallCount, towerBlocks.length);
-      const fallingIds = towerBlocks.slice(-blocksToFall).map(block => block.id);
-      
-      setFallingBlocks(fallingIds);
-      sounds.playBlockFalling();
-      addParticleEffect('destruction', { x: window.innerWidth / 2, y: window.innerHeight / 2 + 100 });
-      
-      setTimeout(() => {
-        setTowerBlocks(prev => prev.filter(block => !fallingIds.includes(block.id)));
-        setFallingBlocks([]);
-        
-        setGameState(prev => ({
-          ...prev,
-          blocksFallen: prev.blocksFallen + blocksToFall,
-          currentHeight: prev.currentHeight - blocksToFall,
-          streak: 0,
-          multiplier: 1,
-          accuracy: prev.blocksPlaced > 0 ? (prev.blocksPlaced - (prev.blocksFallen + blocksToFall)) / prev.blocksPlaced : 1
-        }));
-      }, 1000);
-    } else {
-      addParticleEffect('error', { x: window.innerWidth / 2, y: window.innerHeight / 2 });
-      setGameState(prev => ({ ...prev, streak: 0, multiplier: 1 }));
-    }
-  }, [settings, towerBlocks, addParticleEffect, sounds, triggerScreenShake]);
+  }, [settings, towerBlocks, addParticleEffect, sounds]);
 
   // Enhanced option selection
   const handleSelectOption = useCallback((option: WordOption) => {
@@ -1279,7 +1278,7 @@ function ImprovedSentenceTowersGame({
       setSelectedOption(null);
       setFeedbackVisible(null);
       generateWordOptions();
-    }, option.isCorrect ? 3000 : 1500);
+    }, option.isCorrect ? 1500 : 1500); // Set to match total crane animation time (1400ms) plus small buffer
   }, [gameState.status, selectedOption, handleCorrectAnswer, handleIncorrectAnswer, generateWordOptions]);
 
   // Handle typed answer in typing mode
@@ -1505,20 +1504,8 @@ function ImprovedSentenceTowersGame({
   }, [gameState.status, wordOptions.length, gameState.needsVocabularyReset, generateWordOptions]);
 
   return (
-    <div className={`min-h-screen relative overflow-hidden ${screenShake ? 'animate-pulse' : ''}`}>
-      <motion.div
-        animate={screenShake ? {
-          x: [-10, 10],
-          y: [-5, 5]
-        } : { x: 0, y: 0 }}
-        transition={{ 
-          duration: 0.5, 
-          type: "spring",
-          repeat: screenShake ? 2 : 0,
-          repeatType: "reverse"
-        }}
-        className="w-full h-full"
-      >
+    <div className="min-h-screen relative overflow-hidden">
+      <div className="w-full h-full">
       {/* Enhanced Background */}
       <DynamicBackground 
         level={gameState.currentLevel}
@@ -2253,7 +2240,7 @@ function ImprovedSentenceTowersGame({
         />
       )}
 
-      </motion.div>
+      </div>
     </div>
   );
 }

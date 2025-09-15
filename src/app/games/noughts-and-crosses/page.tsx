@@ -9,6 +9,7 @@ import NoughtsAndCrossesAssignmentWrapper from './components/NoughtsAssignmentWr
 import UnifiedGameLauncher from '../../../components/games/UnifiedGameLauncher';
 import { UnifiedSelectionConfig, UnifiedVocabularyItem } from '../../../hooks/useUnifiedVocabulary';
 import { useAudio } from './hooks/useAudio';
+import InGameConfigPanel from '../../../components/games/InGameConfigPanel';
 
 export default function UnifiedNoughtsAndCrossesPage() {
   const { user, isLoading, isDemo } = useUnifiedAuth();
@@ -37,6 +38,8 @@ export default function UnifiedNoughtsAndCrossesPage() {
     vocabulary: UnifiedVocabularyItem[];
     theme: string;
   } | null>(null);
+  const [showConfigPanel, setShowConfigPanel] = useState(false);
+  const [gameMode, setGameMode] = useState<'computer' | '2-player'>('computer');
 
   // Authentication check
   if (!isLoading && !user && !isDemo) {
@@ -109,6 +112,26 @@ export default function UnifiedNoughtsAndCrossesPage() {
     }
   };
 
+  // Config panel handlers
+  const handleOpenConfigPanel = () => {
+    setShowConfigPanel(true);
+  };
+
+  const handleCloseConfigPanel = () => {
+    setShowConfigPanel(false);
+  };
+
+  const handleConfigChange = (newConfig: UnifiedSelectionConfig, vocabulary: UnifiedVocabularyItem[], theme?: string) => {
+    console.log('🔄 Updating noughts and crosses configuration:', newConfig, 'Theme:', theme);
+    const transformedVocabulary = transformVocabularyForTicTacToe(vocabulary);
+    setGameConfig(prev => prev ? {
+      ...prev,
+      config: newConfig,
+      vocabulary: transformedVocabulary,
+      theme: theme || prev.theme // Update theme if provided, otherwise keep current
+    } : null);
+  };
+
   // Show unified launcher if game not started
   if (!gameStarted) {
     return (
@@ -145,12 +168,13 @@ export default function UnifiedNoughtsAndCrossesPage() {
       difficulty: 'beginner', // Default difficulty
       category: gameConfig.config.categoryId,
       subcategory: gameConfig.config.subcategoryId,
-      language: gameConfig.config.language === 'es' ? 'spanish' : 
-                gameConfig.config.language === 'fr' ? 'french' : 
+      language: gameConfig.config.language === 'es' ? 'spanish' :
+                gameConfig.config.language === 'fr' ? 'french' :
                 gameConfig.config.language === 'de' ? 'german' : 'spanish',
       theme: gameConfig.theme,
       playerMark: 'X',
-      computerMark: 'O'
+      computerMark: 'O',
+      gameMode: gameMode // Use the state variable
     };
 
     return (
@@ -163,6 +187,19 @@ export default function UnifiedNoughtsAndCrossesPage() {
             onGameEnd={handleGameEnd}
             assignmentId={assignmentId}
             userId={user?.id}
+            onOpenSettings={handleOpenConfigPanel}
+            onGameModeChange={setGameMode}
+          />
+
+          {/* In-game configuration panel */}
+          <InGameConfigPanel
+            currentConfig={gameConfig.config}
+            onConfigChange={handleConfigChange}
+            supportedLanguages={['es', 'fr', 'de']}
+            supportsThemes={true}
+            currentTheme={gameConfig.theme}
+            isOpen={showConfigPanel}
+            onClose={handleCloseConfigPanel}
           />
         </div>
       </ThemeProvider>

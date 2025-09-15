@@ -1,0 +1,419 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sentence Builder Worksheet</title>
+    <style>
+        @page {
+            margin: 20mm;
+            size: A4;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.4;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            background: white;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 3px solid #6366f1;
+            padding-bottom: 20px;
+        }
+        
+        .title {
+            font-size: 28px;
+            font-weight: bold;
+            color: #1e293b;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            font-size: 16px;
+            color: #64748b;
+            margin-bottom: 5px;
+        }
+        
+        .instructions {
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+            font-size: 14px;
+            color: #475569;
+        }
+
+        .gender-legend {
+            background: #fefce8;
+            border: 2px solid #facc15;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+
+        .legend-title {
+            font-weight: bold;
+            font-size: 14px;
+            color: #92400e;
+            margin-bottom: 10px;
+        }
+
+        .legend-items {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            border: 2px solid #d1d5db;
+        }
+        
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        
+        .column {
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            overflow: hidden;
+            background: white;
+        }
+        
+        .column-header {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            color: white;
+            padding: 12px;
+            font-weight: bold;
+            font-size: 14px;
+            text-align: center;
+        }
+        
+        .column-content {
+            padding: 15px;
+        }
+        
+        .column-item {
+            margin-bottom: 12px;
+            padding: 8px;
+            border-radius: 4px;
+            background: #f8fafc;
+            border-left: 3px solid #6366f1;
+        }
+        
+        .column-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .item-text {
+            font-weight: 600;
+            color: #1e293b;
+            font-size: 13px;
+        }
+        
+        .item-translation {
+            color: #64748b;
+            font-style: italic;
+            font-size: 12px;
+            margin-top: 2px;
+        }
+
+        .item-group {
+            font-size: 10px;
+            color: #64748b;
+            text-transform: capitalize;
+            margin-top: 2px;
+        }
+
+        /* Gender-specific styling */
+        .gender-masculine {
+            background: #dbeafe !important;
+            border-left-color: #3b82f6 !important;
+        }
+
+        .gender-masculine .item-text {
+            color: #1e40af;
+        }
+
+        .gender-feminine {
+            background: #fce7f3 !important;
+            border-left-color: #ec4899 !important;
+        }
+
+        .gender-feminine .item-text {
+            color: #be185d;
+        }
+
+        .gender-invariable {
+            background: #f3f4f6 !important;
+            border-left-color: #6b7280 !important;
+        }
+
+        .gender-invariable .item-text {
+            color: #374151;
+        }
+        
+        .examples-section {
+            margin-top: 40px;
+            page-break-inside: avoid;
+        }
+        
+        .examples-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #1e293b;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #6366f1;
+            padding-bottom: 5px;
+        }
+        
+        .example-sentence {
+            background: #f0f9ff;
+            border: 1px solid #bae6fd;
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 10px;
+            font-size: 14px;
+            color: #0c4a6e;
+        }
+        
+        .footer {
+            margin-top: 40px;
+            text-align: center;
+            font-size: 12px;
+            color: #94a3b8;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 15px;
+        }
+        
+        @media print {
+            body {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            
+            .grid-container {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 15px;
+            }
+            
+            .column {
+                break-inside: avoid;
+                margin-bottom: 15px;
+            }
+            
+            .examples-section {
+                page-break-before: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="title">Sentence Builder Worksheet</div>
+        <div class="subtitle">Subject: spanish | Topic: hobbies_leisure</div>
+        <div class="subtitle">Level: intermediate | Time: 20-30 minutos</div>
+    </div>
+    
+    <div class="instructions">
+        <strong>Instructions:</strong> Use the words and phrases from each column to build complete sentences.
+    </div>
+
+    <div class="gender-legend">
+        <div class="legend-title">Gender Agreement Guide:</div>
+        <div class="legend-items">
+            <div class="legend-item">
+                <div class="legend-color gender-masculine"></div>
+                <span>Masculine (el/los)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color gender-feminine"></div>
+                <span>Feminine (la/las)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color gender-invariable"></div>
+                <span>Invariable (same for all)</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="grid-container">
+        
+            <div class="column">
+                <div class="column-header">
+                    Sujeto/Objeto
+                </div>
+                <div class="column-content">
+                    
+                        <div class="column-item gender-invariable">
+                            <div class="item-text">Me gusta</div>
+                            <div class="item-translation">(I like)</div>
+                            <div class="item-group">invariable</div>
+                        </div>
+                        
+                        <div class="column-item gender-invariable">
+                            <div class="item-text">Te gusta</div>
+                            <div class="item-translation">(You like)</div>
+                            <div class="item-group">invariable</div>
+                        </div>
+                        
+                        <div class="column-item gender-invariable">
+                            <div class="item-text">Le gusta</div>
+                            <div class="item-translation">(He/She likes)</div>
+                            <div class="item-group">invariable</div>
+                        </div>
+                        
+                        <div class="column-item gender-invariable">
+                            <div class="item-text">Nos gusta</div>
+                            <div class="item-translation">(We like)</div>
+                            <div class="item-group">invariable</div>
+                        </div>
+                        
+                        <div class="column-item gender-invariable">
+                            <div class="item-text">Os gusta</div>
+                            <div class="item-translation">(You all like)</div>
+                            <div class="item-group">invariable</div>
+                        </div>
+                        
+                        <div class="column-item gender-invariable">
+                            <div class="item-text">Les gusta</div>
+                            <div class="item-translation">(They like)</div>
+                            <div class="item-group">invariable</div>
+                        </div>
+                        
+                </div>
+            </div>
+        
+            <div class="column">
+                <div class="column-header">
+                    Actividad/Objeto
+                </div>
+                <div class="column-content">
+                    
+                        <div class="column-item gender-masculine">
+                            <div class="item-text">el deporte</div>
+                            <div class="item-translation">(sport)</div>
+                            <div class="item-group">masculine singular</div>
+                        </div>
+                        
+                        <div class="column-item gender-feminine">
+                            <div class="item-text">la música</div>
+                            <div class="item-translation">(music)</div>
+                            <div class="item-group">feminine singular</div>
+                        </div>
+                        
+                        <div class="column-item gender-invariable">
+                            <div class="item-text">leer</div>
+                            <div class="item-translation">(to read)</div>
+                            <div class="item-group">invariable</div>
+                        </div>
+                        
+                        <div class="column-item gender-invariable">
+                            <div class="item-text">estudiar</div>
+                            <div class="item-translation">(to study)</div>
+                            <div class="item-group">invariable</div>
+                        </div>
+                        
+                        <div class="column-item gender-invariable">
+                            <div class="item-text">jugar</div>
+                            <div class="item-translation">(to play)</div>
+                            <div class="item-group">invariable</div>
+                        </div>
+                        
+                        <div class="column-item gender-invariable">
+                            <div class="item-text">cocinar</div>
+                            <div class="item-translation">(to cook)</div>
+                            <div class="item-group">invariable</div>
+                        </div>
+                        
+                </div>
+            </div>
+        
+            <div class="column">
+                <div class="column-header">
+                    Razón/Hora
+                </div>
+                <div class="column-content">
+                    
+                        <div class="column-item gender-invariable">
+                            <div class="item-text">mucho</div>
+                            <div class="item-translation">(a lot)</div>
+                            <div class="item-group">invariable</div>
+                        </div>
+                        
+                        <div class="column-item gender-invariable">
+                            <div class="item-text">poco</div>
+                            <div class="item-translation">(a little)</div>
+                            <div class="item-group">invariable</div>
+                        </div>
+                        
+                        <div class="column-item gender-invariable">
+                            <div class="item-text">por la mañana</div>
+                            <div class="item-translation">(in the morning)</div>
+                            <div class="item-group">invariable</div>
+                        </div>
+                        
+                        <div class="column-item gender-invariable">
+                            <div class="item-text">los fines de semana</div>
+                            <div class="item-translation">(on weekends)</div>
+                            <div class="item-group">invariable</div>
+                        </div>
+                        
+                        <div class="column-item gender-invariable">
+                            <div class="item-text">en casa</div>
+                            <div class="item-translation">(at home)</div>
+                            <div class="item-group">invariable</div>
+                        </div>
+                        
+                        <div class="column-item gender-invariable">
+                            <div class="item-text">con amigos</div>
+                            <div class="item-translation">(with friends)</div>
+                            <div class="item-group">invariable</div>
+                        </div>
+                        
+                </div>
+            </div>
+        
+    </div>
+    
+    
+        <div class="examples-section">
+            <div class="examples-title">Example Sentences</div>
+            
+                <div class="example-sentence">Me gusta leer mucho</div>
+            
+                <div class="example-sentence">Te gusta la música los fines de semana</div>
+            
+                <div class="example-sentence">Nos gusta cocinar en casa</div>
+            
+                <div class="example-sentence">Le gusta jugar con amigos</div>
+            
+                <div class="example-sentence">Les gusta estudiar por la mañana</div>
+            
+        </div>
+    
+    
+    <div class="footer">
+        Generated by LanguageGems • 9/14/2025
+    </div>
+</body>
+</html>

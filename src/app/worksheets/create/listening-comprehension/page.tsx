@@ -158,38 +158,26 @@ export default function ListeningComprehensionPage() {
   const totalQuestions = audioSegments.reduce((sum, seg) => sum + seg.questions.length, 0);
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+      {/* Hero Background Pattern */}
+      <div className="absolute inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] -z-10" />
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center space-x-4">
-            <Link href="/worksheets/create">
-              <Button variant="ghost" size="sm">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Create
-              </Button>
-            </Link>
-            <div>
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-indigo-500 rounded-lg flex items-center justify-center">
-                  <Volume2 className="h-5 w-5 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-3xl font-bold text-gray-900">Listening Comprehension</h1>
-                  <p className="text-gray-600">Create audio-based comprehension exercises</p>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center space-x-3">
-            <Button variant="outline" onClick={previewWorksheet}>
-              <Eye className="h-4 w-4 mr-2" />
-              Preview
+        <div className="flex items-center space-x-4 mb-12">
+          <Link href="/worksheets/create" passHref>
+            <Button variant="outline" size="icon" aria-label="Back to Create" className="hover:bg-white hover:shadow-md transition-all duration-200">
+              <ArrowLeft className="h-4 w-4" />
             </Button>
-            <Button onClick={downloadWorksheet}>
-              <Download className="h-4 w-4 mr-2" />
-              Download
-            </Button>
+          </Link>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+              Listening Comprehension Creator
+            </h1>
+            <p className="text-slate-600 text-lg flex items-center gap-2">
+              Create audio-based comprehension exercises
+              <Volume2 className="h-5 w-5 text-purple-500" />
+            </p>
           </div>
         </div>
 

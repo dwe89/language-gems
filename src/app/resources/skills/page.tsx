@@ -105,12 +105,13 @@ export default function SkillsHubPage() {
               <div key={language.id} className="bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden group">
                 <div className="p-8 text-center">
                   <Link href={`/resources/skills/${language.id}`} className="mb-4 block hover:scale-110 transition-transform duration-200">
-                    <ReactCountryFlag
-                      countryCode={language.countryCode}
-                      svg
-                      style={{ width: '4rem', height: '4rem' }}
-                      className="mx-auto rounded-lg"
-                    />
+                    <div className="mx-auto rounded-lg overflow-hidden flex justify-center items-center" style={{ width: '4rem', height: '4rem' }}>
+                      <ReactCountryFlag
+                        countryCode={language.countryCode}
+                        svg
+                        style={{ width: '6rem', height: '6rem' }}
+                      />
+                    </div>
                   </Link>
                   <h3 className="text-2xl font-bold text-slate-900 mb-2">
                     <Link href={`/resources/skills/${language.id}`}>{language.name}</Link>

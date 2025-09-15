@@ -17,6 +17,7 @@ interface TicTacToeGameWrapperProps {
     theme: string;
     playerMark: string;
     computerMark: string;
+    gameMode?: 'computer' | '2-player';
     // KS4-specific parameters
     curriculumLevel?: string;
     examBoard?: 'AQA' | 'edexcel';
@@ -36,6 +37,7 @@ interface TicTacToeGameWrapperProps {
   userId?: string;
   gameSessionId?: string | null;
   onOpenSettings?: () => void;
+  onGameModeChange?: (gameMode: 'computer' | '2-player') => void;
 }
 
 export default function TicTacToeGameWrapper(props: TicTacToeGameWrapperProps) {
@@ -316,6 +318,7 @@ export default function TicTacToeGameWrapper(props: TicTacToeGameWrapperProps) {
       gameSessionId={effectiveGameSessionId}
       isAssignmentMode={!!props.assignmentId}
       onOpenSettings={props.onOpenSettings}
+      onGameModeChange={props.onGameModeChange}
       gameService={gameService}
       userId={props.userId}
     />

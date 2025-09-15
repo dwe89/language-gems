@@ -356,7 +356,7 @@ export default function WorksheetPreviewPage() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       {/* Header */}
       <div className="bg-white border-b border-slate-200 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full px-4">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-4">
               <button
@@ -400,11 +400,11 @@ export default function WorksheetPreviewPage() {
       </div>
 
       {/* Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+      <div className="w-full px-4 py-8">
+        <div className="grid grid-cols-1 xl:grid-cols-6 2xl:grid-cols-8 gap-8">
           {/* Sidebar */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-6">
+          <div className="xl:col-span-1 2xl:col-span-1">
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-6 sticky top-24">
               <div>
                 <h3 className="font-semibold text-slate-900 mb-3">Worksheet Details</h3>
                 <div className="space-y-3">
@@ -449,9 +449,9 @@ export default function WorksheetPreviewPage() {
           </div>
 
           {/* Main Content */}
-          <div className="lg:col-span-3">
+          <div className="xl:col-span-5 2xl:col-span-7">
             <div className="bg-white rounded-xl shadow-sm border border-slate-200">
-              <div className="p-6 border-b border-slate-200">
+              <div className="p-6 lg:p-8 border-b border-slate-200">
                 <div className="flex items-center justify-between">
                   <h2 className="text-lg font-semibold text-slate-900">Worksheet Preview</h2>
                   <div className="flex items-center text-sm text-slate-600">
@@ -461,7 +461,7 @@ export default function WorksheetPreviewPage() {
                 </div>
               </div>
 
-              <div className="p-6">
+              <div className="p-2">
                 {generatingHtml ? (
                   <div className="text-center py-12">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto mb-4"></div>
@@ -470,7 +470,7 @@ export default function WorksheetPreviewPage() {
                   </div>
                 ) : htmlContent ? (
                   <div
-                    className="worksheet-content prose max-w-none"
+                    className="worksheet-content w-full"
                     dangerouslySetInnerHTML={{ __html: htmlContent }}
                   />
                 ) : (

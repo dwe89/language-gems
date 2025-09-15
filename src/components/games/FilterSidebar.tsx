@@ -245,12 +245,13 @@ export default function GameSelectionSidebar({
                       : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                   }`}
                 >
-                  <ReactCountryFlag 
-                    countryCode={lang.code.toUpperCase()} 
-                    svg 
-                    style={{ width: '2rem', height: '2rem' }}
-                    className="rounded-full shadow-lg"
-                  />
+                  <div className="rounded-full shadow-lg overflow-hidden flex justify-center items-center" style={{ width: '2rem', height: '2rem' }}>
+                    <ReactCountryFlag
+                      countryCode={lang.code.toUpperCase()}
+                      svg
+                      style={{ width: '3rem', height: '3rem' }}
+                    />
+                  </div>
                   <span className="font-medium">{lang.name}</span>
                   {selection.language === lang.code && <ArrowRight className="h-4 w-4 ml-auto" />}
                 </button>

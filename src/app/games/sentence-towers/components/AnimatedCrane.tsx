@@ -32,26 +32,26 @@ export const AnimatedCrane: React.FC<AnimatedCraneProps> = ({
       
       // Sequence the realistic crane animation with better positioning
       const sequence = async () => {
-        // Step 1: Move crane arm to word location (realistic horizontal movement)
+        // Step 1: Move crane arm to word location (faster horizontal movement)
         setTimeout(() => {
           setCurrentPosition({ 
             x: Math.max(20, Math.min(80, sourcePosition.x)), // Constrain to realistic range
             y: sourcePosition.y 
           });
           setCraneState('lowering');
-        }, 500);
+        }, 150); // Reduced from 500ms to 150ms
         
         // Step 2: Lower cable to grab word
         setTimeout(() => {
           setCableLength(50); // Reasonable cable length
           setCraneState('grabbing');
-        }, 1000);
+        }, 300); // Reduced from 1000ms to 300ms
         
         // Step 3: Grab and start lifting
         setTimeout(() => {
           setCraneState('lifting');
           setCableLength(25); // Lift up
-        }, 1500);
+        }, 450); // Reduced from 1500ms to 450ms
         
         // Step 4: Move to tower position
         setTimeout(() => {
@@ -60,26 +60,26 @@ export const AnimatedCrane: React.FC<AnimatedCraneProps> = ({
             y: towerPosition.y 
           });
           setCraneState('moving-to-tower');
-        }, 2000);
+        }, 650); // Reduced from 2000ms to 650ms
         
         // Step 5: Lower to place on tower
         setTimeout(() => {
           setCableLength(35); // Lower to place
           setCraneState('placing');
-        }, 2500);
+        }, 800); // Reduced from 2500ms to 800ms
         
         // Step 6: Release and return
         setTimeout(() => {
           setCableLength(25); // Retract cable
           setCraneState('returning');
           setCurrentPosition({ x: 50, y: 30 }); // Return to center
-        }, 3000);
+        }, 950); // Reduced from 3000ms to 950ms
         
         // Step 7: Return to idle
         setTimeout(() => {
           setCraneState('idle');
           onLiftComplete();
-        }, 3500);
+        }, 1100); // Reduced from 3500ms to 1100ms (total time reduced from 3.5s to 1.1s)
       };
       
       sequence();
@@ -149,7 +149,7 @@ export const AnimatedCrane: React.FC<AnimatedCraneProps> = ({
             rotate: getCraneRotation()
           }}
           transition={{ 
-            duration: 1.2,
+            duration: 0.4, // Reduced from 1.2s to 0.4s for faster rotation
             ease: "easeInOut"
           }}
         >
@@ -166,7 +166,7 @@ export const AnimatedCrane: React.FC<AnimatedCraneProps> = ({
                 height: getCableLength()
               }}
               transition={{ 
-                duration: 0.6,
+                duration: 0.25, // Reduced from 0.6s to 0.25s for faster cable movement
                 ease: "easeOut"
               }}
             >

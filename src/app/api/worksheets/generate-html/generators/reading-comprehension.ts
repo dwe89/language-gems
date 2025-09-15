@@ -141,33 +141,46 @@ function generateWordSearchSection(words: string[], difficulty: 'easy' | 'medium
 function generateMultipleChoiceSection(questions: any[]): string {
   let html = `
     <div class="section">
-        <div class="section-title">Multiple Choice Questions</div>
+        <h2 class="section-title">Multiple Choice Questions</h2>
+        <div class="multiple-choice-grid">
 `;
 
   questions.forEach((question, index) => {
     html += `
-        <div class="question">
-            <div class="question-number">Question ${index + 1}</div>
-            <div class="question-text">${question.question}</div>
-            <ul class="options">
+            <div class="question">
+                <p class="question-number">Question ${index + 1}</p>
+                <p class="question-text">${question.question}</p>
+                <ul class="options">
 `;
-    
+
     question.options.forEach((option: any) => {
       html += `
-                <li>
-                    <input type="checkbox" id="mc_${question.id}_${option.letter}" name="mc_${question.id}" value="${option.letter}">
-                    <label for="mc_${question.id}_${option.letter}">${option.letter}. ${option.text}</label>
-                </li>
+                    <li>
+                        <input type="checkbox" id="mc_${question.id}_${option.letter}" name="mc_${question.id}" value="${option.letter}">
+                        <label for="mc_${question.id}_${option.letter}">${option.letter}. ${option.text}</label>
+                    </li>
 `;
     });
 
     html += `
-            </ul>
-        </div>
+                </ul>
+            </div>
 `;
   });
 
+  // Add empty question divs if needed for grid layout
+  const remainingSlots = 4 - (questions.length % 4);
+  if (remainingSlots < 4 && questions.length > 0) {
+    for (let i = 0; i < remainingSlots; i++) {
+      html += `
+            <div class="question">
+            </div>
+`;
+    }
+  }
+
   html += `
+        </div>
     </div>
 `;
 
@@ -179,24 +192,26 @@ function generateTrueFalseSection(questions: any[]): string {
     <div class="section">
         <div class="section-title">True or False</div>
         <p><em>Mark each statement as True (T) or False (F).</em></p>
+        <div class="true-false-grid">
 `;
 
   questions.forEach((question, index) => {
     html += `
-        <div class="question">
-            <div class="question-number">${index + 1}.</div>
-            <div class="question-text">${question.statement}</div>
-            <div class="tf-options">
-                <input type="checkbox" id="tf_${question.id}_true" name="tf_${question.id}" value="true">
-                <label for="tf_${question.id}_true">True</label>
-                <input type="checkbox" id="tf_${question.id}_false" name="tf_${question.id}" value="false">
-                <label for="tf_${question.id}_false">False</label>
+            <div class="question-compact">
+                <div class="question-number">${index + 1}.</div>
+                <div class="question-text">${question.statement}</div>
+                <div class="tf-options">
+                    <input type="checkbox" id="tf_${question.id}_true" name="tf_${question.id}" value="true">
+                    <label for="tf_${question.id}_true">True</label>
+                    <input type="checkbox" id="tf_${question.id}_false" name="tf_${question.id}" value="false">
+                    <label for="tf_${question.id}_false">False</label>
+                </div>
             </div>
-        </div>
 `;
   });
 
   html += `
+        </div>
     </div>
 `;
 
@@ -208,6 +223,7 @@ function generateWordHuntSection(words: any[]): string {
     <div class="section">
         <div class="section-title">Word Hunt</div>
         <p><em>Find the Spanish/French word that matches each English description.</em></p>
+        <div class="vocabulary-grid">
 `;
 
   words.forEach((wordItem, index) => {
@@ -220,6 +236,7 @@ function generateWordHuntSection(words: any[]): string {
   });
 
   html += `
+        </div>
     </div>
 `;
 
@@ -231,6 +248,7 @@ function generateVocabularyWritingSection(vocabulary: any[]): string {
     <div class="section">
         <div class="section-title">Vocabulary Practice</div>
         <p><em>Write the English meaning for each word.</em></p>
+        <div class="vocabulary-grid">
 `;
 
   vocabulary.forEach((vocabItem, index) => {
@@ -243,6 +261,7 @@ function generateVocabularyWritingSection(vocabulary: any[]): string {
   });
 
   html += `
+        </div>
     </div>
 `;
 
@@ -258,10 +277,10 @@ function generateSentenceUnscrambleSection(sentences: any[]): string {
 
   sentences.forEach((sentence, index) => {
     html += `
-        <div class="question">
+        <div class="question-compact">
             <div class="question-number">${index + 1}.</div>
             <div class="question-text"><strong>Words:</strong> ${sentence.jumbled_sentence}</div>
-            <div class="answer-space" style="min-height: 40px; margin-top: 10px;"></div>
+            <div class="answer-space" style="min-height: 25px; margin-top: 6px;"></div>
         </div>
 `;
   });
@@ -282,10 +301,10 @@ function generateTranslationSection(sentences: any[]): string {
 
   sentences.forEach((sentence, index) => {
     html += `
-        <div class="question">
+        <div class="question-compact">
             <div class="question-number">${index + 1}.</div>
             <div class="question-text">${sentence.sentence}</div>
-            <div class="answer-space" style="min-height: 40px; margin-top: 10px;"></div>
+            <div class="answer-space" style="min-height: 25px; margin-top: 6px;"></div>
         </div>
 `;
   });
@@ -301,9 +320,9 @@ function generateTenseDetectiveSection(prompt: string): string {
   return `
     <div class="section">
         <div class="section-title">Tense Detective</div>
-        <div class="question">
+        <div class="question-compact">
             <div class="question-text">${prompt}</div>
-            <div class="answer-space" style="min-height: 60px; margin-top: 10px;"></div>
+            <div class="answer-space" style="min-height: 35px; margin-top: 6px;"></div>
         </div>
     </div>
 `;

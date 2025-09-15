@@ -33,7 +33,11 @@ const AVAILABLE_LANGUAGES = [
     code: 'spanish',
     countryCode: 'ES',
     name: 'Spanish',
-    icon: <ReactCountryFlag countryCode="ES" svg style={{ width: '2rem', height: '2rem' }} className="rounded-full shadow-lg" />,
+    icon: (
+      <div className="rounded-full shadow-lg overflow-hidden flex justify-center items-center" style={{ width: '2rem', height: '2rem' }}>
+        <ReactCountryFlag countryCode="ES" svg style={{ width: '3rem', height: '3rem' }} />
+      </div>
+    ),
     description: 'Learn Spanish vocabulary',
     color: 'from-red-500 to-yellow-500'
   },
@@ -41,7 +45,11 @@ const AVAILABLE_LANGUAGES = [
     code: 'french',
     countryCode: 'FR',
     name: 'French',
-    icon: <ReactCountryFlag countryCode="FR" svg style={{ width: '2rem', height: '2rem' }} className="rounded-full shadow-lg" />,
+    icon: (
+      <div className="rounded-full shadow-lg overflow-hidden flex justify-center items-center" style={{ width: '2rem', height: '2rem' }}>
+        <ReactCountryFlag countryCode="FR" svg style={{ width: '3rem', height: '3rem' }} />
+      </div>
+    ),
     description: 'Master French language skills',
     color: 'from-blue-500 to-red-500'
   },
@@ -49,7 +57,11 @@ const AVAILABLE_LANGUAGES = [
     code: 'german',
     countryCode: 'DE',
     name: 'German',
-    icon: <ReactCountryFlag countryCode="DE" svg style={{ width: '2rem', height: '2rem' }} className="rounded-full shadow-lg" />,
+    icon: (
+      <div className="rounded-full shadow-lg overflow-hidden flex justify-center items-center" style={{ width: '2rem', height: '2rem' }}>
+        <ReactCountryFlag countryCode="DE" svg style={{ width: '3rem', height: '3rem' }} />
+      </div>
+    ),
     description: 'Build German language proficiency',
     color: 'from-gray-800 to-red-600'
   },

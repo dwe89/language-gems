@@ -40,7 +40,7 @@ Return ONLY a JSON object with this exact structure:
 Focus on vocabulary that would be useful for language learning or educational purposes. Make sure the words have good letter variety for crossword intersections.`;
 
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4',
+      model: 'gpt-4.1-nano',
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt }

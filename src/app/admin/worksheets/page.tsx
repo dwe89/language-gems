@@ -142,7 +142,7 @@ export default function AdminWorksheetsPage() {
         <p className="text-slate-600">Create professional language learning worksheets with AI assistance</p>
         <div className="flex items-center mt-2 text-sm text-purple-600">
           <Sparkles className="w-4 h-4 mr-1" />
-          <span>Powered by OpenAI GPT-4o-mini</span>
+          <span>Powered by OpenAI gpt-4.1-nano</span>
         </div>
       </div>
 

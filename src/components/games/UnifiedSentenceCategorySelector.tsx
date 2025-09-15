@@ -77,14 +77,22 @@ const AVAILABLE_LANGUAGES = [
   {
     code: 'spanish',
     name: 'Spanish',
-    icon: <ReactCountryFlag countryCode="ES" svg style={{ width: '2rem', height: '2rem' }} className="rounded-full shadow-lg" />,
+    icon: (
+      <div className="rounded-full shadow-lg overflow-hidden flex justify-center items-center" style={{ width: '2rem', height: '2rem' }}>
+        <ReactCountryFlag countryCode="ES" svg style={{ width: '3rem', height: '3rem' }} />
+      </div>
+    ),
     description: 'Learn Spanish sentences',
     color: 'from-red-500 to-yellow-500'
   },
   {
     code: 'french',
     name: 'French',
-    icon: <ReactCountryFlag countryCode="FR" svg style={{ width: '2rem', height: '2rem' }} className="rounded-full shadow-lg" />,
+    icon: (
+      <div className="rounded-full shadow-lg overflow-hidden flex justify-center items-center" style={{ width: '2rem', height: '2rem' }}>
+        <ReactCountryFlag countryCode="FR" svg style={{ width: '3rem', height: '3rem' }} />
+      </div>
+    ),
     description: 'Master French sentence skills',
     color: 'from-blue-500 to-red-500'
   },
@@ -647,9 +655,15 @@ const LanguageSelection: React.FC<{
   >
     <div className="text-center mb-8">
       <div className="flex justify-center space-x-2 mb-4">
-        <ReactCountryFlag countryCode="ES" svg style={{ width: '1.5rem', height: '1.5rem' }} className="rounded-sm" />
-        <ReactCountryFlag countryCode="FR" svg style={{ width: '1.5rem', height: '1.5rem' }} className="rounded-sm" />
-        <ReactCountryFlag countryCode="DE" svg style={{ width: '1.5rem', height: '1.5rem' }} className="rounded-sm" />
+        <div className="rounded-sm overflow-hidden flex justify-center items-center" style={{ width: '1.5rem', height: '1.5rem' }}>
+          <ReactCountryFlag countryCode="ES" svg style={{ width: '2.25rem', height: '2.25rem' }} />
+        </div>
+        <div className="rounded-sm overflow-hidden flex justify-center items-center" style={{ width: '1.5rem', height: '1.5rem' }}>
+          <ReactCountryFlag countryCode="FR" svg style={{ width: '2.25rem', height: '2.25rem' }} />
+        </div>
+        <div className="rounded-sm overflow-hidden flex justify-center items-center" style={{ width: '1.5rem', height: '1.5rem' }}>
+          <ReactCountryFlag countryCode="DE" svg style={{ width: '2.25rem', height: '2.25rem' }} />
+        </div>
       </div>
       <h2 className="text-2xl font-bold text-white mb-2">Choose Your Language</h2>
       <p className="text-white/80">Select the language you want to practice sentences in</p>

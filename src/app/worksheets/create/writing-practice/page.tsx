@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../../components/ui/card';
 import { Button } from '../../../../components/ui/button';
 import { Input } from '../../../../components/ui/input';
@@ -30,12 +30,87 @@ interface WritingPrompt {
   rubric?: string[];
 }
 
+// Writing topics configuration
+interface WritingTopic {
+  id: string;
+  name: string;
+  displayName: string;
+  icon: any;
+  color: string;
+  subtopics: WritingSubtopic[];
+}
+
+interface WritingSubtopic {
+  id: string;
+  name: string;
+  displayName: string;
+  topicId: string;
+}
+
+const WRITING_TOPICS: WritingTopic[] = [
+  {
+    id: 'personal_experiences',
+    name: 'personal_experiences',
+    displayName: 'Personal Experiences',
+    icon: PenTool,
+    color: 'from-blue-500 to-indigo-600',
+    subtopics: [
+      { id: 'family_friends', name: 'family_friends', displayName: 'Family & Friends', topicId: 'personal_experiences' },
+      { id: 'hobbies_interests', name: 'hobbies_interests', displayName: 'Hobbies & Interests', topicId: 'personal_experiences' },
+      { id: 'daily_routine', name: 'daily_routine', displayName: 'Daily Routine', topicId: 'personal_experiences' },
+      { id: 'memories', name: 'memories', displayName: 'Memories', topicId: 'personal_experiences' },
+    ]
+  },
+  {
+    id: 'descriptive_writing',
+    name: 'descriptive_writing',
+    displayName: 'Descriptive Writing',
+    icon: Eye,
+    color: 'from-green-500 to-emerald-600',
+    subtopics: [
+      { id: 'places', name: 'places', displayName: 'Places & Locations', topicId: 'descriptive_writing' },
+      { id: 'people', name: 'people', displayName: 'People & Characters', topicId: 'descriptive_writing' },
+      { id: 'objects', name: 'objects', displayName: 'Objects & Things', topicId: 'descriptive_writing' },
+      { id: 'weather_seasons', name: 'weather_seasons', displayName: 'Weather & Seasons', topicId: 'descriptive_writing' },
+    ]
+  },
+  {
+    id: 'opinions_arguments',
+    name: 'opinions_arguments',
+    displayName: 'Opinions & Arguments',
+    icon: FileText,
+    color: 'from-purple-500 to-pink-600',
+    subtopics: [
+      { id: 'school_education', name: 'school_education', displayName: 'School & Education', topicId: 'opinions_arguments' },
+      { id: 'technology_media', name: 'technology_media', displayName: 'Technology & Media', topicId: 'opinions_arguments' },
+      { id: 'environment', name: 'environment', displayName: 'Environment', topicId: 'opinions_arguments' },
+      { id: 'social_issues', name: 'social_issues', displayName: 'Social Issues', topicId: 'opinions_arguments' },
+    ]
+  }
+];
+
+// Types for writing configuration
+interface WritingConfig {
+  language: string;
+  topicId: string;
+  subtopicId?: string;
+}
+
 export default function WritingPracticePage() {
   const [title, setTitle] = useState('Writing Practice Worksheet');
   const [subject, setSubject] = useState('spanish');
   const [level, setLevel] = useState('intermediate');
   const [instructions, setInstructions] = useState('Choose one of the writing prompts below and write your response.');
-  
+
+  // Writing topic selection
+  const [writingConfig, setWritingConfig] = useState<WritingConfig>({
+    language: 'es',
+    topicId: '',
+    subtopicId: undefined,
+  });
+
+  const [availableSubtopics, setAvailableSubtopics] = useState<WritingSubtopic[]>([]);
+
   const [prompts, setPrompts] = useState<WritingPrompt[]>([
     {
       id: '1',
@@ -51,6 +126,34 @@ export default function WritingPracticePage() {
       wordCount: { min: 150, max: 250 }
     }
   ]);
+
+  // Load subtopics when topic changes
+  useEffect(() => {
+    if (writingConfig.topicId) {
+      const selectedTopic = WRITING_TOPICS.find(topic => topic.id === writingConfig.topicId);
+      if (selectedTopic) {
+        setAvailableSubtopics(selectedTopic.subtopics || []);
+      }
+    } else {
+      setAvailableSubtopics([]);
+    }
+  }, [writingConfig.topicId]);
+
+  const handleSubjectChange = (newSubject: string) => {
+    setSubject(newSubject);
+    const languageMap: { [key: string]: string } = {
+      spanish: 'es',
+      french: 'fr',
+      german: 'de',
+      english: 'en',
+    };
+    setWritingConfig((prev: WritingConfig) => ({
+      ...prev,
+      language: languageMap[newSubject] || 'es',
+      topicId: '',
+      subtopicId: undefined,
+    }));
+  };
 
   const addPrompt = () => {
     const newPrompt: WritingPrompt = {
@@ -125,38 +228,26 @@ export default function WritingPracticePage() {
   };
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+      {/* Hero Background Pattern */}
+      <div className="absolute inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] -z-10" />
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center space-x-4">
-            <Link href="/worksheets/create">
-              <Button variant="ghost" size="sm">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Create
-              </Button>
-            </Link>
-            <div>
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-pink-500 rounded-lg flex items-center justify-center">
-                  <PenTool className="h-5 w-5 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-3xl font-bold text-gray-900">Writing Practice</h1>
-                  <p className="text-gray-600">Design creative writing prompts and exercises</p>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center space-x-3">
-            <Button variant="outline" onClick={previewWorksheet}>
-              <Eye className="h-4 w-4 mr-2" />
-              Preview
+        <div className="flex items-center space-x-4 mb-12">
+          <Link href="/worksheets/create" passHref>
+            <Button variant="outline" size="icon" aria-label="Back to Create" className="hover:bg-white hover:shadow-md transition-all duration-200">
+              <ArrowLeft className="h-4 w-4" />
             </Button>
-            <Button onClick={downloadWorksheet}>
-              <Download className="h-4 w-4 mr-2" />
-              Download
-            </Button>
+          </Link>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
+              Writing Practice Creator
+            </h1>
+            <p className="text-slate-600 text-lg flex items-center gap-2">
+              Design creative writing prompts and exercises
+              <PenTool className="h-5 w-5 text-purple-500" />
+            </p>
           </div>
         </div>
 

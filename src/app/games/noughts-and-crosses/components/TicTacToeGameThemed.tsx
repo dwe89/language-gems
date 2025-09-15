@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from './ThemeProvider';
-import { Brain, ArrowLeft, Volume2, VolumeX, Settings } from 'lucide-react';
+import { Brain, ArrowLeft, Volume2, VolumeX, Settings, Users, Monitor } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useAudio } from '../hooks/useAudio';
 import { EnhancedGameService } from '../../../../services/enhancedGameService';
@@ -27,8 +27,10 @@ interface TicTacToeGameProps {
     theme: string;
     playerMark: string;
     computerMark: string;
+    gameMode?: 'computer' | '2-player'; // Add game mode option
   };
   onBackToMenu: () => void;
+  onGameModeChange?: (gameMode: 'computer' | '2-player') => void;
   onGameEnd: (result: {
     outcome: 'win' | 'loss' | 'tie';
     wordsLearned: number;
@@ -541,12 +543,13 @@ export default function TicTacToeGame({
   gameSessionId,
   isAssignmentMode,
   onOpenSettings,
+  onGameModeChange,
   gameService,
   userId
 }: TicTacToeGameProps) {
 
 
-  const { themeClasses } = useTheme();
+  const { themeClasses, themeId } = useTheme();
 
   // Audio state
   const [soundEnabled, setSoundEnabled] = useState(true);
@@ -583,14 +586,14 @@ export default function TicTacToeGame({
   // Audio effects - Start background music when story is dismissed
   useEffect(() => {
     if (storyDismissed) {
-      startBackgroundMusic(settings.theme);
+      startBackgroundMusic(themeId);
     }
     
     // Cleanup - stop music when component unmounts
     return () => {
       stopBackgroundMusic();
     };
-  }, [storyDismissed, settings.theme, startBackgroundMusic, stopBackgroundMusic]);
+  }, [storyDismissed, themeId, startBackgroundMusic, stopBackgroundMusic]);
   const resetGame = () => {
     setBoard(Array(9).fill(null));
     setCurrentPlayer('X');
@@ -694,7 +697,12 @@ export default function TicTacToeGame({
   };
 
   const handleCellClick = (index: number) => {
-    if (board[index] || gameState !== 'playing' || currentPlayer !== 'X') return;
+    // In 2-player mode, both players can click. In computer mode, only when it's player X's turn
+    if (settings.gameMode === '2-player') {
+      if (board[index] || gameState !== 'playing') return;
+    } else {
+      if (board[index] || gameState !== 'playing' || currentPlayer !== 'X') return;
+    }
     
     // Play square select sound
     playSFX('square-select');
@@ -878,25 +886,38 @@ export default function TicTacToeGame({
       // Play wrong answer sound
       playSFX('wrong-answer');
       
-      console.log('🎯 [VOCAB ANSWER] Wrong answer - checking difficulty');
+      console.log('🎯 [VOCAB ANSWER] Wrong answer - checking game mode');
       
-      // Wrong answer - computer gets a turn or player tries again depending on difficulty
-      if (settings.difficulty === 'beginner') {
-        console.log('🎯 [VOCAB ANSWER] Beginner mode - giving another chance');
-        // Give player another chance on beginner - but mark it as a retry question
-        const newQuestion = generateVocabularyQuestion();
-        if (newQuestion) {
-          // Mark as retry to prevent double FSRS recording
-          (newQuestion as any).isRetryQuestion = true;
+      // Wrong answer - handle based on game mode
+      playSFX('wrong-answer');
+      
+      // Record the wrong answer attempt
+      if (gameSessionId && currentQuestion) {
+        try {
+          const sessionService = new EnhancedGameSessionService();
+          sessionService.recordWordAttempt(gameSessionId, 'noughts-and-crosses', {
+            vocabularyId: currentQuestion.id,
+            wordText: currentQuestion.word,
+            translationText: currentQuestion.translation,
+            wasCorrect: false,
+            responseTimeMs: responseTime * 1000,
+            hintUsed: false,
+            streakCount: 0
+          }, true).catch(error => {
+            console.log('🚀 [FAST] Vocabulary tracking failed:', error);
+          });
+        } catch (error) {
+          console.log('🚀 [FAST] Failed to record wrong answer:', error);
         }
-        setCurrentQuestion(newQuestion);
-        setTotalQuestions(prev => prev + 1);
-        setCumulativeTotalQuestions(prev => prev + 1); // Track cumulative questions for retry
-        setShowVocabQuestion(true);
-        return;
+      }
+      
+      // In 2-player mode, just switch turns. In computer mode, computer gets the move
+      if (settings.gameMode === '2-player') {
+        console.log('🎯 [VOCAB ANSWER] 2-player mode - switching turns after wrong answer');
+        // Just switch to the other player (already handled by the makeMove logic)
       } else {
-        // Computer gets to make a move
-        console.log('🎯 [VOCAB ANSWER] Wrong answer - computer makes move');
+        // Computer gets to make a move immediately
+        console.log('🎯 [VOCAB ANSWER] Computer mode - computer makes move after wrong answer');
         makeComputerMove();
       }
     }
@@ -932,13 +953,16 @@ export default function TicTacToeGame({
         shouldMakeComputerMove: wasPlayerX
       });
       
-      if (wasPlayerX) {
-        // After player's move, computer moves
+      if (wasPlayerX && settings.gameMode !== '2-player') {
+        // After player's move, computer moves (only in computer mode)
         console.log('🎯 [MAKE MOVE] Scheduling computer move in 1 second');
         setTimeout(() => {
           console.log('🎯 [MAKE MOVE] Timeout fired - calling makeComputerMove');
           makeComputerMove(newBoard);
         }, 1000);
+      } else if (settings.gameMode === '2-player') {
+        // In 2-player mode, just wait for the next player to make their move
+        console.log('🎯 [MAKE MOVE] 2-player mode - waiting for next player');
       }
     }
   };
@@ -1219,7 +1243,7 @@ export default function TicTacToeGame({
       onStoryDismiss: () => setStoryDismissed(true)
     };
     
-    switch (settings.theme) {
+    switch (themeId) {
       case 'tokyo':
         return <TokyoNightsAnimation {...animationProps} />;
       case 'pirate':
@@ -1234,7 +1258,7 @@ export default function TicTacToeGame({
   };
 
   const getThemeTitle = () => {
-    switch (settings.theme) {
+    switch (themeId) {
       case 'tokyo':
         return '🌃 Tokyo Nights Hack';
       case 'pirate':
@@ -1309,6 +1333,53 @@ export default function TicTacToeGame({
             <motion.button
               onClick={() => {
                 playSFX('button-click');
+                resetGame();
+              }}
+              className="relative px-3 md:px-4 py-2 md:py-2.5 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white text-sm md:text-base font-semibold flex items-center gap-2 md:gap-3 transition-all duration-300 shadow-lg hover:shadow-xl border-2 border-white/20"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              title="Reset the game board and start fresh"
+            >
+              <svg className="h-5 w-5 md:h-6 md:w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              <span className="hidden md:inline">Reset Game</span>
+              <span className="md:hidden">Reset</span>
+            </motion.button>
+            
+            {/* Game Mode Toggle Button */}
+            {onGameModeChange && (
+              <motion.button
+                onClick={() => {
+                  playSFX('button-click');
+                  const newMode = settings.gameMode === 'computer' ? '2-player' : 'computer';
+                  onGameModeChange(newMode);
+                }}
+                className={`relative px-3 md:px-4 py-2 md:py-2.5 rounded-xl ${
+                  settings.gameMode === '2-player' 
+                    ? 'bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700' 
+                    : 'bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700'
+                } text-white text-sm md:text-base font-semibold flex items-center gap-2 md:gap-3 transition-all duration-300 shadow-lg hover:shadow-xl border-2 border-white/20`}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                title={settings.gameMode === 'computer' ? 'Switch to 2-Player Mode' : 'Switch to Computer Mode'}
+              >
+                {settings.gameMode === '2-player' ? (
+                  <Users className="h-5 w-5 md:h-6 md:w-6" />
+                ) : (
+                  <Monitor className="h-5 w-5 md:h-6 md:w-6" />
+                )}
+                <span className="hidden md:inline">
+                  {settings.gameMode === '2-player' ? '2-Player' : 'vs Computer'}
+                </span>
+                <span className="md:hidden">
+                  {settings.gameMode === '2-player' ? '2P' : 'PC'}
+                </span>
+              </motion.button>
+            )}
+            <motion.button
+              onClick={() => {
+                playSFX('button-click');
                 setSoundEnabled(!soundEnabled);
               }}
               className="p-3 rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white transition-all shadow-lg border border-white/20"
@@ -1339,7 +1410,7 @@ export default function TicTacToeGame({
                   <motion.button
                     key={index}
                     onClick={() => handleCellClick(index)}
-                    disabled={!!cell || gameState !== 'playing' || currentPlayer !== 'X'}
+                    disabled={!!cell || gameState !== 'playing' || (settings.gameMode !== '2-player' && currentPlayer !== 'X')}
                     className={`
                       aspect-square rounded-2xl border-3 flex flex-col items-center justify-center text-6xl font-bold transition-all duration-300 relative
                       backdrop-blur-md bg-white/15 border-white/40 shadow-lg
@@ -1351,14 +1422,14 @@ export default function TicTacToeGame({
                             : 'bg-red-500/40 border-red-400 text-red-100 shadow-xl shadow-red-400/50'
                           : 'hover:bg-white/25 hover:border-white/60 cursor-pointer'
                       }
-                      ${!cell && gameState === 'playing' && currentPlayer === 'X' ? 'transform hover:scale-110' : ''}
+                      ${!cell && gameState === 'playing' && (settings.gameMode === '2-player' || currentPlayer === 'X') ? 'transform hover:scale-110' : ''}
                     `}
-                    whileHover={!cell && gameState === 'playing' && currentPlayer === 'X' ? { 
+                    whileHover={!cell && gameState === 'playing' && (settings.gameMode === '2-player' || currentPlayer === 'X') ? { 
                       scale: 1.1, 
                       y: -4,
                       boxShadow: "0 10px 25px rgba(255, 255, 255, 0.3)" 
                     } : {}}
-                    whileTap={!cell && gameState === 'playing' && currentPlayer === 'X' ? { scale: 0.95 } : {}}
+                    whileTap={!cell && gameState === 'playing' && (settings.gameMode === '2-player' || currentPlayer === 'X') ? { scale: 0.95 } : {}}
                   >
                     {/* Fixed glyph for each square */}
                     <div className="absolute top-1 left-1 text-white/25 text-xs font-bold select-none bg-black/20 rounded-full w-5 h-5 flex items-center justify-center">
@@ -1503,6 +1574,21 @@ export default function TicTacToeGame({
                         >
                           🏠 Menu
                         </motion.button>
+                      </div>
+                    </motion.div>
+                  )}
+                  
+                  {/* Playing State - Show current player in 2-player mode */}
+                  {gameState === 'playing' && settings.gameMode === '2-player' && (
+                    <motion.div
+                      key="playing"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      className="text-center"
+                    >
+                      <div className="text-xl font-bold text-white drop-shadow-lg bg-black/40 backdrop-blur-sm rounded-xl px-4 py-2 border border-white/20">
+                        {currentPlayer === 'X' ? '❌' : '⭕'} Player {currentPlayer}'s Turn
                       </div>
                     </motion.div>
                   )}

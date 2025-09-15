@@ -50,12 +50,17 @@ export default function FlagIcon({
   }
 
   return (
-    <div className="relative">
+    <div
+      className={`rounded-full shadow-lg overflow-hidden flex justify-center items-center ${className}`}
+      style={dimensions}
+    >
       <ReactCountryFlag
         countryCode={countryCode}
         svg
-        style={dimensions}
-        className={`rounded-full shadow-lg ${className}`}
+        style={{
+          width: `calc(${dimensions.width} * 1.5)`,
+          height: `calc(${dimensions.height} * 1.5)`
+        }}
         title={`${countryCode} flag`}
         onError={() => setFlagError(true)}
       />
