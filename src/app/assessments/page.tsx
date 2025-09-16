@@ -3,6 +3,7 @@ import React from 'react';
 import Link from 'next/link';
 import { Metadata } from 'next';
 import { generateMetadata } from '../../components/seo/SEOWrapper';
+import AssessmentsPageWrapper from '../../components/assessments/AssessmentsPageWrapper';
 import {
   BookOpen,
   FileText,
@@ -165,6 +166,7 @@ export default function AssessmentsPage() {
     }
   ];
   return (
+    <AssessmentsPageWrapper>
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       {/* Header */}
       <div className="bg-white shadow-sm">
@@ -271,8 +273,9 @@ export default function AssessmentsPage() {
           </div>
         </div>
       </div>
-      
+
       <Footer />
     </div>
+    </AssessmentsPageWrapper>
   );
 }

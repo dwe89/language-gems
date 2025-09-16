@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import FlagIcon from '../../components/ui/FlagIcon';
 import { motion } from 'framer-motion';
 import {
   BookOpen,
@@ -18,7 +19,7 @@ import {
 import Link from 'next/link';
 import { useAuth } from '../../components/auth/AuthProvider';
 import { GemCard, GemButton } from '../../components/ui/GemTheme';
-import ReactCountryFlag from 'react-country-flag';
+
 
 interface GrammarTopic {
   id: string;
@@ -174,10 +175,9 @@ export default function GrammarHubPage() {
                 >
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center space-x-3">
-                      <ReactCountryFlag
+                      <FlagIcon
                         countryCode={language.countryCode}
-                        svg
-                        style={{ width: '2em', height: '2em' }}
+                        size="md"
                       />
                       <div>
                         <h3 className="text-xl font-bold text-white">{language.name}</h3>

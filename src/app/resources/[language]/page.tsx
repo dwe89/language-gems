@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import FlagIcon from '@/components/ui/FlagIcon';
 import { ArrowLeft, BookOpen, GraduationCap, Users, ChevronRight, ExternalLink, Trophy } from 'lucide-react';
-import ReactCountryFlag from 'react-country-flag';
+
 
 interface PageProps {
   params: {
@@ -87,13 +88,11 @@ export default function LanguagePage({ params }: PageProps) {
           <div className="flex items-center justify-between">
             <div className="flex items-center">
               <div className="w-16 h-16 bg-indigo-100 rounded-xl flex items-center justify-center mr-6">
-                <div className="rounded-full overflow-hidden flex justify-center items-center" style={{ width: '2rem', height: '2rem' }}>
-                  <ReactCountryFlag
-                    countryCode={languageConfig.countryCode}
-                    svg
-                    style={{ width: '3rem', height: '3rem' }}
-                  />
-                </div>
+                <FlagIcon
+                  countryCode={languageConfig.countryCode}
+                  size="lg"
+                  className="rounded-full"
+                />
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-slate-900">

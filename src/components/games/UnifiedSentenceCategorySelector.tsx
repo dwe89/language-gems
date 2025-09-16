@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import FlagIcon from '../../components/ui/FlagIcon';
 import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import ReactCountryFlag from 'react-country-flag';
+
 import {
   ArrowLeft,
   ArrowRight,
@@ -79,7 +80,7 @@ const AVAILABLE_LANGUAGES = [
     name: 'Spanish',
     icon: (
       <div className="rounded-full shadow-lg overflow-hidden flex justify-center items-center" style={{ width: '2rem', height: '2rem' }}>
-        <ReactCountryFlag countryCode="ES" svg style={{ width: '3rem', height: '3rem' }} />
+        <FlagIcon countryCode="ES" size="lg" />
       </div>
     ),
     description: 'Learn Spanish sentences',
@@ -90,7 +91,7 @@ const AVAILABLE_LANGUAGES = [
     name: 'French',
     icon: (
       <div className="rounded-full shadow-lg overflow-hidden flex justify-center items-center" style={{ width: '2rem', height: '2rem' }}>
-        <ReactCountryFlag countryCode="FR" svg style={{ width: '3rem', height: '3rem' }} />
+        <FlagIcon countryCode="FR" size="lg" />
       </div>
     ),
     description: 'Master French sentence skills',
@@ -99,7 +100,7 @@ const AVAILABLE_LANGUAGES = [
   {
     code: 'german',
     name: 'German',
-    icon: <ReactCountryFlag countryCode="DE" svg style={{ width: '2rem', height: '2rem' }} className="rounded-full shadow-lg" />,
+    icon: <FlagIcon countryCode="DE" size="lg" />,
     description: 'Build German sentence proficiency',
     color: 'from-gray-800 to-red-600'
   },
@@ -656,13 +657,13 @@ const LanguageSelection: React.FC<{
     <div className="text-center mb-8">
       <div className="flex justify-center space-x-2 mb-4">
         <div className="rounded-sm overflow-hidden flex justify-center items-center" style={{ width: '1.5rem', height: '1.5rem' }}>
-          <ReactCountryFlag countryCode="ES" svg style={{ width: '2.25rem', height: '2.25rem' }} />
+          <FlagIcon countryCode="ES" size="lg" />
         </div>
         <div className="rounded-sm overflow-hidden flex justify-center items-center" style={{ width: '1.5rem', height: '1.5rem' }}>
-          <ReactCountryFlag countryCode="FR" svg style={{ width: '2.25rem', height: '2.25rem' }} />
+          <FlagIcon countryCode="FR" size="lg" />
         </div>
         <div className="rounded-sm overflow-hidden flex justify-center items-center" style={{ width: '1.5rem', height: '1.5rem' }}>
-          <ReactCountryFlag countryCode="DE" svg style={{ width: '2.25rem', height: '2.25rem' }} />
+          <FlagIcon countryCode="DE" size="lg" />
         </div>
       </div>
       <h2 className="text-2xl font-bold text-white mb-2">Choose Your Language</h2>

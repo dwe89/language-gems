@@ -94,6 +94,7 @@ export default function MemoryGameMain({
   // Add state for custom words
   const [currentCustomWords, setCurrentCustomWords] = useState<WordPair[]>(customWords || []);
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
+  const [firstCardSelected, setFirstCardSelected] = useState(false);
 
   // Update custom words when prop changes (for assignment mode)
   useEffect(() => {
@@ -264,19 +265,29 @@ export default function MemoryGameMain({
     };
   }, [startTime, gameWon]);
   
-  // Auto-start background music when game starts
+  // Start background music after first user interaction
   useEffect(() => {
-    const autoStartMusic = async () => {
-      if (!gameWon && startTime && backgroundMusicRef.current && audioManager && !isMusicPlaying) {
-        // Add a small delay to ensure audio context is ready
+    console.log('🎵 [DEBUG] Background music effect triggered:', {
+      gameWon,
+      startTime: !!startTime,
+      backgroundMusicRef: !!backgroundMusicRef.current,
+      audioManager: !!audioManager,
+      isMusicPlaying,
+      firstCardSelected
+    });
+
+    const startMusicAfterInteraction = async () => {
+      if (!gameWon && startTime && backgroundMusicRef.current && audioManager && !isMusicPlaying && firstCardSelected) {
+        console.log('🎵 [DEBUG] Starting background music after first user interaction');
+        // Add a longer delay to ensure audio context is properly initialized after user interaction
         setTimeout(() => {
           startBackgroundMusic();
-        }, 1000);
+        }, 1500);
       }
     };
-    
-    autoStartMusic();
-  }, [startTime, gameWon, audioManager]);
+
+    startMusicAfterInteraction();
+  }, [startTime, gameWon, audioManager, isMusicPlaying, firstCardSelected]);
   
   // Handle fullscreen toggle
   const toggleFullscreen = () => {
@@ -618,6 +629,11 @@ export default function MemoryGameMain({
     if (!firstCard) {
       const cardWithTime = { ...card, firstAttemptTime: card.firstAttemptTime || now };
       setFirstCard(cardWithTime);
+
+      // Mark that the first card has been selected (for background music)
+      if (!firstCardSelected) {
+        setFirstCardSelected(true);
+      }
       return;
     }
     
@@ -908,14 +924,45 @@ export default function MemoryGameMain({
   
   // Background music control functions
   const startBackgroundMusic = async () => {
+    console.log('🎵 [DEBUG] startBackgroundMusic called:', {
+      hasBackgroundMusicRef: !!backgroundMusicRef.current,
+      hasAudioManager: !!audioManager,
+      backgroundMusicSrc: backgroundMusicRef.current?.src,
+      isMusicPlaying
+    });
+
     if (backgroundMusicRef.current && audioManager) {
       try {
+        console.log('🎵 [DEBUG] About to play background music:', backgroundMusicRef.current.src);
         await audioManager.playAudio(backgroundMusicRef.current);
         setIsMusicPlaying(true);
-        console.log('🎵 Background music started');
+        console.log('🎵 Background music started successfully');
+
+        // Check if the audio is actually playing
+        setTimeout(() => {
+          console.log('🎵 [DEBUG] Background music status check:', {
+            paused: backgroundMusicRef.current?.paused,
+            currentTime: backgroundMusicRef.current?.currentTime,
+            duration: backgroundMusicRef.current?.duration,
+            volume: backgroundMusicRef.current?.volume,
+            loop: backgroundMusicRef.current?.loop,
+            src: backgroundMusicRef.current?.src
+          });
+        }, 1000);
       } catch (error) {
         console.warn('Failed to start background music:', error);
+        console.log('🎵 [DEBUG] Background music error details:', {
+          error: error instanceof Error ? error.message : String(error),
+          audioSrc: backgroundMusicRef.current?.src,
+          audioReadyState: backgroundMusicRef.current?.readyState,
+          audioNetworkState: backgroundMusicRef.current?.networkState
+        });
       }
+    } else {
+      console.warn('🎵 [DEBUG] Cannot start background music - missing refs:', {
+        hasBackgroundMusicRef: !!backgroundMusicRef.current,
+        hasAudioManager: !!audioManager
+      });
     }
   };
   

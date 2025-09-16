@@ -1,7 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { BookOpen, Users, FileText, Globe } from 'lucide-react';
-import ReactCountryFlag from 'react-country-flag';
+import FlagIcon from '../../../components/ui/FlagIcon';
 import FreebiesBreadcrumb from '../../../components/freebies/FreebiesBreadcrumb';
 
 const LANGUAGES = [
@@ -105,13 +105,11 @@ export default function SkillsHubPage() {
               <div key={language.id} className="bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden group">
                 <div className="p-8 text-center">
                   <Link href={`/resources/skills/${language.id}`} className="mb-4 block hover:scale-110 transition-transform duration-200">
-                    <div className="mx-auto rounded-lg overflow-hidden flex justify-center items-center" style={{ width: '4rem', height: '4rem' }}>
-                      <ReactCountryFlag
-                        countryCode={language.countryCode}
-                        svg
-                        style={{ width: '6rem', height: '6rem' }}
-                      />
-                    </div>
+                    <FlagIcon
+                      countryCode={language.countryCode}
+                      size="xl"
+                      className="mx-auto"
+                    />
                   </Link>
                   <h3 className="text-2xl font-bold text-slate-900 mb-2">
                     <Link href={`/resources/skills/${language.id}`}>{language.name}</Link>

@@ -13,22 +13,45 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET!;
+const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
 export async function POST(request: NextRequest) {
   const body = await request.text();
-  const sig = request.headers.get('stripe-signature')!;
+  const sig = request.headers.get('stripe-signature');
 
   let event: Stripe.Event;
 
-  try {
-    event = stripe.webhooks.constructEvent(body, sig, endpointSecret);
-  } catch (err) {
-    console.error('Webhook signature verification failed:', err);
-    return NextResponse.json(
-      { error: 'Invalid signature' },
-      { status: 400 }
-    );
+  // In development, we might not have proper webhook setup
+  if (process.env.NODE_ENV === 'development' && (!endpointSecret || endpointSecret === 'whsec_dev_placeholder')) {
+    console.log('⚠️ Development mode: Skipping webhook signature verification');
+    try {
+      event = JSON.parse(body);
+    } catch (err) {
+      console.error('Failed to parse webhook body:', err);
+      return NextResponse.json(
+        { error: 'Invalid JSON' },
+        { status: 400 }
+      );
+    }
+  } else {
+    // Production: Verify webhook signature
+    if (!sig || !endpointSecret) {
+      console.error('Missing webhook signature or secret');
+      return NextResponse.json(
+        { error: 'Missing signature or secret' },
+        { status: 400 }
+      );
+    }
+
+    try {
+      event = stripe.webhooks.constructEvent(body, sig, endpointSecret);
+    } catch (err) {
+      console.error('Webhook signature verification failed:', err);
+      return NextResponse.json(
+        { error: 'Invalid signature' },
+        { status: 400 }
+      );
+    }
   }
 
   try {

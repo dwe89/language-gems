@@ -74,15 +74,29 @@ export async function POST(request: NextRequest) {
 
     // Try to find user by email (for registered users)
     if (customer_email && customer_email !== 'guest') {
-      const { data: user, error: userError } = await supabase
-        .from('auth.users')
-        .select('id')
+      // First try to get user ID from user_profiles table
+      const { data: profile, error: profileError } = await supabase
+        .from('user_profiles')
+        .select('user_id')
         .eq('email', customer_email)
         .single();
 
-      if (!userError && user) {
-        userId = user.id;
+      if (!profileError && profile) {
+        userId = profile.user_id;
+      } else {
+        // Fallback to auth.users query (though this might not work with RLS)
+        const { data: user, error: userError } = await supabase
+          .from('auth.users')
+          .select('id')
+          .eq('email', customer_email)
+          .single();
+
+        if (!userError && user) {
+          userId = user.id;
+        }
       }
+      
+      console.log(`User lookup for ${customer_email}: ${userId ? 'found' : 'not found'}`);
     }
 
     // Create order

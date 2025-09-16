@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import ReactCountryFlag from 'react-country-flag';
 import FlagIcon from '@/components/ui/FlagIcon';
 import {
   ArrowLeft,

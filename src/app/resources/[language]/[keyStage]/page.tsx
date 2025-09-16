@@ -2,8 +2,9 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import FlagIcon from '@/components/ui/FlagIcon';
 import { ArrowLeft, FileText, MessageSquare, User, Home, School, Gamepad2, Utensils, Shirt, Monitor, Heart, Plane, Briefcase, TreePine, PartyPopper, BookOpen, Building2, TrendingUp, Microscope } from 'lucide-react';
-import ReactCountryFlag from 'react-country-flag';
+
 
 
 interface Theme {
@@ -279,11 +280,10 @@ export default function LanguageKeyStage({ params }: PageProps) {
           <div className="flex items-center justify-between">
             <div className="flex items-center">
               <div className="w-16 h-16 bg-indigo-100 rounded-xl flex items-center justify-center mr-6">
-                <ReactCountryFlag 
-                  countryCode={languageConfig.countryCode} 
-                  svg 
-                  style={{ width: '2rem', height: '2rem' }} 
-                  className="rounded-full" 
+                <FlagIcon
+                  countryCode={languageConfig.countryCode}
+                  size="lg"
+                  className="rounded-full"
                 />
               </div>
               <div>

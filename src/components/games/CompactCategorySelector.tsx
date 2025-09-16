@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import ReactCountryFlag from 'react-country-flag';
+import FlagIcon from '@/components/ui/FlagIcon';
 import {
   ArrowLeft,
   ArrowRight,
@@ -89,17 +89,17 @@ const AVAILABLE_LANGUAGES = [
   {
     code: 'es',
     name: 'Spanish',
-    icon: <ReactCountryFlag countryCode="ES" svg style={{ width: '2rem', height: '2rem' }} />
+    icon: <FlagIcon countryCode="ES" size="lg" />
   },
   {
-    code: 'fr', 
+    code: 'fr',
     name: 'French',
-    icon: <ReactCountryFlag countryCode="FR" svg style={{ width: '2rem', height: '2rem' }} />
+    icon: <FlagIcon countryCode="FR" size="lg" />
   },
   {
     code: 'de',
-    name: 'German', 
-    icon: <ReactCountryFlag countryCode="DE" svg style={{ width: '2rem', height: '2rem' }} />
+    name: 'German',
+    icon: <FlagIcon countryCode="DE" size="lg" />
   }
 ];
 

@@ -1,7 +1,8 @@
 import React from 'react';
+import FlagIcon from '@/components/ui/FlagIcon';
 import Link from 'next/link';
 import { ArrowLeft, BookOpen, Users, FileText } from 'lucide-react';
-import ReactCountryFlag from 'react-country-flag';
+
 import FreebiesBreadcrumb from '../../../../components/freebies/FreebiesBreadcrumb';
 
 const SPANISH_SKILLS = [
@@ -53,10 +54,9 @@ export default function SpanishSkillsPage() {
               <ArrowLeft className="h-5 w-5 text-slate-600" />
             </Link>
             <div className="flex items-center gap-4">
-              <ReactCountryFlag
+              <FlagIcon
                 countryCode="ES"
-                svg
-                style={{ width: '4rem', height: '4rem' }}
+                size="xl"
                 className="rounded-lg"
               />
               <div>

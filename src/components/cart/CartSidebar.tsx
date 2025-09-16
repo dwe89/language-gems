@@ -9,7 +9,13 @@ export function CartSidebar() {
   const { state, updateQuantity, removeItem, toggleCart, getTotalPrice, getTotalItems } = useCart();
   const router = useRouter();
 
-  const formatPrice = (priceCents: number) => {
+  const formatPrice = (priceCents: number | null | undefined) => {
+    if (priceCents === null || priceCents === undefined || isNaN(priceCents)) {
+      return 'FREE';
+    }
+    if (priceCents === 0) {
+      return 'FREE';
+    }
     return `£${(priceCents / 100).toFixed(2)}`;
   };
 

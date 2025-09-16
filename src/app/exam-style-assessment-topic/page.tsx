@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import FlagIcon from '../../components/ui/FlagIcon';
 import Link from 'next/link';
 import {
   Target,
@@ -14,7 +15,7 @@ import {
   Users,
   Globe
 } from 'lucide-react';
-import ReactCountryFlag from 'react-country-flag';
+
 import { AQATopicAssessmentService, type AQATopicAssessmentDefinition } from '../../services/aqaTopicAssessmentService';
 
 // Language options with country flags
@@ -25,7 +26,7 @@ const AVAILABLE_LANGUAGES = [
     name: 'Spanish',
     icon: (
       <div className="rounded-full shadow-lg overflow-hidden flex justify-center items-center" style={{ width: '2rem', height: '2rem' }}>
-        <ReactCountryFlag countryCode="ES" svg style={{ width: '3rem', height: '3rem' }} />
+        <FlagIcon countryCode="ES" size="lg" />
       </div>
     ),
     description: 'Learn Spanish vocabulary',
@@ -37,7 +38,7 @@ const AVAILABLE_LANGUAGES = [
     name: 'French',
     icon: (
       <div className="rounded-full shadow-lg overflow-hidden flex justify-center items-center" style={{ width: '2rem', height: '2rem' }}>
-        <ReactCountryFlag countryCode="FR" svg style={{ width: '3rem', height: '3rem' }} />
+        <FlagIcon countryCode="FR" size="lg" />
       </div>
     ),
     description: 'Master French language skills',
@@ -49,7 +50,7 @@ const AVAILABLE_LANGUAGES = [
     name: 'German',
     icon: (
       <div className="rounded-full shadow-lg overflow-hidden flex justify-center items-center" style={{ width: '2rem', height: '2rem' }}>
-        <ReactCountryFlag countryCode="DE" svg style={{ width: '3rem', height: '3rem' }} />
+        <FlagIcon countryCode="DE" size="lg" />
       </div>
     ),
     description: 'Build German language proficiency',

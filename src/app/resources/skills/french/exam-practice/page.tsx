@@ -1,7 +1,8 @@
 import React from 'react';
+import FlagIcon from '@/components/ui/FlagIcon';
 import Link from 'next/link';
 import { ArrowLeft, FileText, Clock, Download, Target } from 'lucide-react';
-import ReactCountryFlag from 'react-country-flag';
+
 
 const FRENCH_EXAM_TOPICS = [
   {
@@ -82,10 +83,9 @@ export default function FrenchExamPracticePage() {
               <ArrowLeft className="h-5 w-5 text-slate-600" />
             </Link>
             <div className="flex items-center gap-4">
-              <ReactCountryFlag
+              <FlagIcon
                 countryCode="FR"
-                svg
-                style={{ width: '3rem', height: '3rem' }}
+                size="xl"
                 className="rounded-lg"
               />
               <div>

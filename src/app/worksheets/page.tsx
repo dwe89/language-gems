@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
+import ComingSoonWrapper from '../../components/beta/ComingSoonWrapper';
 import {
   FileText,
   Users,
@@ -97,6 +98,7 @@ const worksheetTypes = [
 
 export default function WorksheetsPage() {
   return (
+    <ComingSoonWrapper feature="worksheets">
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       <div className="container mx-auto py-12 px-4">
         <div className="max-w-7xl mx-auto">
@@ -255,5 +257,6 @@ export default function WorksheetsPage() {
         </div>
       </div>
     </div>
+    </ComingSoonWrapper>
   );
 }

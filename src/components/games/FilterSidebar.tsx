@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
+import FlagIcon from '../../components/ui/FlagIcon';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Play, ArrowRight, ArrowLeft, Gamepad2, Rocket, Anchor, Building2, Sun, BookOpen } from 'lucide-react';
-import ReactCountryFlag from 'react-country-flag';
+
 import { getCategoriesByCurriculum, type CurriculumLevel } from './KS4CategorySystem';
 import { Category, Subcategory, CURRICULUM_LEVELS_CONFIG } from './ModernCategorySelector';
 
@@ -245,13 +246,11 @@ export default function GameSelectionSidebar({
                       : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                   }`}
                 >
-                  <div className="rounded-full shadow-lg overflow-hidden flex justify-center items-center" style={{ width: '2rem', height: '2rem' }}>
-                    <ReactCountryFlag
-                      countryCode={lang.code.toUpperCase()}
-                      svg
-                      style={{ width: '3rem', height: '3rem' }}
-                    />
-                  </div>
+                  <FlagIcon
+                    countryCode={lang.code.toUpperCase()}
+                    size="lg"
+                    className="rounded-full shadow-lg"
+                  />
                   <span className="font-medium">{lang.name}</span>
                   {selection.language === lang.code && <ArrowRight className="h-4 w-4 ml-auto" />}
                 </button>

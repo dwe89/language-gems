@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState } from 'react';
-import ReactCountryFlag from 'react-country-flag';
 
 interface FlagIconProps {
   countryCode: string;
@@ -23,28 +22,39 @@ const fallbackColors = {
   DE: 'bg-gradient-to-r from-black via-red-500 to-yellow-500'
 };
 
-export default function FlagIcon({ 
-  countryCode, 
-  size = 'lg', 
-  className = '', 
-  showFallback = true 
+const countryNames = {
+  ES: 'Spanish',
+  FR: 'French',
+  DE: 'German'
+};
+
+export default function FlagIcon({
+  countryCode,
+  size = 'lg',
+  className = '',
+  showFallback = true
 }: FlagIconProps) {
   const [flagError, setFlagError] = useState(false);
   const dimensions = sizeMap[size];
-  
-  // If flag fails to load or we're on a system that doesn't support SVG flags well
+
+  // Convert country code to lowercase for flag-icons
+  const flagCode = countryCode.toLowerCase();
+
+  // If flag fails to load, show fallback
   if (flagError && showFallback) {
     return (
-      <div 
+      <div
         className={`
-          ${fallbackColors[countryCode as keyof typeof fallbackColors] || 'bg-gray-400'} 
-          rounded-full flex items-center justify-center text-white font-bold text-xs
+          ${fallbackColors[countryCode as keyof typeof fallbackColors] || 'bg-gray-400'}
+          rounded-full flex items-center justify-center text-white font-bold shadow-lg
           ${className}
         `}
         style={dimensions}
-        title={`${countryCode} flag`}
+        title={`${countryNames[countryCode as keyof typeof countryNames] || countryCode} flag`}
       >
-        {countryCode}
+        <span className="text-xs font-semibold">
+          {countryCode}
+        </span>
       </div>
     );
   }
@@ -54,18 +64,16 @@ export default function FlagIcon({
       className={`rounded-full shadow-lg overflow-hidden flex justify-center items-center ${className}`}
       style={dimensions}
     >
-      <ReactCountryFlag
-        countryCode={countryCode}
-        svg
-        style={{
-          width: `calc(${dimensions.width} * 1.5)`,
-          height: `calc(${dimensions.height} * 1.5)`
-        }}
-        title={`${countryCode} flag`}
+      <img
+        src={`/flags/${flagCode}.svg`}
+        alt={`${countryNames[countryCode as keyof typeof countryNames] || countryCode} flag`}
+        title={`${countryNames[countryCode as keyof typeof countryNames] || countryCode} flag`}
+        className="w-full h-full object-cover"
         onError={() => setFlagError(true)}
+        onLoad={() => {/* Flag loaded successfully */}}
       />
       {/* Hidden fallback for screen readers */}
-      <span className="sr-only">{countryCode} flag</span>
+      <span className="sr-only">{countryNames[countryCode as keyof typeof countryNames] || countryCode} flag</span>
     </div>
   );
 }

@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState, useMemo, useCallback } from 'react';
+import FlagIcon from '../../components/ui/FlagIcon';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Settings, X, Globe, BookOpen, Target, Palette, Gamepad2, Rocket, Anchor, Building2, Sun, ArrowRight, ArrowLeft, ChevronDown } from 'lucide-react';
-import ReactCountryFlag from 'react-country-flag';
+
 import { UnifiedSelectionConfig, loadVocabulary } from '../../hooks/useUnifiedVocabulary';
 
 // Import category data
@@ -231,10 +232,10 @@ export default function InGameConfigPanel({
                 }`}
               >
                 <div className="mb-2">
-                  <ReactCountryFlag
+                  <FlagIcon
                     countryCode={language.countryCode}
-                    svg
-                    style={{ width: '2.2rem', height: '2.2rem', borderRadius: '0.5rem' }}
+                    size="lg"
+                    className="rounded-lg"
                   />
                 </div>
                 <div className={`font-semibold text-sm ${

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { extractStoragePath, logStorageOperation } from '@/lib/storageUtils';
 
 export const dynamic = 'force-dynamic';
 
@@ -61,15 +62,37 @@ export async function GET(
       );
     }
 
+    // Extract the relative path from the full URL using utility function
+    const relativePath = extractStoragePath(filePath, 'products');
+
+    logStorageOperation('download', {
+      orderId,
+      productId,
+      originalPath: filePath,
+      relativePath,
+      productName: orderItem.product.name
+    });
+
     // Create a signed URL for download (valid for 1 hour)
     const { data: signedUrl, error: urlError } = await supabase.storage
       .from('products')
-      .createSignedUrl(filePath, 3600); // 1 hour expiry
+      .createSignedUrl(relativePath, 3600); // 1 hour expiry
 
     if (urlError || !signedUrl) {
-      console.error('Error creating signed URL:', urlError);
+      console.error('Error creating signed URL:', {
+        error: urlError,
+        relativePath,
+        originalPath: filePath
+      });
       return NextResponse.json(
-        { error: 'Unable to generate download link' },
+        {
+          error: 'Unable to generate download link',
+          details: process.env.NODE_ENV === 'development' ? {
+            originalPath: filePath,
+            relativePath,
+            storageError: urlError
+          } : undefined
+        },
         { status: 500 }
       );
     }

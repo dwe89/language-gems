@@ -23,14 +23,14 @@ interface TeacherNavigationProps {
 }
 
 export default function TeacherNavigation({ children }: TeacherNavigationProps) {
-  const { signOut } = useAuth();
+  const { signOut, user, isAdmin } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   // Define navigation menu items
-  const menuItems = [
+  const baseMenuItems = [
     {
       name: 'Dashboard',
       href: '/dashboard',
@@ -56,17 +56,22 @@ export default function TeacherNavigation({ children }: TeacherNavigationProps) 
       description: 'Create and track assignments'
     },
     {
-      name: 'Worksheets',
-      href: '/worksheets',
-      icon: FileText,
-      description: 'AI-powered worksheet generator'
-    },
-    {
       name: 'Vocabulary',
       href: '/dashboard/vocabulary/analytics',
       icon: Brain,
       description: 'Vocabulary analytics and student progress'
     },
+  ];
+
+  // Add admin-only items
+  const menuItems = [
+    ...baseMenuItems,
+    ...(isAdmin || user?.email === 'danieletienne89@gmail.com' ? [{
+      name: 'Worksheets',
+      href: '/worksheets',
+      icon: FileText,
+      description: 'AI-powered worksheet generator'
+    }] : [])
   ];
 
   // Handle navigation link clicks

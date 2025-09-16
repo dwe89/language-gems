@@ -5,12 +5,13 @@ import Link from 'next/link';
 import { useAuth } from '../../../components/auth/AuthProvider';
 import { supabase } from '../../../lib/supabase';
 import { Order, OrderItem } from '../../../types/ecommerce';
-import { ArrowLeft, Download, Calendar, CreditCard, Package, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Download, Calendar, CreditCard, Package } from 'lucide-react';
 
 export default function OrdersPage() {
   const { user, isLoading } = useAuth();
   const [orders, setOrders] = useState<(Order & { order_items: (OrderItem & { product: any })[] })[]>([]);
   const [loading, setLoading] = useState(true);
+  const [downloading, setDownloading] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -44,7 +45,13 @@ export default function OrdersPage() {
     }
   };
 
-  const formatPrice = (priceCents: number) => {
+  const formatPrice = (priceCents: number | null | undefined) => {
+    if (priceCents === null || priceCents === undefined || isNaN(priceCents)) {
+      return 'FREE';
+    }
+    if (priceCents === 0) {
+      return 'FREE';
+    }
     return `£${(priceCents / 100).toFixed(2)}`;
   };
 
@@ -54,6 +61,47 @@ export default function OrdersPage() {
       month: 'long',
       day: 'numeric'
     });
+  };
+
+  const handleSecureDownload = async (orderId: string, productId: string, productName: string) => {
+    setDownloading(productId);
+    try {
+      const response = await fetch(`/api/orders/${orderId}/download/${productId}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.downloadUrl) {
+          // Create a temporary link to trigger download
+          const link = document.createElement('a');
+          link.href = data.downloadUrl;
+          link.download = productName;
+          link.style.display = 'none';
+
+          document.body.appendChild(link);
+          link.click();
+
+          // Safe cleanup with timeout
+          setTimeout(() => {
+            try {
+              if (link.parentNode === document.body) {
+                document.body.removeChild(link);
+              }
+            } catch (removeError) {
+              console.warn('Failed to remove download link from DOM:', removeError);
+            }
+          }, 100);
+        } else {
+          alert('Download link not available');
+        }
+      } else {
+        const errorData = await response.json();
+        alert(`Download failed: ${errorData.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error downloading file:', error);
+      alert('Failed to download file. Please try again.');
+    } finally {
+      setDownloading(null);
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -196,16 +244,23 @@ export default function OrdersPage() {
 
                         {/* Download Button (for completed orders) */}
                         {order.status === 'completed' && item.product?.file_path && (
-                          <a
-                            href={item.product.file_path}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center space-x-2"
+                          <button
+                            onClick={() => handleSecureDownload(order.id, item.product_id, item.product?.name || 'Product')}
+                            disabled={downloading === item.product_id}
+                            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
-                            <Download className="h-4 w-4" />
-                            <span>Download</span>
-                            <ExternalLink className="h-3 w-3" />
-                          </a>
+                            {downloading === item.product_id ? (
+                              <>
+                                <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white" />
+                                <span>Downloading...</span>
+                              </>
+                            ) : (
+                              <>
+                                <Download className="h-4 w-4" />
+                                <span>Download</span>
+                              </>
+                            )}
+                          </button>
                         )}
                       </div>
                     ))}

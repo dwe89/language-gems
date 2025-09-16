@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Head from 'next/head';
+import FlagIcon from '../../components/ui/FlagIcon';
 import {
   GraduationCap,
   Target,
@@ -21,7 +22,7 @@ import {
   Lightbulb,
   FileText
 } from 'lucide-react';
-import ReactCountryFlag from 'react-country-flag';
+
 import { AQAReadingAssessmentService, type AQAAssessmentDefinition } from '../../services/aqaReadingAssessmentService';
 import { AQAListeningAssessmentService, type AQAListeningAssessmentDefinition } from '../../services/aqaListeningAssessmentService';
 import { AQAWritingAssessmentService, type AQAWritingAssessmentDefinition } from '../../services/aqaWritingAssessmentService';
@@ -33,11 +34,7 @@ const AVAILABLE_LANGUAGES = [
     code: 'spanish',
     countryCode: 'ES',
     name: 'Spanish',
-    icon: (
-      <div className="rounded-full shadow-lg overflow-hidden flex justify-center items-center" style={{ width: '2rem', height: '2rem' }}>
-        <ReactCountryFlag countryCode="ES" svg style={{ width: '3rem', height: '3rem' }} />
-      </div>
-    ),
+    icon: <FlagIcon countryCode="ES" size="lg" />,
     description: 'Learn Spanish vocabulary',
     color: 'from-red-500 to-yellow-500'
   },
@@ -45,11 +42,7 @@ const AVAILABLE_LANGUAGES = [
     code: 'french',
     countryCode: 'FR',
     name: 'French',
-    icon: (
-      <div className="rounded-full shadow-lg overflow-hidden flex justify-center items-center" style={{ width: '2rem', height: '2rem' }}>
-        <ReactCountryFlag countryCode="FR" svg style={{ width: '3rem', height: '3rem' }} />
-      </div>
-    ),
+    icon: <FlagIcon countryCode="FR" size="lg" />,
     description: 'Master French language skills',
     color: 'from-blue-500 to-red-500'
   },
@@ -57,11 +50,7 @@ const AVAILABLE_LANGUAGES = [
     code: 'german',
     countryCode: 'DE',
     name: 'German',
-    icon: (
-      <div className="rounded-full shadow-lg overflow-hidden flex justify-center items-center" style={{ width: '2rem', height: '2rem' }}>
-        <ReactCountryFlag countryCode="DE" svg style={{ width: '3rem', height: '3rem' }} />
-      </div>
-    ),
+    icon: <FlagIcon countryCode="DE" size="lg" />,
     description: 'Build German language proficiency',
     color: 'from-gray-800 to-red-600'
   },
@@ -401,10 +390,9 @@ export default function ExamStyleAssessmentPage() {
                       <div className="flex items-center">
                         {/* Only show flag if language is selected */}
                         {language && getCurrentLanguageDetails(language) && (
-                          <ReactCountryFlag
+                          <FlagIcon
                             countryCode={getCurrentLanguageDetails(language)?.countryCode || 'ES'}
-                            svg
-                            style={{ width: '24px', height: '18px' }}
+                            size="sm"
                             className="mr-3"
                           />
                         )}
@@ -519,10 +507,9 @@ export default function ExamStyleAssessmentPage() {
                       <div className="flex items-center">
                         {/* Only show flag if language is selected */}
                         {language && getCurrentLanguageDetails(language) && (
-                          <ReactCountryFlag
+                          <FlagIcon
                             countryCode={getCurrentLanguageDetails(language)?.countryCode || 'ES'}
-                            svg
-                            style={{ width: '24px', height: '18px' }}
+                            size="sm"
                             className="mr-3"
                           />
                         )}
@@ -620,10 +607,9 @@ export default function ExamStyleAssessmentPage() {
                       <div className="flex items-center">
                         {/* Only show flag if language is selected */}
                         {language && getCurrentLanguageDetails(language) && (
-                          <ReactCountryFlag
+                          <FlagIcon
                             countryCode={getCurrentLanguageDetails(language)?.countryCode || 'ES'}
-                            svg
-                            style={{ width: '24px', height: '18px' }}
+                            size="sm"
                             className="mr-3"
                           />
                         )}
@@ -736,10 +722,9 @@ export default function ExamStyleAssessmentPage() {
                 <div className="flex items-center space-x-4">
                   <div className="flex items-center">
                     {language && getCurrentLanguageDetails(language) && (
-                      <ReactCountryFlag
+                      <FlagIcon
                         countryCode={getCurrentLanguageDetails(language)?.countryCode || 'ES'}
-                        svg
-                        style={{ width: '24px', height: '18px' }}
+                        size="sm"
                         className="mr-3"
                       />
                     )}

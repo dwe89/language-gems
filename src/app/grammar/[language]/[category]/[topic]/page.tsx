@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import FlagIcon from '@/components/ui/FlagIcon';
 import { motion } from 'framer-motion';
 import { 
   BookOpen, 
@@ -18,7 +19,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useAuth } from '../../../../../components/auth/AuthProvider';
 import { GemCard, GemButton } from '../../../../../components/ui/GemTheme';
-import ReactCountryFlag from 'react-country-flag';
+
 
 interface GrammarTopic {
   id: string;
@@ -151,10 +152,9 @@ export default function GrammarTopicPage() {
                 <ArrowLeft className="w-5 h-5 text-white" />
               </Link>
               <div className="flex items-center space-x-3">
-                <ReactCountryFlag 
-                  countryCode={languageInfo.countryCode} 
-                  svg 
-                  style={{ width: '2em', height: '2em' }}
+                <FlagIcon
+                  countryCode={languageInfo.countryCode}
+                  size="md"
                 />
                 <div>
                   <h1 className="text-3xl font-bold text-white">{topic.title}</h1>

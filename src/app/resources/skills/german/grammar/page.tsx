@@ -1,7 +1,8 @@
 import React from 'react';
+import FlagIcon from '@/components/ui/FlagIcon';
 import Link from 'next/link';
 import { ArrowLeft, BookOpen, Clock, Download } from 'lucide-react';
-import ReactCountryFlag from 'react-country-flag';
+
 
 const GERMAN_GRAMMAR_TOPICS = [
   {
@@ -76,10 +77,9 @@ export default function GermanGrammarPage() {
               <ArrowLeft className="h-5 w-5 text-slate-600" />
             </Link>
             <div className="flex items-center gap-4">
-              <ReactCountryFlag
+              <FlagIcon
                 countryCode="DE"
-                svg
-                style={{ width: '3rem', height: '3rem' }}
+                size="xl"
                 className="rounded-lg"
               />
               <div>

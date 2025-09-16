@@ -93,20 +93,20 @@ export default function ResourcesPage() {
       return;
     }
 
-    // In production, this would trigger the actual download
-    // For now, we'll just show an alert
-    if (product.price_cents > 0 && !user) {
-      alert('Please sign in to download premium worksheets');
+    // For free products, allow direct download (they're public anyway)
+    if (product.price_cents === 0) {
+      // Create download link for free products
+      const link = document.createElement('a');
+      link.href = product.file_path;
+      link.download = `${product.name.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
       return;
     }
 
-    // Create download link
-    const link = document.createElement('a');
-    link.href = product.file_path;
-    link.download = `${product.name.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    // For paid products, redirect to purchase flow
+    alert('This is a premium resource. Please add it to your cart and complete the purchase to download.');
   };
 
   const breadcrumbItems = [
@@ -216,7 +216,7 @@ export default function ResourcesPage() {
                   {(product.tags || []).join(', ')}
               </span>
               <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">
-                  {product.price_cents === 0 ? 'Free' : `$${(product.price_cents / 100).toFixed(2)}`}
+                  {formatPrice(product.price_cents)}
               </span>
             </div>
             
@@ -262,7 +262,10 @@ export default function ResourcesPage() {
   );
 
   // Add formatPrice helper
-  const formatPrice = (priceCents: number) => {
+  const formatPrice = (priceCents: number | null | undefined) => {
+    if (priceCents === null || priceCents === undefined || isNaN(priceCents)) {
+      return 'FREE';
+    }
     if (priceCents === 0) return 'FREE';
     return `£${(priceCents / 100).toFixed(2)}`;
   };

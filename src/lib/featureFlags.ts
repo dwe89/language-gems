@@ -55,8 +55,8 @@ export const getFeatureFlags = (userEmail?: string | null): FeatureFlags => {
     games: true, // Now enabled in production with DEMO status
     customLessons: isDevelopment,
     progressTracking: isDevelopment,
-    assessments: true, // Enable assessments for all users
-    worksheets: true, // Enable worksheets for all users
+    assessments: isDevelopment, // Only enable assessments in development for non-admin users
+    worksheets: isDevelopment, // Only enable worksheets in development for non-admin users
   };
 };
 

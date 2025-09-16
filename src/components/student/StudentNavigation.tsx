@@ -21,46 +21,51 @@ import {
   Brain
 } from 'lucide-react';
 
-// Navigation items for student dashboard
-const navItems = [
-  {
-    name: 'Dashboard',
-    href: '/student-dashboard',
-    icon: Home,
-    description: 'Overview and quick actions'
-  },
-  {
-    name: 'Assignments',
-    href: '/student-dashboard/assignments',
-    icon: BookOpen,
-    description: 'Current and upcoming tasks'
-  },
-  {
-    name: 'Games',
-    href: '/games',
-    icon: Gamepad2,
-    description: 'Practice with fun games'
-  },
-  {
-    name: 'Grammar',
-    href: '/grammar',
-    icon: Brain,
-    description: 'Track your conjugation mastery'
-  },
-  {
-    name: 'Assessments',
-    href: '/assessments',
-    icon: Edit,
-    description: 'Take practice assessments'
-  },
-];
-
 export default function StudentNavigation() {
   const pathname = usePathname();
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
-  const { user, signOut } = useAuth(); // Assuming 'user' object contains level and points
+  const { user, signOut, isAdmin } = useAuth(); // Assuming 'user' object contains level and points
+
+  // Navigation items for student dashboard
+  const baseNavItems = [
+    {
+      name: 'Dashboard',
+      href: '/student-dashboard',
+      icon: Home,
+      description: 'Overview and quick actions'
+    },
+    {
+      name: 'Assignments',
+      href: '/student-dashboard/assignments',
+      icon: BookOpen,
+      description: 'Current and upcoming tasks'
+    },
+    {
+      name: 'Games',
+      href: '/games',
+      icon: Gamepad2,
+      description: 'Practice with fun games'
+    },
+    {
+      name: 'Grammar',
+      href: '/grammar',
+      icon: Brain,
+      description: 'Track your conjugation mastery'
+    },
+  ];
+
+  // Add admin-only items
+  const navItems = [
+    ...baseNavItems,
+    ...(isAdmin || user?.email === 'danieletienne89@gmail.com' ? [{
+      name: 'Assessments',
+      href: '/assessments',
+      icon: Edit,
+      description: 'Take practice assessments'
+    }] : [])
+  ];
 
   useEffect(() => {
     setIsMounted(true);
