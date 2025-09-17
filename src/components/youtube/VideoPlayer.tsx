@@ -105,6 +105,8 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({
       
       try {
         playerRef.current = new window.YT.Player(containerRef.current, {
+          width: '100%',
+          height: '100%',
           videoId: videoId,
           playerVars: {
             autoplay: autoplay ? 1 : 0,
@@ -246,9 +248,14 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({
   if (error) {
     return (
       <div className={`video-player-container ${className}`} style={{ width, height, position: 'relative' }}>
-        <div className="error-overlay">
-          <p>{error}</p>
-          <button onClick={() => window.location.reload()}>Reload</button>
+        <div className="error-overlay absolute inset-0 flex flex-col items-center justify-center bg-red-100 text-red-700 rounded">
+          <p className="text-center mb-4">{error}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+          >
+            Reload
+          </button>
         </div>
       </div>
     );
@@ -257,12 +264,12 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({
   return (
     <div className={`video-player-container ${className}`} style={{ width, height, position: 'relative' }}>
       {!playerReady && (
-        <div className="loading-overlay">
-          <div className="spinner"></div>
-          <p>Loading video player...</p>
+        <div className="loading-overlay absolute inset-0 flex flex-col items-center justify-center bg-black bg-opacity-50 text-white">
+          <div className="spinner animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+          <p className="mt-2">Loading video player...</p>
         </div>
       )}
-      <div ref={containerRef} className="youtube-player" />
+      <div ref={containerRef} className="youtube-player w-full h-full" />
     </div>
   );
 });

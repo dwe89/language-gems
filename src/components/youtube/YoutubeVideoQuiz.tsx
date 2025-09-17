@@ -187,15 +187,17 @@ const YoutubeVideoQuiz: React.FC<YoutubeVideoQuizProps> = ({
   };
 
   return (
-    <div className="youtube-video-quiz">
-      <div className="video-container">
+    <div className="youtube-video-quiz w-full h-full">
+      <div className="video-container relative w-full h-full youtube-responsive">
         {/* Video Player */}
         <VideoPlayer
           ref={videoPlayerRef}
           videoId={youtubeId}
           autoplay={autoplay}
           onProgress={handleVideoProgress}
-          className="video-player"
+          className="video-player absolute inset-0 w-full h-full"
+          width="100%"
+          height="100%"
         />
         
         {/* Quiz Overlay */}

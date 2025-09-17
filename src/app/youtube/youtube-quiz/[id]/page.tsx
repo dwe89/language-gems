@@ -147,14 +147,17 @@ export default function YouTubeQuizPage() {
       <h1 className="text-2xl font-bold mb-4">{videoData.title}</h1>
       
       <div className="mb-6">
-        <YoutubeVideoQuiz
-          youtubeId={videoData.youtube_id}
-          videoId={videoData.id}
-          quizPoints={videoData.quizPoints}
-          lyrics={videoData.lyrics}
-          initialMode="normal"
-          autoplay={false}
-        />
+        {/* Video container with proper aspect ratio */}
+        <div className="relative w-full aspect-video bg-black rounded-lg overflow-hidden">
+          <YoutubeVideoQuiz
+            youtubeId={videoData.youtube_id}
+            videoId={videoData.id}
+            quizPoints={videoData.quizPoints}
+            lyrics={videoData.lyrics}
+            initialMode="normal"
+            autoplay={false}
+          />
+        </div>
       </div>
       
       <div className="mb-6">

@@ -613,13 +613,17 @@ export default function VideoPage() {
         <div className="max-w-5xl mx-auto px-4">
           {/* Video Player Section */}
           <div className="mb-8 rounded-lg overflow-hidden shadow-lg">
-            <VideoPlayer
-              ref={videoPlayerRef}
-              videoId={videoData.youtube_id}
-              autoplay={false}
-              onProgress={handleVideoProgress}
-              language={videoData.language}
-            />
+            <div className="relative w-full aspect-video bg-black">
+              <VideoPlayer
+                ref={videoPlayerRef}
+                videoId={videoData.youtube_id}
+                autoplay={false}
+                onProgress={handleVideoProgress}
+                language={videoData.language}
+                width="100%"
+                height="100%"
+              />
+            </div>
           </div>
 
           {/* Video Information */}
