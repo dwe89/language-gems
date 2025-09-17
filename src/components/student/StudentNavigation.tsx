@@ -18,7 +18,8 @@ import {
   Zap,
   Home,
   Edit,
-  Brain
+  Brain,
+  Play
 } from 'lucide-react';
 
 export default function StudentNavigation() {
@@ -47,6 +48,12 @@ export default function StudentNavigation() {
       href: '/games',
       icon: Gamepad2,
       description: 'Practice with fun games'
+    },
+    {
+      name: 'Songs',
+      href: '/songs',
+      icon: Play,
+      description: 'Learn with music and videos'
     },
     {
       name: 'Grammar',

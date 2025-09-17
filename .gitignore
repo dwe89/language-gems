@@ -43,3 +43,9 @@ next-env.d.ts
 
 # uploads
 /public/uploads/
+
+# database backups (contain sensitive data)
+*.backup
+*.sql.backup
+*.dump
+db_cluster-*

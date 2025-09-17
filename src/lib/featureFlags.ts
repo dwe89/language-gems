@@ -12,6 +12,7 @@ export interface FeatureFlags {
   auth: boolean;
   assessments: boolean;
   worksheets: boolean;
+  youtubeVideos: boolean;
 }
 
 // Check if we're in development environment
@@ -41,6 +42,7 @@ export const getFeatureFlags = (userEmail?: string | null): FeatureFlags => {
       progressTracking: true,
       assessments: true,
       worksheets: true,
+      youtubeVideos: true,
     };
   }
   
@@ -57,6 +59,7 @@ export const getFeatureFlags = (userEmail?: string | null): FeatureFlags => {
     progressTracking: isDevelopment,
     assessments: isDevelopment, // Only enable assessments in development for non-admin users
     worksheets: isDevelopment, // Only enable worksheets in development for non-admin users
+    youtubeVideos: true, // Enable YouTube videos in production
   };
 };
 
@@ -79,47 +82,95 @@ export const getNavigationItems = (isAuthenticated: boolean = false, userEmail?:
   
   const baseItems = [
     {
-      name: 'Games',
-      path: '/games',
-      enabled: flags.games,
-      comingSoon: !flags.games,
-      comingSoonPath: '/coming-soon/games'
+      name: 'For Schools',
+      path: '/schools',
+      enabled: true,
+      comingSoon: false,
+      comingSoonPath: null
     },
     {
-      name: 'Worksheets',
-      path: '/worksheets',
-      enabled: flags.worksheets,
-      comingSoon: !flags.worksheets,
-      comingSoonPath: '/coming-soon/worksheets'
+      name: 'For Learners',
+      path: '/learn',
+      enabled: true,
+      comingSoon: false,
+      comingSoonPath: null
     },
     {
-      name: 'Assessments',
-      path: '/assessments',
-      enabled: flags.assessments,
-      comingSoon: !flags.assessments,
-      comingSoonPath: '/coming-soon/assessments'
+      name: 'Features',
+      path: '#',
+      enabled: true,
+      comingSoon: false,
+      comingSoonPath: null,
+      hasDropdown: true,
+      dropdownOnly: true,
+      dropdownItems: [
+        {
+          name: 'Games',
+          path: '/games',
+          enabled: flags.games,
+          comingSoon: !flags.games
+        },
+        {
+          name: 'Songs',
+          path: '/songs',
+          enabled: flags.youtubeVideos,
+          comingSoon: !flags.youtubeVideos
+        },
+        {
+          name: 'Worksheets',
+          path: '/worksheets',
+          enabled: flags.worksheets,
+          comingSoon: !flags.worksheets
+        },
+        {
+          name: 'Assessments',
+          path: '/assessments',
+          enabled: flags.assessments,
+          comingSoon: !flags.assessments
+        }
+      ]
+    },
+    {
+      name: 'Pricing',
+      path: '/pricing',
+      enabled: true,
+      comingSoon: false,
+      comingSoonPath: null
     },
     {
       name: 'Resources',
       path: '/resources',
       enabled: true,
       comingSoon: false,
-      comingSoonPath: null
-    },
-    {
-      name: 'Blog',
-      path: '/blog',
-      enabled: flags.blog,
-      comingSoon: false,
-      comingSoonPath: null
-    },
-    {
-      name: 'About',
-      path: '/about',
-      enabled: true,
-      comingSoon: false,
-      comingSoonPath: null
-    },
+      comingSoonPath: null,
+      hasDropdown: true,
+      dropdownItems: [
+        {
+          name: 'Blog',
+          path: '/blog',
+          enabled: flags.blog,
+          comingSoon: false
+        },
+        {
+          name: 'Resources',
+          path: '/resources',
+          enabled: true,
+          comingSoon: false
+        },
+        {
+          name: 'About Us',
+          path: '/about',
+          enabled: true,
+          comingSoon: false
+        },
+        {
+          name: 'Contact',
+          path: '/contact',
+          enabled: true,
+          comingSoon: false
+        }
+      ]
+    }
   ];
 
   return baseItems;

@@ -1,5 +1,5 @@
 import React from 'react';
-import FlagIcon from '../../../../components/ui/FlagIcon';
+import FlagIcon from '@/components/ui/FlagIcon';
 import Link from 'next/link';
 import { ArrowLeft, FileText, Clock, Download, Target } from 'lucide-react';
 
