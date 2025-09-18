@@ -34,8 +34,7 @@ import {
 import Footer from '../../components/layout/Footer';
 import SEOWrapper from '../../components/seo/SEOWrapper';
 import { getFAQSchema } from '../../lib/seo/structuredData';
-import BetaBanner from '../../components/beta/BetaBanner';
-import { useFeatureFlags } from '../../lib/feature-flags';
+
 
 import { useAuth } from '../../components/auth/AuthProvider';
 
@@ -95,43 +94,43 @@ const founderPhoto = "/images/homepage/founder.jpg"; // Corrected to a local pat
 // Development timeline for "Building in Public" section
 const developmentTimeline = [
   {
-    date: "July 2025",
+    date: "September 2024",
     milestone: "Core vocabulary games and teacher dashboard launched",
     status: "done",
     icon: CheckCircle
   },
   {
-    date: "August 2025",
+    date: "January 2025",
     milestone: "Student assessment system and enhanced analytics",
+    status: "done",
+    icon: CheckCircle
+  },
+  {
+    date: "March 2025",
+    milestone: "Advanced AI features and personalized learning paths",
+    status: "done",
+    icon: CheckCircle
+  },
+  {
+    date: "June 2025",
+    milestone: "Teacher resources hub and automatic AI worksheet creator",
+    status: "done",
+    icon: CheckCircle
+  },
+  {
+    date: "September 2025",
+    milestone: "Enhanced student progress tracking and reporting tools",
     status: "in-progress",
     icon: GitCommit
   },
   {
-    date: "November 2025",
-    milestone: "Advanced AI features and personalized learning paths",
+    date: "December 2025",
+    milestone: "Individual learner platform and song-based learning",
     status: "upcoming",
     icon: Brain
   },
   {
-    date: "January 2026",
-    milestone: "Teacher resources hub and automatic AI worksheet creator",
-    status: "upcoming",
-    icon: BookOpen
-  },
-  {
-    date: "March 2026",
-    milestone: "Enhanced student progress tracking and reporting tools",
-    status: "upcoming",
-    icon: TrendingUp
-  },
-  {
-    date: "May 2026",
-    milestone: "Website fully launched with complete feature set",
-    status: "upcoming",
-    icon: Rocket
-  },
-  {
-    date: "Q3 2026",
+    date: "Q1 2026",
     milestone: "Mobile app launch and offline capabilities",
     status: "upcoming",
     icon: Smartphone
@@ -141,7 +140,6 @@ const developmentTimeline = [
 export default function Home() {
   const { text: animatedText, color: textColor } = useTypewriter(heroTextVariations);
   const { user } = useAuth();
-  const { isBetaLaunch, betaConfig } = useFeatureFlags();
 
   // Auto-redirect logged-in students to their dashboard
   useEffect(() => {
@@ -326,14 +324,8 @@ export default function Home() {
   return (
     <SEOWrapper structuredData={faqStructuredData}>
       <div className="flex min-h-screen flex-col">
-        {/* Beta Banner */}
-        {isBetaLaunch && <BetaBanner variant="top" />}
-
         <main className="flex-grow">
-          {/* Hero Section - Beta Version */}
-          {isBetaLaunch ? (
-            <BetaBanner variant="hero" showStats={true} />
-          ) : (
+          {/* Hero Section */}
             <div className="w-full relative min-h-[90vh] flex items-center justify-center overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
             <div className="absolute inset-0 bg-[url('/images/homepage/subtle-pattern.svg')] opacity-5"></div>
 
@@ -474,7 +466,6 @@ export default function Home() {
             <div className="absolute bottom-20 right-10 w-16 h-16 bg-gradient-to-br from-purple-200 to-pink-200 rounded-full opacity-60 animate-float-delayed"></div>
             <div className="absolute top-1/2 left-5 w-12 h-12 bg-gradient-to-br from-green-200 to-emerald-200 rounded-full opacity-60 animate-float-slow"></div>
           </div>
-          )}
 
           {/* New Section: Founder's Story */}
           <div className="py-20 bg-white">
@@ -513,7 +504,7 @@ export default function Home() {
                 />
                 <div className="text-center md:text-left">
                   <p className="text-slate-700 text-lg mb-2 italic">
-                    "After 8 years teaching Modern Foreign Languages in UK schools, I became increasingly frustrated with expensive platforms that cost £2000+ annually but failed to engage my students. The games were outdated, the progress tracking was clunky, and my students simply weren't motivated to use them. As a passionate MFL teacher, I knew there had to be a better way - a platform that actually understood how teenagers learn languages and what makes learning fun. So I built Language Gems from the ground up with modern game design to create something that both teachers and students actually want to use."
+                    "After 8 years teaching Modern Foreign Languages in UK schools, I became increasingly frustrated with expensive platforms that cost £2000+ annually but failed to engage my students. The games were outdated, the progress tracking was clunky, and my students simply weren't motivated to use them. As a passionate MFL teacher, I knew there had to be a better way - a platform that actually understood how teenagers learn languages and what makes learning fun. So I built LanguageGems from the ground up with modern game design, and now it's being used by schools across the UK to transform language learning."
                   </p>
                   <p className="text-slate-800 font-bold text-base">
                     - Daniel Etienne, Founder & MFL Teacher
@@ -533,7 +524,7 @@ export default function Home() {
                   transition={{ duration: 0.6 }}
                   className="text-3xl md:text-4xl font-bold text-slate-800 mb-4"
                 >
-                  Building With Teacher Input Every Step
+                  Our Development Journey
                 </motion.h2>
                 <motion.p
                   initial={{ opacity: 0, y: 20 }}
@@ -541,7 +532,7 @@ export default function Home() {
                   transition={{ duration: 0.6, delay: 0.1 }}
                   className="text-lg text-slate-600 max-w-3xl mx-auto"
                 >
-                  Join our teacher advisory group and get early access to new features. Your feedback drives our development.
+                  Built with continuous teacher feedback, LanguageGems has evolved into a comprehensive platform that schools trust.
                 </motion.p>
               </div>
 
@@ -577,14 +568,14 @@ export default function Home() {
                 className="text-center mt-12"
               >
                 <h3 className="text-2xl font-bold text-slate-800 mb-4">
-                  Help Shape the Future of LanguageGems
+                  Ready to Transform Your Language Department?
                 </h3>
                 <p className="text-lg text-slate-600 mb-6">
-                  Join our teacher advisory group and get early access to new features. Your feedback drives our development.
+                  Join hundreds of schools already using LanguageGems to boost student engagement and improve learning outcomes.
                 </p>
-                <Link href="/contact-sales" className="inline-flex items-center justify-center bg-white text-slate-700 font-semibold rounded-xl px-8 py-4 text-lg border border-slate-300 hover:bg-slate-100 transition-all">
-                  <Lightbulb className="mr-2 h-5 w-5" />
-                  Join Our Advisory Group
+                <Link href="/schools/pricing" className="inline-flex items-center justify-center bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-xl px-8 py-4 text-lg shadow-lg hover:shadow-xl transform transition-all hover:scale-105">
+                  <Users className="mr-2 h-5 w-5" />
+                  View School Pricing
                   <ArrowRight className="ml-2 w-5 h-5" />
                 </Link>
               </motion.div>
