@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { cookies } from 'next/headers';
-import { createClient } from '../../../../lib/supabase-server';
 
 export async function POST(request: NextRequest) {
   try {
@@ -57,9 +56,16 @@ export async function POST(request: NextRequest) {
     // Update user profile for independent learners
     if (data.user) {
       // Use admin client to bypass RLS policies since user isn't authenticated yet
-      const supabaseAdmin = createClient(
+      const supabaseAdmin = createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        {
+          cookies: {
+            get() { return undefined; },
+            set() {},
+            remove() {},
+          },
+        }
       );
 
       const { error: profileError } = await supabaseAdmin

@@ -142,6 +142,7 @@ export default function SmartSignupSelector({ isOpen, onClose, triggerRef }: Sma
                 {selectedType && (
                   <Link
                     href={signupOptions.find(opt => opt.id === selectedType)?.href || '/auth/signup'}
+                    onClick={onClose}
                     className={`px-6 py-2 bg-gradient-to-r ${
                       signupOptions.find(opt => opt.id === selectedType)?.color
                     } text-white rounded-lg font-medium hover:shadow-lg transition-all`}
