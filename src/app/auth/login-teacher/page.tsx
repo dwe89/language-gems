@@ -1,47 +1,50 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../../../components/auth/AuthProvider';
-import { motion } from 'framer-motion';
 import {
+  BookOpen,
   Mail,
   Lock,
-  ArrowRight,
-  Gamepad2,
-  BookOpen,
-  Trophy,
   Eye,
   EyeOff,
-  User,
-  Target
+  ArrowRight,
+  Users,
+  BarChart3,
+  Trophy,
+  Target,
+  GraduationCap
 } from 'lucide-react';
 
-export default function LearnerLoginPage() {
+export default function TeacherLoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState('');
   const router = useRouter();
   const searchParams = useSearchParams();
   const { signIn } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return;
+
     setLoading(true);
     setError('');
 
     try {
-      const result = await signIn(email, password, 'learner');
+      const result = await signIn(email, password, 'teacher');
       if (result.error) {
         setError(result.error);
         return;
       }
 
       // Check for redirect parameter
-      const redirectTo = searchParams?.get('redirectTo') || '/learner-dashboard';
+      const redirectTo = searchParams?.get('redirectTo') || '/dashboard';
       router.push(redirectTo);
     } catch (err) {
       console.error('Login error:', err);
@@ -52,13 +55,13 @@ export default function LearnerLoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 relative overflow-hidden">
       {/* Animated background elements */}
       <div className="absolute inset-0">
         <div className="absolute top-20 left-20 w-32 h-32 bg-white/10 rounded-full animate-pulse"></div>
-        <div className="absolute top-40 right-32 w-24 h-24 bg-yellow-300/20 rounded-full animate-bounce"></div>
-        <div className="absolute bottom-32 left-1/4 w-40 h-40 bg-blue-300/10 rounded-full animate-pulse delay-1000"></div>
-        <div className="absolute bottom-20 right-20 w-28 h-28 bg-green-300/20 rounded-full animate-bounce delay-500"></div>
+        <div className="absolute top-40 right-32 w-24 h-24 bg-blue-300/20 rounded-full animate-bounce"></div>
+        <div className="absolute bottom-32 left-1/4 w-40 h-40 bg-indigo-300/10 rounded-full animate-pulse delay-1000"></div>
+        <div className="absolute bottom-20 right-20 w-28 h-28 bg-purple-300/20 rounded-full animate-bounce delay-500"></div>
       </div>
 
       <div className="relative z-10 min-h-screen flex">
@@ -70,34 +73,34 @@ export default function LearnerLoginPage() {
             className="text-white space-y-8 max-w-lg"
           >
             <div>
-              <Link href="/" className="inline-flex items-center space-x-2 text-white hover:text-purple-100 transition-colors mb-8">
+              <Link href="/" className="inline-flex items-center space-x-2 text-white hover:text-blue-100 transition-colors mb-8">
                 <BookOpen className="w-8 h-8" />
                 <span className="text-2xl font-bold">Language Gems</span>
               </Link>
-              <h1 className="text-4xl font-bold mb-4">Welcome Back, Learner!</h1>
-              <p className="text-xl text-purple-100">
-                Continue your language learning journey with personalized games and vocabulary practice.
+              <h1 className="text-4xl font-bold mb-4">Welcome Back, Teacher!</h1>
+              <p className="text-xl text-blue-100">
+                Access your classroom dashboard and manage your students' language learning journey.
               </p>
             </div>
 
             <div className="space-y-6">
               <div className="flex items-start space-x-4">
                 <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
-                  <User className="w-6 h-6" />
+                  <Users className="w-6 h-6" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold mb-2">Personal Dashboard</h3>
-                  <p className="text-purple-100">Track your progress, set goals, and see your learning statistics</p>
+                  <h3 className="text-lg font-semibold mb-2">Classroom Management</h3>
+                  <p className="text-blue-100">Manage students, create classes, and assign learning activities</p>
                 </div>
               </div>
 
               <div className="flex items-start space-x-4">
                 <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
-                  <Gamepad2 className="w-6 h-6" />
+                  <BarChart3 className="w-6 h-6" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold mb-2">Interactive Games</h3>
-                  <p className="text-purple-100">Learn through 15+ engaging games designed for language mastery</p>
+                  <h3 className="text-lg font-semibold mb-2">Student Analytics</h3>
+                  <p className="text-blue-100">Track progress, identify weak areas, and celebrate achievements</p>
                 </div>
               </div>
 
@@ -106,8 +109,8 @@ export default function LearnerLoginPage() {
                   <Target className="w-6 h-6" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold mb-2">Daily Challenges</h3>
-                  <p className="text-purple-100">Complete daily tasks to earn XP and unlock achievements</p>
+                  <h3 className="text-lg font-semibold mb-2">Assignment Creation</h3>
+                  <p className="text-blue-100">Create custom assignments and assessments for your curriculum</p>
                 </div>
               </div>
 
@@ -116,8 +119,8 @@ export default function LearnerLoginPage() {
                   <Trophy className="w-6 h-6" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold mb-2">Achievement System</h3>
-                  <p className="text-purple-100">Unlock badges and rewards as you progress through your learning journey</p>
+                  <h3 className="text-lg font-semibold mb-2">Gamified Learning</h3>
+                  <p className="text-blue-100">Engage students with 15+ interactive games and achievement systems</p>
                 </div>
               </div>
             </div>
@@ -137,9 +140,9 @@ export default function LearnerLoginPage() {
                 initial={{ scale: 0, rotate: -180 }}
                 animate={{ scale: 1, rotate: 0 }}
                 transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-                className="w-20 h-20 bg-gradient-to-r from-purple-600 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg"
+                className="w-20 h-20 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg"
               >
-                <User className="h-10 w-10 text-white" />
+                <GraduationCap className="h-10 w-10 text-white" />
               </motion.div>
               <motion.h1
                 initial={{ opacity: 0, y: 10 }}
@@ -155,7 +158,7 @@ export default function LearnerLoginPage() {
                 transition={{ delay: 0.5 }}
                 className="text-gray-600"
               >
-                Sign in to your learning dashboard
+                Sign in to your teacher dashboard
               </motion.p>
             </div>
 
@@ -185,7 +188,7 @@ export default function LearnerLoginPage() {
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                     placeholder="Enter your email"
                     required
                   />
@@ -207,7 +210,7 @@ export default function LearnerLoginPage() {
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
+                    className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                     placeholder="Enter your password"
                     required
                   />
@@ -227,7 +230,7 @@ export default function LearnerLoginPage() {
                 transition={{ delay: 0.8 }}
                 type="submit"
                 disabled={loading}
-                className="w-full bg-gradient-to-r from-purple-600 to-pink-500 text-white py-3 px-6 rounded-xl font-semibold hover:shadow-lg transition-all duration-300 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105"
+                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 px-6 rounded-xl font-semibold hover:shadow-lg transition-all duration-300 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105"
               >
                 {loading ? (
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
@@ -248,12 +251,12 @@ export default function LearnerLoginPage() {
             >
               <p className="text-gray-600 text-sm">
                 Don't have an account?{' '}
-                <Link href="/auth/signup-learner" className="text-purple-600 font-semibold hover:underline">
+                <Link href="/auth/signup" className="text-blue-600 font-semibold hover:underline">
                   Sign up here
                 </Link>
               </p>
               <div className="mt-4 text-sm text-gray-500">
-                <Link href="/auth/login" className="hover:text-purple-600 transition-colors">← Back to login options</Link>
+                <Link href="/auth/login" className="hover:text-blue-600 transition-colors">← Back to login options</Link>
               </div>
             </motion.div>
           </motion.div>

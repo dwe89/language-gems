@@ -65,11 +65,12 @@ export default function LearnerDashboard() {
       // Check if user has premium subscription
       const { data: profile } = await supabase
         .from('user_profiles')
-        .select('subscription_status, plan')
+        .select('subscription_status, subscription_type')
         .eq('user_id', user?.id)
         .single();
 
-      setIsPremium(profile?.subscription_status === 'active' || profile?.plan === 'premium');
+      // Default to FREE unless explicitly premium
+      setIsPremium(profile?.subscription_status === 'active' && profile?.subscription_type === 'premium');
 
       // Load learner progress
       const { data: progress } = await supabase
@@ -316,8 +317,9 @@ export default function LearnerDashboard() {
         {/* Learning Paths */}
         <div className="mb-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">Your Learning Paths</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {learningPaths.map((path, index) => {
+          {learningPaths.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {learningPaths.map((path, index) => {
               const pathProgress = path.learner_path_progress?.[0];
               const progress = pathProgress ? pathProgress.progress_percentage : 0;
               const wordsCompleted = pathProgress ? pathProgress.words_completed : 0;
@@ -359,51 +361,30 @@ export default function LearnerDashboard() {
                 </motion.div>
               );
             })}
-          </div>
+            </div>
+          ) : (
+            <div className="text-center py-12 bg-white rounded-xl shadow-lg">
+              <BookOpen className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-600 mb-2">No Learning Paths Yet</h3>
+              <p className="text-gray-500 mb-6">Select a language above to see available learning paths</p>
+            </div>
+          )}
         </div>
 
         {/* Recent Activity */}
         <div className="bg-white rounded-xl p-6 shadow-lg">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">Recent Activity</h2>
-          <div className="space-y-4">
-            <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
-              <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                <Trophy className="w-5 h-5 text-green-600" />
-              </div>
-              <div className="flex-1">
-                <p className="font-semibold text-gray-900">Completed VocabMaster session</p>
-                <p className="text-gray-600 text-sm">Learned 15 new Spanish words • 2 hours ago</p>
-              </div>
-              <div className="text-right">
-                <div className="text-lg font-bold text-green-600">+50 XP</div>
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
-              <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                <Gamepad2 className="w-5 h-5 text-blue-600" />
-              </div>
-              <div className="flex-1">
-                <p className="font-semibold text-gray-900">Played Word Blast</p>
-                <p className="text-gray-600 text-sm">High score: 1,250 points • Yesterday</p>
-              </div>
-              <div className="text-right">
-                <div className="text-lg font-bold text-blue-600">+25 XP</div>
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
-              <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
-                <Flame className="w-5 h-5 text-purple-600" />
-              </div>
-              <div className="flex-1">
-                <p className="font-semibold text-gray-900">7-day streak achieved!</p>
-                <p className="text-gray-600 text-sm">Keep it up! • 2 days ago</p>
-              </div>
-              <div className="text-right">
-                <div className="text-lg font-bold text-purple-600">+100 XP</div>
-              </div>
-            </div>
+          <div className="text-center py-12">
+            <Calendar className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-600 mb-2">No Recent Activity</h3>
+            <p className="text-gray-500 mb-6">Start playing games to see your activity here!</p>
+            <Link
+              href="/games"
+              className="inline-flex items-center px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+            >
+              <Gamepad2 className="w-5 h-5 mr-2" />
+              Play Games
+            </Link>
           </div>
         </div>
       </div>

@@ -39,11 +39,12 @@ export default function LearnerChallengesPage() {
       // Check premium status
       const { data: profile } = await supabase
         .from('user_profiles')
-        .select('subscription_status, plan')
+        .select('subscription_status, subscription_type')
         .eq('user_id', user?.id)
         .single();
-      
-      setIsPremium(profile?.subscription_status === 'active' || profile?.plan === 'premium');
+
+      // Default to FREE unless explicitly premium
+      setIsPremium(profile?.subscription_status === 'active' && profile?.subscription_type === 'premium');
 
       // For now, create mock daily challenges since the table might not have data
       const mockChallenges = [

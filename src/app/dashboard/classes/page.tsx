@@ -90,54 +90,19 @@ export default function ClassesPage() {
       setHasSchoolAccess(data.has_school_access);
       setSchoolCode(data.school_code);
 
-      if (classesError) {
-        console.error('Classes query error:', classesError);
 
-        // If table doesn't exist, create sample data
-        if (classesError.code === 'PGRST116' || classesError.message?.includes('does not exist')) {
-          console.log('Classes table does not exist, creating sample data');
-          const sampleClasses: ClassData[] = [
-            {
-              id: 'sample-1',
-              name: 'French Beginners',
-              description: 'Introduction to French language',
-              level: 'beginner',
-              year_group: '7',
-              created_at: new Date().toISOString(),
-              student_count: 0,
-              teacher_id: user.id
-            },
-            {
-              id: 'sample-2',
-              name: 'Spanish Intermediate',
-              description: 'Intermediate Spanish conversation',
-              level: 'intermediate',
-              year_group: '9',
-              created_at: new Date().toISOString(),
-              student_count: 0,
-              teacher_id: user.id
-            }
-          ];
-          setClasses(sampleClasses);
-          setError('Demo mode: Classes table not found. These are sample classes.');
-          setLoading(false);
-          return;
-        }
 
-        throw classesError;
-      }
-
-      if (!classesData || classesData.length === 0) {
+      if (!data.classes || data.classes.length === 0) {
         console.log('No classes found for teacher');
         setClasses([]);
         setLoading(false);
         return;
       }
 
-      console.log(`Found ${classesData.length} classes`);
+      console.log(`Found ${data.classes.length} classes`);
 
       // Get student counts for each class
-      const classIds = classesData.map(c => c.id);
+      const classIds = data.classes.map(c => c.id);
       console.log('Class IDs to query:', classIds);
 
       const { data: enrollmentsData, error: enrollmentsError } = await supabaseBrowser
@@ -160,7 +125,7 @@ export default function ClassesPage() {
       }, {} as Record<string, number>);
 
       // Add student counts to classes
-      const classesWithCounts = classesData.map(classItem => ({
+      const classesWithCounts = data.classes.map(classItem => ({
         ...classItem,
         student_count: studentCounts[classItem.id] || 0
       }));

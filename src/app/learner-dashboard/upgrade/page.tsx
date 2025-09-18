@@ -21,7 +21,7 @@ import Link from 'next/link';
 export default function UpgradePage() {
   const { user } = useAuth();
   const [selectedPlan, setSelectedPlan] = useState<'pro' | 'family'>('pro');
-  const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('yearly');
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
 
   const plans = {
     free: {

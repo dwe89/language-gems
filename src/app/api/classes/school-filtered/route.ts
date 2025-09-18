@@ -42,15 +42,9 @@ export async function GET(request: NextRequest) {
         name,
         description,
         level,
-        language,
         created_at,
         updated_at,
-        teacher_id,
-        user_profiles!classes_teacher_id_fkey (
-          email,
-          display_name
-        ),
-        _count:class_enrollments(count)
+        teacher_id
       `);
 
     if (scope === 'my') {

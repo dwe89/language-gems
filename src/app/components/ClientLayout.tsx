@@ -25,6 +25,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   const isStudentDashboard = pathname?.startsWith('/student-dashboard');
   const isStudentPortal = pathname?.startsWith('/student');
   const isStudentLogin = pathname === '/auth/student-login';
+  const isLearnerDashboard = pathname?.startsWith('/learner-dashboard');
 
 
 
@@ -41,6 +42,11 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
 
   // Teacher/Admin dashboard pages - no navigation (they have their own internal nav)
   if (isDashboard) {
+    return <>{children}</>;
+  }
+
+  // Learner dashboard pages - no main navigation (they have their own learner nav)
+  if (isLearnerDashboard) {
     return <>{children}</>;
   }
 

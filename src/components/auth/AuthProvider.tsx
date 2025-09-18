@@ -11,7 +11,7 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   isLoading: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: string | null; user?: User | null }>;
+  signIn: (email: string, password: string, expectedUserType?: 'teacher' | 'student' | 'learner') => Promise<{ error: string | null; user?: User | null }>;
   signOut: () => Promise<void>;
   refreshSession: () => Promise<void>;
   userRole: string | null;
@@ -395,17 +395,71 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const signIn = async (email: string, password: string): Promise<{ error: string | null; user?: User | null }> => {
+  const signIn = async (email: string, password: string, expectedUserType?: 'teacher' | 'student' | 'learner'): Promise<{ error: string | null; user?: User | null }> => {
     try {
       const { data, error } = await supabaseBrowser.auth.signInWithPassword({
         email,
         password,
       });
-      
+
       if (error) {
         return { error: error.message };
       }
-      
+
+      // If user type validation is requested, check the user's role
+      if (expectedUserType && data.user) {
+        try {
+          // Fetch user profile to check role
+          const { data: profile, error: profileError } = await supabaseBrowser
+            .from('user_profiles')
+            .select('role')
+            .eq('user_id', data.user.id)
+            .single();
+
+          if (profileError) {
+            console.error('Error fetching user profile for validation:', profileError);
+            // If we can't fetch profile, check user metadata as fallback
+            const userMetadata = data.user.user_metadata || {};
+            const metadataRole = userMetadata.role;
+            const userType = userMetadata.user_type;
+
+            // Validate based on metadata
+            if (expectedUserType === 'teacher' && metadataRole !== 'teacher' && userType !== 'b2b') {
+              await supabaseBrowser.auth.signOut(); // Sign out the user
+              return { error: 'Access denied. This login is for teachers only.' };
+            }
+            if (expectedUserType === 'student' && metadataRole !== 'student') {
+              await supabaseBrowser.auth.signOut(); // Sign out the user
+              return { error: 'Access denied. This login is for students only.' };
+            }
+            if (expectedUserType === 'learner' && metadataRole !== 'learner' && userType !== 'b2c') {
+              await supabaseBrowser.auth.signOut(); // Sign out the user
+              return { error: 'Access denied. This login is for individual learners only.' };
+            }
+          } else {
+            // Validate based on profile role
+            const userRole = profile.role;
+
+            if (expectedUserType === 'teacher' && userRole !== 'teacher' && userRole !== 'admin') {
+              await supabaseBrowser.auth.signOut(); // Sign out the user
+              return { error: 'Access denied. This login is for teachers only.' };
+            }
+            if (expectedUserType === 'student' && userRole !== 'student') {
+              await supabaseBrowser.auth.signOut(); // Sign out the user
+              return { error: 'Access denied. This login is for students only.' };
+            }
+            if (expectedUserType === 'learner' && userRole !== 'learner') {
+              await supabaseBrowser.auth.signOut(); // Sign out the user
+              return { error: 'Access denied. This login is for individual learners only.' };
+            }
+          }
+        } catch (validationError) {
+          console.error('Error during user type validation:', validationError);
+          await supabaseBrowser.auth.signOut(); // Sign out the user on validation error
+          return { error: 'Unable to verify user permissions. Please try again.' };
+        }
+      }
+
       return { error: null, user: data.user };
     } catch (err) {
       return { error: 'An unexpected error occurred' };
