@@ -48,8 +48,26 @@ export async function GET(request: NextRequest) {
 
       if (data.user) {
         console.log('Email verification successful for user:', data.user.email);
-        // Redirect to confirmation success page
-        return NextResponse.redirect(`${origin}/auth/confirmed`);
+
+        // Check user metadata to determine redirect destination
+        const userMetadata = data.user.user_metadata || {};
+        const userType = userMetadata.user_type;
+        const role = userMetadata.role;
+
+        console.log('User metadata:', { userType, role, userMetadata });
+
+        // Redirect based on user type or role
+        if (role === 'learner' || userType === 'b2c') {
+          console.log('Redirecting learner to learner dashboard');
+          return NextResponse.redirect(`${origin}/learner-dashboard`);
+        } else if (role === 'teacher' || userType === 'b2b') {
+          console.log('Redirecting teacher to teacher dashboard');
+          return NextResponse.redirect(`${origin}/dashboard`);
+        } else {
+          // Default to confirmation page if user type is unclear
+          console.log('User type unclear, redirecting to confirmation page');
+          return NextResponse.redirect(`${origin}/auth/confirmed`);
+        }
       }
     } catch (error) {
       console.error('Exception during code exchange:', error);

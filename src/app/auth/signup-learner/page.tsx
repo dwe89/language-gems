@@ -33,6 +33,10 @@ export default function LearnerSignupPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Prevent double submission
+    if (loading) return;
+
     setLoading(true);
     setError('');
 
@@ -73,18 +77,19 @@ export default function LearnerSignupPage() {
       console.log('Learner signup successful');
       
       if (data.needsEmailVerification) {
-        setSuccess(true);
-        localStorage.setItem('pendingVerificationEmail', email);
+        // Use a small delay to prevent React DOM conflicts
+        setTimeout(() => {
+          setSuccess(true);
+          localStorage.setItem('pendingVerificationEmail', email);
+        }, 50);
       } else {
         // Auto-login and redirect
-        setTimeout(() => {
-          router.push(data.redirectUrl);
-        }, 100);
+        console.log('Redirecting to:', data.redirectUrl);
+        window.location.href = data.redirectUrl;
       }
     } catch (err) {
       console.error('Signup error:', err);
       setError(err instanceof Error ? err.message : 'An unexpected error occurred');
-    } finally {
       setLoading(false);
     }
   };
