@@ -17,7 +17,8 @@ import {
   Flame,
   Award,
   Calendar,
-  BarChart3
+  BarChart3,
+  Crown
 } from 'lucide-react';
 import { useAuth } from '../../components/auth/AuthProvider';
 import { useRouter } from 'next/navigation';
@@ -40,6 +41,9 @@ export default function LearnerDashboard() {
   const [dailyChallenges, setDailyChallenges] = useState([]);
   const [achievements, setAchievements] = useState([]);
   const [learningPaths, setLearningPaths] = useState([]);
+  const [selectedLanguage, setSelectedLanguage] = useState('spanish');
+  const [isPremium, setIsPremium] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -56,7 +60,16 @@ export default function LearnerDashboard() {
 
   const loadLearnerData = async () => {
     try {
-      // Use the imported supabase client
+      setLoading(true);
+
+      // Check if user has premium subscription
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('subscription_status, plan')
+        .eq('user_id', user?.id)
+        .single();
+
+      setIsPremium(profile?.subscription_status === 'active' || profile?.plan === 'premium');
 
       // Load learner progress
       const { data: progress } = await supabase
@@ -75,34 +88,58 @@ export default function LearnerDashboard() {
           accuracy: 85, // Calculate from sessions
           totalTime: progress.total_study_time
         });
+      } else {
+        // Create initial progress record for new users
+        const { data: newProgress } = await supabase
+          .from('learner_progress')
+          .insert({
+            user_id: user?.id,
+            total_xp: 0,
+            current_level: 1,
+            current_streak: 0,
+            words_learned: 0,
+            games_played: 0,
+            total_study_time: 0
+          })
+          .select()
+          .single();
       }
 
-      // Load today's challenges
-      const today = new Date().toISOString().split('T')[0];
-      const { data: challenges } = await supabase
-        .from('daily_challenges')
-        .select(`
-          *,
-          learner_challenge_progress(*)
-        `)
-        .eq('challenge_date', today)
-        .eq('is_active', true);
-
-      setDailyChallenges(challenges || []);
-
-      // Load learning paths
+      // Load learning paths filtered by selected language
       const { data: paths } = await supabase
         .from('learning_paths')
         .select(`
           *,
           learner_path_progress(*)
         `)
+        .eq('language', selectedLanguage)
         .eq('is_active', true);
 
-      setLearningPaths(paths || []);
+      // Filter learning paths based on freemium model
+      const filteredPaths = paths?.filter(path => {
+        if (isPremium) return true;
+        // Free users only get foundation level paths
+        return path.difficulty_level === 'beginner';
+      }) || [];
+
+      setLearningPaths(filteredPaths);
+
+      // Load achievements
+      const { data: userAchievements } = await supabase
+        .from('learner_achievement_progress')
+        .select(`
+          *,
+          learner_achievements(*)
+        `)
+        .eq('user_id', user?.id)
+        .eq('completed', true);
+
+      setAchievements(userAchievements || []);
 
     } catch (error) {
       console.error('Error loading learner data:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -110,27 +147,30 @@ export default function LearnerDashboard() {
   const quickActions = [
     {
       title: 'Practice Vocabulary',
-      description: 'Learn new words with spaced repetition',
+      description: isPremium ? 'Learn unlimited words with spaced repetition' : 'Learn 50 free words',
       icon: BookOpen,
       color: 'from-blue-500 to-indigo-600',
-      href: '/games/vocab-master',
-      badge: 'Popular'
+      href: '/learner-dashboard/vocabulary',
+      badge: 'Popular',
+      isFree: true
     },
     {
       title: 'Play Games',
-      description: 'Choose from 15+ interactive games',
+      description: isPremium ? 'Choose from 15+ interactive games' : '3 free games available',
       icon: Gamepad2,
       color: 'from-purple-500 to-pink-600',
       href: '/games',
-      badge: null
+      badge: null,
+      isFree: true
     },
     {
-      title: 'Daily Challenge',
-      description: 'Complete today\'s language challenge',
+      title: 'Daily Challenges',
+      description: 'Complete challenges to earn XP',
       icon: Target,
       color: 'from-green-500 to-emerald-600',
-      href: '/challenges/daily',
-      badge: 'New'
+      href: '/learner-dashboard/challenges',
+      badge: isPremium ? null : 'Premium',
+      isFree: isPremium
     },
     {
       title: 'Progress Review',
@@ -138,7 +178,8 @@ export default function LearnerDashboard() {
       icon: BarChart3,
       color: 'from-orange-500 to-red-600',
       href: '/learner-dashboard/progress',
-      badge: null
+      badge: null,
+      isFree: true
     }
   ];
 
@@ -191,7 +232,57 @@ export default function LearnerDashboard() {
         </div>
       </div>
 
+      {/* Language Selection */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 border-b border-gray-200">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-gray-900">Learning Language</h2>
+          <div className="flex space-x-2">
+            {[
+              { code: 'spanish', name: 'Spanish', flag: '🇪🇸' },
+              { code: 'french', name: 'French', flag: '🇫🇷' },
+              { code: 'german', name: 'German', flag: '🇩🇪' }
+            ].map((lang) => (
+              <button
+                key={lang.code}
+                onClick={() => setSelectedLanguage(lang.code)}
+                className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+                  selectedLanguage === lang.code
+                    ? 'bg-purple-600 text-white'
+                    : 'bg-white text-gray-600 hover:bg-purple-50 border border-gray-300'
+                }`}
+              >
+                <span className="text-lg">{lang.flag}</span>
+                <span>{lang.name}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Premium Banner */}
+        {!isPremium && (
+          <div className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-2xl p-6 mb-8 text-white">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                  <Crown className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold">Unlock Premium Features</h3>
+                  <p className="text-purple-100">Access all games, unlimited vocabulary, and advanced analytics</p>
+                </div>
+              </div>
+              <Link
+                href="/learner-dashboard/upgrade"
+                className="bg-white text-purple-600 px-6 py-3 rounded-lg font-semibold hover:bg-purple-50 transition-colors"
+              >
+                Upgrade Now
+              </Link>
+            </div>
+          </div>
+        )}
+
         {/* Quick Actions */}
         <div className="mb-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">Quick Actions</h2>

@@ -181,7 +181,6 @@ const ComingSoonWrapper: React.FC<ComingSoonWrapperProps> = ({
             <div className="mt-8 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
               <p className="text-yellow-800 text-sm">
                 <strong>Note:</strong> You're seeing this coming soon page because you're not logged in as the admin user. 
-                Admin access is restricted to: {adminEmail}
               </p>
             </div>
           )}
