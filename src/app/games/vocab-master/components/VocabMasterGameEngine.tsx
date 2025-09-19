@@ -29,6 +29,11 @@ import { LearnMode }
   from '../modes/LearnMode';
 import { RecallMode } from '../modes/RecallMode';
 import { MixedMode } from '../modes/MixedMode';
+import { WordBuilderMode } from '../modes/WordBuilderMode';
+import { PronunciationMode } from '../modes/PronunciationMode';
+import { WordRaceMode } from '../modes/WordRaceMode';
+import { StoryAdventureMode } from '../modes/StoryAdventureMode';
+import { MemoryPalaceMode } from '../modes/MemoryPalaceMode';
 
 // Calculate dynamic time based on word complexity
 const calculateWordTime = (word: VocabularyWord): number => {
@@ -708,8 +713,50 @@ export const VocabMasterGameEngine: React.FC<VocabMasterGameEngineProps> = ({
       case 'show_translation':
         setGameState(prev => ({ ...prev, translationShown: true }));
         break;
+      case 'dont_know':
+        // Mark as incorrect and move to next word
+        setGameState(prev => ({
+          ...prev,
+          isCorrect: false,
+          showAnswer: true,
+          feedback: `The answer was: ${gameState.currentWord?.translation || gameState.currentWord?.english || ''}`,
+          incorrectAnswers: prev.incorrectAnswers + 1,
+          wordsStruggling: [...prev.wordsStruggling, gameState.currentWord].filter(Boolean)
+        }));
+
+        // Track the "don't know" attempt for analytics
+        if (onWordAttempt && gameState.currentWord) {
+          onWordAttempt(
+            gameState.currentWord.word || gameState.currentWord.spanish || '',
+            gameState.currentWord.translation || gameState.currentWord.english || '',
+            '[SKIPPED - DON\'T KNOW]',
+            false,
+            0, // No response time for skipped words
+            gameState.gameMode,
+            undefined, // No mastery level for skipped
+            gameState.currentWord.id
+          );
+        }
+
+        // Auto-advance after a short delay to show the answer
+        setTimeout(() => {
+          nextWord();
+        }, 2000);
+        break;
+      case 'word_complete':
+        console.log('🎯 Word Builder: Word completed', data);
+        handleAnswer('correct');
+        break;
+      case 'pronunciation_complete':
+        console.log('🎤 Pronunciation: Assessment completed', data);
+        // Already handled by the mode's onPronunciationComplete callback
+        break;
+      case 'race_complete':
+        console.log('🏁 Word Race: Race completed', data);
+        // Already handled by the mode's onWordComplete callback
+        break;
     }
-  }, [gameState, handleAnswer, playPronunciation]);
+  }, [gameState, handleAnswer, playPronunciation, onWordAttempt, nextWord]);
 
   // Render mode-specific component
   const renderModeComponent = () => {
@@ -789,6 +836,16 @@ export const VocabMasterGameEngine: React.FC<VocabMasterGameEngineProps> = ({
           />
         );
 
+      case 'story':
+        return (
+          <StoryAdventureMode
+            {...commonProps}
+            onStoryComplete={(isCorrect, chosenPath) => {
+              handleAnswer(isCorrect ? 'correct' : 'incorrect');
+            }}
+          />
+        );
+
       case 'learn':
         return (
           <LearnMode
@@ -860,6 +917,53 @@ export const VocabMasterGameEngine: React.FC<VocabMasterGameEngineProps> = ({
             onTimeUp={() => handleModeSpecificAction('time_up')}
             showHint={gameState.showHint}
             onToggleHint={() => setGameState(prev => ({ ...prev, showHint: !prev.showHint }))}
+          />
+        );
+
+      case 'word_builder':
+        return (
+          <WordBuilderMode
+            {...commonProps}
+            onLetterComplete={(isCorrect, letter) => {
+              // Play audio feedback for individual letters
+              if (config.audioEnabled) {
+                if (isCorrect) {
+                  audioFeedbackService.playCorrectSound();
+                } else {
+                  audioFeedbackService.playErrorSound();
+                }
+              }
+            }}
+          />
+        );
+
+      case 'pronunciation':
+        return (
+          <PronunciationMode
+            {...commonProps}
+            onPronunciationComplete={(isCorrect, attempt) => {
+              handleAnswer(isCorrect ? 'correct' : 'incorrect');
+            }}
+          />
+        );
+
+      case 'word_race':
+        return (
+          <WordRaceMode
+            {...commonProps}
+            onWordComplete={(isCorrect, timeMs, word) => {
+              handleAnswer(isCorrect ? 'correct' : 'incorrect');
+            }}
+          />
+        );
+
+      case 'memory_palace':
+        return (
+          <MemoryPalaceMode
+            {...commonProps}
+            onMemoryComplete={(isCorrect, memoryTechnique) => {
+              handleAnswer(isCorrect ? 'correct' : 'incorrect');
+            }}
           />
         );
 

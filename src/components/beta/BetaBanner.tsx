@@ -12,28 +12,24 @@ import {
 import { useFeatureFlags } from '../../lib/feature-flags';
 
 interface BetaBannerProps {
+  message?: string;
+  showStats?: boolean;
   variant?: 'top' | 'hero' | 'inline';
   dismissible?: boolean;
-  showStats?: boolean;
+  className?: string;
+  onSignupClick?: () => void;
 }
 
 export default function BetaBanner({ 
-  variant = 'top', 
+  message, 
+  showStats = false, 
+  variant = 'top',
   dismissible = true,
-  showStats = false 
+  className = '',
+  onSignupClick
 }: BetaBannerProps) {
   const [isDismissed, setIsDismissed] = useState(false);
   const { isBetaLaunch, betaConfig } = useFeatureFlags();
-
-  if (!isBetaLaunch || isDismissed) {
-    return null;
-  }
-
-  const handleDismiss = () => {
-    setIsDismissed(true);
-    // Store in localStorage to persist dismissal
-    localStorage.setItem('beta-banner-dismissed', 'true');
-  };
 
   // Check if banner was previously dismissed
   React.useEffect(() => {
@@ -42,6 +38,17 @@ export default function BetaBanner({
       setIsDismissed(true);
     }
   }, []);
+
+  const handleDismiss = () => {
+    setIsDismissed(true);
+    // Store in localStorage to persist dismissal
+    localStorage.setItem('beta-banner-dismissed', 'true');
+  };
+
+  // Early return AFTER all hooks have been called
+  if (!isBetaLaunch || isDismissed) {
+    return null;
+  }
 
   if (variant === 'hero') {
     return (
@@ -167,7 +174,7 @@ export default function BetaBanner({
 
   // Default 'top' variant
   return (
-    <div className="bg-gradient-to-r from-purple-600 to-blue-600 text-white">
+    <div className="bg-gradient-to-r from-purple-600 to-blue-600 text-white relative z-[200]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between py-3">
           <div className="flex items-center gap-3">
@@ -181,12 +188,21 @@ export default function BetaBanner({
           </div>
           
           <div className="flex items-center gap-4">
-            <a
-              href="/auth/signup"
-              className="bg-white text-purple-600 px-4 py-2 rounded-lg font-semibold hover:bg-gray-100 transition-colors text-sm"
-            >
-              {betaConfig.ctaText}
-            </a>
+            {onSignupClick ? (
+              <button
+                onClick={onSignupClick}
+                className="bg-white text-purple-600 px-4 py-2 rounded-lg font-semibold hover:bg-gray-100 transition-colors text-sm"
+              >
+                {betaConfig.ctaText}
+              </button>
+            ) : (
+              <a
+                href="/auth/signup"
+                className="bg-white text-purple-600 px-4 py-2 rounded-lg font-semibold hover:bg-gray-100 transition-colors text-sm"
+              >
+                {betaConfig.ctaText}
+              </a>
+            )}
             
             {dismissible && (
               <button

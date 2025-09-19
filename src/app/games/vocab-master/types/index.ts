@@ -14,18 +14,23 @@ export interface VocabularyWord {
   startTime?: number;
 }
 
-export type GameMode = 
-  | 'learn' 
-  | 'recall' 
-  | 'speed' 
-  | 'multiple_choice' 
-  | 'listening' 
-  | 'cloze' 
-  | 'typing' 
-  | 'dictation' 
-  | 'flashcards' 
+export type GameMode =
+  | 'learn'
+  | 'recall'
+  | 'speed'
+  | 'multiple_choice'
+  | 'listening'
+  | 'cloze'
+  | 'typing'
+  | 'dictation'
+  | 'flashcards'
   | 'match'
-  | 'mixed';
+  | 'mixed'
+  | 'word_builder'
+  | 'pronunciation'
+  | 'word_race'
+  | 'story'
+  | 'memory_palace';
 
 export interface GameState {
   currentWordIndex: number;

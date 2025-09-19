@@ -10,7 +10,7 @@ import {
   TrendingUp, Clock, Settings, Play, Lightbulb, Zap,
   RotateCcw, Flame, Trophy, ChevronRight, Volume2, Keyboard,
   PenTool, CreditCard, Mic, Sparkles, Palette, ToggleLeft, ToggleRight,
-  ChevronDown, Globe, GraduationCap, FolderOpen, BarChart3, Award
+  ChevronDown, Globe, GraduationCap, FolderOpen, BarChart3, Award, Link
 } from 'lucide-react';
 import { useGameVocabulary } from '../../../../hooks/useGameVocabulary';
 import { getCategoriesByCurriculum } from '../../../../components/games/KS4CategorySystem';
@@ -84,7 +84,7 @@ const CONSOLIDATED_GAME_MODES: GameMode[] = [
   {
     id: 'dictation',
     name: 'Dictation',
-    description: 'Listen carefully and type what you hear in Spanish/French',
+    description: 'Listen carefully and type what you hear',
     icon: <PenTool className="h-6 w-6" />,
     color: 'bg-gradient-to-r from-indigo-500 to-indigo-600',
     category: 'skills',
@@ -114,6 +114,17 @@ const CONSOLIDATED_GAME_MODES: GameMode[] = [
     difficulty: 'Beginner',
     source: 'unified'
   },
+  {
+    id: 'matching',
+    name: 'Match-Up Challenge',
+    description: 'Connect Spanish words with their English translations',
+    icon: <Link className="h-6 w-6" />,
+    color: 'bg-gradient-to-r from-pink-500 to-rose-600',
+    category: 'skills',
+    estimatedTime: '8-12 min',
+    difficulty: 'Intermediate',
+    source: 'unified'
+  },
 
   // III. Challenges & Speed
   {
@@ -125,6 +136,72 @@ const CONSOLIDATED_GAME_MODES: GameMode[] = [
     category: 'challenge',
     estimatedTime: '5-8 min',
     difficulty: 'Intermediate',
+    source: 'unified'
+  },
+  {
+    id: 'word_builder',
+    name: 'Word Builder',
+    description: 'Build words letter by letter with hints and clues',
+    icon: <Keyboard className="h-6 w-6" />,
+    color: 'bg-gradient-to-r from-green-500 to-emerald-600',
+    category: 'challenge',
+    estimatedTime: '10-15 min',
+    difficulty: 'Intermediate',
+    source: 'unified'
+  },
+  {
+    id: 'pronunciation_practice',
+    name: 'Pronunciation Master',
+    description: 'Perfect your Spanish pronunciation with audio feedback',
+    icon: <Mic className="h-6 w-6" />,
+    color: 'bg-gradient-to-r from-purple-500 to-violet-600',
+    category: 'skills',
+    estimatedTime: '8-12 min',
+    difficulty: 'Advanced',
+    source: 'unified'
+  },
+  {
+    id: 'sentence_builder',
+    name: 'Sentence Builder',
+    description: 'Create meaningful sentences using your vocabulary',
+    icon: <BookOpen className="h-6 w-6" />,
+    color: 'bg-gradient-to-r from-teal-500 to-cyan-600',
+    category: 'skills',
+    estimatedTime: '12-18 min',
+    difficulty: 'Advanced',
+    source: 'unified'
+  },
+  {
+    id: 'memory_palace',
+    name: 'Memory Palace',
+    description: 'Learn through visual associations and memory techniques',
+    icon: <Brain className="h-6 w-6" />,
+    color: 'bg-gradient-to-r from-indigo-500 to-purple-600',
+    category: 'challenge',
+    estimatedTime: '15-20 min',
+    difficulty: 'Intermediate',
+    source: 'unified'
+  },
+  {
+    id: 'word_race',
+    name: 'Word Race',
+    description: 'Competitive speed typing - beat your best time!',
+    icon: <Trophy className="h-6 w-6" />,
+    color: 'bg-gradient-to-r from-orange-500 to-red-600',
+    category: 'challenge',
+    estimatedTime: '5-10 min',
+    difficulty: 'Advanced',
+    source: 'unified'
+  },
+  {
+    id: 'story_mode',
+    name: 'Story Adventure',
+    description: 'Learn vocabulary through interactive stories and adventures',
+    icon: <Sparkles className="h-6 w-6" />,
+    color: 'bg-gradient-to-r from-rose-500 to-pink-600',
+    category: 'skills',
+    estimatedTime: '20-30 min',
+    difficulty: 'Beginner',
     source: 'unified'
   }
 ];
@@ -601,6 +678,12 @@ export default function UnifiedVocabMasterLauncher({ onGameStart, onBack, preset
         category: selectedCategory,
         subcategory: selectedSubcategory,
         vocabularyCount: vocabularySubset.length
+      });
+
+      console.log('🎮 Starting game with config:', {
+        theme: selectedTheme,
+        gamificationEnabled: selectedTheme === 'adventure',
+        gameConfig
       });
 
       onGameStart(modeId, vocabularySubset, gameConfig);

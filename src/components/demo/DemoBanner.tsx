@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Lock, Crown, Sparkles, ArrowRight, Star } from 'lucide-react';
 import Link from 'next/link';
@@ -11,22 +11,45 @@ interface DemoBannerProps {
   showStats?: boolean;
   variant?: 'compact' | 'full' | 'floating';
   className?: string;
+  onSignupClick?: () => void;
 }
 
 export default function DemoBanner({ 
   message, 
   showStats = false, 
   variant = 'compact',
-  className = '' 
+  className = '',
+  onSignupClick
 }: DemoBannerProps) {
   const { isDemo, isAdmin } = useDemoAuth();
+  const [isDismissed, setIsDismissed] = useState(false);
 
-  // Don't show banner for authenticated users or admin
-  if (!isDemo || isAdmin) {
+  // Don't show banner for authenticated users, admin, or if dismissed
+  if (!isDemo || isAdmin || isDismissed) {
     return null;
   }
 
   const defaultMessage = "Demo Mode: Explore basic vocabulary in Spanish, French & German. Sign up for full access to 14+ categories and all languages!";
+
+  // Check if banner was previously dismissed
+  React.useEffect(() => {
+    const dismissed = localStorage.getItem('demo-banner-dismissed');
+    if (dismissed === 'true') {
+      setIsDismissed(true);
+    }
+  }, []);
+
+  const handleSignupClick = () => {
+    if (onSignupClick) {
+      onSignupClick();
+    }
+  };
+
+  const handleDismiss = () => {
+    setIsDismissed(true);
+    // Store in localStorage to persist dismissal
+    localStorage.setItem('demo-banner-dismissed', 'true');
+  };
 
   const renderCompactBanner = () => (
     <div className={`bg-gradient-to-r from-orange-100 to-yellow-100 border border-orange-300 rounded-lg p-4 ${className}`}>
@@ -41,18 +64,27 @@ export default function DemoBanner({
             </p>
             {showStats && (
               <p className="text-orange-600 text-xs mt-1">
-                Demo: 1 category • 3 languages • 25 words max per session
+                Demo: 1 category • 3 languages 
               </p>
             )}
           </div>
         </div>
-        <Link
-          href="/auth/signup"
-          className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2"
-        >
-          <span>Sign Up</span>
-          <ArrowRight className="h-4 w-4" />
-        </Link>
+        {onSignupClick ? (
+          <button
+            onClick={handleSignupClick}
+            className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg font-semibold text-sm transition-colors"
+          >
+            Sign Up
+          </button>
+        ) : (
+          <Link
+            href="/auth/signup"
+            className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2"
+          >
+            <span>Sign Up</span>
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        )}
       </div>
     </div>
   );
@@ -79,13 +111,23 @@ export default function DemoBanner({
           </div>
         </div>
         <div className="flex flex-col space-y-2">
-          <Link
-            href="/auth/signup"
-            className="bg-white text-purple-600 px-6 py-3 rounded-lg font-bold hover:bg-gray-100 transition-colors flex items-center space-x-2"
-          >
-            <Crown className="h-5 w-5" />
-            <span>Unlock Full Access</span>
-          </Link>
+          {onSignupClick ? (
+            <button
+              onClick={handleSignupClick}
+              className="bg-white text-purple-600 px-6 py-3 rounded-lg font-bold hover:bg-gray-100 transition-colors flex items-center space-x-2"
+            >
+              <Crown className="h-5 w-5" />
+              <span>Unlock Full Access</span>
+            </button>
+          ) : (
+            <Link
+              href="/auth/signup"
+              className="bg-white text-purple-600 px-6 py-3 rounded-lg font-bold hover:bg-gray-100 transition-colors flex items-center space-x-2"
+            >
+              <Crown className="h-5 w-5" />
+              <span>Unlock Full Access</span>
+            </Link>
+          )}
           <Link
             href="/auth/login"
             className="text-white hover:text-blue-200 text-sm text-center transition-colors"
@@ -113,12 +155,21 @@ export default function DemoBanner({
             Sign up to access 14+ categories and all languages!
           </p>
           <div className="flex space-x-2 mt-3">
-            <Link
-              href="/auth/signup"
-              className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
-            >
-              Sign Up Free
-            </Link>
+            {onSignupClick ? (
+              <button
+                onClick={handleSignupClick}
+                className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
+              >
+                Sign Up Free
+              </button>
+            ) : (
+              <Link
+                href="/auth/signup"
+                className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
+              >
+                Sign Up Free
+              </Link>
+            )}
             <button
               onClick={() => {
                 // Hide the floating banner (you might want to store this in localStorage)

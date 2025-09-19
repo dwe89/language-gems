@@ -17,7 +17,7 @@ import { GRID_SIZES } from '../data/gameConfig';
 import { useGameVocabulary, GameVocabularyWord } from '../../../../hooks/useGameVocabulary';
 import {
   Target, RotateCcw, BarChart3, Clock,
-  Trophy, Play, Settings, PartyPopper, Music, VolumeX
+  Trophy, Play, Settings, PartyPopper
 } from 'lucide-react';
 import { useGameAudio } from '../../../../hooks/useGlobalAudioContext';
 import { createAudio, getAudioUrl } from '../../../../utils/audioUtils';
@@ -78,7 +78,6 @@ export default function MemoryGameMain({
   const correctSoundRef = useRef<HTMLAudioElement | null>(null);
   const wrongSoundRef = useRef<HTMLAudioElement | null>(null);
   const winSoundRef = useRef<HTMLAudioElement | null>(null);
-  const backgroundMusicRef = useRef<HTMLAudioElement | null>(null);
 
   // Global audio context for assignment mode compatibility
   const internalAudioManager = useGameAudio(true);
@@ -93,8 +92,6 @@ export default function MemoryGameMain({
   
   // Add state for custom words
   const [currentCustomWords, setCurrentCustomWords] = useState<WordPair[]>(customWords || []);
-  const [isMusicPlaying, setIsMusicPlaying] = useState(false);
-  const [firstCardSelected, setFirstCardSelected] = useState(false);
 
   // Update custom words when prop changes (for assignment mode)
   useEffect(() => {
@@ -205,18 +202,10 @@ export default function MemoryGameMain({
     wrongSoundRef.current = createAudio('/games/memory-game/sounds/wrong.mp3');
     winSoundRef.current = createAudio('/games/memory-game/sounds/win.mp3');
     
-    // Initialize background music
-    backgroundMusicRef.current = createAudio('/games/memory-game/sounds/background-music.mp3');
-    if (backgroundMusicRef.current) {
-      backgroundMusicRef.current.loop = true;
-      backgroundMusicRef.current.volume = 0.3; // Lower volume for background music
-    }
-    
     console.log('🎵 Audio refs created:', {
       correct: !!correctSoundRef.current,
       wrong: !!wrongSoundRef.current,
-      win: !!winSoundRef.current,
-      backgroundMusic: !!backgroundMusicRef.current
+      win: !!winSoundRef.current
     });
     
     // Load saved theme
@@ -241,10 +230,6 @@ export default function MemoryGameMain({
       correctSoundRef.current = null;
       wrongSoundRef.current = null;
       winSoundRef.current = null;
-      if (backgroundMusicRef.current) {
-        backgroundMusicRef.current.pause();
-        backgroundMusicRef.current = null;
-      }
     };
   }, [currentLanguage, currentTopic, currentDifficulty, currentCustomWords]);
   
@@ -264,30 +249,6 @@ export default function MemoryGameMain({
       if (timer) clearInterval(timer);
     };
   }, [startTime, gameWon]);
-  
-  // Start background music after first user interaction
-  useEffect(() => {
-    console.log('🎵 [DEBUG] Background music effect triggered:', {
-      gameWon,
-      startTime: !!startTime,
-      backgroundMusicRef: !!backgroundMusicRef.current,
-      audioManager: !!audioManager,
-      isMusicPlaying,
-      firstCardSelected
-    });
-
-    const startMusicAfterInteraction = async () => {
-      if (!gameWon && startTime && backgroundMusicRef.current && audioManager && !isMusicPlaying && firstCardSelected) {
-        console.log('🎵 [DEBUG] Starting background music after first user interaction');
-        // Add a longer delay to ensure audio context is properly initialized after user interaction
-        setTimeout(() => {
-          startBackgroundMusic();
-        }, 1500);
-      }
-    };
-
-    startMusicAfterInteraction();
-  }, [startTime, gameWon, audioManager, isMusicPlaying, firstCardSelected]);
   
   // Handle fullscreen toggle
   const toggleFullscreen = () => {
@@ -629,11 +590,6 @@ export default function MemoryGameMain({
     if (!firstCard) {
       const cardWithTime = { ...card, firstAttemptTime: card.firstAttemptTime || now };
       setFirstCard(cardWithTime);
-
-      // Mark that the first card has been selected (for background music)
-      if (!firstCardSelected) {
-        setFirstCardSelected(true);
-      }
       return;
     }
     
@@ -831,8 +787,6 @@ export default function MemoryGameMain({
         const totalPairs = cards.length / 2;
         if (matches + 1 === totalPairs) {
           setGameWon(true);
-          // Stop background music when game is won
-          stopBackgroundMusic();
           console.log('🎵 Playing win sound...');
           if (winSoundRef.current) {
             audioManager.playAudio(winSoundRef.current).catch((error: any) => {
@@ -914,72 +868,6 @@ export default function MemoryGameMain({
     setGameWon(false);
     setStartTime(new Date());
     setGameTime(0);
-    // Restart background music after a short delay
-    setTimeout(() => {
-      if (!isMusicPlaying) {
-        startBackgroundMusic();
-      }
-    }, 500);
-  };
-  
-  // Background music control functions
-  const startBackgroundMusic = async () => {
-    console.log('🎵 [DEBUG] startBackgroundMusic called:', {
-      hasBackgroundMusicRef: !!backgroundMusicRef.current,
-      hasAudioManager: !!audioManager,
-      backgroundMusicSrc: backgroundMusicRef.current?.src,
-      isMusicPlaying
-    });
-
-    if (backgroundMusicRef.current && audioManager) {
-      try {
-        console.log('🎵 [DEBUG] About to play background music:', backgroundMusicRef.current.src);
-        await audioManager.playAudio(backgroundMusicRef.current);
-        setIsMusicPlaying(true);
-        console.log('🎵 Background music started successfully');
-
-        // Check if the audio is actually playing
-        setTimeout(() => {
-          console.log('🎵 [DEBUG] Background music status check:', {
-            paused: backgroundMusicRef.current?.paused,
-            currentTime: backgroundMusicRef.current?.currentTime,
-            duration: backgroundMusicRef.current?.duration,
-            volume: backgroundMusicRef.current?.volume,
-            loop: backgroundMusicRef.current?.loop,
-            src: backgroundMusicRef.current?.src
-          });
-        }, 1000);
-      } catch (error) {
-        console.warn('Failed to start background music:', error);
-        console.log('🎵 [DEBUG] Background music error details:', {
-          error: error instanceof Error ? error.message : String(error),
-          audioSrc: backgroundMusicRef.current?.src,
-          audioReadyState: backgroundMusicRef.current?.readyState,
-          audioNetworkState: backgroundMusicRef.current?.networkState
-        });
-      }
-    } else {
-      console.warn('🎵 [DEBUG] Cannot start background music - missing refs:', {
-        hasBackgroundMusicRef: !!backgroundMusicRef.current,
-        hasAudioManager: !!audioManager
-      });
-    }
-  };
-  
-  const stopBackgroundMusic = () => {
-    if (backgroundMusicRef.current) {
-      backgroundMusicRef.current.pause();
-      setIsMusicPlaying(false);
-      console.log('🎵 Background music stopped');
-    }
-  };
-  
-  const toggleBackgroundMusic = () => {
-    if (isMusicPlaying) {
-      stopBackgroundMusic();
-    } else {
-      startBackgroundMusic();
-    }
   };
   
   // Toggle theme modal
@@ -1088,10 +976,6 @@ export default function MemoryGameMain({
                 </button>
                 <button onClick={toggleSettingsModal} className="nav-btn">
                   <i className="fas fa-cog"></i> Grid Size
-                </button>
-                <button onClick={toggleBackgroundMusic} className="nav-btn">
-                  {isMusicPlaying ? <VolumeX size={16} /> : <Music size={16} />}
-                  <span className="ml-1">{isMusicPlaying ? 'Mute' : 'Music'}</span>
                 </button>
               </>
             )}

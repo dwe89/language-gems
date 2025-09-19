@@ -122,8 +122,8 @@ export default function LearnPage() {
       popular: false
     },
     {
-      name: "Student Pro",
-      price: "£4.99",
+      name: "Pro",
+      price: "£9.99",
       period: "per month",
       description: "Everything you need to excel in GCSE languages",
       features: [
@@ -138,23 +138,6 @@ export default function LearnPage() {
       cta: "Start Free Trial",
       ctaLink: "/auth/signup-learner?plan=pro",
       popular: true
-    },
-    {
-      name: "Family",
-      price: "£9.99",
-      period: "per month",
-      description: "Perfect for families with multiple learners",
-      features: [
-        "Everything in Student Pro",
-        "Up to 4 student accounts",
-        "Parent progress dashboard",
-        "Family leaderboards",
-        "Bulk vocabulary import",
-        "Custom study plans"
-      ],
-      cta: "Start Free Trial",
-      ctaLink: "/auth/signup-learner?plan=family",
-      popular: false
     }
   ];
 
@@ -185,11 +168,10 @@ export default function LearnPage() {
                   transition={{ duration: 0.6, delay: 0.1 }}
                   className="text-4xl md:text-5xl lg:text-6xl font-bold text-slate-800 leading-tight mb-6"
                 >
-                  <span className={`block text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600 min-h-[1.2em] ${textColor}`}>
+                  <span className={`text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600 ${textColor}`}>
                     {animatedText}
                     <span className="animate-pulse">|</span>
                   </span>
-                  <span className="text-slate-800">Through Gaming</span>
                 </motion.h1>
 
                 <motion.p
@@ -292,7 +274,7 @@ export default function LearnPage() {
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto justify-center">
                 {pricingTiers.map((tier, index) => (
                   <motion.div
                     key={tier.name}

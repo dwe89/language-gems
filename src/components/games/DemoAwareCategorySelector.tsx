@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, ArrowLeft, Search, Filter, X, CheckCircle, Lock, Crown } from 'lucide-react';
 import { useDemoAuth } from '../auth/DemoAuthProvider';
+import { useUserAccess } from '@/hooks/useUserAccess';
 import { getCategoriesByCurriculum, type CurriculumLevel } from './KS4CategorySystem';
 import { Category, Subcategory, VOCABULARY_CATEGORIES } from './ModernCategorySelector';
 import { CategoryDemoBanner } from '../demo/DemoBanner';
@@ -42,6 +43,7 @@ export default function DemoAwareCategorySelector({
   curriculumLevel = 'KS3'
 }: DemoAwareCategorySelectorProps) {
   const { isDemo, isAdmin } = useDemoAuth();
+  const { userType } = useUserAccess();
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSubcategories, setSelectedSubcategories] = useState<Set<string>>(new Set());
@@ -64,16 +66,26 @@ export default function DemoAwareCategorySelector({
   // Check if a category is available in demo mode
   const isCategoryAvailable = (categoryId: string): boolean => {
     if (isAdmin) return true; // Admin always has access
-    if (!isDemo) return true; // Authenticated users have access
-    return DEMO_AVAILABLE_CATEGORIES.includes(categoryId);
+
+    // Use the new access control system
+    if (userType === 'demo') {
+      return DEMO_AVAILABLE_CATEGORIES.includes(categoryId);
+    }
+
+    return true; // Non-demo users have access
   };
 
   // Check if a subcategory is available in demo mode
   const isSubcategoryAvailable = (categoryId: string, subcategoryId: string): boolean => {
     if (isAdmin) return true; // Admin always has access
-    if (!isDemo) return true; // Authenticated users have access
-    const availableSubcategories = DEMO_AVAILABLE_SUBCATEGORIES[categoryId];
-    return availableSubcategories?.includes(subcategoryId) || false;
+
+    // Use the new access control system
+    if (userType === 'demo') {
+      const availableSubcategories = DEMO_AVAILABLE_SUBCATEGORIES[categoryId];
+      return availableSubcategories?.includes(subcategoryId) || false;
+    }
+
+    return true; // Non-demo users have access
   };
 
   const handleCategoryClick = (category: Category) => {

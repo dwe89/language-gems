@@ -22,7 +22,7 @@ import SEOWrapper from '../../components/seo/SEOWrapper';
 
 export default function PricingPage() {
   const [audience, setAudience] = useState<'learners' | 'schools'>('learners');
-  const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('yearly');
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
 
   const learnerPlans = {
     free: {
@@ -33,13 +33,12 @@ export default function PricingPage() {
         '5 games per day',
         'Basic vocabulary lists',
         'Progress tracking',
-        'Spanish only',
+        'All 3 languages (Spanish, French, German)',
         'Community support'
       ],
       limitations: [
         'Limited daily usage',
-        'No offline access',
-        'Single language only'
+        'No offline access'
       ],
       cta: 'Start Free',
       ctaLink: '/auth/signup-learner'
@@ -58,27 +57,21 @@ export default function PricingPage() {
         'Achievement system',
         'Daily challenges',
         'Spaced repetition optimization',
-        'Export progress reports'
+        'Export progress reports',
+        'AI-generated worksheets',
+        'Reading comprehension exercises',
+        'Dictation practice with audio',
+        'Interactive song-based learning',
+        'AQA & Edexcel assessment prep',
+        'Professional text-to-speech audio',
+        'Listening comprehension tests',
+        'Grammar & conjugation practice',
+        'Vocabulary mastery tracking',
+        'Personalized learning paths'
       ],
       popular: true,
       cta: 'Start Free Trial',
       ctaLink: '/auth/signup-learner?plan=pro'
-    },
-    family: {
-      name: 'Family',
-      price: { monthly: 19.99, yearly: 199.99 },
-      description: 'Perfect for families with multiple learners',
-      features: [
-        'Everything in Pro',
-        'Up to 6 family members',
-        'Family progress dashboard',
-        'Parental controls',
-        'Shared vocabulary lists',
-        'Family challenges',
-        'Bulk progress reports'
-      ],
-      cta: 'Start Free Trial',
-      ctaLink: '/auth/signup-learner?plan=family'
     }
   };
 
@@ -86,7 +79,7 @@ export default function PricingPage() {
     basic: {
       name: 'Basic Plan',
       price: { monthly: 'N/A', yearly: 399 },
-      description: 'Perfect for smaller schools or departments focusing on core vocabulary acquisition',
+      description: 'Perfect for smaller schools or departments focusing on core vocabulary acquisition. Students use shared classroom access - no individual accounts.',
       features: [
         'Access for all MFL teachers for classroom-wide, shared use',
         'Access for all students for whole-class game play',
@@ -98,7 +91,11 @@ export default function PricingPage() {
       limitations: [
         'Individual Student Logins & Progress Tracking: Not included',
         'Custom Vocabulary Lists: Not included',
-        'Homework Setting Capability: Not included'
+        'Homework Setting Capability: Not included',
+        'Assessments & Dictation: Not included',
+        'Reading & Listening Comprehension: Not included',
+        'Advanced Analytics Dashboard: Not included',
+        'Assignment Creation: Not included'
       ],
       studentLimit: 'Whole-class access',
       cta: 'Get Basic Plan',
@@ -259,7 +256,7 @@ export default function PricingPage() {
           <div className="py-16 bg-white">
             <div className="container mx-auto px-6">
               <div className={`grid gap-8 max-w-6xl mx-auto ${
-                Object.keys(currentPlans).length === 3 ? 'grid-cols-1 md:grid-cols-3' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
+                Object.keys(currentPlans).length === 3 ? 'grid-cols-1 md:grid-cols-3' : 'grid-cols-1 md:grid-cols-2 justify-center'
               }`}>
                 {Object.entries(currentPlans).map(([planKey, plan]) => (
                   <motion.div

@@ -11,6 +11,9 @@ import { FlashcardsMode } from './FlashcardsMode';
 import { LearnMode } from './LearnMode';
 import { RecallMode } from './RecallMode';
 import { MixedMode } from './MixedMode';
+import { WordBuilderMode } from './WordBuilderMode';
+import { PronunciationMode } from './PronunciationMode';
+import { WordRaceMode } from './WordRaceMode';
 
 /**
  * Registry of all available game modes
@@ -113,6 +116,49 @@ export const MODE_REGISTRY: Record<GameMode, ModeConfig> = {
     requiresInput: true,
     autoAdvance: false,
     hasTimer: false
+  },
+
+  word_builder: {
+    id: 'word_builder',
+    name: 'Word Builder',
+    component: WordBuilderMode as any,
+    requiresInput: false,
+    autoAdvance: true,
+    hasTimer: false
+  },
+
+  pronunciation: {
+    id: 'pronunciation',
+    name: 'Pronunciation Practice',
+    component: PronunciationMode as any,
+    requiresInput: false,
+    autoAdvance: true,
+    hasTimer: false
+  },
+
+  word_race: {
+    id: 'word_race',
+    name: 'Word Race',
+    component: WordRaceMode as any,
+    requiresInput: true,
+    autoAdvance: true,
+    hasTimer: true
+  },
+  story: {
+    id: 'story',
+    name: 'Story Adventure',
+    component: 'StoryAdventureMode' as any, // Custom component handled in game engine
+    requiresInput: false,
+    autoAdvance: true,
+    hasTimer: false
+  },
+  memory_palace: {
+    id: 'memory_palace',
+    name: 'Memory Palace',
+    component: 'MemoryPalaceMode' as any, // Custom component handled in game engine
+    requiresInput: false,
+    autoAdvance: true,
+    hasTimer: false
   }
 };
 
@@ -175,6 +221,7 @@ export function mapLauncherModeToGameMode(launcherMode: string): GameMode {
     case 'dictation':
       return 'dictation';
     case 'flashcard_review':
+    case 'flashcards':
       return 'flashcards';
     case 'multiple_choice_quiz':
       return 'multiple_choice';
@@ -182,10 +229,23 @@ export function mapLauncherModeToGameMode(launcherMode: string): GameMode {
     case 'speed_review':
       return 'speed';
     case 'word_matching':
+    case 'matching':
     case 'match':
       return 'match';
     case 'spaced_repetition':
       return 'recall'; // Use recall mode for spaced repetition
+    case 'word_builder':
+      return 'word_builder';
+    case 'pronunciation_practice':
+      return 'pronunciation';
+    case 'word_race':
+      return 'word_race';
+    case 'sentence_builder':
+      return 'learn'; // Use learn mode for now
+    case 'memory_palace':
+      return 'memory_palace';
+    case 'story_mode':
+      return 'story';
     default:
       return 'learn';
   }

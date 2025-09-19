@@ -80,6 +80,26 @@ const recentPosts = [
     publishDate: 'February 5, 2024',
     author: 'Daniel Etienne',
     icon: Brain
+  },
+  {
+    title: 'Pronunciation in the Reading Aloud Task',
+    excerpt: 'Pronunciation in the Reading Aloud Task: Major vs Minor Errors Explained',
+    slug: 'pronunciation-in-the-reading-aloud-task',
+    category: 'GCSE Preparation',
+    readTime: '8 min read',
+    publishDate: 'June 24, 2025',
+    author: 'LanguageGems Team',
+    icon: Target
+  },
+  {
+    title: 'Everything You Need to Know About the New AQA Speaking Exam',
+    excerpt: 'Understanding the New AQA Speaking Exam: What Students and Teachers Need to Know',
+    slug: 'everything-you-need-to-know-about-the-new-aqa-speaking-exam',
+    category: 'GCSE Preparation',
+    readTime: '10 min read',
+    publishDate: 'June 24, 2025',
+    author: 'LanguageGems Team',
+    icon: BookOpen
   }
 ];
 

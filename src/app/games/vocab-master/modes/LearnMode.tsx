@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BookOpen, Volume2, Lightbulb, Eye, EyeOff, Target, Star, Zap } from 'lucide-react';
+import { BookOpen, Volume2, Lightbulb, Eye, EyeOff, Target, Star, Zap, HelpCircle, SkipForward } from 'lucide-react';
 import { ModeComponent } from '../types';
 import { getPlaceholderText } from '../utils/answerValidation';
 import { getAdventureTheme, getAccentColorClasses } from '../utils/adventureThemes';
@@ -74,10 +74,20 @@ export const LearnMode: React.FC<LearnModeProps> = ({
     }
   };
 
+  const handleDontKnow = () => {
+    // Use the onModeSpecificAction to handle "don't know" action
+    if (onModeSpecificAction) {
+      onModeSpecificAction('dont_know', {
+        word: gameState.currentWord,
+        wordIndex: gameState.currentWordIndex
+      });
+    }
+  };
+
   const getHintText = () => {
     const translation = gameState.currentWord?.english || gameState.currentWord?.translation || '';
     if (!translation) return '';
-    
+
     // Show first letter and length
     return `${translation.charAt(0).toUpperCase()}${'_'.repeat(translation.length - 1)} (${translation.length} letters)`;
   };
@@ -230,17 +240,29 @@ export const LearnMode: React.FC<LearnModeProps> = ({
                   />
                 </div>
 
-                <button
-                  onClick={onSubmit}
-                  disabled={!userAnswer.trim()}
-                  className={`w-full py-3 rounded-xl font-semibold text-white transition-all duration-200 shadow-md ${
-                    userAnswer.trim()
-                      ? 'bg-blue-600 hover:bg-blue-700'
-                      : 'bg-blue-300 cursor-not-allowed'
-                  }`}
-                >
-                  Check Answer
-                </button>
+                <div className="grid grid-cols-1 gap-3">
+                  <button
+                    onClick={onSubmit}
+                    disabled={!userAnswer.trim()}
+                    className={`w-full py-3 rounded-xl font-semibold text-white transition-all duration-200 shadow-md ${
+                      userAnswer.trim()
+                        ? 'bg-blue-600 hover:bg-blue-700'
+                        : 'bg-blue-300 cursor-not-allowed'
+                    }`}
+                  >
+                    Check Answer
+                  </button>
+
+                  <motion.button
+                    onClick={handleDontKnow}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="w-full py-2 rounded-xl font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 border border-gray-300 transition-all duration-200 flex items-center justify-center space-x-2"
+                  >
+                    <HelpCircle className="h-4 w-4" />
+                    <span>Don't Know - Skip</span>
+                  </motion.button>
+                </div>
               </div>
             </div>
           </div>
@@ -507,21 +529,37 @@ export const LearnMode: React.FC<LearnModeProps> = ({
               />
             </div>
 
-            <button
-              onClick={onSubmit}
-              disabled={!userAnswer.trim()}
-              className={`w-full py-3 rounded-xl font-semibold transition-all duration-200 shadow-md ${
-                userAnswer.trim()
-                  ? isAdventureMode
-                    ? 'bg-blue-500 hover:bg-blue-600 text-white shadow-lg hover:shadow-blue-500/25'
-                    : 'bg-blue-600 hover:bg-blue-700 text-white' // Adjusted for consistency
-                  : isAdventureMode
-                    ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                    : 'bg-blue-300 text-white cursor-not-allowed' // Adjusted for consistency
-              }`}
-            >
-              Check Answer
-            </button>
+            <div className="grid grid-cols-1 gap-3">
+              <button
+                onClick={onSubmit}
+                disabled={!userAnswer.trim()}
+                className={`w-full py-3 rounded-xl font-semibold transition-all duration-200 shadow-md ${
+                  userAnswer.trim()
+                    ? isAdventureMode
+                      ? 'bg-blue-500 hover:bg-blue-600 text-white shadow-lg hover:shadow-blue-500/25'
+                      : 'bg-blue-600 hover:bg-blue-700 text-white' // Adjusted for consistency
+                    : isAdventureMode
+                      ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                      : 'bg-blue-300 text-white cursor-not-allowed' // Adjusted for consistency
+                }`}
+              >
+                Check Answer
+              </button>
+
+              <motion.button
+                onClick={handleDontKnow}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className={`w-full py-2 rounded-xl font-medium transition-all duration-200 flex items-center justify-center space-x-2 ${
+                  isAdventureMode
+                    ? 'text-slate-300 bg-slate-700/50 hover:bg-slate-600/50 border border-slate-500/30'
+                    : 'text-gray-600 bg-gray-100 hover:bg-gray-200 border border-gray-300'
+                }`}
+              >
+                <SkipForward className="h-4 w-4" />
+                <span>Don't Know - Skip</span>
+              </motion.button>
+            </div>
           </div>
         </div>
 

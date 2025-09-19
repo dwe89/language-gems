@@ -1,6 +1,6 @@
-import React, { useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
-import { Headphones, Volume2 } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Headphones, Volume2, Play, Pause, RotateCcw, Ear } from 'lucide-react';
 import { ModeComponent } from '../types';
 import { getPlaceholderText } from '../utils/answerValidation';
 
@@ -26,29 +26,41 @@ export const ListeningMode: React.FC<ListeningModeProps> = ({
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const lastPlayedWordRef = useRef<string | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [hasPlayedInitial, setHasPlayedInitial] = useState(false);
+  const [audioWaves, setAudioWaves] = useState([1, 1, 1, 1, 1]);
 
   useEffect(() => {
     // Auto-play audio when word loads
-    if (gameState.currentWord) {
+    if (gameState.currentWord && !hasPlayedInitial) {
       const currentWordKey = `${gameState.currentWord.id}-listening`;
-      
+
       if (lastPlayedWordRef.current !== currentWordKey) {
         lastPlayedWordRef.current = currentWordKey;
-        
+        setHasPlayedInitial(false);
+
         const timer = setTimeout(() => {
           // Double-check the word hasn't changed while we were waiting
           if (lastPlayedWordRef.current === currentWordKey && gameState.currentWord) {
+            setIsPlaying(true);
             playPronunciation(
-              gameState.currentWord?.spanish || '', 
-              'es', 
+              gameState.currentWord?.word || '',
+              'es',
               gameState.currentWord
             );
+            setHasPlayedInitial(true);
+            setTimeout(() => setIsPlaying(false), 2500);
           }
-        }, 1000);
+        }, 800);
         return () => clearTimeout(timer);
       }
     }
-  }, [gameState.currentWord, playPronunciation]);
+  }, [gameState.currentWord, playPronunciation, hasPlayedInitial]);
+
+  useEffect(() => {
+    // Reset for new word
+    setHasPlayedInitial(false);
+  }, [gameState.currentWordIndex]);
 
   useEffect(() => {
     // Focus input
@@ -57,71 +69,275 @@ export const ListeningMode: React.FC<ListeningModeProps> = ({
     }
   }, [gameState.currentWordIndex]);
 
+  // Animate audio waves when playing
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isPlaying || gameState.audioPlaying) {
+      interval = setInterval(() => {
+        setAudioWaves(prev => prev.map(() => Math.random() * 3 + 0.5));
+      }, 150);
+    } else {
+      setAudioWaves([1, 1, 1, 1, 1]);
+    }
+    return () => clearInterval(interval);
+  }, [isPlaying, gameState.audioPlaying]);
+
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && userAnswer.trim()) {
       onSubmit();
     }
   };
 
-  const baseClasses = isAdventureMode 
-    ? "bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-xl rounded-3xl p-8 border-2 border-slate-600/30 shadow-2xl"
-    : "bg-white rounded-xl shadow-lg p-8";
+  const handlePlayAudio = () => {
+    if (gameState.currentWord && !gameState.audioPlaying) {
+      setIsPlaying(true);
+      playPronunciation(
+        gameState.currentWord?.word || '',
+        'es',
+        gameState.currentWord || undefined
+      );
+      setTimeout(() => setIsPlaying(false), 2500);
+    }
+  };
+
+  const progressPercentage = ((gameState.currentWordIndex + 1) / gameState.totalWords) * 100;
+  const accuracy = gameState.correctAnswers + gameState.incorrectAnswers > 0
+    ? Math.round((gameState.correctAnswers / (gameState.correctAnswers + gameState.incorrectAnswers)) * 100)
+    : 0;
 
   return (
-    <div className="space-y-8">
-      {/* Audio-only interface */}
+    <div className="max-w-4xl mx-auto space-y-6">
+      {/* Progress Header */}
       <motion.div
-        key={gameState.currentWordIndex}
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className={baseClasses}
+        className={`rounded-2xl p-4 ${
+          isAdventureMode
+            ? 'bg-gradient-to-r from-slate-800/80 to-slate-900/80 backdrop-blur-sm border border-slate-600/30'
+            : 'bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-100'
+        }`}
       >
-        <div className="text-center space-y-6">
-          <div className="text-6xl">
-            <Headphones className="h-16 w-16 text-blue-300 mx-auto" />
-          </div>
-          
-          <h2 className={`text-2xl font-bold ${isAdventureMode ? 'text-white' : 'text-gray-800'}`}>
-            🎧 Listen and Type the Translation
-          </h2>
-
-          <p className={`text-sm ${isAdventureMode ? 'text-slate-300' : 'text-gray-600'}`}>
-            Listen to the Spanish word and type its English translation
-          </p>
-
-          {/* Single audio control */}
-          <div className="flex justify-center">
-            <button
-              onClick={() => playPronunciation(gameState.currentWord?.spanish || '', 'es', gameState.currentWord || undefined)}
-              disabled={gameState.audioPlaying}
-              className={`p-6 rounded-full transition-colors border-2 shadow-lg ${
-                gameState.audioPlaying
-                  ? 'bg-gray-200 text-gray-400 cursor-not-allowed border-gray-300'
-                  : isAdventureMode
-                    ? 'bg-blue-500/30 hover:bg-blue-500/40 text-blue-200 border-blue-400/50'
-                    : 'bg-blue-100 hover:bg-blue-200 text-blue-600 border-blue-300'
-              }`}
-            >
-              <Volume2 className="h-8 w-8" />
-            </button>
-          </div>
-
-          {/* Replay info */}
-          {canReplayAudio && (
-            <div className={`text-center text-sm ${isAdventureMode ? 'text-white/60' : 'text-gray-500'}`}>
-              {2 - audioReplayCount} replays remaining
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <div className={`p-2 rounded-full ${
+              isAdventureMode ? 'bg-purple-500/20' : 'bg-purple-100'
+            }`}>
+              <Ear className={`h-5 w-5 ${
+                isAdventureMode ? 'text-purple-300' : 'text-purple-600'
+              }`} />
             </div>
-          )}
+            <div>
+              <h3 className={`font-bold ${
+                isAdventureMode ? 'text-white' : 'text-gray-800'
+              }`}>
+                Listening Comprehension
+              </h3>
+              <p className={`text-sm ${
+                isAdventureMode ? 'text-slate-300' : 'text-gray-600'
+              }`}>
+                Question {gameState.currentWordIndex + 1} of {gameState.totalWords}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-6">
+            <div className="text-center">
+              <div className={`text-2xl font-bold ${
+                isAdventureMode ? 'text-green-400' : 'text-green-600'
+              }`}>
+                {gameState.correctAnswers}
+              </div>
+              <div className={`text-xs ${
+                isAdventureMode ? 'text-slate-400' : 'text-gray-500'
+              }`}>
+                Correct
+              </div>
+            </div>
+            <div className="text-center">
+              <div className={`text-2xl font-bold ${
+                isAdventureMode ? 'text-red-400' : 'text-red-600'
+              }`}>
+                {gameState.incorrectAnswers}
+              </div>
+              <div className={`text-xs ${
+                isAdventureMode ? 'text-slate-400' : 'text-gray-500'
+              }`}>
+                Incorrect
+              </div>
+            </div>
+            <div className="text-center">
+              <div className={`text-2xl font-bold ${
+                isAdventureMode ? 'text-blue-400' : 'text-blue-600'
+              }`}>
+                {accuracy}%
+              </div>
+              <div className={`text-xs ${
+                isAdventureMode ? 'text-slate-400' : 'text-gray-500'
+              }`}>
+                Accuracy
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Progress Bar */}
+        <div className="mt-4">
+          <div className={`h-2 rounded-full overflow-hidden ${
+            isAdventureMode ? 'bg-slate-700' : 'bg-gray-200'
+          }`}>
+            <motion.div
+              className="h-full bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full"
+              initial={{ width: 0 }}
+              animate={{ width: `${progressPercentage}%` }}
+              transition={{ duration: 0.5, ease: "easeOut" }}
+            />
+          </div>
         </div>
       </motion.div>
 
-      {/* Input area */}
-      <div className={baseClasses}>
-        <div className="space-y-4">
-          <h3 className={`text-lg font-semibold ${isAdventureMode ? 'text-white' : 'text-gray-800'}`}>
-            English translation:
+      {/* Main Audio Interface */}
+      <motion.div
+        key={gameState.currentWordIndex}
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.3 }}
+        className={`rounded-3xl p-8 text-center ${
+          isAdventureMode
+            ? 'bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-xl border-2 border-slate-600/30 shadow-2xl'
+            : 'bg-white shadow-xl border border-gray-100'
+        }`}
+      >
+        {/* Audio Visualization */}
+        <div className="mb-8">
+          <motion.div
+            animate={isPlaying || gameState.audioPlaying ? { scale: [1, 1.05, 1] } : { scale: 1 }}
+            transition={{ duration: 0.8, repeat: isPlaying || gameState.audioPlaying ? Infinity : 0 }}
+            className={`w-32 h-32 mx-auto rounded-full flex items-center justify-center relative ${
+              isAdventureMode
+                ? 'bg-gradient-to-br from-purple-500/20 to-indigo-500/20 border-2 border-purple-400/30'
+                : 'bg-gradient-to-br from-purple-100 to-indigo-100 border-2 border-purple-200'
+            }`}
+          >
+            <Headphones className={`h-16 w-16 ${
+              isAdventureMode ? 'text-purple-300' : 'text-purple-600'
+            }`} />
+
+            {/* Audio Waves */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="flex space-x-1">
+                {audioWaves.map((height, index) => (
+                  <motion.div
+                    key={index}
+                    className={`w-1 rounded-full ${
+                      isAdventureMode ? 'bg-purple-400/60' : 'bg-purple-500/60'
+                    }`}
+                    animate={{
+                      height: isPlaying || gameState.audioPlaying ? `${height * 8}px` : '4px'
+                    }}
+                    transition={{ duration: 0.15 }}
+                  />
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        </div>
+
+        <h2 className={`text-3xl font-bold mb-4 ${
+          isAdventureMode ? 'text-white' : 'text-gray-800'
+        }`}>
+          Listen & Translate
+        </h2>
+
+        <p className={`text-lg mb-8 ${
+          isAdventureMode ? 'text-slate-300' : 'text-gray-600'
+        }`}>
+          Listen to the Spanish word and type its English translation
+        </p>
+
+        {/* Audio Controls */}
+        <div className="flex justify-center items-center space-x-4 mb-8">
+          <motion.button
+            onClick={handlePlayAudio}
+            disabled={gameState.audioPlaying}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className={`p-4 rounded-full transition-all duration-200 ${
+              gameState.audioPlaying || isPlaying
+                ? isAdventureMode
+                  ? 'bg-slate-600 text-slate-400 cursor-not-allowed'
+                  : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                : isAdventureMode
+                  ? 'bg-purple-500/30 hover:bg-purple-500/40 text-purple-200 border-2 border-purple-400/50 shadow-lg hover:shadow-purple-500/25'
+                  : 'bg-purple-500 hover:bg-purple-600 text-white shadow-lg hover:shadow-xl'
+            }`}
+          >
+            <AnimatePresence mode="wait">
+              {gameState.audioPlaying || isPlaying ? (
+                <motion.div
+                  key="playing"
+                  initial={{ opacity: 0, rotate: -90 }}
+                  animate={{ opacity: 1, rotate: 0 }}
+                  exit={{ opacity: 0, rotate: 90 }}
+                >
+                  <Pause className="h-8 w-8" />
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="play"
+                  initial={{ opacity: 0, rotate: -90 }}
+                  animate={{ opacity: 1, rotate: 0 }}
+                  exit={{ opacity: 0, rotate: 90 }}
+                >
+                  <Play className="h-8 w-8" />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.button>
+
+          {canReplayAudio && audioReplayCount < 2 && (
+            <motion.button
+              onClick={onReplayAudio}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className={`p-3 rounded-full transition-all duration-200 ${
+                isAdventureMode
+                  ? 'bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 border border-slate-500/30'
+                  : 'bg-gray-100 hover:bg-gray-200 text-gray-600 border border-gray-200'
+              }`}
+            >
+              <RotateCcw className="h-5 w-5" />
+            </motion.button>
+          )}
+        </div>
+
+        {/* Replay Counter */}
+        {canReplayAudio && (
+          <div className={`text-sm mb-6 ${
+            isAdventureMode ? 'text-slate-400' : 'text-gray-500'
+          }`}>
+            {2 - audioReplayCount} replays remaining
+          </div>
+        )}
+      </motion.div>
+
+      {/* Input Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className={`rounded-2xl p-6 ${
+          isAdventureMode
+            ? 'bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-xl border-2 border-slate-600/30 shadow-xl'
+            : 'bg-white shadow-lg border border-gray-100'
+        }`}
+      >
+        <div className="space-y-6">
+          <h3 className={`text-xl font-semibold text-center ${
+            isAdventureMode ? 'text-white' : 'text-gray-800'
+          }`}>
+            English Translation
           </h3>
-          
+
           <div className="relative">
             <input
               ref={inputRef}
@@ -129,32 +345,58 @@ export const ListeningMode: React.FC<ListeningModeProps> = ({
               value={userAnswer}
               onChange={(e) => onAnswerChange(e.target.value)}
               onKeyDown={handleKeyPress}
-              placeholder={getPlaceholderText('listening')}
-              className={`w-full p-4 rounded-lg text-lg font-medium transition-all duration-200 ${
+              placeholder="Type the English translation..."
+              className={`w-full p-4 text-xl font-medium rounded-xl transition-all duration-200 ${
                 isAdventureMode
-                  ? 'bg-slate-700/50 text-white placeholder-slate-400 border border-slate-500/30 focus:border-blue-400/50 focus:ring-2 focus:ring-blue-400/20'
-                  : 'bg-gray-50 text-gray-800 placeholder-gray-500 border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200'
+                  ? 'bg-slate-700/50 text-white placeholder-slate-400 border-2 border-slate-500/30 focus:border-purple-400/50 focus:ring-4 focus:ring-purple-400/20'
+                  : 'bg-gray-50 text-gray-800 placeholder-gray-500 border-2 border-gray-200 focus:border-purple-500 focus:ring-4 focus:ring-purple-200/50'
               }`}
               autoFocus
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5 rounded-lg pointer-events-none" />
+
+            {/* Input Enhancement */}
+            <div className={`absolute inset-0 rounded-xl pointer-events-none ${
+              userAnswer.trim()
+                ? 'bg-gradient-to-r from-purple-500/5 to-indigo-500/5'
+                : 'bg-gradient-to-r from-blue-500/5 to-purple-500/5'
+            }`} />
+
+            {/* Character Count */}
+            {userAnswer.length > 0 && (
+              <div className={`absolute right-3 top-1/2 transform -translate-y-1/2 text-sm ${
+                isAdventureMode ? 'text-slate-400' : 'text-gray-400'
+              }`}>
+                {userAnswer.length}
+              </div>
+            )}
           </div>
 
-          <button
+          <motion.button
             onClick={onSubmit}
             disabled={!userAnswer.trim()}
-            className={`w-full py-3 rounded-lg font-semibold transition-all duration-200 ${
+            whileHover={userAnswer.trim() ? { scale: 1.02 } : {}}
+            whileTap={userAnswer.trim() ? { scale: 0.98 } : {}}
+            className={`w-full py-4 rounded-xl font-bold text-lg transition-all duration-200 ${
               userAnswer.trim()
                 ? isAdventureMode
-                  ? 'bg-blue-500 hover:bg-blue-600 text-white shadow-lg hover:shadow-blue-500/25'
-                  : 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg'
-                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  ? 'bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white shadow-lg hover:shadow-xl'
+                  : 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl'
+                : isAdventureMode
+                  ? 'bg-slate-600 text-slate-400 cursor-not-allowed'
+                  : 'bg-gray-200 text-gray-400 cursor-not-allowed'
             }`}
           >
-            Submit Translation
-          </button>
+            {userAnswer.trim() ? 'Submit Translation' : 'Type your translation first'}
+          </motion.button>
+
+          {/* Helpful Tips */}
+          <div className={`text-center text-sm ${
+            isAdventureMode ? 'text-slate-400' : 'text-gray-500'
+          }`}>
+            🎧 Tip: Listen carefully to the pronunciation and spelling
+          </div>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 };

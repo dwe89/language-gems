@@ -497,9 +497,12 @@ export default function AccountPage() {
                     <Crown className="h-5 w-5 mr-2" />
                     Start Premium Trial
                   </Link>
-                  <button className="bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white px-8 py-4 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center border border-white/30">
+                  <Link
+                    href="/account/upgrade"
+                    className="bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white px-8 py-4 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center border border-white/30"
+                  >
                     Learn More
-                  </button>
+                  </Link>
                 </div>
               </div>
             </div>

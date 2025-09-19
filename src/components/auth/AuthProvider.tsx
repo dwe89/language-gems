@@ -83,7 +83,98 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     return null;
   }, []);
-  
+
+  // Check if subscription is active
+  const checkSubscriptionActive = (profile: any): boolean => {
+    if (!profile) return false;
+
+    const now = new Date();
+    const status = profile.subscription_status;
+
+    if (status === 'active' || status === 'trialing') {
+      if (profile.subscription_expires_at) {
+        const expiresAt = new Date(profile.subscription_expires_at);
+        return expiresAt > now;
+      }
+
+      if (status === 'trialing' && profile.trial_ends_at) {
+        const trialEnds = new Date(profile.trial_ends_at);
+        return trialEnds > now;
+      }
+
+      return true;
+    }
+
+    return false;
+  };
+
+  // Check user subscription status
+  const checkUserSubscription = async (userId: string, role: string): Promise<boolean> => {
+    try {
+      // Admin override
+      const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || "admin@languagegems.com";
+      const devAdminEmail = "danieletienne89@gmail.com";
+
+      const { data: { user } } = await supabaseBrowser.auth.getUser();
+      if (user?.email === adminEmail || user?.email === devAdminEmail) {
+        return true;
+      }
+
+      // For learners, check their individual subscription
+      if (role === 'learner') {
+        const { data: profile } = await supabaseBrowser
+          .from('user_profiles')
+          .select('subscription_status, subscription_expires_at, trial_ends_at')
+          .eq('user_id', userId)
+          .single();
+
+        return checkSubscriptionActive(profile);
+      }
+
+      // For teachers, check school subscription or individual subscription
+      if (role === 'teacher') {
+        const { data: profile } = await supabaseBrowser
+          .from('user_profiles')
+          .select(`
+            subscription_status,
+            subscription_expires_at,
+            trial_ends_at,
+            school_owner_id,
+            is_school_owner
+          `)
+          .eq('user_id', userId)
+          .single();
+
+        if (!profile) return false;
+
+        // If user is a school owner, check their own subscription
+        if (profile.is_school_owner) {
+          return checkSubscriptionActive(profile);
+        }
+
+        // If user has a school owner, check the owner's subscription
+        if (profile.school_owner_id) {
+          const { data: ownerData } = await supabaseBrowser
+            .from('user_profiles')
+            .select('subscription_status, subscription_expires_at, trial_ends_at')
+            .eq('user_id', profile.school_owner_id)
+            .single();
+
+          return checkSubscriptionActive(ownerData);
+        }
+
+        // Individual teacher - check their own subscription
+        return checkSubscriptionActive(profile);
+      }
+
+      // Students and other roles don't need subscriptions
+      return true;
+    } catch (error) {
+      console.error('Error checking subscription:', error);
+      return false;
+    }
+  };
+
   // Unified function to get complete user data with faster execution
   const getUserData = async (currentUser: User): Promise<{
     role: string | null;
@@ -135,15 +226,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      // Simplified subscription logic
-      const hasSubscription = true; // For now, give everyone access
+      // Proper subscription logic - check actual subscription status
+      const hasSubscription = await checkUserSubscription(currentUser.id, role || 'student');
       
       const result = { role, hasSubscription };
       console.log('getUserData returning:', result);
       return result;
     } catch (error) {
       console.error('Error getting user data:', error);
-      return { role: 'student', hasSubscription: true }; // Safe defaults
+      return { role: 'student', hasSubscription: false }; // Safe defaults - no free access
     }
   };
 

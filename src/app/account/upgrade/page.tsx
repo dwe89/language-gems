@@ -4,12 +4,12 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth } from '../../../components/auth/AuthProvider';
-import { 
-  ArrowLeft, Crown, Check, Star, Zap, Shield, Users, BookOpen, 
+import {
+  ArrowLeft, Crown, Check, Star, Zap, Shield, Users, BookOpen,
   BarChart2, Gamepad2, Award, Calendar, FileText, MessageSquare,
   Video, Headphones, Globe, Sparkles, GraduationCap, Target,
-  Play, Eye, ChevronRight, Bell, Gem, Brain, Construction, 
-  Puzzle, Shuffle, Layers, Crosshair, Bolt
+  Play, Eye, ChevronRight, Bell, Gem, Brain, Construction,
+  Puzzle, Shuffle, Layers, Crosshair, Bolt, User, Phone, Mail
 } from 'lucide-react';
 
 export default function UpgradePage() {
@@ -32,123 +32,171 @@ export default function UpgradePage() {
     );
   }
 
-  const coreFeatures = [
+  const basicFeatures = [
     {
-      icon: Crown,
-      title: 'Full Dashboard Access',
-      description: 'Complete access to teacher and student dashboards with all premium tools'
+      icon: Gamepad2,
+      title: '15+ Interactive Games',
+      description: 'Full access to all learning games for whole-class gameplay',
+      plans: ['basic', 'standard', 'large']
+    },
+    {
+      icon: Globe,
+      title: 'All Languages',
+      description: 'Complete access to Spanish, French, and German content',
+      plans: ['basic', 'standard', 'large']
     },
     {
       icon: Users,
-      title: 'Class Management',
-      description: 'Create unlimited classes, manage students, and track progress in real-time'
+      title: 'Teacher Access',
+      description: 'All MFL teachers can use the platform for classroom activities',
+      plans: ['basic', 'standard', 'large']
+    }
+  ];
+
+  const standardFeatures = [
+    {
+      icon: User,
+      title: 'Individual Student Logins',
+      description: 'Personal accounts for up to 750 students with progress tracking',
+      plans: ['standard', 'large']
     },
     {
       icon: FileText,
       title: 'Assignment System',
-      description: 'Create custom assignments, track submissions, and provide detailed feedback'
+      description: 'Create homework assignments with automated marking and feedback',
+      plans: ['standard', 'large']
     },
     {
       icon: BarChart2,
       title: 'Advanced Analytics',
-      description: 'Detailed progress tracking, performance analytics, and custom reports'
-    },
-    {
-      icon: Gamepad2,
-      title: 'Interactive Games',
-      description: '15+ premium learning games with customizable difficulty and topics'
+      description: 'Detailed progress tracking, performance insights, and custom reports',
+      plans: ['standard', 'large']
     },
     {
       icon: BookOpen,
-      title: 'Vocabulary Mining',
-      description: 'AI-powered vocabulary extraction from texts and automatic list generation'
+      title: 'Custom Vocabulary Lists',
+      description: 'Create and manage personalized vocabulary collections',
+      plans: ['standard', 'large']
+    },
+    {
+      icon: GraduationCap,
+      title: 'GCSE Alignment',
+      description: 'AQA/Edexcel GCSE vocabulary specifications with tier filtering',
+      plans: ['standard', 'large']
+    },
+    {
+      icon: Award,
+      title: 'Spaced Repetition & Gems',
+      description: 'AI-powered learning optimization with gamified rewards',
+      plans: ['standard', 'large']
+    }
+  ];
+
+  const largeSchoolFeatures = [
+    {
+      icon: Users,
+      title: 'Unlimited Students',
+      description: 'No limits on student accounts - perfect for large schools',
+      plans: ['large']
+    },
+    {
+      icon: Phone,
+      title: 'Priority Support',
+      description: 'Dedicated email and chat support with faster response times',
+      plans: ['large']
+    },
+    {
+      icon: Star,
+      title: 'Strategic Partnership',
+      description: 'Direct input on feature development and priority feedback',
+      plans: ['large']
     }
   ];
 
   const allGames = [
     {
-      title: "Memory Match",
-      description: "Match vocabulary words with images or translations",
-      icon: <Brain className="w-6 h-6" />,
-      category: "Memory",
-      difficulty: "Easy"
+      title: "VocabMaster",
+      description: "Master vocabulary with smart, personalized reviews, adaptive learning, and 8 engaging game modes",
+      icon: <BookOpen className="w-6 h-6" />,
+      category: "Vocabulary"
     },
     {
-      title: "Word Hangman", 
-      description: "Classic hangman with language learning twist",
-      icon: <Target className="w-6 h-6" />,
-      category: "Spelling",
-      difficulty: "Medium"
+      title: "Sentence Sprint",
+      description: "Drag and drop words to build sentences correctly before time runs out",
+      icon: <Zap className="w-6 h-6" />,
+      category: "Sentences"
     },
     {
       title: "Word Blast",
-      description: "Fast-paced word recognition and typing game",
-      icon: <Bolt className="w-6 h-6" />,
-      category: "Speed",
-      difficulty: "Hard"
+      description: "Launch rockets with correct word translations before time runs out!",
+      icon: <Target className="w-6 h-6" />,
+      category: "Vocabulary"
     },
     {
-      title: "Translation Tycoon",
-      description: "Build your translation empire while learning",
+      title: "Word Towers",
+      description: "Build towers by matching words to translations. Wrong answers make towers fall!",
       icon: <Construction className="w-6 h-6" />,
-      category: "Strategy",
-      difficulty: "Medium"
+      category: "Vocabulary"
     },
     {
-      title: "Sentence Builder",
-      description: "Create stories using target vocabulary",
-      icon: <FileText className="w-6 h-6" />,
-      category: "Grammar",
-      difficulty: "Medium"
+      title: "Hangman",
+      description: "Guess the word before the hangman is complete. Excellent for vocabulary practice",
+      icon: <Target className="w-6 h-6" />,
+      category: "Vocabulary"
     },
     {
-      title: "Verb Ladder",
-      description: "Climb the conjugation ladder",
-      icon: <Layers className="w-6 h-6" />,
-      category: "Grammar",
-      difficulty: "Hard"
+      title: "Memory Match",
+      description: "Match pairs of cards to build vocabulary and memory skills",
+      icon: <Brain className="w-6 h-6" />,
+      category: "Vocabulary"
+    },
+    {
+      title: "Noughts and Crosses",
+      description: "Play tic-tac-toe while practicing language terms",
+      icon: <Crosshair className="w-6 h-6" />,
+      category: "Vocabulary"
+    },
+    {
+      title: "Conjugation Duel",
+      description: "Epic verb conjugation battles in different arenas and leagues",
+      icon: <Zap className="w-6 h-6" />,
+      category: "Grammar"
     },
     {
       title: "Word Scramble",
-      description: "Unscramble letters to form words",
+      description: "Unscramble jumbled words to improve spelling and word recognition",
       icon: <Shuffle className="w-6 h-6" />,
-      category: "Spelling",
-      difficulty: "Easy"
+      category: "Spelling"
     },
     {
-      title: "Speed Builder",
-      description: "Rapid-fire vocabulary challenges",
-      icon: <Zap className="w-6 h-6" />,
-      category: "Speed",
-      difficulty: "Hard"
+      title: "Detective Listening Game",
+      description: "Solve cases by identifying evidence through listening to words and finding their translations",
+      icon: <Headphones className="w-6 h-6" />,
+      category: "Listening"
     },
     {
-      title: "Word Association",
-      description: "Connect related words and concepts",
-      icon: <Puzzle className="w-6 h-6" />,
-      category: "Vocabulary",
-      difficulty: "Medium"
+      title: "Case File Translator",
+      description: "Solve detective cases by translating intercepted communications",
+      icon: <FileText className="w-6 h-6" />,
+      category: "Sentences"
     },
     {
-      title: "Vocabulary Tic-Tac-Toe",
-      description: "Classic game with vocabulary challenges",
-      icon: <Crosshair className="w-6 h-6" />,
-      category: "Strategy",
-      difficulty: "Easy"
-    },
-    {
-      title: "Gem Collector",
-      description: "Collect vocabulary gems in mazes",
+      title: "Lava Temple: Word Restore",
+      description: "Restore ancient inscriptions by filling in missing words. Become a linguistic archaeologist!",
       icon: <Gem className="w-6 h-6" />,
-      category: "Adventure",
-      difficulty: "Medium"
+      category: "Sentences"
     },
     {
-      title: "Sentence Towers",
-      description: "Stack words to build correct sentences",
-      icon: <Construction className="w-6 h-6" />,
-      category: "Grammar",
-      difficulty: "Medium"
+      title: "Verb Quest",
+      description: "Embark on an epic RPG adventure to master verb conjugations!",
+      icon: <GraduationCap className="w-6 h-6" />,
+      category: "Grammar"
+    },
+    {
+      title: "Vocab Blast",
+      description: "Click vocabulary gems to pop and translate them quickly",
+      icon: <Bolt className="w-6 h-6" />,
+      category: "Vocabulary"
     }
   ];
 
@@ -157,75 +205,79 @@ export default function UpgradePage() {
       name: 'Basic Plan',
       price: '£399',
       period: '/year',
-      description: 'Perfect for smaller schools or departments focusing on core vocabulary acquisition and gamified practice.',
+      description: 'Perfect for smaller schools focusing on core vocabulary acquisition with shared classroom access.',
       features: [
-        'Access for all MFL teachers for classroom-wide, shared use',
-        'Access for all students for whole-class game play',
-        'Full Access to ALL Available Languages: French, Spanish, German',
-        '15+ Engaging Gamified Learning Activities',
-        'Professional Audio Integration',
-        'Built for Modern Classrooms: Responsive design, WCAG 2.1 AA accessibility'
+        '✅ All MFL teachers - classroom-wide access',
+        '✅ All students - whole-class gameplay',
+        '✅ 15+ interactive learning games',
+        '✅ Spanish, French, German content',
+        '✅ Professional audio integration',
+        '✅ WCAG 2.1 AA accessibility',
+        '❌ Individual student logins',
+        '❌ Custom vocabulary lists',
+        '❌ Homework assignments',
+        '❌ Advanced analytics'
       ],
       highlighted: false,
-      comingSoon: true
+      comingSoon: false,
+      limitations: [
+        'No individual student tracking',
+        'Shared classroom access only',
+        'No assignment creation',
+        'No custom content'
+      ]
     },
     {
       name: 'Standard Plan',
       price: '£799',
       period: '/year',
-      description: 'The ultimate value for most secondary schools with up to 750 students.',
+      description: 'Complete solution for most secondary schools with individual student tracking and advanced features.',
       features: [
-        'All Basic Plan Features (with individual logins enabled)',
-        'Unlimited Teacher Accounts: Full access for all MFL teachers',
-        'Individual Student Logins for up to 750 Students',
-        'Comprehensive Data Analysis Platform',
-        'Full Homework Setting Capability with automated marking',
-        'Fully Aligned Vocabulary: AQA/Edexcel GCSE specifications',
-        'Real-time Analytics & Insights',
-        'Multi-Game Assignment System',
-        'Custom Vocabulary Lists',
-        'Spaced Repetition & Gem Collection',
-        'Competition Features: School-wide leaderboards'
+        '✅ Everything in Basic Plan',
+        '✅ Individual logins for 750 students',
+        '✅ Homework assignments with auto-marking',
+        '✅ Custom vocabulary lists',
+        '✅ Advanced analytics & reports',
+        '✅ AQA/Edexcel GCSE alignment',
+        '✅ Spaced repetition system',
+        '✅ Competition leaderboards',
+        '✅ Progress tracking per student',
+        '✅ Multi-game assignment system'
       ],
       highlighted: true,
-      comingSoon: true
+      comingSoon: false,
+      bestValue: true
     },
     {
       name: 'Large School Plan',
       price: '£1,199',
       period: '/year',
-      description: 'Designed for larger secondary schools (over 750 students).',
+      description: 'Enterprise solution for large schools with unlimited students and premium support.',
       features: [
-        'All Standard Plan Features',
-        'Individual Student Logins for Unlimited Students',
-        'Priority Email and Chat Support',
-        'Advanced Analytics & Custom Reports',
-        'Dedicated Onboarding Support',
-        'Strategic Partnership for feature requests and feedback'
+        '✅ Everything in Standard Plan',
+        '✅ Unlimited student accounts',
+        '✅ Priority email & chat support',
+        '✅ Custom reports & analytics',
+        '✅ Dedicated onboarding support',
+        '✅ Strategic partnership benefits',
+        '✅ Feature request priority',
+        '✅ Advanced admin controls',
+        '✅ Multi-school management',
+        '✅ White-label options'
       ],
       highlighted: false,
-      comingSoon: true
+      comingSoon: false,
+      enterprise: true
     }
   ];
 
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case 'Easy': return 'bg-green-100 text-green-700';
-      case 'Medium': return 'bg-yellow-100 text-yellow-700';
-      case 'Hard': return 'bg-red-100 text-red-700';
-      default: return 'bg-gray-100 text-gray-700';
-    }
-  };
-
   const getCategoryColor = (category: string) => {
     switch (category) {
-      case 'Memory': return 'bg-purple-100 text-purple-700';
-      case 'Speed': return 'bg-orange-100 text-orange-700';
-      case 'Grammar': return 'bg-blue-100 text-blue-700';
       case 'Vocabulary': return 'bg-green-100 text-green-700';
+      case 'Grammar': return 'bg-blue-100 text-blue-700';
+      case 'Sentences': return 'bg-purple-100 text-purple-700';
       case 'Spelling': return 'bg-pink-100 text-pink-700';
-      case 'Strategy': return 'bg-indigo-100 text-indigo-700';
-      case 'Adventure': return 'bg-cyan-100 text-cyan-700';
+      case 'Listening': return 'bg-orange-100 text-orange-700';
       default: return 'bg-gray-100 text-gray-700';
     }
   };
@@ -244,22 +296,19 @@ export default function UpgradePage() {
           </Link>
           
           <div className="text-center">
-            <div className="mx-auto flex items-center justify-center h-20 w-20 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full mb-6 relative">
+            <div className="mx-auto flex items-center justify-center h-20 w-20 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full mb-6">
               <Crown className="h-10 w-10 text-white" />
-              <div className="absolute -top-1 -right-1 bg-yellow-400 text-yellow-900 text-xs font-bold px-2 py-1 rounded-full">
-                SOON
-              </div>
             </div>
             
             <h1 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
               <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                Coming Soon
+                Upgrade to Premium
               </span>
             </h1>
-            
+
             <p className="text-xl text-slate-600 max-w-3xl mx-auto mb-8">
-              We're building the most comprehensive language learning platform for educators. 
-              Get ready for powerful tools, engaging games, and insights that will transform your classroom!
+              Unlock the full power of LanguageGems with comprehensive tools, advanced analytics,
+              and premium features designed to transform your language teaching experience.
             </p>
 
             {/* Preview Tabs */}
@@ -317,19 +366,80 @@ export default function UpgradePage() {
         {/* Features Preview */}
         {activePreview === 'features' && (
           <div className="space-y-16">
-            {/* Core Features Grid */}
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {coreFeatures.map((feature, index) => (
-                <div key={index} className="bg-white rounded-2xl p-8 shadow-lg border border-slate-200 hover:shadow-xl transition-all group">
-                  <div className="flex items-center mb-6">
-                    <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center mr-4 group-hover:scale-110 transition-transform">
-                      <feature.icon className="h-6 w-6 text-white" />
-                    </div>
-                    <h3 className="text-xl font-bold text-slate-800">{feature.title}</h3>
+            {/* Basic Plan Features */}
+            <div className="space-y-8">
+              <div className="text-center">
+                <h2 className="text-3xl font-bold text-slate-900 mb-4">What's Included in Each Plan</h2>
+                <p className="text-xl text-slate-600">Compare features across all pricing tiers</p>
+              </div>
+
+              <div className="bg-green-50 rounded-2xl p-8 border border-green-200">
+                <h3 className="text-2xl font-bold text-green-800 mb-6 flex items-center">
+                  <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center mr-3">
+                    <Check className="h-5 w-5 text-white" />
                   </div>
-                  <p className="text-slate-600 mb-6">{feature.description}</p>
+                  Basic Plan Features (£399/year)
+                </h3>
+                <div className="grid md:grid-cols-3 gap-6">
+                  {basicFeatures.map((feature, index) => (
+                    <div key={index} className="bg-white rounded-xl p-6 shadow-sm border border-green-100">
+                      <div className="flex items-center mb-4">
+                        <div className="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center mr-3">
+                          <feature.icon className="h-5 w-5 text-white" />
+                        </div>
+                        <h4 className="font-bold text-slate-800">{feature.title}</h4>
+                      </div>
+                      <p className="text-slate-600 text-sm">{feature.description}</p>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </div>
+
+              {/* Standard Plan Features */}
+              <div className="bg-purple-50 rounded-2xl p-8 border border-purple-200">
+                <h3 className="text-2xl font-bold text-purple-800 mb-6 flex items-center">
+                  <div className="w-8 h-8 bg-purple-500 rounded-lg flex items-center justify-center mr-3">
+                    <Crown className="h-5 w-5 text-white" />
+                  </div>
+                  Standard Plan Features (£799/year) - Most Popular
+                </h3>
+                <div className="grid md:grid-cols-3 gap-6">
+                  {standardFeatures.map((feature, index) => (
+                    <div key={index} className="bg-white rounded-xl p-6 shadow-sm border border-purple-100">
+                      <div className="flex items-center mb-4">
+                        <div className="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center mr-3">
+                          <feature.icon className="h-5 w-5 text-white" />
+                        </div>
+                        <h4 className="font-bold text-slate-800">{feature.title}</h4>
+                      </div>
+                      <p className="text-slate-600 text-sm">{feature.description}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Large School Features */}
+              <div className="bg-indigo-50 rounded-2xl p-8 border border-indigo-200">
+                <h3 className="text-2xl font-bold text-indigo-800 mb-6 flex items-center">
+                  <div className="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center mr-3">
+                    <Star className="h-5 w-5 text-white" />
+                  </div>
+                  Large School Plan Features (£1,199/year)
+                </h3>
+                <div className="grid md:grid-cols-3 gap-6">
+                  {largeSchoolFeatures.map((feature, index) => (
+                    <div key={index} className="bg-white rounded-xl p-6 shadow-sm border border-indigo-100">
+                      <div className="flex items-center mb-4">
+                        <div className="w-10 h-10 bg-indigo-500 rounded-lg flex items-center justify-center mr-3">
+                          <feature.icon className="h-5 w-5 text-white" />
+                        </div>
+                        <h4 className="font-bold text-slate-800">{feature.title}</h4>
+                      </div>
+                      <p className="text-slate-600 text-sm">{feature.description}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -557,7 +667,7 @@ export default function UpgradePage() {
           <div className="space-y-8">
             <div className="text-center">
               <h2 className="text-3xl font-bold text-slate-900 mb-4">Complete Games Collection</h2>
-              <p className="text-xl text-slate-600">12 engaging games designed for language learning</p>
+              <p className="text-xl text-slate-600">{allGames.length} engaging games designed for language learning - available in all plans</p>
             </div>
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -567,21 +677,19 @@ export default function UpgradePage() {
                     <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
                       {game.icon}
                     </div>
-                    <div className="flex flex-col gap-1">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getCategoryColor(game.category)}`}>
-                        {game.category}
-                      </span>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getDifficultyColor(game.difficulty)}`}>
-                        {game.difficulty}
-                      </span>
-                    </div>
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${getCategoryColor(game.category)}`}>
+                      {game.category}
+                    </span>
                   </div>
                   <h3 className="font-bold text-slate-800 mb-2">{game.title}</h3>
                   <p className="text-slate-600 text-sm mb-4">{game.description}</p>
-                  <button className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white py-2 px-4 rounded-lg font-semibold hover:from-purple-600 hover:to-pink-600 transition-all flex items-center justify-center">
+                  <Link
+                    href="/games"
+                    className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white py-2 px-4 rounded-lg font-semibold hover:from-purple-600 hover:to-pink-600 transition-all flex items-center justify-center"
+                  >
                     <Play className="w-4 h-4 mr-2" />
-                    Coming Soon
-                  </button>
+                    Try Demo
+                  </Link>
                 </div>
               ))}
             </div>
@@ -609,6 +717,22 @@ export default function UpgradePage() {
                     </span>
                   </div>
                 )}
+
+                {plan.bestValue && (
+                  <div className="text-center mb-4">
+                    <span className="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-4 py-1 rounded-full text-sm font-semibold">
+                      Best Value
+                    </span>
+                  </div>
+                )}
+
+                {plan.enterprise && (
+                  <div className="text-center mb-4">
+                    <span className="bg-gradient-to-r from-indigo-600 to-blue-600 text-white px-4 py-1 rounded-full text-sm font-semibold">
+                      Enterprise
+                    </span>
+                  </div>
+                )}
                 
                 <div className="text-center mb-8">
                   <h3 className="text-2xl font-bold text-slate-900 mb-2">{plan.name}</h3>
@@ -628,16 +752,18 @@ export default function UpgradePage() {
                   ))}
                 </ul>
 
-                <button 
-                  disabled={plan.comingSoon}
-                  className={`w-full py-3 px-6 rounded-lg font-semibold transition-all ${
+                <Link
+                  href={`/schools/contact?plan=${plan.name.toLowerCase().replace(' plan', '')}`}
+                  className={`w-full py-3 px-6 rounded-lg font-semibold transition-all text-center block ${
                     plan.highlighted
-                      ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed'
+                      ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700'
+                      : plan.enterprise
+                      ? 'bg-gradient-to-r from-indigo-600 to-blue-600 text-white hover:from-indigo-700 hover:to-blue-700'
+                      : 'bg-slate-800 text-white hover:bg-slate-900'
                   }`}
                 >
-                  {plan.comingSoon ? 'Coming Soon' : 'Get Started'}
-                </button>
+                  {plan.enterprise ? 'Contact Sales' : 'Get Started'}
+                </Link>
               </div>
             ))}
           </div>
@@ -646,26 +772,30 @@ export default function UpgradePage() {
         {/* Call to Action */}
         <div className="text-center mt-16">
           <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl p-12 text-white">
-            <h2 className="text-3xl font-bold mb-4">Ready to Transform Your Teaching?</h2>
+            <h2 className="text-3xl font-bold mb-4">Ready to Transform Your Language Teaching?</h2>
             <p className="text-xl text-purple-100 mb-8 max-w-2xl mx-auto">
-              Join the waitlist to be first in line when LanguageGems launches. Plus, get early access to our development updates!
+              Choose the perfect plan for your school and unlock the full potential of LanguageGems.
+              Start with our demo or contact us for a personalized consultation.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
-                href="/auth/signup"
+                href="/games"
                 className="px-8 py-4 bg-white text-purple-600 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
               >
-                <Sparkles className="h-5 w-5 mr-2 inline" />
-                Join Waitlist
+                <Play className="h-5 w-5 mr-2 inline" />
+                Try Demo Games
               </Link>
               <Link
-                href="/coming-soon/games"
+                href="/schools/contact"
                 className="px-8 py-4 bg-purple-700 text-white rounded-lg font-semibold hover:bg-purple-800 transition-colors border-2 border-white/20"
               >
-                <Eye className="h-5 w-5 mr-2 inline" />
-                View More Previews
+                <Mail className="h-5 w-5 mr-2 inline" />
+                Contact Sales
               </Link>
             </div>
+            <p className="text-purple-200 text-sm mt-6">
+              Questions? Email us at <a href="mailto:hello@languagegems.com" className="underline hover:text-white">hello@languagegems.com</a>
+            </p>
           </div>
         </div>
       </div>

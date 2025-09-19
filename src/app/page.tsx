@@ -24,6 +24,7 @@ import {
 import Footer from '../components/layout/Footer';
 import SEOWrapper from '../components/seo/SEOWrapper';
 import { useAuth } from '../components/auth/AuthProvider';
+import SmartSignupSelector from '../components/auth/SmartSignupSelector';
 
 // Universal hero text variations
 const heroTextVariations = [
@@ -75,6 +76,7 @@ function useTypewriter(texts: any[], speed = 100) {
 export default function Home() {
   const { text: animatedText, color: textColor } = useTypewriter(heroTextVariations);
   const { user } = useAuth();
+  const [showSignupModal, setShowSignupModal] = useState(false);
 
   // Auto-redirect logged-in users to their appropriate dashboard
   useEffect(() => {
@@ -207,10 +209,13 @@ export default function Home() {
                     <ArrowRight className="ml-2 w-5 h-5" />
                   </Link>
 
-                  <Link href="/auth/signup" className="inline-flex items-center justify-center bg-white text-slate-700 font-semibold rounded-xl px-8 py-4 text-lg shadow-lg hover:shadow-xl transform transition-all hover:scale-105 border border-slate-200">
+                  <button 
+                    onClick={() => setShowSignupModal(true)}
+                    className="inline-flex items-center justify-center bg-white text-slate-700 font-semibold rounded-xl px-8 py-4 text-lg shadow-lg hover:shadow-xl transform transition-all hover:scale-105 border border-slate-200"
+                  >
                     Get Started Free
                     <ArrowRight className="ml-2 w-5 h-5" />
-                  </Link>
+                  </button>
                 </motion.div>
 
                 {/* Trust Indicators */}
@@ -303,6 +308,12 @@ export default function Home() {
 
         <Footer />
       </div>
+
+      {/* Signup Modal */}
+      <SmartSignupSelector 
+        isOpen={showSignupModal} 
+        onClose={() => setShowSignupModal(false)} 
+      />
     </SEOWrapper>
   );
 }

@@ -2,6 +2,12 @@
 
 import { CentralizedVocabularyService, VocabularyQuery, CentralizedVocabularyWord } from './centralizedVocabularyService';
 import { SupabaseClient } from '@supabase/supabase-js';
+import {
+  getDemoVocabulary,
+  getDemoAvailableLanguages,
+  getDemoAvailableSubcategories,
+  getDemoStats
+} from '@/data/demoVocabulary';
 
 // Define which categories are available in demo mode
 // Selected "Basics & Core Language" as it's universally appealing and foundational
@@ -25,8 +31,7 @@ const DEMO_AVAILABLE_SUBCATEGORIES: Record<string, string[]> = {
 };
 
 // Languages available in demo mode - ES, FR, DE all have excellent vocabulary coverage
-// Total demo vocabulary: ES=77 words, FR=67 words, DE=59 words
-const DEMO_AVAILABLE_LANGUAGES = ['es', 'fr', 'de'];
+const DEMO_AVAILABLE_LANGUAGES = getDemoAvailableLanguages();
 
 export class DemoVocabularyService extends CentralizedVocabularyService {
   private isDemo: boolean;
@@ -40,6 +45,7 @@ export class DemoVocabularyService extends CentralizedVocabularyService {
 
   /**
    * Override the getVocabulary method to apply demo restrictions
+   * For demo users, return local vocabulary data instead of database calls
    */
   async getVocabulary(query: VocabularyQuery = {}): Promise<CentralizedVocabularyWord[]> {
     // Admin users get unrestricted access
@@ -52,58 +58,55 @@ export class DemoVocabularyService extends CentralizedVocabularyService {
       return super.getVocabulary(query);
     }
 
-    // Apply demo restrictions
-    const restrictedQuery = this.applyDemoRestrictions(query);
-    
-    // If the query is completely restricted, return empty array
-    if (!restrictedQuery) {
-      return [];
-    }
-
-    return super.getVocabulary(restrictedQuery);
+    // For demo users, use local vocabulary data
+    return this.getDemoVocabularyLocal(query);
   }
 
   /**
-   * Apply demo restrictions to a vocabulary query
+   * Get vocabulary from local demo data (no database calls)
    */
-  private applyDemoRestrictions(query: VocabularyQuery): VocabularyQuery | null {
-    const restrictedQuery = { ...query };
+  private getDemoVocabularyLocal(query: VocabularyQuery = {}): CentralizedVocabularyWord[] {
+    const language = query.language || 'es';
+    const subcategory = query.subcategory;
 
-    // Restrict language
-    if (query.language && !DEMO_AVAILABLE_LANGUAGES.includes(query.language)) {
-      return null; // Language not available in demo
-    }
-    
-    // If no language specified, default to Spanish for demo
-    if (!restrictedQuery.language) {
-      restrictedQuery.language = 'es';
+    // Check if language is available in demo
+    if (!DEMO_AVAILABLE_LANGUAGES.includes(language)) {
+      return [];
     }
 
-    // Restrict category
-    if (query.category) {
-      if (!DEMO_AVAILABLE_CATEGORIES.includes(query.category)) {
-        return null; // Category not available in demo
-      }
-    } else {
-      // If no category specified, restrict to demo categories
-      restrictedQuery.category = DEMO_AVAILABLE_CATEGORIES[0];
-    }
+    // Get demo vocabulary for the language
+    const demoWords = getDemoVocabulary(language, subcategory);
 
-    // Restrict subcategory
-    if (query.subcategory && query.category) {
-      const availableSubcategories = DEMO_AVAILABLE_SUBCATEGORIES[query.category];
-      if (!availableSubcategories || !availableSubcategories.includes(query.subcategory)) {
-        return null; // Subcategory not available in demo
-      }
-    }
+    // Convert to CentralizedVocabularyWord format
+    const convertedWords: CentralizedVocabularyWord[] = demoWords.map(demoWord => ({
+      id: demoWord.id,
+      word: demoWord.term, // CentralizedVocabularyWord uses 'word' not 'term'
+      translation: demoWord.translation,
+      language: demoWord.language,
+      category: demoWord.category,
+      subcategory: demoWord.subcategory,
+      difficulty_level: demoWord.difficulty,
+      // Optional fields
+      audio_url: undefined,
+      part_of_speech: undefined,
+      example_sentence: undefined,
+      example_translation: undefined,
+      curriculum_level: undefined,
+      tier: undefined,
+      exam_board_code: undefined,
+      theme_name: undefined,
+      unit_name: undefined,
+      metadata: undefined,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }));
 
-    // Limit the number of words in demo mode to provide a good sample
-    // while encouraging users to sign up for full access
-    const demoLimit = Math.min(query.limit || 25, 25); // Max 25 words in demo
-    restrictedQuery.limit = demoLimit;
-
-    return restrictedQuery;
+    // Apply limit if specified
+    const limit = query.limit || 25;
+    return convertedWords.slice(0, limit);
   }
+
+
 
   /**
    * Get available categories for demo mode
@@ -119,12 +122,12 @@ export class DemoVocabularyService extends CentralizedVocabularyService {
   /**
    * Get available subcategories for a category in demo mode
    */
-  getDemoAvailableSubcategories(categoryId: string): string[] {
+  getDemoAvailableSubcategories(_categoryId: string): string[] {
     if (this.isAdmin || !this.isDemo) {
       // Return all subcategories for non-demo users
       return [];
     }
-    return DEMO_AVAILABLE_SUBCATEGORIES[categoryId] || [];
+    return getDemoAvailableSubcategories('es'); // Use helper function
   }
 
   /**
@@ -178,10 +181,11 @@ export class DemoVocabularyService extends CentralizedVocabularyService {
     totalLanguages: number;
     maxWordsPerSession: number;
   } {
+    const stats = getDemoStats();
     return {
-      availableCategories: DEMO_AVAILABLE_CATEGORIES.length,
+      availableCategories: stats.categories,
       totalCategories: 14, // Approximate total categories
-      availableLanguages: DEMO_AVAILABLE_LANGUAGES.length,
+      availableLanguages: stats.languages,
       totalLanguages: 4, // ES, FR, DE, IT
       maxWordsPerSession: 25
     };

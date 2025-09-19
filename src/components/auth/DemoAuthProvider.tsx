@@ -76,6 +76,9 @@ export function DemoAuthProvider({ children, realUser, isLoading }: DemoAuthProv
     return null;
   })();
 
+  // Enhanced demo detection:
+  // 1. True demo users (no auth on demo routes)
+  // 2. Users without valid subscriptions (treated as demo for access control)
   const isDemo = effectiveUser?.isDemoUser === true;
   const isAdmin = realUser?.email === 'danieletienne89@gmail.com';
 

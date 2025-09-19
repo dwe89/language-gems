@@ -36,56 +36,85 @@ export class ExerciseDataService {
    * Generates cloze exercise data with sentence context from the database
    */
   private async generateClozeExercise(currentWord: VocabularyWord): Promise<ExerciseData> {
-    const targetWord = currentWord.spanish || currentWord.word || '';
-    
+    const targetWord = currentWord.word || currentWord.spanish || '';
+
     if (!targetWord) {
       return this.generateFallbackClozeExercise(currentWord);
     }
 
-    try {
-      // Query for sentences containing the target word
-      const { data: sentences, error: queryError } = await this.supabase
-        .from('sentences')
-        .select('*')
-        .eq('source_language', 'spanish') // TODO: Make this dynamic based on word language
-        .ilike('source_sentence', `%${targetWord}%`)
-        .eq('is_active', true)
-        .limit(5);
+    // First, try to use the example sentence from the current word
+    if (currentWord.example_sentence && currentWord.example_translation) {
+      const exampleSentence = currentWord.example_sentence;
+      const exampleTranslation = currentWord.example_translation;
 
-      if (queryError || !sentences || sentences.length === 0) {
-        console.warn('No sentences found for word:', targetWord);
-        return this.generateFallbackClozeExercise(currentWord);
-      }
-
-      // Select a random sentence from the results
-      const selectedSentence = sentences[Math.floor(Math.random() * sentences.length)];
-      
-      // Create blanked version
+      // Create blanked version by replacing the target word
       const regex = new RegExp(`\\b${targetWord}\\b`, 'gi');
-      const match = regex.exec(selectedSentence.source_sentence);
-      
+      const match = regex.exec(exampleSentence);
+
       if (match) {
-        const blankedSentence = selectedSentence.source_sentence.replace(regex, '_____');
-        
+        const blankedSentence = exampleSentence.replace(regex, '_____');
+
         return {
           type: 'cloze',
           correctAnswer: match[0], // Use the actual word from the sentence
           cloze: {
-            sourceSentence: selectedSentence.source_sentence,
+            sourceSentence: exampleSentence,
             blankedSentence: blankedSentence,
-            englishTranslation: selectedSentence.english_translation,
-            sourceLanguage: selectedSentence.source_language,
+            englishTranslation: exampleTranslation,
+            sourceLanguage: 'spanish',
             targetWord: match[0],
-            wordPosition: match.index,
-            sentenceId: selectedSentence.id
+            wordPosition: match.index || 0,
+            sentenceId: currentWord.id || 'current-word'
+          }
+        };
+      }
+    }
+
+    try {
+      // If no example sentence, try to find other words with example sentences containing this word
+      const { data: vocabularyWithSentences, error: queryError } = await this.supabase
+        .from('centralized_vocabulary')
+        .select('id, word, example_sentence, example_translation')
+        .eq('language', 'es')
+        .not('example_sentence', 'is', null)
+        .not('example_translation', 'is', null)
+        .ilike('example_sentence', `%${targetWord}%`)
+        .limit(5);
+
+      if (queryError || !vocabularyWithSentences || vocabularyWithSentences.length === 0) {
+        console.warn('No example sentences found for word:', targetWord);
+        return this.generateFallbackClozeExercise(currentWord);
+      }
+
+      // Select a random sentence from the results
+      const selectedEntry = vocabularyWithSentences[Math.floor(Math.random() * vocabularyWithSentences.length)];
+
+      // Create blanked version
+      const regex = new RegExp(`\\b${targetWord}\\b`, 'gi');
+      const match = regex.exec(selectedEntry.example_sentence);
+
+      if (match) {
+        const blankedSentence = selectedEntry.example_sentence.replace(regex, '_____');
+
+        return {
+          type: 'cloze',
+          correctAnswer: match[0], // Use the actual word from the sentence
+          cloze: {
+            sourceSentence: selectedEntry.example_sentence,
+            blankedSentence: blankedSentence,
+            englishTranslation: selectedEntry.example_translation,
+            sourceLanguage: 'spanish',
+            targetWord: match[0],
+            wordPosition: match.index || 0,
+            sentenceId: selectedEntry.id
           }
         };
       } else {
         return this.generateFallbackClozeExercise(currentWord);
       }
-      
+
     } catch (err) {
-      console.error('Error fetching sentences for cloze:', err);
+      console.error('Error fetching example sentences for cloze:', err);
       return this.generateFallbackClozeExercise(currentWord);
     }
   }
@@ -94,22 +123,47 @@ export class ExerciseDataService {
    * Generates a fallback cloze exercise when no suitable sentences are found
    */
   private generateFallbackClozeExercise(currentWord: VocabularyWord): ExerciseData {
-    const targetWord = currentWord.spanish || currentWord.word || '';
-    const translation = currentWord.english || currentWord.translation || '';
-    
-    const simpleSentence = `Esta palabra es ${targetWord} en español.`;
-    const blankedSentence = simpleSentence.replace(targetWord, '_____');
-    
+    const targetWord = currentWord.word || currentWord.spanish || '';
+    const translation = currentWord.translation || currentWord.english || '';
+
+    // Create more engaging fallback sentences based on word type
+    const fallbackSentences = [
+      {
+        spanish: `Me gusta mucho ${targetWord}.`,
+        english: `I really like ${translation}.`
+      },
+      {
+        spanish: `¿Dónde está ${targetWord}?`,
+        english: `Where is ${translation}?`
+      },
+      {
+        spanish: `Necesito ${targetWord} para la clase.`,
+        english: `I need ${translation} for class.`
+      },
+      {
+        spanish: `${targetWord} es muy importante.`,
+        english: `${translation} is very important.`
+      },
+      {
+        spanish: `Voy a comprar ${targetWord}.`,
+        english: `I'm going to buy ${translation}.`
+      }
+    ];
+
+    // Select a random fallback sentence
+    const selectedSentence = fallbackSentences[Math.floor(Math.random() * fallbackSentences.length)];
+    const blankedSentence = selectedSentence.spanish.replace(targetWord, '_____');
+
     return {
       type: 'cloze',
       correctAnswer: targetWord,
       cloze: {
-        sourceSentence: simpleSentence,
+        sourceSentence: selectedSentence.spanish,
         blankedSentence: blankedSentence,
-        englishTranslation: `This word is ${translation} in Spanish.`,
+        englishTranslation: selectedSentence.english,
         sourceLanguage: 'spanish',
         targetWord: targetWord,
-        wordPosition: simpleSentence.indexOf(targetWord),
+        wordPosition: selectedSentence.spanish.indexOf(targetWord),
         sentenceId: 'fallback'
       }
     };

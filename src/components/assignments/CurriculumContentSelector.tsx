@@ -9,6 +9,7 @@ import {
 import Link from 'next/link';
 import { useAuth } from '../auth/AuthProvider';
 import { supabaseBrowser } from '../auth/AuthProvider';
+import { useUserAccess } from '@/hooks/useUserAccess';
 import DatabaseCategorySelector from './DatabaseCategorySelector';
 import KS4ThemeUnitSelector from './KS4ThemeUnitSelector';
 
@@ -55,6 +56,7 @@ export default function CurriculumContentSelector({
     hasOnConfigChange: !!onConfigChange,
     initialConfig
   });
+  const { canAccessFeature } = useUserAccess();
   const [selectedType, setSelectedType] = useState<'KS3' | 'KS4' | 'custom' | 'my-vocabulary'>(curriculumLevel);
   const [config, setConfig] = useState<ContentConfig>(
     initialConfig || {
@@ -155,62 +157,66 @@ export default function CurriculumContentSelector({
             <div className="text-xs opacity-80">Years 10-11</div>
           </button>
 
-          <button
-            type="button"
-            onClick={() => {
-              setSelectedType('custom');
-              const newConfig: ContentConfig = {
-                type: 'custom',
-                language,
-                customCategories: [],
-                customSubcategories: []
-              };
-              setConfig(newConfig);
-              onConfigChange(newConfig);
-            }}
-            className={`p-4 rounded-xl text-center transition-all duration-200 ${
-              selectedType === 'custom'
-                ? 'bg-orange-500 text-white shadow-lg transform scale-105'
-                : 'bg-white text-gray-700 hover:bg-orange-50 border border-gray-200'
-            }`}
-          >
-            <Sparkles className="h-6 w-6 mx-auto mb-2" />
-            <div className="font-semibold">Custom</div>
-            <div className="text-xs opacity-80">Enter your own</div>
-          </button>
+          {canAccessFeature('customVocabularyLists') && (
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedType('custom');
+                const newConfig: ContentConfig = {
+                  type: 'custom',
+                  language,
+                  customCategories: [],
+                  customSubcategories: []
+                };
+                setConfig(newConfig);
+                onConfigChange(newConfig);
+              }}
+              className={`p-4 rounded-xl text-center transition-all duration-200 ${
+                selectedType === 'custom'
+                  ? 'bg-orange-500 text-white shadow-lg transform scale-105'
+                  : 'bg-white text-gray-700 hover:bg-orange-50 border border-gray-200'
+              }`}
+            >
+              <Sparkles className="h-6 w-6 mx-auto mb-2" />
+              <div className="font-semibold">Custom</div>
+              <div className="text-xs opacity-80">Enter your own</div>
+            </button>
+          )}
 
-          <button
-            type="button"
-            onClick={() => {
-              console.log('🎯 [CURRICULUM SELECTOR] My Lists clicked - BEFORE state change');
-              console.log('🎯 [CURRICULUM SELECTOR] Current selectedType:', selectedType);
-              console.log('🎯 [CURRICULUM SELECTOR] Current config:', config);
+          {canAccessFeature('customVocabularyLists') && (
+            <button
+              type="button"
+              onClick={() => {
+                console.log('🎯 [CURRICULUM SELECTOR] My Lists clicked - BEFORE state change');
+                console.log('🎯 [CURRICULUM SELECTOR] Current selectedType:', selectedType);
+                console.log('🎯 [CURRICULUM SELECTOR] Current config:', config);
 
-              setSelectedType('my-vocabulary');
-              const newConfig: ContentConfig = {
-                type: 'my-vocabulary',
-                language,
-                customListId: ''
-              };
-              console.log('🎯 [CURRICULUM SELECTOR] NEW config being set:', newConfig);
-              setConfig(newConfig);
+                setSelectedType('my-vocabulary');
+                const newConfig: ContentConfig = {
+                  type: 'my-vocabulary',
+                  language,
+                  customListId: ''
+                };
+                console.log('🎯 [CURRICULUM SELECTOR] NEW config being set:', newConfig);
+                setConfig(newConfig);
 
-              console.log('🎯 [CURRICULUM SELECTOR] About to call onConfigChange with:', newConfig);
-              console.log('🎯 [CURRICULUM SELECTOR] onConfigChange function:', onConfigChange);
-              console.log('🎯 [CURRICULUM SELECTOR] onConfigChange type:', typeof onConfigChange);
-              onConfigChange(newConfig);
-              console.log('🎯 [CURRICULUM SELECTOR] onConfigChange called successfully');
-            }}
-            className={`p-4 rounded-xl text-center transition-all duration-200 ${
-              selectedType === 'my-vocabulary'
-                ? 'bg-green-500 text-white shadow-lg transform scale-105'
-                : 'bg-white text-gray-700 hover:bg-green-50 border border-gray-200'
-            }`}
-          >
-            <BookOpen className="h-6 w-6 mx-auto mb-2" />
-            <div className="font-semibold">My Lists</div>
-            <div className="text-xs opacity-80">Your vocabulary</div>
-          </button>
+                console.log('🎯 [CURRICULUM SELECTOR] About to call onConfigChange with:', newConfig);
+                console.log('🎯 [CURRICULUM SELECTOR] onConfigChange function:', onConfigChange);
+                console.log('🎯 [CURRICULUM SELECTOR] onConfigChange type:', typeof onConfigChange);
+                onConfigChange(newConfig);
+                console.log('🎯 [CURRICULUM SELECTOR] onConfigChange called successfully');
+              }}
+              className={`p-4 rounded-xl text-center transition-all duration-200 ${
+                selectedType === 'my-vocabulary'
+                  ? 'bg-green-500 text-white shadow-lg transform scale-105'
+                  : 'bg-white text-gray-700 hover:bg-green-50 border border-gray-200'
+              }`}
+            >
+              <BookOpen className="h-6 w-6 mx-auto mb-2" />
+              <div className="font-semibold">My Lists</div>
+              <div className="text-xs opacity-80">Your vocabulary</div>
+            </button>
+          )}
         </div>
       </div>
 

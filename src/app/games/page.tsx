@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -12,6 +12,7 @@ import { useDemoAuth } from '../../components/auth/DemoAuthProvider';
 import Footer from '../../components/layout/Footer';
 import DemoBanner from '../../components/demo/DemoBanner';
 import FeaturedVocabMasterCard from '../../components/games/FeaturedVocabMasterCard';
+import SmartSignupSelector from '../../components/auth/SmartSignupSelector';
 
 
 // Login Required Component
@@ -179,6 +180,8 @@ export default function GamesPage() {
   const [games, setGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('all'); // Renamed from 'filter' for clarity
+  const [showSignupSelector, setShowSignupSelector] = useState(false);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
 
   // Define your main categories
@@ -417,6 +420,7 @@ export default function GamesPage() {
                 message="Demo Mode: Try our games with basic vocabulary. Sign up to unlock all categories, languages, and features!"
                 showStats={true}
                 variant="compact"
+                onSignupClick={() => setShowSignupSelector(true)}
               />
             </div>
           )}
@@ -544,6 +548,11 @@ export default function GamesPage() {
       </div>
 
       <Footer />
+      <SmartSignupSelector
+        isOpen={showSignupSelector}
+        onClose={() => setShowSignupSelector(false)}
+        triggerRef={buttonRef}
+      />
     </div>
     </>
   );

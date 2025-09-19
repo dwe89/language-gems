@@ -40,6 +40,7 @@ import {
   Shuffle
 } from 'lucide-react';
 import { useDemoAuth } from '../auth/DemoAuthProvider';
+import { useUserAccess } from '@/hooks/useUserAccess';
 import { supabaseBrowser } from '../auth/AuthProvider';
 import { VOCABULARY_CATEGORIES as KS3_CATEGORIES } from './ModernCategorySelector';
 import { KS4_VOCABULARY_CATEGORIES as KS4_CATEGORIES } from './KS4CategorySystem';
@@ -202,6 +203,12 @@ export default function UnifiedCategorySelector({
   gameCompatibility
 }: UnifiedCategorySelectorProps) {
   const { isDemo } = useDemoAuth();
+  const { userType, canAccessFeature } = useUserAccess();
+
+
+
+  // Fallback function to prevent crashes during hydration
+  const safeCanAccessFeature = canAccessFeature || (() => false);
   const [step, setStep] = useState<'language' | 'curriculum' | 'category' | 'subcategory' | 'custom'>('language');
   const [selectedLanguage, setSelectedLanguage] = useState<string>('');
   const [selectedCurriculumLevel, setSelectedCurriculumLevel] = useState<'KS2' | 'KS3' | 'KS4' | 'KS5'>('KS3');
@@ -244,6 +251,23 @@ export default function UnifiedCategorySelector({
   const isDemoRestricted = (categoryId: string) => {
     if (!isDemo) return false;
     return categoryId !== 'basics_core_language';
+  };
+
+  // Demo subcategory restrictions - only allow specific subcategories for demo users
+  const DEMO_AVAILABLE_SUBCATEGORIES: Record<string, string[]> = {
+    'basics_core_language': [
+      'greetings_introductions',
+      'common_phrases',
+      'numbers_1_30',
+      'colours'
+    ]
+  };
+
+  const isSubcategoryAvailable = (categoryId: string, subcategoryId: string): boolean => {
+    if (!isDemo) return true; // Non-demo users have access to all subcategories
+
+    const availableSubcategories = DEMO_AVAILABLE_SUBCATEGORIES[categoryId];
+    return availableSubcategories?.includes(subcategoryId) || false;
   };
 
   const handleLanguageSelect = (languageCode: string) => {
@@ -430,6 +454,7 @@ export default function UnifiedCategorySelector({
                 levels={CURRICULUM_LEVELS}
                 onSelect={handleCurriculumSelect}
                 onCustomMode={showCustomMode ? handleCustomMode : undefined}
+                canAccessCustom={safeCanAccessFeature('customVocabularyLists')}
                 selectedLanguage={selectedLanguage}
               />
             )}
@@ -439,6 +464,7 @@ export default function UnifiedCategorySelector({
                 categories={currentCategories}
                 onSelect={handleCategorySelect}
                 onCustomMode={showCustomMode ? handleCustomMode : undefined}
+                canAccessCustom={safeCanAccessFeature('customVocabularyLists')}
                 isDemoRestricted={isDemoRestricted}
               />
             )}
@@ -447,6 +473,7 @@ export default function UnifiedCategorySelector({
               <SubcategorySelection
                 category={currentCategory}
                 onSelect={handleSubcategorySelect}
+                isSubcategoryAvailable={isSubcategoryAvailable}
               />
             )}
 
@@ -518,8 +545,9 @@ const CurriculumSelection: React.FC<{
   levels: typeof CURRICULUM_LEVELS;
   onSelect: (level: 'KS2' | 'KS3' | 'KS4' | 'KS5') => void;
   onCustomMode?: () => void;
+  canAccessCustom?: boolean;
   selectedLanguage: string;
-}> = ({ levels, onSelect, onCustomMode, selectedLanguage }) => {
+}> = ({ levels, onSelect, onCustomMode, canAccessCustom = true, selectedLanguage }) => {
   const language = AVAILABLE_LANGUAGES.find(l => l.code === selectedLanguage);
 
   return (
@@ -541,10 +569,12 @@ const CurriculumSelection: React.FC<{
         {/* Custom Content Option - First */}
         {onCustomMode && (
           <motion.button
-            onClick={onCustomMode}
-            whileHover={{ scale: 1.02, y: -4 }}
-            whileTap={{ scale: 0.98 }}
-            className="bg-gradient-to-br from-yellow-500 to-orange-500 rounded-2xl p-6 text-white shadow-lg transition-all duration-300 group relative overflow-hidden hover:shadow-xl cursor-pointer"
+            onClick={() => canAccessCustom && onCustomMode()}
+            whileHover={canAccessCustom ? { scale: 1.02, y: -4 } : {}}
+            whileTap={canAccessCustom ? { scale: 0.98 } : {}}
+            className={`bg-gradient-to-br from-yellow-500 to-orange-500 rounded-2xl p-6 text-white shadow-lg transition-all duration-300 group relative overflow-hidden ${
+              canAccessCustom ? 'hover:shadow-xl cursor-pointer' : 'cursor-not-allowed'
+            }`}
           >
             <div className="relative z-10">
               <Pencil className="h-8 w-8" />
@@ -556,6 +586,19 @@ const CurriculumSelection: React.FC<{
               <span className="text-sm font-medium">Create Content</span>
               <ArrowRight className="h-4 w-4 ml-2" />
             </div>
+            <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+            {/* Padlock overlay - matching category style */}
+            {!canAccessCustom && (
+              <div className="absolute inset-0 bg-black/20 backdrop-blur-[1px] rounded-2xl flex flex-col items-center justify-center">
+                <div className="bg-white/90 backdrop-blur-sm rounded-full p-3 mb-2 shadow-lg">
+                  <Lock className="w-6 h-6 text-gray-700" />
+                </div>
+                <span className="text-white font-medium text-sm bg-black/50 px-3 py-1 rounded-full">
+                  Sign up to unlock
+                </span>
+              </div>
+            )}
           </motion.button>
         )}
 
@@ -605,10 +648,11 @@ interface CategorySelectionProps {
   categories: Category[]; // Using the updated Category interface defined above
   onSelect: (categoryId: string) => void;
   onCustomMode?: () => void;
+  canAccessCustom?: boolean;
   isDemoRestricted: (categoryId: string) => boolean;
 }
 
-const CategorySelection: React.FC<CategorySelectionProps> = ({ categories, onSelect, onCustomMode, isDemoRestricted }) => (
+const CategorySelection: React.FC<CategorySelectionProps> = ({ categories, onSelect, onCustomMode, canAccessCustom = true, isDemoRestricted }) => (
   <motion.div
     key="category"
     initial={{ opacity: 0, y: 20 }}
@@ -668,11 +712,13 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({ categories, onSel
             </motion.button>
 
             {isRestricted && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-2xl">
-                <div className="text-center">
-                  <Lock className="h-8 w-8 text-white mx-auto mb-2" />
-                  <p className="text-white text-sm font-medium">Sign up to unlock</p>
+              <div className="absolute inset-0 bg-black/20 backdrop-blur-[1px] rounded-2xl flex flex-col items-center justify-center">
+                <div className="bg-white/90 backdrop-blur-sm rounded-full p-3 mb-2 shadow-lg">
+                  <Lock className="w-6 h-6 text-gray-700" />
                 </div>
+                <span className="text-white font-medium text-sm bg-black/50 px-3 py-1 rounded-full">
+                  Sign up to unlock
+                </span>
               </div>
             )}
           </motion.div>
@@ -682,10 +728,12 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({ categories, onSel
       {/* Custom Mode Option */}
       {onCustomMode && (
         <motion.button
-          onClick={onCustomMode}
-          whileHover={{ scale: 1.02, y: -4 }}
-          whileTap={{ scale: 0.98 }}
-          className="bg-gradient-to-br from-purple-600 to-indigo-700 rounded-2xl p-6 text-white shadow-lg hover:shadow-xl transition-all duration-300 group relative overflow-hidden border-2 border-purple-400/50"
+          onClick={() => canAccessCustom && onCustomMode()}
+          whileHover={canAccessCustom ? { scale: 1.02, y: -4 } : {}}
+          whileTap={canAccessCustom ? { scale: 0.98 } : {}}
+          className={`bg-gradient-to-br from-purple-600 to-indigo-700 rounded-2xl p-6 text-white shadow-lg transition-all duration-300 group relative overflow-hidden border-2 border-purple-400/50 ${
+            canAccessCustom ? 'hover:shadow-xl cursor-pointer' : 'cursor-not-allowed'
+          }`}
         >
           <div className="relative z-10">
             <Pencil className="h-8 w-8 mb-3 mx-auto" />
@@ -702,6 +750,18 @@ const CategorySelection: React.FC<CategorySelectionProps> = ({ categories, onSel
           <div className="absolute top-2 right-2">
             <Sparkles className="h-5 w-5 text-purple-200 animate-pulse" />
           </div>
+
+          {/* Padlock overlay - matching category style */}
+          {!canAccessCustom && (
+            <div className="absolute inset-0 bg-black/20 backdrop-blur-[1px] rounded-2xl flex flex-col items-center justify-center">
+              <div className="bg-white/90 backdrop-blur-sm rounded-full p-3 mb-2 shadow-lg">
+                <Lock className="w-6 h-6 text-gray-700" />
+              </div>
+              <span className="text-white font-medium text-sm bg-black/50 px-3 py-1 rounded-full">
+                Sign up to unlock
+              </span>
+            </div>
+          )}
         </motion.button>
       )}
     </div>
@@ -713,7 +773,8 @@ const SubcategorySelection: React.FC<{
   // Ensure this type matches the actual category being passed
   category: Category; // Using the updated Category interface defined above
   onSelect: (subcategoryId: string) => void;
-}> = ({ category, onSelect }) => {
+  isSubcategoryAvailable: (categoryId: string, subcategoryId: string) => boolean;
+}> = ({ category, onSelect, isSubcategoryAvailable }) => {
   const IconComponent = category.icon; // Get the component reference
 
   return (
@@ -733,19 +794,24 @@ const SubcategorySelection: React.FC<{
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-4xl mx-auto">
-        {category.subcategories.map((subcategory, index) => (
+        {category.subcategories.map((subcategory, index) => {
+          const isRestricted = !isSubcategoryAvailable(category.id, subcategory.id);
+          return (
           <motion.button
             key={subcategory.id}
-            onClick={() => onSelect(subcategory.id)}
+            onClick={() => !isRestricted && onSelect(subcategory.id)}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
-            whileHover={{ scale: 1.02, y: -4 }}
-            whileTap={{ scale: 0.98 }}
-            className={`bg-gradient-to-br ${category.color} rounded-2xl p-6 text-white shadow-lg hover:shadow-xl transition-all duration-300 group relative overflow-hidden`}
+            whileHover={!isRestricted ? { scale: 1.02, y: -4 } : {}}
+            whileTap={!isRestricted ? { scale: 0.98 } : {}}
+            className={`bg-gradient-to-br ${category.color} rounded-2xl p-6 text-white shadow-lg transition-all duration-300 group relative overflow-hidden ${
+              isRestricted
+                ? 'cursor-not-allowed'
+                : 'hover:shadow-xl cursor-pointer'
+            }`}
           >
             <div className="relative z-10">
-              {/* FIX IS HERE: Render the component directly */}
               <IconComponent className="h-8 w-8 text-white mb-4" />
               <h3 className="text-lg font-bold mb-2 text-left">{subcategory.displayName}</h3>
               <div className="flex items-center justify-end mt-4">
@@ -753,8 +819,21 @@ const SubcategorySelection: React.FC<{
               </div>
             </div>
             <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+            {/* Padlock overlay - matching category style */}
+            {isRestricted && (
+              <div className="absolute inset-0 bg-black/20 backdrop-blur-[1px] rounded-2xl flex flex-col items-center justify-center">
+                <div className="bg-white/90 backdrop-blur-sm rounded-full p-3 mb-2 shadow-lg">
+                  <Lock className="w-6 h-6 text-gray-700" />
+                </div>
+                <span className="text-white font-medium text-sm bg-black/50 px-3 py-1 rounded-full">
+                  Sign up to unlock
+                </span>
+              </div>
+            )}
           </motion.button>
-        ))}
+          );
+        })}
       </div>
     </motion.div>
   );
