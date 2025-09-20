@@ -262,6 +262,8 @@ export function getCorrectAnswer(
   switch (gameMode) {
     case 'dictation': return currentWord.spanish || currentWord.word || '';
     case 'listening': return currentWord.english || currentWord.translation || '';
+    case 'word_race': return currentWord.spanish || currentWord.word || '';
+    case 'word_builder': return currentWord.spanish || currentWord.word || '';
     case 'cloze':
       if (sentenceData?.target_word) return sentenceData.target_word;
       return clozeExercise?.correctAnswer || currentWord.spanish || currentWord.word || '';

@@ -68,8 +68,9 @@ export function DemoAuthProvider({ children, realUser, isLoading }: DemoAuthProv
       return realUser;
     }
 
-    // If on demo route and no real user, provide demo user (regardless of loading state)
-    if (isDemoRoute && !realUser) {
+    // Only provide demo user if auth is not loading AND we're on a demo route AND no real user
+    // This prevents the race condition where demo user is returned during auth loading
+    if (isDemoRoute && !realUser && !isLoading) {
       return createDemoUser();
     }
 

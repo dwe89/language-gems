@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Headphones, Volume2, Play, Pause, RotateCcw, Ear } from 'lucide-react';
+import { Headphones, Play, Pause, Ear, ArrowLeft, SkipForward } from 'lucide-react';
 import { ModeComponent } from '../types';
 import { getPlaceholderText } from '../utils/answerValidation';
 
@@ -22,7 +22,9 @@ export const ListeningMode: React.FC<ListeningModeProps> = ({
   playPronunciation,
   canReplayAudio,
   onReplayAudio,
-  audioReplayCount
+  audioReplayCount,
+  onExit,
+  onModeSpecificAction
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const lastPlayedWordRef = useRef<string | null>(null);
@@ -294,30 +296,7 @@ export const ListeningMode: React.FC<ListeningModeProps> = ({
             </AnimatePresence>
           </motion.button>
 
-          {canReplayAudio && audioReplayCount < 2 && (
-            <motion.button
-              onClick={onReplayAudio}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className={`p-3 rounded-full transition-all duration-200 ${
-                isAdventureMode
-                  ? 'bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 border border-slate-500/30'
-                  : 'bg-gray-100 hover:bg-gray-200 text-gray-600 border border-gray-200'
-              }`}
-            >
-              <RotateCcw className="h-5 w-5" />
-            </motion.button>
-          )}
         </div>
-
-        {/* Replay Counter */}
-        {canReplayAudio && (
-          <div className={`text-sm mb-6 ${
-            isAdventureMode ? 'text-slate-400' : 'text-gray-500'
-          }`}>
-            {2 - audioReplayCount} replays remaining
-          </div>
-        )}
       </motion.div>
 
       {/* Input Section */}
@@ -332,11 +311,39 @@ export const ListeningMode: React.FC<ListeningModeProps> = ({
         }`}
       >
         <div className="space-y-6">
-          <h3 className={`text-xl font-semibold text-center ${
-            isAdventureMode ? 'text-white' : 'text-gray-800'
-          }`}>
-            English Translation
-          </h3>
+          <div className="flex items-center justify-between">
+            <h3 className={`text-xl font-semibold ${
+              isAdventureMode ? 'text-white' : 'text-gray-800'
+            }`}>
+              English Translation
+            </h3>
+            <div className="flex items-center gap-2">
+              {onExit && (
+                <button
+                  onClick={onExit}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium ${
+                    isAdventureMode
+                      ? 'bg-slate-700/50 hover:bg-slate-600/50 text-slate-200 border border-slate-600/30'
+                      : 'bg-white hover:bg-gray-50 text-gray-700 border border-gray-300'
+                  }`}
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  Back
+                </button>
+              )}
+              <button
+                onClick={() => onModeSpecificAction?.('dont_know')}
+                className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold ${
+                  isAdventureMode
+                    ? 'bg-gradient-to-r from-yellow-500/20 to-amber-500/20 hover:from-yellow-500/30 hover:to-amber-500/30 text-yellow-200 border border-yellow-400/30'
+                    : 'bg-gradient-to-r from-yellow-100 to-amber-100 hover:from-yellow-200 hover:to-amber-200 text-yellow-800 border border-yellow-300'
+                }`}
+              >
+                <SkipForward className="h-4 w-4" />
+                Skip
+              </button>
+            </div>
+          </div>
 
           <div className="relative">
             <input
@@ -389,12 +396,7 @@ export const ListeningMode: React.FC<ListeningModeProps> = ({
             {userAnswer.trim() ? 'Submit Translation' : 'Type your translation first'}
           </motion.button>
 
-          {/* Helpful Tips */}
-          <div className={`text-center text-sm ${
-            isAdventureMode ? 'text-slate-400' : 'text-gray-500'
-          }`}>
-            🎧 Tip: Listen carefully to the pronunciation and spelling
-          </div>
+
         </div>
       </motion.div>
     </div>

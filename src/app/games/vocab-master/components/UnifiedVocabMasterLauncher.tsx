@@ -9,7 +9,7 @@ import {
   ArrowRight, Shuffle, Target, Brain, Headphones, BookOpen,
   TrendingUp, Clock, Settings, Play, Lightbulb, Zap,
   RotateCcw, Flame, Trophy, ChevronRight, Volume2, Keyboard,
-  PenTool, CreditCard, Mic, Sparkles, Palette, ToggleLeft, ToggleRight,
+  PenTool, CreditCard, Mic, Sparkles, ToggleLeft, ToggleRight,
   ChevronDown, Globe, GraduationCap, FolderOpen, BarChart3, Award, Link
 } from 'lucide-react';
 import { useGameVocabulary } from '../../../../hooks/useGameVocabulary';
@@ -161,17 +161,6 @@ const CONSOLIDATED_GAME_MODES: GameMode[] = [
     source: 'unified'
   },
   {
-    id: 'sentence_builder',
-    name: 'Sentence Builder',
-    description: 'Create meaningful sentences using your vocabulary',
-    icon: <BookOpen className="h-6 w-6" />,
-    color: 'bg-gradient-to-r from-teal-500 to-cyan-600',
-    category: 'skills',
-    estimatedTime: '12-18 min',
-    difficulty: 'Advanced',
-    source: 'unified'
-  },
-  {
     id: 'memory_palace',
     name: 'Memory Palace',
     description: 'Learn through visual associations and memory techniques',
@@ -192,43 +181,6 @@ const CONSOLIDATED_GAME_MODES: GameMode[] = [
     estimatedTime: '5-10 min',
     difficulty: 'Advanced',
     source: 'unified'
-  },
-  {
-    id: 'story_mode',
-    name: 'Story Adventure',
-    description: 'Learn vocabulary through interactive stories and adventures',
-    icon: <Sparkles className="h-6 w-6" />,
-    color: 'bg-gradient-to-r from-rose-500 to-pink-600',
-    category: 'skills',
-    estimatedTime: '20-30 min',
-    difficulty: 'Beginner',
-    source: 'unified'
-  }
-];
-
-// Theme Configuration
-interface ThemeConfig {
-  id: 'mastery' | 'adventure';
-  name: string;
-  description: string;
-  icon: React.ReactNode;
-  color: string;
-}
-
-const THEME_OPTIONS: ThemeConfig[] = [
-  {
-    id: 'mastery',
-    name: 'Mastery Mode',
-    description: 'Clean, distraction-free academic interface',
-    icon: <BookOpen className="h-5 w-5" />,
-    color: 'text-blue-600'
-  },
-  {
-    id: 'adventure',
-    name: 'Adventure Mode',
-    description: 'Gamified experience with gems, XP, and achievements',
-    icon: <Sparkles className="h-5 w-5" />,
-    color: 'text-purple-600'
   }
 ];
 
@@ -305,7 +257,6 @@ export default function UnifiedVocabMasterLauncher({ onGameStart, onBack, preset
   }, [presetConfig, appliedPresetConfig, isInitialized]);
 
   // Game state management
-  const [selectedTheme, setSelectedTheme] = useState<'mastery' | 'adventure'>('mastery');
   // If you need a local loading state, use a different variable name
   const [localLoading, setLocalLoading] = useState(false);
   const [selectedMode, setSelectedMode] = useState('');
@@ -486,8 +437,8 @@ export default function UnifiedVocabMasterLauncher({ onGameStart, onBack, preset
   // Notify parent of filter changes (only when filters actually change, not on mount)
 
   useEffect(() => {
-    // Only notify parent of filter changes when user manually changes filters (not from preset config)
-    if (isInitialized && onFilterChange && !presetConfig) {
+    // Notify parent of filter changes when user manually changes filters
+    if (isInitialized && onFilterChange) {
       console.log('📤 Notifying parent of filter changes:', {
         language: selectedLanguage,
         curriculumLevel: selectedLevel,
@@ -501,7 +452,7 @@ export default function UnifiedVocabMasterLauncher({ onGameStart, onBack, preset
         subcategoryId: selectedSubcategory
       });
     }
-  }, [selectedLanguage, selectedLevel, selectedCategory, selectedSubcategory, isInitialized, presetConfig, onFilterChange]);
+  }, [selectedLanguage, selectedLevel, selectedCategory, selectedSubcategory, isInitialized, onFilterChange]);
 
   const loadUserStats = async () => {
     if (!user || !supabase) {
@@ -595,17 +546,45 @@ export default function UnifiedVocabMasterLauncher({ onGameStart, onBack, preset
         finalWordsLearned: wordsLearned
       });
 
-      // Calculate current streak from recent performance
+      // Calculate current streak from consecutive practice days (not consecutive correct answers)
       const sortedLogs = (performanceData || []).sort((a, b) =>
         new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
       );
 
       let currentStreak = 0;
-      for (const log of sortedLogs.slice(0, 20)) { // Check last 20 attempts
-        if (log.was_correct) {
-          currentStreak++;
-        } else {
-          break;
+      if (sortedLogs.length > 0) {
+        // Group performance data by calendar day (YYYY-MM-DD format)
+        const practiceByDay = new Map<string, boolean>();
+
+        sortedLogs.forEach(log => {
+          const dayKey = new Date(log.timestamp).toISOString().split('T')[0]; // YYYY-MM-DD
+          practiceByDay.set(dayKey, true);
+        });
+
+        // Get sorted array of practice days (most recent first)
+        const practiceDays = Array.from(practiceByDay.keys()).sort().reverse();
+
+        // Calculate consecutive days streak
+        const today = new Date().toISOString().split('T')[0];
+        let checkDate = new Date();
+
+        // Start from today and work backwards
+        for (let i = 0; i < 365; i++) { // Check up to 365 days back
+          const dayKey = checkDate.toISOString().split('T')[0];
+
+          if (practiceDays.includes(dayKey)) {
+            currentStreak++;
+            // Move to previous day
+            checkDate.setDate(checkDate.getDate() - 1);
+          } else {
+            // If today has no practice, allow one day gap (streak continues if practiced yesterday)
+            if (i === 0 && dayKey === today) {
+              checkDate.setDate(checkDate.getDate() - 1);
+              continue;
+            }
+            // Otherwise, streak is broken
+            break;
+          }
         }
       }
 
@@ -641,8 +620,9 @@ export default function UnifiedVocabMasterLauncher({ onGameStart, onBack, preset
 
   // Filter modes by game mode category (not content category)
   const getFilteredModes = () => {
-    if (gameModeCategory === 'all') return CONSOLIDATED_GAME_MODES;
-    return CONSOLIDATED_GAME_MODES.filter(mode => mode.category === gameModeCategory);
+    return gameModeCategory === 'all'
+      ? CONSOLIDATED_GAME_MODES
+      : CONSOLIDATED_GAME_MODES.filter(mode => mode.category === gameModeCategory);
   };
 
   // Start game session
@@ -661,9 +641,9 @@ export default function UnifiedVocabMasterLauncher({ onGameStart, onBack, preset
         wordsPerSession: Math.min(settings.wordsPerSession, vocabularySubset.length),
         difficulty: settings.difficulty,
         audioEnabled: settings.audioEnabled,
-        theme: selectedTheme,
+        theme: 'mastery',
         mode: modeId,
-        gamificationEnabled: selectedTheme === 'adventure',
+        gamificationEnabled: false,
         // Include current filter context
         language: selectedLanguage,
         curriculumLevel: selectedLevel,
@@ -681,8 +661,8 @@ export default function UnifiedVocabMasterLauncher({ onGameStart, onBack, preset
       });
 
       console.log('🎮 Starting game with config:', {
-        theme: selectedTheme,
-        gamificationEnabled: selectedTheme === 'adventure',
+        theme: 'mastery',
+        gamificationEnabled: false,
         gameConfig
       });
 
@@ -977,44 +957,6 @@ export default function UnifiedVocabMasterLauncher({ onGameStart, onBack, preset
                 <div className="text-sm text-gray-600">Progress</div>
                 <div className="text-xs text-gray-400">{userStats.totalWords} total available</div>
               </div>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Theme Selection */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="mb-8"
-        >
-          <div className="bg-white rounded-xl shadow-lg p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-gray-800">Choose Your Experience</h2>
-              <Palette className="h-5 w-5 text-gray-600" />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {THEME_OPTIONS.map((theme) => (
-                <button
-                  key={theme.id}
-                  onClick={() => setSelectedTheme(theme.id)}
-                  className={`p-4 rounded-lg border-2 transition-all duration-200 text-left ${selectedTheme === theme.id
-                    ? 'border-blue-500 bg-blue-50'
-                    : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                >
-                  <div className="flex items-center space-x-3">
-                    <div className={theme.color}>
-                      {theme.icon}
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-gray-800">{theme.name}</h3>
-                      <p className="text-sm text-gray-600">{theme.description}</p>
-                    </div>
-                  </div>
-                </button>
-              ))}
             </div>
           </div>
         </motion.div>

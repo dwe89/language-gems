@@ -167,6 +167,16 @@ interface WordBlastGameProps {
   onChainReaction?: (chainLength: number, wordsInChain: string[], totalScore: number) => void;
   onBlastCombo?: (comboLevel: number, comboScore: number, comboBroken: boolean) => void;
   onOpenSettings?: () => void;
+  preselectedConfig?: {
+    language: string;
+    category: string;
+    subcategory: string;
+    curriculumLevel: string;
+    examBoard?: string;
+    tier?: string;
+    vocabulary: any[];
+  };
+  selectedTheme?: string;
 }
 
 export default function WordBlastGame({
@@ -180,17 +190,29 @@ export default function WordBlastGame({
   onWordMatch,
   onChainReaction,
   onBlastCombo,
-  onOpenSettings
+  onOpenSettings,
+  preselectedConfig,
+  selectedTheme: initialTheme
 }: WordBlastGameProps) {
   // Initialize FSRS spaced repetition system
 
   // Game flow state
-  const [gameStarted, setGameStarted] = useState(false);
-  const [selectedConfig, setSelectedConfig] = useState<SentenceSelectionConfig | null>(null);
+  const [gameStarted, setGameStarted] = useState(!!preselectedConfig);
+  const [selectedConfig, setSelectedConfig] = useState<SentenceSelectionConfig | null>(
+    preselectedConfig ? {
+      language: preselectedConfig.language,
+      category: preselectedConfig.category,
+      subcategory: preselectedConfig.subcategory,
+      curriculumLevel: preselectedConfig.curriculumLevel,
+      examBoard: preselectedConfig.examBoard,
+      tier: preselectedConfig.tier,
+      vocabulary: preselectedConfig.vocabulary
+    } : null
+  );
 
   // Game state
   const [gameState, setGameState] = useState<GameState>('ready');
-  const [selectedTheme, setSelectedTheme] = useState<string>('temple');
+  const [selectedTheme, setSelectedTheme] = useState<string>(initialTheme || 'temple');
   const [gameStats, setGameStats] = useState<GameStats>(initialStats);
 
   // Game data
@@ -209,6 +231,14 @@ export default function WordBlastGame({
   const [wordStartTime, setWordStartTime] = useState<number>(0);
   const [currentChainLength, setCurrentChainLength] = useState(0);
   const [wordsInCurrentChain, setWordsInCurrentChain] = useState<string[]>([]);
+
+  // Auto-load challenges when preselected config is available
+  useEffect(() => {
+    if (preselectedConfig && selectedConfig && !challenges.length && !isLoading) {
+      console.log('[WordBlast] Auto-loading challenges with preselected config');
+      fetchChallenges();
+    }
+  }, [preselectedConfig, selectedConfig, challenges.length, isLoading]);
 
   // Auto-start game when challenges are loaded
   useEffect(() => {
@@ -244,14 +274,14 @@ export default function WordBlastGame({
     try {
       const params = new URLSearchParams({
         language: selectedConfig.language,
-        category: selectedConfig.categoryId,
+        category: selectedConfig.categoryId || selectedConfig.category,
         difficulty: 'beginner',
         curriculumLevel: selectedConfig.curriculumLevel,
         count: '10'
       });
 
-      if (selectedConfig.subcategoryId) {
-        params.append('subcategory', selectedConfig.subcategoryId);
+      if (selectedConfig.subcategoryId || selectedConfig.subcategory) {
+        params.append('subcategory', selectedConfig.subcategoryId || selectedConfig.subcategory);
       }
       
       if (assignmentConfig?.assignmentId) {

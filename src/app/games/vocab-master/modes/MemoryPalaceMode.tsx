@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Brain, Eye, Lightbulb, MapPin, Volume2, ArrowRight, Sparkles, Home } from 'lucide-react';
+import { Brain, Eye, Lightbulb, MapPin, Volume2, ArrowRight, Sparkles, Home, ArrowLeft } from 'lucide-react';
 import { ModeComponent } from '../types';
 
 interface MemoryPalaceModeProps extends ModeComponent {
@@ -9,9 +9,8 @@ interface MemoryPalaceModeProps extends ModeComponent {
 
 interface MemoryAssociation {
   id: string;
-  visualCue: string;
+  techniqueName: string;
   description: string;
-  memoryTechnique: string;
   icon: React.ReactNode;
   color: string;
 }
@@ -21,89 +20,84 @@ export const MemoryPalaceMode: React.FC<MemoryPalaceModeProps> = ({
   onMemoryComplete,
   isAdventureMode,
   playPronunciation,
-  onModeSpecificAction
+  onModeSpecificAction,
+  onExit
 }) => {
   const [currentStep, setCurrentStep] = useState<'visualize' | 'associate' | 'recall' | 'test'>('visualize');
-  const [selectedAssociation, setSelectedAssociation] = useState<string | null>(null);
-  const [showMemoryTip, setShowMemoryTip] = useState(false);
+  const [selectedAssociationId, setSelectedAssociationId] = useState<string | null>(null);
+  const [userAssociationText, setUserAssociationText] = useState('');
   const [userRecall, setUserRecall] = useState('');
 
   const currentWord = gameState.currentWord;
   const vocabularyWord = currentWord?.word || currentWord?.spanish || '';
   const vocabularyTranslation = currentWord?.translation || currentWord?.english || '';
+  
+  const userAssociationInputRef = useRef<HTMLInputElement>(null);
+  const userRecallInputRef = useRef<HTMLInputElement>(null);
 
-  // Generate memory associations based on the word
-  const generateMemoryAssociations = (): MemoryAssociation[] => {
-    const associations: MemoryAssociation[] = [
-      {
-        id: 'visual',
-        visualCue: `Picture a vivid scene with ${vocabularyTranslation.toLowerCase()}`,
-        description: `Imagine yourself interacting with ${vocabularyTranslation.toLowerCase()} in a memorable way`,
-        memoryTechnique: 'Visual Imagery',
-        icon: <Eye className="h-6 w-6" />,
-        color: 'text-blue-500'
-      },
-      {
-        id: 'location',
-        visualCue: `Place ${vocabularyTranslation.toLowerCase()} in a familiar room`,
-        description: `Visualize ${vocabularyTranslation.toLowerCase()} in your bedroom, kitchen, or living room`,
-        memoryTechnique: 'Method of Loci',
-        icon: <Home className="h-6 w-6" />,
-        color: 'text-green-500'
-      },
-      {
-        id: 'story',
-        visualCue: `Create a story involving ${vocabularyTranslation.toLowerCase()}`,
-        description: `Make up a funny or dramatic story where ${vocabularyTranslation.toLowerCase()} plays a key role`,
-        memoryTechnique: 'Narrative Method',
-        icon: <Sparkles className="h-6 w-6" />,
-        color: 'text-purple-500'
-      },
-      {
-        id: 'sound',
-        visualCue: `Connect the sound of "${vocabularyWord}" to ${vocabularyTranslation.toLowerCase()}`,
-        description: `Find words that sound similar or create a rhyme with "${vocabularyWord}"`,
-        memoryTechnique: 'Phonetic Association',
-        icon: <Volume2 className="h-6 w-6" />,
-        color: 'text-orange-500'
-      }
-    ];
-
-    return associations;
-  };
-
-  const [memoryAssociations] = useState<MemoryAssociation[]>(generateMemoryAssociations());
+  // Define simple, universal memory associations
+  const memoryAssociations: MemoryAssociation[] = [
+    {
+      id: 'visual',
+      techniqueName: 'Visual Imagery',
+      description: `Create a vivid mental image that links "${vocabularyWord}" to its meaning: "${vocabularyTranslation}".`,
+      icon: <Eye className="h-6 w-6" />,
+      color: 'text-blue-500'
+    },
+    {
+      id: 'location',
+      techniqueName: 'Method of Loci',
+      description: `Imagine placing "${vocabularyWord}" in a specific spot in a familiar location, like your bedroom.`,
+      icon: <Home className="h-6 w-6" />,
+      color: 'text-green-500'
+    },
+    {
+      id: 'story',
+      techniqueName: 'Narrative Method',
+      description: `Make up a short, memorable story that includes both "${vocabularyWord}" and "${vocabularyTranslation}".`,
+      icon: <Sparkles className="h-6 w-6" />,
+      color: 'text-purple-500'
+    },
+    {
+      id: 'sound',
+      techniqueName: 'Phonetic Association',
+      description: `Find words that sound similar to "${vocabularyWord}" to create a sound-based link to "${vocabularyTranslation}".`,
+      icon: <Volume2 className="h-6 w-6" />,
+      color: 'text-orange-500'
+    }
+  ];
 
   useEffect(() => {
     // Reset for new word
     setCurrentStep('visualize');
-    setSelectedAssociation(null);
-    setShowMemoryTip(false);
+    setSelectedAssociationId(null);
+    setUserAssociationText('');
     setUserRecall('');
   }, [gameState.currentWordIndex]);
 
+  useEffect(() => {
+    if (currentStep === 'associate' && userAssociationInputRef.current) {
+      userAssociationInputRef.current.focus();
+    }
+    if (currentStep === 'recall' && userRecallInputRef.current) {
+      userRecallInputRef.current.focus();
+    }
+  }, [currentStep]);
+
   const handleAssociationSelect = (associationId: string) => {
-    setSelectedAssociation(associationId);
+    setSelectedAssociationId(associationId);
     setCurrentStep('associate');
-    
-    // Show memory tip after selection
-    setTimeout(() => {
-      setShowMemoryTip(true);
-    }, 1000);
   };
 
   const handleContinueToRecall = () => {
     setCurrentStep('recall');
-    setShowMemoryTip(false);
   };
 
   const handleRecallTest = () => {
-    setCurrentStep('test');
-  };
-
-  const handleMemoryTest = (isCorrect: boolean) => {
-    const selectedTechnique = memoryAssociations.find(a => a.id === selectedAssociation)?.memoryTechnique || 'Visual Memory';
+    const isCorrect = userRecall.toLowerCase().trim() === vocabularyTranslation.toLowerCase().trim();
+    const selectedTechnique = memoryAssociations.find(a => a.id === selectedAssociationId)?.techniqueName || 'Visual Memory';
     onMemoryComplete(isCorrect, selectedTechnique);
+    setCurrentStep('test');
     
     // Auto-advance after showing result
     setTimeout(() => {
@@ -124,36 +118,64 @@ export const MemoryPalaceMode: React.FC<MemoryPalaceModeProps> = ({
   };
 
   const progressPercentage = ((gameState.currentWordIndex + 1) / gameState.totalWords) * 100;
+  const selectedAssociation = memoryAssociations.find(a => a.id === selectedAssociationId);
   const stepProgress = currentStep === 'visualize' ? 25 : currentStep === 'associate' ? 50 : currentStep === 'recall' ? 75 : 100;
 
+  const getContainerClasses = () => {
+    if (isAdventureMode) {
+      return 'min-h-screen flex flex-col items-center justify-center p-8 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900';
+    }
+    return 'min-h-screen flex flex-col items-center justify-center p-8 bg-gray-50';
+  };
+
+  const getCardClasses = () => {
+    if (isAdventureMode) {
+      return 'bg-slate-800/70 backdrop-blur-xl border border-slate-700/50 shadow-2xl';
+    }
+    return 'bg-white shadow-xl border border-gray-100';
+  };
+
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className={getContainerClasses()}>
       {/* Progress Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className={`rounded-2xl p-4 ${
+        className={`rounded-2xl p-4 w-full max-w-4xl mb-6 ${
           isAdventureMode 
             ? 'bg-gradient-to-r from-slate-800/80 to-slate-900/80 backdrop-blur-sm border border-slate-600/30' 
             : 'bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-100'
         }`}
       >
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-3">
+            {onExit && (
+              <button
+                onClick={onExit}
+                className={`${
+                  isAdventureMode
+                    ? 'bg-slate-700/50 hover:bg-slate-600/50 text-slate-200 border border-slate-600/30'
+                    : 'bg-white hover:bg-gray-50 text-gray-700 border border-gray-300'
+                } px-2 py-1 rounded-lg text-sm font-medium inline-flex items-center gap-1`}
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back
+              </button>
+            )}
             <div className={`p-2 rounded-full ${
               isAdventureMode ? 'bg-indigo-500/20' : 'bg-indigo-100'
             }`}>
-              <Brain className={`h-5 w-5 ${
+              <Brain className={`h-4 w-4 ${
                 isAdventureMode ? 'text-indigo-300' : 'text-indigo-600'
               }`} />
             </div>
             <div>
-              <h3 className={`font-bold ${
+              <h3 className={`font-semibold text-sm ${
                 isAdventureMode ? 'text-white' : 'text-gray-800'
               }`}>
                 Memory Palace
               </h3>
-              <p className={`text-sm ${
+              <p className={`text-xs ${
                 isAdventureMode ? 'text-slate-300' : 'text-gray-600'
               }`}>
                 Word {gameState.currentWordIndex + 1} of {gameState.totalWords}
@@ -210,27 +232,40 @@ export const MemoryPalaceMode: React.FC<MemoryPalaceModeProps> = ({
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.3 }}
-        className={`rounded-3xl p-8 ${
-          isAdventureMode 
-            ? 'bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-xl border-2 border-slate-600/30 shadow-2xl' 
-            : 'bg-white shadow-xl border border-gray-100'
-        }`}
+        className={`rounded-3xl p-8 w-full max-w-4xl ${getCardClasses()}`}
       >
         {/* Step 1: Visualize */}
         {currentStep === 'visualize' && (
           <div className="text-center">
-            <div className="flex items-center justify-center space-x-2 mb-6">
-              <Brain className={`h-8 w-8 ${
+            <div className="flex items-center justify-center space-x-2 mb-4">
+              <Brain className={`h-6 w-6 ${
                 isAdventureMode ? 'text-indigo-300' : 'text-indigo-600'
               }`} />
-              <h2 className={`text-3xl font-bold ${
+              <h2 className={`text-2xl font-bold ${
                 isAdventureMode ? 'text-white' : 'text-gray-800'
               }`}>
                 Memory Palace
               </h2>
             </div>
+
+            {/* Explanation Section */}
+            <div className={`mb-6 p-4 rounded-lg ${
+              isAdventureMode ? 'bg-slate-700/30 border border-slate-600/30' : 'bg-blue-50 border border-blue-200'
+            }`}>
+              <h3 className={`text-lg font-semibold mb-2 ${
+                isAdventureMode ? 'text-blue-300' : 'text-blue-700'
+              }`}>
+                How Memory Palace Works
+              </h3>
+              <p className={`text-sm ${
+                isAdventureMode ? 'text-slate-300' : 'text-gray-600'
+              }`}>
+                Memory Palace is an ancient technique used by memory champions. You'll create vivid mental images
+                and place them in familiar locations to remember new words. This method works because our brains
+                are excellent at remembering visual and spatial information.
+              </p>
+            </div>
             
-            {/* Vocabulary Word with Audio */}
             <div className="flex items-center justify-center space-x-4 mb-8">
               <div className={`text-4xl font-bold ${
                 isAdventureMode ? 'text-indigo-300' : 'text-indigo-600'
@@ -268,7 +303,6 @@ export const MemoryPalaceMode: React.FC<MemoryPalaceModeProps> = ({
               Choose a memory technique to help you remember this word:
             </p>
 
-            {/* Memory Technique Options */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {memoryAssociations.map((association) => (
                 <motion.button
@@ -291,11 +325,11 @@ export const MemoryPalaceMode: React.FC<MemoryPalaceModeProps> = ({
                       </div>
                     </div>
                     <div className="flex-1">
-                      <h3 className="font-semibold text-lg mb-2">{association.memoryTechnique}</h3>
+                      <h3 className="font-semibold text-lg mb-2">{association.techniqueName}</h3>
                       <p className={`text-sm ${
                         isAdventureMode ? 'text-slate-400' : 'text-gray-600'
                       }`}>
-                        {association.visualCue}
+                        {association.description}
                       </p>
                     </div>
                   </div>
@@ -308,77 +342,70 @@ export const MemoryPalaceMode: React.FC<MemoryPalaceModeProps> = ({
         {/* Step 2: Associate */}
         {currentStep === 'associate' && selectedAssociation && (
           <div className="text-center">
-            {(() => {
-              const association = memoryAssociations.find(a => a.id === selectedAssociation);
-              return association ? (
-                <div>
-                  <div className="flex items-center justify-center space-x-2 mb-6">
-                    <div className={association.color}>
-                      {association.icon}
-                    </div>
-                    <h2 className={`text-3xl font-bold ${
-                      isAdventureMode ? 'text-white' : 'text-gray-800'
-                    }`}>
-                      {association.memoryTechnique}
-                    </h2>
-                  </div>
+            <div className="flex items-center justify-center space-x-2 mb-6">
+              <div className={selectedAssociation.color}>
+                {selectedAssociation.icon}
+              </div>
+              <h2 className={`text-3xl font-bold ${
+                isAdventureMode ? 'text-white' : 'text-gray-800'
+              }`}>
+                {selectedAssociation.techniqueName}
+              </h2>
+            </div>
+            
+            <div className={`text-2xl mb-6 ${
+              isAdventureMode ? 'text-indigo-300' : 'text-indigo-600'
+            }`}>
+              {vocabularyWord} = {vocabularyTranslation}
+            </div>
 
-                  <div className={`text-2xl mb-6 ${
-                    isAdventureMode ? 'text-indigo-300' : 'text-indigo-600'
-                  }`}>
-                    {vocabularyWord} = {vocabularyTranslation}
-                  </div>
+            <p className={`text-lg mb-4 ${
+              isAdventureMode ? 'text-slate-400' : 'text-gray-600'
+            }`}>
+              Now, type your association to help you remember:
+            </p>
 
-                  <div className={`text-lg mb-8 p-6 rounded-2xl ${
-                    isAdventureMode 
-                      ? 'bg-slate-700/30 text-slate-200' 
-                      : 'bg-indigo-50 text-gray-700'
-                  }`}>
-                    <Lightbulb className={`h-6 w-6 mx-auto mb-4 ${
-                      isAdventureMode ? 'text-yellow-300' : 'text-yellow-500'
-                    }`} />
-                    {association.description}
-                  </div>
+            <input
+              ref={userAssociationInputRef}
+              type="text"
+              value={userAssociationText}
+              onChange={(e) => setUserAssociationText(e.target.value)}
+              placeholder={`My vivid memory is...`}
+              className={`w-full p-4 rounded-2xl text-lg text-center border-2 transition-all duration-200 mb-8 ${
+                isAdventureMode
+                  ? 'bg-slate-700/50 border-slate-500/50 text-white placeholder-slate-400 focus:border-indigo-400'
+                  : 'bg-white border-gray-300 text-gray-800 placeholder-gray-500 focus:border-indigo-500'
+              } focus:outline-none focus:ring-0`}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter' && userAssociationText.trim()) {
+                  handleContinueToRecall();
+                }
+              }}
+            />
 
-                  <AnimatePresence>
-                    {showMemoryTip && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className={`p-4 rounded-xl mb-6 ${
-                          isAdventureMode 
-                            ? 'bg-green-500/20 border border-green-400/30 text-green-300' 
-                            : 'bg-green-100 border border-green-300 text-green-700'
-                        }`}
-                      >
-                        <p className="text-sm">
-                          💡 Take a moment to really visualize this association. The more vivid and personal you make it, the better you'll remember!
-                        </p>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-
-                  <motion.button
-                    onClick={handleContinueToRecall}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className={`px-8 py-4 rounded-2xl font-semibold transition-all duration-200 ${
-                      isAdventureMode
-                        ? 'bg-indigo-500 hover:bg-indigo-400 text-white'
-                        : 'bg-indigo-600 hover:bg-indigo-700 text-white'
-                    }`}
-                  >
-                    I've Created My Memory
-                    <ArrowRight className="h-5 w-5 ml-2 inline" />
-                  </motion.button>
-                </div>
-              ) : null;
-            })()}
+            <motion.button
+              onClick={handleContinueToRecall}
+              disabled={!userAssociationText.trim()}
+              whileHover={{ scale: userAssociationText.trim() ? 1.05 : 1 }}
+              whileTap={{ scale: userAssociationText.trim() ? 0.95 : 1 }}
+              className={`px-8 py-4 rounded-2xl font-semibold transition-all duration-200 ${
+                userAssociationText.trim()
+                  ? isAdventureMode
+                    ? 'bg-indigo-500 hover:bg-indigo-400 text-white'
+                    : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                  : isAdventureMode
+                    ? 'bg-slate-600 text-slate-400 cursor-not-allowed'
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              }`}
+            >
+              I've Created My Memory
+              <ArrowRight className="h-5 w-5 ml-2 inline" />
+            </motion.button>
           </div>
         )}
 
         {/* Step 3: Recall */}
-        {currentStep === 'recall' && (
+        {currentStep === 'recall' && selectedAssociation && (
           <div className="text-center">
             <h2 className={`text-3xl font-bold mb-6 ${
               isAdventureMode ? 'text-white' : 'text-gray-800'
@@ -386,20 +413,30 @@ export const MemoryPalaceMode: React.FC<MemoryPalaceModeProps> = ({
               Test Your Memory
             </h2>
 
-            <p className={`text-lg mb-8 ${
+            <p className={`text-lg mb-4 ${
               isAdventureMode ? 'text-slate-300' : 'text-gray-600'
             }`}>
-              Now use your memory association to recall the meaning:
+              Use your memory association to recall the meaning:
             </p>
 
-            <div className={`text-4xl font-bold mb-8 ${
-              isAdventureMode ? 'text-indigo-300' : 'text-indigo-600'
-            }`}>
-              {vocabularyWord}
+            <div className="flex items-center justify-center space-x-4 mb-8">
+              <div className={`text-4xl font-bold ${
+                isAdventureMode ? 'text-indigo-300' : 'text-indigo-600'
+              }`}>
+                {vocabularyWord}
+              </div>
+              <div className={`p-4 rounded-full ${
+                isAdventureMode ? 'bg-slate-700/50' : 'bg-gray-100'
+              }`}>
+                <div className={selectedAssociation.color}>
+                  {selectedAssociation.icon}
+                </div>
+              </div>
             </div>
 
             <div className="max-w-md mx-auto mb-8">
               <input
+                ref={userRecallInputRef}
                 type="text"
                 value={userRecall}
                 onChange={(e) => setUserRecall(e.target.value)}
@@ -480,7 +517,6 @@ export const MemoryPalaceMode: React.FC<MemoryPalaceModeProps> = ({
                     </div>
                   )}
 
-                  {/* Auto-advance happens via useEffect */}
                   <div className={`text-sm ${
                     isAdventureMode ? 'text-slate-400' : 'text-gray-500'
                   }`}>

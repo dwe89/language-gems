@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mic, Volume2, Play, Pause, RotateCcw, CheckCircle2, XCircle, Ear } from 'lucide-react';
+import { Mic, Volume2, Play, Pause, RotateCcw, CheckCircle2, XCircle, Ear, ArrowLeft } from 'lucide-react';
 import { ModeComponent } from '../types';
 
 interface PronunciationModeProps extends ModeComponent {
   onPronunciationComplete: (isCorrect: boolean, attempt: string) => void;
+  onExit?: () => void;
 }
 
 export const PronunciationMode: React.FC<PronunciationModeProps> = ({
@@ -12,7 +13,8 @@ export const PronunciationMode: React.FC<PronunciationModeProps> = ({
   onPronunciationComplete,
   isAdventureMode,
   playPronunciation,
-  onModeSpecificAction
+  onModeSpecificAction,
+  onExit
 }) => {
   const [isListening, setIsListening] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -99,16 +101,29 @@ export const PronunciationMode: React.FC<PronunciationModeProps> = ({
         }`}
       >
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-3">
+            {onExit && (
+              <button
+                onClick={onExit}
+                className={`${
+                  isAdventureMode
+                    ? 'bg-slate-700/50 hover:bg-slate-600/50 text-slate-200 border border-slate-600/30'
+                    : 'bg-white hover:bg-gray-50 text-gray-700 border border-gray-300'
+                } px-2 py-1 rounded-lg text-sm font-medium inline-flex items-center gap-1`}
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back
+              </button>
+            )}
             <div className={`p-2 rounded-full ${
               isAdventureMode ? 'bg-purple-500/20' : 'bg-purple-100'
             }`}>
-              <Mic className={`h-5 w-5 ${
+              <Mic className={`h-4 w-4 ${
                 isAdventureMode ? 'text-purple-300' : 'text-purple-600'
               }`} />
             </div>
             <div>
-              <h3 className={`font-bold ${
+              <h3 className={`font-semibold text-sm ${
                 isAdventureMode ? 'text-white' : 'text-gray-800'
               }`}>
                 Pronunciation Master

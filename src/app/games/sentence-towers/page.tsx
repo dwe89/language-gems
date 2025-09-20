@@ -605,7 +605,7 @@ function ImprovedSentenceTowersGame({
   const effectIdRef = useRef(0);
 
   // Constants for tower display - increased for better gameplay experience
-  const VISIBLE_BLOCKS = 10; // Show last 10 blocks (increased from 7) for better tower height sense
+  const VISIBLE_BLOCKS = 6; // Show last 6 blocks to fit in fixed height container
 
   // Sound effects hook
   const sounds = useSounds(settings.soundEnabled);
@@ -1751,10 +1751,17 @@ function ImprovedSentenceTowersGame({
 
       {/* Main Game Area */}
       <div className="relative z-10 px-4 flex flex-col items-center pt-4">
-        {/* Tower container - optimized height for both fullscreen and windowed mode */}
-        <div className="flex justify-center items-end mb-4" style={{ minHeight: '450px' }}>
+        {/* Tower container - fixed height to prevent layout shifts */}
+        <div className="flex justify-center items-end mb-4 relative" style={{ height: '500px', overflow: 'hidden' }}>
           {/* Enhanced Tower with Crane */}
           <div className="flex flex-col-reverse items-center space-y-reverse space-y-1 relative">
+            {/* Height indicator when blocks are hidden */}
+            {towerBlocks.length > VISIBLE_BLOCKS && (
+              <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-black/70 backdrop-blur-md rounded-lg px-3 py-1 text-xs text-white/80 border border-white/30">
+                Showing {VISIBLE_BLOCKS} of {towerBlocks.length} blocks
+                <div className="text-center text-yellow-400 font-bold">↓ +{towerBlocks.length - VISIBLE_BLOCKS} below</div>
+              </div>
+            )}
             <AnimatedCrane
               isLifting={craneLifting}
               liftedWord={craneWord}
@@ -1846,7 +1853,7 @@ function ImprovedSentenceTowersGame({
 
       {/* Word Options */}
       {gameState.status === 'playing' && wordOptions.length > 0 && (
-        <div className="relative z-20 px-4 mb-4">
+        <div className="relative z-20 px-4 mb-32 lg:mb-4">
           {!isTypingMode ? (
             // Multiple Choice Mode
             <motion.div

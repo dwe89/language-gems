@@ -5,7 +5,6 @@ import { useUnifiedAuth } from '../../../../hooks/useUnifiedAuth';
 import GameAssignmentWrapper, { GameProgress } from '../../../../components/games/templates/GameAssignmentWrapper';
 import { VocabMasterGameEngine } from './VocabMasterGameEngine';
 import { VocabularyWord, GameResult } from '../types';
-import ModeSelectionModal from './ModeSelectionModal';
 
 interface VocabMasterAssignmentWrapperProps {
   assignmentId: string;
@@ -50,23 +49,7 @@ export default function VocabMasterAssignmentWrapper({
 }: VocabMasterAssignmentWrapperProps) {
   const { user, isLoading, isDemo } = useUnifiedAuth();
 
-  // Mode selection state
-  const [showModeSelector, setShowModeSelector] = useState(true);
-  const [selectedMode, setSelectedMode] = useState<'mastery' | 'adventure'>('mastery');
-
-  // Handle mode selection
-  const handleModeSelect = (mode: 'mastery' | 'adventure') => {
-    setSelectedMode(mode);
-    setShowModeSelector(false);
-  };
-
-  // Show mode selector first
-  if (showModeSelector) {
-    console.log('🎯 [MODE SELECTOR] Showing mode selection modal');
-    return (
-      <ModeSelectionModal onModeSelect={handleModeSelect} />
-    );
-  }
+  // No mode selection needed - always use standard mode
 
   console.log('🎯 [MODE SELECTOR] Mode selected:', selectedMode, 'showModeSelector:', showModeSelector);
 
@@ -179,7 +162,6 @@ export default function VocabMasterAssignmentWrapper({
               });
             }}
             onExit={handleBackToAssignments}
-            isAdventureMode={selectedMode === 'adventure'} // Use selected mode
           />
         );
       }}

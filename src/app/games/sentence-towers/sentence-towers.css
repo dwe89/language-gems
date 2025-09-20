@@ -229,13 +229,23 @@
     flex-direction: column;
     gap: 8px;
   }
-  
+
   .tower-info {
     flex-direction: column;
   }
-  
+
   .tower-block {
     height: 50px;
+  }
+
+  /* Ensure word options don't cover translation on mobile */
+  .word-options-container {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  /* Adjust tower container height on mobile */
+  .tower-container-mobile {
+    min-height: 350px !important;
   }
 }
 

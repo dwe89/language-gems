@@ -1,9 +1,8 @@
 import React, { useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Brain, Volume2, Target, Lightbulb, Star } from 'lucide-react';
+import { Brain, Volume2, Target, Lightbulb, Star, ArrowLeft } from 'lucide-react';
 import { ModeComponent } from '../types';
 import { getPlaceholderText } from '../utils/answerValidation';
-import { getAdventureTheme, getAccentColorClasses } from '../utils/adventureThemes';
 
 interface RecallModeProps extends ModeComponent {
   userAnswer: string;
@@ -18,8 +17,8 @@ export const RecallMode: React.FC<RecallModeProps> = ({
   onAnswerChange,
   onSubmit,
   streak,
-  isAdventureMode,
-  playPronunciation
+  playPronunciation,
+  onExit
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const lastPlayedWordRef = useRef<string | null>(null);
@@ -72,27 +71,6 @@ export const RecallMode: React.FC<RecallModeProps> = ({
     return 'bg-yellow-500/20 border-yellow-400/30';
   };
 
-  // Enhanced styling for both adventure and mastery modes
-  const adventureTheme = getAdventureTheme('recall');
-  
-  const containerClasses = isAdventureMode
-    ? adventureTheme.background
-    : "min-h-screen bg-gray-50 font-sans antialiased";
-
-  const cardClasses = isAdventureMode
-    ? adventureTheme.cardStyle
-    : "bg-white rounded-2xl shadow-lg p-7 border border-gray-100";
-
-  const inputCardClasses = isAdventureMode
-    ? adventureTheme.cardStyle
-    : "bg-white rounded-2xl shadow-lg p-6 border border-gray-100";
-
-  const textPrimary = isAdventureMode ? "text-white" : "text-gray-900";
-  const textSecondary = isAdventureMode ? "text-white/80" : "text-gray-600";
-  const textMuted = isAdventureMode ? "text-white/60" : "text-gray-500";
-
-  if (!isAdventureMode) {
-    // Layout matching the screenshot
     return (
       <div className="min-h-screen bg-gray-50 flex">
         {/* Main content area */}
@@ -106,9 +84,20 @@ export const RecallMode: React.FC<RecallModeProps> = ({
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.3 }}
-                className={cardClasses}
+                className="bg-white rounded-xl shadow-lg p-6"
               >
               <div className="text-center space-y-6">
+                {onExit && (
+                  <div className="flex justify-start mb-4">
+                    <button
+                      onClick={onExit}
+                      className="bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 px-2 py-1 rounded-lg text-sm font-medium inline-flex items-center gap-1"
+                    >
+                      <ArrowLeft className="h-4 w-4" />
+                      Back
+                    </button>
+                  </div>
+                )}
                 <div className="text-4xl text-purple-500">
                   <Brain className="h-12 w-12 mx-auto" />
                 </div>
@@ -144,7 +133,7 @@ export const RecallMode: React.FC<RecallModeProps> = ({
             </AnimatePresence>
 
             {/* Input area */}
-            <div className={inputCardClasses}>
+            <div className="bg-white rounded-xl shadow-lg p-6">
               <div className="space-y-5">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-semibold text-gray-800">
@@ -250,165 +239,4 @@ export const RecallMode: React.FC<RecallModeProps> = ({
         </div>
       </div>
     );
-  }
-
-  // Adventure mode layout (keep existing)
-  return (
-    <div className={`${containerClasses} p-6`}>
-      <div className="max-w-4xl mx-auto space-y-8">
-        {/* Adventure Mode Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-6"
-        >
-          <h1 className="text-4xl font-bold text-white mb-2">
-            {adventureTheme.emoji} {adventureTheme.name}
-          </h1>
-          <p className="text-white/80 text-lg">
-            {adventureTheme.description}
-          </p>
-        </motion.div>
-
-        {/* Word display with streak */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={gameState.currentWordIndex}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3 }}
-            className={cardClasses}
-          >
-          <div className="text-center space-y-6">
-            <div className="text-6xl">
-              <Brain className={`h-16 w-16 mx-auto ${isAdventureMode ? adventureTheme.accentColor === 'purple' ? 'text-purple-300' : 'text-violet-300' : 'text-purple-300'}`} />
-            </div>
-            
-            <h2 className="text-2xl font-bold text-white flex items-center justify-center">
-              <Brain className="h-6 w-6 mr-2" />
-              Mastery Challenge
-            </h2>
-
-            {/* Streak display */}
-            {streak > 0 && (
-              <motion.div
-                initial={{ scale: 0.8 }}
-                animate={{ scale: 1 }}
-                className={`inline-flex items-center space-x-2 px-4 py-2 rounded-full border ${getStreakBg()}`}
-              >
-                <Target className={`h-4 w-4 ${getStreakColor()}`} />
-                <span className={`font-bold ${getStreakColor()}`}>
-                  {streak} streak!
-                </span>
-              </motion.div>
-            )}
-
-            <div className="space-y-4">
-              <h3 className="text-5xl font-bold text-white">
-                {gameState.currentWord?.spanish || gameState.currentWord?.word}
-              </h3>
-
-              {/* Part of speech */}
-              {gameState.currentWord?.part_of_speech && (
-                <div className="inline-block px-3 py-1 rounded-full text-sm bg-purple-500/20 text-purple-200 border border-purple-400/30">
-                  {gameState.currentWord.part_of_speech}
-                </div>
-              )}
-
-              {/* Audio button */}
-              {gameState.currentWord?.audio_url && (
-                <button
-                  onClick={() => playPronunciation(gameState.currentWord?.spanish || '', 'es', gameState.currentWord || undefined)}
-                  disabled={gameState.audioPlaying}
-                  className={`p-4 rounded-full transition-colors border-2 shadow-lg ${
-                    gameState.audioPlaying
-                      ? 'bg-gray-200 text-gray-400 cursor-not-allowed border-gray-300'
-                      : 'bg-blue-500/30 hover:bg-blue-500/40 text-blue-200 border-blue-400/50'
-                  }`}
-                >
-                  <Volume2 className="h-6 w-6" />
-                </button>
-              )}
-            </div>
-
-            <div className="text-sm text-white/60">
-              Test your memory - no hints this time!
-            </div>
-          </div>
-        </motion.div>
-        </AnimatePresence>
-
-        {/* Input area */}
-        <div className={cardClasses}>
-          <div className="space-y-6">
-            <h3 className="text-lg font-semibold text-white">
-              What does this word mean?
-            </h3>
-            
-            <div className="relative">
-              <input
-                ref={inputRef}
-                type="text"
-                value={userAnswer}
-                onChange={(e) => onAnswerChange(e.target.value)}
-                onKeyDown={handleKeyPress}
-                placeholder={getPlaceholderText('recall')}
-                className="w-full p-4 rounded-xl text-lg font-medium transition-all duration-200 bg-slate-700/50 text-white placeholder-slate-400 border border-slate-500/30 focus:border-purple-400/50 focus:ring-2 focus:ring-purple-400/20"
-                autoFocus
-              />
-            </div>
-
-            {/* Action buttons */}
-            <div className="flex space-x-3">
-              <button
-                onClick={onSubmit}
-                disabled={!userAnswer.trim()}
-                className={`flex-1 py-3 rounded-xl font-semibold transition-all duration-200 ${
-                  userAnswer.trim()
-                    ? 'bg-purple-500 hover:bg-purple-600 text-white shadow-lg hover:shadow-purple-500/25'
-                    : 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                }`}
-              >
-                Check Answer
-              </button>
-
-              {/* Hint button */}
-              <button
-                className="px-4 py-3 rounded-xl font-medium transition-all duration-200 border border-slate-600 text-slate-300 hover:bg-slate-700/50"
-                title="Show hint"
-              >
-                <Lightbulb className="h-5 w-5" />
-              </button>
-            </div>
-
-            {/* Progress indicators */}
-            <div className="flex justify-center space-x-2">
-              {Array.from({ length: Math.min(streak, 10) }, (_, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ delay: i * 0.1 }}
-                  className={`w-2 h-2 rounded-full ${getStreakColor().replace('text-', 'bg-')}`}
-                />
-              ))}
-            </div>
-
-            {streak >= 10 && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="text-center p-3 rounded-xl bg-purple-500/20 text-purple-200 border border-purple-400/30"
-              >
-                <p className="text-sm font-semibold">
-                  🔥 Amazing! You're on fire with a {streak} word streak!
-                </p>
-              </motion.div>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
 };

@@ -1,9 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BookOpen, Volume2, Lightbulb, Eye, EyeOff, Target, Star, Zap, HelpCircle, SkipForward } from 'lucide-react';
+import { BookOpen, Volume2, Lightbulb, Eye, EyeOff, Target, Star, Zap, HelpCircle, SkipForward, ArrowLeft } from 'lucide-react';
 import { ModeComponent } from '../types';
 import { getPlaceholderText } from '../utils/answerValidation';
-import { getAdventureTheme, getAccentColorClasses } from '../utils/adventureThemes';
 
 interface LearnModeProps extends ModeComponent {
   userAnswer: string;
@@ -11,6 +10,7 @@ interface LearnModeProps extends ModeComponent {
   onSubmit: () => void;
   showHint: boolean;
   onToggleHint: () => void;
+  onExit?: () => void;
 }
 
 export const LearnMode: React.FC<LearnModeProps> = ({
@@ -20,9 +20,9 @@ export const LearnMode: React.FC<LearnModeProps> = ({
   onSubmit,
   showHint,
   onToggleHint,
-  isAdventureMode,
   playPronunciation,
-  onModeSpecificAction
+  onModeSpecificAction,
+  onExit
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [showTranslation, setShowTranslation] = useState(false);
@@ -93,21 +93,13 @@ export const LearnMode: React.FC<LearnModeProps> = ({
   };
 
   // Enhanced styling for both adventure and learn modes
-  const adventureTheme = getAdventureTheme('learn');
   
-  const containerClasses = isAdventureMode 
-    ? adventureTheme.background
-    : "min-h-screen bg-gray-50 font-sans antialiased"; // Lighter background for non-adventure mode
 
-  const cardClasses = isAdventureMode 
-    ? adventureTheme.cardStyle
-    : "bg-white rounded-2xl shadow-lg p-7 border border-gray-100"; // Softer shadows, rounded corners, subtle border
+  const textPrimary = "text-gray-900"; // Darker primary text for light mode
+  const textSecondary = "text-gray-600"; // Softer secondary text
+  const textMuted = "text-gray-500";
 
-  const textPrimary = isAdventureMode ? "text-white" : "text-gray-900"; // Darker primary text for light mode
-  const textSecondary = isAdventureMode ? "text-white/80" : "text-gray-600"; // Softer secondary text
-  const textMuted = isAdventureMode ? "text-white/60" : "text-gray-500";
-
-  if (!isAdventureMode) {
+  // Use standard (light theme) layout
     // Compact layout matching the screenshot style
     return (
       <div className="min-h-screen bg-gray-50 flex">
@@ -122,13 +114,24 @@ export const LearnMode: React.FC<LearnModeProps> = ({
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.3 }}
-                className={cardClasses}
+                className="bg-white rounded-xl shadow-lg p-6"
               >
               <div className="text-center space-y-6">
+                {onExit && (
+                  <div className="flex justify-start mb-4">
+                    <button
+                      onClick={onExit}
+                      className="bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 px-2 py-1 rounded-lg text-sm font-medium inline-flex items-center gap-1"
+                    >
+                      <ArrowLeft className="h-4 w-4" />
+                      Back
+                    </button>
+                  </div>
+                )}
                 <div className="text-4xl text-blue-500"> {/* Brighter icon color */}
                   <BookOpen className="h-12 w-12 mx-auto" />
                 </div>
-                
+
                 <h2 className="text-xl font-bold text-gray-800 flex items-center justify-center"> {/* Darker heading */}
                   <BookOpen className="h-5 w-5 mr-2" />
                   Learn New Words
@@ -193,7 +196,7 @@ export const LearnMode: React.FC<LearnModeProps> = ({
             </AnimatePresence>
 
             {/* Practice input */}
-            <div className={cardClasses}> {/* Reusing cardClasses for consistency */}
+            <div className="bg-white rounded-xl shadow-lg p-6"> {/* Reusing cardClasses for consistency */}
               <div className="space-y-5"> {/* Increased spacing */}
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-semibold text-gray-800">
@@ -330,260 +333,4 @@ export const LearnMode: React.FC<LearnModeProps> = ({
         </div>
       </div>
     );
-  }
-
-  // Adventure mode layout (keep existing) - This section remains largely unchanged from your previous version
-  return (
-    <div className={`${containerClasses} p-6`}>
-      <div className="max-w-4xl mx-auto space-y-8">
-        {/* Adventure Mode Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-6"
-        >
-          <h1 className="text-4xl font-bold text-white mb-2">
-            {adventureTheme.emoji} {adventureTheme.name}
-          </h1>
-          <p className="text-white/80 text-lg">
-            {adventureTheme.description}
-          </p>
-        </motion.div>
-
-        {/* Word display */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={gameState.currentWordIndex}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3 }}
-            className={cardClasses}
-          >
-          <div className="text-center space-y-6">
-            <div className="text-6xl">
-              <BookOpen className={`h-16 w-16 mx-auto ${isAdventureMode ? 'text-blue-300' : 'text-blue-500'}`} />
-            </div>
-            
-            <h2 className={`text-2xl font-bold ${textPrimary} flex items-center justify-center`}>
-              <BookOpen className="h-6 w-6 mr-2" />
-              Learn New Words
-            </h2>
-
-            <div className="space-y-4">
-              <h3 className={`text-5xl font-bold ${textPrimary}`}>
-                {gameState.currentWord?.spanish || gameState.currentWord?.word}
-              </h3>
-
-              {/* Part of speech */}
-              {gameState.currentWord?.part_of_speech && (
-                <div className={`inline-block px-3 py-1 rounded-full text-sm ${
-                  isAdventureMode
-                    ? 'bg-purple-500/20 text-purple-200 border border-purple-400/30'
-                    : 'bg-blue-100 text-blue-700 font-medium' // Adjusted for consistency
-                }`}>
-                  {gameState.currentWord.part_of_speech}
-                </div>
-              )}
-
-              {/* Audio button */}
-              {gameState.currentWord?.audio_url && (
-                <button
-                  onClick={() => playPronunciation(gameState.currentWord?.spanish || '', 'es', gameState.currentWord || undefined)}
-                  disabled={gameState.audioPlaying}
-                  className={`p-4 rounded-full transition-colors border-2 shadow-lg ${
-                    gameState.audioPlaying
-                      ? 'bg-gray-200 text-gray-400 cursor-not-allowed border-gray-300'
-                      : 'bg-blue-500/30 hover:bg-blue-500/40 text-blue-200 border-blue-400/50'
-                  }`}
-                >
-                  <Volume2 className="h-6 w-6" />
-                </button>
-              )}
-
-              {/* Translation toggle */}
-              <div className="flex justify-center">
-                <button
-                  onClick={() => {
-                    setShowTranslation(!showTranslation);
-                    if (!showTranslation && onModeSpecificAction) {
-                      onModeSpecificAction('show_translation');
-                    }
-                  }}
-                  className={`flex items-center space-x-2 px-4 py-2 rounded-xl transition-colors border ${
-                    isAdventureMode
-                      ? 'bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 border-slate-600/30'
-                      : 'border-gray-300 text-gray-700 hover:bg-gray-100' // Adjusted for consistency
-                  }`}
-                >
-                  {showTranslation ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  <span className="text-sm">
-                    {showTranslation ? 'Hide' : 'Show'} Translation
-                  </span>
-                </button>
-              </div>
-
-              {/* Translation display */}
-              {showTranslation && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className={`p-4 rounded-xl ${
-                    isAdventureMode 
-                      ? 'bg-green-500/20 border border-green-400/30' 
-                      : 'bg-green-50 border border-green-200'
-                  }`}
-                >
-                  <p className={`text-xl font-semibold ${isAdventureMode ? 'text-green-200' : 'text-green-800'}`}>
-                    {gameState.currentWord?.english || gameState.currentWord?.translation}
-                  </p>
-                </motion.div>
-              )}
-            </div>
-          </div>
-        </motion.div>
-        </AnimatePresence>
-
-        {/* Example sentence */}
-        {gameState.currentWord?.example_sentence && (
-          <div className={cardClasses}>
-            <div className="space-y-4">
-              <h4 className={`text-lg font-semibold ${textPrimary}`}>
-                Example Usage:
-              </h4>
-              <div className={`p-4 rounded-xl ${
-                isAdventureMode 
-                  ? 'bg-slate-700/30 border border-slate-600/30' 
-                  : 'bg-blue-50 border border-blue-200'
-              }`}>
-                <p className={`text-lg italic ${isAdventureMode ? 'text-slate-200' : 'text-blue-700'}`}>
-                  "{gameState.currentWord.example_sentence}"
-                </p>
-                
-                {gameState.currentWord.example_translation && (
-                  <p className={`text-sm mt-2 ${textMuted}`}>
-                    Translation: "{gameState.currentWord.example_translation}"
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-        {/* Practice input */}
-        <div className={cardClasses}>
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h3 className={`text-lg font-semibold ${textPrimary}`}>
-                Practice typing the translation:
-              </h3>
-              
-              <button
-                onClick={onToggleHint}
-                className={`flex items-center space-x-2 px-3 py-1 rounded-xl text-sm transition-colors border ${
-                  showHint
-                    ? isAdventureMode
-                      ? 'bg-yellow-500/30 text-yellow-200 border-yellow-400/30'
-                      : 'bg-yellow-100 text-yellow-700 border-yellow-300'
-                    : isAdventureMode
-                      ? 'bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 border-slate-600/30'
-                      : 'border-gray-300 text-gray-600 hover:bg-gray-100' // Adjusted for consistency
-                }`}
-              >
-                <Lightbulb className="h-4 w-4" />
-                <span>Hint</span>
-              </button>
-            </div>
-
-            {/* Hint display */}
-            {showHint && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                className={`p-3 rounded-xl ${
-                  isAdventureMode
-                    ? 'bg-yellow-500/20 text-yellow-200 border border-yellow-400/30'
-                    : 'bg-yellow-50 text-yellow-800 border border-yellow-200' // Adjusted for consistency
-                }`}
-              >
-                <p className="text-sm font-mono flex items-center">
-                  <Lightbulb className="h-4 w-4 mr-2" />
-                  {getHintText()}
-                </p>
-              </motion.div>
-            )}
-            
-            <div className="relative">
-              <input
-                ref={inputRef}
-                type="text"
-                value={userAnswer}
-                onChange={(e) => onAnswerChange(e.target.value)}
-                onKeyDown={handleKeyPress}
-                placeholder={getPlaceholderText('learn')}
-                className={`w-full p-4 rounded-xl text-lg font-medium transition-all duration-200 ${
-                  isAdventureMode
-                    ? 'bg-slate-700/50 text-white placeholder-slate-400 border border-slate-500/30 focus:border-blue-400/50 focus:ring-2 focus:ring-blue-400/20'
-                    : 'bg-gray-50 text-gray-900 placeholder-gray-400 border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none' // Adjusted for consistency
-                }`}
-                autoFocus
-              />
-            </div>
-
-            <div className="grid grid-cols-1 gap-3">
-              <button
-                onClick={onSubmit}
-                disabled={!userAnswer.trim()}
-                className={`w-full py-3 rounded-xl font-semibold transition-all duration-200 shadow-md ${
-                  userAnswer.trim()
-                    ? isAdventureMode
-                      ? 'bg-blue-500 hover:bg-blue-600 text-white shadow-lg hover:shadow-blue-500/25'
-                      : 'bg-blue-600 hover:bg-blue-700 text-white' // Adjusted for consistency
-                    : isAdventureMode
-                      ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                      : 'bg-blue-300 text-white cursor-not-allowed' // Adjusted for consistency
-                }`}
-              >
-                Check Answer
-              </button>
-
-              <motion.button
-                onClick={handleDontKnow}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className={`w-full py-2 rounded-xl font-medium transition-all duration-200 flex items-center justify-center space-x-2 ${
-                  isAdventureMode
-                    ? 'text-slate-300 bg-slate-700/50 hover:bg-slate-600/50 border border-slate-500/30'
-                    : 'text-gray-600 bg-gray-100 hover:bg-gray-200 border border-gray-300'
-                }`}
-              >
-                <SkipForward className="h-4 w-4" />
-                <span>Don't Know - Skip</span>
-              </motion.button>
-            </div>
-          </div>
-        </div>
-
-        {/* Progress bar for non-adventure mode */}
-        {!isAdventureMode && (
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6"> {/* Consistent card styling */}
-            <h4 className="text-gray-800 font-bold text-center mb-4">Session Progress</h4>
-            <div className="space-y-3">
-              <div className="bg-blue-100 rounded-full h-3 overflow-hidden">
-                <div
-                  className="bg-gradient-to-r from-blue-400 to-blue-600 h-full rounded-full transition-all duration-500"
-                  style={{ width: `${((gameState.currentWordIndex + 1) / gameState.totalWords) * 100}%` }}
-                ></div>
-              </div>
-              <div className="text-center text-blue-700 text-lg font-medium">
-                {Math.round(((gameState.currentWordIndex + 1) / gameState.totalWords) * 100)}% Complete
-              </div>
-              <div className="text-center text-gray-500 text-sm">
-                {gameState.totalWords - (gameState.currentWordIndex + 1)} words remaining
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
 };

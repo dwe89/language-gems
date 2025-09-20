@@ -14,6 +14,16 @@ interface WordBlastGameWrapperProps {
   assignmentConfig?: any;
   userId?: string;
   onOpenSettings?: () => void;
+  preselectedConfig?: {
+    language: string;
+    category: string;
+    subcategory: string;
+    curriculumLevel: string;
+    examBoard?: string;
+    tier?: string;
+    vocabulary: any[];
+  };
+  selectedTheme?: string;
 }
 
 export default function WordBlastGameWrapper(props: WordBlastGameWrapperProps) {
@@ -273,6 +283,8 @@ export default function WordBlastGameWrapper(props: WordBlastGameWrapperProps) {
       onWordMatch={logWordMatchPerformance}
       onChainReaction={logChainReaction}
       onBlastCombo={logBlastCombo}
+      preselectedConfig={props.preselectedConfig}
+      selectedTheme={props.selectedTheme}
     />
   );
 }

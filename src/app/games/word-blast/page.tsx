@@ -185,6 +185,16 @@ export default function WordBlastPage() {
         assignmentConfig={assignmentId ? { assignmentId } : undefined}
         userId={user?.id}
         onOpenSettings={handleOpenConfigPanel}
+        preselectedConfig={gameConfig ? {
+          language: gameConfig.config.language,
+          category: gameConfig.config.categoryId || '',
+          subcategory: gameConfig.config.subcategoryId || '',
+          curriculumLevel: gameConfig.config.curriculumLevel || 'KS3',
+          examBoard: gameConfig.config.examBoard,
+          tier: gameConfig.config.tier,
+          vocabulary: gameConfig.vocabulary
+        } : undefined}
+        selectedTheme={gameConfig?.theme}
       />
 
       {/* In-game configuration panel */}

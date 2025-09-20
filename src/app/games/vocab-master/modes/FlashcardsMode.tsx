@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { RotateCcw, CheckCircle, XCircle, Volume2, Play, Pause, CreditCard, Zap } from 'lucide-react';
+import { RotateCcw, CheckCircle, XCircle, Volume2, Play, Pause, CreditCard, Zap, ArrowLeft } from 'lucide-react';
 import { ModeComponent } from '../types';
 
 interface FlashcardsModeProps extends ModeComponent {
@@ -13,7 +13,8 @@ export const FlashcardsMode: React.FC<FlashcardsModeProps> = ({
   onSelfAssessment,
   showAnswer,
   isAdventureMode,
-  playPronunciation
+  playPronunciation,
+  onExit
 }) => {
   const [isFlipped, setIsFlipped] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -51,33 +52,46 @@ export const FlashcardsMode: React.FC<FlashcardsModeProps> = ({
     : 0;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-3xl mx-auto space-y-4">
       {/* Progress Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className={`rounded-2xl p-4 ${
+        className={`rounded-xl p-3 ${
           isAdventureMode
             ? 'bg-gradient-to-r from-slate-800/80 to-slate-900/80 backdrop-blur-sm border border-slate-600/30'
             : 'bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-100'
         }`}
       >
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-3">
+            {onExit && (
+              <button
+                onClick={onExit}
+                className={`${
+                  isAdventureMode
+                    ? 'bg-slate-700/50 hover:bg-slate-600/50 text-slate-200 border border-slate-600/30'
+                    : 'bg-white hover:bg-gray-50 text-gray-700 border border-gray-300'
+                } px-2 py-1 rounded-lg text-sm font-medium inline-flex items-center gap-1`}
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back
+              </button>
+            )}
             <div className={`p-2 rounded-full ${
               isAdventureMode ? 'bg-orange-500/20' : 'bg-orange-100'
             }`}>
-              <CreditCard className={`h-5 w-5 ${
+              <CreditCard className={`h-4 w-4 ${
                 isAdventureMode ? 'text-orange-300' : 'text-orange-600'
               }`} />
             </div>
             <div>
-              <h3 className={`font-bold ${
+              <h3 className={`font-semibold text-sm ${
                 isAdventureMode ? 'text-white' : 'text-gray-800'
               }`}>
                 Flashcards
               </h3>
-              <p className={`text-sm ${
+              <p className={`text-xs ${
                 isAdventureMode ? 'text-slate-300' : 'text-gray-600'
               }`}>
                 Card {gameState.currentWordIndex + 1} of {gameState.totalWords}
@@ -85,9 +99,9 @@ export const FlashcardsMode: React.FC<FlashcardsModeProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center space-x-6">
+          <div className="flex items-center space-x-4">
             <div className="text-center">
-              <div className={`text-2xl font-bold ${
+              <div className={`text-lg font-bold ${
                 isAdventureMode ? 'text-green-400' : 'text-green-600'
               }`}>
                 {gameState.correctAnswers}
@@ -99,7 +113,7 @@ export const FlashcardsMode: React.FC<FlashcardsModeProps> = ({
               </div>
             </div>
             <div className="text-center">
-              <div className={`text-2xl font-bold ${
+              <div className={`text-lg font-bold ${
                 isAdventureMode ? 'text-red-400' : 'text-red-600'
               }`}>
                 {gameState.incorrectAnswers}
@@ -111,7 +125,7 @@ export const FlashcardsMode: React.FC<FlashcardsModeProps> = ({
               </div>
             </div>
             <div className="text-center">
-              <div className={`text-2xl font-bold ${
+              <div className={`text-lg font-bold ${
                 isAdventureMode ? 'text-blue-400' : 'text-blue-600'
               }`}>
                 {accuracy}%
@@ -158,31 +172,33 @@ export const FlashcardsMode: React.FC<FlashcardsModeProps> = ({
           >
             {/* Front of card */}
             <div
-              className={`backface-hidden min-h-[400px] flex flex-col justify-center rounded-3xl p-8 shadow-2xl ${
+              className={`backface-hidden min-h-[280px] flex flex-col justify-center rounded-2xl p-6 shadow-xl ${
                 isAdventureMode
                   ? 'bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl border-2 border-slate-600/30'
                   : 'bg-gradient-to-br from-white to-gray-50 border-2 border-gray-100'
               }`}
               style={{ backfaceVisibility: 'hidden' }}
             >
-              <div className="text-center space-y-8">
+              <div className="text-center space-y-6">
                 <motion.div
                   animate={{ rotate: [0, 5, -5, 0] }}
                   transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
-                  className="text-8xl"
+                  className="text-5xl"
                 >
-                  📚
+                  <CreditCard className={`h-12 w-12 mx-auto ${
+                    isAdventureMode ? 'text-orange-300' : 'text-orange-600'
+                  }`} />
                 </motion.div>
 
-                <h2 className={`text-2xl font-bold ${
+                <h2 className={`text-lg font-bold ${
                   isAdventureMode ? 'text-white' : 'text-gray-800'
                 }`}>
                   Do you know this word?
                 </h2>
 
-                <div className="space-y-6">
+                <div className="space-y-4">
                   <motion.h3
-                    className={`text-6xl font-bold ${
+                    className={`text-4xl font-bold ${
                       isAdventureMode ? 'text-white' : 'text-gray-800'
                     }`}
                     whileHover={{ scale: 1.05 }}
@@ -231,10 +247,10 @@ export const FlashcardsMode: React.FC<FlashcardsModeProps> = ({
                   </motion.button>
                 </div>
 
-                <div className={`text-lg ${
+                <div className={`text-sm ${
                   isAdventureMode ? 'text-slate-300' : 'text-gray-600'
                 }`}>
-                  💭 Think about the meaning, then click to reveal
+                  Think about the meaning, then click to reveal
                 </div>
 
                 <motion.div
@@ -242,7 +258,7 @@ export const FlashcardsMode: React.FC<FlashcardsModeProps> = ({
                   transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 2 }}
                   className="flex justify-center"
                 >
-                  <RotateCcw className={`h-8 w-8 ${
+                  <RotateCcw className={`h-6 w-6 ${
                     isAdventureMode ? 'text-slate-400' : 'text-gray-400'
                   }`} />
                 </motion.div>
@@ -251,7 +267,7 @@ export const FlashcardsMode: React.FC<FlashcardsModeProps> = ({
 
             {/* Back of card */}
             <div
-              className={`backface-hidden absolute inset-0 min-h-[400px] flex flex-col justify-center rounded-3xl p-8 shadow-2xl ${
+              className={`backface-hidden absolute inset-0 min-h-[280px] flex flex-col justify-center rounded-2xl p-6 shadow-xl ${
                 isAdventureMode
                   ? 'bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl border-2 border-slate-600/30'
                   : 'bg-gradient-to-br from-white to-gray-50 border-2 border-gray-100'
@@ -261,7 +277,7 @@ export const FlashcardsMode: React.FC<FlashcardsModeProps> = ({
                 transform: 'rotateY(180deg)'
               }}
             >
-              <div className="text-center space-y-8">
+              <div className="text-center space-y-6">
                 <motion.div
                   animate={{ scale: [1, 1.1, 1] }}
                   transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 2 }}

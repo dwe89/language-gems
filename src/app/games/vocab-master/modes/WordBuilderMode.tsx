@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Keyboard, Lightbulb, CheckCircle2, XCircle, RotateCcw, Zap } from 'lucide-react';
+import { Keyboard, CheckCircle2, XCircle, RotateCcw, Zap, ArrowLeft } from 'lucide-react';
 import { ModeComponent } from '../types';
 
 interface WordBuilderModeProps extends ModeComponent {
@@ -12,12 +12,12 @@ export const WordBuilderMode: React.FC<WordBuilderModeProps> = ({
   onLetterComplete,
   isAdventureMode,
   playPronunciation,
-  onModeSpecificAction
+  onModeSpecificAction,
+  onExit
 }) => {
   const [currentLetterIndex, setCurrentLetterIndex] = useState(0);
   const [guessedLetters, setGuessedLetters] = useState<string[]>([]);
-  const [wrongLetters, setWrongLetters] = useState<string[]>([]);
-  const [showHint, setShowHint] = useState(false);
+  const [wrongLettersForCurrentPosition, setWrongLettersForCurrentPosition] = useState<string[]>([]);
   const [isComplete, setIsComplete] = useState(false);
 
   const targetWord = gameState.currentWord?.word || gameState.currentWord?.spanish || '';
@@ -27,10 +27,14 @@ export const WordBuilderMode: React.FC<WordBuilderModeProps> = ({
     // Reset for new word
     setCurrentLetterIndex(0);
     setGuessedLetters([]);
-    setWrongLetters([]);
-    setShowHint(false);
+    setWrongLettersForCurrentPosition([]);
     setIsComplete(false);
   }, [gameState.currentWordIndex]);
+
+  // Reset wrong letters when moving to next position
+  useEffect(() => {
+    setWrongLettersForCurrentPosition([]);
+  }, [currentLetterIndex]);
 
   const handleLetterGuess = (letter: string) => {
     const targetLetter = targetWord[currentLetterIndex]?.toLowerCase();
@@ -56,7 +60,7 @@ export const WordBuilderMode: React.FC<WordBuilderModeProps> = ({
         onLetterComplete(true, letter);
       }
     } else {
-      setWrongLetters(prev => [...prev, letter.toLowerCase()]);
+      setWrongLettersForCurrentPosition(prev => [...prev, letter.toLowerCase()]);
       onLetterComplete(false, letter);
     }
   };
@@ -68,7 +72,7 @@ export const WordBuilderMode: React.FC<WordBuilderModeProps> = ({
       } else if (index === currentLetterIndex) {
         return '_';
       } else {
-        return showHint ? letter.charAt(0) + '_'.repeat(letter.length - 1) : '_';
+        return '_';
       }
     }).join('');
   };
@@ -91,33 +95,46 @@ export const WordBuilderMode: React.FC<WordBuilderModeProps> = ({
   const wordProgress = (currentLetterIndex / targetWord.length) * 100;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-3xl mx-auto space-y-6">
       {/* Progress Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className={`rounded-2xl p-4 ${
-          isAdventureMode 
-            ? 'bg-gradient-to-r from-slate-800/80 to-slate-900/80 backdrop-blur-sm border border-slate-600/30' 
+        className={`rounded-xl p-4 ${
+          isAdventureMode
+            ? 'bg-gradient-to-r from-slate-800/80 to-slate-900/80 backdrop-blur-sm border border-slate-600/30'
             : 'bg-gradient-to-r from-green-50 to-emerald-50 border border-green-100'
         }`}
       >
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-3">
+            {onExit && (
+              <button
+                onClick={onExit}
+                className={`${
+                  isAdventureMode
+                    ? 'bg-slate-700/50 hover:bg-slate-600/50 text-slate-200 border border-slate-600/30'
+                    : 'bg-white hover:bg-gray-50 text-gray-700 border border-gray-300'
+                } px-2 py-1 rounded-lg text-sm font-medium inline-flex items-center gap-1`}
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back
+              </button>
+            )}
             <div className={`p-2 rounded-full ${
               isAdventureMode ? 'bg-green-500/20' : 'bg-green-100'
             }`}>
-              <Keyboard className={`h-5 w-5 ${
+              <Keyboard className={`h-4 w-4 ${
                 isAdventureMode ? 'text-green-300' : 'text-green-600'
               }`} />
             </div>
             <div>
-              <h3 className={`font-bold ${
+              <h3 className={`font-semibold text-sm ${
                 isAdventureMode ? 'text-white' : 'text-gray-800'
               }`}>
                 Word Builder
               </h3>
-              <p className={`text-sm ${
+              <p className={`text-xs ${
                 isAdventureMode ? 'text-slate-300' : 'text-gray-600'
               }`}>
                 Word {gameState.currentWordIndex + 1} of {gameState.totalWords}
@@ -173,10 +190,10 @@ export const WordBuilderMode: React.FC<WordBuilderModeProps> = ({
             Build the Word
           </h2>
           
-          <p className={`text-lg mb-6 ${
-            isAdventureMode ? 'text-slate-300' : 'text-gray-600'
+          <p className={`text-2xl mb-6 font-semibold ${
+            isAdventureMode ? 'text-blue-300' : 'text-blue-600'
           }`}>
-            Translation: <span className="font-semibold text-blue-500">{translation}</span>
+            {translation}
           </p>
 
           {/* Word Display */}
@@ -216,7 +233,7 @@ export const WordBuilderMode: React.FC<WordBuilderModeProps> = ({
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 className={`p-4 rounded-xl text-2xl font-bold transition-all duration-200 ${
-                  wrongLetters.includes(letter)
+                  wrongLettersForCurrentPosition.includes(letter)
                     ? isAdventureMode
                       ? 'bg-red-500/20 text-red-300 cursor-not-allowed'
                       : 'bg-red-100 text-red-600 cursor-not-allowed'
@@ -224,7 +241,7 @@ export const WordBuilderMode: React.FC<WordBuilderModeProps> = ({
                       ? 'bg-slate-700/50 hover:bg-slate-600/50 text-white border border-slate-500/30'
                       : 'bg-gray-100 hover:bg-gray-200 text-gray-800 border border-gray-200'
                 }`}
-                disabled={wrongLetters.includes(letter)}
+                disabled={wrongLettersForCurrentPosition.includes(letter)}
               >
                 {letter.toUpperCase()}
               </motion.button>
@@ -255,26 +272,7 @@ export const WordBuilderMode: React.FC<WordBuilderModeProps> = ({
           )}
         </AnimatePresence>
 
-        {/* Hint Button */}
-        {!isComplete && (
-          <motion.button
-            onClick={() => setShowHint(!showHint)}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className={`flex items-center space-x-2 mx-auto px-4 py-2 rounded-xl text-sm transition-all duration-200 ${
-              showHint
-                ? isAdventureMode
-                  ? 'bg-yellow-500/30 text-yellow-200 border border-yellow-400/30'
-                  : 'bg-yellow-100 text-yellow-700 border border-yellow-300'
-                : isAdventureMode
-                  ? 'bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 border border-slate-600/30'
-                  : 'border border-gray-300 text-gray-600 hover:bg-gray-100'
-            }`}
-          >
-            <Lightbulb className="h-4 w-4" />
-            <span>{showHint ? 'Hide Hint' : 'Show Hint'}</span>
-          </motion.button>
-        )}
+
       </motion.div>
     </div>
   );

@@ -145,9 +145,9 @@ export interface ModeComponent {
   vocabulary: VocabularyWord[];
   onAnswer: (answer: string) => void;
   onNext: () => void;
-  isAdventureMode: boolean;
   playPronunciation: (text: string, language?: 'es' | 'en', word?: VocabularyWord) => void;
   onModeSpecificAction?: (action: string, data?: any) => void;
+  onExit?: () => void; // Allow modes to render a Back button
 }
 
 export interface ModeConfig {

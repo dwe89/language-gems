@@ -241,7 +241,7 @@ export function mapLauncherModeToGameMode(launcherMode: string): GameMode {
     case 'word_race':
       return 'word_race';
     case 'sentence_builder':
-      return 'learn'; // Use learn mode for now
+      return 'cloze'; // Use cloze mode for sentence context practice
     case 'memory_palace':
       return 'memory_palace';
     case 'story_mode':

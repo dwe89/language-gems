@@ -278,6 +278,7 @@ export default function GamesPage() {
           thumbnail: '/images/games/conjugation-duel.jpg',
           category: 'grammar',
           popular: true,
+          comingSoon: true,
           languages: ['Spanish'],
           path: '/games/conjugation-duel'
         },
