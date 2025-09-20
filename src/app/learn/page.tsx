@@ -128,12 +128,14 @@ export default function LearnPage() {
       description: "Everything you need to excel in GCSE languages",
       features: [
         "All 15+ interactive games",
+        "All original learning songs and tracks",
         "Complete GCSE vocabulary (2000+ words)",
+        "Practise exams and quizzes",
+        "Grammar guides and tips",
         "Advanced progress analytics",
         "Spaced repetition system",
         "Audio pronunciation",
-        "Offline practice mode",
-        "Priority support"
+        "Offline practice mode"
       ],
       cta: "Start Free Trial",
       ctaLink: "/auth/signup-learner?plan=pro",

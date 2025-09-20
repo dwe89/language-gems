@@ -178,8 +178,8 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
     // Add the word to used words list
     setUsedWords(prev => [...prev, newWord]);
 
-    // Get unique letters excluding spaces and normalize for comparison
-    const uniqueLetters = [...new Set(newWord.split('').filter((char: string) => char !== ' '))] as string[];
+    // Get unique letters excluding spaces, apostrophes, and hyphens
+    const uniqueLetters = [...new Set(newWord.split('').filter((char: string) => char !== ' ' && char !== "'" && char !== '-'))] as string[];
     setWordLetters(uniqueLetters);
     setGuessedLetters([]);
     setWrongGuesses(0);
@@ -209,7 +209,7 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
 
     // Check if all letters in the word have been guessed
     const hasWon = wordLetters.every(letter =>
-      letter === ' ' || letter === '-' || isLetterGuessed(letter, guessedLetters)
+      letter === ' ' || letter === '-' || letter === "'" || isLetterGuessed(letter, guessedLetters)
     );
 
     if (hasWon) {
@@ -531,7 +531,7 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
     setWord(newWord);
     // Add the word to used words list
     setUsedWords(prev => [...prev, newWord]);
-    setWordLetters([...new Set(newWord.split('').filter((char: string) => char !== ' '))] as string[]);
+    setWordLetters([...new Set(newWord.split('').filter((char: string) => char !== ' ' && char !== "'" && char !== '-'))] as string[]);
 
     // Restart the timer
     if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
@@ -693,6 +693,17 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
             return (
               <div key={index} className="w-4 md:w-6 flex items-end justify-center">
                 <div className="w-4 h-4 md:w-6 md:h-6"></div>
+              </div>
+            );
+          }
+
+          if (letter === "'" || letter === '-') {
+            // Render apostrophes and hyphens directly (always visible)
+            return (
+              <div key={index} className="w-4 md:w-6 flex items-end justify-center">
+                <div className="text-2xl md:text-3xl font-bold text-white">
+                  {letter}
+                </div>
               </div>
             );
           }

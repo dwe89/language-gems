@@ -2,6 +2,10 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Zap, Coffee, Palette, Hash, Users, Hand, Shirt, Home, BookOpen, Trophy,
+  Cloud, Car, Heart, Clock, TreePine, Monitor, Music, Plane, Globe
+} from 'lucide-react';
 import ThemeSelector from './ThemeSelector';
 import { useAudio } from '../hooks/useAudio';
 
@@ -17,30 +21,39 @@ type GameSettingsProps = {
 };
 
 const CATEGORIES = [
-  { id: 'animals', name: 'Animals', emoji: '🐾', description: 'Pets, wildlife & creatures' },
-  { id: 'food', name: 'Food & Drinks', emoji: '🍎', description: 'Meals, snacks & beverages' },
-  { id: 'colors', name: 'Colors', emoji: '🎨', description: 'Colors & shades' },
-  { id: 'numbers', name: 'Numbers', emoji: '🔢', description: 'Basic counting & math' },
-  { id: 'family', name: 'Family', emoji: '👨‍👩‍👧‍👦', description: 'Family members & relations' },
-  { id: 'body', name: 'Body Parts', emoji: '👋', description: 'Body parts & anatomy' },
-  { id: 'clothes', name: 'Clothing', emoji: '👕', description: 'Clothes & accessories' },
-  { id: 'house', name: 'House & Home', emoji: '🏠', description: 'Rooms, furniture & items' },
-  { id: 'school', name: 'School', emoji: '📚', description: 'Education & learning' },
-  { id: 'sports', name: 'Sports', emoji: '⚽', description: 'Games, sports & activities' },
-  { id: 'weather', name: 'Weather', emoji: '🌤️', description: 'Weather & seasons' },
-  { id: 'transport', name: 'Transportation', emoji: '🚗', description: 'Vehicles & travel' },
-  { id: 'emotions', name: 'Emotions', emoji: '😊', description: 'Feelings & moods' },
-  { id: 'time', name: 'Time', emoji: '⏰', description: 'Days, months & time' },
-  { id: 'nature', name: 'Nature', emoji: '🌳', description: 'Plants, landscapes & outdoors' },
-  { id: 'technology', name: 'Technology', emoji: '💻', description: 'Computers, phones & gadgets' },
-  { id: 'music', name: 'Music', emoji: '🎵', description: 'Instruments & musical terms' },
-  { id: 'travel', name: 'Travel', emoji: '✈️', description: 'Places, countries & tourism' }
+  { id: 'animals', name: 'Animals', icon: 'Zap', description: 'Pets, wildlife & creatures' },
+  { id: 'food', name: 'Food & Drinks', icon: 'Coffee', description: 'Meals, snacks & beverages' },
+  { id: 'colors', name: 'Colors', icon: 'Palette', description: 'Colors & shades' },
+  { id: 'numbers', name: 'Numbers', icon: 'Hash', description: 'Basic counting & math' },
+  { id: 'family', name: 'Family', icon: 'Users', description: 'Family members & relations' },
+  { id: 'body', name: 'Body Parts', icon: 'Hand', description: 'Body parts & anatomy' },
+  { id: 'clothes', name: 'Clothing', icon: 'Shirt', description: 'Clothes & accessories' },
+  { id: 'house', name: 'House & Home', icon: 'Home', description: 'Rooms, furniture & items' },
+  { id: 'school', name: 'School', icon: 'BookOpen', description: 'Education & learning' },
+  { id: 'sports', name: 'Sports', icon: 'Trophy', description: 'Games, sports & activities' },
+  { id: 'weather', name: 'Weather', icon: 'Cloud', description: 'Weather & seasons' },
+  { id: 'transport', name: 'Transportation', icon: 'Car', description: 'Vehicles & travel' },
+  { id: 'emotions', name: 'Emotions', icon: 'Heart', description: 'Feelings & moods' },
+  { id: 'time', name: 'Time', icon: 'Clock', description: 'Days, months & time' },
+  { id: 'nature', name: 'Nature', icon: 'TreePine', description: 'Plants, landscapes & outdoors' },
+  { id: 'technology', name: 'Technology', icon: 'Monitor', description: 'Computers, phones & gadgets' },
+  { id: 'music', name: 'Music', icon: 'Music', description: 'Instruments & musical terms' },
+  { id: 'travel', name: 'Travel', icon: 'Plane', description: 'Places, countries & tourism' }
 ];
 
+// Helper function to get icon component
+const getIconComponent = (iconName: string) => {
+  const icons: { [key: string]: React.ComponentType<any> } = {
+    Zap, Coffee, Palette, Hash, Users, Hand, Shirt, Home, BookOpen, Trophy,
+    Cloud, Car, Heart, Clock, TreePine, Monitor, Music, Plane, Globe
+  };
+  return icons[iconName] || Globe;
+};
+
 const LANGUAGES = [
-  { id: 'spanish', name: 'Spanish', emoji: '🇪🇸', native: 'Español' },
-  { id: 'french', name: 'French', emoji: '🇫🇷', native: 'Français' },
-  { id: 'german', name: 'German', emoji: '🇩🇪', native: 'Deutsch' }
+  { id: 'spanish', name: 'Spanish', icon: 'Globe', native: 'Español' },
+  { id: 'french', name: 'French', icon: 'Globe', native: 'Français' },
+  { id: 'german', name: 'German', icon: 'Globe', native: 'Deutsch' }
 ];
 
 export default function GameSettings({ onStartGame }: GameSettingsProps) {
@@ -106,7 +119,9 @@ export default function GameSettings({ onStartGame }: GameSettingsProps) {
               }}
               className="cursor-pointer text-center p-6 rounded-xl border-2 transition-all transform hover:scale-105 bg-white/10 border-white/40 hover:bg-white/15 hover:border-white/60 min-h-[100px] flex flex-col justify-center"
             >
-              <div className="text-4xl mb-2">{category.emoji}</div>
+              <div className="mb-2">
+                {React.createElement(getIconComponent(category.icon), { className: "w-8 h-8 mx-auto text-white" })}
+              </div>
               <div className="font-medium text-xl">{category.name}</div>
               <div className="text-sm mt-1 opacity-75">{category.description}</div>
               <div className="text-xs mt-2 opacity-50">Click to change</div>
@@ -131,7 +146,9 @@ export default function GameSettings({ onStartGame }: GameSettingsProps) {
               }}
               className="cursor-pointer text-center p-6 rounded-xl border-2 transition-all transform hover:scale-105 bg-white/10 border-white/40 hover:bg-white/15 hover:border-white/60 min-h-[100px] flex flex-col justify-center"
             >
-              <div className="text-4xl mb-2">{language.emoji}</div>
+              <div className="mb-2">
+                {React.createElement(getIconComponent(language.icon), { className: "w-8 h-8 mx-auto text-white" })}
+              </div>
               <div className="font-medium text-xl">{language.name}</div>
               <div className="text-sm mt-1 opacity-75">{language.native}</div>
               <div className="text-xs mt-2 opacity-50">Click to change</div>
@@ -188,7 +205,9 @@ export default function GameSettings({ onStartGame }: GameSettingsProps) {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                   >
-                    <div className="text-3xl mb-2">{item.emoji}</div>
+                    <div className="mb-2">
+                      {React.createElement(getIconComponent(item.icon), { className: "w-6 h-6 mx-auto text-white" })}
+                    </div>
                     <div className="font-medium text-sm">{item.name}</div>
                     <div className="text-xs mt-1 opacity-75">{item.description}</div>
                   </motion.div>
@@ -247,7 +266,9 @@ export default function GameSettings({ onStartGame }: GameSettingsProps) {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                   >
-                    <div className="text-4xl mb-3">{lang.emoji}</div>
+                    <div className="mb-3">
+                      {React.createElement(getIconComponent(lang.icon), { className: "w-8 h-8 mx-auto text-white" })}
+                    </div>
                     <div className="font-medium text-lg">{lang.name}</div>
                     <div className="text-sm mt-1 opacity-75">{lang.native}</div>
                   </motion.div>

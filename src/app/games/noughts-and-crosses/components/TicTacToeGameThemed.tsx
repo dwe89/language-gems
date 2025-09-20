@@ -1399,20 +1399,20 @@ export default function TicTacToeGame({
           
           {/* Left Side - Game Board */}
           <div className="flex-shrink-0">
-            <motion.div 
-              className="bg-black/40 backdrop-blur-lg border-2 border-white/30 rounded-2xl p-4 shadow-2xl"
+            <motion.div
+              className="bg-black/40 backdrop-blur-lg border-2 border-white/30 rounded-2xl p-2 md:p-4 shadow-2xl w-full max-w-sm md:max-w-none"
               initial={{ scale: 0.8, opacity: 0, x: -50 }}
               animate={{ scale: 1, opacity: 1, x: 0 }}
               transition={{ delay: 0.3, type: "spring", stiffness: 150 }}
             >
-              <div className="grid grid-cols-3 gap-6 aspect-square w-[28rem] mx-auto mb-2">
+              <div className="grid grid-cols-3 gap-2 md:gap-6 aspect-square w-full max-w-[20rem] md:max-w-[28rem] mx-auto mb-2">
                 {board.map((cell, index) => (
                   <motion.button
                     key={index}
                     onClick={() => handleCellClick(index)}
                     disabled={!!cell || gameState !== 'playing' || (settings.gameMode !== '2-player' && currentPlayer !== 'X')}
                     className={`
-                      aspect-square rounded-2xl border-3 flex flex-col items-center justify-center text-6xl font-bold transition-all duration-300 relative
+                      aspect-square rounded-2xl border-3 flex flex-col items-center justify-center text-4xl md:text-6xl font-bold transition-all duration-300 relative
                       backdrop-blur-md bg-white/15 border-white/40 shadow-lg
                       ${winningLine.includes(index) 
                         ? 'bg-yellow-400/40 border-yellow-400 shadow-xl shadow-yellow-400/50 scale-105'
