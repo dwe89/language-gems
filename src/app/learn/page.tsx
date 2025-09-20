@@ -135,7 +135,15 @@ export default function LearnPage() {
         "Advanced progress analytics",
         "Spaced repetition system",
         "Audio pronunciation",
-        "Offline practice mode"
+        "Offline practice mode",
+        "AI-powered worksheet generation",
+        "Real-time performance insights",
+        "Custom vocabulary lists",
+        "Listening comprehension exercises",
+        "Speaking practice with feedback",
+        "Achievement badges and rewards",
+        "Study streak tracking",
+        "Mobile app access"
       ],
       cta: "Start Free Trial",
       ctaLink: "/auth/signup-learner?plan=pro",

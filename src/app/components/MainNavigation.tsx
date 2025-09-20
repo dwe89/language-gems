@@ -51,7 +51,11 @@ export default function MainNavigation() {
   }, []);
 
   // Handle dropdown toggle
-  const handleDropdownToggle = useCallback((itemName: string) => {
+  const handleDropdownToggle = useCallback((itemName: string, event?: React.MouseEvent) => {
+    // Prevent event bubbling that might interfere with navigation
+    if (event) {
+      event.stopPropagation();
+    }
     setActiveDropdown(prev => prev === itemName ? null : itemName);
   }, []);
 
@@ -108,7 +112,7 @@ export default function MainNavigation() {
                 return (
                   <div key={item.name} className="relative">
                     <button
-                      onClick={() => handleDropdownToggle(item.name)}
+                      onClick={(e) => handleDropdownToggle(item.name, e)}
                       className={`flex items-center transition-colors text-white font-medium hover:text-yellow-200 relative ${
                         item.dropdownOnly ? '' : isActive(item.path) ? 'text-yellow-300 font-bold' : ''
                       }`}
@@ -128,11 +132,21 @@ export default function MainNavigation() {
                     {activeDropdown === item.name && (
                       <div className="absolute top-full left-0 mt-2 w-48 bg-white rounded-lg shadow-2xl border border-gray-100 py-2 z-[9999]">
                         {item.dropdownItems?.map((dropdownItem) => (
-                          <Link
+                          <a
                             key={dropdownItem.name}
                             href={dropdownItem.comingSoon ? '/coming-soon' : dropdownItem.path}
-                            className="flex items-center justify-between px-4 py-2 hover:bg-gray-50 transition-colors group"
-                            onClick={() => setActiveDropdown(null)}
+                            className="flex items-center justify-between px-4 py-2 hover:bg-gray-50 transition-colors group cursor-pointer"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              
+                              // Navigate using router.push
+                              const targetPath = dropdownItem.comingSoon ? '/coming-soon' : dropdownItem.path;
+                              router.push(targetPath);
+                              
+                              // Close dropdown
+                              setActiveDropdown(null);
+                            }}
                           >
                             <span className="font-medium text-gray-900 group-hover:text-blue-600">
                               {dropdownItem.name}
@@ -142,7 +156,7 @@ export default function MainNavigation() {
                                 Soon
                               </span>
                             )}
-                          </Link>
+                          </a>
                         ))}
                       </div>
                     )}
@@ -209,66 +223,61 @@ export default function MainNavigation() {
                 const href = item.comingSoon ? item.comingSoonPath : item.path;
                 const hasDropdown = item.hasDropdown && item.dropdownItems;
 
-                return (
-                  <li key={item.name}>
-                    {hasDropdown ? (
-                      <div>
-                        <button
-                          onClick={() => handleDropdownToggle(item.name)}
-                          className={`flex items-center justify-between w-full transition-colors text-white relative py-2 ${
-                            isActive(item.path) ? 'text-yellow-300 font-medium' : 'hover:text-yellow-200'
-                          }`}
-                        >
-                          <span>{item.name}</span>
-                          <ChevronDown className={`h-4 w-4 transition-transform ${
-                            activeDropdown === item.name ? 'rotate-180' : ''
-                          }`} />
-                          {item.comingSoon && (
-                            <span className="ml-2 text-xs bg-yellow-400 text-blue-900 px-2 py-1 rounded-full font-bold">
-                              Coming Soon
-                            </span>
-                          )}
-                        </button>
-
-                        {/* Mobile Dropdown */}
-                        {activeDropdown === item.name && (
-                          <div className="mt-2 ml-4 space-y-2 border-l-2 border-blue-600 pl-4">
-                            {item.dropdownItems?.map((dropdownItem) => (
-                              <Link
-                                key={dropdownItem.name}
-                                href={dropdownItem.comingSoon ? '/coming-soon' : dropdownItem.path}
-                                className="block text-blue-200 hover:text-white transition-colors py-1"
-                                onClick={handleMobileMenuClose}
-                              >
-                                <div className="flex items-center justify-between">
-                                  <span className="text-sm">{dropdownItem.name}</span>
-                                  {dropdownItem.comingSoon && (
-                                    <span className="text-xs bg-yellow-400 text-blue-900 px-1 py-0.5 rounded font-bold">
-                                      Soon
-                                    </span>
-                                  )}
-                                </div>
-                              </Link>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <Link
-                        href={href || item.path}
-                        className={`block transition-colors text-white relative py-2 ${
-                          isActive(item.path) ? 'text-yellow-300 font-medium' : 'hover:text-yellow-200'
-                        }`}
-                        onClick={handleMobileMenuClose}
-                      >
+                // For mobile, show all items as a flat list - no dropdowns
+                if (hasDropdown) {
+                  return (
+                    <li key={item.name}>
+                      {/* Main category header (non-clickable for mobile) */}
+                      <div className="text-yellow-300 font-semibold text-sm uppercase tracking-wide py-2">
                         {item.name}
                         {item.comingSoon && (
                           <span className="ml-2 text-xs bg-yellow-400 text-blue-900 px-2 py-1 rounded-full font-bold">
                             Coming Soon
                           </span>
                         )}
-                      </Link>
-                    )}
+                      </div>
+                      
+                      {/* Show all dropdown items as regular links */}
+                      <div className="ml-4 space-y-1">
+                        {item.dropdownItems?.map((dropdownItem) => (
+                          <Link
+                            key={dropdownItem.name}
+                            href={dropdownItem.comingSoon ? '/coming-soon' : dropdownItem.path}
+                            className="block text-blue-200 hover:text-white transition-colors py-2 px-3 rounded hover:bg-blue-700"
+                            onClick={handleMobileMenuClose}
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm">{dropdownItem.name}</span>
+                              {dropdownItem.comingSoon && (
+                                <span className="text-xs bg-yellow-400 text-blue-900 px-1 py-0.5 rounded font-bold">
+                                  Soon
+                                </span>
+                              )}
+                            </div>
+                          </Link>
+                        ))}
+                      </div>
+                    </li>
+                  );
+                }
+
+                // Regular navigation items (no dropdown)
+                return (
+                  <li key={item.name}>
+                    <Link
+                      href={href || item.path}
+                      className={`block transition-colors text-white relative py-2 ${
+                        isActive(item.path) ? 'text-yellow-300 font-medium' : 'hover:text-yellow-200'
+                      }`}
+                      onClick={handleMobileMenuClose}
+                    >
+                      {item.name}
+                      {item.comingSoon && (
+                        <span className="ml-2 text-xs bg-yellow-400 text-blue-900 px-2 py-1 rounded-full font-bold">
+                          Coming Soon
+                        </span>
+                      )}
+                    </Link>
                   </li>
                 );
               })}

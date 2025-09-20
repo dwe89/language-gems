@@ -9,7 +9,8 @@ import {
   Globe, 
   Youtube, 
   Facebook,
-  Sparkles
+  Sparkles,
+  Gamepad2
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -167,20 +168,29 @@ export default function LinksPage() {
 
           {/* Main Website */}
           <LinkButton
-            href="https://www.languagegems.com"
+            href="/"
             icon={<Globe className="w-6 h-6" />}
             title="Visit Our Website"
             description="Interactive GCSE language learning platform"
-            isExternal={true}
+            isExternal={false}
           />
 
           {/* Songs Page */}
           <LinkButton
-            href="https://www.languagegems.com/songs"
+            href="/songs"
             icon={<Music className="w-6 h-6" />}
             title="Find More Songs"
             description="Discover our complete song library"
-            isExternal={true}
+            isExternal={false}
+          />
+
+          {/* Games Demo */}
+          <LinkButton
+            href="/games"
+            icon={<Gamepad2 className="w-6 h-6" />}
+            title="Demo Our Games"
+            description="Try our interactive language learning games"
+            isExternal={false}
           />
 
           {/* YouTube Channel */}
@@ -222,7 +232,7 @@ export default function LinksPage() {
             © {new Date().getFullYear()} LanguageGems. All rights reserved.
           </p>
           <p className="text-gray-400 text-xs mt-2">
-            Interactive GCSE Language Learning Platform
+            Interactive Language Learning Platform
           </p>
         </motion.div>
       </div>
