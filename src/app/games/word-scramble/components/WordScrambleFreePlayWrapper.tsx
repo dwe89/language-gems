@@ -28,6 +28,7 @@ export default function WordScrambleFreePlayWrapper({
   const { user } = useAuth();
   const [gameSessionId, setGameSessionId] = useState<string | null>(null);
   const [sessionService] = useState(() => new EnhancedGameSessionService());
+  const [gameKey, setGameKey] = useState(0); // Key to force component remount on game restart
 
   // Initialize game session for free play mode
   useEffect(() => {
@@ -86,6 +87,9 @@ export default function WordScrambleFreePlayWrapper({
       }
     }
 
+    // Increment game key to force component remount for clean state reset
+    setGameKey(prev => prev + 1);
+
     // Call the original completion handler
     onGameComplete(result);
   };
@@ -104,6 +108,7 @@ export default function WordScrambleFreePlayWrapper({
 
   return (
     <ImprovedWordScrambleGame
+      key={gameKey}
       vocabulary={gameVocabulary}
       isAssignmentMode={false}
       userId={userId || user?.id}

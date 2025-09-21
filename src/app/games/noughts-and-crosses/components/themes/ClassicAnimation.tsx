@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { Gamepad2, PartyPopper } from 'lucide-react';
 
 interface ClassicAnimationProps {
   board: Array<'X' | 'O' | null>;
@@ -128,7 +129,7 @@ export default function ClassicAnimation({ board, gameState, storyDismissed, onS
             animate={{ scale: 1, y: 0 }}
             transition={{ delay: 1.5, duration: 0.5 }}
           >
-            <div className="text-4xl mb-4">🎮</div>
+            <div className="text-4xl mb-4"><Gamepad2 size={48} /></div>
             <h2 className="text-2xl font-bold text-blue-300 mb-3">Classic Learning Arena</h2>
             <p className="text-white/90 leading-relaxed">
               Enter the timeless digital arena where knowledge meets strategy! This classic 
@@ -144,7 +145,7 @@ export default function ClassicAnimation({ board, gameState, storyDismissed, onS
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.98 }}
             >
-              Enter Arena 🎮
+              Enter Arena <Gamepad2 size={16} className="inline" />
             </motion.button>
           </motion.div>
         </motion.div>
@@ -227,7 +228,7 @@ export default function ClassicAnimation({ board, gameState, storyDismissed, onS
             animate={{ scale: [0, 1.2, 1] }}
             transition={{ duration: 0.5 }}
           >
-            🎉 VICTORY! 🎉
+            <PartyPopper size={24} className="inline" /> VICTORY! <PartyPopper size={24} className="inline" />
           </motion.div>
         </div>
       )}

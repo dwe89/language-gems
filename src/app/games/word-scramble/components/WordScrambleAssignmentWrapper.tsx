@@ -29,6 +29,7 @@ export default function WordScrambleAssignmentWrapper({
   onBackToMenu
 }: WordScrambleAssignmentWrapperProps) {
   const { user } = useAuth();
+  const [gameKey, setGameKey] = useState(0); // Key to force component remount on game restart
 
   // Assignment mode helper functions
   const handleAssignmentComplete = (progress: GameProgress) => {
@@ -119,6 +120,9 @@ export default function WordScrambleAssignmentWrapper({
               sessionData: { result, stats: result.stats }
             });
 
+            // Increment game key to force component remount for clean state reset
+            setGameKey(prev => prev + 1);
+
           } catch (err) {
             console.error('Error completing Word Scramble assignment:', err);
           }
@@ -126,6 +130,7 @@ export default function WordScrambleAssignmentWrapper({
 
         return (
           <ImprovedWordScrambleGame
+            key={gameKey}
             vocabulary={categoryVocabulary}
             isAssignmentMode={true}
             assignmentId={assignmentId}
