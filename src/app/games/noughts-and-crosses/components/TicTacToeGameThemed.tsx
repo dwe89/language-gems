@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from './ThemeProvider';
-import { Brain, ArrowLeft, Volume2, VolumeX, Settings, Users, Monitor } from 'lucide-react';
+import { Brain, ArrowLeft, Volume2, VolumeX, Settings, Users, Monitor, Target, Moon, Skull, Rocket, Flame, X, Circle, Trophy, Frown, Handshake, Gamepad2, Home, RotateCcw, Clock, Award, BookOpen, TrendingUp, Zap, Volume1 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useAudio } from '../hooks/useAudio';
 import { EnhancedGameService } from '../../../../services/enhancedGameService';
@@ -53,475 +53,6 @@ interface TicTacToeGameProps {
   gameService?: EnhancedGameService | null;
   userId?: string;
 }
-
-// Simple vocabulary for the game
-const VOCABULARY = {
-  animals: {
-    spanish: [
-      { word: 'perro', translation: 'dog', difficulty: 'beginner' },
-      { word: 'gato', translation: 'cat', difficulty: 'beginner' },
-      { word: 'pájaro', translation: 'bird', difficulty: 'beginner' },
-      { word: 'caballo', translation: 'horse', difficulty: 'beginner' },
-      { word: 'conejo', translation: 'rabbit', difficulty: 'beginner' },
-      { word: 'elefante', translation: 'elephant', difficulty: 'intermediate' },
-      { word: 'jirafa', translation: 'giraffe', difficulty: 'intermediate' },
-      { word: 'león', translation: 'lion', difficulty: 'intermediate' }
-    ],
-    french: [
-      { word: 'chien', translation: 'dog', difficulty: 'beginner' },
-      { word: 'chat', translation: 'cat', difficulty: 'beginner' },
-      { word: 'oiseau', translation: 'bird', difficulty: 'beginner' },
-      { word: 'cheval', translation: 'horse', difficulty: 'beginner' },
-      { word: 'lapin', translation: 'rabbit', difficulty: 'beginner' }
-    ],
-    german: [
-      { word: 'hund', translation: 'dog', difficulty: 'beginner' },
-      { word: 'katze', translation: 'cat', difficulty: 'beginner' },
-      { word: 'vogel', translation: 'bird', difficulty: 'beginner' },
-      { word: 'pferd', translation: 'horse', difficulty: 'beginner' },
-      { word: 'kaninchen', translation: 'rabbit', difficulty: 'beginner' }
-    ]
-  },
-  food: {
-    spanish: [
-      { word: 'pan', translation: 'bread', difficulty: 'beginner' },
-      { word: 'agua', translation: 'water', difficulty: 'beginner' },
-      { word: 'leche', translation: 'milk', difficulty: 'beginner' },
-      { word: 'manzana', translation: 'apple', difficulty: 'beginner' },
-      { word: 'pollo', translation: 'chicken', difficulty: 'beginner' }
-    ],
-    french: [
-      { word: 'pain', translation: 'bread', difficulty: 'beginner' },
-      { word: 'eau', translation: 'water', difficulty: 'beginner' },
-      { word: 'lait', translation: 'milk', difficulty: 'beginner' },
-      { word: 'pomme', translation: 'apple', difficulty: 'beginner' },
-      { word: 'poulet', translation: 'chicken', difficulty: 'beginner' }
-    ],
-    german: [
-      { word: 'brot', translation: 'bread', difficulty: 'beginner' },
-      { word: 'wasser', translation: 'water', difficulty: 'beginner' },
-      { word: 'milch', translation: 'milk', difficulty: 'beginner' },
-      { word: 'apfel', translation: 'apple', difficulty: 'beginner' },
-      { word: 'huhn', translation: 'chicken', difficulty: 'beginner' }
-    ]
-  },
-  colors: {
-    spanish: [
-      { word: 'rojo', translation: 'red', difficulty: 'beginner' },
-      { word: 'azul', translation: 'blue', difficulty: 'beginner' },
-      { word: 'verde', translation: 'green', difficulty: 'beginner' },
-      { word: 'amarillo', translation: 'yellow', difficulty: 'beginner' },
-      { word: 'negro', translation: 'black', difficulty: 'beginner' }
-    ],
-    french: [
-      { word: 'rouge', translation: 'red', difficulty: 'beginner' },
-      { word: 'bleu', translation: 'blue', difficulty: 'beginner' },
-      { word: 'vert', translation: 'green', difficulty: 'beginner' },
-      { word: 'jaune', translation: 'yellow', difficulty: 'beginner' },
-      { word: 'noir', translation: 'black', difficulty: 'beginner' }
-    ],
-    german: [
-      { word: 'rot', translation: 'red', difficulty: 'beginner' },
-      { word: 'blau', translation: 'blue', difficulty: 'beginner' },
-      { word: 'grün', translation: 'green', difficulty: 'beginner' },
-      { word: 'gelb', translation: 'yellow', difficulty: 'beginner' },
-      { word: 'schwarz', translation: 'black', difficulty: 'beginner' }
-    ]
-  },
-  numbers: {
-    spanish: [
-      { word: 'uno', translation: 'one', difficulty: 'beginner' },
-      { word: 'dos', translation: 'two', difficulty: 'beginner' },
-      { word: 'tres', translation: 'three', difficulty: 'beginner' },
-      { word: 'cuatro', translation: 'four', difficulty: 'beginner' },
-      { word: 'cinco', translation: 'five', difficulty: 'beginner' }
-    ],
-    french: [
-      { word: 'un', translation: 'one', difficulty: 'beginner' },
-      { word: 'deux', translation: 'two', difficulty: 'beginner' },
-      { word: 'trois', translation: 'three', difficulty: 'beginner' },
-      { word: 'quatre', translation: 'four', difficulty: 'beginner' },
-      { word: 'cinq', translation: 'five', difficulty: 'beginner' }
-    ],
-    german: [
-      { word: 'eins', translation: 'one', difficulty: 'beginner' },
-      { word: 'zwei', translation: 'two', difficulty: 'beginner' },
-      { word: 'drei', translation: 'three', difficulty: 'beginner' },
-      { word: 'vier', translation: 'four', difficulty: 'beginner' },
-      { word: 'fünf', translation: 'five', difficulty: 'beginner' }
-    ]
-  },
-  family: {
-    spanish: [
-      { word: 'madre', translation: 'mother', difficulty: 'beginner' },
-      { word: 'padre', translation: 'father', difficulty: 'beginner' },
-      { word: 'hijo', translation: 'son', difficulty: 'beginner' },
-      { word: 'hija', translation: 'daughter', difficulty: 'beginner' },
-      { word: 'hermano', translation: 'brother', difficulty: 'beginner' }
-    ],
-    french: [
-      { word: 'mère', translation: 'mother', difficulty: 'beginner' },
-      { word: 'père', translation: 'father', difficulty: 'beginner' },
-      { word: 'fils', translation: 'son', difficulty: 'beginner' },
-      { word: 'fille', translation: 'daughter', difficulty: 'beginner' },
-      { word: 'frère', translation: 'brother', difficulty: 'beginner' }
-    ],
-    german: [
-      { word: 'mutter', translation: 'mother', difficulty: 'beginner' },
-      { word: 'vater', translation: 'father', difficulty: 'beginner' },
-      { word: 'sohn', translation: 'son', difficulty: 'beginner' },
-      { word: 'tochter', translation: 'daughter', difficulty: 'beginner' },
-      { word: 'bruder', translation: 'brother', difficulty: 'beginner' }
-    ]
-  },
-  body: {
-    spanish: [
-      { word: 'cabeza', translation: 'head', difficulty: 'beginner' },
-      { word: 'brazo', translation: 'arm', difficulty: 'beginner' },
-      { word: 'pierna', translation: 'leg', difficulty: 'beginner' },
-      { word: 'mano', translation: 'hand', difficulty: 'beginner' },
-      { word: 'pie', translation: 'foot', difficulty: 'beginner' },
-      { word: 'ojo', translation: 'eye', difficulty: 'beginner' },
-      { word: 'nariz', translation: 'nose', difficulty: 'beginner' }
-    ],
-    french: [
-      { word: 'tête', translation: 'head', difficulty: 'beginner' },
-      { word: 'bras', translation: 'arm', difficulty: 'beginner' },
-      { word: 'jambe', translation: 'leg', difficulty: 'beginner' },
-      { word: 'main', translation: 'hand', difficulty: 'beginner' },
-      { word: 'pied', translation: 'foot', difficulty: 'beginner' },
-      { word: 'œil', translation: 'eye', difficulty: 'beginner' },
-      { word: 'nez', translation: 'nose', difficulty: 'beginner' }
-    ],
-    german: [
-      { word: 'kopf', translation: 'head', difficulty: 'beginner' },
-      { word: 'arm', translation: 'arm', difficulty: 'beginner' },
-      { word: 'bein', translation: 'leg', difficulty: 'beginner' },
-      { word: 'hand', translation: 'hand', difficulty: 'beginner' },
-      { word: 'fuß', translation: 'foot', difficulty: 'beginner' },
-      { word: 'auge', translation: 'eye', difficulty: 'beginner' },
-      { word: 'nase', translation: 'nose', difficulty: 'beginner' }
-    ]
-  },
-  clothes: {
-    spanish: [
-      { word: 'camisa', translation: 'shirt', difficulty: 'beginner' },
-      { word: 'pantalones', translation: 'pants', difficulty: 'beginner' },
-      { word: 'zapatos', translation: 'shoes', difficulty: 'beginner' },
-      { word: 'sombrero', translation: 'hat', difficulty: 'beginner' },
-      { word: 'vestido', translation: 'dress', difficulty: 'beginner' },
-      { word: 'chaqueta', translation: 'jacket', difficulty: 'intermediate' }
-    ],
-    french: [
-      { word: 'chemise', translation: 'shirt', difficulty: 'beginner' },
-      { word: 'pantalon', translation: 'pants', difficulty: 'beginner' },
-      { word: 'chaussures', translation: 'shoes', difficulty: 'beginner' },
-      { word: 'chapeau', translation: 'hat', difficulty: 'beginner' },
-      { word: 'robe', translation: 'dress', difficulty: 'beginner' },
-      { word: 'veste', translation: 'jacket', difficulty: 'intermediate' }
-    ],
-    german: [
-      { word: 'hemd', translation: 'shirt', difficulty: 'beginner' },
-      { word: 'hose', translation: 'pants', difficulty: 'beginner' },
-      { word: 'schuhe', translation: 'shoes', difficulty: 'beginner' },
-      { word: 'hut', translation: 'hat', difficulty: 'beginner' },
-      { word: 'kleid', translation: 'dress', difficulty: 'beginner' },
-      { word: 'jacke', translation: 'jacket', difficulty: 'intermediate' }
-    ]
-  },
-  house: {
-    spanish: [
-      { word: 'casa', translation: 'house', difficulty: 'beginner' },
-      { word: 'cocina', translation: 'kitchen', difficulty: 'beginner' },
-      { word: 'baño', translation: 'bathroom', difficulty: 'beginner' },
-      { word: 'dormitorio', translation: 'bedroom', difficulty: 'beginner' },
-      { word: 'sala', translation: 'living room', difficulty: 'beginner' },
-      { word: 'mesa', translation: 'table', difficulty: 'beginner' },
-      { word: 'silla', translation: 'chair', difficulty: 'beginner' }
-    ],
-    french: [
-      { word: 'maison', translation: 'house', difficulty: 'beginner' },
-      { word: 'cuisine', translation: 'kitchen', difficulty: 'beginner' },
-      { word: 'salle de bain', translation: 'bathroom', difficulty: 'beginner' },
-      { word: 'chambre', translation: 'bedroom', difficulty: 'beginner' },
-      { word: 'salon', translation: 'living room', difficulty: 'beginner' },
-      { word: 'table', translation: 'table', difficulty: 'beginner' },
-      { word: 'chaise', translation: 'chair', difficulty: 'beginner' }
-    ],
-    german: [
-      { word: 'haus', translation: 'house', difficulty: 'beginner' },
-      { word: 'küche', translation: 'kitchen', difficulty: 'beginner' },
-      { word: 'badezimmer', translation: 'bathroom', difficulty: 'beginner' },
-      { word: 'schlafzimmer', translation: 'bedroom', difficulty: 'beginner' },
-      { word: 'wohnzimmer', translation: 'living room', difficulty: 'beginner' },
-      { word: 'tisch', translation: 'table', difficulty: 'beginner' },
-      { word: 'stuhl', translation: 'chair', difficulty: 'beginner' }
-    ]
-  },
-  school: {
-    spanish: [
-      { word: 'escuela', translation: 'school', difficulty: 'beginner' },
-      { word: 'libro', translation: 'book', difficulty: 'beginner' },
-      { word: 'lápiz', translation: 'pencil', difficulty: 'beginner' },
-      { word: 'papel', translation: 'paper', difficulty: 'beginner' },
-      { word: 'maestro', translation: 'teacher', difficulty: 'beginner' },
-      { word: 'estudiante', translation: 'student', difficulty: 'beginner' }
-    ],
-    french: [
-      { word: 'école', translation: 'school', difficulty: 'beginner' },
-      { word: 'livre', translation: 'book', difficulty: 'beginner' },
-      { word: 'crayon', translation: 'pencil', difficulty: 'beginner' },
-      { word: 'papier', translation: 'paper', difficulty: 'beginner' },
-      { word: 'professeur', translation: 'teacher', difficulty: 'beginner' },
-      { word: 'étudiant', translation: 'student', difficulty: 'beginner' }
-    ],
-    german: [
-      { word: 'schule', translation: 'school', difficulty: 'beginner' },
-      { word: 'buch', translation: 'book', difficulty: 'beginner' },
-      { word: 'bleistift', translation: 'pencil', difficulty: 'beginner' },
-      { word: 'papier', translation: 'paper', difficulty: 'beginner' },
-      { word: 'lehrer', translation: 'teacher', difficulty: 'beginner' },
-      { word: 'schüler', translation: 'student', difficulty: 'beginner' }
-    ]
-  },
-  sports: {
-    spanish: [
-      { word: 'fútbol', translation: 'soccer', difficulty: 'beginner' },
-      { word: 'baloncesto', translation: 'basketball', difficulty: 'beginner' },
-      { word: 'tenis', translation: 'tennis', difficulty: 'beginner' },
-      { word: 'natación', translation: 'swimming', difficulty: 'beginner' },
-      { word: 'correr', translation: 'running', difficulty: 'beginner' },
-      { word: 'pelota', translation: 'ball', difficulty: 'beginner' }
-    ],
-    french: [
-      { word: 'football', translation: 'soccer', difficulty: 'beginner' },
-      { word: 'basketball', translation: 'basketball', difficulty: 'beginner' },
-      { word: 'tennis', translation: 'tennis', difficulty: 'beginner' },
-      { word: 'natation', translation: 'swimming', difficulty: 'beginner' },
-      { word: 'course', translation: 'running', difficulty: 'beginner' },
-      { word: 'balle', translation: 'ball', difficulty: 'beginner' }
-    ],
-    german: [
-      { word: 'fußball', translation: 'soccer', difficulty: 'beginner' },
-      { word: 'basketball', translation: 'basketball', difficulty: 'beginner' },
-      { word: 'tennis', translation: 'tennis', difficulty: 'beginner' },
-      { word: 'schwimmen', translation: 'swimming', difficulty: 'beginner' },
-      { word: 'laufen', translation: 'running', difficulty: 'beginner' },
-      { word: 'ball', translation: 'ball', difficulty: 'beginner' }
-    ]
-  },
-  weather: {
-    spanish: [
-      { word: 'sol', translation: 'sun', difficulty: 'beginner' },
-      { word: 'lluvia', translation: 'rain', difficulty: 'beginner' },
-      { word: 'nieve', translation: 'snow', difficulty: 'beginner' },
-      { word: 'viento', translation: 'wind', difficulty: 'beginner' },
-      { word: 'nube', translation: 'cloud', difficulty: 'beginner' },
-      { word: 'calor', translation: 'heat', difficulty: 'beginner' }
-    ],
-    french: [
-      { word: 'soleil', translation: 'sun', difficulty: 'beginner' },
-      { word: 'pluie', translation: 'rain', difficulty: 'beginner' },
-      { word: 'neige', translation: 'snow', difficulty: 'beginner' },
-      { word: 'vent', translation: 'wind', difficulty: 'beginner' },
-      { word: 'nuage', translation: 'cloud', difficulty: 'beginner' },
-      { word: 'chaleur', translation: 'heat', difficulty: 'beginner' }
-    ],
-    german: [
-      { word: 'sonne', translation: 'sun', difficulty: 'beginner' },
-      { word: 'regen', translation: 'rain', difficulty: 'beginner' },
-      { word: 'schnee', translation: 'snow', difficulty: 'beginner' },
-      { word: 'wind', translation: 'wind', difficulty: 'beginner' },
-      { word: 'wolke', translation: 'cloud', difficulty: 'beginner' },
-      { word: 'hitze', translation: 'heat', difficulty: 'beginner' }
-    ]
-  },
-  transport: {
-    spanish: [
-      { word: 'coche', translation: 'car', difficulty: 'beginner' },
-      { word: 'autobús', translation: 'bus', difficulty: 'beginner' },
-      { word: 'tren', translation: 'train', difficulty: 'beginner' },
-      { word: 'avión', translation: 'airplane', difficulty: 'beginner' },
-      { word: 'bicicleta', translation: 'bicycle', difficulty: 'beginner' },
-      { word: 'barco', translation: 'boat', difficulty: 'beginner' }
-    ],
-    french: [
-      { word: 'voiture', translation: 'car', difficulty: 'beginner' },
-      { word: 'bus', translation: 'bus', difficulty: 'beginner' },
-      { word: 'train', translation: 'train', difficulty: 'beginner' },
-      { word: 'avion', translation: 'airplane', difficulty: 'beginner' },
-      { word: 'vélo', translation: 'bicycle', difficulty: 'beginner' },
-      { word: 'bateau', translation: 'boat', difficulty: 'beginner' }
-    ],
-    german: [
-      { word: 'auto', translation: 'car', difficulty: 'beginner' },
-      { word: 'bus', translation: 'bus', difficulty: 'beginner' },
-      { word: 'zug', translation: 'train', difficulty: 'beginner' },
-      { word: 'flugzeug', translation: 'airplane', difficulty: 'beginner' },
-      { word: 'fahrrad', translation: 'bicycle', difficulty: 'beginner' },
-      { word: 'boot', translation: 'boat', difficulty: 'beginner' }
-    ]
-  },
-  emotions: {
-    spanish: [
-      { word: 'feliz', translation: 'happy', difficulty: 'beginner' },
-      { word: 'triste', translation: 'sad', difficulty: 'beginner' },
-      { word: 'enojado', translation: 'angry', difficulty: 'beginner' },
-      { word: 'asustado', translation: 'scared', difficulty: 'beginner' },
-      { word: 'sorprendido', translation: 'surprised', difficulty: 'intermediate' },
-      { word: 'cansado', translation: 'tired', difficulty: 'beginner' }
-    ],
-    french: [
-      { word: 'heureux', translation: 'happy', difficulty: 'beginner' },
-      { word: 'triste', translation: 'sad', difficulty: 'beginner' },
-      { word: 'en colère', translation: 'angry', difficulty: 'beginner' },
-      { word: 'effrayé', translation: 'scared', difficulty: 'beginner' },
-      { word: 'surpris', translation: 'surprised', difficulty: 'intermediate' },
-      { word: 'fatigué', translation: 'tired', difficulty: 'beginner' }
-    ],
-    german: [
-      { word: 'glücklich', translation: 'happy', difficulty: 'beginner' },
-      { word: 'traurig', translation: 'sad', difficulty: 'beginner' },
-      { word: 'wütend', translation: 'angry', difficulty: 'beginner' },
-      { word: 'ängstlich', translation: 'scared', difficulty: 'beginner' },
-      { word: 'überrascht', translation: 'surprised', difficulty: 'intermediate' },
-      { word: 'müde', translation: 'tired', difficulty: 'beginner' }
-    ]
-  },
-  time: {
-    spanish: [
-      { word: 'hora', translation: 'hour', difficulty: 'beginner' },
-      { word: 'día', translation: 'day', difficulty: 'beginner' },
-      { word: 'semana', translation: 'week', difficulty: 'beginner' },
-      { word: 'mes', translation: 'month', difficulty: 'beginner' },
-      { word: 'año', translation: 'year', difficulty: 'beginner' },
-      { word: 'mañana', translation: 'morning', difficulty: 'beginner' },
-      { word: 'noche', translation: 'night', difficulty: 'beginner' }
-    ],
-    french: [
-      { word: 'heure', translation: 'hour', difficulty: 'beginner' },
-      { word: 'jour', translation: 'day', difficulty: 'beginner' },
-      { word: 'semaine', translation: 'week', difficulty: 'beginner' },
-      { word: 'mois', translation: 'month', difficulty: 'beginner' },
-      { word: 'année', translation: 'year', difficulty: 'beginner' },
-      { word: 'matin', translation: 'morning', difficulty: 'beginner' },
-      { word: 'nuit', translation: 'night', difficulty: 'beginner' }
-    ],
-    german: [
-      { word: 'stunde', translation: 'hour', difficulty: 'beginner' },
-      { word: 'tag', translation: 'day', difficulty: 'beginner' },
-      { word: 'woche', translation: 'week', difficulty: 'beginner' },
-      { word: 'monat', translation: 'month', difficulty: 'beginner' },
-      { word: 'jahr', translation: 'year', difficulty: 'beginner' },
-      { word: 'morgen', translation: 'morning', difficulty: 'beginner' },
-      { word: 'nacht', translation: 'night', difficulty: 'beginner' }
-    ]
-  },
-  nature: {
-    spanish: [
-      { word: 'árbol', translation: 'tree', difficulty: 'beginner' },
-      { word: 'flor', translation: 'flower', difficulty: 'beginner' },
-      { word: 'montaña', translation: 'mountain', difficulty: 'beginner' },
-      { word: 'río', translation: 'river', difficulty: 'beginner' },
-      { word: 'mar', translation: 'sea', difficulty: 'beginner' },
-      { word: 'bosque', translation: 'forest', difficulty: 'intermediate' }
-    ],
-    french: [
-      { word: 'arbre', translation: 'tree', difficulty: 'beginner' },
-      { word: 'fleur', translation: 'flower', difficulty: 'beginner' },
-      { word: 'montagne', translation: 'mountain', difficulty: 'beginner' },
-      { word: 'rivière', translation: 'river', difficulty: 'beginner' },
-      { word: 'mer', translation: 'sea', difficulty: 'beginner' },
-      { word: 'forêt', translation: 'forest', difficulty: 'intermediate' }
-    ],
-    german: [
-      { word: 'baum', translation: 'tree', difficulty: 'beginner' },
-      { word: 'blume', translation: 'flower', difficulty: 'beginner' },
-      { word: 'berg', translation: 'mountain', difficulty: 'beginner' },
-      { word: 'fluss', translation: 'river', difficulty: 'beginner' },
-      { word: 'meer', translation: 'sea', difficulty: 'beginner' },
-      { word: 'wald', translation: 'forest', difficulty: 'intermediate' }
-    ]
-  },
-  technology: {
-    spanish: [
-      { word: 'computadora', translation: 'computer', difficulty: 'beginner' },
-      { word: 'teléfono', translation: 'phone', difficulty: 'beginner' },
-      { word: 'internet', translation: 'internet', difficulty: 'beginner' },
-      { word: 'televisión', translation: 'television', difficulty: 'beginner' },
-      { word: 'radio', translation: 'radio', difficulty: 'beginner' },
-      { word: 'cámara', translation: 'camera', difficulty: 'beginner' }
-    ],
-    french: [
-      { word: 'ordinateur', translation: 'computer', difficulty: 'beginner' },
-      { word: 'téléphone', translation: 'phone', difficulty: 'beginner' },
-      { word: 'internet', translation: 'internet', difficulty: 'beginner' },
-      { word: 'télévision', translation: 'television', difficulty: 'beginner' },
-      { word: 'radio', translation: 'radio', difficulty: 'beginner' },
-      { word: 'appareil photo', translation: 'camera', difficulty: 'beginner' }
-    ],
-    german: [
-      { word: 'computer', translation: 'computer', difficulty: 'beginner' },
-      { word: 'telefon', translation: 'phone', difficulty: 'beginner' },
-      { word: 'internet', translation: 'internet', difficulty: 'beginner' },
-      { word: 'fernseher', translation: 'television', difficulty: 'beginner' },
-      { word: 'radio', translation: 'radio', difficulty: 'beginner' },
-      { word: 'kamera', translation: 'camera', difficulty: 'beginner' }
-    ]
-  },
-  music: {
-    spanish: [
-      { word: 'música', translation: 'music', difficulty: 'beginner' },
-      { word: 'guitarra', translation: 'guitar', difficulty: 'beginner' },
-      { word: 'piano', translation: 'piano', difficulty: 'beginner' },
-      { word: 'canción', translation: 'song', difficulty: 'beginner' },
-      { word: 'cantante', translation: 'singer', difficulty: 'beginner' },
-      { word: 'tambor', translation: 'drum', difficulty: 'beginner' }
-    ],
-    french: [
-      { word: 'musique', translation: 'music', difficulty: 'beginner' },
-      { word: 'guitare', translation: 'guitar', difficulty: 'beginner' },
-      { word: 'piano', translation: 'piano', difficulty: 'beginner' },
-      { word: 'chanson', translation: 'song', difficulty: 'beginner' },
-      { word: 'chanteur', translation: 'singer', difficulty: 'beginner' },
-      { word: 'tambour', translation: 'drum', difficulty: 'beginner' }
-    ],
-    german: [
-      { word: 'musik', translation: 'music', difficulty: 'beginner' },
-      { word: 'gitarre', translation: 'guitar', difficulty: 'beginner' },
-      { word: 'klavier', translation: 'piano', difficulty: 'beginner' },
-      { word: 'lied', translation: 'song', difficulty: 'beginner' },
-      { word: 'sänger', translation: 'singer', difficulty: 'beginner' },
-      { word: 'trommel', translation: 'drum', difficulty: 'beginner' }
-    ]
-  },
-  travel: {
-    spanish: [
-      { word: 'viaje', translation: 'trip', difficulty: 'beginner' },
-      { word: 'hotel', translation: 'hotel', difficulty: 'beginner' },
-      { word: 'aeropuerto', translation: 'airport', difficulty: 'beginner' },
-      { word: 'pasaporte', translation: 'passport', difficulty: 'beginner' },
-      { word: 'maleta', translation: 'suitcase', difficulty: 'beginner' },
-      { word: 'turista', translation: 'tourist', difficulty: 'beginner' }
-    ],
-    french: [
-      { word: 'voyage', translation: 'trip', difficulty: 'beginner' },
-      { word: 'hôtel', translation: 'hotel', difficulty: 'beginner' },
-      { word: 'aéroport', translation: 'airport', difficulty: 'beginner' },
-      { word: 'passeport', translation: 'passport', difficulty: 'beginner' },
-      { word: 'valise', translation: 'suitcase', difficulty: 'beginner' },
-      { word: 'touriste', translation: 'tourist', difficulty: 'beginner' }
-    ],
-    german: [
-      { word: 'reise', translation: 'trip', difficulty: 'beginner' },
-      { word: 'hotel', translation: 'hotel', difficulty: 'beginner' },
-      { word: 'flughafen', translation: 'airport', difficulty: 'beginner' },
-      { word: 'reisepass', translation: 'passport', difficulty: 'beginner' },
-      { word: 'koffer', translation: 'suitcase', difficulty: 'beginner' },
-      { word: 'tourist', translation: 'tourist', difficulty: 'beginner' }
-    ]
-  }
-};
 
 const generateWrongOptions = (correctTranslation: string, vocabulary: any[]) => {
   if (!vocabulary || vocabulary.length === 0) return [];
@@ -607,21 +138,16 @@ export default function TicTacToeGame({
     setCorrectAnswers(0);
     setTotalQuestions(0);
     setGameStartTime(new Date()); // Reset timer
-    // Keep storyDismissed as true to prevent modal from showing again
-    // setStoryDismissed(false);
   };
 
   // Get vocabulary for current settings
   const getVocabulary = () => {
-    // Use vocabularyWords prop if available, otherwise fallback to static VOCABULARY
+    // Use vocabularyWords prop if available, otherwise return empty array
     if (vocabularyWords && vocabularyWords.length > 0) {
       return vocabularyWords;
     }
     
-    const categoryData = VOCABULARY[settings.category as keyof typeof VOCABULARY];
-    if (!categoryData) return [];
-    const languageData = categoryData[settings.language as keyof typeof categoryData];
-    return languageData || [];
+    return [];
   };
 
   const generateVocabularyQuestion = () => {
@@ -629,16 +155,6 @@ export default function TicTacToeGame({
     if (vocabulary.length === 0) return null;
 
     const randomWord = vocabulary[Math.floor(Math.random() * vocabulary.length)];
-
-    // 🔍 INSTRUMENTATION: Log vocabulary word selection
-    console.log('🔍 [QUESTION GEN] Selected vocabulary word:', {
-      randomWord,
-      hasId: !!(randomWord as any).id,
-      idValue: (randomWord as any).id,
-      idType: typeof (randomWord as any).id,
-      vocabularyLength: vocabulary.length,
-      isAssignmentMode: !!vocabularyWords?.length
-    });
 
     const wrongOptions = generateWrongOptions(randomWord.translation, vocabulary);
     
@@ -661,16 +177,6 @@ export default function TicTacToeGame({
       vocabularyWord: randomWord // Include full vocabulary word for audio playback
     };
 
-    // 🔍 INSTRUMENTATION: Debug question creation
-    console.log('🔍 [QUESTION CREATE] Question object created:', {
-      questionId: question.id,
-      questionIdType: typeof question.id,
-      randomWordId: (randomWord as any).id,
-      randomWordIdType: typeof (randomWord as any).id,
-      vocabularyId,
-      vocabularyIdType: typeof vocabularyId
-    });
-    
     return question;
   };
 
@@ -724,14 +230,6 @@ export default function TicTacToeGame({
   };
 
   const handleVocabAnswer = async (selectedIndex: number) => {
-    console.log('🎯 [VOCAB ANSWER] Starting handleVocabAnswer', {
-      selectedIndex,
-      correctIndex: currentQuestion?.correctIndex,
-      pendingMove,
-      currentPlayer,
-      gameState
-    });
-    
     setShowVocabQuestion(false);
 
     if (!currentQuestion || pendingMove === null) return;
@@ -739,20 +237,10 @@ export default function TicTacToeGame({
     const isCorrect = selectedIndex === currentQuestion.correctIndex;
     const responseTime = (Date.now() - questionStartTime) / 1000;
 
-    console.log('🎯 [VOCAB ANSWER] Answer result:', { isCorrect, responseTime });
-
     // Record word practice with FSRS system (for both assignment and free play modes)
     // BUT ONLY if this is NOT a retry question to avoid double recording
     if (currentQuestion && !(currentQuestion as any).isRetryQuestion) {
       try {
-        // 🔍 INSTRUMENTATION: Debug vocabulary ID passing
-        console.log('🔍 [FSRS DEBUG] Current question data:', {
-          currentQuestionId: currentQuestion.id,
-          currentQuestionIdType: typeof currentQuestion.id,
-          currentQuestionWord: currentQuestion.word,
-          currentQuestionTranslation: currentQuestion.translation
-        });
-
         // Ensure vocabulary ID is properly preserved - use multiple fallbacks
         const vocabularyId = currentQuestion.id ||
                            (currentQuestion as any).vocabularyId ||
@@ -774,9 +262,7 @@ export default function TicTacToeGame({
           language: settings.language === 'spanish' ? 'es' : settings.language === 'french' ? 'fr' : 'en'
         };
 
-        console.log('🔍 [FSRS DEBUG] Word data being passed to FSRS:', wordData);
-
-        // 🚀 FAST GEM RECORDING: Lightweight gem recording without heavy FSRS
+        // Lightweight gem recording without FSRS to avoid delays
         if (vocabularyId && gameSessionId && isCorrect) {
           try {
             const sessionService = new EnhancedGameSessionService();
@@ -796,9 +282,8 @@ export default function TicTacToeGame({
               difficultyLevel: 'beginner'
             }, true).then(gemEvent => {
               if (gemEvent) {
-                console.log(`✅ [FAST] Gem awarded: ${gemEvent.rarity} (${gemEvent.xpValue} XP)`);
+                // Gem awarded successfully
               }
-              console.log('🚀 [FAST] Lightweight vocabulary tracking completed');
             }).catch(error => {
               console.error('🚀 [FAST] Gem recording failed:', error);
             }); // Skip FSRS = true for speed
@@ -810,7 +295,7 @@ export default function TicTacToeGame({
         console.error('Error recording FSRS practice for noughts-and-crosses:', error);
       }
     } else if ((currentQuestion as any).isRetryQuestion) {
-      console.log('🔍 [FSRS SKIP] Skipping FSRS recording for retry question to avoid double counting');
+      // Skipping FSRS recording for retry question to avoid double counting
     }
 
     // 🚀 FAST VOCABULARY TRACKING: Lightweight tracking without heavy analytics
@@ -842,19 +327,12 @@ export default function TicTacToeGame({
           },
           timestamp: new Date()
         }).then(() => {
-          console.log('🚀 [FAST] Lightweight vocabulary tracking completed');
         }).catch(error => {
           console.error('🚀 [FAST] Vocabulary tracking failed:', error);
         });
     }
 
-    // 🔮 CRITICAL FIX: FSRS and Gem Recording are SEPARATE systems!
-    // - FSRS: Handles spaced repetition scheduling (when to review words)
-    // - Gem Recording: Handles reward system (awarding gems and XP)
-    // Both systems should run independently!
-
-    // 🚀 PERFORMANCE: Skip assignment wrapper gem recording too
-    console.log('🚀 [FAST] Skipping assignment wrapper gem recording for speed');
+    // FSRS and Gem Recording are separate systems - both should run independently
 
     if (isCorrect) {
       // Play correct answer sound
@@ -880,16 +358,12 @@ export default function TicTacToeGame({
         }, 300);
       }
       
-      console.log('🎯 [VOCAB ANSWER] Correct answer - calling makeMove');
       makeMove(pendingMove);
     } else {
       // Play wrong answer sound
       playSFX('wrong-answer');
       
-      console.log('🎯 [VOCAB ANSWER] Wrong answer - checking game mode');
-      
       // Wrong answer - handle based on game mode
-      playSFX('wrong-answer');
       
       // Record the wrong answer attempt
       if (gameSessionId && currentQuestion) {
@@ -904,37 +378,27 @@ export default function TicTacToeGame({
             hintUsed: false,
             streakCount: 0
           }, true).catch(error => {
-            console.log('🚀 [FAST] Vocabulary tracking failed:', error);
+            console.error('🚀 [FAST] Vocabulary tracking failed:', error);
           });
         } catch (error) {
-          console.log('🚀 [FAST] Failed to record wrong answer:', error);
+          console.error('🚀 [FAST] Failed to record wrong answer:', error);
         }
       }
       
       // In 2-player mode, just switch turns. In computer mode, computer gets the move
       if (settings.gameMode === '2-player') {
-        console.log('🎯 [VOCAB ANSWER] 2-player mode - switching turns after wrong answer');
         // Just switch to the other player (already handled by the makeMove logic)
       } else {
         // Computer gets to make a move immediately
-        console.log('🎯 [VOCAB ANSWER] Computer mode - computer makes move after wrong answer');
         makeComputerMove();
       }
     }
     
-    console.log('🎯 [VOCAB ANSWER] Cleaning up question state');
     setPendingMove(null);
     setCurrentQuestion(null);
   };
 
   const makeMove = (index: number) => {
-    console.log('🎯 [MAKE MOVE] Starting makeMove', {
-      index,
-      currentPlayer,
-      gameState,
-      board: board.slice()
-    });
-
     const newBoard = [...board];
     newBoard[index] = currentPlayer;
     setBoard(newBoard);
@@ -947,22 +411,13 @@ export default function TicTacToeGame({
       const wasPlayerX = currentPlayer === 'X';
       setCurrentPlayer(currentPlayer === 'X' ? 'O' : 'X');
       
-      console.log('🎯 [MAKE MOVE] After player move', {
-        wasPlayerX,
-        newCurrentPlayer: currentPlayer === 'X' ? 'O' : 'X',
-        shouldMakeComputerMove: wasPlayerX
-      });
-      
       if (wasPlayerX && settings.gameMode !== '2-player') {
         // After player's move, computer moves (only in computer mode)
-        console.log('🎯 [MAKE MOVE] Scheduling computer move in 1 second');
         setTimeout(() => {
-          console.log('🎯 [MAKE MOVE] Timeout fired - calling makeComputerMove');
           makeComputerMove(newBoard);
         }, 1000);
       } else if (settings.gameMode === '2-player') {
         // In 2-player mode, just wait for the next player to make their move
-        console.log('🎯 [MAKE MOVE] 2-player mode - waiting for next player');
       }
     }
   };
@@ -1125,23 +580,11 @@ export default function TicTacToeGame({
   };
 
   const makeComputerMove = (currentBoard = board) => {
-    console.log('🤖 [COMPUTER MOVE] Starting computer move', {
-      currentBoard,
-      boardLength: currentBoard.length,
-      gameState,
-      currentPlayer,
-      computerMark: settings.computerMark,
-      playerMark: settings.playerMark
-    });
-
     const availableCells = currentBoard
       .map((cell, index) => cell === null ? index : null)
       .filter(val => val !== null) as number[];
     
-    console.log('🤖 [COMPUTER MOVE] Available cells:', availableCells);
-    
     if (availableCells.length === 0) {
-      console.log('🤖 [COMPUTER MOVE] No available cells, returning');
       return;
     }
     
@@ -1171,12 +614,6 @@ export default function TicTacToeGame({
       }
     }
     
-    console.log('🤖 [COMPUTER MOVE] Selected move:', {
-      bestMove,
-      computerMark,
-      difficulty: settings.difficulty
-    });
-    
     const newBoard = [...currentBoard];
     newBoard[bestMove] = computerMark;
     setBoard(newBoard);
@@ -1187,12 +624,6 @@ export default function TicTacToeGame({
     } else {
       setCurrentPlayer('X');
     }
-    
-    console.log('🤖 [COMPUTER MOVE] Move completed', {
-      newBoard,
-      result,
-      newCurrentPlayer: 'X'
-    });
   };
 
   const handleGameEnd = (gameWinner: 'X' | 'O' | 'tie', line: number[]) => {
@@ -1260,15 +691,15 @@ export default function TicTacToeGame({
   const getThemeTitle = () => {
     switch (themeId) {
       case 'tokyo':
-        return '🌃 Tokyo Nights Hack';
+        return <><Moon className="inline w-5 h-5 mr-2" />Tokyo Nights Hack</>;
       case 'pirate':
-        return '🏴‍☠️ Pirate Adventure';
+        return <><Skull className="inline w-5 h-5 mr-2" />Pirate Adventure</>;
       case 'space':
-        return '🚀 Space Explorer';
+        return <><Rocket className="inline w-5 h-5 mr-2" />Space Explorer</>;
       case 'temple':
-        return '🔥 Lava Temple';
+        return <><Flame className="inline w-5 h-5 mr-2" />Lava Temple</>;
       default:
-        return '🎯 Classic Challenge';
+        return <><Target className="inline w-5 h-5 mr-2" />Classic Challenge</>;
     }
   };
 
@@ -1282,52 +713,54 @@ export default function TicTacToeGame({
 
       {/* Header Overlay */}
       <div className="absolute top-0 left-0 right-0 z-20 bg-black/20 backdrop-blur-sm border-b border-white/10">
-        <div className="flex justify-between items-center p-6">
+        <div className="flex justify-between items-center p-4 md:p-6">
           <motion.button
             onClick={() => {
               playSFX('button-click');
               onBackToMenu();
             }}
-            className="flex items-center gap-2 bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white px-6 py-3 rounded-full transition-all shadow-lg border border-white/20"
+            className="flex items-center gap-2 bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white px-4 md:px-6 py-2 md:py-3 rounded-full transition-all shadow-lg border border-white/20"
             whileHover={{ scale: 1.05, x: -4 }}
             whileTap={{ scale: 0.98 }}
           >
-            <ArrowLeft className="w-5 h-5" />
-            <span className="font-medium">Back to Menu</span>
+            <ArrowLeft className="w-4 h-4 md:w-5 md:h-5" />
+            <span className="font-medium text-sm md:text-base">Back</span>
           </motion.button>
           
           {/* Themed Title */}
           <motion.div
-            className="flex-1 text-center"
+            className="flex-1 text-center px-2"
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.3 }}
           >
             <h1 
-              className="text-2xl md:text-3xl font-bold text-white"
+              className="text-lg md:text-2xl lg:text-3xl font-bold text-white"
               style={{
                 textShadow: '3px 3px 0px rgba(0, 0, 0, 0.8), -1px -1px 0px rgba(0, 0, 0, 0.8), 1px -1px 0px rgba(0, 0, 0, 0.8), -1px 1px 0px rgba(0, 0, 0, 0.8), 0 0 10px rgba(0, 0, 0, 0.5)',
               }}
             >
-              {getThemeTitle()}
+              <span className="hidden sm:inline">{getThemeTitle()}</span>
+              <span className="sm:hidden flex items-center justify-center">
+                <Target className="w-4 h-4 mr-1" />Classic
+              </span>
             </h1>
           </motion.div>
           
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1 md:gap-3">
             {onOpenSettings && (
               <motion.button
                 onClick={() => {
                   playSFX('button-click');
                   onOpenSettings();
                 }}
-                className="relative px-3 md:px-4 py-2 md:py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-sm md:text-base font-semibold flex items-center gap-2 md:gap-3 transition-all duration-300 shadow-lg hover:shadow-xl border-2 border-white/20"
+                className="relative p-2 md:px-4 md:py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold flex items-center gap-1 md:gap-3 transition-all duration-300 shadow-lg hover:shadow-xl border-2 border-white/20"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                title="Customize your game: Change Language, Level, Topic & Theme"
+                title="Game Settings"
               >
-                <Settings className="h-5 w-5 md:h-6 md:w-6" />
-                <span className="hidden md:inline">Game Settings</span>
-                <span className="md:hidden">Settings</span>
+                <Settings className="h-4 w-4 md:h-5 md:w-5" />
+                <span className="hidden md:inline text-sm md:text-base">Settings</span>
               </motion.button>
             )}
             <motion.button
@@ -1335,19 +768,18 @@ export default function TicTacToeGame({
                 playSFX('button-click');
                 resetGame();
               }}
-              className="relative px-3 md:px-4 py-2 md:py-2.5 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white text-sm md:text-base font-semibold flex items-center gap-2 md:gap-3 transition-all duration-300 shadow-lg hover:shadow-xl border-2 border-white/20"
+              className="relative p-2 md:px-4 md:py-2.5 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold flex items-center gap-1 md:gap-3 transition-all duration-300 shadow-lg hover:shadow-xl border-2 border-white/20"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              title="Reset the game board and start fresh"
+              title="Reset Game"
             >
-              <svg className="h-5 w-5 md:h-6 md:w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="h-4 w-4 md:h-5 md:w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
               </svg>
-              <span className="hidden md:inline">Reset Game</span>
-              <span className="md:hidden">Reset</span>
+              <span className="hidden md:inline text-sm md:text-base">Reset</span>
             </motion.button>
             
-            {/* Game Mode Toggle Button */}
+            {/* Game Mode Toggle Button - Hide on mobile for space */}
             {onGameModeChange && (
               <motion.button
                 onClick={() => {
@@ -1355,11 +787,11 @@ export default function TicTacToeGame({
                   const newMode = settings.gameMode === 'computer' ? '2-player' : 'computer';
                   onGameModeChange(newMode);
                 }}
-                className={`relative px-3 md:px-4 py-2 md:py-2.5 rounded-xl ${
+                className={`hidden sm:flex relative px-3 md:px-4 py-2 md:py-2.5 rounded-xl ${
                   settings.gameMode === '2-player' 
                     ? 'bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700' 
                     : 'bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700'
-                } text-white text-sm md:text-base font-semibold flex items-center gap-2 md:gap-3 transition-all duration-300 shadow-lg hover:shadow-xl border-2 border-white/20`}
+                } text-white text-sm md:text-base font-semibold items-center gap-2 md:gap-3 transition-all duration-300 shadow-lg hover:shadow-xl border-2 border-white/20`}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 title={settings.gameMode === 'computer' ? 'Switch to 2-Player Mode' : 'Switch to Computer Mode'}
@@ -1382,11 +814,11 @@ export default function TicTacToeGame({
                 playSFX('button-click');
                 setSoundEnabled(!soundEnabled);
               }}
-              className="p-3 rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white transition-all shadow-lg border border-white/20"
+              className="p-2 md:p-3 rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white transition-all shadow-lg border border-white/20"
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
             >
-              {soundEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
+              {soundEnabled ? <Volume2 className="w-4 h-4 md:w-5 md:h-5" /> : <VolumeX className="w-4 h-4 md:w-5 md:h-5" />}
             </motion.button>
           </div>
         </div>
@@ -1395,215 +827,656 @@ export default function TicTacToeGame({
       {/* Game Content - Split Layout: Board Left, Theme Right - Only show after story dismissed */}
       {storyDismissed && (
         <div className="absolute inset-0 pt-24 pb-4 flex items-start justify-center z-10">
-          <div className="w-full max-w-7xl mx-auto px-8 flex items-start gap-8 mt-2">
-          
-          {/* Left Side - Game Board */}
-          <div className="flex-shrink-0">
-            <motion.div
-              className="bg-black/40 backdrop-blur-lg border-2 border-white/30 rounded-2xl p-2 md:p-4 shadow-2xl w-full max-w-sm md:max-w-none"
-              initial={{ scale: 0.8, opacity: 0, x: -50 }}
-              animate={{ scale: 1, opacity: 1, x: 0 }}
-              transition={{ delay: 0.3, type: "spring", stiffness: 150 }}
-            >
-              <div className="grid grid-cols-3 gap-2 md:gap-6 aspect-square w-full max-w-[20rem] md:max-w-[28rem] mx-auto mb-2">
-                {board.map((cell, index) => (
-                  <motion.button
-                    key={index}
-                    onClick={() => handleCellClick(index)}
-                    disabled={!!cell || gameState !== 'playing' || (settings.gameMode !== '2-player' && currentPlayer !== 'X')}
-                    className={`
-                      aspect-square rounded-2xl border-3 flex flex-col items-center justify-center text-4xl md:text-6xl font-bold transition-all duration-300 relative
-                      backdrop-blur-md bg-white/15 border-white/40 shadow-lg
-                      ${winningLine.includes(index) 
-                        ? 'bg-yellow-400/40 border-yellow-400 shadow-xl shadow-yellow-400/50 scale-105'
-                        : cell 
-                          ? cell === 'X' 
-                            ? 'bg-blue-500/40 border-blue-400 text-blue-100 shadow-xl shadow-blue-400/50' 
-                            : 'bg-red-500/40 border-red-400 text-red-100 shadow-xl shadow-red-400/50'
-                          : 'hover:bg-white/25 hover:border-white/60 cursor-pointer'
-                      }
-                      ${!cell && gameState === 'playing' && (settings.gameMode === '2-player' || currentPlayer === 'X') ? 'transform hover:scale-110' : ''}
-                    `}
-                    whileHover={!cell && gameState === 'playing' && (settings.gameMode === '2-player' || currentPlayer === 'X') ? { 
-                      scale: 1.1, 
-                      y: -4,
-                      boxShadow: "0 10px 25px rgba(255, 255, 255, 0.3)" 
-                    } : {}}
-                    whileTap={!cell && gameState === 'playing' && (settings.gameMode === '2-player' || currentPlayer === 'X') ? { scale: 0.95 } : {}}
+          {/* Desktop Layout for Classic Mode */}
+          {(!themeId || themeId === 'classic' || !['tokyo', 'pirate', 'space', 'temple'].includes(themeId)) ? (
+            <>
+              {/* Desktop Layout */}
+              <div className="hidden lg:flex w-full max-w-7xl mx-auto px-8 items-start gap-8 mt-2">
+                
+                {/* Left Side - Game Board */}
+                <div className="flex-shrink-0">
+                  <motion.div 
+                    className="bg-black/40 backdrop-blur-lg border-2 border-white/30 rounded-2xl p-4 shadow-2xl"
+                    initial={{ scale: 0.8, opacity: 0, x: -50 }}
+                    animate={{ scale: 1, opacity: 1, x: 0 }}
+                    transition={{ delay: 0.3, type: "spring", stiffness: 150 }}
                   >
-                    {/* Fixed glyph for each square */}
-                    <div className="absolute top-1 left-1 text-white/25 text-xs font-bold select-none bg-black/20 rounded-full w-5 h-5 flex items-center justify-center">
-                      {index + 1}
-                    </div>
-                    
-                    <AnimatePresence>
-                      {cell && (
-                        <motion.span
-                          initial={{ scale: 0, rotate: 180 }}
-                          animate={{ scale: 1, rotate: 0 }}
-                          transition={{ type: "spring", stiffness: 200, damping: 15 }}
-                          className={`drop-shadow-2xl ${cell === 'X' ? 'text-blue-300' : 'text-red-300'}`}
+                    <div className="grid grid-cols-3 gap-6 aspect-square w-[28rem] mx-auto mb-2">
+                      {board.map((cell, index) => (
+                        <motion.button
+                          key={index}
+                          onClick={() => handleCellClick(index)}
+                          disabled={!!cell || gameState !== 'playing' || (settings.gameMode !== '2-player' && currentPlayer !== 'X')}
+                          className={`
+                            aspect-square rounded-2xl border-3 flex flex-col items-center justify-center text-6xl font-bold transition-all duration-300 relative
+                            backdrop-blur-md bg-white/15 border-white/40 shadow-lg
+                            ${winningLine.includes(index) 
+                              ? 'bg-yellow-400/40 border-yellow-400 shadow-xl shadow-yellow-400/50 scale-105'
+                              : cell 
+                                ? cell === 'X' 
+                                  ? 'bg-blue-500/40 border-blue-400 text-blue-100 shadow-xl shadow-blue-400/50' 
+                                  : 'bg-red-500/40 border-red-400 text-red-100 shadow-xl shadow-red-400/50'
+                                : 'hover:bg-white/25 hover:border-white/60 cursor-pointer'
+                            }
+                            ${!cell && gameState === 'playing' && (settings.gameMode === '2-player' || currentPlayer === 'X') ? 'transform hover:scale-110' : ''}
+                          `}
+                          whileHover={!cell && gameState === 'playing' && (settings.gameMode === '2-player' || currentPlayer === 'X') ? { 
+                            scale: 1.1, 
+                            y: -4,
+                            boxShadow: "0 10px 25px rgba(255, 255, 255, 0.3)" 
+                          } : {}}
+                          whileTap={!cell && gameState === 'playing' && (settings.gameMode === '2-player' || currentPlayer === 'X') ? { scale: 0.95 } : {}}
                         >
-                          {cell}
-                        </motion.span>
+                          {/* Fixed glyph for each square */}
+                          <div className="absolute top-1 left-1 text-white/25 text-xs font-bold select-none bg-black/20 rounded-full w-5 h-5 flex items-center justify-center">
+                            {index + 1}
+                          </div>
+                          
+                          <AnimatePresence>
+                            {cell && (
+                              <motion.span
+                                initial={{ scale: 0, rotate: 180 }}
+                                animate={{ scale: 1, rotate: 0 }}
+                                transition={{ type: "spring", stiffness: 200, damping: 15 }}
+                                className={`drop-shadow-2xl ${cell === 'X' ? 'text-blue-300' : 'text-red-300'}`}
+                              >
+                                {cell}
+                              </motion.span>
+                            )}
+                          </AnimatePresence>
+                        </motion.button>
+                      ))}
+                    </div>
+
+                    {/* Game Status - Simplified */}
+                    <div className="text-center min-h-[60px] flex items-center justify-center">
+                      <AnimatePresence mode="wait">
+                        
+                        
+                        {gameState === 'tie' && (
+                          <motion.div
+                            key="tie"
+                            initial={{ opacity: 0, y: 20, scale: 0.8 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: -20, scale: 0.8 }}
+                            className="space-y-4"
+                          >
+                            <div className="text-2xl font-bold text-yellow-300 drop-shadow-lg bg-black/50 backdrop-blur-sm rounded-2xl px-4 py-3 border border-yellow-400/50">
+                              <Handshake className="inline w-6 h-6 mr-2" />Stalemate
+                            </div>
+                            <div className="text-sm text-white bg-black/30 backdrop-blur-sm rounded-lg px-3 py-2">
+                              Words learned: {wordsLearned}
+                            </div>
+                            <div className="flex gap-3 justify-center mt-3">
+                              <motion.button
+                                onClick={() => {
+                                  playSFX('button-click');
+                                  resetGame();
+                                }}
+                                className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white font-bold rounded-full transition-all shadow-lg text-sm"
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.98 }}
+                              >
+                                <Target className="inline w-4 h-4 mr-2" />Rematch
+                              </motion.button>
+                              <motion.button
+                                onClick={() => {
+                                  playSFX('button-click');
+                                  onBackToMenu();
+                                }}
+                                className="px-4 py-2 bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white font-bold rounded-full transition-all shadow-lg border border-white/20 text-sm"
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.98 }}
+                              >
+                                <Home className="inline w-4 h-4 mr-2" />Menu
+                              </motion.button>
+                            </div>
+                          </motion.div>
+                        )}
+                        
+                        {/* Playing State - Show current player in 2-player mode */}
+                        {gameState === 'playing' && settings.gameMode === '2-player' && (
+                          <motion.div
+                            key="playing"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -20 }}
+                            className="text-center"
+                          >
+                            <div className="text-xl font-bold text-white drop-shadow-lg bg-black/40 backdrop-blur-sm rounded-xl px-4 py-2 border border-white/20">
+                              {currentPlayer === 'X' ? <X className="inline w-6 h-6 mr-2" /> : <Circle className="inline w-6 h-6 mr-2" />} Player {currentPlayer}'s Turn
+                            </div>
+                          </motion.div>
+                        )}
+                        
+                        {/* Removed computer thinking message to save space */}
+                      </AnimatePresence>
+                    </div>
+                  </motion.div>
+                </div>
+
+                {/* Right Side - Statistics Panel (Desktop Only) */}
+                <div className="flex-1 h-full relative">
+                  <motion.div
+                    className="bg-black/40 backdrop-blur-lg border-2 border-white/30 rounded-2xl p-6 shadow-2xl max-w-sm mx-auto mt-4"
+                    initial={{ scale: 0.8, opacity: 0, x: 50 }}
+                    animate={{ scale: 1, opacity: 1, x: 0 }}
+                    transition={{ delay: 0.5, type: "spring", stiffness: 150 }}
+                  >
+                    <div className="space-y-6">
+                      {/* Game Statistics */}
+                      <div>
+                        <div className="flex items-center gap-2 mb-4">
+                          <TrendingUp className="w-5 h-5 text-blue-400" />
+                          <h3 className="text-lg font-bold text-white">Game Progress</h3>
+                        </div>
+                        <div className="space-y-3">
+                          <div className="flex justify-between items-center bg-black/30 rounded-lg p-3">
+                            <div className="flex items-center gap-2">
+                              <BookOpen className="w-4 h-4 text-green-400" />
+                              <span className="text-white text-sm">Words Learned</span>
+                            </div>
+                            <span className="text-green-400 font-bold">{cumulativeWordsLearned}</span>
+                          </div>
+                          <div className="flex justify-between items-center bg-black/30 rounded-lg p-3">
+                            <div className="flex items-center gap-2">
+                              <Target className="w-4 h-4 text-blue-400" />
+                              <span className="text-white text-sm">Accuracy</span>
+                            </div>
+                            <span className="text-blue-400 font-bold">
+                              {cumulativeTotalQuestions > 0 ? Math.round((cumulativeCorrectAnswers / cumulativeTotalQuestions) * 100) : 0}%
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center bg-black/30 rounded-lg p-3">
+                            <div className="flex items-center gap-2">
+                              <Zap className="w-4 h-4 text-yellow-400" />
+                              <span className="text-white text-sm">Current Streak</span>
+                            </div>
+                            <span className="text-yellow-400 font-bold">{correctAnswers}</span>
+                          </div>
+                          <div className="flex justify-between items-center bg-black/30 rounded-lg p-3">
+                            <div className="flex items-center gap-2">
+                              <Clock className="w-4 h-4 text-purple-400" />
+                              <span className="text-white text-sm">Time Elapsed</span>
+                            </div>
+                            <span className="text-purple-400 font-bold">
+                              {gameStartTime ? Math.floor((new Date().getTime() - gameStartTime.getTime()) / 1000 / 60) : 0}m
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Current Question Info */}
+                      {currentQuestion && showVocabQuestion && (
+                        <div>
+                          <div className="flex items-center gap-2 mb-4">
+                            <Brain className="w-5 h-5 text-purple-400" />
+                            <h3 className="text-lg font-bold text-white">Current Challenge</h3>
+                          </div>
+                          <div className="bg-black/30 rounded-lg p-4">
+                            <div className="text-center">
+                              <div className="text-sm text-purple-400 mb-2">Translate</div>
+                              <div className="text-xl font-bold text-white mb-3">"{currentQuestion.word}"</div>
+                              {currentQuestion.audio_url && (
+                                <motion.button
+                                  onClick={() => {
+                                    const audio = new Audio(currentQuestion.audio_url);
+                                    audio.play().catch(error => console.warn('Audio play failed:', error));
+                                  }}
+                                  className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-full text-sm mx-auto transition-all"
+                                  whileHover={{ scale: 1.05 }}
+                                  whileTap={{ scale: 0.95 }}
+                                >
+                                  <Volume1 className="w-4 h-4" />
+                                  Play Audio
+                                </motion.button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Achievement Progress */}
+                      <div>
+                        <div className="flex items-center gap-2 mb-4">
+                          <Award className="w-5 h-5 text-orange-400" />
+                          <h3 className="text-lg font-bold text-white">Achievements</h3>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="bg-black/30 rounded-lg p-3">
+                            <div className="flex justify-between items-center mb-2">
+                              <span className="text-white text-sm">First Victory</span>
+                              <span className="text-orange-400 text-xs">
+                                {gameState === 'won' ? 'Complete!' : 'In Progress'}
+                              </span>
+                            </div>
+                            <div className="w-full bg-gray-700 rounded-full h-2">
+                              <div 
+                                className="bg-orange-400 h-2 rounded-full transition-all duration-300"
+                                style={{ width: gameState === 'won' ? '100%' : '0%' }}
+                              ></div>
+                            </div>
+                          </div>
+                          <div className="bg-black/30 rounded-lg p-3">
+                            <div className="flex justify-between items-center mb-2">
+                              <span className="text-white text-sm">Learning Streak</span>
+                              <span className="text-green-400 text-xs">
+                                {cumulativeWordsLearned}/10
+                              </span>
+                            </div>
+                            <div className="w-full bg-gray-700 rounded-full h-2">
+                              <div 
+                                className="bg-green-400 h-2 rounded-full transition-all duration-300"
+                                style={{ width: `${Math.min((cumulativeWordsLearned / 10) * 100, 100)}%` }}
+                              ></div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                </div>
+              </div>
+
+              {/* Mobile Layout */}
+              <div className="lg:hidden w-full px-4 space-y-4">
+                
+                {/* Mobile Game Board */}
+                <motion.div 
+                  className="bg-black/40 backdrop-blur-lg border-2 border-white/30 rounded-2xl p-3 shadow-2xl mx-auto max-w-sm"
+                  initial={{ scale: 0.8, opacity: 0, y: 50 }}
+                  animate={{ scale: 1, opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3, type: "spring", stiffness: 150 }}
+                >
+                  <div className="grid grid-cols-3 gap-3 aspect-square w-full mb-2">
+                    {board.map((cell, index) => (
+                      <motion.button
+                        key={index}
+                        onClick={() => handleCellClick(index)}
+                        disabled={!!cell || gameState !== 'playing' || (settings.gameMode !== '2-player' && currentPlayer !== 'X')}
+                        className={`
+                          aspect-square rounded-xl border-2 flex flex-col items-center justify-center text-4xl font-bold transition-all duration-300 relative
+                          backdrop-blur-md bg-white/15 border-white/40 shadow-lg
+                          ${winningLine.includes(index) 
+                            ? 'bg-yellow-400/40 border-yellow-400 shadow-xl shadow-yellow-400/50 scale-105'
+                            : cell 
+                              ? cell === 'X' 
+                                ? 'bg-blue-500/40 border-blue-400 text-blue-100 shadow-xl shadow-blue-400/50' 
+                                : 'bg-red-500/40 border-red-400 text-red-100 shadow-xl shadow-red-400/50'
+                              : 'hover:bg-white/25 hover:border-white/60 cursor-pointer active:scale-95'
+                          }
+                        `}
+                        whileTap={!cell && gameState === 'playing' && (settings.gameMode === '2-player' || currentPlayer === 'X') ? { scale: 0.9 } : {}}
+                      >
+                        {/* Mobile number indicators - smaller */}
+                        <div className="absolute top-0.5 left-0.5 text-white/25 text-xs font-bold select-none bg-black/20 rounded-full w-4 h-4 flex items-center justify-center">
+                          {index + 1}
+                        </div>
+                        
+                        <AnimatePresence>
+                          {cell && (
+                            <motion.span
+                              initial={{ scale: 0, rotate: 180 }}
+                              animate={{ scale: 1, rotate: 0 }}
+                              transition={{ type: "spring", stiffness: 200, damping: 15 }}
+                              className={`drop-shadow-2xl ${cell === 'X' ? 'text-blue-300' : 'text-red-300'}`}
+                            >
+                              {cell}
+                            </motion.span>
+                          )}
+                        </AnimatePresence>
+                      </motion.button>
+                    ))}
+                  </div>
+
+                  {/* Mobile Game Status */}
+                  <div className="text-center min-h-[40px] flex items-center justify-center">
+                    <AnimatePresence mode="wait">
+                      {gameState === 'tie' && (
+                        <motion.div
+                          key="tie-mobile"
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -20 }}
+                          className="text-center"
+                        >
+                          <div className="text-lg font-bold text-yellow-300 drop-shadow-lg bg-black/50 backdrop-blur-sm rounded-xl px-3 py-2 border border-yellow-400/50">
+                            <Handshake className="inline w-5 h-5 mr-2" />Stalemate
+                          </div>
+                        </motion.div>
+                      )}
+                      
+                      {gameState === 'playing' && settings.gameMode === '2-player' && (
+                        <motion.div
+                          key="playing-mobile"
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -20 }}
+                          className="text-center"
+                        >
+                          <div className="text-lg font-bold text-white drop-shadow-lg bg-black/40 backdrop-blur-sm rounded-xl px-3 py-2 border border-white/20">
+                            {currentPlayer === 'X' ? <X className="inline w-5 h-5 mr-2" /> : <Circle className="inline w-5 h-5 mr-2" />} Player {currentPlayer}'s Turn
+                          </div>
+                        </motion.div>
                       )}
                     </AnimatePresence>
-                  </motion.button>
-                ))}
+                  </div>
+                </motion.div>
+
+                {/* Mobile Statistics Panel - Horizontal Scrolling Cards */}
+                <motion.div
+                  className="space-y-3"
+                  initial={{ opacity: 0, y: 50 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5 }}
+                >
+                  {/* Quick Stats Row */}
+                  <div className="flex gap-3 overflow-x-auto pb-2">
+                    <div className="bg-black/40 backdrop-blur-lg border border-white/30 rounded-xl p-3 min-w-[120px] flex-shrink-0">
+                      <div className="text-center">
+                        <BookOpen className="w-5 h-5 text-green-400 mx-auto mb-1" />
+                        <div className="text-green-400 font-bold text-lg">{cumulativeWordsLearned}</div>
+                        <div className="text-white text-xs">Words</div>
+                      </div>
+                    </div>
+                    <div className="bg-black/40 backdrop-blur-lg border border-white/30 rounded-xl p-3 min-w-[120px] flex-shrink-0">
+                      <div className="text-center">
+                        <Target className="w-5 h-5 text-blue-400 mx-auto mb-1" />
+                        <div className="text-blue-400 font-bold text-lg">
+                          {cumulativeTotalQuestions > 0 ? Math.round((cumulativeCorrectAnswers / cumulativeTotalQuestions) * 100) : 0}%
+                        </div>
+                        <div className="text-white text-xs">Accuracy</div>
+                      </div>
+                    </div>
+                    <div className="bg-black/40 backdrop-blur-lg border border-white/30 rounded-xl p-3 min-w-[120px] flex-shrink-0">
+                      <div className="text-center">
+                        <Zap className="w-5 h-5 text-yellow-400 mx-auto mb-1" />
+                        <div className="text-yellow-400 font-bold text-lg">{correctAnswers}</div>
+                        <div className="text-white text-xs">Streak</div>
+                      </div>
+                    </div>
+                    <div className="bg-black/40 backdrop-blur-lg border border-white/30 rounded-xl p-3 min-w-[120px] flex-shrink-0">
+                      <div className="text-center">
+                        <Clock className="w-5 h-5 text-purple-400 mx-auto mb-1" />
+                        <div className="text-purple-400 font-bold text-lg">
+                          {gameStartTime ? Math.floor((new Date().getTime() - gameStartTime.getTime()) / 1000 / 60) : 0}m
+                        </div>
+                        <div className="text-white text-xs">Time</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Current Challenge Card (Mobile) */}
+                  {currentQuestion && showVocabQuestion && (
+                    <div className="bg-black/40 backdrop-blur-lg border border-white/30 rounded-xl p-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Brain className="w-5 h-5 text-purple-400" />
+                        <h3 className="text-lg font-bold text-white">Current Challenge</h3>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-sm text-purple-400 mb-2">Translate</div>
+                        <div className="text-2xl font-bold text-white mb-3">"{currentQuestion.word}"</div>
+                        {currentQuestion.audio_url && (
+                          <motion.button
+                            onClick={() => {
+                              const audio = new Audio(currentQuestion.audio_url);
+                              audio.play().catch(error => console.warn('Audio play failed:', error));
+                            }}
+                            className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-full text-sm mx-auto transition-all"
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                          >
+                            <Volume1 className="w-4 h-4" />
+                            Play Audio
+                          </motion.button>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </motion.div>
+              </div>
+            </>
+          ) : (
+            /* Original layout for other themes - Now responsive */
+            <>
+              {/* Desktop Layout */}
+              <div className="hidden lg:flex w-full max-w-7xl mx-auto px-8 items-start gap-8 mt-2">
+            
+                {/* Left Side - Game Board */}
+                <div className="flex-shrink-0">
+                  <motion.div 
+                    className="bg-black/40 backdrop-blur-lg border-2 border-white/30 rounded-2xl p-4 shadow-2xl"
+                    initial={{ scale: 0.8, opacity: 0, x: -50 }}
+                    animate={{ scale: 1, opacity: 1, x: 0 }}
+                    transition={{ delay: 0.3, type: "spring", stiffness: 150 }}
+                  >
+                    <div className="grid grid-cols-3 gap-6 aspect-square w-[28rem] mx-auto mb-2">
+                    {board.map((cell, index) => (
+                      <motion.button
+                        key={index}
+                        onClick={() => handleCellClick(index)}
+                        disabled={!!cell || gameState !== 'playing' || (settings.gameMode !== '2-player' && currentPlayer !== 'X')}
+                        className={`
+                          aspect-square rounded-2xl border-3 flex flex-col items-center justify-center text-6xl font-bold transition-all duration-300 relative
+                          backdrop-blur-md bg-white/15 border-white/40 shadow-lg
+                          ${winningLine.includes(index) 
+                            ? 'bg-yellow-400/40 border-yellow-400 shadow-xl shadow-yellow-400/50 scale-105'
+                            : cell 
+                              ? cell === 'X' 
+                                ? 'bg-blue-500/40 border-blue-400 text-blue-100 shadow-xl shadow-blue-400/50' 
+                                : 'bg-red-500/40 border-red-400 text-red-100 shadow-xl shadow-red-400/50'
+                              : 'hover:bg-white/25 hover:border-white/60 cursor-pointer'
+                          }
+                          ${!cell && gameState === 'playing' && (settings.gameMode === '2-player' || currentPlayer === 'X') ? 'transform hover:scale-110' : ''}
+                        `}
+                        whileHover={!cell && gameState === 'playing' && (settings.gameMode === '2-player' || currentPlayer === 'X') ? { 
+                          scale: 1.1, 
+                          y: -4,
+                          boxShadow: "0 10px 25px rgba(255, 255, 255, 0.3)" 
+                        } : {}}
+                        whileTap={!cell && gameState === 'playing' && (settings.gameMode === '2-player' || currentPlayer === 'X') ? { scale: 0.95 } : {}}
+                      >
+                        {/* Fixed glyph for each square */}
+                        <div className="absolute top-1 left-1 text-white/25 text-xs font-bold select-none bg-black/20 rounded-full w-5 h-5 flex items-center justify-center">
+                          {index + 1}
+                        </div>
+                        
+                        <AnimatePresence>
+                          {cell && (
+                            <motion.span
+                              initial={{ scale: 0, rotate: 180 }}
+                              animate={{ scale: 1, rotate: 0 }}
+                              transition={{ type: "spring", stiffness: 200, damping: 15 }}
+                              className={`drop-shadow-2xl ${cell === 'X' ? 'text-blue-300' : 'text-red-300'}`}
+                            >
+                              {cell}
+                            </motion.span>
+                          )}
+                        </AnimatePresence>
+                      </motion.button>
+                    ))}
+                  </div>
+
+                  {/* Game Status - Simplified */}
+                  <div className="text-center min-h-[60px] flex items-center justify-center">
+                    <AnimatePresence mode="wait">
+                      
+                      
+                      {gameState === 'tie' && (
+                        <motion.div
+                          key="tie"
+                          initial={{ opacity: 0, y: 20, scale: 0.8 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: -20, scale: 0.8 }}
+                          className="space-y-4"
+                        >
+                          <div className="text-2xl font-bold text-yellow-300 drop-shadow-lg bg-black/50 backdrop-blur-sm rounded-2xl px-4 py-3 border border-yellow-400/50">
+                            <Handshake className="inline w-6 h-6 mr-2" />Stalemate
+                          </div>
+                          <div className="text-sm text-white bg-black/30 backdrop-blur-sm rounded-lg px-3 py-2">
+                            Words learned: {wordsLearned}
+                          </div>
+                          <div className="flex gap-3 justify-center mt-3">
+                            <motion.button
+                              onClick={() => {
+                                playSFX('button-click');
+                                resetGame();
+                              }}
+                              className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white font-bold rounded-full transition-all shadow-lg text-sm"
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.98 }}
+                            >
+                              <Target className="inline w-4 h-4 mr-2" />Rematch
+                            </motion.button>
+                            <motion.button
+                              onClick={() => {
+                                playSFX('button-click');
+                                onBackToMenu();
+                              }}
+                              className="px-4 py-2 bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white font-bold rounded-full transition-all shadow-lg border border-white/20 text-sm"
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.98 }}
+                            >
+                              <Home className="inline w-4 h-4 mr-2" />Menu
+                            </motion.button>
+                          </div>
+                        </motion.div>
+                      )}
+                      
+                      {/* Playing State - Show current player in 2-player mode */}
+                      {gameState === 'playing' && settings.gameMode === '2-player' && (
+                        <motion.div
+                          key="playing"
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -20 }}
+                          className="text-center"
+                        >
+                          <div className="text-xl font-bold text-white drop-shadow-lg bg-black/40 backdrop-blur-sm rounded-xl px-4 py-2 border border-white/20">
+                            {currentPlayer === 'X' ? <X className="inline w-6 h-6 mr-2" /> : <Circle className="inline w-6 h-6 mr-2" />} Player {currentPlayer}'s Turn
+                          </div>
+                        </motion.div>
+                      )}
+                      
+                      {/* Removed computer thinking message to save space */}
+                    </AnimatePresence>
+                  </div>
+                </motion.div>
               </div>
 
-              {/* Game Status - Simplified */}
-              <div className="text-center min-h-[60px] flex items-center justify-center">
-                <AnimatePresence mode="wait">
-                  {gameState === 'won' && (
-                    <motion.div
-                      key="winner"
-                      initial={{ opacity: 0, y: 20, scale: 0.8 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -20, scale: 0.8 }}
-                      className="space-y-4"
-                    >
-                      <div className="text-2xl font-bold text-green-300 drop-shadow-lg bg-black/50 backdrop-blur-sm rounded-2xl px-4 py-3 border border-green-400/50">
-                        🎉 Victory Achieved!
-                      </div>
-                      <div className="text-sm text-white bg-black/30 backdrop-blur-sm rounded-lg px-3 py-2">
-                        Words learned: {wordsLearned} • Accuracy: {Math.round((correctAnswers / Math.max(wordsLearned, 1)) * 100)}%
-                      </div>
-                      <div className="flex gap-3 justify-center mt-3">
-                        <motion.button
-                          onClick={() => {
-                            playSFX('button-click');
-                            resetGame();
-                          }}
-                          className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-bold rounded-full transition-all shadow-lg text-sm"
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.98 }}
-                        >
-                          🎮 Play Again
-                        </motion.button>
-                        <motion.button
-                          onClick={() => {
-                            playSFX('button-click');
-                            onBackToMenu();
-                          }}
-                          className="px-4 py-2 bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white font-bold rounded-full transition-all shadow-lg border border-white/20 text-sm"
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.98 }}
-                        >
-                          🏠 Menu
-                        </motion.button>
-                      </div>
-                    </motion.div>
-                  )}
-                  
-                  {gameState === 'lost' && (
-                    <motion.div
-                      key="loser"
-                      initial={{ opacity: 0, y: 20, scale: 0.8 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -20, scale: 0.8 }}
-                      className="space-y-4"
-                    >
-                      <div className="text-2xl font-bold text-red-300 drop-shadow-lg bg-black/50 backdrop-blur-sm rounded-2xl px-4 py-3 border border-red-400/50">
-                        💔 Mission Failed
-                      </div>
-                      <div className="text-sm text-white bg-black/30 backdrop-blur-sm rounded-lg px-3 py-2">
-                        Words learned: {wordsLearned}
-                      </div>
-                      <div className="flex gap-3 justify-center mt-3">
-                        <motion.button
-                          onClick={() => {
-                            playSFX('button-click');
-                            resetGame();
-                          }}
-                          className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-full transition-all shadow-lg text-sm"
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.98 }}
-                        >
-                          🔄 Try Again
-                        </motion.button>
-                        <motion.button
-                          onClick={() => {
-                            playSFX('button-click');
-                            onBackToMenu();
-                          }}
-                          className="px-4 py-2 bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white font-bold rounded-full transition-all shadow-lg border border-white/20 text-sm"
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.98 }}
-                        >
-                          🏠 Menu
-                        </motion.button>
-                      </div>
-                    </motion.div>
-                  )}
-                  
-                  {gameState === 'tie' && (
-                    <motion.div
-                      key="tie"
-                      initial={{ opacity: 0, y: 20, scale: 0.8 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -20, scale: 0.8 }}
-                      className="space-y-4"
-                    >
-                      <div className="text-2xl font-bold text-yellow-300 drop-shadow-lg bg-black/50 backdrop-blur-sm rounded-2xl px-4 py-3 border border-yellow-400/50">
-                        🤝 Stalemate
-                      </div>
-                      <div className="text-sm text-white bg-black/30 backdrop-blur-sm rounded-lg px-3 py-2">
-                        Words learned: {wordsLearned}
-                      </div>
-                      <div className="flex gap-3 justify-center mt-3">
-                        <motion.button
-                          onClick={() => {
-                            playSFX('button-click');
-                            resetGame();
-                          }}
-                          className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white font-bold rounded-full transition-all shadow-lg text-sm"
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.98 }}
-                        >
-                          🎯 Rematch
-                        </motion.button>
-                        <motion.button
-                          onClick={() => {
-                            playSFX('button-click');
-                            onBackToMenu();
-                          }}
-                          className="px-4 py-2 bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white font-bold rounded-full transition-all shadow-lg border border-white/20 text-sm"
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.98 }}
-                        >
-                          🏠 Menu
-                        </motion.button>
-                      </div>
-                    </motion.div>
-                  )}
-                  
-                  {/* Playing State - Show current player in 2-player mode */}
-                  {gameState === 'playing' && settings.gameMode === '2-player' && (
-                    <motion.div
-                      key="playing"
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -20 }}
-                      className="text-center"
-                    >
-                      <div className="text-xl font-bold text-white drop-shadow-lg bg-black/40 backdrop-blur-sm rounded-xl px-4 py-2 border border-white/20">
-                        {currentPlayer === 'X' ? '❌' : '⭕'} Player {currentPlayer}'s Turn
-                      </div>
-                    </motion.div>
-                  )}
-                  
-                  {/* Removed computer thinking message to save space */}
-                </AnimatePresence>
+              {/* Right Side - Theme Area (ship, treasure, etc.) */}
+              <div className="flex-1 h-full relative">
+                {/* Other themes: Reserved for theme-specific elements */}
+                {themeId && ['tokyo', 'pirate', 'space', 'temple'].includes(themeId) && (
+                  <div>
+                    {/* This area is reserved for theme-specific elements like ships and treasures */}
+                  </div>
+                )}
               </div>
-            </motion.div>
-          </div>
+            </div>
 
-          {/* Right Side - Theme Area (ship, treasure, etc.) */}
-          <div className="flex-1 h-full relative">
-            {/* This area is reserved for theme-specific elements like ships and treasures */}
-          </div>
-        </div>
+            {/* Mobile Layout for Other Themes */}
+            <div className="lg:hidden w-full px-4">
+              <motion.div 
+                className="bg-black/40 backdrop-blur-lg border-2 border-white/30 rounded-2xl p-3 shadow-2xl mx-auto max-w-sm"
+                initial={{ scale: 0.8, opacity: 0, y: 50 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                transition={{ delay: 0.3, type: "spring", stiffness: 150 }}
+              >
+                <div className="grid grid-cols-3 gap-3 aspect-square w-full mb-2">
+                  {board.map((cell, index) => (
+                    <motion.button
+                      key={index}
+                      onClick={() => handleCellClick(index)}
+                      disabled={!!cell || gameState !== 'playing' || (settings.gameMode !== '2-player' && currentPlayer !== 'X')}
+                      className={`
+                        aspect-square rounded-xl border-2 flex flex-col items-center justify-center text-4xl font-bold transition-all duration-300 relative
+                        backdrop-blur-md bg-white/15 border-white/40 shadow-lg
+                        ${winningLine.includes(index) 
+                          ? 'bg-yellow-400/40 border-yellow-400 shadow-xl shadow-yellow-400/50 scale-105'
+                          : cell 
+                            ? cell === 'X' 
+                              ? 'bg-blue-500/40 border-blue-400 text-blue-100 shadow-xl shadow-blue-400/50' 
+                              : 'bg-red-500/40 border-red-400 text-red-100 shadow-xl shadow-red-400/50'
+                            : 'hover:bg-white/25 hover:border-white/60 cursor-pointer active:scale-95'
+                        }
+                      `}
+                      whileTap={!cell && gameState === 'playing' && (settings.gameMode === '2-player' || currentPlayer === 'X') ? { scale: 0.9 } : {}}
+                    >
+                      {/* Mobile number indicators - smaller */}
+                      <div className="absolute top-0.5 left-0.5 text-white/25 text-xs font-bold select-none bg-black/20 rounded-full w-4 h-4 flex items-center justify-center">
+                        {index + 1}
+                      </div>
+                      
+                      <AnimatePresence>
+                        {cell && (
+                          <motion.span
+                            initial={{ scale: 0, rotate: 180 }}
+                            animate={{ scale: 1, rotate: 0 }}
+                            transition={{ type: "spring", stiffness: 200, damping: 15 }}
+                            className={`drop-shadow-2xl ${cell === 'X' ? 'text-blue-300' : 'text-red-300'}`}
+                          >
+                            {cell}
+                          </motion.span>
+                        )}
+                      </AnimatePresence>
+                    </motion.button>
+                  ))}
+                </div>
+
+                {/* Mobile Game Status */}
+                <div className="text-center min-h-[40px] flex items-center justify-center">
+                  <AnimatePresence mode="wait">
+                    {gameState === 'tie' && (
+                      <motion.div
+                        key="tie-mobile-other"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        className="text-center"
+                      >
+                        <div className="text-lg font-bold text-yellow-300 drop-shadow-lg bg-black/50 backdrop-blur-sm rounded-xl px-3 py-2 border border-yellow-400/50">
+                          <Handshake className="inline w-5 h-5 mr-2" />Stalemate
+                        </div>
+                      </motion.div>
+                    )}
+                    
+                    {gameState === 'playing' && settings.gameMode === '2-player' && (
+                      <motion.div
+                        key="turn-mobile-other"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        className="text-center"
+                      >
+                        <div className="text-sm font-bold text-white drop-shadow-lg bg-black/50 backdrop-blur-sm rounded-lg px-3 py-2">
+                          <span className={currentPlayer === 'X' ? 'text-blue-300' : 'text-red-300'}>
+                            Player {currentPlayer}
+                          </span>
+                          <span className="text-white">'s Turn</span>
+                        </div>
+                      </motion.div>
+                    )}
+                    
+                    {gameState === 'playing' && settings.gameMode === 'computer' && (
+                      <motion.div
+                        key="vs-computer-mobile-other"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        className="text-center"
+                      >
+                        <div className="text-sm font-bold drop-shadow-lg bg-black/50 backdrop-blur-sm rounded-lg px-3 py-2">
+                          <span className="text-blue-300">Your Turn</span>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </motion.div>
+            </div>
+            </>
+          )}
         </div>
       )}
 
@@ -1655,6 +1528,129 @@ export default function TicTacToeGame({
                     {option}
                   </motion.button>
                 ))}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Victory Modal */}
+      <AnimatePresence>
+        {gameState === 'won' && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.8, y: 50 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.8, y: 50 }}
+              className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl border border-gray-200"
+            >
+              <div className="text-center mb-6">
+                <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Trophy className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-3xl font-bold text-gray-800 mb-2">Victory Achieved!</h3>
+                <p className="text-gray-600">Congratulations on your win!</p>
+              </div>
+
+              <div className="text-center mb-6">
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <div className="text-lg font-semibold text-gray-800 mb-2">Game Statistics</div>
+                  <div className="text-sm text-gray-600 space-y-1">
+                    <div>Words learned: <span className="font-bold text-green-600">{wordsLearned}</span></div>
+                    <div>Accuracy: <span className="font-bold text-green-600">{Math.round((correctAnswers / Math.max(wordsLearned, 1)) * 100)}%</span></div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <motion.button
+                  onClick={() => {
+                    playSFX('button-click');
+                    resetGame();
+                  }}
+                  className="w-full p-4 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-bold rounded-xl transition-all shadow-lg"
+                  whileHover={{ scale: 1.02, y: -2 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <Gamepad2 className="inline w-5 h-5 mr-2" />Play Again
+                </motion.button>
+                <motion.button
+                  onClick={() => {
+                    playSFX('button-click');
+                    onBackToMenu();
+                  }}
+                  className="w-full p-4 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold rounded-xl transition-all shadow-lg border border-gray-200"
+                  whileHover={{ scale: 1.02, y: -2 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <Home className="inline w-5 h-5 mr-2" />Back to Menu
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Defeat Modal */}
+      <AnimatePresence>
+        {gameState === 'lost' && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.8, y: 50 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.8, y: 50 }}
+              className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl border border-gray-200"
+            >
+              <div className="text-center mb-6">
+                <div className="w-16 h-16 bg-gradient-to-r from-red-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Frown className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-3xl font-bold text-gray-800 mb-2">Mission Failed</h3>
+                <p className="text-gray-600">Better luck next time!</p>
+              </div>
+
+              <div className="text-center mb-6">
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <div className="text-lg font-semibold text-gray-800 mb-2">Game Statistics</div>
+                  <div className="text-sm text-gray-600 space-y-1">
+                    <div>Words learned: <span className="font-bold text-red-600">{wordsLearned}</span></div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <motion.button
+                  onClick={() => {
+                    playSFX('button-click');
+                    resetGame();
+                  }}
+                  className="w-full p-4 bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white font-bold rounded-xl transition-all shadow-lg"
+                  whileHover={{ scale: 1.02, y: -2 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <RotateCcw className="inline w-5 h-5 mr-2" />Try Again
+                </motion.button>
+                <motion.button
+                  onClick={() => {
+                    playSFX('button-click');
+                    onBackToMenu();
+                  }}
+                  className="w-full p-4 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold rounded-xl transition-all shadow-lg border border-gray-200"
+                  whileHover={{ scale: 1.02, y: -2 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <Home className="inline w-5 h-5 mr-2" />Back to Menu
+                </motion.button>
               </div>
             </motion.div>
           </motion.div>

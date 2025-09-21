@@ -158,9 +158,9 @@ export default function SpaceExplorerAnimation({ board, gameState, storyDismisse
         </div>
       </motion.div>
       
-      {/* Astronaut moving across space - using proper PNG */}
+      {/* Astronaut moving across space - using proper PNG - Hidden on mobile for cleaner layout */}
       <motion.div 
-        className="absolute transform -translate-x-1/2 -translate-y-1/2 z-20"
+        className="absolute transform -translate-x-1/2 -translate-y-1/2 z-20 hidden lg:block"
         style={{
           left: `${astronautPosition.x}%`,
           top: `${astronautPosition.y}%`,

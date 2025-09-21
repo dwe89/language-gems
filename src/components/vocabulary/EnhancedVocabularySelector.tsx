@@ -112,7 +112,7 @@ const THEME_ICONS: Record<string, { icon: string; color: string; description: st
   'Travel': { icon: '✈️', color: 'from-green-500 to-green-700', description: 'Travel and transportation gems' },
   'Food': { icon: '🍎', color: 'from-red-500 to-red-700', description: 'Food and dining vocabulary' },
   'Business': { icon: '💼', color: 'from-gray-500 to-gray-700', description: 'Professional vocabulary gems' },
-  'Education': { icon: '📚', color: 'from-purple-500 to-purple-700', description: 'Academic vocabulary gems' },
+  'Education': { icon: 'BookOpen', color: 'from-purple-500 to-purple-700', description: 'Academic vocabulary gems' },
   'Entertainment': { icon: '🎭', color: 'from-pink-500 to-pink-700', description: 'Entertainment vocabulary gems' },
   'Health': { icon: '⚕️', color: 'from-teal-500 to-teal-700', description: 'Health and medical gems' },
   'Technology': { icon: '💻', color: 'from-cyan-500 to-cyan-700', description: 'Tech vocabulary gems' },

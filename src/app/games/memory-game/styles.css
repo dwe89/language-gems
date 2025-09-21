@@ -64,6 +64,83 @@
   gap: 20px;
 }
 
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  .header {
+    padding: 10px 0;
+  }
+  
+  .header-content {
+    padding: 0 10px;
+    flex-direction: column;
+    gap: 10px;
+    align-items: stretch;
+  }
+  
+  .title {
+    font-size: 1.5rem;
+    text-align: center;
+    margin-bottom: 10px;
+    order: 1;
+    width: 100%;
+  }
+  
+  .left-controls, .right-controls {
+    gap: 8px;
+    justify-content: space-around;
+    flex-wrap: wrap;
+  }
+  
+  .left-controls {
+    order: 2;
+  }
+  
+  .right-controls {
+    order: 3;
+  }
+  
+  .nav-btn {
+    padding: 8px 12px;
+    font-size: 0.9rem;
+    flex: 1;
+    min-width: 0;
+    text-align: center;
+    justify-content: center;
+  }
+  
+  .stats-group {
+    gap: 15px;
+    display: flex;
+    justify-content: space-around;
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .header-content {
+    padding: 0 5px;
+  }
+  
+  .title {
+    font-size: 1.2rem;
+  }
+  
+  .nav-btn {
+    padding: 6px 8px;
+    font-size: 0.8rem;
+    min-width: auto;
+  }
+  
+  .left-controls, .right-controls {
+    gap: 4px;
+  }
+  
+  .stats-group {
+    gap: 8px;
+    font-size: 0.8rem;
+  }
+}
+
 
 .stat-item i {
   color: #ffca28;
@@ -108,6 +185,39 @@
   /* Ensure minimum card size for consistency */
   min-height: 400px;
   /* Grid template columns and rows are set dynamically via JavaScript inline styles */
+}
+
+/* Mobile optimizations for game container */
+@media (max-width: 768px) {
+  .game-container {
+    padding: 10px;
+  }
+  
+  .cards-container {
+    height: calc(100vh - 140px); /* Account for header height on mobile */
+    max-height: none;
+    min-height: 300px;
+  }
+  
+  .cards-grid {
+    gap: 8px;
+    min-height: 300px;
+  }
+}
+
+@media (max-width: 480px) {
+  .game-container {
+    padding: 5px;
+  }
+  
+  .cards-container {
+    height: calc(100vh - 120px); /* Smaller header on mobile */
+  }
+  
+  .cards-grid {
+    gap: 5px;
+    min-height: 250px;
+  }
 }
 
 /* Cards */
@@ -185,6 +295,72 @@
   object-fit: contain;
   max-height: 80%;
   border-radius: 8px;
+}
+
+/* Mobile optimizations for cards */
+@media (max-width: 768px) {
+  .card {
+    min-height: 60px;
+    border-radius: 6px;
+  }
+  
+  .card-front, .card-back {
+    padding: 8px;
+    border-radius: 6px;
+  }
+  
+  .card-front {
+    font-size: 1.5rem;
+  }
+  
+  .card-back {
+    font-size: 1rem;
+  }
+  
+  .word-content {
+    font-size: 0.9rem;
+    padding: 2px;
+    word-wrap: break-word;
+    hyphens: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .card {
+    min-height: 50px;
+    border-radius: 4px;
+  }
+  
+  .card-front, .card-back {
+    padding: 5px;
+    border-radius: 4px;
+  }
+  
+  .card-front {
+    font-size: 1.2rem;
+  }
+  
+  .card-back {
+    font-size: 0.8rem;
+  }
+  
+  .word-content {
+    font-size: 0.75rem;
+    padding: 1px;
+    line-height: 1.1;
+    word-wrap: break-word;
+    hyphens: auto;
+    text-align: center;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  
+  .card-image {
+    max-height: 85%;
+  }
 }
 
 /* Fullscreen adjustments */

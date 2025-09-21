@@ -261,7 +261,7 @@ export default function SpaceExplorerEngine(props: WordBlastEngineProps) {
 
         <div className="bg-black/70 backdrop-blur-sm rounded-lg px-6 py-4 border border-blue-500/30">
           <div className="text-center">
-            <div className="text-sm text-blue-300 mb-1">🚀 Decode this space transmission:</div>
+            <div className="text-sm text-blue-300 mb-1">Decode this space transmission:</div>
             <div className="text-xl font-bold text-white">{currentChallenge.english}</div>
             <div className="text-sm text-cyan-300 mt-2">
               Click the {currentChallenge.targetLanguage} space comets in the correct order

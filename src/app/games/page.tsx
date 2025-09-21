@@ -221,16 +221,6 @@ export default function GamesPage() {
           path: '/games/speed-builder'
         },
         {
-          id: 'word-blast',
-          name: 'Word Blast',
-          description: 'Launch rockets with correct word translations before time runs out!',
-          thumbnail: '/images/games/word-blast.jpg',
-          category: 'vocabulary',
-          popular: true,
-          languages: ['English', 'Spanish', 'French'],
-          path: '/games/word-blast'
-        },
-        {
           id: 'sentence-towers',
           name: 'Word Towers',
           description: 'Build towers by matching words to translations. Wrong answers make towers fall!',
@@ -270,17 +260,6 @@ export default function GamesPage() {
           popular: false,
           languages: ['English', 'Spanish', 'French', 'German'],
           path: '/games/noughts-and-crosses'
-        },
-        {
-          id: 'conjugation-duel',
-          name: 'Conjugation Duel',
-          description: 'Epic verb conjugation battles in different arenas and leagues.',
-          thumbnail: '/images/games/conjugation-duel.jpg',
-          category: 'grammar',
-          popular: true,
-          comingSoon: true,
-          languages: ['Spanish'],
-          path: '/games/conjugation-duel'
         },
         {
           id: 'word-scramble',
@@ -325,6 +304,38 @@ export default function GamesPage() {
           path: '/games/lava-temple-word-restore'
         },
         {
+          id: 'vocab-blast', // New game ID
+          name: 'Vocab Blast', // New game name
+          description: 'Click vocabulary gems to pop and translate them quickly', // New game description
+          thumbnail: '/images/games/vocab-blast.jpg', // New thumbnail
+          category: 'vocabulary',
+          popular: true,
+          languages: ['English', 'Spanish', 'French', 'German'], // Example languages
+          path: '/games/vocab-blast' // New path
+        },
+        {
+          id: 'word-blast',
+          name: 'Word Blast',
+          description: 'Launch rockets with correct word translations before time runs out!',
+          thumbnail: '/images/games/word-blast.jpg',
+          category: 'vocabulary',
+          popular: true,
+          comingSoon: true,
+          languages: ['English', 'Spanish', 'French'],
+          path: '/games/word-blast'
+        },
+        {
+          id: 'conjugation-duel',
+          name: 'Conjugation Duel',
+          description: 'Epic verb conjugation battles in different arenas and leagues.',
+          thumbnail: '/images/games/conjugation-duel.jpg',
+          category: 'grammar',
+          popular: true,
+          comingSoon: true,
+          languages: ['Spanish'],
+          path: '/games/conjugation-duel'
+        },
+        {
           id: 'verb-quest',
           name: 'Verb Quest',
           description: 'Embark on an epic RPG adventure to master verb conjugations!',
@@ -334,16 +345,6 @@ export default function GamesPage() {
           comingSoon: true,
           languages: ['Spanish', 'French', 'German'],
           path: '/games/verb-quest'
-        },
-        {
-          id: 'vocab-blast', // New game ID
-          name: 'Vocab Blast', // New game name
-          description: 'Click vocabulary gems to pop and translate them quickly', // New game description
-          thumbnail: '/images/games/vocab-blast.jpg', // New thumbnail
-          category: 'vocabulary',
-          popular: true,
-          languages: ['English', 'Spanish', 'French', 'German'], // Example languages
-          path: '/games/vocab-blast' // New path
         }
       ];
 

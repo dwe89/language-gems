@@ -838,7 +838,7 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
   }, [settings.theme]);
 
   return (
-    <div className={`fixed inset-0 ${themeClassesState.background} ${themeClassesState.text} flex flex-col overflow-hidden z-40`}>
+    <div className={`flex flex-col min-h-screen ${themeClassesState.background} ${themeClassesState.text} overflow-hidden`}>
       {/* Custom CSS for glow effects */}
       <style jsx>{`
         .glow-pink {
@@ -855,13 +855,13 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
         }
       `}</style>
 
-      {/* Background video/animation fills entire screen */}
-      <div className="absolute inset-0">
+      {/* Background video/animation fills entire screen - behind everything */}
+      <div className="absolute inset-0 z-0">
         {renderThematicAnimation()}
       </div>
 
-      {/* Top navigation and info bar - fixed above game content */}
-      <div className="fixed top-0 left-0 right-0 z-50 flex justify-between items-center p-3 md:p-4 bg-black/30 backdrop-blur-sm">
+      {/* Top navigation and info bar - part of document flow but on top */}
+      <div className="relative z-50 flex justify-between items-center p-3 md:p-4 bg-black/30 backdrop-blur-sm">
         {!isFullscreen && (
           <button
             onClick={onBackToMenu}
@@ -968,8 +968,8 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
         </div>
       </div>
 
-      {/* Progress bar - fixed below navigation */}
-      <div className="fixed top-16 md:top-20 left-0 right-0 z-50 px-3 md:px-4 pb-3 md:pb-4">
+      {/* Progress bar - on top of the header */}
+      <div className="relative z-60 px-3 md:px-4 pb-3 md:pb-4">
         <div className="w-full h-2 md:h-3 bg-gray-700/50 rounded-full overflow-hidden backdrop-blur-sm">
           <div
             className="h-full rounded-full transition-all duration-500"
@@ -981,10 +981,9 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
         </div>
       </div>
 
-      {/* Main game content area - positioned below fixed UI */}
-      <div className="relative z-40 flex-1 flex flex-col pt-24 md:pt-28 pb-4">        <div className="flex-1"></div>
-
-
+      {/* Main game content area - fills remaining space */}
+      <div className="relative z-40 flex-1 flex flex-col">
+        <div className="flex-1"></div>
 
         {/* Word display positioned much lower */}
         {gameStatus === 'playing' && (

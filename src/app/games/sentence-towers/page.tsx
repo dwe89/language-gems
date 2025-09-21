@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft, Flame, Clock, Trophy, Star, Settings,
-  Volume2, VolumeX, Pause, Play, RotateCcw, Maximize, Minimize
+  Volume2, VolumeX, Pause, Play, RotateCcw, Maximize, Minimize, BookOpen, Target
 } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import UnifiedGameLauncher from '../../../components/games/UnifiedGameLauncher';
@@ -1588,7 +1588,7 @@ function ImprovedSentenceTowersGame({
             className="p-2 md:p-3 bg-black/30 hover:bg-black/50 rounded-xl backdrop-blur-md border border-white/20 transition-all duration-300"
             title="Change Language, Level, Topic & Theme"
           >
-            <span className="text-sm md:text-base">🎯</span>
+            <Target className="h-4 w-4 md:h-5 md:w-5 text-white" />
             <span className="hidden md:inline ml-2">Game Config</span>
           </button>
         </div>
@@ -2004,7 +2004,9 @@ function ImprovedSentenceTowersGame({
               {/* Game Info */}
               <div className="mb-6">
                 <div className="w-full p-4 rounded-xl border-2 border-white/30 bg-white/10 text-white">
-                  <div className="text-2xl mb-2">📚</div>
+                  <div className="text-2xl mb-2 flex justify-center">
+                    <BookOpen className="h-8 w-8 text-orange-400" />
+                  </div>
                   <h3 className="text-lg font-bold mb-1">
                     {config.subcategoryId ?
                       `${config.categoryId} - ${config.subcategoryId}` :

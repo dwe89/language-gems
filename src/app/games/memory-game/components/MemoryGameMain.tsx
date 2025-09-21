@@ -118,6 +118,19 @@ export default function MemoryGameMain({
   const [gameService, setGameService] = useState<EnhancedGameService | null>(null);
   const [gameSessionId, setGameSessionId] = useState<string | null>(null);
 
+  // Add state to force re-render on screen size changes for responsive grid
+  const [screenWidth, setScreenWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1024);
+
+  // Add window resize listener for responsive grid updates
+  useEffect(() => {
+    const handleResize = () => {
+      setScreenWidth(window.innerWidth);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   // Use assignment gameSessionId when in assignment mode, otherwise use own session
   const effectiveGameSessionId = isAssignmentMode ? assignmentGameSessionId : gameSessionId;
 
@@ -284,17 +297,43 @@ export default function MemoryGameMain({
     // Always calculate pairs from total cards to ensure consistency
     const actualPairs = Math.floor(totalCards / 2);
     
-    // Use the same grid layout logic for both custom and database modes
-    // This ensures consistent card sizing regardless of content source
-    if (actualPairs <= 3) return { cols: 3, rows: 2 }; // 3 pairs (6 cards) in 3x2
-    if (actualPairs <= 4) return { cols: 4, rows: 2 }; // 4 pairs (8 cards) in 4x2
-    if (actualPairs <= 5) return { cols: 5, rows: 2 }; // 5 pairs (10 cards) in 5x2
-    if (actualPairs <= 6) return { cols: 4, rows: 3 }; // 6 pairs (12 cards) in 4x3
-    if (actualPairs <= 8) return { cols: 4, rows: 4 }; // 8 pairs (16 cards) in 4x4
-    if (actualPairs <= 10) return { cols: 5, rows: 4 }; // 10 pairs (20 cards) in 5x4
+    // Check if we're on a mobile device using state (more reliable for SSR)
+    const isMobile = screenWidth <= 768;
+    const isSmallMobile = screenWidth <= 480;
+    
+    if (isSmallMobile) {
+      // For very small screens, prioritize narrow layouts and avoid cramped grids
+      if (actualPairs <= 3) return { cols: 2, rows: 3 }; // 3 pairs (6 cards) in 2x3
+      if (actualPairs <= 4) return { cols: 2, rows: 4 }; // 4 pairs (8 cards) in 2x4
+      if (actualPairs <= 5) return { cols: 2, rows: 5 }; // 5 pairs (10 cards) in 2x5
+      if (actualPairs <= 6) return { cols: 3, rows: 4 }; // 6 pairs (12 cards) in 3x4
+      if (actualPairs <= 8) return { cols: 3, rows: 6 }; // 8 pairs (16 cards) in 3x6 (if needed)
+      if (actualPairs <= 10) return { cols: 3, rows: 7 }; // 10 pairs (20 cards) in 3x7 - much better than 4x5
+    } else if (isMobile) {
+      // For tablets/mobile in portrait, use more balanced layouts
+      if (actualPairs <= 3) return { cols: 3, rows: 2 }; // 3 pairs (6 cards) in 3x2
+      if (actualPairs <= 4) return { cols: 3, rows: 3 }; // 4 pairs (8 cards) in 3x3 (with empty spaces)
+      if (actualPairs <= 5) return { cols: 4, rows: 3 }; // 5 pairs (10 cards) in 4x3
+      if (actualPairs <= 6) return { cols: 4, rows: 3 }; // 6 pairs (12 cards) in 4x3
+      if (actualPairs <= 8) return { cols: 4, rows: 4 }; // 8 pairs (16 cards) in 4x4
+      if (actualPairs <= 10) return { cols: 4, rows: 5 }; // 10 pairs (20 cards) in 4x5
+    } else {
+      // Desktop layouts (original logic)
+      if (actualPairs <= 3) return { cols: 3, rows: 2 }; // 3 pairs (6 cards) in 3x2
+      if (actualPairs <= 4) return { cols: 4, rows: 2 }; // 4 pairs (8 cards) in 4x2
+      if (actualPairs <= 5) return { cols: 5, rows: 2 }; // 5 pairs (10 cards) in 5x2
+      if (actualPairs <= 6) return { cols: 4, rows: 3 }; // 6 pairs (12 cards) in 4x3
+      if (actualPairs <= 8) return { cols: 4, rows: 4 }; // 8 pairs (16 cards) in 4x4
+      if (actualPairs <= 10) return { cols: 5, rows: 4 }; // 10 pairs (20 cards) in 5x4
+    }
     
     // For larger sets, calculate a reasonable square-ish layout
-    return { cols: Math.ceil(Math.sqrt(totalCards)), rows: Math.ceil(Math.sqrt(totalCards)) };
+    const sqrt = Math.ceil(Math.sqrt(totalCards));
+    if (isMobile) {
+      // On mobile, prefer more rows than columns
+      return { cols: Math.min(sqrt, 4), rows: Math.ceil(totalCards / Math.min(sqrt, 4)) };
+    }
+    return { cols: sqrt, rows: sqrt };
   };
   
   // Save assignment progress when game is completed

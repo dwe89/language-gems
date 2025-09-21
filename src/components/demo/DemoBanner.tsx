@@ -103,9 +103,9 @@ export default function DemoBanner({
             </p>
             {showStats && (
               <div className="flex items-center space-x-4 text-sm text-blue-200">
-                <span>✨ 1 category available</span>
-                <span>🌍 3 languages</span>
-                <span>📚 25 words per session</span>
+                <span>1 category available</span>
+                <span>3 languages</span>
+                <span>25 words per session</span>
               </div>
             )}
           </div>

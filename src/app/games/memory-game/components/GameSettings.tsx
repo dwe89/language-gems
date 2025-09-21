@@ -281,10 +281,10 @@ export default function GameSettings({ onStartGame }: GameSettingsProps) {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
-            {!selectedCategory ? '📚 Choose a Topic First' :
-             vocabLoading ? '⏳ Loading...' :
-             vocabulary.length === 0 ? '❌ No Vocabulary Available' :
-             '🚀 Start Memory Game'}
+            {!selectedCategory ? 'Choose a Topic First' :
+             vocabLoading ? 'Loading...' :
+             vocabulary.length === 0 ? 'No Vocabulary Available' :
+             'Start Memory Game'}
           </motion.button>
           {!selectedCategory && (
             <p className="text-sm text-white/60 mt-2">Select a learning topic to begin</p>

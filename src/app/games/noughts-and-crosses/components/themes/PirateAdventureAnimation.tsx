@@ -82,9 +82,9 @@ export default function PirateAdventureAnimation({ board, gameState, storyDismis
         </motion.div>
       )}
       
-      {/* Player pirate ship - MUCH MUCH bigger on right side */}
+      {/* Player pirate ship - MUCH MUCH bigger on right side - Hidden on mobile for cleaner layout */}
       <motion.div 
-        className="absolute top-1/4 right-8 transform -translate-y-1/4"
+        className="absolute top-1/4 right-8 transform -translate-y-1/4 hidden lg:block"
         style={{ 
           width: '650px', // MUCH MUCH bigger
           height: '500px'

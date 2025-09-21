@@ -43,7 +43,7 @@ export default function SentenceGameLauncher({ onGameStart, onBack }: SentenceGa
   const categoryMetadata: Record<string, { name: string; icon: string; description: string }> = {
     'basics_core_language': {
       name: 'Basics & Core Language',
-      icon: '📚',
+      icon: 'BookOpen',
       description: 'Essential vocabulary and basic language concepts'
     },
     'identity_personal_life': {

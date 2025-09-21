@@ -1,17 +1,24 @@
 'use client';
 
 import React, { useState } from 'react';
-import { 
-  Gamepad2, 
-  BookOpen, 
-  Users, 
-  ArrowRight, 
+import {
+  Gamepad2,
+  BookOpen,
+  Users,
+  ArrowRight,
   CheckCircle,
   Sparkles,
   Play,
   Mail,
   MessageSquare,
-  X
+  X,
+  Target,
+  Brain,
+  Zap,
+  Search,
+  Swords,
+  Building,
+  Pickaxe
 } from 'lucide-react';
 import { useFeatureFlags } from '../../lib/feature-flags';
 
@@ -110,20 +117,32 @@ export default function BetaOnboarding({
         <div className="text-center">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
             {[
-              { name: "VocabMaster", icon: "🎯" },
-              { name: "Memory Match", icon: "🧠" },
-              { name: "Word Blast", icon: "💥" },
-              { name: "Detective Listening", icon: "🕵️" },
-              { name: "Conjugation Duel", icon: "⚔️" },
-              { name: "Lava Temple", icon: "🏛️" },
-              { name: "Speed Builder", icon: "⚡" },
-              { name: "Vocab Mining", icon: "⛏️" }
-            ].map((game, index) => (
-              <div key={index} className="p-4 bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg">
-                <div className="text-2xl mb-2">{game.icon}</div>
-                <div className="text-sm font-medium text-gray-700">{game.name}</div>
-              </div>
-            ))}
+              { name: "VocabMaster", icon: "Target" },
+              { name: "Memory Match", icon: "Brain" },
+              { name: "Word Blast", icon: "Zap" },
+              { name: "Detective Listening", icon: "Search" },
+              { name: "Conjugation Duel", icon: "Swords" },
+              { name: "Lava Temple", icon: "Building" },
+              { name: "Speed Builder", icon: "Zap" },
+              { name: "Vocab Mining", icon: "Pickaxe" }
+            ].map((game, index) => {
+              const IconComponent = {
+                Target,
+                Brain,
+                Zap,
+                Search,
+                Swords,
+                Building,
+                Pickaxe
+              }[game.icon] || Target;
+
+              return (
+                <div key={index} className="p-4 bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg">
+                  <IconComponent className="w-8 h-8 mx-auto mb-2 text-purple-600" />
+                  <div className="text-sm font-medium text-gray-700">{game.name}</div>
+                </div>
+              );
+            })}
           </div>
           
           <a
