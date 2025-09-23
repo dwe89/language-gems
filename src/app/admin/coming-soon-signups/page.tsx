@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '../../../components/auth/AuthProvider';
-import { supabaseBrowser } from '../../../lib/supabase-browser';
+import { useAuth, supabaseBrowser } from '../../../components/auth/AuthProvider';
 import { Mail, Calendar, User, Download } from 'lucide-react';
 
 interface EmailSignup {

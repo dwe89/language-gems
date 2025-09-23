@@ -1,0 +1,825 @@
+brandUpdateTime: ""
+firstLoadSocialIcons: false
+hideSwapBanner: false
+font-fallback:
+  default: Arial
+  headings: Arial
+campaignType: automation_template
+fieldsHistory: []
+subject: 'Welcome to LanguageGems {{contact.FIRSTNAME | default : ''''}}'
+ui:
+  showDeleteOption: false
+  showMoreOption: false
+user-hash: 4334256ac3ccb51fda1cc5acebbeab59
+author: ""
+name: ""
+id: ""
+version: 3.0.1
+fields: {}
+fonts:
+  - 'https://fonts.googleapis.com/css2?family=IBM Plex Serif&family=Open Sans&family=Roboto&family=Inter&family=Inter Tight'
+styles:
+  default:
+    properties:
+      color: '#414141'
+      font-family: Arial
+      font-size: 16px
+      line-height: '1.5'
+    title: Paragraph
+  default-button:
+    properties:
+      background-color: '#666666'
+      border-radius: 4px
+      border-width: 0px
+      color: '#fff'
+      font-family: Arial
+      font-size: 16px
+      remove-vml-button: optional
+      width: 135px
+    title: Button
+  default-heading1:
+    properties:
+      color: '#414141'
+      font-family: Arial
+      font-size: 36px
+    title: 'Heading 1'
+  default-heading2:
+    properties:
+      color: '#414141'
+      font-family: Arial
+      font-size: 32px
+    title: 'Heading 2'
+  default-heading3:
+    properties:
+      color: '#1F2D3D'
+      font-family: Arial
+      font-size: 24px
+    title: 'Heading 3'
+  default-heading4:
+    properties:
+      color: '#1F2D3D'
+      font-family: Arial
+      font-size: 18px
+    title: 'Heading 4'
+  default-link:
+    properties:
+      color: '#666666'
+      text-decoration: underline
+    title: Link
+media:
+  320px:
+    max-width: 600
+    min-width: 0
+body:
+  content:
+    -
+      type: rows
+      thumbnail: null
+      isCustomBlock: null
+      customBlockId: null
+      moduleName: null
+      sidebarSection: null
+      sync-module-id: null
+      content-type: wrapper
+      title: Wrapper
+      stylable: null
+      layout:
+        320px:
+          width: 320px
+        default:
+          align: center
+          valign: top
+      content:
+        -
+          type: grid-row
+          thumbnail: /assets/img/editor/grid_12.svg
+          isCustomBlock: null
+          customBlockId: null
+          moduleName: viewInBrowser
+          sidebarSection: null
+          sync-module-id: null
+          align: top
+          title: section
+          stylable: null
+          layout:
+            320px:
+              display: rows
+              width: 100%
+            default:
+              align: center
+              full-width: true
+              background-color: transparent
+              display: none
+              padding-bottom: 5px
+              padding-top: 5px
+              width: 100%
+              valign: top
+              padding-left: null
+              padding-right: null
+          content:
+            -
+              type: grid-column
+              thumbnail: null
+              isCustomBlock: null
+              customBlockId: null
+              moduleName: null
+              sidebarSection: null
+              sync-module-id: null
+              imagelabel: 'Select a content type'
+              isEmpty: false
+              label: 'Drop content here'
+              title: 'column 1'
+              stylable: false
+              layout:
+                320px: {}
+                default:
+                  padding-left: 0px
+                  padding-right: 0px
+                  valign: top
+              content:
+                -
+                  type: text
+                  thumbnail: null
+                  isCustomBlock: null
+                  customBlockId: null
+                  moduleName: null
+                  sidebarSection: null
+                  sync-module-id: null
+                  title: 'View in browser'
+                  stylable: null
+                  layout:
+                    320px:
+                      padding-left: 10px
+                      padding-right: 10px
+                      width: 100%
+                    default:
+                      align: center
+                      padding-left: 30px
+                      padding-right: 30px
+                      text-align: center
+                      width: 100%
+                  content: "<p><a href=\"{{ mirror }}\">\n                      <span style=\"font-family: arial,helvetica,sans-serif;color:#858588;font-size: 12px; text-decoration: underline;\">\n                      View in browser</span></a></p>"
+          dist: '12'
+          gutter: 0px
+        -
+          type: grid-row
+          thumbnail: null
+          isCustomBlock: null
+          customBlockId: null
+          moduleName: header
+          sidebarSection: null
+          sync-module-id: null
+          align: top
+          title: Header
+          stylable: null
+          layout:
+            320px:
+              display: rows
+              padding-left: 15px
+              padding-right: 15px
+              width: 100%
+            default:
+              align: center
+              padding-bottom: 80px
+              padding-top: 20px
+              width: 100%
+              valign: top
+              padding-left: null
+              padding-right: null
+          content:
+            -
+              type: grid-column
+              thumbnail: null
+              isCustomBlock: null
+              customBlockId: null
+              moduleName: null
+              sidebarSection: null
+              sync-module-id: null
+              isEmpty: false
+              label: 'Drop content here'
+              title: grid-column
+              stylable: false
+              layout:
+                320px: {}
+                default:
+                  padding-left: 0px
+                  padding-right: 0px
+                  valign: top
+              content:
+                -
+                  type: image
+                  thumbnail: /assets/img/editor/element-logo.png
+                  isCustomBlock: null
+                  customBlockId: null
+                  moduleName: brand-logo
+                  sidebarSection: null
+                  sync-module-id: null
+                  label: Replace
+                  title: Logo
+                  stylable: null
+                  layout:
+                    320px:
+                      max-width: 320px
+                      width: 100%
+                    default:
+                      align: center
+                      canvas-height: 60px
+                      dynamic: false
+                      embed: false
+                      img-border-radius: 0px
+                      imgSize: '7142'
+                      width: 200px
+                      valign: top
+                  content:
+                    src: 'https://creative-assets.mailinblue.com/editor/templates/logo-placeholder.png'
+          dist: '12'
+          gutter: 30px
+        -
+          type: grid-row
+          thumbnail: null
+          isCustomBlock: null
+          customBlockId: null
+          moduleName: null
+          sidebarSection: null
+          sync-module-id: null
+          align: top
+          title: 1_Title_section
+          stylable: null
+          layout:
+            320px:
+              display: rows
+              padding-left: 15px
+              padding-right: 15px
+              width: 100%
+            default:
+              align: center
+              padding-bottom: 40px
+              padding-top: 20px
+              width: 100%
+              valign: top
+              padding-left: null
+              padding-right: null
+          content:
+            -
+              type: grid-column
+              thumbnail: null
+              isCustomBlock: null
+              customBlockId: null
+              moduleName: null
+              sidebarSection: null
+              sync-module-id: null
+              isEmpty: false
+              title: 'column 1'
+              stylable: false
+              layout:
+                320px: {}
+                default:
+                  padding-left: 0px
+                  padding-right: 0px
+                  valign: top
+              content:
+                -
+                  type: text
+                  thumbnail: /assets/img/editor/element-title.svg
+                  isCustomBlock: null
+                  customBlockId: null
+                  moduleName: text-title
+                  sidebarSection: null
+                  sync-module-id: null
+                  title: Titre
+                  stylable: null
+                  layout:
+                    320px:
+                      width: 100%
+                    default:
+                      align: left
+                      removePadding: false
+                      line-height: '1'
+                      padding-bottom: 0px
+                      padding-left: 0px
+                      padding-right: 0px
+                      padding-top: 0px
+                      text-align: center
+                      text-valign: top
+                      width: 100%
+                      valign: top
+                  content: '<h2 class="default-heading2">Hey&nbsp;{{ contact.FIRSTNAME }},&nbsp;</h2><h2 class="default-heading2"><strong>welcome on board!</strong></h2>'
+                -
+                  type: image
+                  thumbnail: /assets/img/editor/element_image.svg
+                  isCustomBlock: null
+                  customBlockId: null
+                  moduleName: null
+                  sidebarSection: null
+                  sync-module-id: null
+                  title: Image
+                  stylable: null
+                  layout:
+                    320px:
+                      max-width: 320px
+                      width: 100%
+                    default:
+                      align: center
+                      canvas-height: 228.9930419921875px
+                      dynamic: false
+                      embed: false
+                      img-border-radius: 8px
+                      imgSize: '19757'
+                      background-position: center
+                      background-repeat: no-repeat
+                      background-size: auto
+                      border-radius: 8px
+                      color: '#3b3f44'
+                      font-family: Arial
+                      font-size: 16px
+                      padding-bottom: 0px
+                      padding-top: 20px
+                      width: 100%
+                      valign: top
+                  content:
+                    src: 'https://creative-assets.mailinblue.com/editor/templates/image-placeholder-3x-2.png'
+          dist: '12'
+          gutter: 30px
+        -
+          type: grid-row
+          thumbnail: /assets/img/editor/grid_12.svg
+          isCustomBlock: null
+          customBlockId: null
+          moduleName: grid-row12
+          sidebarSection: null
+          sync-module-id: null
+          align: top
+          title: section
+          stylable: null
+          layout:
+            320px:
+              display: rows
+              padding-left: 15px
+              padding-right: 15px
+              width: 100%
+            default:
+              align: center
+              removePadding: true
+              padding-bottom: 20px
+              padding-left: 0px
+              padding-right: 0px
+              padding-top: 20px
+              width: 100%
+              valign: top
+          content:
+            -
+              type: grid-column
+              thumbnail: null
+              isCustomBlock: null
+              customBlockId: null
+              moduleName: null
+              sidebarSection: null
+              sync-module-id: null
+              isEmpty: false
+              title: 'column 1'
+              stylable: false
+              layout:
+                320px: {}
+                default:
+                  padding-left: 0px
+                  padding-right: 0px
+                  valign: top
+              content:
+                -
+                  type: text
+                  thumbnail: /assets/img/editor/element_text.svg
+                  isCustomBlock: null
+                  customBlockId: null
+                  moduleName: null
+                  sidebarSection: null
+                  sync-module-id: null
+                  title: Texte
+                  stylable: null
+                  layout:
+                    320px:
+                      width: 100%
+                    default:
+                      align: left
+                      removePadding: false
+                      padding-bottom: 0px
+                      padding-left: 0px
+                      padding-right: 0px
+                      padding-top: 0px
+                      text-align: left
+                      text-valign: top
+                      width: 100%
+                      valign: top
+                  content: '<p>We’re excited to have you join our community. You can expect exclusive offers and newsletter to learn more about our activity.</p><p>To get started, we invite you to explore our most popular blogs articles:</p>'
+          dist: '12'
+          gutter: 30px
+        -
+          type: grid-row
+          thumbnail: /assets/img/editor/grid_12.svg
+          isCustomBlock: null
+          customBlockId: null
+          moduleName: grid-row12
+          sidebarSection: null
+          sync-module-id: null
+          align: top
+          title: section
+          stylable: null
+          layout:
+            320px:
+              display: rows
+              padding-left: 15px
+              padding-right: 15px
+              width: 100%
+            default:
+              align: center
+              padding-bottom: 20px
+              padding-top: 20px
+              width: 100%
+              valign: top
+              padding-left: null
+              padding-right: null
+          content:
+            -
+              type: grid-column
+              thumbnail: null
+              isCustomBlock: null
+              customBlockId: null
+              moduleName: null
+              sidebarSection: null
+              sync-module-id: null
+              isEmpty: false
+              title: 'column 1'
+              stylable: false
+              layout:
+                320px: {}
+                default:
+                  padding-left: 0px
+                  padding-right: 0px
+                  valign: top
+              content:
+                -
+                  type: text-button
+                  thumbnail: /assets/img/editor/element_button.svg
+                  isCustomBlock: null
+                  customBlockId: null
+                  moduleName: null
+                  sidebarSection: null
+                  sync-module-id: null
+                  text: '<p><span style="font-family:Arial, helvetica, sans-serif;">Discover our articles</span></p>'
+                  title: Bouton
+                  stylable: null
+                  layout:
+                    320px:
+                      width: 100%
+                    default:
+                      align: center
+                      data-placeholder-href: '{{params.url}}'
+                      item-height: 42.37268829345703px
+                      removeMargin: false
+                      type: absoluteLink
+                      background-color: '#222222'
+                      border-radius: 4px
+                      margin-bottom: 0px
+                      margin-top: 0px
+                      padding-bottom: 12px
+                      padding-top: 12px
+                      text-align: center
+                      text-valign: top
+                      width: 50%
+                      valign: top
+                  content:
+                    text: '<p><span style="font-family:Arial, helvetica, sans-serif;">Discover our articles</span></p>'
+                    href: '{{params.url}}'
+                    title: 'Button title'
+          dist: '12'
+          gutter: 30px
+        -
+          type: grid-row
+          thumbnail: /assets/img/editor/grid_12.svg
+          isCustomBlock: null
+          customBlockId: null
+          moduleName: grid-row12
+          sidebarSection: null
+          sync-module-id: null
+          align: top
+          title: section
+          stylable: null
+          layout:
+            320px:
+              display: rows
+              padding-left: 15px
+              padding-right: 15px
+              width: 100%
+            default:
+              align: center
+              padding-bottom: 20px
+              padding-top: 20px
+              width: 100%
+              valign: top
+              padding-left: null
+              padding-right: null
+          content:
+            -
+              type: grid-column
+              thumbnail: null
+              isCustomBlock: null
+              customBlockId: null
+              moduleName: null
+              sidebarSection: null
+              sync-module-id: null
+              isEmpty: false
+              title: 'column 1'
+              stylable: false
+              layout:
+                320px: {}
+                default:
+                  padding-left: 0px
+                  padding-right: 0px
+                  valign: top
+              content:
+                -
+                  type: divider
+                  thumbnail: /assets/img/editor/element_divider.svg
+                  isCustomBlock: null
+                  customBlockId: null
+                  moduleName: null
+                  sidebarSection: null
+                  sync-module-id: null
+                  title: Diviseur
+                  stylable: null
+                  layout:
+                    320px:
+                      width: 100%
+                    default:
+                      align: center
+                      removePadding: true
+                      border-color: '#aaaaaa'
+                      border-style: solid
+                      display: auto
+                      padding-bottom: 20px
+                      padding-left: 0px
+                      padding-right: 0px
+                      padding-top: 20px
+                      width: 100%
+                      border-width: 2px
+          dist: '12'
+          gutter: 30px
+        -
+          type: grid-row
+          thumbnail: /assets/img/editor/grid_12.svg
+          isCustomBlock: null
+          customBlockId: null
+          moduleName: grid-row12
+          sidebarSection: null
+          sync-module-id: null
+          align: top
+          title: section
+          stylable: null
+          layout:
+            320px:
+              display: rows
+              padding-left: 15px
+              padding-right: 15px
+              width: 100%
+            default:
+              align: center
+              removePadding: true
+              padding-bottom: 20px
+              padding-left: 0px
+              padding-right: 0px
+              padding-top: 20px
+              width: 100%
+              valign: top
+          content:
+            -
+              type: grid-column
+              thumbnail: null
+              isCustomBlock: null
+              customBlockId: null
+              moduleName: null
+              sidebarSection: null
+              sync-module-id: null
+              isEmpty: false
+              title: 'column 1'
+              stylable: false
+              layout:
+                320px: {}
+                default:
+                  padding-left: 0px
+                  padding-right: 0px
+                  valign: top
+              content:
+                -
+                  type: text
+                  thumbnail: /assets/img/editor/element_text.svg
+                  isCustomBlock: null
+                  customBlockId: null
+                  moduleName: null
+                  sidebarSection: null
+                  sync-module-id: null
+                  title: Texte
+                  stylable: null
+                  layout:
+                    320px:
+                      width: 100%
+                    default:
+                      align: left
+                      removePadding: false
+                      padding-bottom: 0px
+                      padding-left: 0px
+                      padding-right: 0px
+                      padding-top: 0px
+                      text-align: left
+                      text-valign: top
+                      width: 100%
+                      valign: top
+                  content: '<p>We’re here to make your experience amazing. If you have any questions or feedback, feel free to reply to this email, we’d love to hear from you!</p>'
+          dist: '12'
+          gutter: 30px
+        -
+          type: grid-row
+          thumbnail: null
+          isCustomBlock: null
+          customBlockId: null
+          moduleName: grid-row12
+          sidebarSection: section
+          sync-module-id: null
+          align: top
+          brandable: true
+          sectionGroup: 'Footer & signatures'
+          thumbnailUrl: 'https://creative-assets.mailinblue.com/editor/block-thumbs/footers_02.png'
+          title: 1_Footer_V2
+          stylable: null
+          layout:
+            320px:
+              display: rows
+              padding-left: 15px
+              padding-right: 15px
+              width: 100%
+            default:
+              align: center
+              full-width: false
+              padding-bottom: 20px
+              padding-top: 80px
+              width: 100%
+              valign: top
+              padding-left: null
+              padding-right: null
+          content:
+            -
+              type: grid-column
+              thumbnail: null
+              isCustomBlock: null
+              customBlockId: null
+              moduleName: null
+              sidebarSection: null
+              sync-module-id: null
+              imagelabel: 'Select a content type'
+              isEmpty: false
+              label: 'Drop content here'
+              title: 'column 1'
+              stylable: false
+              layout:
+                320px: {}
+                default:
+                  padding-left: 0px
+                  padding-right: 0px
+                  valign: top
+              content:
+                -
+                  type: image
+                  thumbnail: null
+                  isCustomBlock: null
+                  customBlockId: null
+                  moduleName: brand-logo
+                  sidebarSection: null
+                  sync-module-id: null
+                  title: Logo
+                  stylable: null
+                  layout:
+                    320px:
+                      max-width: 320px
+                      width: 100%
+                    default:
+                      align: left
+                      dynamic: false
+                      embed: false
+                      img-border-radius: 0px
+                      imgSize: '7142'
+                      removePadding: true
+                      padding-bottom: 10px
+                      width: 20%
+                      valign: top
+                  content:
+                    src: 'https://creative-assets.mailinblue.com/editor/templates/logo-placeholder.png'
+                -
+                  type: text
+                  thumbnail: /assets/img/editor/element_text.svg
+                  isCustomBlock: null
+                  customBlockId: null
+                  moduleName: null
+                  sidebarSection: null
+                  sync-module-id: null
+                  title: Text
+                  stylable: null
+                  layout:
+                    320px:
+                      text-align: center
+                      width: 100%
+                    default:
+                      align: left
+                      removePadding: true
+                      padding-bottom: 10px
+                      padding-left: 0px
+                      padding-right: 0px
+                      padding-top: 0px
+                      text-align: left
+                      text-valign: top
+                      width: 100%
+                      valign: top
+                  content: '<p style="color:#000000;font-size:14px;"><strong>Brevo</strong></p>'
+                -
+                  type: text
+                  thumbnail: /assets/img/editor/element_text.svg
+                  isCustomBlock: null
+                  customBlockId: null
+                  moduleName: null
+                  sidebarSection: null
+                  sync-module-id: null
+                  title: Text
+                  stylable: null
+                  layout:
+                    320px:
+                      text-align: center
+                      width: 100%
+                    default:
+                      align: left
+                      removePadding: true
+                      padding-bottom: 10px
+                      padding-left: 0px
+                      padding-right: 0px
+                      padding-top: 0px
+                      text-align: left
+                      text-valign: top
+                      width: 100%
+                      valign: top
+                  content: '<p><span style="color:#666666;font-size:14px;">Rue de Madrid 7, 75008, Paris</span></p>'
+                -
+                  type: text
+                  thumbnail: /assets/img/editor/element_text.svg
+                  isCustomBlock: null
+                  customBlockId: null
+                  moduleName: null
+                  sidebarSection: null
+                  sync-module-id: null
+                  title: Text
+                  stylable: null
+                  layout:
+                    320px:
+                      text-align: center
+                      width: 100%
+                    default:
+                      align: left
+                      removePadding: true
+                      padding-bottom: 0px
+                      padding-left: 0px
+                      padding-right: 0px
+                      padding-top: 10px
+                      text-align: left
+                      text-valign: top
+                      width: 100%
+                      valign: top
+                  content: '<p><span style="color:#666666;font-size:14px;">This email was sent to {{ contact.EMAIL }}.</span></p><p><span style="color:#666666;font-size:14px;">You''ve received this email because you''ve subscribed to our newsletter.</span></p>'
+                -
+                  type: text
+                  thumbnail: /assets/img/editor/element_text.svg
+                  isCustomBlock: null
+                  customBlockId: null
+                  moduleName: null
+                  sidebarSection: null
+                  sync-module-id: null
+                  title: Text
+                  stylable: null
+                  layout:
+                    320px:
+                      text-align: center
+                      width: 100%
+                    default:
+                      align: left
+                      removePadding: true
+                      padding-bottom: 0px
+                      padding-left: 0px
+                      padding-right: 0px
+                      padding-top: 10px
+                      text-align: left
+                      text-valign: top
+                      width: 100%
+                      valign: top
+                  content: '<p><span condition="{{ update_profile }}" style="display:none"><a href="{{ update_profile }}">Update your preference</a> | </span><a href="{{ unsubscribe }}" target="_blank"><span style="color:#666666;font-size:14px;"><u>Unsubscribe</u></span></a></p>'
+          dist: '12'
+          gutter: 30px
+  layout:
+    320px:
+      width: 320px
+    default:
+      direction: ltr
+      wrapper-width: 600px
