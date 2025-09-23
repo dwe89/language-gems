@@ -431,7 +431,7 @@ function createCrosswordData(state: GenerationState, originalGridSize: number): 
 
   // Fill the grid and adjust word positions
   const adjustedWords: PlacedWord[] = [];
-  
+
   for (const word of state.placedWords) {
     const adjustedWord: PlacedWord = {
       ...word,
@@ -439,18 +439,66 @@ function createCrosswordData(state: GenerationState, originalGridSize: number): 
       startCol: word.startCol - minCol,
     };
     adjustedWords.push(adjustedWord);
-    
-    // Fill grid cells for this word
+  }
+
+  // Assign proper crossword numbers based on grid position
+  // First, collect all starting positions
+  const startPositions: Array<{
+    row: number;
+    col: number;
+    words: PlacedWord[];
+  }> = [];
+
+  // Group words by their starting positions
+  const positionMap = new Map<string, PlacedWord[]>();
+
+  for (const word of adjustedWords) {
+    const key = `${word.startRow}-${word.startCol}`;
+    if (!positionMap.has(key)) {
+      positionMap.set(key, []);
+    }
+    positionMap.get(key)!.push(word);
+  }
+
+  // Convert to array and sort by position (top-to-bottom, left-to-right)
+  for (const [key, words] of positionMap.entries()) {
+    const [row, col] = key.split('-').map(Number);
+    startPositions.push({ row, col, words });
+  }
+
+  startPositions.sort((a, b) => {
+    if (a.row !== b.row) return a.row - b.row;
+    return a.col - b.col;
+  });
+
+  // Assign numbers sequentially based on sorted positions
+  let currentNumber = 1;
+  const numberMap = new Map<string, number>();
+
+  for (const position of startPositions) {
+    const key = `${position.row}-${position.col}`;
+    numberMap.set(key, currentNumber);
+
+    // Update all words at this position with the same number
+    for (const word of position.words) {
+      word.number = currentNumber;
+    }
+
+    currentNumber++;
+  }
+
+  // Fill grid cells for all words
+  for (const word of adjustedWords) {
     for (let i = 0; i < word.word.length; i++) {
-      const row = adjustedWord.startRow + (word.direction === 'down' ? i : 0);
-      const col = adjustedWord.startCol + (word.direction === 'across' ? i : 0);
-      
+      const row = word.startRow + (word.direction === 'down' ? i : 0);
+      const col = word.startCol + (word.direction === 'across' ? i : 0);
+
       grid[row][col] = {
         letter: word.word[i],
         isBlack: false,
         number: i === 0 ? word.number : undefined,
         isStart: i === 0,
-        belongsToWords: grid[row][col].belongsToWords 
+        belongsToWords: grid[row][col].belongsToWords
           ? [...grid[row][col].belongsToWords!, word.number]
           : [word.number],
       };
@@ -460,7 +508,7 @@ function createCrosswordData(state: GenerationState, originalGridSize: number): 
   // Create clues
   const acrossClues: CrosswordClue[] = [];
   const downClues: CrosswordClue[] = [];
-  
+
   for (const word of adjustedWords) {
     const clue: CrosswordClue = {
       number: word.number,
@@ -468,7 +516,7 @@ function createCrosswordData(state: GenerationState, originalGridSize: number): 
       answer: word.word,
       direction: word.direction,
     };
-    
+
     if (word.direction === 'across') {
       acrossClues.push(clue);
     } else {

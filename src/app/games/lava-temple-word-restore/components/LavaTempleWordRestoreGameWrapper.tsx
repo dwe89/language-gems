@@ -5,6 +5,7 @@ import { EnhancedGameService } from '../../../../services/enhancedGameService';
 import { supabaseBrowser } from '../../../../components/auth/AuthProvider';
 import { RewardEngine } from '../../../../services/rewards/RewardEngine';
 import LavaTempleWordRestoreGame, { GameConfig } from './LavaTempleWordRestoreGame';
+import InGameConfigPanel from '../../../../components/games/InGameConfigPanel';
 
 interface LavaTempleWordRestoreGameWrapperProps {
   gameConfig: GameConfig;
@@ -37,6 +38,11 @@ export default function LavaTempleWordRestoreGameWrapper(props: LavaTempleWordRe
     contextCluesUsed: 0,
     tabletsRestored: 0
   });
+
+  // Settings and mute state
+  const [showSettings, setShowSettings] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+  const [currentGameConfig, setCurrentGameConfig] = useState<GameConfig>(props.gameConfig);
 
   // Initialize game service
   useEffect(() => {
@@ -159,6 +165,24 @@ export default function LavaTempleWordRestoreGameWrapper(props: LavaTempleWordRe
     props.onGameEnd(result);
   };
 
+  // Settings handlers
+  const handleOpenSettings = () => {
+    setShowSettings(true);
+  };
+
+  const handleCloseSettings = () => {
+    setShowSettings(false);
+  };
+
+  const handleConfigChange = (newConfig: GameConfig) => {
+    setCurrentGameConfig(newConfig);
+    setShowSettings(false);
+  };
+
+  const handleToggleMute = () => {
+    setIsMuted(!isMuted);
+  };
+
   if (!gameService) {
     return (
       <div className="flex items-center justify-center h-screen bg-gradient-to-b from-red-900 via-orange-900 to-yellow-900">
@@ -171,11 +195,27 @@ export default function LavaTempleWordRestoreGameWrapper(props: LavaTempleWordRe
   }
 
   return (
-    <LavaTempleWordRestoreGame
-      {...props}
-      onRestorationComplete={handleEnhancedGameEnd}
-      gameSessionId={gameSessionId}
-      gameService={gameService}
-    />
+    <>
+      <LavaTempleWordRestoreGame
+        {...props}
+        gameConfig={currentGameConfig}
+        onRestorationComplete={handleEnhancedGameEnd}
+        gameSessionId={gameSessionId}
+        gameService={gameService}
+        onOpenSettings={handleOpenSettings}
+        isMuted={isMuted}
+        onToggleMute={handleToggleMute}
+      />
+
+      {showSettings && (
+        <InGameConfigPanel
+          isOpen={showSettings}
+          onClose={handleCloseSettings}
+          currentConfig={currentGameConfig}
+          onConfigChange={handleConfigChange}
+          gameType="sentence"
+        />
+      )}
+    </>
   );
 }

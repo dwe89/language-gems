@@ -36,6 +36,7 @@ interface DetectiveListeningGameProps {
   gameSessionId?: string | null;
   gameService?: EnhancedGameService | null;
   vocabularyWords?: any[];
+  onOpenSettings?: () => void;
 }
 
 export default function DetectiveListeningGame({
@@ -45,7 +46,8 @@ export default function DetectiveListeningGame({
   onGameComplete,
   gameSessionId,
   gameService,
-  vocabularyWords
+  vocabularyWords,
+  onOpenSettings
 }: DetectiveListeningGameProps) {
   // If assignment mode or settings are provided (from unified launcher), skip case selection and go straight to detective room
   const hasPreselectedSettings = assignmentMode || (settings.caseType && settings.language);
@@ -207,6 +209,7 @@ export default function DetectiveListeningGame({
               gameSessionId={gameSessionId}
               gameService={gameService}
               vocabularyWords={vocabularyWords}
+              onOpenSettings={onOpenSettings}
             />
           </motion.div>
         )}

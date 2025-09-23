@@ -19,6 +19,7 @@ interface InGameConfigPanelProps {
   currentTheme?: string;
   isOpen: boolean;
   onClose: () => void;
+  gameType?: 'vocabulary' | 'sentence'; // New prop to indicate game type
 }
 
 // Language options with country codes for flags
@@ -70,7 +71,8 @@ export default function InGameConfigPanel({
   supportsThemes = false,
   currentTheme = 'default',
   isOpen,
-  onClose
+  onClose,
+  gameType = 'vocabulary'
 }: InGameConfigPanelProps) {
   const [tempConfig, setTempConfig] = useState<UnifiedSelectionConfig>(currentConfig);
   const [tempTheme, setTempTheme] = useState<string>(currentTheme);
@@ -171,13 +173,21 @@ export default function InGameConfigPanel({
       if (!tempConfig.categoryId) return;
       setLoading(true);
       try {
-        const vocabulary = await loadVocabulary(tempConfig);
-        if (vocabulary && vocabulary.length > 0) {
-          onConfigChange(tempConfig, vocabulary, tempTheme);
+        if (gameType === 'sentence') {
+          // For sentence-based games, we don't need to load vocabulary
+          // Just pass the config change with empty vocabulary array
+          onConfigChange(tempConfig, [], tempTheme);
           onClose();
         } else {
-          // TODO: Show a user-friendly error message
-          console.warn('⚠️ No vocabulary found for new configuration');
+          // For vocabulary-based games, load vocabulary as usual
+          const vocabulary = await loadVocabulary(tempConfig);
+          if (vocabulary && vocabulary.length > 0) {
+            onConfigChange(tempConfig, vocabulary, tempTheme);
+            onClose();
+          } else {
+            // TODO: Show a user-friendly error message
+            console.warn('⚠️ No vocabulary found for new configuration');
+          }
         }
       } catch (error) {
         console.error('❌ Error loading new vocabulary:', error);

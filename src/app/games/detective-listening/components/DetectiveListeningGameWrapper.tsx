@@ -36,6 +36,7 @@ interface DetectiveListeningGameWrapperProps {
   }) => void;
   assignmentId?: string | null;
   userId?: string;
+  onOpenSettings?: () => void;
 }
 
 export default function DetectiveListeningGameWrapper(props: DetectiveListeningGameWrapperProps) {

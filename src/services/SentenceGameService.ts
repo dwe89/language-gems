@@ -78,7 +78,7 @@ export class SentenceGameService {
         };
       }
 
-      console.log(`🎯 SentenceGameService: Processing sentence attempt: "${attempt.originalSentence}" (${attempt.language})`);
+      console.log(`SentenceGameService: Processing sentence attempt: "${attempt.originalSentence}" (${attempt.language})`);
 
       // Parse sentence for vocabulary matches
       const parsingResult = await this.mweService.parseSentenceWithLemmatization(
@@ -125,31 +125,33 @@ export class SentenceGameService {
                 difficultyLevel: attempt.difficultyLevel || 'intermediate'
               };
 
-              // Record with session service (handles gems)
-              const gemEvent = await this.sessionService.recordWordAttempt(
+              // Record with session service (handles gems) - non-blocking
+              this.sessionService.recordWordAttempt(
                 attempt.sessionId,
                 attempt.gameType,
                 wordAttempt
-              );
+              ).then(gemEvent => {
+                if (gemEvent) {
+                  console.log(`Gem awarded for "${match.word}": ${gemEvent.rarity} (+${gemEvent.xpValue} XP)`);
+                }
+              }).catch(error => {
+                console.warn('Gem recording failed (non-blocking):', error);
+              });
 
-              if (gemEvent) {
-                result.gemsAwarded.push({
-                  vocabularyId: match.id,
-                  word: match.word,
-                  gemRarity: gemEvent.rarity,
-                  xpAwarded: gemEvent.xpValue
-                });
-                result.totalGems++;
-                result.totalXP += gemEvent.xpValue;
-              }
+              // Add to result immediately (optimistic)
+              result.gemsAwarded.push({
+                vocabularyId: match.id,
+                word: match.word,
+                gemRarity: 'common', // Default assumption
+                xpAwarded: 5 // Default XP
+              });
+              result.totalGems++;
+              result.totalXP += 5;
 
-              // Update FSRS for spaced repetition
-              try {
-                // CRITICAL FIX: Get the actual studentId from the session
-                // sessionId and studentId are different concepts!
-                const studentId = await this.getStudentIdFromSession(attempt.sessionId);
+              // Update FSRS for spaced repetition (non-blocking)
+              this.getStudentIdFromSession(attempt.sessionId).then(studentId => {
                 if (studentId) {
-                  await this.fsrsService.updateProgress(
+                  return this.fsrsService.updateProgress(
                     studentId,
                     match.id,
                     true, // Correct attempt
@@ -157,20 +159,18 @@ export class SentenceGameService {
                     confidence
                   );
                 }
-
-                result.fsrsUpdates.push({
-                  vocabularyId: match.id,
-                  word: match.word,
-                  updated: true
-                });
-              } catch (fsrsError) {
+              }).then(() => {
+                console.log(`FSRS updated for "${match.word}"`);
+              }).catch(fsrsError => {
                 console.warn(`FSRS update failed for ${match.word}:`, fsrsError);
-                result.fsrsUpdates.push({
-                  vocabularyId: match.id,
-                  word: match.word,
-                  updated: false
-                });
-              }
+              });
+
+              // Add to result immediately (optimistic)
+              result.fsrsUpdates.push({
+                vocabularyId: match.id,
+                word: match.word,
+                updated: true
+              });
 
             } catch (error) {
               console.error(`Error processing vocabulary match ${match.word}:`, error);

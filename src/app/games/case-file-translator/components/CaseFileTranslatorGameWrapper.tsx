@@ -29,6 +29,7 @@ interface CaseFileTranslatorGameWrapperProps {
   }) => void;
   assignmentId?: string | null;
   userId?: string;
+  onOpenSettings?: () => void;
 }
 
 export default function CaseFileTranslatorGameWrapper(props: CaseFileTranslatorGameWrapperProps) {

@@ -112,8 +112,8 @@ export class EnhancedGameSessionService {
     }
   ): Promise<GemEvent | null> {
     try {
-      // Log sentence performance (using sentenceId as vocabularyId for compatibility)
-      await this.logWordPerformance(sessionId, {
+      // Log sentence performance (using sentenceId as vocabularyId for compatibility) - non-blocking
+      this.logWordPerformance(sessionId, {
         vocabularyId: attempt.sentenceId,
         wordText: attempt.sourceText,
         translationText: attempt.targetText,
@@ -126,6 +126,8 @@ export class EnhancedGameSessionService {
         gameMode: attempt.gameMode || 'sentence_based',
         difficultyLevel: attempt.difficultyLevel || 'intermediate',
         contextData: attempt.contextData
+      }).catch(error => {
+        console.warn('🚨 [SESSION SERVICE] Sentence performance logging failed (non-blocking):', error);
       });
 
       // Only award gems for correct answers in non-assessment modes
@@ -206,9 +208,11 @@ export class EnhancedGameSessionService {
     });
 
     try {
-      // Always log the word performance
+      // Always log the word performance (non-blocking)
       console.log(`🔮 [SESSION SERVICE] Logging word performance [${callId}]...`);
-      await this.logWordPerformance(sessionId, attempt);
+      this.logWordPerformance(sessionId, attempt).catch(error => {
+        console.warn('🚨 [SESSION SERVICE] Word performance logging failed (non-blocking):', error);
+      });
 
       // ✅ UPDATE FSRS FOR ALL ANSWERS (both correct and incorrect)
       if (attempt.vocabularyId && !skipSpacedRepetition) {

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, FileText, CheckCircle, Languages, Clock, Gem, Star } from 'lucide-react';
+import { ArrowLeft, FileText, CheckCircle, Languages, Clock, Gem, Star, Volume2, VolumeX, Settings, Play } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 import { VOCABULARY_CATEGORIES } from '../../../../components/games/ModernCategorySelector';
 import { StandardVocabularyItem, AssignmentData, GameProgress } from '../../../../components/games/templates/GameAssignmentWrapper';
@@ -49,6 +49,7 @@ interface TranslatorRoomProps {
   };
   gameSessionId?: string | null;
   gameService?: EnhancedGameService | null;
+  onOpenSettings?: () => void;
 }
 
 export default function TranslatorRoom({
@@ -59,7 +60,8 @@ export default function TranslatorRoom({
   onBack,
   assignmentMode,
   gameSessionId,
-  gameService
+  gameService,
+  onOpenSettings
 }: TranslatorRoomProps) {
   // Initialize sentence game service for vocabulary tracking
   const sentenceGame = useTranslationGame(
@@ -77,7 +79,13 @@ export default function TranslatorRoom({
   const [gameStartTime] = useState(Date.now());
   const [translationStartTime, setTranslationStartTime] = useState<number>(0);
   const [backgroundMusic, setBackgroundMusic] = useState<HTMLAudioElement | null>(null);
-  
+
+  // Game settings state
+  const [isMuted, setIsMuted] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [sentenceAudio, setSentenceAudio] = useState<HTMLAudioElement | null>(null);
+  const [isGeneratingAudio, setIsGeneratingAudio] = useState(false);
+
   const [gameProgress, setGameProgress] = useState({
     correctAnswers: 0,
     totalSentences: 10,
@@ -114,6 +122,11 @@ export default function TranslatorRoom({
 
   // Start background music on first user interaction
   const ensureBackgroundMusic = async () => {
+    if (isMuted) {
+      console.log('Background music muted');
+      return;
+    }
+
     if (backgroundMusic && backgroundMusic.paused) {
       try {
         await backgroundMusic.play();
@@ -196,6 +209,11 @@ export default function TranslatorRoom({
 
   // Play sound effects
   const playSound = async (soundType: 'correct' | 'incorrect' | 'complete') => {
+    if (isMuted) {
+      console.log(`Sound ${soundType} muted`);
+      return;
+    }
+
     try {
       let audioPath = '';
       switch (soundType) {
@@ -209,7 +227,7 @@ export default function TranslatorRoom({
           audioPath = '/audio/detective-listening/case-solved.mp3';
           break;
       }
-      
+
       const audio = new Audio(audioPath);
       audio.volume = 0.5;
       await audio.play();
@@ -258,37 +276,42 @@ export default function TranslatorRoom({
     const correct = checkTranslation(userTranslation, currentSentence.english_translation);
     const responseTime = translationStartTime > 0 ? Date.now() - translationStartTime : 0;
 
-    // Process sentence with new vocabulary tracking system
-    try {
-      const result = await sentenceGame.processSentence(
-        currentSentence.source_sentence,
-        correct,
-        responseTime,
-        false, // hintUsed
-        currentSentence.id
-      );
-
-      if (result) {
-        console.log(`🎯 Case File Translator: Processed sentence "${currentSentence.source_sentence}"`);
-        console.log(`📊 Vocabulary matches: ${result.vocabularyMatches.length}`);
-        console.log(`💎 Gems awarded: ${result.totalGems}`);
-        console.log(`⭐ XP earned: ${result.totalXP}`);
-        console.log(`📈 Coverage: ${result.coveragePercentage}%`);
-
-        // Log individual vocabulary matches
-        result.gemsAwarded.forEach((gem, index) => {
-          console.log(`  ${index + 1}. "${gem.word}" → ${gem.gemRarity} gem (+${gem.xpAwarded} XP)`);
-        });
-      }
-    } catch (error) {
-      console.error('Error processing sentence with vocabulary tracking:', error);
-    }
-
+    // Immediately show feedback and play sound - don't wait for vocabulary processing
     setIsCorrect(correct);
     setShowFeedback(true);
 
-    // Play sound effect
-    await playSound(correct ? 'correct' : 'incorrect');
+    // Play sound effect in background (non-blocking)
+    playSound(correct ? 'correct' : 'incorrect').catch(error => 
+      console.warn('Sound playback failed:', error)
+    );
+
+    // Process sentence with vocabulary tracking system in the background (non-blocking)
+    setTimeout(async () => {
+      try {
+        const result = await sentenceGame.processSentence(
+          currentSentence.source_sentence,
+          correct,
+          responseTime,
+          false, // hintUsed
+          currentSentence.id
+        );
+
+        if (result) {
+          console.log(`🎯 Case File Translator: Processed sentence "${currentSentence.source_sentence}"`);
+          console.log(`📊 Vocabulary matches: ${result.vocabularyMatches.length}`);
+          console.log(`💎 Gems awarded: ${result.totalGems}`);
+          console.log(`⭐ XP earned: ${result.totalXP}`);
+          console.log(`📈 Coverage: ${result.coveragePercentage}%`);
+
+          // Log individual vocabulary matches
+          result.gemsAwarded.forEach((gem, index) => {
+            console.log(`  ${index + 1}. "${gem.word}" → ${gem.gemRarity} gem (+${gem.xpAwarded} XP)`);
+          });
+        }
+      } catch (error) {
+        console.error('Error processing sentence with vocabulary tracking:', error);
+      }
+    }, 0);
 
     // Update progress
     setGameProgress(prev => ({
@@ -420,12 +443,34 @@ export default function TranslatorRoom({
             <ArrowLeft className="h-4 w-4" />
             Back to Cases
           </button>
-          
+
           <div className="text-center bg-black/40 px-4 py-2 rounded-lg backdrop-blur-sm">
             <h1 className="text-xl font-bold text-amber-400">Case File Translator</h1>
             <p className="text-amber-300/70 text-xs">
               {categoryInfo?.name} • {currentSentenceIndex + 1}/{sentences.length} • {gameProgress.correctAnswers} correct
             </p>
+          </div>
+
+          {/* Game Controls */}
+          <div className="flex items-center space-x-2">
+            {/* Mute Button */}
+            <button
+              onClick={() => setIsMuted(!isMuted)}
+              className="bg-black/40 backdrop-blur-sm text-amber-400 p-2 rounded-lg hover:bg-black/60 transition-colors"
+              aria-label={isMuted ? 'Unmute audio' : 'Mute audio'}
+            >
+              {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+            </button>
+
+            {/* Settings Button */}
+            <button
+              onClick={() => onOpenSettings?.()}
+              className="bg-black/40 backdrop-blur-sm text-amber-400 px-3 py-2 rounded-lg hover:bg-black/60 transition-colors flex items-center gap-2"
+              aria-label="Game settings"
+            >
+              <Settings className="h-4 w-4" />
+              <span className="text-sm font-medium">Game Settings</span>
+            </button>
           </div>
 
           <div className="bg-black/40 px-3 py-2 rounded-lg backdrop-blur-sm">
@@ -626,6 +671,7 @@ export default function TranslatorRoom({
             )}
           </motion.div>
         </div>
+
 
       {/* Feedback Modal */}
       <AnimatePresence mode="wait">

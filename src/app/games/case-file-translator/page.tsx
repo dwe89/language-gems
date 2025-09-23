@@ -4,8 +4,10 @@ import React, { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../../../components/auth/AuthProvider';
 import UnifiedSentenceCategorySelector, { SentenceSelectionConfig } from '../../../components/games/UnifiedSentenceCategorySelector';
+import { UnifiedSelectionConfig } from '../../../hooks/useUnifiedVocabulary';
 import CaseFileTranslatorGameWrapper from './components/CaseFileTranslatorGameWrapper';
 import GameAssignmentWrapper from '../../../components/games/templates/GameAssignmentWrapper';
+import InGameConfigPanel from '../../../components/games/InGameConfigPanel';
 import Link from 'next/link';
 
 export default function CaseFileTranslatorPage() {
@@ -21,6 +23,9 @@ export default function CaseFileTranslatorPage() {
   // Game configuration from sentence selector
   const [gameConfig, setGameConfig] = useState<SentenceSelectionConfig | null>(null);
 
+  // Config panel state
+  const [showConfigPanel, setShowConfigPanel] = useState(false);
+
   const handleSelectionComplete = (config: SentenceSelectionConfig) => {
     console.log('Case File Translator starting with config:', config);
     setGameConfig(config);
@@ -30,6 +35,46 @@ export default function CaseFileTranslatorPage() {
   const handleBackToMenu = () => {
     setGameStarted(false);
     setGameConfig(null);
+  };
+
+  // Config panel handlers
+  const handleOpenConfigPanel = () => {
+    setShowConfigPanel(true);
+  };
+
+  const handleCloseConfigPanel = () => {
+    setShowConfigPanel(false);
+  };
+
+  // Convert SentenceSelectionConfig to UnifiedSelectionConfig for the config panel
+  const convertToUnifiedConfig = (sentenceConfig: SentenceSelectionConfig): UnifiedSelectionConfig => {
+    return {
+      language: sentenceConfig.language,
+      curriculumLevel: sentenceConfig.curriculumLevel,
+      categoryId: sentenceConfig.categoryId,
+      subcategoryId: sentenceConfig.subcategoryId
+    };
+  };
+
+  // Convert UnifiedSelectionConfig back to SentenceSelectionConfig
+  const convertFromUnifiedConfig = (unifiedConfig: UnifiedSelectionConfig): SentenceSelectionConfig => {
+    return {
+      language: unifiedConfig.language,
+      curriculumLevel: unifiedConfig.curriculumLevel,
+      categoryId: unifiedConfig.categoryId,
+      subcategoryId: unifiedConfig.subcategoryId
+    };
+  };
+
+  const handleConfigChange = (newConfig: UnifiedSelectionConfig, vocabulary: any[], theme?: string) => {
+    const sentenceConfig = convertFromUnifiedConfig(newConfig);
+    setGameConfig(sentenceConfig);
+
+    console.log('Case File Translator config changed:', {
+      newConfig,
+      sentenceConfig,
+      theme
+    });
   };
 
   // If assignment mode, use GameAssignmentWrapper
@@ -127,6 +172,7 @@ export default function CaseFileTranslatorPage() {
                 onGameEnd={handleGameComplete}
                 assignmentId={assignment.id}
                 userId={user?.id}
+                onOpenSettings={handleOpenConfigPanel}
               />
             </div>
           );
@@ -161,22 +207,39 @@ export default function CaseFileTranslatorPage() {
     };
 
     return (
-      <div className="min-h-screen">
-        <CaseFileTranslatorGameWrapper
-          settings={legacySettings}
-          onBackToMenu={handleBackToMenu}
-          onGameEnd={(result) => {
-            console.log('Case File Translator ended:', result);
-            if (assignmentId) {
-              setTimeout(() => {
-                router.push('/student-dashboard/assignments');
-              }, 3000);
-            }
-          }}
-          assignmentId={assignmentId}
-          userId={user?.id}
-        />
-      </div>
+      <>
+        <div className="min-h-screen">
+          <CaseFileTranslatorGameWrapper
+            settings={legacySettings}
+            onBackToMenu={handleBackToMenu}
+            onGameEnd={(result) => {
+              console.log('Case File Translator ended:', result);
+              if (assignmentId) {
+                setTimeout(() => {
+                  router.push('/student-dashboard/assignments');
+                }, 3000);
+              }
+            }}
+            assignmentId={assignmentId}
+            userId={user?.id}
+            onOpenSettings={handleOpenConfigPanel}
+          />
+        </div>
+
+        {/* In-game configuration panel */}
+        {gameConfig && (
+          <InGameConfigPanel
+            currentConfig={convertToUnifiedConfig(gameConfig)}
+            onConfigChange={handleConfigChange}
+            supportedLanguages={['es', 'fr', 'de']}
+            supportsThemes={false}
+            currentTheme="default"
+            isOpen={showConfigPanel}
+            onClose={handleCloseConfigPanel}
+            gameType="sentence"
+          />
+        )}
+      </>
     );
   }
 

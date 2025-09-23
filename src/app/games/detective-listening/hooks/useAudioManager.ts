@@ -5,7 +5,7 @@ import { AudioManager } from '../types';
 import { getAudioUrl, checkAudioExists } from '../utils/audioUtils';
 import { createAudio } from '@/utils/audioUtils';
 
-export const useAudioManager = (): AudioManager & {
+export const useAudioManager = (isMuted: boolean = false): AudioManager & {
   preloadAudio: (audioFiles: string[]) => Promise<void>;
   clearCache: () => void;
   getCacheStatus: () => { cached: number; total: number };
@@ -133,7 +133,7 @@ export const useAudioManager = (): AudioManager & {
   }, []);
 
   const playEvidence = useCallback(async (audioFile: string, fallbackText?: string): Promise<void> => {
-    if (!audioRef.current) return;
+    if (!audioRef.current || isMuted) return;
 
     try {
       // Stop current audio if playing

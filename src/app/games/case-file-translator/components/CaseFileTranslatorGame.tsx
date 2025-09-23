@@ -39,6 +39,7 @@ interface CaseFileTranslatorGameProps {
   }) => void;
   gameSessionId?: string | null;
   gameService?: EnhancedGameService | null;
+  onOpenSettings?: () => void;
 }
 
 export default function CaseFileTranslatorGame({
@@ -47,7 +48,8 @@ export default function CaseFileTranslatorGame({
   assignmentMode,
   onGameComplete,
   gameSessionId,
-  gameService
+  gameService,
+  onOpenSettings
 }: CaseFileTranslatorGameProps) {
   // If assignment mode or settings are provided (from unified launcher), skip case selection and go straight to translator room
   const hasPreselectedSettings = assignmentMode || (settings.caseType && settings.language);
@@ -243,6 +245,7 @@ export default function CaseFileTranslatorGame({
               assignmentMode={assignmentMode}
               gameSessionId={gameSessionId}
               gameService={gameService}
+              onOpenSettings={onOpenSettings}
             />
           </motion.div>
         )}

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Play, RotateCcw, Volume2, CheckCircle, XCircle, FileText } from 'lucide-react';
+import { ArrowLeft, Play, RotateCcw, Volume2, CheckCircle, XCircle, FileText, VolumeX, Settings } from 'lucide-react';
 import { useVocabularyByCategory } from '../../../../hooks/useVocabulary';
 import { VOCABULARY_CATEGORIES } from '../../../../components/games/ModernCategorySelector';
 import { useAudioManager } from '../hooks/useAudioManager';
@@ -29,6 +29,7 @@ interface DetectiveRoomProps {
   gameSessionId?: string | null;
   gameService?: EnhancedGameService | null;
   vocabularyWords?: any[];
+  onOpenSettings?: () => void;
 }
 
 export default function DetectiveRoom({
@@ -40,7 +41,8 @@ export default function DetectiveRoom({
   assignmentMode,
   gameSessionId,
   gameService,
-  vocabularyWords
+  vocabularyWords,
+  onOpenSettings
 }: DetectiveRoomProps) {
 
 
@@ -56,6 +58,9 @@ export default function DetectiveRoom({
     totalEvidence: 10,
     evidenceCollected: [] as Evidence[]
   });
+
+  // Game settings state
+  const [isMuted, setIsMuted] = useState(false);
 
   // Audio state and refs
   const [backgroundMusic, setBackgroundMusic] = useState<HTMLAudioElement | null>(null);
@@ -93,7 +98,7 @@ export default function DetectiveRoom({
   // Use assignment vocabulary if available, otherwise use category vocabulary
   const vocabulary = assignmentMode ? assignmentMode.vocabulary : vocabularyWords || categoryVocabulary;
 
-  const { playEvidence, isPlaying } = useAudioManager();
+  const { playEvidence, isPlaying } = useAudioManager(isMuted);
 
   // Get category info for display
   const categoryInfo = VOCABULARY_CATEGORIES.find(cat => cat.id === caseType);
@@ -221,6 +226,11 @@ export default function DetectiveRoom({
 
   // Helper function to play sound effects
   const playSound = async (soundType: keyof typeof audioEffects) => {
+    if (isMuted) {
+      console.log(`Sound ${soundType} muted`);
+      return;
+    }
+
     console.log(`Attempting to play ${soundType}:`, audioEffects);
     const sound = audioEffects[soundType];
     console.log(`Sound object for ${soundType}:`, sound);
@@ -249,6 +259,11 @@ export default function DetectiveRoom({
 
   // Ensure background music starts on first user interaction
   const ensureBackgroundMusic = async () => {
+    if (isMuted) {
+      console.log('Background music muted');
+      return;
+    }
+
     console.log('ensureBackgroundMusic called, backgroundMusic:', backgroundMusic);
     if (backgroundMusic && backgroundMusic.paused) {
       try {
@@ -304,6 +319,13 @@ export default function DetectiveRoom({
     const isCorrect = answer === currentEvidence.correct;
     const responseTime = evidenceStartTime > 0 ? Date.now() - evidenceStartTime : 0;
 
+    // Play feedback sound effect IMMEDIATELY - don't wait for async operations
+    if (isCorrect) {
+      playSound('correctAnswer');
+    } else {
+      playSound('wrongAnswer');
+    }
+
     // 🔍 INSTRUMENTATION: Log Detective Listening vocabulary tracking details
     console.log('🔍 [DETECTIVE LISTENING] Starting vocabulary tracking:', {
       currentEvidence: {
@@ -336,9 +358,9 @@ export default function DetectiveRoom({
           correctAnswer: currentEvidence.correct
         });
 
-        // Use EnhancedGameSessionService for gems-first vocabulary tracking
+        // Use EnhancedGameSessionService for gems-first vocabulary tracking (non-blocking)
         const sessionService = new EnhancedGameSessionService();
-        const gemEvent = await sessionService.recordWordAttempt(gameSessionId, 'detective-listening', {
+        sessionService.recordWordAttempt(gameSessionId, 'detective-listening', {
           vocabularyId: currentEvidence.vocabularyId, // ✅ FIXED: Use evidence vocabulary ID
           wordText: currentEvidence.word || currentEvidence.correct,
           translationText: currentEvidence.correct,
@@ -350,24 +372,26 @@ export default function DetectiveRoom({
           maxGemRarity: 'rare', // Cap at rare to prevent grinding
           gameMode: 'listening',
           difficultyLevel: 'beginner'
-        }); // ✅ SINGLE SYSTEM: Only EnhancedGameSessionService handles all vocabulary tracking
+        }).then(gemEvent => {
+          // 🔍 INSTRUMENTATION: Log gem event result
+          console.log('🔍 [VOCAB TRACKING] Gem event result:', {
+            gemEventExists: !!gemEvent,
+            gemEvent: gemEvent ? {
+              rarity: gemEvent.rarity,
+              xpValue: gemEvent.xpValue,
+              vocabularyId: gemEvent.vocabularyId,
+              wordText: gemEvent.wordText
+            } : null,
+            wasCorrect: isCorrect
+          });
 
-        // 🔍 INSTRUMENTATION: Log gem event result
-        console.log('🔍 [VOCAB TRACKING] Gem event result:', {
-          gemEventExists: !!gemEvent,
-          gemEvent: gemEvent ? {
-            rarity: gemEvent.rarity,
-            xpValue: gemEvent.xpValue,
-            vocabularyId: gemEvent.vocabularyId,
-            wordText: gemEvent.wordText
-          } : null,
-          wasCorrect: isCorrect
-        });
-
-        // Show gem feedback if correct and gem was awarded
-        if (gemEvent && isCorrect) {
-          console.log(`🔮 Detective earned ${gemEvent.rarity} gem (${gemEvent.xpValue} XP) for "${currentEvidence.word || currentEvidence.correct}"`);
-        }
+          // Show gem feedback if correct and gem was awarded
+          if (gemEvent && isCorrect) {
+            console.log(`🔮 Detective earned ${gemEvent.rarity} gem (${gemEvent.xpValue} XP) for "${currentEvidence.word || currentEvidence.correct}"`);
+          }
+        }).catch(error => {
+          console.error('🚨 [DETECTIVE LISTENING] Failed to record vocabulary attempt:', error);
+        }); // ✅ NON-BLOCKING: Don't await - let it run in background
 
         // Also log to word_performance_logs for legacy compatibility (temporarily disabled)
         /*
@@ -416,13 +440,6 @@ export default function DetectiveRoom({
       });
     }
 
-    // Play feedback sound effect
-    if (isCorrect) {
-      playSound('correctAnswer');
-    } else {
-      playSound('wrongAnswer');
-    }
-
     const updatedEvidence = {
       ...currentEvidence,
       answered: true,
@@ -447,20 +464,19 @@ export default function DetectiveRoom({
       }));
     }
 
-    // Record vocabulary interaction for assignment mode
+    // Record vocabulary interaction for assignment mode (non-blocking)
     if (assignmentMode && typeof window !== 'undefined' && (window as any).recordVocabularyInteraction) {
-      try {
-        await (window as any).recordVocabularyInteraction(
-          currentEvidence.word || currentEvidence.correct,
-          currentEvidence.correct,
-          isCorrect,
-          responseTime,
-          replayCount > 0, // hintUsed
-          gameProgress.correctAnswers + (isCorrect ? 1 : 0) // streakCount
-        );
-      } catch (error) {
+      // Run in background - don't await to avoid blocking UI
+      (window as any).recordVocabularyInteraction(
+        currentEvidence.word || currentEvidence.correct,
+        currentEvidence.correct,
+        isCorrect,
+        responseTime,
+        replayCount > 0, // hintUsed
+        gameProgress.correctAnswers + (isCorrect ? 1 : 0) // streakCount
+      ).catch((error: any) => {
         console.error('Failed to record vocabulary interaction for assignment:', error);
-      }
+      });
     }
 
     // Update assignment progress if in assignment mode
@@ -534,7 +550,7 @@ export default function DetectiveRoom({
           });
         }
       }
-    }, 2000);
+    }, 1000); // Reduced from 2000ms to 1000ms for better user experience
   };
 
   if (!currentEvidence) {
@@ -589,6 +605,33 @@ export default function DetectiveRoom({
         <ArrowLeft className="h-4 w-4" />
         <span>Back</span>
       </motion.button>
+
+      {/* Game Controls */}
+      <div className="absolute top-8 right-8 z-20 flex items-center space-x-2">
+        {/* Mute Button */}
+        <motion.button
+          initial={{ opacity: 0, x: 50 }}
+          animate={{ opacity: 1, x: 0 }}
+          onClick={() => setIsMuted(!isMuted)}
+          className="bg-slate-800/80 backdrop-blur-sm text-slate-200 p-3 rounded-lg hover:bg-slate-700/80 transition-colors"
+          aria-label={isMuted ? 'Unmute audio' : 'Mute audio'}
+        >
+          {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+        </motion.button>
+
+        {/* Settings Button */}
+        <motion.button
+          initial={{ opacity: 0, x: 50 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.1 }}
+          onClick={() => onOpenSettings?.()}
+          className="bg-slate-800/80 backdrop-blur-sm text-slate-200 px-4 py-3 rounded-lg hover:bg-slate-700/80 transition-colors flex items-center gap-2"
+          aria-label="Game settings"
+        >
+          <Settings className="h-5 w-5" />
+          <span className="text-sm font-medium">Game Settings</span>
+        </motion.button>
+      </div>
 
       {/* Header */}
       <div className="relative z-10 pt-8 pb-4">

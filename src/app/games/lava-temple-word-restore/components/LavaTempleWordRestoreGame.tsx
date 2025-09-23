@@ -32,6 +32,9 @@ interface LavaTempleWordRestoreGameProps {
   }) => void;
   gameSessionId?: string | null;
   gameService?: EnhancedGameService | null;
+  onOpenSettings?: () => void;
+  isMuted?: boolean;
+  onToggleMute?: () => void;
 }
 
 type GameState = 'temple-restoration' | 'tablet-completed';
@@ -42,7 +45,10 @@ export default function LavaTempleWordRestoreGame({
   onBackToMenu,
   onRestorationComplete,
   gameSessionId,
-  gameService
+  gameService,
+  onOpenSettings,
+  isMuted,
+  onToggleMute
 }: LavaTempleWordRestoreGameProps) {
   const { user } = useAuth();
   const [gameState, setGameState] = useState<GameState>('temple-restoration');
@@ -119,6 +125,9 @@ export default function LavaTempleWordRestoreGame({
                 onBackToMenu={handleBackToMenu}
                 gameSessionId={gameSessionId}
                 gameService={gameService}
+                onOpenSettings={onOpenSettings}
+                isMuted={isMuted}
+                onToggleMute={onToggleMute}
               />
             </motion.div>
           )}

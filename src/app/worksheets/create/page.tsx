@@ -23,14 +23,6 @@ import {
 const worksheetCategories = {
   popular: [
     {
-      id: 'sentence-builder',
-      title: 'Sentence Builder',
-      description: 'Create sentence construction and grammar exercises with drag-and-drop functionality',
-      icon: MessageSquare,
-      color: 'bg-blue-500',
-      features: ['Grammar Practice', 'Sentence Structure', 'Interactive Elements']
-    },
-    {
       id: 'crossword',
       title: 'Crossword Puzzle',
       description: 'Generate crossword puzzles with vocabulary words and custom clues',
@@ -85,6 +77,15 @@ const worksheetCategories = {
   ],
   advanced: [
     {
+      id: 'sentence-builder',
+      title: 'Sentence Builder',
+      description: 'Create sentence construction and grammar exercises with drag-and-drop functionality',
+      icon: MessageSquare,
+      color: 'bg-blue-500',
+      features: ['Grammar Practice', 'Sentence Structure', 'Interactive Elements'],
+      comingSoon: true
+    },
+    {
       id: 'grammar-exercises',
       title: 'Grammar Exercises',
       description: 'Create targeted grammar practice with conjugations and transformations',
@@ -114,7 +115,50 @@ const worksheetCategories = {
 export default function CreateWorksheetPage() {
   const renderWorksheetCard = (worksheet: any) => {
     const IconComponent = worksheet.icon;
-    
+
+    if (worksheet.comingSoon) {
+      return (
+        <Card key={worksheet.id} className="h-full shadow-lg border-0 bg-white/80 backdrop-blur-sm relative overflow-hidden">
+          <div className="absolute top-4 right-4 z-20">
+            <Badge className="bg-gradient-to-r from-orange-400 to-orange-500 text-white border-0 shadow-lg">
+              Coming Soon
+            </Badge>
+          </div>
+          <CardHeader className="pb-3">
+            <div className="flex items-start justify-between mb-3">
+              <div className={`w-12 h-12 ${worksheet.color} rounded-xl flex items-center justify-center shadow-lg relative overflow-hidden opacity-60`}>
+                <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent" />
+                <IconComponent className="h-6 w-6 text-white relative z-10" />
+              </div>
+            </div>
+            <CardTitle className="text-lg font-bold mb-2 text-slate-600">
+              {worksheet.title}
+            </CardTitle>
+            <CardDescription className="text-sm leading-relaxed text-slate-500">
+              {worksheet.description}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="space-y-3">
+              <div className="flex flex-wrap gap-2">
+                {worksheet.features.map((feature: string, index: number) => (
+                  <Badge key={index} variant="outline" className="text-xs bg-gradient-to-r from-slate-50 to-slate-100 border-slate-200 text-slate-500">
+                    {feature}
+                  </Badge>
+                ))}
+              </div>
+              <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+                <span className="text-sm font-medium text-slate-500">Coming Soon</span>
+                <div className="flex items-center text-slate-400">
+                  <ArrowRight className="h-4 w-4" />
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      );
+    }
+
     return (
       <Link key={worksheet.id} href={`/worksheets/create/${worksheet.id}`}>
         <Card className="h-full hover:shadow-xl transition-all duration-300 cursor-pointer group hover:scale-[1.01] border-0 bg-white/80 backdrop-blur-sm shadow-lg hover:shadow-purple-200/25">

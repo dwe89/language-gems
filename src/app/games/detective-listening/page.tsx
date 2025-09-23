@@ -9,6 +9,7 @@ import UnifiedGameLauncher from '../../../components/games/UnifiedGameLauncher';
 import { UnifiedSelectionConfig, UnifiedVocabularyItem } from '../../../hooks/useUnifiedVocabulary';
 import AssignmentLoadingScreen from '../../../components/ui/AssignmentLoadingScreen';
 import AssignmentErrorScreen from '../../../components/ui/AssignmentErrorScreen';
+import InGameConfigPanel from '../../../components/games/InGameConfigPanel';
 
 export default function UnifiedDetectiveListeningPage() {
   const { user, isLoading, isDemo } = useUnifiedAuth();
@@ -24,6 +25,9 @@ export default function UnifiedDetectiveListeningPage() {
     vocabulary: UnifiedVocabularyItem[];
     theme: string;
   } | null>(null);
+
+  // Config panel state
+  const [showConfigPanel, setShowConfigPanel] = useState(false);
 
   console.log('🎯 [Detective Listening] URL params [DEBUG-v3]:', {
     assignmentId,
@@ -91,12 +95,12 @@ export default function UnifiedDetectiveListeningPage() {
   };
 
   // Handle game end
-  const handleGameEnd = (result: { 
-    correctAnswers: number; 
-    totalEvidence: number; 
-    evidenceCollected: any[]; 
-    timeSpent?: number; 
-    averageResponseTime?: number; 
+  const handleGameEnd = (result: {
+    correctAnswers: number;
+    totalEvidence: number;
+    evidenceCollected: any[];
+    timeSpent?: number;
+    averageResponseTime?: number;
   }) => {
     console.log('Game ended:', result);
 
@@ -106,6 +110,32 @@ export default function UnifiedDetectiveListeningPage() {
         router.push('/student-dashboard/assignments');
       }, 3000);
     }
+  };
+
+  // Config panel handlers
+  const handleOpenConfigPanel = () => {
+    setShowConfigPanel(true);
+  };
+
+  const handleCloseConfigPanel = () => {
+    setShowConfigPanel(false);
+  };
+
+  const handleConfigChange = (newConfig: UnifiedSelectionConfig, vocabulary: UnifiedVocabularyItem[], theme?: string) => {
+    const transformedVocabulary = transformVocabularyForDetectiveListening(vocabulary);
+
+    setGameConfig({
+      config: newConfig,
+      vocabulary: transformedVocabulary,
+      theme: theme || gameConfig?.theme || 'default'
+    });
+
+    console.log('Detective Listening config changed:', {
+      newConfig,
+      vocabularyCount: vocabulary.length,
+      theme,
+      transformedCount: transformedVocabulary.length
+    });
   };
 
   // Show loading while authenticating
@@ -168,14 +198,28 @@ export default function UnifiedDetectiveListeningPage() {
     };
 
     return (
-      <DetectiveListeningGameWrapper
-        settings={gameSettings}
-        vocabulary={gameConfig.vocabulary} // Pass the custom vocabulary
-        assignmentId={assignmentId}
-        userId={user?.id}
-        onBackToMenu={handleBackToMenu}
-        onGameEnd={handleGameEnd}
-      />
+      <>
+        <DetectiveListeningGameWrapper
+          settings={gameSettings}
+          vocabulary={gameConfig.vocabulary} // Pass the custom vocabulary
+          assignmentId={assignmentId}
+          userId={user?.id}
+          onBackToMenu={handleBackToMenu}
+          onGameEnd={handleGameEnd}
+          onOpenSettings={handleOpenConfigPanel}
+        />
+
+        {/* In-game configuration panel */}
+        <InGameConfigPanel
+          currentConfig={gameConfig.config}
+          onConfigChange={handleConfigChange}
+          supportedLanguages={['es', 'fr', 'de']}
+          supportsThemes={true}
+          currentTheme={gameConfig.theme}
+          isOpen={showConfigPanel}
+          onClose={handleCloseConfigPanel}
+        />
+      </>
     );
   }
 

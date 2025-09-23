@@ -67,7 +67,7 @@ export default function LavaTempleWordRestorePage() {
             language: (assignment.vocabulary_criteria?.language || 'spanish') as 'spanish' | 'french' | 'german',
             category: assignment.vocabulary_criteria?.category || 'assignment',
             subcategory: assignment.vocabulary_criteria?.subcategory || 'assignment',
-            difficulty: 'intermediate'
+            difficulty: 'beginner'
           };
 
           return (
@@ -88,12 +88,12 @@ export default function LavaTempleWordRestorePage() {
   const handleGameStart = (config: UnifiedSelectionConfig, vocabulary: UnifiedVocabularyItem[], theme?: string) => {
     // Convert unified config to legacy game config format
     const legacyGameConfig: GameConfig = {
-      language: config.language === 'es' ? 'spanish' : 
-                config.language === 'fr' ? 'french' : 
+      language: config.language === 'es' ? 'spanish' :
+                config.language === 'fr' ? 'french' :
                 config.language === 'de' ? 'german' : 'spanish',
       category: config.categoryId || 'general',
       subcategory: config.subcategoryId || 'general',
-      difficulty: 'intermediate' // Default difficulty
+      difficulty: 'beginner' // Default difficulty
     };
     
     setGameConfig(legacyGameConfig);

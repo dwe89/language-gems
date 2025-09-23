@@ -8,6 +8,8 @@ import { EnhancedGameService } from '../../../../services/enhancedGameService';
 import { createAudio } from '@/utils/audioUtils';
 import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
 import { useDictationGame } from '../../../../hooks/useSentenceGame';
+import { Settings, VolumeX, Volume2, Castle, AlertTriangle, ArrowLeft } from 'lucide-react';
+import InGameConfigPanel from '../../../../components/games/InGameConfigPanel';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -40,6 +42,9 @@ interface TempleRestorationProps {
   onBackToMenu: () => void;
   gameSessionId?: string | null;
   gameService?: EnhancedGameService | null;
+  onOpenSettings?: () => void;
+  isMuted?: boolean;
+  onToggleMute?: () => void;
 }
 
 export default function TempleRestoration({
@@ -47,7 +52,10 @@ export default function TempleRestoration({
   onRestorationComplete,
   onBackToMenu,
   gameSessionId,
-  gameService
+  gameService,
+  onOpenSettings,
+  isMuted = false,
+  onToggleMute
 }: TempleRestorationProps) {
   // Initialize sentence game service for vocabulary tracking
   const sentenceGame = useDictationGame(
@@ -382,40 +390,44 @@ export default function TempleRestoration({
 
           // Only process if we have a valid sentence
           if (sentenceText && sentenceText !== 'Unknown sentence') {
-            console.log(`🎯 TempleRestoration: About to call sentenceGame.processSentence with "${sentenceText}"`);
-            try {
-              const result = await sentenceGame.processSentence(
-                sentenceText,
-                true, // Gap fill success counts as correct sentence understanding
-                responseTime,
-                currentSentence.temple_context ? true : false, // Context clues count as hints
-                currentSentence.id
-              );
-              console.log(`🎯 TempleRestoration: Got result from processSentence:`, result);
+            console.log(`TempleRestoration: About to call sentenceGame.processSentence with "${sentenceText}"`);
 
-              if (result) {
-                console.log(`🏛️ Lava Temple: Processed sentence "${sentenceText}"`);
-                console.log(`📊 Vocabulary matches: ${result.vocabularyMatches?.length || 0}`);
-                console.log(`💎 Gems awarded: ${result.totalGems || result.gemsAwarded || 0}`);
-                console.log(`⭐ XP earned: ${result.totalXP || result.xpEarned || 0}`);
-                console.log(`📈 Coverage: ${result.coveragePercentage || 0}%`);
+            // Process sentence in background (non-blocking)
+            setTimeout(async () => {
+              try {
+                const result = await sentenceGame.processSentence(
+                  sentenceText,
+                  true, // Gap fill success counts as correct sentence understanding
+                  responseTime,
+                  currentSentence.temple_context ? true : false, // Context clues count as hints
+                  currentSentence.id
+                );
+                console.log(`TempleRestoration: Got result from processSentence:`, result);
 
-              // Log individual vocabulary matches with safe array check
-              if (result.gemsAwarded && Array.isArray(result.gemsAwarded)) {
-                result.gemsAwarded.forEach((gem, index) => {
-                  console.log(`  ${index + 1}. "${gem.word}" → ${gem.gemRarity} gem (+${gem.xpAwarded} XP)`);
-                });
-              } else if (result.vocabularyMatches && Array.isArray(result.vocabularyMatches)) {
-                result.vocabularyMatches.forEach((match, index) => {
-                  console.log(`  ${index + 1}. "${match.word}" → vocabulary match`);
-                });
+                if (result) {
+                  console.log(`Lava Temple: Processed sentence "${sentenceText}"`);
+                  console.log(`Vocabulary matches: ${result.vocabularyMatches?.length || 0}`);
+                  console.log(`Gems awarded: ${result.totalGems || result.gemsAwarded || 0}`);
+                  console.log(`XP earned: ${result.totalXP || result.xpEarned || 0}`);
+                  console.log(`Coverage: ${result.coveragePercentage || 0}%`);
+
+                  // Log individual vocabulary matches with safe array check
+                  if (result.gemsAwarded && Array.isArray(result.gemsAwarded)) {
+                    result.gemsAwarded.forEach((gem, index) => {
+                      console.log(`  ${index + 1}. "${gem.word}" → ${gem.gemRarity} gem (+${gem.xpAwarded} XP)`);
+                    });
+                  } else if (result.vocabularyMatches && Array.isArray(result.vocabularyMatches)) {
+                    result.vocabularyMatches.forEach((match, index) => {
+                      console.log(`  ${index + 1}. "${match.word}" → vocabulary match`);
+                    });
+                  }
+                } else {
+                  console.log('Lava Temple: No sentence processing result returned');
+                }
+              } catch (sentenceError) {
+                console.error('Error calling sentenceGame.processSentence:', sentenceError);
               }
-              } else {
-                console.log('🏛️ Lava Temple: No sentence processing result returned');
-              }
-            } catch (sentenceError) {
-              console.error('🚨 Error calling sentenceGame.processSentence:', sentenceError);
-            }
+            }, 0);
           }
         } catch (error) {
           console.error('Error processing sentence with vocabulary tracking:', error);
@@ -524,7 +536,7 @@ export default function TempleRestoration({
             animate={{ rotate: 360 }}
             transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
           >
-            🏛️
+            <Castle className="h-16 w-16" />
           </motion.div>
           <p className="text-xl text-orange-200">Loading ancient tablets...</p>
         </div>
@@ -536,7 +548,9 @@ export default function TempleRestoration({
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center bg-black/50 p-8 rounded-xl border border-red-500/50">
-          <div className="text-4xl mb-4">⚠️</div>
+          <div className="text-4xl mb-4 flex justify-center">
+            <AlertTriangle className="h-16 w-16 text-red-400" />
+          </div>
           <h3 className="text-xl font-bold text-red-400 mb-4">Temple Access Denied</h3>
           <p className="text-red-200 mb-6">{error}</p>
           <button
@@ -564,10 +578,37 @@ export default function TempleRestoration({
             </p>
           </div>
           
-          <div className="text-right text-white">
-            <div className="text-lg">Score: <span className="text-yellow-400 font-bold">{score}</span></div>
-            <div className="text-sm text-orange-200">
-              Restored: {correctAnswers}/{totalAttempts}
+          <div className="flex items-center gap-4">
+            <div className="text-right text-white">
+              <div className="text-lg">Score: <span className="text-yellow-400 font-bold">{score}</span></div>
+              <div className="text-sm text-orange-200">
+                Restored: {correctAnswers}/{totalAttempts}
+              </div>
+            </div>
+
+            {/* Game Controls */}
+            <div className="flex items-center gap-2">
+              {/* Mute Button */}
+              {onToggleMute && (
+                <button
+                  onClick={onToggleMute}
+                  className="bg-black/40 backdrop-blur-sm text-orange-400 p-2 rounded-lg hover:bg-black/60 transition-colors"
+                  title={isMuted ? "Unmute" : "Mute"}
+                >
+                  {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+                </button>
+              )}
+
+              {/* Game Settings Button */}
+              {onOpenSettings && (
+                <button
+                  onClick={onOpenSettings}
+                  className="bg-black/40 backdrop-blur-sm text-orange-400 px-3 py-2 rounded-lg hover:bg-black/60 transition-colors flex items-center gap-2"
+                >
+                  <Settings className="h-4 w-4" />
+                  Game Settings
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -670,7 +711,8 @@ export default function TempleRestoration({
                 whileHover={areAllGapsFilled() ? { scale: 1.05 } : {}}
                 whileTap={areAllGapsFilled() ? { scale: 0.95 } : {}}
               >
-                🏛️ Restore Inscription
+                <Castle className="h-5 w-5 mr-2" />
+                Restore Inscription
               </motion.button>
             </div>
           </motion.div>
@@ -682,7 +724,8 @@ export default function TempleRestoration({
             onClick={onBackToMenu}
             className="px-6 py-3 bg-black/50 text-orange-200 border border-orange-600/50 hover:bg-orange-600/20 hover:border-orange-400 rounded-xl transition-all duration-300"
           >
-            ← Exit Temple
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Exit Temple
           </button>
         </div>
       </div>

@@ -29,9 +29,14 @@ export default function CrosswordTestPage() {
     setIsGenerating(true);
     try {
       const data = await generateCrosswordLayout(sampleWords);
-      setCrosswordData(data);
+      if (data) {
+        setCrosswordData(data);
+        console.log('✅ Crossword generated successfully!', data);
+      } else {
+        console.error('❌ Failed to generate crossword - returned null');
+      }
     } catch (error) {
-      console.error('Generation failed:', error);
+      console.error('❌ Generation failed:', error);
     } finally {
       setIsGenerating(false);
     }

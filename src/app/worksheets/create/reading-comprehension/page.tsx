@@ -22,10 +22,16 @@ import {
   ClipboardList
 } from 'lucide-react';
 
-// Import category system
-import { VOCABULARY_CATEGORIES, CURRICULUM_LEVELS_CONFIG } from '@/components/games/ModernCategorySelector';
-import { getCategoriesByCurriculum } from '@/components/games/KS4CategorySystem';
-import type { Category, Subcategory } from '@/components/games/ModernCategorySelector';
+// Import database category system
+import {
+  fetchKS3Categories,
+  fetchKS4Themes,
+  fetchAvailableTiers,
+  type DatabaseCategory,
+  type DatabaseSubcategory,
+  type KS4Theme,
+  type KS4Unit
+} from '@/lib/database-categories';
 
 // Corrected shadcn/ui component imports using the '@/' alias
 import { Button } from '@/components/ui/button';
@@ -55,6 +61,10 @@ interface TopicConfig {
   tier?: 'foundation' | 'higher';
 }
 
+// Union type for categories/themes
+type CategoryOrTheme = DatabaseCategory | KS4Theme;
+type SubcategoryOrUnit = DatabaseSubcategory | KS4Unit;
+
 export default function ReadingComprehensionPage() {
   const [title, setTitle] = useState('Reading Comprehension Worksheet');
   const [subject, setSubject] = useState('spanish');
@@ -69,8 +79,9 @@ export default function ReadingComprehensionPage() {
     subcategoryId: undefined,
   });
 
-  const [availableCategories, setAvailableCategories] = useState<Category[]>([]);
-  const [availableSubcategories, setAvailableSubcategories] = useState<Subcategory[]>([]);
+  const [availableCategories, setAvailableCategories] = useState<CategoryOrTheme[]>([]);
+  const [availableSubcategories, setAvailableSubcategories] = useState<SubcategoryOrUnit[]>([]);
+  const [availableTiers, setAvailableTiers] = useState<string[]>(['foundation', 'higher']);
 
   // Reading comprehension specific settings
   const [readingSettings, setReadingSettings] = useState({
@@ -91,20 +102,36 @@ export default function ReadingComprehensionPage() {
 
   // Load categories based on curriculum level and exam board
   useEffect(() => {
-    if (topicConfig.curriculumLevel === 'KS3') {
-      setAvailableCategories(VOCABULARY_CATEGORIES);
-    } else if (topicConfig.curriculumLevel === 'KS4') {
-      const ks4Categories = getCategoriesByCurriculum('KS4', topicConfig.examBoard || 'AQA');
-      setAvailableCategories(ks4Categories);
-    }
+    const loadCategories = async () => {
+      if (topicConfig.curriculumLevel === 'KS3') {
+        const categories = await fetchKS3Categories();
+        setAvailableCategories(categories);
+      } else if (topicConfig.curriculumLevel === 'KS4') {
+        const examBoard = topicConfig.examBoard || 'AQA';
+        const [themes, tiers] = await Promise.all([
+          fetchKS4Themes(examBoard),
+          fetchAvailableTiers(examBoard)
+        ]);
+        setAvailableCategories(themes);
+        setAvailableTiers(tiers);
+      }
+    };
+
+    loadCategories();
   }, [topicConfig.curriculumLevel, topicConfig.examBoard]);
 
-  // Load subcategories when category changes
+  // Load subcategories/units when category/theme changes
   useEffect(() => {
     if (topicConfig.categoryId) {
       const selectedCategory = availableCategories.find(cat => cat.id === topicConfig.categoryId);
       if (selectedCategory) {
-        setAvailableSubcategories(selectedCategory.subcategories || []);
+        // For KS3 categories, use subcategories; for KS4 themes, use units
+        const subItems = 'subcategories' in selectedCategory
+          ? selectedCategory.subcategories
+          : 'units' in selectedCategory
+            ? selectedCategory.units
+            : [];
+        setAvailableSubcategories(subItems);
       }
     } else {
       setAvailableSubcategories([]);
@@ -435,8 +462,11 @@ export default function ReadingComprehensionPage() {
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="foundation">Foundation</SelectItem>
-                            <SelectItem value="higher">Higher</SelectItem>
+                            {availableTiers.map((tier) => (
+                              <SelectItem key={tier} value={tier}>
+                                {tier.charAt(0).toUpperCase() + tier.slice(1)}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </div>
@@ -467,7 +497,6 @@ export default function ReadingComprehensionPage() {
                     {availableCategories.length > 0 && (
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-3">
                         {availableCategories.map((category) => {
-                          const IconComponent = category.icon;
                           const isSelected = topicConfig.categoryId === category.id;
                           return (
                             <button
@@ -482,11 +511,11 @@ export default function ReadingComprehensionPage() {
                               }
                               className={`flex items-center gap-2 p-3 rounded-lg border-2 transition-all duration-200 text-sm font-medium ${
                                 isSelected
-                                  ? `bg-gradient-to-r ${category.color} text-white border-transparent shadow-lg`
+                                  ? 'bg-gradient-to-r from-purple-500 to-indigo-600 text-white border-transparent shadow-lg'
                                   : 'bg-background border-border hover:border-purple-300 hover:shadow-md'
                               }`}
                             >
-                              <IconComponent className="h-4 w-4" />
+                              <BookOpen className="h-4 w-4" />
                               <span className="truncate">{category.displayName}</span>
                             </button>
                           );
