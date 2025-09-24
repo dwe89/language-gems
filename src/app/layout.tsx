@@ -110,8 +110,12 @@ export default function RootLayout({
   ];
 
   return (
-    <html lang="en">
+        <html lang="en">
       <head>
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+        <link rel="icon" type="image/png" sizes="64x64" href="/favicon-64x64.png" />
+        <link rel="icon" type="image/png" sizes="512x512" href="/favicon.png" />
         <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" defer></script>
       </head>
       <body className={`${inter.variable} ${cinzel.variable} ${pirataOne.variable} font-sans`}>

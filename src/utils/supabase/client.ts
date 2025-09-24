@@ -1,4 +1,5 @@
 import { createBrowserClient, createServerClient } from '@supabase/ssr';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '../../lib/database.types';
 
 // Standard browser client - no special configuration needed
@@ -24,6 +25,20 @@ export const createServerSideClient = (cookiesStore: any) => {
           cookiesStore.set(name, '', { ...options, maxAge: 0 });
         },
       },
+    }
+  );
+};
+
+// Service role client for API routes - bypasses RLS
+export const createServiceRoleClient = () => {
+  return createSupabaseClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
     }
   );
 };

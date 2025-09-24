@@ -194,7 +194,7 @@ export default function BlogPostPage() {
         .from('blog_posts')
         .select('*')
         .eq('slug', slug)
-        .eq('is_published', true)
+        .eq('status', 'published')
         .single();
 
       if (error) throw error;
@@ -212,7 +212,7 @@ export default function BlogPostPage() {
           .from('blog_posts')
           .select('*')
           .neq('id', data.id)
-          .eq('is_published', true)
+          .eq('status', 'published')
           .limit(3);
 
         setRelatedPosts(related || []);

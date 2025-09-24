@@ -15,6 +15,11 @@ interface BlogFormData {
   author: string;
   tags: string;
   is_published: boolean;
+  scheduled_for: string;
+  seo_title: string;
+  seo_description: string;
+  featured_image_url: string;
+  reading_time_minutes: number;
 }
 
 export default function NewBlogPostPage() {
@@ -27,7 +32,12 @@ export default function NewBlogPostPage() {
     excerpt: '',
     author: 'LanguageGems Team',
     tags: '',
-    is_published: true,
+    is_published: false,
+    scheduled_for: '',
+    seo_title: '',
+    seo_description: '',
+    featured_image_url: '',
+    reading_time_minutes: 5,
   });
   const [loading, setLoading] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
@@ -55,43 +65,59 @@ export default function NewBlogPostPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.title.trim() || !formData.slug.trim() || !formData.content.trim()) {
       alert('Please fill in all required fields (Title, Slug, and Content).');
+      return;
+    }
+
+    // Validate scheduled date if provided
+    if (formData.scheduled_for && new Date(formData.scheduled_for) <= new Date()) {
+      alert('Scheduled date must be in the future.');
       return;
     }
 
     setLoading(true);
 
     try {
-      // Prepare post data
+      // Prepare post data for the new scheduling API
       const postData = {
         title: formData.title.trim(),
         slug: formData.slug.trim(),
         content: formData.content.trim(),
         excerpt: formData.excerpt.trim() || null,
         author: formData.author.trim() || 'LanguageGems Team',
-        tags: formData.tags ? formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag) : null,
-        is_published: formData.is_published,
+        tags: formData.tags ? formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag) : [],
+        scheduled_for: formData.scheduled_for || null,
+        seo_title: formData.seo_title.trim() || formData.title.trim(),
+        seo_description: formData.seo_description.trim() || formData.excerpt.trim(),
+        featured_image_url: formData.featured_image_url.trim() || null,
+        reading_time_minutes: formData.reading_time_minutes,
       };
 
-      const { data, error } = await supabaseBrowser
-        .from('blog_posts')
-        .insert([postData])
-        .select()
-        .single();
+      const response = await fetch('/api/blog/schedule', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(postData),
+      });
 
-      if (error) throw error;
+      const result = await response.json();
 
-      // Redirect to blog posts list
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to create blog post');
+      }
+
+      alert(result.message);
       router.push('/admin/blog');
     } catch (error: any) {
       console.error('Error creating blog post:', error);
-      
-      if (error.code === '23505' && error.message.includes('slug')) {
+
+      if (error.message.includes('slug already exists')) {
         alert('A blog post with this slug already exists. Please use a different slug.');
       } else {
-        alert('Error creating blog post. Please try again.');
+        alert(`Error creating blog post: ${error.message}`);
       }
     } finally {
       setLoading(false);
@@ -216,24 +242,38 @@ export default function NewBlogPostPage() {
               </div>
 
               <div className="space-y-4">
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    id="is_published"
-                    checked={formData.is_published}
-                    onChange={(e) => setFormData(prev => ({ ...prev, is_published: e.target.checked }))}
-                    className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
-                  />
-                  <label htmlFor="is_published" className="text-sm font-medium text-slate-700">
-                    Publish immediately
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Schedule for later (optional)
                   </label>
+                  <input
+                    type="datetime-local"
+                    value={formData.scheduled_for}
+                    onChange={(e) => setFormData(prev => ({ ...prev, scheduled_for: e.target.value }))}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    min={new Date().toISOString().slice(0, 16)}
+                  />
+                  <p className="text-xs text-slate-500 mt-1">
+                    {formData.scheduled_for
+                      ? `Will be published on ${new Date(formData.scheduled_for).toLocaleString()}`
+                      : 'Leave empty to save as draft'
+                    }
+                  </p>
                 </div>
-                <p className="text-xs text-slate-500">
-                  {formData.is_published 
-                    ? 'This post will be visible to all visitors'
-                    : 'This post will be saved as a draft'
-                  }
-                </p>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Reading Time (minutes)
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="60"
+                    value={formData.reading_time_minutes}
+                    onChange={(e) => setFormData(prev => ({ ...prev, reading_time_minutes: parseInt(e.target.value) || 5 }))}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  />
+                </div>
               </div>
             </div>
 
@@ -270,6 +310,55 @@ export default function NewBlogPostPage() {
               <p className="text-xs text-slate-500 mt-2">
                 Separate tags with commas
               </p>
+            </div>
+
+            {/* SEO Settings */}
+            <div className="bg-white rounded-lg border p-6">
+              <div className="flex items-center mb-4">
+                <Eye className="h-5 w-5 text-indigo-600 mr-2" />
+                <h2 className="text-lg font-semibold text-slate-800">SEO</h2>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    SEO Title
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.seo_title}
+                    onChange={(e) => setFormData(prev => ({ ...prev, seo_title: e.target.value }))}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    placeholder="Leave empty to use post title"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    SEO Description
+                  </label>
+                  <textarea
+                    value={formData.seo_description}
+                    onChange={(e) => setFormData(prev => ({ ...prev, seo_description: e.target.value }))}
+                    rows={3}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    placeholder="Leave empty to use excerpt"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Featured Image URL
+                  </label>
+                  <input
+                    type="url"
+                    value={formData.featured_image_url}
+                    onChange={(e) => setFormData(prev => ({ ...prev, featured_image_url: e.target.value }))}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    placeholder="https://example.com/image.jpg"
+                  />
+                </div>
+              </div>
             </div>
 
             {/* Editor Features Info */}

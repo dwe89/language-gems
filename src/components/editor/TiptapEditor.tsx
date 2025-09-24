@@ -76,6 +76,7 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
   const [isUploading, setIsUploading] = useState(false);
 
   const editor = useEditor({
+    immediatelyRender: false,
     extensions: [
       StarterKit.configure({
         bulletList: false,

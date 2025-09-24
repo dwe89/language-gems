@@ -4,6 +4,12 @@
   "devCommand": "next dev",
   "installCommand": "npm install",
   "framework": "nextjs",
+  "crons": [
+    {
+      "path": "/api/blog/publish-scheduled",
+      "schedule": "0 * * * *"
+    }
+  ],
   "redirects": [
     {
       "source": "/(.*)",
@@ -17,4 +23,4 @@
       ]
     }
   ]
-} 
+}

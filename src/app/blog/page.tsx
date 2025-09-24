@@ -1,6 +1,6 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
-import { Calendar, User, Clock, ArrowRight, BookOpen, Users, Target, Brain } from 'lucide-react';
+import { Calendar, User, Clock, ArrowRight, BookOpen, Users, Target, Brain, Languages, Gamepad2, Film } from 'lucide-react';
 import SEOWrapper from '../../components/seo/SEOWrapper';
 import { generateMetadata } from '../../components/seo/SEOWrapper';
 import Footer from '../../components/layout/Footer';
@@ -100,6 +100,116 @@ const recentPosts = [
     publishDate: 'June 24, 2025',
     author: 'LanguageGems Team',
     icon: BookOpen
+  },
+  {
+    title: 'Ser vs Estar: The Ultimate Guide for Students',
+    excerpt: 'Master the most challenging Spanish grammar concept with this comprehensive guide. Learn when to use ser vs estar with clear rules, examples, and practice exercises.',
+    slug: 'ser-vs-estar-ultimate-guide-students',
+    category: 'Spanish Grammar',
+    readTime: '15 min read',
+    publishDate: 'March 10, 2024',
+    author: 'LanguageGems Team',
+    icon: Languages
+  },
+  {
+    title: 'German Cases Explained: Simple Guide for English Speakers',
+    excerpt: 'Demystify German cases with this authoritative guide. Learn nominative, accusative, dative, and genitive cases with practical examples and memory techniques.',
+    slug: 'german-cases-explained-simple-guide',
+    category: 'German Grammar',
+    readTime: '18 min read',
+    publishDate: 'March 15, 2024',
+    author: 'LanguageGems Team',
+    icon: Languages
+  },
+  {
+    title: 'Imparfait vs Passé Composé: Simple Guide for GCSE Students',
+    excerpt: 'Master French past tenses with this clear guide. Learn when to use imparfait vs passé composé with rules, examples, and common mistakes to avoid.',
+    slug: 'imparfait-vs-passe-compose-simple-guide',
+    category: 'French Grammar',
+    readTime: '12 min read',
+    publishDate: 'March 20, 2024',
+    author: 'LanguageGems Team',
+    icon: Languages
+  },
+  {
+    title: 'GCSE Spanish Speaking Exam Tips: Boost Your Grade',
+    excerpt: 'Ace your GCSE Spanish speaking exam with proven strategies, practice techniques, and confidence-building tips from experienced examiners.',
+    slug: 'gcse-spanish-speaking-exam-tips',
+    category: 'GCSE Preparation',
+    readTime: '10 min read',
+    publishDate: 'March 25, 2024',
+    author: 'LanguageGems Team',
+    icon: Target
+  },
+  {
+    title: 'The Science of Gamification in Language Learning',
+    excerpt: 'Discover how gamification transforms language learning through behavioral science. Learn why games increase engagement and improve retention by 90%.',
+    slug: 'science-of-gamification-language-learning',
+    category: 'Learning Science',
+    readTime: '14 min read',
+    publishDate: 'April 1, 2024',
+    author: 'LanguageGems Team',
+    icon: Gamepad2
+  },
+  {
+    title: 'Spaced Repetition vs Cramming: What Works Best?',
+    excerpt: 'Compare spaced repetition vs cramming with scientific evidence. Learn why spaced repetition improves long-term retention and how to implement it effectively.',
+    slug: 'spaced-repetition-vs-cramming',
+    category: 'Study Tips',
+    readTime: '11 min read',
+    publishDate: 'April 5, 2024',
+    author: 'LanguageGems Team',
+    icon: Brain
+  },
+  {
+    title: 'Por vs Para: Complete Guide for Spanish Learners',
+    excerpt: 'Master por vs para with this comprehensive guide. Learn the rules, exceptions, and practice with real-world examples to use these prepositions correctly.',
+    slug: 'por-vs-para-guide',
+    category: 'Spanish Grammar',
+    readTime: '13 min read',
+    publishDate: 'April 10, 2024',
+    author: 'LanguageGems Team',
+    icon: Languages
+  },
+  {
+    title: 'Jouer à vs Jouer de: Explained Simply',
+    excerpt: 'Clear up French preposition confusion with jouer à vs jouer de. Learn the rules with sports, instruments, and games examples.',
+    slug: 'jouer-a-vs-jouer-de-explained',
+    category: 'French Grammar',
+    readTime: '8 min read',
+    publishDate: 'April 15, 2024',
+    author: 'LanguageGems Team',
+    icon: Languages
+  },
+  {
+    title: 'GCSE German Writing Exam Tips: Get Top Marks',
+    excerpt: 'Master GCSE German writing with expert tips, structure guides, and vocabulary strategies to achieve the highest grades.',
+    slug: 'gcse-german-writing-exam-tips',
+    category: 'GCSE Preparation',
+    readTime: '12 min read',
+    publishDate: 'April 20, 2024',
+    author: 'LanguageGems Team',
+    icon: Target
+  },
+  {
+    title: 'KS3 French: Word Blast Game Better Than Flashcards',
+    excerpt: 'Discover why interactive games like Word Blast outperform traditional flashcards for KS3 French vocabulary learning and long-term retention.',
+    slug: 'ks3-french-word-blast-game-better-than-flashcards',
+    category: 'Teaching Strategies',
+    readTime: '9 min read',
+    publishDate: 'April 25, 2024',
+    author: 'LanguageGems Team',
+    icon: Gamepad2
+  },
+  {
+    title: 'German Movies & TV Shows for Listening Skills',
+    excerpt: 'Build German listening skills with curated movies and TV shows. Includes difficulty levels, subtitles strategies, and cultural insights.',
+    slug: 'german-movies-tv-shows-listening-skills',
+    category: 'Cultural Learning',
+    readTime: '10 min read',
+    publishDate: 'May 1, 2024',
+    author: 'LanguageGems Team',
+    icon: Film
   }
 ];
 
@@ -123,11 +233,15 @@ const upcomingPosts = [
 ];
 
 const categories = [
-  { name: 'Study Tips', count: 1, color: 'bg-blue-100 text-blue-700' },
-  { name: 'Teaching Strategies', count: 1, color: 'bg-purple-100 text-purple-700' },
-  { name: 'GCSE Preparation', count: 1, color: 'bg-green-100 text-green-700' },
+  { name: 'GCSE Preparation', count: 4, color: 'bg-green-100 text-green-700' },
+  { name: 'Learning Science', count: 2, color: 'bg-indigo-100 text-indigo-700' },
+  { name: 'Spanish Grammar', count: 2, color: 'bg-red-100 text-red-700' },
+  { name: 'French Grammar', count: 2, color: 'bg-blue-100 text-blue-700' },
+  { name: 'German Grammar', count: 1, color: 'bg-yellow-100 text-yellow-700' },
+  { name: 'Study Tips', count: 1, color: 'bg-purple-100 text-purple-700' },
+  { name: 'Teaching Strategies', count: 1, color: 'bg-pink-100 text-pink-700' },
   { name: 'Educational Technology', count: 1, color: 'bg-orange-100 text-orange-700' },
-  { name: 'Learning Science', count: 1, color: 'bg-indigo-100 text-indigo-700' }
+  { name: 'Cultural Learning', count: 1, color: 'bg-teal-100 text-teal-700' }
 ];
 
 export default function BlogPage() {
