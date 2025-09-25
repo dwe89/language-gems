@@ -14,7 +14,8 @@ import {
   Trophy,
   Target,
   Volume2,
-  Users
+  Users,
+  RefreshCw
 } from 'lucide-react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
@@ -27,6 +28,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import FlagIcon from '@/components/ui/FlagIcon';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useSupabase } from '@/hooks/useSupabase';
+import { VOCABULARY_CATEGORIES } from '@/components/games/ModernCategorySelector';
+import { GRAMMAR_CATEGORIES } from '@/lib/grammar-categories';
+
+import SongCategoryFilter from '@/components/songs/SongCategoryFilter';
 
 interface YouTubeVideo {
   id: string;
@@ -41,6 +46,9 @@ interface YouTubeVideo {
   view_count: number;
   is_featured: boolean;
   created_at: string;
+  theme?: string;
+  topic?: string;
+  subtopic?: string;
 }
 
 interface VideoProgress {
@@ -55,27 +63,75 @@ export default function LanguageSongsPage() {
   const router = useRouter();
   const language = params.language as string;
   
-  const [videos, setVideos] = useState<YouTubeVideo[]>([]);
+  const [allVideos, setAllVideos] = useState<YouTubeVideo[]>([]); // Store all videos
   const [progress, setProgress] = useState<Record<string, VideoProgress>>({});
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [levelFilter, setLevelFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('newest');
   const [activeTab, setActiveTab] = useState('videos');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [subcategoryFilter, setSubcategoryFilter] = useState<string>('all');
+  const [themeFilter, setThemeFilter] = useState<string>('all'); // 'vocabulary' or 'grammar'
+  const [examBoardFilter, setExamBoardFilter] = useState<string>('all'); // 'AQA' or 'edexcel'
+  const [tierFilter, setTierFilter] = useState<string>('all'); // 'foundation' or 'higher'
 
   const { user } = useAuth();
   const { supabase } = useSupabase();
 
+  // Only re-fetch when language, user, or level changes - not for theme/category filters
   useEffect(() => {
     if (language) {
-      fetchVideos();
+      fetchAllVideos();
       if (user) {
         fetchProgress();
       }
     }
-  }, [language, user, levelFilter, sortBy]);
+  }, [language, user, levelFilter, sortBy, examBoardFilter, tierFilter]);
 
-  const fetchVideos = async () => {
+  // Set up real-time subscription for video changes
+  useEffect(() => {
+    if (!language) return;
+
+    console.log(`Setting up real-time subscription for ${language} videos...`);
+
+    const channel = supabase
+      .channel('youtube_videos_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen for all changes (INSERT, UPDATE, DELETE)
+          schema: 'public',
+          table: 'youtube_videos',
+          filter: `language=eq.${language}`
+        },
+        (payload) => {
+          console.log('Video change detected:', payload);
+          
+          // Refresh videos when any change occurs
+          setTimeout(() => {
+            fetchAllVideos();
+          }, 500); // Small delay to ensure DB consistency
+        }
+      )
+      .subscribe((status) => {
+        console.log('Subscription status:', status);
+      });
+
+    // Fallback: Poll for changes every 30 seconds
+    const pollInterval = setInterval(() => {
+      console.log('Polling for video changes...');
+      fetchAllVideos();
+    }, 30000);
+
+    return () => {
+      console.log('Cleaning up video subscription...');
+      supabase.removeChannel(channel);
+      clearInterval(pollInterval);
+    };
+  }, [language]);
+
+  const fetchAllVideos = async () => {
     try {
       setLoading(true);
       
@@ -85,9 +141,21 @@ export default function LanguageSongsPage() {
         .eq('is_active', true)
         .eq('language', language);
 
-      // Apply level filter
+      // Apply level filter (this still requires server-side filtering)
       if (levelFilter !== 'all') {
-        query = query.eq('level', levelFilter);
+        if (levelFilter === 'KS4') {
+          query = query.eq('curriculum_level', 'KS4');
+
+          // Apply KS4-specific filters
+          if (examBoardFilter !== 'all') {
+            query = query.eq('exam_board_code', examBoardFilter);
+          }
+          if (tierFilter !== 'all') {
+            query = query.eq('tier', tierFilter);
+          }
+        } else {
+          query = query.eq('level', levelFilter);
+        }
       }
 
       // Apply sorting
@@ -110,14 +178,34 @@ export default function LanguageSongsPage() {
 
       const { data, error } = await query;
       
-      if (error) throw error;
-      setVideos(data || []);
+      if (error) {
+        console.error('Error fetching videos:', error);
+        throw error;
+      }
+      
+      console.log(`Fetched ${data?.length || 0} videos for ${language}:`, {
+        timestamp: new Date().toISOString(),
+        query: query.toString(),
+        videoIds: data?.map(v => v.id).slice(0, 5) // Show first 5 IDs for debugging
+      });
+      setAllVideos(data || []);
       
     } catch (error) {
       console.error('Error fetching videos:', error);
+      // Don't clear existing videos on error, just show an error state
     } finally {
       setLoading(false);
     }
+  };
+
+  // Manual refresh function
+  const refreshVideos = async () => {
+    console.log('Manually refreshing videos...');
+    await fetchAllVideos();
+    if (user) {
+      await fetchProgress();
+    }
+    console.log('Videos refreshed successfully');
   };
 
   const fetchProgress = async () => {
@@ -142,13 +230,43 @@ export default function LanguageSongsPage() {
     }
   };
 
+  // Client-side filtering to avoid loading flash
+  const getFilteredVideos = () => {
+    if (!allVideos || allVideos.length === 0) return [];
+    
+    let filtered = [...allVideos];
+
+    // Apply theme filter
+    if (themeFilter !== 'all') {
+      filtered = filtered.filter(video => video && video.theme === themeFilter);
+    }
+
+    // Apply category filter
+    if (categoryFilter !== 'all') {
+      filtered = filtered.filter(video => video && video.topic === categoryFilter);
+    }
+
+    // Apply subcategory filter
+    if (subcategoryFilter !== 'all') {
+      filtered = filtered.filter(video => video && video.subtopic === subcategoryFilter);
+    }
+
+    return filtered.filter(video => video && video.id); // Ensure all videos have required properties
+  };
+
+  // Get filtered videos based on current filters
+  const videos = getFilteredVideos();
+
+  // Apply search filter on top of other filters
   const filteredVideos = videos.filter(video => {
-    if (searchQuery) {
+    if (!video) return false;
+    
+    if (searchQuery && searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      return (
-        video.title.toLowerCase().includes(query) ||
-        video.description?.toLowerCase().includes(query)
-      );
+      const title = video.title?.toLowerCase() || '';
+      const description = video.description?.toLowerCase() || '';
+      
+      return title.includes(query) || description.includes(query);
     }
     return true;
   });
@@ -168,6 +286,54 @@ export default function LanguageSongsPage() {
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
+  // Handler for theme filter changes - reset category filter when theme changes
+  const handleThemeFilterChange = (value: string) => {
+    setThemeFilter(value);
+    setCategoryFilter('all'); // Reset category filter when theme changes
+    setSubcategoryFilter('all'); // Reset subcategory filter when theme changes
+  };
+
+  // Handler for category filter changes - reset subcategory filter when category changes
+  const handleCategoryFilterChange = (value: string) => {
+    setCategoryFilter(value);
+    setSubcategoryFilter('all'); // Reset subcategory filter when category changes
+  };
+
+  // Handler for level filter changes - reset KS4-specific filters when level changes
+  const handleLevelFilterChange = (value: string) => {
+    setLevelFilter(value);
+    if (value !== 'KS4') {
+      setExamBoardFilter('all');
+      setTierFilter('all');
+    }
+  };
+
+  // Clear all filters
+  const clearAllFilters = () => {
+    setSearchQuery('');
+    setLevelFilter('all');
+    setThemeFilter('all');
+    setCategoryFilter('all');
+    setSubcategoryFilter('all');
+    setExamBoardFilter('all');
+    setTierFilter('all');
+    setSortBy('newest');
+  };
+
+  // Count active filters
+  const getActiveFiltersCount = () => {
+    let count = 0;
+    if (searchQuery) count++;
+    if (levelFilter !== 'all') count++;
+    if (themeFilter !== 'all') count++;
+    if (categoryFilter !== 'all') count++;
+    if (subcategoryFilter !== 'all') count++;
+    if (examBoardFilter !== 'all') count++;
+    if (tierFilter !== 'all') count++;
+    if (sortBy !== 'newest') count++;
+    return count;
+  };
+
   const getLevelColor = (level: string) => {
     const colors = {
       beginner: 'bg-green-100 text-green-800',
@@ -185,6 +351,17 @@ export default function LanguageSongsPage() {
         <div className="text-center py-12">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p>Loading {langInfo.name} content...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render if no videos to prevent hydration mismatch
+  if (!allVideos || allVideos.length === 0) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center py-12">
+          <p>No videos available for {langInfo.name}</p>
         </div>
       </div>
     );
@@ -226,7 +403,7 @@ export default function LanguageSongsPage() {
             <div className="bg-white rounded-lg px-4 py-2 shadow-sm">
               <div className="flex items-center">
                 <BookOpen className="w-4 h-4 text-green-600 mr-2" />
-                <span className="text-sm font-medium">{videos.reduce((sum, v) => sum + v.vocabulary_count, 0)} Words</span>
+                <span className="text-sm font-medium">{videos.reduce((sum: number, v: YouTubeVideo) => sum + (v.vocabulary_count || 0), 0)} Words</span>
               </div>
             </div>
             {user && (
@@ -237,96 +414,163 @@ export default function LanguageSongsPage() {
                 </div>
               </div>
             )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={refreshVideos}
+              disabled={loading}
+              className="flex items-center gap-2"
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
           </div>
         </div>
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-8">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="videos">
-              <Play className="w-4 h-4 mr-2" />
+          <TabsList className="grid w-full grid-cols-4 bg-white border border-gray-200 rounded-xl p-1 shadow-sm">
+            <TabsTrigger
+              value="videos"
+              className="flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all data-[state=active]:bg-blue-500 data-[state=active]:text-white data-[state=active]:shadow-md hover:bg-gray-50"
+            >
+              <Play className="w-4 h-4" />
               Videos
             </TabsTrigger>
-            <TabsTrigger value="vocabulary">
-              <BookOpen className="w-4 h-4 mr-2" />
+            <TabsTrigger
+              value="vocabulary"
+              className="flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all data-[state=active]:bg-green-500 data-[state=active]:text-white data-[state=active]:shadow-md hover:bg-gray-50"
+            >
+              <BookOpen className="w-4 h-4" />
               Vocabulary
             </TabsTrigger>
-            <TabsTrigger value="games">
-              <Gamepad2 className="w-4 h-4 mr-2" />
+            <TabsTrigger
+              value="games"
+              className="flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all data-[state=active]:bg-purple-500 data-[state=active]:text-white data-[state=active]:shadow-md hover:bg-gray-50"
+            >
+              <Gamepad2 className="w-4 h-4" />
               Games
             </TabsTrigger>
-            <TabsTrigger value="progress">
-              <Trophy className="w-4 h-4 mr-2" />
+            <TabsTrigger
+              value="progress"
+              className="flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all data-[state=active]:bg-orange-500 data-[state=active]:text-white data-[state=active]:shadow-md hover:bg-gray-50"
+            >
+              <Trophy className="w-4 h-4" />
               Progress
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="videos" className="mt-6">
-            {/* Filters */}
-            <div className="mb-6 space-y-4">
-              <div className="flex flex-col md:flex-row gap-4">
-                <div className="flex-1">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                    <Input
-                      placeholder="Search videos..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
-                
-                <div className="flex gap-2">
-                  <Select value={levelFilter} onValueChange={setLevelFilter}>
-                    <SelectTrigger className="w-32">
-                      <SelectValue placeholder="Level" />
+            {/* New Category Filter Component */}
+            <div className="mb-8">
+              <SongCategoryFilter
+                themeFilter={themeFilter}
+                categoryFilter={categoryFilter}
+                subcategoryFilter={subcategoryFilter}
+                searchQuery={searchQuery}
+                onThemeChange={handleThemeFilterChange}
+                onCategoryChange={handleCategoryFilterChange}
+                onSubcategoryChange={setSubcategoryFilter}
+                onSearchChange={setSearchQuery}
+                onClearFilters={clearAllFilters}
+                activeFiltersCount={getActiveFiltersCount()}
+                resultsCount={filteredVideos.length}
+              />
+            </div>
+
+            {/* Level and Sort Filters */}
+            <div className="mb-6 flex gap-4">
+              <Select value={levelFilter} onValueChange={handleLevelFilterChange}>
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="Level" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Levels</SelectItem>
+                  <SelectItem value="beginner">Beginner</SelectItem>
+                  <SelectItem value="intermediate">Intermediate</SelectItem>
+                  <SelectItem value="advanced">Advanced</SelectItem>
+                  <SelectItem value="KS4">KS4 (GCSE)</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* KS4-specific filters */}
+              {levelFilter === 'KS4' && (
+                <>
+                  <Select value={examBoardFilter} onValueChange={setExamBoardFilter}>
+                    <SelectTrigger className="w-40">
+                      <SelectValue placeholder="Exam Board" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Levels</SelectItem>
-                      <SelectItem value="beginner">Beginner</SelectItem>
-                      <SelectItem value="intermediate">Intermediate</SelectItem>
-                      <SelectItem value="advanced">Advanced</SelectItem>
+                      <SelectItem value="all">All Boards</SelectItem>
+                      <SelectItem value="AQA">AQA</SelectItem>
+                      <SelectItem value="edexcel">Edexcel</SelectItem>
                     </SelectContent>
                   </Select>
 
-                  <Select value={sortBy} onValueChange={setSortBy}>
-                    <SelectTrigger className="w-32">
-                      <SelectValue placeholder="Sort by" />
+                  <Select value={tierFilter} onValueChange={setTierFilter}>
+                    <SelectTrigger className="w-40">
+                      <SelectValue placeholder="Tier" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="newest">Newest</SelectItem>
-                      <SelectItem value="popular">Popular</SelectItem>
-                      <SelectItem value="featured">Featured</SelectItem>
-                      <SelectItem value="vocabulary">Vocabulary</SelectItem>
+                      <SelectItem value="all">All Tiers</SelectItem>
+                      <SelectItem value="foundation">Foundation</SelectItem>
+                      <SelectItem value="higher">Higher</SelectItem>
                     </SelectContent>
                   </Select>
-                </div>
-              </div>
+                </>
+              )}
+
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="newest">Newest</SelectItem>
+                  <SelectItem value="popular">Popular</SelectItem>
+                  <SelectItem value="featured">Featured</SelectItem>
+                  <SelectItem value="vocabulary">Most Vocabulary</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Videos Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredVideos.map((video, index) => {
-                const videoProgress = progress[video.id];
-                
-                return (
-                  <motion.div
-                    key={video.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                  >
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" key={`video-grid-${themeFilter}-${categoryFilter}-${subcategoryFilter}`}>
+              {filteredVideos.length > 0 ? (
+                filteredVideos.map((video, index) => {
+                  const videoProgress = progress[video.id];
+                  
+                  return (
+                    <motion.div
+                      key={`video-${video.id}-${video.youtube_id}`}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ 
+                        delay: Math.min(index * 0.05, 0.5), // Cap the delay to prevent too long delays
+                        duration: 0.3,
+                        ease: "easeOut"
+                      }}
+                    >
                     <Link href={`/songs/${language}/video/${video.id}`}>
-                      <Card className="group hover:shadow-lg transition-shadow duration-200 cursor-pointer">
+                      <Card className="group hover:shadow-lg transition-shadow duration-200 cursor-pointer h-full">
                         <div className="relative">
                           {/* Thumbnail */}
                           <div className="aspect-video bg-gray-100 rounded-t-lg overflow-hidden">
-                            <img
-                              src={video.thumbnail_url || `https://img.youtube.com/vi/${video.youtube_id}/maxresdefault.jpg`}
-                              alt={video.title}
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-                            />
+                            {video.thumbnail_url || video.youtube_id ? (
+                              <img
+                                src={video.thumbnail_url || `https://img.youtube.com/vi/${video.youtube_id}/maxresdefault.jpg`}
+                                alt={video.title || 'Video thumbnail'}
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                                loading="lazy"
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement;
+                                  target.src = '/placeholder-video.jpg'; // Fallback image
+                                }}
+                              />
+                            ) : (
+                              <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                                <Play className="w-8 h-8 text-gray-400" />
+                              </div>
+                            )}
 
                             {/* Play overlay */}
                             <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
@@ -337,11 +581,66 @@ export default function LanguageSongsPage() {
                           </div>
 
                         {/* Badges */}
-                        <div className="absolute top-2 left-2 flex gap-1">
+                        <div className="absolute top-2 left-2 flex flex-col gap-1">
                           {video.is_featured && (
                             <Badge className="bg-yellow-500 text-white">
                               <Star className="w-3 h-3 mr-1" />
                               Featured
+                            </Badge>
+                          )}
+
+                          {/* Theme Badge */}
+                          {video.theme && (
+                            <Badge
+                              className={`text-white ${
+                                video.theme === 'vocabulary'
+                                  ? 'bg-blue-500'
+                                  : video.theme === 'grammar'
+                                  ? 'bg-green-500'
+                                  : 'bg-gray-500'
+                              }`}
+                            >
+                              {video.theme === 'vocabulary' ? (
+                                <BookOpen className="w-3 h-3 mr-1" />
+                              ) : video.theme === 'grammar' ? (
+                                <Target className="w-3 h-3 mr-1" />
+                              ) : null}
+                              {video.theme.charAt(0).toUpperCase() + video.theme.slice(1)}
+                            </Badge>
+                          )}
+
+                          {/* Category Badge */}
+                          {video.topic && (
+                            <Badge variant="outline" className="bg-white/90 text-gray-700 text-xs">
+                              {(() => {
+                                // Find display name for vocabulary categories
+                                const vocabCategory = VOCABULARY_CATEGORIES.find(cat => cat.id === video.topic);
+                                if (vocabCategory) return vocabCategory.displayName;
+
+                                // Find display name for grammar categories
+                                const grammarCategory = GRAMMAR_CATEGORIES.find(cat => cat.id === video.topic);
+                                if (grammarCategory) return grammarCategory.displayName;
+
+                                // Fallback to topic name
+                                return video.topic.charAt(0).toUpperCase() + video.topic.slice(1);
+                              })()}
+                            </Badge>
+                          )}
+
+                          {/* Subcategory Badge */}
+                          {video.subtopic && video.subtopic !== 'general' && (
+                            <Badge variant="outline" className="bg-white/80 text-gray-600 text-xs">
+                              {(() => {
+                                // Find display name for subcategories
+                                const categories = [...VOCABULARY_CATEGORIES, ...GRAMMAR_CATEGORIES];
+                                const category = categories.find(cat => cat.id === video.topic);
+                                const subcategory = category?.subcategories.find(sub => sub.id === video.subtopic);
+
+                                if (subcategory) return subcategory.displayName;
+
+                                // Fallback to subtopic name
+                                return video.subtopic.charAt(0).toUpperCase() + video.subtopic.slice(1).replace(/_/g, ' ');
+                              })()}
                             </Badge>
                           )}
                         </div>
@@ -402,20 +701,13 @@ export default function LanguageSongsPage() {
                     </Link>
                   </motion.div>
                 );
-              })}
-            </div>
-
-            {filteredVideos.length === 0 && (
-              <div className="text-center py-12">
-                <div className="text-gray-400 mb-4">
-                  <Play className="w-16 h-16 mx-auto" />
+              })
+              ) : (
+                <div className="col-span-full text-center py-12">
+                  <p className="text-gray-500">No videos found matching your criteria</p>
                 </div>
-                <h3 className="text-lg font-semibold mb-2">No videos found</h3>
-                <p className="text-gray-600">
-                  Try adjusting your filters or search terms
-                </p>
-              </div>
-            )}
+              )}
+            </div>
           </TabsContent>
 
           <TabsContent value="vocabulary" className="mt-6">

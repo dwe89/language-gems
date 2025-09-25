@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import { motion } from 'framer-motion';
 import { Gem } from 'lucide-react';
 
 export default function Navigation() {
@@ -11,9 +12,15 @@ export default function Navigation() {
     <nav className="w-full bg-indigo-900/30 backdrop-blur-sm sticky top-0 z-50">
       <div className="container mx-auto px-4 py-3 flex justify-between items-center">
         <div className="flex items-center">
-          <Link href="/" className="text-2xl font-bold text-white mr-8 flex items-center">
-            <Gem className="w-6 h-6 mr-2 text-cyan-400" />
-            LanguageGems
+          <Link href="/" className="text-2xl font-bold text-white mr-8 flex items-center group">
+            <motion.div
+              whileHover={{ rotate: 360 }}
+              transition={{ duration: 0.6 }}
+              className="w-6 h-6 mr-2"
+            >
+              <Gem className="w-6 h-6 text-cyan-400" />
+            </motion.div>
+            Language<span className="text-cyan-400">Gems</span>
           </Link>
           <ul className="hidden md:flex space-x-2">
             <li><Link href="/" className="gem-nav-item">Home</Link></li>

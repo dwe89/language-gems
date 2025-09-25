@@ -3,18 +3,19 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useAuth, supabaseBrowser } from '../../components/auth/AuthProvider';
-import { 
-  Package, 
-  Plus, 
-  TrendingUp, 
-  Users, 
-  DollarSign, 
+import {
+  Package,
+  Plus,
+  TrendingUp,
+  Users,
+  DollarSign,
   Eye,
   FileText,
   ShoppingCart,
   Calendar,
   Database,
-  Volume2
+  Volume2,
+  Play
 } from 'lucide-react';
 
 interface DashboardStats {
@@ -127,6 +128,13 @@ export default function AdminDashboardPage() {
       href: '/admin/new',
       icon: Plus,
       color: 'bg-green-500 hover:bg-green-600',
+    },
+    {
+      title: 'Video Management',
+      description: 'Manage YouTube videos, categories, and content organization',
+      href: '/admin/videos',
+      icon: Play,
+      color: 'bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600',
     },
     {
       title: 'Manage Products',

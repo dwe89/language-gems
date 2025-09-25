@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { motion } from 'framer-motion';
 import { useAuth } from '../../components/auth/AuthProvider';
 import { getNavigationItems } from '../../lib/featureFlags';
 import { LogOut, User, Settings, Gem, ChevronDown, Menu, X } from 'lucide-react';
@@ -96,9 +97,15 @@ export default function MainNavigation() {
         <div className="flex items-center justify-between">
           <Link 
             href={(isMounted && user) ? "/account" : "/"} 
-            className="font-bold text-2xl text-white flex items-center"
+            className="font-bold text-2xl text-white flex items-center group"
           >
-            <Gem className="h-8 w-8 mr-2 text-yellow-300" />
+            <motion.div
+              whileHover={{ rotate: 360 }}
+              transition={{ duration: 0.6 }}
+              className="mr-2"
+            >
+              <Gem className="h-8 w-8 text-yellow-300" />
+            </motion.div>
             <span className="text-yellow-300">Language<span className="text-white">Gems</span></span>
           </Link>
 

@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Package, Plus, Home, FileText } from 'lucide-react';
+import { Package, Plus, Home, FileText, Play } from 'lucide-react';
 import { useAuth, supabaseBrowser } from '../../components/auth/AuthProvider';
 
 export default function AdminLayout({
@@ -138,12 +138,20 @@ export default function AdminLayout({
                   <span>Add Product</span>
                 </Link>
 
-                <Link 
-                  href="/admin/vocabulary" 
+                <Link
+                  href="/admin/vocabulary"
                   className="flex items-center space-x-2 text-slate-700 hover:text-indigo-600 font-medium transition-colors"
                 >
                   <Plus className="w-4 h-4" />
                   <span>Vocabulary</span>
+                </Link>
+
+                <Link
+                  href="/admin/videos"
+                  className="flex items-center space-x-2 text-slate-700 hover:text-indigo-600 font-medium transition-colors"
+                >
+                  <Play className="w-4 h-4" />
+                  <span>Videos</span>
                 </Link>
               </div>
             </div>

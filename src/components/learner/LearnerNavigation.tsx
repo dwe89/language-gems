@@ -3,8 +3,8 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { useAuth } from '../auth/AuthProvider';
 import { motion } from 'framer-motion';
+import { useAuth } from '../auth/AuthProvider';
 import {
   Home,
   BookOpen,
@@ -92,9 +92,19 @@ export default function LearnerNavigation() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link href="/learner-dashboard" className="flex items-center space-x-3">
-            <Gem className="h-8 w-8 text-white" />
-            <span className="text-xl font-bold text-white">LanguageGems</span>
+          <Link href="/learner-dashboard" className="flex items-center space-x-3 group">
+            <motion.div
+              whileHover={{ rotate: 360 }}
+              transition={{ duration: 0.6 }}
+            >
+              <Gem className="h-8 w-8 text-white" />
+            </motion.div>
+            <div>
+              <span className="text-xl font-bold text-white">
+                Language<span className="text-yellow-300">Gems</span>
+              </span>
+              <div className="text-xs text-purple-200">Learner Portal</div>
+            </div>
           </Link>
 
           {/* Desktop Navigation */}

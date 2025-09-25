@@ -3,9 +3,9 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
+import { motion } from 'framer-motion';
 import { useAuth } from './auth/AuthProvider';
 import {
-  Home,
   BookOpen,
   Users,
   FileText,
@@ -15,7 +15,8 @@ import {
   LogOut,
   ChevronDown,
   BarChart3,
-  Brain
+  Brain,
+  Gem
 } from 'lucide-react';
 
 interface TeacherNavigationProps {
@@ -31,12 +32,6 @@ export default function TeacherNavigation({ children }: TeacherNavigationProps) 
 
   // Define navigation menu items
   const baseMenuItems = [
-    {
-      name: 'Dashboard',
-      href: '/dashboard',
-      icon: Home,
-      description: 'Overview and quick stats'
-    },
     {
       name: 'Analytics',
       href: '/dashboard/progress',
@@ -95,8 +90,20 @@ export default function TeacherNavigation({ children }: TeacherNavigationProps) 
               <Link href="/" className="flex items-center text-blue-200 hover:text-white text-sm transition-colors">
                 ← Back to Site
               </Link>
-              <Link href="/dashboard" className="flex items-center">
-                <span className="text-xl font-bold text-white">Teacher Dashboard</span>
+              <Link href="/dashboard" className="flex items-center space-x-2 group">
+                <motion.div
+                  whileHover={{ rotate: 360 }}
+                  transition={{ duration: 0.6 }}
+                  className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm"
+                >
+                  <Gem className="h-5 w-5 text-yellow-300" />
+                </motion.div>
+                <div>
+                  <span className="text-xl font-bold text-white">
+                    Language<span className="text-yellow-300">Gems</span>
+                  </span>
+                  <div className="text-xs text-blue-200">Teacher Portal</div>
+                </div>
               </Link>
             </div>
 

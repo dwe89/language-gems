@@ -169,15 +169,18 @@ const loadSentencesForAssignment = async (supabase: any, assignment: AssignmentD
 
 // Custom hook for assignment vocabulary loading
 export const useAssignmentVocabulary = (assignmentId: string, gameId?: string) => {
-  console.log('🔧 [HOOK] useAssignmentVocabulary called [DEBUG-v2]:', {
-    assignmentId,
-    gameId,
-    timestamp: new Date().toISOString()
-  });
-
   const [assignment, setAssignment] = useState<AssignmentData | null>(null);
   const [vocabulary, setVocabulary] = useState<StandardVocabularyItem[]>([]);
   const [sentences, setSentences] = useState<any[]>([]);
+  const [lastLoadTime, setLastLoadTime] = useState<string>('never');
+
+  console.log('🔧 [HOOK] useAssignmentVocabulary called [DEBUG-v2]:', {
+    assignmentId,
+    gameId,
+    vocabularyLength: vocabulary.length,
+    lastLoadTime,
+    timestamp: new Date().toISOString()
+  });
 
   // Debug vocabulary state changes
   useEffect(() => {
@@ -193,7 +196,7 @@ export const useAssignmentVocabulary = (assignmentId: string, gameId?: string) =
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    console.log('🔄 [HOOK EFFECT] useEffect triggered [DEBUG-v3]:', {
+    console.log('🚨🚨🚨 [HOOK EFFECT] useEffect triggered [DEBUG-v4] 🚨🚨🚨:', {
       assignmentId,
       hasAssignmentId: !!assignmentId,
       timestamp: new Date().toISOString()
@@ -302,6 +305,9 @@ export const useAssignmentVocabulary = (assignmentId: string, gameId?: string) =
         });
 
         // Try list-based approach first if vocabulary_assignment_list_id exists
+        console.log('🔍 [DEBUG] Assignment vocabulary_assignment_list_id:', assignmentData.vocabulary_assignment_list_id);
+        console.log('🔍 [DEBUG] Assignment game_config:', JSON.stringify(assignmentData.game_config, null, 2));
+
         if (assignmentData.vocabulary_assignment_list_id) {
           console.log('📋 [VOCABULARY LOAD] Using list-based approach...');
           const { data, error } = await supabase
@@ -674,9 +680,14 @@ export const useAssignmentVocabulary = (assignmentId: string, gameId?: string) =
               }
             }
           } else {
-            console.log('⚠️ [VOCAB CONFIG] Not KS4 curriculum level, using basic fallback...');
+            console.log('📚 [KS3] Loading KS3 vocabulary with config:', {
+              language: vocabConfig.language,
+              category: vocabConfig.category,
+              subcategory: vocabConfig.subcategory,
+              wordCount: vocabConfig.wordCount
+            });
 
-            const { data: fallbackVocab, error: fallbackError } = await supabase
+            let query = supabase
               .from('centralized_vocabulary')
               .select(`
                 id,
@@ -691,20 +702,90 @@ export const useAssignmentVocabulary = (assignmentId: string, gameId?: string) =
                 gender,
                 article,
                 display_word
-              `)
-              .eq('language', vocabConfig.language === 'es' ? 'es' :
-                            vocabConfig.language === 'fr' ? 'fr' :
-                            vocabConfig.language === 'de' ? 'de' : 'es')
-              .limit(vocabConfig.wordCount || 10);
+              `);
+
+            // Apply language filter
+            if (vocabConfig.language) {
+              query = query.eq('language', vocabConfig.language === 'es' ? 'es' :
+                                         vocabConfig.language === 'fr' ? 'fr' :
+                                         vocabConfig.language === 'de' ? 'de' : 'es');
+            }
+
+            // Apply category filter for KS3
+            if (vocabConfig.category) {
+              query = query.eq('category', vocabConfig.category);
+            }
+
+            // Apply subcategory filter for KS3 - this is the key fix!
+            if (vocabConfig.subcategory) {
+              query = query.eq('subcategory', vocabConfig.subcategory);
+              console.log('🎯 [KS3] Applying subcategory filter:', vocabConfig.subcategory);
+            }
+
+            // Apply curriculum level filter
+            query = query.or('curriculum_level.eq.KS3,curriculum_level.is.null');
+
+            // Apply word count limit
+            if (vocabConfig.wordCount) {
+              query = query.limit(vocabConfig.wordCount);
+            }
+
+            const { data: fallbackVocab, error: fallbackError } = await query;
 
             if (fallbackError) {
-              console.error('❌ [FALLBACK] Error loading fallback vocabulary:', fallbackError);
+              console.error('❌ [KS3] Error loading KS3 vocabulary:', fallbackError);
             } else if (fallbackVocab && fallbackVocab.length > 0) {
-              console.log(`✅ [FALLBACK] Using ${fallbackVocab.length} fallback vocabulary items`);
+              console.log(`✅ [KS3] Successfully loaded ${fallbackVocab.length} KS3 vocabulary items`);
+              console.log('📝 [KS3] Sample vocabulary:', fallbackVocab.slice(0, 3).map(item => ({
+                word: item.word,
+                translation: item.translation,
+                category: item.category,
+                subcategory: item.subcategory
+              })));
               vocabularyData = fallbackVocab.map((item, index) => ({
                 order_position: index + 1,
                 centralized_vocabulary: item
               }));
+            } else {
+              console.log('⚠️ [KS3] No vocabulary found with current subcategory, trying category-only fallback...');
+              
+              // Try fallback without subcategory
+              let fallbackQuery = supabase
+                .from('centralized_vocabulary')
+                .select(`
+                  id,
+                  word,
+                  translation,
+                  category,
+                  subcategory,
+                  part_of_speech,
+                  language,
+                  audio_url,
+                  word_type,
+                  gender,
+                  article,
+                  display_word
+                `)
+                .eq('language', vocabConfig.language === 'es' ? 'es' : vocabConfig.language === 'fr' ? 'fr' : vocabConfig.language === 'de' ? 'de' : 'es');
+
+              if (vocabConfig.category) {
+                fallbackQuery = fallbackQuery.eq('category', vocabConfig.category);
+              }
+
+              fallbackQuery = fallbackQuery.or('curriculum_level.eq.KS3,curriculum_level.is.null')
+                                         .limit(vocabConfig.wordCount || 10);
+
+              const { data: categoryFallback, error: categoryFallbackError } = await fallbackQuery;
+              
+              if (categoryFallback && categoryFallback.length > 0) {
+                console.log(`✅ [KS3 CATEGORY FALLBACK] Using ${categoryFallback.length} vocabulary items from category`);
+                vocabularyData = categoryFallback.map((item, index) => ({
+                  order_position: index + 1,
+                  centralized_vocabulary: item
+                }));
+              } else {
+                console.error('❌ [KS3 CATEGORY FALLBACK] Still no vocabulary found');
+              }
             }
           }
         } else if ((!vocabularyData || vocabularyData.length === 0) && assignmentData.vocabulary_criteria) {
@@ -911,6 +992,7 @@ export const useAssignmentVocabulary = (assignmentId: string, gameId?: string) =
         console.log('📋 [VOCABULARY TRANSFORM] About to set vocabulary state...');
         setAssignment(transformedAssignment);
         setVocabulary(transformedVocabulary);
+        setLastLoadTime(new Date().toISOString());
         console.log('📋 [VOCABULARY TRANSFORM] Vocabulary state set successfully!', {
           newVocabularyLength: transformedVocabulary.length,
           assignmentId,

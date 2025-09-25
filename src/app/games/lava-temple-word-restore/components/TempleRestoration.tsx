@@ -153,16 +153,34 @@ export default function TempleRestoration({
         // Map assignment categories to sentence table categories
         const categoryMapping: Record<string, string> = {
           'food': 'basics_core_language',
-          'family': 'basics_core_language',
-          'school': 'basics_core_language',
-          'hobbies': 'basics_core_language',
-          'assignment': 'basics_core_language' // Default for assignments
+          'family': 'identity_personal_life',
+          'school': 'education_work',
+          'hobbies': 'identity_personal_life',
+          'assignment': 'identity_personal_life' // Default for assignments
         };
 
-        // Use mapped category or default to basics_core_language
-        const mappedCategory = gameConfig.category ?
-          (categoryMapping[gameConfig.category] || 'basics_core_language') :
-          'basics_core_language';
+        // Map subcategories to their correct categories
+        const subcategoryToCategoryMap: Record<string, string> = {
+          'family_friends': 'identity_personal_life',
+          'relationships': 'identity_personal_life',
+          'personal_details': 'identity_personal_life',
+          'hobbies_interests': 'identity_personal_life',
+          'food_drink': 'basics_core_language',
+          'shopping': 'basics_core_language',
+          'travel': 'basics_core_language',
+          'school_work': 'education_work',
+          'future_plans': 'education_work',
+          'technology': 'modern_life',
+          'environment': 'modern_life'
+        };
+
+        // Use subcategory mapping first, then category mapping, then default
+        let mappedCategory = 'basics_core_language';
+        if (gameConfig.subcategory && subcategoryToCategoryMap[gameConfig.subcategory]) {
+          mappedCategory = subcategoryToCategoryMap[gameConfig.subcategory];
+        } else if (gameConfig.category && categoryMapping[gameConfig.category]) {
+          mappedCategory = categoryMapping[gameConfig.category];
+        }
 
         query = query.eq('category', mappedCategory);
 

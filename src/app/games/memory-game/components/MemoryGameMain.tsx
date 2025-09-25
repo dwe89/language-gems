@@ -1001,69 +1001,57 @@ export default function MemoryGameMain({
       }}
       ref={gameContainerRef}
     >
-      <header className="header">
-        <div className="header-content">
-          <div className="left-controls">
-            <button onClick={onBackToSettings} className="nav-btn">
-              <i className={`fas ${isAssignmentMode ? 'fa-arrow-left' : 'fa-home'}`}></i>
-              {isAssignmentMode ? ' Back' : ''}
-            </button>
-            {!isAssignmentMode && (
-              <>
-                <button onClick={toggleThemeModal} className="nav-btn">
-                  <i className="fas fa-palette"></i> Theme
-                </button>
-                <button onClick={toggleSettingsModal} className="nav-btn">
-                  <i className="fas fa-cog"></i> Grid Size
-                </button>
-              </>
-            )}
-          </div>
-
-          <h1 className="title">
-            {isAssignmentMode ? (
-              <div className="assignment-title">
-                <div className="assignment-badge">Assignment</div>
-                <div className="assignment-name">{assignmentTitle}</div>
-                <div className="game-subtitle">Memory Match Game</div>
-              </div>
-            ) : (
-              'Memory Match'
-            )}
-          </h1>
-
-          <div className="right-controls">
-            <div className="stats-group">
-              <div className="stat-item compact header-stat">
-                <i className="fas fa-star"></i>
-                <span className="stat-label">{matches}</span>
-              </div>
-              <div className="stat-item compact header-stat">
-                <i className="fas fa-redo"></i>
-                <span className="stat-label">{attempts}</span>
-              </div>
-            </div>
-            {onOpenSettings && (
-              <button
-                onClick={onOpenSettings}
-                className="nav-btn"
-                title="Change Language, Level, Topic & Theme"
-              >
-                <i className="fas fa-cog"></i>
-                <span className="hidden md:inline ml-2">Game Settings</span>
+      {/* Only render header in non-assignment mode, since GameAssignmentWrapper provides the header in assignment mode */}
+      {!isAssignmentMode && (
+        <header className="header">
+          <div className="header-content">
+            <div className="left-controls">
+              <button onClick={onBackToSettings} className="nav-btn">
+                <i className="fas fa-home"></i>
               </button>
-            )}
-            <button onClick={toggleFullscreen} className="nav-btn">
-              <i className={`fas ${isFullscreen ? 'fa-compress' : 'fa-expand'}`}></i>
-            </button>
-            <button onClick={resetGame} className="nav-btn">
-              <i className="fas fa-sync"></i>
-            </button>
-          </div>
-        </div>
-      </header>
+              <button onClick={toggleThemeModal} className="nav-btn">
+                <i className="fas fa-palette"></i> Theme
+              </button>
+              <button onClick={toggleSettingsModal} className="nav-btn">
+                <i className="fas fa-cog"></i> Grid Size
+              </button>
+            </div>
 
-      <div className="game-container">
+            <h1 className="title">Memory Match</h1>
+
+            <div className="right-controls">
+              <div className="stats-group">
+                <div className="stat-item compact header-stat">
+                  <i className="fas fa-star"></i>
+                  <span className="stat-label">{matches}</span>
+                </div>
+                <div className="stat-item compact header-stat">
+                  <i className="fas fa-redo"></i>
+                  <span className="stat-label">{attempts}</span>
+                </div>
+              </div>
+              {onOpenSettings && (
+                <button
+                  onClick={onOpenSettings}
+                  className="nav-btn"
+                  title="Change Language, Level, Topic & Theme"
+                >
+                  <i className="fas fa-gamepad"></i>
+                  <span className="hidden md:inline ml-2">Game Settings</span>
+                </button>
+              )}
+              <button onClick={toggleFullscreen} className="nav-btn">
+                <i className={`fas ${isFullscreen ? 'fa-compress' : 'fa-expand'}`}></i>
+              </button>
+              <button onClick={resetGame} className="nav-btn">
+                <i className="fas fa-sync"></i>
+              </button>
+            </div>
+          </div>
+        </header>
+      )}
+
+      <div className={`game-container ${isAssignmentMode ? 'assignment-mode' : ''}`}>
         <div className="cards-container">
           <div 
             className="cards-grid"

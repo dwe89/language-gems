@@ -39,6 +39,17 @@ export default function HangmanPage() {
   });
   const [isFullscreen, setIsFullscreen] = useState(false);
 
+  // Game configuration from unified launcher - MUST be at top level
+  const [gameConfig, setGameConfig] = useState<{
+    config: UnifiedSelectionConfig;
+    vocabulary: UnifiedVocabularyItem[];
+    theme: string;
+  } | null>(null);
+  const [showConfigPanel, setShowConfigPanel] = useState(false);
+
+  // Assignment theme state for background music
+  const [assignmentTheme, setAssignmentTheme] = useState<string | null>(null);
+
   // Initialize the audio hook (assuming sound is enabled by default, or you can add a user preference)
   const { playSFX, startBackgroundMusic, stopBackgroundMusic } = useAudio(true);
 
@@ -59,6 +70,61 @@ export default function HangmanPage() {
       globalAudioManager.initializeAudio().catch(console.warn);
     }
   }, [playSFX, globalAudioManager]);
+
+  // --- Audio Management for Background Music ---
+  useEffect(() => {
+    if (gameStarted && gameConfig?.theme) {
+      // Map your theme strings to the keys expected by useAudio.ts
+      const themeMap: Record<string, 'classic' | 'space-explorer' | 'tokyo-nights' | 'pirate-adventure' | 'lava-temple'> = {
+        'default': 'classic',
+        'space': 'space-explorer',
+        'tokyo': 'tokyo-nights',
+        'pirate': 'pirate-adventure',
+        'temple': 'lava-temple',
+      };
+      
+      const audioThemeKey = themeMap[gameConfig.theme];
+      if (audioThemeKey) {
+        startBackgroundMusic(audioThemeKey);
+      } else {
+        // Fallback for unmapped themes or 'default' if not explicitly handled
+        startBackgroundMusic('classic'); 
+      }
+    } else {
+      // Stop music when game is not started (e.g., back to menu)
+      stopBackgroundMusic();
+    }
+
+    // Cleanup function to stop music when component unmounts or dependencies change
+    return () => {
+      stopBackgroundMusic();
+    };
+  }, [gameStarted, gameConfig?.theme, startBackgroundMusic, stopBackgroundMusic]);
+
+  // --- Background Music for Assignment Mode ---
+  // Handle theme-based background music for assignment mode
+  useEffect(() => {
+    if (isAssignmentMode && assignmentTheme) {
+      // Map assignment theme to audio theme
+      const themeMap: Record<string, 'classic' | 'space-explorer' | 'tokyo-nights' | 'pirate-adventure' | 'lava-temple'> = {
+        'default': 'classic',
+        'space': 'space-explorer',
+        'tokyo': 'tokyo-nights',
+        'pirate': 'pirate-adventure',
+        'temple': 'lava-temple',
+      };
+      
+      const audioThemeKey = themeMap[assignmentTheme] || 'classic';
+      startBackgroundMusic(audioThemeKey);
+      console.log('Assignment music started for theme:', assignmentTheme, '-> audio:', audioThemeKey);
+    }
+    
+    return () => {
+      if (isAssignmentMode) {
+        stopBackgroundMusic();
+      }
+    };
+  }, [isAssignmentMode, assignmentTheme, startBackgroundMusic, stopBackgroundMusic]);
 
   // Assignment mode helper functions
   const formatCategoryName = (category: string) => {
@@ -147,48 +213,40 @@ export default function HangmanPage() {
     }
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-400 via-orange-500 to-yellow-500">
-        {/* Header - consistent with standalone game */}
-        <div className="flex justify-between items-center p-6 bg-black/20 backdrop-blur-sm">
-          <button
-            onClick={handleBackToAssignments}
-            className="flex items-center gap-2 bg-white/20 backdrop-blur-sm hover:bg-white/30 px-6 py-3 rounded-full transition-all border border-white/30 text-white font-medium"
-          >
-            ← Back to Assignments
-          </button>
+      <GameAssignmentWrapper
+        assignmentId={assignmentId}
+        gameId="hangman"
+        studentId={user.id}
+        onAssignmentComplete={handleAssignmentComplete}
+        onBackToAssignments={handleBackToAssignments}
+        onBackToMenu={() => router.push('/games/hangman')}
+      >
+        {({ assignment, vocabulary, onProgressUpdate, onGameComplete, gameSessionId, selectedTheme }) => {
+          // Transform vocabulary to the format expected by HangmanGameWrapper
+          const gameVocabulary = vocabulary.map(item => item.word);
 
-          <h1 className="text-3xl md:text-4xl font-bold text-white text-center">
-            🎯 Hangman Game
-          </h1>
+          console.log('Hangman Assignment - Vocabulary loaded:', vocabulary.length, 'items');
+          console.log('Hangman Assignment - Selected theme:', selectedTheme);
 
-          <div className="w-48"></div> {/* Spacer for centering */}
-        </div>
+          // Update assignment theme state when selectedTheme changes (without using hooks)
+          if (assignmentTheme !== selectedTheme) {
+            setAssignmentTheme(selectedTheme || null);
+          }
 
-        <GameAssignmentWrapper
-          assignmentId={assignmentId}
-          gameId="hangman"
-          studentId={user.id}
-          onAssignmentComplete={handleAssignmentComplete}
-          onBackToAssignments={handleBackToAssignments}
-          onBackToMenu={() => router.push('/games/hangman')}
-        >
-          {({ assignment, vocabulary, onProgressUpdate, onGameComplete, gameSessionId }) => {
-            // Transform vocabulary to the format expected by HangmanGameWrapper
-            const gameVocabulary = vocabulary.map(item => item.word);
+          const categoryName = vocabulary[0]?.category || 'assignment';
+          const subcategoryName = vocabulary[0]?.subcategory || 'assignment';
 
-            console.log('Hangman Assignment - Vocabulary loaded:', vocabulary.length, 'items');
+          // Use selectedTheme from wrapper, fallback to 'default'
+          const gameTheme = selectedTheme || 'default';
 
-            const categoryName = vocabulary[0]?.category || 'assignment';
-            const subcategoryName = vocabulary[0]?.subcategory || 'assignment';
-
-            return (
+          return (
               <HangmanGameWrapper
                 settings={{
                   difficulty: 'intermediate',
                   category: categoryName,
                   subcategory: subcategoryName,
                   language: 'spanish',
-                  theme: 'default',
+                  theme: gameTheme,
                   customWords: gameVocabulary,
                   categoryVocabulary: vocabulary
                 }}
@@ -250,48 +308,8 @@ export default function HangmanPage() {
             );
           }}
         </GameAssignmentWrapper>
-      </div>
     );
   }
-
-  // Game configuration from unified launcher
-  const [gameConfig, setGameConfig] = useState<{
-    config: UnifiedSelectionConfig;
-    vocabulary: UnifiedVocabularyItem[];
-    theme: string;
-  } | null>(null);
-  const [showConfigPanel, setShowConfigPanel] = useState(false);
-
-  // --- Audio Management for Background Music ---
-  useEffect(() => {
-    if (gameStarted && gameConfig?.theme) {
-      // Map your theme strings to the keys expected by useAudio.ts
-      const themeMap: Record<string, 'classic' | 'space-explorer' | 'tokyo-nights' | 'pirate-adventure' | 'lava-temple'> = {
-        'default': 'classic',
-        'space': 'space-explorer',
-        'tokyo': 'tokyo-nights',
-        'pirate': 'pirate-adventure',
-        'temple': 'lava-temple',
-      };
-      
-      const audioThemeKey = themeMap[gameConfig.theme];
-      if (audioThemeKey) {
-        startBackgroundMusic(audioThemeKey);
-      } else {
-        // Fallback for unmapped themes or 'default' if not explicitly handled
-        startBackgroundMusic('classic'); 
-      }
-    } else {
-      // Stop music when game is not started (e.g., back to menu)
-      stopBackgroundMusic();
-    }
-
-    // Cleanup function to stop music when component unmounts or dependencies change
-    return () => {
-      stopBackgroundMusic();
-    };
-  }, [gameStarted, gameConfig?.theme, startBackgroundMusic, stopBackgroundMusic]);
-  // --- End Audio Management ---
 
   // Transform vocabulary for hangman game
   const transformVocabularyForHangman = (vocabulary: UnifiedVocabularyItem[]) => {

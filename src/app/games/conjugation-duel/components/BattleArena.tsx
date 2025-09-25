@@ -230,10 +230,12 @@ export default function BattleArena({
   useEffect(() => {
     if (!battleState.isInBattle && (battleState.playerHealth === 0 || battleState.opponentHealth === 0)) {
       const won = battleState.opponentHealth === 0;
+      console.log('🏁 Battle ended:', { won, playerHealth: battleState.playerHealth, opponentHealth: battleState.opponentHealth });
       playSound(won ? 'victory' : 'defeat');
       setTimeout(() => {
+        console.log('🏁 Calling onBattleEnd...');
         onBattleEnd();
-      }, 2000);
+      }, 1000); // Reduced from 2000ms to 1000ms for faster completion
     }
   }, [battleState, onBattleEnd, playSound]);
 
@@ -291,15 +293,20 @@ export default function BattleArena({
             : `Wrong! The correct answer was "${result.expectedAnswer}"`
         );
 
-        // Move to next challenge after a brief delay
+        // Move to next challenge after a shorter delay for better responsiveness
         setTimeout(() => {
           if (!conjugationDuel.isComplete) {
             conjugationDuel.nextChallenge();
           } else {
             // End the duel when all challenges are complete
-            setBattleState({ opponentHealth: 0 }); // Force victory
+            console.log('🏆 All challenges complete, ending duel...');
+            setBattleState(prev => ({ ...prev, opponentHealth: 0, isInBattle: false })); // Force victory
+            // Trigger battle end callback
+            setTimeout(() => {
+              onBattleEnd();
+            }, 500);
           }
-        }, 1500);
+        }, 800); // Reduced from 1500ms to 800ms
       }
     } catch (error) {
       console.error('Error processing conjugation:', error);

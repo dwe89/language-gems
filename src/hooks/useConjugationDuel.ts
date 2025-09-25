@@ -327,11 +327,20 @@ export function useConjugationDuel(options: UseConjugationDuelOptions) {
   const progress = state.challenges.length > 0 ? 
     (state.currentChallengeIndex / state.challenges.length) * 100 : 0;
   
-  const accuracy = state.results.length > 0 ? 
+  const accuracy = state.results.length > 0 ?
     (state.correctAnswers / state.results.length) * 100 : 0;
 
+  // Debug accuracy calculation
+  if (state.results.length > 0) {
+    console.log('🎯 [CONJUGATION DUEL] Accuracy calculation:', {
+      correctAnswers: state.correctAnswers,
+      totalResults: state.results.length,
+      accuracy: accuracy.toFixed(1) + '%'
+    });
+  }
+
   const averageResponseTime = state.results.length > 0 ?
-    state.results.reduce((sum, r) => sum + (r.isCorrect ? 1 : 0), 0) / state.results.length : 0;
+    state.results.reduce((sum, r) => sum + r.responseTimeMs, 0) / state.results.length : 0;
 
   return {
     // State

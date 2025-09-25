@@ -59,7 +59,8 @@ export function BulkAddStudentsModal({
         .split('\n')
         .filter(line => line.trim())
         .map(line => {
-          return { name: line.trim() };
+          // Replace tabs with spaces before returning
+          return { name: line.replace(/\t/g, ' ').trim() };
         });
 
       let schoolCode = "LG"; // Default fallback
@@ -254,14 +255,18 @@ export function BulkAddStudentsModal({
                   Enter Student Names
                 </Label>
                 <p className="text-sm text-gray-600 mb-3">
-                  Type one student name per line (e.g., "Alex Johnson"). Usernames and temporary passwords will be generated automatically for new students.
+                  Type one student name per line. When copying from Excel, tabs will automatically be converted to spaces.
                 </p>
                 <Textarea
                   id="bulkStudents"
                   placeholder={`Example:
 Jane Smith
 John Doe
-Maria Garcia`}
+Maria Garcia
+
+From Excel (tabs become spaces):
+Alex Johnson
+Emily Davis`}
                   rows={10}
                   value={bulkStudentData}
                   onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setBulkStudentData(e.target.value)}

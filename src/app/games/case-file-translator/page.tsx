@@ -138,8 +138,22 @@ export default function CaseFileTranslatorPage() {
           let subcategory = 'common_phrases'; // Default subcategory
 
           if (sentenceConfig.source === 'topic' && sentenceConfig.topic) {
-            // For topic-based selection, use basics_core_language as category and topic as subcategory
-            caseType = 'basics_core_language';
+            // Map topics to their correct categories based on database structure
+            const topicToCategoryMap: Record<string, string> = {
+              'family_friends': 'identity_personal_life',
+              'relationships': 'identity_personal_life',
+              'personal_details': 'identity_personal_life',
+              'hobbies_interests': 'identity_personal_life',
+              'food_drink': 'basics_core_language',
+              'shopping': 'basics_core_language',
+              'travel': 'basics_core_language',
+              'school_work': 'education_work',
+              'future_plans': 'education_work',
+              'technology': 'modern_life',
+              'environment': 'modern_life'
+            };
+
+            caseType = topicToCategoryMap[sentenceConfig.topic] || 'basics_core_language';
             subcategory = sentenceConfig.topic;
           } else if (sentenceConfig.source === 'theme' && sentenceConfig.theme) {
             // For theme-based selection, use theme as category

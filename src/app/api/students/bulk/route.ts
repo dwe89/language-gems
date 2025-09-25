@@ -164,10 +164,13 @@ export async function POST(request: Request) {
           continue;
         }
         
+        // Replace tabs with spaces and normalize whitespace
+        const normalizedName = name.replace(/\t/g, ' ').replace(/\s+/g, ' ').trim();
+        
         // Parse first and last name from full name
-        const nameParts = name.split(' ').filter((part: string) => part.length > 0);
+        const nameParts = normalizedName.split(' ').filter((part: string) => part.length > 0);
         if (nameParts.length < 2) {
-          errors.push({ name, error: 'Please use "First Last" format' });
+          errors.push({ name: normalizedName, error: 'Please use "First Last" format' });
           continue;
         }
         
@@ -185,7 +188,7 @@ export async function POST(request: Request) {
         const email = `${baseEmail}.${uniqueId}@student.languagegems.com`;
         
         validStudents.push({
-          name,
+          name: normalizedName,
           firstName,
           lastName,
           displayName,
@@ -194,8 +197,10 @@ export async function POST(request: Request) {
           email
         });
       } catch (error: any) {
+        const originalName = typeof studentInput === 'string' ? studentInput : studentInput.name || 'Unknown';
+        const normalizedErrorName = originalName.replace(/\t/g, ' ').replace(/\s+/g, ' ').trim();
         errors.push({ 
-          name: typeof studentInput === 'string' ? studentInput : studentInput.name || 'Unknown', 
+          name: normalizedErrorName, 
           error: error.message 
         });
       }
