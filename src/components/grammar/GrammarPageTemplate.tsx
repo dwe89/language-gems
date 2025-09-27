@@ -10,7 +10,9 @@ import VideoPlayer from '../youtube/VideoPlayer';
 import { useAuth } from '../auth/AuthProvider';
 
 interface Example {
-  spanish: string;
+  spanish?: string;
+  french?: string;
+  german?: string;
   english: string;
   highlight?: string[];
 }
@@ -89,29 +91,34 @@ export default function GrammarPageTemplate({
   const { user } = useAuth();
   const languageInfo = LANGUAGE_INFO[language];
 
-  const renderExample = (example: Example, index: number) => (
-    <div key={index} className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 p-6 rounded-xl shadow-sm">
-      <div className="space-y-3">
-        <div className="text-lg font-semibold text-gray-800">
-          {example.highlight ? (
-            <span>
-              {example.spanish.split(' ').map((word, i) => (
-                <span
-                  key={i}
-                  className={example.highlight?.includes(word) ? 'bg-yellow-300 px-2 py-1 rounded-md font-bold' : ''}
-                >
-                  {word}{' '}
-                </span>
-              ))}
-            </span>
-          ) : (
-            example.spanish
-          )}
+  const renderExample = (example: Example, index: number) => {
+    // Get the text in the appropriate language
+    const languageText = example[language] || example.spanish || example.french || example.german || '';
+    
+    return (
+      <div key={index} className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 p-6 rounded-xl shadow-sm">
+        <div className="space-y-3">
+          <div className="text-lg font-semibold text-gray-800">
+            {example.highlight ? (
+              <span>
+                {languageText.split(' ').map((word, i) => (
+                  <span
+                    key={i}
+                    className={example.highlight?.includes(word) ? 'bg-yellow-300 px-2 py-1 rounded-md font-bold' : ''}
+                  >
+                    {word}{' '}
+                  </span>
+                ))}
+              </span>
+            ) : (
+              languageText
+            )}
+          </div>
+          <div className="text-gray-600 italic text-base">{example.english}</div>
         </div>
-        <div className="text-gray-600 italic text-base">{example.english}</div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderConjugationTable = (table: ConjugationTable) => (
     <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
