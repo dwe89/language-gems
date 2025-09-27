@@ -274,26 +274,10 @@ The present tense is one of the most important tenses in Spanish and forms the f
 ];
 
 const relatedTopics = [
-  {
-    title: 'Spanish Past Tense (Preterite)',
-    url: '/grammar/spanish/verbs/preterite',
-    difficulty: 'intermediate'
-  },
-  {
-    title: 'Spanish Irregular Verbs',
-    url: '/grammar/spanish/verbs/irregular-verbs',
-    difficulty: 'intermediate'
-  },
-  {
-    title: 'Ser vs Estar',
-    url: '/grammar/spanish/verbs/ser-vs-estar',
-    difficulty: 'beginner'
-  },
-  {
-    title: 'Spanish Verb Moods',
-    url: '/grammar/spanish/verbs/moods',
-    difficulty: 'advanced'
-  }
+  { title: 'Ser vs Estar', url: '/grammar/spanish/verbs/ser-vs-estar', difficulty: 'beginner' },
+  { title: 'Imperative', url: '/grammar/spanish/verbs/imperative', difficulty: 'intermediate' },
+  { title: 'Present Tense', url: '/grammar/spanish/verbs/present-tense', difficulty: 'beginner' },
+  { title: 'Preterite Tense', url: '/grammar/spanish/verbs/preterite', difficulty: 'intermediate' }
 ];
 
 export default function SpanishPresentTensePage() {

@@ -263,9 +263,10 @@ Spanish has a rich aspectual system that helps speakers express subtle differenc
 ];
 
 const relatedTopics = [
-  { title: 'Preterite Tense', url: '/grammar/spanish/verbs/preterite' },
-  { title: 'Imperfect Tense', url: '/grammar/spanish/verbs/imperfect' },
-  { title: 'Progressive Tenses', url: '/grammar/spanish/verbs/progressive-tenses' }
+  { title: 'Imperfect Tense', url: '/grammar/spanish/verbs/imperfect', difficulty: 'intermediate' },
+  { title: 'Present Tense', url: '/grammar/spanish/verbs/present-tense', difficulty: 'beginner' },
+  { title: 'Ser vs Estar', url: '/grammar/spanish/verbs/ser-vs-estar', difficulty: 'beginner' },
+  { title: 'Preterite Tense', url: '/grammar/spanish/verbs/preterite', difficulty: 'intermediate' }
 ];
 
 export default function SpanishVerbAspectPage() {

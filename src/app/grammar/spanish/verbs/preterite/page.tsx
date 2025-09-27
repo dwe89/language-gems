@@ -32,9 +32,10 @@ const examples = [
 ];
 
 const relatedTopics = [
-  { name: 'Present Tense', href: '/grammar/spanish/verbs/present-tense' },
-  { name: 'Imperfect Tense', href: '/grammar/spanish/verbs/imperfect' },
-  { name: 'Irregular Verbs', href: '/grammar/spanish/verbs/irregular-verbs' }
+  { title: 'Subjunctive Present', url: '/grammar/spanish/verbs/subjunctive-present', difficulty: 'advanced' },
+  { title: 'Modal Verbs', url: '/grammar/spanish/verbs/modal-verbs', difficulty: 'intermediate' },
+  { title: 'Por vs Para', url: '/grammar/spanish/verbs/por-vs-para', difficulty: 'intermediate' },
+  { title: 'Conditional Tense', url: '/grammar/spanish/verbs/conditional', difficulty: 'intermediate' }
 ];
 
 export default function SpanishPreteritePage() {
@@ -234,7 +235,7 @@ export default function SpanishPreteritePage() {
             <h3 className="text-2xl font-bold text-gray-800 mb-6">Related Topics</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {relatedTopics.map((topic, index) => (
-                <Link key={index} href={topic.href}>
+                <Link key={index} href={topic.url}>
                   <div className="p-4 border border-gray-200 rounded-lg hover:border-purple-300 hover:bg-purple-50 transition-all duration-200">
                     <div className="flex items-center justify-between">
                       <h4 className="font-semibold text-gray-800">{topic.name}</h4>

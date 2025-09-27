@@ -287,10 +287,10 @@ This tense is equivalent to the English present perfect ("I have eaten," "She ha
 ];
 
 const relatedTopics = [
-  { title: 'Present Tense', url: '/grammar/spanish/verbs/present-tense' },
-  { title: 'Preterite Tense', url: '/grammar/spanish/verbs/preterite' },
-  { title: 'Imperfect Tense', url: '/grammar/spanish/verbs/imperfect' },
-  { title: 'Future Tense', url: '/grammar/spanish/verbs/future' }
+  { title: 'Passive Voice', url: '/grammar/spanish/verbs/passive-voice', difficulty: 'advanced' },
+  { title: 'Preterite Tense', url: '/grammar/spanish/verbs/preterite', difficulty: 'intermediate' },
+  { title: 'Conditional Tense', url: '/grammar/spanish/verbs/conditional', difficulty: 'intermediate' },
+  { title: 'Gerunds', url: '/grammar/spanish/verbs/gerunds', difficulty: 'intermediate' }
 ];
 
 export default function SpanishPresentPerfectPage() {

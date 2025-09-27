@@ -198,9 +198,10 @@ This tense is essential for complex conditional sentences and expressing regrets
 ];
 
 const relatedTopics = [
-  { title: 'Imperfect Subjunctive', url: '/grammar/spanish/verbs/subjunctive-imperfect' },
-  { title: 'Conditional Perfect', url: '/grammar/spanish/verbs/conditional-perfect' },
-  { title: 'Pluperfect Tense', url: '/grammar/spanish/verbs/pluperfect' }
+  { title: 'Reflexive Verbs', url: '/grammar/spanish/verbs/reflexive', difficulty: 'intermediate' },
+  { title: 'Present Perfect', url: '/grammar/spanish/verbs/present-perfect', difficulty: 'intermediate' },
+  { title: 'Past Participles', url: '/grammar/spanish/verbs/past-participles', difficulty: 'intermediate' },
+  { title: 'Por vs Para', url: '/grammar/spanish/verbs/por-vs-para', difficulty: 'intermediate' }
 ];
 
 export default function SpanishPluperfectSubjunctivePage() {

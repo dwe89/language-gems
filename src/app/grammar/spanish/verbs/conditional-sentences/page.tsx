@@ -211,9 +211,10 @@ There are three types of conditional sentences in Spanish, each expressing diffe
 ];
 
 const relatedTopics = [
-  { title: 'Imperfect Subjunctive', url: '/grammar/spanish/verbs/subjunctive-imperfect' },
-  { title: 'Conditional Tense', url: '/grammar/spanish/verbs/conditional' },
-  { title: 'Conditional Perfect', url: '/grammar/spanish/verbs/conditional-perfect' }
+  { title: 'Preterite Tense', url: '/grammar/spanish/verbs/preterite', difficulty: 'intermediate' },
+  { title: 'Present Perfect', url: '/grammar/spanish/verbs/present-perfect', difficulty: 'intermediate' },
+  { title: 'Imperative', url: '/grammar/spanish/verbs/imperative', difficulty: 'intermediate' },
+  { title: 'Subjunctive Present', url: '/grammar/spanish/verbs/subjunctive-present', difficulty: 'advanced' }
 ];
 
 export default function SpanishConditionalSentencesPage() {

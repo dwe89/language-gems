@@ -143,9 +143,10 @@ Each construction adds a specific meaning or emphasis to the ongoing action.`,
 ];
 
 const relatedTopics = [
-  { title: 'Present Continuous', url: '/grammar/spanish/verbs/present-continuous' },
-  { title: 'Imperfect Continuous', url: '/grammar/spanish/verbs/imperfect-continuous' },
-  { title: 'Gerunds', url: '/grammar/spanish/verbs/gerunds' }
+  { title: 'Reflexive Verbs', url: '/grammar/spanish/verbs/reflexive', difficulty: 'intermediate' },
+  { title: 'Subjunctive Present', url: '/grammar/spanish/verbs/subjunctive-present', difficulty: 'advanced' },
+  { title: 'Present Tense', url: '/grammar/spanish/verbs/present-tense', difficulty: 'beginner' },
+  { title: 'Ser vs Estar', url: '/grammar/spanish/verbs/ser-vs-estar', difficulty: 'beginner' }
 ];
 
 export default function SpanishContinuousConstructionsPage() {

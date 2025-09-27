@@ -232,9 +232,10 @@ The key is to understand that **para** expresses purpose, destination, and futur
 ];
 
 const relatedTopics = [
-  { title: 'Spanish Prepositions', url: '/grammar/spanish/prepositions/basic' },
-  { title: 'Present Tense', url: '/grammar/spanish/verbs/present-tense' },
-  { title: 'Infinitive Constructions', url: '/grammar/spanish/verbs/infinitive-constructions' }
+  { title: 'Modal Verbs', url: '/grammar/spanish/verbs/modal-verbs', difficulty: 'intermediate' },
+  { title: 'Por vs Para', url: '/grammar/spanish/verbs/por-vs-para', difficulty: 'intermediate' },
+  { title: 'Passive Voice', url: '/grammar/spanish/verbs/passive-voice', difficulty: 'advanced' },
+  { title: 'Interrogatives', url: '/grammar/spanish/verbs/interrogatives', difficulty: 'beginner' }
 ];
 
 export default function SpanishPorVsParaPage() {

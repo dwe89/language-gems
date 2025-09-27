@@ -247,9 +247,10 @@ These constructions are essential for expressing complex relationships between a
 ];
 
 const relatedTopics = [
-  { title: 'Infinitive Constructions', url: '/grammar/spanish/verbs/infinitive-constructions' },
-  { title: 'Present Subjunctive', url: '/grammar/spanish/verbs/subjunctive-present' },
-  { title: 'Modal Verbs', url: '/grammar/spanish/verbs/modal-verbs' }
+  { title: 'Imperfect Tense', url: '/grammar/spanish/verbs/imperfect', difficulty: 'intermediate' },
+  { title: 'Modal Verbs', url: '/grammar/spanish/verbs/modal-verbs', difficulty: 'intermediate' },
+  { title: 'Stem-changing Verbs', url: '/grammar/spanish/verbs/stem-changing', difficulty: 'intermediate' },
+  { title: 'Subjunctive Imperfect', url: '/grammar/spanish/verbs/subjunctive-imperfect', difficulty: 'advanced' }
 ];
 
 export default function SpanishCausativeVerbsPage() {

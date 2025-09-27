@@ -188,9 +188,10 @@ Reflexive verbs can express actions done to oneself, reciprocal actions, or chan
 ];
 
 const relatedTopics = [
-  { title: 'Direct Object Pronouns', url: '/grammar/spanish/pronouns/direct-object' },
-  { title: 'Indirect Object Pronouns', url: '/grammar/spanish/pronouns/indirect-object' },
-  { title: 'Present Tense', url: '/grammar/spanish/verbs/present-tense' }
+  { title: 'Present Tense', url: '/grammar/spanish/verbs/present-tense', difficulty: 'beginner' },
+  { title: 'Negation', url: '/grammar/spanish/verbs/negation', difficulty: 'beginner' },
+  { title: 'Subjunctive Imperfect', url: '/grammar/spanish/verbs/subjunctive-imperfect', difficulty: 'advanced' },
+  { title: 'Past Participles', url: '/grammar/spanish/verbs/past-participles', difficulty: 'intermediate' }
 ];
 
 export default function SpanishReflexiveVerbsPage() {

@@ -185,9 +185,10 @@ Past participles are formed by adding **-ado** to -ar verbs and **-ido** to -er 
 ];
 
 const relatedTopics = [
-  { title: 'Present Perfect', url: '/grammar/spanish/verbs/present-perfect' },
-  { title: 'Passive Voice', url: '/grammar/spanish/verbs/passive-voice' },
-  { title: 'Ser vs Estar', url: '/grammar/spanish/verbs/ser-vs-estar' }
+  { title: 'Interrogatives', url: '/grammar/spanish/verbs/interrogatives', difficulty: 'beginner' },
+  { title: 'Conditional Tense', url: '/grammar/spanish/verbs/conditional', difficulty: 'intermediate' },
+  { title: 'Por vs Para', url: '/grammar/spanish/verbs/por-vs-para', difficulty: 'intermediate' },
+  { title: 'Present Perfect', url: '/grammar/spanish/verbs/present-perfect', difficulty: 'intermediate' }
 ];
 
 export default function SpanishPastParticiplesPage() {

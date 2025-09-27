@@ -162,7 +162,7 @@ const grammarData = {
     }
   ],
 
-  youtubeVideoId: "KHKcVJOjhJE"
+  youtubeVideoId: undefined
 };
 
 export default function SpanishPresentContinuousPage() {

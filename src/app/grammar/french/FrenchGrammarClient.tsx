@@ -22,7 +22,17 @@ const grammarCategories = [
       { name: 'Conditional Tense', slug: 'conditional', difficulty: 'advanced', time: '20 min' },
       { name: 'Subjunctive Mood', slug: 'subjunctive', difficulty: 'advanced', time: '25 min' },
       { name: 'Imperative Mood', slug: 'imperative', difficulty: 'intermediate', time: '12 min' },
-      { name: 'Reflexive Verbs', slug: 'reflexive-verbs', difficulty: 'intermediate', time: '18 min' }
+      { name: 'Reflexive Verbs', slug: 'reflexive-verbs', difficulty: 'intermediate', time: '18 min' },
+      { name: 'Regular Verb Conjugation', slug: 'regular-conjugation', difficulty: 'beginner', time: '16 min' },
+      { name: 'Irregular Verbs', slug: 'irregular-verbs', difficulty: 'intermediate', time: '20 min' },
+      { name: 'Negative Forms', slug: 'negative-forms', difficulty: 'beginner', time: '12 min' },
+      { name: 'Interrogative Forms', slug: 'interrogative-forms', difficulty: 'intermediate', time: '14 min' },
+      { name: 'Modes of Address', slug: 'modes-of-address', difficulty: 'beginner', time: '10 min' },
+      { name: 'Impersonal Verbs', slug: 'impersonal-verbs', difficulty: 'intermediate', time: '15 min' },
+      { name: 'Verbs + Infinitive', slug: 'verbs-infinitive', difficulty: 'intermediate', time: '18 min' },
+      { name: 'Immediate Future', slug: 'immediate-future', difficulty: 'beginner', time: '12 min' },
+      { name: 'Perfect Infinitive', slug: 'perfect-infinitive', difficulty: 'advanced', time: '16 min' },
+      { name: 'Present Participle with EN', slug: 'present-participle-en', difficulty: 'advanced', time: '18 min' }
     ]
   },
   {
@@ -39,7 +49,9 @@ const grammarCategories = [
       { name: 'Plural Formation', slug: 'plural-formation', difficulty: 'beginner', time: '10 min' },
       { name: 'Noun Agreement', slug: 'noun-agreement', difficulty: 'intermediate', time: '12 min' },
       { name: 'Contractions', slug: 'contractions', difficulty: 'intermediate', time: '8 min' },
-      { name: 'Collective Nouns', slug: 'collective-nouns', difficulty: 'intermediate', time: '10 min' }
+      { name: 'Collective Nouns', slug: 'collective-nouns', difficulty: 'intermediate', time: '10 min' },
+      { name: 'Gender and Number', slug: 'gender-number', difficulty: 'beginner', time: '14 min' },
+      { name: 'Noun Agreement Patterns', slug: 'noun-agreement-patterns', difficulty: 'intermediate', time: '16 min' }
     ]
   },
   {
@@ -54,7 +66,28 @@ const grammarCategories = [
       { name: 'Comparative', slug: 'comparative', difficulty: 'intermediate', time: '15 min' },
       { name: 'Superlative', slug: 'superlative', difficulty: 'intermediate', time: '12 min' },
       { name: 'Irregular Adjectives', slug: 'irregular-adjectives', difficulty: 'intermediate', time: '14 min' },
-      { name: 'Demonstrative', slug: 'demonstrative', difficulty: 'beginner', time: '8 min' }
+      { name: 'Demonstrative', slug: 'demonstrative', difficulty: 'beginner', time: '8 min' },
+      { name: 'Indefinite Adjectives', slug: 'indefinite-adjectives', difficulty: 'intermediate', time: '12 min' },
+      { name: 'Possessive Adjectives', slug: 'possessive-adjectives', difficulty: 'beginner', time: '10 min' },
+      { name: 'Interrogative Adjectives', slug: 'interrogative-adjectives', difficulty: 'intermediate', time: '14 min' }
+    ]
+  },
+  {
+    id: 'adverbs',
+    name: 'Adverbs',
+    description: 'Master adverb formation, placement, and usage',
+    icon: Clock,
+    color: 'from-teal-500 to-teal-600',
+    topics: [
+      { name: 'Formation and Usage', slug: 'formation', difficulty: 'beginner', time: '14 min' },
+      { name: 'Comparative and Superlative', slug: 'comparative', difficulty: 'intermediate', time: '16 min' },
+      { name: 'Interrogative Adverbs', slug: 'interrogative', difficulty: 'intermediate', time: '12 min' },
+      { name: 'Adverbs of Time and Place', slug: 'time-place', difficulty: 'beginner', time: '10 min' },
+      { name: 'Common Adverbial Phrases', slug: 'adverbial-phrases', difficulty: 'intermediate', time: '14 min' },
+      { name: 'Quantifiers/Intensifiers', slug: 'quantifiers', difficulty: 'beginner', time: '12 min' },
+      { name: 'Placement Rules', slug: 'placement', difficulty: 'intermediate', time: '16 min' },
+      { name: 'Frequency Adverbs', slug: 'frequency', difficulty: 'beginner', time: '10 min' },
+      { name: 'Degree Adverbs', slug: 'degree', difficulty: 'intermediate', time: '14 min' }
     ]
   },
   {
@@ -70,7 +103,66 @@ const grammarCategories = [
       { name: 'Relative Pronouns', slug: 'relative-pronouns', difficulty: 'advanced', time: '20 min' },
       { name: 'Possessive', slug: 'possessive', difficulty: 'intermediate', time: '12 min' },
       { name: 'Demonstrative', slug: 'demonstrative', difficulty: 'intermediate', time: '10 min' },
-      { name: 'Indefinite', slug: 'indefinite', difficulty: 'advanced', time: '18 min' }
+      { name: 'Indefinite', slug: 'indefinite', difficulty: 'advanced', time: '18 min' },
+      { name: 'Reflexive Pronouns', slug: 'reflexive', difficulty: 'intermediate', time: '14 min' },
+      { name: 'Relative Pronoun QUI', slug: 'relative-qui', difficulty: 'intermediate', time: '12 min' },
+      { name: 'Relative Pronoun QUE', slug: 'relative-que', difficulty: 'intermediate', time: '14 min' },
+      { name: 'Pronoun Order', slug: 'pronoun-order', difficulty: 'advanced', time: '18 min' },
+      { name: 'Disjunctive Pronouns', slug: 'disjunctive', difficulty: 'intermediate', time: '16 min' },
+      { name: 'Interrogative Pronouns', slug: 'interrogative', difficulty: 'intermediate', time: '14 min' },
+      { name: 'Pronouns Y and EN', slug: 'y-en', difficulty: 'advanced', time: '20 min' },
+      { name: 'Relative Pronoun DONT', slug: 'relative-dont', difficulty: 'advanced', time: '18 min' }
+    ]
+  },
+  {
+    id: 'prepositions',
+    name: 'Prepositions',
+    description: 'Learn French prepositions and their usage',
+    icon: Target,
+    color: 'from-indigo-500 to-indigo-600',
+    topics: [
+      { name: 'Basic Prepositions', slug: 'basic-prepositions', difficulty: 'beginner', time: '14 min' },
+      { name: 'Location Prepositions', slug: 'location', difficulty: 'intermediate', time: '16 min' },
+      { name: 'Time Prepositions', slug: 'time', difficulty: 'intermediate', time: '14 min' },
+      { name: 'Common Prepositions', slug: 'common-prepositions', difficulty: 'beginner', time: '12 min' },
+      { name: 'Compound Prepositions', slug: 'compound-prepositions', difficulty: 'intermediate', time: '16 min' }
+    ]
+  },
+  {
+    id: 'conjunctions',
+    name: 'Conjunctions',
+    description: 'Master coordinating and subordinating conjunctions',
+    icon: BookOpen,
+    color: 'from-pink-500 to-pink-600',
+    topics: [
+      { name: 'Coordinating Conjunctions', slug: 'coordinating', difficulty: 'beginner', time: '12 min' },
+      { name: 'Subordinating Conjunctions', slug: 'subordinating', difficulty: 'intermediate', time: '16 min' }
+    ]
+  },
+  {
+    id: 'numbers',
+    name: 'Numbers & Time',
+    description: 'Learn numbers, dates, and time expressions',
+    icon: Star,
+    color: 'from-cyan-500 to-cyan-600',
+    topics: [
+      { name: 'Cardinal Numbers', slug: 'cardinal', difficulty: 'beginner', time: '14 min' },
+      { name: 'Ordinal Numbers', slug: 'ordinal', difficulty: 'beginner', time: '12 min' },
+      { name: 'Numbers, Dates, Time', slug: 'dates-time', difficulty: 'intermediate', time: '18 min' },
+      { name: 'Advanced Time Expressions', slug: 'advanced-time', difficulty: 'advanced', time: '20 min' }
+    ]
+  },
+  {
+    id: 'syntax',
+    name: 'Syntax & Structure',
+    description: 'Master French sentence structure and word order',
+    icon: Award,
+    color: 'from-emerald-500 to-emerald-600',
+    topics: [
+      { name: 'Negation', slug: 'negation', difficulty: 'intermediate', time: '16 min' },
+      { name: 'Questions', slug: 'questions', difficulty: 'intermediate', time: '18 min' },
+      { name: 'Word Order', slug: 'word-order', difficulty: 'advanced', time: '20 min' },
+      { name: 'Complex Sentences', slug: 'complex-sentences', difficulty: 'advanced', time: '22 min' }
     ]
   }
 ];
@@ -114,7 +206,7 @@ export default function FrenchGrammarClient() {
             <div className="flex items-center space-x-3">
               <div className="flex items-center space-x-2 bg-white px-4 py-2 rounded-full border border-gray-200 shadow-sm">
                 <Star className="w-4 h-4 text-yellow-500" />
-                <span className="text-sm text-gray-700">29 Topics</span>
+                <span className="text-sm text-gray-700">93 Topics</span>
               </div>
               <div className="flex items-center space-x-2 bg-white px-4 py-2 rounded-full border border-gray-200 shadow-sm">
                 <Clock className="w-4 h-4 text-gray-500" />
@@ -141,11 +233,11 @@ export default function FrenchGrammarClient() {
               </p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="text-center p-4 bg-blue-50 rounded-lg border border-blue-200">
-                  <div className="text-2xl font-bold text-blue-600 mb-2">29</div>
+                  <div className="text-2xl font-bold text-blue-600 mb-2">93</div>
                   <div className="text-sm text-gray-600">Grammar Topics</div>
                 </div>
                 <div className="text-center p-4 bg-green-50 rounded-lg border border-green-200">
-                  <div className="text-2xl font-bold text-green-600 mb-2">87</div>
+                  <div className="text-2xl font-bold text-green-600 mb-2">279</div>
                   <div className="text-sm text-gray-600">Practice Exercises</div>
                 </div>
                 <div className="text-center p-4 bg-purple-50 rounded-lg border border-purple-200">

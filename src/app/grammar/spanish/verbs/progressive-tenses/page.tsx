@@ -214,9 +214,10 @@ Progressive tenses are used less frequently in Spanish than in English, but they
 ];
 
 const relatedTopics = [
-  { title: 'Present Continuous', url: '/grammar/spanish/verbs/present-continuous' },
-  { title: 'Gerunds', url: '/grammar/spanish/verbs/gerunds' },
-  { title: 'Estar vs Ser', url: '/grammar/spanish/verbs/ser-vs-estar' }
+  { title: 'Past Participles', url: '/grammar/spanish/verbs/past-participles', difficulty: 'intermediate' },
+  { title: 'Por vs Para', url: '/grammar/spanish/verbs/por-vs-para', difficulty: 'intermediate' },
+  { title: 'Stem-changing Verbs', url: '/grammar/spanish/verbs/stem-changing', difficulty: 'intermediate' },
+  { title: 'Present Tense', url: '/grammar/spanish/verbs/present-tense', difficulty: 'beginner' }
 ];
 
 export default function SpanishProgressiveTensesPage() {

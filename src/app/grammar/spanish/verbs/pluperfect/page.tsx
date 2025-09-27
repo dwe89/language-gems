@@ -167,9 +167,10 @@ This tense is essential for expressing the sequence of past events and is common
 ];
 
 const relatedTopics = [
-  { title: 'Present Perfect', url: '/grammar/spanish/verbs/present-perfect' },
-  { title: 'Past Participles', url: '/grammar/spanish/verbs/past-participles' },
-  { title: 'Imperfect Tense', url: '/grammar/spanish/verbs/imperfect' }
+  { title: 'Passive Voice', url: '/grammar/spanish/verbs/passive-voice', difficulty: 'advanced' },
+  { title: 'Conditional Tense', url: '/grammar/spanish/verbs/conditional', difficulty: 'intermediate' },
+  { title: 'Modal Verbs', url: '/grammar/spanish/verbs/modal-verbs', difficulty: 'intermediate' },
+  { title: 'Imperative', url: '/grammar/spanish/verbs/imperative', difficulty: 'intermediate' }
 ];
 
 export default function SpanishPluperfectPage() {

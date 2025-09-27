@@ -204,9 +204,10 @@ Compound tenses allow speakers to express complex time relationships and are use
 ];
 
 const relatedTopics = [
-  { title: 'Present Perfect', url: '/grammar/spanish/verbs/present-perfect' },
-  { title: 'Past Participles', url: '/grammar/spanish/verbs/past-participles' },
-  { title: 'Pluperfect Tense', url: '/grammar/spanish/verbs/pluperfect' }
+  { title: 'Past Participles', url: '/grammar/spanish/verbs/past-participles', difficulty: 'intermediate' },
+  { title: 'Imperfect Tense', url: '/grammar/spanish/verbs/imperfect', difficulty: 'intermediate' },
+  { title: 'Modal Verbs', url: '/grammar/spanish/verbs/modal-verbs', difficulty: 'intermediate' },
+  { title: 'Por vs Para', url: '/grammar/spanish/verbs/por-vs-para', difficulty: 'intermediate' }
 ];
 
 export default function SpanishCompoundTensesPage() {

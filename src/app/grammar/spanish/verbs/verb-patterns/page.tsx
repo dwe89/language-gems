@@ -246,9 +246,10 @@ These patterns often don't translate directly from English, making them challeng
 ];
 
 const relatedTopics = [
-  { title: 'Modal Verbs', url: '/grammar/spanish/verbs/modal-verbs' },
-  { title: 'Reflexive Verbs', url: '/grammar/spanish/verbs/reflexive' },
-  { title: 'Infinitive Constructions', url: '/grammar/spanish/verbs/infinitive-constructions' }
+  { title: 'Subjunctive Imperfect', url: '/grammar/spanish/verbs/subjunctive-imperfect', difficulty: 'advanced' },
+  { title: 'Present Tense', url: '/grammar/spanish/verbs/present-tense', difficulty: 'beginner' },
+  { title: 'Preterite Tense', url: '/grammar/spanish/verbs/preterite', difficulty: 'intermediate' },
+  { title: 'Past Participles', url: '/grammar/spanish/verbs/past-participles', difficulty: 'intermediate' }
 ];
 
 export default function SpanishVerbPatternsPage() {

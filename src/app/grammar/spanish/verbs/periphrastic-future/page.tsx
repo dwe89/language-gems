@@ -107,9 +107,10 @@ This construction is formed by conjugating the verb **ir** (to go) in the presen
 ];
 
 const relatedTopics = [
-  { title: 'Present Tense', url: '/grammar/spanish/verbs/present-tense' },
-  { title: 'Future Tense', url: '/grammar/spanish/verbs/future' },
-  { title: 'Present Continuous', url: '/grammar/spanish/verbs/present-continuous' }
+  { title: 'Irregular Verbs', url: '/grammar/spanish/verbs/irregular-verbs', difficulty: 'intermediate' },
+  { title: 'Modal Verbs', url: '/grammar/spanish/verbs/modal-verbs', difficulty: 'intermediate' },
+  { title: 'Ser vs Estar', url: '/grammar/spanish/verbs/ser-vs-estar', difficulty: 'beginner' },
+  { title: 'Por vs Para', url: '/grammar/spanish/verbs/por-vs-para', difficulty: 'intermediate' }
 ];
 
 export default function SpanishPeriphrasticFuturePage() {
@@ -151,7 +152,7 @@ export default function SpanishPeriphrasticFuturePage() {
         practiceUrl="/grammar/spanish/verbs/periphrastic-future/practice"
         quizUrl="/grammar/spanish/verbs/periphrastic-future/quiz"
         songUrl="/songs/es?theme=grammar&topic=periphrastic-future"
-        youtubeVideoId="2ZwNZKWZFE8"
+        youtubeVideoId={undefined}
         relatedTopics={relatedTopics}
       />
     </>

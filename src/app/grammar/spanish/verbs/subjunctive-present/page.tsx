@@ -208,9 +208,10 @@ The subjunctive is one of the most challenging aspects of Spanish grammar, but m
 ];
 
 const relatedTopics = [
-  { title: 'Present Tense', url: '/grammar/spanish/verbs/present-tense' },
-  { title: 'Subjunctive vs Indicative', url: '/grammar/spanish/verbs/subjunctive' },
-  { title: 'Irregular Verbs', url: '/grammar/spanish/verbs/irregular-verbs' }
+  { title: 'Stem-changing Verbs', url: '/grammar/spanish/verbs/stem-changing', difficulty: 'intermediate' },
+  { title: 'Modal Verbs', url: '/grammar/spanish/verbs/modal-verbs', difficulty: 'intermediate' },
+  { title: 'Subjunctive Present', url: '/grammar/spanish/verbs/subjunctive-present', difficulty: 'advanced' },
+  { title: 'Ser vs Estar', url: '/grammar/spanish/verbs/ser-vs-estar', difficulty: 'beginner' }
 ];
 
 export default function SpanishPresentSubjunctivePage() {

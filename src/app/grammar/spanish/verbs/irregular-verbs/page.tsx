@@ -306,26 +306,10 @@ Understanding irregular verbs is crucial because many of the most common and use
 ];
 
 const relatedTopics = [
-  {
-    title: 'Spanish Present Tense',
-    url: '/grammar/spanish/verbs/present-tense',
-    difficulty: 'beginner'
-  },
-  {
-    title: 'Ser vs Estar',
-    url: '/grammar/spanish/verbs/ser-vs-estar',
-    difficulty: 'intermediate'
-  },
-  {
-    title: 'Spanish Past Tense (Preterite)',
-    url: '/grammar/spanish/verbs/preterite',
-    difficulty: 'intermediate'
-  },
-  {
-    title: 'Spanish Subjunctive Mood',
-    url: '/grammar/spanish/verbs/subjunctive',
-    difficulty: 'advanced'
-  }
+  { title: 'Passive Voice', url: '/grammar/spanish/verbs/passive-voice', difficulty: 'advanced' },
+  { title: 'Interrogatives', url: '/grammar/spanish/verbs/interrogatives', difficulty: 'beginner' },
+  { title: 'Stem-changing Verbs', url: '/grammar/spanish/verbs/stem-changing', difficulty: 'intermediate' },
+  { title: 'Conditional Tense', url: '/grammar/spanish/verbs/conditional', difficulty: 'intermediate' }
 ];
 
 export default function SpanishIrregularVerbsPage() {

@@ -268,26 +268,10 @@ Often, both tenses appear in the same sentence, with the imperfect setting the s
 ];
 
 const relatedTopics = [
-  {
-    title: 'Spanish Present Tense',
-    url: '/grammar/spanish/verbs/present-tense',
-    difficulty: 'beginner'
-  },
-  {
-    title: 'Spanish Past Tense (Preterite)',
-    url: '/grammar/spanish/verbs/preterite',
-    difficulty: 'intermediate'
-  },
-  {
-    title: 'Preterite vs Imperfect',
-    url: '/grammar/spanish/verbs/preterite-vs-imperfect',
-    difficulty: 'intermediate'
-  },
-  {
-    title: 'Spanish Future Tense',
-    url: '/grammar/spanish/verbs/future',
-    difficulty: 'intermediate'
-  }
+  { title: 'Future Tense', url: '/grammar/spanish/verbs/future', difficulty: 'intermediate' },
+  { title: 'Imperfect Tense', url: '/grammar/spanish/verbs/imperfect', difficulty: 'intermediate' },
+  { title: 'Subjunctive Present', url: '/grammar/spanish/verbs/subjunctive-present', difficulty: 'advanced' },
+  { title: 'Conditional Tense', url: '/grammar/spanish/verbs/conditional', difficulty: 'intermediate' }
 ];
 
 export default function SpanishImperfectPage() {

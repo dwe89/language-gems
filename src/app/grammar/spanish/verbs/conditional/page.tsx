@@ -227,26 +227,10 @@ The conditional is essential for expressing politeness, making suggestions, and 
 ];
 
 const relatedTopics = [
-  {
-    title: 'Spanish Future Tense',
-    url: '/grammar/spanish/verbs/future',
-    difficulty: 'intermediate'
-  },
-  {
-    title: 'Spanish Subjunctive Mood',
-    url: '/grammar/spanish/verbs/subjunctive',
-    difficulty: 'advanced'
-  },
-  {
-    title: 'Spanish Imperfect Tense',
-    url: '/grammar/spanish/verbs/imperfect',
-    difficulty: 'intermediate'
-  },
-  {
-    title: 'Si Clauses in Spanish',
-    url: '/grammar/spanish/verbs/si-clauses',
-    difficulty: 'advanced'
-  }
+  { title: 'Ser vs Estar', url: '/grammar/spanish/verbs/ser-vs-estar', difficulty: 'beginner' },
+  { title: 'Past Participles', url: '/grammar/spanish/verbs/past-participles', difficulty: 'intermediate' },
+  { title: 'Imperfect Tense', url: '/grammar/spanish/verbs/imperfect', difficulty: 'intermediate' },
+  { title: 'Irregular Verbs', url: '/grammar/spanish/verbs/irregular-verbs', difficulty: 'intermediate' }
 ];
 
 export default function SpanishConditionalPage() {

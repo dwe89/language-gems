@@ -203,9 +203,10 @@ This tense is essential for expressing "si" (if) clauses, past desires, and hypo
 ];
 
 const relatedTopics = [
-  { title: 'Present Subjunctive', url: '/grammar/spanish/verbs/subjunctive-present' },
-  { title: 'Conditional Tense', url: '/grammar/spanish/verbs/conditional' },
-  { title: 'Preterite Tense', url: '/grammar/spanish/verbs/preterite' }
+  { title: 'Subjunctive Present', url: '/grammar/spanish/verbs/subjunctive-present', difficulty: 'advanced' },
+  { title: 'Ser vs Estar', url: '/grammar/spanish/verbs/ser-vs-estar', difficulty: 'beginner' },
+  { title: 'Future Tense', url: '/grammar/spanish/verbs/future', difficulty: 'intermediate' },
+  { title: 'Imperfect Tense', url: '/grammar/spanish/verbs/imperfect', difficulty: 'intermediate' }
 ];
 
 export default function SpanishImperfectSubjunctivePage() {

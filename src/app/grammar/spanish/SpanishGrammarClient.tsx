@@ -9,13 +9,13 @@ import FlagIcon from '../../../components/ui/FlagIcon';
 
 const grammarCategories = [
   {
-    id: 'noun-phrases',
+    id: 'nouns',
     name: 'Noun Phrases',
     description: 'Master Spanish nouns, articles, and determiners',
     icon: BookOpen,
     color: 'from-green-500 to-green-600',
     topics: [
-      { name: 'Gender and Plural of Nouns', slug: 'gender-plural', difficulty: 'beginner', time: '15 min' },
+      { name: 'Gender and Plural of Nouns', slug: 'gender-and-plurals', difficulty: 'beginner', time: '15 min' },
       { name: 'Articles (Definite and Indefinite)', slug: 'articles', difficulty: 'beginner', time: '12 min' },
       { name: 'Demonstrative Adjectives', slug: 'demonstrative', difficulty: 'beginner', time: '10 min' },
       { name: 'Indefinite Adjectives', slug: 'indefinite', difficulty: 'intermediate', time: '12 min' },

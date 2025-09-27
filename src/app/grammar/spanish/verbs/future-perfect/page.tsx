@@ -167,9 +167,10 @@ This tense is used to express what will have happened by a certain time in the f
 ];
 
 const relatedTopics = [
-  { title: 'Future Tense', url: '/grammar/spanish/verbs/future' },
-  { title: 'Present Perfect', url: '/grammar/spanish/verbs/present-perfect' },
-  { title: 'Past Participles', url: '/grammar/spanish/verbs/past-participles' }
+  { title: 'Modal Verbs', url: '/grammar/spanish/verbs/modal-verbs', difficulty: 'intermediate' },
+  { title: 'Future Tense', url: '/grammar/spanish/verbs/future', difficulty: 'intermediate' },
+  { title: 'Present Perfect', url: '/grammar/spanish/verbs/present-perfect', difficulty: 'intermediate' },
+  { title: 'Irregular Verbs', url: '/grammar/spanish/verbs/irregular-verbs', difficulty: 'intermediate' }
 ];
 
 export default function SpanishFuturePerfectPage() {

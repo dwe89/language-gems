@@ -248,9 +248,10 @@ Reported speech is essential for storytelling, news reporting, and everyday conv
 ];
 
 const relatedTopics = [
-  { title: 'Imperfect Tense', url: '/grammar/spanish/verbs/imperfect' },
-  { title: 'Conditional Tense', url: '/grammar/spanish/verbs/conditional' },
-  { title: 'Pluperfect Tense', url: '/grammar/spanish/verbs/pluperfect' }
+  { title: 'Modal Verbs', url: '/grammar/spanish/verbs/modal-verbs', difficulty: 'intermediate' },
+  { title: 'Present Perfect', url: '/grammar/spanish/verbs/present-perfect', difficulty: 'intermediate' },
+  { title: 'Future Tense', url: '/grammar/spanish/verbs/future', difficulty: 'intermediate' },
+  { title: 'Subjunctive Present', url: '/grammar/spanish/verbs/subjunctive-present', difficulty: 'advanced' }
 ];
 
 export default function SpanishReportedSpeechPage() {

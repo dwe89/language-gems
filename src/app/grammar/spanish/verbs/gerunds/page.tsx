@@ -170,9 +170,10 @@ Unlike English, Spanish gerunds are never used as nouns - for that, Spanish uses
 ];
 
 const relatedTopics = [
-  { title: 'Present Continuous', url: '/grammar/spanish/verbs/present-continuous' },
-  { title: 'Continuous Constructions', url: '/grammar/spanish/verbs/continuous-constructions' },
-  { title: 'Past Participles', url: '/grammar/spanish/verbs/past-participles' }
+  { title: 'Ser vs Estar', url: '/grammar/spanish/verbs/ser-vs-estar', difficulty: 'beginner' },
+  { title: 'Imperative', url: '/grammar/spanish/verbs/imperative', difficulty: 'intermediate' },
+  { title: 'Stem-changing Verbs', url: '/grammar/spanish/verbs/stem-changing', difficulty: 'intermediate' },
+  { title: 'Subjunctive Imperfect', url: '/grammar/spanish/verbs/subjunctive-imperfect', difficulty: 'advanced' }
 ];
 
 export default function SpanishGerundsPage() {

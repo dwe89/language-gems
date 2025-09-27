@@ -188,9 +188,10 @@ The three main patterns are: **e→ie**, **o→ue**, and **e→i**.`,
 ];
 
 const relatedTopics = [
-  { title: 'Present Tense', url: '/grammar/spanish/verbs/present-tense' },
-  { title: 'Irregular Verbs', url: '/grammar/spanish/verbs/irregular-verbs' },
-  { title: 'Preterite Tense', url: '/grammar/spanish/verbs/preterite' }
+  { title: 'Future Tense', url: '/grammar/spanish/verbs/future', difficulty: 'intermediate' },
+  { title: 'Gerunds', url: '/grammar/spanish/verbs/gerunds', difficulty: 'intermediate' },
+  { title: 'Negation', url: '/grammar/spanish/verbs/negation', difficulty: 'beginner' },
+  { title: 'Irregular Verbs', url: '/grammar/spanish/verbs/irregular-verbs', difficulty: 'intermediate' }
 ];
 
 export default function SpanishStemChangingVerbsPage() {

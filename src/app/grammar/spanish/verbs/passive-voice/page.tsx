@@ -155,9 +155,10 @@ The passive voice is less common in Spanish than in English, and Spanish speaker
 ];
 
 const relatedTopics = [
-  { title: 'Past Participles', url: '/grammar/spanish/verbs/past-participles' },
-  { title: 'Reflexive Verbs', url: '/grammar/spanish/verbs/reflexive' },
-  { title: 'Ser vs Estar', url: '/grammar/spanish/verbs/ser-vs-estar' }
+  { title: 'Interrogatives', url: '/grammar/spanish/verbs/interrogatives', difficulty: 'beginner' },
+  { title: 'Passive Voice', url: '/grammar/spanish/verbs/passive-voice', difficulty: 'advanced' },
+  { title: 'Stem-changing Verbs', url: '/grammar/spanish/verbs/stem-changing', difficulty: 'intermediate' },
+  { title: 'Conditional Tense', url: '/grammar/spanish/verbs/conditional', difficulty: 'intermediate' }
 ];
 
 export default function SpanishPassiveVoicePage() {

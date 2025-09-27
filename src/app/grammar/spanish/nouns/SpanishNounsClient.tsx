@@ -9,22 +9,31 @@ import FlagIcon from '../../../../components/ui/FlagIcon';
 
 const nounTopics = [
   {
-    name: 'Noun Gender',
-    slug: 'gender',
-    description: 'Learn the rules for masculine and feminine nouns',
+    name: 'Gender and Plural of Nouns',
+    slug: 'gender-and-plurals',
+    description: 'Master gender rules and plural formation in Spanish',
     difficulty: 'beginner',
-    time: '10 min',
+    time: '15 min',
     featured: true,
-    concepts: ['Masculine endings', 'Feminine endings', 'Exceptions', 'Memory tricks']
+    concepts: ['Masculine/feminine patterns', 'Plural formation rules', 'Exceptions', 'Article agreement']
   },
   {
-    name: 'Articles (el, la, los, las)',
-    slug: 'articles',
-    description: 'Master definite and indefinite articles',
+    name: 'Articles (Definite and Indefinite)',
+    slug: '../articles/definite-indefinite',
+    description: 'Master el, la, los, las and un, una, unos, unas',
     difficulty: 'beginner',
     time: '12 min',
     featured: true,
     concepts: ['Definite articles', 'Indefinite articles', 'Contractions', 'Usage rules']
+  },
+  {
+    name: 'Noun Gender Rules',
+    slug: 'gender-rules',
+    description: 'Detailed patterns for predicting noun gender',
+    difficulty: 'beginner',
+    time: '10 min',
+    featured: false,
+    concepts: ['Ending patterns', 'Semantic categories', 'Common exceptions', 'Memory strategies']
   },
   {
     name: 'Plural Formation',
@@ -36,13 +45,13 @@ const nounTopics = [
     concepts: ['Add -s', 'Add -es', 'Irregular plurals', 'Accent changes']
   },
   {
-    name: 'Definite vs Indefinite Articles',
-    slug: 'definite-indefinite',
-    description: 'When to use el/la vs un/una',
-    difficulty: 'intermediate',
-    time: '15 min',
-    featured: true,
-    concepts: ['Specific vs general', 'Abstract concepts', 'Professions', 'Languages']
+    name: 'Nominalisation',
+    slug: 'nominalisation',
+    description: 'Convert adjectives and verbs into nouns',
+    difficulty: 'advanced',
+    time: '12 min',
+    featured: false,
+    concepts: ['Infinitive as noun', 'Adjective nominalization', 'Lo + adjective', 'Abstract concepts']
   }
 ];
 

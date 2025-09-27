@@ -248,9 +248,10 @@ Understanding sequence of tenses helps you choose the correct tense in complex s
 ];
 
 const relatedTopics = [
-  { title: 'Present Subjunctive', url: '/grammar/spanish/verbs/subjunctive-present' },
-  { title: 'Imperfect Subjunctive', url: '/grammar/spanish/verbs/subjunctive-imperfect' },
-  { title: 'Perfect Subjunctive', url: '/grammar/spanish/verbs/subjunctive-perfect' }
+  { title: 'Imperfect Tense', url: '/grammar/spanish/verbs/imperfect', difficulty: 'intermediate' },
+  { title: 'Past Participles', url: '/grammar/spanish/verbs/past-participles', difficulty: 'intermediate' },
+  { title: 'Future Tense', url: '/grammar/spanish/verbs/future', difficulty: 'intermediate' },
+  { title: 'Subjunctive Present', url: '/grammar/spanish/verbs/subjunctive-present', difficulty: 'advanced' }
 ];
 
 export default function SpanishSequenceOfTensesPage() {

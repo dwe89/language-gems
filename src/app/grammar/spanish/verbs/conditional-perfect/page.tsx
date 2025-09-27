@@ -162,9 +162,10 @@ This tense is essential for expressing hypothetical situations in the past and i
 ];
 
 const relatedTopics = [
-  { title: 'Conditional Tense', url: '/grammar/spanish/verbs/conditional' },
-  { title: 'Pluperfect Subjunctive', url: '/grammar/spanish/verbs/subjunctive' },
-  { title: 'Si Clauses', url: '/grammar/spanish/verbs/conditional' }
+  { title: 'Passive Voice', url: '/grammar/spanish/verbs/passive-voice', difficulty: 'advanced' },
+  { title: 'Interrogatives', url: '/grammar/spanish/verbs/interrogatives', difficulty: 'beginner' },
+  { title: 'Present Tense', url: '/grammar/spanish/verbs/present-tense', difficulty: 'beginner' },
+  { title: 'Subjunctive Imperfect', url: '/grammar/spanish/verbs/subjunctive-imperfect', difficulty: 'advanced' }
 ];
 
 export default function SpanishConditionalPerfectPage() {

@@ -241,9 +241,10 @@ Understanding verb moods is crucial for advanced Spanish fluency as they convey 
 ];
 
 const relatedTopics = [
-  { title: 'Present Subjunctive', url: '/grammar/spanish/verbs/subjunctive-present' },
-  { title: 'Imperative', url: '/grammar/spanish/verbs/imperative' },
-  { title: 'Indicative vs Subjunctive', url: '/grammar/spanish/verbs/subjunctive' }
+  { title: 'Passive Voice', url: '/grammar/spanish/verbs/passive-voice', difficulty: 'advanced' },
+  { title: 'Stem-changing Verbs', url: '/grammar/spanish/verbs/stem-changing', difficulty: 'intermediate' },
+  { title: 'Subjunctive Imperfect', url: '/grammar/spanish/verbs/subjunctive-imperfect', difficulty: 'advanced' },
+  { title: 'Negation', url: '/grammar/spanish/verbs/negation', difficulty: 'beginner' }
 ];
 
 export default function SpanishVerbMoodsPage() {

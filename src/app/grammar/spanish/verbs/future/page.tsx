@@ -234,26 +234,10 @@ The choice depends on how certain you are about the future action and how formal
 ];
 
 const relatedTopics = [
-  {
-    title: 'Spanish Present Tense',
-    url: '/grammar/spanish/verbs/present-tense',
-    difficulty: 'beginner'
-  },
-  {
-    title: 'Spanish Conditional Tense',
-    url: '/grammar/spanish/verbs/conditional',
-    difficulty: 'advanced'
-  },
-  {
-    title: 'Spanish Irregular Verbs',
-    url: '/grammar/spanish/verbs/irregular-verbs',
-    difficulty: 'intermediate'
-  },
-  {
-    title: 'Near Future (ir + a)',
-    url: '/grammar/spanish/verbs/near-future',
-    difficulty: 'beginner'
-  }
+  { title: 'Present Tense', url: '/grammar/spanish/verbs/present-tense', difficulty: 'beginner' },
+  { title: 'Preterite Tense', url: '/grammar/spanish/verbs/preterite', difficulty: 'intermediate' },
+  { title: 'Por vs Para', url: '/grammar/spanish/verbs/por-vs-para', difficulty: 'intermediate' },
+  { title: 'Imperfect Tense', url: '/grammar/spanish/verbs/imperfect', difficulty: 'intermediate' }
 ];
 
 export default function SpanishFuturePage() {

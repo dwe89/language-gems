@@ -305,26 +305,10 @@ Remember: When in doubt, ask yourself "Is this a permanent characteristic (ser) 
 ];
 
 const relatedTopics = [
-  {
-    title: 'Spanish Present Tense',
-    url: '/grammar/spanish/verbs/present-tense',
-    difficulty: 'beginner'
-  },
-  {
-    title: 'Spanish Irregular Verbs',
-    url: '/grammar/spanish/verbs/irregular-verbs',
-    difficulty: 'intermediate'
-  },
-  {
-    title: 'Spanish Adjectives',
-    url: '/grammar/spanish/adjectives/agreement',
-    difficulty: 'beginner'
-  },
-  {
-    title: 'Spanish Progressive Tenses',
-    url: '/grammar/spanish/verbs/progressive',
-    difficulty: 'intermediate'
-  }
+  { title: 'Passive Voice', url: '/grammar/spanish/verbs/passive-voice', difficulty: 'advanced' },
+  { title: 'Future Tense', url: '/grammar/spanish/verbs/future', difficulty: 'intermediate' },
+  { title: 'Imperfect Tense', url: '/grammar/spanish/verbs/imperfect', difficulty: 'intermediate' },
+  { title: 'Negation', url: '/grammar/spanish/verbs/negation', difficulty: 'beginner' }
 ];
 
 export default function SerVsEstarPage() {

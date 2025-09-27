@@ -145,9 +145,10 @@ These verbs often work differently from their English equivalents and require sp
 ];
 
 const relatedTopics = [
-  { title: 'Indirect Object Pronouns', url: '/grammar/spanish/pronouns/indirect-object' },
-  { title: 'Present Tense', url: '/grammar/spanish/verbs/present-tense' },
-  { title: 'Reflexive Verbs', url: '/grammar/spanish/verbs/reflexive' }
+  { title: 'Past Participles', url: '/grammar/spanish/verbs/past-participles', difficulty: 'intermediate' },
+  { title: 'Conditional Tense', url: '/grammar/spanish/verbs/conditional', difficulty: 'intermediate' },
+  { title: 'Passive Voice', url: '/grammar/spanish/verbs/passive-voice', difficulty: 'advanced' },
+  { title: 'Gerunds', url: '/grammar/spanish/verbs/gerunds', difficulty: 'intermediate' }
 ];
 
 export default function SpanishImpersonalVerbsPage() {

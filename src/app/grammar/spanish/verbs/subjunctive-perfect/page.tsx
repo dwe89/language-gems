@@ -182,9 +182,10 @@ This tense is used when the main clause requires subjunctive and refers to actio
 ];
 
 const relatedTopics = [
-  { title: 'Present Perfect', url: '/grammar/spanish/verbs/present-perfect' },
-  { title: 'Present Subjunctive', url: '/grammar/spanish/verbs/subjunctive-present' },
-  { title: 'Past Participles', url: '/grammar/spanish/verbs/past-participles' }
+  { title: 'Imperfect Tense', url: '/grammar/spanish/verbs/imperfect', difficulty: 'intermediate' },
+  { title: 'Por vs Para', url: '/grammar/spanish/verbs/por-vs-para', difficulty: 'intermediate' },
+  { title: 'Passive Voice', url: '/grammar/spanish/verbs/passive-voice', difficulty: 'advanced' },
+  { title: 'Gerunds', url: '/grammar/spanish/verbs/gerunds', difficulty: 'intermediate' }
 ];
 
 export default function SpanishPerfectSubjunctivePage() {
