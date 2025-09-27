@@ -16,7 +16,8 @@ import {
   ChevronDown,
   BarChart3,
   Brain,
-  Gem
+  Gem,
+  ClipboardCheck
 } from 'lucide-react';
 
 interface TeacherNavigationProps {
@@ -55,6 +56,12 @@ export default function TeacherNavigation({ children }: TeacherNavigationProps) 
       href: '/dashboard/vocabulary/analytics',
       icon: Brain,
       description: 'Vocabulary analytics and student progress'
+    },
+    {
+      name: 'Vocab Tests',
+      href: '/dashboard/vocabulary-tests',
+      icon: ClipboardCheck,
+      description: 'Create and manage vocabulary assessments'
     },
   ];
 

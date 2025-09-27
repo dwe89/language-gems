@@ -18,12 +18,12 @@ import {
   Gamepad2,
   Trophy,
   Award,
+  ClipboardCheck,
 } from 'lucide-react';
 import { useAuth } from '../../components/auth/AuthProvider';
 import { supabaseBrowser } from '../../components/auth/AuthProvider';
-import BetaDashboardWrapper, { BetaStatsCard, DashboardComingSoonCards } from '../../components/beta/BetaDashboardWrapper';
+import BetaDashboardWrapper, { BetaStatsCard } from '../../components/beta/BetaDashboardWrapper';
 import FeedbackWidget from '../../components/beta/FeedbackWidget';
-import { useFeatureFlags } from '../../lib/feature-flags';
 
 // The main page component that handles authentication and renders the dashboard
 export default function DashboardPage() {
@@ -72,7 +72,6 @@ export default function DashboardPage() {
 // The main dashboard content for teachers
 function TeacherDashboard({ username }: { username: string }) {
   const { user } = useAuth();
-  const { isBetaLaunch } = useFeatureFlags();
   const [helpWidgetVisible, setHelpWidgetVisible] = useState(false);
   const [stats, setStats] = useState({
     totalClasses: 0,
@@ -245,6 +244,13 @@ function TeacherDashboard({ username }: { username: string }) {
             href="/dashboard/vocabulary"
           />
           <DashboardCard
+            title="Vocabulary Tests"
+            description="Create comprehensive vocabulary assessments with detailed analytics and automatic grading for student evaluation."
+            icon={<ClipboardCheck className="h-8 w-8" />}
+            gradient="from-rose-500 to-pink-600"
+            href="/dashboard/vocabulary-tests"
+          />
+          <DashboardCard
             title="Competitions & Rankings"
             description="Motivate students with class challenges, achievement badges, and dynamic leaderboards that celebrate progress."
             icon={<Trophy className="h-8 w-8" />}
@@ -252,21 +258,6 @@ function TeacherDashboard({ username }: { username: string }) {
             href="/dashboard/leaderboards"
           />
         </div>
-
-        {/* Beta: Coming Soon Features */}
-        {isBetaLaunch && (
-          <div className="mt-16">
-            <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Coming Soon in Full Launch</h2>
-              <p className="text-gray-600">Advanced features currently in development</p>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <DashboardComingSoonCards.AdvancedAnalytics />
-              <DashboardComingSoonCards.AssignmentManagement />
-            </div>
-          </div>
-        )}
       </section>
 
       {/* Help Widget */}

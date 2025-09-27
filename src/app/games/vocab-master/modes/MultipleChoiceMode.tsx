@@ -20,53 +20,9 @@ export const MultipleChoiceMode: React.FC<MultipleChoiceModeProps> = ({
   playPronunciation,
   onExit
 }) => {
-  const [options, setOptions] = useState<MultipleChoiceOption[]>([]);
-
-  useEffect(() => {
-    if (gameState.currentWord) {
-      generateMultipleChoiceOptions(gameState.currentWord);
-    }
-  }, [gameState.currentWord, vocabulary]);
-
-  const generateMultipleChoiceOptions = (currentWord: VocabularyWord) => {
-    if (!currentWord) return;
-
-    const correctAnswer = currentWord.english || currentWord.translation || '';
-    const incorrectOptions: string[] = [];
-
-    // Get other vocabulary words for incorrect options
-    const otherWords = vocabulary.filter(w => 
-      w.id !== currentWord.id && 
-      (w.english || w.translation) !== correctAnswer
-    );
-
-    // Randomly select 3 incorrect options
-    const shuffledOthers = otherWords.sort(() => Math.random() - 0.5);
-    for (let i = 0; i < Math.min(3, shuffledOthers.length); i++) {
-      const incorrectAnswer = shuffledOthers[i].english || shuffledOthers[i].translation || '';
-      if (incorrectAnswer && !incorrectOptions.includes(incorrectAnswer)) {
-        incorrectOptions.push(incorrectAnswer);
-      }
-    }
-
-    // Fill remaining slots with generic options if needed
-    const genericOptions = ['house', 'water', 'food', 'time', 'person', 'place', 'thing', 'good', 'bad', 'big'];
-    while (incorrectOptions.length < 3) {
-      const generic = genericOptions[Math.floor(Math.random() * genericOptions.length)];
-      if (!incorrectOptions.includes(generic) && generic !== correctAnswer.toLowerCase()) {
-        incorrectOptions.push(generic);
-      }
-    }
-
-    // Create options array
-    const allOptions: MultipleChoiceOption[] = [
-      { id: 'correct', text: correctAnswer, isCorrect: true },
-      ...incorrectOptions.slice(0, 3).map((text, index) => ({ id: `incorrect-${index}`, text, isCorrect: false }))
-    ];
-
-    // Shuffle options
-    setOptions(allOptions.sort(() => Math.random() - 0.5));
-  };
+  // Use options from gameState instead of generating our own
+  // This ensures consistency between what's displayed and what's validated
+  const options = gameState.multipleChoiceOptions || [];
 
   const handleOptionClick = (index: number) => {
     if (showAnswer) return;

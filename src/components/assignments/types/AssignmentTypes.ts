@@ -125,11 +125,32 @@ export interface AssessmentConfig {
   assessmentSubcategory: string;
 }
 
+export interface VocabularyTestConfig {
+  test_id?: string; // For existing tests
+  title?: string; // For new tests
+  description?: string;
+  language: string;
+  curriculum_level: 'KS3' | 'KS4';
+  test_type: 'translation_to_english' | 'translation_to_target' | 'multiple_choice' | 'spelling_audio' | 'mixed';
+  vocabulary_source: 'category' | 'custom_list' | 'assignment_vocabulary';
+  vocabulary_criteria: any;
+  word_count: number;
+  time_limit_minutes: number;
+  max_attempts: number;
+  randomize_questions: boolean;
+  show_immediate_feedback: boolean;
+  allow_hints: boolean;
+  passing_score_percentage: number;
+  points_per_question: number;
+  time_bonus_enabled: boolean;
+}
+
 export interface UnifiedGameConfig {
   selectedGames: string[]; // List of game IDs to match existing structure
   vocabularyConfig: VocabularyConfig;
   sentenceConfig: SentenceConfig;
   grammarConfig: GrammarConfig;
+  vocabularyTestConfig?: VocabularyTestConfig; // Add vocabulary test config
   difficulty: string;
   timeLimit: number;
   maxAttempts: number;

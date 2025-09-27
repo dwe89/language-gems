@@ -865,8 +865,8 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
         }
       `}</style>
 
-      {/* Background video/animation - render for non-assignment mode OR assignment mode with non-classic themes */}
-      {(!isAssignmentMode || (isAssignmentMode && themeId !== 'default')) && (
+      {/* Background video/animation - render ONLY for non-classic themes in fullscreen mode OR non-classic themes in assignment mode */}
+      {((!isAssignmentMode && themeId !== 'default') || (isAssignmentMode && themeId !== 'default')) && (
         <div className="absolute inset-0 z-0">
           {renderThematicAnimation()}
         </div>
@@ -1064,68 +1064,140 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
           </div>
         </div>
       ) : (
-        /* Fullscreen Mode: Original overlapping layout */
-        <div className="relative z-40 flex-1 flex flex-col">
-          <div className="flex-1"></div>
-
-          {/* Word display positioned much lower */}
-          {gameStatus === 'playing' && (
-            <div className="px-2 md:px-4 pb-4 md:pb-8">
-              {renderWord()}
+        /* Fullscreen Mode: Different layouts for classic vs other themes */
+        themeId === 'default' ? (
+          /* Classic Theme Fullscreen: Side-by-side responsive layout */
+          <div className="relative z-40 flex-1 flex flex-col lg:flex-row gap-4 lg:gap-6">
+            {/* Animation area - responsive sizing */}
+            <div className="flex-1 lg:flex-[2] flex items-center justify-center min-h-[300px] lg:min-h-0">
+              {renderThematicAnimation()}
             </div>
-          )}
 
-          {/* Keyboard area positioned at bottom with more space for larger letters */}
-          <div className="px-2 md:px-4 pb-4 md:pb-8">
-            {gameStatus === 'playing' ? (
-              <div className={`transition-all duration-300 ${animation === 'wrong' ? 'scale-105' : animation === 'correct' ? 'scale-95' : ''}`}>
-                {renderKeyboard()}
-              </div>
-            ) : (
-              <div className="text-center">
-                <h2 className="text-2xl md:text-3xl font-bold mb-4">
-                  {gameStatus === 'won'
-                    ? (themeClassesState.winMessage)
-                    : (themeClassesState.loseMessage)}
-                </h2>
+            {/* Controls area - positioned to the side on large screens */}
+            <div className="flex-1 lg:flex-[1] flex flex-col justify-center space-y-6 px-2 md:px-4">
+              {/* Word display */}
+              {gameStatus === 'playing' && (
+                <div className="text-center">
+                  {renderWord()}
+                </div>
+              )}
 
-                <p className="text-xl mb-4">
-                  {gameStatus === 'won'
-                    ? `Great job! You guessed the word correctly.`
-                    : `The word was: ${word.toUpperCase()}`}
-                </p>
+              {/* Keyboard/Game End area */}
+              <div className="flex-1 flex flex-col justify-center">
+                {gameStatus === 'playing' ? (
+                  <div className={`transition-all duration-300 ${animation === 'wrong' ? 'scale-105' : animation === 'correct' ? 'scale-95' : ''}`}>
+                    {renderKeyboard()}
+                  </div>
+                ) : (
+                  <div className="text-center space-y-4">
+                    <h2 className="text-2xl md:text-3xl font-bold">
+                      {gameStatus === 'won'
+                        ? (themeClassesState.winMessage)
+                        : (themeClassesState.loseMessage)}
+                    </h2>
 
-                {gameStatus === 'won' && (
-                  <div className="my-4 text-lg">
-                    <p>Score: <span className="font-bold">{calculateScore()}</span></p>
+                    <p className="text-xl">
+                      {gameStatus === 'won'
+                        ? `Great job! You guessed the word correctly.`
+                        : `The word was: ${word.toUpperCase()}`}
+                    </p>
+
+                    {gameStatus === 'won' && (
+                      <div className="text-lg">
+                        <p>Score: <span className="font-bold">{calculateScore()}</span></p>
+                      </div>
+                    )}
+
+                    <div className="flex flex-col sm:flex-row justify-center gap-4 mt-6">
+                      <button
+                        onClick={() => {
+                          playSFX('button-click');
+                          resetGame();
+                        }}
+                        className={`${themeClassesState.button} py-3 px-6 rounded-lg font-bold text-white`}
+                      >
+                        Play Again
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          playSFX('button-click');
+                          onBackToMenu();
+                        }}
+                        className="bg-gray-700 hover:bg-gray-600 py-3 px-6 rounded-lg font-bold text-white"
+                      >
+                        Back to Games
+                      </button>
+                    </div>
                   </div>
                 )}
+              </div>
+            </div>
+          </div>
+        ) : (
+          /* Other Themes Fullscreen: Original overlapping layout */
+          <div className="relative z-40 flex-1 flex flex-col">
+            <div className="flex-1"></div>
 
-                <div className="flex justify-center gap-4 mt-6">
-                  <button
-                    onClick={() => {
-                      playSFX('button-click'); // Use passed-in playSFX
-                      resetGame();
-                    }}
-                    className={`${themeClassesState.button} py-3 px-6 rounded-lg font-bold text-white`}
-                  >
-                    Play Again
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      playSFX('button-click'); // Use passed-in playSFX
-                      onBackToMenu();
-                    }}
-                    className="bg-gray-700 hover:bg-gray-600 py-3 px-6 rounded-lg font-bold text-white"
-                  >
-                    Back to Games
-                  </button>
-                </div>
+            {/* Word display positioned much lower */}
+            {gameStatus === 'playing' && (
+              <div className="px-2 md:px-4 pb-4 md:pb-8">
+                {renderWord()}
               </div>
             )}
+
+            {/* Keyboard area positioned at bottom with more space for larger letters */}
+            <div className="px-2 md:px-4 pb-4 md:pb-8">
+              {gameStatus === 'playing' ? (
+                <div className={`transition-all duration-300 ${animation === 'wrong' ? 'scale-105' : animation === 'correct' ? 'scale-95' : ''}`}>
+                  {renderKeyboard()}
+                </div>
+              ) : (
+                <div className="text-center">
+                  <h2 className="text-2xl md:text-3xl font-bold mb-4">
+                    {gameStatus === 'won'
+                      ? (themeClassesState.winMessage)
+                      : (themeClassesState.loseMessage)}
+                  </h2>
+
+                  <p className="text-xl mb-4">
+                    {gameStatus === 'won'
+                      ? `Great job! You guessed the word correctly.`
+                      : `The word was: ${word.toUpperCase()}`}
+                  </p>
+
+                  {gameStatus === 'won' && (
+                    <div className="my-4 text-lg">
+                      <p>Score: <span className="font-bold">{calculateScore()}</span></p>
+                    </div>
+                  )}
+
+                  <div className="flex justify-center gap-4 mt-6">
+                    <button
+                      onClick={() => {
+                        playSFX('button-click'); // Use passed-in playSFX
+                        resetGame();
+                      }}
+                      className={`${themeClassesState.button} py-3 px-6 rounded-lg font-bold text-white`}
+                    >
+                      Play Again
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        playSFX('button-click'); // Use passed-in playSFX
+                        onBackToMenu();
+                      }}
+                      className="bg-gray-700 hover:bg-gray-600 py-3 px-6 rounded-lg font-bold text-white"
+                    >
+                      Back to Games
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        )
       )}
 
       {/* Theme-specific Modals */}

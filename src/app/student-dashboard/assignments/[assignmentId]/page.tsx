@@ -31,6 +31,7 @@ const mapGameTypeToPath = (gameType: string | null): string => {
     'conjugation-duel': 'conjugation-duel', // ✅ Conjugation Duel assignment support
     'case-file-translator': 'case-file-translator', // ✅ Case File Translator assignment support
     'lava-temple-word-restore': 'lava-temple-word-restore', // ✅ Lava Temple assignment support
+    'vocabulary_test': 'vocabulary-test', // ✅ Vocabulary Test assignment support
 
     // Legacy mappings for potential mismatches
     'quiz': 'memory-game', // Fallback for quiz to memory game
@@ -158,7 +159,8 @@ export default function StudentAssignmentDetailPage() {
           'lava-temple-word-restore': { name: 'Lava Temple Word Restore', description: 'Restore words in a temple setting' },
           'verb-quest': { name: 'Verb Quest', description: 'Embark on quests to master verb conjugations' },
           'vocab-master': { name: 'Vocab Master', description: 'Master vocabulary through spaced repetition' },
-          'noughts-and-crosses': { name: 'Noughts & Crosses', description: 'Strategic gameplay with vocabulary questions' }
+          'noughts-and-crosses': { name: 'Noughts & Crosses', description: 'Strategic gameplay with vocabulary questions' },
+          'vocabulary_test': { name: 'Vocabulary Test', description: 'Complete a vocabulary assessment' }
       
     
           

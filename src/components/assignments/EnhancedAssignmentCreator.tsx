@@ -241,6 +241,16 @@ const ASSESSMENT_TYPES = [
     features: ['Audio dictation', 'Spelling accuracy', 'Speed control', 'Instant feedback']
   },
   {
+    id: 'vocabulary-test',
+    name: 'Vocabulary Test',
+    description: 'Comprehensive vocabulary assessment with multiple question types and detailed analytics',
+    icon: <BookOpen className="h-6 w-6" />,
+    color: 'from-emerald-500 to-emerald-600',
+    estimatedTime: '20-45 min',
+    skills: ['Vocabulary'],
+    features: ['Translation', 'Multiple choice', 'Audio spelling', 'Detailed analytics', 'Progress tracking']
+  },
+  {
     id: 'four-skills',
     name: 'Four Skills Assessment',
     description: 'Comprehensive assessment covering reading, writing, listening, and speaking',

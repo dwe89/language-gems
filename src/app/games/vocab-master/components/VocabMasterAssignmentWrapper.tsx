@@ -5,6 +5,7 @@ import { useUnifiedAuth } from '../../../../hooks/useUnifiedAuth';
 import GameAssignmentWrapper, { GameProgress } from '../../../../components/games/templates/GameAssignmentWrapper';
 import { VocabMasterGameEngine } from './VocabMasterGameEngine';
 import { VocabularyWord, GameResult } from '../types';
+import VocabMasterAssignmentLauncher from './VocabMasterAssignmentLauncher';
 
 interface VocabMasterAssignmentWrapperProps {
   assignmentId: string;
@@ -47,11 +48,11 @@ export default function VocabMasterAssignmentWrapper({
   onBackToAssignments,
   onBackToMenu
 }: VocabMasterAssignmentWrapperProps) {
-  const { user, isLoading, isDemo } = useUnifiedAuth();
+  const { user } = useUnifiedAuth();
 
-  // No mode selection needed - always use standard mode
-
-  console.log('🎯 [MODE SELECTOR] Mode selected:', selectedMode, 'showModeSelector:', showModeSelector);
+  // Game state management
+  const [gameState, setGameState] = useState<'launcher' | 'playing'>('launcher');
+  const [selectedMode, setSelectedMode] = useState<string>('');
 
   if (!user) {
     return (
@@ -77,6 +78,17 @@ export default function VocabMasterAssignmentWrapper({
   const handleBackToMenu = () => {
     console.log('Returning to VocabMaster menu from assignment');
     onBackToMenu();
+  };
+
+  const handleModeSelect = (modeId: string) => {
+    console.log('Mode selected:', modeId);
+    setSelectedMode(modeId);
+    setGameState('playing');
+  };
+
+  const handleBackToLauncher = () => {
+    setGameState('launcher');
+    setSelectedMode('');
   };
 
   return (
@@ -106,10 +118,23 @@ export default function VocabMasterAssignmentWrapper({
           startTime: Date.now()
         }));
 
+        // Show launcher first, then game
+        if (gameState === 'launcher') {
+          return (
+            <VocabMasterAssignmentLauncher
+              vocabulary={gameVocabulary}
+              assignmentTitle={assignment.title}
+              onModeSelect={handleModeSelect}
+              onBack={handleBackToAssignments}
+            />
+          );
+        }
+
+        // Show the selected game mode
         return (
           <VocabMasterGameEngine
             config={{
-              mode: 'learn_new', // Always use learn_new as the base mode
+              mode: selectedMode, // Use the selected mode instead of hardcoded 'learn_new'
               vocabulary: gameVocabulary,
               audioEnabled: true,
               assignmentMode: true,
@@ -161,7 +186,7 @@ export default function VocabMasterAssignmentWrapper({
                 }
               });
             }}
-            onExit={handleBackToAssignments}
+            onExit={handleBackToLauncher}
           />
         );
       }}

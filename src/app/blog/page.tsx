@@ -62,6 +62,16 @@ const featuredPosts = [
 
 const recentPosts = [
   {
+    title: 'AQA GCSE Speaking: Photocard & Unprepared Conversation Guide',
+    excerpt: 'Master the AQA GCSE Speaking exam with our comprehensive guide to the Photocard and Unprepared Conversation tasks. Learn scoring criteria, strategies, and common pitfalls.',
+    slug: 'aqa-gcse-speaking-photocard-guide',
+    category: 'GCSE Preparation',
+    readTime: '12 min read',
+    publishDate: 'September 27, 2025',
+    author: 'LanguageGems Team',
+    icon: Target
+  },
+  {
     title: 'Language Learning Apps vs. Educational Software: What Schools Need to Know',
     excerpt: 'Compare consumer language apps like Duolingo with educational platforms designed for schools. Discover why curriculum alignment matters for educational success.',
     slug: 'language-learning-apps-vs-educational-software',

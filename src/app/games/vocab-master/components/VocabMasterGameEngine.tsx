@@ -874,6 +874,13 @@ export const VocabMasterGameEngine: React.FC<VocabMasterGameEngineProps> = ({
             {...commonProps}
             onChoiceSelect={(choiceIndex: number) => {
               const selectedOption = gameState.multipleChoiceOptions[choiceIndex];
+              console.log('🎯 [MULTIPLE CHOICE] Selection:', {
+                choiceIndex,
+                selectedOption,
+                allOptions: gameState.multipleChoiceOptions,
+                currentWord: gameState.currentWord?.spanish || gameState.currentWord?.word,
+                expectedAnswer: gameState.currentWord?.english || gameState.currentWord?.translation
+              });
               if (selectedOption) {
                 handleAnswer(selectedOption.text);
               }

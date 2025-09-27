@@ -170,6 +170,13 @@ export function validateAnswerEnhanced(
   // Use a Set to store final variations to avoid duplicates
   const possibleAnswers = new Set<string>();
 
+  // IMPORTANT: Also add the original answer (before splitting) as a valid option
+  // This handles cases like "children / sons" where the user types the full form
+  const originalCleaned = cleanAndNormalize(correctAnswer);
+  if (originalCleaned) {
+    possibleAnswers.add(originalCleaned);
+  }
+
   // For each base answer, generate all cleaned/normalized variations
   baseAnswers.forEach(answer => {
     const cleaned = cleanAndNormalize(answer);
@@ -208,6 +215,17 @@ export function validateAnswerEnhanced(
 
   // A. Direct check (accent-insensitive)
   let isCorrect = finalPossibleAnswers.some(pa => removeAccents(pa) === userCleanNoAccents);
+
+  // CRITICAL DEBUG: Multiple choice validation issue
+  console.log('🚨 [CRITICAL VALIDATION DEBUG]:', {
+    originalCorrectAnswer: correctAnswer,
+    userAnswer: userAnswer,
+    userClean: userClean,
+    userCleanNoAccents: userCleanNoAccents,
+    finalPossibleAnswers: finalPossibleAnswers,
+    isCorrect: isCorrect,
+    timestamp: new Date().toISOString()
+  });
 
   // B. Number word vs. digit check (if direct check fails)
   if (!isCorrect) {
