@@ -1,11 +1,9 @@
+'use client';
+
 import { Metadata } from 'next';
 import GrammarQuiz from '@/components/grammar/GrammarQuiz';
 
-export const metadata: Metadata = {
-  title: 'Spanish Modal Verbs Quiz | LanguageGems',
-  description: 'Test your knowledge of Spanish modal verbs with this comprehensive quiz.',
-  keywords: 'Spanish modal verbs quiz, poder deber querer test, tener que assessment',
-};
+
 
 const quizData = {
   title: "Spanish Modal Verbs Quiz",

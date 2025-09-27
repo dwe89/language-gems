@@ -1,22 +1,9 @@
+'use client';
+
 import { Metadata } from 'next';
 import GrammarQuiz from '@/components/grammar/GrammarQuiz';
 
-export const metadata: Metadata = {
-  title: 'Spanish Ser vs Estar Quiz | LanguageGems',
-  description: 'Test your knowledge of Spanish ser vs estar with this comprehensive quiz. Master permanent vs temporary states.',
-  keywords: 'Spanish ser vs estar quiz, ser estar test, Spanish to be quiz',
-  openGraph: {
-    title: 'Spanish Ser vs Estar Quiz | LanguageGems',
-    description: 'Test your knowledge of Spanish ser vs estar with this comprehensive quiz. Master permanent vs temporary states.',
-    url: 'https://languagegems.com/grammar/spanish/verbs/ser-vs-estar/quiz',
-    siteName: 'LanguageGems',
-    locale: 'en_US',
-    type: 'website',
-  },
-  alternates: {
-    canonical: 'https://languagegems.com/grammar/spanish/verbs/ser-vs-estar/quiz',
-  },
-};
+
 
 const quizData = {
   id: "ser-vs-estar-quiz",

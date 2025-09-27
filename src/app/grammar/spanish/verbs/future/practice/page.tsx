@@ -1,168 +1,212 @@
+'use client';
+
 import { Metadata } from 'next';
-import { GrammarPractice } from '@/components/grammar/GrammarPractice';
+import GrammarPractice from '@/components/grammar/GrammarPractice';
 
-export const metadata: Metadata = {
-  title: 'Spanish Future Tense Practice | LanguageGems',
-  description: 'Practice Spanish future tense with interactive exercises. Master regular and irregular future conjugations.',
-  keywords: 'Spanish future practice, future tense exercises, Spanish future conjugation practice',
-  openGraph: {
-    title: 'Spanish Future Tense Practice | LanguageGems',
-    description: 'Practice Spanish future tense with interactive exercises. Master regular and irregular future conjugations.',
-    url: 'https://languagegems.com/grammar/spanish/verbs/future/practice',
-    siteName: 'LanguageGems',
-    locale: 'en_US',
-    type: 'website',
-  },
-  alternates: {
-    canonical: 'https://languagegems.com/grammar/spanish/verbs/future/practice',
-  },
-};
 
-const practiceData = {
-  title: "Spanish Future Tense Practice",
-  description: "Practice conjugating Spanish verbs in the future tense with these interactive exercises.",
-  exercises: [
-    {
-      type: "conjugation",
-      instruction: "Conjugate the verb in parentheses in the future tense.",
-      items: [
-        {
-          spanish: "Mañana yo _____ (hablar) con el director.",
-          english: "Tomorrow I will speak with the director.",
-          answer: "hablaré",
-          explanation: "Regular -ar verbs in future: yo form ends in -é"
-        },
-        {
-          spanish: "Ellos _____ (comer) en el restaurante nuevo.",
-          english: "They will eat at the new restaurant.",
-          answer: "comerán",
-          explanation: "Regular -er verbs in future: ellos form ends in -án"
-        },
-        {
-          spanish: "Nosotros _____ (vivir) en España el próximo año.",
-          english: "We will live in Spain next year.",
-          answer: "viviremos",
-          explanation: "Regular -ir verbs in future: nosotros form ends in -emos"
-        },
-        {
-          spanish: "¿Qué _____ (hacer) tú este fin de semana?",
-          english: "What will you do this weekend?",
-          answer: "harás",
-          explanation: "Hacer is irregular in future: har- + ás = harás"
-        },
-        {
-          spanish: "Ella _____ (tener) que estudiar mucho.",
-          english: "She will have to study a lot.",
-          answer: "tendrá",
-          explanation: "Tener is irregular in future: tendr- + á = tendrá"
-        },
-        {
-          spanish: "Ustedes _____ (poder) venir a la fiesta.",
-          english: "You all will be able to come to the party.",
-          answer: "podrán",
-          explanation: "Poder is irregular in future: podr- + án = podrán"
-        },
-        {
-          spanish: "Yo _____ (salir) temprano del trabajo.",
-          english: "I will leave work early.",
-          answer: "saldré",
-          explanation: "Salir is irregular in future: saldr- + é = saldré"
-        },
-        {
-          spanish: "Los estudiantes _____ (venir) a clase mañana.",
-          english: "The students will come to class tomorrow.",
-          answer: "vendrán",
-          explanation: "Venir is irregular in future: vendr- + án = vendrán"
-        },
-        {
-          spanish: "Tú _____ (decir) la verdad, ¿no?",
-          english: "You will tell the truth, right?",
-          answer: "dirás",
-          explanation: "Decir is irregular in future: dir- + ás = dirás"
-        },
-        {
-          spanish: "Mi hermana _____ (poner) la mesa para la cena.",
-          english: "My sister will set the table for dinner.",
-          answer: "pondrá",
-          explanation: "Poner is irregular in future: pondr- + á = pondrá"
-        }
-      ]
-    },
-    {
-      type: "multiple-choice",
-      instruction: "Choose the correct future form.",
-      items: [
-        {
-          question: "Tomorrow we _____ to the movies.",
-          spanish: "Mañana nosotros _____ al cine.",
-          options: ["vamos", "fuimos", "iremos", "íbamos"],
-          answer: "iremos",
-          explanation: "Ir is irregular in future: iremos (we will go)"
-        },
-        {
-          question: "She _____ the book next week.",
-          spanish: "Ella _____ el libro la próxima semana.",
-          options: ["lee", "leyó", "leerá", "leía"],
-          answer: "leerá",
-          explanation: "Regular -er verb in future: leerá (she will read)"
-        },
-        {
-          question: "They _____ at the hotel.",
-          spanish: "Ellos _____ en el hotel.",
-          options: ["quedan", "quedaron", "quedarán", "quedaban"],
-          answer: "quedarán",
-          explanation: "Regular -ar verb in future: quedarán (they will stay)"
-        },
-        {
-          question: "I _____ my homework tonight.",
-          spanish: "Yo _____ mi tarea esta noche.",
-          options: ["hago", "hice", "haré", "hacía"],
-          answer: "haré",
-          explanation: "Hacer is irregular in future: haré (I will do)"
-        },
-        {
-          question: "You _____ very well in the exam.",
-          spanish: "Tú _____ muy bien en el examen.",
-          options: ["sales", "saliste", "saldrás", "salías"],
-          answer: "saldrás",
-          explanation: "Salir is irregular in future: saldrás (you will do/come out)"
-        }
-      ]
-    },
-    {
-      type: "translation",
-      instruction: "Translate these sentences using the future tense.",
-      items: [
-        {
-          english: "I will buy a new house next year.",
-          answer: "Compraré una casa nueva el próximo año.",
-          explanation: "Regular -ar verb in future: compraré (I will buy)"
-        },
-        {
-          english: "We will visit our friends on Sunday.",
-          answer: "Visitaremos a nuestros amigos el domingo.",
-          explanation: "Regular -ar verb in future: visitaremos (we will visit)"
-        },
-        {
-          english: "They will arrive late to the meeting.",
-          answer: "Llegarán tarde a la reunión.",
-          explanation: "Regular -ar verb in future: llegarán (they will arrive)"
-        },
-        {
-          english: "She will write a letter to her mother.",
-          answer: "Escribirá una carta a su madre.",
-          explanation: "Regular -ir verb in future: escribirá (she will write)"
-        },
-        {
-          english: "You will know the answer tomorrow.",
-          answer: "Sabrás la respuesta mañana.",
-          explanation: "Saber is irregular in future: sabrás (you will know)"
-        }
-      ]
-    }
-  ]
-};
+
+const practiceItems = [
+  {
+    id: "future-1",
+    type: "fill_blank" as const,
+    question: "Mañana yo _____ (hablar) con el director.",
+    answer: "hablaré",
+    hint: "Regular -ar verbs in future: yo form ends in -é",
+    difficulty: "beginner" as const,
+    category: "future-tense"
+  },
+  {
+    id: "future-2",
+    type: "fill_blank" as const,
+    question: "Ellos _____ (comer) en el restaurante nuevo.",
+    answer: "comerán",
+    hint: "Regular -er verbs in future: ellos form ends in -án",
+    difficulty: "beginner" as const,
+    category: "future-tense"
+  },
+  {
+    id: "future-3",
+    type: "fill_blank" as const,
+    question: "Nosotros _____ (vivir) en España el próximo año.",
+    answer: "viviremos",
+    hint: "Regular -ir verbs in future: nosotros form ends in -emos",
+    difficulty: "beginner" as const,
+    category: "future-tense"
+  },
+  {
+    id: "future-4",
+    type: "fill_blank" as const,
+    question: "¿Qué _____ (hacer) tú este fin de semana?",
+    answer: "harás",
+    hint: "Hacer is irregular in future: har- + ás = harás",
+    difficulty: "intermediate" as const,
+    category: "future-tense"
+  },
+  {
+    id: "future-5",
+    type: "fill_blank" as const,
+    question: "Ella _____ (tener) que estudiar mucho.",
+    answer: "tendrá",
+    hint: "Tener is irregular in future: tendr- + á = tendrá",
+    difficulty: "intermediate" as const,
+    category: "future-tense"
+  },
+  {
+    id: "future-6",
+    type: "fill_blank" as const,
+    question: "Ustedes _____ (poder) venir a la fiesta.",
+    answer: "podrán",
+    hint: "Poder is irregular in future: podr- + án = podrán",
+    difficulty: "intermediate" as const,
+    category: "future-tense"
+  },
+  {
+    id: "future-7",
+    type: "fill_blank" as const,
+    question: "Yo _____ (salir) temprano del trabajo.",
+    answer: "saldré",
+    hint: "Salir is irregular in future: saldr- + é = saldré",
+    difficulty: "intermediate" as const,
+    category: "future-tense"
+  },
+  {
+    id: "future-8",
+    type: "fill_blank" as const,
+    question: "Los estudiantes _____ (venir) a clase mañana.",
+    answer: "vendrán",
+    hint: "Venir is irregular in future: vendr- + án = vendrán",
+    difficulty: "intermediate" as const,
+    category: "future-tense"
+  },
+  {
+    id: "future-9",
+    type: "fill_blank" as const,
+    question: "Tú _____ (decir) la verdad, ¿no?",
+    answer: "dirás",
+    hint: "Decir is irregular in future: dir- + ás = dirás",
+    difficulty: "intermediate" as const,
+    category: "future-tense"
+  },
+  {
+    id: "future-10",
+    type: "fill_blank" as const,
+    question: "Mi hermana _____ (poner) la mesa para la cena.",
+    answer: "pondrá",
+    hint: "Poner is irregular in future: pondr- + á = pondrá",
+    difficulty: "intermediate" as const,
+    category: "future-tense"
+  },
+  {
+    id: "future-11",
+    type: "fill_blank" as const,
+    question: "Mañana nosotros _____ al cine.",
+    answer: "iremos",
+    options: ["vamos", "fuimos", "iremos", "íbamos"],
+    hint: "Ir is irregular in future: iremos (we will go)",
+    difficulty: "intermediate" as const,
+    category: "future-tense"
+  },
+  {
+    id: "future-12",
+    type: "fill_blank" as const,
+    question: "Ella _____ el libro la próxima semana.",
+    answer: "leerá",
+    options: ["lee", "leyó", "leerá", "leía"],
+    hint: "Regular -er verb in future: leerá (she will read)",
+    difficulty: "beginner" as const,
+    category: "future-tense"
+  },
+  {
+    id: "future-13",
+    type: "fill_blank" as const,
+    question: "Ellos _____ en el hotel.",
+    answer: "quedarán",
+    options: ["quedan", "quedaron", "quedarán", "quedaban"],
+    hint: "Regular -ar verb in future: quedarán (they will stay)",
+    difficulty: "beginner" as const,
+    category: "future-tense"
+  },
+  {
+    id: "future-14",
+    type: "fill_blank" as const,
+    question: "Yo _____ mi tarea esta noche.",
+    answer: "haré",
+    options: ["hago", "hice", "haré", "hacía"],
+    hint: "Hacer is irregular in future: haré (I will do)",
+    difficulty: "intermediate" as const,
+    category: "future-tense"
+  },
+  {
+    id: "future-15",
+    type: "fill_blank" as const,
+    question: "Tú _____ muy bien en el examen.",
+    answer: "saldrás",
+    options: ["sales", "saliste", "saldrás", "salías"],
+    hint: "Salir is irregular in future: saldrás (you will do/come out)",
+    difficulty: "intermediate" as const,
+    category: "future-tense"
+  },
+  {
+    id: "future-16",
+    type: "translation" as const,
+    question: "I will buy a new house next year.",
+    answer: "Compraré una casa nueva el próximo año.",
+    hint: "Regular -ar verb in future: compraré (I will buy)",
+    difficulty: "beginner" as const,
+    category: "future-tense"
+  },
+  {
+    id: "future-17",
+    type: "translation" as const,
+    question: "We will visit our friends on Sunday.",
+    answer: "Visitaremos a nuestros amigos el domingo.",
+    hint: "Regular -ar verb in future: visitaremos (we will visit)",
+    difficulty: "beginner" as const,
+    category: "future-tense"
+  },
+  {
+    id: "future-18",
+    type: "translation" as const,
+    question: "They will arrive late to the meeting.",
+    answer: "Llegarán tarde a la reunión.",
+    hint: "Regular -ar verb in future: llegarán (they will arrive)",
+    difficulty: "beginner" as const,
+    category: "future-tense"
+  },
+  {
+    id: "future-19",
+    type: "translation" as const,
+    question: "She will write a letter to her mother.",
+    answer: "Escribirá una carta a su madre.",
+    hint: "Regular -ir verb in future: escribirá (she will write)",
+    difficulty: "beginner" as const,
+    category: "future-tense"
+  },
+  {
+    id: "future-20",
+    type: "translation" as const,
+    question: "You will know the answer tomorrow.",
+    answer: "Sabrás la respuesta mañana.",
+    hint: "Saber is irregular in future: sabrás (you will know)",
+    difficulty: "intermediate" as const,
+    category: "future-tense"
+  }
+];
 
 export default function SpanishFuturePracticePage() {
-  return <GrammarPractice {...practiceData} />;
+  return (
+    <GrammarPractice
+      language="spanish"
+      category="verbs"
+      difficulty="mixed"
+      practiceItems={practiceItems}
+      onComplete={(score, gemsEarned, timeSpent) => {
+        console.log('Practice completed:', { score, gemsEarned, timeSpent });
+      }}
+      onExit={() => {
+        window.history.back();
+      }}
+      gamified={true}
+    />
+  );
 }

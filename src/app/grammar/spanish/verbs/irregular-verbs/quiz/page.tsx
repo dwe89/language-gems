@@ -1,22 +1,9 @@
+'use client';
+
 import { Metadata } from 'next';
 import GrammarQuiz from '@/components/grammar/GrammarQuiz';
 
-export const metadata: Metadata = {
-  title: 'Spanish Irregular Verbs Quiz | LanguageGems',
-  description: 'Test your knowledge of Spanish irregular verbs with this comprehensive quiz. Covers high-frequency irregular verb conjugations.',
-  keywords: 'Spanish irregular verbs quiz, irregular verb test, Spanish irregular conjugation quiz',
-  openGraph: {
-    title: 'Spanish Irregular Verbs Quiz | LanguageGems',
-    description: 'Test your knowledge of Spanish irregular verbs with this comprehensive quiz. Covers high-frequency irregular verb conjugations.',
-    url: 'https://languagegems.com/grammar/spanish/verbs/irregular-verbs/quiz',
-    siteName: 'LanguageGems',
-    locale: 'en_US',
-    type: 'website',
-  },
-  alternates: {
-    canonical: 'https://languagegems.com/grammar/spanish/verbs/irregular-verbs/quiz',
-  },
-};
+
 
 const quizData = {
   id: "irregular-verbs-quiz",
