@@ -413,7 +413,7 @@ export default function GermanPerfectTensePage() {
         practiceUrl="/grammar/german/verbs/perfect-tense/practice"
         quizUrl="/grammar/german/verbs/perfect-tense/quiz"
         songUrl="/songs/de?theme=grammar&topic=perfect-tense"
-        youtubeVideoId="dQw4w9WgXcQ"
+        youtubeVideoId="EGaSgIRswcI"
         relatedTopics={relatedTopics}
       />
     </>

@@ -1,17 +1,138 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../../../../../../components/auth/AuthProvider';
 import GrammarQuiz from '../../../../../../components/grammar/GrammarQuiz';
 import { ArrowLeft, Award, Users, Clock, Trophy } from 'lucide-react';
 import Link from 'next/link';
-import { GemCard } from '../../../../../../components/ui/GemTheme';
+import { GemCard, GemButton } from '../../../../../../components/ui/GemTheme';
 import FlagIcon from '../../../../../../components/ui/FlagIcon';
+
+// Sample quiz data for Spanish noun gender
+const quizData = {
+  id: 'spanish-noun-gender-quiz',
+  title: 'Spanish Noun Gender Quiz',
+  description: 'Test your knowledge of Spanish noun gender',
+  difficulty_level: 'beginner',
+  estimated_duration: 10,
+  questions: [
+    {
+      id: '1',
+      question_text: 'What is the correct article for "mesa" (table)?',
+      question_type: 'multiple_choice' as const,
+      correct_answer: 'la',
+      options: ['el', 'la', 'los', 'las'],
+      explanation: 'Mesa is feminine, so it uses "la". Most nouns ending in -a are feminine.',
+      difficulty_level: 'beginner',
+      hint_text: 'Think about the ending of the noun'
+    },
+    {
+      id: '2',
+      question_text: 'What is the correct article for "coche" (car)?',
+      question_type: 'multiple_choice' as const,
+      correct_answer: 'el',
+      options: ['el', 'la', 'los', 'las'],
+      explanation: 'Coche is masculine despite ending in -e. Many nouns ending in -e are masculine.',
+      difficulty_level: 'beginner',
+      hint_text: 'This word is masculine despite its ending'
+    },
+    {
+      id: '3',
+      question_text: 'Complete: _____ problema es difícil',
+      question_type: 'fill_blank' as const,
+      correct_answer: 'El',
+      explanation: 'Problema is masculine despite ending in -a. It\'s an exception to the general rule.',
+      difficulty_level: 'intermediate',
+      hint_text: 'This is an exception to the -a = feminine rule'
+    },
+    {
+      id: '4',
+      question_text: 'Complete: _____ mano está fría',
+      question_type: 'fill_blank' as const,
+      correct_answer: 'La',
+      explanation: 'Mano is feminine despite ending in -o. It\'s an exception to the general rule.',
+      difficulty_level: 'intermediate',
+      hint_text: 'This is an exception to the -o = masculine rule'
+    },
+    {
+      id: '5',
+      question_text: 'Which article goes with "estudiante" (student) when referring to a female?',
+      question_type: 'multiple_choice' as const,
+      correct_answer: 'la',
+      options: ['el', 'la', 'los', 'las'],
+      explanation: 'When referring to a female student, use "la estudiante". The gender of the article changes with the person\'s gender.',
+      difficulty_level: 'intermediate',
+      hint_text: 'The gender depends on the person, not just the word'
+    },
+    {
+      id: '6',
+      question_text: 'Most nouns ending in -dad are:',
+      question_type: 'multiple_choice' as const,
+      correct_answer: 'feminine',
+      options: ['masculine', 'feminine', 'both', 'neither'],
+      explanation: 'Nouns ending in -dad (like ciudad, verdad) are almost always feminine.',
+      difficulty_level: 'intermediate',
+      hint_text: 'Think of words like ciudad, verdad, libertad'
+    },
+    {
+      id: '7',
+      question_text: 'Complete: _____ agua está muy fría',
+      question_type: 'fill_blank' as const,
+      correct_answer: 'El',
+      explanation: 'Agua is feminine but uses "el" to avoid the awkward sound of "la agua". This happens with feminine nouns starting with stressed "a".',
+      difficulty_level: 'advanced',
+      hint_text: 'This is about pronunciation, not gender'
+    },
+    {
+      id: '8',
+      question_text: 'True or False: All nouns ending in -ión are feminine',
+      question_type: 'true_false' as const,
+      correct_answer: 'true',
+      explanation: 'Almost all nouns ending in -ión are feminine (like acción, nación, emoción).',
+      difficulty_level: 'intermediate',
+      hint_text: 'Think of words like acción, nación, información'
+    }
+  ]
+};
 
 export default function SpanishNounGenderQuizPage() {
   const { user } = useAuth();
+  const [showQuiz, setShowQuiz] = useState(false);
 
   console.log('🏆 [NOUN GENDER QUIZ] Page loaded, user:', !!user);
+
+  const handleComplete = async (score: number, answers: any[], timeSpent: number) => {
+    console.log('Quiz completed!', { score, answers, timeSpent });
+    
+    if (user) {
+      // Save quiz results to database for logged-in users
+      // TODO: Implement database saving
+      const percentage = Math.round((score / quizData.questions.length) * 100);
+      alert(`Great job! You scored ${score}/${quizData.questions.length} (${percentage}%) in ${Math.round(timeSpent / 1000)} seconds!`);
+    } else {
+      // Show results without saving for free users
+      const percentage = Math.round((score / quizData.questions.length) * 100);
+      alert(`Great job! You scored ${score}/${quizData.questions.length} (${percentage}%)! Sign up to track your progress.`);
+    }
+    
+    setShowQuiz(false);
+  };
+
+  const handleExit = () => {
+    setShowQuiz(false);
+  };
+
+  if (showQuiz) {
+    return (
+      <GrammarQuiz
+        quizData={quizData}
+        onComplete={handleComplete}
+        onExit={handleExit}
+        showHints={true}
+        timeLimit={user ? 300 : undefined} // 5 minutes for logged-in users
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
@@ -91,23 +212,17 @@ export default function SpanishNounGenderQuizPage() {
             </GemCard>
           </div>
 
-          {/* Quiz Component */}
-          <GrammarQuiz
-            language="es"
-            category="nouns"
-            topic="gender"
-            title="Spanish Noun Gender Quiz"
-            onComplete={(score) => {
-              console.log('🏆 [NOUN GENDER QUIZ] Quiz completed with score:', score);
-            }}
-            onExit={() => {
-              console.log('🏆 [NOUN GENDER QUIZ] Quiz exited');
-              window.location.href = '/grammar/spanish/nouns/gender';
-            }}
-            userId={user?.id}
-            trackProgress={!!user}
-            timeLimit={user ? 300 : undefined} // 5 minutes for logged-in users
-          />
+          {/* Start Quiz Button */}
+          <div className="text-center">
+            <GemButton
+              onClick={() => setShowQuiz(true)}
+              size="lg"
+              className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700"
+            >
+              <Award className="w-5 h-5 mr-2" />
+              Start Quiz
+            </GemButton>
+          </div>
         </div>
       </div>
     </div>

@@ -381,7 +381,7 @@ export default function GermanPastTensePage() {
         practiceUrl="/grammar/german/verbs/past-tense/practice"
         quizUrl="/grammar/german/verbs/past-tense/quiz"
         songUrl="/songs/de?theme=grammar&topic=past-tense"
-        youtubeVideoId="dQw4w9WgXcQ"
+        youtubeVideoId="EGaSgIRswcI"
         relatedTopics={relatedTopics}
       />
     </>

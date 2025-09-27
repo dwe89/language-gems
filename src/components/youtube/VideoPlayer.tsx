@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
 import { useSupabase } from '@/hooks/useSupabase';
 import { useAuth } from '@/components/auth/AuthProvider';
+import useProgress from '@/hooks/useProgress';
 
 interface VideoPlayerProps {
   videoId: string;
@@ -39,6 +40,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const { user } = useAuth();
   const { supabase } = useSupabase();
+  const { trackVideoProgress } = useProgress();
 
   // Helper function to save progress to our new API
   const saveProgressToDb = async (currentPercentage: number, durationSecs?: number) => {
@@ -99,12 +101,15 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({
   }));
 
   useEffect(() => {
+    let playerInstance: YT.Player | null = null;
+    let isComponentMounted = true;
+
     // Function to initialize the player
     const initializePlayer = () => {
-      if (!containerRef.current) return;
+      if (!containerRef.current || !isComponentMounted) return;
       
       try {
-        playerRef.current = new window.YT.Player(containerRef.current, {
+        playerInstance = new window.YT.Player(containerRef.current, {
           width: '100%',
           height: '100%',
           videoId: videoId,
@@ -120,14 +125,21 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({
           events: {
             onReady: () => {
               console.log('YouTube player ready');
-              setPlayerReady(true);
-              setupProgressTracking();
+              if (isComponentMounted) {
+                playerRef.current = playerInstance;
+                setPlayerReady(true);
+                setupProgressTracking();
+              }
             },
             onError: (e) => {
               console.error('YouTube player error:', e.data);
-              setError('Error loading video. Please try again later.');
+              if (isComponentMounted) {
+                setError('Error loading video. Please try again later.');
+              }
             },
             onStateChange: (e) => {
+              if (!isComponentMounted) return;
+              
               // Track when video starts playing
               if (e.data === window.YT.PlayerState.PLAYING) {
                 setupProgressTracking();
@@ -153,7 +165,9 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({
         });
       } catch (err) {
         console.error('Error initializing YouTube player:', err);
-        setError('Failed to initialize video player');
+        if (isComponentMounted) {
+          setError('Failed to initialize video player');
+        }
       }
     };
 
@@ -164,8 +178,10 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({
       }
       
       progressIntervalRef.current = setInterval(() => {
-        if (playerRef.current && playerRef.current.getPlayerState() === window.YT.PlayerState.PLAYING) {
-          try {
+        if (!isComponentMounted || !playerRef.current) return;
+        
+        try {
+          if (playerRef.current.getPlayerState() === window.YT.PlayerState.PLAYING) {
             const currentTime = playerRef.current.getCurrentTime();
             const duration = playerRef.current.getDuration();
             const percentage = (currentTime / duration) * 100;
@@ -178,9 +194,9 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({
             if (Math.round(currentTime) % 15 === 0) { 
               saveProgressToDb(percentage, duration);
             }
-          } catch (e) {
-            console.error('Error tracking progress:', e);
           }
+        } catch (e) {
+          console.error('Error tracking progress:', e);
         }
       }, 5000); // Check progress every 5 seconds
     };
@@ -206,29 +222,45 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({
       
       // Set a timeout for API loading
       const apiTimeout = setTimeout(() => {
-        if (!window.YT || !window.YT.Player) {
+        if (isComponentMounted && (!window.YT || !window.YT.Player)) {
           setError('Player initialization timeout. Please check your internet connection.');
         }
       }, 15000);
       
-      return () => clearTimeout(apiTimeout);
+      return () => {
+        isComponentMounted = false;
+        clearTimeout(apiTimeout);
+        clearProgressTracking();
+        
+        // Clean up player instance
+        if (playerInstance) {
+          try {
+            playerInstance.destroy();
+          } catch (e) {
+            console.error('Error destroying player:', e);
+          }
+        }
+        playerRef.current = null;
+      };
     } else if (window.YT && window.YT.Player) {
       // If API is already loaded
       initializePlayer();
     }
     
-    // Cleanup function to destroy player and clear intervals
+    // Cleanup function
     return () => {
+      isComponentMounted = false;
       clearProgressTracking();
       
-      if (playerRef.current) {
+      // Clean up player instance
+      if (playerInstance) {
         try {
-          // @ts-ignore - YT Player doesn't have proper typings for destroy
-          playerRef.current.destroy();
+          playerInstance.destroy();
         } catch (e) {
           console.error('Error destroying player:', e);
         }
       }
+      playerRef.current = null;
     };
   }, [videoId, autoplay, onProgress, language]);
 

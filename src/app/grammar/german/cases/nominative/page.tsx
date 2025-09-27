@@ -408,7 +408,7 @@ export default function GermanNominativePage() {
         practiceUrl="/grammar/german/cases/nominative/practice"
         quizUrl="/grammar/german/cases/nominative/quiz"
         songUrl="/songs/de?theme=grammar&topic=nominative"
-        youtubeVideoId="dQw4w9WgXcQ"
+        youtubeVideoId="EGaSgIRswcI"
         relatedTopics={relatedTopics}
       />
     </>

@@ -71,6 +71,24 @@ export default function GrammarQuiz({
   const [timeRemaining, setTimeRemaining] = useState(timeLimit || 0);
   const [isCompleted, setIsCompleted] = useState(false);
 
+  // Guard against undefined or empty quizData.questions
+  if (!quizData || !quizData.questions || quizData.questions.length === 0) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 flex items-center justify-center p-4">
+        <GemCard className="max-w-md w-full text-center">
+          <div className="text-gray-500 mb-4">
+            <Target className="w-12 h-12 mx-auto mb-2" />
+            <p className="text-lg">No quiz questions available</p>
+            <p className="text-sm">Please try again later or contact support if this persists.</p>
+          </div>
+          <GemButton variant="gem" gemType="common" onClick={onExit}>
+            Return to Menu
+          </GemButton>
+        </GemCard>
+      </div>
+    );
+  }
+
   const currentQuestionData = quizData.questions[currentQuestion];
   const isLastQuestion = currentQuestion === quizData.questions.length - 1;
   const progress = ((currentQuestion + 1) / quizData.questions.length) * 100;
@@ -120,7 +138,11 @@ export default function GrammarQuiz({
     if (isLastQuestion) {
       handleQuizComplete();
     } else {
-      setCurrentQuestion(prev => prev + 1);
+      setCurrentQuestion(prev => {
+        const nextIndex = prev + 1;
+        // Safety check to ensure we don't go out of bounds
+        return nextIndex < quizData.questions.length ? nextIndex : prev;
+      });
       setCurrentAnswer('');
       setShowFeedback(false);
       setShowHint(false);

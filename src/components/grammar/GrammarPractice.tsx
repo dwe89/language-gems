@@ -61,6 +61,24 @@ export default function GrammarPractice({
   const [showHint, setShowHint] = useState(false);
   const [completedItems, setCompletedItems] = useState<Set<number>>(new Set());
 
+  // Guard against undefined or empty practiceItems
+  if (!practiceItems || practiceItems.length === 0) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 flex items-center justify-center p-4">
+        <GemCard className="max-w-md w-full text-center">
+          <div className="text-gray-500 mb-4">
+            <Target className="w-12 h-12 mx-auto mb-2" />
+            <p className="text-lg">No practice items available</p>
+            <p className="text-sm">Please try again later or contact support if this persists.</p>
+          </div>
+          <GemButton variant="gem" gemType="common" onClick={onExit}>
+            Return to Menu
+          </GemButton>
+        </GemCard>
+      </div>
+    );
+  }
+
   const currentPracticeItem = practiceItems[currentItem];
   const progress = ((currentItem + 1) / practiceItems.length) * 100;
   const isLastItem = currentItem === practiceItems.length - 1;
@@ -136,7 +154,11 @@ export default function GrammarPractice({
       const totalTimeSpent = Math.round((Date.now() - startTime) / 1000);
       onComplete(score, gemsEarned, totalTimeSpent);
     } else {
-      setCurrentItem(prev => prev + 1);
+      setCurrentItem(prev => {
+        const nextIndex = prev + 1;
+        // Safety check to ensure we don't go out of bounds
+        return nextIndex < practiceItems.length ? nextIndex : prev;
+      });
       setUserAnswer('');
       setShowFeedback(false);
       setShowHint(false);

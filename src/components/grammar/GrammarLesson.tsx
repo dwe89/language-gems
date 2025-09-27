@@ -121,6 +121,24 @@ export default function GrammarLesson({
   const title = contentData?.title || lessonData?.title || 'Grammar Lesson';
   const estimatedDuration = contentData?.estimated_duration || lessonData?.estimated_duration || 15;
 
+  // Guard against empty sections
+  if (sections.length === 0) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 flex items-center justify-center p-4">
+        <GemCard className="max-w-md w-full text-center">
+          <div className="text-gray-500 mb-4">
+            <Target className="w-12 h-12 mx-auto mb-2" />
+            <p className="text-lg">No lesson content available</p>
+            <p className="text-sm">Please try again later or contact support if this persists.</p>
+          </div>
+          <GemButton variant="gem" gemType="common" onClick={onExit}>
+            Return to Menu
+          </GemButton>
+        </GemCard>
+      </div>
+    );
+  }
+
   const currentSectionData = sections[currentSection];
   const isLastSection = currentSection === sections.length - 1;
   const isFirstSection = currentSection === 0;

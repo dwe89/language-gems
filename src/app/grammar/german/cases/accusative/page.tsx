@@ -451,7 +451,7 @@ export default function GermanAccusativePage() {
         practiceUrl="/grammar/german/cases/accusative/practice"
         quizUrl="/grammar/german/cases/accusative/quiz"
         songUrl="/songs/de?theme=grammar&topic=accusative"
-        youtubeVideoId="dQw4w9WgXcQ"
+        youtubeVideoId="EGaSgIRswcI"
         relatedTopics={relatedTopics}
       />
     </>
