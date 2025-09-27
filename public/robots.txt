@@ -11,6 +11,7 @@ Allow: /community
 Allow: /worksheets
 Allow: /vocabulary
 Allow: /sitemap
+ALlow: /grammar
 
 # Disallow sensitive areas
 Disallow: /api/

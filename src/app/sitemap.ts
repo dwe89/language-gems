@@ -1,4 +1,67 @@
 import { MetadataRoute } from 'next'
+import fs from 'fs'
+import path from 'path'
+
+// Function to get all static grammar pages
+function getGrammarPages(): { url: string; priority: number; changeFrequency: 'weekly' | 'monthly' }[] {
+  const grammarDir = path.join(process.cwd(), 'src/app/grammar')
+  const grammarPages: { url: string; priority: number; changeFrequency: 'weekly' | 'monthly' }[] = []
+  
+  // Function to recursively find page.tsx files
+  function findPages(dir: string, currentPath: string = ''): void {
+    try {
+      const items = fs.readdirSync(dir)
+      
+      for (const item of items) {
+        const fullPath = path.join(dir, item)
+        const relativePath = currentPath ? `${currentPath}/${item}` : item
+        
+        // Skip dynamic routes (contains brackets)
+        if (item.includes('[') || item.includes(']')) {
+          continue
+        }
+        
+        if (fs.statSync(fullPath).isDirectory()) {
+          findPages(fullPath, relativePath)
+        } else if (item === 'page.tsx') {
+          // Convert file path to URL
+          const url = currentPath ? `/grammar/${currentPath}` : '/grammar'
+          
+          // Determine priority based on depth and content type
+          let priority = 0.7 // default for grammar pages
+          let changeFrequency: 'weekly' | 'monthly' = 'monthly'
+          
+          // Higher priority for main language pages
+          if (currentPath.match(/^(spanish|french|german)$/)) {
+            priority = 0.8
+            changeFrequency = 'weekly'
+          }
+          // Higher priority for category pages (verbs, nouns, etc.)
+          else if (currentPath.match(/^(spanish|french|german)\/(verbs|nouns|adjectives|pronouns)$/)) {
+            priority = 0.75
+            changeFrequency = 'weekly'
+          }
+          // Specific topic pages
+          else if (currentPath.includes('/')) {
+            priority = 0.7
+            changeFrequency = 'monthly'
+          }
+          
+          grammarPages.push({
+            url,
+            priority,
+            changeFrequency
+          })
+        }
+      }
+    } catch (error) {
+      console.warn(`Could not read directory ${dir}:`, error)
+    }
+  }
+  
+  findPages(grammarDir)
+  return grammarPages.sort((a, b) => b.priority - a.priority) // Sort by priority
+}
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = 'https://languagegems.com'
@@ -412,8 +475,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     {
       url: `${baseUrl}/grammar`,
       lastModified: currentDate,
-      changeFrequency: 'monthly' as const,
-      priority: 0.7,
+      changeFrequency: 'weekly' as const,
+      priority: 0.8,
     },
     {
       url: `${baseUrl}/resources`,
@@ -450,6 +513,17 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.4,
     },
   ]
+
+  // Add all grammar pages dynamically
+  const grammarPages = getGrammarPages()
+  grammarPages.forEach(page => {
+    routes.push({
+      url: `${baseUrl}${page.url}`,
+      lastModified: currentDate,
+      changeFrequency: page.changeFrequency,
+      priority: page.priority,
+    })
+  })
 
   return routes
 }
