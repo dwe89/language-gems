@@ -66,7 +66,7 @@ export const metadata: Metadata = {
     siteName: 'Language Gems',
     images: [
       {
-        url: '/images/og-default.jpg',
+        url: '/images/og-default.svg',
         width: 1200,
         height: 630,
         alt: 'Language Gems - Interactive Language Learning Platform',

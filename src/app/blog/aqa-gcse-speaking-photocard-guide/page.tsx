@@ -1,21 +1,54 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowLeft, Camera, MessageCircle, Target, AlertTriangle, CheckCircle, Star } from 'lucide-react';
+import { generateBlogMetadata, generateBlogStructuredData, generateBlogBreadcrumbs } from '../../../lib/seo/blogSEO';
 
-export const metadata: Metadata = {
-  title: 'AQA GCSE Speaking: Teacher Guide to Photocard & Unprepared Conversation | Language Gems',
-  description: 'Comprehensive teacher guide to the AQA GCSE Speaking exam Photocard and Unprepared Conversation tasks. Includes scoring criteria, student strategies, and practical examples.',
-  keywords: 'AQA GCSE Speaking, photocard task, unprepared conversation, GCSE Spanish speaking, GCSE French speaking, GCSE German speaking, teacher guide, exam preparation',
-  openGraph: {
-    title: 'AQA GCSE Speaking: Teacher Guide to Photocard & Unprepared Conversation',
-    description: 'Complete teacher guide to the AQA GCSE Speaking exam photocard and conversation tasks',
-    type: 'article',
-  },
-};
+export const metadata: Metadata = generateBlogMetadata({
+  title: 'AQA GCSE Speaking: Complete Photocard Guide',
+  description: 'Master the AQA GCSE Speaking exam photocard task with our comprehensive guide. Learn scoring criteria, strategies, and common pitfalls for exam success.',
+  slug: 'aqa-gcse-speaking-photocard-guide',
+  keywords: [
+    'AQA GCSE Speaking',
+    'photocard task',
+    'GCSE Spanish speaking',
+    'GCSE French speaking',
+    'GCSE German speaking',
+    'exam preparation',
+    'speaking assessment',
+    'GCSE revision'
+  ],
+  author: 'Daniel Etienne',
+  publishedDate: '2024-01-15T10:00:00.000Z',
+  category: 'GCSE Exam Preparation',
+  tags: ['AQA GCSE', 'Speaking Exam', 'Photocard Task', 'Language Learning'],
+  imageUrl: 'https://languagegems.com/images/blog/aqa-gcse-speaking-photocard-og.svg',
+  imageAlt: 'AQA GCSE Speaking Photocard Guide - Complete exam preparation resource',
+});
 
 export default function AQAGCSESpeakingPhotocardGuide() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <>
+      {/* Structured Data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify([
+            generateBlogStructuredData({
+              title: 'AQA GCSE Speaking: Complete Photocard Guide',
+              description: 'Master the AQA GCSE Speaking exam photocard task with our comprehensive guide. Learn scoring criteria, strategies, and common pitfalls for exam success.',
+              slug: 'aqa-gcse-speaking-photocard-guide',
+              author: 'Daniel Etienne',
+              publishedDate: '2024-01-15T10:00:00.000Z',
+              category: 'GCSE Exam Preparation',
+              keywords: ['AQA GCSE Speaking', 'photocard task', 'GCSE Spanish speaking', 'GCSE French speaking', 'GCSE German speaking', 'exam preparation'],
+              imageUrl: 'https://languagegems.com/images/blog/aqa-gcse-speaking-photocard-og.svg',
+            }),
+            generateBlogBreadcrumbs('AQA GCSE Speaking: Complete Photocard Guide', 'GCSE Exam Preparation')
+          ])
+        }}
+      />
+      
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
@@ -34,10 +67,10 @@ export default function AQAGCSESpeakingPhotocardGuide() {
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-gray-900">
-                  AQA GCSE Speaking: Teacher Guide to Photocard & Unprepared Conversation
+                  AQA GCSE Speaking: Complete Photocard Guide
                 </h1>
                 <p className="text-gray-600 mt-2">
-                  A comprehensive teacher guide to preparing students for the speaking exam's most challenging components
+                  Your complete guide to mastering the speaking exam's photocard task
                 </p>
               </div>
             </div>
@@ -63,8 +96,8 @@ export default function AQAGCSESpeakingPhotocardGuide() {
               </h2>
 
               <p className="text-gray-700 mb-4">
-                The AQA GCSE Speaking exam's Photocard and Unprepared Conversation is a crucial component that tests students' ability to
-                describe, analyze, and discuss visual content while engaging in spontaneous dialogue. This task is worth <strong>25 marks
+                The AQA GCSE Speaking exam's Photocard task is a crucial component that tests students' ability to
+                describe, analyze, and discuss visual content. This task is worth <strong>25 marks
                 (50% of the speaking test)</strong> and requires students to demonstrate both descriptive skills and conversational fluency.
               </p>
 
@@ -97,12 +130,8 @@ export default function AQAGCSESpeakingPhotocardGuide() {
                       <div className="font-semibold text-blue-800">Total Time: 4-5 minutes</div>
                     </div>
                     <div className="bg-white p-3 rounded border border-blue-200">
-                      <div className="font-medium text-blue-700">Photo Description</div>
-                      <div className="text-blue-600">~1 minute</div>
-                    </div>
-                    <div className="bg-white p-3 rounded border border-blue-200">
-                      <div className="font-medium text-blue-700">Unprepared Conversation</div>
-                      <div className="text-blue-600">3-4 minutes</div>
+                      <div className="font-medium text-blue-700">Photo Description & Discussion</div>
+                      <div className="text-blue-600">4-5 minutes</div>
                     </div>
                   </div>
                 </div>
@@ -114,12 +143,8 @@ export default function AQAGCSESpeakingPhotocardGuide() {
                       <div className="font-semibold text-purple-800">Total Time: 6-7 minutes</div>
                     </div>
                     <div className="bg-white p-3 rounded border border-purple-200">
-                      <div className="font-medium text-purple-700">Photo Description</div>
-                      <div className="text-purple-600">~1.5 minutes</div>
-                    </div>
-                    <div className="bg-white p-3 rounded border border-purple-200">
-                      <div className="font-medium text-purple-700">Unprepared Conversation</div>
-                      <div className="text-purple-600">4.5-5.5 minutes</div>
+                      <div className="font-medium text-purple-700">Photo Description & Discussion</div>
+                      <div className="text-purple-600">6-7 minutes</div>
                     </div>
                   </div>
                 </div>
@@ -201,40 +226,6 @@ export default function AQAGCSESpeakingPhotocardGuide() {
                     <p className="text-blue-700 text-sm mt-2">
                       You cannot place yourself IN the photos, but you can relate to what you see.
                     </p>
-                  </div>
-                </div>
-
-                <div className="border-l-4 border-purple-400 pl-6">
-                  <h3 className="text-xl font-semibold text-gray-900 mb-3">Part 2: Unprepared Conversation</h3>
-                  <p className="text-gray-600 mb-3 italic">
-                    "This conversation can be based on any or all of the three topics from the theme, enabling candidates to develop personalised responses."
-                  </p>
-                  <ul className="space-y-2 text-gray-700">
-                    <li className="flex items-start gap-2">
-                      <CheckCircle className="w-4 h-4 text-green-500 mt-1" />
-                      <span>Respond spontaneously to examiner questions</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <CheckCircle className="w-4 h-4 text-green-500 mt-1" />
-                      <span>Develop personalised responses based on the theme</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <CheckCircle className="w-4 h-4 text-green-500 mt-1" />
-                      <span>Questions can cover any of the three topics within the theme</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <CheckCircle className="w-4 h-4 text-green-500 mt-1" />
-                      <span>Demonstrate natural conversation skills</span>
-                    </li>
-                  </ul>
-
-                  <div className="bg-red-50 p-4 rounded-lg mt-4">
-                    <h4 className="font-semibold text-red-900 mb-2">Important Restrictions</h4>
-                    <ul className="text-red-800 text-sm space-y-1">
-                      <li>• You cannot know the questions in advance</li>
-                      <li>• Teachers cannot discuss preferred topic areas beforehand</li>
-                      <li>• The conversation must be genuinely unprepared</li>
-                    </ul>
                   </div>
                 </div>
               </div>
@@ -657,5 +648,6 @@ export default function AQAGCSESpeakingPhotocardGuide() {
         </div>
       </div>
     </div>
+    </>
   );
 }

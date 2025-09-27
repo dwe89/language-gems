@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../../../../../../components/auth/AuthProvider';
 import GrammarLesson from '../../../../../../components/grammar/GrammarLesson';
 import { motion } from 'framer-motion';
@@ -22,8 +22,9 @@ interface GrammarContentData {
 export default function GrammarTopicLessonPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user } = useAuth();
-  
+
   const [contentData, setContentData] = useState<GrammarContentData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -31,6 +32,10 @@ export default function GrammarTopicLessonPage() {
   const language = params.language as string;
   const category = params.category as string;
   const topic = params.topic as string;
+
+  // Extract assignment parameters from URL
+  const assignmentId = searchParams?.get('assignment');
+  const isPreview = searchParams?.get('preview') === 'true';
 
   useEffect(() => {
     loadLessonContent();

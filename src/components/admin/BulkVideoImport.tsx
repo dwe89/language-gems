@@ -43,15 +43,15 @@ export default function BulkVideoImport({ onComplete, onCancel }: BulkVideoImpor
   const [results, setResults] = useState<{ success: number; errors: string[] } | null>(null);
 
   const sampleData = `Title,YouTube ID,Language,Level,Theme,Topic,Description
-Spanish Numbers Song,dQw4w9WgXcQ,es,beginner,vocabulary,numbers,Learn numbers 1-20 in Spanish
-French Verb Conjugation,dQw4w9WgXcQ,fr,intermediate,grammar,verbs,Master present tense verbs
-German Greetings,dQw4w9WgXcQ,de,beginner,vocabulary,basics_core_language,Common German greetings`;
+Spanish Numbers Song,EGaSgIRswcI,es,beginner,vocabulary,numbers,Learn numbers 1-20 in Spanish
+French Verb Conjugation,EGaSgIRswcI,fr,intermediate,grammar,verbs,Master present tense verbs
+German Greetings,EGaSgIRswcI,de,beginner,vocabulary,basics_core_language,Common German greetings`;
 
   const downloadTemplate = () => {
     const csvContent = "data:text/csv;charset=utf-8," + 
       "Title,YouTube ID,Language,Level,Theme,Topic,Subtopic,Description\n" +
-      "Spanish Numbers Song,dQw4w9WgXcQ,es,beginner,vocabulary,numbers,,Learn numbers 1-20\n" +
-      "French Verbs,dQw4w9WgXcQ,fr,intermediate,grammar,verbs,present_tense,Present tense conjugation";
+      "Spanish Numbers Song,EGaSgIRswcI,es,beginner,vocabulary,numbers,,Learn numbers 1-20\n" +
+      "French Verbs,EGaSgIRswcI,fr,intermediate,grammar,verbs,present_tense,Present tense conjugation";
     
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");

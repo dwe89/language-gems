@@ -596,48 +596,46 @@ export default function GrammarLesson({
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
       {/* Header */}
-      <div className="bg-black/20 backdrop-blur-sm border-b border-white/10">
-        <div className="container mx-auto px-4 py-4">
+      <div className="bg-white/90 backdrop-blur-sm border-b border-gray-200 shadow-sm">
+        <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <button
                 onClick={onExit}
-                className="p-2 bg-white/10 rounded-lg hover:bg-white/20 transition-colors"
+                className="p-3 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors shadow-sm"
               >
-                <ChevronLeft className="w-5 h-5 text-white" />
+                <ChevronLeft className="w-5 h-5 text-gray-600" />
               </button>
               <div>
-                <h1 className="text-xl font-bold text-white">{title}</h1>
-                <p className="text-sm text-purple-200">
+                <h1 className="text-2xl font-bold text-gray-800">{title}</h1>
+                <p className="text-sm text-gray-600">
                   Section {currentSection + 1} of {sections.length}
                 </p>
               </div>
             </div>
-            
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2 text-sm text-purple-200">
-                  <Clock className="w-4 h-4" />
-                  <span>~{estimatedDuration} min</span>
-                </div>
-                <div className="flex items-center space-x-2 text-sm text-purple-200">
-                  <Gem className="w-4 h-4" />
-                  <span>{gemsEarned} gems</span>
-                </div>
-                <div className="text-sm text-purple-200">
-                  {completedSections.size}/{sections.length} completed
-                </div>
+
+            <div className="flex items-center space-x-6">
+              <div className="flex items-center space-x-2 text-sm text-gray-600 bg-white px-3 py-2 rounded-lg border border-gray-200">
+                <Clock className="w-4 h-4" />
+                <span>~{estimatedDuration} min</span>
+              </div>
+              <div className="flex items-center space-x-2 text-sm text-purple-600 bg-purple-50 px-3 py-2 rounded-lg border border-purple-200">
+                <Gem className="w-4 h-4" />
+                <span>{gemsEarned} gems</span>
+              </div>
+              <div className="text-sm text-gray-600 bg-white px-3 py-2 rounded-lg border border-gray-200">
+                {completedSections.size}/{sections.length} completed
               </div>
             </div>
           </div>
-          
+
           {/* Progress Bar */}
-          <div className="mt-4">
-            <div className="w-full bg-white/20 rounded-full h-2">
+          <div className="mt-6">
+            <div className="w-full bg-gray-200 rounded-full h-3">
               <div
-                className="bg-gradient-to-r from-purple-400 to-pink-400 h-2 rounded-full transition-all duration-500"
+                className="bg-gradient-to-r from-purple-500 to-blue-500 h-3 rounded-full transition-all duration-500 shadow-sm"
                 style={{ width: `${((currentSection + 1) / sections.length) * 100}%` }}
               />
             </div>
@@ -646,20 +644,20 @@ export default function GrammarLesson({
       </div>
 
       {/* Content */}
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-12">
         <div className="max-w-4xl mx-auto">
-          <GemCard className="mb-6">
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+          <GemCard className="mb-8 shadow-xl">
+            <div className="mb-8">
+              <h2 className="text-3xl font-bold text-gray-800 mb-3">
                 {currentSectionData.title}
               </h2>
               <div className="flex items-center space-x-4 text-sm text-gray-600">
-                <span className="capitalize">{currentSectionData.type}</span>
+                <span className="capitalize bg-gray-100 px-3 py-1 rounded-full">{currentSectionData.type}</span>
                 <span>•</span>
-                <span>Step {currentSection + 1}</span>
+                <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full">Step {currentSection + 1}</span>
               </div>
             </div>
-            
+
             {renderSection()}
           </GemCard>
 

@@ -117,6 +117,12 @@ export const getNavigationItems = (isAuthenticated: boolean = false, userEmail?:
           comingSoon: !flags.youtubeVideos
         },
         {
+          name: 'Grammar',
+          path: '/grammar',
+          enabled: true,
+          comingSoon: false
+        },
+        {
           name: 'Worksheets',
           path: '/worksheets',
           enabled: flags.worksheets,

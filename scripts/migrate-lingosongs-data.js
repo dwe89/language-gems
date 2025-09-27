@@ -79,11 +79,11 @@ class LingoSongsMigrator {
         {
           id: 'temp-1',
           title: 'Spanish Beginner Song 1',
-          youtube_id: 'dQw4w9WgXcQ',
+          youtube_id: 'EGaSgIRswcI',
           language: 'spanish',
           level: 'beginner',
           description: 'Learn basic Spanish vocabulary through music',
-          thumbnail_url: 'https://img.youtube.com/vi/dQw4w9WgXcQ/maxresdefault.jpg',
+          thumbnail_url: 'https://img.youtube.com/vi/EGaSgIRswcI/maxresdefault.jpg',
           duration_seconds: 180,
           is_premium: false
         }

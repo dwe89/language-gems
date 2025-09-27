@@ -155,23 +155,23 @@ export default function LanguageGrammarPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
       {/* Header */}
-      <div className="bg-black/20 backdrop-blur-sm border-b border-white/10">
-        <div className="container mx-auto px-4 py-6">
+      <div className="bg-white/80 backdrop-blur-sm border-b border-gray-200 shadow-sm">
+        <div className="container mx-auto px-4 py-8">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <Link 
+              <Link
                 href="/grammar"
-                className="p-2 bg-white/10 rounded-lg hover:bg-white/20 transition-colors"
+                className="p-3 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors shadow-sm"
               >
-                <ArrowLeft className="w-5 h-5 text-white" />
+                <ArrowLeft className="w-5 h-5 text-gray-600" />
               </Link>
-              <div className="flex items-center space-x-3">
-                <span className="text-4xl">{languageInfo.flag}</span>
+              <div className="flex items-center space-x-4">
+                <div className="text-5xl">{languageInfo.flag}</div>
                 <div>
-                  <h1 className="text-3xl font-bold text-white">{languageInfo.name} Grammar</h1>
-                  <p className="text-purple-200">Master {languageInfo.name} grammar concepts</p>
+                  <h1 className="text-4xl font-bold text-gray-800 mb-2">{languageInfo.name} Grammar</h1>
+                  <p className="text-gray-600 text-lg">Master {languageInfo.name} grammar concepts step by step</p>
                 </div>
               </div>
             </div>
@@ -200,17 +200,20 @@ export default function LanguageGrammarPage() {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-12">
         {/* Category Filter */}
-        <div className="mb-8">
-          <h2 className="text-xl font-bold text-white mb-4">Categories</h2>
-          <div className="flex flex-wrap gap-2">
+        <div className="mb-12">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-bold text-gray-800 mb-3">Grammar Topics</h2>
+            <p className="text-gray-600 text-lg">Choose a category to filter topics</p>
+          </div>
+          <div className="flex flex-wrap justify-center gap-3">
             <button
               onClick={() => setSelectedCategory('all')}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+              className={`px-6 py-3 rounded-full text-sm font-medium transition-all duration-200 ${
                 selectedCategory === 'all'
-                  ? 'bg-purple-500 text-white'
-                  : 'bg-white/10 text-purple-200 hover:bg-white/20'
+                  ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg'
+                  : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 shadow-sm'
               }`}
             >
               All Topics
@@ -219,10 +222,10 @@ export default function LanguageGrammarPage() {
               <button
                 key={category}
                 onClick={() => setSelectedCategory(category)}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors capitalize ${
+                className={`px-6 py-3 rounded-full text-sm font-medium transition-all duration-200 capitalize ${
                   selectedCategory === category
-                    ? 'bg-purple-500 text-white'
-                    : 'bg-white/10 text-purple-200 hover:bg-white/20'
+                    ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg'
+                    : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 shadow-sm'
                 }`}
               >
                 {category}
@@ -238,82 +241,74 @@ export default function LanguageGrammarPage() {
             const progressPercentage = calculateTopicProgress(topic);
             const masteryLevel = topicProgress?.mastery_level || 'novice';
             const MasteryIcon = MASTERY_LEVELS[masteryLevel as keyof typeof MASTERY_LEVELS]?.icon || Circle;
-            
+
             return (
-              <motion.div
+              <GemCard
                 key={topic.id}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 p-6 hover:bg-white/15 transition-all duration-300 cursor-pointer"
+                title={topic.title}
+                subtitle={topic.description}
+                icon={<BookOpen className="w-6 h-6 text-white" />}
+                gemType={progressPercentage > 80 ? "legendary" : progressPercentage > 60 ? "epic" : progressPercentage > 40 ? "rare" : progressPercentage > 20 ? "uncommon" : "common"}
                 onClick={() => window.location.href = `/grammar/${language}/${topic.category}/${topic.slug}`}
+                className="h-full hover:shadow-xl transition-all duration-300"
               >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <h3 className="text-lg font-bold text-white mb-2">{topic.title}</h3>
-                    <p className="text-sm text-purple-200 mb-3">{topic.description}</p>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium bg-gradient-to-r ${
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium bg-gradient-to-r ${
                       DIFFICULTY_COLORS[topic.difficulty_level as keyof typeof DIFFICULTY_COLORS]
                     } text-white`}>
                       {topic.difficulty_level}
                     </span>
+                    <div className="flex items-center space-x-1">
+                      <MasteryIcon className="w-4 h-4 text-gray-500" />
+                      <span className="text-xs text-gray-500 capitalize">{masteryLevel}</span>
+                    </div>
                   </div>
-                </div>
 
-                {/* Learning Objectives */}
-                {topic.learning_objectives && topic.learning_objectives.length > 0 && (
-                  <div className="mb-4">
-                    <h4 className="text-sm font-semibold text-purple-200 mb-2">You'll learn:</h4>
-                    <ul className="text-xs text-purple-300 space-y-1">
-                      {topic.learning_objectives.slice(0, 3).map((objective, index) => (
-                        <li key={index} className="flex items-center space-x-2">
-                          <div className="w-1 h-1 bg-purple-400 rounded-full" />
-                          <span>{objective}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {/* Progress and Mastery */}
-                <div className="space-y-3">
-                  {topicProgress && (
-                    <div>
-                      <div className="flex justify-between text-sm mb-1">
-                        <span className="text-purple-200">Progress</span>
-                        <span className="text-white font-semibold">{progressPercentage}%</span>
-                      </div>
-                      <div className="w-full bg-white/20 rounded-full h-2">
-                        <div 
-                          className="bg-gradient-to-r from-purple-400 to-pink-400 h-2 rounded-full transition-all duration-500"
-                          style={{ width: `${progressPercentage}%` }}
-                        />
-                      </div>
+                  {/* Learning Objectives */}
+                  {topic.learning_objectives && topic.learning_objectives.length > 0 && (
+                    <div className="mb-4">
+                      <h4 className="text-sm font-semibold text-gray-700 mb-2">You'll learn:</h4>
+                      <ul className="text-xs text-gray-600 space-y-1">
+                        {topic.learning_objectives.slice(0, 3).map((objective, index) => (
+                          <li key={index} className="flex items-center space-x-2">
+                            <div className="w-1 h-1 bg-purple-500 rounded-full" />
+                            <span>{objective}</span>
+                          </li>
+                        ))}
+                      </ul>
                     </div>
                   )}
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <MasteryIcon className={`w-4 h-4 ${MASTERY_LEVELS[masteryLevel as keyof typeof MASTERY_LEVELS]?.color}`} />
-                      <span className="text-sm text-purple-200">
-                        {MASTERY_LEVELS[masteryLevel as keyof typeof MASTERY_LEVELS]?.label || 'Novice'}
-                      </span>
-                    </div>
-                    <div className="flex items-center space-x-2 text-sm text-purple-300">
-                      <Clock className="w-4 h-4" />
-                      <span>~15 min</span>
-                    </div>
-                  </div>
-                </div>
 
-                <div className="mt-4 pt-4 border-t border-white/10">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-purple-200">Curriculum Level</span>
-                    <span className="text-white font-semibold">{topic.curriculum_level}</span>
+                  {/* Progress and Mastery */}
+                  <div className="space-y-3">
+                    {topicProgress && (
+                      <div>
+                        <div className="flex justify-between text-sm mb-1">
+                          <span className="text-gray-600">Progress</span>
+                          <span className="text-gray-800 font-semibold">{progressPercentage}%</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div
+                            className="bg-gradient-to-r from-purple-500 to-blue-500 h-2 rounded-full transition-all duration-500"
+                            style={{ width: `${progressPercentage}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2 text-sm text-gray-600">
+                        <Clock className="w-4 h-4" />
+                        <span>~15 min</span>
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        {topic.curriculum_level}
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </motion.div>
+              </GemCard>
             );
           })}
         </div>

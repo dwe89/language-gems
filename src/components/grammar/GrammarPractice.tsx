@@ -249,45 +249,45 @@ export default function GrammarPractice({
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
       {/* Header */}
-      <div className="bg-black/20 backdrop-blur-sm border-b border-white/10">
-        <div className="container mx-auto px-4 py-4">
+      <div className="bg-white/90 backdrop-blur-sm border-b border-gray-200 shadow-sm">
+        <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <button
                 onClick={onExit}
-                className="p-2 bg-white/10 rounded-lg hover:bg-white/20 transition-colors"
+                className="p-3 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors shadow-sm"
               >
-                <ArrowRight className="w-5 h-5 text-white rotate-180" />
+                <ArrowRight className="w-5 h-5 text-gray-600 rotate-180" />
               </button>
               <div>
-                <h1 className="text-xl font-bold text-white">Grammar Practice</h1>
-                <p className="text-sm text-purple-200">
+                <h1 className="text-2xl font-bold text-gray-800">Grammar Practice</h1>
+                <p className="text-sm text-gray-600">
                   {category && `${category} • `}Item {currentItem + 1} of {practiceItems.length}
                 </p>
               </div>
             </div>
-            
+
             {gamified && (
-              <div className="flex items-center space-x-6">
-                <div className="flex items-center space-x-2">
-                  <Star className="w-5 h-5 text-yellow-400" />
-                  <span className="text-white font-semibold">{score}</span>
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2 bg-yellow-50 px-3 py-2 rounded-lg border border-yellow-200">
+                  <Star className="w-5 h-5 text-yellow-500" />
+                  <span className="text-gray-800 font-semibold">{score}</span>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <Zap className="w-5 h-5 text-orange-400" />
-                  <span className="text-white font-semibold">{streak}</span>
+                <div className="flex items-center space-x-2 bg-orange-50 px-3 py-2 rounded-lg border border-orange-200">
+                  <Zap className="w-5 h-5 text-orange-500" />
+                  <span className="text-gray-800 font-semibold">{streak}</span>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <Gem className="w-5 h-5 text-cyan-400" />
-                  <span className="text-white font-semibold">{gemsEarned}</span>
+                <div className="flex items-center space-x-2 bg-purple-50 px-3 py-2 rounded-lg border border-purple-200">
+                  <Gem className="w-5 h-5 text-purple-500" />
+                  <span className="text-gray-800 font-semibold">{gemsEarned}</span>
                 </div>
-                <div className="flex items-center space-x-1">
+                <div className="flex items-center space-x-1 bg-red-50 px-3 py-2 rounded-lg border border-red-200">
                   {Array.from({ length: 3 }, (_, i) => (
                     <Heart
                       key={i}
-                      className={`w-5 h-5 ${i < lives ? 'text-red-500 fill-current' : 'text-gray-400'}`}
+                      className={`w-5 h-5 ${i < lives ? 'text-red-500 fill-current' : 'text-gray-300'}`}
                     />
                   ))}
                 </div>

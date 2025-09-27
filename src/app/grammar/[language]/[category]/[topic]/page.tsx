@@ -139,39 +139,42 @@ export default function GrammarTopicPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
       {/* Header */}
-      <div className="bg-black/20 backdrop-blur-sm border-b border-white/10">
-        <div className="container mx-auto px-4 py-6">
+      <div className="bg-white/80 backdrop-blur-sm border-b border-gray-200 shadow-sm">
+        <div className="container mx-auto px-4 py-8">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <Link 
+              <Link
                 href={`/grammar/${language}/${category}`}
-                className="p-2 bg-white/10 rounded-lg hover:bg-white/20 transition-colors"
+                className="p-3 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors shadow-sm"
               >
-                <ArrowLeft className="w-5 h-5 text-white" />
+                <ArrowLeft className="w-5 h-5 text-gray-600" />
               </Link>
-              <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-4">
                 <FlagIcon
                   countryCode={languageInfo.countryCode}
-                  size="md"
+                  size="lg"
                 />
+                <div className="p-3 bg-gradient-to-r from-purple-500 to-blue-500 rounded-xl shadow-lg">
+                  <Brain className="w-8 h-8 text-white" />
+                </div>
                 <div>
-                  <h1 className="text-3xl font-bold text-white">{topic.title}</h1>
-                  <p className="text-purple-200">{topic.description}</p>
+                  <h1 className="text-4xl font-bold text-gray-800 mb-2">{topic.title}</h1>
+                  <p className="text-gray-600 text-lg">{topic.description}</p>
                 </div>
               </div>
             </div>
-            
-            <div className="flex items-center space-x-2">
-              <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                topic.difficulty_level === 'beginner' ? 'bg-green-500' :
-                topic.difficulty_level === 'intermediate' ? 'bg-yellow-500' :
-                'bg-red-500'
-              } text-white`}>
+
+            <div className="flex items-center space-x-3">
+              <span className={`px-4 py-2 rounded-full text-sm font-medium ${
+                topic.difficulty_level === 'beginner' ? 'bg-gradient-to-r from-green-500 to-green-600' :
+                topic.difficulty_level === 'intermediate' ? 'bg-gradient-to-r from-yellow-500 to-orange-500' :
+                'bg-gradient-to-r from-red-500 to-red-600'
+              } text-white shadow-lg`}>
                 {topic.difficulty_level}
               </span>
-              <span className="px-3 py-1 bg-white/20 text-white rounded-full text-sm font-medium">
+              <span className="px-4 py-2 bg-gray-100 text-gray-700 rounded-full text-sm font-medium border border-gray-200">
                 {topic.curriculum_level}
               </span>
             </div>
@@ -179,24 +182,26 @@ export default function GrammarTopicPage() {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-12">
         {/* Topic Overview */}
-        <div className="mb-8">
-          <GemCard className="mb-6">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="mb-12">
+          <GemCard className="mb-8 shadow-xl">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               <div className="lg:col-span-2">
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">Learning Objectives</h2>
+                <h2 className="text-3xl font-bold text-gray-800 mb-6">Learning Objectives</h2>
                 {topic.learning_objectives && topic.learning_objectives.length > 0 ? (
-                  <ul className="space-y-2">
+                  <ul className="space-y-3">
                     {topic.learning_objectives.map((objective, index) => (
                       <li key={index} className="flex items-center space-x-3">
-                        <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
-                        <span className="text-gray-700">{objective}</span>
+                        <div className="w-6 h-6 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center flex-shrink-0">
+                          <CheckCircle className="w-4 h-4 text-white" />
+                        </div>
+                        <span className="text-gray-700 text-lg">{objective}</span>
                       </li>
                     ))}
                   </ul>
                 ) : (
-                  <p className="text-gray-600">Master the fundamentals of {topic.title.toLowerCase()}.</p>
+                  <p className="text-gray-600 text-lg">Master the fundamentals of {topic.title.toLowerCase()}.</p>
                 )}
               </div>
               

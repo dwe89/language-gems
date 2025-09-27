@@ -135,29 +135,31 @@ export default function GrammarCategoryPage() {
   const filteredTopics = getFilteredTopics();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
       {/* Header */}
-      <div className="bg-black/20 backdrop-blur-sm border-b border-white/10">
-        <div className="container mx-auto px-4 py-6">
+      <div className="bg-white/80 backdrop-blur-sm border-b border-gray-200 shadow-sm">
+        <div className="container mx-auto px-4 py-8">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <Link 
+              <Link
                 href={`/grammar/${language}`}
-                className="p-2 bg-white/10 rounded-lg hover:bg-white/20 transition-colors"
+                className="p-3 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors shadow-sm"
               >
-                <ArrowLeft className="w-5 h-5 text-white" />
+                <ArrowLeft className="w-5 h-5 text-gray-600" />
               </Link>
-              <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-4">
                 <FlagIcon
                   countryCode={languageInfo.countryCode}
-                  size="md"
+                  size="lg"
                 />
-                <CategoryIcon className="w-8 h-8 text-white" />
+                <div className="p-3 bg-gradient-to-r from-purple-500 to-blue-500 rounded-xl shadow-lg">
+                  <CategoryIcon className="w-8 h-8 text-white" />
+                </div>
                 <div>
-                  <h1 className="text-3xl font-bold text-white">
+                  <h1 className="text-4xl font-bold text-gray-800 mb-2">
                     {languageInfo.name} {categoryInfo.name}
                   </h1>
-                  <p className="text-purple-200">{categoryInfo.description}</p>
+                  <p className="text-gray-600 text-lg">{categoryInfo.description}</p>
                 </div>
               </div>
             </div>
@@ -186,17 +188,20 @@ export default function GrammarCategoryPage() {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-12">
         {/* Difficulty Filter */}
-        <div className="mb-8">
-          <h2 className="text-xl font-bold text-white mb-4">Difficulty Level</h2>
-          <div className="flex flex-wrap gap-2">
+        <div className="mb-12">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-bold text-gray-800 mb-3">Choose Difficulty Level</h2>
+            <p className="text-gray-600 text-lg">Filter topics by your skill level</p>
+          </div>
+          <div className="flex flex-wrap justify-center gap-3">
             <button
               onClick={() => setSelectedDifficulty('all')}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+              className={`px-6 py-3 rounded-full text-sm font-medium transition-all duration-200 ${
                 selectedDifficulty === 'all'
-                  ? 'bg-purple-500 text-white'
-                  : 'bg-white/10 text-purple-200 hover:bg-white/20'
+                  ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg'
+                  : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 shadow-sm'
               }`}
             >
               All Levels

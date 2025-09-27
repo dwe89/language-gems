@@ -1,28 +1,11 @@
-import { Metadata } from 'next';
+'use client';
+
+import { useState } from 'react';
 import Link from 'next/link';
 import { Calendar, User, Clock, ArrowRight, BookOpen, Users, Target, Brain, Languages, Gamepad2, Film } from 'lucide-react';
 import SEOWrapper from '../../components/seo/SEOWrapper';
 import { generateMetadata } from '../../components/seo/SEOWrapper';
 import Footer from '../../components/layout/Footer';
-
-export const metadata: Metadata = generateMetadata({
-  title: 'Language Learning Blog - GCSE Tips, Teaching Strategies & Educational Insights',
-  description: 'Expert insights on GCSE language learning, vocabulary techniques, gamification strategies, and modern teaching methods. Written by experienced MFL educators.',
-  keywords: [
-    'language learning blog',
-    'GCSE language tips',
-    'MFL teaching strategies',
-    'vocabulary learning techniques',
-    'gamification education',
-    'language teaching blog',
-    'educational technology',
-    'language learning research',
-    'GCSE preparation tips',
-    'modern language teaching'
-  ],
-  canonical: '/blog',
-  ogImage: '/images/blog-og.jpg',
-});
 
 const featuredPosts = [
   {
@@ -51,7 +34,7 @@ const featuredPosts = [
     title: 'Complete Guide to GCSE Spanish Vocabulary Themes (AQA, Edexcel, OCR)',
     excerpt: 'Master all GCSE Spanish vocabulary themes with our comprehensive guide. Includes 500+ essential words, exam tips, and practice strategies for all major exam boards.',
     slug: 'complete-guide-gcse-spanish-vocabulary-themes',
-    category: 'GCSE Preparation',
+    category: 'Study Tips',
     readTime: '12 min read',
     publishDate: 'January 25, 2024',
     author: 'Daniel Etienne',
@@ -62,10 +45,10 @@ const featuredPosts = [
 
 const recentPosts = [
   {
-    title: 'AQA GCSE Speaking: Photocard & Unprepared Conversation Guide',
-    excerpt: 'Master the AQA GCSE Speaking exam with our comprehensive guide to the Photocard and Unprepared Conversation tasks. Learn scoring criteria, strategies, and common pitfalls.',
+    title: 'AQA GCSE Speaking: Complete Photocard Guide',
+    excerpt: 'Master the AQA GCSE Speaking exam photocard task with our comprehensive guide. Learn scoring criteria, strategies, and common pitfalls for exam success.',
     slug: 'aqa-gcse-speaking-photocard-guide',
-    category: 'GCSE Preparation',
+    category: 'Exam Preparation',
     readTime: '12 min read',
     publishDate: 'September 27, 2025',
     author: 'LanguageGems Team',
@@ -95,7 +78,7 @@ const recentPosts = [
     title: 'Pronunciation in the Reading Aloud Task',
     excerpt: 'Pronunciation in the Reading Aloud Task: Major vs Minor Errors Explained',
     slug: 'pronunciation-in-the-reading-aloud-task',
-    category: 'GCSE Preparation',
+    category: 'Exam Preparation',
     readTime: '8 min read',
     publishDate: 'June 24, 2025',
     author: 'LanguageGems Team',
@@ -105,7 +88,7 @@ const recentPosts = [
     title: 'Everything You Need to Know About the New AQA Speaking Exam',
     excerpt: 'Understanding the New AQA Speaking Exam: What Students and Teachers Need to Know',
     slug: 'everything-you-need-to-know-about-the-new-aqa-speaking-exam',
-    category: 'GCSE Preparation',
+    category: 'Exam Preparation',
     readTime: '10 min read',
     publishDate: 'June 24, 2025',
     author: 'LanguageGems Team',
@@ -145,7 +128,7 @@ const recentPosts = [
     title: 'GCSE Spanish Speaking Exam Tips: Boost Your Grade',
     excerpt: 'Ace your GCSE Spanish speaking exam with proven strategies, practice techniques, and confidence-building tips from experienced examiners.',
     slug: 'gcse-spanish-speaking-exam-tips',
-    category: 'GCSE Preparation',
+    category: 'Exam Preparation',
     readTime: '10 min read',
     publishDate: 'March 25, 2024',
     author: 'LanguageGems Team',
@@ -195,7 +178,7 @@ const recentPosts = [
     title: 'GCSE German Writing Exam Tips: Get Top Marks',
     excerpt: 'Master GCSE German writing with expert tips, structure guides, and vocabulary strategies to achieve the highest grades.',
     slug: 'gcse-german-writing-exam-tips',
-    category: 'GCSE Preparation',
+    category: 'Exam Preparation',
     readTime: '12 min read',
     publishDate: 'April 20, 2024',
     author: 'LanguageGems Team',
@@ -243,25 +226,54 @@ const upcomingPosts = [
 ];
 
 const categories = [
-  { name: 'GCSE Preparation', count: 4, color: 'bg-green-100 text-green-700' },
+  { name: 'Exam Preparation', count: 4, color: 'bg-green-100 text-green-700' },
+  { name: 'Study Tips', count: 3, color: 'bg-purple-100 text-purple-700' },
+  { name: 'Teaching Strategies', count: 2, color: 'bg-pink-100 text-pink-700' },
   { name: 'Learning Science', count: 2, color: 'bg-indigo-100 text-indigo-700' },
   { name: 'Spanish Grammar', count: 2, color: 'bg-red-100 text-red-700' },
   { name: 'French Grammar', count: 2, color: 'bg-blue-100 text-blue-700' },
   { name: 'German Grammar', count: 1, color: 'bg-yellow-100 text-yellow-700' },
-  { name: 'Study Tips', count: 1, color: 'bg-purple-100 text-purple-700' },
-  { name: 'Teaching Strategies', count: 1, color: 'bg-pink-100 text-pink-700' },
   { name: 'Educational Technology', count: 1, color: 'bg-orange-100 text-orange-700' },
   { name: 'Cultural Learning', count: 1, color: 'bg-teal-100 text-teal-700' }
 ];
 
 export default function BlogPage() {
+  const [selectedCategory, setSelectedCategory] = useState<string>('All');
+  
   const breadcrumbs = [
     { name: 'Home', url: '/' },
     { name: 'Blog', url: '/blog' }
   ];
 
+  const metadata = {
+    title: 'Language Learning Blog - GCSE Tips, Teaching Strategies & Educational Insights',
+    description: 'Expert insights on GCSE language learning, vocabulary techniques, gamification strategies, and modern teaching methods. Written by experienced MFL educators.',
+    keywords: [
+      'language learning blog',
+      'GCSE language tips',
+      'MFL teaching strategies',
+      'vocabulary learning techniques',
+      'gamification education',
+      'language teaching blog',
+      'educational technology',
+      'language learning research',
+      'GCSE preparation tips',
+      'modern language teaching'
+    ],
+    canonical: '/blog',
+    ogImage: '/images/blog-og.jpg',
+  };
+
+  // Combine all posts
+  const allPosts = [...featuredPosts, ...recentPosts];
+  
+  // Filter posts based on selected category
+  const filteredPosts = selectedCategory === 'All' 
+    ? allPosts 
+    : allPosts.filter(post => post.category === selectedCategory);
+
   return (
-    <SEOWrapper breadcrumbs={breadcrumbs}>
+    <SEOWrapper breadcrumbs={breadcrumbs} {...metadata}>
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
         {/* Hero Section */}
         <section className="relative py-20 px-4 sm:px-6 lg:px-8">
@@ -277,30 +289,56 @@ export default function BlogPage() {
               </p>
               
               <div className="flex flex-wrap justify-center gap-4 mb-12">
+                {/* All Categories Button */}
+                <button
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 hover:scale-105 hover:shadow-md cursor-pointer ${
+                    selectedCategory === 'All' 
+                      ? 'bg-blue-600 text-white shadow-lg' 
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                  onClick={() => setSelectedCategory('All')}
+                >
+                  All ({allPosts.length})
+                </button>
+                
                 {categories.map((category, index) => (
-                  <span key={index} className={`px-4 py-2 rounded-full text-sm font-medium ${category.color}`}>
+                  <button
+                    key={index}
+                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 hover:scale-105 hover:shadow-md cursor-pointer ${
+                      selectedCategory === category.name
+                        ? 'shadow-lg ring-2 ring-blue-500 ring-opacity-50 ' + category.color
+                        : category.color
+                    }`}
+                    onClick={() => setSelectedCategory(category.name)}
+                  >
                     {category.name} ({category.count})
-                  </span>
+                  </button>
                 ))}
               </div>
             </div>
           </div>
         </section>
 
-        {/* Featured Posts */}
+        {/* Blog Posts */}
         <section className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-16">
               <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
-                Featured Articles
+                {selectedCategory === 'All' 
+                  ? `All Articles (${filteredPosts.length})`
+                  : `${selectedCategory} (${filteredPosts.length})`
+                }
               </h2>
               <p className="text-xl text-slate-600 max-w-3xl mx-auto">
-                In-depth guides and research-backed strategies for language learning success
+                {selectedCategory === 'All' 
+                  ? 'In-depth guides and research-backed strategies for language learning success'
+                  : `Articles focused on ${selectedCategory.toLowerCase()}`
+                }
               </p>
             </div>
             
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {featuredPosts.map((post, index) => {
+              {filteredPosts.map((post, index) => {
                 const IconComponent = post.icon;
                 return (
                   <article key={index} className="bg-gradient-to-br from-slate-50 to-blue-50 rounded-xl p-8 border border-blue-100 hover:border-blue-200 transition-all duration-300 hover:shadow-lg">
@@ -342,76 +380,6 @@ export default function BlogPage() {
                         </div>
                       </div>
                       
-                      <Link
-                        href={`/blog/${post.slug}`}
-                        className="inline-flex items-center text-blue-600 font-semibold hover:text-blue-700 transition-colors duration-200"
-                      >
-                        Read More
-                        <ArrowRight className="h-4 w-4 ml-1" />
-                      </Link>
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
-          </div>
-        </section>
-
-        {/* Recent Posts */}
-        <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-blue-50 to-indigo-50">
-          <div className="max-w-7xl mx-auto">
-            <div className="text-center mb-16">
-              <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
-                Recent Articles
-              </h2>
-              <p className="text-xl text-slate-600 max-w-3xl mx-auto">
-                Latest insights and practical guides for language learning success
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
-              {recentPosts.map((post, index) => {
-                const IconComponent = post.icon;
-                return (
-                  <article key={index} className="bg-white rounded-xl p-8 shadow-lg">
-                    <div className="flex items-center mb-6">
-                      <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center mr-4">
-                        <IconComponent className="h-6 w-6 text-white" />
-                      </div>
-                      <div>
-                        <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
-                          {post.category}
-                        </span>
-                      </div>
-                    </div>
-
-                    <h3 className="text-xl font-bold text-slate-900 mb-4 leading-tight">
-                      <Link
-                        href={`/blog/${post.slug}`}
-                        className="hover:text-blue-600 transition-colors duration-200"
-                      >
-                        {post.title}
-                      </Link>
-                    </h3>
-
-                    <p className="text-slate-600 leading-relaxed mb-6">{post.excerpt}</p>
-
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center text-sm text-slate-500 space-x-4">
-                        <div className="flex items-center">
-                          <User className="h-4 w-4 mr-1" />
-                          <span>{post.author}</span>
-                        </div>
-                        <div className="flex items-center">
-                          <Calendar className="h-4 w-4 mr-1" />
-                          <span>{post.publishDate}</span>
-                        </div>
-                        <div className="flex items-center">
-                          <Clock className="h-4 w-4 mr-1" />
-                          <span>{post.readTime}</span>
-                        </div>
-                      </div>
-
                       <Link
                         href={`/blog/${post.slug}`}
                         className="inline-flex items-center text-blue-600 font-semibold hover:text-blue-700 transition-colors duration-200"
