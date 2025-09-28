@@ -239,7 +239,8 @@ export default function SpanishDefectiveVerbsPage() {
             keywords: ['spanish defective verbs', 'incomplete verbs', 'weather verbs', 'impersonal verbs'],
             language: 'spanish',
             category: 'verbs',
-            topic: 'defective-verbs'
+            topic: 'defective-verbs',
+            difficulty: 'advanced'
           }))
         }} 
       />
@@ -256,7 +257,7 @@ export default function SpanishDefectiveVerbsPage() {
         practiceUrl="/grammar/spanish/verbs/defective-verbs/practice"
         quizUrl="/grammar/spanish/verbs/defective-verbs/quiz"
         songUrl="/songs/es?theme=grammar&topic=defective-verbs"
-        youtubeVideoId="defective-verbs-spanish"
+        youtubeVideoId="EGaSgIRswcI"
         relatedTopics={relatedTopics}
       />
     </>

@@ -323,7 +323,7 @@ export default function SpanishVerbGovernmentPage() {
         practiceUrl="/grammar/spanish/verbs/verb-government/practice"
         quizUrl="/grammar/spanish/verbs/verb-government/quiz"
         songUrl="/songs/es?theme=grammar&topic=verb-government"
-        youtubeVideoId="verb-government-spanish"
+        youtubeVideoId="EGaSgIRswcI"
         relatedTopics={relatedTopics}
       />
     </>

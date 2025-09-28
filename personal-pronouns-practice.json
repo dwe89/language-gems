@@ -1,0 +1,207 @@
+{
+  "practice_content": {
+    "instructions": "Practice Spanish personal pronouns with these exercises.",
+    "practice_type": "mixed_exercises",
+    "estimated_duration": 15,
+    "exercises": [
+      {
+        "type": "multiple_choice",
+        "instructions": "Choose the correct personal pronoun",
+        "prompts": [
+          {
+            "question": "After prepositions, which pronoun means 'me'?",
+            "options": ["yo", "me", "mí", "mi"],
+            "answer": "mí",
+            "explanation": "After prepositions, use 'mí' for 'me'"
+          },
+          {
+            "question": "After prepositions, which pronoun means 'you'?",
+            "options": ["tú", "te", "ti", "tu"],
+            "answer": "ti",
+            "explanation": "After prepositions, use 'ti' for 'you' (informal)"
+          },
+          {
+            "question": "After prepositions, which pronoun means 'him'?",
+            "options": ["él", "le", "lo", "su"],
+            "answer": "él",
+            "explanation": "After prepositions, use 'él' for 'him'"
+          },
+          {
+            "question": "After prepositions, which pronoun means 'her'?",
+            "options": ["ella", "la", "le", "su"],
+            "answer": "ella",
+            "explanation": "After prepositions, use 'ella' for 'her'"
+          },
+          {
+            "question": "After prepositions, which pronoun means 'us'?",
+            "options": ["nos", "nosotros", "nuestro", "nos"],
+            "answer": "nosotros",
+            "explanation": "After prepositions, use 'nosotros' for 'us'"
+          },
+          {
+            "question": "What does 'para mí' mean?",
+            "options": ["for me", "with me", "to me", "from me"],
+            "answer": "for me",
+            "explanation": "'Para mí' means 'for me'"
+          },
+          {
+            "question": "What does 'con él' mean?",
+            "options": ["for him", "with him", "to him", "from him"],
+            "answer": "with him",
+            "explanation": "'Con él' means 'with him'"
+          },
+          {
+            "question": "What's special about 'con + mí'?",
+            "options": ["Nothing", "Becomes conmigo", "Becomes contigo", "Changes to con me"],
+            "answer": "Becomes conmigo",
+            "explanation": "'Con + mí' becomes 'conmigo' (with me)"
+          },
+          {
+            "question": "What's special about 'con + ti'?",
+            "options": ["Nothing", "Becomes conmigo", "Becomes contigo", "Changes to con te"],
+            "answer": "Becomes contigo",
+            "explanation": "'Con + ti' becomes 'contigo' (with you)"
+          },
+          {
+            "question": "Which is correct: 'Es para _____' (It's for me)?",
+            "options": ["yo", "me", "mí", "mi"],
+            "answer": "mí",
+            "explanation": "After prepositions, use 'mí' not 'me'"
+          }
+        ]
+      },
+      {
+        "type": "fill_blank",
+        "instructions": "Complete with the correct personal pronoun",
+        "prompts": [
+          {
+            "sentence": "Este regalo es para _____. (This gift is for me.)",
+            "answer": "mí",
+            "explanation": "After 'para', use 'mí' for 'me'"
+          },
+          {
+            "sentence": "¿Vienes con_____? (Are you coming with me?)",
+            "answer": "migo",
+            "explanation": "'Con + mí' becomes 'conmigo'"
+          },
+          {
+            "sentence": "Voy con_____. (I'm going with you.)",
+            "answer": "tigo",
+            "explanation": "'Con + ti' becomes 'contigo'"
+          },
+          {
+            "sentence": "Hablan de _____. (They talk about him.)",
+            "answer": "él",
+            "explanation": "After prepositions, use 'él' for 'him'"
+          },
+          {
+            "sentence": "Sin _____ no puedo hacerlo. (Without you I can't do it.)",
+            "answer": "ti",
+            "explanation": "After 'sin', use 'ti' for 'you'"
+          },
+          {
+            "sentence": "Según _____, es verdad. (According to her, it's true.)",
+            "answer": "ella",
+            "explanation": "After 'según', use 'ella' for 'her'"
+          },
+          {
+            "sentence": "Entre _____ y yo, es un secreto. (Between you and me, it's a secret.)",
+            "answer": "tú",
+            "explanation": "With 'entre', use subject pronouns: 'tú' and 'yo'"
+          },
+          {
+            "sentence": "Excepto _____, todos vinieron. (Except for us, everyone came.)",
+            "answer": "nosotros",
+            "explanation": "After 'excepto', use 'nosotros' for 'us'"
+          },
+          {
+            "sentence": "Después de _____, llegó María. (After them, María arrived.)",
+            "answer": "ellos",
+            "explanation": "After 'después de', use 'ellos' for 'them'"
+          },
+          {
+            "sentence": "¿Es para _____? (Is it for you?)",
+            "answer": "ti",
+            "explanation": "After 'para', use 'ti' for 'you'"
+          }
+        ]
+      },
+      {
+        "type": "conjugation",
+        "instructions": "Complete these prepositional phrases",
+        "prompts": [
+          {
+            "verb": "con",
+            "subject": "_____ (with me)",
+            "answer": "conmigo",
+            "english": "with me",
+            "explanation": "'Con + mí' becomes 'conmigo'"
+          },
+          {
+            "verb": "con",
+            "subject": "_____ (with you)",
+            "answer": "contigo",
+            "english": "with you",
+            "explanation": "'Con + ti' becomes 'contigo'"
+          },
+          {
+            "verb": "para",
+            "subject": "_____ (for him)",
+            "answer": "para él",
+            "english": "for him",
+            "explanation": "After 'para', use 'él'"
+          },
+          {
+            "verb": "sin",
+            "subject": "_____ (without her)",
+            "answer": "sin ella",
+            "english": "without her",
+            "explanation": "After 'sin', use 'ella'"
+          },
+          {
+            "verb": "de",
+            "subject": "_____ (about us)",
+            "answer": "de nosotros",
+            "english": "about us",
+            "explanation": "After 'de', use 'nosotros'"
+          },
+          {
+            "verb": "por",
+            "subject": "_____ (for them)",
+            "answer": "por ellos",
+            "english": "for them",
+            "explanation": "After 'por', use 'ellos'"
+          },
+          {
+            "verb": "hacia",
+            "subject": "_____ (toward me)",
+            "answer": "hacia mí",
+            "english": "toward me",
+            "explanation": "After 'hacia', use 'mí'"
+          },
+          {
+            "verb": "desde",
+            "subject": "_____ (from you)",
+            "answer": "desde ti",
+            "english": "from you",
+            "explanation": "After 'desde', use 'ti'"
+          },
+          {
+            "verb": "hasta",
+            "subject": "_____ (until her)",
+            "answer": "hasta ella",
+            "english": "until her",
+            "explanation": "After 'hasta', use 'ella'"
+          },
+          {
+            "verb": "entre",
+            "subject": "_____ y yo (between you and me)",
+            "answer": "entre tú",
+            "english": "between you and me",
+            "explanation": "With 'entre', use subject pronouns"
+          }
+        ]
+      }
+    ]
+  }
+}

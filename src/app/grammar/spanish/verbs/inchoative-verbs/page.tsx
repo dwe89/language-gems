@@ -436,7 +436,7 @@ export default function SpanishInchoativeVerbsPage() {
         practiceUrl="/grammar/spanish/verbs/inchoative-verbs/practice"
         quizUrl="/grammar/spanish/verbs/inchoative-verbs/quiz"
         songUrl="/songs/es?theme=grammar&topic=inchoative-verbs"
-        youtubeVideoId="inchoative-verbs-spanish"
+        youtubeVideoId="EGaSgIRswcI"
         relatedTopics={relatedTopics}
       />
     </>

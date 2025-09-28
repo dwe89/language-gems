@@ -1,0 +1,207 @@
+{
+  "practice_content": {
+    "instructions": "Practice Spanish object pronouns (direct and indirect) with these exercises.",
+    "practice_type": "mixed_exercises",
+    "estimated_duration": 15,
+    "exercises": [
+      {
+        "type": "multiple_choice",
+        "instructions": "Choose the correct object pronoun",
+        "prompts": [
+          {
+            "question": "Replace 'el libro': Lo veo → I see _____",
+            "options": ["him", "her", "it", "them"],
+            "answer": "it",
+            "explanation": "'Lo' replaces masculine singular objects"
+          },
+          {
+            "question": "Replace 'a María': La conozco → I know _____",
+            "options": ["him", "her", "it", "them"],
+            "answer": "her",
+            "explanation": "'La' can refer to feminine persons"
+          },
+          {
+            "question": "What does 'me' mean as object pronoun?",
+            "options": ["I", "me", "my", "mine"],
+            "answer": "me",
+            "explanation": "'Me' is the object pronoun for 'me'"
+          },
+          {
+            "question": "What does 'te' mean as object pronoun?",
+            "options": ["I", "you", "your", "yours"],
+            "answer": "you",
+            "explanation": "'Te' is the object pronoun for 'you' (informal)"
+          },
+          {
+            "question": "What does 'nos' mean as object pronoun?",
+            "options": ["we", "us", "our", "ours"],
+            "answer": "us",
+            "explanation": "'Nos' is the object pronoun for 'us'"
+          },
+          {
+            "question": "In 'Le doy dinero', what type of pronoun is 'le'?",
+            "options": ["Direct object", "Indirect object", "Subject", "Reflexive"],
+            "answer": "Indirect object",
+            "explanation": "'Le' is an indirect object pronoun (to him/her)"
+          },
+          {
+            "question": "In 'Los veo', what type of pronoun is 'los'?",
+            "options": ["Direct object", "Indirect object", "Subject", "Reflexive"],
+            "answer": "Direct object",
+            "explanation": "'Los' is a direct object pronoun (them - masculine)"
+          },
+          {
+            "question": "Where do object pronouns go?",
+            "options": ["After verb", "Before verb", "At end", "Anywhere"],
+            "answer": "Before verb",
+            "explanation": "Object pronouns go before conjugated verbs"
+          },
+          {
+            "question": "What's the difference between 'lo' and 'le'?",
+            "options": ["Gender", "Number", "Direct vs indirect", "Formality"],
+            "answer": "Direct vs indirect",
+            "explanation": "'Lo' is direct object, 'le' is indirect object"
+          },
+          {
+            "question": "Can you use both direct and indirect pronouns together?",
+            "options": ["Never", "Sometimes", "Always", "Only in questions"],
+            "answer": "Sometimes",
+            "explanation": "You can use both: 'Se lo doy' (I give it to him)"
+          }
+        ]
+      },
+      {
+        "type": "fill_blank",
+        "instructions": "Complete with the correct object pronoun",
+        "prompts": [
+          {
+            "sentence": "María _____ llama por teléfono. (María calls me.)",
+            "answer": "me",
+            "explanation": "'Me' is the object pronoun for 'me'"
+          },
+          {
+            "sentence": "Yo _____ veo en el parque. (I see you in the park.)",
+            "answer": "te",
+            "explanation": "'Te' is the object pronoun for 'you'"
+          },
+          {
+            "sentence": "Nosotros _____ conocemos bien. (We know him well.)",
+            "answer": "lo",
+            "explanation": "'Lo' is the direct object pronoun for 'him'"
+          },
+          {
+            "sentence": "Ellos _____ invitan a la fiesta. (They invite us.)",
+            "answer": "nos",
+            "explanation": "'Nos' is the object pronoun for 'us'"
+          },
+          {
+            "sentence": "¿_____ ayudas con la tarea? (Do you help me with homework?)",
+            "answer": "Me",
+            "explanation": "'Me' is the object pronoun for 'me'"
+          },
+          {
+            "sentence": "El profesor _____ explica la lección. (The teacher explains the lesson to us.)",
+            "answer": "nos",
+            "explanation": "'Nos' can be indirect object (to us)"
+          },
+          {
+            "sentence": "Yo _____ escribo una carta. (I write a letter to her.)",
+            "answer": "le",
+            "explanation": "'Le' is indirect object pronoun (to her)"
+          },
+          {
+            "sentence": "¿Dónde están las llaves? No _____ encuentro. (Where are the keys? I can't find them.)",
+            "answer": "las",
+            "explanation": "'Las' replaces feminine plural objects"
+          },
+          {
+            "sentence": "Mi madre _____ compra regalos. (My mother buys gifts for them.)",
+            "answer": "les",
+            "explanation": "'Les' is indirect object pronoun (for them)"
+          },
+          {
+            "sentence": "¿_____ gusta la pizza? (Do you like pizza?)",
+            "answer": "Te",
+            "explanation": "'Te' is used with 'gustar' (it pleases you)"
+          }
+        ]
+      },
+      {
+        "type": "conjugation",
+        "instructions": "Replace the object with a pronoun",
+        "prompts": [
+          {
+            "verb": "Veo a Juan",
+            "subject": "replace",
+            "answer": "Lo veo",
+            "english": "I see him",
+            "explanation": "Replace 'a Juan' with 'lo'"
+          },
+          {
+            "verb": "Compro las flores",
+            "subject": "replace",
+            "answer": "Las compro",
+            "english": "I buy them",
+            "explanation": "Replace 'las flores' with 'las'"
+          },
+          {
+            "verb": "Doy dinero a María",
+            "subject": "replace",
+            "answer": "Le doy dinero",
+            "english": "I give money to her",
+            "explanation": "Replace 'a María' with 'le'"
+          },
+          {
+            "verb": "Escribimos cartas a los amigos",
+            "subject": "replace",
+            "answer": "Les escribimos cartas",
+            "english": "We write letters to them",
+            "explanation": "Replace 'a los amigos' with 'les'"
+          },
+          {
+            "verb": "Buscan el coche",
+            "subject": "replace",
+            "answer": "Lo buscan",
+            "english": "They look for it",
+            "explanation": "Replace 'el coche' with 'lo'"
+          },
+          {
+            "verb": "Conoces a las chicas",
+            "subject": "replace",
+            "answer": "Las conoces",
+            "english": "You know them",
+            "explanation": "Replace 'a las chicas' with 'las'"
+          },
+          {
+            "verb": "Hablo a ti",
+            "subject": "replace",
+            "answer": "Te hablo",
+            "english": "I speak to you",
+            "explanation": "Replace 'a ti' with 'te'"
+          },
+          {
+            "verb": "Ayudan a nosotros",
+            "subject": "replace",
+            "answer": "Nos ayudan",
+            "english": "They help us",
+            "explanation": "Replace 'a nosotros' with 'nos'"
+          },
+          {
+            "verb": "Leo los libros",
+            "subject": "replace",
+            "answer": "Los leo",
+            "english": "I read them",
+            "explanation": "Replace 'los libros' with 'los'"
+          },
+          {
+            "verb": "Muestro fotos a ella",
+            "subject": "replace",
+            "answer": "Le muestro fotos",
+            "english": "I show photos to her",
+            "explanation": "Replace 'a ella' with 'le'"
+          }
+        ]
+      }
+    ]
+  }
+}

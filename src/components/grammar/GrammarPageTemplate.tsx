@@ -314,6 +314,7 @@ export default function GrammarPageTemplate({
                 {user ? 'Take Quiz' : 'Free Quiz'}
               </GemButton>
             )}
+
             {songUrl && (
               <GemButton
                 variant="gem"

@@ -296,7 +296,7 @@ export default function SpanishVerbComplementationPage() {
         practiceUrl="/grammar/spanish/verbs/verb-complementation/practice"
         quizUrl="/grammar/spanish/verbs/verb-complementation/quiz"
         songUrl="/songs/es?theme=grammar&topic=verb-complementation"
-        youtubeVideoId="verb-complementation-spanish"
+        youtubeVideoId="EGaSgIRswcI"
         relatedTopics={relatedTopics}
       />
     </>

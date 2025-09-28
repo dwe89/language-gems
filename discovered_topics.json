@@ -1,0 +1,680 @@
+[
+  {
+    "slug": "agreement",
+    "category": "adjectives",
+    "name": "Agreement",
+    "path": "adjectives/agreement"
+  },
+  {
+    "slug": "comparison",
+    "category": "adjectives",
+    "name": "Comparison",
+    "path": "adjectives/comparison"
+  },
+  {
+    "slug": "demonstrative",
+    "category": "adjectives",
+    "name": "Demonstrative",
+    "path": "adjectives/demonstrative"
+  },
+  {
+    "slug": "indefinite",
+    "category": "adjectives",
+    "name": "Indefinite",
+    "path": "adjectives/indefinite"
+  },
+  {
+    "slug": "position",
+    "category": "adjectives",
+    "name": "Position",
+    "path": "adjectives/position"
+  },
+  {
+    "slug": "possessive",
+    "category": "adjectives",
+    "name": "Possessive",
+    "path": "adjectives/possessive"
+  },
+  {
+    "slug": "comparatives",
+    "category": "adverbial-prepositional",
+    "name": "Comparatives",
+    "path": "adverbial-prepositional/comparatives"
+  },
+  {
+    "slug": "personal-a",
+    "category": "adverbial-prepositional",
+    "name": "Personal A",
+    "path": "adverbial-prepositional/personal-a"
+  },
+  {
+    "slug": "por-vs-para",
+    "category": "adverbial-prepositional",
+    "name": "Por Vs Para",
+    "path": "adverbial-prepositional/por-vs-para"
+  },
+  {
+    "slug": "superlatives",
+    "category": "adverbial-prepositional",
+    "name": "Superlatives",
+    "path": "adverbial-prepositional/superlatives"
+  },
+  {
+    "slug": "formation",
+    "category": "adverbs",
+    "name": "Formation",
+    "path": "adverbs/formation"
+  },
+  {
+    "slug": "definite-articles",
+    "category": "articles",
+    "name": "Definite Articles",
+    "path": "articles/definite-articles"
+  },
+  {
+    "slug": "definite-indefinite",
+    "category": "articles",
+    "name": "Definite Indefinite",
+    "path": "articles/definite-indefinite"
+  },
+  {
+    "slug": "agreement-position",
+    "category": "nouns",
+    "name": "Agreement Position",
+    "path": "nouns/agreement-position"
+  },
+  {
+    "slug": "articles",
+    "category": "nouns",
+    "name": "Articles",
+    "path": "nouns/articles"
+  },
+  {
+    "slug": "definite-indefinite",
+    "category": "nouns",
+    "name": "Definite Indefinite",
+    "path": "nouns/definite-indefinite"
+  },
+  {
+    "slug": "demonstrative",
+    "category": "nouns",
+    "name": "Demonstrative",
+    "path": "nouns/demonstrative"
+  },
+  {
+    "slug": "gender",
+    "category": "nouns",
+    "name": "Gender",
+    "path": "nouns/gender"
+  },
+  {
+    "slug": "gender-and-plurals",
+    "category": "nouns",
+    "name": "Gender And Plurals",
+    "path": "nouns/gender-and-plurals"
+  },
+  {
+    "slug": "gender-rules",
+    "category": "nouns",
+    "name": "Gender Rules",
+    "path": "nouns/gender-rules"
+  },
+  {
+    "slug": "indefinite",
+    "category": "nouns",
+    "name": "Indefinite",
+    "path": "nouns/indefinite"
+  },
+  {
+    "slug": "nominalisation",
+    "category": "nouns",
+    "name": "Nominalisation",
+    "path": "nouns/nominalisation"
+  },
+  {
+    "slug": "plurals",
+    "category": "nouns",
+    "name": "Plurals",
+    "path": "nouns/plurals"
+  },
+  {
+    "slug": "possessive-adj",
+    "category": "nouns",
+    "name": "Possessive Adj",
+    "path": "nouns/possessive-adj"
+  },
+  {
+    "slug": "basic-prepositions",
+    "category": "prepositions",
+    "name": "Basic Prepositions",
+    "path": "prepositions/basic-prepositions"
+  },
+  {
+    "slug": "direct-object",
+    "category": "pronouns",
+    "name": "Direct Object",
+    "path": "pronouns/direct-object"
+  },
+  {
+    "slug": "indirect-object",
+    "category": "pronouns",
+    "name": "Indirect Object",
+    "path": "pronouns/indirect-object"
+  },
+  {
+    "slug": "interrogative",
+    "category": "pronouns",
+    "name": "Interrogative",
+    "path": "pronouns/interrogative"
+  },
+  {
+    "slug": "personal",
+    "category": "pronouns",
+    "name": "Personal",
+    "path": "pronouns/personal"
+  },
+  {
+    "slug": "possessive",
+    "category": "pronouns",
+    "name": "Possessive",
+    "path": "pronouns/possessive"
+  },
+  {
+    "slug": "reflexive",
+    "category": "pronouns",
+    "name": "Reflexive",
+    "path": "pronouns/reflexive"
+  },
+  {
+    "slug": "relative",
+    "category": "pronouns",
+    "name": "Relative",
+    "path": "pronouns/relative"
+  },
+  {
+    "slug": "subject",
+    "category": "pronouns",
+    "name": "Subject",
+    "path": "pronouns/subject"
+  },
+  {
+    "slug": "subject-pronouns",
+    "category": "pronouns",
+    "name": "Subject Pronouns",
+    "path": "pronouns/subject-pronouns"
+  },
+  {
+    "slug": "sound-symbol",
+    "category": "sounds-spelling",
+    "name": "Sound Symbol",
+    "path": "sounds-spelling/sound-symbol"
+  },
+  {
+    "slug": "stress-patterns",
+    "category": "sounds-spelling",
+    "name": "Stress Patterns",
+    "path": "sounds-spelling/stress-patterns"
+  },
+  {
+    "slug": "written-accents",
+    "category": "sounds-spelling",
+    "name": "Written Accents",
+    "path": "sounds-spelling/written-accents"
+  },
+  {
+    "slug": "action-verbs",
+    "category": "verbs",
+    "name": "Action Verbs",
+    "path": "verbs/action-verbs"
+  },
+  {
+    "slug": "auxiliary-verbs",
+    "category": "verbs",
+    "name": "Auxiliary Verbs",
+    "path": "verbs/auxiliary-verbs"
+  },
+  {
+    "slug": "causative-verbs",
+    "category": "verbs",
+    "name": "Causative Verbs",
+    "path": "verbs/causative-verbs"
+  },
+  {
+    "slug": "change-verbs",
+    "category": "verbs",
+    "name": "Change Verbs",
+    "path": "verbs/change-verbs"
+  },
+  {
+    "slug": "cognitive-verbs",
+    "category": "verbs",
+    "name": "Cognitive Verbs",
+    "path": "verbs/cognitive-verbs"
+  },
+  {
+    "slug": "communication-verbs",
+    "category": "verbs",
+    "name": "Communication Verbs",
+    "path": "verbs/communication-verbs"
+  },
+  {
+    "slug": "compound-tenses",
+    "category": "verbs",
+    "name": "Compound Tenses",
+    "path": "verbs/compound-tenses"
+  },
+  {
+    "slug": "conditional",
+    "category": "verbs",
+    "name": "Conditional",
+    "path": "verbs/conditional"
+  },
+  {
+    "slug": "conditional-perfect",
+    "category": "verbs",
+    "name": "Conditional Perfect",
+    "path": "verbs/conditional-perfect"
+  },
+  {
+    "slug": "conditional-sentences",
+    "category": "verbs",
+    "name": "Conditional Sentences",
+    "path": "verbs/conditional-sentences"
+  },
+  {
+    "slug": "conditional-tense",
+    "category": "verbs",
+    "name": "Conditional Tense",
+    "path": "verbs/conditional-tense"
+  },
+  {
+    "slug": "continuous-constructions",
+    "category": "verbs",
+    "name": "Continuous Constructions",
+    "path": "verbs/continuous-constructions"
+  },
+  {
+    "slug": "copular-verbs",
+    "category": "verbs",
+    "name": "Copular Verbs",
+    "path": "verbs/copular-verbs"
+  },
+  {
+    "slug": "defective-verbs",
+    "category": "verbs",
+    "name": "Defective Verbs",
+    "path": "verbs/defective-verbs"
+  },
+  {
+    "slug": "emotion-verbs",
+    "category": "verbs",
+    "name": "Emotion Verbs",
+    "path": "verbs/emotion-verbs"
+  },
+  {
+    "slug": "existential-verbs",
+    "category": "verbs",
+    "name": "Existential Verbs",
+    "path": "verbs/existential-verbs"
+  },
+  {
+    "slug": "future",
+    "category": "verbs",
+    "name": "Future",
+    "path": "verbs/future"
+  },
+  {
+    "slug": "future-perfect",
+    "category": "verbs",
+    "name": "Future Perfect",
+    "path": "verbs/future-perfect"
+  },
+  {
+    "slug": "future-tense",
+    "category": "verbs",
+    "name": "Future Tense",
+    "path": "verbs/future-tense"
+  },
+  {
+    "slug": "gerunds",
+    "category": "verbs",
+    "name": "Gerunds",
+    "path": "verbs/gerunds"
+  },
+  {
+    "slug": "imperative",
+    "category": "verbs",
+    "name": "Imperative",
+    "path": "verbs/imperative"
+  },
+  {
+    "slug": "imperfect",
+    "category": "verbs",
+    "name": "Imperfect",
+    "path": "verbs/imperfect"
+  },
+  {
+    "slug": "imperfect-continuous",
+    "category": "verbs",
+    "name": "Imperfect Continuous",
+    "path": "verbs/imperfect-continuous"
+  },
+  {
+    "slug": "imperfect-tense",
+    "category": "verbs",
+    "name": "Imperfect Tense",
+    "path": "verbs/imperfect-tense"
+  },
+  {
+    "slug": "impersonal-verbs",
+    "category": "verbs",
+    "name": "Impersonal Verbs",
+    "path": "verbs/impersonal-verbs"
+  },
+  {
+    "slug": "inchoative-verbs",
+    "category": "verbs",
+    "name": "Inchoative Verbs",
+    "path": "verbs/inchoative-verbs"
+  },
+  {
+    "slug": "infinitive-constructions",
+    "category": "verbs",
+    "name": "Infinitive Constructions",
+    "path": "verbs/infinitive-constructions"
+  },
+  {
+    "slug": "interrogatives",
+    "category": "verbs",
+    "name": "Interrogatives",
+    "path": "verbs/interrogatives"
+  },
+  {
+    "slug": "irregular-verbs",
+    "category": "verbs",
+    "name": "Irregular Verbs",
+    "path": "verbs/irregular-verbs"
+  },
+  {
+    "slug": "light-verbs",
+    "category": "verbs",
+    "name": "Light Verbs",
+    "path": "verbs/light-verbs"
+  },
+  {
+    "slug": "modal-verbs",
+    "category": "verbs",
+    "name": "Modal Verbs",
+    "path": "verbs/modal-verbs"
+  },
+  {
+    "slug": "motion-verbs",
+    "category": "verbs",
+    "name": "Motion Verbs",
+    "path": "verbs/motion-verbs"
+  },
+  {
+    "slug": "negation",
+    "category": "verbs",
+    "name": "Negation",
+    "path": "verbs/negation"
+  },
+  {
+    "slug": "passive-voice",
+    "category": "verbs",
+    "name": "Passive Voice",
+    "path": "verbs/passive-voice"
+  },
+  {
+    "slug": "past-participles",
+    "category": "verbs",
+    "name": "Past Participles",
+    "path": "verbs/past-participles"
+  },
+  {
+    "slug": "perception-verbs",
+    "category": "verbs",
+    "name": "Perception Verbs",
+    "path": "verbs/perception-verbs"
+  },
+  {
+    "slug": "periphrastic-future",
+    "category": "verbs",
+    "name": "Periphrastic Future",
+    "path": "verbs/periphrastic-future"
+  },
+  {
+    "slug": "phrasal-verbs",
+    "category": "verbs",
+    "name": "Phrasal Verbs",
+    "path": "verbs/phrasal-verbs"
+  },
+  {
+    "slug": "pluperfect",
+    "category": "verbs",
+    "name": "Pluperfect",
+    "path": "verbs/pluperfect"
+  },
+  {
+    "slug": "por-vs-para",
+    "category": "verbs",
+    "name": "Por Vs Para",
+    "path": "verbs/por-vs-para"
+  },
+  {
+    "slug": "possession-verbs",
+    "category": "verbs",
+    "name": "Possession Verbs",
+    "path": "verbs/possession-verbs"
+  },
+  {
+    "slug": "present-continuous",
+    "category": "verbs",
+    "name": "Present Continuous",
+    "path": "verbs/present-continuous"
+  },
+  {
+    "slug": "present-perfect",
+    "category": "verbs",
+    "name": "Present Perfect",
+    "path": "verbs/present-perfect"
+  },
+  {
+    "slug": "present-tense",
+    "category": "verbs",
+    "name": "Present Tense",
+    "path": "verbs/present-tense"
+  },
+  {
+    "slug": "preterite",
+    "category": "verbs",
+    "name": "Preterite",
+    "path": "verbs/preterite"
+  },
+  {
+    "slug": "progressive-tenses",
+    "category": "verbs",
+    "name": "Progressive Tenses",
+    "path": "verbs/progressive-tenses"
+  },
+  {
+    "slug": "pronominal-verbs",
+    "category": "verbs",
+    "name": "Pronominal Verbs",
+    "path": "verbs/pronominal-verbs"
+  },
+  {
+    "slug": "reflexive",
+    "category": "verbs",
+    "name": "Reflexive",
+    "path": "verbs/reflexive"
+  },
+  {
+    "slug": "reported-speech",
+    "category": "verbs",
+    "name": "Reported Speech",
+    "path": "verbs/reported-speech"
+  },
+  {
+    "slug": "sequence-of-tenses",
+    "category": "verbs",
+    "name": "Sequence Of Tenses",
+    "path": "verbs/sequence-of-tenses"
+  },
+  {
+    "slug": "ser-vs-estar",
+    "category": "verbs",
+    "name": "Ser Vs Estar",
+    "path": "verbs/ser-vs-estar"
+  },
+  {
+    "slug": "stative-verbs",
+    "category": "verbs",
+    "name": "Stative Verbs",
+    "path": "verbs/stative-verbs"
+  },
+  {
+    "slug": "stem-changing",
+    "category": "verbs",
+    "name": "Stem Changing",
+    "path": "verbs/stem-changing"
+  },
+  {
+    "slug": "subjunctive",
+    "category": "verbs",
+    "name": "Subjunctive",
+    "path": "verbs/subjunctive"
+  },
+  {
+    "slug": "subjunctive-imperfect",
+    "category": "verbs",
+    "name": "Subjunctive Imperfect",
+    "path": "verbs/subjunctive-imperfect"
+  },
+  {
+    "slug": "subjunctive-perfect",
+    "category": "verbs",
+    "name": "Subjunctive Perfect",
+    "path": "verbs/subjunctive-perfect"
+  },
+  {
+    "slug": "subjunctive-pluperfect",
+    "category": "verbs",
+    "name": "Subjunctive Pluperfect",
+    "path": "verbs/subjunctive-pluperfect"
+  },
+  {
+    "slug": "subjunctive-present",
+    "category": "verbs",
+    "name": "Subjunctive Present",
+    "path": "verbs/subjunctive-present"
+  },
+  {
+    "slug": "terminative-verbs",
+    "category": "verbs",
+    "name": "Terminative Verbs",
+    "path": "verbs/terminative-verbs"
+  },
+  {
+    "slug": "transitive-intransitive",
+    "category": "verbs",
+    "name": "Transitive Intransitive",
+    "path": "verbs/transitive-intransitive"
+  },
+  {
+    "slug": "verb-aspect",
+    "category": "verbs",
+    "name": "Verb Aspect",
+    "path": "verbs/verb-aspect"
+  },
+  {
+    "slug": "verb-complementation",
+    "category": "verbs",
+    "name": "Verb Complementation",
+    "path": "verbs/verb-complementation"
+  },
+  {
+    "slug": "verb-conjugation-patterns",
+    "category": "verbs",
+    "name": "Verb Conjugation Patterns",
+    "path": "verbs/verb-conjugation-patterns"
+  },
+  {
+    "slug": "verb-government",
+    "category": "verbs",
+    "name": "Verb Government",
+    "path": "verbs/verb-government"
+  },
+  {
+    "slug": "verb-moods",
+    "category": "verbs",
+    "name": "Verb Moods",
+    "path": "verbs/verb-moods"
+  },
+  {
+    "slug": "verb-patterns",
+    "category": "verbs",
+    "name": "Verb Patterns",
+    "path": "verbs/verb-patterns"
+  },
+  {
+    "slug": "verb-serialization",
+    "category": "verbs",
+    "name": "Verb Serialization",
+    "path": "verbs/verb-serialization"
+  },
+  {
+    "slug": "verb-tense-agreement",
+    "category": "verbs",
+    "name": "Verb Tense Agreement",
+    "path": "verbs/verb-tense-agreement"
+  },
+  {
+    "slug": "verb-valency",
+    "category": "verbs",
+    "name": "Verb Valency",
+    "path": "verbs/verb-valency"
+  },
+  {
+    "slug": "verbal-periphrases",
+    "category": "verbs",
+    "name": "Verbal Periphrases",
+    "path": "verbs/verbal-periphrases"
+  },
+  {
+    "slug": "voice-constructions",
+    "category": "verbs",
+    "name": "Voice Constructions",
+    "path": "verbs/voice-constructions"
+  },
+  {
+    "slug": "weather-verbs",
+    "category": "verbs",
+    "name": "Weather Verbs",
+    "path": "verbs/weather-verbs"
+  },
+  {
+    "slug": "adjective-adverb",
+    "category": "word-formation",
+    "name": "Adjective Adverb",
+    "path": "word-formation/adjective-adverb"
+  },
+  {
+    "slug": "adjective-noun",
+    "category": "word-formation",
+    "name": "Adjective Noun",
+    "path": "word-formation/adjective-noun"
+  },
+  {
+    "slug": "augmentative-suffixes",
+    "category": "word-formation",
+    "name": "Augmentative Suffixes",
+    "path": "word-formation/augmentative-suffixes"
+  },
+  {
+    "slug": "diminutive-suffixes",
+    "category": "word-formation",
+    "name": "Diminutive Suffixes",
+    "path": "word-formation/diminutive-suffixes"
+  }
+]

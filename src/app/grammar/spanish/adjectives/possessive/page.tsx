@@ -440,7 +440,7 @@ export default function SpanishPossessiveAdjectivesPage() {
         difficulty="beginner"
         estimatedTime={10}
         sections={sections}
-        backUrl="/grammar/spanish/adjectives"
+        backUrl="/grammar/spanish"
         practiceUrl="/grammar/spanish/adjectives/possessive/practice"
         quizUrl="/grammar/spanish/adjectives/possessive/quiz"
         songUrl="/songs/es?theme=grammar&topic=possessive-adjectives"

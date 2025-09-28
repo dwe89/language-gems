@@ -1,0 +1,358 @@
+{
+  "practice_content": {
+    "instructions": "Practice Spanish future tense with these exercises.",
+    "practice_type": "mixed_exercises",
+    "estimated_duration": 20,
+    "exercises": [
+      {
+        "type": "conjugation",
+        "instructions": "Conjugate these verbs in the future tense",
+        "prompts": [
+          {
+            "verb": "hablar",
+            "subject": "yo",
+            "answer": "hablaré",
+            "english": "I will speak",
+            "explanation": "Regular future: hablar + é = hablaré"
+          },
+          {
+            "verb": "comer",
+            "subject": "tú",
+            "answer": "comerás",
+            "english": "you will eat",
+            "explanation": "Regular future: comer + ás = comerás"
+          },
+          {
+            "verb": "vivir",
+            "subject": "él",
+            "answer": "vivirá",
+            "english": "he will live",
+            "explanation": "Regular future: vivir + á = vivirá"
+          },
+          {
+            "verb": "tener",
+            "subject": "nosotros",
+            "answer": "tendremos",
+            "english": "we will have",
+            "explanation": "Irregular future: tener → tendr- + emos = tendremos"
+          },
+          {
+            "verb": "poder",
+            "subject": "vosotros",
+            "answer": "podréis",
+            "english": "you all will be able",
+            "explanation": "Irregular future: poder → podr- + éis = podréis"
+          },
+          {
+            "verb": "hacer",
+            "subject": "ellos",
+            "answer": "harán",
+            "english": "they will do/make",
+            "explanation": "Irregular future: hacer → har- + án = harán"
+          },
+          {
+            "verb": "decir",
+            "subject": "yo",
+            "answer": "diré",
+            "english": "I will say",
+            "explanation": "Irregular future: decir → dir- + é = diré"
+          },
+          {
+            "verb": "salir",
+            "subject": "ella",
+            "answer": "saldrá",
+            "english": "she will leave",
+            "explanation": "Irregular future: salir → saldr- + á = saldrá"
+          },
+          {
+            "verb": "venir",
+            "subject": "ustedes",
+            "answer": "vendrán",
+            "english": "you all will come",
+            "explanation": "Irregular future: venir → vendr- + án = vendrán"
+          },
+          {
+            "verb": "poner",
+            "subject": "tú",
+            "answer": "pondrás",
+            "english": "you will put",
+            "explanation": "Irregular future: poner → pondr- + ás = pondrás"
+          }
+        ]
+      },
+      {
+        "type": "multiple_choice",
+        "instructions": "Choose the correct future form",
+        "prompts": [
+          {
+            "question": "What is the future form of 'estudiar' for 'yo'?",
+            "options": ["estudio", "estudiaré", "estudiaba", "estudie"],
+            "answer": "estudiaré",
+            "explanation": "Regular future: estudiar + é = estudiaré"
+          },
+          {
+            "question": "What is the future form of 'querer' for 'tú'?",
+            "options": ["quieres", "querrás", "querías", "quisieras"],
+            "answer": "querrás",
+            "explanation": "Irregular future: querer → querr- + ás = querrás"
+          },
+          {
+            "question": "What is the future form of 'saber' for 'él'?",
+            "options": ["sabe", "sabrá", "sabía", "sepa"],
+            "answer": "sabrá",
+            "explanation": "Irregular future: saber → sabr- + á = sabrá"
+          },
+          {
+            "question": "What is the future form of 'escribir' for 'nosotros'?",
+            "options": ["escribimos", "escribiremos", "escribíamos", "escribamos"],
+            "answer": "escribiremos",
+            "explanation": "Regular future: escribir + emos = escribiremos"
+          },
+          {
+            "question": "What is the future form of 'haber' for 'ellos'?",
+            "options": ["han", "habrán", "habían", "hayan"],
+            "answer": "habrán",
+            "explanation": "Irregular future: haber → habr- + án = habrán"
+          },
+          {
+            "question": "What is the future form of 'ir' for 'vosotros'?",
+            "options": ["vais", "iréis", "ibais", "vayáis"],
+            "answer": "iréis",
+            "explanation": "Regular future: ir + éis = iréis"
+          },
+          {
+            "question": "What is the future form of 'ser' for 'yo'?",
+            "options": ["soy", "seré", "era", "sea"],
+            "answer": "seré",
+            "explanation": "Regular future: ser + é = seré"
+          },
+          {
+            "question": "What is the future form of 'dar' for 'ella'?",
+            "options": ["da", "dará", "daba", "dé"],
+            "answer": "dará",
+            "explanation": "Regular future: dar + á = dará"
+          },
+          {
+            "question": "What is the future form of 'ver' for 'ustedes'?",
+            "options": ["ven", "verán", "veían", "vean"],
+            "answer": "verán",
+            "explanation": "Regular future: ver + án = verán"
+          },
+          {
+            "question": "What is the future form of 'estar' for 'nosotros'?",
+            "options": ["estamos", "estaremos", "estábamos", "estemos"],
+            "answer": "estaremos",
+            "explanation": "Regular future: estar + emos = estaremos"
+          }
+        ]
+      },
+      {
+        "type": "fill_blank",
+        "instructions": "Complete the sentences with the correct future form",
+        "prompts": [
+          {
+            "sentence": "Mañana _____ (llover) mucho.",
+            "answer": "lloverá",
+            "explanation": "Regular future: llover + á = lloverá"
+          },
+          {
+            "sentence": "Nosotros _____ (viajar) a Madrid el próximo año.",
+            "answer": "viajaremos",
+            "explanation": "Regular future: viajar + emos = viajaremos"
+          },
+          {
+            "sentence": "¿_____ (tener) tiempo para ayudarme?",
+            "answer": "Tendrás",
+            "explanation": "Irregular future: tener → tendr- + ás = tendrás"
+          },
+          {
+            "sentence": "Ellos _____ (salir) temprano mañana.",
+            "answer": "saldrán",
+            "explanation": "Irregular future: salir → saldr- + án = saldrán"
+          },
+          {
+            "sentence": "Yo _____ (hacer) la tarea esta noche.",
+            "answer": "haré",
+            "explanation": "Irregular future: hacer → har- + é = haré"
+          },
+          {
+            "sentence": "¿Qué _____ (decir) tus padres?",
+            "answer": "dirán",
+            "explanation": "Irregular future: decir → dir- + án = dirán"
+          },
+          {
+            "sentence": "Tú _____ (poder) hacerlo si practicas.",
+            "answer": "podrás",
+            "explanation": "Irregular future: poder → podr- + ás = podrás"
+          },
+          {
+            "sentence": "La película _____ (empezar) a las ocho.",
+            "answer": "empezará",
+            "explanation": "Regular future: empezar + á = empezará"
+          },
+          {
+            "sentence": "Nosotros _____ (venir) a la fiesta.",
+            "answer": "vendremos",
+            "explanation": "Irregular future: venir → vendr- + emos = vendremos"
+          },
+          {
+            "sentence": "¿Dónde _____ (poner) los libros?",
+            "answer": "pondrás",
+            "explanation": "Irregular future: poner → pondr- + ás = pondrás"
+          }
+        ]
+      }
+    ]
+  },
+  "quiz_content": {
+    "instructions": "Test your knowledge of Spanish future tense.",
+    "quiz_type": "mixed_assessment",
+    "time_limit": 1200,
+    "max_attempts": 3,
+    "passing_score": 70,
+    "show_explanations": true,
+    "randomize_questions": true,
+    "questions": [
+      {
+        "question_text": "What is the future form of 'hablar' for 'yo'?",
+        "options": ["hablo", "hablaré", "hablaba", "hable"],
+        "correct_answer": "hablaré",
+        "explanation": "Regular future: infinitive + é = hablaré",
+        "difficulty": "beginner"
+      },
+      {
+        "question_text": "Which verb has an irregular future stem?",
+        "options": ["hablar", "comer", "tener", "escribir"],
+        "correct_answer": "tener",
+        "explanation": "Tener becomes 'tendr-' in future (tendré)",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "What is the future form of 'poder' for 'tú'?",
+        "options": ["puedes", "podrás", "podías", "puedas"],
+        "correct_answer": "podrás",
+        "explanation": "Irregular future: poder → podr- + ás = podrás",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "Complete: 'Mañana _____ (llover).'",
+        "options": ["llueve", "lloverá", "llovía", "llueva"],
+        "correct_answer": "lloverá",
+        "explanation": "Regular future: llover + á = lloverá",
+        "difficulty": "beginner"
+      },
+      {
+        "question_text": "What is the future form of 'hacer' for 'ellos'?",
+        "options": ["hacen", "harán", "hacían", "hagan"],
+        "correct_answer": "harán",
+        "explanation": "Irregular future: hacer → har- + án = harán",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "What is the future form of 'decir' for 'yo'?",
+        "options": ["digo", "diré", "decía", "diga"],
+        "correct_answer": "diré",
+        "explanation": "Irregular future: decir → dir- + é = diré",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "What is the future form of 'salir' for 'nosotros'?",
+        "options": ["salimos", "saldremos", "salíamos", "salgamos"],
+        "correct_answer": "saldremos",
+        "explanation": "Irregular future: salir → saldr- + emos = saldremos",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "Complete: 'Yo _____ (estudiar) más el próximo año.'",
+        "options": ["estudio", "estudiaré", "estudiaba", "estudie"],
+        "correct_answer": "estudiaré",
+        "explanation": "Regular future: estudiar + é = estudiaré",
+        "difficulty": "beginner"
+      },
+      {
+        "question_text": "What is the future form of 'venir' for 'ustedes'?",
+        "options": ["vienen", "vendrán", "venían", "vengan"],
+        "correct_answer": "vendrán",
+        "explanation": "Irregular future: venir → vendr- + án = vendrán",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "What is the future form of 'poner' for 'tú'?",
+        "options": ["pones", "pondrás", "ponías", "pongas"],
+        "correct_answer": "pondrás",
+        "explanation": "Irregular future: poner → pondr- + ás = pondrás",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "Which verb keeps its infinitive form in future?",
+        "options": ["tener", "poder", "comer", "hacer"],
+        "correct_answer": "comer",
+        "explanation": "Regular verbs like 'comer' keep infinitive + future endings",
+        "difficulty": "beginner"
+      },
+      {
+        "question_text": "Complete: '¿_____ (tener) tiempo mañana?'",
+        "options": ["Tienes", "Tendrás", "Tenías", "Tengas"],
+        "correct_answer": "Tendrás",
+        "explanation": "Irregular future: tener → tendr- + ás = tendrás",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "What is the future form of 'querer' for 'ella'?",
+        "options": ["quiere", "querrá", "quería", "quiera"],
+        "correct_answer": "querrá",
+        "explanation": "Irregular future: querer → querr- + á = querrá",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "Complete: 'Nosotros _____ (viajar) en verano.'",
+        "options": ["viajamos", "viajaremos", "viajábamos", "viajemos"],
+        "correct_answer": "viajaremos",
+        "explanation": "Regular future: viajar + emos = viajaremos",
+        "difficulty": "beginner"
+      },
+      {
+        "question_text": "What is the future form of 'saber' for 'yo'?",
+        "options": ["sé", "sabré", "sabía", "sepa"],
+        "correct_answer": "sabré",
+        "explanation": "Irregular future: saber → sabr- + é = sabré",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "Complete: 'La clase _____ (empezar) a las nueve.'",
+        "options": ["empieza", "empezará", "empezaba", "empiece"],
+        "correct_answer": "empezará",
+        "explanation": "Regular future: empezar + á = empezará",
+        "difficulty": "beginner"
+      },
+      {
+        "question_text": "What is the future form of 'haber' for 'ellos'?",
+        "options": ["han", "habrán", "habían", "hayan"],
+        "correct_answer": "habrán",
+        "explanation": "Irregular future: haber → habr- + án = habrán",
+        "difficulty": "advanced"
+      },
+      {
+        "question_text": "Complete: '¿Qué _____ (hacer) este fin de semana?'",
+        "options": ["haces", "harás", "hacías", "hagas"],
+        "correct_answer": "harás",
+        "explanation": "Irregular future: hacer → har- + ás = harás",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "What is the future form of 'ir' for 'vosotros'?",
+        "options": ["vais", "iréis", "ibais", "vayáis"],
+        "correct_answer": "iréis",
+        "explanation": "Regular future: ir + éis = iréis",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "Complete: 'Ellos _____ (llegar) tarde.'",
+        "options": ["llegan", "llegarán", "llegaban", "lleguen"],
+        "correct_answer": "llegarán",
+        "explanation": "Regular future: llegar + án = llegarán",
+        "difficulty": "beginner"
+      }
+    ]
+  }
+}

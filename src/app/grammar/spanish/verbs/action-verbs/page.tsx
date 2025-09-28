@@ -430,7 +430,7 @@ export default function SpanishActionVerbsPage() {
         practiceUrl="/grammar/spanish/verbs/action-verbs/practice"
         quizUrl="/grammar/spanish/verbs/action-verbs/quiz"
         songUrl="/songs/es?theme=grammar&topic=action-verbs"
-        youtubeVideoId="action-verbs-spanish"
+        youtubeVideoId="EGaSgIRswcI"
         relatedTopics={relatedTopics}
       />
     </>

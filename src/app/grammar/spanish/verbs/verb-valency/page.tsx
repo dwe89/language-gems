@@ -287,7 +287,7 @@ export default function SpanishVerbValencyPage() {
         practiceUrl="/grammar/spanish/verbs/verb-valency/practice"
         quizUrl="/grammar/spanish/verbs/verb-valency/quiz"
         songUrl="/songs/es?theme=grammar&topic=verb-valency"
-        youtubeVideoId="verb-valency-spanish"
+        youtubeVideoId="EGaSgIRswcI"
         relatedTopics={relatedTopics}
       />
     </>

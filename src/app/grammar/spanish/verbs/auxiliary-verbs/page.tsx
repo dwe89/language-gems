@@ -207,7 +207,7 @@ export default function SpanishAuxiliaryVerbsPage() {
         practiceUrl="/grammar/spanish/verbs/auxiliary-verbs/practice"
         quizUrl="/grammar/spanish/verbs/auxiliary-verbs/quiz"
         songUrl="/songs/es?theme=grammar&topic=auxiliary-verbs"
-        youtubeVideoId="auxiliary-verbs-spanish"
+        youtubeVideoId="EGaSgIRswcI"
         relatedTopics={relatedTopics}
       />
     </>

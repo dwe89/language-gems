@@ -328,7 +328,7 @@ export default function SpanishPhrasalVerbsPage() {
         practiceUrl="/grammar/spanish/verbs/phrasal-verbs/practice"
         quizUrl="/grammar/spanish/verbs/phrasal-verbs/quiz"
         songUrl="/songs/es?theme=grammar&topic=phrasal-verbs"
-        youtubeVideoId="phrasal-verbs-spanish"
+        youtubeVideoId="EGaSgIRswcI"
         relatedTopics={relatedTopics}
       />
     </>

@@ -312,7 +312,7 @@ export default function SpanishVerbSerializationPage() {
         practiceUrl="/grammar/spanish/verbs/verb-serialization/practice"
         quizUrl="/grammar/spanish/verbs/verb-serialization/quiz"
         songUrl="/songs/es?theme=grammar&topic=verb-serialization"
-        youtubeVideoId="verb-serialization-spanish"
+        youtubeVideoId="EGaSgIRswcI"
         relatedTopics={relatedTopics}
       />
     </>

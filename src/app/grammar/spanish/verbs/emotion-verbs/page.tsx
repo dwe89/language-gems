@@ -430,7 +430,7 @@ export default function SpanishEmotionVerbsPage() {
         practiceUrl="/grammar/spanish/verbs/emotion-verbs/practice"
         quizUrl="/grammar/spanish/verbs/emotion-verbs/quiz"
         songUrl="/songs/es?theme=grammar&topic=emotion-verbs"
-        youtubeVideoId="emotion-verbs-spanish"
+        youtubeVideoId="EGaSgIRswcI"
         relatedTopics={relatedTopics}
       />
     </>

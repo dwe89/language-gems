@@ -4,10 +4,25 @@ import { cookies } from 'next/headers';
 
 export const dynamic = 'force-dynamic';
 
+// Language mapping helper
+const mapLanguageToCode = (language: string | null): string | null => {
+  if (!language) return null;
+  const languageMap: Record<string, string> = {
+    'spanish': 'es',
+    'french': 'fr',
+    'german': 'de',
+    'es': 'es',
+    'fr': 'fr',
+    'de': 'de'
+  };
+  return languageMap[language.toLowerCase()] || null;
+};
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const language = searchParams.get('language');
+    const rawLanguage = searchParams.get('language');
+    const language = mapLanguageToCode(rawLanguage);
     const curriculumLevel = searchParams.get('curriculumLevel');
     const category = searchParams.get('category');
     const difficulty = searchParams.get('difficulty');

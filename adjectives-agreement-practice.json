@@ -1,0 +1,279 @@
+{
+  "topic_id": "2c608bbb-9af0-4306-b72d-acfc66b66981",
+  "title": "Spanish Adjective Agreement - Practice",
+  "content_type": "practice",
+  "difficulty_level": "intermediate",
+  "age_group": "11-14",
+  "questions": [
+    {
+      "id": "p1",
+      "question": "Choose the correct form: La casa _____ (blanco)",
+      "correct_answer": "blanca",
+      "options": ["blanco", "blanca", "blancos", "blancas"],
+      "explanation": "Casa is feminine singular, so the adjective becomes 'blanca'.",
+      "difficulty": "beginner",
+      "type": "multiple_choice"
+    },
+    {
+      "id": "p2",
+      "question": "Select: Los gatos _____ (negro)",
+      "correct_answer": "negros",
+      "options": ["negro", "negra", "negros", "negras"],
+      "explanation": "Gatos is masculine plural, so the adjective becomes 'negros'.",
+      "difficulty": "beginner",
+      "type": "multiple_choice"
+    },
+    {
+      "id": "p3",
+      "question": "Complete: Las flores _____ (bonito)",
+      "correct_answer": "bonitas",
+      "options": ["bonito", "bonita", "bonitos", "bonitas"],
+      "explanation": "Flores is feminine plural, so the adjective becomes 'bonitas'.",
+      "difficulty": "beginner",
+      "type": "multiple_choice"
+    },
+    {
+      "id": "p4",
+      "question": "Choose: El libro _____ (interesante)",
+      "correct_answer": "interesante",
+      "options": ["interesante", "interesantes", "interesanto", "interesanta"],
+      "explanation": "Adjectives ending in -e don't change for gender. Libro is singular, so 'interesante'.",
+      "difficulty": "beginner",
+      "type": "multiple_choice"
+    },
+    {
+      "id": "p5",
+      "question": "Select: Una mesa _____ (grande)",
+      "correct_answer": "grande",
+      "options": ["grande", "grandes", "grando", "granda"],
+      "explanation": "Adjectives ending in -e don't change for gender, only number. Mesa is singular.",
+      "difficulty": "beginner",
+      "type": "multiple_choice"
+    },
+    {
+      "id": "p6",
+      "question": "Complete: Los estudiantes _____ (inteligente)",
+      "correct_answer": "inteligentes",
+      "options": ["inteligente", "inteligentes", "inteligento", "inteligenta"],
+      "explanation": "Estudiantes is plural. Adjectives ending in -e add -s for plural.",
+      "difficulty": "beginner",
+      "type": "multiple_choice"
+    },
+    {
+      "id": "p7",
+      "question": "Choose: Las sillas _____ (cómodo)",
+      "correct_answer": "cómodas",
+      "options": ["cómodo", "cómoda", "cómodos", "cómodas"],
+      "explanation": "Sillas is feminine plural, so the adjective becomes 'cómodas'.",
+      "difficulty": "beginner",
+      "type": "multiple_choice"
+    },
+    {
+      "id": "p8",
+      "question": "Select: El perro _____ (pequeño)",
+      "correct_answer": "pequeño",
+      "options": ["pequeño", "pequeña", "pequeños", "pequeñas"],
+      "explanation": "Perro is masculine singular, so the adjective remains 'pequeño'.",
+      "difficulty": "beginner",
+      "type": "multiple_choice"
+    },
+    {
+      "id": "p9",
+      "question": "Complete: Las niñas _____ (alto)",
+      "correct_answer": "altas",
+      "options": ["alto", "alta", "altos", "altas"],
+      "explanation": "Niñas is feminine plural, so the adjective becomes 'altas'.",
+      "difficulty": "beginner",
+      "type": "multiple_choice"
+    },
+    {
+      "id": "p10",
+      "question": "Choose: Los coches _____ (rápido)",
+      "correct_answer": "rápidos",
+      "options": ["rápido", "rápida", "rápidos", "rápidas"],
+      "explanation": "Coches is masculine plural, so the adjective becomes 'rápidos'.",
+      "difficulty": "beginner",
+      "type": "multiple_choice"
+    },
+    {
+      "id": "p11",
+      "question": "Select: La profesora _____ (simpático)",
+      "correct_answer": "simpática",
+      "options": ["simpático", "simpática", "simpáticos", "simpáticas"],
+      "explanation": "Profesora is feminine singular, so the adjective becomes 'simpática'.",
+      "difficulty": "intermediate",
+      "type": "multiple_choice"
+    },
+    {
+      "id": "p12",
+      "question": "Complete: Los exámenes _____ (fácil)",
+      "correct_answer": "fáciles",
+      "options": ["fácil", "fáciles", "fácilo", "fácila"],
+      "explanation": "Exámenes is plural. Adjectives ending in consonants add -es for plural.",
+      "difficulty": "intermediate",
+      "type": "multiple_choice"
+    },
+    {
+      "id": "p13",
+      "question": "Choose: Las ciudades _____ (grande)",
+      "correct_answer": "grandes",
+      "options": ["grande", "grandes", "grando", "granda"],
+      "explanation": "Ciudades is plural. Adjectives ending in -e add -s for plural.",
+      "difficulty": "intermediate",
+      "type": "multiple_choice"
+    },
+    {
+      "id": "p14",
+      "question": "Select: El clima _____ (tropical)",
+      "correct_answer": "tropical",
+      "options": ["tropical", "tropicala", "tropicales", "tropicalas"],
+      "explanation": "Clima is masculine singular. Adjectives ending in consonants don't change for gender.",
+      "difficulty": "intermediate",
+      "type": "multiple_choice"
+    },
+    {
+      "id": "p15",
+      "question": "Complete: Las manos _____ (limpio)",
+      "correct_answer": "limpias",
+      "options": ["limpio", "limpia", "limpios", "limpias"],
+      "explanation": "Manos is feminine plural, so the adjective becomes 'limpias'.",
+      "difficulty": "intermediate",
+      "type": "multiple_choice"
+    },
+    {
+      "id": "p16",
+      "question": "Choose: Los días _____ (feliz)",
+      "correct_answer": "felices",
+      "options": ["feliz", "feliza", "felizos", "felices"],
+      "explanation": "Días is plural. Adjectives ending in -z change to -ces in plural.",
+      "difficulty": "intermediate",
+      "type": "multiple_choice"
+    },
+    {
+      "id": "p17",
+      "question": "Select: Una actriz _____ (famoso)",
+      "correct_answer": "famosa",
+      "options": ["famoso", "famosa", "famosos", "famosas"],
+      "explanation": "Actriz is feminine singular, so the adjective becomes 'famosa'.",
+      "difficulty": "intermediate",
+      "type": "multiple_choice"
+    },
+    {
+      "id": "p18",
+      "question": "Complete: Los animales _____ (salvaje)",
+      "correct_answer": "salvajes",
+      "options": ["salvaje", "salvajes", "salvajo", "salvaja"],
+      "explanation": "Animales is plural. Adjectives ending in -e add -s for plural.",
+      "difficulty": "intermediate",
+      "type": "multiple_choice"
+    },
+    {
+      "id": "p19",
+      "question": "Choose: Las voces _____ (dulce)",
+      "correct_answer": "dulces",
+      "options": ["dulce", "dulces", "dulco", "dulca"],
+      "explanation": "Voces is plural. Adjectives ending in -e add -s for plural.",
+      "difficulty": "intermediate",
+      "type": "multiple_choice"
+    },
+    {
+      "id": "p20",
+      "question": "Select: El problema _____ (serio)",
+      "correct_answer": "serio",
+      "options": ["serio", "seria", "serios", "serias"],
+      "explanation": "Despite ending in -a, 'problema' is masculine singular, so 'serio'.",
+      "difficulty": "advanced",
+      "type": "multiple_choice"
+    },
+    {
+      "id": "p21",
+      "question": "Complete: El agua _____ (frío)",
+      "correct_answer": "fría",
+      "options": ["frío", "fría", "fríos", "frías"],
+      "explanation": "Despite using 'el', agua is feminine. The adjective must agree: 'fría'.",
+      "difficulty": "advanced",
+      "type": "multiple_choice"
+    },
+    {
+      "id": "p22",
+      "question": "Choose: Los programas _____ (educativo)",
+      "correct_answer": "educativos",
+      "options": ["educativo", "educativa", "educativos", "educativas"],
+      "explanation": "Programas is masculine plural, so the adjective becomes 'educativos'.",
+      "difficulty": "advanced",
+      "type": "multiple_choice"
+    },
+    {
+      "id": "p23",
+      "question": "Select: Las crisis _____ (económico)",
+      "correct_answer": "económicas",
+      "options": ["económico", "económica", "económicos", "económicas"],
+      "explanation": "Crisis is feminine plural, so the adjective becomes 'económicas'.",
+      "difficulty": "advanced",
+      "type": "multiple_choice"
+    },
+    {
+      "id": "p24",
+      "question": "Complete: La moto _____ (rápido)",
+      "correct_answer": "rápida",
+      "options": ["rápido", "rápida", "rápidos", "rápidas"],
+      "explanation": "Moto is feminine singular, so the adjective becomes 'rápida'.",
+      "difficulty": "intermediate",
+      "type": "multiple_choice"
+    },
+    {
+      "id": "p25",
+      "question": "Choose: Los lápices _____ (azul)",
+      "correct_answer": "azules",
+      "options": ["azul", "azula", "azulos", "azules"],
+      "explanation": "Lápices is plural. Adjectives ending in consonants add -es for plural.",
+      "difficulty": "intermediate",
+      "type": "multiple_choice"
+    },
+    {
+      "id": "p26",
+      "question": "Select: Las tradiciones _____ (español)",
+      "correct_answer": "españolas",
+      "options": ["español", "española", "españoles", "españolas"],
+      "explanation": "Tradiciones is feminine plural, so the adjective becomes 'españolas'.",
+      "difficulty": "advanced",
+      "type": "multiple_choice"
+    },
+    {
+      "id": "p27",
+      "question": "Complete: El mapa _____ (detallado)",
+      "correct_answer": "detallado",
+      "options": ["detallado", "detallada", "detallados", "detalladas"],
+      "explanation": "Despite ending in -a, 'mapa' is masculine singular, so 'detallado'.",
+      "difficulty": "advanced",
+      "type": "multiple_choice"
+    },
+    {
+      "id": "p28",
+      "question": "Choose: Las canciones _____ (popular)",
+      "correct_answer": "populares",
+      "options": ["popular", "populara", "populares", "popularas"],
+      "explanation": "Canciones is plural. Adjectives ending in consonants add -es for plural.",
+      "difficulty": "intermediate",
+      "type": "multiple_choice"
+    },
+    {
+      "id": "p29",
+      "question": "Select: Los turistas _____ (alemán)",
+      "correct_answer": "alemanes",
+      "options": ["alemán", "alemana", "alemanes", "alemanas"],
+      "explanation": "Turistas is masculine plural, so the adjective becomes 'alemanes'.",
+      "difficulty": "advanced",
+      "type": "multiple_choice"
+    },
+    {
+      "id": "p30",
+      "question": "Complete: La foto _____ (borroso)",
+      "correct_answer": "borrosa",
+      "options": ["borroso", "borrosa", "borrosos", "borrosas"],
+      "explanation": "Foto is feminine singular, so the adjective becomes 'borrosa'.",
+      "difficulty": "intermediate",
+      "type": "multiple_choice"
+    }
+  ]
+}

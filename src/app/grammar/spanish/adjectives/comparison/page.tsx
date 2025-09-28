@@ -436,7 +436,7 @@ export default function SpanishAdjectiveComparisonPage() {
         difficulty="intermediate"
         estimatedTime={18}
         sections={sections}
-        backUrl="/grammar/spanish/adjectives"
+        backUrl="/grammar/spanish"
         practiceUrl="/grammar/spanish/adjectives/comparison/practice"
         quizUrl="/grammar/spanish/adjectives/comparison/quiz"
         songUrl="/songs/es?theme=grammar&topic=comparisons"

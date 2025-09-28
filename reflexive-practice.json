@@ -1,0 +1,207 @@
+{
+  "practice_content": {
+    "instructions": "Practice Spanish reflexive pronouns and verbs with these exercises.",
+    "practice_type": "mixed_exercises",
+    "estimated_duration": 15,
+    "exercises": [
+      {
+        "type": "multiple_choice",
+        "instructions": "Choose the correct reflexive form",
+        "prompts": [
+          {
+            "question": "How do you say 'I get up' in Spanish?",
+            "options": ["me levanto", "te levantas", "se levanta", "nos levantamos"],
+            "answer": "me levanto",
+            "explanation": "'Me levanto' means 'I get up'"
+          },
+          {
+            "question": "How do you say 'you wash yourself' in Spanish?",
+            "options": ["me lavo", "te lavas", "se lava", "nos lavamos"],
+            "answer": "te lavas",
+            "explanation": "'Te lavas' means 'you wash yourself'"
+          },
+          {
+            "question": "How do you say 'she gets dressed' in Spanish?",
+            "options": ["me visto", "te vistes", "se viste", "nos vestimos"],
+            "answer": "se viste",
+            "explanation": "'Se viste' means 'she gets dressed'"
+          },
+          {
+            "question": "How do you say 'we sit down' in Spanish?",
+            "options": ["me siento", "te sientas", "se sienta", "nos sentamos"],
+            "answer": "nos sentamos",
+            "explanation": "'Nos sentamos' means 'we sit down'"
+          },
+          {
+            "question": "How do you say 'they go to bed' in Spanish?",
+            "options": ["me acuesto", "te acuestas", "se acuesta", "se acuestan"],
+            "answer": "se acuestan",
+            "explanation": "'Se acuestan' means 'they go to bed'"
+          },
+          {
+            "question": "What does 'ducharse' mean?",
+            "options": ["to wash", "to shower", "to bathe", "to clean"],
+            "answer": "to shower",
+            "explanation": "'Ducharse' means 'to shower oneself'"
+          },
+          {
+            "question": "What does 'despertarse' mean?",
+            "options": ["to sleep", "to wake up", "to dream", "to rest"],
+            "answer": "to wake up",
+            "explanation": "'Despertarse' means 'to wake up'"
+          },
+          {
+            "question": "What does 'peinarse' mean?",
+            "options": ["to wash hair", "to cut hair", "to comb hair", "to dry hair"],
+            "answer": "to comb hair",
+            "explanation": "'Peinarse' means 'to comb one's hair'"
+          },
+          {
+            "question": "What does 'afeitarse' mean?",
+            "options": ["to cut", "to shave", "to trim", "to wash"],
+            "answer": "to shave",
+            "explanation": "'Afeitarse' means 'to shave oneself'"
+          },
+          {
+            "question": "What does 'maquillarse' mean?",
+            "options": ["to wash face", "to put on makeup", "to look in mirror", "to smile"],
+            "answer": "to put on makeup",
+            "explanation": "'Maquillarse' means 'to put on makeup'"
+          }
+        ]
+      },
+      {
+        "type": "fill_blank",
+        "instructions": "Complete with the correct reflexive verb form",
+        "prompts": [
+          {
+            "sentence": "Yo _____ a las siete. (I wake up at seven.)",
+            "answer": "me despierto",
+            "explanation": "'Me despierto' means 'I wake up'"
+          },
+          {
+            "sentence": "Tú _____ los dientes. (You brush your teeth.)",
+            "answer": "te cepillas",
+            "explanation": "'Te cepillas' means 'you brush (yourself)'"
+          },
+          {
+            "sentence": "Ella _____ el pelo. (She combs her hair.)",
+            "answer": "se peina",
+            "explanation": "'Se peina' means 'she combs her hair'"
+          },
+          {
+            "sentence": "Nosotros _____ rápido. (We get dressed quickly.)",
+            "answer": "nos vestimos",
+            "explanation": "'Nos vestimos' means 'we get dressed'"
+          },
+          {
+            "sentence": "Ellos _____ en el sofá. (They sit on the sofa.)",
+            "answer": "se sientan",
+            "explanation": "'Se sientan' means 'they sit down'"
+          },
+          {
+            "sentence": "¿A qué hora _____? (What time do you go to bed?)",
+            "answer": "te acuestas",
+            "explanation": "'Te acuestas' means 'you go to bed'"
+          },
+          {
+            "sentence": "Mi hermano _____ por la mañana. (My brother showers in the morning.)",
+            "answer": "se ducha",
+            "explanation": "'Se ducha' means 'he showers'"
+          },
+          {
+            "sentence": "Nosotras _____ para la fiesta. (We put on makeup for the party.)",
+            "answer": "nos maquillamos",
+            "explanation": "'Nos maquillamos' means 'we put on makeup'"
+          },
+          {
+            "sentence": "Vosotros _____ tarde. (You all wake up late.)",
+            "answer": "os despertáis",
+            "explanation": "'Os despertáis' means 'you all wake up'"
+          },
+          {
+            "sentence": "Yo _____ las manos. (I wash my hands.)",
+            "answer": "me lavo",
+            "explanation": "'Me lavo' means 'I wash myself'"
+          }
+        ]
+      },
+      {
+        "type": "conjugation",
+        "instructions": "Conjugate these reflexive verbs",
+        "prompts": [
+          {
+            "verb": "levantarse",
+            "subject": "tú",
+            "answer": "te levantas",
+            "english": "you get up",
+            "explanation": "Tú + te + levantas = te levantas"
+          },
+          {
+            "verb": "bañarse",
+            "subject": "él",
+            "answer": "se baña",
+            "english": "he bathes",
+            "explanation": "Él + se + baña = se baña"
+          },
+          {
+            "verb": "vestirse",
+            "subject": "nosotros",
+            "answer": "nos vestimos",
+            "english": "we get dressed",
+            "explanation": "Nosotros + nos + vestimos = nos vestimos"
+          },
+          {
+            "verb": "acostarse",
+            "subject": "ellas",
+            "answer": "se acuestan",
+            "english": "they go to bed",
+            "explanation": "Ellas + se + acuestan = se acuestan"
+          },
+          {
+            "verb": "despertarse",
+            "subject": "yo",
+            "answer": "me despierto",
+            "english": "I wake up",
+            "explanation": "Yo + me + despierto = me despierto"
+          },
+          {
+            "verb": "ducharse",
+            "subject": "usted",
+            "answer": "se ducha",
+            "english": "you shower",
+            "explanation": "Usted + se + ducha = se ducha"
+          },
+          {
+            "verb": "peinarse",
+            "subject": "nosotras",
+            "answer": "nos peinamos",
+            "english": "we comb our hair",
+            "explanation": "Nosotras + nos + peinamos = nos peinamos"
+          },
+          {
+            "verb": "sentarse",
+            "subject": "vosotros",
+            "answer": "os sentáis",
+            "english": "you all sit down",
+            "explanation": "Vosotros + os + sentáis = os sentáis"
+          },
+          {
+            "verb": "lavarse",
+            "subject": "ellos",
+            "answer": "se lavan",
+            "english": "they wash themselves",
+            "explanation": "Ellos + se + lavan = se lavan"
+          },
+          {
+            "verb": "afeitarse",
+            "subject": "tú",
+            "answer": "te afeitas",
+            "english": "you shave",
+            "explanation": "Tú + te + afeitas = te afeitas"
+          }
+        ]
+      }
+    ]
+  }
+}

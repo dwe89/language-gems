@@ -1,0 +1,302 @@
+{
+  "topics": [
+    {
+      "topic_id": "demonstrative",
+      "title": "Demonstrative Adjectives",
+      "content_type": "practice",
+      "questions": [
+        {
+          "id": 1,
+          "question": "Choose the correct demonstrative adjective: ___ libro (this book - near me)",
+          "correct_answer": "este",
+          "options": ["este", "ese", "aquel", "esta"],
+          "explanation": "'Este' is used for masculine singular nouns that are close to the speaker.",
+          "difficulty": "beginner",
+          "type": "multiple_choice"
+        },
+        {
+          "id": 2,
+          "question": "Choose the correct demonstrative adjective: ___ casa (that house - near you)",
+          "correct_answer": "esa",
+          "options": ["esta", "esa", "aquella", "ese"],
+          "explanation": "'Esa' is used for feminine singular nouns that are close to the listener.",
+          "difficulty": "beginner",
+          "type": "multiple_choice"
+        },
+        {
+          "id": 3,
+          "question": "Choose the correct demonstrative adjective: ___ montañas (those mountains - far away)",
+          "correct_answer": "aquellas",
+          "options": ["estas", "esas", "aquellas", "aquellos"],
+          "explanation": "'Aquellas' is used for feminine plural nouns that are far from both speaker and listener.",
+          "difficulty": "beginner",
+          "type": "multiple_choice"
+        },
+        {
+          "id": 4,
+          "question": "Complete: ___ coches son muy caros (these cars)",
+          "correct_answer": "Estos",
+          "options": ["Estos", "Esos", "Aquellos", "Este"],
+          "explanation": "'Estos' is used for masculine plural nouns close to the speaker.",
+          "difficulty": "beginner",
+          "type": "multiple_choice"
+        },
+        {
+          "id": 5,
+          "question": "Choose the correct form: ___ problema es difícil (this problem)",
+          "correct_answer": "Este",
+          "options": ["Este", "Esta", "Ese", "Esa"],
+          "explanation": "'Problema' is masculine despite ending in -a, so we use 'este'.",
+          "difficulty": "intermediate",
+          "type": "multiple_choice"
+        },
+        {
+          "id": 6,
+          "question": "Complete: No me gusta ___ música (that music - you're listening to)",
+          "correct_answer": "esa",
+          "options": ["esta", "esa", "aquella", "ese"],
+          "explanation": "'Esa' refers to something near the listener but not the speaker.",
+          "difficulty": "beginner",
+          "type": "multiple_choice"
+        },
+        {
+          "id": 7,
+          "question": "Choose the correct form: ___ días fueron increíbles (those days - long ago)",
+          "correct_answer": "Aquellos",
+          "options": ["Estos", "Esos", "Aquellos", "Aquellas"],
+          "explanation": "'Aquellos' is used for masculine plural nouns distant in time or space.",
+          "difficulty": "intermediate",
+          "type": "multiple_choice"
+        },
+        {
+          "id": 8,
+          "question": "Complete: ___ mano me duele (this hand)",
+          "correct_answer": "Esta",
+          "options": ["Este", "Esta", "Ese", "Esa"],
+          "explanation": "'Mano' is feminine despite ending in -o, so we use 'esta'.",
+          "difficulty": "intermediate",
+          "type": "multiple_choice"
+        },
+        {
+          "id": 9,
+          "question": "Choose the correct form: ___ tiempos eran mejores (those times - in the past)",
+          "correct_answer": "Aquellos",
+          "options": ["Estos", "Esos", "Aquellos", "Aquellas"],
+          "explanation": "'Aquellos' is used for masculine plural nouns referring to distant past.",
+          "difficulty": "intermediate",
+          "type": "multiple_choice"
+        },
+        {
+          "id": 10,
+          "question": "Complete: ___ flores huelen bien (these flowers)",
+          "correct_answer": "Estas",
+          "options": ["Estas", "Esas", "Aquellas", "Estos"],
+          "explanation": "'Estas' is used for feminine plural nouns close to the speaker.",
+          "difficulty": "beginner",
+          "type": "multiple_choice"
+        }
+      ]
+    },
+    {
+      "topic_id": "demonstrative",
+      "title": "Demonstrative Adjectives",
+      "content_type": "quiz",
+      "questions": [
+        {
+          "id": 1,
+          "question": "Select the correct demonstrative: ___ año ha sido difícil (this year)",
+          "correct_answer": "Este",
+          "options": ["Este", "Ese", "Aquel", "Esta"],
+          "explanation": "'Este' is used for masculine singular nouns close to the speaker.",
+          "difficulty": "beginner",
+          "type": "multiple_choice"
+        },
+        {
+          "id": 2,
+          "question": "Choose the correct form: ___ época del año me encanta (this time of year)",
+          "correct_answer": "Esta",
+          "options": ["Este", "Esta", "Esa", "Aquella"],
+          "explanation": "'Época' is feminine, so we use 'esta' for something close to the speaker.",
+          "difficulty": "beginner",
+          "type": "multiple_choice"
+        },
+        {
+          "id": 3,
+          "question": "Complete: ___ chicos de allí son mis amigos (those boys over there)",
+          "correct_answer": "Aquellos",
+          "options": ["Estos", "Esos", "Aquellos", "Aquellas"],
+          "explanation": "'Aquellos' is used for masculine plural nouns far from both speaker and listener.",
+          "difficulty": "intermediate",
+          "type": "multiple_choice"
+        },
+        {
+          "id": 4,
+          "question": "Choose the correct demonstrative: ___ ideas que tienes son buenas (those ideas you have)",
+          "correct_answer": "Esas",
+          "options": ["Estas", "Esas", "Aquellas", "Esos"],
+          "explanation": "'Esas' refers to feminine plural nouns close to the listener.",
+          "difficulty": "intermediate",
+          "type": "multiple_choice"
+        },
+        {
+          "id": 5,
+          "question": "Complete: ___ foto de la pared es antigua (that photo on the wall - far away)",
+          "correct_answer": "Aquella",
+          "options": ["Esta", "Esa", "Aquella", "Aquel"],
+          "explanation": "'Aquella' is used for feminine singular nouns distant from both speaker and listener.",
+          "difficulty": "intermediate",
+          "type": "multiple_choice"
+        }
+      ]
+    },
+    {
+      "topic_id": "indefinite",
+      "title": "Indefinite Adjectives",
+      "content_type": "practice",
+      "questions": [
+        {
+          "id": 1,
+          "question": "Choose the correct indefinite adjective: ___ personas vinieron (some people)",
+          "correct_answer": "Algunas",
+          "options": ["Alguna", "Algunas", "Algunos", "Algún"],
+          "explanation": "'Algunas' is used with feminine plural nouns to mean 'some'.",
+          "difficulty": "beginner",
+          "type": "multiple_choice"
+        },
+        {
+          "id": 2,
+          "question": "Complete: No tengo ___ dinero (any money)",
+          "correct_answer": "ningún",
+          "options": ["ningún", "ninguno", "ninguna", "ningunos"],
+          "explanation": "'Ningún' is used before masculine singular nouns to mean 'no/not any'.",
+          "difficulty": "beginner",
+          "type": "multiple_choice"
+        },
+        {
+          "id": 3,
+          "question": "Choose the correct form: ___ día iré a visitarte (some day)",
+          "correct_answer": "Algún",
+          "options": ["Algún", "Alguno", "Alguna", "Algunos"],
+          "explanation": "'Algún' is the shortened form of 'alguno' used before masculine singular nouns.",
+          "difficulty": "beginner",
+          "type": "multiple_choice"
+        },
+        {
+          "id": 4,
+          "question": "Complete: ___ estudiante puede hacer esto (any student)",
+          "correct_answer": "Cualquier",
+          "options": ["Cualquier", "Cualquiera", "Algún", "Ningún"],
+          "explanation": "'Cualquier' is used before singular nouns to mean 'any' (whichever).",
+          "difficulty": "intermediate",
+          "type": "multiple_choice"
+        },
+        {
+          "id": 5,
+          "question": "Choose the correct form: ___ libros están en la mesa (several books)",
+          "correct_answer": "Varios",
+          "options": ["Varios", "Varias", "Muchos", "Algunos"],
+          "explanation": "'Varios' is used with masculine plural nouns to mean 'several'.",
+          "difficulty": "beginner",
+          "type": "multiple_choice"
+        },
+        {
+          "id": 6,
+          "question": "Complete: No hay ___ solución fácil (any easy solution)",
+          "correct_answer": "ninguna",
+          "options": ["alguna", "ninguna", "cualquier", "otra"],
+          "explanation": "'Ninguna' is used with feminine singular nouns to mean 'no/not any'.",
+          "difficulty": "beginner",
+          "type": "multiple_choice"
+        },
+        {
+          "id": 7,
+          "question": "Choose the correct form: ___ personas llegaron tarde (few people)",
+          "correct_answer": "Pocas",
+          "options": ["Pocas", "Pocos", "Algunas", "Varias"],
+          "explanation": "'Pocas' is used with feminine plural nouns to mean 'few'.",
+          "difficulty": "beginner",
+          "type": "multiple_choice"
+        },
+        {
+          "id": 8,
+          "question": "Complete: ___ cosa es posible (anything is possible)",
+          "correct_answer": "Cualquier",
+          "options": ["Cualquier", "Alguna", "Otra", "Toda"],
+          "explanation": "'Cualquier' before a singular noun means 'any' in the sense of 'anything'.",
+          "difficulty": "intermediate",
+          "type": "multiple_choice"
+        },
+        {
+          "id": 9,
+          "question": "Choose the correct form: ___ chicas vinieron a la fiesta (many girls)",
+          "correct_answer": "Muchas",
+          "options": ["Muchas", "Muchos", "Varias", "Algunas"],
+          "explanation": "'Muchas' is used with feminine plural nouns to mean 'many'.",
+          "difficulty": "beginner",
+          "type": "multiple_choice"
+        },
+        {
+          "id": 10,
+          "question": "Complete: ___ problema tiene solución (every problem)",
+          "correct_answer": "Todo",
+          "options": ["Todo", "Toda", "Cada", "Cualquier"],
+          "explanation": "'Todo' is used with masculine singular nouns to mean 'every/all'.",
+          "difficulty": "intermediate",
+          "type": "multiple_choice"
+        }
+      ]
+    },
+    {
+      "topic_id": "indefinite",
+      "title": "Indefinite Adjectives",
+      "content_type": "quiz",
+      "questions": [
+        {
+          "id": 1,
+          "question": "Select the correct indefinite adjective: ___ momento puede llegar (at any moment)",
+          "correct_answer": "Cualquier",
+          "options": ["Cualquier", "Algún", "Ningún", "Todo"],
+          "explanation": "'Cualquier' is used before singular nouns to mean 'any' (at any time).",
+          "difficulty": "intermediate",
+          "type": "multiple_choice"
+        },
+        {
+          "id": 2,
+          "question": "Choose the correct form: ___ semanas han pasado (several weeks)",
+          "correct_answer": "Varias",
+          "options": ["Varios", "Varias", "Algunas", "Muchas"],
+          "explanation": "'Varias' is used with feminine plural nouns to mean 'several'.",
+          "difficulty": "beginner",
+          "type": "multiple_choice"
+        },
+        {
+          "id": 3,
+          "question": "Complete: No conozco a ___ persona aquí (any person)",
+          "correct_answer": "ninguna",
+          "options": ["alguna", "ninguna", "cualquier", "otra"],
+          "explanation": "'Ninguna' is used with feminine singular nouns in negative sentences.",
+          "difficulty": "intermediate",
+          "type": "multiple_choice"
+        },
+        {
+          "id": 4,
+          "question": "Choose the correct form: ___ niño puede aprender esto (every child)",
+          "correct_answer": "Todo",
+          "options": ["Todo", "Cada", "Cualquier", "Algún"],
+          "explanation": "'Todo' is used with masculine singular nouns to mean 'every'.",
+          "difficulty": "intermediate",
+          "type": "multiple_choice"
+        },
+        {
+          "id": 5,
+          "question": "Complete: ___ amigos míos viven aquí (few of my friends)",
+          "correct_answer": "Pocos",
+          "options": ["Pocos", "Algunos", "Varios", "Muchos"],
+          "explanation": "'Pocos' is used with masculine plural nouns to mean 'few'.",
+          "difficulty": "beginner",
+          "type": "multiple_choice"
+        }
+      ]
+    }
+  ]
+}

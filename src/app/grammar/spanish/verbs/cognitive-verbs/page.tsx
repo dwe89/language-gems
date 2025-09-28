@@ -488,7 +488,7 @@ export default function SpanishCognitiveVerbsPage() {
         practiceUrl="/grammar/spanish/verbs/cognitive-verbs/practice"
         quizUrl="/grammar/spanish/verbs/cognitive-verbs/quiz"
         songUrl="/songs/es?theme=grammar&topic=cognitive-verbs"
-        youtubeVideoId="cognitive-verbs-spanish"
+        youtubeVideoId="EGaSgIRswcI"
         relatedTopics={relatedTopics}
       />
     </>

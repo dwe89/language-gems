@@ -1,0 +1,580 @@
+{
+  "topics": [
+    {
+      "topic_id": "5ba47579-a2c9-4b04-b021-3e2fc2f0b145",
+      "topic_name": "adjective_agreement",
+      "title": "Spanish Adjective Agreement",
+      "practice_questions": [
+        {
+          "id": "adj_agr_p1",
+          "question": "Choose the correct form: La mesa _____ (blanco)",
+          "correct_answer": "blanca",
+          "options": ["blanco", "blanca", "blancos", "blancas"],
+          "explanation": "Mesa is feminine singular, so the adjective becomes 'blanca'.",
+          "difficulty": "beginner",
+          "type": "multiple_choice"
+        },
+        {
+          "id": "adj_agr_p2",
+          "question": "Select: Los gatos _____ (negro)",
+          "correct_answer": "negros",
+          "options": ["negro", "negra", "negros", "negras"],
+          "explanation": "Gatos is masculine plural, so the adjective becomes 'negros'.",
+          "difficulty": "beginner",
+          "type": "multiple_choice"
+        },
+        {
+          "id": "adj_agr_p3",
+          "question": "Complete: Las flores _____ (bonito)",
+          "correct_answer": "bonitas",
+          "options": ["bonito", "bonita", "bonitos", "bonitas"],
+          "explanation": "Flores is feminine plural, so the adjective becomes 'bonitas'.",
+          "difficulty": "beginner",
+          "type": "multiple_choice"
+        },
+        {
+          "id": "adj_agr_p4",
+          "question": "Choose: El libro _____ (interesante)",
+          "correct_answer": "interesante",
+          "options": ["interesante", "interesantes", "interesanto", "interesanta"],
+          "explanation": "Adjectives ending in -e don't change for gender. Libro is singular, so 'interesante'.",
+          "difficulty": "beginner",
+          "type": "multiple_choice"
+        },
+        {
+          "id": "adj_agr_p5",
+          "question": "Select: Una mesa _____ (grande)",
+          "correct_answer": "grande",
+          "options": ["grande", "grandes", "grando", "granda"],
+          "explanation": "Adjectives ending in -e don't change for gender, only number. Mesa is singular.",
+          "difficulty": "beginner",
+          "type": "multiple_choice"
+        },
+        {
+          "id": "adj_agr_p6",
+          "question": "Complete: Los estudiantes _____ (inteligente)",
+          "correct_answer": "inteligentes",
+          "options": ["inteligente", "inteligentes", "inteligento", "inteligenta"],
+          "explanation": "Estudiantes is plural. Adjectives ending in -e add -s for plural.",
+          "difficulty": "beginner",
+          "type": "multiple_choice"
+        },
+        {
+          "id": "adj_agr_p7",
+          "question": "Choose: Las sillas _____ (cómodo)",
+          "correct_answer": "cómodas",
+          "options": ["cómodo", "cómoda", "cómodos", "cómodas"],
+          "explanation": "Sillas is feminine plural, so the adjective becomes 'cómodas'.",
+          "difficulty": "beginner",
+          "type": "multiple_choice"
+        },
+        {
+          "id": "adj_agr_p8",
+          "question": "Select: El perro _____ (pequeño)",
+          "correct_answer": "pequeño",
+          "options": ["pequeño", "pequeña", "pequeños", "pequeñas"],
+          "explanation": "Perro is masculine singular, so the adjective remains 'pequeño'.",
+          "difficulty": "beginner",
+          "type": "multiple_choice"
+        },
+        {
+          "id": "adj_agr_p9",
+          "question": "Complete: Las niñas _____ (alto)",
+          "correct_answer": "altas",
+          "options": ["alto", "alta", "altos", "altas"],
+          "explanation": "Niñas is feminine plural, so the adjective becomes 'altas'.",
+          "difficulty": "beginner",
+          "type": "multiple_choice"
+        },
+        {
+          "id": "adj_agr_p10",
+          "question": "Choose: Los coches _____ (rápido)",
+          "correct_answer": "rápidos",
+          "options": ["rápido", "rápida", "rápidos", "rápidas"],
+          "explanation": "Coches is masculine plural, so the adjective becomes 'rápidos'.",
+          "difficulty": "beginner",
+          "type": "multiple_choice"
+        },
+        {
+          "id": "adj_agr_p11",
+          "question": "Select: La profesora _____ (simpático)",
+          "correct_answer": "simpática",
+          "options": ["simpático", "simpática", "simpáticos", "simpáticas"],
+          "explanation": "Profesora is feminine singular, so the adjective becomes 'simpática'.",
+          "difficulty": "intermediate",
+          "type": "multiple_choice"
+        },
+        {
+          "id": "adj_agr_p12",
+          "question": "Complete: Los exámenes _____ (fácil)",
+          "correct_answer": "fáciles",
+          "options": ["fácil", "fáciles", "fácilo", "fácila"],
+          "explanation": "Exámenes is plural. Adjectives ending in consonants add -es for plural.",
+          "difficulty": "intermediate",
+          "type": "multiple_choice"
+        },
+        {
+          "id": "adj_agr_p13",
+          "question": "Choose: Las ciudades _____ (grande)",
+          "correct_answer": "grandes",
+          "options": ["grande", "grandes", "grando", "granda"],
+          "explanation": "Ciudades is plural. Adjectives ending in -e add -s for plural.",
+          "difficulty": "intermediate",
+          "type": "multiple_choice"
+        },
+        {
+          "id": "adj_agr_p14",
+          "question": "Select: El clima _____ (tropical)",
+          "correct_answer": "tropical",
+          "options": ["tropical", "tropicala", "tropicales", "tropicalas"],
+          "explanation": "Clima is masculine singular. Adjectives ending in consonants don't change for gender.",
+          "difficulty": "intermediate",
+          "type": "multiple_choice"
+        },
+        {
+          "id": "adj_agr_p15",
+          "question": "Complete: Las manos _____ (limpio)",
+          "correct_answer": "limpias",
+          "options": ["limpio", "limpia", "limpios", "limpias"],
+          "explanation": "Manos is feminine plural, so the adjective becomes 'limpias'.",
+          "difficulty": "intermediate",
+          "type": "multiple_choice"
+        }
+      ],
+      "test_questions": [
+        {
+          "id": "adj_agr_t1",
+          "question": "Choose the correct form: La mesa _____ (blanco)",
+          "correct_answer": "blanca",
+          "options": ["blanco", "blanca", "blancos", "blancas"],
+          "explanation": "Mesa is feminine singular, so the adjective must be 'blanca' (feminine singular).",
+          "difficulty": "beginner",
+          "type": "multiple_choice"
+        },
+        {
+          "id": "adj_agr_t2",
+          "question": "Select the correct form: Los libros _____ (rojo)",
+          "correct_answer": "rojos",
+          "options": ["rojo", "roja", "rojos", "rojas"],
+          "explanation": "Libros is masculine plural, so the adjective becomes 'rojos' (masculine plural).",
+          "difficulty": "beginner",
+          "type": "multiple_choice"
+        },
+        {
+          "id": "adj_agr_t3",
+          "question": "Complete: Las chicas _____ (alto)",
+          "correct_answer": "altas",
+          "options": ["alto", "alta", "altos", "altas"],
+          "explanation": "Chicas is feminine plural, so the adjective must be 'altas' (feminine plural).",
+          "difficulty": "beginner",
+          "type": "multiple_choice"
+        },
+        {
+          "id": "adj_agr_t4",
+          "question": "Choose the correct form: El perro _____ (pequeño)",
+          "correct_answer": "pequeño",
+          "options": ["pequeño", "pequeña", "pequeños", "pequeñas"],
+          "explanation": "Perro is masculine singular, so the adjective remains 'pequeño' (masculine singular).",
+          "difficulty": "beginner",
+          "type": "multiple_choice"
+        },
+        {
+          "id": "adj_agr_t5",
+          "question": "Select: Una casa _____ (grande)",
+          "correct_answer": "grande",
+          "options": ["grande", "grandes", "grando", "granda"],
+          "explanation": "Adjectives ending in -e don't change for gender, only number. Casa is singular, so 'grande'.",
+          "difficulty": "intermediate",
+          "type": "multiple_choice"
+        },
+        {
+          "id": "adj_agr_t6",
+          "question": "Complete: Los estudiantes _____ (inteligente)",
+          "correct_answer": "inteligentes",
+          "options": ["inteligente", "inteligentes", "inteligento", "inteligenta"],
+          "explanation": "Adjectives ending in -e add -s for plural. Estudiantes is plural, so 'inteligentes'.",
+          "difficulty": "intermediate",
+          "type": "multiple_choice"
+        },
+        {
+          "id": "adj_agr_t7",
+          "question": "Choose: Las flores _____ (azul)",
+          "correct_answer": "azules",
+          "options": ["azul", "azula", "azulos", "azules"],
+          "explanation": "Adjectives ending in consonants add -es for plural. Flores is plural, so 'azules'.",
+          "difficulty": "intermediate",
+          "type": "multiple_choice"
+        },
+        {
+          "id": "adj_agr_t8",
+          "question": "Select the correct form: El examen _____ (fácil)",
+          "correct_answer": "fácil",
+          "options": ["fácil", "fáciles", "fácilo", "fácila"],
+          "explanation": "Adjectives ending in consonants don't change for gender. Examen is singular, so 'fácil'.",
+          "difficulty": "intermediate",
+          "type": "multiple_choice"
+        },
+        {
+          "id": "adj_agr_t9",
+          "question": "Complete: Unos problemas _____ (difícil)",
+          "correct_answer": "difíciles",
+          "options": ["difícil", "difíciles", "difícilo", "difícila"],
+          "explanation": "Problemas is masculine plural. Adjectives ending in consonants add -es for plural: 'difíciles'.",
+          "difficulty": "intermediate",
+          "type": "multiple_choice"
+        },
+        {
+          "id": "adj_agr_t10",
+          "question": "Choose: La profesora _____ y _____ (joven, simpático)",
+          "correct_answer": "joven y simpática",
+          "options": ["joven y simpático", "joven y simpática", "jovena y simpática", "jóvenes y simpática"],
+          "explanation": "Profesora is feminine singular. 'Joven' doesn't change for gender, but 'simpático' becomes 'simpática'.",
+          "difficulty": "advanced",
+          "type": "multiple_choice"
+        }
+      ]
+    },
+    {
+      "topic_id": "ee9ccff1-6e13-4343-be85-6f779537ae91",
+      "topic_name": "adjective_position",
+      "title": "Spanish Adjective Position",
+      "practice_questions": [
+        {
+          "id": "adj_pos_p1",
+          "question": "Choose the correct position: Una casa _____ (blanca/white)",
+          "correct_answer": "blanca",
+          "options": ["blanca casa", "casa blanca", "blanca", "casa"],
+          "explanation": "Descriptive adjectives usually go after the noun: 'casa blanca'.",
+          "difficulty": "beginner",
+          "type": "multiple_choice"
+        },
+        {
+          "id": "adj_pos_p2",
+          "question": "Select the correct order: A _____ man (good)",
+          "correct_answer": "buen hombre",
+          "options": ["hombre bueno", "buen hombre", "bueno hombre", "hombre buen"],
+          "explanation": "'Bueno' becomes 'buen' before masculine singular nouns and goes before.",
+          "difficulty": "intermediate",
+          "type": "multiple_choice"
+        },
+        {
+          "id": "adj_pos_p3",
+          "question": "Complete: Una _____ mujer (great)",
+          "correct_answer": "gran",
+          "options": ["grande mujer", "gran mujer", "mujer grande", "mujer gran"],
+          "explanation": "'Grande' becomes 'gran' before singular nouns and means 'great'.",
+          "difficulty": "intermediate",
+          "type": "multiple_choice"
+        },
+        {
+          "id": "adj_pos_p4",
+          "question": "Choose: El _____ día (first)",
+          "correct_answer": "primer",
+          "options": ["primero día", "primer día", "día primero", "día primer"],
+          "explanation": "'Primero' becomes 'primer' before masculine singular nouns.",
+          "difficulty": "intermediate",
+          "type": "multiple_choice"
+        },
+        {
+          "id": "adj_pos_p5",
+          "question": "Select: Una mesa _____ (wooden)",
+          "correct_answer": "de madera",
+          "options": ["madera", "de madera", "maderera", "maderen"],
+          "explanation": "Material adjectives go after the noun, often as 'de + material'.",
+          "difficulty": "beginner",
+          "type": "multiple_choice"
+        },
+        {
+          "id": "adj_pos_p6",
+          "question": "Complete: Un _____ problema (bad)",
+          "correct_answer": "mal",
+          "options": ["malo problema", "mal problema", "problema malo", "problema mal"],
+          "explanation": "'Malo' becomes 'mal' before masculine singular nouns.",
+          "difficulty": "intermediate",
+          "type": "multiple_choice"
+        },
+        {
+          "id": "adj_pos_p7",
+          "question": "Choose: La _____ página (third)",
+          "correct_answer": "tercera",
+          "options": ["tercer página", "tercera página", "página tercera", "página tercer"],
+          "explanation": "Ordinal numbers usually go before the noun: 'tercera página'.",
+          "difficulty": "intermediate",
+          "type": "multiple_choice"
+        },
+        {
+          "id": "adj_pos_p8",
+          "question": "Select: Un coche _____ (red)",
+          "correct_answer": "rojo",
+          "options": ["rojo coche", "coche rojo", "rojo", "coche"],
+          "explanation": "Color adjectives go after the noun: 'coche rojo'.",
+          "difficulty": "beginner",
+          "type": "multiple_choice"
+        },
+        {
+          "id": "adj_pos_p9",
+          "question": "Complete: Una _____ idea (good)",
+          "correct_answer": "buena",
+          "options": ["buen idea", "buena idea", "idea buena", "idea buen"],
+          "explanation": "'Bueno' stays as 'buena' with feminine nouns and can go before for emphasis.",
+          "difficulty": "intermediate",
+          "type": "multiple_choice"
+        },
+        {
+          "id": "adj_pos_p10",
+          "question": "Choose: El _____ capítulo (last)",
+          "correct_answer": "último",
+          "options": ["último capítulo", "capítulo último", "último", "capítulo"],
+          "explanation": "Ordinal adjectives like 'último' usually go before the noun.",
+          "difficulty": "intermediate",
+          "type": "multiple_choice"
+        }
+      ],
+      "test_questions": [
+        {
+          "id": "adj_pos_t1",
+          "question": "Choose the correct position: Una camisa _____ (azul/blue)",
+          "correct_answer": "azul",
+          "options": ["azul camisa", "camisa azul", "azul", "camisa"],
+          "explanation": "Color adjectives go after the noun: 'camisa azul'.",
+          "difficulty": "beginner",
+          "type": "multiple_choice"
+        },
+        {
+          "id": "adj_pos_t2",
+          "question": "Select: Un _____ amigo (good)",
+          "correct_answer": "buen",
+          "options": ["bueno amigo", "buen amigo", "amigo bueno", "amigo buen"],
+          "explanation": "'Bueno' becomes 'buen' before masculine singular nouns.",
+          "difficulty": "intermediate",
+          "type": "multiple_choice"
+        },
+        {
+          "id": "adj_pos_t3",
+          "question": "Complete: Una _____ ciudad (great)",
+          "correct_answer": "gran",
+          "options": ["grande ciudad", "gran ciudad", "ciudad grande", "ciudad gran"],
+          "explanation": "'Grande' becomes 'gran' before singular nouns meaning 'great'.",
+          "difficulty": "intermediate",
+          "type": "multiple_choice"
+        },
+        {
+          "id": "adj_pos_t4",
+          "question": "Choose: El _____ mes (third)",
+          "correct_answer": "tercer",
+          "options": ["tercero mes", "tercer mes", "mes tercero", "mes tercer"],
+          "explanation": "'Tercero' becomes 'tercer' before masculine singular nouns.",
+          "difficulty": "intermediate",
+          "type": "multiple_choice"
+        },
+        {
+          "id": "adj_pos_t5",
+          "question": "Select: Una casa _____ (stone)",
+          "correct_answer": "de piedra",
+          "options": ["piedra", "de piedra", "piedrera", "piedren"],
+          "explanation": "Material descriptions use 'de + material' after the noun.",
+          "difficulty": "beginner",
+          "type": "multiple_choice"
+        },
+        {
+          "id": "adj_pos_t6",
+          "question": "Complete: Un _____ día (bad)",
+          "correct_answer": "mal",
+          "options": ["malo día", "mal día", "día malo", "día mal"],
+          "explanation": "'Malo' becomes 'mal' before masculine singular nouns.",
+          "difficulty": "intermediate",
+          "type": "multiple_choice"
+        },
+        {
+          "id": "adj_pos_t7",
+          "question": "Choose: La _____ vez (first)",
+          "correct_answer": "primera",
+          "options": ["primer vez", "primera vez", "vez primera", "vez primer"],
+          "explanation": "Ordinal numbers go before the noun: 'primera vez'.",
+          "difficulty": "intermediate",
+          "type": "multiple_choice"
+        },
+        {
+          "id": "adj_pos_t8",
+          "question": "Select: Un perro _____ (small)",
+          "correct_answer": "pequeño",
+          "options": ["pequeño perro", "perro pequeño", "pequeño", "perro"],
+          "explanation": "Size adjectives can go before or after; after is more common.",
+          "difficulty": "beginner",
+          "type": "multiple_choice"
+        }
+      ]
+    },
+    {
+      "topic_id": "8c000ce9-eff3-44bd-93ef-bb04d80ba031",
+      "topic_name": "comparatives",
+      "title": "Spanish Comparatives",
+      "practice_questions": [
+        {
+          "id": "comp_p1",
+          "question": "Choose the comparative form: María es _____ alta que Ana (more)",
+          "correct_answer": "más",
+          "options": ["más", "menos", "tan", "muy"],
+          "explanation": "Use 'más' + adjective + 'que' for 'more than' comparisons.",
+          "difficulty": "beginner",
+          "type": "multiple_choice"
+        },
+        {
+          "id": "comp_p2",
+          "question": "Select the correct form: Este libro es _____ interesante que ese (less)",
+          "correct_answer": "menos",
+          "options": ["más", "menos", "tan", "muy"],
+          "explanation": "Use 'menos' + adjective + 'que' for 'less than' comparisons.",
+          "difficulty": "beginner",
+          "type": "multiple_choice"
+        },
+        {
+          "id": "comp_p3",
+          "question": "Complete: Pedro es _____ alto _____ su hermano (as tall as)",
+          "correct_answer": "tan como",
+          "options": ["más que", "menos que", "tan como", "muy de"],
+          "explanation": "Use 'tan' + adjective + 'como' for equality comparisons.",
+          "difficulty": "beginner",
+          "type": "multiple_choice"
+        },
+        {
+          "id": "comp_p4",
+          "question": "Select: Mi hermana es _____ (older) que yo",
+          "correct_answer": "mayor",
+          "options": ["más vieja", "mayor", "más grande", "más alta"],
+          "explanation": "'Mayor' is the irregular comparative form for age (older).",
+          "difficulty": "intermediate",
+          "type": "multiple_choice"
+        },
+        {
+          "id": "comp_p5",
+          "question": "Complete: Este problema es _____ (worse) que el anterior",
+          "correct_answer": "peor",
+          "options": ["más malo", "peor", "menos bueno", "más difícil"],
+          "explanation": "'Peor' is the irregular comparative form of 'malo' (worse).",
+          "difficulty": "intermediate",
+          "type": "multiple_choice"
+        },
+        {
+          "id": "comp_p6",
+          "question": "Choose: La comida está _____ (better) hoy",
+          "correct_answer": "mejor",
+          "options": ["más buena", "mejor", "más rica", "buenísima"],
+          "explanation": "'Mejor' is the irregular comparative form of 'bueno' (better).",
+          "difficulty": "intermediate",
+          "type": "multiple_choice"
+        },
+        {
+          "id": "comp_p7",
+          "question": "Select: Es el _____ (youngest) de la familia",
+          "correct_answer": "menor",
+          "options": ["más joven", "menor", "más pequeño", "más chico"],
+          "explanation": "'Menor' is used for the youngest in a family context.",
+          "difficulty": "intermediate",
+          "type": "multiple_choice"
+        },
+        {
+          "id": "comp_p8",
+          "question": "Complete: Esta película es _____ aburrida _____ la otra",
+          "correct_answer": "tan como",
+          "options": ["más que", "tan como", "menos que", "muy de"],
+          "explanation": "Use 'tan' + adjective + 'como' for equal comparisons.",
+          "difficulty": "beginner",
+          "type": "multiple_choice"
+        },
+        {
+          "id": "comp_p9",
+          "question": "Choose: Mi coche es _____ rápido que el tuyo",
+          "correct_answer": "menos",
+          "options": ["más", "menos", "tan", "muy"],
+          "explanation": "Context suggests 'less fast than' - use 'menos'.",
+          "difficulty": "beginner",
+          "type": "multiple_choice"
+        },
+        {
+          "id": "comp_p10",
+          "question": "Complete: Es _____ difícil _____ pensaba",
+          "correct_answer": "más de lo que",
+          "options": ["más que", "más de lo que", "tan como", "menos que"],
+          "explanation": "Use 'más de lo que' when comparing with a clause.",
+          "difficulty": "advanced",
+          "type": "multiple_choice"
+        }
+      ],
+      "test_questions": [
+        {
+          "id": "comp_t1",
+          "question": "Choose the correct comparative: Juan es _____ inteligente que Pedro",
+          "correct_answer": "más",
+          "options": ["más", "menos", "tan", "muy"],
+          "explanation": "Use 'más' + adjective + 'que' for superiority comparisons.",
+          "difficulty": "beginner",
+          "type": "multiple_choice"
+        },
+        {
+          "id": "comp_t2",
+          "question": "Complete: Mi hermano es _____ (older) que mi hermana",
+          "correct_answer": "mayor",
+          "options": ["más viejo", "mayor", "más grande", "más alto"],
+          "explanation": "'Mayor' is the irregular comparative for age.",
+          "difficulty": "intermediate",
+          "type": "multiple_choice"
+        },
+        {
+          "id": "comp_t3",
+          "question": "Choose: Esta comida está _____ (worse) que ayer",
+          "correct_answer": "peor",
+          "options": ["más mala", "peor", "menos buena", "malísima"],
+          "explanation": "'Peor' is the irregular comparative of 'malo'.",
+          "difficulty": "intermediate",
+          "type": "multiple_choice"
+        },
+        {
+          "id": "comp_t4",
+          "question": "Select: Ana es _____ alta _____ María",
+          "correct_answer": "tan como",
+          "options": ["más que", "tan como", "menos que", "muy de"],
+          "explanation": "Equal comparison uses 'tan' + adjective + 'como'.",
+          "difficulty": "beginner",
+          "type": "multiple_choice"
+        },
+        {
+          "id": "comp_t5",
+          "question": "Complete: Es el _____ (youngest) de los hermanos",
+          "correct_answer": "menor",
+          "options": ["más joven", "menor", "más pequeño", "más chico"],
+          "explanation": "'Menor' is used for youngest in family contexts.",
+          "difficulty": "intermediate",
+          "type": "multiple_choice"
+        },
+        {
+          "id": "comp_t6",
+          "question": "Choose: Este libro es _____ (better) que el otro",
+          "correct_answer": "mejor",
+          "options": ["más bueno", "mejor", "buenísimo", "más interesante"],
+          "explanation": "'Mejor' is the irregular comparative of 'bueno'.",
+          "difficulty": "intermediate",
+          "type": "multiple_choice"
+        },
+        {
+          "id": "comp_t7",
+          "question": "Select: Es _____ complicado _____ esperaba",
+          "correct_answer": "más de lo que",
+          "options": ["más que", "más de lo que", "tan como", "menos que"],
+          "explanation": "Use 'más de lo que' when comparing with a clause.",
+          "difficulty": "advanced",
+          "type": "multiple_choice"
+        },
+        {
+          "id": "comp_t8",
+          "question": "Choose: Mi trabajo es _____ estresante que el tuyo",
+          "correct_answer": "menos",
+          "options": ["más", "menos", "tan", "muy"],
+          "explanation": "Use 'menos' + adjective + 'que' for inferiority comparisons.",
+          "difficulty": "beginner",
+          "type": "multiple_choice"
+        }
+      ]
+    }
+  ]
+}

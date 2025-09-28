@@ -4,6 +4,20 @@ import { cookies } from 'next/headers';
 
 export const dynamic = 'force-dynamic';
 
+// Language mapping helper
+const mapLanguageToCode = (language: string | null): string | null => {
+  if (!language) return null;
+  const languageMap: Record<string, string> = {
+    'spanish': 'es',
+    'french': 'fr',
+    'german': 'de',
+    'es': 'es',
+    'fr': 'fr',
+    'de': 'de'
+  };
+  return languageMap[language.toLowerCase()] || null;
+};
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -12,7 +26,8 @@ export async function GET(request: NextRequest) {
     const difficulty = searchParams.get('difficulty');
     const ageGroup = searchParams.get('ageGroup');
     // New parameters for topic-based filtering
-    const language = searchParams.get('language');
+    const rawLanguage = searchParams.get('language');
+    const language = mapLanguageToCode(rawLanguage);
     const topic = searchParams.get('topic');
     const type = searchParams.get('type'); // alias for contentType
 

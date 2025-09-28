@@ -435,7 +435,7 @@ export default function SpanishStativeVerbsPage() {
         practiceUrl="/grammar/spanish/verbs/stative-verbs/practice"
         quizUrl="/grammar/spanish/verbs/stative-verbs/quiz"
         songUrl="/songs/es?theme=grammar&topic=stative-verbs"
-        youtubeVideoId="stative-verbs-spanish"
+        youtubeVideoId="EGaSgIRswcI"
         relatedTopics={relatedTopics}
       />
     </>

@@ -1,0 +1,207 @@
+{
+  "practice_content": {
+    "instructions": "Practice Spanish interrogative pronouns with these exercises.",
+    "practice_type": "mixed_exercises",
+    "estimated_duration": 15,
+    "exercises": [
+      {
+        "type": "multiple_choice",
+        "instructions": "Choose the correct interrogative pronoun",
+        "prompts": [
+          {
+            "question": "Which word means 'what' in Spanish?",
+            "options": ["qué", "quién", "cuál", "cómo"],
+            "answer": "qué",
+            "explanation": "'Qué' means 'what' in Spanish"
+          },
+          {
+            "question": "Which word means 'who' in Spanish?",
+            "options": ["qué", "quién", "cuál", "dónde"],
+            "answer": "quién",
+            "explanation": "'Quién' means 'who' in Spanish"
+          },
+          {
+            "question": "Which word means 'where' in Spanish?",
+            "options": ["qué", "quién", "cuándo", "dónde"],
+            "answer": "dónde",
+            "explanation": "'Dónde' means 'where' in Spanish"
+          },
+          {
+            "question": "Which word means 'when' in Spanish?",
+            "options": ["qué", "cuándo", "cómo", "por qué"],
+            "answer": "cuándo",
+            "explanation": "'Cuándo' means 'when' in Spanish"
+          },
+          {
+            "question": "Which word means 'how' in Spanish?",
+            "options": ["qué", "cómo", "cuál", "quién"],
+            "answer": "cómo",
+            "explanation": "'Cómo' means 'how' in Spanish"
+          },
+          {
+            "question": "Which word means 'why' in Spanish?",
+            "options": ["por qué", "porque", "qué", "cuál"],
+            "answer": "por qué",
+            "explanation": "'Por qué' means 'why' (two words with accent)"
+          },
+          {
+            "question": "Which word means 'which' in Spanish?",
+            "options": ["qué", "quién", "cuál", "cómo"],
+            "answer": "cuál",
+            "explanation": "'Cuál' means 'which' when choosing from options"
+          },
+          {
+            "question": "What's the plural of 'quién'?",
+            "options": ["quién", "quiénes", "quienes", "quien"],
+            "answer": "quiénes",
+            "explanation": "'Quiénes' is the plural of 'quién'"
+          },
+          {
+            "question": "What's the plural of 'cuál'?",
+            "options": ["cuál", "cuáles", "cuales", "cual"],
+            "answer": "cuáles",
+            "explanation": "'Cuáles' is the plural of 'cuál'"
+          },
+          {
+            "question": "Which means 'how much/many'?",
+            "options": ["cuánto", "cuándo", "cuál", "cómo"],
+            "answer": "cuánto",
+            "explanation": "'Cuánto' means 'how much/many'"
+          }
+        ]
+      },
+      {
+        "type": "fill_blank",
+        "instructions": "Complete with the correct interrogative pronoun",
+        "prompts": [
+          {
+            "sentence": "¿_____ te llamas? (What's your name?)",
+            "answer": "Cómo",
+            "explanation": "'¿Cómo te llamas?' means 'What's your name?'"
+          },
+          {
+            "sentence": "¿_____ vives? (Where do you live?)",
+            "answer": "Dónde",
+            "explanation": "'¿Dónde vives?' means 'Where do you live?'"
+          },
+          {
+            "sentence": "¿_____ años tienes? (How old are you?)",
+            "answer": "Cuántos",
+            "explanation": "'¿Cuántos años?' means 'How many years?'"
+          },
+          {
+            "sentence": "¿_____ es tu profesor? (Who is your teacher?)",
+            "answer": "Quién",
+            "explanation": "'¿Quién es?' means 'Who is?'"
+          },
+          {
+            "sentence": "¿_____ estudias español? (Why do you study Spanish?)",
+            "answer": "Por qué",
+            "explanation": "'¿Por qué?' means 'Why?' (two words)"
+          },
+          {
+            "sentence": "¿_____ es tu color favorito? (What's your favorite color?)",
+            "answer": "Cuál",
+            "explanation": "'¿Cuál es?' asks for choice/preference"
+          },
+          {
+            "sentence": "¿_____ llegas a casa? (When do you arrive home?)",
+            "answer": "Cuándo",
+            "explanation": "'¿Cuándo?' means 'When?'"
+          },
+          {
+            "sentence": "¿_____ cuesta este libro? (How much does this book cost?)",
+            "answer": "Cuánto",
+            "explanation": "'¿Cuánto cuesta?' means 'How much does it cost?'"
+          },
+          {
+            "sentence": "¿_____ son tus amigos? (Who are your friends?)",
+            "answer": "Quiénes",
+            "explanation": "'¿Quiénes?' is plural 'who'"
+          },
+          {
+            "sentence": "¿_____ haces los fines de semana? (What do you do on weekends?)",
+            "answer": "Qué",
+            "explanation": "'¿Qué haces?' means 'What do you do?'"
+          }
+        ]
+      },
+      {
+        "type": "conjugation",
+        "instructions": "Form questions with interrogative pronouns",
+        "prompts": [
+          {
+            "verb": "ask name",
+            "subject": "¿_____ te llamas?",
+            "answer": "Cómo",
+            "english": "What's your name?",
+            "explanation": "Use 'cómo' to ask for names"
+          },
+          {
+            "verb": "ask age",
+            "subject": "¿_____ años tienes?",
+            "answer": "Cuántos",
+            "english": "How old are you?",
+            "explanation": "Use 'cuántos' for counting years"
+          },
+          {
+            "verb": "ask location",
+            "subject": "¿_____ está el banco?",
+            "answer": "Dónde",
+            "english": "Where is the bank?",
+            "explanation": "Use 'dónde' for location"
+          },
+          {
+            "verb": "ask time",
+            "subject": "¿_____ es la clase?",
+            "answer": "Cuándo",
+            "english": "When is the class?",
+            "explanation": "Use 'cuándo' for time"
+          },
+          {
+            "verb": "ask reason",
+            "subject": "¿_____ estudias?",
+            "answer": "Por qué",
+            "english": "Why do you study?",
+            "explanation": "Use 'por qué' for reasons"
+          },
+          {
+            "verb": "ask identity",
+            "subject": "¿_____ es ella?",
+            "answer": "Quién",
+            "english": "Who is she?",
+            "explanation": "Use 'quién' for identity"
+          },
+          {
+            "verb": "ask choice",
+            "subject": "¿_____ prefieres?",
+            "answer": "Cuál",
+            "english": "Which do you prefer?",
+            "explanation": "Use 'cuál' for choices"
+          },
+          {
+            "verb": "ask method",
+            "subject": "¿_____ lo haces?",
+            "answer": "Cómo",
+            "english": "How do you do it?",
+            "explanation": "Use 'cómo' for methods"
+          },
+          {
+            "verb": "ask quantity",
+            "subject": "¿_____ dinero tienes?",
+            "answer": "Cuánto",
+            "english": "How much money do you have?",
+            "explanation": "Use 'cuánto' for quantities"
+          },
+          {
+            "verb": "ask definition",
+            "subject": "¿_____ es esto?",
+            "answer": "Qué",
+            "english": "What is this?",
+            "explanation": "Use 'qué' for definitions"
+          }
+        ]
+      }
+    ]
+  }
+}

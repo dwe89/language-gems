@@ -379,7 +379,7 @@ export default function SpanishWeatherVerbsPage() {
         practiceUrl="/grammar/spanish/verbs/weather-verbs/practice"
         quizUrl="/grammar/spanish/verbs/weather-verbs/quiz"
         songUrl="/songs/es?theme=grammar&topic=weather-verbs"
-        youtubeVideoId="weather-verbs-spanish"
+        youtubeVideoId="EGaSgIRswcI"
         relatedTopics={relatedTopics}
       />
     </>

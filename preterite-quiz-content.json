@@ -1,0 +1,153 @@
+{
+  "quiz_content": {
+    "instructions": "Test your knowledge of Spanish preterite tense.",
+    "quiz_type": "mixed_assessment",
+    "time_limit": 1200,
+    "max_attempts": 3,
+    "passing_score": 70,
+    "show_explanations": true,
+    "randomize_questions": true,
+    "questions": [
+      {
+        "question_text": "What is the preterite form of 'hablar' for 'yo'?",
+        "options": ["hablo", "hablé", "hablaba", "hablaré"],
+        "correct_answer": "hablé",
+        "explanation": "Regular -ar preterite: add -é endings",
+        "difficulty": "beginner"
+      },
+      {
+        "question_text": "What is the preterite form of 'comer' for 'tú'?",
+        "options": ["comes", "comiste", "comías", "comerás"],
+        "correct_answer": "comiste",
+        "explanation": "Regular -er preterite: add -iste endings",
+        "difficulty": "beginner"
+      },
+      {
+        "question_text": "What is the preterite form of 'vivir' for 'él'?",
+        "options": ["vive", "vivió", "vivía", "vivirá"],
+        "correct_answer": "vivió",
+        "explanation": "Regular -ir preterite: add -ió endings",
+        "difficulty": "beginner"
+      },
+      {
+        "question_text": "What is the preterite form of 'ser' for 'nosotros'?",
+        "options": ["somos", "fuimos", "éramos", "seremos"],
+        "correct_answer": "fuimos",
+        "explanation": "Irregular preterite: ser → fuimos",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "What is the preterite form of 'ir' for 'ellos'?",
+        "options": ["van", "fueron", "iban", "irán"],
+        "correct_answer": "fueron",
+        "explanation": "Irregular preterite: ir → fueron (same as ser)",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "Complete: 'Ayer _____ (estudiar) toda la noche.'",
+        "options": ["estudio", "estudié", "estudiaba", "estudiaré"],
+        "correct_answer": "estudié",
+        "explanation": "Completed action in the past uses preterite",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "What is the preterite form of 'hacer' for 'tú'?",
+        "options": ["haces", "hiciste", "hacías", "harás"],
+        "correct_answer": "hiciste",
+        "explanation": "Irregular preterite: hacer → hiciste",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "What is the preterite form of 'tener' for 'yo'?",
+        "options": ["tengo", "tuve", "tenía", "tendré"],
+        "correct_answer": "tuve",
+        "explanation": "Irregular preterite: tener → tuve",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "Complete: 'Ellos _____ (llegar) tarde ayer.'",
+        "options": ["llegan", "llegaron", "llegaban", "llegarán"],
+        "correct_answer": "llegaron",
+        "explanation": "Completed past action: llegar → llegaron",
+        "difficulty": "beginner"
+      },
+      {
+        "question_text": "What is the preterite form of 'poder' for 'ella'?",
+        "options": ["puede", "pudo", "podía", "podrá"],
+        "correct_answer": "pudo",
+        "explanation": "Irregular preterite: poder → pudo",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "Which verb has the same preterite forms as 'ser'?",
+        "options": ["estar", "ir", "tener", "hacer"],
+        "correct_answer": "ir",
+        "explanation": "Ser and ir have identical preterite forms",
+        "difficulty": "advanced"
+      },
+      {
+        "question_text": "Complete: 'Nosotros _____ (escribir) una carta.'",
+        "options": ["escribimos", "escribimos", "escribíamos", "escribiremos"],
+        "correct_answer": "escribimos",
+        "explanation": "Regular -ir preterite: escribir → escribimos",
+        "difficulty": "beginner"
+      },
+      {
+        "question_text": "What is the preterite form of 'decir' for 'ustedes'?",
+        "options": ["dicen", "dijeron", "decían", "dirán"],
+        "correct_answer": "dijeron",
+        "explanation": "Irregular preterite: decir → dijeron",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "Complete: 'Tú _____ (ver) la película anoche.'",
+        "options": ["ves", "viste", "veías", "verás"],
+        "correct_answer": "viste",
+        "explanation": "Irregular preterite: ver → viste",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "What is the preterite form of 'dar' for 'yo'?",
+        "options": ["doy", "di", "daba", "daré"],
+        "correct_answer": "di",
+        "explanation": "Irregular preterite: dar → di",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "Which time expression often uses preterite?",
+        "options": ["Siempre", "Ayer", "Todos los días", "Generalmente"],
+        "correct_answer": "Ayer",
+        "explanation": "'Ayer' indicates completed past action (preterite)",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "Complete: 'Ella _____ (comprar) un vestido nuevo.'",
+        "options": ["compra", "compró", "compraba", "comprará"],
+        "correct_answer": "compró",
+        "explanation": "Completed action: comprar → compró",
+        "difficulty": "beginner"
+      },
+      {
+        "question_text": "What is the preterite form of 'querer' for 'vosotros'?",
+        "options": ["queréis", "quisisteis", "queríais", "querréis"],
+        "correct_answer": "quisisteis",
+        "explanation": "Irregular preterite: querer → quisisteis",
+        "difficulty": "advanced"
+      },
+      {
+        "question_text": "Complete: 'Los niños _____ (jugar) en el parque.'",
+        "options": ["juegan", "jugaron", "jugaban", "jugarán"],
+        "correct_answer": "jugaron",
+        "explanation": "Completed past action: jugar → jugaron",
+        "difficulty": "beginner"
+      },
+      {
+        "question_text": "What is the preterite form of 'poner' for 'nosotros'?",
+        "options": ["ponemos", "pusimos", "poníamos", "pondremos"],
+        "correct_answer": "pusimos",
+        "explanation": "Irregular preterite: poner → pusimos",
+        "difficulty": "intermediate"
+      }
+    ]
+  }
+}

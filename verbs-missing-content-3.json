@@ -1,0 +1,169 @@
+[
+  {
+    "topic_id": "subjunctive-mood",
+    "content_type": "practice",
+    "title": "Subjunctive Mood Practice",
+    "slug": "subjunctive-mood-practice",
+    "content_data": {
+      "questions": [
+        {
+          "id": "sm_1",
+          "type": "multiple_choice",
+          "question": "Complete: Espero que tú _____ bien. (estar)",
+          "options": ["estás", "estés", "está", "esté"],
+          "correct_answer": "estés",
+          "explanation": "After 'espero que' use subjunctive: tú estés.",
+          "difficulty": "intermediate"
+        },
+        {
+          "id": "sm_2",
+          "type": "multiple_choice",
+          "question": "Complete: Es importante que nosotros _____ temprano. (llegar)",
+          "options": ["llegamos", "lleguemos", "llegan", "lleguen"],
+          "correct_answer": "lleguemos",
+          "explanation": "After 'es importante que' use subjunctive: nosotros lleguemos.",
+          "difficulty": "intermediate"
+        },
+        {
+          "id": "sm_3",
+          "type": "multiple_choice",
+          "question": "Complete: Dudo que él _____ la verdad. (saber)",
+          "options": ["sabe", "sepa", "sabes", "sepas"],
+          "correct_answer": "sepa",
+          "explanation": "After 'dudo que' use subjunctive: él sepa.",
+          "difficulty": "intermediate"
+        },
+        {
+          "id": "sm_4",
+          "type": "multiple_choice",
+          "question": "Complete: Quiero que ellos _____ conmigo. (venir)",
+          "options": ["vienen", "vengan", "viene", "venga"],
+          "correct_answer": "vengan",
+          "explanation": "After 'quiero que' use subjunctive: ellos vengan.",
+          "difficulty": "intermediate"
+        },
+        {
+          "id": "sm_5",
+          "type": "multiple_choice",
+          "question": "Complete: No creo que _____ mañana. (llover)",
+          "options": ["llueve", "llueva", "llover", "lloviendo"],
+          "correct_answer": "llueva",
+          "explanation": "After 'no creo que' use subjunctive: llueva.",
+          "difficulty": "intermediate"
+        },
+        {
+          "id": "sm_6",
+          "type": "multiple_choice",
+          "question": "Complete: Es posible que yo _____ tarde. (llegar)",
+          "options": ["llego", "llegue", "llega", "llegues"],
+          "correct_answer": "llegue",
+          "explanation": "After 'es posible que' use subjunctive: yo llegue.",
+          "difficulty": "intermediate"
+        },
+        {
+          "id": "sm_7",
+          "type": "multiple_choice",
+          "question": "Complete: Te pido que me _____ la verdad. (decir)",
+          "options": ["dices", "digas", "dice", "diga"],
+          "correct_answer": "digas",
+          "explanation": "After 'te pido que' use subjunctive: tú digas.",
+          "difficulty": "advanced"
+        },
+        {
+          "id": "sm_8",
+          "type": "multiple_choice",
+          "question": "Complete: Aunque _____ cansado, voy a trabajar. (estar)",
+          "options": ["estoy", "esté", "está", "estés"],
+          "correct_answer": "esté",
+          "explanation": "After 'aunque' use subjunctive for hypothetical situations.",
+          "difficulty": "advanced"
+        },
+        {
+          "id": "sm_9",
+          "type": "multiple_choice",
+          "question": "Complete: Cuando _____ tiempo, te llamo. (tener)",
+          "options": ["tengo", "tenga", "tienes", "tengas"],
+          "correct_answer": "tenga",
+          "explanation": "After 'cuando' use subjunctive for future uncertain events.",
+          "difficulty": "advanced"
+        },
+        {
+          "id": "sm_10",
+          "type": "multiple_choice",
+          "question": "Complete: Ojalá que _____ buen tiempo. (hacer)",
+          "options": ["hace", "haga", "hacemos", "hagamos"],
+          "correct_answer": "haga",
+          "explanation": "After 'ojalá que' always use subjunctive: haga.",
+          "difficulty": "advanced"
+        }
+      ]
+    },
+    "difficulty_level": "advanced",
+    "age_group": "11-14",
+    "estimated_duration": 20,
+    "order_position": 1,
+    "is_active": true,
+    "is_featured": false
+  },
+  {
+    "topic_id": "subjunctive-mood",
+    "content_type": "quiz",
+    "title": "Subjunctive Mood Quiz",
+    "slug": "subjunctive-mood-quiz",
+    "content_data": {
+      "questions": [
+        {
+          "id": "smq_1",
+          "type": "multiple_choice",
+          "question": "Complete: Espero que tú _____ feliz. (ser)",
+          "options": ["eres", "seas", "es", "sea"],
+          "correct_answer": "seas",
+          "explanation": "After 'espero que' use subjunctive: tú seas.",
+          "difficulty": "intermediate"
+        },
+        {
+          "id": "smq_2",
+          "type": "multiple_choice",
+          "question": "Complete: Es necesario que nosotros _____ ahora. (salir)",
+          "options": ["salimos", "salgamos", "salen", "salgan"],
+          "correct_answer": "salgamos",
+          "explanation": "After 'es necesario que' use subjunctive: nosotros salgamos.",
+          "difficulty": "intermediate"
+        },
+        {
+          "id": "smq_3",
+          "type": "multiple_choice",
+          "question": "Complete: No pienso que él _____ razón. (tener)",
+          "options": ["tiene", "tenga", "tienes", "tengas"],
+          "correct_answer": "tenga",
+          "explanation": "After 'no pienso que' use subjunctive: él tenga.",
+          "difficulty": "intermediate"
+        },
+        {
+          "id": "smq_4",
+          "type": "multiple_choice",
+          "question": "Complete: Quiero que ellos _____ la tarea. (hacer)",
+          "options": ["hacen", "hagan", "hace", "haga"],
+          "correct_answer": "hagan",
+          "explanation": "After 'quiero que' use subjunctive: ellos hagan.",
+          "difficulty": "intermediate"
+        },
+        {
+          "id": "smq_5",
+          "type": "multiple_choice",
+          "question": "Complete: Ojalá que _____ pronto. (llegar)",
+          "options": ["llega", "llegue", "llegan", "lleguen"],
+          "correct_answer": "llegue",
+          "explanation": "After 'ojalá que' use subjunctive: llegue.",
+          "difficulty": "advanced"
+        }
+      ]
+    },
+    "difficulty_level": "advanced",
+    "age_group": "11-14",
+    "estimated_duration": 15,
+    "order_position": 2,
+    "is_active": true,
+    "is_featured": false
+  }
+]

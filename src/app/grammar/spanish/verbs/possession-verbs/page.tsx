@@ -430,7 +430,7 @@ export default function SpanishPossessionVerbsPage() {
         practiceUrl="/grammar/spanish/verbs/possession-verbs/practice"
         quizUrl="/grammar/spanish/verbs/possession-verbs/quiz"
         songUrl="/songs/es?theme=grammar&topic=possession-verbs"
-        youtubeVideoId="possession-verbs-spanish"
+        youtubeVideoId="EGaSgIRswcI"
         relatedTopics={relatedTopics}
       />
     </>

@@ -167,7 +167,7 @@ export default function SpanishVoiceConstructionsPage() {
         practiceUrl="/grammar/spanish/verbs/voice-constructions/practice"
         quizUrl="/grammar/spanish/verbs/voice-constructions/quiz"
         songUrl="/songs/es?theme=grammar&topic=voice-constructions"
-        youtubeVideoId="voice-constructions-spanish"
+        youtubeVideoId="EGaSgIRswcI"
         relatedTopics={relatedTopics}
       />
     </>

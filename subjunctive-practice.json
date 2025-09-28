@@ -1,0 +1,207 @@
+{
+  "practice_content": {
+    "instructions": "Practice Spanish subjunctive mood with these exercises.",
+    "practice_type": "mixed_exercises",
+    "estimated_duration": 15,
+    "exercises": [
+      {
+        "type": "multiple_choice",
+        "instructions": "Choose the correct subjunctive form",
+        "prompts": [
+          {
+            "question": "Espero que tú _____ bien. (I hope you are well.)",
+            "options": ["estás", "estés", "estar", "estarás"],
+            "answer": "estés",
+            "explanation": "After 'espero que', use subjunctive 'estés'"
+          },
+          {
+            "question": "Es importante que nosotros _____ español. (It's important that we study Spanish.)",
+            "options": ["estudiamos", "estudiemos", "estudiar", "estudiaremos"],
+            "answer": "estudiemos",
+            "explanation": "After 'es importante que', use subjunctive 'estudiemos'"
+          },
+          {
+            "question": "Dudo que él _____ la verdad. (I doubt he knows the truth.)",
+            "options": ["sabe", "sepa", "saber", "sabrá"],
+            "answer": "sepa",
+            "explanation": "After 'dudo que', use subjunctive 'sepa'"
+          },
+          {
+            "question": "Quiero que ella _____ conmigo. (I want her to come with me.)",
+            "options": ["viene", "venga", "venir", "vendrá"],
+            "answer": "venga",
+            "explanation": "After 'quiero que', use subjunctive 'venga'"
+          },
+          {
+            "question": "Es posible que _____ mañana. (It's possible it will rain tomorrow.)",
+            "options": ["llueve", "llueva", "llover", "lloverá"],
+            "answer": "llueva",
+            "explanation": "After 'es posible que', use subjunctive 'llueva'"
+          },
+          {
+            "question": "No creo que _____ tiempo. (I don't think we have time.)",
+            "options": ["tenemos", "tengamos", "tener", "tendremos"],
+            "answer": "tengamos",
+            "explanation": "After negative 'no creo que', use subjunctive 'tengamos'"
+          },
+          {
+            "question": "Me alegra que ustedes _____ aquí. (I'm glad you all are here.)",
+            "options": ["están", "estén", "estar", "estarán"],
+            "answer": "estén",
+            "explanation": "After 'me alegra que', use subjunctive 'estén'"
+          },
+          {
+            "question": "Ojalá que _____ buen tiempo. (I hope the weather is good.)",
+            "options": ["hace", "haga", "hacer", "hará"],
+            "answer": "haga",
+            "explanation": "After 'ojalá que', use subjunctive 'haga'"
+          },
+          {
+            "question": "Es necesario que tú _____ temprano. (It's necessary that you arrive early.)",
+            "options": ["llegas", "llegues", "llegar", "llegarás"],
+            "answer": "llegues",
+            "explanation": "After 'es necesario que', use subjunctive 'llegues'"
+          },
+          {
+            "question": "Temo que _____ problemas. (I fear there are problems.)",
+            "options": ["hay", "haya", "haber", "habrá"],
+            "answer": "haya",
+            "explanation": "After 'temo que', use subjunctive 'haya'"
+          }
+        ]
+      },
+      {
+        "type": "fill_blank",
+        "instructions": "Complete with the correct subjunctive form",
+        "prompts": [
+          {
+            "sentence": "Es bueno que _____ ejercicio. (It's good that you exercise.)",
+            "answer": "hagas",
+            "explanation": "After 'es bueno que', use subjunctive 'hagas'"
+          },
+          {
+            "sentence": "Prefiero que nosotros _____ en casa. (I prefer that we stay at home.)",
+            "answer": "nos quedemos",
+            "explanation": "After 'prefiero que', use subjunctive 'nos quedemos'"
+          },
+          {
+            "sentence": "No pienso que él _____ razón. (I don't think he's right.)",
+            "answer": "tenga",
+            "explanation": "After negative 'no pienso que', use subjunctive 'tenga'"
+          },
+          {
+            "sentence": "Es probable que ellos _____ tarde. (It's probable they'll arrive late.)",
+            "answer": "lleguen",
+            "explanation": "After 'es probable que', use subjunctive 'lleguen'"
+          },
+          {
+            "sentence": "Me molesta que _____ tanto ruido. (It bothers me that there's so much noise.)",
+            "answer": "haya",
+            "explanation": "After 'me molesta que', use subjunctive 'haya'"
+          },
+          {
+            "sentence": "Espero que _____ un buen día. (I hope you have a good day.)",
+            "answer": "tengas",
+            "explanation": "After 'espero que', use subjunctive 'tengas'"
+          },
+          {
+            "sentence": "Es raro que no _____ todavía. (It's strange that he hasn't called yet.)",
+            "answer": "haya llamado",
+            "explanation": "Use present perfect subjunctive 'haya llamado'"
+          },
+          {
+            "sentence": "Dudo que _____ la respuesta. (I doubt she knows the answer.)",
+            "answer": "sepa",
+            "explanation": "After 'dudo que', use subjunctive 'sepa'"
+          },
+          {
+            "sentence": "Es imposible que _____ tanto dinero. (It's impossible that they have so much money.)",
+            "answer": "tengan",
+            "explanation": "After 'es imposible que', use subjunctive 'tengan'"
+          },
+          {
+            "sentence": "Ojalá que _____ pronto. (I hope they come soon.)",
+            "answer": "vengan",
+            "explanation": "After 'ojalá que', use subjunctive 'vengan'"
+          }
+        ]
+      },
+      {
+        "type": "conjugation",
+        "instructions": "Conjugate these verbs in present subjunctive",
+        "prompts": [
+          {
+            "verb": "hablar",
+            "subject": "que yo",
+            "answer": "hable",
+            "english": "that I speak",
+            "explanation": "Present subjunctive: hable"
+          },
+          {
+            "verb": "comer",
+            "subject": "que tú",
+            "answer": "comas",
+            "english": "that you eat",
+            "explanation": "Present subjunctive: comas"
+          },
+          {
+            "verb": "vivir",
+            "subject": "que él",
+            "answer": "viva",
+            "english": "that he lives",
+            "explanation": "Present subjunctive: viva"
+          },
+          {
+            "verb": "ser",
+            "subject": "que nosotros",
+            "answer": "seamos",
+            "english": "that we are",
+            "explanation": "Irregular subjunctive: seamos"
+          },
+          {
+            "verb": "ir",
+            "subject": "que ellas",
+            "answer": "vayan",
+            "english": "that they go",
+            "explanation": "Irregular subjunctive: vayan"
+          },
+          {
+            "verb": "tener",
+            "subject": "que usted",
+            "answer": "tenga",
+            "english": "that you have",
+            "explanation": "Irregular subjunctive: tenga"
+          },
+          {
+            "verb": "hacer",
+            "subject": "que nosotras",
+            "answer": "hagamos",
+            "english": "that we do",
+            "explanation": "Irregular subjunctive: hagamos"
+          },
+          {
+            "verb": "poder",
+            "subject": "que vosotros",
+            "answer": "podáis",
+            "english": "that you all can",
+            "explanation": "Irregular subjunctive: podáis"
+          },
+          {
+            "verb": "saber",
+            "subject": "que ellos",
+            "answer": "sepan",
+            "english": "that they know",
+            "explanation": "Irregular subjunctive: sepan"
+          },
+          {
+            "verb": "dar",
+            "subject": "que yo",
+            "answer": "dé",
+            "english": "that I give",
+            "explanation": "Irregular subjunctive: dé (with accent)"
+          }
+        ]
+      }
+    ]
+  }
+}

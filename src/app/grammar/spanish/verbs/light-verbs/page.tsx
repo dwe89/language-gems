@@ -371,7 +371,7 @@ export default function SpanishLightVerbsPage() {
         practiceUrl="/grammar/spanish/verbs/light-verbs/practice"
         quizUrl="/grammar/spanish/verbs/light-verbs/quiz"
         songUrl="/songs/es?theme=grammar&topic=light-verbs"
-        youtubeVideoId="light-verbs-spanish"
+        youtubeVideoId="EGaSgIRswcI"
         relatedTopics={relatedTopics}
       />
     </>

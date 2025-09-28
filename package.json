@@ -43,7 +43,8 @@
     "test:production:critical": "node scripts/production-readiness-test.js --mode=critical",
     "test:production:full": "node scripts/production-readiness-test.js --mode=full",
     "benchmark": "node scripts/performance-benchmark.js",
-    "benchmark:load": "node scripts/performance-benchmark.js --concurrent=50 --duration=120"
+    "benchmark:load": "node scripts/performance-benchmark.js --concurrent=50 --duration=120",
+    "import-grammar-content": "tsx src/scripts/import-grammar-content.ts"
   },
   "dependencies": {
     "@aws-sdk/client-polly": "^3.848.0",
@@ -60,7 +61,7 @@
     "@radix-ui/react-tabs": "^1.1.13",
     "@stripe/stripe-js": "^2.4.0",
     "@supabase/ssr": "^0.6.1",
-    "@supabase/supabase-js": "^2.55.0",
+    "@supabase/supabase-js": "^2.58.0",
     "@tailwindcss/forms": "^0.5.10",
     "@tailwindcss/typography": "^0.5.16",
     "@tiptap/extension-image": "^3.0.3",
@@ -95,7 +96,7 @@
     "lucide-react": "^0.344.0",
     "next": "^14.2.30",
     "node-fetch": "^3.3.2",
-    "openai": "^5.19.1",
+    "openai": "^5.23.1",
     "pdfkit": "^0.17.1",
     "phaser": "^3.90.0",
     "pixi.js": "^8.11.0",

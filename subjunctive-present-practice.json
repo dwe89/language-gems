@@ -1,0 +1,207 @@
+{
+  "practice_content": {
+    "instructions": "Practice Spanish present subjunctive with these exercises.",
+    "practice_type": "mixed_exercises",
+    "estimated_duration": 15,
+    "exercises": [
+      {
+        "type": "multiple_choice",
+        "instructions": "Choose the correct present subjunctive form",
+        "prompts": [
+          {
+            "question": "What's the present subjunctive of 'hablar' for 'yo'?",
+            "options": ["hablo", "hable", "habla", "hablas"],
+            "answer": "hable",
+            "explanation": "Present subjunctive of 'hablar' for 'yo' is 'hable'"
+          },
+          {
+            "question": "What's the present subjunctive of 'comer' for 'tú'?",
+            "options": ["comes", "comas", "come", "coma"],
+            "answer": "comas",
+            "explanation": "Present subjunctive of 'comer' for 'tú' is 'comas'"
+          },
+          {
+            "question": "What's the present subjunctive of 'vivir' for 'él'?",
+            "options": ["vive", "viva", "vivas", "vivan"],
+            "answer": "viva",
+            "explanation": "Present subjunctive of 'vivir' for 'él' is 'viva'"
+          },
+          {
+            "question": "What's the present subjunctive of 'ser' for 'nosotros'?",
+            "options": ["somos", "seamos", "sean", "seas"],
+            "answer": "seamos",
+            "explanation": "Present subjunctive of 'ser' for 'nosotros' is 'seamos'"
+          },
+          {
+            "question": "What's the present subjunctive of 'tener' for 'ellos'?",
+            "options": ["tienen", "tengan", "tenga", "tengas"],
+            "answer": "tengan",
+            "explanation": "Present subjunctive of 'tener' for 'ellos' is 'tengan'"
+          },
+          {
+            "question": "What's the present subjunctive of 'ir' for 'yo'?",
+            "options": ["voy", "vaya", "vayas", "vayan"],
+            "answer": "vaya",
+            "explanation": "Present subjunctive of 'ir' for 'yo' is 'vaya'"
+          },
+          {
+            "question": "What's the present subjunctive of 'hacer' for 'tú'?",
+            "options": ["haces", "hagas", "haga", "hagan"],
+            "answer": "hagas",
+            "explanation": "Present subjunctive of 'hacer' for 'tú' is 'hagas'"
+          },
+          {
+            "question": "What's the present subjunctive of 'poder' for 'ella'?",
+            "options": ["puede", "pueda", "puedas", "puedan"],
+            "answer": "pueda",
+            "explanation": "Present subjunctive of 'poder' for 'ella' is 'pueda'"
+          },
+          {
+            "question": "What's the present subjunctive of 'saber' for 'nosotros'?",
+            "options": ["sabemos", "sepamos", "sepa", "sepan"],
+            "answer": "sepamos",
+            "explanation": "Present subjunctive of 'saber' for 'nosotros' is 'sepamos'"
+          },
+          {
+            "question": "What's the present subjunctive of 'dar' for 'ustedes'?",
+            "options": ["dan", "den", "dé", "des"],
+            "answer": "den",
+            "explanation": "Present subjunctive of 'dar' for 'ustedes' is 'den'"
+          }
+        ]
+      },
+      {
+        "type": "fill_blank",
+        "instructions": "Complete with the correct present subjunctive form",
+        "prompts": [
+          {
+            "sentence": "Que yo _____ español bien. (That I speak Spanish well.)",
+            "answer": "hable",
+            "explanation": "Present subjunctive: 'hable'"
+          },
+          {
+            "sentence": "Que tú _____ la verdad. (That you tell the truth.)",
+            "answer": "digas",
+            "explanation": "Present subjunctive: 'digas'"
+          },
+          {
+            "sentence": "Que él _____ temprano. (That he arrives early.)",
+            "answer": "llegue",
+            "explanation": "Present subjunctive: 'llegue'"
+          },
+          {
+            "sentence": "Que nosotros _____ juntos. (That we work together.)",
+            "answer": "trabajemos",
+            "explanation": "Present subjunctive: 'trabajemos'"
+          },
+          {
+            "sentence": "Que ellas _____ felices. (That they are happy.)",
+            "answer": "sean",
+            "explanation": "Present subjunctive: 'sean'"
+          },
+          {
+            "sentence": "Que yo _____ la tarea. (That I do the homework.)",
+            "answer": "haga",
+            "explanation": "Present subjunctive: 'haga'"
+          },
+          {
+            "sentence": "Que tú _____ cuidado. (That you are careful.)",
+            "answer": "tengas",
+            "explanation": "Present subjunctive: 'tengas'"
+          },
+          {
+            "sentence": "Que ella _____ al médico. (That she goes to the doctor.)",
+            "answer": "vaya",
+            "explanation": "Present subjunctive: 'vaya'"
+          },
+          {
+            "sentence": "Que nosotros _____ la respuesta. (That we know the answer.)",
+            "answer": "sepamos",
+            "explanation": "Present subjunctive: 'sepamos'"
+          },
+          {
+            "sentence": "Que ellos _____ ayuda. (That they can help.)",
+            "answer": "puedan",
+            "explanation": "Present subjunctive: 'puedan'"
+          }
+        ]
+      },
+      {
+        "type": "conjugation",
+        "instructions": "Conjugate in present subjunctive",
+        "prompts": [
+          {
+            "verb": "estudiar",
+            "subject": "yo",
+            "answer": "estudie",
+            "english": "I study",
+            "explanation": "Regular -ar verb: estudie"
+          },
+          {
+            "verb": "aprender",
+            "subject": "tú",
+            "answer": "aprendas",
+            "english": "you learn",
+            "explanation": "Regular -er verb: aprendas"
+          },
+          {
+            "verb": "escribir",
+            "subject": "él",
+            "answer": "escriba",
+            "english": "he writes",
+            "explanation": "Regular -ir verb: escriba"
+          },
+          {
+            "verb": "estar",
+            "subject": "nosotros",
+            "answer": "estemos",
+            "english": "we are",
+            "explanation": "Irregular verb: estemos"
+          },
+          {
+            "verb": "venir",
+            "subject": "ellas",
+            "answer": "vengan",
+            "english": "they come",
+            "explanation": "Irregular verb: vengan"
+          },
+          {
+            "verb": "poner",
+            "subject": "usted",
+            "answer": "ponga",
+            "english": "you put",
+            "explanation": "Irregular verb: ponga"
+          },
+          {
+            "verb": "salir",
+            "subject": "nosotras",
+            "answer": "salgamos",
+            "english": "we leave",
+            "explanation": "Irregular verb: salgamos"
+          },
+          {
+            "verb": "traer",
+            "subject": "vosotros",
+            "answer": "traigáis",
+            "english": "you all bring",
+            "explanation": "Irregular verb: traigáis"
+          },
+          {
+            "verb": "conocer",
+            "subject": "ellos",
+            "answer": "conozcan",
+            "english": "they know",
+            "explanation": "Irregular verb: conozcan"
+          },
+          {
+            "verb": "conducir",
+            "subject": "yo",
+            "answer": "conduzca",
+            "english": "I drive",
+            "explanation": "Irregular verb: conduzca"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,207 @@
+{
+  "practice_content": {
+    "instructions": "Practice Spanish present tense with these exercises.",
+    "practice_type": "mixed_exercises",
+    "estimated_duration": 20,
+    "exercises": [
+      {
+        "type": "conjugation",
+        "instructions": "Conjugate these verbs in the present tense",
+        "prompts": [
+          {
+            "verb": "hablar",
+            "subject": "yo",
+            "answer": "hablo",
+            "english": "I speak",
+            "explanation": "Regular -ar verbs: hablar → hablo"
+          },
+          {
+            "verb": "comer",
+            "subject": "tú",
+            "answer": "comes",
+            "english": "you eat",
+            "explanation": "Regular -er verbs: comer → comes"
+          },
+          {
+            "verb": "vivir",
+            "subject": "él",
+            "answer": "vive",
+            "english": "he lives",
+            "explanation": "Regular -ir verbs: vivir → vive"
+          },
+          {
+            "verb": "estudiar",
+            "subject": "nosotros",
+            "answer": "estudiamos",
+            "english": "we study",
+            "explanation": "Regular -ar verbs: estudiar → estudiamos"
+          },
+          {
+            "verb": "escribir",
+            "subject": "ellos",
+            "answer": "escriben",
+            "english": "they write",
+            "explanation": "Regular -ir verbs: escribir → escriben"
+          },
+          {
+            "verb": "ser",
+            "subject": "yo",
+            "answer": "soy",
+            "english": "I am",
+            "explanation": "Irregular verb: ser → soy"
+          },
+          {
+            "verb": "tener",
+            "subject": "tú",
+            "answer": "tienes",
+            "english": "you have",
+            "explanation": "Irregular verb: tener → tienes"
+          },
+          {
+            "verb": "hacer",
+            "subject": "ella",
+            "answer": "hace",
+            "english": "she does/makes",
+            "explanation": "Irregular verb: hacer → hace"
+          },
+          {
+            "verb": "ir",
+            "subject": "nosotros",
+            "answer": "vamos",
+            "english": "we go",
+            "explanation": "Irregular verb: ir → vamos"
+          },
+          {
+            "verb": "poder",
+            "subject": "ustedes",
+            "answer": "pueden",
+            "english": "you all can",
+            "explanation": "Stem-changing verb: poder → pueden"
+          }
+        ]
+      },
+      {
+        "type": "multiple_choice",
+        "instructions": "Choose the correct present tense form",
+        "prompts": [
+          {
+            "question": "What is the present form of 'trabajar' for 'yo'?",
+            "options": ["trabajo", "trabajas", "trabaja", "trabajamos"],
+            "answer": "trabajo",
+            "explanation": "Regular -ar verbs: yo + -o = trabajo"
+          },
+          {
+            "question": "What is the present form of 'beber' for 'tú'?",
+            "options": ["bebo", "bebes", "bebe", "bebemos"],
+            "answer": "bebes",
+            "explanation": "Regular -er verbs: tú + -es = bebes"
+          },
+          {
+            "question": "What is the present form of 'abrir' for 'él'?",
+            "options": ["abro", "abres", "abre", "abrimos"],
+            "answer": "abre",
+            "explanation": "Regular -ir verbs: él + -e = abre"
+          },
+          {
+            "question": "What is the present form of 'estar' for 'nosotros'?",
+            "options": ["estoy", "estás", "está", "estamos"],
+            "answer": "estamos",
+            "explanation": "Irregular verb: estar → estamos"
+          },
+          {
+            "question": "What is the present form of 'querer' for 'ellos'?",
+            "options": ["quiero", "quieres", "quiere", "quieren"],
+            "answer": "quieren",
+            "explanation": "Stem-changing verb: querer → quieren"
+          },
+          {
+            "question": "What is the present form of 'decir' for 'yo'?",
+            "options": ["digo", "dices", "dice", "decimos"],
+            "answer": "digo",
+            "explanation": "Irregular verb: decir → digo"
+          },
+          {
+            "question": "What is the present form of 'jugar' for 'tú'?",
+            "options": ["jugo", "juegas", "juega", "jugamos"],
+            "answer": "juegas",
+            "explanation": "Stem-changing verb: jugar → juegas"
+          },
+          {
+            "question": "What is the present form of 'venir' for 'ella'?",
+            "options": ["vengo", "vienes", "viene", "venimos"],
+            "answer": "viene",
+            "explanation": "Irregular verb: venir → viene"
+          },
+          {
+            "question": "What is the present form of 'dormir' for 'ustedes'?",
+            "options": ["duermo", "duermes", "duerme", "duermen"],
+            "answer": "duermen",
+            "explanation": "Stem-changing verb: dormir → duermen"
+          },
+          {
+            "question": "What is the present form of 'conocer' for 'yo'?",
+            "options": ["conozco", "conoces", "conoce", "conocemos"],
+            "answer": "conozco",
+            "explanation": "Irregular verb: conocer → conozco"
+          }
+        ]
+      },
+      {
+        "type": "fill_blank",
+        "instructions": "Complete the sentences with the correct present tense form",
+        "prompts": [
+          {
+            "sentence": "Yo _____ (estudiar) español todos los días.",
+            "answer": "estudio",
+            "explanation": "Regular -ar verb: estudiar → estudio"
+          },
+          {
+            "sentence": "Tú _____ (comer) pizza los viernes.",
+            "answer": "comes",
+            "explanation": "Regular -er verb: comer → comes"
+          },
+          {
+            "sentence": "Ella _____ (vivir) en Barcelona.",
+            "answer": "vive",
+            "explanation": "Regular -ir verb: vivir → vive"
+          },
+          {
+            "sentence": "Nosotros _____ (ser) estudiantes.",
+            "answer": "somos",
+            "explanation": "Irregular verb: ser → somos"
+          },
+          {
+            "sentence": "Ellos _____ (tener) mucho trabajo.",
+            "answer": "tienen",
+            "explanation": "Irregular verb: tener → tienen"
+          },
+          {
+            "sentence": "¿_____ (hacer) tú la tarea?",
+            "answer": "Haces",
+            "explanation": "Irregular verb: hacer → haces"
+          },
+          {
+            "sentence": "Nosotros _____ (ir) al cine.",
+            "answer": "vamos",
+            "explanation": "Irregular verb: ir → vamos"
+          },
+          {
+            "sentence": "Ustedes _____ (poder) ayudarme.",
+            "answer": "pueden",
+            "explanation": "Stem-changing verb: poder → pueden"
+          },
+          {
+            "sentence": "Yo _____ (querer) aprender más.",
+            "answer": "quiero",
+            "explanation": "Stem-changing verb: querer → quiero"
+          },
+          {
+            "sentence": "Los niños _____ (jugar) en el parque.",
+            "answer": "juegan",
+            "explanation": "Stem-changing verb: jugar → juegan"
+          }
+        ]
+      }
+    ]
+  }
+}

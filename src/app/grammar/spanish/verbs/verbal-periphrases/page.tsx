@@ -263,7 +263,7 @@ export default function SpanishVerbalPeriphrasesPage() {
         practiceUrl="/grammar/spanish/verbs/verbal-periphrases/practice"
         quizUrl="/grammar/spanish/verbs/verbal-periphrases/quiz"
         songUrl="/songs/es?theme=grammar&topic=verbal-periphrases"
-        youtubeVideoId="verbal-periphrases-spanish"
+        youtubeVideoId="EGaSgIRswcI"
         relatedTopics={relatedTopics}
       />
     </>

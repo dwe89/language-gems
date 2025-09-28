@@ -1,0 +1,336 @@
+[
+  {
+    "topic_id": "present-irregular",
+    "content_type": "practice",
+    "title": "Present Tense Irregular Verbs Practice",
+    "slug": "present-irregular-practice",
+    "content_data": {
+      "questions": [
+        {
+          "id": "pi_1",
+          "type": "multiple_choice",
+          "question": "What is the correct form of 'ser' for 'yo'?",
+          "options": ["soy", "eres", "es", "somos"],
+          "correct_answer": "soy",
+          "explanation": "'Ser' is irregular: yo soy, tú eres, él/ella es.",
+          "difficulty": "beginner"
+        },
+        {
+          "id": "pi_2",
+          "type": "multiple_choice",
+          "question": "What is the correct form of 'tener' for 'él'?",
+          "options": ["tengo", "tienes", "tiene", "tenemos"],
+          "correct_answer": "tiene",
+          "explanation": "'Tener' is irregular: yo tengo, tú tienes, él tiene.",
+          "difficulty": "beginner"
+        },
+        {
+          "id": "pi_3",
+          "type": "multiple_choice",
+          "question": "What is the correct form of 'ir' for 'nosotros'?",
+          "options": ["voy", "vas", "va", "vamos"],
+          "correct_answer": "vamos",
+          "explanation": "'Ir' is very irregular: yo voy, tú vas, él va, nosotros vamos.",
+          "difficulty": "beginner"
+        },
+        {
+          "id": "pi_4",
+          "type": "multiple_choice",
+          "question": "What is the correct form of 'hacer' for 'tú'?",
+          "options": ["hago", "haces", "hace", "hacemos"],
+          "correct_answer": "haces",
+          "explanation": "'Hacer' is irregular: yo hago, tú haces, él hace.",
+          "difficulty": "intermediate"
+        },
+        {
+          "id": "pi_5",
+          "type": "multiple_choice",
+          "question": "What is the correct form of 'venir' for 'yo'?",
+          "options": ["vengo", "vienes", "viene", "venimos"],
+          "correct_answer": "vengo",
+          "explanation": "'Venir' is irregular: yo vengo, tú vienes, él viene.",
+          "difficulty": "intermediate"
+        },
+        {
+          "id": "pi_6",
+          "type": "multiple_choice",
+          "question": "What is the correct form of 'decir' for 'ellos'?",
+          "options": ["digo", "dices", "dice", "dicen"],
+          "correct_answer": "dicen",
+          "explanation": "'Decir' is irregular: yo digo, tú dices, él dice, ellos dicen.",
+          "difficulty": "intermediate"
+        },
+        {
+          "id": "pi_7",
+          "type": "multiple_choice",
+          "question": "What is the correct form of 'saber' for 'yo'?",
+          "options": ["sé", "sabes", "sabe", "sabemos"],
+          "correct_answer": "sé",
+          "explanation": "'Saber' is irregular: yo sé, tú sabes, él sabe.",
+          "difficulty": "intermediate"
+        },
+        {
+          "id": "pi_8",
+          "type": "multiple_choice",
+          "question": "What is the correct form of 'dar' for 'ustedes'?",
+          "options": ["doy", "das", "da", "dan"],
+          "correct_answer": "dan",
+          "explanation": "'Dar' is irregular: yo doy, tú das, él da, ustedes dan.",
+          "difficulty": "intermediate"
+        },
+        {
+          "id": "pi_9",
+          "type": "multiple_choice",
+          "question": "What is the correct form of 'ver' for 'nosotros'?",
+          "options": ["veo", "ves", "ve", "vemos"],
+          "correct_answer": "vemos",
+          "explanation": "'Ver' is irregular: yo veo, tú ves, él ve, nosotros vemos.",
+          "difficulty": "intermediate"
+        },
+        {
+          "id": "pi_10",
+          "type": "multiple_choice",
+          "question": "What is the correct form of 'oír' for 'yo'?",
+          "options": ["oigo", "oyes", "oye", "oímos"],
+          "correct_answer": "oigo",
+          "explanation": "'Oír' is very irregular: yo oigo, tú oyes, él oye.",
+          "difficulty": "advanced"
+        }
+      ]
+    },
+    "difficulty_level": "intermediate",
+    "age_group": "11-14",
+    "estimated_duration": 15,
+    "order_position": 1,
+    "is_active": true,
+    "is_featured": false
+  },
+  {
+    "topic_id": "present-irregular",
+    "content_type": "quiz",
+    "title": "Present Tense Irregular Verbs Quiz",
+    "slug": "present-irregular-quiz",
+    "content_data": {
+      "questions": [
+        {
+          "id": "piq_1",
+          "type": "multiple_choice",
+          "question": "Complete: Yo _____ estudiante. (ser)",
+          "options": ["soy", "eres", "es", "somos"],
+          "correct_answer": "soy",
+          "explanation": "'Ser' conjugated for 'yo' is 'soy'.",
+          "difficulty": "beginner"
+        },
+        {
+          "id": "piq_2",
+          "type": "multiple_choice",
+          "question": "Complete: Ella _____ veinte años. (tener)",
+          "options": ["tengo", "tienes", "tiene", "tenemos"],
+          "correct_answer": "tiene",
+          "explanation": "'Tener' conjugated for 'ella' is 'tiene'.",
+          "difficulty": "beginner"
+        },
+        {
+          "id": "piq_3",
+          "type": "multiple_choice",
+          "question": "Complete: Nosotros _____ al cine. (ir)",
+          "options": ["voy", "vas", "va", "vamos"],
+          "correct_answer": "vamos",
+          "explanation": "'Ir' conjugated for 'nosotros' is 'vamos'.",
+          "difficulty": "intermediate"
+        },
+        {
+          "id": "piq_4",
+          "type": "multiple_choice",
+          "question": "Complete: ¿Qué _____ tú? (hacer)",
+          "options": ["hago", "haces", "hace", "hacemos"],
+          "correct_answer": "haces",
+          "explanation": "'Hacer' conjugated for 'tú' is 'haces'.",
+          "difficulty": "intermediate"
+        },
+        {
+          "id": "piq_5",
+          "type": "multiple_choice",
+          "question": "Complete: Yo _____ de España. (venir)",
+          "options": ["vengo", "vienes", "viene", "venimos"],
+          "correct_answer": "vengo",
+          "explanation": "'Venir' conjugated for 'yo' is 'vengo'.",
+          "difficulty": "intermediate"
+        }
+      ]
+    },
+    "difficulty_level": "intermediate",
+    "age_group": "11-14",
+    "estimated_duration": 10,
+    "order_position": 2,
+    "is_active": true,
+    "is_featured": false
+  },
+  {
+    "topic_id": "present-regular",
+    "content_type": "practice",
+    "title": "Present Tense Regular Verbs Practice",
+    "slug": "present-regular-practice",
+    "content_data": {
+      "questions": [
+        {
+          "id": "pr_1",
+          "type": "multiple_choice",
+          "question": "What is the correct form of 'hablar' for 'yo'?",
+          "options": ["hablo", "hablas", "habla", "hablamos"],
+          "correct_answer": "hablo",
+          "explanation": "AR verbs: yo -o, tú -as, él -a, nosotros -amos.",
+          "difficulty": "beginner"
+        },
+        {
+          "id": "pr_2",
+          "type": "multiple_choice",
+          "question": "What is the correct form of 'comer' for 'tú'?",
+          "options": ["como", "comes", "come", "comemos"],
+          "correct_answer": "comes",
+          "explanation": "ER verbs: yo -o, tú -es, él -e, nosotros -emos.",
+          "difficulty": "beginner"
+        },
+        {
+          "id": "pr_3",
+          "type": "multiple_choice",
+          "question": "What is the correct form of 'vivir' for 'ella'?",
+          "options": ["vivo", "vives", "vive", "vivimos"],
+          "correct_answer": "vive",
+          "explanation": "IR verbs: yo -o, tú -es, él -e, nosotros -imos.",
+          "difficulty": "beginner"
+        },
+        {
+          "id": "pr_4",
+          "type": "multiple_choice",
+          "question": "What is the correct form of 'estudiar' for 'nosotros'?",
+          "options": ["estudio", "estudias", "estudia", "estudiamos"],
+          "correct_answer": "estudiamos",
+          "explanation": "AR verbs add -amos for nosotros: estudiamos.",
+          "difficulty": "beginner"
+        },
+        {
+          "id": "pr_5",
+          "type": "multiple_choice",
+          "question": "What is the correct form of 'beber' for 'ellos'?",
+          "options": ["bebo", "bebes", "bebe", "beben"],
+          "correct_answer": "beben",
+          "explanation": "ER verbs add -en for ellos/ellas: beben.",
+          "difficulty": "beginner"
+        },
+        {
+          "id": "pr_6",
+          "type": "multiple_choice",
+          "question": "What is the correct form of 'escribir' for 'ustedes'?",
+          "options": ["escribo", "escribes", "escribe", "escriben"],
+          "correct_answer": "escriben",
+          "explanation": "IR verbs add -en for ustedes: escriben.",
+          "difficulty": "beginner"
+        },
+        {
+          "id": "pr_7",
+          "type": "multiple_choice",
+          "question": "What is the correct form of 'trabajar' for 'usted'?",
+          "options": ["trabajo", "trabajas", "trabaja", "trabajamos"],
+          "correct_answer": "trabaja",
+          "explanation": "Usted uses the same form as él/ella: trabaja.",
+          "difficulty": "intermediate"
+        },
+        {
+          "id": "pr_8",
+          "type": "multiple_choice",
+          "question": "What is the correct form of 'aprender' for 'yo'?",
+          "options": ["aprendo", "aprendes", "aprende", "aprendemos"],
+          "correct_answer": "aprendo",
+          "explanation": "ER verbs: yo form ends in -o: aprendo.",
+          "difficulty": "beginner"
+        },
+        {
+          "id": "pr_9",
+          "type": "multiple_choice",
+          "question": "What is the correct form of 'abrir' for 'tú'?",
+          "options": ["abro", "abres", "abre", "abrimos"],
+          "correct_answer": "abres",
+          "explanation": "IR verbs: tú form ends in -es: abres.",
+          "difficulty": "beginner"
+        },
+        {
+          "id": "pr_10",
+          "type": "multiple_choice",
+          "question": "What is the correct form of 'caminar' for 'ellas'?",
+          "options": ["camino", "caminas", "camina", "caminan"],
+          "correct_answer": "caminan",
+          "explanation": "AR verbs: ellas form ends in -an: caminan.",
+          "difficulty": "beginner"
+        }
+      ]
+    },
+    "difficulty_level": "beginner",
+    "age_group": "11-14",
+    "estimated_duration": 15,
+    "order_position": 1,
+    "is_active": true,
+    "is_featured": false
+  },
+  {
+    "topic_id": "present-regular",
+    "content_type": "quiz",
+    "title": "Present Tense Regular Verbs Quiz",
+    "slug": "present-regular-quiz",
+    "content_data": {
+      "questions": [
+        {
+          "id": "prq_1",
+          "type": "multiple_choice",
+          "question": "Complete: Yo _____ español. (hablar)",
+          "options": ["hablo", "hablas", "habla", "hablamos"],
+          "correct_answer": "hablo",
+          "explanation": "AR verb 'hablar' for 'yo' is 'hablo'.",
+          "difficulty": "beginner"
+        },
+        {
+          "id": "prq_2",
+          "type": "multiple_choice",
+          "question": "Complete: Tú _____ pizza. (comer)",
+          "options": ["como", "comes", "come", "comemos"],
+          "correct_answer": "comes",
+          "explanation": "ER verb 'comer' for 'tú' is 'comes'.",
+          "difficulty": "beginner"
+        },
+        {
+          "id": "prq_3",
+          "type": "multiple_choice",
+          "question": "Complete: Ella _____ en Madrid. (vivir)",
+          "options": ["vivo", "vives", "vive", "vivimos"],
+          "correct_answer": "vive",
+          "explanation": "IR verb 'vivir' for 'ella' is 'vive'.",
+          "difficulty": "beginner"
+        },
+        {
+          "id": "prq_4",
+          "type": "multiple_choice",
+          "question": "Complete: Nosotros _____ mucho. (estudiar)",
+          "options": ["estudio", "estudias", "estudia", "estudiamos"],
+          "correct_answer": "estudiamos",
+          "explanation": "AR verb 'estudiar' for 'nosotros' is 'estudiamos'.",
+          "difficulty": "beginner"
+        },
+        {
+          "id": "prq_5",
+          "type": "multiple_choice",
+          "question": "Complete: Ellos _____ agua. (beber)",
+          "options": ["bebo", "bebes", "bebe", "beben"],
+          "correct_answer": "beben",
+          "explanation": "ER verb 'beber' for 'ellos' is 'beben'.",
+          "difficulty": "beginner"
+        }
+      ]
+    },
+    "difficulty_level": "beginner",
+    "age_group": "11-14",
+    "estimated_duration": 10,
+    "order_position": 2,
+    "is_active": true,
+    "is_featured": false
+  }
+]

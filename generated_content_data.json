@@ -1,0 +1,2216 @@
+[
+  {
+    "topic": {
+      "slug": "agreement",
+      "category": "adjectives",
+      "hasContent": false
+    },
+    "practice": {
+      "title": "Agreement Practice",
+      "description": "Interactive practice exercises for agreement",
+      "exercises": [
+        {
+          "type": "agreement",
+          "instructions": "Make adjectives agree with nouns",
+          "prompts": [
+            {
+              "phrase": "la mesa (blanco)",
+              "answer": "la mesa blanca",
+              "explanation": "Adjective agrees with feminine singular noun"
+            },
+            {
+              "phrase": "los libros (interesante)",
+              "answer": "los libros interesantes",
+              "explanation": "Adjective agrees with masculine plural noun"
+            },
+            {
+              "phrase": "las casas (pequeño)",
+              "answer": "las casas pequeñas",
+              "explanation": "Adjective agrees with feminine plural noun"
+            }
+          ]
+        },
+        {
+          "type": "position",
+          "instructions": "Place adjectives in the correct position",
+          "prompts": [
+            {
+              "elements": [
+                "casa",
+                "grande"
+              ],
+              "answer": "casa grande",
+              "explanation": "Descriptive adjectives usually follow the noun"
+            },
+            {
+              "elements": [
+                "buen",
+                "amigo"
+              ],
+              "answer": "buen amigo",
+              "explanation": "Bueno shortens to buen before masculine singular nouns"
+            }
+          ]
+        },
+        {
+          "type": "fill_blank",
+          "instructions": "Complete with the correct adjective form",
+          "prompts": [
+            {
+              "sentence": "El coche es _____ (rojo)",
+              "answer": "rojo",
+              "explanation": "Masculine singular form"
+            },
+            {
+              "sentence": "Las flores son _____ (bonito)",
+              "answer": "bonitas",
+              "explanation": "Feminine plural form"
+            }
+          ]
+        }
+      ],
+      "estimated_duration": 15,
+      "difficulty_level": "intermediate",
+      "content_type": "practice"
+    },
+    "quiz": {
+      "title": "Agreement Quiz",
+      "description": "Assessment quiz for agreement",
+      "questions": [
+        {
+          "type": "multiple_choice",
+          "question": "Which adjective agrees correctly with \"las casas\"?",
+          "options": [
+            "blanco",
+            "blanca",
+            "blancos",
+            "blancas"
+          ],
+          "correct_answer": "blancas",
+          "explanation": "Adjective must agree in gender (feminine) and number (plural)"
+        },
+        {
+          "type": "fill_blank",
+          "question": "Complete: El coche _____ (rojo)",
+          "correct_answer": "rojo",
+          "explanation": "Masculine singular form matches el coche"
+        }
+      ],
+      "estimated_duration": 10,
+      "difficulty_level": "intermediate",
+      "content_type": "quiz"
+    }
+  },
+  {
+    "topic": {
+      "slug": "comparison",
+      "category": "adjectives",
+      "hasContent": false
+    },
+    "practice": {
+      "title": "Comparison Practice",
+      "description": "Interactive practice exercises for comparison",
+      "exercises": [
+        {
+          "type": "agreement",
+          "instructions": "Make adjectives agree with nouns",
+          "prompts": [
+            {
+              "phrase": "la mesa (blanco)",
+              "answer": "la mesa blanca",
+              "explanation": "Adjective agrees with feminine singular noun"
+            },
+            {
+              "phrase": "los libros (interesante)",
+              "answer": "los libros interesantes",
+              "explanation": "Adjective agrees with masculine plural noun"
+            },
+            {
+              "phrase": "las casas (pequeño)",
+              "answer": "las casas pequeñas",
+              "explanation": "Adjective agrees with feminine plural noun"
+            }
+          ]
+        },
+        {
+          "type": "position",
+          "instructions": "Place adjectives in the correct position",
+          "prompts": [
+            {
+              "elements": [
+                "casa",
+                "grande"
+              ],
+              "answer": "casa grande",
+              "explanation": "Descriptive adjectives usually follow the noun"
+            },
+            {
+              "elements": [
+                "buen",
+                "amigo"
+              ],
+              "answer": "buen amigo",
+              "explanation": "Bueno shortens to buen before masculine singular nouns"
+            }
+          ]
+        },
+        {
+          "type": "fill_blank",
+          "instructions": "Complete with the correct adjective form",
+          "prompts": [
+            {
+              "sentence": "El coche es _____ (rojo)",
+              "answer": "rojo",
+              "explanation": "Masculine singular form"
+            },
+            {
+              "sentence": "Las flores son _____ (bonito)",
+              "answer": "bonitas",
+              "explanation": "Feminine plural form"
+            }
+          ]
+        }
+      ],
+      "estimated_duration": 15,
+      "difficulty_level": "intermediate",
+      "content_type": "practice"
+    },
+    "quiz": {
+      "title": "Comparison Quiz",
+      "description": "Assessment quiz for comparison",
+      "questions": [
+        {
+          "type": "multiple_choice",
+          "question": "Which adjective agrees correctly with \"las casas\"?",
+          "options": [
+            "blanco",
+            "blanca",
+            "blancos",
+            "blancas"
+          ],
+          "correct_answer": "blancas",
+          "explanation": "Adjective must agree in gender (feminine) and number (plural)"
+        },
+        {
+          "type": "fill_blank",
+          "question": "Complete: El coche _____ (rojo)",
+          "correct_answer": "rojo",
+          "explanation": "Masculine singular form matches el coche"
+        }
+      ],
+      "estimated_duration": 10,
+      "difficulty_level": "intermediate",
+      "content_type": "quiz"
+    }
+  },
+  {
+    "topic": {
+      "slug": "position",
+      "category": "adjectives",
+      "hasContent": false
+    },
+    "practice": {
+      "title": "Position Practice",
+      "description": "Interactive practice exercises for position",
+      "exercises": [
+        {
+          "type": "agreement",
+          "instructions": "Make adjectives agree with nouns",
+          "prompts": [
+            {
+              "phrase": "la mesa (blanco)",
+              "answer": "la mesa blanca",
+              "explanation": "Adjective agrees with feminine singular noun"
+            },
+            {
+              "phrase": "los libros (interesante)",
+              "answer": "los libros interesantes",
+              "explanation": "Adjective agrees with masculine plural noun"
+            },
+            {
+              "phrase": "las casas (pequeño)",
+              "answer": "las casas pequeñas",
+              "explanation": "Adjective agrees with feminine plural noun"
+            }
+          ]
+        },
+        {
+          "type": "position",
+          "instructions": "Place adjectives in the correct position",
+          "prompts": [
+            {
+              "elements": [
+                "casa",
+                "grande"
+              ],
+              "answer": "casa grande",
+              "explanation": "Descriptive adjectives usually follow the noun"
+            },
+            {
+              "elements": [
+                "buen",
+                "amigo"
+              ],
+              "answer": "buen amigo",
+              "explanation": "Bueno shortens to buen before masculine singular nouns"
+            }
+          ]
+        },
+        {
+          "type": "fill_blank",
+          "instructions": "Complete with the correct adjective form",
+          "prompts": [
+            {
+              "sentence": "El coche es _____ (rojo)",
+              "answer": "rojo",
+              "explanation": "Masculine singular form"
+            },
+            {
+              "sentence": "Las flores son _____ (bonito)",
+              "answer": "bonitas",
+              "explanation": "Feminine plural form"
+            }
+          ]
+        }
+      ],
+      "estimated_duration": 15,
+      "difficulty_level": "intermediate",
+      "content_type": "practice"
+    },
+    "quiz": {
+      "title": "Position Quiz",
+      "description": "Assessment quiz for position",
+      "questions": [
+        {
+          "type": "multiple_choice",
+          "question": "Which adjective agrees correctly with \"las casas\"?",
+          "options": [
+            "blanco",
+            "blanca",
+            "blancos",
+            "blancas"
+          ],
+          "correct_answer": "blancas",
+          "explanation": "Adjective must agree in gender (feminine) and number (plural)"
+        },
+        {
+          "type": "fill_blank",
+          "question": "Complete: El coche _____ (rojo)",
+          "correct_answer": "rojo",
+          "explanation": "Masculine singular form matches el coche"
+        }
+      ],
+      "estimated_duration": 10,
+      "difficulty_level": "intermediate",
+      "content_type": "quiz"
+    }
+  },
+  {
+    "topic": {
+      "slug": "possessive",
+      "category": "adjectives",
+      "hasContent": false
+    },
+    "practice": {
+      "title": "Possessive Practice",
+      "description": "Interactive practice exercises for possessive",
+      "exercises": [
+        {
+          "type": "agreement",
+          "instructions": "Make adjectives agree with nouns",
+          "prompts": [
+            {
+              "phrase": "la mesa (blanco)",
+              "answer": "la mesa blanca",
+              "explanation": "Adjective agrees with feminine singular noun"
+            },
+            {
+              "phrase": "los libros (interesante)",
+              "answer": "los libros interesantes",
+              "explanation": "Adjective agrees with masculine plural noun"
+            },
+            {
+              "phrase": "las casas (pequeño)",
+              "answer": "las casas pequeñas",
+              "explanation": "Adjective agrees with feminine plural noun"
+            }
+          ]
+        },
+        {
+          "type": "position",
+          "instructions": "Place adjectives in the correct position",
+          "prompts": [
+            {
+              "elements": [
+                "casa",
+                "grande"
+              ],
+              "answer": "casa grande",
+              "explanation": "Descriptive adjectives usually follow the noun"
+            },
+            {
+              "elements": [
+                "buen",
+                "amigo"
+              ],
+              "answer": "buen amigo",
+              "explanation": "Bueno shortens to buen before masculine singular nouns"
+            }
+          ]
+        },
+        {
+          "type": "fill_blank",
+          "instructions": "Complete with the correct adjective form",
+          "prompts": [
+            {
+              "sentence": "El coche es _____ (rojo)",
+              "answer": "rojo",
+              "explanation": "Masculine singular form"
+            },
+            {
+              "sentence": "Las flores son _____ (bonito)",
+              "answer": "bonitas",
+              "explanation": "Feminine plural form"
+            }
+          ]
+        }
+      ],
+      "estimated_duration": 15,
+      "difficulty_level": "intermediate",
+      "content_type": "practice"
+    },
+    "quiz": {
+      "title": "Possessive Quiz",
+      "description": "Assessment quiz for possessive",
+      "questions": [
+        {
+          "type": "multiple_choice",
+          "question": "Which adjective agrees correctly with \"las casas\"?",
+          "options": [
+            "blanco",
+            "blanca",
+            "blancos",
+            "blancas"
+          ],
+          "correct_answer": "blancas",
+          "explanation": "Adjective must agree in gender (feminine) and number (plural)"
+        },
+        {
+          "type": "fill_blank",
+          "question": "Complete: El coche _____ (rojo)",
+          "correct_answer": "rojo",
+          "explanation": "Masculine singular form matches el coche"
+        }
+      ],
+      "estimated_duration": 10,
+      "difficulty_level": "intermediate",
+      "content_type": "quiz"
+    }
+  },
+  {
+    "topic": {
+      "slug": "personal-a",
+      "category": "adverbial-prepositional",
+      "hasContent": false
+    },
+    "practice": {
+      "title": "Personal A Practice",
+      "description": "Interactive practice exercises for personal a",
+      "exercises": [
+        {
+          "type": "usage",
+          "instructions": "Choose the correct preposition",
+          "prompts": [
+            {
+              "sentence": "Voy _____ la escuela",
+              "options": [
+                "a",
+                "en",
+                "de"
+              ],
+              "answer": "a",
+              "explanation": "Use \"a\" for direction/destination"
+            },
+            {
+              "sentence": "El libro está _____ la mesa",
+              "options": [
+                "en",
+                "a",
+                "de"
+              ],
+              "answer": "en",
+              "explanation": "Use \"en\" for location on a surface"
+            }
+          ]
+        },
+        {
+          "type": "por_para",
+          "instructions": "Choose between por and para",
+          "prompts": [
+            {
+              "sentence": "Estudio _____ ser médico",
+              "options": [
+                "por",
+                "para"
+              ],
+              "answer": "para",
+              "explanation": "Use \"para\" for purpose/goal"
+            },
+            {
+              "sentence": "Camino _____ el parque",
+              "options": [
+                "por",
+                "para"
+              ],
+              "answer": "por",
+              "explanation": "Use \"por\" for movement through a place"
+            }
+          ]
+        }
+      ],
+      "estimated_duration": 15,
+      "difficulty_level": "intermediate",
+      "content_type": "practice"
+    },
+    "quiz": {
+      "title": "Personal A Quiz",
+      "description": "Assessment quiz for personal a",
+      "questions": [
+        {
+          "type": "multiple_choice",
+          "question": "Which sentence correctly uses personal a?",
+          "options": [
+            "Es correcto",
+            "Está correcto"
+          ],
+          "correct_answer": "Es correcto",
+          "explanation": "Use ser for permanent characteristics"
+        }
+      ],
+      "estimated_duration": 10,
+      "difficulty_level": "intermediate",
+      "content_type": "quiz"
+    }
+  },
+  {
+    "topic": {
+      "slug": "por-vs-para",
+      "category": "adverbial-prepositional",
+      "hasContent": false
+    },
+    "practice": {
+      "title": "Por Vs Para Practice",
+      "description": "Interactive practice exercises for por vs para",
+      "exercises": [
+        {
+          "type": "usage",
+          "instructions": "Choose the correct preposition",
+          "prompts": [
+            {
+              "sentence": "Voy _____ la escuela",
+              "options": [
+                "a",
+                "en",
+                "de"
+              ],
+              "answer": "a",
+              "explanation": "Use \"a\" for direction/destination"
+            },
+            {
+              "sentence": "El libro está _____ la mesa",
+              "options": [
+                "en",
+                "a",
+                "de"
+              ],
+              "answer": "en",
+              "explanation": "Use \"en\" for location on a surface"
+            }
+          ]
+        },
+        {
+          "type": "por_para",
+          "instructions": "Choose between por and para",
+          "prompts": [
+            {
+              "sentence": "Estudio _____ ser médico",
+              "options": [
+                "por",
+                "para"
+              ],
+              "answer": "para",
+              "explanation": "Use \"para\" for purpose/goal"
+            },
+            {
+              "sentence": "Camino _____ el parque",
+              "options": [
+                "por",
+                "para"
+              ],
+              "answer": "por",
+              "explanation": "Use \"por\" for movement through a place"
+            }
+          ]
+        }
+      ],
+      "estimated_duration": 15,
+      "difficulty_level": "intermediate",
+      "content_type": "practice"
+    },
+    "quiz": {
+      "title": "Por Vs Para Quiz",
+      "description": "Assessment quiz for por vs para",
+      "questions": [
+        {
+          "type": "multiple_choice",
+          "question": "Which sentence correctly uses por vs para?",
+          "options": [
+            "Es correcto",
+            "Está correcto"
+          ],
+          "correct_answer": "Es correcto",
+          "explanation": "Use ser for permanent characteristics"
+        }
+      ],
+      "estimated_duration": 10,
+      "difficulty_level": "intermediate",
+      "content_type": "quiz"
+    }
+  },
+  {
+    "topic": {
+      "slug": "formation",
+      "category": "adverbs",
+      "hasContent": false
+    },
+    "practice": {
+      "title": "Formation Practice",
+      "description": "Interactive practice exercises for formation",
+      "exercises": [
+        {
+          "type": "formation",
+          "instructions": "Form adverbs from adjectives",
+          "prompts": [
+            {
+              "adjective": "rápido",
+              "answer": "rápidamente",
+              "explanation": "Add -mente to feminine form of adjective"
+            },
+            {
+              "adjective": "fácil",
+              "answer": "fácilmente",
+              "explanation": "Add -mente to adjectives ending in consonant"
+            }
+          ]
+        },
+        {
+          "type": "usage",
+          "instructions": "Choose the correct adverb",
+          "prompts": [
+            {
+              "sentence": "Habla muy _____",
+              "options": [
+                "rápido",
+                "rápidamente"
+              ],
+              "answer": "rápidamente",
+              "explanation": "Use adverb to modify verb"
+            }
+          ]
+        }
+      ],
+      "estimated_duration": 15,
+      "difficulty_level": "intermediate",
+      "content_type": "practice"
+    },
+    "quiz": {
+      "title": "Formation Quiz",
+      "description": "Assessment quiz for formation",
+      "questions": [
+        {
+          "type": "multiple_choice",
+          "question": "Which sentence correctly uses formation?",
+          "options": [
+            "Es correcto",
+            "Está correcto"
+          ],
+          "correct_answer": "Es correcto",
+          "explanation": "Use ser for permanent characteristics"
+        }
+      ],
+      "estimated_duration": 10,
+      "difficulty_level": "intermediate",
+      "content_type": "quiz"
+    }
+  },
+  {
+    "topic": {
+      "slug": "definite-articles",
+      "category": "articles",
+      "hasContent": false
+    },
+    "practice": {
+      "title": "Definite Articles Practice",
+      "description": "Interactive practice exercises for definite articles",
+      "exercises": [
+        {
+          "type": "definite_indefinite",
+          "instructions": "Choose the correct article",
+          "prompts": [
+            {
+              "noun": "casa",
+              "context": "specific",
+              "answer": "la casa",
+              "explanation": "Use definite article for specific reference"
+            },
+            {
+              "noun": "libro",
+              "context": "general",
+              "answer": "un libro",
+              "explanation": "Use indefinite article for general reference"
+            }
+          ]
+        },
+        {
+          "type": "gender_agreement",
+          "instructions": "Match articles with noun gender",
+          "prompts": [
+            {
+              "noun": "problema",
+              "answer": "el problema",
+              "explanation": "Problema is masculine despite ending in -a"
+            },
+            {
+              "noun": "mano",
+              "answer": "la mano",
+              "explanation": "Mano is feminine despite ending in -o"
+            }
+          ]
+        }
+      ],
+      "estimated_duration": 15,
+      "difficulty_level": "intermediate",
+      "content_type": "practice"
+    },
+    "quiz": {
+      "title": "Definite Articles Quiz",
+      "description": "Assessment quiz for definite articles",
+      "questions": [
+        {
+          "type": "multiple_choice",
+          "question": "Which sentence correctly uses definite articles?",
+          "options": [
+            "Es correcto",
+            "Está correcto"
+          ],
+          "correct_answer": "Es correcto",
+          "explanation": "Use ser for permanent characteristics"
+        }
+      ],
+      "estimated_duration": 10,
+      "difficulty_level": "intermediate",
+      "content_type": "quiz"
+    }
+  },
+  {
+    "topic": {
+      "slug": "definite-indefinite",
+      "category": "articles",
+      "hasContent": false
+    },
+    "practice": {
+      "title": "Definite Indefinite Practice",
+      "description": "Interactive practice exercises for definite indefinite",
+      "exercises": [
+        {
+          "type": "definite_indefinite",
+          "instructions": "Choose the correct article",
+          "prompts": [
+            {
+              "noun": "casa",
+              "context": "specific",
+              "answer": "la casa",
+              "explanation": "Use definite article for specific reference"
+            },
+            {
+              "noun": "libro",
+              "context": "general",
+              "answer": "un libro",
+              "explanation": "Use indefinite article for general reference"
+            }
+          ]
+        },
+        {
+          "type": "gender_agreement",
+          "instructions": "Match articles with noun gender",
+          "prompts": [
+            {
+              "noun": "problema",
+              "answer": "el problema",
+              "explanation": "Problema is masculine despite ending in -a"
+            },
+            {
+              "noun": "mano",
+              "answer": "la mano",
+              "explanation": "Mano is feminine despite ending in -o"
+            }
+          ]
+        }
+      ],
+      "estimated_duration": 15,
+      "difficulty_level": "intermediate",
+      "content_type": "practice"
+    },
+    "quiz": {
+      "title": "Definite Indefinite Quiz",
+      "description": "Assessment quiz for definite indefinite",
+      "questions": [
+        {
+          "type": "multiple_choice",
+          "question": "Which sentence correctly uses definite indefinite?",
+          "options": [
+            "Es correcto",
+            "Está correcto"
+          ],
+          "correct_answer": "Es correcto",
+          "explanation": "Use ser for permanent characteristics"
+        }
+      ],
+      "estimated_duration": 10,
+      "difficulty_level": "intermediate",
+      "content_type": "quiz"
+    }
+  },
+  {
+    "topic": {
+      "slug": "agreement-position",
+      "category": "nouns",
+      "hasContent": false
+    },
+    "practice": {
+      "title": "Agreement Position Practice",
+      "description": "Interactive practice exercises for agreement position",
+      "exercises": [
+        {
+          "type": "gender",
+          "instructions": "Identify the gender of these nouns",
+          "prompts": [
+            {
+              "noun": "mesa",
+              "answer": "feminine",
+              "options": [
+                "masculine",
+                "feminine"
+              ],
+              "explanation": "Most nouns ending in -a are feminine"
+            },
+            {
+              "noun": "problema",
+              "answer": "masculine",
+              "options": [
+                "masculine",
+                "feminine"
+              ],
+              "explanation": "Problema is masculine despite ending in -a"
+            }
+          ]
+        },
+        {
+          "type": "plural",
+          "instructions": "Form the plural of these nouns",
+          "prompts": [
+            {
+              "singular": "casa",
+              "answer": "casas",
+              "explanation": "Add -s to nouns ending in vowels"
+            },
+            {
+              "singular": "ciudad",
+              "answer": "ciudades",
+              "explanation": "Add -es to nouns ending in consonants"
+            }
+          ]
+        }
+      ],
+      "estimated_duration": 15,
+      "difficulty_level": "intermediate",
+      "content_type": "practice"
+    },
+    "quiz": {
+      "title": "Agreement Position Quiz",
+      "description": "Assessment quiz for agreement position",
+      "questions": [
+        {
+          "type": "multiple_choice",
+          "question": "What is the gender of \"problema\"?",
+          "options": [
+            "masculine",
+            "feminine"
+          ],
+          "correct_answer": "masculine",
+          "explanation": "Problema is masculine despite ending in -a"
+        }
+      ],
+      "estimated_duration": 10,
+      "difficulty_level": "intermediate",
+      "content_type": "quiz"
+    }
+  },
+  {
+    "topic": {
+      "slug": "gender-and-plurals",
+      "category": "nouns",
+      "hasContent": false
+    },
+    "practice": {
+      "title": "Gender And Plurals Practice",
+      "description": "Interactive practice exercises for gender and plurals",
+      "exercises": [
+        {
+          "type": "gender",
+          "instructions": "Identify the gender of these nouns",
+          "prompts": [
+            {
+              "noun": "mesa",
+              "answer": "feminine",
+              "options": [
+                "masculine",
+                "feminine"
+              ],
+              "explanation": "Most nouns ending in -a are feminine"
+            },
+            {
+              "noun": "problema",
+              "answer": "masculine",
+              "options": [
+                "masculine",
+                "feminine"
+              ],
+              "explanation": "Problema is masculine despite ending in -a"
+            }
+          ]
+        },
+        {
+          "type": "plural",
+          "instructions": "Form the plural of these nouns",
+          "prompts": [
+            {
+              "singular": "casa",
+              "answer": "casas",
+              "explanation": "Add -s to nouns ending in vowels"
+            },
+            {
+              "singular": "ciudad",
+              "answer": "ciudades",
+              "explanation": "Add -es to nouns ending in consonants"
+            }
+          ]
+        }
+      ],
+      "estimated_duration": 15,
+      "difficulty_level": "beginner",
+      "content_type": "practice"
+    },
+    "quiz": {
+      "title": "Gender And Plurals Quiz",
+      "description": "Assessment quiz for gender and plurals",
+      "questions": [
+        {
+          "type": "multiple_choice",
+          "question": "What is the gender of \"problema\"?",
+          "options": [
+            "masculine",
+            "feminine"
+          ],
+          "correct_answer": "masculine",
+          "explanation": "Problema is masculine despite ending in -a"
+        }
+      ],
+      "estimated_duration": 10,
+      "difficulty_level": "beginner",
+      "content_type": "quiz"
+    }
+  },
+  {
+    "topic": {
+      "slug": "gender-rules",
+      "category": "nouns",
+      "hasContent": false
+    },
+    "practice": {
+      "title": "Gender Rules Practice",
+      "description": "Interactive practice exercises for gender rules",
+      "exercises": [
+        {
+          "type": "gender",
+          "instructions": "Identify the gender of these nouns",
+          "prompts": [
+            {
+              "noun": "mesa",
+              "answer": "feminine",
+              "options": [
+                "masculine",
+                "feminine"
+              ],
+              "explanation": "Most nouns ending in -a are feminine"
+            },
+            {
+              "noun": "problema",
+              "answer": "masculine",
+              "options": [
+                "masculine",
+                "feminine"
+              ],
+              "explanation": "Problema is masculine despite ending in -a"
+            }
+          ]
+        },
+        {
+          "type": "plural",
+          "instructions": "Form the plural of these nouns",
+          "prompts": [
+            {
+              "singular": "casa",
+              "answer": "casas",
+              "explanation": "Add -s to nouns ending in vowels"
+            },
+            {
+              "singular": "ciudad",
+              "answer": "ciudades",
+              "explanation": "Add -es to nouns ending in consonants"
+            }
+          ]
+        }
+      ],
+      "estimated_duration": 15,
+      "difficulty_level": "beginner",
+      "content_type": "practice"
+    },
+    "quiz": {
+      "title": "Gender Rules Quiz",
+      "description": "Assessment quiz for gender rules",
+      "questions": [
+        {
+          "type": "multiple_choice",
+          "question": "What is the gender of \"problema\"?",
+          "options": [
+            "masculine",
+            "feminine"
+          ],
+          "correct_answer": "masculine",
+          "explanation": "Problema is masculine despite ending in -a"
+        }
+      ],
+      "estimated_duration": 10,
+      "difficulty_level": "beginner",
+      "content_type": "quiz"
+    }
+  },
+  {
+    "topic": {
+      "slug": "nominalisation",
+      "category": "nouns",
+      "hasContent": false
+    },
+    "practice": {
+      "title": "Nominalisation Practice",
+      "description": "Interactive practice exercises for nominalisation",
+      "exercises": [
+        {
+          "type": "gender",
+          "instructions": "Identify the gender of these nouns",
+          "prompts": [
+            {
+              "noun": "mesa",
+              "answer": "feminine",
+              "options": [
+                "masculine",
+                "feminine"
+              ],
+              "explanation": "Most nouns ending in -a are feminine"
+            },
+            {
+              "noun": "problema",
+              "answer": "masculine",
+              "options": [
+                "masculine",
+                "feminine"
+              ],
+              "explanation": "Problema is masculine despite ending in -a"
+            }
+          ]
+        },
+        {
+          "type": "plural",
+          "instructions": "Form the plural of these nouns",
+          "prompts": [
+            {
+              "singular": "casa",
+              "answer": "casas",
+              "explanation": "Add -s to nouns ending in vowels"
+            },
+            {
+              "singular": "ciudad",
+              "answer": "ciudades",
+              "explanation": "Add -es to nouns ending in consonants"
+            }
+          ]
+        }
+      ],
+      "estimated_duration": 15,
+      "difficulty_level": "advanced",
+      "content_type": "practice"
+    },
+    "quiz": {
+      "title": "Nominalisation Quiz",
+      "description": "Assessment quiz for nominalisation",
+      "questions": [
+        {
+          "type": "multiple_choice",
+          "question": "What is the gender of \"problema\"?",
+          "options": [
+            "masculine",
+            "feminine"
+          ],
+          "correct_answer": "masculine",
+          "explanation": "Problema is masculine despite ending in -a"
+        }
+      ],
+      "estimated_duration": 10,
+      "difficulty_level": "advanced",
+      "content_type": "quiz"
+    }
+  },
+  {
+    "topic": {
+      "slug": "plurals",
+      "category": "nouns",
+      "hasContent": false
+    },
+    "practice": {
+      "title": "Plurals Practice",
+      "description": "Interactive practice exercises for plurals",
+      "exercises": [
+        {
+          "type": "gender",
+          "instructions": "Identify the gender of these nouns",
+          "prompts": [
+            {
+              "noun": "mesa",
+              "answer": "feminine",
+              "options": [
+                "masculine",
+                "feminine"
+              ],
+              "explanation": "Most nouns ending in -a are feminine"
+            },
+            {
+              "noun": "problema",
+              "answer": "masculine",
+              "options": [
+                "masculine",
+                "feminine"
+              ],
+              "explanation": "Problema is masculine despite ending in -a"
+            }
+          ]
+        },
+        {
+          "type": "plural",
+          "instructions": "Form the plural of these nouns",
+          "prompts": [
+            {
+              "singular": "casa",
+              "answer": "casas",
+              "explanation": "Add -s to nouns ending in vowels"
+            },
+            {
+              "singular": "ciudad",
+              "answer": "ciudades",
+              "explanation": "Add -es to nouns ending in consonants"
+            }
+          ]
+        }
+      ],
+      "estimated_duration": 15,
+      "difficulty_level": "beginner",
+      "content_type": "practice"
+    },
+    "quiz": {
+      "title": "Plurals Quiz",
+      "description": "Assessment quiz for plurals",
+      "questions": [
+        {
+          "type": "multiple_choice",
+          "question": "What is the gender of \"problema\"?",
+          "options": [
+            "masculine",
+            "feminine"
+          ],
+          "correct_answer": "masculine",
+          "explanation": "Problema is masculine despite ending in -a"
+        }
+      ],
+      "estimated_duration": 10,
+      "difficulty_level": "beginner",
+      "content_type": "quiz"
+    }
+  },
+  {
+    "topic": {
+      "slug": "possessive-adj",
+      "category": "nouns",
+      "hasContent": false
+    },
+    "practice": {
+      "title": "Possessive Adj Practice",
+      "description": "Interactive practice exercises for possessive adj",
+      "exercises": [
+        {
+          "type": "gender",
+          "instructions": "Identify the gender of these nouns",
+          "prompts": [
+            {
+              "noun": "mesa",
+              "answer": "feminine",
+              "options": [
+                "masculine",
+                "feminine"
+              ],
+              "explanation": "Most nouns ending in -a are feminine"
+            },
+            {
+              "noun": "problema",
+              "answer": "masculine",
+              "options": [
+                "masculine",
+                "feminine"
+              ],
+              "explanation": "Problema is masculine despite ending in -a"
+            }
+          ]
+        },
+        {
+          "type": "plural",
+          "instructions": "Form the plural of these nouns",
+          "prompts": [
+            {
+              "singular": "casa",
+              "answer": "casas",
+              "explanation": "Add -s to nouns ending in vowels"
+            },
+            {
+              "singular": "ciudad",
+              "answer": "ciudades",
+              "explanation": "Add -es to nouns ending in consonants"
+            }
+          ]
+        }
+      ],
+      "estimated_duration": 15,
+      "difficulty_level": "intermediate",
+      "content_type": "practice"
+    },
+    "quiz": {
+      "title": "Possessive Adj Quiz",
+      "description": "Assessment quiz for possessive adj",
+      "questions": [
+        {
+          "type": "multiple_choice",
+          "question": "What is the gender of \"problema\"?",
+          "options": [
+            "masculine",
+            "feminine"
+          ],
+          "correct_answer": "masculine",
+          "explanation": "Problema is masculine despite ending in -a"
+        }
+      ],
+      "estimated_duration": 10,
+      "difficulty_level": "intermediate",
+      "content_type": "quiz"
+    }
+  },
+  {
+    "topic": {
+      "slug": "direct-object",
+      "category": "pronouns",
+      "hasContent": false
+    },
+    "practice": {
+      "title": "Direct Object Practice",
+      "description": "Interactive practice exercises for direct object",
+      "exercises": [
+        {
+          "type": "substitution",
+          "instructions": "Replace nouns with appropriate pronouns",
+          "prompts": [
+            {
+              "sentence": "Veo a María",
+              "answer": "La veo",
+              "explanation": "La replaces feminine direct object"
+            },
+            {
+              "sentence": "Doy el libro a Juan",
+              "answer": "Le doy el libro",
+              "explanation": "Le replaces indirect object"
+            }
+          ]
+        },
+        {
+          "type": "placement",
+          "instructions": "Place pronouns correctly",
+          "prompts": [
+            {
+              "elements": [
+                "quiero",
+                "ver",
+                "lo"
+              ],
+              "answer": "Quiero verlo / Lo quiero ver",
+              "explanation": "Pronouns can attach to infinitive or precede conjugated verb"
+            }
+          ]
+        }
+      ],
+      "estimated_duration": 15,
+      "difficulty_level": "intermediate",
+      "content_type": "practice"
+    },
+    "quiz": {
+      "title": "Direct Object Quiz",
+      "description": "Assessment quiz for direct object",
+      "questions": [
+        {
+          "type": "multiple_choice",
+          "question": "Replace the direct object: \"Veo el libro\"",
+          "options": [
+            "Lo veo",
+            "La veo",
+            "Le veo"
+          ],
+          "correct_answer": "Lo veo",
+          "explanation": "Lo replaces masculine direct objects"
+        }
+      ],
+      "estimated_duration": 10,
+      "difficulty_level": "intermediate",
+      "content_type": "quiz"
+    }
+  },
+  {
+    "topic": {
+      "slug": "indirect-object",
+      "category": "pronouns",
+      "hasContent": false
+    },
+    "practice": {
+      "title": "Indirect Object Practice",
+      "description": "Interactive practice exercises for indirect object",
+      "exercises": [
+        {
+          "type": "substitution",
+          "instructions": "Replace nouns with appropriate pronouns",
+          "prompts": [
+            {
+              "sentence": "Veo a María",
+              "answer": "La veo",
+              "explanation": "La replaces feminine direct object"
+            },
+            {
+              "sentence": "Doy el libro a Juan",
+              "answer": "Le doy el libro",
+              "explanation": "Le replaces indirect object"
+            }
+          ]
+        },
+        {
+          "type": "placement",
+          "instructions": "Place pronouns correctly",
+          "prompts": [
+            {
+              "elements": [
+                "quiero",
+                "ver",
+                "lo"
+              ],
+              "answer": "Quiero verlo / Lo quiero ver",
+              "explanation": "Pronouns can attach to infinitive or precede conjugated verb"
+            }
+          ]
+        }
+      ],
+      "estimated_duration": 15,
+      "difficulty_level": "intermediate",
+      "content_type": "practice"
+    },
+    "quiz": {
+      "title": "Indirect Object Quiz",
+      "description": "Assessment quiz for indirect object",
+      "questions": [
+        {
+          "type": "multiple_choice",
+          "question": "Replace the direct object: \"Veo el libro\"",
+          "options": [
+            "Lo veo",
+            "La veo",
+            "Le veo"
+          ],
+          "correct_answer": "Lo veo",
+          "explanation": "Lo replaces masculine direct objects"
+        }
+      ],
+      "estimated_duration": 10,
+      "difficulty_level": "intermediate",
+      "content_type": "quiz"
+    }
+  },
+  {
+    "topic": {
+      "slug": "interrogative",
+      "category": "pronouns",
+      "hasContent": false
+    },
+    "practice": {
+      "title": "Interrogative Practice",
+      "description": "Interactive practice exercises for interrogative",
+      "exercises": [
+        {
+          "type": "substitution",
+          "instructions": "Replace nouns with appropriate pronouns",
+          "prompts": [
+            {
+              "sentence": "Veo a María",
+              "answer": "La veo",
+              "explanation": "La replaces feminine direct object"
+            },
+            {
+              "sentence": "Doy el libro a Juan",
+              "answer": "Le doy el libro",
+              "explanation": "Le replaces indirect object"
+            }
+          ]
+        },
+        {
+          "type": "placement",
+          "instructions": "Place pronouns correctly",
+          "prompts": [
+            {
+              "elements": [
+                "quiero",
+                "ver",
+                "lo"
+              ],
+              "answer": "Quiero verlo / Lo quiero ver",
+              "explanation": "Pronouns can attach to infinitive or precede conjugated verb"
+            }
+          ]
+        }
+      ],
+      "estimated_duration": 15,
+      "difficulty_level": "intermediate",
+      "content_type": "practice"
+    },
+    "quiz": {
+      "title": "Interrogative Quiz",
+      "description": "Assessment quiz for interrogative",
+      "questions": [
+        {
+          "type": "multiple_choice",
+          "question": "Replace the direct object: \"Veo el libro\"",
+          "options": [
+            "Lo veo",
+            "La veo",
+            "Le veo"
+          ],
+          "correct_answer": "Lo veo",
+          "explanation": "Lo replaces masculine direct objects"
+        }
+      ],
+      "estimated_duration": 10,
+      "difficulty_level": "intermediate",
+      "content_type": "quiz"
+    }
+  },
+  {
+    "topic": {
+      "slug": "personal",
+      "category": "pronouns",
+      "hasContent": false
+    },
+    "practice": {
+      "title": "Personal Practice",
+      "description": "Interactive practice exercises for personal",
+      "exercises": [
+        {
+          "type": "substitution",
+          "instructions": "Replace nouns with appropriate pronouns",
+          "prompts": [
+            {
+              "sentence": "Veo a María",
+              "answer": "La veo",
+              "explanation": "La replaces feminine direct object"
+            },
+            {
+              "sentence": "Doy el libro a Juan",
+              "answer": "Le doy el libro",
+              "explanation": "Le replaces indirect object"
+            }
+          ]
+        },
+        {
+          "type": "placement",
+          "instructions": "Place pronouns correctly",
+          "prompts": [
+            {
+              "elements": [
+                "quiero",
+                "ver",
+                "lo"
+              ],
+              "answer": "Quiero verlo / Lo quiero ver",
+              "explanation": "Pronouns can attach to infinitive or precede conjugated verb"
+            }
+          ]
+        }
+      ],
+      "estimated_duration": 15,
+      "difficulty_level": "intermediate",
+      "content_type": "practice"
+    },
+    "quiz": {
+      "title": "Personal Quiz",
+      "description": "Assessment quiz for personal",
+      "questions": [
+        {
+          "type": "multiple_choice",
+          "question": "Replace the direct object: \"Veo el libro\"",
+          "options": [
+            "Lo veo",
+            "La veo",
+            "Le veo"
+          ],
+          "correct_answer": "Lo veo",
+          "explanation": "Lo replaces masculine direct objects"
+        }
+      ],
+      "estimated_duration": 10,
+      "difficulty_level": "intermediate",
+      "content_type": "quiz"
+    }
+  },
+  {
+    "topic": {
+      "slug": "possessive-pronouns",
+      "category": "pronouns",
+      "hasContent": false
+    },
+    "practice": {
+      "title": "Possessive Pronouns Practice",
+      "description": "Interactive practice exercises for possessive pronouns",
+      "exercises": [
+        {
+          "type": "substitution",
+          "instructions": "Replace nouns with appropriate pronouns",
+          "prompts": [
+            {
+              "sentence": "Veo a María",
+              "answer": "La veo",
+              "explanation": "La replaces feminine direct object"
+            },
+            {
+              "sentence": "Doy el libro a Juan",
+              "answer": "Le doy el libro",
+              "explanation": "Le replaces indirect object"
+            }
+          ]
+        },
+        {
+          "type": "placement",
+          "instructions": "Place pronouns correctly",
+          "prompts": [
+            {
+              "elements": [
+                "quiero",
+                "ver",
+                "lo"
+              ],
+              "answer": "Quiero verlo / Lo quiero ver",
+              "explanation": "Pronouns can attach to infinitive or precede conjugated verb"
+            }
+          ]
+        }
+      ],
+      "estimated_duration": 15,
+      "difficulty_level": "intermediate",
+      "content_type": "practice"
+    },
+    "quiz": {
+      "title": "Possessive Pronouns Quiz",
+      "description": "Assessment quiz for possessive pronouns",
+      "questions": [
+        {
+          "type": "multiple_choice",
+          "question": "Replace the direct object: \"Veo el libro\"",
+          "options": [
+            "Lo veo",
+            "La veo",
+            "Le veo"
+          ],
+          "correct_answer": "Lo veo",
+          "explanation": "Lo replaces masculine direct objects"
+        }
+      ],
+      "estimated_duration": 10,
+      "difficulty_level": "intermediate",
+      "content_type": "quiz"
+    }
+  },
+  {
+    "topic": {
+      "slug": "reflexive-pronouns",
+      "category": "pronouns",
+      "hasContent": false
+    },
+    "practice": {
+      "title": "Reflexive Pronouns Practice",
+      "description": "Interactive practice exercises for reflexive pronouns",
+      "exercises": [
+        {
+          "type": "substitution",
+          "instructions": "Replace nouns with appropriate pronouns",
+          "prompts": [
+            {
+              "sentence": "Veo a María",
+              "answer": "La veo",
+              "explanation": "La replaces feminine direct object"
+            },
+            {
+              "sentence": "Doy el libro a Juan",
+              "answer": "Le doy el libro",
+              "explanation": "Le replaces indirect object"
+            }
+          ]
+        },
+        {
+          "type": "placement",
+          "instructions": "Place pronouns correctly",
+          "prompts": [
+            {
+              "elements": [
+                "quiero",
+                "ver",
+                "lo"
+              ],
+              "answer": "Quiero verlo / Lo quiero ver",
+              "explanation": "Pronouns can attach to infinitive or precede conjugated verb"
+            }
+          ]
+        }
+      ],
+      "estimated_duration": 15,
+      "difficulty_level": "intermediate",
+      "content_type": "practice"
+    },
+    "quiz": {
+      "title": "Reflexive Pronouns Quiz",
+      "description": "Assessment quiz for reflexive pronouns",
+      "questions": [
+        {
+          "type": "multiple_choice",
+          "question": "Replace the direct object: \"Veo el libro\"",
+          "options": [
+            "Lo veo",
+            "La veo",
+            "Le veo"
+          ],
+          "correct_answer": "Lo veo",
+          "explanation": "Lo replaces masculine direct objects"
+        }
+      ],
+      "estimated_duration": 10,
+      "difficulty_level": "intermediate",
+      "content_type": "quiz"
+    }
+  },
+  {
+    "topic": {
+      "slug": "relative",
+      "category": "pronouns",
+      "hasContent": false
+    },
+    "practice": {
+      "title": "Relative Practice",
+      "description": "Interactive practice exercises for relative",
+      "exercises": [
+        {
+          "type": "substitution",
+          "instructions": "Replace nouns with appropriate pronouns",
+          "prompts": [
+            {
+              "sentence": "Veo a María",
+              "answer": "La veo",
+              "explanation": "La replaces feminine direct object"
+            },
+            {
+              "sentence": "Doy el libro a Juan",
+              "answer": "Le doy el libro",
+              "explanation": "Le replaces indirect object"
+            }
+          ]
+        },
+        {
+          "type": "placement",
+          "instructions": "Place pronouns correctly",
+          "prompts": [
+            {
+              "elements": [
+                "quiero",
+                "ver",
+                "lo"
+              ],
+              "answer": "Quiero verlo / Lo quiero ver",
+              "explanation": "Pronouns can attach to infinitive or precede conjugated verb"
+            }
+          ]
+        }
+      ],
+      "estimated_duration": 15,
+      "difficulty_level": "intermediate",
+      "content_type": "practice"
+    },
+    "quiz": {
+      "title": "Relative Quiz",
+      "description": "Assessment quiz for relative",
+      "questions": [
+        {
+          "type": "multiple_choice",
+          "question": "Replace the direct object: \"Veo el libro\"",
+          "options": [
+            "Lo veo",
+            "La veo",
+            "Le veo"
+          ],
+          "correct_answer": "Lo veo",
+          "explanation": "Lo replaces masculine direct objects"
+        }
+      ],
+      "estimated_duration": 10,
+      "difficulty_level": "intermediate",
+      "content_type": "quiz"
+    }
+  },
+  {
+    "topic": {
+      "slug": "subject",
+      "category": "pronouns",
+      "hasContent": false
+    },
+    "practice": {
+      "title": "Subject Practice",
+      "description": "Interactive practice exercises for subject",
+      "exercises": [
+        {
+          "type": "substitution",
+          "instructions": "Replace nouns with appropriate pronouns",
+          "prompts": [
+            {
+              "sentence": "Veo a María",
+              "answer": "La veo",
+              "explanation": "La replaces feminine direct object"
+            },
+            {
+              "sentence": "Doy el libro a Juan",
+              "answer": "Le doy el libro",
+              "explanation": "Le replaces indirect object"
+            }
+          ]
+        },
+        {
+          "type": "placement",
+          "instructions": "Place pronouns correctly",
+          "prompts": [
+            {
+              "elements": [
+                "quiero",
+                "ver",
+                "lo"
+              ],
+              "answer": "Quiero verlo / Lo quiero ver",
+              "explanation": "Pronouns can attach to infinitive or precede conjugated verb"
+            }
+          ]
+        }
+      ],
+      "estimated_duration": 15,
+      "difficulty_level": "intermediate",
+      "content_type": "practice"
+    },
+    "quiz": {
+      "title": "Subject Quiz",
+      "description": "Assessment quiz for subject",
+      "questions": [
+        {
+          "type": "multiple_choice",
+          "question": "Replace the direct object: \"Veo el libro\"",
+          "options": [
+            "Lo veo",
+            "La veo",
+            "Le veo"
+          ],
+          "correct_answer": "Lo veo",
+          "explanation": "Lo replaces masculine direct objects"
+        }
+      ],
+      "estimated_duration": 10,
+      "difficulty_level": "intermediate",
+      "content_type": "quiz"
+    }
+  },
+  {
+    "topic": {
+      "slug": "sound-symbol",
+      "category": "sounds-spelling",
+      "hasContent": false
+    },
+    "practice": {
+      "title": "Sound Symbol Practice",
+      "description": "Interactive practice exercises for sound symbol",
+      "exercises": [
+        {
+          "type": "accent_placement",
+          "instructions": "Place accents correctly",
+          "prompts": [
+            {
+              "word": "medico",
+              "answer": "médico",
+              "explanation": "Stress on antepenultimate syllable requires accent"
+            },
+            {
+              "word": "corazon",
+              "answer": "corazón",
+              "explanation": "Words ending in -n need accent when stressed on last syllable"
+            }
+          ]
+        },
+        {
+          "type": "stress_identification",
+          "instructions": "Identify the stressed syllable",
+          "prompts": [
+            {
+              "word": "teléfono",
+              "answer": 2,
+              "explanation": "Second syllable is stressed"
+            }
+          ]
+        }
+      ],
+      "estimated_duration": 15,
+      "difficulty_level": "intermediate",
+      "content_type": "practice"
+    },
+    "quiz": {
+      "title": "Sound Symbol Quiz",
+      "description": "Assessment quiz for sound symbol",
+      "questions": [
+        {
+          "type": "multiple_choice",
+          "question": "Which sentence correctly uses sound symbol?",
+          "options": [
+            "Es correcto",
+            "Está correcto"
+          ],
+          "correct_answer": "Es correcto",
+          "explanation": "Use ser for permanent characteristics"
+        }
+      ],
+      "estimated_duration": 10,
+      "difficulty_level": "intermediate",
+      "content_type": "quiz"
+    }
+  },
+  {
+    "topic": {
+      "slug": "stress-patterns",
+      "category": "sounds-spelling",
+      "hasContent": false
+    },
+    "practice": {
+      "title": "Stress Patterns Practice",
+      "description": "Interactive practice exercises for stress patterns",
+      "exercises": [
+        {
+          "type": "accent_placement",
+          "instructions": "Place accents correctly",
+          "prompts": [
+            {
+              "word": "medico",
+              "answer": "médico",
+              "explanation": "Stress on antepenultimate syllable requires accent"
+            },
+            {
+              "word": "corazon",
+              "answer": "corazón",
+              "explanation": "Words ending in -n need accent when stressed on last syllable"
+            }
+          ]
+        },
+        {
+          "type": "stress_identification",
+          "instructions": "Identify the stressed syllable",
+          "prompts": [
+            {
+              "word": "teléfono",
+              "answer": 2,
+              "explanation": "Second syllable is stressed"
+            }
+          ]
+        }
+      ],
+      "estimated_duration": 15,
+      "difficulty_level": "intermediate",
+      "content_type": "practice"
+    },
+    "quiz": {
+      "title": "Stress Patterns Quiz",
+      "description": "Assessment quiz for stress patterns",
+      "questions": [
+        {
+          "type": "multiple_choice",
+          "question": "Which sentence correctly uses stress patterns?",
+          "options": [
+            "Es correcto",
+            "Está correcto"
+          ],
+          "correct_answer": "Es correcto",
+          "explanation": "Use ser for permanent characteristics"
+        }
+      ],
+      "estimated_duration": 10,
+      "difficulty_level": "intermediate",
+      "content_type": "quiz"
+    }
+  },
+  {
+    "topic": {
+      "slug": "written-accents",
+      "category": "sounds-spelling",
+      "hasContent": false
+    },
+    "practice": {
+      "title": "Written Accents Practice",
+      "description": "Interactive practice exercises for written accents",
+      "exercises": [
+        {
+          "type": "accent_placement",
+          "instructions": "Place accents correctly",
+          "prompts": [
+            {
+              "word": "medico",
+              "answer": "médico",
+              "explanation": "Stress on antepenultimate syllable requires accent"
+            },
+            {
+              "word": "corazon",
+              "answer": "corazón",
+              "explanation": "Words ending in -n need accent when stressed on last syllable"
+            }
+          ]
+        },
+        {
+          "type": "stress_identification",
+          "instructions": "Identify the stressed syllable",
+          "prompts": [
+            {
+              "word": "teléfono",
+              "answer": 2,
+              "explanation": "Second syllable is stressed"
+            }
+          ]
+        }
+      ],
+      "estimated_duration": 15,
+      "difficulty_level": "intermediate",
+      "content_type": "practice"
+    },
+    "quiz": {
+      "title": "Written Accents Quiz",
+      "description": "Assessment quiz for written accents",
+      "questions": [
+        {
+          "type": "multiple_choice",
+          "question": "Which sentence correctly uses written accents?",
+          "options": [
+            "Es correcto",
+            "Está correcto"
+          ],
+          "correct_answer": "Es correcto",
+          "explanation": "Use ser for permanent characteristics"
+        }
+      ],
+      "estimated_duration": 10,
+      "difficulty_level": "intermediate",
+      "content_type": "quiz"
+    }
+  },
+  {
+    "topic": {
+      "slug": "adjective-adverb",
+      "category": "word-formation",
+      "hasContent": false
+    },
+    "practice": {
+      "title": "Adjective Adverb Practice",
+      "description": "Interactive practice exercises for adjective adverb",
+      "exercises": [
+        {
+          "type": "suffix_formation",
+          "instructions": "Form words using suffixes",
+          "prompts": [
+            {
+              "base": "casa",
+              "suffix": "-ita",
+              "answer": "casita",
+              "explanation": "Diminutive suffix -ita makes things smaller/cuter"
+            },
+            {
+              "base": "perro",
+              "suffix": "-ón",
+              "answer": "perrón",
+              "explanation": "Augmentative suffix -ón makes things bigger"
+            }
+          ]
+        },
+        {
+          "type": "word_transformation",
+          "instructions": "Transform words between categories",
+          "prompts": [
+            {
+              "adjective": "rápido",
+              "target": "adverb",
+              "answer": "rápidamente",
+              "explanation": "Add -mente to form adverb"
+            }
+          ]
+        }
+      ],
+      "estimated_duration": 15,
+      "difficulty_level": "intermediate",
+      "content_type": "practice"
+    },
+    "quiz": {
+      "title": "Adjective Adverb Quiz",
+      "description": "Assessment quiz for adjective adverb",
+      "questions": [
+        {
+          "type": "multiple_choice",
+          "question": "Which sentence correctly uses adjective adverb?",
+          "options": [
+            "Es correcto",
+            "Está correcto"
+          ],
+          "correct_answer": "Es correcto",
+          "explanation": "Use ser for permanent characteristics"
+        }
+      ],
+      "estimated_duration": 10,
+      "difficulty_level": "intermediate",
+      "content_type": "quiz"
+    }
+  },
+  {
+    "topic": {
+      "slug": "adjective-noun",
+      "category": "word-formation",
+      "hasContent": false
+    },
+    "practice": {
+      "title": "Adjective Noun Practice",
+      "description": "Interactive practice exercises for adjective noun",
+      "exercises": [
+        {
+          "type": "suffix_formation",
+          "instructions": "Form words using suffixes",
+          "prompts": [
+            {
+              "base": "casa",
+              "suffix": "-ita",
+              "answer": "casita",
+              "explanation": "Diminutive suffix -ita makes things smaller/cuter"
+            },
+            {
+              "base": "perro",
+              "suffix": "-ón",
+              "answer": "perrón",
+              "explanation": "Augmentative suffix -ón makes things bigger"
+            }
+          ]
+        },
+        {
+          "type": "word_transformation",
+          "instructions": "Transform words between categories",
+          "prompts": [
+            {
+              "adjective": "rápido",
+              "target": "adverb",
+              "answer": "rápidamente",
+              "explanation": "Add -mente to form adverb"
+            }
+          ]
+        }
+      ],
+      "estimated_duration": 15,
+      "difficulty_level": "intermediate",
+      "content_type": "practice"
+    },
+    "quiz": {
+      "title": "Adjective Noun Quiz",
+      "description": "Assessment quiz for adjective noun",
+      "questions": [
+        {
+          "type": "multiple_choice",
+          "question": "Which sentence correctly uses adjective noun?",
+          "options": [
+            "Es correcto",
+            "Está correcto"
+          ],
+          "correct_answer": "Es correcto",
+          "explanation": "Use ser for permanent characteristics"
+        }
+      ],
+      "estimated_duration": 10,
+      "difficulty_level": "intermediate",
+      "content_type": "quiz"
+    }
+  },
+  {
+    "topic": {
+      "slug": "augmentative-suffixes",
+      "category": "word-formation",
+      "hasContent": false
+    },
+    "practice": {
+      "title": "Augmentative Suffixes Practice",
+      "description": "Interactive practice exercises for augmentative suffixes",
+      "exercises": [
+        {
+          "type": "suffix_formation",
+          "instructions": "Form words using suffixes",
+          "prompts": [
+            {
+              "base": "casa",
+              "suffix": "-ita",
+              "answer": "casita",
+              "explanation": "Diminutive suffix -ita makes things smaller/cuter"
+            },
+            {
+              "base": "perro",
+              "suffix": "-ón",
+              "answer": "perrón",
+              "explanation": "Augmentative suffix -ón makes things bigger"
+            }
+          ]
+        },
+        {
+          "type": "word_transformation",
+          "instructions": "Transform words between categories",
+          "prompts": [
+            {
+              "adjective": "rápido",
+              "target": "adverb",
+              "answer": "rápidamente",
+              "explanation": "Add -mente to form adverb"
+            }
+          ]
+        }
+      ],
+      "estimated_duration": 15,
+      "difficulty_level": "intermediate",
+      "content_type": "practice"
+    },
+    "quiz": {
+      "title": "Augmentative Suffixes Quiz",
+      "description": "Assessment quiz for augmentative suffixes",
+      "questions": [
+        {
+          "type": "multiple_choice",
+          "question": "Which sentence correctly uses augmentative suffixes?",
+          "options": [
+            "Es correcto",
+            "Está correcto"
+          ],
+          "correct_answer": "Es correcto",
+          "explanation": "Use ser for permanent characteristics"
+        }
+      ],
+      "estimated_duration": 10,
+      "difficulty_level": "intermediate",
+      "content_type": "quiz"
+    }
+  },
+  {
+    "topic": {
+      "slug": "diminutive-suffixes",
+      "category": "word-formation",
+      "hasContent": false
+    },
+    "practice": {
+      "title": "Diminutive Suffixes Practice",
+      "description": "Interactive practice exercises for diminutive suffixes",
+      "exercises": [
+        {
+          "type": "suffix_formation",
+          "instructions": "Form words using suffixes",
+          "prompts": [
+            {
+              "base": "casa",
+              "suffix": "-ita",
+              "answer": "casita",
+              "explanation": "Diminutive suffix -ita makes things smaller/cuter"
+            },
+            {
+              "base": "perro",
+              "suffix": "-ón",
+              "answer": "perrón",
+              "explanation": "Augmentative suffix -ón makes things bigger"
+            }
+          ]
+        },
+        {
+          "type": "word_transformation",
+          "instructions": "Transform words between categories",
+          "prompts": [
+            {
+              "adjective": "rápido",
+              "target": "adverb",
+              "answer": "rápidamente",
+              "explanation": "Add -mente to form adverb"
+            }
+          ]
+        }
+      ],
+      "estimated_duration": 15,
+      "difficulty_level": "intermediate",
+      "content_type": "practice"
+    },
+    "quiz": {
+      "title": "Diminutive Suffixes Quiz",
+      "description": "Assessment quiz for diminutive suffixes",
+      "questions": [
+        {
+          "type": "multiple_choice",
+          "question": "Which sentence correctly uses diminutive suffixes?",
+          "options": [
+            "Es correcto",
+            "Está correcto"
+          ],
+          "correct_answer": "Es correcto",
+          "explanation": "Use ser for permanent characteristics"
+        }
+      ],
+      "estimated_duration": 10,
+      "difficulty_level": "intermediate",
+      "content_type": "quiz"
+    }
+  }
+]

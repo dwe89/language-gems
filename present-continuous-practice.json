@@ -1,0 +1,207 @@
+{
+  "practice_content": {
+    "instructions": "Practice Spanish present continuous (estar + gerund) with these exercises.",
+    "practice_type": "mixed_exercises",
+    "estimated_duration": 15,
+    "exercises": [
+      {
+        "type": "multiple_choice",
+        "instructions": "Choose the correct present continuous form",
+        "prompts": [
+          {
+            "question": "How do you say 'I am eating' in Spanish?",
+            "options": ["estoy comiendo", "estás comiendo", "está comiendo", "estamos comiendo"],
+            "answer": "estoy comiendo",
+            "explanation": "'Estoy comiendo' means 'I am eating'"
+          },
+          {
+            "question": "How do you say 'you are studying' in Spanish?",
+            "options": ["estoy estudiando", "estás estudiando", "está estudiando", "estamos estudiando"],
+            "answer": "estás estudiando",
+            "explanation": "'Estás estudiando' means 'you are studying'"
+          },
+          {
+            "question": "How do you say 'she is working' in Spanish?",
+            "options": ["estoy trabajando", "estás trabajando", "está trabajando", "estamos trabajando"],
+            "answer": "está trabajando",
+            "explanation": "'Está trabajando' means 'she is working'"
+          },
+          {
+            "question": "How do you say 'we are watching' in Spanish?",
+            "options": ["estoy viendo", "estás viendo", "está viendo", "estamos viendo"],
+            "answer": "estamos viendo",
+            "explanation": "'Estamos viendo' means 'we are watching'"
+          },
+          {
+            "question": "How do you say 'they are sleeping' in Spanish?",
+            "options": ["está durmiendo", "estás durmiendo", "están durmiendo", "estamos durmiendo"],
+            "answer": "están durmiendo",
+            "explanation": "'Están durmiendo' means 'they are sleeping'"
+          },
+          {
+            "question": "What's the gerund of 'hablar'?",
+            "options": ["hablando", "hablendo", "habliendo", "hablundo"],
+            "answer": "hablando",
+            "explanation": "Regular -ar verbs form gerund with -ando"
+          },
+          {
+            "question": "What's the gerund of 'comer'?",
+            "options": ["comendo", "comiendo", "comando", "comundo"],
+            "answer": "comiendo",
+            "explanation": "Regular -er verbs form gerund with -iendo"
+          },
+          {
+            "question": "What's the gerund of 'vivir'?",
+            "options": ["vivendo", "viviendo", "vivando", "vivundo"],
+            "answer": "viviendo",
+            "explanation": "Regular -ir verbs form gerund with -iendo"
+          },
+          {
+            "question": "What's the gerund of 'leer'?",
+            "options": ["leendo", "leyendo", "leiendo", "leando"],
+            "answer": "leyendo",
+            "explanation": "'Leer' has irregular gerund 'leyendo'"
+          },
+          {
+            "question": "What's the gerund of 'dormir'?",
+            "options": ["dormiendo", "durmiendo", "dormando", "durmendo"],
+            "answer": "durmiendo",
+            "explanation": "'Dormir' has stem change o→u in gerund"
+          }
+        ]
+      },
+      {
+        "type": "fill_blank",
+        "instructions": "Complete with the correct present continuous form",
+        "prompts": [
+          {
+            "sentence": "Yo _____ _____ español. (I am speaking Spanish.)",
+            "answer": "estoy hablando",
+            "explanation": "'Estoy hablando' = I am speaking"
+          },
+          {
+            "sentence": "Tú _____ _____ la televisión. (You are watching TV.)",
+            "answer": "estás viendo",
+            "explanation": "'Estás viendo' = you are watching"
+          },
+          {
+            "sentence": "Ella _____ _____ un libro. (She is reading a book.)",
+            "answer": "está leyendo",
+            "explanation": "'Está leyendo' = she is reading"
+          },
+          {
+            "sentence": "Nosotros _____ _____ en el parque. (We are walking in the park.)",
+            "answer": "estamos caminando",
+            "explanation": "'Estamos caminando' = we are walking"
+          },
+          {
+            "sentence": "Ellos _____ _____ música. (They are listening to music.)",
+            "answer": "están escuchando",
+            "explanation": "'Están escuchando' = they are listening"
+          },
+          {
+            "sentence": "¿Qué _____ _____? (What are you doing?)",
+            "answer": "estás haciendo",
+            "explanation": "'Estás haciendo' = you are doing"
+          },
+          {
+            "sentence": "Mi hermano _____ _____ la cena. (My brother is cooking dinner.)",
+            "answer": "está cocinando",
+            "explanation": "'Está cocinando' = he is cooking"
+          },
+          {
+            "sentence": "Nosotras _____ _____ para el examen. (We are studying for the exam.)",
+            "answer": "estamos estudiando",
+            "explanation": "'Estamos estudiando' = we are studying"
+          },
+          {
+            "sentence": "Vosotros _____ _____ fútbol. (You all are playing soccer.)",
+            "answer": "estáis jugando",
+            "explanation": "'Estáis jugando' = you all are playing"
+          },
+          {
+            "sentence": "El bebé _____ _____. (The baby is sleeping.)",
+            "answer": "está durmiendo",
+            "explanation": "'Está durmiendo' = he/she is sleeping"
+          }
+        ]
+      },
+      {
+        "type": "conjugation",
+        "instructions": "Form the present continuous",
+        "prompts": [
+          {
+            "verb": "trabajar",
+            "subject": "yo",
+            "answer": "estoy trabajando",
+            "english": "I am working",
+            "explanation": "Yo + estoy + trabajando"
+          },
+          {
+            "verb": "escribir",
+            "subject": "tú",
+            "answer": "estás escribiendo",
+            "english": "you are writing",
+            "explanation": "Tú + estás + escribiendo"
+          },
+          {
+            "verb": "correr",
+            "subject": "él",
+            "answer": "está corriendo",
+            "english": "he is running",
+            "explanation": "Él + está + corriendo"
+          },
+          {
+            "verb": "bailar",
+            "subject": "nosotros",
+            "answer": "estamos bailando",
+            "english": "we are dancing",
+            "explanation": "Nosotros + estamos + bailando"
+          },
+          {
+            "verb": "cantar",
+            "subject": "ellas",
+            "answer": "están cantando",
+            "english": "they are singing",
+            "explanation": "Ellas + están + cantando"
+          },
+          {
+            "verb": "beber",
+            "subject": "usted",
+            "answer": "está bebiendo",
+            "english": "you are drinking",
+            "explanation": "Usted + está + bebiendo"
+          },
+          {
+            "verb": "construir",
+            "subject": "nosotras",
+            "answer": "estamos construyendo",
+            "english": "we are building",
+            "explanation": "Construir → construyendo (irregular gerund)"
+          },
+          {
+            "verb": "pedir",
+            "subject": "vosotros",
+            "answer": "estáis pidiendo",
+            "english": "you all are asking for",
+            "explanation": "Pedir → pidiendo (stem change e→i)"
+          },
+          {
+            "verb": "mentir",
+            "subject": "ellos",
+            "answer": "están mintiendo",
+            "english": "they are lying",
+            "explanation": "Mentir → mintiendo (stem change e→i)"
+          },
+          {
+            "verb": "servir",
+            "subject": "yo",
+            "answer": "estoy sirviendo",
+            "english": "I am serving",
+            "explanation": "Servir → sirviendo (stem change e→i)"
+          }
+        ]
+      }
+    ]
+  }
+}

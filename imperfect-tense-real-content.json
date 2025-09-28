@@ -1,0 +1,358 @@
+{
+  "practice_content": {
+    "instructions": "Practice Spanish imperfect tense with these exercises.",
+    "practice_type": "mixed_exercises",
+    "estimated_duration": 20,
+    "exercises": [
+      {
+        "type": "conjugation",
+        "instructions": "Conjugate these verbs in the imperfect tense",
+        "prompts": [
+          {
+            "verb": "hablar",
+            "subject": "yo",
+            "answer": "hablaba",
+            "english": "I was speaking/used to speak",
+            "explanation": "Regular -ar verbs: hablar → hablaba"
+          },
+          {
+            "verb": "comer",
+            "subject": "tú",
+            "answer": "comías",
+            "english": "you were eating/used to eat",
+            "explanation": "Regular -er verbs: comer → comías"
+          },
+          {
+            "verb": "vivir",
+            "subject": "él",
+            "answer": "vivía",
+            "english": "he was living/used to live",
+            "explanation": "Regular -ir verbs: vivir → vivía"
+          },
+          {
+            "verb": "ser",
+            "subject": "nosotros",
+            "answer": "éramos",
+            "english": "we were/used to be",
+            "explanation": "Irregular: ser → éramos"
+          },
+          {
+            "verb": "ir",
+            "subject": "vosotros",
+            "answer": "ibais",
+            "english": "you all were going/used to go",
+            "explanation": "Irregular: ir → ibais"
+          },
+          {
+            "verb": "ver",
+            "subject": "ellos",
+            "answer": "veían",
+            "english": "they were seeing/used to see",
+            "explanation": "Irregular: ver → veían"
+          },
+          {
+            "verb": "estudiar",
+            "subject": "yo",
+            "answer": "estudiaba",
+            "english": "I was studying/used to study",
+            "explanation": "Regular -ar verbs: estudiar → estudiaba"
+          },
+          {
+            "verb": "beber",
+            "subject": "ella",
+            "answer": "bebía",
+            "english": "she was drinking/used to drink",
+            "explanation": "Regular -er verbs: beber → bebía"
+          },
+          {
+            "verb": "escribir",
+            "subject": "ustedes",
+            "answer": "escribían",
+            "english": "you all were writing/used to write",
+            "explanation": "Regular -ir verbs: escribir → escribían"
+          },
+          {
+            "verb": "jugar",
+            "subject": "tú",
+            "answer": "jugabas",
+            "english": "you were playing/used to play",
+            "explanation": "Regular -ar verbs: jugar → jugabas"
+          }
+        ]
+      },
+      {
+        "type": "multiple_choice",
+        "instructions": "Choose the correct imperfect form",
+        "prompts": [
+          {
+            "question": "What is the imperfect form of 'trabajar' for 'yo'?",
+            "options": ["trabajo", "trabajaba", "trabajé", "trabajaré"],
+            "answer": "trabajaba",
+            "explanation": "Regular -ar imperfect: trabajar → trabajaba"
+          },
+          {
+            "question": "What is the imperfect form of 'leer' for 'tú'?",
+            "options": ["lees", "leías", "leíste", "leerás"],
+            "answer": "leías",
+            "explanation": "Regular -er imperfect: leer → leías"
+          },
+          {
+            "question": "What is the imperfect form of 'dormir' for 'él'?",
+            "options": ["duerme", "dormía", "durmió", "dormirá"],
+            "answer": "dormía",
+            "explanation": "Regular -ir imperfect: dormir → dormía"
+          },
+          {
+            "question": "What is the imperfect form of 'ser' for 'nosotros'?",
+            "options": ["somos", "éramos", "fuimos", "seremos"],
+            "answer": "éramos",
+            "explanation": "Irregular imperfect: ser → éramos"
+          },
+          {
+            "question": "What is the imperfect form of 'ir' for 'ellos'?",
+            "options": ["van", "iban", "fueron", "irán"],
+            "answer": "iban",
+            "explanation": "Irregular imperfect: ir → iban"
+          },
+          {
+            "question": "What is the imperfect form of 'ver' for 'yo'?",
+            "options": ["veo", "veía", "vi", "veré"],
+            "answer": "veía",
+            "explanation": "Irregular imperfect: ver → veía"
+          },
+          {
+            "question": "What is the imperfect form of 'caminar' for 'vosotros'?",
+            "options": ["camináis", "caminabais", "caminasteis", "caminaréis"],
+            "answer": "caminabais",
+            "explanation": "Regular -ar imperfect: caminar → caminabais"
+          },
+          {
+            "question": "What is the imperfect form of 'aprender' for 'ella'?",
+            "options": ["aprende", "aprendía", "aprendió", "aprenderá"],
+            "answer": "aprendía",
+            "explanation": "Regular -er imperfect: aprender → aprendía"
+          },
+          {
+            "question": "What is the imperfect form of 'abrir' for 'ustedes'?",
+            "options": ["abren", "abrían", "abrieron", "abrirán"],
+            "answer": "abrían",
+            "explanation": "Regular -ir imperfect: abrir → abrían"
+          },
+          {
+            "question": "What is the imperfect form of 'cantar' for 'tú'?",
+            "options": ["cantas", "cantabas", "cantaste", "cantarás"],
+            "answer": "cantabas",
+            "explanation": "Regular -ar imperfect: cantar → cantabas"
+          }
+        ]
+      },
+      {
+        "type": "fill_blank",
+        "instructions": "Complete the sentences with the correct imperfect form",
+        "prompts": [
+          {
+            "sentence": "Cuando era niño, _____ (jugar) en el parque todos los días.",
+            "answer": "jugaba",
+            "explanation": "Habitual action in the past: jugar → jugaba"
+          },
+          {
+            "sentence": "Mis abuelos _____ (vivir) en una casa grande.",
+            "answer": "vivían",
+            "explanation": "Description in the past: vivir → vivían"
+          },
+          {
+            "sentence": "Tú _____ (ser) muy tímido cuando eras pequeño.",
+            "answer": "eras",
+            "explanation": "Irregular imperfect: ser → eras"
+          },
+          {
+            "sentence": "Nosotros _____ (ir) a la playa cada verano.",
+            "answer": "íbamos",
+            "explanation": "Irregular imperfect: ir → íbamos"
+          },
+          {
+            "sentence": "Ella _____ (leer) un libro mientras esperaba.",
+            "answer": "leía",
+            "explanation": "Ongoing action in the past: leer → leía"
+          },
+          {
+            "sentence": "Vosotros _____ (ver) la televisión por las tardes.",
+            "answer": "veíais",
+            "explanation": "Irregular imperfect: ver → veíais"
+          },
+          {
+            "sentence": "Yo _____ (estudiar) español en la universidad.",
+            "answer": "estudiaba",
+            "explanation": "Past habit: estudiar → estudiaba"
+          },
+          {
+            "sentence": "Los niños _____ (correr) en el patio.",
+            "answer": "corrían",
+            "explanation": "Ongoing action: correr → corrían"
+          },
+          {
+            "sentence": "Mi madre _____ (cocinar) muy bien.",
+            "answer": "cocinaba",
+            "explanation": "Past characteristic: cocinar → cocinaba"
+          },
+          {
+            "sentence": "¿Qué _____ (hacer) tú los fines de semana?",
+            "answer": "hacías",
+            "explanation": "Past habit: hacer → hacías"
+          }
+        ]
+      }
+    ]
+  },
+  "quiz_content": {
+    "instructions": "Test your knowledge of Spanish imperfect tense.",
+    "quiz_type": "mixed_assessment",
+    "time_limit": 1200,
+    "max_attempts": 3,
+    "passing_score": 70,
+    "show_explanations": true,
+    "randomize_questions": true,
+    "questions": [
+      {
+        "question_text": "What is the imperfect form of 'hablar' for 'yo'?",
+        "options": ["hablo", "hablaba", "hablé", "hablaré"],
+        "correct_answer": "hablaba",
+        "explanation": "Regular -ar imperfect: add -aba endings",
+        "difficulty": "beginner"
+      },
+      {
+        "question_text": "Which verb is irregular in the imperfect?",
+        "options": ["hablar", "comer", "ser", "vivir"],
+        "correct_answer": "ser",
+        "explanation": "Only ser, ir, and ver are irregular in imperfect",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "What is the imperfect form of 'comer' for 'tú'?",
+        "options": ["comes", "comías", "comiste", "comerás"],
+        "correct_answer": "comías",
+        "explanation": "Regular -er imperfect: add -ías endings",
+        "difficulty": "beginner"
+      },
+      {
+        "question_text": "Complete: 'Cuando era niño, _____ (jugar) mucho.'",
+        "options": ["juego", "jugaba", "jugué", "jugaré"],
+        "correct_answer": "jugaba",
+        "explanation": "Habitual past action uses imperfect",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "What is the imperfect form of 'ir' for 'nosotros'?",
+        "options": ["vamos", "íbamos", "fuimos", "iremos"],
+        "correct_answer": "íbamos",
+        "explanation": "Irregular imperfect: ir → íbamos",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "What is the imperfect form of 'ver' for 'ellos'?",
+        "options": ["ven", "veían", "vieron", "verán"],
+        "correct_answer": "veían",
+        "explanation": "Irregular imperfect: ver → veían",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "Complete: 'Mis abuelos _____ (vivir) en España.'",
+        "options": ["viven", "vivían", "vivieron", "vivirán"],
+        "correct_answer": "vivían",
+        "explanation": "Description in the past uses imperfect",
+        "difficulty": "beginner"
+      },
+      {
+        "question_text": "What is the imperfect form of 'estudiar' for 'vosotros'?",
+        "options": ["estudiáis", "estudiabais", "estudiasteis", "estudiaréis"],
+        "correct_answer": "estudiabais",
+        "explanation": "Regular -ar imperfect: add -abais endings",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "Which use describes the imperfect tense?",
+        "options": ["Completed actions", "Habitual actions", "Future actions", "Commands"],
+        "correct_answer": "Habitual actions",
+        "explanation": "Imperfect describes ongoing or habitual past actions",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "Complete: 'Tú _____ (ser) muy inteligente.'",
+        "options": ["eres", "eras", "fuiste", "serás"],
+        "correct_answer": "eras",
+        "explanation": "Irregular imperfect: ser → eras",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "What is the imperfect form of 'escribir' for 'ella'?",
+        "options": ["escribe", "escribía", "escribió", "escribirá"],
+        "correct_answer": "escribía",
+        "explanation": "Regular -ir imperfect: add -ía endings",
+        "difficulty": "beginner"
+      },
+      {
+        "question_text": "Complete: 'Nosotros _____ (ir) al cine los sábados.'",
+        "options": ["vamos", "íbamos", "fuimos", "iremos"],
+        "correct_answer": "íbamos",
+        "explanation": "Habitual past action: ir → íbamos",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "What is the imperfect form of 'leer' for 'ustedes'?",
+        "options": ["leen", "leían", "leyeron", "leerán"],
+        "correct_answer": "leían",
+        "explanation": "Regular -er imperfect: add -ían endings",
+        "difficulty": "beginner"
+      },
+      {
+        "question_text": "Which sentence uses imperfect correctly?",
+        "options": ["Ayer comí pizza", "Siempre comía pizza", "Mañana comeré pizza", "Come pizza ahora"],
+        "correct_answer": "Siempre comía pizza",
+        "explanation": "'Siempre' indicates habitual action (imperfect)",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "Complete: 'Los niños _____ (correr) en el parque.'",
+        "options": ["corren", "corrían", "corrieron", "correrán"],
+        "correct_answer": "corrían",
+        "explanation": "Ongoing past action uses imperfect",
+        "difficulty": "beginner"
+      },
+      {
+        "question_text": "What is the imperfect form of 'trabajar' for 'yo'?",
+        "options": ["trabajo", "trabajaba", "trabajé", "trabajaré"],
+        "correct_answer": "trabajaba",
+        "explanation": "Regular -ar imperfect: add -aba endings",
+        "difficulty": "beginner"
+      },
+      {
+        "question_text": "Complete: 'Ella _____ (ver) la televisión cada noche.'",
+        "options": ["ve", "veía", "vio", "verá"],
+        "correct_answer": "veía",
+        "explanation": "Habitual action: ver → veía (irregular)",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "What is the imperfect form of 'dormir' for 'tú'?",
+        "options": ["duermes", "dormías", "dormiste", "dormirás"],
+        "correct_answer": "dormías",
+        "explanation": "Regular -ir imperfect: add -ías endings",
+        "difficulty": "beginner"
+      },
+      {
+        "question_text": "Which time expression often uses imperfect?",
+        "options": ["Ayer", "Mañana", "Siempre", "Una vez"],
+        "correct_answer": "Siempre",
+        "explanation": "'Siempre' indicates habitual actions (imperfect)",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "Complete: '¿Qué _____ (hacer) los domingos?'",
+        "options": ["haces", "hacías", "hiciste", "harás"],
+        "correct_answer": "hacías",
+        "explanation": "Habitual past action: hacer → hacías",
+        "difficulty": "intermediate"
+      }
+    ]
+  }
+}

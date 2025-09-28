@@ -446,7 +446,7 @@ export default function SpanishMotionVerbsPage() {
         practiceUrl="/grammar/spanish/verbs/motion-verbs/practice"
         quizUrl="/grammar/spanish/verbs/motion-verbs/quiz"
         songUrl="/songs/es?theme=grammar&topic=motion-verbs"
-        youtubeVideoId="motion-verbs-spanish"
+        youtubeVideoId="EGaSgIRswcI"
         relatedTopics={relatedTopics}
       />
     </>

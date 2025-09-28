@@ -242,7 +242,7 @@ export default function SpanishVerbTenseAgreementPage() {
         practiceUrl="/grammar/spanish/verbs/verb-tense-agreement/practice"
         quizUrl="/grammar/spanish/verbs/verb-tense-agreement/quiz"
         songUrl="/songs/es?theme=grammar&topic=verb-tense-agreement"
-        youtubeVideoId="verb-tense-agreement-spanish"
+        youtubeVideoId="EGaSgIRswcI"
         relatedTopics={relatedTopics}
       />
     </>

@@ -1,0 +1,207 @@
+{
+  "practice_content": {
+    "instructions": "Practice Spanish present perfect (haber + past participle) with these exercises.",
+    "practice_type": "mixed_exercises",
+    "estimated_duration": 15,
+    "exercises": [
+      {
+        "type": "multiple_choice",
+        "instructions": "Choose the correct present perfect form",
+        "prompts": [
+          {
+            "question": "How do you say 'I have eaten' in Spanish?",
+            "options": ["he comido", "has comido", "ha comido", "hemos comido"],
+            "answer": "he comido",
+            "explanation": "'He comido' means 'I have eaten'"
+          },
+          {
+            "question": "How do you say 'you have studied' in Spanish?",
+            "options": ["he estudiado", "has estudiado", "ha estudiado", "hemos estudiado"],
+            "answer": "has estudiado",
+            "explanation": "'Has estudiado' means 'you have studied'"
+          },
+          {
+            "question": "How do you say 'she has worked' in Spanish?",
+            "options": ["he trabajado", "has trabajado", "ha trabajado", "hemos trabajado"],
+            "answer": "ha trabajado",
+            "explanation": "'Ha trabajado' means 'she has worked'"
+          },
+          {
+            "question": "How do you say 'we have lived' in Spanish?",
+            "options": ["he vivido", "has vivido", "ha vivido", "hemos vivido"],
+            "answer": "hemos vivido",
+            "explanation": "'Hemos vivido' means 'we have lived'"
+          },
+          {
+            "question": "How do you say 'they have written' in Spanish?",
+            "options": ["ha escrito", "has escrito", "han escrito", "hemos escrito"],
+            "answer": "han escrito",
+            "explanation": "'Han escrito' means 'they have written'"
+          },
+          {
+            "question": "What's the past participle of 'hablar'?",
+            "options": ["hablado", "hablido", "hablendo", "hablando"],
+            "answer": "hablado",
+            "explanation": "Regular -ar verbs form past participle with -ado"
+          },
+          {
+            "question": "What's the past participle of 'comer'?",
+            "options": ["comado", "comido", "comendo", "comando"],
+            "answer": "comido",
+            "explanation": "Regular -er verbs form past participle with -ido"
+          },
+          {
+            "question": "What's the past participle of 'vivir'?",
+            "options": ["vivado", "vivido", "vivendo", "vivando"],
+            "answer": "vivido",
+            "explanation": "Regular -ir verbs form past participle with -ido"
+          },
+          {
+            "question": "What's the past participle of 'hacer'?",
+            "options": ["hacido", "hecho", "hacido", "hacendo"],
+            "answer": "hecho",
+            "explanation": "'Hacer' has irregular past participle 'hecho'"
+          },
+          {
+            "question": "What's the past participle of 'ver'?",
+            "options": ["vido", "visto", "veído", "vendo"],
+            "answer": "visto",
+            "explanation": "'Ver' has irregular past participle 'visto'"
+          }
+        ]
+      },
+      {
+        "type": "fill_blank",
+        "instructions": "Complete with the correct present perfect form",
+        "prompts": [
+          {
+            "sentence": "Yo _____ _____ en España. (I have traveled to Spain.)",
+            "answer": "he viajado",
+            "explanation": "'He viajado' = I have traveled"
+          },
+          {
+            "sentence": "Tú _____ _____ la tarea. (You have finished the homework.)",
+            "answer": "has terminado",
+            "explanation": "'Has terminado' = you have finished"
+          },
+          {
+            "sentence": "Ella _____ _____ tres libros. (She has read three books.)",
+            "answer": "ha leído",
+            "explanation": "'Ha leído' = she has read (irregular participle)"
+          },
+          {
+            "sentence": "Nosotros _____ _____ mucho español. (We have learned a lot of Spanish.)",
+            "answer": "hemos aprendido",
+            "explanation": "'Hemos aprendido' = we have learned"
+          },
+          {
+            "sentence": "Ellos _____ _____ la película. (They have seen the movie.)",
+            "answer": "han visto",
+            "explanation": "'Han visto' = they have seen (irregular participle)"
+          },
+          {
+            "sentence": "¿_____ _____ alguna vez paella? (Have you ever eaten paella?)",
+            "answer": "Has comido",
+            "explanation": "'Has comido' = you have eaten"
+          },
+          {
+            "sentence": "Mi hermana _____ _____ médica. (My sister has become a doctor.)",
+            "answer": "se ha hecho",
+            "explanation": "'Se ha hecho' = she has become (reflexive)"
+          },
+          {
+            "sentence": "Nosotras _____ _____ temprano. (We have gotten up early.)",
+            "answer": "nos hemos levantado",
+            "explanation": "'Nos hemos levantado' = we have gotten up (reflexive)"
+          },
+          {
+            "sentence": "Vosotros _____ _____ la ventana. (You all have opened the window.)",
+            "answer": "habéis abierto",
+            "explanation": "'Habéis abierto' = you all have opened (irregular participle)"
+          },
+          {
+            "sentence": "¿Dónde _____ _____ las llaves? (Where have you put the keys?)",
+            "answer": "has puesto",
+            "explanation": "'Has puesto' = you have put (irregular participle)"
+          }
+        ]
+      },
+      {
+        "type": "conjugation",
+        "instructions": "Form the present perfect",
+        "prompts": [
+          {
+            "verb": "comprar",
+            "subject": "yo",
+            "answer": "he comprado",
+            "english": "I have bought",
+            "explanation": "Yo + he + comprado"
+          },
+          {
+            "verb": "beber",
+            "subject": "tú",
+            "answer": "has bebido",
+            "english": "you have drunk",
+            "explanation": "Tú + has + bebido"
+          },
+          {
+            "verb": "escribir",
+            "subject": "él",
+            "answer": "ha escrito",
+            "english": "he has written",
+            "explanation": "Él + ha + escrito (irregular participle)"
+          },
+          {
+            "verb": "volver",
+            "subject": "nosotros",
+            "answer": "hemos vuelto",
+            "english": "we have returned",
+            "explanation": "Nosotros + hemos + vuelto (irregular participle)"
+          },
+          {
+            "verb": "decir",
+            "subject": "ellas",
+            "answer": "han dicho",
+            "english": "they have said",
+            "explanation": "Ellas + han + dicho (irregular participle)"
+          },
+          {
+            "verb": "morir",
+            "subject": "usted",
+            "answer": "ha muerto",
+            "english": "you have died",
+            "explanation": "Usted + ha + muerto (irregular participle)"
+          },
+          {
+            "verb": "romper",
+            "subject": "nosotras",
+            "answer": "hemos roto",
+            "english": "we have broken",
+            "explanation": "Nosotras + hemos + roto (irregular participle)"
+          },
+          {
+            "verb": "cubrir",
+            "subject": "vosotros",
+            "answer": "habéis cubierto",
+            "english": "you all have covered",
+            "explanation": "Vosotros + habéis + cubierto (irregular participle)"
+          },
+          {
+            "verb": "poner",
+            "subject": "ellos",
+            "answer": "han puesto",
+            "english": "they have put",
+            "explanation": "Ellos + han + puesto (irregular participle)"
+          },
+          {
+            "verb": "resolver",
+            "subject": "yo",
+            "answer": "he resuelto",
+            "english": "I have solved",
+            "explanation": "Yo + he + resuelto (irregular participle)"
+          }
+        ]
+      }
+    ]
+  }
+}

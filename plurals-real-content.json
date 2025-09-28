@@ -1,0 +1,358 @@
+{
+  "practice_content": {
+    "instructions": "Practice Spanish plural formation with these exercises.",
+    "practice_type": "mixed_exercises",
+    "estimated_duration": 15,
+    "exercises": [
+      {
+        "type": "multiple_choice",
+        "instructions": "Choose the correct plural form",
+        "prompts": [
+          {
+            "question": "What is the plural of 'casa' (house)?",
+            "options": ["casa", "casas", "cases", "casen"],
+            "answer": "casas",
+            "explanation": "Add -s to nouns ending in vowels: casa → casas"
+          },
+          {
+            "question": "What is the plural of 'hotel' (hotel)?",
+            "options": ["hotel", "hotels", "hoteles", "hotels"],
+            "answer": "hoteles",
+            "explanation": "Add -es to nouns ending in consonants: hotel → hoteles"
+          },
+          {
+            "question": "What is the plural of 'lápiz' (pencil)?",
+            "options": ["lápiz", "lápizs", "lápices", "lápizes"],
+            "answer": "lápices",
+            "explanation": "Words ending in -z change to -ces: lápiz → lápices"
+          },
+          {
+            "question": "What is the plural of 'libro' (book)?",
+            "options": ["libro", "libros", "libres", "libroes"],
+            "answer": "libros",
+            "explanation": "Add -s to nouns ending in vowels: libro → libros"
+          },
+          {
+            "question": "What is the plural of 'ciudad' (city)?",
+            "options": ["ciudad", "ciudads", "ciudades", "ciudaddes"],
+            "answer": "ciudades",
+            "explanation": "Add -es to nouns ending in consonants: ciudad → ciudades"
+          },
+          {
+            "question": "What is the plural of 'mesa' (table)?",
+            "options": ["mesa", "mesas", "meses", "mesen"],
+            "answer": "mesas",
+            "explanation": "Add -s to nouns ending in vowels: mesa → mesas"
+          },
+          {
+            "question": "What is the plural of 'animal' (animal)?",
+            "options": ["animal", "animals", "animales", "animalles"],
+            "answer": "animales",
+            "explanation": "Add -es to nouns ending in consonants: animal → animales"
+          },
+          {
+            "question": "What is the plural of 'feliz' (happy)?",
+            "options": ["feliz", "felizs", "felices", "felizes"],
+            "answer": "felices",
+            "explanation": "Words ending in -z change to -ces: feliz → felices"
+          },
+          {
+            "question": "What is the plural of 'coche' (car)?",
+            "options": ["coche", "coches", "cochs", "cochees"],
+            "answer": "coches",
+            "explanation": "Add -s to nouns ending in vowels: coche → coches"
+          },
+          {
+            "question": "What is the plural of 'profesor' (teacher)?",
+            "options": ["profesor", "profesors", "profesores", "profesorres"],
+            "answer": "profesores",
+            "explanation": "Add -es to nouns ending in consonants: profesor → profesores"
+          }
+        ]
+      },
+      {
+        "type": "fill_blank",
+        "instructions": "Complete with the correct plural form",
+        "prompts": [
+          {
+            "sentence": "Los _____ (niño) juegan en el parque.",
+            "answer": "niños",
+            "explanation": "Add -s to nouns ending in vowels: niño → niños"
+          },
+          {
+            "sentence": "Las _____ (mujer) trabajan en la oficina.",
+            "answer": "mujeres",
+            "explanation": "Add -es to nouns ending in consonants: mujer → mujeres"
+          },
+          {
+            "sentence": "Los _____ (pez) nadan en el agua.",
+            "answer": "peces",
+            "explanation": "Words ending in -z change to -ces: pez → peces"
+          },
+          {
+            "sentence": "Las _____ (flor) son muy bonitas.",
+            "answer": "flores",
+            "explanation": "Add -es to nouns ending in consonants: flor → flores"
+          },
+          {
+            "sentence": "Los _____ (estudiante) estudian mucho.",
+            "answer": "estudiantes",
+            "explanation": "Add -s to nouns ending in vowels: estudiante → estudiantes"
+          },
+          {
+            "sentence": "Las _____ (luz) están encendidas.",
+            "answer": "luces",
+            "explanation": "Words ending in -z change to -ces: luz → luces"
+          },
+          {
+            "sentence": "Los _____ (árbol) dan sombra.",
+            "answer": "árboles",
+            "explanation": "Add -es to nouns ending in consonants: árbol → árboles"
+          },
+          {
+            "sentence": "Las _____ (ventana) están abiertas.",
+            "answer": "ventanas",
+            "explanation": "Add -s to nouns ending in vowels: ventana → ventanas"
+          },
+          {
+            "sentence": "Los _____ (doctor) ayudan a los pacientes.",
+            "answer": "doctores",
+            "explanation": "Add -es to nouns ending in consonants: doctor → doctores"
+          },
+          {
+            "sentence": "Las _____ (actriz) son famosas.",
+            "answer": "actrices",
+            "explanation": "Words ending in -z change to -ces: actriz → actrices"
+          }
+        ]
+      },
+      {
+        "type": "conjugation",
+        "instructions": "Form the plural of these nouns",
+        "prompts": [
+          {
+            "verb": "gato",
+            "subject": "plural",
+            "answer": "gatos",
+            "english": "cats",
+            "explanation": "Add -s to nouns ending in vowels: gato → gatos"
+          },
+          {
+            "verb": "reloj",
+            "subject": "plural", 
+            "answer": "relojes",
+            "english": "clocks/watches",
+            "explanation": "Add -es to nouns ending in consonants: reloj → relojes"
+          },
+          {
+            "verb": "nariz",
+            "subject": "plural",
+            "answer": "narices", 
+            "english": "noses",
+            "explanation": "Words ending in -z change to -ces: nariz → narices"
+          },
+          {
+            "verb": "perro",
+            "subject": "plural",
+            "answer": "perros",
+            "english": "dogs", 
+            "explanation": "Add -s to nouns ending in vowels: perro → perros"
+          },
+          {
+            "verb": "hospital",
+            "subject": "plural",
+            "answer": "hospitales",
+            "english": "hospitals",
+            "explanation": "Add -es to nouns ending in consonants: hospital → hospitales"
+          },
+          {
+            "verb": "voz",
+            "subject": "plural",
+            "answer": "voces",
+            "english": "voices",
+            "explanation": "Words ending in -z change to -ces: voz → voces"
+          },
+          {
+            "verb": "amigo",
+            "subject": "plural",
+            "answer": "amigos",
+            "english": "friends",
+            "explanation": "Add -s to nouns ending in vowels: amigo → amigos"
+          },
+          {
+            "verb": "papel",
+            "subject": "plural",
+            "answer": "papeles",
+            "english": "papers",
+            "explanation": "Add -es to nouns ending in consonants: papel → papeles"
+          },
+          {
+            "verb": "cruz",
+            "subject": "plural",
+            "answer": "cruces",
+            "english": "crosses",
+            "explanation": "Words ending in -z change to -ces: cruz → cruces"
+          },
+          {
+            "verb": "hermana",
+            "subject": "plural",
+            "answer": "hermanas",
+            "english": "sisters",
+            "explanation": "Add -s to nouns ending in vowels: hermana → hermanas"
+          }
+        ]
+      }
+    ]
+  },
+  "quiz_content": {
+    "instructions": "Test your knowledge of Spanish plural formation.",
+    "quiz_type": "mixed_assessment",
+    "time_limit": 900,
+    "max_attempts": 3,
+    "passing_score": 70,
+    "show_explanations": true,
+    "randomize_questions": true,
+    "questions": [
+      {
+        "question_text": "What is the plural of 'casa'?",
+        "options": ["casa", "casas", "cases", "casen"],
+        "correct_answer": "casas",
+        "explanation": "Add -s to nouns ending in vowels",
+        "difficulty": "beginner"
+      },
+      {
+        "question_text": "What is the plural of 'hotel'?",
+        "options": ["hotel", "hotels", "hoteles", "hotells"],
+        "correct_answer": "hoteles",
+        "explanation": "Add -es to nouns ending in consonants",
+        "difficulty": "beginner"
+      },
+      {
+        "question_text": "What is the plural of 'lápiz'?",
+        "options": ["lápiz", "lápizs", "lápices", "lápizes"],
+        "correct_answer": "lápices",
+        "explanation": "Words ending in -z change to -ces",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "Complete: 'Los _____ (niño) juegan.'",
+        "options": ["niño", "niños", "niñes", "niñas"],
+        "correct_answer": "niños",
+        "explanation": "Add -s to nouns ending in vowels",
+        "difficulty": "beginner"
+      },
+      {
+        "question_text": "What is the plural of 'mujer'?",
+        "options": ["mujer", "mujers", "mujeres", "mujerres"],
+        "correct_answer": "mujeres",
+        "explanation": "Add -es to nouns ending in consonants",
+        "difficulty": "beginner"
+      },
+      {
+        "question_text": "What is the plural of 'pez'?",
+        "options": ["pez", "pezs", "peces", "pezes"],
+        "correct_answer": "peces",
+        "explanation": "Words ending in -z change to -ces",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "Complete: 'Las _____ (flor) son bonitas.'",
+        "options": ["flor", "flores", "flors", "florres"],
+        "correct_answer": "flores",
+        "explanation": "Add -es to nouns ending in consonants",
+        "difficulty": "beginner"
+      },
+      {
+        "question_text": "What is the plural of 'estudiante'?",
+        "options": ["estudiante", "estudiantes", "estudiantees", "estudiantos"],
+        "correct_answer": "estudiantes",
+        "explanation": "Add -s to nouns ending in vowels",
+        "difficulty": "beginner"
+      },
+      {
+        "question_text": "What is the plural of 'luz'?",
+        "options": ["luz", "luzs", "luces", "luzes"],
+        "correct_answer": "luces",
+        "explanation": "Words ending in -z change to -ces",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "Complete: 'Los _____ (árbol) dan sombra.'",
+        "options": ["árbol", "árboles", "árbols", "árbolles"],
+        "correct_answer": "árboles",
+        "explanation": "Add -es to nouns ending in consonants",
+        "difficulty": "beginner"
+      },
+      {
+        "question_text": "What is the plural of 'actriz'?",
+        "options": ["actriz", "actrizs", "actrices", "actrizes"],
+        "correct_answer": "actrices",
+        "explanation": "Words ending in -z change to -ces",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "What is the plural of 'reloj'?",
+        "options": ["reloj", "relojs", "relojes", "relojjes"],
+        "correct_answer": "relojes",
+        "explanation": "Add -es to nouns ending in consonants",
+        "difficulty": "beginner"
+      },
+      {
+        "question_text": "Complete: 'Las _____ (ventana) están abiertas.'",
+        "options": ["ventana", "ventanas", "ventanes", "ventanos"],
+        "correct_answer": "ventanas",
+        "explanation": "Add -s to nouns ending in vowels",
+        "difficulty": "beginner"
+      },
+      {
+        "question_text": "What is the plural of 'nariz'?",
+        "options": ["nariz", "narizs", "narices", "narizes"],
+        "correct_answer": "narices",
+        "explanation": "Words ending in -z change to -ces",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "What is the plural of 'hospital'?",
+        "options": ["hospital", "hospitals", "hospitales", "hospitalles"],
+        "correct_answer": "hospitales",
+        "explanation": "Add -es to nouns ending in consonants",
+        "difficulty": "beginner"
+      },
+      {
+        "question_text": "Complete: 'Los _____ (doctor) trabajan.'",
+        "options": ["doctor", "doctores", "doctors", "doctorres"],
+        "correct_answer": "doctores",
+        "explanation": "Add -es to nouns ending in consonants",
+        "difficulty": "beginner"
+      },
+      {
+        "question_text": "What is the plural of 'voz'?",
+        "options": ["voz", "vozs", "voces", "vozes"],
+        "correct_answer": "voces",
+        "explanation": "Words ending in -z change to -ces",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "What is the plural of 'papel'?",
+        "options": ["papel", "papels", "papeles", "papelles"],
+        "correct_answer": "papeles",
+        "explanation": "Add -es to nouns ending in consonants",
+        "difficulty": "beginner"
+      },
+      {
+        "question_text": "Complete: 'Las _____ (cruz) son grandes.'",
+        "options": ["cruz", "cruzs", "cruces", "cruzes"],
+        "correct_answer": "cruces",
+        "explanation": "Words ending in -z change to -ces",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "What is the plural of 'animal'?",
+        "options": ["animal", "animals", "animales", "animalles"],
+        "correct_answer": "animales",
+        "explanation": "Add -es to nouns ending in consonants",
+        "difficulty": "beginner"
+      }
+    ]
+  }
+}

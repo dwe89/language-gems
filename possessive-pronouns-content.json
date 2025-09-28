@@ -1,0 +1,358 @@
+{
+  "practice_content": {
+    "instructions": "Practice Spanish possessive pronouns with these exercises.",
+    "practice_type": "mixed_exercises",
+    "estimated_duration": 15,
+    "exercises": [
+      {
+        "type": "multiple_choice",
+        "instructions": "Choose the correct possessive pronoun",
+        "prompts": [
+          {
+            "question": "What does 'mi' mean in English?",
+            "options": ["my", "your", "his", "our"],
+            "answer": "my",
+            "explanation": "'Mi' means 'my' in Spanish"
+          },
+          {
+            "question": "What does 'tu' mean in English?",
+            "options": ["my", "your", "his", "our"],
+            "answer": "your",
+            "explanation": "'Tu' means 'your' (informal) in Spanish"
+          },
+          {
+            "question": "What does 'su' mean in English?",
+            "options": ["my", "your", "his/her/your", "our"],
+            "answer": "his/her/your",
+            "explanation": "'Su' means 'his/her/your' (formal) in Spanish"
+          },
+          {
+            "question": "What does 'nuestro' mean in English?",
+            "options": ["my", "your", "his", "our"],
+            "answer": "our",
+            "explanation": "'Nuestro' means 'our' (masculine) in Spanish"
+          },
+          {
+            "question": "Which possessive agrees with feminine nouns?",
+            "options": ["mi casa", "tu casa", "nuestra casa", "su casa"],
+            "answer": "nuestra casa",
+            "explanation": "'Nuestra' is the feminine form of 'our'"
+          },
+          {
+            "question": "What's the plural of 'mi'?",
+            "options": ["mi", "mis", "mio", "mios"],
+            "answer": "mis",
+            "explanation": "'Mis' is the plural form of 'mi'"
+          },
+          {
+            "question": "What's the plural of 'tu'?",
+            "options": ["tu", "tus", "tuyo", "tuyos"],
+            "answer": "tus",
+            "explanation": "'Tus' is the plural form of 'tu'"
+          },
+          {
+            "question": "Which is correct for 'our books'?",
+            "options": ["nuestro libros", "nuestra libros", "nuestros libros", "nuestras libros"],
+            "answer": "nuestros libros",
+            "explanation": "'Nuestros' agrees with masculine plural 'libros'"
+          },
+          {
+            "question": "Which is correct for 'their house'?",
+            "options": ["su casa", "sus casa", "su casas", "sus casas"],
+            "answer": "su casa",
+            "explanation": "'Su' is used with singular 'casa'"
+          },
+          {
+            "question": "What does 'vuestro' mean?",
+            "options": ["my", "your (informal plural)", "his", "our"],
+            "answer": "your (informal plural)",
+            "explanation": "'Vuestro' means 'your' (informal plural, used in Spain)"
+          }
+        ]
+      },
+      {
+        "type": "fill_blank",
+        "instructions": "Complete with the correct possessive pronoun",
+        "prompts": [
+          {
+            "sentence": "_____ libro está en la mesa. (My book is on the table.)",
+            "answer": "Mi",
+            "explanation": "'Mi' means 'my' and doesn't change with gender"
+          },
+          {
+            "sentence": "_____ hermana es doctora. (Your sister is a doctor.)",
+            "answer": "Tu",
+            "explanation": "'Tu' means 'your' (informal) and doesn't change with gender"
+          },
+          {
+            "sentence": "_____ casa es muy grande. (His/Her house is very big.)",
+            "answer": "Su",
+            "explanation": "'Su' means 'his/her/your' (formal)"
+          },
+          {
+            "sentence": "_____ padres viven en Madrid. (Our parents live in Madrid.)",
+            "answer": "Nuestros",
+            "explanation": "'Nuestros' agrees with masculine plural 'padres'"
+          },
+          {
+            "sentence": "_____ amigas son simpáticas. (My friends are nice.)",
+            "answer": "Mis",
+            "explanation": "'Mis' is the plural form of 'mi'"
+          },
+          {
+            "sentence": "_____ profesores son buenos. (Your teachers are good.)",
+            "answer": "Tus",
+            "explanation": "'Tus' is the plural form of 'tu'"
+          },
+          {
+            "sentence": "_____ escuela es nueva. (Our school is new.)",
+            "answer": "Nuestra",
+            "explanation": "'Nuestra' is feminine to agree with 'escuela'"
+          },
+          {
+            "sentence": "_____ coches son rojos. (Their cars are red.)",
+            "answer": "Sus",
+            "explanation": "'Sus' is the plural form of 'su'"
+          },
+          {
+            "sentence": "_____ hermanos estudian mucho. (Your brothers study a lot - Spain.)",
+            "answer": "Vuestros",
+            "explanation": "'Vuestros' is masculine plural for 'your' in Spain"
+          },
+          {
+            "sentence": "_____ ideas son interesantes. (Our ideas are interesting.)",
+            "answer": "Nuestras",
+            "explanation": "'Nuestras' is feminine plural to agree with 'ideas'"
+          }
+        ]
+      },
+      {
+        "type": "conjugation",
+        "instructions": "Choose the correct possessive form",
+        "prompts": [
+          {
+            "verb": "mi/mis",
+            "subject": "_____ libros (my books)",
+            "answer": "mis",
+            "english": "my books",
+            "explanation": "Use 'mis' for plural nouns"
+          },
+          {
+            "verb": "tu/tus",
+            "subject": "_____ hermana (your sister)",
+            "answer": "tu",
+            "english": "your sister",
+            "explanation": "Use 'tu' for singular nouns"
+          },
+          {
+            "verb": "nuestro/nuestra",
+            "subject": "_____ familia (our family)",
+            "answer": "nuestra",
+            "english": "our family",
+            "explanation": "'Familia' is feminine, so use 'nuestra'"
+          },
+          {
+            "verb": "su/sus",
+            "subject": "_____ amigos (their friends)",
+            "answer": "sus",
+            "english": "their friends",
+            "explanation": "Use 'sus' for plural nouns"
+          },
+          {
+            "verb": "nuestro/nuestros",
+            "subject": "_____ profesores (our teachers)",
+            "answer": "nuestros",
+            "english": "our teachers",
+            "explanation": "'Profesores' is masculine plural, so use 'nuestros'"
+          },
+          {
+            "verb": "mi/mis",
+            "subject": "_____ casa (my house)",
+            "answer": "mi",
+            "english": "my house",
+            "explanation": "Use 'mi' for singular nouns"
+          },
+          {
+            "verb": "tu/tus",
+            "subject": "_____ padres (your parents)",
+            "answer": "tus",
+            "english": "your parents",
+            "explanation": "Use 'tus' for plural nouns"
+          },
+          {
+            "verb": "nuestra/nuestras",
+            "subject": "_____ amigas (our friends - female)",
+            "answer": "nuestras",
+            "english": "our friends",
+            "explanation": "'Amigas' is feminine plural, so use 'nuestras'"
+          },
+          {
+            "verb": "su/sus",
+            "subject": "_____ perro (his dog)",
+            "answer": "su",
+            "english": "his dog",
+            "explanation": "Use 'su' for singular nouns"
+          },
+          {
+            "verb": "vuestro/vuestra",
+            "subject": "_____ escuela (your school - Spain)",
+            "answer": "vuestra",
+            "english": "your school",
+            "explanation": "'Escuela' is feminine, so use 'vuestra'"
+          }
+        ]
+      }
+    ]
+  },
+  "quiz_content": {
+    "instructions": "Test your knowledge of Spanish possessive pronouns.",
+    "quiz_type": "mixed_assessment",
+    "time_limit": 900,
+    "max_attempts": 3,
+    "passing_score": 70,
+    "show_explanations": true,
+    "randomize_questions": true,
+    "questions": [
+      {
+        "question_text": "What does 'mi' mean in English?",
+        "options": ["my", "your", "his", "our"],
+        "correct_answer": "my",
+        "explanation": "'Mi' means 'my' in Spanish",
+        "difficulty": "beginner"
+      },
+      {
+        "question_text": "What's the plural form of 'mi'?",
+        "options": ["mi", "mis", "mio", "mios"],
+        "correct_answer": "mis",
+        "explanation": "'Mis' is the plural form of 'mi'",
+        "difficulty": "beginner"
+      },
+      {
+        "question_text": "Which is correct: '_____ casa' (our house)?",
+        "options": ["nuestro casa", "nuestra casa", "nuestros casa", "nuestras casa"],
+        "correct_answer": "nuestra casa",
+        "explanation": "'Casa' is feminine, so use 'nuestra'",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "What does 'su' mean?",
+        "options": ["my", "your", "his/her/your (formal)", "our"],
+        "correct_answer": "his/her/your (formal)",
+        "explanation": "'Su' can mean his, her, or your (formal)",
+        "difficulty": "beginner"
+      },
+      {
+        "question_text": "Which is correct: '_____ libros' (my books)?",
+        "options": ["mi libros", "mis libros", "mio libros", "mios libros"],
+        "correct_answer": "mis libros",
+        "explanation": "Use 'mis' for plural nouns",
+        "difficulty": "beginner"
+      },
+      {
+        "question_text": "What does 'nuestro' mean?",
+        "options": ["my", "your", "his", "our"],
+        "correct_answer": "our",
+        "explanation": "'Nuestro' means 'our' (masculine form)",
+        "difficulty": "beginner"
+      },
+      {
+        "question_text": "Which is correct: '_____ hermanas' (our sisters)?",
+        "options": ["nuestro hermanas", "nuestra hermanas", "nuestros hermanas", "nuestras hermanas"],
+        "correct_answer": "nuestras hermanas",
+        "explanation": "'Hermanas' is feminine plural, so use 'nuestras'",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "What's the plural form of 'tu'?",
+        "options": ["tu", "tus", "tuyo", "tuyos"],
+        "correct_answer": "tus",
+        "explanation": "'Tus' is the plural form of 'tu'",
+        "difficulty": "beginner"
+      },
+      {
+        "question_text": "Which is correct: '_____ amigos' (their friends)?",
+        "options": ["su amigos", "sus amigos", "suyo amigos", "suyos amigos"],
+        "correct_answer": "sus amigos",
+        "explanation": "Use 'sus' for plural nouns",
+        "difficulty": "beginner"
+      },
+      {
+        "question_text": "What does 'vuestro' mean?",
+        "options": ["my", "your (informal plural)", "his", "our"],
+        "correct_answer": "your (informal plural)",
+        "explanation": "'Vuestro' means 'your' (informal plural, used in Spain)",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "Which possessive doesn't change for gender?",
+        "options": ["nuestro/nuestra", "vuestro/vuestra", "mi", "suyo/suya"],
+        "correct_answer": "mi",
+        "explanation": "'Mi' stays the same for both masculine and feminine nouns",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "Complete: '_____ familia es grande' (our family)",
+        "options": ["nuestro", "nuestra", "nuestros", "nuestras"],
+        "correct_answer": "nuestra",
+        "explanation": "'Familia' is feminine, so use 'nuestra'",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "Which is correct: '_____ perros' (your dogs)?",
+        "options": ["tu perros", "tus perros", "tuyo perros", "tuyos perros"],
+        "correct_answer": "tus perros",
+        "explanation": "Use 'tus' for plural nouns",
+        "difficulty": "beginner"
+      },
+      {
+        "question_text": "What's the feminine form of 'vuestro'?",
+        "options": ["vuestra", "vuestros", "vuestras", "vuestro"],
+        "correct_answer": "vuestra",
+        "explanation": "'Vuestra' is the feminine form of 'vuestro'",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "Complete: '_____ ideas son buenas' (our ideas)",
+        "options": ["nuestro", "nuestra", "nuestros", "nuestras"],
+        "correct_answer": "nuestras",
+        "explanation": "'Ideas' is feminine plural, so use 'nuestras'",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "Which possessive is used in Spain for 'your' (plural)?",
+        "options": ["su", "sus", "vuestro", "ustedes"],
+        "correct_answer": "vuestro",
+        "explanation": "'Vuestro/a/os/as' is used in Spain for informal plural 'your'",
+        "difficulty": "advanced"
+      },
+      {
+        "question_text": "Complete: '_____ coche es nuevo' (his car)",
+        "options": ["su", "sus", "suyo", "suyos"],
+        "correct_answer": "su",
+        "explanation": "Use 'su' for singular nouns",
+        "difficulty": "beginner"
+      },
+      {
+        "question_text": "Which is correct: '_____ profesores' (our teachers)?",
+        "options": ["nuestro profesores", "nuestra profesores", "nuestros profesores", "nuestras profesores"],
+        "correct_answer": "nuestros profesores",
+        "explanation": "'Profesores' is masculine plural, so use 'nuestros'",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "What does 'tu' mean (without accent)?",
+        "options": ["you", "your", "his", "our"],
+        "correct_answer": "your",
+        "explanation": "'Tu' (without accent) means 'your' (informal)",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "Complete: '_____ escuela es grande' (your school - Spain, plural)",
+        "options": ["su", "vuestra", "nuestro", "tuya"],
+        "correct_answer": "vuestra",
+        "explanation": "'Escuela' is feminine, and 'vuestra' is used in Spain",
+        "difficulty": "advanced"
+      }
+    ]
+  }
+}

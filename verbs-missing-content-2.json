@@ -1,0 +1,336 @@
+[
+  {
+    "topic_id": "preterite-tense",
+    "content_type": "practice",
+    "title": "Preterite Tense Practice",
+    "slug": "preterite-tense-practice",
+    "content_data": {
+      "questions": [
+        {
+          "id": "pt_1",
+          "type": "multiple_choice",
+          "question": "What is the correct preterite form of 'hablar' for 'yo'?",
+          "options": ["hablé", "hablaste", "habló", "hablamos"],
+          "correct_answer": "hablé",
+          "explanation": "AR verbs in preterite: yo -é, tú -aste, él -ó.",
+          "difficulty": "beginner"
+        },
+        {
+          "id": "pt_2",
+          "type": "multiple_choice",
+          "question": "What is the correct preterite form of 'comer' for 'tú'?",
+          "options": ["comí", "comiste", "comió", "comimos"],
+          "correct_answer": "comiste",
+          "explanation": "ER/IR verbs in preterite: yo -í, tú -iste, él -ió.",
+          "difficulty": "beginner"
+        },
+        {
+          "id": "pt_3",
+          "type": "multiple_choice",
+          "question": "What is the correct preterite form of 'vivir' for 'ella'?",
+          "options": ["viví", "viviste", "vivió", "vivimos"],
+          "correct_answer": "vivió",
+          "explanation": "IR verbs in preterite: él/ella -ió.",
+          "difficulty": "beginner"
+        },
+        {
+          "id": "pt_4",
+          "type": "multiple_choice",
+          "question": "What is the correct preterite form of 'ser' for 'yo'?",
+          "options": ["fui", "fuiste", "fue", "fuimos"],
+          "correct_answer": "fui",
+          "explanation": "'Ser' and 'ir' have the same irregular preterite forms.",
+          "difficulty": "intermediate"
+        },
+        {
+          "id": "pt_5",
+          "type": "multiple_choice",
+          "question": "What is the correct preterite form of 'tener' for 'él'?",
+          "options": ["tuve", "tuviste", "tuvo", "tuvimos"],
+          "correct_answer": "tuvo",
+          "explanation": "'Tener' is irregular in preterite: tuv- stem.",
+          "difficulty": "intermediate"
+        },
+        {
+          "id": "pt_6",
+          "type": "multiple_choice",
+          "question": "What is the correct preterite form of 'hacer' for 'nosotros'?",
+          "options": ["hice", "hiciste", "hizo", "hicimos"],
+          "correct_answer": "hicimos",
+          "explanation": "'Hacer' is irregular: hic- stem, nosotros hicimos.",
+          "difficulty": "intermediate"
+        },
+        {
+          "id": "pt_7",
+          "type": "multiple_choice",
+          "question": "What is the correct preterite form of 'estar' for 'ellos'?",
+          "options": ["estuve", "estuviste", "estuvo", "estuvieron"],
+          "correct_answer": "estuvieron",
+          "explanation": "'Estar' is irregular: estuv- stem, ellos estuvieron.",
+          "difficulty": "intermediate"
+        },
+        {
+          "id": "pt_8",
+          "type": "multiple_choice",
+          "question": "What is the correct preterite form of 'dar' for 'yo'?",
+          "options": ["di", "diste", "dio", "dimos"],
+          "correct_answer": "di",
+          "explanation": "'Dar' is irregular and short: yo di, tú diste, él dio.",
+          "difficulty": "intermediate"
+        },
+        {
+          "id": "pt_9",
+          "type": "multiple_choice",
+          "question": "What is the correct preterite form of 'ver' for 'ustedes'?",
+          "options": ["vi", "viste", "vio", "vieron"],
+          "correct_answer": "vieron",
+          "explanation": "'Ver' is irregular: yo vi, tú viste, ustedes vieron.",
+          "difficulty": "intermediate"
+        },
+        {
+          "id": "pt_10",
+          "type": "multiple_choice",
+          "question": "What is the correct preterite form of 'decir' for 'tú'?",
+          "options": ["dije", "dijiste", "dijo", "dijimos"],
+          "correct_answer": "dijiste",
+          "explanation": "'Decir' is irregular: dij- stem, tú dijiste.",
+          "difficulty": "advanced"
+        }
+      ]
+    },
+    "difficulty_level": "intermediate",
+    "age_group": "11-14",
+    "estimated_duration": 15,
+    "order_position": 1,
+    "is_active": true,
+    "is_featured": false
+  },
+  {
+    "topic_id": "preterite-tense",
+    "content_type": "quiz",
+    "title": "Preterite Tense Quiz",
+    "slug": "preterite-tense-quiz",
+    "content_data": {
+      "questions": [
+        {
+          "id": "ptq_1",
+          "type": "multiple_choice",
+          "question": "Complete: Ayer yo _____ con mi amigo. (hablar)",
+          "options": ["hablé", "hablaste", "habló", "hablamos"],
+          "correct_answer": "hablé",
+          "explanation": "Preterite of 'hablar' for 'yo' is 'hablé'.",
+          "difficulty": "beginner"
+        },
+        {
+          "id": "ptq_2",
+          "type": "multiple_choice",
+          "question": "Complete: Tú _____ toda la pizza. (comer)",
+          "options": ["comí", "comiste", "comió", "comimos"],
+          "correct_answer": "comiste",
+          "explanation": "Preterite of 'comer' for 'tú' is 'comiste'.",
+          "difficulty": "beginner"
+        },
+        {
+          "id": "ptq_3",
+          "type": "multiple_choice",
+          "question": "Complete: Ella _____ en París el año pasado. (vivir)",
+          "options": ["viví", "viviste", "vivió", "vivimos"],
+          "correct_answer": "vivió",
+          "explanation": "Preterite of 'vivir' for 'ella' is 'vivió'.",
+          "difficulty": "beginner"
+        },
+        {
+          "id": "ptq_4",
+          "type": "multiple_choice",
+          "question": "Complete: Nosotros _____ al cine anoche. (ir)",
+          "options": ["fui", "fuiste", "fue", "fuimos"],
+          "correct_answer": "fuimos",
+          "explanation": "Preterite of 'ir' for 'nosotros' is 'fuimos'.",
+          "difficulty": "intermediate"
+        },
+        {
+          "id": "ptq_5",
+          "type": "multiple_choice",
+          "question": "Complete: Ellos _____ mucho trabajo ayer. (tener)",
+          "options": ["tuve", "tuviste", "tuvo", "tuvieron"],
+          "correct_answer": "tuvieron",
+          "explanation": "Preterite of 'tener' for 'ellos' is 'tuvieron'.",
+          "difficulty": "intermediate"
+        }
+      ]
+    },
+    "difficulty_level": "intermediate",
+    "age_group": "11-14",
+    "estimated_duration": 10,
+    "order_position": 2,
+    "is_active": true,
+    "is_featured": false
+  },
+  {
+    "topic_id": "ser-estar",
+    "content_type": "practice",
+    "title": "Ser vs Estar Practice",
+    "slug": "ser-estar-practice",
+    "content_data": {
+      "questions": [
+        {
+          "id": "se_1",
+          "type": "multiple_choice",
+          "question": "Complete: Mi hermana _____ doctora. (permanent characteristic)",
+          "options": ["es", "está", "son", "están"],
+          "correct_answer": "es",
+          "explanation": "Use 'ser' for professions and permanent characteristics.",
+          "difficulty": "beginner"
+        },
+        {
+          "id": "se_2",
+          "type": "multiple_choice",
+          "question": "Complete: El café _____ caliente. (temporary state)",
+          "options": ["es", "está", "son", "están"],
+          "correct_answer": "está",
+          "explanation": "Use 'estar' for temporary states like temperature.",
+          "difficulty": "beginner"
+        },
+        {
+          "id": "se_3",
+          "type": "multiple_choice",
+          "question": "Complete: Los libros _____ en la mesa. (location)",
+          "options": ["es", "está", "son", "están"],
+          "correct_answer": "están",
+          "explanation": "Use 'estar' for location: los libros están.",
+          "difficulty": "beginner"
+        },
+        {
+          "id": "se_4",
+          "type": "multiple_choice",
+          "question": "Complete: Nosotros _____ de México. (origin)",
+          "options": ["es", "está", "somos", "estamos"],
+          "correct_answer": "somos",
+          "explanation": "Use 'ser' for origin and nationality.",
+          "difficulty": "beginner"
+        },
+        {
+          "id": "se_5",
+          "type": "multiple_choice",
+          "question": "Complete: Tú _____ muy cansado hoy. (temporary condition)",
+          "options": ["eres", "estás", "es", "está"],
+          "correct_answer": "estás",
+          "explanation": "Use 'estar' for temporary physical/emotional states.",
+          "difficulty": "beginner"
+        },
+        {
+          "id": "se_6",
+          "type": "multiple_choice",
+          "question": "Complete: La fiesta _____ el sábado. (time/date)",
+          "options": ["es", "está", "son", "están"],
+          "correct_answer": "es",
+          "explanation": "Use 'ser' for time, dates, and events.",
+          "difficulty": "intermediate"
+        },
+        {
+          "id": "se_7",
+          "type": "multiple_choice",
+          "question": "Complete: Mi padre _____ trabajando. (ongoing action)",
+          "options": ["es", "está", "son", "están"],
+          "correct_answer": "está",
+          "explanation": "Use 'estar' with gerunds for ongoing actions.",
+          "difficulty": "intermediate"
+        },
+        {
+          "id": "se_8",
+          "type": "multiple_choice",
+          "question": "Complete: Esta comida _____ deliciosa. (taste/opinion)",
+          "options": ["es", "está", "son", "están"],
+          "correct_answer": "está",
+          "explanation": "Use 'estar' for taste and subjective opinions about food.",
+          "difficulty": "intermediate"
+        },
+        {
+          "id": "se_9",
+          "type": "multiple_choice",
+          "question": "Complete: El examen _____ difícil. (inherent quality)",
+          "options": ["es", "está", "son", "están"],
+          "correct_answer": "es",
+          "explanation": "Use 'ser' for inherent characteristics and qualities.",
+          "difficulty": "intermediate"
+        },
+        {
+          "id": "se_10",
+          "type": "multiple_choice",
+          "question": "Complete: Las ventanas _____ abiertas. (result of action)",
+          "options": ["es", "está", "son", "están"],
+          "correct_answer": "están",
+          "explanation": "Use 'estar' for results of actions or states.",
+          "difficulty": "intermediate"
+        }
+      ]
+    },
+    "difficulty_level": "intermediate",
+    "age_group": "11-14",
+    "estimated_duration": 15,
+    "order_position": 1,
+    "is_active": true,
+    "is_featured": false
+  },
+  {
+    "topic_id": "ser-estar",
+    "content_type": "quiz",
+    "title": "Ser vs Estar Quiz",
+    "slug": "ser-estar-quiz",
+    "content_data": {
+      "questions": [
+        {
+          "id": "seq_1",
+          "type": "multiple_choice",
+          "question": "Complete: Yo _____ estudiante.",
+          "options": ["soy", "estoy", "es", "está"],
+          "correct_answer": "soy",
+          "explanation": "Use 'ser' for professions and roles.",
+          "difficulty": "beginner"
+        },
+        {
+          "id": "seq_2",
+          "type": "multiple_choice",
+          "question": "Complete: La puerta _____ cerrada.",
+          "options": ["es", "está", "son", "están"],
+          "correct_answer": "está",
+          "explanation": "Use 'estar' for states and conditions.",
+          "difficulty": "beginner"
+        },
+        {
+          "id": "seq_3",
+          "type": "multiple_choice",
+          "question": "Complete: Mis padres _____ en casa.",
+          "options": ["es", "está", "son", "están"],
+          "correct_answer": "están",
+          "explanation": "Use 'estar' for location.",
+          "difficulty": "beginner"
+        },
+        {
+          "id": "seq_4",
+          "type": "multiple_choice",
+          "question": "Complete: El concierto _____ a las ocho.",
+          "options": ["es", "está", "son", "están"],
+          "correct_answer": "es",
+          "explanation": "Use 'ser' for time and scheduled events.",
+          "difficulty": "intermediate"
+        },
+        {
+          "id": "seq_5",
+          "type": "multiple_choice",
+          "question": "Complete: Nosotros _____ contentos con los resultados.",
+          "options": ["somos", "estamos", "es", "está"],
+          "correct_answer": "estamos",
+          "explanation": "Use 'estar' for temporary emotional states.",
+          "difficulty": "intermediate"
+        }
+      ]
+    },
+    "difficulty_level": "intermediate",
+    "age_group": "11-14",
+    "estimated_duration": 10,
+    "order_position": 2,
+    "is_active": true,
+    "is_featured": false
+  }
+]

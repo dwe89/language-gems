@@ -1,0 +1,153 @@
+{
+  "quiz_content": {
+    "instructions": "Test your knowledge of Spanish subjunctive mood.",
+    "quiz_type": "mixed_assessment",
+    "time_limit": 1200,
+    "max_attempts": 3,
+    "passing_score": 70,
+    "show_explanations": true,
+    "randomize_questions": true,
+    "questions": [
+      {
+        "question_text": "What is the present subjunctive form of 'hablar' for 'yo'?",
+        "options": ["hablo", "hable", "hablaba", "hablaré"],
+        "correct_answer": "hable",
+        "explanation": "Present subjunctive: -ar verbs change to -e endings",
+        "difficulty": "beginner"
+      },
+      {
+        "question_text": "What is the present subjunctive form of 'comer' for 'tú'?",
+        "options": ["comes", "comas", "comías", "comerás"],
+        "correct_answer": "comas",
+        "explanation": "Present subjunctive: -er verbs change to -a endings",
+        "difficulty": "beginner"
+      },
+      {
+        "question_text": "Complete: 'Espero que él _____ (venir) mañana.'",
+        "options": ["viene", "venga", "venía", "vendrá"],
+        "correct_answer": "venga",
+        "explanation": "After 'espero que' use subjunctive: venir → venga",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "What is the present subjunctive form of 'ser' for 'nosotros'?",
+        "options": ["somos", "seamos", "éramos", "seremos"],
+        "correct_answer": "seamos",
+        "explanation": "Irregular subjunctive: ser → seamos",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "Complete: 'Dudo que ellos _____ (tener) razón.'",
+        "options": ["tienen", "tengan", "tenían", "tendrán"],
+        "correct_answer": "tengan",
+        "explanation": "After 'dudo que' use subjunctive: tener → tengan",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "What is the present subjunctive form of 'ir' for 'ella'?",
+        "options": ["va", "vaya", "iba", "irá"],
+        "correct_answer": "vaya",
+        "explanation": "Irregular subjunctive: ir → vaya",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "Complete: 'Es importante que tú _____ (estudiar).'",
+        "options": ["estudias", "estudies", "estudiabas", "estudiarás"],
+        "correct_answer": "estudies",
+        "explanation": "After 'es importante que' use subjunctive",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "What is the present subjunctive form of 'hacer' for 'yo'?",
+        "options": ["hago", "haga", "hacía", "haré"],
+        "correct_answer": "haga",
+        "explanation": "Irregular subjunctive: hacer → haga",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "Complete: 'No creo que _____ (llover) hoy.'",
+        "options": ["llueve", "llueva", "llovía", "lloverá"],
+        "correct_answer": "llueva",
+        "explanation": "After 'no creo que' use subjunctive",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "What is the present subjunctive form of 'poder' for 'ustedes'?",
+        "options": ["pueden", "puedan", "podían", "podrán"],
+        "correct_answer": "puedan",
+        "explanation": "Stem-changing subjunctive: poder → puedan",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "Which expression requires subjunctive?",
+        "options": ["Creo que", "Es cierto que", "Ojalá que", "Sé que"],
+        "correct_answer": "Ojalá que",
+        "explanation": "'Ojalá que' expresses hope and requires subjunctive",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "Complete: 'Quiero que vosotros _____ (venir).'",
+        "options": ["venís", "vengáis", "veníais", "vendréis"],
+        "correct_answer": "vengáis",
+        "explanation": "After 'quiero que' use subjunctive: venir → vengáis",
+        "difficulty": "advanced"
+      },
+      {
+        "question_text": "What is the present subjunctive form of 'dar' for 'tú'?",
+        "options": ["das", "des", "dabas", "darás"],
+        "correct_answer": "des",
+        "explanation": "Irregular subjunctive: dar → des",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "Complete: 'Me alegro de que _____ (estar) bien.'",
+        "options": ["estás", "estés", "estabas", "estarás"],
+        "correct_answer": "estés",
+        "explanation": "After 'me alegro de que' use subjunctive",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "What is the present subjunctive form of 'saber' for 'ellos'?",
+        "options": ["saben", "sepan", "sabían", "sabrán"],
+        "correct_answer": "sepan",
+        "explanation": "Irregular subjunctive: saber → sepan",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "Complete: 'Es posible que nosotros _____ (salir).'",
+        "options": ["salimos", "salgamos", "salíamos", "saldremos"],
+        "correct_answer": "salgamos",
+        "explanation": "After 'es posible que' use subjunctive",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "What is the present subjunctive form of 'decir' for 'yo'?",
+        "options": ["digo", "diga", "decía", "diré"],
+        "correct_answer": "diga",
+        "explanation": "Irregular subjunctive: decir → diga",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "Complete: 'Temo que él no _____ (llegar) a tiempo.'",
+        "options": ["llega", "llegue", "llegaba", "llegará"],
+        "correct_answer": "llegue",
+        "explanation": "After 'temo que' use subjunctive",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "What is the present subjunctive form of 'poner' for 'ella'?",
+        "options": ["pone", "ponga", "ponía", "pondrá"],
+        "correct_answer": "ponga",
+        "explanation": "Irregular subjunctive: poner → ponga",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "Complete: 'Ojalá que _____ (haber) tiempo.'",
+        "options": ["hay", "haya", "había", "habrá"],
+        "correct_answer": "haya",
+        "explanation": "After 'ojalá que' use subjunctive: haber → haya",
+        "difficulty": "advanced"
+      }
+    ]
+  }
+}

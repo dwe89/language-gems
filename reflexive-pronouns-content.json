@@ -1,0 +1,358 @@
+{
+  "practice_content": {
+    "instructions": "Practice Spanish reflexive pronouns with these exercises.",
+    "practice_type": "mixed_exercises",
+    "estimated_duration": 15,
+    "exercises": [
+      {
+        "type": "multiple_choice",
+        "instructions": "Choose the correct reflexive pronoun",
+        "prompts": [
+          {
+            "question": "What reflexive pronoun goes with 'yo'?",
+            "options": ["me", "te", "se", "nos"],
+            "answer": "me",
+            "explanation": "'Me' is the reflexive pronoun for 'yo'"
+          },
+          {
+            "question": "What reflexive pronoun goes with 'tú'?",
+            "options": ["me", "te", "se", "nos"],
+            "answer": "te",
+            "explanation": "'Te' is the reflexive pronoun for 'tú'"
+          },
+          {
+            "question": "What reflexive pronoun goes with 'él/ella/usted'?",
+            "options": ["me", "te", "se", "nos"],
+            "answer": "se",
+            "explanation": "'Se' is the reflexive pronoun for third person singular"
+          },
+          {
+            "question": "What reflexive pronoun goes with 'nosotros'?",
+            "options": ["me", "te", "nos", "os"],
+            "answer": "nos",
+            "explanation": "'Nos' is the reflexive pronoun for 'nosotros'"
+          },
+          {
+            "question": "What reflexive pronoun goes with 'ellos/ellas/ustedes'?",
+            "options": ["nos", "os", "se", "les"],
+            "answer": "se",
+            "explanation": "'Se' is the reflexive pronoun for third person plural"
+          },
+          {
+            "question": "In 'Me lavo', what does 'me' indicate?",
+            "options": ["I wash someone", "Someone washes me", "I wash myself", "I am washed"],
+            "answer": "I wash myself",
+            "explanation": "Reflexive pronouns show the action is done to oneself"
+          },
+          {
+            "question": "What does 'levantarse' mean?",
+            "options": ["to lift", "to get up", "to raise", "to stand"],
+            "answer": "to get up",
+            "explanation": "'Levantarse' means 'to get up' (reflexive verb)"
+          },
+          {
+            "question": "Where do reflexive pronouns go?",
+            "options": ["After the verb", "Before the verb", "At the end", "Anywhere"],
+            "answer": "Before the verb",
+            "explanation": "Reflexive pronouns go before conjugated verbs"
+          },
+          {
+            "question": "What's the reflexive pronoun for 'vosotros'?",
+            "options": ["nos", "os", "se", "les"],
+            "answer": "os",
+            "explanation": "'Os' is the reflexive pronoun for 'vosotros'"
+          },
+          {
+            "question": "Which verb is always reflexive?",
+            "options": ["comer", "beber", "ducharse", "hablar"],
+            "answer": "ducharse",
+            "explanation": "'Ducharse' (to shower) is always used reflexively"
+          }
+        ]
+      },
+      {
+        "type": "fill_blank",
+        "instructions": "Complete with the correct reflexive pronoun",
+        "prompts": [
+          {
+            "sentence": "Yo _____ levanto a las siete. (I get up at seven.)",
+            "answer": "me",
+            "explanation": "'Me' is the reflexive pronoun for 'yo'"
+          },
+          {
+            "sentence": "Tú _____ lavas las manos. (You wash your hands.)",
+            "answer": "te",
+            "explanation": "'Te' is the reflexive pronoun for 'tú'"
+          },
+          {
+            "sentence": "Ella _____ ducha por la mañana. (She showers in the morning.)",
+            "answer": "se",
+            "explanation": "'Se' is the reflexive pronoun for 'ella'"
+          },
+          {
+            "sentence": "Nosotros _____ vestimos rápido. (We get dressed quickly.)",
+            "answer": "nos",
+            "explanation": "'Nos' is the reflexive pronoun for 'nosotros'"
+          },
+          {
+            "sentence": "Ellos _____ acuestan tarde. (They go to bed late.)",
+            "answer": "se",
+            "explanation": "'Se' is the reflexive pronoun for 'ellos'"
+          },
+          {
+            "sentence": "¿A qué hora _____ despiertas? (What time do you wake up?)",
+            "answer": "te",
+            "explanation": "'Te' is the reflexive pronoun for 'tú'"
+          },
+          {
+            "sentence": "Mi hermano _____ afeita todos los días. (My brother shaves every day.)",
+            "answer": "se",
+            "explanation": "'Se' is the reflexive pronoun for third person"
+          },
+          {
+            "sentence": "Nosotras _____ maquillamos para la fiesta. (We put on makeup for the party.)",
+            "answer": "nos",
+            "explanation": "'Nos' is the reflexive pronoun for 'nosotras'"
+          },
+          {
+            "sentence": "Vosotros _____ bañáis en la playa. (You all bathe at the beach.)",
+            "answer": "os",
+            "explanation": "'Os' is the reflexive pronoun for 'vosotros'"
+          },
+          {
+            "sentence": "Yo _____ cepillo los dientes. (I brush my teeth.)",
+            "answer": "me",
+            "explanation": "'Me' is the reflexive pronoun for 'yo'"
+          }
+        ]
+      },
+      {
+        "type": "conjugation",
+        "instructions": "Conjugate these reflexive verbs",
+        "prompts": [
+          {
+            "verb": "levantarse",
+            "subject": "yo",
+            "answer": "me levanto",
+            "english": "I get up",
+            "explanation": "Yo + me + levanto = me levanto"
+          },
+          {
+            "verb": "ducharse",
+            "subject": "tú",
+            "answer": "te duchas",
+            "english": "you shower",
+            "explanation": "Tú + te + duchas = te duchas"
+          },
+          {
+            "verb": "vestirse",
+            "subject": "él",
+            "answer": "se viste",
+            "english": "he gets dressed",
+            "explanation": "Él + se + viste = se viste"
+          },
+          {
+            "verb": "acostarse",
+            "subject": "nosotros",
+            "answer": "nos acostamos",
+            "english": "we go to bed",
+            "explanation": "Nosotros + nos + acostamos = nos acostamos"
+          },
+          {
+            "verb": "despertarse",
+            "subject": "ellas",
+            "answer": "se despiertan",
+            "english": "they wake up",
+            "explanation": "Ellas + se + despiertan = se despiertan"
+          },
+          {
+            "verb": "lavarse",
+            "subject": "yo",
+            "answer": "me lavo",
+            "english": "I wash myself",
+            "explanation": "Yo + me + lavo = me lavo"
+          },
+          {
+            "verb": "peinarse",
+            "subject": "tú",
+            "answer": "te peinas",
+            "english": "you comb your hair",
+            "explanation": "Tú + te + peinas = te peinas"
+          },
+          {
+            "verb": "sentarse",
+            "subject": "usted",
+            "answer": "se sienta",
+            "english": "you sit down",
+            "explanation": "Usted + se + sienta = se sienta"
+          },
+          {
+            "verb": "bañarse",
+            "subject": "nosotras",
+            "answer": "nos bañamos",
+            "english": "we bathe",
+            "explanation": "Nosotras + nos + bañamos = nos bañamos"
+          },
+          {
+            "verb": "afeitarse",
+            "subject": "ellos",
+            "answer": "se afeitan",
+            "english": "they shave",
+            "explanation": "Ellos + se + afeitan = se afeitan"
+          }
+        ]
+      }
+    ]
+  },
+  "quiz_content": {
+    "instructions": "Test your knowledge of Spanish reflexive pronouns.",
+    "quiz_type": "mixed_assessment",
+    "time_limit": 900,
+    "max_attempts": 3,
+    "passing_score": 70,
+    "show_explanations": true,
+    "randomize_questions": true,
+    "questions": [
+      {
+        "question_text": "What reflexive pronoun goes with 'yo'?",
+        "options": ["me", "te", "se", "nos"],
+        "correct_answer": "me",
+        "explanation": "'Me' is the reflexive pronoun for 'yo'",
+        "difficulty": "beginner"
+      },
+      {
+        "question_text": "Complete: 'Tú _____ lavas' (you wash yourself)",
+        "options": ["me", "te", "se", "nos"],
+        "correct_answer": "te",
+        "explanation": "'Te' is the reflexive pronoun for 'tú'",
+        "difficulty": "beginner"
+      },
+      {
+        "question_text": "What does 'se levanta' mean?",
+        "options": ["he lifts", "he gets up", "he raises", "he stands"],
+        "correct_answer": "he gets up",
+        "explanation": "'Se levanta' means 'he gets up' (reflexive)",
+        "difficulty": "beginner"
+      },
+      {
+        "question_text": "What reflexive pronoun goes with 'nosotros'?",
+        "options": ["me", "te", "nos", "os"],
+        "correct_answer": "nos",
+        "explanation": "'Nos' is the reflexive pronoun for 'nosotros'",
+        "difficulty": "beginner"
+      },
+      {
+        "question_text": "Complete: 'Ellos _____ duchan' (they shower)",
+        "options": ["nos", "os", "se", "les"],
+        "correct_answer": "se",
+        "explanation": "'Se' is the reflexive pronoun for third person plural",
+        "difficulty": "beginner"
+      },
+      {
+        "question_text": "What does 'ducharse' mean?",
+        "options": ["to wash", "to shower", "to bathe", "to clean"],
+        "correct_answer": "to shower",
+        "explanation": "'Ducharse' means 'to shower' (reflexive verb)",
+        "difficulty": "beginner"
+      },
+      {
+        "question_text": "Where do reflexive pronouns go?",
+        "options": ["After the verb", "Before the verb", "At the end", "Anywhere"],
+        "correct_answer": "Before the verb",
+        "explanation": "Reflexive pronouns go before conjugated verbs",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "What's the reflexive pronoun for 'vosotros'?",
+        "options": ["nos", "os", "se", "les"],
+        "correct_answer": "os",
+        "explanation": "'Os' is the reflexive pronoun for 'vosotros'",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "Complete: 'Yo _____ visto' (I get dressed)",
+        "options": ["me", "te", "se", "nos"],
+        "correct_answer": "me",
+        "explanation": "'Me' is the reflexive pronoun for 'yo'",
+        "difficulty": "beginner"
+      },
+      {
+        "question_text": "What does 'acostarse' mean?",
+        "options": ["to lie down", "to go to bed", "to rest", "to sleep"],
+        "correct_answer": "to go to bed",
+        "explanation": "'Acostarse' means 'to go to bed' (reflexive)",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "Complete: 'Ella _____ peina' (she combs her hair)",
+        "options": ["me", "te", "se", "nos"],
+        "correct_answer": "se",
+        "explanation": "'Se' is the reflexive pronoun for 'ella'",
+        "difficulty": "beginner"
+      },
+      {
+        "question_text": "What does reflexive mean?",
+        "options": ["Action done to others", "Action done to oneself", "Action done by others", "Action done together"],
+        "correct_answer": "Action done to oneself",
+        "explanation": "Reflexive verbs show actions done to oneself",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "Complete: 'Nosotros _____ despertamos' (we wake up)",
+        "options": ["me", "te", "nos", "os"],
+        "correct_answer": "nos",
+        "explanation": "'Nos' is the reflexive pronoun for 'nosotros'",
+        "difficulty": "beginner"
+      },
+      {
+        "question_text": "What does 'lavarse' mean?",
+        "options": ["to wash", "to wash oneself", "to be washed", "to wash others"],
+        "correct_answer": "to wash oneself",
+        "explanation": "'Lavarse' means 'to wash oneself' (reflexive)",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "Complete: 'Vosotros _____ sentáis' (you all sit down)",
+        "options": ["nos", "os", "se", "les"],
+        "correct_answer": "os",
+        "explanation": "'Os' is the reflexive pronoun for 'vosotros'",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "What's the infinitive of 'me levanto'?",
+        "options": ["levantar", "levantarse", "levanto", "levantando"],
+        "correct_answer": "levantarse",
+        "explanation": "The infinitive form includes 'se' at the end",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "Complete: 'Ustedes _____ bañan' (you all bathe)",
+        "options": ["nos", "os", "se", "les"],
+        "correct_answer": "se",
+        "explanation": "'Se' is used for 'ustedes' (third person plural)",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "What does 'afeitarse' mean?",
+        "options": ["to cut", "to shave", "to trim", "to clean"],
+        "correct_answer": "to shave",
+        "explanation": "'Afeitarse' means 'to shave oneself'",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "Complete: 'Tú _____ cepillas los dientes' (you brush your teeth)",
+        "options": ["me", "te", "se", "nos"],
+        "correct_answer": "te",
+        "explanation": "'Te' is the reflexive pronoun for 'tú'",
+        "difficulty": "beginner"
+      },
+      {
+        "question_text": "Which is NOT a reflexive verb?",
+        "options": ["ducharse", "levantarse", "comer", "vestirse"],
+        "correct_answer": "comer",
+        "explanation": "'Comer' (to eat) is not typically used reflexively",
+        "difficulty": "advanced"
+      }
+    ]
+  }
+}

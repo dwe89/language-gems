@@ -1,0 +1,320 @@
+[
+  {
+    "topic_id": "definite",
+    "content_type": "practice",
+    "title": "Definite Articles Practice",
+    "slug": "definite-practice",
+    "content_data": {
+      "questions": [
+        {
+          "id": "def_1",
+          "type": "multiple_choice",
+          "question": "Which definite article goes with 'casa' (house)?",
+          "options": ["el", "la", "los", "las"],
+          "correct_answer": "la",
+          "explanation": "'Casa' is feminine singular, so it takes 'la'.",
+          "difficulty": "beginner"
+        },
+        {
+          "id": "def_2", 
+          "type": "multiple_choice",
+          "question": "Which definite article goes with 'libros' (books)?",
+          "options": ["el", "la", "los", "las"],
+          "correct_answer": "los",
+          "explanation": "'Libros' is masculine plural, so it takes 'los'.",
+          "difficulty": "beginner"
+        },
+        {
+          "id": "def_3",
+          "type": "multiple_choice", 
+          "question": "Which definite article goes with 'mesa' (table)?",
+          "options": ["el", "la", "los", "las"],
+          "correct_answer": "la",
+          "explanation": "'Mesa' is feminine singular, so it takes 'la'.",
+          "difficulty": "beginner"
+        },
+        {
+          "id": "def_4",
+          "type": "multiple_choice",
+          "question": "Which definite article goes with 'coches' (cars)?",
+          "options": ["el", "la", "los", "las"],
+          "correct_answer": "los", 
+          "explanation": "'Coches' is masculine plural, so it takes 'los'.",
+          "difficulty": "beginner"
+        },
+        {
+          "id": "def_5",
+          "type": "multiple_choice",
+          "question": "Which definite article goes with 'niñas' (girls)?",
+          "options": ["el", "la", "los", "las"],
+          "correct_answer": "las",
+          "explanation": "'Niñas' is feminine plural, so it takes 'las'.",
+          "difficulty": "beginner"
+        },
+        {
+          "id": "def_6",
+          "type": "multiple_choice",
+          "question": "Which definite article goes with 'problema' (problem)?",
+          "options": ["el", "la", "los", "las"],
+          "correct_answer": "el",
+          "explanation": "'Problema' ends in -a but is masculine, so it takes 'el'.",
+          "difficulty": "intermediate"
+        },
+        {
+          "id": "def_7",
+          "type": "multiple_choice",
+          "question": "Which definite article goes with 'mano' (hand)?",
+          "options": ["el", "la", "los", "las"],
+          "correct_answer": "la",
+          "explanation": "'Mano' ends in -o but is feminine, so it takes 'la'.",
+          "difficulty": "intermediate"
+        },
+        {
+          "id": "def_8",
+          "type": "multiple_choice",
+          "question": "Which definite article goes with 'universidades' (universities)?",
+          "options": ["el", "la", "los", "las"],
+          "correct_answer": "las",
+          "explanation": "'Universidades' is feminine plural, so it takes 'las'.",
+          "difficulty": "intermediate"
+        },
+        {
+          "id": "def_9",
+          "type": "multiple_choice",
+          "question": "Which definite article goes with 'día' (day)?",
+          "options": ["el", "la", "los", "las"],
+          "correct_answer": "el",
+          "explanation": "'Día' ends in -a but is masculine, so it takes 'el'.",
+          "difficulty": "intermediate"
+        },
+        {
+          "id": "def_10",
+          "type": "multiple_choice",
+          "question": "Which definite article goes with 'ciudades' (cities)?",
+          "options": ["el", "la", "los", "las"],
+          "correct_answer": "las",
+          "explanation": "'Ciudades' is feminine plural, so it takes 'las'.",
+          "difficulty": "intermediate"
+        }
+      ]
+    },
+    "difficulty_level": "intermediate",
+    "age_group": "11-14",
+    "estimated_duration": 15,
+    "order_position": 1,
+    "is_active": true,
+    "is_featured": false
+  },
+  {
+    "topic_id": "gender-plurals",
+    "content_type": "practice", 
+    "title": "Gender and Plurals Practice",
+    "slug": "gender-plurals-practice",
+    "content_data": {
+      "questions": [
+        {
+          "id": "gp_1",
+          "type": "multiple_choice",
+          "question": "What is the plural of 'el gato' (the cat)?",
+          "options": ["los gatos", "las gatas", "los gatas", "las gatos"],
+          "correct_answer": "los gatos",
+          "explanation": "'Gato' is masculine, so the plural is 'los gatos'.",
+          "difficulty": "beginner"
+        },
+        {
+          "id": "gp_2",
+          "type": "multiple_choice",
+          "question": "What is the plural of 'la mesa' (the table)?",
+          "options": ["los mesas", "las mesas", "los mesa", "las mesa"],
+          "correct_answer": "las mesas",
+          "explanation": "'Mesa' is feminine, so the plural is 'las mesas'.",
+          "difficulty": "beginner"
+        },
+        {
+          "id": "gp_3",
+          "type": "multiple_choice",
+          "question": "What is the plural of 'el profesor' (the teacher)?",
+          "options": ["los profesores", "las profesoras", "los profesors", "las profesors"],
+          "correct_answer": "los profesores",
+          "explanation": "Words ending in consonants add -es for plural: 'los profesores'.",
+          "difficulty": "intermediate"
+        },
+        {
+          "id": "gp_4",
+          "type": "multiple_choice",
+          "question": "What is the plural of 'la ciudad' (the city)?",
+          "options": ["los ciudades", "las ciudades", "los ciudads", "las ciudads"],
+          "correct_answer": "las ciudades",
+          "explanation": "'Ciudad' is feminine and ends in -d, so plural is 'las ciudades'.",
+          "difficulty": "intermediate"
+        },
+        {
+          "id": "gp_5",
+          "type": "multiple_choice",
+          "question": "What is the plural of 'el lápiz' (the pencil)?",
+          "options": ["los lápices", "las lápices", "los lápizs", "las lápizs"],
+          "correct_answer": "los lápices",
+          "explanation": "Words ending in -z change to -ces in plural: 'los lápices'.",
+          "difficulty": "intermediate"
+        },
+        {
+          "id": "gp_6",
+          "type": "multiple_choice",
+          "question": "What is the feminine form of 'el actor' (the actor)?",
+          "options": ["la actor", "la actora", "la actriz", "la actora"],
+          "correct_answer": "la actriz",
+          "explanation": "The feminine of 'actor' is 'actriz'.",
+          "difficulty": "intermediate"
+        },
+        {
+          "id": "gp_7",
+          "type": "multiple_choice",
+          "question": "What is the plural of 'la luz' (the light)?",
+          "options": ["los luces", "las luces", "los luzs", "las luzs"],
+          "correct_answer": "las luces",
+          "explanation": "'Luz' is feminine and ends in -z, so plural is 'las luces'.",
+          "difficulty": "intermediate"
+        },
+        {
+          "id": "gp_8",
+          "type": "multiple_choice",
+          "question": "What is the plural of 'el país' (the country)?",
+          "options": ["los países", "las países", "los paiss", "las paiss"],
+          "correct_answer": "los países",
+          "explanation": "Words ending in stressed vowel + s add -es: 'los países'.",
+          "difficulty": "advanced"
+        },
+        {
+          "id": "gp_9",
+          "type": "multiple_choice",
+          "question": "What is the plural of 'la crisis' (the crisis)?",
+          "options": ["los crisis", "las crisis", "los crisises", "las crisises"],
+          "correct_answer": "las crisis",
+          "explanation": "Words ending in unstressed -is don't change in plural: 'las crisis'.",
+          "difficulty": "advanced"
+        },
+        {
+          "id": "gp_10",
+          "type": "multiple_choice",
+          "question": "What is the plural of 'el martes' (Tuesday)?",
+          "options": ["los martes", "las martes", "los marteses", "las marteses"],
+          "correct_answer": "los martes",
+          "explanation": "Days of the week ending in -s don't change in plural: 'los martes'.",
+          "difficulty": "advanced"
+        }
+      ]
+    },
+    "difficulty_level": "intermediate",
+    "age_group": "11-14",
+    "estimated_duration": 15,
+    "order_position": 1,
+    "is_active": true,
+    "is_featured": false
+  },
+  {
+    "topic_id": "plural-formation",
+    "content_type": "practice",
+    "title": "Plural Formation Practice", 
+    "slug": "plural-formation-practice",
+    "content_data": {
+      "questions": [
+        {
+          "id": "pf_1",
+          "type": "multiple_choice",
+          "question": "How do you make 'libro' (book) plural?",
+          "options": ["libro", "libros", "libroes", "libres"],
+          "correct_answer": "libros",
+          "explanation": "Words ending in vowels add -s: libro → libros.",
+          "difficulty": "beginner"
+        },
+        {
+          "id": "pf_2",
+          "type": "multiple_choice",
+          "question": "How do you make 'animal' (animal) plural?",
+          "options": ["animals", "animales", "animalis", "animalos"],
+          "correct_answer": "animales",
+          "explanation": "Words ending in consonants add -es: animal → animales.",
+          "difficulty": "beginner"
+        },
+        {
+          "id": "pf_3",
+          "type": "multiple_choice",
+          "question": "How do you make 'feliz' (happy) plural?",
+          "options": ["felizs", "felizes", "felices", "felicios"],
+          "correct_answer": "felices",
+          "explanation": "Words ending in -z change to -ces: feliz → felices.",
+          "difficulty": "intermediate"
+        },
+        {
+          "id": "pf_4",
+          "type": "multiple_choice",
+          "question": "How do you make 'café' (coffee) plural?",
+          "options": ["cafés", "cafees", "cafeses", "cafes"],
+          "correct_answer": "cafés",
+          "explanation": "Words ending in stressed vowels add -s: café → cafés.",
+          "difficulty": "intermediate"
+        },
+        {
+          "id": "pf_5",
+          "type": "multiple_choice",
+          "question": "How do you make 'autobús' (bus) plural?",
+          "options": ["autobús", "autobuses", "autobuss", "autobúses"],
+          "correct_answer": "autobuses",
+          "explanation": "Words ending in stressed vowel + s add -es: autobús → autobuses.",
+          "difficulty": "intermediate"
+        },
+        {
+          "id": "pf_6",
+          "type": "multiple_choice",
+          "question": "How do you make 'análisis' (analysis) plural?",
+          "options": ["análisis", "análisises", "análises", "análisies"],
+          "correct_answer": "análisis",
+          "explanation": "Words ending in unstressed -is don't change: análisis → análisis.",
+          "difficulty": "advanced"
+        },
+        {
+          "id": "pf_7",
+          "type": "multiple_choice",
+          "question": "How do you make 'reloj' (clock) plural?",
+          "options": ["relojs", "relojes", "relojis", "relojoes"],
+          "correct_answer": "relojes",
+          "explanation": "Words ending in -j add -es: reloj → relojes.",
+          "difficulty": "intermediate"
+        },
+        {
+          "id": "pf_8",
+          "type": "multiple_choice",
+          "question": "How do you make 'bambú' (bamboo) plural?",
+          "options": ["bambús", "bambúes", "bambues", "bamboos"],
+          "correct_answer": "bambús",
+          "explanation": "Words ending in stressed -ú add -s: bambú → bambús.",
+          "difficulty": "advanced"
+        },
+        {
+          "id": "pf_9",
+          "type": "multiple_choice",
+          "question": "How do you make 'virus' (virus) plural?",
+          "options": ["virus", "viruses", "viris", "virús"],
+          "correct_answer": "virus",
+          "explanation": "Words ending in unstressed -us don't change: virus → virus.",
+          "difficulty": "advanced"
+        },
+        {
+          "id": "pf_10",
+          "type": "multiple_choice",
+          "question": "How do you make 'champú' (shampoo) plural?",
+          "options": ["champús", "champúes", "champues", "champoos"],
+          "correct_answer": "champús",
+          "explanation": "Words ending in stressed -ú add -s: champú → champús.",
+          "difficulty": "advanced"
+        }
+      ]
+    },
+    "difficulty_level": "intermediate",
+    "age_group": "11-14",
+    "estimated_duration": 15,
+    "order_position": 1,
+    "is_active": true,
+    "is_featured": false
+  }
+]

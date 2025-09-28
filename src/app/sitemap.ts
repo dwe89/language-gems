@@ -2,52 +2,82 @@ import { MetadataRoute } from 'next'
 import fs from 'fs'
 import path from 'path'
 
-// Function to get all static grammar pages
-function getGrammarPages(): { url: string; priority: number; changeFrequency: 'weekly' | 'monthly' }[] {
-  const grammarDir = path.join(process.cwd(), 'src/app/grammar')
-  const grammarPages: { url: string; priority: number; changeFrequency: 'weekly' | 'monthly' }[] = []
-  
+// Function to get all static pages from the app directory
+function getAllPages(): { url: string; priority: number; changeFrequency: 'weekly' | 'monthly' | 'yearly' }[] {
+  const appDir = path.join(process.cwd(), 'src/app')
+  const allPages: { url: string; priority: number; changeFrequency: 'weekly' | 'monthly' | 'yearly' }[] = []
+
   // Function to recursively find page.tsx files
   function findPages(dir: string, currentPath: string = ''): void {
     try {
       const items = fs.readdirSync(dir)
-      
+
       for (const item of items) {
         const fullPath = path.join(dir, item)
         const relativePath = currentPath ? `${currentPath}/${item}` : item
-        
-        // Skip dynamic routes (contains brackets)
-        if (item.includes('[') || item.includes(']')) {
+
+        // Skip dynamic routes, API routes, and special Next.js files
+        if (item.includes('[') || item.includes(']') || item === 'api' || item.startsWith('_') || item.startsWith('.')) {
           continue
         }
-        
+
         if (fs.statSync(fullPath).isDirectory()) {
           findPages(fullPath, relativePath)
         } else if (item === 'page.tsx') {
           // Convert file path to URL
-          const url = currentPath ? `/grammar/${currentPath}` : '/grammar'
-          
-          // Determine priority based on depth and content type
-          let priority = 0.7 // default for grammar pages
-          let changeFrequency: 'weekly' | 'monthly' = 'monthly'
-          
-          // Higher priority for main language pages
-          if (currentPath.match(/^(spanish|french|german)$/)) {
+          const url = currentPath ? `/${currentPath}` : ''
+
+          // Determine priority and change frequency based on URL patterns
+          let priority = 0.6 // default
+          let changeFrequency: 'weekly' | 'monthly' | 'yearly' = 'monthly'
+
+          // High priority pages
+          if (url === '' || url === '/about' || url === '/schools' || url === '/games' || url === '/vocabmaster' || url === '/blog' || url === '/grammar') {
+            priority = 0.9
+            changeFrequency = url === '' || url === '/games' || url === '/blog' || url === '/grammar' ? 'weekly' : 'monthly'
+          }
+          // Language hub pages
+          else if (url.match(/^\/grammar\/(spanish|french|german)$/)) {
+            priority = 0.9
+            changeFrequency = 'weekly'
+          }
+          // High-value SEO content
+          else if (url.includes('ser-vs-estar') || url.includes('por-vs-para') || url.includes('cases') || url.includes('imparfait') || url.includes('gcse') || url.includes('aqa') || url.includes('edexcel')) {
+            priority = 0.9
+            changeFrequency = 'monthly'
+          }
+          // Blog posts
+          else if (url.startsWith('/blog/') && url !== '/blog') {
+            priority = 0.8
+            changeFrequency = 'monthly'
+          }
+          // Grammar pages
+          else if (url.startsWith('/grammar/')) {
+            priority = 0.8
+            changeFrequency = 'monthly'
+          }
+          // Game pages
+          else if (url.startsWith('/games/')) {
             priority = 0.8
             changeFrequency = 'weekly'
           }
-          // Higher priority for category pages (verbs, nouns, etc.)
-          else if (currentPath.match(/^(spanish|french|german)\/(verbs|nouns|adjectives|pronouns)$/)) {
-            priority = 0.75
-            changeFrequency = 'weekly'
-          }
-          // Specific topic pages
-          else if (currentPath.includes('/')) {
+          // Assessment pages
+          else if (url.includes('assessment') || url.includes('test') || url.includes('exam')) {
             priority = 0.7
             changeFrequency = 'monthly'
           }
-          
-          grammarPages.push({
+          // Legal pages
+          else if (url.includes('privacy') || url.includes('terms') || url.includes('cookies')) {
+            priority = 0.4
+            changeFrequency = 'yearly'
+          }
+          // Other content pages
+          else if (url.includes('vocabulary') || url.includes('songs') || url.includes('worksheets')) {
+            priority = 0.8
+            changeFrequency = 'weekly'
+          }
+
+          allPages.push({
             url,
             priority,
             changeFrequency
@@ -58,9 +88,9 @@ function getGrammarPages(): { url: string; priority: number; changeFrequency: 'w
       console.warn(`Could not read directory ${dir}:`, error)
     }
   }
-  
-  findPages(grammarDir)
-  return grammarPages.sort((a, b) => b.priority - a.priority) // Sort by priority
+
+  findPages(appDir)
+  return allPages.sort((a, b) => b.priority - a.priority) // Sort by priority
 }
 
 export default function sitemap(): MetadataRoute.Sitemap {

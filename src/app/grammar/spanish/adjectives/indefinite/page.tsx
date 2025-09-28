@@ -437,7 +437,7 @@ export default function SpanishIndefiniteAdjectivesPage() {
         difficulty="intermediate"
         estimatedTime={12}
         sections={sections}
-        backUrl="/grammar/spanish/adjectives"
+        backUrl="/grammar/spanish"
         practiceUrl="/grammar/spanish/adjectives/indefinite/practice"
         quizUrl="/grammar/spanish/adjectives/indefinite/quiz"
         songUrl="/songs/es?theme=grammar&topic=indefinite-adjectives"

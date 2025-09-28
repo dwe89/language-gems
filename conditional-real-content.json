@@ -1,0 +1,358 @@
+{
+  "practice_content": {
+    "instructions": "Practice Spanish conditional tense with these exercises.",
+    "practice_type": "mixed_exercises",
+    "estimated_duration": 20,
+    "exercises": [
+      {
+        "type": "conjugation",
+        "instructions": "Conjugate these verbs in the conditional tense",
+        "prompts": [
+          {
+            "verb": "hablar",
+            "subject": "yo",
+            "answer": "hablaría",
+            "english": "I would speak",
+            "explanation": "Regular -ar verb: hablar + ía = hablaría"
+          },
+          {
+            "verb": "comer",
+            "subject": "tú",
+            "answer": "comerías",
+            "english": "you would eat",
+            "explanation": "Regular -er verb: comer + ías = comerías"
+          },
+          {
+            "verb": "vivir",
+            "subject": "él",
+            "answer": "viviría",
+            "english": "he would live",
+            "explanation": "Regular -ir verb: vivir + ía = viviría"
+          },
+          {
+            "verb": "tener",
+            "subject": "nosotros",
+            "answer": "tendríamos",
+            "english": "we would have",
+            "explanation": "Irregular verb: tener → tendr- + íamos = tendríamos"
+          },
+          {
+            "verb": "poder",
+            "subject": "vosotros",
+            "answer": "podríais",
+            "english": "you all would be able",
+            "explanation": "Irregular verb: poder → podr- + íais = podríais"
+          },
+          {
+            "verb": "hacer",
+            "subject": "ellos",
+            "answer": "harían",
+            "english": "they would do/make",
+            "explanation": "Irregular verb: hacer → har- + ían = harían"
+          },
+          {
+            "verb": "decir",
+            "subject": "yo",
+            "answer": "diría",
+            "english": "I would say",
+            "explanation": "Irregular verb: decir → dir- + ía = diría"
+          },
+          {
+            "verb": "salir",
+            "subject": "ella",
+            "answer": "saldría",
+            "english": "she would leave",
+            "explanation": "Irregular verb: salir → saldr- + ía = saldría"
+          },
+          {
+            "verb": "venir",
+            "subject": "ustedes",
+            "answer": "vendrían",
+            "english": "you all would come",
+            "explanation": "Irregular verb: venir → vendr- + ían = vendrían"
+          },
+          {
+            "verb": "poner",
+            "subject": "tú",
+            "answer": "pondrías",
+            "english": "you would put",
+            "explanation": "Irregular verb: poner → pondr- + ías = pondrías"
+          }
+        ]
+      },
+      {
+        "type": "multiple_choice",
+        "instructions": "Choose the correct conditional form",
+        "prompts": [
+          {
+            "question": "What is the conditional form of 'hablar' for 'yo'?",
+            "options": ["hablaré", "hablaría", "hablara", "hablase"],
+            "answer": "hablaría",
+            "explanation": "Regular conditional: infinitive + ía = hablaría"
+          },
+          {
+            "question": "What is the conditional form of 'tener' for 'nosotros'?",
+            "options": ["tenemos", "tendríamos", "teníamos", "tendremos"],
+            "answer": "tendríamos",
+            "explanation": "Irregular conditional: tener → tendr- + íamos = tendríamos"
+          },
+          {
+            "question": "What is the conditional form of 'poder' for 'tú'?",
+            "options": ["puedes", "podrías", "podías", "podrás"],
+            "answer": "podrías",
+            "explanation": "Irregular conditional: poder → podr- + ías = podrías"
+          },
+          {
+            "question": "What is the conditional form of 'hacer' for 'ellos'?",
+            "options": ["hacen", "harán", "harían", "hicieron"],
+            "answer": "harían",
+            "explanation": "Irregular conditional: hacer → har- + ían = harían"
+          },
+          {
+            "question": "What is the conditional form of 'decir' for 'yo'?",
+            "options": ["digo", "diré", "diría", "decía"],
+            "answer": "diría",
+            "explanation": "Irregular conditional: decir → dir- + ía = diría"
+          },
+          {
+            "question": "What is the conditional form of 'salir' for 'ella'?",
+            "options": ["sale", "saldrá", "saldría", "salía"],
+            "answer": "saldría",
+            "explanation": "Irregular conditional: salir → saldr- + ía = saldría"
+          },
+          {
+            "question": "What is the conditional form of 'venir' for 'ustedes'?",
+            "options": ["vienen", "vendrán", "vendrían", "vinieron"],
+            "answer": "vendrían",
+            "explanation": "Irregular conditional: venir → vendr- + ían = vendrían"
+          },
+          {
+            "question": "What is the conditional form of 'poner' for 'tú'?",
+            "options": ["pones", "pondrás", "pondrías", "ponías"],
+            "answer": "pondrías",
+            "explanation": "Irregular conditional: poner → pondr- + ías = pondrías"
+          },
+          {
+            "question": "What is the conditional form of 'comer' for 'vosotros'?",
+            "options": ["coméis", "comeréis", "comeríais", "comíais"],
+            "answer": "comeríais",
+            "explanation": "Regular conditional: comer + íais = comeríais"
+          },
+          {
+            "question": "What is the conditional form of 'vivir' for 'él'?",
+            "options": ["vive", "vivirá", "viviría", "vivía"],
+            "answer": "viviría",
+            "explanation": "Regular conditional: vivir + ía = viviría"
+          }
+        ]
+      },
+      {
+        "type": "fill_blank",
+        "instructions": "Complete the sentences with the correct conditional form",
+        "prompts": [
+          {
+            "sentence": "En tu lugar, yo no _____ (hacer) eso.",
+            "answer": "haría",
+            "explanation": "Irregular conditional: hacer → haría"
+          },
+          {
+            "sentence": "¿_____ (poder) ayudarme con la tarea?",
+            "answer": "Podrías",
+            "explanation": "Polite request with poder in conditional"
+          },
+          {
+            "sentence": "Nosotros _____ (ir) al cine si no lloviera.",
+            "answer": "iríamos",
+            "explanation": "Regular conditional: ir + íamos = iríamos"
+          },
+          {
+            "sentence": "Ella dijo que _____ (venir) mañana.",
+            "answer": "vendría",
+            "explanation": "Irregular conditional: venir → vendría"
+          },
+          {
+            "sentence": "¿Qué _____ (decir) tus padres si supieran?",
+            "answer": "dirían",
+            "explanation": "Irregular conditional: decir → dirían"
+          },
+          {
+            "sentence": "Me _____ (gustar) vivir en Barcelona.",
+            "answer": "gustaría",
+            "explanation": "Conditional of gustar for wishes"
+          },
+          {
+            "sentence": "¿_____ (tener) tiempo para hablar?",
+            "answer": "Tendrías",
+            "explanation": "Irregular conditional: tener → tendrías"
+          },
+          {
+            "sentence": "Sin dinero, no _____ (poder) comprar nada.",
+            "answer": "podríamos",
+            "explanation": "Irregular conditional: poder → podríamos"
+          },
+          {
+            "sentence": "¿_____ (querer) un café?",
+            "answer": "Querrías",
+            "explanation": "Polite offer with querer in conditional"
+          },
+          {
+            "sentence": "Con más práctica, _____ (hablar) mejor español.",
+            "answer": "hablarías",
+            "explanation": "Regular conditional: hablar + ías = hablarías"
+          }
+        ]
+      }
+    ]
+  },
+  "quiz_content": {
+    "instructions": "Test your knowledge of Spanish conditional tense.",
+    "quiz_type": "mixed_assessment",
+    "time_limit": 1200,
+    "max_attempts": 3,
+    "passing_score": 70,
+    "show_explanations": true,
+    "randomize_questions": true,
+    "questions": [
+      {
+        "question_text": "What is the conditional form of 'hablar' for 'yo'?",
+        "options": ["hablaré", "hablaría", "hablara", "hablase"],
+        "correct_answer": "hablaría",
+        "explanation": "Regular conditional: infinitive + ía = hablaría",
+        "difficulty": "beginner"
+      },
+      {
+        "question_text": "Which verb has an irregular conditional stem?",
+        "options": ["hablar", "comer", "tener", "escribir"],
+        "correct_answer": "tener",
+        "explanation": "Tener becomes 'tendr-' in conditional (tendría)",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "How do you say 'I would like' in Spanish?",
+        "options": ["me gusta", "me gustaría", "me gustaba", "me gustará"],
+        "correct_answer": "me gustaría",
+        "explanation": "Conditional of gustar: me gustaría",
+        "difficulty": "beginner"
+      },
+      {
+        "question_text": "What is the conditional form of 'poder' for 'tú'?",
+        "options": ["puedes", "podrías", "podías", "podrás"],
+        "correct_answer": "podrías",
+        "explanation": "Irregular conditional: poder → podr- + ías = podrías",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "Complete: 'En tu lugar, yo _____ más cuidado.'",
+        "options": ["tengo", "tendré", "tendría", "tenía"],
+        "correct_answer": "tendría",
+        "explanation": "Hypothetical situation requires conditional: tendría",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "Which sentence uses conditional correctly for a polite request?",
+        "options": ["¿Puedes ayudarme?", "¿Podrías ayudarme?", "¿Ayúdame?", "¿Vas a ayudarme?"],
+        "correct_answer": "¿Podrías ayudarme?",
+        "explanation": "Conditional makes requests more polite: ¿Podrías...?",
+        "difficulty": "beginner"
+      },
+      {
+        "question_text": "What is the conditional form of 'hacer' for 'ellos'?",
+        "options": ["hacen", "harán", "harían", "hicieron"],
+        "correct_answer": "harían",
+        "explanation": "Irregular conditional: hacer → har- + ían = harían",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "Complete: 'Yo _____ (querer) un café.'",
+        "options": ["quiero", "querré", "querría", "quería"],
+        "correct_answer": "querría",
+        "explanation": "Polite request using conditional: querría",
+        "difficulty": "beginner"
+      },
+      {
+        "question_text": "What is the conditional form of 'salir' for 'nosotros'?",
+        "options": ["salimos", "saldríamos", "salíamos", "saldremos"],
+        "correct_answer": "saldríamos",
+        "explanation": "Irregular conditional: salir → saldr- + íamos = saldríamos",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "Complete: 'Si tuviera dinero, _____ un coche.'",
+        "options": ["compro", "compraré", "compraría", "compraba"],
+        "correct_answer": "compraría",
+        "explanation": "Si + imperfect subjunctive requires conditional in main clause",
+        "difficulty": "advanced"
+      },
+      {
+        "question_text": "Which verb keeps its infinitive form in conditional?",
+        "options": ["tener", "poder", "comer", "hacer"],
+        "correct_answer": "comer",
+        "explanation": "Regular verbs like 'comer' keep infinitive + conditional endings",
+        "difficulty": "beginner"
+      },
+      {
+        "question_text": "What is the conditional form of 'decir' for 'yo'?",
+        "options": ["digo", "diré", "diría", "decía"],
+        "correct_answer": "diría",
+        "explanation": "Irregular conditional: decir → dir- + ía = diría",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "How do you express 'It would be better' in Spanish?",
+        "options": ["Es mejor", "Será mejor", "Sería mejor", "Era mejor"],
+        "correct_answer": "Sería mejor",
+        "explanation": "Conditional of ser for suggestions: sería mejor",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "What is the conditional form of 'venir' for 'ustedes'?",
+        "options": ["vienen", "vendrán", "vendrían", "vinieron"],
+        "correct_answer": "vendrían",
+        "explanation": "Irregular conditional: venir → vendr- + ían = vendrían",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "Complete: '¿_____ un favor?'",
+        "options": ["Me haces", "Me harás", "Me harías", "Me hiciste"],
+        "correct_answer": "Me harías",
+        "explanation": "Polite request using conditional: ¿Me harías...?",
+        "difficulty": "beginner"
+      },
+      {
+        "question_text": "Which sentence shows conditional for hypothesis?",
+        "options": ["Hablaré español", "Hablo español", "Hablaría español si...", "Hablaba español"],
+        "correct_answer": "Hablaría español si...",
+        "explanation": "Conditional + si clause expresses hypothesis",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "What is the conditional form of 'poner' for 'ella'?",
+        "options": ["pone", "pondrá", "pondría", "ponía"],
+        "correct_answer": "pondría",
+        "explanation": "Irregular conditional: poner → pondr- + ía = pondría",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "Complete: 'Nunca _____ eso en tu lugar.'",
+        "options": ["hago", "haré", "haría", "hacía"],
+        "correct_answer": "haría",
+        "explanation": "Hypothetical situation requires conditional: haría",
+        "difficulty": "intermediate"
+      },
+      {
+        "question_text": "How do you say 'Would you like to dance?' politely?",
+        "options": ["¿Quieres bailar?", "¿Querrás bailar?", "¿Querrías bailar?", "¿Bailas?"],
+        "correct_answer": "¿Querrías bailar?",
+        "explanation": "Conditional makes invitations more polite: ¿Querrías...?",
+        "difficulty": "beginner"
+      },
+      {
+        "question_text": "Complete: 'Nosotros _____ (ir) si tuviéramos tiempo.'",
+        "options": ["vamos", "iremos", "iríamos", "íbamos"],
+        "correct_answer": "iríamos",
+        "explanation": "Conditional in hypothetical situations: iríamos",
+        "difficulty": "intermediate"
+      }
+    ]
+  }
+}

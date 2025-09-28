@@ -244,7 +244,7 @@ export default function SpanishPronominalVerbsPage() {
         practiceUrl="/grammar/spanish/verbs/pronominal-verbs/practice"
         quizUrl="/grammar/spanish/verbs/pronominal-verbs/quiz"
         songUrl="/songs/es?theme=grammar&topic=pronominal-verbs"
-        youtubeVideoId="pronominal-verbs-spanish"
+        youtubeVideoId="EGaSgIRswcI"
         relatedTopics={relatedTopics}
       />
     </>

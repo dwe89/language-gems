@@ -420,7 +420,7 @@ export default function SpanishAdjectiveAgreementPage() {
         difficulty="beginner"
         estimatedTime={12}
         sections={sections}
-        backUrl="/grammar/spanish/adjectives"
+        backUrl="/grammar/spanish"
         practiceUrl="/grammar/spanish/adjectives/agreement/practice"
         quizUrl="/grammar/spanish/adjectives/agreement/quiz"
         songUrl="/songs/es?theme=grammar&topic=adjective-agreement"

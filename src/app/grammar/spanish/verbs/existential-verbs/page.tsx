@@ -371,7 +371,7 @@ export default function SpanishExistentialVerbsPage() {
         practiceUrl="/grammar/spanish/verbs/existential-verbs/practice"
         quizUrl="/grammar/spanish/verbs/existential-verbs/quiz"
         songUrl="/songs/es?theme=grammar&topic=existential-verbs"
-        youtubeVideoId="existential-verbs-spanish"
+        youtubeVideoId="EGaSgIRswcI"
         relatedTopics={relatedTopics}
       />
     </>

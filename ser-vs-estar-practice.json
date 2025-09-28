@@ -1,0 +1,207 @@
+{
+  "practice_content": {
+    "instructions": "Practice the difference between ser and estar with these exercises.",
+    "practice_type": "mixed_exercises",
+    "estimated_duration": 15,
+    "exercises": [
+      {
+        "type": "multiple_choice",
+        "instructions": "Choose ser or estar",
+        "prompts": [
+          {
+            "question": "María _____ doctora. (María is a doctor.)",
+            "options": ["es", "está", "son", "están"],
+            "answer": "es",
+            "explanation": "Use 'ser' for professions and identity"
+          },
+          {
+            "question": "El café _____ caliente. (The coffee is hot.)",
+            "options": ["es", "está", "son", "están"],
+            "answer": "está",
+            "explanation": "Use 'estar' for temporary conditions like temperature"
+          },
+          {
+            "question": "Nosotros _____ de España. (We are from Spain.)",
+            "options": ["es", "está", "somos", "estamos"],
+            "answer": "somos",
+            "explanation": "Use 'ser' for origin and nationality"
+          },
+          {
+            "question": "Los niños _____ en el parque. (The children are in the park.)",
+            "options": ["es", "está", "son", "están"],
+            "answer": "están",
+            "explanation": "Use 'estar' for location"
+          },
+          {
+            "question": "Mi hermana _____ muy inteligente. (My sister is very intelligent.)",
+            "options": ["es", "está", "son", "están"],
+            "answer": "es",
+            "explanation": "Use 'ser' for permanent characteristics"
+          },
+          {
+            "question": "Yo _____ cansado. (I am tired.)",
+            "options": ["soy", "estoy", "es", "está"],
+            "answer": "estoy",
+            "explanation": "Use 'estar' for temporary physical/emotional states"
+          },
+          {
+            "question": "La mesa _____ de madera. (The table is made of wood.)",
+            "options": ["es", "está", "son", "están"],
+            "answer": "es",
+            "explanation": "Use 'ser' for material composition"
+          },
+          {
+            "question": "¿Dónde _____ el banco? (Where is the bank?)",
+            "options": ["es", "está", "son", "están"],
+            "answer": "está",
+            "explanation": "Use 'estar' for location"
+          },
+          {
+            "question": "Hoy _____ lunes. (Today is Monday.)",
+            "options": ["es", "está", "son", "están"],
+            "answer": "es",
+            "explanation": "Use 'ser' for days of the week"
+          },
+          {
+            "question": "La comida _____ deliciosa. (The food is delicious.)",
+            "options": ["es", "está", "son", "están"],
+            "answer": "está",
+            "explanation": "Use 'estar' when talking about taste (temporary perception)"
+          }
+        ]
+      },
+      {
+        "type": "fill_blank",
+        "instructions": "Complete with the correct form of ser or estar",
+        "prompts": [
+          {
+            "sentence": "Mi padre _____ profesor. (My father is a teacher.)",
+            "answer": "es",
+            "explanation": "Use 'ser' for professions"
+          },
+          {
+            "sentence": "Los estudiantes _____ en clase. (The students are in class.)",
+            "answer": "están",
+            "explanation": "Use 'estar' for location"
+          },
+          {
+            "sentence": "Yo _____ muy feliz hoy. (I am very happy today.)",
+            "answer": "estoy",
+            "explanation": "Use 'estar' for temporary emotional states"
+          },
+          {
+            "sentence": "¿De dónde _____ tú? (Where are you from?)",
+            "answer": "eres",
+            "explanation": "Use 'ser' for origin"
+          },
+          {
+            "sentence": "La película _____ muy aburrida. (The movie is very boring.)",
+            "answer": "es",
+            "explanation": "Use 'ser' for inherent characteristics"
+          },
+          {
+            "sentence": "Nosotros _____ estudiando español. (We are studying Spanish.)",
+            "answer": "estamos",
+            "explanation": "Use 'estar' with present continuous"
+          },
+          {
+            "sentence": "¿Qué hora _____? (What time is it?)",
+            "answer": "es",
+            "explanation": "Use 'ser' for telling time"
+          },
+          {
+            "sentence": "Mi hermano _____ enfermo. (My brother is sick.)",
+            "answer": "está",
+            "explanation": "Use 'estar' for temporary health conditions"
+          },
+          {
+            "sentence": "Esta casa _____ muy grande. (This house is very big.)",
+            "answer": "es",
+            "explanation": "Use 'ser' for size (permanent characteristic)"
+          },
+          {
+            "sentence": "¿_____ tú lista? (Are you ready?)",
+            "answer": "Estás",
+            "explanation": "Use 'estar' for temporary states like being ready"
+          }
+        ]
+      },
+      {
+        "type": "conjugation",
+        "instructions": "Choose between ser and estar and conjugate correctly",
+        "prompts": [
+          {
+            "verb": "profession",
+            "subject": "Ella _____ enfermera",
+            "answer": "es",
+            "english": "She is a nurse",
+            "explanation": "Use 'ser' for professions"
+          },
+          {
+            "verb": "location",
+            "subject": "Nosotros _____ en Madrid",
+            "answer": "estamos",
+            "english": "We are in Madrid",
+            "explanation": "Use 'estar' for location"
+          },
+          {
+            "verb": "characteristic",
+            "subject": "Los gatos _____ independientes",
+            "answer": "son",
+            "english": "Cats are independent",
+            "explanation": "Use 'ser' for inherent characteristics"
+          },
+          {
+            "verb": "condition",
+            "subject": "El agua _____ fría",
+            "answer": "está",
+            "english": "The water is cold",
+            "explanation": "Use 'estar' for temporary conditions"
+          },
+          {
+            "verb": "time",
+            "subject": "_____ las tres de la tarde",
+            "answer": "Son",
+            "english": "It's three in the afternoon",
+            "explanation": "Use 'ser' for telling time"
+          },
+          {
+            "verb": "origin",
+            "subject": "Yo _____ de México",
+            "answer": "soy",
+            "english": "I am from Mexico",
+            "explanation": "Use 'ser' for origin"
+          },
+          {
+            "verb": "emotion",
+            "subject": "Tú _____ triste",
+            "answer": "estás",
+            "english": "You are sad",
+            "explanation": "Use 'estar' for temporary emotions"
+          },
+          {
+            "verb": "material",
+            "subject": "La silla _____ de plástico",
+            "answer": "es",
+            "english": "The chair is made of plastic",
+            "explanation": "Use 'ser' for material"
+          },
+          {
+            "verb": "weather",
+            "subject": "Hoy _____ nublado",
+            "answer": "está",
+            "english": "Today it's cloudy",
+            "explanation": "Use 'estar' for weather conditions"
+          },
+          {
+            "verb": "personality",
+            "subject": "Mi amiga _____ muy simpática",
+            "answer": "es",
+            "english": "My friend is very nice",
+            "explanation": "Use 'ser' for personality traits"
+          }
+        ]
+      }
+    ]
+  }
+}

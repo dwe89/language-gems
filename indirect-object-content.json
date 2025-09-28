@@ -1,0 +1,207 @@
+{
+  "practice_content": {
+    "instructions": "Practice Spanish indirect object pronouns with these exercises.",
+    "practice_type": "mixed_exercises",
+    "estimated_duration": 15,
+    "exercises": [
+      {
+        "type": "multiple_choice",
+        "instructions": "Choose the correct indirect object pronoun",
+        "prompts": [
+          {
+            "question": "What indirect object pronoun means 'to me'?",
+            "options": ["me", "te", "le", "nos"],
+            "answer": "me",
+            "explanation": "'Me' is the indirect object pronoun for 'to me'"
+          },
+          {
+            "question": "What indirect object pronoun means 'to you' (informal)?",
+            "options": ["me", "te", "le", "nos"],
+            "answer": "te",
+            "explanation": "'Te' is the indirect object pronoun for 'to you' (informal)"
+          },
+          {
+            "question": "What indirect object pronoun means 'to him/her/you' (formal)?",
+            "options": ["me", "te", "le", "nos"],
+            "answer": "le",
+            "explanation": "'Le' is used for 'to him/her/you' (formal)"
+          },
+          {
+            "question": "What indirect object pronoun means 'to us'?",
+            "options": ["me", "te", "nos", "os"],
+            "answer": "nos",
+            "explanation": "'Nos' is the indirect object pronoun for 'to us'"
+          },
+          {
+            "question": "What indirect object pronoun means 'to them/you all'?",
+            "options": ["le", "les", "nos", "os"],
+            "answer": "les",
+            "explanation": "'Les' is used for 'to them/you all'"
+          },
+          {
+            "question": "In 'Le doy el libro', what does 'le' mean?",
+            "options": ["him", "to him/her", "the book", "I give"],
+            "answer": "to him/her",
+            "explanation": "'Le' indicates the indirect object 'to him/her'"
+          },
+          {
+            "question": "Where do indirect object pronouns go?",
+            "options": ["After the verb", "Before the verb", "At the end", "Anywhere"],
+            "answer": "Before the verb",
+            "explanation": "Indirect object pronouns go before conjugated verbs"
+          },
+          {
+            "question": "What's the indirect object pronoun for 'to you all' (Spain)?",
+            "options": ["les", "nos", "os", "se"],
+            "answer": "os",
+            "explanation": "'Os' is used for 'to you all' in Spain"
+          },
+          {
+            "question": "Which verb commonly uses indirect object pronouns?",
+            "options": ["ser", "estar", "gustar", "tener"],
+            "answer": "gustar",
+            "explanation": "'Gustar' requires indirect object pronouns (me gusta, te gusta)"
+          },
+          {
+            "question": "In 'Nos escriben cartas', what does 'nos' mean?",
+            "options": ["we", "us", "to us", "our"],
+            "answer": "to us",
+            "explanation": "'Nos' is the indirect object meaning 'to us'"
+          }
+        ]
+      },
+      {
+        "type": "fill_blank",
+        "instructions": "Complete with the correct indirect object pronoun",
+        "prompts": [
+          {
+            "sentence": "_____ gusta la pizza. (I like pizza.)",
+            "answer": "Me",
+            "explanation": "'Me gusta' means 'I like' (literally 'it pleases me')"
+          },
+          {
+            "sentence": "_____ escribo una carta. (I write a letter to you.)",
+            "answer": "Te",
+            "explanation": "'Te' is the indirect object pronoun for 'to you'"
+          },
+          {
+            "sentence": "_____ doy el regalo. (I give the gift to him/her.)",
+            "answer": "Le",
+            "explanation": "'Le' is used for 'to him/her/you' (formal)"
+          },
+          {
+            "sentence": "_____ hablan en español. (They speak to us in Spanish.)",
+            "answer": "Nos",
+            "explanation": "'Nos' is the indirect object pronoun for 'to us'"
+          },
+          {
+            "sentence": "_____ compro flores. (I buy flowers for them.)",
+            "answer": "Les",
+            "explanation": "'Les' is used for 'to them/you all'"
+          },
+          {
+            "sentence": "¿_____ duele la cabeza? (Does your head hurt?)",
+            "answer": "Te",
+            "explanation": "'Te duele' means 'it hurts you'"
+          },
+          {
+            "sentence": "_____ encanta bailar. (She loves to dance.)",
+            "answer": "Le",
+            "explanation": "'Le encanta' means 'she loves' (it enchants her)"
+          },
+          {
+            "sentence": "_____ interesan los libros. (Books interest us.)",
+            "answer": "Nos",
+            "explanation": "'Nos interesan' means 'they interest us'"
+          },
+          {
+            "sentence": "_____ molesta el ruido. (The noise bothers you all.)",
+            "answer": "Les",
+            "explanation": "'Les molesta' means 'it bothers them/you all'"
+          },
+          {
+            "sentence": "_____ parece difícil. (It seems difficult to me.)",
+            "answer": "Me",
+            "explanation": "'Me parece' means 'it seems to me'"
+          }
+        ]
+      },
+      {
+        "type": "conjugation",
+        "instructions": "Complete these sentences with indirect object pronouns",
+        "prompts": [
+          {
+            "verb": "dar",
+            "subject": "Yo _____ doy dinero (a ti)",
+            "answer": "te",
+            "english": "I give you money",
+            "explanation": "Use 'te' for 'to you' (informal)"
+          },
+          {
+            "verb": "escribir",
+            "subject": "Ella _____ escribe (a nosotros)",
+            "answer": "nos",
+            "english": "She writes to us",
+            "explanation": "Use 'nos' for 'to us'"
+          },
+          {
+            "verb": "comprar",
+            "subject": "Nosotros _____ compramos regalos (a ellos)",
+            "answer": "les",
+            "english": "We buy them gifts",
+            "explanation": "Use 'les' for 'to them'"
+          },
+          {
+            "verb": "hablar",
+            "subject": "Tú _____ hablas (a mí)",
+            "answer": "me",
+            "english": "You speak to me",
+            "explanation": "Use 'me' for 'to me'"
+          },
+          {
+            "verb": "mostrar",
+            "subject": "Ellos _____ muestran fotos (a ella)",
+            "answer": "le",
+            "english": "They show her photos",
+            "explanation": "Use 'le' for 'to her'"
+          },
+          {
+            "verb": "preguntar",
+            "subject": "Yo _____ pregunto (a ustedes)",
+            "answer": "les",
+            "english": "I ask you all",
+            "explanation": "Use 'les' for 'to you all'"
+          },
+          {
+            "verb": "contar",
+            "subject": "María _____ cuenta historias (a nosotros)",
+            "answer": "nos",
+            "english": "María tells us stories",
+            "explanation": "Use 'nos' for 'to us'"
+          },
+          {
+            "verb": "enviar",
+            "subject": "Nosotros _____ enviamos cartas (a ti)",
+            "answer": "te",
+            "english": "We send you letters",
+            "explanation": "Use 'te' for 'to you'"
+          },
+          {
+            "verb": "explicar",
+            "subject": "El profesor _____ explica (a los estudiantes)",
+            "answer": "les",
+            "english": "The teacher explains to the students",
+            "explanation": "Use 'les' for 'to them'"
+          },
+          {
+            "verb": "traer",
+            "subject": "Ellos _____ traen comida (a mí)",
+            "answer": "me",
+            "english": "They bring me food",
+            "explanation": "Use 'me' for 'to me'"
+          }
+        ]
+      }
+    ]
+  }
+}

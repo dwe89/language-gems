@@ -413,7 +413,7 @@ export default function SpanishChangeVerbsPage() {
         practiceUrl="/grammar/spanish/verbs/change-verbs/practice"
         quizUrl="/grammar/spanish/verbs/change-verbs/quiz"
         songUrl="/songs/es?theme=grammar&topic=change-verbs"
-        youtubeVideoId="change-verbs-spanish"
+        youtubeVideoId="EGaSgIRswcI"
         relatedTopics={relatedTopics}
       />
     </>

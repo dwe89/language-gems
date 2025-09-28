@@ -393,7 +393,7 @@ export default function SpanishCommunicationVerbsPage() {
         practiceUrl="/grammar/spanish/verbs/communication-verbs/practice"
         quizUrl="/grammar/spanish/verbs/communication-verbs/quiz"
         songUrl="/songs/es?theme=grammar&topic=communication-verbs"
-        youtubeVideoId="communication-verbs-spanish"
+        youtubeVideoId="EGaSgIRswcI"
         relatedTopics={relatedTopics}
       />
     </>

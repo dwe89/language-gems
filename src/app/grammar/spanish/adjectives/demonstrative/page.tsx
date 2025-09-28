@@ -488,7 +488,7 @@ export default function SpanishDemonstrativeAdjectivesPage() {
         difficulty="beginner"
         estimatedTime={8}
         sections={sections}
-        backUrl="/grammar/spanish/adjectives"
+        backUrl="/grammar/spanish"
         practiceUrl="/grammar/spanish/adjectives/demonstrative/practice"
         quizUrl="/grammar/spanish/adjectives/demonstrative/quiz"
         songUrl="/songs/es?theme=grammar&topic=demonstratives"

@@ -280,7 +280,7 @@ export default function SpanishCopularVerbsPage() {
         practiceUrl="/grammar/spanish/verbs/copular-verbs/practice"
         quizUrl="/grammar/spanish/verbs/copular-verbs/quiz"
         songUrl="/songs/es?theme=grammar&topic=copular-verbs"
-        youtubeVideoId="copular-verbs-spanish"
+        youtubeVideoId="EGaSgIRswcI"
         relatedTopics={relatedTopics}
       />
     </>

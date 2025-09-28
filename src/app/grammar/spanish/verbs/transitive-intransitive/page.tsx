@@ -232,7 +232,7 @@ export default function SpanishTransitiveIntransitivePage() {
         practiceUrl="/grammar/spanish/verbs/transitive-intransitive/practice"
         quizUrl="/grammar/spanish/verbs/transitive-intransitive/quiz"
         songUrl="/songs/es?theme=grammar&topic=transitive-intransitive"
-        youtubeVideoId="transitive-intransitive-spanish"
+        youtubeVideoId="EGaSgIRswcI"
         relatedTopics={relatedTopics}
       />
     </>

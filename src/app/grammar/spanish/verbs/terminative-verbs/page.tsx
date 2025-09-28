@@ -447,7 +447,7 @@ export default function SpanishTerminativeVerbsPage() {
         practiceUrl="/grammar/spanish/verbs/terminative-verbs/practice"
         quizUrl="/grammar/spanish/verbs/terminative-verbs/quiz"
         songUrl="/songs/es?theme=grammar&topic=terminative-verbs"
-        youtubeVideoId="terminative-verbs-spanish"
+        youtubeVideoId="EGaSgIRswcI"
         relatedTopics={relatedTopics}
       />
     </>

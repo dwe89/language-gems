@@ -473,7 +473,7 @@ export default function SpanishPerceptionVerbsPage() {
         practiceUrl="/grammar/spanish/verbs/perception-verbs/practice"
         quizUrl="/grammar/spanish/verbs/perception-verbs/quiz"
         songUrl="/songs/es?theme=grammar&topic=perception-verbs"
-        youtubeVideoId="perception-verbs-spanish"
+        youtubeVideoId="EGaSgIRswcI"
         relatedTopics={relatedTopics}
       />
     </>

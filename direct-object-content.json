@@ -1,0 +1,207 @@
+{
+  "practice_content": {
+    "instructions": "Practice Spanish direct object pronouns with these exercises.",
+    "practice_type": "mixed_exercises",
+    "estimated_duration": 15,
+    "exercises": [
+      {
+        "type": "multiple_choice",
+        "instructions": "Choose the correct direct object pronoun",
+        "prompts": [
+          {
+            "question": "What direct object pronoun replaces 'el libro' (the book)?",
+            "options": ["la", "lo", "los", "las"],
+            "answer": "lo",
+            "explanation": "'Lo' replaces masculine singular direct objects"
+          },
+          {
+            "question": "What direct object pronoun replaces 'la mesa' (the table)?",
+            "options": ["la", "lo", "los", "las"],
+            "answer": "la",
+            "explanation": "'La' replaces feminine singular direct objects"
+          },
+          {
+            "question": "What direct object pronoun replaces 'los estudiantes' (the students)?",
+            "options": ["la", "lo", "los", "las"],
+            "answer": "los",
+            "explanation": "'Los' replaces masculine plural direct objects"
+          },
+          {
+            "question": "What direct object pronoun replaces 'las cartas' (the letters)?",
+            "options": ["la", "lo", "los", "las"],
+            "answer": "las",
+            "explanation": "'Las' replaces feminine plural direct objects"
+          },
+          {
+            "question": "What direct object pronoun means 'me'?",
+            "options": ["me", "te", "nos", "os"],
+            "answer": "me",
+            "explanation": "'Me' is the first person singular direct object pronoun"
+          },
+          {
+            "question": "What direct object pronoun means 'you' (informal)?",
+            "options": ["me", "te", "nos", "os"],
+            "answer": "te",
+            "explanation": "'Te' is the second person singular direct object pronoun"
+          },
+          {
+            "question": "What direct object pronoun means 'us'?",
+            "options": ["me", "te", "nos", "os"],
+            "answer": "nos",
+            "explanation": "'Nos' is the first person plural direct object pronoun"
+          },
+          {
+            "question": "Where do direct object pronouns usually go?",
+            "options": ["After the verb", "Before the verb", "At the end of sentence", "At the beginning"],
+            "answer": "Before the verb",
+            "explanation": "Direct object pronouns go before conjugated verbs"
+          },
+          {
+            "question": "In 'Lo veo', what does 'lo' refer to?",
+            "options": ["A feminine object", "A masculine object", "A person", "A place"],
+            "answer": "A masculine object",
+            "explanation": "'Lo' refers to a masculine singular direct object"
+          },
+          {
+            "question": "What's the direct object pronoun for 'you all' (Spain)?",
+            "options": ["os", "nos", "los", "las"],
+            "answer": "os",
+            "explanation": "'Os' is the second person plural direct object pronoun"
+          }
+        ]
+      },
+      {
+        "type": "fill_blank",
+        "instructions": "Complete with the correct direct object pronoun",
+        "prompts": [
+          {
+            "sentence": "Veo el coche. _____ veo. (I see the car. I see it.)",
+            "answer": "Lo",
+            "explanation": "'Lo' replaces 'el coche' (masculine singular)"
+          },
+          {
+            "sentence": "Compro la casa. _____ compro. (I buy the house. I buy it.)",
+            "answer": "La",
+            "explanation": "'La' replaces 'la casa' (feminine singular)"
+          },
+          {
+            "sentence": "Leo los libros. _____ leo. (I read the books. I read them.)",
+            "answer": "Los",
+            "explanation": "'Los' replaces 'los libros' (masculine plural)"
+          },
+          {
+            "sentence": "Escribo las cartas. _____ escribo. (I write the letters. I write them.)",
+            "answer": "Las",
+            "explanation": "'Las' replaces 'las cartas' (feminine plural)"
+          },
+          {
+            "sentence": "María _____ ve. (María sees me.)",
+            "answer": "me",
+            "explanation": "'Me' is the direct object pronoun for 'me'"
+          },
+          {
+            "sentence": "Yo _____ conozco. (I know you.)",
+            "answer": "te",
+            "explanation": "'Te' is the direct object pronoun for 'you' (informal)"
+          },
+          {
+            "sentence": "Ellos _____ invitan. (They invite us.)",
+            "answer": "nos",
+            "explanation": "'Nos' is the direct object pronoun for 'us'"
+          },
+          {
+            "sentence": "Nosotros _____ visitamos. (We visit you all - Spain.)",
+            "answer": "os",
+            "explanation": "'Os' is the direct object pronoun for 'you all' in Spain"
+          },
+          {
+            "sentence": "¿Dónde está Pedro? No _____ veo. (Where is Pedro? I don't see him.)",
+            "answer": "lo",
+            "explanation": "'Lo' can refer to a masculine person as direct object"
+          },
+          {
+            "sentence": "¿Conoces a María? Sí, _____ conozco. (Do you know María? Yes, I know her.)",
+            "answer": "la",
+            "explanation": "'La' can refer to a feminine person as direct object"
+          }
+        ]
+      },
+      {
+        "type": "conjugation",
+        "instructions": "Replace the direct object with a pronoun",
+        "prompts": [
+          {
+            "verb": "Compro el pan",
+            "subject": "replace",
+            "answer": "Lo compro",
+            "english": "I buy it",
+            "explanation": "Replace 'el pan' with 'lo' and place before verb"
+          },
+          {
+            "verb": "Vemos la película",
+            "subject": "replace",
+            "answer": "La vemos",
+            "english": "We see it",
+            "explanation": "Replace 'la película' with 'la' and place before verb"
+          },
+          {
+            "verb": "Estudian los verbos",
+            "subject": "replace",
+            "answer": "Los estudian",
+            "english": "They study them",
+            "explanation": "Replace 'los verbos' with 'los' and place before verb"
+          },
+          {
+            "verb": "Escribes las tareas",
+            "subject": "replace",
+            "answer": "Las escribes",
+            "english": "You write them",
+            "explanation": "Replace 'las tareas' with 'las' and place before verb"
+          },
+          {
+            "verb": "María llama a Juan",
+            "subject": "replace",
+            "answer": "María lo llama",
+            "english": "María calls him",
+            "explanation": "Replace 'a Juan' with 'lo' for masculine person"
+          },
+          {
+            "verb": "Visitamos a Ana",
+            "subject": "replace",
+            "answer": "La visitamos",
+            "english": "We visit her",
+            "explanation": "Replace 'a Ana' with 'la' for feminine person"
+          },
+          {
+            "verb": "Invitan a los estudiantes",
+            "subject": "replace",
+            "answer": "Los invitan",
+            "english": "They invite them",
+            "explanation": "Replace 'a los estudiantes' with 'los'"
+          },
+          {
+            "verb": "Conocemos a las profesoras",
+            "subject": "replace",
+            "answer": "Las conocemos",
+            "english": "We know them",
+            "explanation": "Replace 'a las profesoras' with 'las'"
+          },
+          {
+            "verb": "Ayudo a mi hermano",
+            "subject": "replace",
+            "answer": "Lo ayudo",
+            "english": "I help him",
+            "explanation": "Replace 'a mi hermano' with 'lo'"
+          },
+          {
+            "verb": "Buscas las llaves",
+            "subject": "replace",
+            "answer": "Las buscas",
+            "english": "You look for them",
+            "explanation": "Replace 'las llaves' with 'las'"
+          }
+        ]
+      }
+    ]
+  }
+}

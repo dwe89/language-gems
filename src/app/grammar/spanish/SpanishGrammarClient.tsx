@@ -1,252 +1,533 @@
 'use client';
 
-import React from 'react';
-import { motion } from 'framer-motion';
-import { ArrowLeft, BookOpen, Target, Award, Clock, Users, Gem, Star, ChevronRight, Volume2, Layers } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { BookOpen, Target, Award, Clock, Users, Star, ChevronRight, ChevronDown, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
-import { GemCard, GemButton } from '../../../components/ui/GemTheme';
+import { GemCard } from '../../../components/ui/GemTheme';
 import FlagIcon from '../../../components/ui/FlagIcon';
 
-const grammarCategories = [
-  {
-    id: 'nouns',
-    name: 'Noun Phrases',
-    description: 'Master Spanish nouns, articles, and determiners',
-    icon: BookOpen,
+// Interfaces for discovered topics and categories
+interface DiscoveredTopic {
+  name: string;
+  slug: string;
+  category: string;
+  path: string;
+  hasContent: boolean; // Renamed from hasQuiz/hasPractice - indicates if topic has interactive content
+}
+
+interface GrammarCategory {
+  name: string;
+  description: string;
+  icon: React.ComponentType<any>;
+  color: string;
+  topics: DiscoveredTopic[];
+  isExpanded: boolean;
+  hasSubcategories?: boolean;
+  subcategories?: VerbSubcategory[];
+}
+
+interface VerbSubcategory {
+  key: string;
+  name: string;
+  description: string;
+  icon: React.ComponentType<any>;
+  color: string;
+  priority: number;
+  topics: string[];
+  isExpanded: boolean;
+  matchedTopics: DiscoveredTopic[];
+}
+
+// Verb sub-categorization for better organization
+const VERB_SUBCATEGORIES = {
+  'essential-tenses': {
+    name: 'Essential Tenses',
+    description: 'Core tenses every Spanish learner needs',
+    icon: Award,
     color: 'from-green-500 to-green-600',
+    priority: 1,
     topics: [
-      { name: 'Gender and Plural of Nouns', slug: 'gender-and-plurals', difficulty: 'beginner', time: '15 min' },
-      { name: 'Articles (Definite and Indefinite)', slug: 'articles', difficulty: 'beginner', time: '12 min' },
-      { name: 'Demonstrative Adjectives', slug: 'demonstrative', difficulty: 'beginner', time: '10 min' },
-      { name: 'Indefinite Adjectives', slug: 'indefinite', difficulty: 'intermediate', time: '12 min' },
-      { name: 'Possessive Adjectives', slug: 'possessive-adj', difficulty: 'beginner', time: '10 min' },
-      { name: 'Adjectives: Agreement and Position', slug: 'agreement-position', difficulty: 'beginner', time: '15 min' },
-      { name: 'Nominalisation', slug: 'nominalisation', difficulty: 'advanced', time: '18 min' }
+      'present-tense', 'present-continuous', 'present-perfect',
+      'preterite', 'imperfect', 'imperfect-continuous',
+      'future', 'future-perfect', 'periphrastic-future',
+      'conditional', 'conditional-perfect', 'pluperfect'
     ]
   },
-  {
-    id: 'pronouns',
-    name: 'Pronouns',
-    description: 'Master all types of Spanish pronouns',
-    icon: Users,
-    color: 'from-orange-500 to-orange-600',
-    topics: [
-      { name: 'Subject Pronouns and Usage', slug: 'subject', difficulty: 'beginner', time: '10 min' },
-      { name: 'Direct Object Pronouns', slug: 'direct-object', difficulty: 'intermediate', time: '15 min' },
-      { name: 'Indirect Object Pronouns', slug: 'indirect-object', difficulty: 'intermediate', time: '15 min' },
-      { name: 'Reflexive Pronouns', slug: 'reflexive', difficulty: 'intermediate', time: '18 min' },
-      { name: 'Interrogative Pronouns', slug: 'interrogative', difficulty: 'intermediate', time: '12 min' },
-      { name: 'Relative Pronouns', slug: 'relative', difficulty: 'advanced', time: '20 min' },
-      { name: 'Other Pronouns', slug: 'other', difficulty: 'intermediate', time: '15 min' }
-    ]
-  },
-  {
-    id: 'verb-phrases',
-    name: 'Verb Phrases',
-    description: 'Complete Spanish verb system - tenses, moods, and constructions',
-    icon: Target,
-    color: 'from-blue-500 to-blue-600',
-    topics: [
-      { name: 'Present Tense', slug: 'present-tense', difficulty: 'beginner', time: '15 min' },
-      { name: 'Preterite Tense (Simple Past)', slug: 'preterite', difficulty: 'intermediate', time: '20 min' },
-      { name: 'Imperfect Tense', slug: 'imperfect', difficulty: 'intermediate', time: '18 min' },
-      { name: 'Present Perfect', slug: 'present-perfect', difficulty: 'intermediate', time: '16 min' },
-      { name: 'Periphrastic Future (ir a + infinitive)', slug: 'periphrastic-future', difficulty: 'beginner', time: '12 min' },
-      { name: 'Inflectional Future', slug: 'future', difficulty: 'intermediate', time: '15 min' },
-      { name: 'Conditional Tense', slug: 'conditional', difficulty: 'advanced', time: '20 min' },
-      { name: 'Present Continuous', slug: 'present-continuous', difficulty: 'beginner', time: '10 min' },
-      { name: 'Imperfect Continuous', slug: 'imperfect-continuous', difficulty: 'intermediate', time: '12 min' },
-      { name: 'Imperative (Commands)', slug: 'imperative', difficulty: 'intermediate', time: '18 min' },
-      { name: 'Present Subjunctive', slug: 'subjunctive', difficulty: 'advanced', time: '25 min' },
-      { name: 'Negation', slug: 'negation', difficulty: 'beginner', time: '12 min' },
-      { name: 'Interrogatives', slug: 'interrogatives', difficulty: 'beginner', time: '10 min' },
-      { name: 'Modal Verbs', slug: 'modal-verbs', difficulty: 'intermediate', time: '16 min' },
-      { name: 'Infinitive Constructions', slug: 'infinitive-constructions', difficulty: 'intermediate', time: '14 min' },
-      { name: 'Continuous Constructions', slug: 'continuous-constructions', difficulty: 'intermediate', time: '12 min' },
-      { name: 'Impersonal Verbs', slug: 'impersonal-verbs', difficulty: 'intermediate', time: '15 min' },
-      { name: 'Passive Voice', slug: 'passive-voice', difficulty: 'advanced', time: '20 min' },
-      { name: 'Ser vs Estar', slug: 'ser-vs-estar', difficulty: 'beginner', time: '12 min' }
-    ]
-  },
-  {
-    id: 'adverbial-prepositional',
-    name: 'Adverbial & Prepositional Phrases',
-    description: 'Master Spanish adverbs, prepositions, and comparisons',
+  'subjunctive-moods': {
+    name: 'Subjunctive & Moods',
+    description: 'Subjunctive forms and imperative mood',
     icon: Star,
     color: 'from-purple-500 to-purple-600',
+    priority: 2,
     topics: [
-      { name: 'Adverbs', slug: 'adverbs', difficulty: 'intermediate', time: '14 min' },
-      { name: 'Comparative Adverbs', slug: 'comparative-adverbs', difficulty: 'intermediate', time: '12 min' },
-      { name: 'Superlative Adverbs', slug: 'superlative-adverbs', difficulty: 'intermediate', time: '12 min' },
-      { name: 'Personal Preposition "a"', slug: 'personal-a', difficulty: 'beginner', time: '10 min' },
-      { name: 'Preposition "de"', slug: 'preposition-de', difficulty: 'beginner', time: '10 min' },
-      { name: 'Por vs Para', slug: 'por-vs-para', difficulty: 'intermediate', time: '20 min' },
-      { name: 'Prepositions with Infinitives', slug: 'prepositions-infinitives', difficulty: 'intermediate', time: '15 min' },
-      { name: 'Verb + Preposition Combinations', slug: 'verb-preposition', difficulty: 'intermediate', time: '16 min' },
-      { name: 'Prepositions in Questions', slug: 'prepositions-questions', difficulty: 'intermediate', time: '12 min' },
-      { name: 'Comparatives', slug: 'comparatives', difficulty: 'intermediate', time: '15 min' },
-      { name: 'Superlatives', slug: 'superlatives', difficulty: 'intermediate', time: '15 min' },
-      { name: 'Other Prepositions', slug: 'other-prepositions', difficulty: 'beginner', time: '12 min' }
+      'subjunctive', 'subjunctive-present', 'subjunctive-imperfect',
+      'subjunctive-perfect', 'subjunctive-pluperfect', 'imperative'
     ]
   },
-  {
-    id: 'sounds-spelling',
-    name: 'Spanish Sounds & Spelling',
-    description: 'Master Spanish pronunciation and orthography',
-    icon: Volume2,
-    color: 'from-red-500 to-red-600',
+  'verb-types': {
+    name: 'Verb Types & Patterns',
+    description: 'Different types of verbs and their patterns',
+    icon: Target,
+    color: 'from-blue-500 to-blue-600',
+    priority: 3,
     topics: [
-      { name: 'Sound-Symbol Correspondences', slug: 'sound-symbol', difficulty: 'beginner', time: '15 min' },
-      { name: 'Stress Patterns', slug: 'stress-patterns', difficulty: 'intermediate', time: '12 min' },
-      { name: 'Written Accents (Tildes)', slug: 'written-accents', difficulty: 'intermediate', time: '18 min' }
+      'irregular-verbs', 'stem-changing', 'modal-verbs',
+      'reflexive', 'ser-vs-estar', 'copular-verbs',
+      'transitive-intransitive', 'pronominal-verbs', 'auxiliary-verbs',
+      'defective-verbs', 'impersonal-verbs', 'weather-verbs',
+      'light-verbs', 'inchoative-verbs', 'terminative-verbs'
     ]
   },
-  {
-    id: 'word-formation',
-    name: 'Word Formation',
-    description: 'Understand Spanish derivational morphology and word building',
-    icon: Layers,
+  'advanced-grammar': {
+    name: 'Advanced Grammar',
+    description: 'Complex grammatical concepts and structures',
+    icon: BookOpen,
     color: 'from-indigo-500 to-indigo-600',
+    priority: 4,
     topics: [
-      { name: 'Diminutive Suffixes', slug: 'diminutive-suffixes', difficulty: 'intermediate', time: '12 min' },
-      { name: 'Augmentative Suffixes', slug: 'augmentative-suffixes', difficulty: 'intermediate', time: '12 min' },
-      { name: 'Adjective to Adverb Formation', slug: 'adjective-adverb', difficulty: 'intermediate', time: '10 min' },
-      { name: 'Adjective to Noun Formation', slug: 'adjective-noun', difficulty: 'advanced', time: '15 min' },
-      { name: 'Verb to Adjective Formation', slug: 'verb-adjective', difficulty: 'advanced', time: '15 min' },
-      { name: 'Other Word Formation Patterns', slug: 'other-patterns', difficulty: 'advanced', time: '18 min' }
+      'passive-voice', 'reported-speech', 'negation',
+      'verb-aspect', 'verb-moods', 'sequence-of-tenses',
+      'verb-complementation', 'verb-government', 'verb-valency',
+      'verb-conjugation-patterns', 'verb-patterns', 'verb-tense-agreement'
+    ]
+  },
+  'semantic-groups': {
+    name: 'Semantic Verb Groups',
+    description: 'Verbs organized by meaning and usage',
+    icon: Users,
+    color: 'from-pink-500 to-pink-600',
+    priority: 5,
+    topics: [
+      'action-verbs', 'motion-verbs', 'emotion-verbs',
+      'communication-verbs', 'cognitive-verbs', 'perception-verbs',
+      'possession-verbs', 'change-verbs', 'causative-verbs',
+      'existential-verbs', 'stative-verbs'
+    ]
+  },
+  'complex-constructions': {
+    name: 'Complex Constructions',
+    description: 'Advanced verb constructions and forms',
+    icon: ChevronRight,
+    color: 'from-orange-500 to-orange-600',
+    priority: 6,
+    topics: [
+      'compound-tenses', 'continuous-constructions', 'progressive-tenses',
+      'infinitive-constructions', 'verbal-periphrases', 'voice-constructions',
+      'past-participles', 'gerunds', 'phrasal-verbs',
+      'conditional-sentences', 'interrogatives', 'verb-serialization'
     ]
   }
-];
+};
 
-const difficultyColors = {
-  beginner: 'bg-green-100 text-green-700',
-  intermediate: 'bg-yellow-100 text-yellow-700',
-  advanced: 'bg-red-100 text-red-700'
+// Dynamic grammar categories based on file system structure
+const CATEGORY_CONFIG = {
+  'adjectives': {
+    name: 'Adjectives',
+    description: 'Master Spanish adjectives, agreement, and position',
+    icon: Star,
+    color: 'from-purple-500 to-purple-600'
+  },
+  'adverbial-prepositional': {
+    name: 'Adverbs & Prepositions',
+    description: 'Master Spanish adverbs, prepositions, and comparisons',
+    icon: Target,
+    color: 'from-blue-500 to-blue-600'
+  },
+  'adverbs': {
+    name: 'Adverbs',
+    description: 'Learn Spanish adverb formation and usage',
+    icon: ChevronRight,
+    color: 'from-green-500 to-green-600'
+  },
+  'articles': {
+    name: 'Articles',
+    description: 'Master definite and indefinite articles',
+    icon: BookOpen,
+    color: 'from-orange-500 to-orange-600'
+  },
+  'nouns': {
+    name: 'Nouns',
+    description: 'Master Spanish nouns, gender, and plurals',
+    icon: BookOpen,
+    color: 'from-green-500 to-green-600'
+  },
+  'prepositions': {
+    name: 'Prepositions',
+    description: 'Learn Spanish prepositions and their usage',
+    icon: Target,
+    color: 'from-indigo-500 to-indigo-600'
+  },
+  'pronouns': {
+    name: 'Pronouns',
+    description: 'Master Spanish pronouns and their forms',
+    icon: Users,
+    color: 'from-pink-500 to-pink-600'
+  },
+  'sounds-spelling': {
+    name: 'Sounds & Spelling',
+    description: 'Learn Spanish pronunciation and spelling rules',
+    icon: Award,
+    color: 'from-yellow-500 to-yellow-600'
+  },
+  'syntax': {
+    name: 'Syntax',
+    description: 'Master Spanish sentence structure and word order',
+    icon: Target,
+    color: 'from-cyan-500 to-cyan-600'
+  },
+  'verbs': {
+    name: 'Verbs',
+    description: 'Master Spanish verb conjugations and tenses',
+    icon: Clock,
+    color: 'from-red-500 to-red-600',
+    hasSubcategories: true
+  },
+  'word-formation': {
+    name: 'Word Formation',
+    description: 'Learn Spanish word formation patterns',
+    icon: Star,
+    color: 'from-teal-500 to-teal-600'
+  }
 };
 
 export function SpanishGrammarClient() {
-  console.log('🏗️ [SPANISH GRAMMAR] Client component loaded');
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
-      {/* Header */}
-      <div className="bg-white/95 backdrop-blur-sm border-b border-gray-200 shadow-lg">
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Link 
-                href="/grammar"
-                className="p-3 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors shadow-sm"
-              >
-                <ArrowLeft className="w-5 h-5 text-gray-600" />
-              </Link>
-              <div className="flex items-center space-x-4">
-                <FlagIcon countryCode="ES" size="xl" />
-                <div className="p-3 bg-gradient-to-r from-red-500 to-yellow-500 rounded-xl shadow-lg">
-                  <BookOpen className="w-8 h-8 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-4xl font-bold text-gray-800 mb-2">Spanish Grammar</h1>
-                  <p className="text-gray-600 text-lg">Complete guide to mastering Spanish grammar</p>
-                </div>
-              </div>
-            </div>
+
+  const [categories, setCategories] = useState<GrammarCategory[]>([]);
+  const [practiceReadyTopics, setPracticeReadyTopics] = useState<Set<string>>(new Set());
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Load grammar structure and practice status
+  useEffect(() => {
+    const loadGrammarStructure = async () => {
+      try {
+        setLoading(true);
+
+        // Fetch content-ready topics from database FIRST
+        const contentResponse = await fetch('/api/grammar/practice-status?language=spanish');
+        const contentData = await contentResponse.json();
+
+        let practiceReadySet = new Set<string>();
+        if (contentData.success) {
+          practiceReadySet = new Set(contentData.data || []);
+          setPracticeReadyTopics(practiceReadySet);
+        }
+
+        // Fetch topics directly from database instead of file system discovery
+        const topicsResponse = await fetch('/api/grammar/topics?language=es');
+        const topicsData = await topicsResponse.json();
+
+        if (!topicsData.success) {
+          throw new Error('Failed to load grammar topics');
+        }
+
+        // Organize topics by category
+        const categoryMap: { [key: string]: GrammarCategory } = {};
+
+        topicsData.data.forEach((topic: any) => {
+          const categoryKey = topic.category;
+          const categoryConfig = CATEGORY_CONFIG[categoryKey as keyof typeof CATEGORY_CONFIG];
+
+          if (!categoryConfig) {
+            console.warn(`No configuration found for category: ${categoryKey}`);
+            return;
+          }
+
+          if (!categoryMap[categoryKey]) {
+            categoryMap[categoryKey] = {
+              ...categoryConfig,
+              topics: [],
+              isExpanded: false
+            };
+          }
+
+          // Convert database topic to DiscoveredTopic format
+          const hasContent = practiceReadySet.has(topic.slug);
+          const discoveredTopic: DiscoveredTopic = {
+            name: topic.title || topic.topic_name,
+            slug: topic.slug,
+            category: topic.category,
+            path: `${topic.category}/${topic.slug}`,
+            hasContent: hasContent
+          };
+
+
+
+          categoryMap[categoryKey].topics.push(discoveredTopic);
+        });
+
+        // Handle verb subcategorization
+        if (categoryMap['verbs']) {
+          const verbCategory = categoryMap['verbs'];
+          const subcategories: VerbSubcategory[] = [];
+
+          // Create subcategories with matched topics
+          Object.entries(VERB_SUBCATEGORIES).forEach(([key, subcat]) => {
+            const matchedTopics = verbCategory.topics.filter(topic =>
+              subcat.topics.includes(topic.slug)
+            );
+
+            subcategories.push({
+              key,
+              name: subcat.name,
+              description: subcat.description,
+              icon: subcat.icon,
+              color: subcat.color,
+              priority: subcat.priority,
+              topics: subcat.topics,
+              isExpanded: false,
+              matchedTopics
+            });
+          });
+
+          // Sort subcategories by priority
+          subcategories.sort((a, b) => a.priority - b.priority);
+
+          // Add subcategories to verb category
+          verbCategory.subcategories = subcategories;
+          verbCategory.hasSubcategories = true;
+        }
+
+        // Convert to array and sort
+        const categoriesArray = Object.values(categoryMap).sort((a, b) => a.name.localeCompare(b.name));
+        setCategories(categoriesArray);
+
+      } catch (err) {
+        console.error('Error loading grammar structure:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load grammar structure');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadGrammarStructure();
+  }, []);
+
+  const toggleCategory = (categoryIndex: number) => {
+    setCategories(prev => prev.map((cat, index) =>
+      index === categoryIndex ? { ...cat, isExpanded: !cat.isExpanded } : cat
+    ));
+  };
+
+  const toggleSubcategory = (categoryIndex: number, subcategoryKey: string) => {
+    setCategories(prev => prev.map((cat, index) => {
+      if (index === categoryIndex && cat.subcategories) {
+        return {
+          ...cat,
+          subcategories: cat.subcategories.map(subcat =>
+            subcat.key === subcategoryKey
+              ? { ...subcat, isExpanded: !subcat.isExpanded }
+              : subcat
+          )
+        };
+      }
+      return cat;
+    }));
+  };
+
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-12">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading Spanish grammar topics...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-12">
+        <div className="text-center">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+            <h2 className="text-xl font-semibold text-red-800 mb-2">Error Loading Grammar Topics</h2>
+            <p className="text-red-600">{error}</p>
           </div>
         </div>
       </div>
+    );
+  }
 
-      {/* Content */}
-      <div className="container mx-auto px-4 py-12">
-        <div className="max-w-6xl mx-auto">
-          {/* Introduction */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-12"
-          >
-            <GemCard className="shadow-xl border border-gray-200 text-center">
-              <h2 className="text-3xl font-bold text-gray-800 mb-4">Complete Spanish Grammar Mastery</h2>
-              <p className="text-gray-600 text-lg mb-6 max-w-3xl mx-auto">
-                The most comprehensive Spanish grammar curriculum available online. Based on GCSE and CEFR standards,
-                covering 80 essential topics from A1 beginner to C2 advanced level. Master noun phrases, verb systems,
-                pronouns, prepositions, pronunciation, and word formation with interactive lessons and practice exercises.
-              </p>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="p-4 bg-blue-50 rounded-xl border border-blue-200">
-                  <div className="text-2xl font-bold text-blue-600 mb-1">80</div>
-                  <div className="text-sm text-gray-600">Grammar Topics</div>
+  return (
+    <div className="container mx-auto px-4 py-12">
+      {/* Header */}
+      <div className="text-center mb-12">
+        <div className="flex items-center justify-center mb-6">
+          <FlagIcon countryCode="ES" size="lg" className="mr-4" />
+          <h1 className="text-4xl font-bold text-gray-900">Spanish Grammar</h1>
+        </div>
+        <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+          Master Spanish grammar with comprehensive guides covering all essential topics.
+          Explore {categories.reduce((total, cat) => total + cat.topics.length, 0)} grammar topics
+          organized into {categories.length} categories.
+        </p>
+      </div>
+
+      {/* Categories Grid */}
+      <div className="space-y-6">
+        {categories.map((category, categoryIndex) => (
+          <GemCard key={category.name} className="overflow-hidden">
+            {/* Category Header */}
+            <div
+              className={`bg-gradient-to-r ${category.color} p-6 cursor-pointer transition-all duration-200 hover:shadow-lg`}
+              onClick={() => toggleCategory(categoryIndex)}
+            >
+              <div className="flex items-center justify-between text-white">
+                <div className="flex items-center space-x-4">
+                  <category.icon className="h-8 w-8" />
+                  <div>
+                    <h2 className="text-2xl font-bold">{category.name}</h2>
+                    <p className="text-white/90 mt-1">{category.description}</p>
+                  </div>
                 </div>
-                <div className="p-4 bg-green-50 rounded-xl border border-green-200">
-                  <div className="text-2xl font-bold text-green-600 mb-1">240</div>
-                  <div className="text-sm text-gray-600">Practice Exercises</div>
-                </div>
-                <div className="p-4 bg-purple-50 rounded-xl border border-purple-200">
-                  <div className="text-2xl font-bold text-purple-600 mb-1">240</div>
-                  <div className="text-sm text-gray-600">Interactive Quizzes</div>
-                </div>
-                <div className="p-4 bg-orange-50 rounded-xl border border-orange-200">
-                  <div className="text-2xl font-bold text-orange-600 mb-1">A1-C2</div>
-                  <div className="text-sm text-gray-600">CEFR Levels</div>
+                <div className="flex items-center space-x-4">
+                  <div className="text-right">
+                    <div className="text-sm text-white/90">Topics</div>
+                    <div className="text-xl font-bold">{category.topics.length}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm text-white/90">Content Ready</div>
+                    <div className="text-xl font-bold">
+                      {category.topics.filter(t => t.hasContent).length}
+                    </div>
+                  </div>
+                  <ChevronDown
+                    className={`h-6 w-6 transition-transform duration-200 ${
+                      category.isExpanded ? 'rotate-180' : ''
+                    }`}
+                  />
                 </div>
               </div>
-            </GemCard>
-          </motion.div>
+            </div>
 
-          {/* Grammar Categories */}
-          <div className="space-y-12">
-            {grammarCategories.map((category, index) => {
-              const IconComponent = category.icon;
-              return (
-                <motion.div
-                  key={category.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                >
-                  <GemCard className="shadow-xl border border-gray-200">
-                    <div className="flex items-center mb-6">
-                      <div className={`p-3 bg-gradient-to-r ${category.color} rounded-xl shadow-lg mr-4`}>
-                        <IconComponent className="w-8 h-8 text-white" />
-                      </div>
-                      <div>
-                        <h3 className="text-2xl font-bold text-gray-800">{category.name}</h3>
-                        <p className="text-gray-600">{category.description}</p>
-                      </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {category.topics.map((topic) => (
-                        <Link 
-                          key={topic.slug}
-                          href={`/grammar/spanish/${category.id === 'verb-phrases' ? 'verbs' : category.id}/${topic.slug}`}
-                          className="group"
+            {/* Topics List or Subcategories */}
+            {category.isExpanded && (
+              <div className="bg-white">
+                {category.hasSubcategories && category.subcategories ? (
+                  // Render verb subcategories
+                  <div className="space-y-4 p-6">
+                    {category.subcategories.map((subcategory) => (
+                      <div key={subcategory.key} className="border border-gray-200 rounded-lg overflow-hidden">
+                        {/* Subcategory Header */}
+                        <div
+                          className={`bg-gradient-to-r ${subcategory.color} p-4 cursor-pointer`}
+                          onClick={() => toggleSubcategory(categoryIndex, subcategory.key)}
                         >
-                          <div className="p-4 border border-gray-200 rounded-lg hover:border-purple-300 hover:bg-purple-50 transition-all duration-200 h-full">
-                            <div className="flex items-center justify-between mb-2">
-                              <h4 className="font-semibold text-gray-800 group-hover:text-purple-700">
-                                {topic.name}
-                              </h4>
-                              <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-purple-500" />
-                            </div>
-                            <div className="flex items-center justify-between text-sm">
-                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${difficultyColors[topic.difficulty as keyof typeof difficultyColors]}`}>
-                                {topic.difficulty}
-                              </span>
-                              <div className="flex items-center text-gray-500">
-                                <Clock className="w-3 h-3 mr-1" />
-                                {topic.time}
+                          <div className="flex items-center justify-between text-white">
+                            <div className="flex items-center space-x-3">
+                              <subcategory.icon className="h-5 w-5" />
+                              <div>
+                                <h3 className="font-semibold">{subcategory.name}</h3>
+                                <p className="text-sm text-white/90">{subcategory.description}</p>
                               </div>
                             </div>
+                            <div className="flex items-center space-x-3">
+                              <div className="text-right">
+                                <div className="text-xs text-white/90">Topics</div>
+                                <div className="font-bold">{subcategory.matchedTopics.length}</div>
+                              </div>
+                              <div className="text-right">
+                                <div className="text-xs text-white/90">Content</div>
+                                <div className="font-bold">
+                                  {subcategory.matchedTopics.filter(t => t.hasContent).length}
+                                </div>
+                              </div>
+                              <ChevronDown
+                                className={`h-4 w-4 transition-transform duration-200 ${
+                                  subcategory.isExpanded ? 'rotate-180' : ''
+                                }`}
+                              />
+                            </div>
                           </div>
-                        </Link>
+                        </div>
+
+                        {/* Subcategory Topics */}
+                        {subcategory.isExpanded && (
+                          <div className="p-4 bg-gray-50">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                              {subcategory.matchedTopics.map((topic) => (
+                                <div key={topic.slug} className="bg-white border border-gray-200 rounded-lg p-3 hover:shadow-md transition-shadow">
+                                  <div className="flex items-start justify-between mb-2">
+                                    <h4 className="font-medium text-gray-900 text-sm flex-1">{topic.name}</h4>
+                                    <div className="flex items-center space-x-1 ml-2">
+                                      {topic.hasContent && (
+                                        <CheckCircle className="h-3 w-3 text-green-500" />
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  <div className="flex items-center space-x-1 mt-2">
+                                    <Link
+                                      href={`/grammar/spanish/${topic.path}`}
+                                      className="flex-1 bg-blue-50 hover:bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs font-medium transition-colors text-center"
+                                    >
+                                      Learn
+                                    </Link>
+
+                                    {topic.hasContent && (
+                                      <Link
+                                        href={`/grammar/spanish/${topic.path}/challenge`}
+                                        className="flex-1 bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 text-purple-700 px-2 py-1 rounded text-xs font-medium transition-colors text-center flex items-center justify-center"
+                                      >
+                                        <Award className="h-2 w-2 mr-1" />
+                                        Challenge
+                                      </Link>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  // Render regular topics
+                  <div className="p-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {category.topics.map((topic) => (
+                        <div key={topic.slug} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                          <div className="flex items-start justify-between mb-2">
+                            <h3 className="font-semibold text-gray-900 flex-1">{topic.name}</h3>
+                            <div className="flex items-center space-x-2 ml-2">
+                              {topic.hasContent && (
+                                <div title="Content Available">
+                                  <CheckCircle className="h-4 w-4 text-green-500" />
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center space-x-2 mt-3">
+                            <Link
+                              href={`/grammar/spanish/${topic.path}`}
+                              className="flex-1 bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-2 rounded-md text-sm font-medium transition-colors text-center"
+                            >
+                              Learn
+                            </Link>
+
+                            {topic.hasContent && (
+                              <Link
+                                href={`/grammar/spanish/${topic.path}/challenge`}
+                                className="flex-1 bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 text-purple-700 px-3 py-2 rounded-md text-sm font-medium transition-colors text-center flex items-center justify-center"
+                              >
+                                <Award className="h-3 w-3 mr-1" />
+                                Challenge
+                              </Link>
+                            )}
+                          </div>
+                        </div>
                       ))}
                     </div>
-                  </GemCard>
-                </motion.div>
-              );
-            })}
-          </div>
-        </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </GemCard>
+        ))}
       </div>
     </div>
   );

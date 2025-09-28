@@ -1,0 +1,207 @@
+{
+  "practice_content": {
+    "instructions": "Practice Spanish relative pronouns with these exercises.",
+    "practice_type": "mixed_exercises",
+    "estimated_duration": 15,
+    "exercises": [
+      {
+        "type": "multiple_choice",
+        "instructions": "Choose the correct relative pronoun",
+        "prompts": [
+          {
+            "question": "Which relative pronoun means 'that/who/which'?",
+            "options": ["que", "quien", "cual", "donde"],
+            "answer": "que",
+            "explanation": "'Que' is the most common relative pronoun"
+          },
+          {
+            "question": "Which relative pronoun means 'who' (after prepositions)?",
+            "options": ["que", "quien", "cual", "donde"],
+            "answer": "quien",
+            "explanation": "'Quien' is used for people after prepositions"
+          },
+          {
+            "question": "Which relative pronoun means 'where'?",
+            "options": ["que", "quien", "donde", "cuando"],
+            "answer": "donde",
+            "explanation": "'Donde' means 'where' as a relative pronoun"
+          },
+          {
+            "question": "Complete: 'El libro _____ leo' (The book that I read)",
+            "options": ["que", "quien", "cual", "donde"],
+            "answer": "que",
+            "explanation": "'Que' connects the clauses about the book"
+          },
+          {
+            "question": "Complete: 'La persona con _____ hablo' (The person with whom I speak)",
+            "options": ["que", "quien", "cual", "donde"],
+            "answer": "quien",
+            "explanation": "After prepositions with people, use 'quien'"
+          },
+          {
+            "question": "Complete: 'La casa _____ vivo' (The house where I live)",
+            "options": ["que", "quien", "donde", "cuando"],
+            "answer": "donde",
+            "explanation": "'Donde' indicates location"
+          },
+          {
+            "question": "What's the plural of 'quien'?",
+            "options": ["quien", "quienes", "quiens", "quienes"],
+            "answer": "quienes",
+            "explanation": "'Quienes' is the plural of 'quien'"
+          },
+          {
+            "question": "Which is more formal: 'el cual' or 'que'?",
+            "options": ["que", "el cual", "both equal", "neither"],
+            "answer": "el cual",
+            "explanation": "'El cual' is more formal than 'que'"
+          },
+          {
+            "question": "Complete: 'El día _____ llegué' (The day when I arrived)",
+            "options": ["que", "quien", "donde", "cuando"],
+            "answer": "que",
+            "explanation": "'Que' can also mean 'when' in relative clauses"
+          },
+          {
+            "question": "Which relative pronoun agrees in gender and number?",
+            "options": ["que", "quien", "el cual", "donde"],
+            "answer": "el cual",
+            "explanation": "'El cual' changes: el cual, la cual, los cuales, las cuales"
+          }
+        ]
+      },
+      {
+        "type": "fill_blank",
+        "instructions": "Complete with the correct relative pronoun",
+        "prompts": [
+          {
+            "sentence": "El estudiante _____ estudia mucho saca buenas notas. (The student who studies a lot gets good grades.)",
+            "answer": "que",
+            "explanation": "'Que' is used for people as subjects"
+          },
+          {
+            "sentence": "La película _____ vimos ayer fue excelente. (The movie that we saw yesterday was excellent.)",
+            "answer": "que",
+            "explanation": "'Que' connects clauses about things"
+          },
+          {
+            "sentence": "La chica con _____ bailo es mi novia. (The girl with whom I dance is my girlfriend.)",
+            "answer": "quien",
+            "explanation": "After prepositions with people, use 'quien'"
+          },
+          {
+            "sentence": "El restaurante _____ comemos es muy bueno. (The restaurant where we eat is very good.)",
+            "answer": "donde",
+            "explanation": "'Donde' indicates the place"
+          },
+          {
+            "sentence": "Los amigos de _____ te hablé vienen mañana. (The friends about whom I told you are coming tomorrow.)",
+            "answer": "quienes",
+            "explanation": "Plural 'quienes' after prepositions"
+          },
+          {
+            "sentence": "El coche _____ compré es rojo. (The car that I bought is red.)",
+            "answer": "que",
+            "explanation": "'Que' is the most common relative pronoun"
+          },
+          {
+            "sentence": "La ciudad _____ nací es pequeña. (The city where I was born is small.)",
+            "answer": "donde",
+            "explanation": "'Donde' indicates place of birth"
+          },
+          {
+            "sentence": "El profesor para _____ trabajo es muy exigente. (The professor for whom I work is very demanding.)",
+            "answer": "quien",
+            "explanation": "After prepositions with people, use 'quien'"
+          },
+          {
+            "sentence": "Los libros _____ leemos son interesantes. (The books that we read are interesting.)",
+            "answer": "que",
+            "explanation": "'Que' connects clauses about books"
+          },
+          {
+            "sentence": "El momento _____ llegaste fue perfecto. (The moment when you arrived was perfect.)",
+            "answer": "que",
+            "explanation": "'Que' can mean 'when' in time expressions"
+          }
+        ]
+      },
+      {
+        "type": "conjugation",
+        "instructions": "Combine these sentences using relative pronouns",
+        "prompts": [
+          {
+            "verb": "El hombre + El hombre habla español",
+            "subject": "combine",
+            "answer": "El hombre que habla español",
+            "english": "The man who speaks Spanish",
+            "explanation": "Use 'que' to combine clauses about people"
+          },
+          {
+            "verb": "La casa + Vivo en la casa",
+            "subject": "combine",
+            "answer": "La casa donde vivo",
+            "english": "The house where I live",
+            "explanation": "Use 'donde' for location"
+          },
+          {
+            "verb": "El libro + Leo el libro",
+            "subject": "combine",
+            "answer": "El libro que leo",
+            "english": "The book that I read",
+            "explanation": "Use 'que' for direct objects"
+          },
+          {
+            "verb": "La mujer + Hablo con la mujer",
+            "subject": "combine",
+            "answer": "La mujer con quien hablo",
+            "english": "The woman with whom I speak",
+            "explanation": "Use 'quien' after prepositions with people"
+          },
+          {
+            "verb": "El día + Llegué el día",
+            "subject": "combine",
+            "answer": "El día que llegué",
+            "english": "The day when I arrived",
+            "explanation": "Use 'que' for time expressions"
+          },
+          {
+            "verb": "Los estudiantes + Trabajo para los estudiantes",
+            "subject": "combine",
+            "answer": "Los estudiantes para quienes trabajo",
+            "english": "The students for whom I work",
+            "explanation": "Use 'quienes' (plural) after prepositions"
+          },
+          {
+            "verb": "El parque + Jugamos en el parque",
+            "subject": "combine",
+            "answer": "El parque donde jugamos",
+            "english": "The park where we play",
+            "explanation": "Use 'donde' for location"
+          },
+          {
+            "verb": "La canción + Escucho la canción",
+            "subject": "combine",
+            "answer": "La canción que escucho",
+            "english": "The song that I listen to",
+            "explanation": "Use 'que' for direct objects"
+          },
+          {
+            "verb": "El médico + Confío en el médico",
+            "subject": "combine",
+            "answer": "El médico en quien confío",
+            "english": "The doctor in whom I trust",
+            "explanation": "Use 'quien' after prepositions with people"
+          },
+          {
+            "verb": "La escuela + Estudio en la escuela",
+            "subject": "combine",
+            "answer": "La escuela donde estudio",
+            "english": "The school where I study",
+            "explanation": "Use 'donde' for location"
+          }
+        ]
+      }
+    ]
+  }
+}

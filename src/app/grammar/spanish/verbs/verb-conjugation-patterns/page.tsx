@@ -178,7 +178,7 @@ export default function SpanishVerbConjugationPatternsPage() {
         practiceUrl="/grammar/spanish/verbs/verb-conjugation-patterns/practice"
         quizUrl="/grammar/spanish/verbs/verb-conjugation-patterns/quiz"
         songUrl="/songs/es?theme=grammar&topic=verb-conjugation-patterns"
-        youtubeVideoId="verb-conjugation-patterns-spanish"
+        youtubeVideoId="EGaSgIRswcI"
         relatedTopics={relatedTopics}
       />
     </>

@@ -1,0 +1,207 @@
+{
+  "practice_content": {
+    "instructions": "Practice Spanish subject pronouns with these exercises.",
+    "practice_type": "mixed_exercises",
+    "estimated_duration": 15,
+    "exercises": [
+      {
+        "type": "multiple_choice",
+        "instructions": "Choose the correct subject pronoun",
+        "prompts": [
+          {
+            "question": "Which pronoun means 'I' in Spanish?",
+            "options": ["yo", "tú", "él", "nosotros"],
+            "answer": "yo",
+            "explanation": "'Yo' means 'I' in Spanish"
+          },
+          {
+            "question": "Which pronoun means 'you' (informal) in Spanish?",
+            "options": ["yo", "tú", "usted", "vosotros"],
+            "answer": "tú",
+            "explanation": "'Tú' is informal 'you' in Spanish"
+          },
+          {
+            "question": "Which pronoun means 'he' in Spanish?",
+            "options": ["yo", "tú", "él", "ella"],
+            "answer": "él",
+            "explanation": "'Él' means 'he' in Spanish"
+          },
+          {
+            "question": "Which pronoun means 'we' in Spanish?",
+            "options": ["yo", "nosotros", "vosotros", "ellos"],
+            "answer": "nosotros",
+            "explanation": "'Nosotros' means 'we' in Spanish"
+          },
+          {
+            "question": "Which pronoun means 'they' (masculine) in Spanish?",
+            "options": ["nosotros", "vosotros", "ellos", "ellas"],
+            "answer": "ellos",
+            "explanation": "'Ellos' means 'they' (masculine or mixed)"
+          },
+          {
+            "question": "Which pronoun is formal 'you' in Spanish?",
+            "options": ["tú", "usted", "vosotros", "ustedes"],
+            "answer": "usted",
+            "explanation": "'Usted' is formal singular 'you'"
+          },
+          {
+            "question": "Which pronoun means 'you all' in Spain (informal)?",
+            "options": ["ustedes", "vosotros", "nosotros", "ellos"],
+            "answer": "vosotros",
+            "explanation": "'Vosotros' is informal plural 'you' in Spain"
+          },
+          {
+            "question": "Which pronoun means 'she' in Spanish?",
+            "options": ["yo", "tú", "él", "ella"],
+            "answer": "ella",
+            "explanation": "'Ella' means 'she' in Spanish"
+          },
+          {
+            "question": "Which pronoun means 'they' (feminine) in Spanish?",
+            "options": ["nosotras", "vosotras", "ellos", "ellas"],
+            "answer": "ellas",
+            "explanation": "'Ellas' means 'they' (all feminine)"
+          },
+          {
+            "question": "Which pronoun means 'you all' in Latin America?",
+            "options": ["vosotros", "ustedes", "nosotros", "ellos"],
+            "answer": "ustedes",
+            "explanation": "'Ustedes' is used for plural 'you' in Latin America"
+          }
+        ]
+      },
+      {
+        "type": "fill_blank",
+        "instructions": "Complete with the correct subject pronoun",
+        "prompts": [
+          {
+            "sentence": "_____ soy de España. (I am from Spain.)",
+            "answer": "Yo",
+            "explanation": "'Yo' means 'I'"
+          },
+          {
+            "sentence": "_____ eres muy inteligente. (You are very smart.)",
+            "answer": "Tú",
+            "explanation": "'Tú' is informal 'you'"
+          },
+          {
+            "sentence": "_____ es mi hermano. (He is my brother.)",
+            "answer": "Él",
+            "explanation": "'Él' means 'he'"
+          },
+          {
+            "sentence": "_____ es profesora. (She is a teacher.)",
+            "answer": "Ella",
+            "explanation": "'Ella' means 'she'"
+          },
+          {
+            "sentence": "_____ somos estudiantes. (We are students.)",
+            "answer": "Nosotros",
+            "explanation": "'Nosotros' means 'we'"
+          },
+          {
+            "sentence": "_____ sois de Madrid. (You all are from Madrid.)",
+            "answer": "Vosotros",
+            "explanation": "'Vosotros' is informal plural 'you' in Spain"
+          },
+          {
+            "sentence": "_____ son mis amigos. (They are my friends.)",
+            "answer": "Ellos",
+            "explanation": "'Ellos' means 'they' (masculine/mixed)"
+          },
+          {
+            "sentence": "_____ es muy amable. (You are very kind - formal.)",
+            "answer": "Usted",
+            "explanation": "'Usted' is formal 'you'"
+          },
+          {
+            "sentence": "_____ están en casa. (They are at home - all female.)",
+            "answer": "Ellas",
+            "explanation": "'Ellas' means 'they' (all feminine)"
+          },
+          {
+            "sentence": "_____ hablan español. (You all speak Spanish.)",
+            "answer": "Ustedes",
+            "explanation": "'Ustedes' is formal/Latin American plural 'you'"
+          }
+        ]
+      },
+      {
+        "type": "conjugation",
+        "instructions": "Identify the subject pronoun for these verb forms",
+        "prompts": [
+          {
+            "verb": "hablo",
+            "subject": "identify pronoun",
+            "answer": "yo",
+            "english": "I speak",
+            "explanation": "The -o ending indicates first person singular (yo)"
+          },
+          {
+            "verb": "comes",
+            "subject": "identify pronoun",
+            "answer": "tú",
+            "english": "you eat",
+            "explanation": "The -es ending indicates second person singular (tú)"
+          },
+          {
+            "verb": "vive",
+            "subject": "identify pronoun",
+            "answer": "él/ella/usted",
+            "english": "he/she/you live(s)",
+            "explanation": "The -e ending indicates third person singular"
+          },
+          {
+            "verb": "estudiamos",
+            "subject": "identify pronoun",
+            "answer": "nosotros",
+            "english": "we study",
+            "explanation": "The -amos ending indicates first person plural"
+          },
+          {
+            "verb": "escribís",
+            "subject": "identify pronoun",
+            "answer": "vosotros",
+            "english": "you all write",
+            "explanation": "The -ís ending indicates second person plural"
+          },
+          {
+            "verb": "son",
+            "subject": "identify pronoun",
+            "answer": "ellos/ellas/ustedes",
+            "english": "they/you all are",
+            "explanation": "'Son' indicates third person plural"
+          },
+          {
+            "verb": "tengo",
+            "subject": "identify pronoun",
+            "answer": "yo",
+            "english": "I have",
+            "explanation": "The -go ending indicates first person singular"
+          },
+          {
+            "verb": "eres",
+            "subject": "identify pronoun",
+            "answer": "tú",
+            "english": "you are",
+            "explanation": "'Eres' is second person singular"
+          },
+          {
+            "verb": "van",
+            "subject": "identify pronoun",
+            "answer": "ellos/ellas/ustedes",
+            "english": "they/you all go",
+            "explanation": "'Van' indicates third person plural"
+          },
+          {
+            "verb": "somos",
+            "subject": "identify pronoun",
+            "answer": "nosotros",
+            "english": "we are",
+            "explanation": "'Somos' is first person plural"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -488,7 +488,7 @@ export default function SpanishAdjectivePositionPage() {
         difficulty="intermediate"
         estimatedTime={10}
         sections={sections}
-        backUrl="/grammar/spanish/adjectives"
+        backUrl="/grammar/spanish"
         practiceUrl="/grammar/spanish/adjectives/position/practice"
         quizUrl="/grammar/spanish/adjectives/position/quiz"
         songUrl="/songs/es?theme=grammar&topic=adjective-position"

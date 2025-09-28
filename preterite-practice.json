@@ -1,0 +1,207 @@
+{
+  "practice_content": {
+    "instructions": "Practice Spanish preterite tense with these exercises.",
+    "practice_type": "mixed_exercises",
+    "estimated_duration": 15,
+    "exercises": [
+      {
+        "type": "multiple_choice",
+        "instructions": "Choose the correct preterite form",
+        "prompts": [
+          {
+            "question": "How do you say 'I spoke' in Spanish?",
+            "options": ["hablé", "hablaste", "habló", "hablamos"],
+            "answer": "hablé",
+            "explanation": "'Hablé' means 'I spoke' (preterite)"
+          },
+          {
+            "question": "How do you say 'you ate' in Spanish?",
+            "options": ["comí", "comiste", "comió", "comimos"],
+            "answer": "comiste",
+            "explanation": "'Comiste' means 'you ate' (preterite)"
+          },
+          {
+            "question": "How do you say 'she lived' in Spanish?",
+            "options": ["viví", "viviste", "vivió", "vivimos"],
+            "answer": "vivió",
+            "explanation": "'Vivió' means 'she lived' (preterite)"
+          },
+          {
+            "question": "How do you say 'we worked' in Spanish?",
+            "options": ["trabajé", "trabajaste", "trabajó", "trabajamos"],
+            "answer": "trabajamos",
+            "explanation": "'Trabajamos' means 'we worked' (preterite)"
+          },
+          {
+            "question": "How do you say 'they studied' in Spanish?",
+            "options": ["estudié", "estudiaste", "estudió", "estudiaron"],
+            "answer": "estudiaron",
+            "explanation": "'Estudiaron' means 'they studied' (preterite)"
+          },
+          {
+            "question": "What's the preterite of 'ser' for 'yo'?",
+            "options": ["era", "fui", "soy", "fue"],
+            "answer": "fui",
+            "explanation": "'Fui' is preterite of 'ser' for 'yo'"
+          },
+          {
+            "question": "What's the preterite of 'ir' for 'tú'?",
+            "options": ["ibas", "fuiste", "vas", "fue"],
+            "answer": "fuiste",
+            "explanation": "'Fuiste' is preterite of 'ir' for 'tú'"
+          },
+          {
+            "question": "What's the preterite of 'hacer' for 'él'?",
+            "options": ["hacía", "hizo", "hace", "hice"],
+            "answer": "hizo",
+            "explanation": "'Hizo' is preterite of 'hacer' for 'él'"
+          },
+          {
+            "question": "What's the preterite of 'tener' for 'nosotros'?",
+            "options": ["teníamos", "tuvimos", "tenemos", "tuvieron"],
+            "answer": "tuvimos",
+            "explanation": "'Tuvimos' is preterite of 'tener' for 'nosotros'"
+          },
+          {
+            "question": "What's the preterite of 'estar' for 'ellos'?",
+            "options": ["estaban", "estuvieron", "están", "estuvimos"],
+            "answer": "estuvieron",
+            "explanation": "'Estuvieron' is preterite of 'estar' for 'ellos'"
+          }
+        ]
+      },
+      {
+        "type": "fill_blank",
+        "instructions": "Complete with the correct preterite form",
+        "prompts": [
+          {
+            "sentence": "Ayer yo _____ al cine. (Yesterday I went to the movies.)",
+            "answer": "fui",
+            "explanation": "'Fui' is preterite of 'ir' for 'yo'"
+          },
+          {
+            "sentence": "Tú _____ la tarea anoche. (You did the homework last night.)",
+            "answer": "hiciste",
+            "explanation": "'Hiciste' is preterite of 'hacer' for 'tú'"
+          },
+          {
+            "sentence": "Ella _____ médica el año pasado. (She became a doctor last year.)",
+            "answer": "fue",
+            "explanation": "'Fue' is preterite of 'ser' for 'ella'"
+          },
+          {
+            "sentence": "Nosotros _____ en Madrid en 2020. (We lived in Madrid in 2020.)",
+            "answer": "vivimos",
+            "explanation": "'Vivimos' is preterite of 'vivir' for 'nosotros'"
+          },
+          {
+            "sentence": "Ellos _____ mucho dinero. (They had a lot of money.)",
+            "answer": "tuvieron",
+            "explanation": "'Tuvieron' is preterite of 'tener' for 'ellos'"
+          },
+          {
+            "sentence": "¿Dónde _____ las llaves? (Where did you put the keys?)",
+            "answer": "pusiste",
+            "explanation": "'Pusiste' is preterite of 'poner' for 'tú'"
+          },
+          {
+            "sentence": "Mi hermana _____ temprano ayer. (My sister came early yesterday.)",
+            "answer": "vino",
+            "explanation": "'Vino' is preterite of 'venir' for 'ella'"
+          },
+          {
+            "sentence": "Nosotras _____ la verdad. (We told the truth.)",
+            "answer": "dijimos",
+            "explanation": "'Dijimos' is preterite of 'decir' for 'nosotras'"
+          },
+          {
+            "sentence": "Vosotros _____ en casa todo el día. (You all stayed at home all day.)",
+            "answer": "estuvisteis",
+            "explanation": "'Estuvisteis' is preterite of 'estar' for 'vosotros'"
+          },
+          {
+            "sentence": "¿Qué _____ en la fiesta? (What did they do at the party?)",
+            "answer": "hicieron",
+            "explanation": "'Hicieron' is preterite of 'hacer' for 'ellos'"
+          }
+        ]
+      },
+      {
+        "type": "conjugation",
+        "instructions": "Conjugate these verbs in preterite",
+        "prompts": [
+          {
+            "verb": "caminar",
+            "subject": "yo",
+            "answer": "caminé",
+            "english": "I walked",
+            "explanation": "Regular -ar verb: caminé"
+          },
+          {
+            "verb": "aprender",
+            "subject": "tú",
+            "answer": "aprendiste",
+            "english": "you learned",
+            "explanation": "Regular -er verb: aprendiste"
+          },
+          {
+            "verb": "escribir",
+            "subject": "él",
+            "answer": "escribió",
+            "english": "he wrote",
+            "explanation": "Regular -ir verb: escribió"
+          },
+          {
+            "verb": "poder",
+            "subject": "nosotros",
+            "answer": "pudimos",
+            "english": "we could",
+            "explanation": "Irregular verb: pudimos"
+          },
+          {
+            "verb": "querer",
+            "subject": "ellas",
+            "answer": "quisieron",
+            "english": "they wanted",
+            "explanation": "Irregular verb: quisieron"
+          },
+          {
+            "verb": "saber",
+            "subject": "usted",
+            "answer": "supo",
+            "english": "you knew/found out",
+            "explanation": "Irregular verb: supo"
+          },
+          {
+            "verb": "dar",
+            "subject": "nosotras",
+            "answer": "dimos",
+            "english": "we gave",
+            "explanation": "Irregular verb: dimos"
+          },
+          {
+            "verb": "ver",
+            "subject": "vosotros",
+            "answer": "visteis",
+            "english": "you all saw",
+            "explanation": "Irregular verb: visteis"
+          },
+          {
+            "verb": "traer",
+            "subject": "ellos",
+            "answer": "trajeron",
+            "english": "they brought",
+            "explanation": "Irregular verb: trajeron"
+          },
+          {
+            "verb": "conducir",
+            "subject": "yo",
+            "answer": "conduje",
+            "english": "I drove",
+            "explanation": "Irregular verb: conduje"
+          }
+        ]
+      }
+    ]
+  }
+}
