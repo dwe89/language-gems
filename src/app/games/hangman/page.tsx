@@ -51,7 +51,7 @@ export default function HangmanPage() {
   const [assignmentTheme, setAssignmentTheme] = useState<string | null>(null);
 
   // Initialize the audio hook (assuming sound is enabled by default, or you can add a user preference)
-  const { playSFX, startBackgroundMusic, stopBackgroundMusic } = useAudio(true);
+  const { playSFX, startBackgroundMusic, stopBackgroundMusic, toggleMusic, isMusicEnabled } = useAudio(true);
 
   // Global audio context for assignment mode compatibility
   const globalAudioManager = useGameAudio(true);
@@ -572,6 +572,8 @@ export default function HangmanPage() {
         isAssignmentMode={!!assignmentId}
         playSFX={enhancedPlaySFX}
         onOpenSettings={handleOpenConfigPanel}
+        toggleMusic={toggleMusic}
+        isMusicEnabled={isMusicEnabled}
       />
 
       {/* In-game configuration panel (assuming it needs to overlay the game) */}

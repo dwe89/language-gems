@@ -473,6 +473,7 @@ export default function BattleArena({
                   type="text"
                   placeholder="Type your conjugation here..."
                   className="w-full p-4 text-lg border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none text-center"
+                  autoFocus
                   onKeyPress={(e) => {
                     if (e.key === 'Enter') {
                       const target = e.target as HTMLInputElement;

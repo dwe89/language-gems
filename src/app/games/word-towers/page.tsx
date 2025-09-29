@@ -2133,12 +2133,37 @@ function ImprovedSentenceTowersGame({
                 </div>
               </div>
               
-              <button
-                onClick={resetGame}
-                className="w-full bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-400 hover:to-orange-400 text-white font-bold py-4 px-8 rounded-2xl text-xl transition-all duration-300 hover:scale-105 shadow-2xl"
-              >
-                Try Again! 🔄
-              </button>
+              {/* Completion Buttons */}
+              <div className="flex flex-col gap-4">
+                {assignmentMode ? (
+                  <>
+                    <button
+                      onClick={() => {
+                        // Return to assignments dashboard
+                        if (typeof window !== 'undefined') {
+                          window.location.href = '/student-dashboard/assignments';
+                        }
+                      }}
+                      className="w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-400 hover:to-blue-400 text-white font-bold py-4 px-8 rounded-2xl text-xl transition-all duration-300 hover:scale-105 shadow-2xl"
+                    >
+                      Return to Assignments 📚
+                    </button>
+                    <button
+                      onClick={resetGame}
+                      className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400 text-white font-bold py-3 px-6 rounded-2xl text-lg transition-all duration-300 hover:scale-105 shadow-xl"
+                    >
+                      Play Again 🔄
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={resetGame}
+                    className="w-full bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-400 hover:to-orange-400 text-white font-bold py-4 px-8 rounded-2xl text-xl transition-all duration-300 hover:scale-105 shadow-2xl"
+                  >
+                    Try Again! 🔄
+                  </button>
+                )}
+              </div>
             </motion.div>
           </motion.div>
         )}

@@ -119,22 +119,35 @@ export const SoundProvider: React.FC<{
     }
   }, [musicEnabled, bgMusic]);
   
-  // Function to play a sound
+  // Function to play a sound with improved error handling
   const playSound = useCallback((soundName: keyof typeof SOUNDS | 'bgMusic') => {
     if (!soundEnabled && soundName !== 'bgMusic') return;
     if (soundName === 'bgMusic' && !musicEnabled) return;
-    
+
     if (soundName === 'bgMusic') {
       if (bgMusic && bgMusic.paused) {
         bgMusic.play().catch(err => console.error('Failed to play background music:', err));
       }
       return;
     }
-    
+
     const audio = audioElements[soundName];
     if (audio) {
+      // Prevent "interrupted by pause" errors by checking if audio is already playing
+      if (!audio.paused) {
+        audio.pause();
+      }
       audio.currentTime = 0;
-      audio.play().catch(err => console.error(`Failed to play sound ${soundName}:`, err));
+
+      // Add a small delay to prevent rapid play/pause conflicts
+      setTimeout(() => {
+        audio.play().catch(err => {
+          // Only log if it's not a common autoplay restriction
+          if (!err.message.includes('user interaction') && !err.message.includes('autoplay')) {
+            console.error(`Failed to play sound ${soundName}:`, err);
+          }
+        });
+      }, 10);
     }
   }, [soundEnabled, musicEnabled, audioElements, bgMusic]);
   

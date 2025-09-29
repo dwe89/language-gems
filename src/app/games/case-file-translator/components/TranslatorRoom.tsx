@@ -79,6 +79,7 @@ export default function TranslatorRoom({
   const [gameStartTime] = useState(Date.now());
   const [translationStartTime, setTranslationStartTime] = useState<number>(0);
   const [backgroundMusic, setBackgroundMusic] = useState<HTMLAudioElement | null>(null);
+  const [showIntroModal, setShowIntroModal] = useState(true);
 
   // Game settings state
   const [isMuted, setIsMuted] = useState(false);
@@ -120,8 +121,8 @@ export default function TranslatorRoom({
     };
   }, []);
 
-  // Start background music on first user interaction
-  const ensureBackgroundMusic = async () => {
+  // Start background music immediately
+  const startBackgroundMusic = async () => {
     if (isMuted) {
       console.log('Background music muted');
       return;
@@ -130,10 +131,17 @@ export default function TranslatorRoom({
     if (backgroundMusic && backgroundMusic.paused) {
       try {
         await backgroundMusic.play();
+        console.log('Background music started');
       } catch (error) {
         console.log('Background music autoplay prevented:', error);
       }
     }
+  };
+
+  // Handle intro modal start
+  const handleStartGame = async () => {
+    setShowIntroModal(false);
+    await startBackgroundMusic();
   };
 
   // Load sentences from database
@@ -269,8 +277,6 @@ export default function TranslatorRoom({
 
   const handleSubmitTranslation = async () => {
     if (!userTranslation.trim()) return;
-
-    await ensureBackgroundMusic();
 
     const currentSentence = sentences[currentSentenceIndex];
     const correct = checkTranslation(userTranslation, currentSentence.english_translation);
@@ -746,6 +752,32 @@ export default function TranslatorRoom({
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Intro Modal */}
+      {showIntroModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-8 max-w-md mx-4 border border-amber-500/30"
+          >
+            <div className="text-center">
+              <div className="text-4xl mb-4">🕵️‍♂️</div>
+              <h2 className="text-2xl font-bold text-white mb-4">Case File Translator</h2>
+              <p className="text-slate-300 mb-6">
+                Welcome, Detective! You're about to enter the translation room.
+                Background music and sound effects will enhance your investigation experience.
+              </p>
+              <button
+                onClick={handleStartGame}
+                className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-black font-bold py-3 px-6 rounded-lg transition-all duration-300"
+              >
+                Start Investigation 🔍
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
       </div>
     </div>
   );

@@ -84,6 +84,7 @@ export default function TempleRestoration({
   const [gameStartTime] = useState(Date.now());
   const [gapFillStartTime, setGapFillStartTime] = useState<number>(0);
   const [contextCluesUsed, setContextCluesUsed] = useState(0);
+  const [showIntroModal, setShowIntroModal] = useState(true);
 
   // Audio refs
   const backgroundMusicRef = useRef<HTMLAudioElement | null>(null);
@@ -117,15 +118,22 @@ export default function TempleRestoration({
     };
   }, []);
 
-  // Start background music on first user interaction
-  const ensureBackgroundMusic = async () => {
+  // Start background music immediately
+  const startBackgroundMusic = async () => {
     if (backgroundMusicRef.current && backgroundMusicRef.current.paused) {
       try {
         await backgroundMusicRef.current.play();
+        console.log('Lava Temple background music started');
       } catch (error) {
         console.log('Background music autoplay prevented:', error);
       }
     }
+  };
+
+  // Handle intro modal start
+  const handleStartGame = async () => {
+    setShowIntroModal(false);
+    await startBackgroundMusic();
   };
 
   // Load sentences and options
@@ -136,6 +144,9 @@ export default function TempleRestoration({
         setError(null);
 
         console.log('Loading sentences for:', gameConfig);
+
+        // Show loading for minimum time to prevent flash
+        const startTime = Date.now();
 
         // Use language directly since database stores full language names
         const dbLanguage = gameConfig.language;
@@ -210,7 +221,19 @@ export default function TempleRestoration({
         console.error('Error loading sentences:', err);
         setError(err instanceof Error ? err.message : 'Failed to load sentences');
       } finally {
-        setLoading(false);
+        // Ensure minimum loading time of 800ms to prevent flash, but don't exceed 2 seconds
+        const elapsedTime = Date.now() - startTime;
+        const minLoadingTime = 800;
+        const maxLoadingTime = 2000;
+
+        if (elapsedTime < minLoadingTime) {
+          setTimeout(() => setLoading(false), minLoadingTime - elapsedTime);
+        } else if (elapsedTime > maxLoadingTime) {
+          // If loading is taking too long, show immediately
+          setLoading(false);
+        } else {
+          setLoading(false);
+        }
       }
     };
 
@@ -320,7 +343,6 @@ export default function TempleRestoration({
 
   // Handle word selection
   const handleWordSelect = async (gapIndex: number, word: string) => {
-    await ensureBackgroundMusic();
     
     setSelectedWords(prev => ({
       ...prev,
@@ -788,6 +810,32 @@ export default function TempleRestoration({
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Intro Modal */}
+      {showIntroModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-gradient-to-br from-red-900 to-orange-900 rounded-2xl p-8 max-w-md mx-4 border border-orange-500/30"
+          >
+            <div className="text-center">
+              <div className="text-4xl mb-4">🏛️</div>
+              <h2 className="text-2xl font-bold text-white mb-4">Lava Temple Word Restore</h2>
+              <p className="text-orange-200 mb-6">
+                Welcome, Explorer! You're about to enter the ancient Lava Temple.
+                Atmospheric music and sound effects will immerse you in this mystical adventure.
+              </p>
+              <button
+                onClick={handleStartGame}
+                className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-400 hover:to-red-400 text-white font-bold py-3 px-6 rounded-lg transition-all duration-300"
+              >
+                Enter the Temple 🔥
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }

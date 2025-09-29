@@ -39,6 +39,8 @@ interface MemoryGameMainProps {
   onOpenSettings?: () => void;
   audioManager?: any;
   gameSessionId?: string | null;
+  onProgressUpdate?: (progress: any) => void;
+  onGameComplete?: (progress: any) => void;
 }
 
 export default function MemoryGameMain({
@@ -56,7 +58,9 @@ export default function MemoryGameMain({
   curriculumLevel = 'KS3',
   onOpenSettings,
   audioManager: externalAudioManager,
-  gameSessionId: assignmentGameSessionId
+  gameSessionId: assignmentGameSessionId,
+  onProgressUpdate,
+  onGameComplete
 }: MemoryGameMainProps) {
   const { user, isLoading, isDemo } = useUnifiedAuth();
 
@@ -839,7 +843,33 @@ export default function MemoryGameMain({
           if (isAssignmentMode && startTime) {
             const endTime = new Date();
             const timeSpent = Math.round((endTime.getTime() - startTime.getTime()) / 1000); // in seconds
-            saveAssignmentProgress(timeSpent, matches + 1, attempts + 1);
+
+            // Call the assignment wrapper callbacks if available
+            if (onGameComplete) {
+              const accuracy = ((matches + 1) / (attempts + 1)) * 100;
+              onGameComplete({
+                assignmentId: assignmentId,
+                gameId: 'memory-game',
+                studentId: userId || user?.id,
+                wordsCompleted: matches + 1,
+                totalWords: cards.length / 2,
+                score: Math.round(accuracy),
+                maxScore: 100,
+                accuracy: accuracy,
+                timeSpent: timeSpent,
+                completedAt: new Date(),
+                sessionData: {
+                  matches: matches + 1,
+                  attempts: attempts + 1,
+                  gameType: 'memory-game',
+                  gridSize: cards.length,
+                  totalPairs: cards.length / 2
+                }
+              });
+            } else {
+              // Fallback to legacy assignment progress saving
+              saveAssignmentProgress(timeSpent, matches + 1, attempts + 1);
+            }
           }
         }
       }, 500);

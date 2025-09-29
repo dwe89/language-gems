@@ -18,8 +18,8 @@ export class AudioManager {
   }
 
   async playPronunciation(
-    text: string, 
-    language: 'es' | 'en' = 'es', 
+    text: string,
+    language: 'es' | 'en' = 'es',
     word?: VocabularyWord
   ): Promise<void> {
     if (this.isPlaying || !this.soundEnabled) return;
@@ -27,16 +27,34 @@ export class AudioManager {
     try {
       this.isPlaying = true;
 
+      // Stop any currently playing audio first
+      if (this.audioRef) {
+        this.audioRef.pause();
+        this.audioRef.currentTime = 0;
+        this.audioRef = null;
+      }
+
       // Try to use the word's audio URL first
-      if (word?.audio_url) {
+      if (word?.audio_url && word.audio_url.trim()) {
+        console.log('Playing word audio:', word.audio_url);
         await this.playAudioFile(word.audio_url);
         return;
       }
 
       // Fallback to text-to-speech
+      console.log('Using text-to-speech for:', text, language);
       await this.playTextToSpeech(text, language);
     } catch (error) {
       console.error('Error playing pronunciation:', error);
+      // Try fallback TTS if audio file fails
+      if (word?.audio_url) {
+        try {
+          console.log('Audio file failed, trying TTS fallback');
+          await this.playTextToSpeech(text, language);
+        } catch (ttsError) {
+          console.error('TTS fallback also failed:', ttsError);
+        }
+      }
     } finally {
       this.isPlaying = false;
     }
@@ -49,17 +67,43 @@ export class AudioManager {
         this.audioRef = null;
       }
 
+      // Validate URL
+      if (!audioUrl || !audioUrl.trim()) {
+        reject(new Error('Invalid audio URL'));
+        return;
+      }
+
       this.audioRef = new Audio(audioUrl);
-      
+
       this.audioRef.onended = () => {
+        console.log('Audio playback completed');
         resolve();
       };
-      
-      this.audioRef.onerror = () => {
-        reject(new Error('Failed to load audio file'));
+
+      this.audioRef.onerror = (e) => {
+        console.error('Audio file failed to load:', audioUrl, e);
+        reject(new Error(`Audio file failed to load: ${audioUrl}`));
       };
 
-      this.audioRef.play().catch(reject);
+      // Add timeout to prevent hanging
+      const timeout = setTimeout(() => {
+        if (this.audioRef) {
+          this.audioRef.pause();
+          this.audioRef = null;
+        }
+        reject(new Error('Audio loading timeout'));
+      }, 10000);
+
+      this.audioRef.onloadeddata = () => {
+        clearTimeout(timeout);
+        console.log('Audio ready to play:', audioUrl);
+      };
+
+      this.audioRef.play().catch(playError => {
+        clearTimeout(timeout);
+        console.error('Audio play failed:', playError);
+        reject(playError);
+      });
     });
   }
 

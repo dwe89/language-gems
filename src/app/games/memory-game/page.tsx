@@ -102,6 +102,8 @@ export default function UnifiedMemoryGamePage() {
               userId={user.id}
               audioManager={audioManager}
               gameSessionId={gameSessionId}
+              onProgressUpdate={onProgressUpdate}
+              onGameComplete={onGameComplete}
             />
           );
         }}

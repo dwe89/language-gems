@@ -544,9 +544,26 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
   ]
 
-  // Add all grammar pages dynamically
-  const grammarPages = getGrammarPages()
-  grammarPages.forEach(page => {
+  // Add main grammar language pages
+  const grammarLanguagePages = [
+    {
+      url: '/grammar/spanish',
+      priority: 0.9,
+      changeFrequency: 'weekly' as const,
+    },
+    {
+      url: '/grammar/french',
+      priority: 0.9,
+      changeFrequency: 'weekly' as const,
+    },
+    {
+      url: '/grammar/german',
+      priority: 0.9,
+      changeFrequency: 'weekly' as const,
+    },
+  ]
+
+  grammarLanguagePages.forEach(page => {
     routes.push({
       url: `${baseUrl}${page.url}`,
       lastModified: currentDate,

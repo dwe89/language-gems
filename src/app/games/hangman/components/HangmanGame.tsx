@@ -80,6 +80,8 @@ interface HangmanGameProps {
   onOpenSettings?: () => void;
   gameSessionId?: string;
   userId?: string;
+  toggleMusic?: () => void;
+  isMusicEnabled?: boolean;
 }
 
 const MAX_ATTEMPTS = 6;
@@ -98,7 +100,7 @@ type ExtendedThemeContextType = {
   };
 };
 
-export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isFullscreen, isAssignmentMode, playSFX, onOpenSettings, gameSessionId, userId }: HangmanGameProps) {
+export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isFullscreen, isAssignmentMode, playSFX, onOpenSettings, gameSessionId, userId, toggleMusic, isMusicEnabled }: HangmanGameProps) {
 
 
   const { themeId, themeClasses } = useTheme() as ExtendedThemeContextType;
@@ -937,14 +939,16 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
           <button
             onClick={() => {
               playSFX('button-click'); // SFX for the button click itself
-              setMusicEnabled(prev => !prev); // Toggle local state for icon change
-              // If you want this button to control the parent's background music,
-              // you'd need to pass a `toggleMusic` prop from HangmanPage.tsx here.
+              if (toggleMusic) {
+                toggleMusic();
+              } else {
+                setMusicEnabled(prev => !prev); // Fallback to local state
+              }
             }}
             className="p-1.5 md:p-2 rounded-full bg-gray-700 hover:bg-gray-600 text-white"
-            title={musicEnabled ? "Mute music" : "Play music"}
+            title={(isMusicEnabled ?? musicEnabled) ? "Mute music" : "Play music"}
           >
-            {musicEnabled ? <Volume2 size={14} className="md:w-4 md:h-4" /> : <VolumeX size={14} className="md:w-4 md:h-4" />}
+            {(isMusicEnabled ?? musicEnabled) ? <Volume2 size={14} className="md:w-4 md:h-4" /> : <VolumeX size={14} className="md:w-4 md:h-4" />}
           </button>
 
           {/* Hint button */}
