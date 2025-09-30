@@ -1,20 +1,10 @@
+'use client';
+
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { ArrowLeft, Book, CheckCircle } from 'lucide-react';
 import Footer from '../../../components/layout/Footer';
-import SEOWrapper from '../../../components/seo/SEOWrapper';
-import { Metadata } from 'next';
-
-export const metadata: Metadata = {
-  title: 'Getting Started - LanguageGems Help Center',
-  description: 'New to LanguageGems? Learn how to create assignments, track student progress, set up your classroom, and navigate the dashboard.',
-  openGraph: {
-    title: 'Getting Started - LanguageGems Help Center',
-    description: 'New to LanguageGems? Learn the basics to get up and running quickly.',
-    url: 'https://languagegems.com/help/getting-started',
-    type: 'website',
-  },
-};
+import Head from 'next/head';
 
 export default function GettingStartedPage() {
   const articles = [
@@ -133,7 +123,11 @@ export default function GettingStartedPage() {
   ];
 
   return (
-    <SEOWrapper>
+    <>
+      <Head>
+        <title>Getting Started - LanguageGems Help Center</title>
+        <meta name="description" content="New to LanguageGems? Learn how to create assignments, track student progress, set up your classroom, and navigate the dashboard." />
+      </Head>
       <div className="flex min-h-screen flex-col">
         <main className="flex-grow">
           {/* Header */}
@@ -232,6 +226,6 @@ export default function GettingStartedPage() {
         </main>
         <Footer />
       </div>
-    </SEOWrapper>
+    </>
   );
 }

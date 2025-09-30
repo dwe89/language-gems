@@ -5,18 +5,8 @@ import Link from 'next/link';
 import {
   Book,
   Users,
-  Settings,  ];
-
-  return (
-    <>
-      <Head>
-        <title>Help Center - LanguageGems Support</title>
-        <meta name="description" content="Find answers to your questions about LanguageGems. Browse our help articles, video tutorials, and guides to get the most out of our language learning platform." />
-      </Head>
-      <div className="flex min-h-screen flex-col">
-        <main className="flex-grow">
-          {/* Hero Section */}
-          <div className="bg-gradient-to-br from-blue-50 to-indigo-100 py-16">{rd,
+  Settings,
+  CreditCard,
   HelpCircle,
   FileText,
   Video,
@@ -26,7 +16,6 @@ import {
   MessageCircle
 } from 'lucide-react';
 import Footer from '../../components/layout/Footer';
-import SEOWrapper from '../../components/seo/SEOWrapper';
 import HelpSearchBar from '../../components/help/HelpSearchBar';
 import HelpQuickActions from '../../components/help/HelpQuickActions';
 import HelpCategories from '../../components/help/HelpCategories';
