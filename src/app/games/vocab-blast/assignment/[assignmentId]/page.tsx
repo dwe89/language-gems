@@ -16,12 +16,12 @@ export default function VocabBlastAssignmentPage() {
     console.log('Vocab Blast assignment completed:', progress);
     // Could show completion modal or redirect
     setTimeout(() => {
-      router.push('/student-dashboard/assignments');
+      router.push(`/student-dashboard/assignments/${assignmentId}`);
     }, 2000);
   };
 
   const handleBackToAssignments = () => {
-    router.push('/student-dashboard/assignments');
+    router.push(`/student-dashboard/assignments/${assignmentId}`);
   };
 
   const handleBackToMenu = () => {

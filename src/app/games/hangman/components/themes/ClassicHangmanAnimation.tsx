@@ -571,7 +571,7 @@ export default function ClassicHangmanAnimation({ mistakes, maxMistakes, classNa
     return (
         <div
             ref={containerRef}
-            className={`relative w-full max-w-[min(560px,100%)] aspect-[4/5] lg:aspect-square rounded-3xl border border-white/10 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 shadow-[0_40px_120px_-40px_rgba(15,23,42,0.9)] overflow-hidden ${className ?? ''}`}
+            className={`relative w-full max-w-full h-full aspect-[4/5] md:aspect-[3/4] lg:aspect-square rounded-3xl border border-white/10 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 shadow-[0_40px_120px_-40px_rgba(15,23,42,0.9)] overflow-hidden ${className ?? ''}`}
         >
             <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.08),_transparent_55%),radial-gradient(circle_at_bottom,_rgba(96,165,250,0.06),_transparent_55%)]" />
             <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />

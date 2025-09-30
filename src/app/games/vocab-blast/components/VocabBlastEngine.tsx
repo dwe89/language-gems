@@ -235,6 +235,9 @@ function DefaultEngine({
   // Handle object click
   const handleObjectClick = useCallback((obj: VocabObject) => {
     if (obj.isCorrect) {
+      // ✅ CRITICAL FIX: Clear ALL objects when correct answer is clicked
+      // This prevents the user from being forced to click wrong answers (old decoys)
+      setVocabObjects([]);
       onCorrectAnswer(currentWord);
       // Create success particles
       createParticles(obj.x, obj.y, 'success');
@@ -242,10 +245,9 @@ function DefaultEngine({
       onIncorrectAnswer();
       // Create error particles
       createParticles(obj.x, obj.y, 'error');
+      // Only remove the clicked wrong object
+      setVocabObjects(prev => prev.filter(o => o.id !== obj.id));
     }
-
-    // Remove clicked object
-    setVocabObjects(prev => prev.filter(o => o.id !== obj.id));
   }, [onCorrectAnswer, onIncorrectAnswer, currentWord]);
 
   // Create particle effects

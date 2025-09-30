@@ -97,7 +97,7 @@ const EnhancedAssignmentCard: React.FC<{
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.3 }}
-      className="bg-white rounded-2xl p-6 border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 overflow-hidden relative"
+      className="bg-white rounded-2xl p-6 border border-gray-100 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 overflow-hidden relative"
     >
       {/* Top gradient border */}
   <div className={`absolute top-0 left-0 right-0 h-2 bg-gradient-to-r ${statusGradients[statusKey]}`}></div>
@@ -116,15 +116,7 @@ const EnhancedAssignmentCard: React.FC<{
         <div className="space-y-3 mb-6">
           <div className="flex items-center space-x-2 text-sm text-gray-600">
             <Clock className="h-4 w-4 text-indigo-500" />
-            <span>Due: {assignment?.dueDate ? new Date(assignment.dueDate).toLocaleDateString() : 'N/A'}</span>
-          </div>
-          <div className="flex items-center space-x-2 text-sm text-gray-600">
-            <Target className="h-4 w-4 text-purple-500" />
-            <span>Points: {assignment?.maxScore ?? 'N/A'}</span>
-          </div>
-          <div className="flex items-center space-x-2 text-sm text-gray-600">
-            <Gamepad2 className="h-4 w-4 text-green-500" />
-            <span>Game Type: {assignment?.type || 'vocabulary'}</span>
+            <span className="font-medium">Due: {assignment?.dueDate ? new Date(assignment.dueDate).toLocaleDateString() : 'N/A'}</span>
           </div>
         </div>
 
@@ -359,6 +351,58 @@ export default function ModernStudentDashboard({
     return date.toLocaleDateString();
   };
 
+  // Helper function to calculate streak from sessions
+  const calculateStreakFromSessions = (sessions: { created_at: string }[]): number => {
+    if (!sessions || sessions.length === 0) return 0;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Group sessions by date
+    const sessionDates = new Set<string>();
+    sessions.forEach(session => {
+      const sessionDate = new Date(session.created_at);
+      sessionDate.setHours(0, 0, 0, 0);
+      sessionDates.add(sessionDate.toISOString());
+    });
+
+    const sortedDates = Array.from(sessionDates)
+      .map(d => new Date(d))
+      .sort((a, b) => b.getTime() - a.getTime());
+
+    let streak = 0;
+    let checkDate = new Date(today);
+
+    // Count consecutive days including today
+    for (const sessionDate of sortedDates) {
+      const daysDiff = Math.floor((checkDate.getTime() - sessionDate.getTime()) / (1000 * 60 * 60 * 24));
+      
+      if (daysDiff === 0) {
+        // Session on the check date
+        streak++;
+        checkDate.setDate(checkDate.getDate() - 1);
+      } else if (daysDiff > 0 && daysDiff === 1 && streak === 0) {
+        // Allow yesterday to count as streak if no activity today
+        streak++;
+        checkDate.setDate(checkDate.getDate() - 1);
+      } else if (daysDiff > streak) {
+        // Gap in streak
+        break;
+      }
+    }
+
+    // If user has activity today OR yesterday, start with at least 1
+    if (streak === 0 && sortedDates.length > 0) {
+      const mostRecentDate = sortedDates[0];
+      const daysSinceActivity = Math.floor((today.getTime() - mostRecentDate.getTime()) / (1000 * 60 * 60 * 24));
+      if (daysSinceActivity <= 1) {
+        streak = 1;
+      }
+    }
+
+    return streak;
+  };
+
   // Load real student data using unified service
   useEffect(() => {
     if (user?.id) {
@@ -373,88 +417,100 @@ export default function ModernStudentDashboard({
     try {
       setLoading(true);
 
-      // Load unified vocabulary data for consistent metrics
-      const { stats: vocabularyStats } = await vocabularyService.getVocabularyData(user.id);
+      // 🚀 OPTIMIZATION: Execute all independent queries in parallel
+      const [
+        vocabularyResult,
+        metricsResult,
+        gemsData,
+        enrollmentsResult
+      ] = await Promise.all([
+        // Load unified vocabulary data
+        vocabularyService.getVocabularyData(user.id),
+        // Load dashboard metrics
+        dashboardService.getDashboardMetrics(user.id),
+        // Load gems analytics (already optimized internally)
+        new GemsAnalyticsService().getStudentGemsAnalytics(user.id),
+        // Get class enrollments for assignment counts
+        supabase
+          .from('class_enrollments')
+          .select('class_id')
+          .eq('student_id', user.id)
+      ]);
 
-      // Load dashboard metrics for other data
-      const metrics = await dashboardService.getDashboardMetrics(user.id);
+      console.log('📊 [DASHBOARD] Gems data loaded:', gemsData);
+      setGemsAnalytics(gemsData);
 
       // Use vocabulary stats for vocabulary-related metrics, dashboard service for others
       const unifiedMetrics = {
-        ...metrics,
-        totalWordsTracked: vocabularyStats.totalWords,
-        masteredWords: vocabularyStats.masteredWords,
-        strugglingWords: vocabularyStats.strugglingWords,
-        overdueWords: vocabularyStats.overdueWords,
-        overallAccuracy: vocabularyStats.averageAccuracy,
-        memoryStrength: vocabularyStats.memoryStrength,
-        wordsReadyForReview: vocabularyStats.wordsReadyForReview
+        ...metricsResult,
+        totalWordsTracked: vocabularyResult.stats.totalWords,
+        masteredWords: vocabularyResult.stats.masteredWords,
+        strugglingWords: vocabularyResult.stats.strugglingWords,
+        overdueWords: vocabularyResult.stats.overdueWords,
+        overallAccuracy: vocabularyResult.stats.averageAccuracy,
+        memoryStrength: vocabularyResult.stats.memoryStrength,
+        wordsReadyForReview: vocabularyResult.stats.wordsReadyForReview
       };
 
       setDashboardMetrics(unifiedMetrics);
 
-      // Get basic profile data for level calculation
-      const { data: profile } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
-
-      // Get total XP for level calculation
-      const { data: xpSummary } = await supabase
-        .from('enhanced_game_sessions')
-        .select('xp_earned')
-        .eq('student_id', user.id);
-
-      const totalXP = xpSummary?.reduce((sum, session) => sum + (session.xp_earned || 0), 0) || 0;
-
-      // Load gems analytics
-      console.log('🔍 [DASHBOARD] Loading gems analytics for user:', user.id, user.email);
-      const gemsService = new GemsAnalyticsService();
-      const gemsData = await gemsService.getStudentGemsAnalytics(user.id);
-      console.log('📊 [DASHBOARD] Gems data loaded:', gemsData);
-      setGemsAnalytics(gemsData);
-
-      // Calculate level from XP
+      // 🚀 OPTIMIZATION: Use XP from gems analytics instead of separate query
+      const totalXP = gemsData.totalXP;
       const { level, xpToNext } = calculateLevelFromXP(totalXP);
+
+      // Calculate actual streak from game sessions
+      let currentStreak = 0;
+      try {
+        const { data: sessions } = await supabase
+          .from('enhanced_game_sessions')
+          .select('created_at')
+          .eq('student_id', user.id)
+          .order('created_at', { ascending: false });
+
+        if (sessions && sessions.length > 0) {
+          currentStreak = calculateStreakFromSessions(sessions);
+        }
+      } catch (error) {
+        console.error('Error calculating streak:', error);
+      }
 
       // Get actual assignment counts for this student's classes only
       let totalAssignments = 0;
       let completedAssignments = 0;
 
       try {
-        // Get student's class enrollments
-        const { data: enrollments } = await supabase
-          .from('class_enrollments')
-          .select('class_id')
-          .eq('student_id', user.id);
+        const enrollments = enrollmentsResult.data;
 
         if (enrollments && enrollments.length > 0) {
           const classIds = enrollments.map(e => e.class_id);
 
-          // Get assignments for student's classes only (security: class-filtered)
-          const { data: assignmentData } = await supabase
-            .from('assignments')
-            .select('id')
-            .in('class_id', classIds);
-
-          totalAssignments = assignmentData?.length || 0;
-
-          // Get completed assignments for this student only
-          if (totalAssignments > 0) {
-            const { data: completedData } = await supabase
+          // 🚀 OPTIMIZATION: Fetch assignments and completed status in parallel
+          const [assignmentResult, completedResult] = await Promise.all([
+            // Get assignments for student's classes
+            supabase
+              .from('assignments')
+              .select('id')
+              .in('class_id', classIds),
+            // Get completed assignments for this student
+            supabase
               .from('enhanced_assignment_progress')
               .select('assignment_id')
               .eq('student_id', user.id)
               .eq('status', 'completed')
-              .in('assignment_id', assignmentData?.map(a => a.id) || []);
+          ]);
 
-            completedAssignments = completedData?.length || 0;
+          totalAssignments = assignmentResult.data?.length || 0;
+          
+          // Filter completed assignments to only those in the student's classes
+          if (totalAssignments > 0 && assignmentResult.data) {
+            const assignmentIds = new Set(assignmentResult.data.map(a => a.id));
+            completedAssignments = completedResult.data?.filter(c => 
+              assignmentIds.has(c.assignment_id)
+            ).length || 0;
           }
         }
       } catch (error) {
         console.error('Error loading assignment counts:', error);
-        // Fallback to 0 if there's an error
         totalAssignments = 0;
         completedAssignments = 0;
       }
@@ -464,13 +520,20 @@ export default function ModernStudentDashboard({
         level,
         xp: totalXP,
         xpToNext,
-        streak: Math.round(unifiedMetrics.consistencyScore / 14.3), // Convert to days
+        streak: currentStreak,
         achievements: 0, // TODO: Get from achievements table
-        totalAssignments, // Actual assignments for student's classes only
-        completedAssignments, // Actual completed assignments for this student
+        totalAssignments,
+        completedAssignments,
         strongWords: unifiedMetrics.masteredWords,
         weakWords: unifiedMetrics.strugglingWords,
-        vocabularyAccuracy: unifiedMetrics.overallAccuracy
+        vocabularyAccuracy: Math.min(100, Math.max(0, unifiedMetrics.overallAccuracy)) // Ensure it's 0-100
+      });
+
+      console.log('📊 [DASHBOARD] Student stats loaded:', {
+        streak: currentStreak,
+        accuracy: unifiedMetrics.overallAccuracy,
+        xp: totalXP,
+        level
       });
 
 
@@ -501,50 +564,59 @@ export default function ModernStudentDashboard({
     if (!user?.id || !supabase) return;
 
     try {
-      // Get recent achievements
-      const { data: achievements } = await supabase
-        .from('achievements')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('achieved_at', { ascending: false })
-        .limit(5);
+      // 🚀 OPTIMIZATION: Execute all queries in parallel
+      const [achievementsResult, enrollmentsResult] = await Promise.all([
+        // Get recent achievements
+        supabase
+          .from('achievements')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('achieved_at', { ascending: false })
+          .limit(5),
+        // Get student's class enrollments
+        supabase
+          .from('class_enrollments')
+          .select('class_id')
+          .eq('student_id', user.id)
+      ]);
 
-      // Get assignment notifications - assignments due in the future (class-filtered for security)
+      const achievements = achievementsResult.data || [];
+      const enrollments = enrollmentsResult.data || [];
       let assignmentNotifications: any[] = [];
+      let userSubmissions: any[] = [];
 
-      // First get student's class enrollments
-      const { data: enrollments } = await supabase
-        .from('class_enrollments')
-        .select('class_id')
-        .eq('student_id', user.id);
-
-      if (enrollments && enrollments.length > 0) {
+      // Only fetch assignments if student has class enrollments
+      if (enrollments.length > 0) {
         const classIds = enrollments.map(e => e.class_id);
 
-        // Only get assignments from classes the student is enrolled in
+        // Get assignments from student's classes
         const { data: notifications } = await supabase
           .from('assignments')
           .select('id, title, due_date')
-          .in('class_id', classIds) // Security: class-filtered
+          .in('class_id', classIds)
           .gte('due_date', new Date().toISOString())
           .order('due_date', { ascending: true })
           .limit(3);
 
         assignmentNotifications = notifications || [];
+
+        // Check submissions in parallel if there are assignments
+        if (assignmentNotifications.length > 0) {
+          const assignmentIds = assignmentNotifications.map(a => a.id);
+          const { data: submissions } = await supabase
+            .from('enhanced_assignment_progress')
+            .select('assignment_id')
+            .eq('student_id', user.id)
+            .in('assignment_id', assignmentIds);
+          
+          userSubmissions = submissions || [];
+        }
       }
 
-      // Check which assignments have submissions by the current user
-      const assignmentIds = assignmentNotifications?.map(a => a.id) || [];
-      const { data: userSubmissions } = assignmentIds.length > 0 ? await supabase
-        .from('enhanced_assignment_progress')
-        .select('assignment_id')
-        .eq('student_id', user.id)
-        .in('assignment_id', assignmentIds) : { data: [] };
-
-      const submittedAssignmentIds = new Set(userSubmissions?.map(s => s.assignment_id) || []);
+      const submittedAssignmentIds = new Set(userSubmissions.map(s => s.assignment_id));
 
       const notifications = [
-        ...(achievements || []).map(a => ({
+        ...achievements.map(a => ({
           id: `achievement-${a.id}`,
           type: 'achievement',
           title: 'New Achievement!',
@@ -552,7 +624,7 @@ export default function ModernStudentDashboard({
           timestamp: a.earned_at || a.achieved_at,
           isNew: true
         })),
-        ...(assignmentNotifications || []).map(a => ({
+        ...assignmentNotifications.map(a => ({
           id: `assignment-${a.id}`,
           type: 'assignment',
           title: 'Assignment Due Soon',

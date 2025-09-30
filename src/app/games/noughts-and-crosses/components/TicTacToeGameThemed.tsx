@@ -748,6 +748,28 @@ export default function TicTacToeGame({
           </motion.div>
           
           <div className="flex items-center gap-1 md:gap-3">
+            {/* Mute Button - Only show in assignment mode */}
+            {isAssignmentMode && (
+              <motion.button
+                onClick={() => {
+                  playSFX('button-click');
+                  setSoundEnabled(!soundEnabled);
+                  if (soundEnabled) {
+                    stopBackgroundMusic();
+                  } else {
+                    startBackgroundMusic(themeId);
+                  }
+                }}
+                className="relative p-2 md:px-4 md:py-2.5 rounded-xl bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white font-semibold flex items-center gap-1 md:gap-3 transition-all duration-300 shadow-lg hover:shadow-xl border-2 border-white/20"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                title={soundEnabled ? "Mute audio" : "Unmute audio"}
+              >
+                {soundEnabled ? <Volume2 className="h-4 w-4 md:h-5 md:w-5" /> : <VolumeX className="h-4 w-4 md:h-5 md:w-5" />}
+                <span className="hidden md:inline text-sm md:text-base">{soundEnabled ? "Mute" : "Unmute"}</span>
+              </motion.button>
+            )}
+
             {onOpenSettings && (
               <motion.button
                 onClick={() => {

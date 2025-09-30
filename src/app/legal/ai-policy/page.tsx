@@ -1,9 +1,19 @@
-'use client';
-
 import React from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Brain, Zap } from 'lucide-react';
 import Footer from '../../../components/layout/Footer';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'AI Ethics & Policy - LanguageGems',
+  description: 'Learn how LanguageGems responsibly uses AI in education. Our commitment to ethical AI, student privacy, and teacher oversight.',
+  openGraph: {
+    title: 'AI Ethics & Policy - LanguageGems',
+    description: 'Learn how LanguageGems responsibly uses AI in education.',
+    url: 'https://languagegems.com/legal/ai-policy',
+    type: 'website',
+  },
+};
 
 export default function AIPolicyPage() {
   return (
@@ -198,7 +208,7 @@ export default function AIPolicyPage() {
               </p>
               <div className="text-blue-700 text-sm">
                 <p><strong>Email:</strong> ai-ethics@languagegems.com</p>
-                <p><strong>General Contact:</strong> hello@languagegems.com</p>
+                <p><strong>General Contact:</strong> support@languagegems.com</p>
                 <p><strong>Company:</strong> LanguageGems Ltd</p>
               </div>
             </div>

@@ -108,21 +108,47 @@ export class UnifiedStudentDashboardService {
   }
 
   async getDashboardMetrics(studentId: string): Promise<DashboardMetrics> {
-    // Run queries in parallel for performance
+    console.time('⏱️ getDashboardMetrics');
+    
+    // 🚀 OPTIMIZATION: Get session IDs first, then run everything in parallel
+    console.time('⏱️ get sessions');
+    const { data: recentSessions, error: sessionError } = await this.supabase
+      .from('enhanced_game_sessions')
+      .select('id, started_at')
+      .eq('student_id', studentId)
+      .order('started_at', { ascending: false })
+      .limit(50);
+    console.timeEnd('⏱️ get sessions');
+
+    if (sessionError) throw sessionError;
+
+    const sessionIds = recentSessions?.map(s => s.id) || [];
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const recentSessionIds = recentSessions
+      ?.filter(s => new Date(s.started_at) >= sevenDaysAgo)
+      .map(s => s.id) || [];
+
+    // Run all queries in parallel using the session IDs
+    console.time('⏱️ parallel queries');
     const [
       performanceLogs,
       vocabularyGems,
       recentPerformance
     ] = await Promise.all([
-      this.getPerformanceLogs(studentId),
+      this.getPerformanceLogsForSessions(sessionIds),
       this.getVocabularyGems(studentId),
-      this.getRecentPerformance(studentId, 7) // Last 7 days
+      this.getPerformanceLogsForSessions(recentSessionIds)
     ]);
+    console.timeEnd('⏱️ parallel queries');
 
+    console.timeEnd('⏱️ getDashboardMetrics');
     return this.combineMetrics(performanceLogs, vocabularyGems, recentPerformance);
   }
 
-  private async getPerformanceLogs(studentId: string) {
+  private async getPerformanceLogsForSessions(sessionIds: string[]) {
+    if (sessionIds.length === 0) return [];
+
     const { data, error } = await this.supabase
       .from('word_performance_logs')
       .select(`
@@ -132,15 +158,30 @@ export class UnifiedStudentDashboardService {
         response_time_ms,
         timestamp,
         language,
-        curriculum_level,
-        enhanced_game_sessions!inner(student_id)
+        curriculum_level
       `)
-      .eq('enhanced_game_sessions.student_id', studentId)
+      .in('session_id', sessionIds)
       .order('timestamp', { ascending: false })
-      .limit(1000); // Recent attempts for analysis
+      .limit(200);
 
     if (error) throw error;
     return data || [];
+  }
+
+  private async getPerformanceLogs(studentId: string) {
+    // 🚀 DEPRECATED: Use getPerformanceLogsForSessions instead
+    // Keeping for backward compatibility
+    const { data: sessions, error: sessionError } = await this.supabase
+      .from('enhanced_game_sessions')
+      .select('id')
+      .eq('student_id', studentId)
+      .order('started_at', { ascending: false })
+      .limit(50);
+
+    if (sessionError) throw sessionError;
+    if (!sessions || sessions.length === 0) return [];
+
+    return this.getPerformanceLogsForSessions(sessions.map(s => s.id));
   }
 
   private async getVocabularyGems(studentId: string) {
@@ -159,7 +200,9 @@ export class UnifiedStudentDashboardService {
         next_review_at,
         last_encountered_at
       `)
-      .eq('student_id', studentId);
+      .eq('student_id', studentId)
+      .order('last_encountered_at', { ascending: false })
+      .limit(200);
 
     if (gemError) throw gemError;
     if (!gemData || gemData.length === 0) return [];
@@ -200,8 +243,20 @@ export class UnifiedStudentDashboardService {
   }
 
   private async getRecentPerformance(studentId: string, days: number) {
+    // 🚀 OPTIMIZATION: Use session IDs instead of expensive join
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
+
+    const { data: sessions, error: sessionError } = await this.supabase
+      .from('enhanced_game_sessions')
+      .select('id')
+      .eq('student_id', studentId)
+      .gte('started_at', startDate.toISOString());
+
+    if (sessionError) throw sessionError;
+    if (!sessions || sessions.length === 0) return [];
+
+    const sessionIds = sessions.map(s => s.id);
 
     const { data, error } = await this.supabase
       .from('word_performance_logs')
@@ -209,10 +264,9 @@ export class UnifiedStudentDashboardService {
         word_text,
         was_correct,
         response_time_ms,
-        timestamp,
-        enhanced_game_sessions!inner(student_id)
+        timestamp
       `)
-      .eq('enhanced_game_sessions.student_id', studentId)
+      .in('session_id', sessionIds)
       .gte('timestamp', startDate.toISOString())
       .order('timestamp', { ascending: true });
 

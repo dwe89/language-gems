@@ -16,9 +16,21 @@ export default function UnifiedNoughtsAndCrossesPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // ALWAYS initialize hooks first to prevent "more hooks than previous render" error
+  // ALWAYS initialize ALL hooks first to prevent "more hooks than previous render" error
   const [soundEnabled] = useState(true);
   const { playSFX } = useAudio(soundEnabled);
+  
+  // Game state management - must be initialized BEFORE any conditional returns
+  const [gameStarted, setGameStarted] = useState(false);
+
+  // Game configuration from unified launcher - must be initialized BEFORE any conditional returns
+  const [gameConfig, setGameConfig] = useState<{
+    config: UnifiedSelectionConfig;
+    vocabulary: UnifiedVocabularyItem[];
+    theme: string;
+  } | null>(null);
+  const [showConfigPanel, setShowConfigPanel] = useState(false);
+  const [gameMode, setGameMode] = useState<'computer' | '2-player'>('computer');
 
   // Check for assignment mode
   const assignmentId = searchParams?.get('assignment');
@@ -28,18 +40,6 @@ export default function UnifiedNoughtsAndCrossesPage() {
   if (assignmentId && mode === 'assignment') {
     return <NoughtsAndCrossesAssignmentWrapper assignmentId={assignmentId} />;
   }
-
-  // Game state management
-  const [gameStarted, setGameStarted] = useState(false);
-
-  // Game configuration from unified launcher
-  const [gameConfig, setGameConfig] = useState<{
-    config: UnifiedSelectionConfig;
-    vocabulary: UnifiedVocabularyItem[];
-    theme: string;
-  } | null>(null);
-  const [showConfigPanel, setShowConfigPanel] = useState(false);
-  const [gameMode, setGameMode] = useState<'computer' | '2-player'>('computer');
 
   // Authentication check
   if (!isLoading && !user && !isDemo) {

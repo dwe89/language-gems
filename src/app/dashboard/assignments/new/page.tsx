@@ -257,6 +257,17 @@ export default function NewAssignmentPage() {
     streakTarget: 3
   });
 
+  // Grammar configuration state (for Conjugation Duel, Verb Quest, etc.)
+  const [grammarConfig, setGrammarConfig] = useState({
+    language: 'spanish' as 'spanish' | 'french' | 'german',
+    verbTypes: ['regular', 'irregular'] as ('regular' | 'irregular' | 'stem-changing' | 'reflexive')[],
+    tenses: ['present'] as string[],
+    persons: ['yo', 'tu', 'el_ella_usted', 'nosotros', 'vosotros', 'ellos_ellas_ustedes'] as string[],
+    difficulty: 'beginner' as 'beginner' | 'intermediate' | 'advanced',
+    verbCount: 10,
+    focusAreas: ['conjugation'] as ('conjugation' | 'recognition' | 'translation')[]
+  });
+
   // Create a ref to track if data has already been fetched
   const [dataFetched, setDataFetched] = useState(false);
   const [vocabularyPreview, setVocabularyPreview] = useState<any[]>([]);
@@ -624,7 +635,8 @@ export default function NewAssignmentPage() {
         curriculumLevel: formData.curriculum_level,
         vocabularySelection: vocabularySelection,
         gameConfig: {
-          miningSettings: selectedActivities.some(a => a.id === 'vocabulary-mining') ? miningSettings : undefined
+          miningSettings: selectedActivities.some(a => a.id === 'vocabulary-mining') ? miningSettings : undefined,
+          grammarConfig: selectedActivities.some(a => a.id === 'conjugation-duel' || a.id === 'verb-quest') ? grammarConfig : undefined
         }
       };
 
@@ -1234,6 +1246,153 @@ export default function NewAssignmentPage() {
                 </div>
 
 
+              </div>
+            )}
+
+            {/* Grammar Configuration (for Conjugation Duel, Verb Quest) */}
+            {selectedActivities.some(activity => activity.id === 'conjugation-duel' || activity.id === 'verb-quest') && (
+              <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl shadow-lg p-6 border-2 border-purple-200">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                    <Layers className="mr-2 text-purple-600" size={20} />
+                    ⚔️ Grammar Configuration
+                  </h3>
+                </div>
+
+                <div className="bg-white/70 rounded-lg p-4 mb-6">
+                  <p className="text-sm text-gray-700 mb-2">
+                    <strong>🎯 Verb Conjugation Practice:</strong> Configure language, tenses, verb types, and difficulty for grammar games.
+                  </p>
+                  <p className="text-xs text-gray-600">
+                    Students will practice conjugating verbs in epic battles and quests.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Language Selection */}
+                  <div className="space-y-4">
+                    <h4 className="font-medium text-gray-900">Language & Difficulty</h4>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Language
+                      </label>
+                      <div className="grid grid-cols-3 gap-2">
+                        {[
+                          { id: 'spanish', name: 'Spanish', flag: '🇪🇸' },
+                          { id: 'french', name: 'French', flag: '🇫🇷' },
+                          { id: 'german', name: 'German', flag: '🇩🇪' }
+                        ].map(lang => (
+                          <button
+                            key={lang.id}
+                            type="button"
+                            onClick={() => setGrammarConfig({ ...grammarConfig, language: lang.id as any })}
+                            className={`p-3 rounded-lg border-2 transition-all text-center ${
+                              grammarConfig.language === lang.id
+                                ? 'border-purple-500 bg-purple-50 text-purple-700'
+                                : 'border-gray-200 hover:border-gray-300'
+                            }`}
+                          >
+                            <div className="text-2xl mb-1">{lang.flag}</div>
+                            <div className="text-xs font-medium">{lang.name}</div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Difficulty Level
+                      </label>
+                      <select
+                        value={grammarConfig.difficulty}
+                        onChange={(e) => setGrammarConfig({ ...grammarConfig, difficulty: e.target.value as any })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                      >
+                        <option value="beginner">Beginner</option>
+                        <option value="intermediate">Intermediate</option>
+                        <option value="advanced">Advanced</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Number of Verbs
+                      </label>
+                      <input
+                        type="number"
+                        value={grammarConfig.verbCount}
+                        onChange={(e) => setGrammarConfig({ ...grammarConfig, verbCount: parseInt(e.target.value) || 10 })}
+                        min="5"
+                        max="30"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Verb Types & Tenses */}
+                  <div className="space-y-4">
+                    <h4 className="font-medium text-gray-900">Verb Types & Tenses</h4>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Verb Types
+                      </label>
+                      <div className="space-y-2">
+                        {[
+                          { id: 'regular', name: 'Regular Verbs' },
+                          { id: 'irregular', name: 'Irregular Verbs' },
+                          { id: 'stem-changing', name: 'Stem-Changing' },
+                          { id: 'reflexive', name: 'Reflexive Verbs' }
+                        ].map(type => (
+                          <label key={type.id} className="flex items-center">
+                            <input
+                              type="checkbox"
+                              checked={grammarConfig.verbTypes.includes(type.id as any)}
+                              onChange={(e) => {
+                                const newTypes = e.target.checked
+                                  ? [...grammarConfig.verbTypes, type.id as any]
+                                  : grammarConfig.verbTypes.filter(t => t !== type.id);
+                                setGrammarConfig({ ...grammarConfig, verbTypes: newTypes });
+                              }}
+                              className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                            />
+                            <span className="ml-2 text-sm text-gray-700">{type.name}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Tenses
+                      </label>
+                      <div className="space-y-2">
+                        {[
+                          { id: 'present', name: 'Present' },
+                          { id: 'preterite', name: 'Preterite (Past)' },
+                          { id: 'imperfect', name: 'Imperfect' },
+                          { id: 'future', name: 'Future' }
+                        ].map(tense => (
+                          <label key={tense.id} className="flex items-center">
+                            <input
+                              type="checkbox"
+                              checked={grammarConfig.tenses.includes(tense.id)}
+                              onChange={(e) => {
+                                const newTenses = e.target.checked
+                                  ? [...grammarConfig.tenses, tense.id]
+                                  : grammarConfig.tenses.filter(t => t !== tense.id);
+                                setGrammarConfig({ ...grammarConfig, tenses: newTenses });
+                              }}
+                              className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                            />
+                            <span className="ml-2 text-sm text-gray-700">{tense.name}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
 

@@ -12,6 +12,8 @@ import { ThemeProvider } from '../components/theme/ThemeProvider'
 import { ToastProvider } from '../components/ui/use-toast';
 import { StructuredData } from '../components/seo/SEOWrapper'
 import { getOrganizationSchema, getWebsiteSchema } from '../lib/seo/structuredData'
+import { ChatbotProvider } from '../components/providers/ChatbotProvider'
+import ChatbotWrapper from '../components/ui/ChatbotWrapper'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 
@@ -125,9 +127,12 @@ export default function RootLayout({
             <CartProvider>
               <ThemeProvider>
                 <ToastProvider>
-                  <Suspense fallback={<div>Loading...</div>}>
-                    <ClientLayout>{children}</ClientLayout>
-                  </Suspense>
+                  <ChatbotProvider>
+                    <Suspense fallback={<div>Loading...</div>}>
+                      <ClientLayout>{children}</ClientLayout>
+                    </Suspense>
+                    <ChatbotWrapper />
+                  </ChatbotProvider>
                 </ToastProvider>
               </ThemeProvider>
             </CartProvider>

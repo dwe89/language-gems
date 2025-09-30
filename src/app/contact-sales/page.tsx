@@ -51,8 +51,8 @@ export default function ContactSalesPage() {
       icon: Mail,
       title: 'Email Us',
       description: 'Get a response within 24 hours',
-      contact: 'hello@languagegems.com',
-      action: 'mailto:hello@languagegems.com'
+      contact: 'support@languagegems.com',
+      action: 'mailto:support@languagegems.com'
     },
     {
       icon: Phone,

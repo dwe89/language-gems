@@ -20,11 +20,11 @@ export default function WordBlastAssignmentWrapper({
 
   const handleAssignmentComplete = (progress: GameProgress) => {
     console.log('Word Blast assignment completed:', progress);
-    router.push('/student-dashboard/assignments');
+    // No auto-redirect - let completion screen handle navigation
   };
 
   const handleBackToAssignments = () => {
-    router.push('/student-dashboard/assignments');
+    router.push(`/student-dashboard/assignments/${assignmentId}`);
   };
 
   const handleBackToMenu = () => {

@@ -69,7 +69,11 @@ export class StudentDataService {
    */
   async getStudentAnalyticsData(teacherId: string): Promise<RealTimeStudentData[]> {
     try {
-      // Get all students enrolled in teacher's classes
+      console.time('⏱️ [ANALYTICS] getStudentAnalyticsData');
+
+      // =====================================================
+      // STEP 1: Get all student IDs in teacher's classes
+      // =====================================================
       const { data: enrollments, error: enrollmentError } = await supabase
         .from('class_enrollments')
         .select(`
@@ -85,65 +89,114 @@ export class StudentDataService {
         .eq('status', 'active');
 
       if (enrollmentError) throw enrollmentError;
+      if (!enrollments || enrollments.length === 0) return [];
 
+      const studentIds = [...new Set(enrollments.map(e => e.student_id))];
+      console.log(`📊 [ANALYTICS] Loading data for ${studentIds.length} students`);
+
+      // =====================================================
+      // STEP 2: Batch load ALL data in parallel (5 queries total instead of 150!)
+      // =====================================================
+      const [
+        profilesResult,
+        assignmentProgressResult,
+        gameSessionsResult,
+        vocabProgressResult
+      ] = await Promise.all([
+        // Query 1: Get all student profiles at once
+        supabase
+          .from('user_profiles')
+          .select('user_id, display_name, email')
+          .in('user_id', studentIds),
+
+        // Query 2: Get all assignment progress at once
+        supabase
+          .from('assignment_progress')
+          .select('*')
+          .in('student_id', studentIds),
+
+        // Query 3: Get recent game sessions for all students at once
+        supabase
+          .from('enhanced_game_sessions')
+          .select('*')
+          .in('student_id', studentIds)
+          .not('ended_at', 'is', null)
+          .order('ended_at', { ascending: false })
+          .limit(300), // 10 per student × 30 students
+
+        // Query 4: Get vocabulary progress for all students at once
+        supabase
+          .from('student_vocabulary_assignment_progress')
+          .select('*')
+          .in('student_id', studentIds)
+      ]);
+
+      // Check for errors
+      if (profilesResult.error) console.error('Profiles error:', profilesResult.error);
+      if (assignmentProgressResult.error) console.error('Assignment progress error:', assignmentProgressResult.error);
+      if (gameSessionsResult.error) console.error('Game sessions error:', gameSessionsResult.error);
+      if (vocabProgressResult.error) console.error('Vocab progress error:', vocabProgressResult.error);
+
+      // =====================================================
+      // STEP 3: Create lookup maps for O(1) access
+      // =====================================================
+      const profilesMap = new Map(
+        (profilesResult.data || []).map(p => [p.user_id, p])
+      );
+
+      const assignmentProgressMap = new Map<string, any[]>();
+      (assignmentProgressResult.data || []).forEach(ap => {
+        if (!assignmentProgressMap.has(ap.student_id)) {
+          assignmentProgressMap.set(ap.student_id, []);
+        }
+        assignmentProgressMap.get(ap.student_id)!.push(ap);
+      });
+
+      const gameSessionsMap = new Map<string, any[]>();
+      (gameSessionsResult.data || []).forEach(gs => {
+        if (!gameSessionsMap.has(gs.student_id)) {
+          gameSessionsMap.set(gs.student_id, []);
+        }
+        const sessions = gameSessionsMap.get(gs.student_id)!;
+        if (sessions.length < 10) { // Limit to 10 per student
+          sessions.push(gs);
+        }
+      });
+
+      const vocabProgressMap = new Map<string, any[]>();
+      (vocabProgressResult.data || []).forEach(vp => {
+        if (!vocabProgressMap.has(vp.student_id)) {
+          vocabProgressMap.set(vp.student_id, []);
+        }
+        vocabProgressMap.get(vp.student_id)!.push(vp);
+      });
+
+      // =====================================================
+      // STEP 4: Build student data array using lookup maps
+      // =====================================================
       const studentData: RealTimeStudentData[] = [];
 
-      for (const enrollment of enrollments || []) {
+      for (const enrollment of enrollments) {
         const studentId = enrollment.student_id;
         const classId = enrollment.class_id;
         const className = enrollment.classes?.name || 'Unknown Class';
 
-
-
-        // Get student profile
-        const { data: profile } = await supabase
-          .from('user_profiles')
-          .select('display_name, user_id')
-          .eq('user_id', studentId)
-          .single();
-
-        // Get user email
-        const { data: user } = await supabase
-          .from('auth.users')
-          .select('email')
-          .eq('id', studentId)
-          .single();
-
-        // Get assignment progress
-        const { data: assignmentProgress } = await supabase
-          .from('assignment_progress')
-          .select('*')
-          .eq('student_id', studentId);
-
-        // Get recent game sessions
-        const { data: gameSessions } = await supabase
-          .from('enhanced_game_sessions')
-          .select('*')
-          .eq('student_id', studentId)
-          .not('ended_at', 'is', null)
-          .order('ended_at', { ascending: false })
-          .limit(10);
-
-        // Get vocabulary progress
-        const { data: vocabProgress } = await supabase
-          .from('student_vocabulary_assignment_progress')
-          .select('*')
-          .eq('student_id', studentId);
+        // Get data from lookup maps (O(1) instead of database query!)
+        const profile = profilesMap.get(studentId);
+        const assignments = assignmentProgressMap.get(studentId) || [];
+        const sessions = gameSessionsMap.get(studentId) || [];
+        const vocab = vocabProgressMap.get(studentId) || [];
 
         // Calculate metrics
-        const assignments = assignmentProgress || [];
-        const sessions = gameSessions || [];
-        const vocab = vocabProgress || [];
-
         const assignmentsCompleted = assignments.filter(a => a.status === 'completed').length;
         const assignmentsTotal = assignments.length;
-        const averageScore = assignments.length > 0 
-          ? assignments.reduce((sum, a) => sum + a.score, 0) / assignments.length 
+        const averageScore = assignments.length > 0
+          ? assignments.reduce((sum, a) => sum + (a.score || 0), 0) / assignments.length
           : 0;
         const averageAccuracy = assignments.length > 0
-          ? assignments.reduce((sum, a) => sum + a.accuracy, 0) / assignments.length
+          ? assignments.reduce((sum, a) => sum + (a.accuracy || 0), 0) / assignments.length
           : 0;
-        const totalTimeSpent = assignments.reduce((sum, a) => sum + a.time_spent, 0);
+        const totalTimeSpent = assignments.reduce((sum, a) => sum + (a.time_spent || 0), 0);
 
         // Calculate vocabulary stats
         const wordsAttempted = vocab.length;
@@ -227,9 +280,12 @@ export class StudentDataService {
         });
       }
 
+      console.timeEnd('⏱️ [ANALYTICS] getStudentAnalyticsData');
+      console.log(`✅ [ANALYTICS] Loaded data for ${studentData.length} students`);
+
       return studentData;
     } catch (error) {
-      console.error('Error fetching student analytics data:', error);
+      console.error('❌ [ANALYTICS] Error fetching student analytics data:', error);
       return [];
     }
   }

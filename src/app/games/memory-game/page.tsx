@@ -43,14 +43,12 @@ export default function UnifiedMemoryGamePage() {
   // Assignment mode helper functions
   const handleAssignmentComplete = (progress: GameProgress) => {
     console.log('Memory Game assignment completed:', progress);
-    // Show completion message and redirect
-    setTimeout(() => {
-      router.push('/student-dashboard/assignments');
-    }, 3000);
+    // No auto-redirect - let completion screen handle navigation
   };
 
   const handleBackToAssignments = () => {
-    router.push('/student-dashboard/assignments');
+    const assignmentId = searchParams?.get('assignment');
+    router.push(`/student-dashboard/assignments/${assignmentId}`);
   };
 
   // If assignment mode, render assignment wrapper (after all hooks are initialized)
@@ -94,7 +92,7 @@ export default function UnifiedMemoryGamePage() {
               language={vocabulary[0]?.language || "spanish"}
               topic="Assignment"
               difficulty="medium"
-              onBackToSettings={() => router.push('/games/memory-game')}
+              onBackToSettings={() => router.push(`/student-dashboard/assignments/${assignmentId}`)}
               customWords={wordPairs}
               isAssignmentMode={true}
               assignmentTitle={assignment.title}

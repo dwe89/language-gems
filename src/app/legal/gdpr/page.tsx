@@ -1,9 +1,19 @@
-'use client';
-
 import React from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Shield, CheckCircle } from 'lucide-react';
 import Footer from '../../../components/layout/Footer';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'GDPR Compliance - LanguageGems',
+  description: 'LanguageGems GDPR compliance information for schools and educational institutions. Learn about our data protection practices and your rights.',
+  openGraph: {
+    title: 'GDPR Compliance - LanguageGems',
+    description: 'LanguageGems GDPR compliance information for schools and educational institutions.',
+    url: 'https://languagegems.com/legal/gdpr',
+    type: 'website',
+  },
+};
 
 export default function GDPRPage() {
   return (

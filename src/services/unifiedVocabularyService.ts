@@ -46,9 +46,10 @@ export class UnifiedVocabularyService {
     items: VocabularyItem[];
     stats: VocabularyStats;
   }> {
+    console.time('⏱️ [VOCAB] getVocabularyData');
     console.log('🔍 [UNIFIED VOCAB] Getting vocabulary data for student:', studentId);
 
-    // Get all vocabulary gem collection records for the student
+    // 🚀 OPTIMIZATION: Limit query to reduce load time
     const { data: gemData, error: gemError } = await this.supabase
       .from('vocabulary_gem_collection')
       .select(`
@@ -64,7 +65,8 @@ export class UnifiedVocabularyService {
         fsrs_stability,
         fsrs_retrievability
       `)
-      .eq('student_id', studentId);
+      .eq('student_id', studentId)
+      .limit(300); // Limit for dashboard performance
 
     console.log('🔍 [UNIFIED VOCAB] Gem data query result:', {
       gemDataLength: gemData?.length || 0,
@@ -248,6 +250,7 @@ export class UnifiedVocabularyService {
       wordsReadyForReview
     };
 
+    console.timeEnd('⏱️ [VOCAB] getVocabularyData');
     return { items, stats };
   }
 

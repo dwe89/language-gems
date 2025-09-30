@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, ChevronRight, Search, X, CheckCircle } from 'lucide-react';
+import { ChevronDown, ChevronRight, Search, X, CheckCircle, Plus } from 'lucide-react';
 import { supabaseBrowser } from '../auth/AuthProvider';
 
 // Configuration for reading comprehension allowed categories
@@ -239,15 +239,28 @@ export default function DatabaseCategorySelector({
         </div>
       )}
 
-      {/* Selected Items Display */}
+      {/* Selection Summary */}
       {(selectedCategories.length > 0 || selectedSubcategories.length > 0) && (
         <div className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl shadow-sm">
-          <div className="flex items-center mb-4">
-            <CheckCircle className="h-5 w-5 text-blue-600 mr-2" />
-            <h4 className="font-semibold text-gray-900">Selected Content</h4>
-            <span className="ml-2 text-sm text-gray-500">
-              ({selectedCategories.length + selectedSubcategories.length} selected)
-            </span>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center">
+              <CheckCircle className="h-5 w-5 text-blue-600 mr-2" />
+              <h4 className="font-semibold text-gray-900">Selected Content</h4>
+            </div>
+            <div className="flex items-center space-x-4 text-sm">
+              {selectedSubcategories.length > 0 && (
+                <div className="flex items-center px-3 py-1 bg-blue-100 rounded-full">
+                  <span className="font-semibold text-blue-700">{selectedSubcategories.length}</span>
+                  <span className="ml-1 text-blue-600">subcategories</span>
+                </div>
+              )}
+              {selectedCategories.length > 0 && selectedSubcategories.length === 0 && (
+                <div className="flex items-center px-3 py-1 bg-blue-100 rounded-full">
+                  <span className="font-semibold text-blue-700">{selectedCategories.length}</span>
+                  <span className="ml-1 text-blue-600">categories</span>
+                </div>
+              )}
+            </div>
           </div>
           
           <div className="space-y-4">
@@ -333,6 +346,38 @@ export default function DatabaseCategorySelector({
                   <span className="text-sm text-gray-500">
                     {category.subcategories.length} topics
                   </span>
+                  {category.subcategories.length > 0 && (
+                    <button
+                      onClick={() => {
+                        // Select all subcategories for this category
+                        const categorySubcategoryIds = category.subcategories.map(s => s.id);
+                        const allSelected = categorySubcategoryIds.every(id => selectedSubcategories.includes(id));
+
+                        if (allSelected) {
+                          // Deselect all
+                          const newSubcategories = selectedSubcategories.filter(id => !categorySubcategoryIds.includes(id));
+                          onChange(selectedCategories, newSubcategories);
+                        } else {
+                          // Select all
+                          const newSubcategories = [...new Set([...selectedSubcategories, ...categorySubcategoryIds])];
+                          onChange(selectedCategories, newSubcategories);
+                        }
+                      }}
+                      className="flex items-center space-x-1 px-2 py-1 text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-md transition-colors duration-200"
+                    >
+                      {category.subcategories.every(s => selectedSubcategories.includes(s.id)) ? (
+                        <>
+                          <CheckCircle className="h-3 w-3" />
+                          <span>Deselect All</span>
+                        </>
+                      ) : (
+                        <>
+                          <Plus className="h-3 w-3" />
+                          <span>Select All</span>
+                        </>
+                      )}
+                    </button>
+                  )}
                   <button
                     onClick={() => toggleCategoryExpansion(category.id)}
                     className="flex items-center space-x-1 px-2 py-1 text-xs font-medium text-purple-600 bg-purple-50 hover:bg-purple-100 rounded-md transition-colors duration-200"

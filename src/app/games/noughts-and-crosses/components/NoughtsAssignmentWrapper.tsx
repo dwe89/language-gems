@@ -33,15 +33,11 @@ export default function NoughtsAndCrossesAssignmentWrapper({
 
   const handleAssignmentComplete = (progress: GameProgress) => {
     console.log('Noughts and Crosses assignment completed:', progress);
-    
-    // Show completion message and redirect
-    setTimeout(() => {
-      router.push('/student-dashboard/assignments');
-    }, 3000);
+    // No auto-redirect - let completion screen handle navigation
   };
 
   const handleBackToAssignments = () => {
-    router.push('/student-dashboard/assignments');
+    router.push(`/student-dashboard/assignments/${assignmentId}`);
   };
 
   const handleBackToMenu = () => {
@@ -80,7 +76,7 @@ export default function NoughtsAndCrossesAssignmentWrapper({
         return (
           <div className="relative">
             {/* Progress Indicator */}
-            <div className="fixed top-4 right-4 z-50 bg-white rounded-lg shadow-lg p-4 border border-gray-200">
+            <div className="fixed top-4 right-4 z-[9999] bg-white rounded-lg shadow-lg p-4 border border-gray-200">
               <div className="text-center">
                 <div className="text-sm font-medium text-gray-600 mb-2">Assignment Progress</div>
                 <div className="text-2xl font-bold text-blue-600 mb-1">

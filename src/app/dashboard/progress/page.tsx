@@ -4,20 +4,49 @@
 export const dynamic = 'force-dynamic';
 export const fetchCache = 'force-no-store';
 
-import { useState, lazy, Suspense } from 'react';
+import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../../../components/auth/AuthProvider';
-import { Brain, BarChart3, Users, Gamepad2 } from 'lucide-react';
-import DashboardHeader from '../../../components/dashboard/DashboardHeader';
-import ProactiveAIDashboard from '../../../components/dashboard/ProactiveAIDashboard';
+import { useSupabase } from '../../../components/supabase/SupabaseProvider';
+import { Users, BookOpen, Brain, ExternalLink } from 'lucide-react';
+import { ClassSummaryDashboard } from '../../../components/dashboard/ClassSummaryDashboard';
 
-// Lazy load heavy dashboard components for better performance
-const InteractiveStudentOverview = lazy(() => import('../../../components/dashboard/InteractiveStudentOverview'));
-const DetailedReportsAnalytics = lazy(() => import('../../../components/dashboard/DetailedReportsAnalytics'));
-const GamificationAnalytics = lazy(() => import('../../../components/dashboard/GamificationAnalytics'));
+interface ClassOption {
+  id: string;
+  name: string;
+}
 
 export default function ProgressPage() {
   const { user } = useAuth();
-  const [activeSection, setActiveSection] = useState<'insights' | 'students' | 'reports' | 'gamification'>('insights');
+  const { supabase } = useSupabase();
+  const router = useRouter();
+  const [classes, setClasses] = useState<ClassOption[]>([]);
+  const [selectedClassId, setSelectedClassId] = useState<string>('all');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (user) {
+      loadClasses();
+    }
+  }, [user]);
+
+  const loadClasses = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('classes')
+        .select('id, name')
+        .eq('teacher_id', user!.id)
+        .order('name');
+
+      if (error) throw error;
+
+      setClasses(data || []);
+    } catch (error) {
+      console.error('Error loading classes:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (!user) {
     return (
@@ -32,80 +61,89 @@ export default function ProgressPage() {
       </div>
     );
   }
+
+  const handleStudentClick = (studentId: string) => {
+    router.push(`/dashboard/progress/student/${studentId}`);
+  };
+
+  const handleAssignmentClick = (assignmentId: string) => {
+    router.push(`/dashboard/progress/assignment/${assignmentId}`);
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 p-6">
-      <div className="max-w-7xl mx-auto space-y-8">
-        <DashboardHeader
-          title="AI-Powered Analytics Dashboard"
-          description="Comprehensive insights, student performance tracking, and gamification analytics"
-          icon={<Brain className="h-5 w-5 text-white" />}
-        />
+      <div className="max-w-7xl mx-auto">
+        {/* Header with Class Selector */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Teacher Intelligence Dashboard</h1>
+              <p className="text-gray-600 mt-2">
+                60-second overview of class performance, urgent interventions, and assignment efficacy
+              </p>
+            </div>
 
-        {/* Navigation Tabs */}
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-          <div className="border-b border-gray-200">
-            <nav className="flex space-x-8 px-6">
-              {[
-                { key: 'insights', label: 'AI Insights', icon: Brain, description: 'Real-time AI notifications and predictive alerts' },
-                { key: 'students', label: 'Student Performance', icon: Users, description: 'Interactive student progress tracking' },
-                { key: 'reports', label: 'Detailed Reports', icon: BarChart3, description: 'Assignment and vocabulary analytics' },
-                { key: 'gamification', label: 'Gamification', icon: Gamepad2, description: 'XP progression and achievement tracking' }
-              ].map((tab) => {
-                const Icon = tab.icon;
-                return (
-                  <button
-                    key={tab.key}
-                    onClick={() => setActiveSection(tab.key as any)}
-                    className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                      activeSection === tab.key
-                        ? 'border-blue-500 text-blue-600'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                    }`}
-                    title={tab.description}
-                  >
-                    <Icon className="h-4 w-4" />
-                    <span>{tab.label}</span>
-                  </button>
-                );
-              })}
-            </nav>
+            {/* Class Selector */}
+            {!loading && classes.length > 0 && (
+              <div className="flex items-center space-x-3">
+                <label htmlFor="class-select" className="text-sm font-medium text-gray-700">
+                  Class:
+                </label>
+                <select
+                  id="class-select"
+                  value={selectedClassId}
+                  onChange={(e) => setSelectedClassId(e.target.value)}
+                  className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 font-medium"
+                >
+                  <option value="all">All Classes</option>
+                  {classes.map((cls) => (
+                    <option key={cls.id} value={cls.id}>
+                      {cls.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+
+          {/* Quick Links to Detailed Dashboards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <button
+              onClick={() => router.push('/dashboard/vocabulary/analytics')}
+              className="flex items-center justify-between p-4 bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-lg hover:shadow-md transition-all group"
+            >
+              <div className="flex items-center space-x-3">
+                <BookOpen className="h-6 w-6 text-emerald-600" />
+                <div className="text-left">
+                  <p className="font-semibold text-gray-900">Vocabulary Analytics</p>
+                  <p className="text-sm text-gray-600">Deep dive into word-level mastery</p>
+                </div>
+              </div>
+              <ExternalLink className="h-5 w-5 text-emerald-600 group-hover:translate-x-1 transition-transform" />
+            </button>
+
+            <button
+              onClick={() => router.push('/dashboard/grammar/analytics')}
+              className="flex items-center justify-between p-4 bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-lg hover:shadow-md transition-all group"
+            >
+              <div className="flex items-center space-x-3">
+                <Brain className="h-6 w-6 text-purple-600" />
+                <div className="text-left">
+                  <p className="font-semibold text-gray-900">Grammar Analytics</p>
+                  <p className="text-sm text-gray-600">Deep dive into grammar mastery</p>
+                </div>
+              </div>
+              <ExternalLink className="h-5 w-5 text-purple-600 group-hover:translate-x-1 transition-transform" />
+            </button>
           </div>
         </div>
 
-        {/* Dashboard Content */}
-        <div className="space-y-8">
-          {activeSection === 'insights' && <ProactiveAIDashboard teacherId={user.id} />}
-          {activeSection === 'students' && (
-            <Suspense fallback={
-              <div className="flex items-center justify-center p-12">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                <span className="ml-3 text-gray-600">Loading student overview...</span>
-              </div>
-            }>
-              <InteractiveStudentOverview />
-            </Suspense>
-          )}
-          {activeSection === 'reports' && (
-            <Suspense fallback={
-              <div className="flex items-center justify-center p-12">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                <span className="ml-3 text-gray-600">Loading detailed reports...</span>
-              </div>
-            }>
-              <DetailedReportsAnalytics />
-            </Suspense>
-          )}
-          {activeSection === 'gamification' && (
-            <Suspense fallback={
-              <div className="flex items-center justify-center p-12">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                <span className="ml-3 text-gray-600">Loading gamification analytics...</span>
-              </div>
-            }>
-              <GamificationAnalytics />
-            </Suspense>
-          )}
-        </div>
+        <ClassSummaryDashboard
+          teacherId={user.id}
+          classId={selectedClassId === 'all' ? undefined : selectedClassId}
+          onStudentClick={handleStudentClick}
+          onAssignmentClick={handleAssignmentClick}
+        />
       </div>
     </div>
   );

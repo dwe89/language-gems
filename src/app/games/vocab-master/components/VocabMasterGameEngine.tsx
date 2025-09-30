@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Volume2, Gem, Lightbulb, Sparkles, Flame, Target, Star, Zap, Settings } from 'lucide-react';
+import { Volume2, VolumeX, Gem, Lightbulb, Sparkles, Flame, Target, Star, Zap, Settings } from 'lucide-react';
 import { GameState, GameConfig, VocabularyWord, GameMode, GameResult, MultipleChoiceOption, ClozeExercise } from '../types';
 import { AudioManager } from '../utils/audioUtils';
 import { validateGameAnswer } from '../utils/answerValidation';
@@ -138,6 +138,7 @@ export const VocabMasterGameEngine: React.FC<VocabMasterGameEngineProps> = ({
 
   // UI state
   const [userAnswer, setUserAnswer] = useState('');
+  const [audioEnabled, setAudioEnabled] = useState(config.audioEnabled);
   const [audioManager] = useState(() => new AudioManager(config.audioEnabled));
   const [currentResponseTime, setCurrentResponseTime] = useState(0);
   const [questionStartTime, setQuestionStartTime] = useState(Date.now());
@@ -990,6 +991,23 @@ export const VocabMasterGameEngine: React.FC<VocabMasterGameEngineProps> = ({
   return (
     <div className="min-h-screen">
       {renderModeComponent()}
+
+      {/* Floating Mute Button - Only show in assignment mode */}
+      {config.assignmentMode && (
+        <div className="fixed top-4 right-4 z-50">
+          <button
+            onClick={() => {
+              const newAudioEnabled = !audioEnabled;
+              setAudioEnabled(newAudioEnabled);
+              audioManager.setEnabled(newAudioEnabled);
+            }}
+            className="p-3 rounded-full bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white shadow-lg hover:shadow-xl transition-all duration-300 border-2 border-white/20"
+            title={audioEnabled ? "Mute audio" : "Unmute audio"}
+          >
+            {audioEnabled ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
+          </button>
+        </div>
+      )}
 
       {/* Game progress */}
       <div className="fixed bottom-4 right-4 bg-black/50 text-white px-4 py-2 rounded-lg">

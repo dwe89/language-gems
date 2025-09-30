@@ -152,14 +152,19 @@ export default function ConjugationDuelPage() {
             router.push('/student-dashboard');
           };
 
+          // Get grammar config from assignment (new location)
+          const grammarConfig = assignment.game_config?.grammarConfig || assignment.game_config?.gameConfig?.grammarConfig;
+
           // Convert assignment language to game format
-          const gameLanguage = assignment.vocabulary_criteria?.language === 'spanish' ? 'spanish' :
-                               assignment.vocabulary_criteria?.language === 'french' ? 'french' :
-                               assignment.vocabulary_criteria?.language === 'german' ? 'german' : 'spanish';
+          // Priority: grammarConfig.language > vocabulary_criteria.language > default to spanish
+          const gameLanguage = grammarConfig?.language ||
+                               (assignment.vocabulary_criteria?.language === 'spanish' ? 'spanish' :
+                                assignment.vocabulary_criteria?.language === 'french' ? 'french' :
+                                assignment.vocabulary_criteria?.language === 'german' ? 'german' : 'spanish');
 
           console.log('🎯 [CONJUGATION DUEL] Assignment grammar config:', {
             fullGameConfig: assignment.game_config,
-            grammarConfig: assignment.game_config?.gameConfig?.grammarConfig,
+            grammarConfig,
             gameLanguage,
             vocabularyCount: vocabulary.length
           });
@@ -175,7 +180,7 @@ export default function ConjugationDuelPage() {
                 assignmentId={assignment.id}
                 userId={user?.id}
                 assignmentVocabulary={vocabulary}
-                grammarConfig={assignment.game_config?.gameConfig?.grammarConfig}
+                grammarConfig={grammarConfig}
               />
             </div>
           );

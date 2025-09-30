@@ -175,7 +175,8 @@ export class SimpleStudentDataService {
    */
   async getStudentAnalyticsData(teacherId: string): Promise<SimpleStudentData[]> {
     try {
-      
+      console.time('⏱️ [SIMPLE SERVICE] getStudentAnalyticsData');
+
       // Get all students for this teacher
       const { data: students, error: studentsError } = await supabase
         .from('user_profiles')
@@ -184,55 +185,64 @@ export class SimpleStudentDataService {
         .eq('role', 'student');
 
       if (studentsError) {
-        
+        console.error('❌ Error fetching students:', studentsError);
         return [];
       }
 
       if (!students || students.length === 0) {
-        
+        console.log('⚠️ No students found');
         return [];
       }
 
+      const studentIds = students.map(s => s.user_id);
+      console.log(`📊 Loading data for ${studentIds.length} students`);
+
+      // ✅ BATCH LOAD ALL DATA IN PARALLEL (2 queries instead of 76!)
+      console.time('⏱️ [SIMPLE SERVICE] Batch queries');
+      const [enrollmentsResult, gameSessionsResult] = await Promise.all([
+        supabase
+          .from('class_enrollments')
+          .select(`
+            student_id,
+            class_id,
+            classes!inner(id, name)
+          `)
+          .in('student_id', studentIds)
+          .eq('status', 'active'),
+
+        supabase
+          .from('enhanced_game_sessions')
+          .select('*')
+          .in('student_id', studentIds)
+          .order('created_at', { ascending: false })
+      ]);
+      console.timeEnd('⏱️ [SIMPLE SERVICE] Batch queries');
+
+      // ✅ CREATE LOOKUP MAPS
+      const enrollmentMap = new Map(
+        (enrollmentsResult.data || []).map(e => [e.student_id, e])
+      );
+
+      const sessionsMap = new Map<string, any[]>();
+      (gameSessionsResult.data || []).forEach(session => {
+        if (!sessionsMap.has(session.student_id)) {
+          sessionsMap.set(session.student_id, []);
+        }
+        sessionsMap.get(session.student_id)!.push(session);
+      });
+
+      // ✅ BUILD STUDENT DATA
       const studentData: SimpleStudentData[] = [];
 
       for (const student of students) {
         const studentId = student.user_id;
 
-        // Get class enrollment for this student
-        const { data: enrollment, error: enrollmentError } = await supabase
-          .from('class_enrollments')
-          .select(`
-            class_id,
-            classes!inner(
-              id,
-              name
-            )
-          `)
-          .eq('student_id', studentId)
-          .eq('status', 'active')
-          .single();
+        // Get data from lookup maps (O(1)!)
+        const enrollment = enrollmentMap.get(studentId);
+        const sessions = sessionsMap.get(studentId) || [];
 
-        let classId = null;
-        let className = 'Default Class';
-
-        if (!enrollmentError && enrollment) {
-          classId = enrollment.class_id;
-          className = enrollment.classes?.name || 'Default Class';
-        }
-
-        // Get game sessions for this student
-        const { data: gameSessions, error: sessionsError } = await supabase
-          .from('enhanced_game_sessions')
-          .select('*')
-          .eq('student_id', studentId)
-          .order('created_at', { ascending: false });
-
-        if (sessionsError) {
-          
-          continue;
-        }
-
-        const sessions = gameSessions || [];
+        const classId = enrollment?.class_id || null;
+        const className = enrollment?.classes?.name || 'Default Class';
 
         // Calculate metrics
         const totalSessions = sessions.length;
@@ -323,10 +333,12 @@ export class SimpleStudentDataService {
         });
       }
 
+      console.timeEnd('⏱️ [SIMPLE SERVICE] getStudentAnalyticsData');
+      console.log(`✅ Loaded data for ${studentData.length} students`);
       return studentData;
 
     } catch (error) {
-      
+      console.error('❌ Error in getStudentAnalyticsData:', error);
       return [];
     }
   }

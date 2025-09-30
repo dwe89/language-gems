@@ -1,8 +1,19 @@
-'use client';
-
 import React from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Shield, AlertTriangle } from 'lucide-react';
+import Footer from '../../../components/layout/Footer';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Legal Disclaimer - LanguageGems',
+  description: 'Important information about LanguageGems exam practice materials, content ownership, and relationship with examination boards.',
+  openGraph: {
+    title: 'Legal Disclaimer - LanguageGems',
+    description: 'Important information about LanguageGems exam practice materials.',
+    url: 'https://languagegems.com/legal/disclaimer',
+    type: 'website',
+  },
+};
 
 export default function DisclaimerPage() {
   return (
@@ -104,6 +115,8 @@ export default function DisclaimerPage() {
           </div>
         </div>
       </div>
+
+      <Footer />
     </div>
   );
 }

@@ -39,7 +39,7 @@ export const getOrganizationSchema = () => ({
   "contactPoint": {
     "@type": "ContactPoint",
     "contactType": "customer service",
-    "email": "hello@languagegems.com"
+    "email": "support@languagegems.com"
   }
 });
 

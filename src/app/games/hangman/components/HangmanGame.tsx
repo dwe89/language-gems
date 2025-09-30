@@ -613,7 +613,7 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
           accentedLetters = ['Á', 'É', 'Í', 'Ó', 'Ú', 'Ñ'];
           break;
         case 'french':
-          accentedLetters = ['É', 'È', 'Ê', 'À', 'Ç'];
+          accentedLetters = ['É', 'È', 'Ê', 'À', 'Ç', 'Œ'];
           break;
         case 'german':
           accentedLetters = ['Ä', 'Ö', 'Ü', 'ß'];
@@ -1001,8 +1001,8 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
       {isAssignmentMode && themeId === 'default' ? (
         /* Assignment Mode: Responsive layout with hero animation and control panel */
         <div className="flex flex-col md:flex-row w-full gap-6 md:gap-8 min-h-[480px] md:min-h-[560px] lg:min-h-[620px]">
-          {/* Left side: Canvas area */}
-          <div className="w-full md:flex-[3] flex items-center justify-center">
+          {/* Left side: Canvas area - constrained height on mobile */}
+          <div className="w-full md:flex-[3] flex items-center justify-center max-h-[400px] md:max-h-none">
             {renderThematicAnimation()}
           </div>
 
@@ -1059,7 +1059,7 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
                       }}
                       className={`bg-gray-700 hover:bg-gray-600 ${isAssignmentMode ? 'py-3 sm:py-4 px-6 sm:px-8 text-base sm:text-lg' : 'py-2 px-4 text-sm'} rounded-lg font-bold text-white`}
                     >
-                      Back to Games
+                      {isAssignmentMode ? 'Back to Assignment' : 'Back to Games'}
                     </button>
                   </div>
                 </div>
@@ -1130,7 +1130,7 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
                         }}
                         className="bg-gray-700 hover:bg-gray-600 py-3 px-6 rounded-lg font-bold text-white"
                       >
-                        Back to Games
+                        {isAssignmentMode ? 'Back to Assignment' : 'Back to Games'}
                       </button>
                     </div>
                   </div>
@@ -1194,7 +1194,7 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
                       }}
                       className="bg-gray-700 hover:bg-gray-600 py-3 px-6 rounded-lg font-bold text-white"
                     >
-                      Back to Games
+                      {isAssignmentMode ? 'Back to Assignment' : 'Back to Games'}
                     </button>
                   </div>
                 </div>

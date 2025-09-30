@@ -185,8 +185,8 @@ export const PAGE_TITLES = {
   '/dashboard/content/create': 'Create Content | Teacher Dashboard | Language Gems',
   '/dashboard/content/import': 'Import Content | Teacher Dashboard | Language Gems',
   '/dashboard/content/speed-builder': 'Speed Builder Content | Teacher Dashboard | Language Gems',
-  '/dashboard/assignments/new': 'Create Assignment | Teacher Dashboard | Language Gems',
-  '/dashboard/assignments/new/enhanced': 'Enhanced Assignment | Teacher Dashboard | Language Gems',
+  '/dashboard/assignments/new': 'Quick Assignment | Teacher Dashboard | Language Gems',
+  '/dashboard/assignments/new/enhanced': 'Comprehensive Assignment | Teacher Dashboard | Language Gems',
   '/dashboard/assignments/new/exam': 'Exam Assignment | Teacher Dashboard | Language Gems',
   
   // ===============================

@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Volume2, VolumeX } from 'lucide-react';
 import { useGameStore } from '../../../../store/gameStore';
 import { useBattle } from '../../../../hooks/useBattle';
 import { useBattleAudio } from '../../../../hooks/useBattleAudio';
@@ -182,7 +183,9 @@ export default function BattleArena({
     battleState,
     playerStats,
     leagues,
+    settings,
     setBattleState,
+    setSettings,
     takeDamage,
     addBattleLog
   } = useGameStore();
@@ -405,15 +408,34 @@ export default function BattleArena({
         </div>
         {showTimer && (
           <div className="text-center">
-            <div className={`text-3xl font-bold ${timeLeft <= 10 ? 'text-red-400 animate-pulse' : 'text-white'}`}> 
+            <div className={`text-3xl font-bold ${timeLeft <= 10 ? 'text-red-400 animate-pulse' : 'text-white'}`}>
               {timeLeft}
             </div>
             <p className="text-xs text-white/80">seconds</p>
           </div>
         )}
-        <div className="text-white text-right">
-          <p className="text-sm">XP: {playerStats.experience}</p>
-          <p className="text-xs opacity-80">Accuracy: {playerStats.accuracy.toFixed(1)}%</p>
+        <div className="flex items-center gap-4">
+          {/* Mute Button - Only show in assignment mode */}
+          {assignmentId && (
+            <button
+              onClick={() => {
+                const newSoundEnabled = !settings.soundEnabled;
+                setSettings({ soundEnabled: newSoundEnabled, musicEnabled: newSoundEnabled });
+                if (!newSoundEnabled) {
+                  stopMusic();
+                }
+              }}
+              className="p-2 rounded-lg bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white shadow-lg hover:shadow-xl transition-all duration-300 border-2 border-white/20"
+              title={settings.soundEnabled ? "Mute audio" : "Unmute audio"}
+            >
+              {settings.soundEnabled ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
+            </button>
+          )}
+
+          <div className="text-white text-right">
+            <p className="text-sm">XP: {playerStats.experience}</p>
+            <p className="text-xs opacity-80">Accuracy: {playerStats.accuracy.toFixed(1)}%</p>
+          </div>
         </div>
       </div>
 

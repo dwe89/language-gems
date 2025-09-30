@@ -794,7 +794,7 @@ export default function UpgradePage() {
               </Link>
             </div>
             <p className="text-purple-200 text-sm mt-6">
-              Questions? Email us at <a href="mailto:hello@languagegems.com" className="underline hover:text-white">hello@languagegems.com</a>
+              Questions? Email us at <a href="mailto:support@languagegems.com" className="underline hover:text-white">support@languagegems.com</a>
             </p>
           </div>
         </div>

@@ -17,7 +17,7 @@ import { GRID_SIZES } from '../data/gameConfig';
 import { useGameVocabulary, GameVocabularyWord } from '../../../../hooks/useGameVocabulary';
 import {
   Target, RotateCcw, BarChart3, Clock,
-  Trophy, Play, Settings, PartyPopper
+  Trophy, Play, Settings, PartyPopper, Volume2, VolumeX, ArrowLeft
 } from 'lucide-react';
 import { useGameAudio } from '../../../../hooks/useGlobalAudioContext';
 import { createAudio, getAudioUrl } from '../../../../utils/audioUtils';
@@ -1081,6 +1081,24 @@ export default function MemoryGameMain({
         </header>
       )}
 
+      {/* Floating Mute Button - Only show in assignment mode */}
+      {isAssignmentMode && (
+        <div className="fixed top-4 right-4 z-50">
+          <button
+            onClick={() => {
+              const newSoundEnabled = !audioManager.soundEnabled;
+              if (newSoundEnabled) {
+                audioManager.initializeAudio();
+              }
+            }}
+            className="p-3 rounded-full bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white shadow-lg hover:shadow-xl transition-all duration-300 border-2 border-white/20"
+            title={audioManager.soundEnabled ? "Mute audio" : "Unmute audio"}
+          >
+            {audioManager.soundEnabled ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
+          </button>
+        </div>
+      )}
+
       <div className={`game-container ${isAssignmentMode ? 'assignment-mode' : ''}`}>
         <div className="cards-container">
           <div 
@@ -1169,57 +1187,69 @@ export default function MemoryGameMain({
           )}
           
           <div className="modal" id="winModal">
-            <div className="modal-content win-modal">
-              <div className="win-header">
-                <PartyPopper className="win-icon" size={48} />
-                <h2 className="win-title">Congratulations!</h2>
-                <PartyPopper className="win-icon" size={48} />
+            <div className="modal-content win-modal-new">
+              {/* Trophy Icon Header */}
+              <div className="win-trophy-container">
+                <Trophy className="win-trophy-icon" size={64} strokeWidth={1.5} />
               </div>
               
-              {/* Performance Rating */}
-              <div className={`performance-rating rating-${getPerformanceRating().rating}`}>
-                <div className="performance-stars">
-                  {[...Array(getPerformanceRating().rating === 'excellent' ? 3 : getPerformanceRating().rating === 'good' ? 2 : 1)].map((_, i) => (
-                    <Trophy key={i} size={24} className="star-icon" />
-                  ))}
-                </div>
-                <div className="performance-text">{getPerformanceRating().text}</div>
+              {/* Title */}
+              <h2 className="win-title-new">
+                {getPerformanceRating().rating === 'excellent' ? 'Perfect Game!' : 
+                 getPerformanceRating().rating === 'good' ? 'Great Job!' : 
+                 'Well Done!'}
+              </h2>
+              
+              {/* Stars Rating */}
+              <div className="win-stars-row">
+                {[...Array(getPerformanceRating().rating === 'excellent' ? 3 : getPerformanceRating().rating === 'good' ? 2 : 1)].map((_, i) => (
+                  <div key={i} className="win-star" style={{ animationDelay: `${i * 0.1}s` }}>
+                    ⭐
+                  </div>
+                ))}
               </div>
               
-              {/* Enhanced Stats Grid */}
-              <div className="win-stats">
-                <div className="stat-item">
-                  <Target className="stat-icon" size={32} />
-                  <div className="stat-label">Matches</div>
-                  <div className="stat-value">{matches}</div>
+              {/* Stats Grid */}
+              <div className="win-stats-new">
+                <div className="stat-card">
+                  <Target className="stat-card-icon" size={28} />
+                  <div className="stat-card-value">{matches}</div>
+                  <div className="stat-card-label">Matches</div>
                 </div>
-                <div className="stat-item">
-                  <RotateCcw className="stat-icon" size={32} />
-                  <div className="stat-label">Attempts</div>
-                  <div className="stat-value">{attempts}</div>
+                <div className="stat-card">
+                  <RotateCcw className="stat-card-icon" size={28} />
+                  <div className="stat-card-value">{attempts}</div>
+                  <div className="stat-card-label">Attempts</div>
                 </div>
-                <div className="stat-item">
-                  <BarChart3 className="stat-icon" size={32} />
-                  <div className="stat-label">Accuracy</div>
-                  <div className="stat-value">{Math.round((matches / Math.max(attempts, 1)) * 100)}%</div>
+                <div className="stat-card">
+                  <BarChart3 className="stat-card-icon" size={28} />
+                  <div className="stat-card-value">{Math.round((matches / Math.max(attempts, 1)) * 100)}%</div>
+                  <div className="stat-card-label">Accuracy</div>
                 </div>
-                <div className="stat-item">
-                  <Clock className="stat-icon" size={32} />
-                  <div className="stat-label">Time</div>
-                  <div className="stat-value">{formatTime(gameTime)}</div>
+                <div className="stat-card">
+                  <Clock className="stat-card-icon" size={28} />
+                  <div className="stat-card-value">{formatTime(gameTime)}</div>
+                  <div className="stat-card-label">Time</div>
                 </div>
               </div>
               
               {/* Action Buttons */}
-              <div className="win-actions">
-                <button onClick={resetGame} className="win-btn win-btn-primary">
+              <div className="win-actions-new">
+                <button onClick={resetGame} className="win-btn-new win-btn-play">
                   <Play size={20} />
-                  Play Again
+                  <span>Play Again</span>
                 </button>
-                <button onClick={onBackToSettings} className="win-btn win-btn-secondary">
-                  <Settings size={20} />
-                  New Game
-                </button>
+                {isAssignmentMode ? (
+                  <button onClick={onBackToSettings} className="win-btn-new win-btn-back">
+                    <ArrowLeft size={20} />
+                    <span>Back to Assignment</span>
+                  </button>
+                ) : (
+                  <button onClick={onBackToSettings} className="win-btn-new win-btn-settings">
+                    <Settings size={20} />
+                    <span>New Game</span>
+                  </button>
+                )}
               </div>
             </div>
           </div>

@@ -17,18 +17,18 @@ export default function SpeedBuilderPage() {
   const assignmentId = searchParams?.get('assignment');
   const mode = searchParams?.get('mode');
 
-  // Game state management
+  // Game state management - ALWAYS initialize hooks first
   const [gameStarted, setGameStarted] = useState(false);
   const [selectedConfig, setSelectedConfig] = useState<SentenceSelectionConfig | null>(null);
   const [showConfigPanel, setShowConfigPanel] = useState(false);
 
   // Assignment mode handlers
   const handleAssignmentComplete = () => {
-    router.push('/student-dashboard/assignments');
+    // No auto-redirect - let completion screen handle navigation
   };
 
   const handleBackToAssignments = () => {
-    router.push('/student-dashboard/assignments');
+    router.push(`/student-dashboard/assignments/${assignmentId}`);
   };
 
   // Handle selection complete from sentence selector
@@ -60,7 +60,7 @@ export default function SpeedBuilderPage() {
     setShowConfigPanel(false);
   };
 
-  // Assignment mode: wrap with GameAssignmentWrapper
+  // Assignment mode: wrap with GameAssignmentWrapper (after all hooks are initialized)
   if (assignmentId && mode === 'assignment' && user) {
     return (
       <GameAssignmentWrapper

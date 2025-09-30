@@ -24,18 +24,28 @@ export async function GET(request: NextRequest) {
 
     switch (action) {
       case 'get_insights':
+        console.time('⏱️ [API] Total get_insights');
+        console.time('⏱️ [API] getStudentAnalyticsData');
+
         // Get real student data using simple service
         const studentData = await studentDataService.getStudentAnalyticsData(teacherId);
+        console.timeEnd('⏱️ [API] getStudentAnalyticsData');
+
+        console.time('⏱️ [API] getClassAnalytics');
         const classAnalytics = await studentDataService.getClassAnalytics(teacherId);
+        console.timeEnd('⏱️ [API] getClassAnalytics');
 
         // Debug logging
         console.log(`AI Insights API - Teacher: ${teacherId}`);
         console.log(`Students found: ${studentData.length}`);
         console.log(`Classes found: ${classAnalytics.length}`);
-        
+
+        console.time('⏱️ [API] generateInsightsFromData');
         // Generate AI insights based on real data
         const insights = await aiInsightsService.generateInsightsFromData(teacherId, studentData, classAnalytics);
-        
+        console.timeEnd('⏱️ [API] generateInsightsFromData');
+
+        console.time('⏱️ [API] fetch existing insights');
         // Get existing insights from database
         const { data: existingInsights } = await supabase
           .from('ai_insights')
@@ -43,6 +53,9 @@ export async function GET(request: NextRequest) {
           .eq('teacher_id', teacherId)
           .eq('status', 'active')
           .order('generated_at', { ascending: false });
+        console.timeEnd('⏱️ [API] fetch existing insights');
+
+        console.timeEnd('⏱️ [API] Total get_insights');
 
         return NextResponse.json({
           success: true,

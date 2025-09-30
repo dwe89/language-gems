@@ -23,15 +23,7 @@ export default function VocabularyMiningAssignmentWrapper({
 
   const handleAssignmentComplete = (progress: GameProgress) => {
     console.log('Vocabulary Mining assignment completed:', progress);
-
-    // Show completion message and redirect
-    setTimeout(() => {
-      if (isPreview) {
-        router.push(`/student-dashboard/assignments/${assignmentId}?preview=true`);
-      } else {
-        router.push(`/student-dashboard/assignments/${assignmentId}`);
-      }
-    }, 3000);
+    // No auto-redirect - let completion screen handle navigation
   };
 
   const handleBackToAssignments = () => {

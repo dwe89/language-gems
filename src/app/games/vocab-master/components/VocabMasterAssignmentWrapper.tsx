@@ -6,6 +6,7 @@ import GameAssignmentWrapper, { GameProgress } from '../../../../components/game
 import { VocabMasterGameEngine } from './VocabMasterGameEngine';
 import { VocabularyWord, GameResult } from '../types';
 import VocabMasterAssignmentLauncher from './VocabMasterAssignmentLauncher';
+import { GameCompletionScreen } from './GameCompletionScreen';
 
 interface VocabMasterAssignmentWrapperProps {
   assignmentId: string;
@@ -51,8 +52,9 @@ export default function VocabMasterAssignmentWrapper({
   const { user } = useUnifiedAuth();
 
   // Game state management
-  const [gameState, setGameState] = useState<'launcher' | 'playing'>('launcher');
+  const [gameState, setGameState] = useState<'launcher' | 'playing' | 'complete'>('launcher');
   const [selectedMode, setSelectedMode] = useState<string>('');
+  const [gameResults, setGameResults] = useState<GameResult | null>(null);
 
   if (!user) {
     return (
@@ -185,10 +187,33 @@ export default function VocabMasterAssignmentWrapper({
                   gameMode: 'assignment'
                 }
               });
+
+              // Show completion screen
+              setGameResults(results);
+              setGameState('complete');
             }}
             onExit={handleBackToLauncher}
           />
         );
+
+        // Show completion screen
+        if (gameState === 'complete' && gameResults) {
+          return (
+            <GameCompletionScreen
+              result={gameResults}
+              isAssignmentMode={true}
+              onPlayAgain={() => {
+                // Reset to launcher to start a new game
+                setGameState('launcher');
+                setGameResults(null);
+                setSelectedMode('');
+              }}
+              onBackToMenu={handleBackToAssignments}
+            />
+          );
+        }
+
+        return null;
       }}
     </GameAssignmentWrapper>
   );

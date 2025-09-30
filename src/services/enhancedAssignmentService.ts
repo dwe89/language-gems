@@ -451,9 +451,55 @@ export class EnhancedAssignmentService {
     // Transform the vocabulary config from Smart Assignment Creator format
     // to the format expected by the assignment creation API
 
-    console.log('Transforming vocabulary config:', vocabularyConfig);
+    console.log('🔄 [TRANSFORM] Transforming vocabulary config:', vocabularyConfig);
 
-    // Handle KS4 themes and units first (before subcategory check)
+    // =====================================================
+    // HANDLE MULTIPLE SUBCATEGORIES (Enhanced Creator)
+    // =====================================================
+    // Check for arrays first (from Enhanced Assignment Creator)
+    if (vocabularyConfig.subcategories?.length > 0) {
+      console.log('✅ [TRANSFORM] Multiple subcategories detected:', {
+        count: vocabularyConfig.subcategories.length,
+        subcategories: vocabularyConfig.subcategories,
+        categories: vocabularyConfig.categories,
+        wordCount: vocabularyConfig.wordCount
+      });
+
+      return {
+        type: 'multiple_subcategory_based', // New type for multiple subcategories
+        categories: vocabularyConfig.categories || [], // Array of categories
+        subcategories: vocabularyConfig.subcategories, // Array of subcategories
+        language: vocabularyConfig.language || 'es',
+        wordCount: vocabularyConfig.wordCount || 20, // Default 20 for multiple subcategories
+        difficulty: vocabularyConfig.difficulty || 'intermediate',
+        curriculumLevel: vocabularyConfig.curriculumLevel || 'KS3'
+      };
+    }
+
+    // =====================================================
+    // HANDLE MULTIPLE CATEGORIES (Enhanced Creator)
+    // =====================================================
+    if (vocabularyConfig.categories?.length > 0 && !vocabularyConfig.subcategories?.length) {
+      console.log('✅ [TRANSFORM] Multiple categories detected:', {
+        count: vocabularyConfig.categories.length,
+        categories: vocabularyConfig.categories,
+        wordCount: vocabularyConfig.wordCount
+      });
+
+      return {
+        type: 'multiple_category_based', // New type for multiple categories
+        categories: vocabularyConfig.categories, // Array of categories
+        language: vocabularyConfig.language || 'es',
+        wordCount: vocabularyConfig.wordCount || 20, // Default 20 for multiple categories
+        difficulty: vocabularyConfig.difficulty || 'intermediate',
+        curriculumLevel: vocabularyConfig.curriculumLevel || 'KS3'
+      };
+    }
+
+    // =====================================================
+    // HANDLE KS4 THEMES AND UNITS
+    // =====================================================
+    // Handle KS4 themes and units (before single subcategory check)
     if (vocabularyConfig.curriculumLevel === 'KS4' && vocabularyConfig.subcategory) {
       console.log('🎯 [ASSIGNMENT SERVICE] Processing KS4 theme/unit configuration');
 
@@ -510,8 +556,13 @@ export class EnhancedAssignmentService {
       };
     }
 
-    // Check if we have a subcategory (most common case for KS3)
+    // =====================================================
+    // HANDLE SINGLE SUBCATEGORY (Quick Creator / Legacy)
+    // =====================================================
+    // Check if we have a single subcategory (most common case for KS3)
     if (vocabularyConfig.subcategory && vocabularyConfig.subcategory !== '') {
+      console.log('✅ [TRANSFORM] Single subcategory detected:', vocabularyConfig.subcategory);
+
       // Map subcategory to its parent category
       const category = this.mapSubcategoryToCategory(vocabularyConfig.subcategory);
 
@@ -520,14 +571,21 @@ export class EnhancedAssignmentService {
         category: category,
         subcategory: vocabularyConfig.subcategory,
         language: vocabularyConfig.language || 'es',
-        wordCount: vocabularyConfig.wordCount || 10
+        wordCount: vocabularyConfig.wordCount || 10 // Default 10 for single subcategory
       };
-    } else if (vocabularyConfig.source === 'category' && vocabularyConfig.category && vocabularyConfig.category !== '') {
+    }
+
+    // =====================================================
+    // HANDLE SINGLE CATEGORY (Quick Creator / Legacy)
+    // =====================================================
+    else if (vocabularyConfig.source === 'category' && vocabularyConfig.category && vocabularyConfig.category !== '') {
+      console.log('✅ [TRANSFORM] Single category detected:', vocabularyConfig.category);
+
       return {
         type: 'category_based',
         category: vocabularyConfig.category,
         language: vocabularyConfig.language || 'es',
-        wordCount: vocabularyConfig.wordCount || 10
+        wordCount: vocabularyConfig.wordCount || 10 // Default 10 for single category
       };
     } else if (vocabularyConfig.source === 'theme') {
       return {

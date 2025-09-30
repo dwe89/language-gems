@@ -395,6 +395,56 @@ Format as JSON:
 
   private async gatherTeacherAnalyticsData(teacherId: string): Promise<StudentAnalyticsData[]> {
     try {
+      console.time('⏱️ [AI INSIGHTS] gatherTeacherAnalyticsData');
+
+      // ✅ USE THE OPTIMIZED SimpleStudentDataService INSTEAD!
+      // The old code was querying a non-existent 'students' table with slow nested JOINs
+      const { SimpleStudentDataService } = await import('./studentDataService');
+      const studentDataService = new SimpleStudentDataService();
+
+      const studentData = await studentDataService.getStudentAnalyticsData(teacherId);
+
+      console.timeEnd('⏱️ [AI INSIGHTS] gatherTeacherAnalyticsData');
+      console.log(`✅ [AI INSIGHTS] Loaded ${studentData.length} students for analysis`);
+
+      // Transform to StudentAnalyticsData format expected by insight generators
+      return studentData.map(student => ({
+        student_id: student.student_id,
+        student_name: student.student_name,
+        class_id: student.class_id,
+        class_name: student.class_name,
+        average_score: student.average_score,
+        average_accuracy: student.average_accuracy,
+        total_time_spent: student.total_time_spent,
+        assignments_completed: student.assignments_completed,
+        assignments_total: student.assignments_total,
+        last_active: student.last_active,
+        is_at_risk: student.is_at_risk,
+        risk_factors: student.risk_factors,
+        recent_sessions: student.recent_sessions || [],
+        vocabulary_stats: student.vocabulary_stats || {
+          words_attempted: 0,
+          words_mastered: 0,
+          retention_rate: 0,
+          struggling_words: []
+        },
+        skill_breakdown: {}, // Would need to be calculated from sessions
+        engagement_metrics: {
+          login_frequency: student.login_frequency || 0,
+          session_duration_avg: student.session_duration_avg || 0,
+          current_streak: student.current_streak || 0
+        }
+      }));
+    } catch (error) {
+      console.error('❌ [AI INSIGHTS] Error gathering teacher analytics data:', error);
+      return [];
+    }
+  }
+
+  // DEPRECATED: Old method that queried non-existent 'students' table
+  // Keeping for reference but should not be used
+  private async gatherTeacherAnalyticsData_OLD_SLOW(teacherId: string): Promise<StudentAnalyticsData[]> {
+    try {
       // Get all classes for this teacher
       const { data: classes } = await this.supabase
         .from('classes')
@@ -407,7 +457,7 @@ Format as JSON:
 
       const classIds = classes.map(c => c.id);
 
-      // Get all students in teacher's classes with their analytics data
+      // ❌ THIS TABLE DOESN'T EXIST! That's why it was taking 9 seconds!
       const { data: students } = await this.supabase
         .from('students')
         .select(`
@@ -470,23 +520,21 @@ Format as JSON:
         return [];
       }
 
-      // Transform the data into StudentAnalyticsData format
+      // ❌ OLD SLOW CODE - Transform the data from non-existent 'students' table
       return students.map(student => {
         const gameSessions = student.enhanced_game_sessions || [];
         const wordPerformance = student.word_performance_logs || [];
         const assessmentSkills = student.assessment_skill_breakdown || [];
 
-        // Calculate recent performance metrics
-        const recentSessions = gameSessions.slice(-10); // Last 10 sessions
+        const recentSessions = gameSessions.slice(-10);
         const totalScore = recentSessions.reduce((sum, session) => sum + (session.total_score || 0), 0);
         const avgScore = recentSessions.length > 0 ? totalScore / recentSessions.length : 0;
         const avgAccuracy = recentSessions.length > 0 ?
           recentSessions.reduce((sum, session) => sum + (session.accuracy_percentage || 0), 0) / recentSessions.length : 0;
 
-        // Calculate skill breakdown from assessment data
         const skillBreakdown: { [skill: string]: number } = {};
         if (assessmentSkills.length > 0) {
-          const latestSkills = assessmentSkills.slice(-5); // Last 5 assessments
+          const latestSkills = assessmentSkills.slice(-5);
           skillBreakdown.listening = latestSkills.reduce((sum, skill) => sum + (skill.listening_score || 0), 0) / latestSkills.length;
           skillBreakdown.reading = latestSkills.reduce((sum, skill) => sum + (skill.reading_score || 0), 0) / latestSkills.length;
           skillBreakdown.writing = latestSkills.reduce((sum, skill) => sum + (skill.writing_score || 0), 0) / latestSkills.length;
@@ -495,14 +543,10 @@ Format as JSON:
           skillBreakdown.grammar = latestSkills.reduce((sum, skill) => sum + (skill.grammar_accuracy || 0), 0) / latestSkills.length;
         }
 
-        // Calculate vocabulary performance
         const correctWords = wordPerformance.filter(w => w.is_correct).length;
         const totalWords = wordPerformance.length;
         const retentionRate = totalWords > 0 ? (correctWords / totalWords) * 100 : 0;
-        const difficultWords = wordPerformance
-          .filter(w => !w.is_correct)
-          .map(w => w.word_id)
-          .slice(0, 10); // Top 10 difficult words
+        const difficultWords = wordPerformance.filter(w => !w.is_correct).map(w => w.word_id).slice(0, 10);
 
         return {
           student_id: student.id,
@@ -542,13 +586,13 @@ Format as JSON:
                 const end = new Date(session.session_end);
                 return sum + (end.getTime() - start.getTime()) / 1000;
               }, 0) / recentSessions.length : 0,
-            streak_current: 0, // Would need streak calculation logic
+            streak_current: 0,
             motivation_indicators: student.is_at_risk ? ['at_risk'] : ['engaged']
           }
         };
       });
     } catch (error) {
-      console.error('Error gathering teacher analytics data:', error);
+      console.error('❌ [OLD METHOD] Error gathering teacher analytics data:', error);
       return [];
     }
   }

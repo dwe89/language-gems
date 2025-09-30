@@ -265,12 +265,47 @@ async function populateVocabularyList(
 
     // Apply filters based on criteria type using centralized_vocabulary schema
     switch (criteria.type) {
+      case 'multiple_subcategory_based':
+        // NEW: Handle multiple subcategories (Enhanced Creator)
+        console.log('🎯 [API] Multiple subcategories detected:', {
+          subcategories: criteria.subcategories,
+          categories: criteria.categories,
+          wordCount: criteria.wordCount
+        });
+
+        if (criteria.subcategories && criteria.subcategories.length > 0) {
+          // Use .in() to match any of the subcategories
+          query = query.in('subcategory', criteria.subcategories);
+        }
+
+        // Optionally filter by categories if provided
+        if (criteria.categories && criteria.categories.length > 0) {
+          query = query.in('category', criteria.categories);
+        }
+        break;
+
+      case 'multiple_category_based':
+        // NEW: Handle multiple categories (Enhanced Creator)
+        console.log('🎯 [API] Multiple categories detected:', {
+          categories: criteria.categories,
+          wordCount: criteria.wordCount
+        });
+
+        if (criteria.categories && criteria.categories.length > 0) {
+          // Use .in() to match any of the categories
+          query = query.in('category', criteria.categories);
+        }
+        break;
+
       case 'category_based':
+        // LEGACY: Single category (Quick Creator)
         if (criteria.category) {
           query = query.eq('category', criteria.category);
         }
         break;
+
       case 'subcategory_based':
+        // LEGACY: Single subcategory (Quick Creator)
         if (criteria.category) {
           query = query.eq('category', criteria.category);
         }

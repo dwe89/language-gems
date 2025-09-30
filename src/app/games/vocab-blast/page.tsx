@@ -52,28 +52,7 @@ export default function VocabBlastPage() {
   const assignmentId = searchParams?.get('assignment');
   const mode = searchParams?.get('mode');
 
-  // Assignment mode handlers
-  const handleAssignmentComplete = () => {
-    router.push('/student-dashboard/assignments');
-  };
-
-  const handleBackToAssignments = () => {
-    router.push('/student-dashboard/assignments');
-  };
-
-  // Assignment mode: use dedicated assignment wrapper
-  if (assignmentId && mode === 'assignment' && user) {
-    return (
-      <VocabBlastAssignmentWrapper
-        assignmentId={assignmentId}
-        studentId={user.id}
-        onAssignmentComplete={handleAssignmentComplete}
-        onBackToAssignments={handleBackToAssignments}
-        onBackToMenu={() => router.push('/games/vocab-blast')}
-      />
-    );
-  }
-
+  // ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
   // Game state management
   const [gameStarted, setGameStarted] = useState(false);
 
@@ -95,6 +74,15 @@ export default function VocabBlastPage() {
     const hasUrlParams = searchParams?.get('lang') && searchParams?.get('level') && searchParams?.get('cat');
     return !!hasUrlParams && !assignmentId;
   });
+
+  // Assignment mode handlers
+  const handleAssignmentComplete = () => {
+    // No auto-redirect - let completion screen handle navigation
+  };
+
+  const handleBackToAssignments = () => {
+    router.push(`/student-dashboard/assignments/${assignmentId}`);
+  };
 
   // Handle game start from unified launcher
   const handleGameStart = (config: UnifiedSelectionConfig, vocabulary: UnifiedVocabularyItem[], theme?: string) => {
@@ -201,6 +189,20 @@ export default function VocabBlastPage() {
       difficulty_level: item.difficulty_level || 'intermediate'
     }));
   };
+
+  // Assignment mode: use dedicated assignment wrapper
+  // THIS MUST COME AFTER ALL HOOKS
+  if (assignmentId && mode === 'assignment' && user) {
+    return (
+      <VocabBlastAssignmentWrapper
+        assignmentId={assignmentId}
+        studentId={user.id}
+        onAssignmentComplete={handleAssignmentComplete}
+        onBackToAssignments={handleBackToAssignments}
+        onBackToMenu={() => router.push('/games/vocab-blast')}
+      />
+    );
+  }
 
   // Conditional logic after all hooks are initialized
   // Only redirect to login if not in demo mode and not authenticated

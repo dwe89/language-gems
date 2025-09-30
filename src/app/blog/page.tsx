@@ -1,13 +1,45 @@
-'use client';
-
-import { useState } from 'react';
 import Link from 'next/link';
-import { Calendar, User, Clock, ArrowRight, BookOpen, Users, Target, Brain, Languages, Gamepad2, Film } from 'lucide-react';
+import { Clock, Calendar, Target, Brain, Users, BookOpen, Languages, Gamepad2, Film } from 'lucide-react';
 import SEOWrapper from '../../components/seo/SEOWrapper';
-import { generateMetadata } from '../../components/seo/SEOWrapper';
 import Footer from '../../components/layout/Footer';
+import { createClient } from '@/utils/supabase/client';
+import BlogPageClient from '../../components/blog/BlogPageClient';
+import { Metadata } from 'next';
 
-const featuredPosts = [
+export const metadata: Metadata = {
+  title: 'Language Learning Blog - GCSE Tips, Teaching Strategies & Educational Insights',
+  description: 'Expert insights on GCSE language learning, vocabulary techniques, gamification strategies, and modern teaching methods. Written by experienced MFL educators.',
+  keywords: 'language learning blog, GCSE language tips, MFL teaching strategies, vocabulary learning techniques, gamification education',
+  openGraph: {
+    title: 'Language Learning Blog - GCSE Tips & Teaching Strategies',
+    description: 'Expert insights on GCSE language learning and modern teaching methods.',
+    url: 'https://languagegems.com/blog',
+    type: 'website',
+  },
+};
+
+interface BlogPost {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string;
+  content: string;
+  author: string;
+  tags: string[];
+  is_published: boolean;
+  created_at: string;
+  updated_at: string;
+  publish_date: string;
+  scheduled_for: string | null;
+  status: string;
+  seo_title: string | null;
+  seo_description: string | null;
+  featured_image_url: string | null;
+  reading_time_minutes: number;
+}
+
+// Static blog posts (for existing blog pages that are file-based)
+const staticFeaturedPosts = [
   {
     title: 'The 7 Best Vocabulary Learning Techniques for GCSE Success (2024)',
     excerpt: 'Discover scientifically-proven vocabulary learning techniques that help GCSE students retain 40% more words. Includes spaced repetition, active recall, and gamification strategies.',
@@ -43,7 +75,7 @@ const featuredPosts = [
   }
 ];
 
-const recentPosts = [
+const staticRecentPosts = [
   {
     title: 'AQA GCSE Speaking: Complete Photocard Guide',
     excerpt: 'Master the AQA GCSE Speaking exam photocard task with our comprehensive guide. Learn scoring criteria, strategies, and common pitfalls for exam success.',
@@ -206,6 +238,7 @@ const recentPosts = [
   }
 ];
 
+
 const upcomingPosts = [
   {
     title: 'GCSE French Grammar Mastery: Complete Guide to Verb Conjugations',
@@ -225,27 +258,72 @@ const upcomingPosts = [
   }
 ];
 
-const categories = [
-  { name: 'Exam Preparation', count: 4, color: 'bg-green-100 text-green-700' },
-  { name: 'Study Tips', count: 3, color: 'bg-purple-100 text-purple-700' },
-  { name: 'Teaching Strategies', count: 2, color: 'bg-pink-100 text-pink-700' },
-  { name: 'Learning Science', count: 2, color: 'bg-indigo-100 text-indigo-700' },
-  { name: 'Spanish Grammar', count: 2, color: 'bg-red-100 text-red-700' },
-  { name: 'French Grammar', count: 2, color: 'bg-blue-100 text-blue-700' },
-  { name: 'German Grammar', count: 1, color: 'bg-yellow-100 text-yellow-700' },
-  { name: 'Educational Technology', count: 1, color: 'bg-orange-100 text-orange-700' },
-  { name: 'Cultural Learning', count: 1, color: 'bg-teal-100 text-teal-700' }
-];
+export default async function BlogPage() {
+  const supabase = createClient();
 
-export default function BlogPage() {
-  const [selectedCategory, setSelectedCategory] = useState<string>('All');
-  
+  // Fetch blog posts from database
+  const now = new Date().toISOString();
+
+  // Fetch published posts from database
+  const { data: publishedPosts } = await supabase
+    .from('blog_posts')
+    .select('*')
+    .eq('is_published', true)
+    .eq('status', 'published')
+    .order('publish_date', { ascending: false });
+
+  // Fetch scheduled posts that should be visible
+  const { data: scheduledPosts } = await supabase
+    .from('blog_posts')
+    .select('*')
+    .eq('is_published', true)
+    .eq('status', 'scheduled')
+    .lte('scheduled_for', now)
+    .order('publish_date', { ascending: false });
+
+  // Combine database posts
+  const dbPosts = [...(publishedPosts || []), ...(scheduledPosts || [])];
+
+  // Extract unique categories from database post tags
+  const categoryMap = new Map<string, number>();
+  dbPosts.forEach(post => {
+    post.tags?.forEach((tag: string) => {
+      categoryMap.set(tag, (categoryMap.get(tag) || 0) + 1);
+    });
+  });
+
+  // Also add static post categories
+  const allStaticPosts = [...staticFeaturedPosts, ...staticRecentPosts];
+  allStaticPosts.forEach(post => {
+    categoryMap.set(post.category, (categoryMap.get(post.category) || 0) + 1);
+  });
+
+  // Convert to category array with colors
+  const colors = [
+    'bg-green-100 text-green-700',
+    'bg-purple-100 text-purple-700',
+    'bg-pink-100 text-pink-700',
+    'bg-indigo-100 text-indigo-700',
+    'bg-red-100 text-red-700',
+    'bg-blue-100 text-blue-700',
+    'bg-yellow-100 text-yellow-700',
+    'bg-orange-100 text-orange-700',
+    'bg-teal-100 text-teal-700'
+  ];
+
+  const categories = Array.from(categoryMap.entries()).map(([name, count], index) => ({
+    name,
+    count,
+    color: colors[index % colors.length]
+  }));
+
+
   const breadcrumbs = [
     { name: 'Home', url: '/' },
     { name: 'Blog', url: '/blog' }
   ];
 
-  const metadata = {
+  const metadataObj = {
     title: 'Language Learning Blog - GCSE Tips, Teaching Strategies & Educational Insights',
     description: 'Expert insights on GCSE language learning, vocabulary techniques, gamification strategies, and modern teaching methods. Written by experienced MFL educators.',
     keywords: [
@@ -264,133 +342,40 @@ export default function BlogPage() {
     ogImage: '/images/blog-og.jpg',
   };
 
-  // Combine all posts
-  const allPosts = [...featuredPosts, ...recentPosts];
-  
-  // Filter posts based on selected category
-  const filteredPosts = selectedCategory === 'All' 
-    ? allPosts 
-    : allPosts.filter(post => post.category === selectedCategory);
+  // Convert static posts to match BlogPost interface for filtering
+  const staticPostsForDisplay = allStaticPosts.map((post) => ({
+    ...post,
+    id: `static-${post.slug}`, // Add ID for static posts
+    tags: [post.category], // Convert category to tags array for filtering
+    publish_date: post.publishDate,
+    reading_time_minutes: parseInt(post.readTime) || 5,
+    icon: undefined // Remove icon component - can't be serialized to client
+  }));
+
+  // Combine all posts (database + static)
+  const allPosts = [...dbPosts, ...staticPostsForDisplay];
+
 
   return (
-    <SEOWrapper breadcrumbs={breadcrumbs} {...metadata}>
+    <SEOWrapper breadcrumbs={breadcrumbs} {...metadataObj}>
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
         {/* Hero Section */}
         <section className="relative py-20 px-4 sm:px-6 lg:px-8">
           <div className="max-w-7xl mx-auto">
             <div className="text-center">
               <h1 className="text-4xl md:text-6xl font-bold text-slate-900 mb-6">
-                Language Learning 
+                Language Learning
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600"> Insights</span>
               </h1>
               <p className="text-xl md:text-2xl text-slate-600 mb-8 max-w-4xl mx-auto leading-relaxed">
-                Expert insights on GCSE language learning, vocabulary techniques, gamification strategies, 
+                Expert insights on GCSE language learning, vocabulary techniques, gamification strategies,
                 and modern teaching methods. Written by experienced MFL educators.
               </p>
-              
-              <div className="flex flex-wrap justify-center gap-4 mb-12">
-                {/* All Categories Button */}
-                <button
-                  className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 hover:scale-105 hover:shadow-md cursor-pointer ${
-                    selectedCategory === 'All' 
-                      ? 'bg-blue-600 text-white shadow-lg' 
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                  onClick={() => setSelectedCategory('All')}
-                >
-                  All ({allPosts.length})
-                </button>
-                
-                {categories.map((category, index) => (
-                  <button
-                    key={index}
-                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 hover:scale-105 hover:shadow-md cursor-pointer ${
-                      selectedCategory === category.name
-                        ? 'shadow-lg ring-2 ring-blue-500 ring-opacity-50 ' + category.color
-                        : category.color
-                    }`}
-                    onClick={() => setSelectedCategory(category.name)}
-                  >
-                    {category.name} ({category.count})
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
 
-        {/* Blog Posts */}
-        <section className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
-          <div className="max-w-7xl mx-auto">
-            <div className="text-center mb-16">
-              <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
-                {selectedCategory === 'All' 
-                  ? `All Articles (${filteredPosts.length})`
-                  : `${selectedCategory} (${filteredPosts.length})`
-                }
-              </h2>
-              <p className="text-xl text-slate-600 max-w-3xl mx-auto">
-                {selectedCategory === 'All' 
-                  ? 'In-depth guides and research-backed strategies for language learning success'
-                  : `Articles focused on ${selectedCategory.toLowerCase()}`
-                }
-              </p>
-            </div>
-            
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {filteredPosts.map((post, index) => {
-                const IconComponent = post.icon;
-                return (
-                  <article key={index} className="bg-gradient-to-br from-slate-50 to-blue-50 rounded-xl p-8 border border-blue-100 hover:border-blue-200 transition-all duration-300 hover:shadow-lg">
-                    <div className="flex items-center mb-6">
-                      <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center mr-4">
-                        <IconComponent className="h-6 w-6 text-white" />
-                      </div>
-                      <div>
-                        <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
-                          {post.category}
-                        </span>
-                      </div>
-                    </div>
-                    
-                    <h3 className="text-2xl font-bold text-slate-900 mb-4 leading-tight">
-                      <Link 
-                        href={`/blog/${post.slug}`}
-                        className="hover:text-blue-600 transition-colors duration-200"
-                      >
-                        {post.title}
-                      </Link>
-                    </h3>
-                    
-                    <p className="text-slate-600 leading-relaxed mb-6">{post.excerpt}</p>
-                    
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center text-sm text-slate-500 space-x-4">
-                        <div className="flex items-center">
-                          <User className="h-4 w-4 mr-1" />
-                          <span>{post.author}</span>
-                        </div>
-                        <div className="flex items-center">
-                          <Calendar className="h-4 w-4 mr-1" />
-                          <span>{post.publishDate}</span>
-                        </div>
-                        <div className="flex items-center">
-                          <Clock className="h-4 w-4 mr-1" />
-                          <span>{post.readTime}</span>
-                        </div>
-                      </div>
-                      
-                      <Link
-                        href={`/blog/${post.slug}`}
-                        className="inline-flex items-center text-blue-600 font-semibold hover:text-blue-700 transition-colors duration-200"
-                      >
-                        Read More
-                        <ArrowRight className="h-4 w-4 ml-1" />
-                      </Link>
-                    </div>
-                  </article>
-                );
-              })}
+              <BlogPageClient
+                initialPosts={allPosts}
+                categories={categories}
+              />
             </div>
           </div>
         </section>

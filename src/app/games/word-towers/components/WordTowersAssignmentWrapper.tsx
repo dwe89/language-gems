@@ -23,12 +23,11 @@ export default function WordTowersAssignmentWrapper({ assignmentId }: WordTowers
 
   const handleAssignmentComplete = (finalProgress: GameProgress) => {
     console.log('Word Towers Assignment completed:', finalProgress);
-    // Navigate back to assignments
-    router.push('/student-dashboard/assignments');
+    // No auto-redirect - let completion screen handle navigation
   };
 
   const handleBackToAssignments = () => {
-    router.push('/student-dashboard/assignments');
+    router.push(`/student-dashboard/assignments/${assignmentId}`);
   };
 
   const handleBackToMenu = () => {

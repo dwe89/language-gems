@@ -306,6 +306,12 @@ export default function SentenceTowersPage() {
   const assignmentId = searchParams?.get('assignment');
   const mode = searchParams?.get('mode');
 
+  // ALL HOOKS MUST BE INITIALIZED FIRST - before any conditional returns
+  // Game state management for unified launcher
+  const [gameStarted, setGameStarted] = useState(false);
+  const [selectedConfig, setSelectedConfig] = useState<UnifiedSelectionConfig | null>(null);
+  const [vocabulary, setVocabulary] = useState<UnifiedVocabularyItem[]>([]);
+
   // Assignment mode handlers
   const handleAssignmentComplete = () => {
     router.push('/student-dashboard/assignments');
@@ -315,7 +321,7 @@ export default function SentenceTowersPage() {
     router.push('/student-dashboard/assignments');
   };
 
-  // Assignment mode: wrap with GameAssignmentWrapper
+  // Assignment mode: wrap with GameAssignmentWrapper (after all hooks are initialized)
   if (assignmentId && mode === 'assignment' && user) {
     return (
       <GameAssignmentWrapper
@@ -411,11 +417,6 @@ export default function SentenceTowersPage() {
       </GameAssignmentWrapper>
     );
   }
-
-  // Game state management for unified launcher
-  const [gameStarted, setGameStarted] = useState(false);
-  const [selectedConfig, setSelectedConfig] = useState<UnifiedSelectionConfig | null>(null);
-  const [vocabulary, setVocabulary] = useState<UnifiedVocabularyItem[]>([]);
 
   // Handle game start from unified launcher
   const handleGameStart = (config: UnifiedSelectionConfig, vocabularyItems: UnifiedVocabularyItem[]) => {

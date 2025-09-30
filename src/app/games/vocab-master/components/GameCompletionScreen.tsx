@@ -1,10 +1,11 @@
 import React from 'react';
-import { Trophy, Star, Target, Clock, Zap, BookOpen, TrendingUp, Award, Home, RotateCcw } from 'lucide-react';
+import { Trophy, Star, Target, Clock, Zap, BookOpen, TrendingUp, Award, Home, RotateCcw, ArrowLeft } from 'lucide-react';
 import { GameResult } from '../types';
 
 interface GameCompletionScreenProps {
   result: GameResult;
   isAdventureMode?: boolean;
+  isAssignmentMode?: boolean;
   onPlayAgain: () => void;
   onBackToMenu: () => void;
 }
@@ -12,6 +13,7 @@ interface GameCompletionScreenProps {
 export const GameCompletionScreen: React.FC<GameCompletionScreenProps> = ({
   result,
   isAdventureMode = false,
+  isAssignmentMode = false,
   onPlayAgain,
   onBackToMenu
 }) => {
@@ -210,8 +212,17 @@ export const GameCompletionScreen: React.FC<GameCompletionScreenProps> = ({
               onClick={onBackToMenu}
               className="flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 text-white font-semibold py-4 px-8 rounded-2xl transition-all duration-200 border border-white/20 hover:border-white/30"
             >
-              <Home className="h-5 w-5" />
-              Back to Menu
+              {isAssignmentMode ? (
+                <>
+                  <ArrowLeft className="h-5 w-5" />
+                  Go back to assignment
+                </>
+              ) : (
+                <>
+                  <Home className="h-5 w-5" />
+                  Back to Menu
+                </>
+              )}
             </button>
           </div>
         </div>

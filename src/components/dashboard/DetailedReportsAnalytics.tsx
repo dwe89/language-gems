@@ -178,7 +178,7 @@ export default function DetailedReportsAnalytics() {
           accuracy_percentage,
           xp_earned,
           created_at,
-          time_spent_seconds
+          duration_seconds
         `)
         .order('created_at', { ascending: false })
         .limit(200);
@@ -481,9 +481,9 @@ export default function DetailedReportsAnalytics() {
             report.students_started.toString(),
             report.students_completed.toString(),
             report.completion_rate.toString(),
-            report.average_score.toFixed(1),
-            report.average_time_minutes.toString(),
-            report.engagement_score.toString()
+            report.average_score?.toFixed(1) || '0.0',
+            report.average_time_spent?.toString() || '0',
+            report.engagement_score?.toString() || '0'
           ]];
 
           filename = `assignment-report-${report.assignment_title.replace(/[^a-zA-Z0-9]/g, '-')}-${new Date().toISOString().split('T')[0]}.csv`;
@@ -530,7 +530,7 @@ export default function DetailedReportsAnalytics() {
 
           csvData = learningPatterns.map(pattern => [
             pattern.date,
-            pattern.average_class_score.toFixed(1),
+            pattern.average_class_score?.toFixed(1) || '0.0',
             pattern.engagement_level.toString(),
             pattern.new_words_learned.toString(),
             pattern.concepts_mastered.toString(),
@@ -627,10 +627,10 @@ export default function DetailedReportsAnalytics() {
                   </div>
                   <div className="text-right">
                     <div className="text-sm text-gray-500">Avg Score</div>
-                    <div className={`text-lg font-semibold ${report.average_score >= 80 ? 'text-green-600' :
-                        report.average_score >= 60 ? 'text-yellow-600' : 'text-red-600'
+                    <div className={`text-lg font-semibold ${(report.average_score || 0) >= 80 ? 'text-green-600' :
+                        (report.average_score || 0) >= 60 ? 'text-yellow-600' : 'text-red-600'
                       }`}>
-                      {report.average_score.toFixed(1)}%
+                      {report.average_score?.toFixed(1) || '0.0'}%
                     </div>
                   </div>
 
@@ -667,7 +667,7 @@ export default function DetailedReportsAnalytics() {
                           <Target className="h-4 w-4 text-green-600" />
                           <span className="text-sm font-medium text-green-800">Performance</span>
                         </div>
-                        <div className="text-2xl font-bold text-green-900">{report.average_score.toFixed(1)}%</div>
+                        <div className="text-2xl font-bold text-green-900">{report.average_score?.toFixed(1) || '0.0'}%</div>
                         <div className="text-sm text-green-700">Average score</div>
                       </div>
 
@@ -676,7 +676,7 @@ export default function DetailedReportsAnalytics() {
                           <Clock className="h-4 w-4 text-yellow-600" />
                           <span className="text-sm font-medium text-yellow-800">Time Spent</span>
                         </div>
-                        <div className="text-2xl font-bold text-yellow-900">{report.average_time_spent.toFixed(1)}</div>
+                        <div className="text-2xl font-bold text-yellow-900">{report.average_time_spent?.toFixed(1) || '0.0'}</div>
                         <div className="text-sm text-yellow-700">Minutes average</div>
                       </div>
 
@@ -685,7 +685,7 @@ export default function DetailedReportsAnalytics() {
                           <Star className="h-4 w-4 text-purple-600" />
                           <span className="text-sm font-medium text-purple-800">Difficulty</span>
                         </div>
-                        <div className="text-2xl font-bold text-purple-900">{report.difficulty_rating.toFixed(1)}/5</div>
+                        <div className="text-2xl font-bold text-purple-900">{report.difficulty_rating?.toFixed(1) || '0.0'}/5</div>
                         <div className="text-sm text-purple-700">Difficulty rating</div>
                       </div>
                     </div>
@@ -697,12 +697,15 @@ export default function DetailedReportsAnalytics() {
                         <span>Common Errors</span>
                       </h4>
                       <div className="space-y-2">
-                        {report.common_errors.map((error, index) => (
+                        {(report.common_errors || []).map((error, index) => (
                           <div key={index} className="flex items-start space-x-2">
                             <div className="w-2 h-2 bg-red-400 rounded-full mt-2 flex-shrink-0"></div>
                             <span className="text-sm text-red-700">{error}</span>
                           </div>
                         ))}
+                        {(!report.common_errors || report.common_errors.length === 0) && (
+                          <p className="text-sm text-red-600 italic">No common errors recorded</p>
+                        )}
                       </div>
                     </div>
 
@@ -713,12 +716,15 @@ export default function DetailedReportsAnalytics() {
                         <span>Most Challenging Questions</span>
                       </h4>
                       <div className="space-y-2">
-                        {report.challenging_questions.map((question, index) => (
+                        {(report.challenging_questions || []).map((question, index) => (
                           <div key={index} className="flex items-start space-x-2">
                             <div className="w-2 h-2 bg-orange-400 rounded-full mt-2 flex-shrink-0"></div>
                             <span className="text-sm text-orange-700">{question}</span>
                           </div>
                         ))}
+                        {(!report.challenging_questions || report.challenging_questions.length === 0) && (
+                          <p className="text-sm text-orange-600 italic">No challenging questions recorded</p>
+                        )}
                       </div>
                     </div>
 
@@ -866,7 +872,7 @@ export default function DetailedReportsAnalytics() {
                   <div
                     className="w-full bg-blue-500 rounded-t transition-all duration-300 hover:bg-blue-600"
                     style={{ height: `${height}%` }}
-                    title={`${pattern.date}: ${pattern.average_class_score.toFixed(1)}%`}
+                    title={`${pattern.date}: ${pattern.average_class_score?.toFixed(1) || '0.0'}%`}
                   ></div>
                   <div className="text-xs text-gray-600 mt-2">
                     {new Date(pattern.date).toLocaleDateString('en-US', { weekday: 'short' })}

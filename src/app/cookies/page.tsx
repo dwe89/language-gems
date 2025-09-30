@@ -177,7 +177,7 @@ export default function CookiePolicyPage() {
                 If you have any questions about our use of cookies, please contact us:
               </p>
               <div className="text-blue-700 text-sm">
-                <p><strong>Email:</strong> hello@languagegems.com</p>
+                <p><strong>Email:</strong> support@languagegems.com</p>
                 <p><strong>Company:</strong> LanguageGems Ltd</p>
                 <p><strong>Website:</strong> www.languagegems.com</p>
               </div>

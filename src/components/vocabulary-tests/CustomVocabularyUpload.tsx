@@ -171,11 +171,11 @@ export default function CustomVocabularyUpload({
   };
 
   const downloadTemplate = () => {
-    const csvContent = `Target Word,English Translation,Category,Subcategory,Difficulty
-hola,hello,Greetings,Basic,beginner
-adiós,goodbye,Greetings,Basic,beginner
-casa,house,Home,Buildings,intermediate
-comer,to eat,Verbs,Actions,intermediate`;
+    const csvContent = `Target Word,English Translation
+hola,hello
+adiós,goodbye
+casa,house
+comer,to eat`;
 
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
@@ -302,8 +302,8 @@ comer,to eat,Verbs,Actions,intermediate`;
                 <Info className="h-4 w-4 text-blue-600 mt-0.5" />
                 <div className="text-sm text-blue-800">
                   <p className="font-medium">CSV Format:</p>
-                  <p>Target Word, English Translation, Category, Subcategory, Difficulty</p>
-                  <p className="mt-1">Example: hola, hello, Greetings, Basic, beginner</p>
+                  <p>Target Word, English Translation</p>
+                  <p className="mt-1">Example: hola, hello</p>
                 </div>
               </div>
             </div>

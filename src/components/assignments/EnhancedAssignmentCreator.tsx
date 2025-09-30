@@ -1323,6 +1323,67 @@ export default function EnhancedAssignmentCreator({
               Configure the vocabulary and content for your assignment based on curriculum level
             </p>
 
+            {/* Word Count Configuration */}
+            {gameConfig.selectedGames.length > 0 && (
+              <div className="bg-gradient-to-r from-amber-50 to-yellow-50 rounded-2xl p-6 border border-amber-100 mb-6">
+                <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <div className="w-6 h-6 bg-amber-100 rounded-lg flex items-center justify-center mr-2">
+                    <Target className="h-4 w-4 text-amber-600" />
+                  </div>
+                  Vocabulary Settings
+                </h4>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-3">
+                      Total Words in Assignment
+                    </label>
+                    <input
+                      type="number"
+                      min="5"
+                      max="100"
+                      value={gameConfig.vocabularyConfig.wordCount || 20}
+                      onChange={(e) => {
+                        const wordCount = parseInt(e.target.value) || 20;
+                        setGameConfig(prev => ({
+                          ...prev,
+                          vocabularyConfig: {
+                            ...prev.vocabularyConfig,
+                            wordCount
+                          }
+                        }));
+                      }}
+                      className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-200"
+                    />
+                    <p className="text-sm text-gray-600 mt-2">
+                      Recommended: 10-20 for quick practice, 30-50 for comprehensive review
+                    </p>
+                  </div>
+
+                  <div className="bg-white rounded-xl p-4 border border-amber-200">
+                    <div className="text-sm font-medium text-amber-900 mb-2">📊 Assignment Preview</div>
+                    {gameConfig.vocabularyConfig.subcategories?.length > 0 ? (
+                      <div className="space-y-1 text-sm text-gray-700">
+                        <p>✅ <strong>{gameConfig.vocabularyConfig.subcategories.length}</strong> subcategories selected</p>
+                        <p>📝 <strong>{gameConfig.vocabularyConfig.wordCount || 20}</strong> words will be randomly sampled</p>
+                        <p className="text-xs text-gray-500 mt-2">
+                          Words will be selected randomly from: {gameConfig.vocabularyConfig.subcategories.slice(0, 3).join(', ')}
+                          {gameConfig.vocabularyConfig.subcategories.length > 3 && ` and ${gameConfig.vocabularyConfig.subcategories.length - 3} more`}
+                        </p>
+                      </div>
+                    ) : gameConfig.vocabularyConfig.categories?.length > 0 ? (
+                      <div className="space-y-1 text-sm text-gray-700">
+                        <p>✅ <strong>{gameConfig.vocabularyConfig.categories.length}</strong> categories selected</p>
+                        <p>📝 <strong>{gameConfig.vocabularyConfig.wordCount || 20}</strong> words will be randomly sampled</p>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-500">Select categories/subcategories below to see preview</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
             <CurriculumContentSelector
               curriculumLevel={assignmentDetails.curriculum_level || 'KS3'}
               language={gameConfig.vocabularyConfig?.language as 'spanish' | 'french' | 'german' || 'spanish'}
@@ -1339,6 +1400,25 @@ export default function EnhancedAssignmentCreator({
                 console.log('🎯 [UI] Normalized config:', normalizedConfig);
                 console.log('🎯 [UI] ===== CALLBACK ENDED =====');
                 setContentConfig(normalizedConfig);
+
+                // Auto-adjust word count based on selection
+                const subcategoryCount = config.subcategories?.length || 0;
+                const categoryCount = config.categories?.length || 0;
+                const isMultipleSelection = subcategoryCount > 1 || categoryCount > 1;
+
+                // Set default word count: 20 for multiple selections, 10 for single
+                const defaultWordCount = isMultipleSelection ? 20 : 10;
+
+                // Only update word count if it's still at the default value
+                if (!gameConfig.vocabularyConfig.wordCount || gameConfig.vocabularyConfig.wordCount === 10 || gameConfig.vocabularyConfig.wordCount === 20) {
+                  setGameConfig(prev => ({
+                    ...prev,
+                    vocabularyConfig: {
+                      ...prev.vocabularyConfig,
+                      wordCount: defaultWordCount
+                    }
+                  }));
+                }
 
                 // @ts-ignore - Temporarily disable TypeScript checking to test callback execution
                 // Update both game and assessment configs based on the unified content config

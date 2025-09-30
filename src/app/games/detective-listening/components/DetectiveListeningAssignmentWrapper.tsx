@@ -22,15 +22,11 @@ export default function DetectiveListeningAssignmentWrapper({
 
   const handleAssignmentComplete = (progress: GameProgress) => {
     console.log('Detective Listening assignment completed:', progress);
-    
-    // Show completion message and redirect
-    setTimeout(() => {
-      router.push('/student-dashboard/assignments');
-    }, 3000);
+    // No auto-redirect - let completion screen handle navigation
   };
 
   const handleBackToAssignments = () => {
-    router.push('/student-dashboard/assignments');
+    router.push(`/student-dashboard/assignments/${assignmentId}`);
   };
 
   const handleBackToMenu = () => {

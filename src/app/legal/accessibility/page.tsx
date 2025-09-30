@@ -1,9 +1,19 @@
-'use client';
-
 import React from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Eye, Users } from 'lucide-react';
 import Footer from '../../../components/layout/Footer';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Accessibility Statement - LanguageGems',
+  description: 'LanguageGems commitment to accessibility. WCAG 2.1 AA compliance, assistive technology support, and inclusive learning features.',
+  openGraph: {
+    title: 'Accessibility Statement - LanguageGems',
+    description: 'LanguageGems commitment to accessibility and inclusive learning.',
+    url: 'https://languagegems.com/legal/accessibility',
+    type: 'website',
+  },
+};
 
 export default function AccessibilityPage() {
   return (
@@ -228,7 +238,7 @@ export default function AccessibilityPage() {
               </p>
               <div className="text-blue-700 text-sm">
                 <p><strong>Accessibility Team:</strong> accessibility@languagegems.com</p>
-                <p><strong>General Support:</strong> hello@languagegems.com</p>
+                <p><strong>General Support:</strong> support@languagegems.com</p>
                 <p><strong>Company:</strong> LanguageGems Ltd</p>
                 <p><strong>Website:</strong> www.languagegems.com</p>
               </div>

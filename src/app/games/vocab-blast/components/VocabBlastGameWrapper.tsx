@@ -11,6 +11,7 @@ import VocabBlastGame from './VocabBlastGame';
 interface VocabBlastGameWrapperProps {
   settings: VocabBlastGameSettings;
   onBackToMenu: () => void;
+  onBackToAssignment?: () => void; // For assignment mode
   onGameEnd: (result: {
     outcome: 'win' | 'loss' | 'timeout';
     score: number;
@@ -330,7 +331,7 @@ export default function VocabBlastGameWrapper(props: VocabBlastGameWrapperProps)
               onClick={props.onBackToMenu}
               className="bg-transparent border-2 border-white text-white px-6 py-2 rounded-lg font-semibold hover:bg-white hover:text-black transition-colors"
             >
-              Back to Menu
+              {props.isAssignmentMode ? 'Back to Assignment' : 'Back to Menu'}
             </button>
           </div>
         </div>
@@ -351,7 +352,7 @@ export default function VocabBlastGameWrapper(props: VocabBlastGameWrapperProps)
             onClick={props.onBackToMenu}
             className="bg-gradient-to-r from-pink-600 to-purple-600 text-white px-6 py-2 rounded-lg font-semibold hover:from-pink-700 hover:to-purple-700 transition-colors"
           >
-            Back to Menu
+            {props.isAssignmentMode ? 'Back to Assignment' : 'Back to Menu'}
           </button>
         </div>
       </div>
@@ -363,6 +364,7 @@ export default function VocabBlastGameWrapper(props: VocabBlastGameWrapperProps)
       settings={props.settings}
       vocabulary={gameVocabulary}
       onBackToMenu={props.onBackToMenu}
+      onBackToAssignment={props.onBackToAssignment}
       onGameEnd={handleEnhancedGameEnd}
       gameSessionId={effectiveGameSessionId}
       isAssignmentMode={props.isAssignmentMode}

@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
+import Link from 'next/link';
+import Head from 'next/head';
 import {
   Mail,
   Phone,
@@ -29,6 +31,7 @@ export default function ContactPage() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -42,11 +45,48 @@ export default function ContactPage() {
     e.preventDefault();
     setIsSubmitting(true);
     
-    // Simulate form submission
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    setIsSubmitted(true);
-    setIsSubmitting(false);
+    try {
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          subject: formData.subject,
+          message: formData.message,
+          contactType: formData.type
+        })
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        setShowSuccess(true);
+        setFormData({
+          name: '',
+          email: '',
+          subject: '',
+          message: '',
+          type: 'general'
+        });
+        
+        // Scroll to success message
+        setTimeout(() => {
+          document.getElementById('success-message')?.scrollIntoView({ 
+            behavior: 'smooth' 
+          });
+        }, 100);
+      } else {
+        throw new Error(result.error || 'Failed to send message');
+      }
+    } catch (error) {
+      console.error('Contact form error:', error);
+      alert('Sorry, there was an error sending your message. Please try again or email us directly at support@languagegems.com');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const contactTypes = [
@@ -80,29 +120,26 @@ export default function ContactPage() {
     {
       icon: Mail,
       title: 'Email Us',
-      content: 'hello@languagegems.com',
+      content: 'support@languagegems.com',
       description: 'We typically respond within 24 hours'
     },
     {
-      icon: Phone,
-      title: 'Call Us',
-      content: '+44 (0) 20 1234 5678',
-      description: 'Monday to Friday, 9am to 6pm GMT'
-    },
-    {
-      icon: MapPin,
-      title: 'Visit Us',
-      content: 'London, United Kingdom',
-      description: 'Available for in-person meetings'
+      icon: MessageCircle,
+      title: 'Get Support',
+      content: 'Online Help Center',
+      description: 'Browse our help articles and guides',
+      href: '/help'
     }
   ];
 
   if (isSubmitted) {
     return (
-      <SEOWrapper
-        title="Thank You - LanguageGems Contact"
-        description="Thank you for contacting LanguageGems. We'll get back to you soon!"
-      >
+      <>
+        <Head>
+          <title>Thank You - LanguageGems Contact</title>
+          <meta name="description" content="Your message has been sent successfully. We'll get back to you soon." />
+        </Head>
+            <SEOWrapper>
         <div className="flex min-h-screen flex-col">
           <main className="flex-grow flex items-center justify-center bg-gradient-to-br from-green-50 to-blue-50">
             <motion.div
@@ -139,14 +176,17 @@ export default function ContactPage() {
           <Footer />
         </div>
       </SEOWrapper>
+      </>
     );
   }
 
   return (
-    <SEOWrapper
-      title="Contact Us - LanguageGems | Get in Touch"
-      description="Contact LanguageGems for support, sales inquiries, or general questions. We're here to help with your language learning journey."
-    >
+    <>
+      <Head>
+        <title>Contact Us - LanguageGems | Get in Touch</title>
+        <meta name="description" content="Contact LanguageGems for support, partnerships, or general inquiries. We're here to help with your language learning journey." />
+      </Head>
+    <SEOWrapper>
       <div className="flex min-h-screen flex-col">
         <main className="flex-grow">
           {/* Hero Section */}
@@ -305,6 +345,24 @@ export default function ContactPage() {
                       )}
                     </button>
                   </form>
+
+                  {/* Success Message */}
+                  {showSuccess && (
+                    <div 
+                      id="success-message"
+                      className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg"
+                    >
+                      <div className="flex items-center">
+                        <CheckCircle className="w-5 h-5 text-green-600 mr-2" />
+                        <div>
+                          <h3 className="text-sm font-semibold text-green-800">Message Sent Successfully!</h3>
+                          <p className="text-sm text-green-600 mt-1">
+                            Thank you for your message. We'll get back to you within 24 hours.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </motion.div>
 
                 {/* Contact Information */}
@@ -324,7 +382,17 @@ export default function ContactPage() {
                           </div>
                           <div>
                             <h3 className="font-bold text-gray-900 mb-1">{info.title}</h3>
-                            <p className="text-lg text-blue-600 font-semibold mb-1">{info.content}</p>
+                            {info.href ? (
+                              <Link href={info.href} className="text-lg text-blue-600 font-semibold mb-1 hover:underline">
+                                {info.content}
+                              </Link>
+                            ) : info.content.includes('@') ? (
+                              <a href={`mailto:${info.content}`} className="text-lg text-blue-600 font-semibold mb-1 hover:underline">
+                                {info.content}
+                              </a>
+                            ) : (
+                              <p className="text-lg text-blue-600 font-semibold mb-1">{info.content}</p>
+                            )}
                             <p className="text-gray-600 text-sm">{info.description}</p>
                           </div>
                         </div>
@@ -381,5 +449,6 @@ export default function ContactPage() {
         <Footer />
       </div>
     </SEOWrapper>
+    </>
   );
 }

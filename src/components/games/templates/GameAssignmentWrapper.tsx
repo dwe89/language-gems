@@ -684,6 +684,8 @@ export const useAssignmentVocabulary = (assignmentId: string, gameId?: string) =
               language: vocabConfig.language,
               category: vocabConfig.category,
               subcategory: vocabConfig.subcategory,
+              categories: vocabConfig.categories,
+              subcategories: vocabConfig.subcategories,
               wordCount: vocabConfig.wordCount
             });
 
@@ -711,26 +713,60 @@ export const useAssignmentVocabulary = (assignmentId: string, gameId?: string) =
                                          vocabConfig.language === 'de' ? 'de' : 'es');
             }
 
-            // Apply category filter for KS3
-            if (vocabConfig.category) {
-              query = query.eq('category', vocabConfig.category);
-            }
+            // =====================================================
+            // HANDLE MULTIPLE SUBCATEGORIES (Enhanced Creator)
+            // =====================================================
+            if (vocabConfig.subcategories && vocabConfig.subcategories.length > 0) {
+              console.log('🎯 [KS3] Applying MULTIPLE subcategory filter:', vocabConfig.subcategories);
+              query = query.in('subcategory', vocabConfig.subcategories);
 
-            // Apply subcategory filter for KS3 - this is the key fix!
-            if (vocabConfig.subcategory) {
-              query = query.eq('subcategory', vocabConfig.subcategory);
-              console.log('🎯 [KS3] Applying subcategory filter:', vocabConfig.subcategory);
+              // Optionally filter by categories if provided
+              if (vocabConfig.categories && vocabConfig.categories.length > 0) {
+                query = query.in('category', vocabConfig.categories);
+              }
+            }
+            // =====================================================
+            // HANDLE MULTIPLE CATEGORIES (Enhanced Creator)
+            // =====================================================
+            else if (vocabConfig.categories && vocabConfig.categories.length > 0) {
+              console.log('🎯 [KS3] Applying MULTIPLE category filter:', vocabConfig.categories);
+              query = query.in('category', vocabConfig.categories);
+            }
+            // =====================================================
+            // HANDLE SINGLE CATEGORY/SUBCATEGORY (Quick Creator / Legacy)
+            // =====================================================
+            else {
+              // Apply category filter for KS3
+              if (vocabConfig.category) {
+                query = query.eq('category', vocabConfig.category);
+              }
+
+              // Apply subcategory filter for KS3
+              if (vocabConfig.subcategory) {
+                query = query.eq('subcategory', vocabConfig.subcategory);
+                console.log('🎯 [KS3] Applying SINGLE subcategory filter:', vocabConfig.subcategory);
+              }
             }
 
             // Apply curriculum level filter
             query = query.or('curriculum_level.eq.KS3,curriculum_level.is.null');
 
-            // Apply word count limit
-            if (vocabConfig.wordCount) {
-              query = query.limit(vocabConfig.wordCount);
+            // Fetch ALL matching vocabulary first (no limit yet)
+            const { data: allVocab, error: fetchError } = await query;
+
+            if (fetchError) {
+              console.error('❌ [KS3] Error loading KS3 vocabulary:', fetchError);
             }
 
-            const { data: fallbackVocab, error: fallbackError } = await query;
+            // Randomly shuffle and select the specified number of words
+            let fallbackVocab = allVocab;
+            if (allVocab && allVocab.length > 0 && vocabConfig.wordCount) {
+              const shuffled = [...allVocab].sort(() => 0.5 - Math.random());
+              fallbackVocab = shuffled.slice(0, vocabConfig.wordCount);
+              console.log(`🎲 [KS3] Randomly selected ${fallbackVocab.length} words from ${allVocab.length} available`);
+            }
+
+            const fallbackError = fetchError;
 
             if (fallbackError) {
               console.error('❌ [KS3] Error loading KS3 vocabulary:', fallbackError);
@@ -1559,7 +1595,7 @@ export default function GameAssignmentWrapper({
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <button
-              onClick={() => router.push('/student-dashboard/assignments')}
+              onClick={onBackToAssignments}
               className="flex items-center text-white hover:text-blue-200 transition-colors"
             >
               <ArrowLeft className="w-5 h-5 mr-2" />

@@ -1,4 +1,4 @@
-# Smart vs Standard Assignment Analysis
+# Comprehensive vs Quick Assignment Analysis
 
 ## 🎯 Overview
 
@@ -6,17 +6,17 @@ The Language Gems platform supports two distinct assignment types, each designed
 
 ## 📊 Assignment Type Comparison
 
-### **Standard Assignments**
+### **Quick Assignments**
 **Route**: `/dashboard/assignments/new/page.tsx`
-**Purpose**: Simple, single-game assignments with basic configuration
+**Purpose**: Simple, single-activity assignments with basic configuration
 
-### **Smart Multi-Game Assignments** 
+### **Comprehensive Assignments** 
 **Route**: `/dashboard/assignments/new/enhanced/page.tsx`
-**Purpose**: Advanced, multi-game assignments with dynamic configuration
+**Purpose**: Advanced, multi-activity assignments with dynamic configuration including games, grammar exercises, assessments, and worksheets
 
 ## 🔍 Detailed Feature Comparison
 
-| Feature | Standard Assignment | Smart Multi-Game Assignment |
+| Feature | Quick Assignment | Comprehensive Assignment |
 |---------|-------------------|----------------------------|
 | **Game Selection** | Single game only | Up to 5 games simultaneously |
 | **Workflow Steps** | 3-4 basic steps | 5-step guided workflow |
@@ -31,13 +31,13 @@ The Language Gems platform supports two distinct assignment types, each designed
 
 ## 🎮 Game Type Handling
 
-### Standard Assignments
+### Quick Assignments
 - **Vocabulary Games**: Basic category selection
 - **Sentence Games**: Simple sentence set selection
 - **Mixed Games**: Manual configuration required
 - **Limitations**: No cross-game coordination
 
-### Smart Multi-Game Assignments
+### Comprehensive Assignments
 - **Vocabulary Games**: Advanced category system with curriculum levels
 - **Sentence Games**: Integrated sentence configuration with grammar focus
 - **Mixed Games**: Automatic content alignment and consistency checks
@@ -45,9 +45,9 @@ The Language Gems platform supports two distinct assignment types, each designed
 
 ## 🏗️ Technical Architecture
 
-### Standard Assignment Structure
+### Quick Assignment Structure
 ```typescript
-interface StandardAssignment {
+interface QuickAssignment {
   title: string;
   description: string;
   gameType: string; // Single game
@@ -63,9 +63,9 @@ interface StandardAssignment {
 }
 ```
 
-### Smart Multi-Game Assignment Structure
+### Comprehensive Assignment Structure
 ```typescript
-interface SmartAssignment {
+interface ComprehensiveAssignment {
   title: string;
   description: string;
   game_type: string; // Primary game for compatibility
@@ -104,7 +104,7 @@ interface SmartAssignment {
 
 ## 🎨 User Experience Differences
 
-### Standard Assignment Creation
+### Quick Assignment Creation
 1. **Basic Details**: Title, description, class selection
 2. **Game Selection**: Choose single game from dropdown
 3. **Vocabulary Setup**: Simple theme/topic selection
@@ -114,7 +114,7 @@ interface SmartAssignment {
 **Complexity**: Low
 **Flexibility**: Limited
 
-### Smart Multi-Game Assignment Creation
+### Comprehensive Assignment Creation
 1. **Assignment Details**: Enhanced form with curriculum level
 2. **Choose Games**: Visual game cards with multi-selection
 3. **Configure Content**: Dynamic sections based on selected games
@@ -222,10 +222,10 @@ interface SmartAssignment {
 ## 🎯 Recommendations
 
 ### For Teachers
-- **New to Platform**: Start with Standard assignments
-- **Experienced Users**: Leverage Smart Multi-Game assignments
-- **Curriculum Requirements**: Use Smart assignments for KS3/KS4 alignment
-- **Quick Practice**: Use Standard assignments for focused practice
+- **New to Platform**: Start with Quick assignments
+- **Experienced Users**: Leverage Comprehensive assignments
+- **Curriculum Requirements**: Use Comprehensive assignments for KS3/KS4 alignment
+- **Quick Practice**: Use Quick assignments for focused practice
 
 ### For Platform Development
 - **Maintain Both Types**: Each serves different needs
@@ -235,11 +235,33 @@ interface SmartAssignment {
 
 ---
 
+## 🎬 Video Tutorial Script: Creating Your First Assignment
+
+**Welcome to LanguageGems, the interactive platform where language learning comes to life. In this guide, we'll walk you through creating your very first assignment, starting with the fast, focused Quick Assignment.**
+
+From your main Teacher Dashboard, locate and click the Assignments tab in the left-hand menu. Then, click the large blue + Create New Assignment button at the top right of the screen.
+
+Here, you'll see two options: **Quick Assignment** for a simple single-activity task, and **Comprehensive Assignment** for advanced assignments that combine games, grammar exercises, assessments, and worksheets for complete learning experiences. Since this is your first time, let's choose the Quick Assignment.
+
+A simple creation form will appear. First, give your assignment a clear Name, like 'Spanish Food Vocabulary Practice'. Then, add a brief Description for your students, and select the specific class or individuals you wish to target.
+
+Next, you will choose your content. Under Vocabulary Source, you can select a Theme or Topic, or choose one of your own Custom Lists. Once your words are selected, pick your Game Type. Since Quick Assignments are single-activity, we'll choose a quick game like Memory Match.
+
+Finally, define the basic parameters. Use the calendar tool to set the Due Date and adjust the target score.
+
+When you're ready, click Submit.
+
+That's it! Your assignment is now live, and your students are notified. For more comprehensive learning units that mix games like VocabMaster and Conjugation Duel with grammar exercises, assessments, and worksheets, and require specific curriculum alignment, remember to choose the **Comprehensive Assignment** option next time.
+
+You can now use the Progress Tracking feature to monitor student performance on your new assignment.
+
+---
+
 ## 📊 Summary
 
 Both assignment types serve important roles in the Language Gems ecosystem:
 
-- **Standard Assignments**: Simple, fast, focused - perfect for quick practice and new users
-- **Smart Multi-Game Assignments**: Comprehensive, flexible, advanced - ideal for complex learning scenarios and experienced teachers
+- **Quick Assignments**: Simple, fast, focused - perfect for quick practice and new users
+- **Comprehensive Assignments**: Advanced, flexible, multi-activity - ideal for complex learning scenarios and experienced teachers
 
 The unified assignment system should support both types while providing consistent student experiences and teacher analytics across all assignment types.

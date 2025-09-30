@@ -305,8 +305,8 @@ export default function AssignmentsPage() {
                   <div className="flex items-center">
                     <span className="text-lg mr-3">🚀</span>
                     <div>
-                      <div className="font-semibold text-indigo-600">Smart Integrated Assignment</div>
-                      <div className="text-xs text-slate-500">Combines all 15 interactive games with targeted reading, listening, writing, and exam-style assessment tasks.</div>
+                      <div className="font-semibold text-indigo-600">Comprehensive Assignment</div>
+                      <div className="text-xs text-slate-500">Combine games, grammar exercises, assessments, and worksheets for complete learning experiences</div>
                     </div>
                   </div>
                 </Link>
@@ -315,7 +315,13 @@ export default function AssignmentsPage() {
                   className="block px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition-colors font-medium"
                   onClick={() => setDropdownOpen(false)}
                 >
-                  📝 Standard Assignment
+                  <div className="flex items-center">
+                    <span className="text-lg mr-3">⚡</span>
+                    <div>
+                      <div className="font-semibold text-emerald-600">Quick Assignment</div>
+                      <div className="text-xs text-slate-500">Create focused practice with a single activity - perfect for homework or quick review</div>
+                    </div>
+                  </div>
                 </Link>
               </div>
             </div>

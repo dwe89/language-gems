@@ -177,14 +177,24 @@ export default function HangmanPage() {
 
   const handleAssignmentComplete = (progress: GameProgress) => {
     console.log('Hangman assignment completed:', progress);
-    // Show completion message and redirect
+    // Show completion message and redirect to assignment detail page
     setTimeout(() => {
-      router.push('/student-dashboard/assignments');
+      if (assignmentId) {
+        router.push(`/student-dashboard/assignments/${assignmentId}`);
+      } else {
+        router.push('/student-dashboard/assignments');
+      }
     }, 3000);
   };
 
   const handleBackToAssignments = () => {
-    router.push('/student-dashboard/assignments');
+    // If we have an assignmentId, go back to that specific assignment
+    // Otherwise go to the assignments list
+    if (assignmentId) {
+      router.push(`/student-dashboard/assignments/${assignmentId}`);
+    } else {
+      router.push('/student-dashboard/assignments');
+    }
   };
 
   // Show loading while authenticating (applies to both modes)

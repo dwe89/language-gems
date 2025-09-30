@@ -2,15 +2,21 @@
 
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, RotateCcw, Lightbulb, Volume2, Settings, PartyPopper, Sparkles, SkipForward, Undo2 } from 'lucide-react';
+import { ArrowLeft, RotateCcw, Lightbulb, Volume2, VolumeX, Settings, PartyPopper, Sparkles, SkipForward, Undo2 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
 
 // Simple sound manager for audio feedback
 class SoundManager {
+  private muted: boolean = false;
+
+  setMuted(muted: boolean) {
+    this.muted = muted;
+  }
+
   play(type: 'correct' | 'wrong' | 'select') {
     // Simple audio feedback - can be enhanced later
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && !this.muted) {
       try {
         const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
         let frequency = 261.63; // Default C4
@@ -222,6 +228,9 @@ export default function WordScrambleGame({
   // Destructure commonly used values from gameStats
   const { score, streak } = gameStats;
 
+  // Sound state
+  const [soundEnabled, setSoundEnabled] = useState(true);
+
   // Refs
   const soundManager = useRef<SoundManager>(new SoundManager());
   const inputRef = useRef<HTMLInputElement>(null);
@@ -273,6 +282,11 @@ export default function WordScrambleGame({
     
     return result;
   }, []);
+
+  // Sync sound manager with soundEnabled state
+  useEffect(() => {
+    soundManager.current.setMuted(!soundEnabled);
+  }, [soundEnabled]);
 
   // Initialize remaining words when vocabulary loads
   useEffect(() => {
@@ -671,18 +685,34 @@ export default function WordScrambleGame({
               Word Scramble
             </h1>
           </div>
-          
-          {onOpenSettings && (
-            <motion.button
-              onClick={onOpenSettings}
-              className="px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold flex items-center gap-2 transition-all shadow-lg border-2 border-white/20"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <Settings className="h-5 w-5" />
-              <span className="hidden sm:inline">Settings</span>
-            </motion.button>
-          )}
+
+          <div className="flex items-center gap-2">
+            {/* Mute Button - Only show in assignment mode */}
+            {isAssignmentMode && (
+              <motion.button
+                onClick={() => setSoundEnabled(!soundEnabled)}
+                className="px-3 py-2 rounded-xl bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white font-semibold flex items-center gap-2 transition-all shadow-lg border-2 border-white/20"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                title={soundEnabled ? "Mute audio" : "Unmute audio"}
+              >
+                {soundEnabled ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
+                <span className="hidden sm:inline">{soundEnabled ? "Mute" : "Unmute"}</span>
+              </motion.button>
+            )}
+
+            {onOpenSettings && (
+              <motion.button
+                onClick={onOpenSettings}
+                className="px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold flex items-center gap-2 transition-all shadow-lg border-2 border-white/20"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Settings className="h-5 w-5" />
+                <span className="hidden sm:inline">Settings</span>
+              </motion.button>
+            )}
+          </div>
         </div>
 
         {/* Stats Bar - More compact grid */}

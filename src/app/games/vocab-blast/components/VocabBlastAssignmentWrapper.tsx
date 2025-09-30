@@ -60,6 +60,7 @@ export default function VocabBlastAssignmentWrapper({
               gameSessionId={gameSessionId}
               categoryVocabulary={vocabulary} // Pass the assignment vocabulary
             onBackToMenu={onBackToMenu}
+            onBackToAssignment={onBackToAssignments}
             onGameEnd={(result) => {
               // Use gems-first scoring: 10 XP per correct answer
               const correctAnswers = result.correctAnswers || 0;

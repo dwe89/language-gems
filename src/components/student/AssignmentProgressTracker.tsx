@@ -305,35 +305,75 @@ export default function AssignmentProgressTracker({
     return weeklyData;
   };
 
-  // Helper function to analyze subject performance
-  const analyzeSubjectPerformance = async (submissions: any[]): Promise<{strongest: string[], needsImprovement: string[]}> => {
-    const subjectScores: {[key: string]: {total: number, count: number}} = {};
+  // Helper function to analyze topic performance from vocabulary data
+  const analyzeTopicPerformance = async (userId: string): Promise<{strongest: string[], needsImprovement: string[]}> => {
+    try {
+      // Get vocabulary performance grouped by topic
+      const { data: vocabPerformance } = await supabase
+        .from('word_performance_logs')
+        .select(`
+          was_correct,
+          centralized_vocabulary!inner(
+            topic_name,
+            language
+          )
+        `)
+        .eq('user_id', userId)
+        .not('centralized_vocabulary.topic_name', 'is', null);
 
-    submissions.forEach(submission => {
-      if (submission.assignment?.game_type && submission.best_score !== null) {
-        const subject = submission.assignment.game_type;
-        if (!subjectScores[subject]) {
-          subjectScores[subject] = {total: 0, count: 0};
-        }
-        subjectScores[subject].total += submission.best_score;
-        subjectScores[subject].count += 1;
+      if (!vocabPerformance || vocabPerformance.length === 0) {
+        return {
+          strongest: ['No data yet'],
+          needsImprovement: []
+        };
       }
-    });
 
-    const subjectAverages = Object.entries(subjectScores)
-      .map(([subject, data]) => ({
-        subject,
-        average: data.total / data.count
-      }))
-      .sort((a, b) => b.average - a.average);
+      // Calculate accuracy by topic
+      const topicScores: {[key: string]: {correct: number, total: number}} = {};
 
-    const strongest = subjectAverages.slice(0, 2).map(s => s.subject);
-    const needsImprovement = subjectAverages.slice(-2).filter(s => s.average < 70).map(s => s.subject);
+      vocabPerformance.forEach((log: any) => {
+        const topic = log.centralized_vocabulary?.topic_name;
+        const language = log.centralized_vocabulary?.language;
+        
+        if (topic && language) {
+          const key = `${language.toUpperCase()} - ${topic}`;
+          if (!topicScores[key]) {
+            topicScores[key] = {correct: 0, total: 0};
+          }
+          topicScores[key].total += 1;
+          if (log.was_correct) {
+            topicScores[key].correct += 1;
+          }
+        }
+      });
 
-    return {
-      strongest: strongest.length > 0 ? strongest : ['Continue practicing'],
-      needsImprovement: needsImprovement.length > 0 ? needsImprovement : []
-    };
+      // Calculate averages and sort
+      const topicAverages = Object.entries(topicScores)
+        .filter(([_, data]) => data.total >= 3) // Only topics with at least 3 attempts
+        .map(([topic, data]) => ({
+          topic,
+          accuracy: (data.correct / data.total) * 100,
+          attempts: data.total
+        }))
+        .sort((a, b) => b.accuracy - a.accuracy);
+
+      const strongest = topicAverages.slice(0, 3).map(t => t.topic);
+      const needsImprovement = topicAverages
+        .filter(t => t.accuracy < 70)
+        .slice(0, 3)
+        .map(t => t.topic);
+
+      return {
+        strongest: strongest.length > 0 ? strongest : ['Keep practicing!'],
+        needsImprovement: needsImprovement.length > 0 ? needsImprovement : []
+      };
+    } catch (error) {
+      console.error('Error analyzing topic performance:', error);
+      return {
+        strongest: ['No data available'],
+        needsImprovement: []
+      };
+    }
   };
 
   // Helper function to calculate current streak
@@ -487,8 +527,8 @@ export default function AssignmentProgressTracker({
       // Calculate actual weekly progress from submissions
       const weeklyProgress = await calculateWeeklyProgress(submissionsForAnalysis);
 
-      // Calculate strongest subjects and improvement areas from actual data
-      const subjectAnalysis = await analyzeSubjectPerformance(submissionsForAnalysis);
+      // Calculate strongest topics and improvement areas from vocabulary performance
+      const topicAnalysis = await analyzeTopicPerformance(studentId);
 
       setProgressMetrics({
         totalAssignments: assignments.length,
@@ -498,8 +538,8 @@ export default function AssignmentProgressTracker({
         totalXpEarned,
         currentStreak: await calculateCurrentStreak(studentId),
         weeklyProgress,
-        strongestSubjects: subjectAnalysis.strongest,
-        improvementAreas: subjectAnalysis.needsImprovement
+        strongestSubjects: topicAnalysis.strongest,
+        improvementAreas: topicAnalysis.needsImprovement
       });
 
       setAssignmentList(assignmentProgressList);
@@ -624,19 +664,19 @@ export default function AssignmentProgressTracker({
             />
           </div>
 
-          {/* Subject Performance */}
+          {/* Topic Performance */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="bg-white rounded-xl p-6 border border-gray-200">
               <h3 className="font-bold text-gray-900 mb-4 student-font-display">
-                Strongest Subjects
+                Strongest Topics
               </h3>
               <div className="space-y-3">
-                {progressMetrics.strongestSubjects.map((subject, index) => (
+                {progressMetrics.strongestSubjects.map((topic, index) => (
                   <div key={index} className="flex items-center space-x-3">
                     <div className="p-2 bg-green-100 rounded-lg">
                       <TrendingUp className="h-4 w-4 text-green-600" />
                     </div>
-                    <span className="font-medium text-gray-900">{subject}</span>
+                    <span className="font-medium text-gray-900 text-sm">{topic}</span>
                   </div>
                 ))}
               </div>
@@ -644,7 +684,7 @@ export default function AssignmentProgressTracker({
 
             <div className="bg-white rounded-xl p-6 border border-gray-200">
               <h3 className="font-bold text-gray-900 mb-4 student-font-display">
-                Areas for Improvement
+                Topics to Practice
               </h3>
               <div className="space-y-3">
                 {progressMetrics.improvementAreas.map((area, index) => (
@@ -652,7 +692,7 @@ export default function AssignmentProgressTracker({
                     <div className="p-2 bg-yellow-100 rounded-lg">
                       <Target className="h-4 w-4 text-yellow-600" />
                     </div>
-                    <span className="font-medium text-gray-900">{area}</span>
+                    <span className="font-medium text-gray-900 text-sm">{area}</span>
                   </div>
                 ))}
               </div>
