@@ -1,34 +1,36 @@
+'use client';
+
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import {
   Book,
   Users,
-  Settings,
-  CreditCard,
+  Settings,  ];
+
+  return (
+    <>
+      <Head>
+        <title>Help Center - LanguageGems Support</title>
+        <meta name="description" content="Find answers to your questions about LanguageGems. Browse our help articles, video tutorials, and guides to get the most out of our language learning platform." />
+      </Head>
+      <div className="flex min-h-screen flex-col">
+        <main className="flex-grow">
+          {/* Hero Section */}
+          <div className="bg-gradient-to-br from-blue-50 to-indigo-100 py-16">{rd,
   HelpCircle,
   FileText,
   Video,
   Mail,
   ExternalLink,
-  ArrowRight
+  ArrowRight,
+  MessageCircle
 } from 'lucide-react';
 import Footer from '../../components/layout/Footer';
 import SEOWrapper from '../../components/seo/SEOWrapper';
 import HelpSearchBar from '../../components/help/HelpSearchBar';
 import HelpQuickActions from '../../components/help/HelpQuickActions';
 import HelpCategories from '../../components/help/HelpCategories';
-import { Metadata } from 'next';
-
-export const metadata: Metadata = {
-  title: 'Help Center - LanguageGems Support',
-  description: 'Find answers to your questions about LanguageGems. Browse our help articles, video tutorials, and guides to get the most out of our language learning platform.',
-  openGraph: {
-    title: 'Help Center - LanguageGems Support',
-    description: 'Find answers to your questions about LanguageGems.',
-    url: 'https://languagegems.com/help',
-    type: 'website',
-  },
-};
+import Head from 'next/head';
 
 export default function HelpCenterPage() {
 
@@ -131,10 +133,11 @@ export default function HelpCenterPage() {
   ];
 
   return (
-    <SEOWrapper
-      title="Help Center - LanguageGems Support"
-      description="Find answers to your questions about LanguageGems. Browse our help articles, video tutorials, and guides to get the most out of our language learning platform."
-    >
+    <>
+      <Head>
+        <title>Help Center - LanguageGems Support</title>
+        <meta name="description" content="Find answers to your questions about LanguageGems. Browse our help articles, video tutorials, and guides to get the most out of our language learning platform." />
+      </Head>
       <div className="flex min-h-screen flex-col">
         <main className="flex-grow">
           {/* Hero Section */}
@@ -254,6 +257,6 @@ export default function HelpCenterPage() {
         </main>
         <Footer />
       </div>
-    </SEOWrapper>
+    </>
   );
 }
