@@ -7,6 +7,7 @@ import Footer from '../../../components/layout/Footer';
 import Head from 'next/head';
 
 export default function GettingStartedPage() {
+  // Getting Started help page
   const articles = [
     {
       title: 'Creating your first assignment',
