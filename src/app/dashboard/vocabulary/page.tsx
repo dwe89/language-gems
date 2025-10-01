@@ -165,6 +165,31 @@ export default function VocabularyPage() {
     }
   }, [vocabularyService, uploadService, user]);
 
+  // Refresh data when page becomes visible (user returns from another page/tab)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && vocabularyService && uploadService && user) {
+        console.log('📝 [VOCABULARY] Page became visible, refreshing data...');
+        loadData();
+      }
+    };
+
+    const handleFocus = () => {
+      if (vocabularyService && uploadService && user) {
+        console.log('📝 [VOCABULARY] Window gained focus, refreshing data...');
+        loadData();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [vocabularyService, uploadService, user]);
+
   const loadData = async () => {
     if (!vocabularyService || !uploadService || !user) return;
 

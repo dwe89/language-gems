@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   BookOpen, GraduationCap, Target, ChevronRight,
-  Check, Search, Filter, Sparkles, Plus
+  Check, Search, Filter, Sparkles, Plus, AlertCircle, CheckCircle
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '../auth/AuthProvider';
@@ -14,7 +14,7 @@ import DatabaseCategorySelector from './DatabaseCategorySelector';
 import KS4ThemeUnitSelector from './KS4ThemeUnitSelector';
 
 interface CurriculumContentSelectorProps {
-  curriculumLevel: 'KS3' | 'KS4';
+  curriculumLevel: 'KS3' | 'KS4' | 'custom' | 'my-vocabulary';
   language: 'spanish' | 'french' | 'german';
   onConfigChange: (config: ContentConfig) => void;
   initialConfig?: ContentConfig;
@@ -57,20 +57,31 @@ export default function CurriculumContentSelector({
     initialConfig
   });
   const { canAccessFeature } = useUserAccess();
-  const [selectedType, setSelectedType] = useState<'KS3' | 'KS4' | 'custom' | 'my-vocabulary'>(curriculumLevel);
+  const [selectedType, setSelectedType] = useState<'KS3' | 'KS4' | 'custom' | 'my-vocabulary' | undefined>(initialConfig?.type);
   const [config, setConfig] = useState<ContentConfig>(
     initialConfig || {
-      type: curriculumLevel,
+      // Default config stays inert until a selection is made
+      type: 'KS3',
       language,
       categories: [],
       subcategories: []
     }
   );
 
+  // Keep selectedType in sync with incoming initialConfig.type (e.g., when parent persists selection)
+  useEffect(() => {
+    if (initialConfig?.type && initialConfig.type !== selectedType) {
+      setSelectedType(initialConfig.type);
+    }
+  }, [initialConfig?.type]);
+
   // Update config when type changes (but don't trigger infinite re-renders)
   useEffect(() => {
-    // Don't override config for 'my-vocabulary' type - it's handled by the button click
-    if (selectedType === 'my-vocabulary') {
+    // Wait until the user explicitly selects a type
+    if (!selectedType) return;
+
+    // Don't override config for 'my-vocabulary' or 'custom' types - they're handled by button clicks and user input
+    if (selectedType === 'my-vocabulary' || selectedType === 'custom') {
       return;
     }
 
@@ -161,6 +172,10 @@ export default function CurriculumContentSelector({
             <button
               type="button"
               onClick={() => {
+                console.log('🎯 [CURRICULUM SELECTOR] ===== CUSTOM BUTTON CLICKED =====');
+                console.log('🎯 [CURRICULUM SELECTOR] BEFORE - selectedType:', selectedType);
+                console.log('🎯 [CURRICULUM SELECTOR] BEFORE - config:', config);
+
                 setSelectedType('custom');
                 const newConfig: ContentConfig = {
                   type: 'custom',
@@ -168,8 +183,13 @@ export default function CurriculumContentSelector({
                   customCategories: [],
                   customSubcategories: []
                 };
+
+                console.log('🎯 [CURRICULUM SELECTOR] NEW config being set:', newConfig);
                 setConfig(newConfig);
+
+                console.log('🎯 [CURRICULUM SELECTOR] About to call onConfigChange with:', newConfig);
                 onConfigChange(newConfig);
+                console.log('🎯 [CURRICULUM SELECTOR] onConfigChange called - DONE');
               }}
               className={`p-4 rounded-xl text-center transition-all duration-200 ${
                 selectedType === 'custom'
@@ -345,7 +365,7 @@ export default function CurriculumContentSelector({
               </h5>
               <KS4ThemeUnitSelector
                 language={language === 'spanish' ? 'es' : language === 'french' ? 'fr' : 'de'}
-                examBoard={config.examBoard || 'AQA'}
+                examBoard={(config.examBoard === 'edexcel' ? 'Edexcel' : (config.examBoard || 'AQA')) as 'AQA' | 'Edexcel'}
                 selectedThemes={config.themes || []}
                 selectedUnits={config.units || []}
                 onChange={(themes, units) => {
@@ -378,25 +398,15 @@ export default function CurriculumContentSelector({
             </p>
 
             <div className="space-y-6">
-              {/* Custom Vocabulary */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Custom Vocabulary Words
-                </label>
-                <p className="text-xs text-gray-500 mb-3">
-                  Enter vocabulary words, one per line. Format: "word = translation" (e.g., "casa = house")
-                </p>
-                <textarea
-                  rows={6}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                  placeholder="casa = house&#10;perro = dog&#10;gato = cat&#10;escuela = school"
-                  onChange={(e) => {
-                    const newConfig = { ...config, customVocabulary: e.target.value };
-                    setConfig(newConfig);
-                    onConfigChange(newConfig);
-                  }}
-                />
-              </div>
+              {/* Custom Vocabulary with Format Selector */}
+              <CustomVocabularyInput
+                value={config.customVocabulary || ''}
+                onChange={(value) => {
+                  const newConfig = { ...config, customVocabulary: value };
+                  setConfig(newConfig);
+                  onConfigChange(newConfig);
+                }}
+              />
 
               {/* Custom Sentences */}
               <div>
@@ -678,6 +688,171 @@ function CustomVocabularySelector({
           Create New List
         </Link>
       </div>
+    </div>
+  );
+}
+
+// Custom Vocabulary Input Component
+// Custom Vocabulary Input Component
+function CustomVocabularyInput({
+  value,
+  onChange
+}: {
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const [parsedCount, setParsedCount] = useState(0);
+  const [parsedItems, setParsedItems] = useState<{ term: string; translation: string }[]>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  const parseVocabularyText = useCallback((text: string) => {
+    if (!text || text.trim() === '') {
+      return [];
+    }
+
+    return text
+      .split('\n')
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0)
+      .map((line) => {
+        // Look for common delimiters first
+        const delimiterMatch = line.match(/\s*(=|,|;|\||\t|:)\s*/);
+
+        if (delimiterMatch) {
+          const delimiter = delimiterMatch[1];
+          const parts = line.split(delimiter);
+          const term = (parts.shift() || '').trim();
+          const translation = parts.join(delimiter).trim();
+          return { term, translation };
+        }
+
+        // Handle " - " as a delimiter if present
+        if (line.includes(' - ')) {
+          const [term, ...rest] = line.split(' - ');
+          return {
+            term: term.trim(),
+            translation: rest.join(' - ').trim()
+          };
+        }
+
+        // Handle spacing copied from spreadsheets (two or more spaces)
+        const spaceSplit = line.split(/\s{2,}/);
+        if (spaceSplit.length > 1) {
+          const term = (spaceSplit.shift() || '').trim();
+          const translation = spaceSplit.join(' ').trim();
+          return { term, translation };
+        }
+
+        // Default: keep the term, leave translation blank
+        return { term: line, translation: '' };
+      })
+      .filter((item) => item.term !== '');
+  }, []);
+
+  const updateParsedItems = useCallback((text: string, showErrors = false) => {
+    if (!text || text.trim() === '') {
+      setParsedItems([]);
+      setParsedCount(0);
+      if (showErrors) {
+        setError(null);
+      }
+      return;
+    }
+
+    const items = parseVocabularyText(text);
+    setParsedItems(items);
+    setParsedCount(items.length);
+
+    if (showErrors) {
+      setError(
+        items.length === 0
+          ? 'We couldn\'t detect the format. Try adding a separator like "=", ",", ";", "|", or a tab between the word and its translation.'
+          : null
+      );
+    } else {
+      setError(null);
+    }
+  }, [parseVocabularyText]);
+
+  useEffect(() => {
+    updateParsedItems(value);
+  }, [value, updateParsedItems]);
+
+  const handleParseClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    updateParsedItems(value, true);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    onChange(e.target.value);
+  };
+
+  return (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-2">
+        Custom Vocabulary Words
+      </label>
+      <p className="text-xs text-gray-500 mb-3">
+        Copy and paste your vocabulary words
+      </p>
+
+      {/* Text Area */}
+      <textarea
+        rows={8}
+        value={value}
+        onChange={handleInputChange}
+        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 font-mono text-sm"
+        placeholder="casa = house&#10;perro, dog&#10;gato\tcat"
+      />
+
+      {/* Error Display */}
+      {error && (
+        <div className="mt-2 text-sm text-red-600">
+          {error}
+        </div>
+      )}
+
+      {/* Parse Button and Count */}
+      <div className="mt-3 flex items-center justify-between">
+        <button
+          type="button"
+          onClick={handleParseClick}
+          className="px-4 py-2 bg-orange-100 text-orange-700 border border-orange-300 rounded-lg hover:bg-orange-200 text-sm font-medium"
+        >
+          Parse Vocabulary
+        </button>
+        {parsedCount > 0 && (
+          <span className="text-sm text-gray-600">
+            {parsedCount} items parsed
+          </span>
+        )}
+      </div>
+
+      {/* Parsed Items Display */}
+      {parsedItems.length > 0 && (
+        <div className="mt-4">
+          <h5 className="text-sm font-medium text-gray-700 mb-2">Parsed Vocabulary:</h5>
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 max-h-40 overflow-y-auto">
+            <div className="space-y-1">
+              {parsedItems.map((item, index) => (
+                <div key={index} className="flex justify-between text-sm gap-3">
+                  <span className="font-medium text-gray-900 truncate">{item.term}</span>
+                  <span className="text-gray-600 text-right truncate">
+                    {item.translation ? `= ${item.translation}` : '—'}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {parsedItems.length === 0 && value.trim() !== '' && !error && (
+        <div className="mt-4 text-sm text-gray-500">
+          We\'ll save your text exactly as typed if no separator is detected.
+        </div>
+      )}
     </div>
   );
 }

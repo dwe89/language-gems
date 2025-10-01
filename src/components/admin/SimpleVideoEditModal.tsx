@@ -18,7 +18,7 @@ interface YouTubeVideo {
   youtube_id: string;
   language: string;
   level: string;
-  theme: string;
+  theme?: string;
   topic?: string; // Renamed from category to match database
   subtopic?: string; // Renamed from subcategory to match database
   description?: string;

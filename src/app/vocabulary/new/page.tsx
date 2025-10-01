@@ -12,7 +12,9 @@ export default function NewVocabularyPage() {
   const [uploadMethod, setUploadMethod] = useState<'manual' | 'ai'>('ai');
 
   const handleSuccess = () => {
+    console.log('✅ [VOCABULARY] Vocabulary saved successfully, redirecting and refreshing...');
     router.push('/dashboard/vocabulary');
+    router.refresh(); // Force refresh the page to show new data
   };
 
   const handleClose = () => {

@@ -35,6 +35,7 @@ import { GRAMMAR_CATEGORIES } from '@/lib/grammar-categories';
 import VideoForm from '@/components/admin/VideoForm';
 import SimpleVideoEditModal from '@/components/admin/SimpleVideoEditModal';
 import BulkVideoImport from '@/components/admin/BulkVideoImport';
+import VideoContentManagerModal from '@/components/admin/VideoContentManagerModal';
 import Link from 'next/link';
 
 interface YouTubeVideo {
@@ -80,7 +81,9 @@ export default function VideoManagementPage() {
   const [selectedVideo, setSelectedVideo] = useState<YouTubeVideo | null>(null);
   const [editingVideo, setEditingVideo] = useState<YouTubeVideo | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
-  
+  const [showContentModal, setShowContentModal] = useState(false);
+  const [contentModalVideo, setContentModalVideo] = useState<YouTubeVideo | null>(null);
+
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
   const [languageFilter, setLanguageFilter] = useState('all');
@@ -144,12 +147,12 @@ export default function VideoManagementPage() {
       data.forEach(video => {
         // Language stats
         stats.byLanguage[video.language] = (stats.byLanguage[video.language] || 0) + 1;
-        
+
         // Theme stats
         if (video.theme) {
           stats.byTheme[video.theme] = (stats.byTheme[video.theme] || 0) + 1;
         }
-        
+
         // Level stats
         if (video.level) {
           stats.byLevel[video.level] = (stats.byLevel[video.level] || 0) + 1;
@@ -185,7 +188,7 @@ export default function VideoManagementPage() {
     }
 
     if (statusFilter !== 'all') {
-      filtered = filtered.filter(video => 
+      filtered = filtered.filter(video =>
         statusFilter === 'active' ? video.is_active : !video.is_active
       );
     }
@@ -274,6 +277,21 @@ export default function VideoManagementPage() {
     setEditingVideo(null);
   };
 
+  const openContentModal = (video: YouTubeVideo) => {
+    setContentModalVideo(video);
+    setShowContentModal(true);
+  };
+
+  const closeContentModal = () => {
+    setShowContentModal(false);
+    setContentModalVideo(null);
+  };
+
+  const handleContentUpdated = () => {
+    fetchVideos();
+    fetchStats();
+  };
+
   const handleSaveVideo = () => {
     console.log('Video saved, refreshing list');
     fetchVideos(); // Refresh the video list
@@ -303,10 +321,10 @@ export default function VideoManagementPage() {
         .limit(5);
 
       console.log('Database test result:', { data, error });
-      alert(`Database test: ${error ? `Error: ${error.message}` : `Success: Found ${data?.length || 0} videos`}`);
+      alert('Database test: ' + (error ? `Error: ${error.message}` : `Success: Found ${data?.length || 0} videos`));
     } catch (error) {
       console.error('Database test failed:', error);
-      alert(`Database test failed: ${error}`);
+      alert('Database test failed: ' + error);
     }
   };
 
@@ -366,14 +384,14 @@ export default function VideoManagementPage() {
       {/* Navigation Tabs */}
       <Tabs value={currentView} onValueChange={(value) => setCurrentView(value as any)} className="mb-6">
         <TabsList className="grid w-full grid-cols-5 bg-white border border-gray-200 rounded-xl p-1 shadow-sm">
-          <TabsTrigger 
+          <TabsTrigger
             value="list"
             className="flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all data-[state=active]:bg-blue-500 data-[state=active]:text-white data-[state=active]:shadow-md hover:bg-gray-50"
           >
             <Play className="w-4 h-4" />
             Videos
           </TabsTrigger>
-          <TabsTrigger 
+          <TabsTrigger
             value="add"
             className="flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all data-[state=active]:bg-green-500 data-[state=active]:text-white data-[state=active]:shadow-md hover:bg-gray-50"
           >
@@ -396,12 +414,11 @@ export default function VideoManagementPage() {
             Statistics
           </TabsTrigger>
         </TabsList>
-      </Tabs>
+
 
       {/* Content */}
-      <div className="min-h-[400px]">
-          {currentView === 'list' && (
-            <div className="space-y-6">
+      <TabsContent value="list" className="mt-0 min-h-[400px]">
+        <div className="space-y-6">
               {/* Filters */}
               <Card>
                 <CardContent className="p-6">
@@ -590,6 +607,15 @@ export default function VideoManagementPage() {
                                   <ExternalLink className="w-4 h-4" />
                                 </Link>
                                 <Button
+                                  onClick={() => openContentModal(video)}
+                                  variant="outline"
+                                  size="sm"
+                                  className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                                >
+                                  <BookOpen className="w-4 h-4 mr-1" />
+                                  Manage Content
+                                </Button>
+                                <Button
                                   onClick={() => handleEditVideo(video)}
                                   variant="outline"
                                   size="sm"
@@ -634,49 +660,56 @@ export default function VideoManagementPage() {
                   )}
                 </div>
               )}
-            </div>
-          )}
+        </div>
+      </TabsContent>
 
-          {currentView === 'add' && (
-            <VideoForm
-              onSave={() => {
-                fetchVideos();
-                fetchStats();
-                setCurrentView('list');
-              }}
-              onCancel={() => setCurrentView('list')}
-            />
-          )}
+      <TabsContent value="add" className="mt-0 min-h-[400px]">
+        <VideoForm
+          onSave={() => {
+            fetchVideos();
+            fetchStats();
+            setCurrentView('list');
+          }}
+          onCancel={() => setCurrentView('list')}
+        />
+      </TabsContent>
 
-          {currentView === 'bulk' && (
-            <BulkVideoImport
-              onComplete={() => {
-                fetchVideos();
-                fetchStats();
-                setCurrentView('list');
-              }}
-              onCancel={() => setCurrentView('list')}
-            />
-          )}
+      <TabsContent value="bulk" className="mt-0 min-h-[400px]">
+        <BulkVideoImport
+          onComplete={() => {
+            fetchVideos();
+            fetchStats();
+            setCurrentView('list');
+          }}
+          onCancel={() => setCurrentView('list')}
+        />
+      </TabsContent>
 
-          {currentView === 'edit' && selectedVideo && (
-            <VideoForm
-              video={selectedVideo}
-              onSave={() => {
-                fetchVideos();
-                fetchStats();
-                setCurrentView('list');
-                setSelectedVideo(null);
-              }}
-              onCancel={() => {
-                setCurrentView('list');
-                setSelectedVideo(null);
-              }}
-            />
-          )}
+      <TabsContent value="edit" className="mt-0 min-h-[400px]">
+        {selectedVideo ? (
+          <VideoForm
+            video={selectedVideo}
+            onSave={() => {
+              fetchVideos();
+              fetchStats();
+              setCurrentView('list');
+              setSelectedVideo(null);
+            }}
+            onCancel={() => {
+              setCurrentView('list');
+              setSelectedVideo(null);
+            }}
+          />
+        ) : (
+          <div className="flex h-full items-center justify-center rounded-lg border border-dashed border-slate-200 bg-slate-50/60 p-12 text-center text-slate-500">
+            Select a video from the list to edit its details.
+          </div>
+        )}
+      </TabsContent>
 
-          {currentView === 'stats' && stats && (
-            <div className="space-y-6">
+      <TabsContent value="stats" className="mt-0 min-h-[400px]">
+        {stats && (
+        <div className="space-y-6">
               {/* Overview Stats */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <Card>
@@ -775,9 +808,10 @@ export default function VideoManagementPage() {
                   </CardContent>
                 </Card>
               </div>
-            </div>
-          )}
-      </div>
+        </div>
+        )}
+      </TabsContent>
+      </Tabs>
 
       {/* Simple Edit Modal */}
       <SimpleVideoEditModal
@@ -785,6 +819,13 @@ export default function VideoManagementPage() {
         isOpen={showEditModal}
         onClose={handleCloseEditModal}
         onSave={handleSaveVideo}
+      />
+
+      <VideoContentManagerModal
+        video={contentModalVideo}
+        isOpen={showContentModal}
+        onClose={closeContentModal}
+        onContentUpdated={handleContentUpdated}
       />
     </div>
   );

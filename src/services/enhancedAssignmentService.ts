@@ -209,7 +209,88 @@ export class EnhancedAssignmentService {
     if (vocabularyConfig && vocabularyConfig.source && vocabularyConfig.source !== '' && !isGrammarAssignment) {
       console.log('📝 [ASSIGNMENT SERVICE] Processing vocabulary config:', vocabularyConfig);
       try {
-        if (vocabularyConfig.source === 'custom' && vocabularyConfig.customListId) {
+        if (vocabularyConfig.source === 'create') {
+          const customText = (vocabularyConfig.customVocabulary || '').trim();
+          if (!customText) {
+            console.error('❌ [ASSIGNMENT SERVICE] Custom vocabulary selected but no text provided. Aborting instead of falling back.');
+            throw new Error('You selected Custom vocabulary, but no words were entered. Please paste your words in the box.');
+          }
+          console.log('📝 [ASSIGNMENT SERVICE] Using MANUAL custom vocabulary entry');
+          // Handle manual custom vocabulary entry (parse and store)
+          const parsedVocabulary = this.parseCustomVocabulary(customText);
+          console.log('📝 [ASSIGNMENT SERVICE] Parsed vocabulary:', parsedVocabulary.length, 'items');
+
+          if (parsedVocabulary.length > 0) {
+            // Create vocabulary assignment list
+            const { data: newVocabList, error: vocabListError } = await this.supabase
+              .from('vocabulary_assignment_lists')
+              .insert([{
+                name: `${assignmentData.title} - Manual Vocabulary`,
+                description: `Custom vocabulary manually entered for ${assignmentData.title}`,
+                teacher_id: teacherId,
+                theme: null,
+                topic: null,
+                difficulty_level: 'intermediate',
+                word_count: parsedVocabulary.length,
+                vocabulary_items: [],
+                is_public: false
+              }])
+              .select()
+              .single();
+
+            if (vocabListError) {
+              console.error('Vocabulary list creation error:', vocabListError);
+            } else {
+              vocabularyListId = newVocabList.id;
+              vocabularyCount = parsedVocabulary.length;
+              vocabularySelectionType = 'custom_list';
+              vocabularyCriteria = {
+                type: 'manual_entry',
+                wordCount: parsedVocabulary.length
+              };
+
+              // First, insert the parsed vocabulary into centralized_vocabulary as temporary entries
+              const centralizedVocabEntries = parsedVocabulary.map((item: any) => ({
+                word: item.term,
+                translation: item.translation,
+                language: vocabularyConfig.language || 'es',
+                category: 'custom_manual',
+                subcategory: `manual_${Date.now()}`,
+                part_of_speech: 'manual_entry',
+                curriculum_level: 'KS3'
+              }));
+
+              const { data: insertedVocab, error: vocabInsertError } = await this.supabase
+                .from('centralized_vocabulary')
+                .insert(centralizedVocabEntries)
+                .select('id');
+
+              if (vocabInsertError) {
+                console.error('Error inserting manual vocabulary:', vocabInsertError);
+              } else if (insertedVocab && insertedVocab.length > 0) {
+                console.log(`✅ Created ${insertedVocab.length} centralized vocabulary entries for manual words`);
+                
+                // Now create assignment items referencing the centralized vocabulary
+                const assignmentItems = insertedVocab.map((vocabItem: any, index: number) => ({
+                  assignment_list_id: vocabularyListId,
+                  centralized_vocabulary_id: vocabItem.id,
+                  order_position: index + 1,
+                  is_required: true
+                }));
+
+                const { error: itemsError } = await this.supabase
+                  .from('vocabulary_assignment_items')
+                  .insert(assignmentItems);
+
+                if (itemsError) {
+                  console.error('Error creating manual vocabulary assignment items:', itemsError);
+                } else {
+                  console.log(`✅ Successfully created ${assignmentItems.length} manual vocabulary assignment items`);
+                }
+              }
+            }
+          }
+        } else if (vocabularyConfig.source === 'custom' && vocabularyConfig.customListId) {
           console.log('📝 [ASSIGNMENT SERVICE] Using custom vocabulary path with listId:', vocabularyConfig.customListId);
           // Handle custom vocabulary list from enhanced vocabulary system
           const { data: customList, error: customListError } = await this.supabase
@@ -335,6 +416,10 @@ export class EnhancedAssignmentService {
     // console.log('📝 [ASSIGNMENT SERVICE] About to create assignment with vocabulary_selection_type:', vocabularySelectionType);
 
     // Create the assignment
+    // IMPORTANT: vocabulary_selection_type cannot be null due to database constraint
+    // For grammar-only assignments, we still need a valid value
+    const finalVocabularySelectionType = isGrammarAssignment ? 'custom_list' : vocabularySelectionType;
+
     const { data: assignment, error: assignmentError } = await this.supabase
       .from('assignments')
       .insert({
@@ -343,9 +428,9 @@ export class EnhancedAssignmentService {
         game_type: assignmentData.game_type,
         class_id: assignmentData.class_id,
         due_date: assignmentData.due_date ? new Date(assignmentData.due_date).toISOString() : null,
-        vocabulary_assignment_list_id: isGrammarAssignment ? null : vocabularyListId,
-        vocabulary_selection_type: isGrammarAssignment ? null : vocabularySelectionType,
-        vocabulary_criteria: isGrammarAssignment ? null : vocabularyCriteria,
+        vocabulary_assignment_list_id: vocabularyListId || null,
+        vocabulary_selection_type: finalVocabularySelectionType, // Never null
+        vocabulary_criteria: isGrammarAssignment ? {} : vocabularyCriteria,
         vocabulary_count: isGrammarAssignment ? 0 : vocabularyCount,
         created_by: teacherId,
         game_config: assignmentData.config,
@@ -466,13 +551,14 @@ export class EnhancedAssignmentService {
       });
 
       return {
-        type: 'multiple_subcategory_based', // New type for multiple subcategories
+        type: 'subcategory_based', // Use valid constraint value (multiple subcategories stored in array)
         categories: vocabularyConfig.categories || [], // Array of categories
         subcategories: vocabularyConfig.subcategories, // Array of subcategories
         language: vocabularyConfig.language || 'es',
         wordCount: vocabularyConfig.wordCount || 20, // Default 20 for multiple subcategories
         difficulty: vocabularyConfig.difficulty || 'intermediate',
-        curriculumLevel: vocabularyConfig.curriculumLevel || 'KS3'
+        curriculumLevel: vocabularyConfig.curriculumLevel || 'KS3',
+        isMultiple: true // Flag to indicate multiple subcategories
       };
     }
 
@@ -487,12 +573,13 @@ export class EnhancedAssignmentService {
       });
 
       return {
-        type: 'multiple_category_based', // New type for multiple categories
+        type: 'category_based', // Use valid constraint value (multiple categories stored in array)
         categories: vocabularyConfig.categories, // Array of categories
         language: vocabularyConfig.language || 'es',
         wordCount: vocabularyConfig.wordCount || 20, // Default 20 for multiple categories
         difficulty: vocabularyConfig.difficulty || 'intermediate',
-        curriculumLevel: vocabularyConfig.curriculumLevel || 'KS3'
+        curriculumLevel: vocabularyConfig.curriculumLevel || 'KS3',
+        isMultiple: true // Flag to indicate multiple categories
       };
     }
 
@@ -610,6 +697,54 @@ export class EnhancedAssignmentService {
       language: vocabularyConfig.language || 'es',
       wordCount: vocabularyConfig.wordCount || 10
     };
+  }
+
+  /**
+   * Parse custom vocabulary text into structured items
+   * Uses the same parsing logic as the frontend component
+   */
+  private parseCustomVocabulary(text: string): Array<{ term: string; translation: string }> {
+    if (!text || text.trim() === '') {
+      return [];
+    }
+
+    return text
+      .split('\n')
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0)
+      .map((line) => {
+        // Look for common delimiters first
+        const delimiterMatch = line.match(/\s*(=|,|;|\||\t|:)\s*/);
+
+        if (delimiterMatch) {
+          const delimiter = delimiterMatch[1];
+          const parts = line.split(delimiter);
+          const term = (parts.shift() || '').trim();
+          const translation = parts.join(delimiter).trim();
+          return { term, translation };
+        }
+
+        // Handle " - " as a delimiter if present
+        if (line.includes(' - ')) {
+          const [term, ...rest] = line.split(' - ');
+          return {
+            term: term.trim(),
+            translation: rest.join(' - ').trim()
+          };
+        }
+
+        // Handle spacing copied from spreadsheets (two or more spaces)
+        const spaceSplit = line.split(/\s{2,}/);
+        if (spaceSplit.length > 1) {
+          const term = (spaceSplit.shift() || '').trim();
+          const translation = spaceSplit.join(' ').trim();
+          return { term, translation };
+        }
+
+        // Default: keep the term, leave translation blank
+        return { term: line, translation: '' };
+      })
+      .filter((item) => item.term !== '');
   }
 
   private mapSubcategoryToCategory(subcategory: string): string {

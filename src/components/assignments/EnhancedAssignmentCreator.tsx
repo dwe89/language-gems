@@ -15,6 +15,7 @@ import MultiGameSelector from './MultiGameSelector';
 import SmartAssignmentConfig from './SmartAssignmentConfig';
 import DatabaseCategorySelector from './DatabaseCategorySelector';
 import CurriculumContentSelector from './CurriculumContentSelector';
+import VocabularyPreviewSection from './VocabularyPreviewSection';
 
 // Import step components
 import AssignmentDetailsStep from './steps/AssignmentDetailsStep';
@@ -45,6 +46,7 @@ interface VocabularyConfig {
   topic?: string;
   customListId?: string;
   customList?: any;
+  customVocabulary?: string; // Inline custom vocabulary (manual entry)
   wordCount?: number;
   difficulty?: string;
   curriculumLevel?: 'KS3' | 'KS4'; // Added this as per your usage
@@ -525,8 +527,18 @@ export default function EnhancedAssignmentCreator({
   const needsSentences = gameConfig.selectedGames.some(gameId => ['speed-builder', 'case-file-translator', 'lava-temple-word-restore', 'sentence-towers'].includes(gameId));
   const needsGrammar = gameConfig.selectedGames.some(gameId => ['conjugation-duel'].includes(gameId));
 
+        // Vocabulary completeness: require additional fields when using custom sources
+        const vocabSource = gameConfig.vocabularyConfig.source;
+        const isVocabComplete = !needsVocabulary || (
+          vocabSource === 'create'
+            ? !!gameConfig.vocabularyConfig.customVocabulary && gameConfig.vocabularyConfig.customVocabulary.trim().length > 0
+            : vocabSource === 'custom'
+              ? !!gameConfig.vocabularyConfig.customListId && gameConfig.vocabularyConfig.customListId !== ''
+              : !!vocabSource
+        );
+
         const gamesContentComplete =
-          (!needsVocabulary || !!gameConfig.vocabularyConfig.source) &&
+          isVocabComplete &&
           (!needsSentences || !!gameConfig.sentenceConfig.source) &&
           (!needsGrammar || (gameConfig.grammarConfig.verbTypes.length > 0 && gameConfig.grammarConfig.tenses.length > 0 && gameConfig.grammarConfig.persons.length > 0));
 
@@ -654,6 +666,9 @@ export default function EnhancedAssignmentCreator({
         skillsConfig: skillsConfig.selectedSkills.length > 0 ? skillsConfig : undefined, // Only include if skills are selected
         // Add any other global assignment configs here
       };
+
+      console.log('🎯 [UI] Final gameConfig before assignment creation:', gameConfig);
+      console.log('🎯 [UI] vocabularyConfig in gameConfig:', gameConfig.vocabularyConfig);
 
       const finalAssignmentData: AssignmentCreationData = {
         title: assignmentDetails.title!,
@@ -1362,7 +1377,15 @@ export default function EnhancedAssignmentCreator({
 
                   <div className="bg-white rounded-xl p-4 border border-amber-200">
                     <div className="text-sm font-medium text-amber-900 mb-2">📊 Assignment Preview</div>
-                    {gameConfig.vocabularyConfig.subcategories?.length > 0 ? (
+                    {gameConfig.vocabularyConfig.source === 'custom' && gameConfig.vocabularyConfig.customListId ? (
+                      <div className="space-y-1 text-sm text-gray-700">
+                        <p>✅ Custom vocabulary list: <strong>{gameConfig.vocabularyConfig.customList?.name || 'Selected'}</strong></p>
+                        <p>📝 <strong>{gameConfig.vocabularyConfig.wordCount || 20}</strong> words will be used from your list</p>
+                        <p className="text-xs text-gray-500 mt-2">
+                          Using your custom vocabulary from "My Lists"
+                        </p>
+                      </div>
+                    ) : gameConfig.vocabularyConfig.subcategories?.length > 0 ? (
                       <div className="space-y-1 text-sm text-gray-700">
                         <p>✅ <strong>{gameConfig.vocabularyConfig.subcategories.length}</strong> subcategories selected</p>
                         <p>📝 <strong>{gameConfig.vocabularyConfig.wordCount || 20}</strong> words will be randomly sampled</p>
@@ -1377,7 +1400,7 @@ export default function EnhancedAssignmentCreator({
                         <p>📝 <strong>{gameConfig.vocabularyConfig.wordCount || 20}</strong> words will be randomly sampled</p>
                       </div>
                     ) : (
-                      <p className="text-sm text-gray-500">Select categories/subcategories below to see preview</p>
+                      <p className="text-sm text-gray-500">Select content source below to see preview</p>
                     )}
                   </div>
                 </div>
@@ -1385,7 +1408,7 @@ export default function EnhancedAssignmentCreator({
             )}
 
             <CurriculumContentSelector
-              curriculumLevel={assignmentDetails.curriculum_level || 'KS3'}
+              curriculumLevel={(contentConfig.type === 'custom') ? contentConfig.type : (assignmentDetails.curriculum_level || 'KS3')}
               language={gameConfig.vocabularyConfig?.language as 'spanish' | 'french' | 'german' || 'spanish'}
               onConfigChange={(config) => {
                 console.log('🎯 [UI] ===== CALLBACK STARTED =====');
@@ -1425,8 +1448,10 @@ export default function EnhancedAssignmentCreator({
                 if (gameConfig.selectedGames.length > 0) {
                   let vocabularyConfig;
 
-                  console.log('🎯 [UI] Content config type:', config.type, 'customListId:', config.customListId);
+                  console.log('🎯 [UI] Content config FULL:', JSON.stringify(config, null, 2));
+                  console.log('🎯 [UI] Content config type:', config.type, 'customListId:', config.customListId, 'customVocabulary:', config.customVocabulary?.substring(0, 50));
                   console.log('🎯 [UI] Checking config.type === "my-vocabulary":', config.type === 'my-vocabulary');
+                  console.log('🎯 [UI] Checking config.type === "custom":', config.type === 'custom');
                   console.log('🎯 [UI] config.type exact value and type:', JSON.stringify(config.type), typeof config.type);
 
                   if (config.type === 'my-vocabulary') {
@@ -1442,11 +1467,14 @@ export default function EnhancedAssignmentCreator({
                   } else if (config.type === 'custom') {
                     // Handle manual custom entry
                     vocabularyConfig = {
-                      ...gameConfig.vocabularyConfig,
                       source: 'create' as const,
                       curriculumLevel: 'KS3' as const,
-                      customVocabulary: config.customVocabulary
+                      customVocabulary: config.customVocabulary,
+                      wordCount: gameConfig.vocabularyConfig.wordCount || 10,
+                      difficulty: gameConfig.vocabularyConfig.difficulty || 'intermediate',
+                      language: gameConfig.vocabularyConfig.language || 'es'
                     };
+                    console.log('🎯 [UI] Created MANUAL custom vocabulary config:', vocabularyConfig);
                   } else {
                     // Handle KS3/KS4 curriculum content
                     vocabularyConfig = {
@@ -1481,6 +1509,25 @@ export default function EnhancedAssignmentCreator({
               }}
               initialConfig={contentConfig}
             />
+
+            {/* Vocabulary Preview Section */}
+            {gameConfig.selectedGames.length > 0 && gameConfig.vocabularyConfig.source && gameConfig.vocabularyConfig.source !== '' && (
+              <VocabularyPreviewSection
+                vocabularyConfig={gameConfig.vocabularyConfig}
+                onVocabularyChange={(selectedItems, wordCount) => {
+                  console.log('📝 [PREVIEW] Vocabulary selection changed:', { selectedItems: selectedItems.length, wordCount });
+                  setGameConfig(prev => ({
+                    ...prev,
+                    vocabularyConfig: {
+                      ...prev.vocabularyConfig,
+                      wordCount: wordCount,
+                      selectedVocabularyIds: selectedItems.map(item => item.id)
+                    }
+                  }));
+                }}
+                maxWords={100}
+              />
+            )}
           </div>
         </div>
       )}

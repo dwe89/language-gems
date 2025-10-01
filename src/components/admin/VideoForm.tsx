@@ -18,7 +18,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { supabase } from '@/lib/supabase';
+import { supabaseBrowser } from '@/components/auth/AuthProvider';
 import { VOCABULARY_CATEGORIES } from '@/components/games/ModernCategorySelector';
 import { GRAMMAR_CATEGORIES } from '@/lib/grammar-categories';
 
@@ -45,20 +45,23 @@ interface VideoFormProps {
   onCancel: () => void;
 }
 
+const createEmptyFormState = (): YouTubeVideo => ({
+  title: '',
+  youtube_id: '',
+  language: 'es',
+  level: 'beginner',
+  theme: '',
+  topic: '',
+  subtopic: '',
+  description: '',
+  thumbnail_url: '',
+  vocabulary_count: 0,
+  is_featured: false,
+  is_active: true
+});
+
 export default function VideoForm({ video, onSave, onCancel }: VideoFormProps) {
-  const [formData, setFormData] = useState<YouTubeVideo>({
-    title: '',
-    youtube_id: '',
-    language: 'es',
-    level: 'beginner',
-    theme: '',
-    topic: '',
-    subtopic: '',
-    description: '',
-    vocabulary_count: 0,
-    is_featured: false,
-    is_active: true
-  });
+  const [formData, setFormData] = useState<YouTubeVideo>(createEmptyFormState);
   
   const [loading, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -75,10 +78,14 @@ export default function VideoForm({ video, onSave, onCancel }: VideoFormProps) {
         topic: video.topic || '',
         subtopic: video.subtopic || '',
         description: video.description || '',
+        thumbnail_url: video.thumbnail_url || '',
+        duration_seconds: video.duration_seconds,
         vocabulary_count: video.vocabulary_count || 0,
         is_featured: video.is_featured || false,
         is_active: video.is_active !== undefined ? video.is_active : true
       });
+    } else {
+      setFormData(createEmptyFormState());
     }
   }, [video]);
 
@@ -161,13 +168,14 @@ export default function VideoForm({ video, onSave, onCancel }: VideoFormProps) {
         topic: formData.topic || null,
         subtopic: formData.subtopic || null,
         description: formData.description || null,
+        thumbnail_url: formData.thumbnail_url || null,
         vocabulary_count: formData.vocabulary_count || 0,
         updated_at: new Date().toISOString()
       };
 
       if (video?.id) {
         // Update existing video
-        const { error } = await supabase
+        const { error } = await supabaseBrowser
           .from('youtube_videos')
           .update(videoData)
           .eq('id', video.id);
@@ -176,12 +184,13 @@ export default function VideoForm({ video, onSave, onCancel }: VideoFormProps) {
         setSuccess('Video updated successfully!');
       } else {
         // Create new video
-        const { error } = await supabase
+        const { error } = await supabaseBrowser
           .from('youtube_videos')
           .insert([videoData]);
 
         if (error) throw error;
         setSuccess('Video added successfully!');
+        setFormData(createEmptyFormState());
       }
 
       // Call onSave immediately to refresh the list
@@ -195,7 +204,7 @@ export default function VideoForm({ video, onSave, onCancel }: VideoFormProps) {
   };
 
   return (
-    <div className="max-w-4xl mx-auto" key={video?.id || 'new'}>
+    <div className="max-w-4xl mx-auto">
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">

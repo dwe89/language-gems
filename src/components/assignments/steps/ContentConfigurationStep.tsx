@@ -496,7 +496,11 @@ export default function ContentConfigurationStep({
               </div>
 
               <CurriculumContentSelector
-                curriculumLevel={assignmentDetails?.curriculum_level || 'KS3'}
+                curriculumLevel={
+                  contentConfig.type === 'custom' || contentConfig.type === 'my-vocabulary'
+                    ? contentConfig.type
+                    : (assignmentDetails?.curriculum_level || 'KS3')
+                }
                 language={contentConfig.language}
                 onConfigChange={(config) => {
                   console.log('🎯 [CONTENT CONFIG STEP] Config received:', config);
@@ -512,13 +516,23 @@ export default function ContentConfigurationStep({
                       // @ts-ignore - Temporarily disable TypeScript checking
                       if (config.type === 'my-vocabulary') {
                         // Custom vocabulary from user's lists
-                        console.log('🎯 [CONTENT CONFIG STEP] Setting up CUSTOM vocabulary config');
+                        console.log('🎯 [CONTENT CONFIG STEP] Setting up CUSTOM vocabulary config (from lists)');
                         vocabularyConfig = {
                           ...prev.vocabularyConfig,
                           source: 'custom' as const,
                           customListId: config.customListId,
                           customList: { name: config.customListName },
                           curriculumLevel: 'KS3' as const, // Default for custom lists
+                          language: config.language === 'spanish' ? 'es' : config.language === 'french' ? 'fr' : 'de',
+                        };
+                      } else if (config.type === 'custom') {
+                        // Custom vocabulary created inline
+                        console.log('🎯 [CONTENT CONFIG STEP] Setting up CREATE vocabulary config (inline custom)');
+                        vocabularyConfig = {
+                          ...prev.vocabularyConfig,
+                          source: 'create' as const,
+                          customVocabulary: config.customVocabulary,
+                          curriculumLevel: 'KS3' as const, // Default for custom vocabulary
                           language: config.language === 'spanish' ? 'es' : config.language === 'french' ? 'fr' : 'de',
                         };
                       } else {
