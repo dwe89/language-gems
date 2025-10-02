@@ -1,12 +1,12 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+
 import { ArrowLeft, Clock, Users, Target } from 'lucide-react';
 import { useAuth } from '../../auth/AuthProvider';
 import { createBrowserClient } from '../../../lib/supabase-client';
 import { useGlobalAudioContext } from '../../../hooks/useGlobalAudioContext';
-import { createAudio, getAudioUrl } from '../../../utils/audioUtils';
+
 import { EnhancedGameSessionService } from '../../../services/rewards/EnhancedGameSessionService';
 import UniversalThemeSelector from '../UniversalThemeSelector';
 // RewardEngine removed - games should handle individual vocabulary interactions
@@ -234,7 +234,7 @@ export const useAssignmentVocabulary = (assignmentId: string, gameId?: string) =
         console.log('🔐 [AUTH] Authentication status [DEBUG-v2]:', {
           hasSession: !!session,
           userId: session?.user?.id,
-          authError: authError?.message,
+          authError: (authError as any)?.message ?? String(authError ?? ''),
           timestamp: new Date().toISOString()
         });
 
@@ -392,7 +392,7 @@ export const useAssignmentVocabulary = (assignmentId: string, gameId?: string) =
 
             // Try multiple query approaches to debug the issue
             const sourceListId = assignmentListData[0].source_list_id;
-            
+
             console.log('📋 [ENHANCED-QUERY] Debug query details:', {
               sourceListId: sourceListId,
               sourceListIdType: typeof sourceListId,
@@ -784,7 +784,7 @@ export const useAssignmentVocabulary = (assignmentId: string, gameId?: string) =
               }));
             } else {
               console.log('⚠️ [KS3] No vocabulary found with current subcategory, trying category-only fallback...');
-              
+
               // Try fallback without subcategory
               let fallbackQuery = supabase
                 .from('centralized_vocabulary')
@@ -811,8 +811,8 @@ export const useAssignmentVocabulary = (assignmentId: string, gameId?: string) =
               fallbackQuery = fallbackQuery.or('curriculum_level.eq.KS3,curriculum_level.is.null')
                                          .limit(vocabConfig.wordCount || 10);
 
-              const { data: categoryFallback, error: categoryFallbackError } = await fallbackQuery;
-              
+              const { data: categoryFallback } = await fallbackQuery;
+
               if (categoryFallback && categoryFallback.length > 0) {
                 console.log(`✅ [KS3 CATEGORY FALLBACK] Using ${categoryFallback.length} vocabulary items from category`);
                 vocabularyData = categoryFallback.map((item, index) => ({
@@ -1090,10 +1090,198 @@ export default function GameAssignmentWrapper({
   });
 
   const { user } = useAuth();
-  const router = useRouter();
+
   const supabase = createBrowserClient();
 
   const { assignment, vocabulary, sentences, loading, error } = useAssignmentVocabulary(assignmentId, gameId);
+
+  // Progressive Coverage feature flag and ratios
+  const FEATURE_PROGRESSIVE_COVERAGE = true;
+  const SESSION_SIZE_DEFAULT = 10;
+  const NEW_RATIO = 0.7; // 70% new, 30% review
+
+  // Session-scoped vocabulary (after runtime selection)
+  const [sessionVocabulary, setSessionVocabulary] = useState<StandardVocabularyItem[]>([]);
+
+  // Build per-session vocabulary selection using assignment_vocabulary_progress
+  useEffect(() => {
+    const runSelector = async () => {
+      try {
+        // Only apply to vocabulary practice games; skip grammar or if feature is off
+        if (!FEATURE_PROGRESSIVE_COVERAGE || !assignmentId || !gameId) {
+          setSessionVocabulary(vocabulary);
+          return;
+        }
+        const practiceGames = new Set(['memory-game','hangman','word-blast','noughts-and-crosses','word-scramble','vocab-blast','detective-listening','vocab-master','word-towers']);
+        if (!practiceGames.has(gameId)) {
+          setSessionVocabulary(vocabulary);
+          return;
+        }
+        const activeStudentId = studentId || user?.id;
+        if (!activeStudentId || vocabulary.length === 0) {
+          setSessionVocabulary(vocabulary);
+          return;
+        }
+
+        // Load per-student exposure
+        const { data: progressRows, error: progressErr } = await supabase
+          .from('assignment_vocabulary_progress')
+          .select('vocab_id, seen_count, correct_count, incorrect_count, last_seen_at')
+          .eq('assignment_id', assignmentId)
+          .eq('student_id', activeStudentId);
+        if (progressErr) {
+          console.warn('assignment_vocabulary_progress query error:', progressErr);
+        }
+        const pmap = new Map<string, any>((progressRows || []).map(r => [r.vocab_id, r]));
+
+        // Phase 2 enhancements
+        const NO_REPEAT_K = 3;
+        const idToItem = new Map<string, StandardVocabularyItem>(vocabulary.map(v => [v.id, v]));
+
+        // Pinned words
+        const { data: pinnedRows } = await supabase
+          .from('assignment_pinned_words')
+          .select('vocab_id')
+          .eq('assignment_id', assignmentId);
+        const pinnedIds = new Set<string>((pinnedRows || []).map(r => r.vocab_id));
+
+        // Recent sessions (no repeats within last K sessions)
+        const { data: recentSessions } = await supabase
+          .from('assignment_session_history')
+          .select('vocab_ids, meta')
+          .eq('assignment_id', assignmentId)
+          .eq('student_id', activeStudentId)
+          .eq('game_id', gameId)
+          .order('created_at', { ascending: false })
+          .limit(NO_REPEAT_K);
+        const recentSet = new Set<string>();
+        (recentSessions || []).forEach(s => (s.vocab_ids || []).forEach((id: string) => recentSet.add(id)));
+
+        // Subcategory rotation (determine next target subcategory)
+        const subcats = Array.from(new Set(vocabulary.map(v => v.subcategory).filter(Boolean)));
+        let lastDominant: string | undefined;
+        if ((recentSessions || []).length > 0 && Array.isArray(recentSessions![0].vocab_ids)) {
+          const counts = new Map<string, number>();
+          for (const id of recentSessions![0].vocab_ids) {
+            const item = idToItem.get(id);
+            const key = item?.subcategory;
+            if (key) counts.set(key, (counts.get(key) || 0) + 1);
+          }
+          let best = 0;
+          for (const [k, v] of counts) {
+            if (v > best) { best = v; lastDominant = k; }
+          }
+        }
+        const nextIndex = lastDominant && subcats.length > 1 ? (subcats.indexOf(lastDominant) + 1) % subcats.length : -1;
+        const targetSubcat = nextIndex >= 0 ? subcats[nextIndex] : undefined;
+
+        const size = Math.min(SESSION_SIZE_DEFAULT, vocabulary.length);
+        const nNew = Math.max(0, Math.floor(size * NEW_RATIO));
+        const nReview = size - nNew;
+
+        // Apply no-repeat filter (except allow pinned to bypass)
+        const baseAvail = vocabulary.filter(v => !recentSet.has(v.id) || pinnedIds.has(v.id));
+        const withOrder = [...baseAvail].sort((a, b) => (a.order_position ?? 0) - (b.order_position ?? 0));
+
+        // Partition unseen/seen
+        const unseen = withOrder.filter(v => {
+          const p = pmap.get(v.id);
+          return !p || (p.seen_count ?? 0) === 0;
+        });
+        // const seen = withOrder.filter(v => !unseen.includes(v));
+
+
+        // Smart Reset: if nothing unseen remains, rank the whole pool by weakness + recency
+        const allSeen = unseen.length === 0;
+        if (allSeen) {
+          const pinnedVocab = withOrder.filter(v => pinnedIds.has(v.id));
+          const ranked = [...withOrder].sort((a, b) => {
+            const pa = pmap.get(a.id) || {}; const pb = pmap.get(b.id) || {};
+            const ea = (pa.incorrect_count || 0) - (pa.correct_count || 0);
+            const eb = (pb.incorrect_count || 0) - (pb.correct_count || 0);
+            if (eb !== ea) return eb - ea;
+            const ta = new Date(pa.last_seen_at || 0).getTime();
+            const tb = new Date(pb.last_seen_at || 0).getTime();
+            return ta - tb;
+          });
+          const session = Array.from(new Set<StandardVocabularyItem>([...pinnedVocab, ...ranked])).slice(0, size);
+          setSessionVocabulary(session);
+          try {
+            const sessionId = (globalThis.crypto as any)?.randomUUID?.() || (Math.random().toString(36).slice(2) + Date.now().toString(36));
+            await supabase.from('assignment_session_history').insert({
+              assignment_id: assignmentId,
+              student_id: activeStudentId,
+              game_id: gameId,
+              session_id: sessionId,
+              vocab_ids: session.map(s => s.id),
+              meta: { target_subcategory: targetSubcat || null }
+            });
+          } catch (e) {
+            console.warn('assignment_session_history insert failed (allSeen):', e);
+          }
+          return;
+        }
+
+        // Build new set (prioritize target subcategory if applicable)
+        const chosen: StandardVocabularyItem[] = [];
+        if (targetSubcat) {
+          const targetUnseen = unseen.filter(v => v.subcategory === targetSubcat);
+          chosen.push(...targetUnseen.slice(0, nNew));
+        }
+        if (chosen.length < nNew) {
+          const remainNew = nNew - chosen.length;
+          const otherUnseen = unseen.filter(v => !chosen.includes(v));
+          chosen.push(...otherUnseen.slice(0, remainNew));
+        }
+
+        // Review selection: include pinned first
+        const review: StandardVocabularyItem[] = [];
+        const pinnedVocab = withOrder.filter(v => pinnedIds.has(v.id));
+        for (const pv of pinnedVocab) {
+          if (review.length >= nReview) break;
+          if (!chosen.some(x => x.id === pv.id)) review.push(pv);
+        }
+
+        if (review.length < nReview) {
+          const candidates = withOrder.filter(v => !chosen.some(x => x.id === v.id) && !review.some(x => x.id === v.id) && !unseen.includes(v));
+          const sorted = candidates.sort((a, b) => {
+            const pa = pmap.get(a.id) || {}; const pb = pmap.get(b.id) || {};
+            const ea = (pa.incorrect_count || 0) - (pa.correct_count || 0);
+            const eb = (pb.incorrect_count || 0) - (pb.correct_count || 0);
+            if (eb !== ea) return eb - ea;
+            const ta = new Date(pa.last_seen_at || 0).getTime();
+            const tb = new Date(pb.last_seen_at || 0).getTime();
+            return ta - tb;
+          });
+          const needed = nReview - review.length;
+          review.push(...sorted.slice(0, needed));
+        }
+
+        // Compose final session, ensure uniqueness and cap to size
+        const session = Array.from(new Set<StandardVocabularyItem>([...chosen, ...review])).slice(0, size);
+        setSessionVocabulary(session);
+        // Persist session history for no-repeat + rotation
+        try {
+          const sessionId = (globalThis.crypto as any)?.randomUUID?.() || (Math.random().toString(36).slice(2) + Date.now().toString(36));
+          await supabase.from('assignment_session_history').insert({
+            assignment_id: assignmentId,
+            student_id: activeStudentId,
+            game_id: gameId,
+            session_id: sessionId,
+            vocab_ids: session.map(s => s.id),
+            meta: { target_subcategory: targetSubcat || null }
+          });
+        } catch (e) {
+          console.warn('assignment_session_history insert failed:', e);
+        }
+      } catch (e) {
+        console.warn('Progressive Coverage selector error:', e);
+        setSessionVocabulary(vocabulary);
+      }
+    };
+    runSelector();
+  }, [FEATURE_PROGRESSIVE_COVERAGE, assignmentId, gameId, studentId, user?.id, supabase, vocabulary]);
+
   const audioManager = useGlobalAudioContext();
 
   // Initialize audio context but DON'T start background music
@@ -1108,47 +1296,12 @@ export default function GameAssignmentWrapper({
     });
 
     // Cleanup function to stop any assignment music when component unmounts
-    return () => {
-      stopAssignmentBackgroundMusic();
-    };
+    return () => {};
+
   }, [audioManager]);
 
-  // Background music management for assignment mode
-  const startAssignmentBackgroundMusic = () => {
-    try {
-      // Create and play background music for assignment mode using cross-subdomain audio utility
-      const backgroundMusic = createAudio(getAudioUrl('/audio/themes/classic-ambient.mp3'));
-      backgroundMusic.loop = true;
-      backgroundMusic.volume = 0.3;
 
-      console.log('🎵 GameAssignmentWrapper: Loading background music from:', backgroundMusic.src);
 
-      // Store reference for cleanup
-      (window as any).assignmentBackgroundMusic = backgroundMusic;
-
-      backgroundMusic.play().catch(error => {
-        console.warn('🎵 GameAssignmentWrapper: Failed to start background music:', error);
-      });
-
-      console.log('🎵 GameAssignmentWrapper: Background music started');
-    } catch (error) {
-      console.warn('🎵 GameAssignmentWrapper: Error creating background music:', error);
-    }
-  };
-
-  const stopAssignmentBackgroundMusic = () => {
-    try {
-      const backgroundMusic = (window as any).assignmentBackgroundMusic;
-      if (backgroundMusic) {
-        backgroundMusic.pause();
-        backgroundMusic.currentTime = 0;
-        (window as any).assignmentBackgroundMusic = null;
-        console.log('🎵 GameAssignmentWrapper: Background music stopped');
-      }
-    } catch (error) {
-      console.warn('🎵 GameAssignmentWrapper: Error stopping background music:', error);
-    }
-  };
 
   const [gameProgress, setGameProgress] = useState<Partial<GameProgress>>({
     assignmentId,
@@ -1226,7 +1379,7 @@ export default function GameAssignmentWrapper({
           hintUsed: boolean = false,
           streakCount: number = 1
         ) => {
-          const callId = Math.random().toString(36).substr(2, 9);
+          const callId = Math.random().toString(36).slice(2, 11);
           console.log(`🔮 [WRAPPER] recordVocabularyInteraction called [${callId}]:`, {
             wordText,
             wasCorrect,
@@ -1309,17 +1462,44 @@ export default function GameAssignmentWrapper({
               console.log(`🔮 ${gameId} incorrect answer for "${wordText}" - no gem awarded [${callId}]`);
             }
 
+
+            // Update assignment_vocabulary_progress (after attempt)
+            try {
+              if (resolvedVocabId) {
+                const activeStudentId = studentId || user?.id || '';
+                const { data: existing } = await supabase
+                  .from('assignment_vocabulary_progress')
+                  .select('seen_count, correct_count, incorrect_count')
+                  .eq('assignment_id', assignmentId)
+                  .eq('student_id', activeStudentId)
+                  .eq('vocab_id', resolvedVocabId)
+                  .single();
+                const seen_count = (existing?.seen_count || 0) + 1;
+                const correct_count = (existing?.correct_count || 0) + (wasCorrect ? 1 : 0);
+                const incorrect_count = (existing?.incorrect_count || 0) + (!wasCorrect ? 1 : 0);
+                await supabase
+                  .from('assignment_vocabulary_progress')
+                  .upsert({
+                    assignment_id: assignmentId,
+                    student_id: activeStudentId,
+                    vocab_id: resolvedVocabId,
+                    seen_count,
+                    correct_count,
+                    incorrect_count,
+                    last_seen_at: new Date().toISOString()
+                  }, { onConflict: 'assignment_id,student_id,vocab_id', ignoreDuplicates: false });
+              }
+            } catch (e) {
+              console.warn('Failed to upsert assignment_vocabulary_progress:', e);
+            }
+
             return gemEvent;
           }
         };
 
         console.log('🔮 [WRAPPER] recordVocabularyInteraction function set up for assignment games');
 
-        // Expose the function to window for games to use
-        if (typeof window !== 'undefined') {
-          (window as any).recordVocabularyInteraction = recordVocabularyInteraction;
-          console.log('🔮 [WRAPPER] recordVocabularyInteraction exposed to window');
-        }
+
       }
     } catch (error) {
       console.error('🔮 [WRAPPER] Failed to initialize gem session:', error);
@@ -1344,7 +1524,7 @@ export default function GameAssignmentWrapper({
       studentId: studentId || user?.id,
       timestamp: new Date().toISOString()
     });
-    
+
     try {
       // Save final progress to database
       const progressData = {
@@ -1372,7 +1552,7 @@ export default function GameAssignmentWrapper({
         originalAccuracy: finalProgress.accuracy,
         safeGameAccuracy
       });
-      
+
       // Save assignment progress to database
       try {
         const { error: gameProgressError } = await supabase
@@ -1601,7 +1781,7 @@ export default function GameAssignmentWrapper({
               <ArrowLeft className="w-5 h-5 mr-2" />
               Back to Assignments
             </button>
-            
+
             <div className="text-center text-white">
               <h1 className="text-xl font-bold">{assignment.title}</h1>
               <p className="text-blue-200 text-sm">{assignment.description}</p>
@@ -1631,7 +1811,7 @@ export default function GameAssignmentWrapper({
       <div className="flex-1">
         {children({
           assignment,
-          vocabulary,
+          vocabulary: sessionVocabulary.length ? sessionVocabulary : vocabulary,
           sentences,
           onProgressUpdate: handleProgressUpdate,
           onGameComplete: handleGameComplete,

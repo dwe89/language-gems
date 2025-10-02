@@ -23,6 +23,8 @@ export interface VocabularyConfig {
   // New vocabulary options
   useAllWords?: boolean;
   shuffleWords?: boolean;
+  selectedVocabularyIds?: (string | number)[];
+  pinnedVocabularyIds?: string[];
 }
 
 export interface SentenceConfig {

@@ -1,0 +1,20 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false
+  },
+  "include": [
+    "src/services/enhancedAssignmentService.ts",
+    "src/components/games/templates/gameassignmentwrapper.tsx",
+    "src/components/assignments/EnhancedAssignmentCreator.tsx"
+  ],
+  "exclude": [
+    "**/*_backup.tsx",
+    "**/page_backup.tsx",
+    "**/*.spec.ts",
+    "**/*.test.tsx"
+  ]
+}
+

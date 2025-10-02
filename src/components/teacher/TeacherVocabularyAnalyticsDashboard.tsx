@@ -457,7 +457,7 @@ export default function TeacherVocabularyAnalyticsDashboard({
                                     <div className="text-xs text-gray-600">{word.translation}</div>
                                   </div>
                                   <div className="text-right">
-                                    <div className="text-sm font-semibold text-green-600">{(word.accuracy * 100).toFixed(0)}%</div>
+                                    <div className="text-sm font-semibold text-green-600">{word.accuracy.toFixed(0)}%</div>
                                     <div className="text-xs text-gray-500">Mastery: {word.masteryLevel}</div>
                                   </div>
                                 </div>
@@ -484,7 +484,7 @@ export default function TeacherVocabularyAnalyticsDashboard({
                                       <div className="text-xs text-gray-600">{word.translation}</div>
                                     </div>
                                     <div className="text-right">
-                                      <div className="text-sm font-semibold text-red-600">{(word.accuracy * 100).toFixed(0)}%</div>
+                                      <div className="text-sm font-semibold text-red-600">{word.accuracy.toFixed(0)}%</div>
                                       <div className="text-xs text-gray-500">{word.totalEncounters} attempts</div>
                                     </div>
                                   </div>
@@ -827,10 +827,10 @@ export default function TeacherVocabularyAnalyticsDashboard({
                         <div className="flex-1 bg-gray-200 rounded-full h-2 mr-2 max-w-[100px]">
                           <div 
                             className={`h-2 rounded-full ${word.accuracy < 0.3 ? 'bg-red-500' : word.accuracy < 0.5 ? 'bg-orange-500' : 'bg-yellow-500'}`}
-                            style={{ width: `${word.accuracy * 100}%` }}
+                            style={{ width: `${word.accuracy}%` }}
                           />
                         </div>
-                        <span className="text-sm font-medium text-gray-700">{(word.accuracy * 100).toFixed(0)}%</span>
+                        <span className="text-sm font-medium text-gray-700">{word.accuracy.toFixed(0)}%</span>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
@@ -875,10 +875,10 @@ export default function TeacherVocabularyAnalyticsDashboard({
                         <div className="flex-1 bg-gray-200 rounded-full h-2 mr-2 max-w-[100px]">
                           <div 
                             className="h-2 rounded-full bg-green-500"
-                            style={{ width: `${word.accuracy * 100}%` }}
+                            style={{ width: `${word.accuracy}%` }}
                           />
                         </div>
-                        <span className="text-sm font-medium text-gray-700">{(word.accuracy * 100).toFixed(0)}%</span>
+                        <span className="text-sm font-medium text-gray-700">{word.accuracy.toFixed(0)}%</span>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
@@ -947,7 +947,7 @@ export default function TeacherVocabularyAnalyticsDashboard({
                                   <span className="font-medium text-gray-900">{word.word}</span>
                                   <div className="flex items-center space-x-2">
                                     <span className="text-gray-600">{word.translation}</span>
-                                    <span className="text-green-600 font-semibold">{(word.accuracy * 100).toFixed(0)}%</span>
+                                    <span className="text-green-600 font-semibold">{word.accuracy.toFixed(0)}%</span>
                                   </div>
                                 </div>
                               ))}
@@ -971,7 +971,7 @@ export default function TeacherVocabularyAnalyticsDashboard({
                                     <span className="font-medium text-gray-900">{word.word}</span>
                                     <div className="flex items-center space-x-2">
                                       <span className="text-gray-600">{word.translation}</span>
-                                      <span className="text-red-600 font-semibold">{(word.accuracy * 100).toFixed(0)}%</span>
+                                      <span className="text-red-600 font-semibold">{word.accuracy.toFixed(0)}%</span>
                                     </div>
                                   </div>
                                   {word.errorPattern && (

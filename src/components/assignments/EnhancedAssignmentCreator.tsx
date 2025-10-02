@@ -35,6 +35,10 @@ interface AssignmentStep {
   completed: boolean; // Dynamic based on current state
 }
 
+const MAX_POOL = 75;
+const SESSION_SIZE_DEFAULT = 10; // used for estimated sessions
+
+
 interface VocabularyConfig {
   source: 'category' | 'theme' | 'topic' | 'custom' | 'create' | '';
   language?: string;
@@ -48,6 +52,8 @@ interface VocabularyConfig {
   customList?: any;
   customVocabulary?: string; // Inline custom vocabulary (manual entry)
   wordCount?: number;
+  useAllWords?: boolean;
+  shuffleWords?: boolean;
   difficulty?: string;
   curriculumLevel?: 'KS3' | 'KS4'; // Added this as per your usage
   // KS4-specific parameters
@@ -346,7 +352,7 @@ export default function EnhancedAssignmentCreator({
   // --- Activity-Specific Configurations ---
   const [gameConfig, setGameConfig] = useState<UnifiedGameConfig>({
     selectedGames: [],
-    vocabularyConfig: { source: '', wordCount: 10, difficulty: 'intermediate', curriculumLevel: 'KS3' },
+    vocabularyConfig: { source: '', useAllWords: true, wordCount: undefined, difficulty: 'intermediate', curriculumLevel: 'KS3' },
     sentenceConfig: { source: '', theme: '', topic: '', sentenceCount: 10, difficulty: 'intermediate' },
     grammarConfig: { language: 'spanish', verbTypes: ['regular'], tenses: ['present'], persons: ['yo', 'tu', 'el_ella_usted'], difficulty: 'beginner', verbCount: 10 },
     difficulty: 'intermediate',
@@ -393,6 +399,58 @@ export default function EnhancedAssignmentCreator({
   // --- UI States ---
   const [currentStep, setCurrentStep] = useState(0);
   const [selectedClasses, setSelectedClasses] = useState<string[]>(classId ? [classId] : []);
+
+  // Estimated master pool size (for UI warnings)
+  const [poolEstimate, setPoolEstimate] = useState<{ total: number; capped: number; estimatedSessions: number } | null>(null);
+
+  // Recompute estimated pool when content selection changes
+  useEffect(() => {
+    const computeEstimate = async () => {
+      try {
+        const level = assignmentDetails.curriculum_level || 'KS3';
+        const lang = gameConfig.vocabularyConfig.language || (contentConfig.language as string) || 'spanish';
+        let query = supabaseBrowser
+          .from('centralized_vocabulary')
+          .select('id', { count: 'exact', head: true })
+          .eq('language', lang);
+
+        if (level === 'KS3') {
+          if (contentConfig.subcategories && contentConfig.subcategories.length > 0) {
+            query = query.in('subcategory', contentConfig.subcategories);
+          }
+          if (contentConfig.categories && contentConfig.categories.length > 0) {
+            query = query.in('category', contentConfig.categories);
+          }
+          query = query.or('curriculum_level.eq.KS3,curriculum_level.is.null');
+        } else if (level === 'KS4') {
+          if (gameConfig.vocabularyConfig.examBoard) {
+            query = query.eq('exam_board_code', gameConfig.vocabularyConfig.examBoard);
+          }
+          if (gameConfig.vocabularyConfig.tier) {
+            const dbTier = gameConfig.vocabularyConfig.tier === 'foundation' ? 'both' : gameConfig.vocabularyConfig.tier;
+            query = query.eq('tier', dbTier);
+          }
+          query = query.eq('curriculum_level', 'KS4');
+        }
+
+        const { count } = await query;
+        const total = count || 0;
+        const capped = Math.min(total, MAX_POOL);
+        const estimatedSessions = Math.max(1, Math.ceil(capped / SESSION_SIZE_DEFAULT));
+        setPoolEstimate({ total, capped, estimatedSessions });
+      } catch (e) {
+        console.warn('Pool estimate computation failed:', e);
+        setPoolEstimate(null);
+      }
+    };
+    // Only attempt when there is some selection
+    if ((contentConfig.subcategories?.length || 0) > 0 || (contentConfig.categories?.length || 0) > 0) {
+      computeEstimate();
+    } else {
+      setPoolEstimate(null);
+    }
+  }, [assignmentDetails.curriculum_level, contentConfig.categories, contentConfig.subcategories, gameConfig.vocabularyConfig.examBoard, gameConfig.vocabularyConfig.tier, gameConfig.vocabularyConfig.language]);
+
   const [availableClasses, setAvailableClasses] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -424,7 +482,25 @@ export default function EnhancedAssignmentCreator({
         return;
       }
 
-      setAvailableClasses(classes || []);
+      const classIds = (classes || []).map((c: any) => c.id);
+      let countsMap = new Map<string, number>();
+      if (classIds.length > 0) {
+        const { data: enrollmentsData, error: enrollErr } = await supabaseBrowser
+          .from('class_enrollments')
+          .select('class_id')
+          .in('class_id', classIds)
+          .eq('status', 'active');
+        if (enrollErr) {
+          console.warn('Could not load enrollments; defaulting counts to 0', enrollErr);
+        } else {
+          (enrollmentsData || []).forEach((e: any) => {
+            countsMap.set(e.class_id, (countsMap.get(e.class_id) || 0) + 1);
+          });
+        }
+      }
+
+      const withCounts = (classes || []).map((c: any) => ({ ...c, student_count: countsMap.get(c.id) || 0 }));
+      setAvailableClasses(withCounts);
     } catch (error) {
       console.error('Error loading classes:', error);
     }
@@ -1338,74 +1414,22 @@ export default function EnhancedAssignmentCreator({
               Configure the vocabulary and content for your assignment based on curriculum level
             </p>
 
-            {/* Word Count Configuration */}
-            {gameConfig.selectedGames.length > 0 && (
-              <div className="bg-gradient-to-r from-amber-50 to-yellow-50 rounded-2xl p-6 border border-amber-100 mb-6">
-                <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                  <div className="w-6 h-6 bg-amber-100 rounded-lg flex items-center justify-center mr-2">
-                    <Target className="h-4 w-4 text-amber-600" />
-                  </div>
-                  Vocabulary Settings
-                </h4>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-3">
-                      Total Words in Assignment
-                    </label>
-                    <input
-                      type="number"
-                      min="5"
-                      max="100"
-                      value={gameConfig.vocabularyConfig.wordCount || 20}
-                      onChange={(e) => {
-                        const wordCount = parseInt(e.target.value) || 20;
-                        setGameConfig(prev => ({
-                          ...prev,
-                          vocabularyConfig: {
-                            ...prev.vocabularyConfig,
-                            wordCount
-                          }
-                        }));
-                      }}
-                      className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-200"
-                    />
-                    <p className="text-sm text-gray-600 mt-2">
-                      Recommended: 10-20 for quick practice, 30-50 for comprehensive review
-                    </p>
-                  </div>
-
-                  <div className="bg-white rounded-xl p-4 border border-amber-200">
-                    <div className="text-sm font-medium text-amber-900 mb-2">📊 Assignment Preview</div>
-                    {gameConfig.vocabularyConfig.source === 'custom' && gameConfig.vocabularyConfig.customListId ? (
-                      <div className="space-y-1 text-sm text-gray-700">
-                        <p>✅ Custom vocabulary list: <strong>{gameConfig.vocabularyConfig.customList?.name || 'Selected'}</strong></p>
-                        <p>📝 <strong>{gameConfig.vocabularyConfig.wordCount || 20}</strong> words will be used from your list</p>
-                        <p className="text-xs text-gray-500 mt-2">
-                          Using your custom vocabulary from "My Lists"
-                        </p>
-                      </div>
-                    ) : gameConfig.vocabularyConfig.subcategories?.length > 0 ? (
-                      <div className="space-y-1 text-sm text-gray-700">
-                        <p>✅ <strong>{gameConfig.vocabularyConfig.subcategories.length}</strong> subcategories selected</p>
-                        <p>📝 <strong>{gameConfig.vocabularyConfig.wordCount || 20}</strong> words will be randomly sampled</p>
-                        <p className="text-xs text-gray-500 mt-2">
-                          Words will be selected randomly from: {gameConfig.vocabularyConfig.subcategories.slice(0, 3).join(', ')}
-                          {gameConfig.vocabularyConfig.subcategories.length > 3 && ` and ${gameConfig.vocabularyConfig.subcategories.length - 3} more`}
-                        </p>
-                      </div>
-                    ) : gameConfig.vocabularyConfig.categories?.length > 0 ? (
-                      <div className="space-y-1 text-sm text-gray-700">
-                        <p>✅ <strong>{gameConfig.vocabularyConfig.categories.length}</strong> categories selected</p>
-                        <p>📝 <strong>{gameConfig.vocabularyConfig.wordCount || 20}</strong> words will be randomly sampled</p>
-                      </div>
-                    ) : (
-                      <p className="text-sm text-gray-500">Select content source below to see preview</p>
-                    )}
-                  </div>
+            {/* Master Pool Cap & Estimate Banner */}
+            {poolEstimate && (
+              <div className={`rounded-xl border p-4 mb-4 ${poolEstimate.total > MAX_POOL ? 'bg-amber-50 border-amber-200' : 'bg-emerald-50 border-emerald-200'}`}>
+                <div className="text-sm font-medium mb-1">
+                  {poolEstimate.total > MAX_POOL ? 'Pool capped at 75 words' : 'Pool size within cap'}
+                </div>
+                <div className="text-sm text-gray-700">
+                  Selected pool: <strong>{poolEstimate.total}</strong> words → sampling <strong>{poolEstimate.capped}</strong> based on subcategory proportions.
+                </div>
+                <div className="text-xs text-gray-600 mt-1">
+                  Estimated sessions to see all once (at 10 words/session): ~<strong>{poolEstimate.estimatedSessions}</strong>
                 </div>
               </div>
             )}
+
 
             <CurriculumContentSelector
               curriculumLevel={(contentConfig.type === 'custom') ? contentConfig.type : (assignmentDetails.curriculum_level || 'KS3')}
@@ -1453,6 +1477,7 @@ export default function EnhancedAssignmentCreator({
                   console.log('🎯 [UI] Checking config.type === "my-vocabulary":', config.type === 'my-vocabulary');
                   console.log('🎯 [UI] Checking config.type === "custom":', config.type === 'custom');
                   console.log('🎯 [UI] config.type exact value and type:', JSON.stringify(config.type), typeof config.type);
+
 
                   if (config.type === 'my-vocabulary') {
                     // Handle custom vocabulary lists
@@ -1522,6 +1547,15 @@ export default function EnhancedAssignmentCreator({
                       ...prev.vocabularyConfig,
                       wordCount: wordCount,
                       selectedVocabularyIds: selectedItems.map(item => item.id)
+                    }
+                  }));
+                }}
+                onPinnedChange={(pinned) => {
+                  setGameConfig(prev => ({
+                    ...prev,
+                    vocabularyConfig: {
+                      ...prev.vocabularyConfig,
+                      pinnedVocabularyIds: pinned
                     }
                   }));
                 }}
@@ -1870,7 +1904,7 @@ export default function EnhancedAssignmentCreator({
       {/* Compact Header */}
       <div className="text-center mb-6">
         <h1 className="text-2xl font-bold text-gray-900 mb-1">Create New Assignment</h1>
-        <p className="text-sm text-gray-600">Set up activities and assessments for your students</p>
+  <p className="text-sm text-gray-600">Set up activities & assessments</p>
       </div>
 
       {/* Error Display */}

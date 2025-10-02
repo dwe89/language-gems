@@ -1,7 +1,12 @@
 // API ROUTE: ASSIGNMENT ANALYSIS (TIER 3)
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import type { TimeRange, AssignmentAnalysisData } from '@/types/teacherAnalytics';
+import type { 
+  TimeRange, 
+  AssignmentAnalysisData, 
+  QuestionBreakdown, 
+  DistractorAnalysis 
+} from '@/types/teacherAnalytics';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -35,13 +40,22 @@ export async function GET(request: NextRequest) {
     // Fetch assignment details
     const { data: assignment } = await supabase
       .from('assignments')
-      .select('id, title, created_at, game_type, type')
+      .select('id, title, created_at, game_type, type, class_id')
       .eq('id', assignmentId)
       .single();
 
     if (!assignment) {
       return NextResponse.json({ success: false, error: 'Assignment not found' }, { status: 404 });
     }
+
+    // Get ALL enrolled students from the class, not just those who started
+    const { data: enrolledStudents } = await supabase
+      .from('class_enrollments')
+      .select('student_id')
+      .eq('class_id', assignment.class_id)
+      .eq('status', 'active');
+
+    const allStudentIds = enrolledStudents?.map(e => e.student_id) || [];
 
     // Fetch assignment progress for all students
     const { data: progress } = await supabase
@@ -53,17 +67,19 @@ export async function GET(request: NextRequest) {
     const allProgress = progress || [];
     const completedProgress = allProgress.filter(p => p.status === 'completed');
 
-    // Fetch student names
-    const studentIds = [...new Set(allProgress.map(p => p.student_id))];
+    // Create a map of student progress
+    const progressMap = new Map(allProgress.map(p => [p.student_id, p]));
+
+    // Fetch student names for ALL enrolled students
     const { data: students } = await supabase
       .from('user_profiles')
       .select('user_id, display_name')
-      .in('user_id', studentIds);
+      .in('user_id', allStudentIds);
 
     const studentMap = new Map(students?.map(s => [s.user_id, s.display_name]) || []);
 
-    // Calculate summary metrics
-    const totalStudents = studentIds.length;
+    // Calculate summary metrics with ALL enrolled students
+    const totalStudents = allStudentIds.length;
     const completedCount = completedProgress.length;
     const completionRate = totalStudents > 0 ? Math.round((completedCount / totalStudents) * 100) : 0;
     const averageScore = completedProgress.length > 0
@@ -74,23 +90,25 @@ export async function GET(request: NextRequest) {
       : 0;
     const strugglingStudents = completedProgress.filter(p => (p.score || 0) < 60).length;
 
-    // Build student performance list
-    const studentPerformance = studentIds.map(studentId => {
+    // Build student performance list for ALL enrolled students
+    const studentPerformance = allStudentIds.map(studentId => {
       const studentProgress = allProgress.filter(p => p.student_id === studentId);
-      const latestProgress = studentProgress.sort((a, b) => 
-        new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
-      )[0];
+      const latestProgress = studentProgress.length > 0
+        ? studentProgress.sort((a, b) => 
+            new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+          )[0]
+        : null;
 
       return {
         studentId,
         studentName: studentMap.get(studentId) || 'Unknown Student',
-        status: latestProgress.status as 'not-started' | 'in-progress' | 'completed',
-        score: latestProgress.status === 'completed' ? latestProgress.score : null,
-        timeSpentMinutes: latestProgress.time_spent_seconds 
+        status: latestProgress ? latestProgress.status as 'not-started' | 'in-progress' | 'completed' : 'not-started',
+        score: latestProgress && latestProgress.status === 'completed' ? latestProgress.score : null,
+        timeSpentMinutes: latestProgress && latestProgress.time_spent_seconds
           ? Math.round(latestProgress.time_spent_seconds / 60) 
           : null,
         attempts: studentProgress.length,
-        lastAttempt: new Date(latestProgress.updated_at)
+        lastAttempt: latestProgress ? new Date(latestProgress.updated_at) : null
       };
     }).sort((a, b) => {
       // Sort: completed first, then by score descending
@@ -99,25 +117,39 @@ export async function GET(request: NextRequest) {
       return (b.score || 0) - (a.score || 0);
     });
 
-    // Question breakdown (placeholder - would need actual question data)
-    const questionBreakdown = [
-      {
-        questionNumber: 1,
-        questionText: 'Sample question text (requires question data schema)',
-        successRate: 85,
-        correctCount: Math.round(completedCount * 0.85),
-        totalAttempts: completedCount,
-        averageTimeSeconds: 45,
-        minTimeSeconds: 20,
-        maxTimeSeconds: 120,
-        distractorAnalysis: [
-          { answer: 'Common wrong answer 1', count: 3, percentage: 15 },
-          { answer: 'Common wrong answer 2', count: 2, percentage: 10 }
-        ]
-      }
-    ];
+    // Question breakdown - only include for quiz-style assignments with actual questions
+    // For vocabulary/multi-game assignments, this data doesn't apply
+    // TODO: Implement real question tracking for quiz assignments
+    let questionBreakdown: QuestionBreakdown[] | undefined;
+    const distractorAnalysis: DistractorAnalysis[] = [];
 
     const data: AssignmentAnalysisData = {
+      assignmentInfo: {
+        assignmentId,
+        assignmentName: assignment.title,
+        description: null,
+        completedCount,
+        totalStudents,
+        averageScore,
+        efficacy: averageScore >= 75 ? 'high' : averageScore >= 60 ? 'medium' : 'low',
+        dueDate: null,
+        createdAt: new Date(assignment.created_at)
+      },
+      questionBreakdown,
+      distractorAnalysis,
+      timeDistribution: {
+        buckets: [],
+        average: averageTimeMinutes,
+        median: averageTimeMinutes,
+        min: 0,
+        max: 0,
+        wideDistribution: false
+      }
+    };
+
+    // Add backward compatibility fields for the UI
+    const compatibilityData: Record<string, any> = {
+      ...data,
       assignmentId,
       assignmentName: assignment.title,
       totalStudents,
@@ -126,12 +158,27 @@ export async function GET(request: NextRequest) {
       averageScore,
       averageTimeMinutes,
       strugglingStudents,
-      questionBreakdown,
       studentPerformance
     };
 
+    // Only include questionBreakdown if it exists (quiz-style assignments)
+    if (questionBreakdown && questionBreakdown.length > 0) {
+      compatibilityData.questionBreakdown = questionBreakdown.map((q: QuestionBreakdown) => ({
+        ...q,
+        questionText: q.questionPreview,
+        successRate: q.accuracy,
+        averageTimeSeconds: 45,
+        minTimeSeconds: 20,
+        maxTimeSeconds: 120,
+        distractorAnalysis: [
+          { answer: 'Common wrong answer 1', count: 3, percentage: 15 },
+          { answer: 'Common wrong answer 2', count: 2, percentage: 10 }
+        ]
+      }));
+    }
+
     console.timeEnd('⏱️ [API] assignment-analysis');
-    return NextResponse.json({ success: true, data, timeRange, generatedAt: new Date() });
+    return NextResponse.json({ success: true, data: compatibilityData, timeRange, generatedAt: new Date() });
   } catch (error) {
     console.error('Error:', error);
     return NextResponse.json({ 

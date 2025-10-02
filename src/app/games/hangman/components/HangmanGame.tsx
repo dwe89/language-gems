@@ -569,14 +569,14 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
   const renderThematicAnimation = () => {
     if (themeId === 'default') {
       const classicSizing = isAssignmentMode
-        ? 'max-w-[min(620px,92vw)] sm:max-w-[min(700px,85vw)] md:max-w-none md:w-full md:h-full md:aspect-[4/5] lg:aspect-square'
-        : '';
+        ? 'w-full max-w-[min(620px,92vw)] sm:max-w-[min(680px,85vw)] md:max-w-[min(640px,70vw)] xl:max-w-[680px] !h-auto aspect-[4/5] lg:aspect-square'
+        : 'w-full max-w-[min(440px,90vw)] sm:max-w-[min(500px,80vw)] md:max-w-[min(520px,65vw)] lg:max-w-[560px] xl:max-w-[600px] !h-auto max-h-[min(520px,72vh)] aspect-[3/4] md:aspect-[4/5] mx-auto';
 
       return (
         <ClassicHangmanAnimation
           mistakes={wrongGuesses}
           maxMistakes={MAX_ATTEMPTS}
-          className={classicSizing}
+          className={`${classicSizing} transition-[max-width] duration-300 ease-out`}
         />
       );
     }

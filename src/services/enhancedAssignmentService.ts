@@ -29,30 +29,30 @@ export interface EnhancedAssignmentProgress {
   status: 'not_started' | 'in_progress' | 'completed' | 'overdue' | 'submitted';
   attempts_count: number;
   max_attempts: number;
-  
+
   // Performance metrics
   best_score: number;
   best_accuracy: number;
   total_time_spent: number;
   average_session_time: number;
-  
+
   // Learning analytics
   words_mastered: number;
   words_struggling: number;
   improvement_rate: number;
   consistency_score: number;
-  
+
   // Timestamps
   first_attempt_at?: Date;
   last_attempt_at?: Date;
   completed_at?: Date;
   submitted_at?: Date;
-  
+
   // Feedback
   teacher_feedback?: string;
   auto_feedback: Record<string, any>;
   student_reflection?: string;
-  
+
   // Metadata
   session_ids: string[];
   progress_data: Record<string, any>;
@@ -113,10 +113,13 @@ export interface WordDifficultyData {
 // ENHANCED ASSIGNMENT SERVICE CLASS
 // =====================================================
 
+
 export class EnhancedAssignmentService {
   private supabase: SupabaseClient;
   private gameService: EnhancedGameService;
-  
+
+  static readonly MAX_POOL = 75;
+
   constructor(supabaseClient?: SupabaseClient) {
     this.supabase = supabaseClient || createBrowserClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL || '',
@@ -269,7 +272,7 @@ export class EnhancedAssignmentService {
                 console.error('Error inserting manual vocabulary:', vocabInsertError);
               } else if (insertedVocab && insertedVocab.length > 0) {
                 console.log(`✅ Created ${insertedVocab.length} centralized vocabulary entries for manual words`);
-                
+
                 // Now create assignment items referencing the centralized vocabulary
                 const assignmentItems = insertedVocab.map((vocabItem: any, index: number) => ({
                   assignment_list_id: vocabularyListId,
@@ -404,7 +407,12 @@ export class EnhancedAssignmentService {
 
             // Populate vocabulary list
             if (vocabularyListId) {
-              await this.populateVocabularyList(vocabularyListId, vocabularySelection);
+              const insertedCount = await this.populateVocabularyList(vocabularyListId, vocabularySelection);
+              vocabularyCount = insertedCount || vocabularyCount;
+              await this.supabase
+                .from('vocabulary_assignment_lists')
+                .update({ word_count: vocabularyCount })
+                .eq('id', vocabularyListId);
             }
           }
         }
@@ -454,6 +462,28 @@ export class EnhancedAssignmentService {
 
     // Create progress entries for all students in the class
     await this.initializeStudentProgress(assignment.id, assignmentData.class_id);
+
+    // Insert teacher-pinned vocabulary if provided in config
+    try {
+      const pinnedIds: string[] = assignmentData.config?.gameConfig?.vocabularyConfig?.pinnedVocabularyIds || [];
+      if (pinnedIds.length > 0) {
+        const pinRows = pinnedIds.map((vid) => ({
+          assignment_id: assignment.id,
+          vocab_id: vid,
+          pinned_by: teacherId
+        }));
+        const { error: pinError } = await this.supabase
+          .from('assignment_pinned_words')
+          .insert(pinRows, { count: 'exact' });
+        if (pinError) {
+          console.warn('⚠️ [ASSIGNMENT SERVICE] Failed to insert pinned words:', pinError);
+        } else {
+          console.log(`✅ [ASSIGNMENT SERVICE] Inserted ${pinRows.length} pinned words`);
+        }
+      }
+    } catch (e) {
+      console.warn('⚠️ [ASSIGNMENT SERVICE] Error while inserting pinned words:', e);
+    }
 
     // Create grammar assignment record if this is a grammar-based assignment
     await this.createGrammarAssignmentIfNeeded(assignment.id, assignmentData);
@@ -872,7 +902,7 @@ export class EnhancedAssignmentService {
     return subcategoryMap[subcategory] || 'basics_core_language';
   }
 
-  private async populateVocabularyList(listId: string, criteria: any): Promise<void> {
+  private async populateVocabularyList(listId: string, criteria: any): Promise<number> {
     try {
       // Use centralized_vocabulary table with modern schema
       let query = this.supabase
@@ -884,67 +914,90 @@ export class EnhancedAssignmentService {
         query = query.eq('language', criteria.language);
       }
 
-      // Apply filters based on criteria type
-      switch (criteria.type) {
-        case 'category_based':
-          if (criteria.category) {
-            query = query.eq('category', criteria.category);
-          }
-          break;
-        case 'subcategory_based':
-          if (criteria.category) {
-            query = query.eq('category', criteria.category);
-          }
-          if (criteria.subcategory) {
-            query = query.eq('subcategory', criteria.subcategory);
-          }
-          break;
+      // Apply curriculum level filter if present
+      if (criteria.curriculumLevel) {
+        query = query.eq('curriculum_level', criteria.curriculumLevel);
+      }
 
-        case 'theme_based':
-          // Check if this is a KS4 theme-based query (has unit, examBoard, tier)
-          if (criteria.unit && criteria.examBoard && criteria.tier) {
-            console.log('🎯 [ASSIGNMENT SERVICE] Applying KS4 theme/unit filters (theme_based):', {
-              theme: criteria.theme,
-              unit: criteria.unit,
-              examBoard: criteria.examBoard,
-              tier: criteria.tier
-            });
+      // Support multiple selections first (arrays from Enhanced Assignment Creator)
+      const hasMultipleSubcats = Array.isArray(criteria.subcategories) && criteria.subcategories.length > 0;
+      const hasMultipleCats = Array.isArray(criteria.categories) && criteria.categories.length > 0;
 
-            // For KS4, filter by theme_name and unit_name
-            if (criteria.theme) {
-              query = query.eq('theme_name', criteria.theme);
+      if (hasMultipleSubcats) {
+        console.log('🎯 [ASSIGNMENT SERVICE] Applying MULTIPLE subcategory filters:', {
+          subcategories: criteria.subcategories,
+          categories: criteria.categories
+        });
+        query = query.in('subcategory', criteria.subcategories);
+        if (hasMultipleCats) {
+          query = query.in('category', criteria.categories);
+        }
+      } else if (hasMultipleCats) {
+        console.log('🎯 [ASSIGNMENT SERVICE] Applying MULTIPLE category filters:', criteria.categories);
+        query = query.in('category', criteria.categories);
+      } else {
+        // Apply filters based on criteria type (single selection cases)
+        switch (criteria.type) {
+          case 'category_based':
+            if (criteria.category) {
+              query = query.eq('category', criteria.category);
             }
-            if (criteria.unit) {
-              query = query.eq('unit_name', criteria.unit);
+            break;
+          case 'subcategory_based':
+            if (criteria.category) {
+              query = query.eq('category', criteria.category);
             }
-            if (criteria.examBoard) {
-              const examBoardCode = criteria.examBoard === 'AQA' ? 'AQA' : 'edexcel';
-              query = query.eq('exam_board_code', examBoardCode);
+            if (criteria.subcategory) {
+              query = query.eq('subcategory', criteria.subcategory);
             }
-            if (criteria.tier) {
-              // Handle tier filtering: foundation should include 'both', higher should include 'both' and 'higher'
-              if (criteria.tier === 'foundation') {
-                query = query.eq('tier', 'both'); // Foundation tier gets 'both' words
-              } else if (criteria.tier === 'higher') {
-                query = query.in('tier', ['both', 'higher']); // Higher tier gets both 'both' and 'higher' words
-              } else {
-                query = query.eq('tier', criteria.tier); // Fallback for other tier values
+            break;
+
+          case 'theme_based':
+            // Check if this is a KS4 theme-based query (has unit, examBoard, tier)
+            if (criteria.unit && criteria.examBoard && criteria.tier) {
+              console.log('🎯 [ASSIGNMENT SERVICE] Applying KS4 theme/unit filters (theme_based):', {
+                theme: criteria.theme,
+                unit: criteria.unit,
+                examBoard: criteria.examBoard,
+                tier: criteria.tier
+              });
+
+              // For KS4, filter by theme_name and unit_name
+              if (criteria.theme) {
+                query = query.eq('theme_name', criteria.theme);
+              }
+              if (criteria.unit) {
+                query = query.eq('unit_name', criteria.unit);
+              }
+              if (criteria.examBoard) {
+                const examBoardCode = criteria.examBoard === 'AQA' ? 'AQA' : 'edexcel';
+                query = query.eq('exam_board_code', examBoardCode);
+              }
+              if (criteria.tier) {
+                // Handle tier filtering: foundation should include 'both', higher should include 'both' and 'higher'
+                if (criteria.tier === 'foundation') {
+                  query = query.eq('tier', 'both'); // Foundation tier gets 'both' words
+                } else if (criteria.tier === 'higher') {
+                  query = query.in('tier', ['both', 'higher']); // Higher tier gets both 'both' and 'higher' words
+                } else {
+                  query = query.eq('tier', criteria.tier); // Fallback for other tier values
+                }
+              }
+              // Always filter by KS4 curriculum level
+              query = query.eq('curriculum_level', 'KS4');
+            } else {
+              // Traditional theme-based query for non-KS4
+              if (criteria.theme) {
+                query = query.eq('category', criteria.theme);
               }
             }
-            // Always filter by KS4 curriculum level
-            query = query.eq('curriculum_level', 'KS4');
-          } else {
-            // Traditional theme-based query for non-KS4
-            if (criteria.theme) {
-              query = query.eq('category', criteria.theme);
+            break;
+          case 'topic_based':
+            if (criteria.topic) {
+              query = query.eq('subcategory', criteria.topic);
             }
-          }
-          break;
-        case 'topic_based':
-          if (criteria.topic) {
-            query = query.eq('subcategory', criteria.topic);
-          }
-          break;
+            break;
+        }
       }
 
       // Execute the query
@@ -952,21 +1005,66 @@ export class EnhancedAssignmentService {
 
       if (vocabularyError) {
         console.error('Vocabulary fetch error:', vocabularyError);
-        return;
+        return 0;
       }
 
       if (!allVocabulary || allVocabulary.length === 0) {
         console.warn('No vocabulary found for criteria:', criteria);
-        return;
+        return 0;
       }
 
-      // Select random words up to the requested count
-      const wordCount = Math.min(criteria.wordCount || 10, allVocabulary.length);
-      const shuffled = allVocabulary.sort(() => 0.5 - Math.random());
-      const selectedWords = shuffled.slice(0, wordCount);
+      // Build full master pool with cap and proportional sampling (by subcategory, else category)
+      let masterPool = [...allVocabulary];
 
-      // Insert vocabulary items into the assignment list
-      const vocabularyItems = selectedWords.map((word: any, index: number) => ({
+      if (masterPool.length > EnhancedAssignmentService.MAX_POOL) {
+        // Group by subcategory if present in criteria; otherwise by category
+        const groupKey = (row: any) => (row.subcategory || row.category || 'other');
+        const groups = new Map<string, any[]>();
+        for (const item of masterPool) {
+          const key = groupKey(item);
+          if (!groups.has(key)) groups.set(key, []);
+          groups.get(key)!.push(item);
+        }
+
+        const total = masterPool.length;
+        // First pass: floor allocation
+        const allocations: { key: string; take: number; frac: number }[] = [];
+        let allocated = 0;
+        for (const [key, items] of groups) {
+          const exact = (items.length / total) * EnhancedAssignmentService.MAX_POOL;
+          const take = Math.floor(exact);
+          const frac = exact - take;
+          allocations.push({ key, take, frac });
+          allocated += take;
+        }
+        // Distribute remainder by largest fractional parts
+        let remainder = EnhancedAssignmentService.MAX_POOL - allocated;
+        allocations.sort((a, b) => b.frac - a.frac);
+        for (let i = 0; i < allocations.length && remainder > 0; i++, remainder--) {
+          allocations[i].take += 1;
+        }
+
+        // Sample from each group (random within group) according to allocation
+        const sampled: any[] = [];
+        for (const { key, take } of allocations) {
+          const items = groups.get(key)!;
+          const shuffledGroup = [...items].sort(() => Math.random() - 0.5);
+          sampled.push(...shuffledGroup.slice(0, Math.min(take, items.length)));
+        }
+        // If due to small groups we still have less than MAX_POOL, top-up randomly
+        if (sampled.length < EnhancedAssignmentService.MAX_POOL) {
+          const remaining = masterPool.filter(x => !sampled.includes(x));
+          const topUp = remaining.sort(() => Math.random() - 0.5).slice(0, EnhancedAssignmentService.MAX_POOL - sampled.length);
+          sampled.push(...topUp);
+        }
+        masterPool = sampled.slice(0, EnhancedAssignmentService.MAX_POOL);
+      }
+
+      // Randomize final order for variety but keep deterministic order_position
+      const finalPool = masterPool.sort(() => Math.random() - 0.5);
+
+      // Insert the ENTIRE capped pool (not just session size)
+      const vocabularyItems = finalPool.map((word: any, index: number) => ({
         assignment_list_id: listId,
         centralized_vocabulary_id: word.id,
         order_position: index
@@ -978,11 +1076,14 @@ export class EnhancedAssignmentService {
 
       if (insertError) {
         console.error('Vocabulary items insertion error:', insertError);
+        return 0;
       } else {
-        console.log(`Successfully populated vocabulary list with ${selectedWords.length} items`);
+        console.log(`Successfully populated vocabulary list with master pool of ${finalPool.length} items (cap=${EnhancedAssignmentService.MAX_POOL})`);
+        return finalPool.length;
       }
     } catch (error) {
       console.error('Error populating vocabulary list:', error);
+      return 0;
     }
   }
 
@@ -1117,7 +1218,7 @@ export class EnhancedAssignmentService {
     // Calculate learning metrics
     updates.words_mastered = sessionData.words_correct || 0;
     updates.words_struggling = (sessionData.words_attempted || 0) - (sessionData.words_correct || 0);
-    
+
     // Calculate improvement rate
     if (progress.attempts_count > 0) {
       const previousAccuracy = progress.best_accuracy;

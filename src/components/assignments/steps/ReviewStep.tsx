@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { CheckCircle, Calendar, Clock, Users, Gamepad2, FileCheck, Settings, Edit } from 'lucide-react';
+import { CheckCircle, Calendar, Clock, Users, Gamepad2, FileCheck, Settings, Edit, BookOpen, Globe, Hash, Layers, Target } from 'lucide-react';
 import { StepProps } from '../types/AssignmentTypes';
+import { supabaseBrowser } from '../../auth/AuthProvider';
 
 // Import game definitions to map IDs to objects
 const AVAILABLE_GAMES = [
@@ -37,21 +38,256 @@ export default function ReviewStep({
   onStepComplete,
   classes,
 }: StepProps) {
+  const [previewWords, setPreviewWords] = useState<{ term: string; translation: string; subcategory?: string }[]>([]);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [topicCounts, setTopicCounts] = useState<Record<string, number>>({});
+
+  const [contentDetails, setContentDetails] = useState<{
+    vocabularyListName: string;
+    wordCount: number;
+    language: string;
+    categories: string[];
+    subcategories: string[];
+    themes: string[];
+    estimatedSessions: number;
+  } | null>(null);
+
+  const [loadingContent, setLoadingContent] = useState(true);
 
   // This step is always completed when reached
   useEffect(() => {
     onStepComplete('review', true);
   }, [onStepComplete]);
 
+  // Fetch vocabulary/content details for display
+  useEffect(() => {
+    const fetchContentDetails = async () => {
+      setLoadingContent(true);
+      try {
+        const vocabConfig = gameConfig.vocabularyConfig;
+        const details: any = {
+          vocabularyListName: 'Not configured',
+          wordCount: vocabConfig.wordCount || 0,
+          language: vocabConfig.language || 'Not specified',
+          categories: [],
+          subcategories: [],
+          themes: [],
+          estimatedSessions: 0,
+        };
+
+        // Determine vocabulary list name based on source
+        if (vocabConfig.source === 'category') {
+          const categoryNames = vocabConfig.categories || (vocabConfig.category ? [vocabConfig.category] : []);
+          const subcategoryNames = vocabConfig.subcategories || (vocabConfig.subcategory ? [vocabConfig.subcategory] : []);
+
+          details.categories = categoryNames;
+          details.subcategories = subcategoryNames;
+
+          if (categoryNames.length > 0) {
+            details.vocabularyListName = categoryNames.join(', ');
+            if (subcategoryNames.length > 0) {
+              details.vocabularyListName += ` → ${subcategoryNames.join(', ')}`;
+            }
+          }
+        } else if (vocabConfig.source === 'theme' || vocabConfig.source === 'topic') {
+          const themeNames = vocabConfig.themes || (vocabConfig.theme ? [vocabConfig.theme] : []);
+          const topicName = vocabConfig.topic;
+
+          details.themes = themeNames;
+
+          if (themeNames.length > 0) {
+            details.vocabularyListName = `KS4: ${themeNames.join(', ')}`;
+            if (topicName) {
+              details.vocabularyListName += ` → ${topicName}`;
+            }
+          }
+        } else if (vocabConfig.source === 'custom' && vocabConfig.customListId) {
+          // Fetch custom list details
+          try {
+            const { data: customList } = await supabaseBrowser
+              .from('custom_vocabulary_lists')
+              .select('name, language')
+              .eq('id', vocabConfig.customListId)
+              .single();
+
+            if (customList) {
+              details.vocabularyListName = `Custom: ${customList.name}`;
+              details.language = customList.language || details.language;
+            }
+          } catch (error) {
+            console.error('Error fetching custom list:', error);
+          }
+        } else if (vocabConfig.source === 'create') {
+
+          details.vocabularyListName = 'Custom Vocabulary (Manual Entry)';
+        }
+
+        // Get word count from selected vocabulary IDs if available
+        if (vocabConfig.selectedVocabularyIds && vocabConfig.selectedVocabularyIds.length > 0) {
+          details.wordCount = vocabConfig.selectedVocabularyIds.length;
+        }
+
+        // Fallbacks: if subcategories/categories are present regardless of source, reflect them
+        if (Array.isArray(vocabConfig.subcategories) && vocabConfig.subcategories.length > 0) {
+          details.subcategories = vocabConfig.subcategories;
+          if (details.vocabularyListName === 'Not configured') {
+            details.vocabularyListName = `Topics: ${vocabConfig.subcategories.join(', ')}`;
+          }
+        }
+        if (Array.isArray(vocabConfig.categories) && vocabConfig.categories.length > 0) {
+          details.categories = vocabConfig.categories;
+          if (details.vocabularyListName === 'Not configured') {
+            details.vocabularyListName = vocabConfig.categories.join(', ');
+          }
+        }
+
+        // Format language for display (support codes like 'es')
+        if (details.language) {
+          const languageMap: Record<string, string> = {
+            es: 'Spanish', fr: 'French', de: 'German', it: 'Italian', pt: 'Portuguese',
+            zh: 'Chinese', ja: 'Japanese', ar: 'Arabic', ru: 'Russian', en: 'English',
+            spanish: 'Spanish', french: 'French', german: 'German'
+          };
+          const key = String(details.language).toLowerCase();
+          details.language = languageMap[key] || details.language;
+        }
+
+        // Fetch a preview list of words for this config (up to 75)
+        try {
+          setPreviewLoading(true);
+          const vc = vocabConfig;
+          let rows: any[] = [];
+
+          // Determine language column mapping
+          const langCode = (vc.language || 'es').toLowerCase();
+          const targetLangCol = langCode === 'es' || langCode === 'spanish' ? 'spanish'
+            : langCode === 'fr' || langCode === 'french' ? 'french'
+            : langCode === 'de' || langCode === 'german' ? 'german'
+            : 'spanish'; // fallback
+
+          if (vc.source === 'custom' && vc.customListId) {
+            const { data } = await supabaseBrowser
+              .from('enhanced_vocabulary_lists')
+              .select('enhanced_vocabulary_items ( term, translation )')
+              .eq('id', vc.customListId)
+              .single();
+            rows = (data?.enhanced_vocabulary_items || []).map((r: any) => ({ term: r.term, translation: r.translation }));
+          } else if (vc.subcategories && vc.subcategories.length > 0) {
+            const { data } = await supabaseBrowser
+              .from('centralized_vocabulary')
+              .select(`${targetLangCol}, english, subcategory`)
+              .in('subcategory', vc.subcategories)
+              .limit(75);
+            rows = (data || []).map((r: any) => ({ term: r[targetLangCol], translation: r.english, subcategory: r.subcategory }));
+
+            // Calculate per-topic counts (filtered by language)
+            const counts: Record<string, number> = {};
+            const languageCode = langCode === 'es' || langCode === 'spanish' ? 'es'
+              : langCode === 'fr' || langCode === 'french' ? 'fr'
+              : langCode === 'de' || langCode === 'german' ? 'de'
+              : 'es';
+            
+            for (const subcat of vc.subcategories) {
+              const { count } = await supabaseBrowser
+                .from('centralized_vocabulary')
+                .select('id', { count: 'exact', head: true })
+                .eq('subcategory', subcat)
+                .eq('language', languageCode);
+              counts[subcat] = count || 0;
+            }
+            setTopicCounts(counts);
+          } else if (vc.categories && vc.categories.length > 0) {
+            const { data } = await supabaseBrowser
+              .from('centralized_vocabulary')
+              .select(`${targetLangCol}, english, category`)
+              .in('category', vc.categories)
+              .limit(75);
+            rows = (data || []).map((r: any) => ({ term: r[targetLangCol], translation: r.english, subcategory: r.category }));
+
+            // Calculate per-category counts (filtered by language)
+            const counts: Record<string, number> = {};
+            const languageCode = langCode === 'es' || langCode === 'spanish' ? 'es'
+              : langCode === 'fr' || langCode === 'french' ? 'fr'
+              : langCode === 'de' || langCode === 'german' ? 'de'
+              : 'es';
+            
+            for (const cat of vc.categories) {
+              const { count } = await supabaseBrowser
+                .from('centralized_vocabulary')
+                .select('id', { count: 'exact', head: true })
+                .eq('category', cat)
+                .eq('language', languageCode);
+              counts[cat] = count || 0;
+            }
+            setTopicCounts(counts);
+          } else if (vc.themes && vc.themes.length > 0) {
+            // KS4: fetch by themes
+            const { data } = await supabaseBrowser
+              .from('centralized_vocabulary')
+              .select(`${targetLangCol}, english`)
+              .in('ks4_theme', vc.themes)
+              .limit(75);
+            rows = (data || []).map((r: any) => ({ term: r[targetLangCol], translation: r.english }));
+          } else if ((vc as any).units && (vc as any).units.length > 0) {
+            // KS4: fetch by units
+            const { data } = await supabaseBrowser
+              .from('centralized_vocabulary')
+              .select(`${targetLangCol}, english`)
+              .in('ks4_unit', (vc as any).units)
+              .limit(75);
+            rows = (data || []).map((r: any) => ({ term: r[targetLangCol], translation: r.english }));
+          }
+
+          if (rows.length > 0) {
+            setPreviewWords(rows);
+            details.wordCount = rows.length;
+            // Calculate estimated sessions (10 words per session)
+            details.estimatedSessions = Math.ceil(rows.length / 10);
+          } else {
+            // If no rows fetched, still try to estimate from config
+            const estimatedTotal = vc.wordCount || 20;
+            details.wordCount = estimatedTotal;
+            details.estimatedSessions = Math.ceil(estimatedTotal / 10);
+          }
+        } finally {
+          setPreviewLoading(false);
+        }
+
+        setContentDetails(details);
+      } catch (error) {
+        console.error('Error fetching content details:', error);
+      } finally {
+        setLoadingContent(false);
+      }
+    };
+
+    fetchContentDetails();
+  }, [gameConfig.vocabularyConfig]);
+
   const selectedClasses = classes.filter(cls => assignmentDetails.selectedClasses.includes(cls.id));
   const totalStudents = selectedClasses.reduce((sum, cls) => sum + (cls.student_count || 0), 0);
-  
+
   const hasGames = gameConfig.selectedGames.length > 0;
   const hasAssessments = assessmentConfig.selectedAssessments.length > 0;
 
   const formatDate = (dateString: string) => {
     if (!dateString) return 'Not set';
-    return new Date(dateString).toLocaleString();
+    const date = new Date(dateString);
+    const now = new Date();
+
+    // Check if the date is in the past or within the next hour
+    const isNow = date <= now || (date.getTime() - now.getTime()) < 3600000; // 1 hour in milliseconds
+
+    if (isNow) {
+      return `${date.toLocaleDateString()} at ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} (Now)`;
+    }
+
+    return `${date.toLocaleDateString()} at ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+  };
+
+  const getStartDate = () => {
+    // If no specific start date is set, assume it launches immediately
+    return assignmentDetails.dueDate ? new Date().toISOString() : '';
   };
 
   return (
@@ -81,19 +317,29 @@ export default function ReviewStep({
                 Edit
               </button>
             </div>
-            
+
             <div className="space-y-3">
               <div>
                 <span className="text-sm font-medium text-gray-600">Title:</span>
                 <p className="text-gray-900 font-medium">{assignmentDetails.title || 'Untitled Assignment'}</p>
               </div>
-              
+
               <div>
                 <span className="text-sm font-medium text-gray-600">Description:</span>
                 <p className="text-gray-900 text-sm">{assignmentDetails.description || 'No description provided'}</p>
               </div>
-              
+
               <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <span className="text-sm font-medium text-gray-600 flex items-center">
+                    <Calendar className="h-4 w-4 mr-1" />
+                    Launch Date:
+                  </span>
+                  <p className="text-gray-900 text-sm font-medium text-green-600">
+                    {formatDate(getStartDate())}
+                  </p>
+                </div>
+
                 <div>
                   <span className="text-sm font-medium text-gray-600 flex items-center">
                     <Calendar className="h-4 w-4 mr-1" />
@@ -101,29 +347,50 @@ export default function ReviewStep({
                   </span>
                   <p className="text-gray-900 text-sm">{formatDate(assignmentDetails.dueDate)}</p>
                 </div>
-                
-                <div>
-                  <span className="text-sm font-medium text-gray-600 flex items-center">
-                    <Clock className="h-4 w-4 mr-1" />
-                    Est. Time:
-                  </span>
-                  <p className="text-gray-900 text-sm">{assignmentDetails.estimatedTime} minutes</p>
-                </div>
               </div>
-              
+
               <div>
                 <span className="text-sm font-medium text-gray-600 flex items-center">
-                  <Users className="h-4 w-4 mr-1" />
-                  Classes ({selectedClasses.length}):
+                  <Clock className="h-4 w-4 mr-1" />
+                  Est. Time:
                 </span>
-                <div className="mt-1 space-y-1">
-                  {selectedClasses.map(cls => (
-                    <div key={cls.id} className="text-sm text-gray-900 bg-gray-50 px-2 py-1 rounded">
-                      {cls.name} ({cls.student_count || 0} students)
-                    </div>
-                  ))}
+                <p className="text-gray-900 text-sm">{assignmentDetails.estimatedTime} minutes</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Classes and Students */}
+          <div className="bg-white border border-gray-200 rounded-lg p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                <Users className="h-5 w-5 text-blue-500 mr-2" />
+                Classes ({selectedClasses.length})
+              </h3>
+            </div>
+
+            <div className="space-y-2">
+              {selectedClasses.map(cls => (
+                <div key={cls.id} className="flex items-center justify-between bg-blue-50 px-3 py-2 rounded-lg">
+                  <div>
+                    <p className="font-medium text-gray-900">{cls.name}</p>
+                    <p className="text-xs text-gray-600">
+                      {cls.student_count > 0
+                        ? `All ${cls.student_count} students`
+                        : 'No students enrolled'}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-lg font-bold text-blue-600">{cls.student_count || 0}</div>
+                    <div className="text-xs text-gray-500">students</div>
+                  </div>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">Total: {totalStudents} students</p>
+              ))}
+
+              <div className="pt-2 border-t border-gray-200 mt-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium text-gray-600">Total Students:</span>
+                  <span className="text-xl font-bold text-blue-600">{totalStudents}</span>
+                </div>
               </div>
             </div>
           </div>
@@ -134,32 +401,37 @@ export default function ReviewStep({
               <Settings className="h-5 w-5 text-gray-500 mr-2" />
               Assignment Settings
             </h3>
-            
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div className="flex items-center">
-                <div className={`w-2 h-2 rounded-full mr-2 ${assignmentDetails.allowLateSubmissions ? 'bg-green-500' : 'bg-gray-300'}`} />
-                <span className={assignmentDetails.allowLateSubmissions ? 'text-gray-900' : 'text-gray-500'}>
-                  Late submissions {assignmentDetails.allowLateSubmissions ? 'allowed' : 'not allowed'}
+
+            <div className="space-y-2 text-sm">
+              <div className="flex items-center justify-between py-1">
+                <span className="text-gray-600">Late submissions:</span>
+                <span className={`font-medium ${assignmentDetails.allowLateSubmissions ? 'text-green-600' : 'text-red-600'}`}>
+                  {assignmentDetails.allowLateSubmissions ? 'Allowed' : 'Not allowed'}
                 </span>
               </div>
-              
-              <div className="flex items-center">
-                <div className={`w-2 h-2 rounded-full mr-2 ${assignmentDetails.showResults ? 'bg-green-500' : 'bg-gray-300'}`} />
-                <span className={assignmentDetails.showResults ? 'text-gray-900' : 'text-gray-500'}>
-                  Results {assignmentDetails.showResults ? 'shown' : 'hidden'}
+
+              <div className="flex items-center justify-between py-1">
+                <span className="text-gray-600">Show results to students:</span>
+                <span className={`font-medium ${assignmentDetails.showResults ? 'text-green-600' : 'text-gray-600'}`}>
+                  {assignmentDetails.showResults ? 'Yes' : 'No'}
                 </span>
               </div>
-              
-              <div className="flex items-center">
-                <div className={`w-2 h-2 rounded-full mr-2 ${assignmentDetails.randomizeOrder ? 'bg-green-500' : 'bg-gray-300'}`} />
-                <span className={assignmentDetails.randomizeOrder ? 'text-gray-900' : 'text-gray-500'}>
-                  Order {assignmentDetails.randomizeOrder ? 'randomized' : 'fixed'}
+
+              <div className="flex items-center justify-between py-1">
+                <span className="text-gray-600">Question order:</span>
+                <span className="font-medium text-gray-900">
+                  {assignmentDetails.randomizeOrder ? 'Randomized' : 'Fixed'}
                 </span>
               </div>
-              
-              <div className="flex items-center">
-                <div className="w-2 h-2 rounded-full bg-blue-500 mr-2" />
-                <span className="text-gray-900">Max attempts: {assignmentDetails.maxAttempts}</span>
+
+              <div className="flex items-center justify-between py-1">
+                <span className="text-gray-600">Max attempts:</span>
+                <span className="font-medium text-gray-900">{assignmentDetails.maxAttempts}</span>
+              </div>
+
+              <div className="flex items-center justify-between py-1 pt-2 border-t border-gray-200">
+                <span className="text-gray-600">Student notifications:</span>
+                <span className="font-medium text-green-600">In-app + Email on launch</span>
               </div>
             </div>
           </div>
@@ -167,6 +439,149 @@ export default function ReviewStep({
 
         {/* Right Column - Activities */}
         <div className="space-y-6">
+          {/* Content Details - NEW SECTION */}
+          {hasGames && contentDetails && !loadingContent && (
+            <div className="bg-gradient-to-br from-purple-50 to-indigo-50 border-2 border-purple-200 rounded-lg p-5">
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center mb-4">
+                <BookOpen className="h-5 w-5 text-purple-600 mr-2" />
+                Learning Content
+              </h3>
+
+              <div className="space-y-3">
+                <div className="bg-white rounded-lg p-3">
+                  <span className="text-xs font-medium text-gray-600 uppercase tracking-wide flex items-center mb-1">
+                    <Layers className="h-3 w-3 mr-1" />
+                    Vocabulary List:
+                  </span>
+                  <p className="text-gray-900 font-semibold text-base">
+                    {contentDetails.vocabularyListName}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="bg-white rounded-lg p-3">
+                    <span className="text-xs font-medium text-gray-600 uppercase tracking-wide flex items-center mb-1">
+                      <Globe className="h-3 w-3 mr-1" />
+                      Language:
+                    </span>
+                    <p className="text-purple-700 font-bold text-sm">
+                      {contentDetails.language}
+                    </p>
+                  </div>
+
+                  <div className="bg-white rounded-lg p-3">
+                    <span className="text-xs font-medium text-gray-600 uppercase tracking-wide flex items-center mb-1">
+                      <Hash className="h-3 w-3 mr-1" />
+                      Pool Size:
+                    </span>
+                    <p className="text-purple-700 font-bold text-sm">
+                      {contentDetails.wordCount} words
+                    </p>
+                  </div>
+
+                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-3 border border-blue-200">
+                    <span className="text-xs font-medium text-blue-600 uppercase tracking-wide flex items-center mb-1">
+                      <Target className="h-3 w-3 mr-1" />
+                      Sessions:
+                    </span>
+                    <p className="text-blue-700 font-bold text-sm">
+                      ~{contentDetails.estimatedSessions} to complete
+                    </p>
+                  </div>
+                </div>
+
+                {/* Preview list of words */}
+                {previewWords.length > 0 && (
+                  <div className="bg-white rounded-lg p-4 border-2 border-purple-200 shadow-sm">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="text-sm font-bold text-purple-900 flex items-center">
+                        <BookOpen className="h-4 w-4 mr-2" />
+                        Vocabulary Preview ({previewWords.length} words)
+                      </div>
+                      {gameConfig.vocabularyConfig.pinnedVocabularyIds && gameConfig.vocabularyConfig.pinnedVocabularyIds.length > 0 && (
+                        <div className="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded-full font-medium">
+                          {gameConfig.vocabularyConfig.pinnedVocabularyIds.length} pinned
+                        </div>
+                      )}
+                    </div>
+                    <div className="max-h-64 overflow-y-auto bg-gray-50 rounded-lg p-2">
+                      <ul className="text-sm text-gray-800 divide-y divide-gray-200">
+                        {previewWords.map((w, idx) => {
+                          const isPinned = gameConfig.vocabularyConfig.pinnedVocabularyIds?.includes(w.term);
+                          return (
+                            <li key={idx} className={`py-2 px-2 flex justify-between items-center hover:bg-white transition-colors ${isPinned ? 'bg-amber-50' : ''}`}>
+                              <span className="font-medium text-gray-900 flex items-center">
+                                {isPinned && <span className="text-amber-500 mr-2">📌</span>}
+                                {w.term}
+                              </span>
+                              <span className="text-gray-600">{w.translation}</span>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+                    <div className="mt-2 text-xs text-gray-500 flex items-center">
+                      <Target className="h-3 w-3 mr-1" />
+                      Students will see ~10 words per session with Progressive Coverage rotation
+                    </div>
+                  </div>
+                )}
+
+
+                {/* Show categories/themes if available */}
+                {contentDetails.categories.length > 0 && (
+                  <div className="bg-white rounded-lg p-3">
+                    <span className="text-xs font-medium text-gray-600 uppercase tracking-wide mb-1 block">
+                      Categories:
+                    </span>
+                    <div className="flex flex-wrap gap-1">
+                      {contentDetails.categories.map((cat, idx) => (
+                        <span key={idx} className="inline-block bg-purple-100 text-purple-700 text-xs px-2 py-1 rounded">
+                          {cat}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {contentDetails.subcategories.length > 0 && (
+                  <div className="bg-white rounded-lg p-3">
+                    <span className="text-xs font-medium text-gray-600 uppercase tracking-wide mb-2 block">
+                      Topics ({contentDetails.subcategories.length}):
+                    </span>
+                    <div className="flex flex-wrap gap-2">
+                      {contentDetails.subcategories.map((subcat, idx) => (
+                        <div key={idx} className="inline-flex items-center bg-indigo-100 text-indigo-700 text-xs px-3 py-1.5 rounded-lg border border-indigo-200">
+                          <span className="font-medium">{subcat}</span>
+                          {topicCounts[subcat] && (
+                            <span className="ml-2 bg-indigo-200 text-indigo-800 px-1.5 py-0.5 rounded font-bold">
+                              {topicCounts[subcat]}
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {contentDetails.themes.length > 0 && (
+                  <div className="bg-white rounded-lg p-3">
+                    <span className="text-xs font-medium text-gray-600 uppercase tracking-wide mb-1 block">
+                      Themes:
+                    </span>
+                    <div className="flex flex-wrap gap-1">
+                      {contentDetails.themes.map((theme, idx) => (
+                        <span key={idx} className="inline-block bg-purple-100 text-purple-700 text-xs px-2 py-1 rounded">
+                          {theme}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Games */}
           {hasGames && (
             <div className="bg-white border border-gray-200 rounded-lg p-5">
@@ -180,19 +595,31 @@ export default function ReviewStep({
                   Edit
                 </button>
               </div>
-              
+
               <div className="space-y-2">
                 {gameConfig.selectedGames.map((gameId, index) => {
                   const game = getGameById(gameId);
                   return (
-                    <div key={gameId} className="flex items-center justify-between p-2 bg-blue-50 rounded">
-                      <div className="flex items-center">
-                        <div className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold mr-3">
+                    <div key={gameId} className="border border-blue-200 rounded-lg p-3 bg-blue-50">
+                      <div className="flex items-start">
+                        <div className="w-7 h-7 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3 flex-shrink-0 mt-0.5">
                           {index + 1}
                         </div>
-                        <div>
-                          <p className="font-medium text-gray-900 text-sm">{game.name}</p>
-                          <p className="text-xs text-gray-600">{game.estimatedTime} • {game.features.join(', ')}</p>
+                        <div className="flex-1">
+                          <p className="font-semibold text-gray-900 text-sm mb-1">{game.name}</p>
+                          <div className="flex items-center gap-3 text-xs text-gray-600 mb-2">
+                            <span className="flex items-center">
+                              <Clock className="h-3 w-3 mr-1" />
+                              {game.estimatedTime}
+                            </span>
+                          </div>
+                          <div className="flex flex-wrap gap-1">
+                            {game.features.map((feature, idx) => (
+                              <span key={idx} className="inline-block bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded">
+                                {feature}
+                              </span>
+                            ))}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -215,7 +642,7 @@ export default function ReviewStep({
                   Edit
                 </button>
               </div>
-              
+
               <div className="space-y-2">
                 {assessmentConfig.selectedAssessments.map((assessment, index) => (
                   <div key={assessment.id} className="p-3 bg-indigo-50 rounded">
@@ -228,7 +655,7 @@ export default function ReviewStep({
                         <p className="text-xs text-gray-600">{assessment.estimatedTime} • {assessment.skills?.join(', ') || 'Assessment skills'}</p>
                       </div>
                     </div>
-                    
+
                     <div className="ml-9 grid grid-cols-2 gap-2 text-xs text-gray-600">
                       <span>
                         Language: <span className="font-medium text-indigo-700">

@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Metadata } from 'next';
 import { generateMetadata } from '../../components/seo/SEOWrapper';
@@ -16,6 +16,7 @@ import {
   PenTool,
   Info
 } from 'lucide-react';
+import DevWarningDialog from '../../components/assessments/DevWarningDialog';
 
 export const metadata: Metadata = generateMetadata({
   title: 'GCSE Language Assessments | Reading Comprehension & Vocabulary Tests | Language Gems',
@@ -99,6 +100,8 @@ const AssessmentCard = ({
 };
 
 export default function AssessmentsPage() {
+  // Client-side development warning handled by DevWarningDialog component
+
   const assessmentTypes = [
     {
       title: "Reading Comprehension",
@@ -166,6 +169,7 @@ export default function AssessmentsPage() {
     }
   ];
   return (
+    <>
     <AssessmentsPageWrapper>
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       {/* Header */}
@@ -276,6 +280,10 @@ export default function AssessmentsPage() {
 
       <Footer />
     </div>
-    </AssessmentsPageWrapper>
+  </AssessmentsPageWrapper>
+
+  {/* Development Warning Popup (client) */}
+  <DevWarningDialog />
+    </>
   );
 }

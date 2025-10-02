@@ -229,11 +229,13 @@ export class TeacherVocabularyAnalyticsService {
 
     return (data || []).map(item => {
       const profile = profileMap.get(item.student_id);
+      // Type assertion needed because Supabase's type inference doesn't handle joins well
+      const classes = item.classes as unknown as { id: string; name: string };
       return {
         id: item.student_id,
         name: profile?.display_name || profile?.email || 'Unknown Student',
         classId: item.class_id,
-        className: item.classes.name
+        className: classes.name
       };
     });
   }
@@ -282,6 +284,26 @@ export class TeacherVocabularyAnalyticsService {
         gemsByStudent.get(gem.student_id)!.push(gem);
       });
 
+      // FALLBACK: Get last activity from game sessions for students with no vocabulary collection
+      // This fixes the "Last active: never" issue when students play games but don't have vocab items
+      const studentsWithoutVocab = studentIds.filter(id => !gemsByStudent.has(id) || gemsByStudent.get(id)!.length === 0);
+      let gameSessionsByStudent = new Map<string, string>(); // student_id -> last_game_session_date
+      
+      if (studentsWithoutVocab.length > 0) {
+        console.log('🔍 [FALLBACK] Checking game sessions for', studentsWithoutVocab.length, 'students without vocabulary data');
+        const { data: gameSessions } = await this.supabase
+          .from('enhanced_game_sessions')
+          .select('student_id, created_at')
+          .in('student_id', studentsWithoutVocab)
+          .order('created_at', { ascending: false });
+        
+        (gameSessions || []).forEach(session => {
+          if (!gameSessionsByStudent.has(session.student_id)) {
+            gameSessionsByStudent.set(session.student_id, session.created_at);
+          }
+        });
+      }
+
       const now = new Date();
 
       // Process each student's data
@@ -320,7 +342,7 @@ export class TeacherVocabularyAnalyticsService {
               if (!gDate) return latest;
               return !latest || gDate > new Date(latest) ? g.last_encountered_at : latest;
             }, null as string | null)
-          : null;
+          : gameSessionsByStudent.get(student.id) || null; // FALLBACK: Use game session date if no vocabulary data
 
         progress.push({
           studentId: student.id,
@@ -459,7 +481,18 @@ export class TeacherVocabularyAnalyticsService {
           .map(g => g.centralized_vocabulary_id)
       )];
 
-      let vocabularyDetails = [];
+      let vocabularyDetails: Array<{
+        id: string;
+        word: string;
+        translation: string;
+        category: string | null;
+        subcategory: string | null;
+        curriculum_level: string | null;
+        language: string;
+        theme_name: string | null;
+        unit_name: string | null;
+      }> = [];
+      
       if (centralizedIds.length > 0) {
         const { data: vocabData, error: vocabError } = await this.supabase
           .from('centralized_vocabulary')
@@ -486,6 +519,11 @@ export class TeacherVocabularyAnalyticsService {
       (gemData || []).forEach(gem => {
         const vocab = vocabMap.get(gem.centralized_vocabulary_id);
         if (!vocab) return;
+
+        // Skip vocabulary items without required category or curriculum level
+        if (!vocab.category || !vocab.curriculum_level) {
+          return;
+        }
 
         const topicKey = `${vocab.category}_${vocab.subcategory || 'none'}_${vocab.theme_name || 'none'}_${vocab.language}_${vocab.curriculum_level}`;
 

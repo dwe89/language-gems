@@ -144,8 +144,8 @@ export interface EngagementLog {
 
 export interface AssignmentAnalysisData {
   assignmentInfo: AssignmentInfo;
-  questionBreakdown: QuestionBreakdown[];
-  distractorAnalysis: DistractorAnalysis[];
+  questionBreakdown?: QuestionBreakdown[]; // Optional - only for quiz-style assignments
+  distractorAnalysis?: DistractorAnalysis[]; // Optional - only for quiz-style assignments
   timeDistribution: TimeDistribution;
 }
 

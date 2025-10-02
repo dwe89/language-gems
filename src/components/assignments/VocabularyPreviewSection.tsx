@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Eye, X, CheckCircle, AlertCircle, Loader2, RefreshCw } from 'lucide-react';
+import { Eye, X, CheckCircle, AlertCircle, Loader2, RefreshCw, Star } from 'lucide-react';
 import { createBrowserClient } from '@supabase/ssr';
 
 interface VocabularyItem {
@@ -30,12 +30,14 @@ interface VocabularyPreviewSectionProps {
     curriculumLevel?: string;
   };
   onVocabularyChange: (selectedItems: VocabularyItem[], wordCount: number) => void;
+  onPinnedChange?: (pinnedIds: string[]) => void;
   maxWords?: number;
 }
 
 export default function VocabularyPreviewSection({
   vocabularyConfig,
   onVocabularyChange,
+  onPinnedChange,
   maxWords = 100
 }: VocabularyPreviewSectionProps) {
   const [vocabulary, setVocabulary] = useState<VocabularyItem[]>([]);
@@ -46,6 +48,8 @@ export default function VocabularyPreviewSection({
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
+
+  const [pinnedIds, setPinnedIds] = useState<Set<string>>(new Set());
 
   // Fetch vocabulary based on configuration
   useEffect(() => {
@@ -180,7 +184,7 @@ export default function VocabularyPreviewSection({
       item.id === itemId ? { ...item, selected: !item.selected } : item
     );
     setVocabulary(updatedVocabulary);
-    
+
     const selectedItems = updatedVocabulary.filter(item => item.selected);
     onVocabularyChange(selectedItems, selectedItems.length);
   };
@@ -196,6 +200,15 @@ export default function VocabularyPreviewSection({
     setVocabulary(updatedVocabulary);
     onVocabularyChange([], 0);
   };
+
+  const togglePin = (itemId: string | number) => {
+    const id = String(itemId);
+    const next = new Set(pinnedIds);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    setPinnedIds(next);
+    if (onPinnedChange) onPinnedChange(Array.from(next));
+  };
+
 
   const selectedCount = vocabulary.filter(item => item.selected).length;
 
@@ -283,6 +296,9 @@ export default function VocabularyPreviewSection({
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                       Term
                     </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-16">
+                      Pin
+                    </th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                       Translation
                     </th>
@@ -313,6 +329,20 @@ export default function VocabularyPreviewSection({
                           <div className="text-xs text-gray-500 mt-1 italic">{item.context_sentence}</div>
                         )}
                       </td>
+                      <td className="px-4 py-3">
+                        <button
+                          onClick={() => togglePin(item.id)}
+                          className={`p-1.5 rounded-lg transition-colors ${
+                            pinnedIds.has(String(item.id))
+                              ? 'bg-amber-100 text-amber-600 hover:bg-amber-200'
+                              : 'bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-600'
+                          }`}
+                          title={pinnedIds.has(String(item.id)) ? 'Unpin word' : 'Pin word (always included in review)'}
+                        >
+                          <Star className={`h-4 w-4 ${pinnedIds.has(String(item.id)) ? 'fill-current' : ''}`} />
+                        </button>
+                      </td>
+
                       <td className="px-4 py-3">
                         <div className="text-sm text-gray-700">{item.translation}</div>
                         {item.context_translation && (

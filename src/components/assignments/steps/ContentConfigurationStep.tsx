@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Settings, Gamepad2, FileCheck, BookOpen, Brain } from 'lucide-react';
+import { Settings, Gamepad2, FileCheck, BookOpen, Brain, Target } from 'lucide-react';
 import { StepProps } from '../types/AssignmentTypes';
 
 import CurriculumContentSelector from '../CurriculumContentSelector';
@@ -580,7 +580,12 @@ export default function ContentConfigurationStep({
 
               {/* Vocabulary Options */}
               {(() => {
-                const shouldShow = (contentConfig.type === 'KS4' || contentConfig.type === 'KS3') && (contentConfig.categories?.length > 0 || contentConfig.themes?.length > 0 || contentConfig.units?.length > 0);
+                const shouldShow = (contentConfig.type === 'KS4' || contentConfig.type === 'KS3') && (
+                  (contentConfig.categories?.length || 0) > 0 ||
+                  (contentConfig.subcategories?.length || 0) > 0 ||
+                  (contentConfig.themes?.length || 0) > 0 ||
+                  (contentConfig.units?.length || 0) > 0
+                );
                 console.log('🎯 [VOCAB OPTIONS] Should show vocabulary options?', {
                   shouldShow,
                   contentConfigType: contentConfig.type,
@@ -591,37 +596,48 @@ export default function ContentConfigurationStep({
                 });
                 return shouldShow;
               })() && (
-                <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <h4 className="text-sm font-semibold text-blue-900 mb-3">Vocabulary Options</h4>
+                <div className="mt-6 p-5 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-300 rounded-xl shadow-sm">
+                  <div className="flex items-center mb-4">
+                    <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center mr-3">
+                      <Target className="h-5 w-5 text-white" />
+                    </div>
+                    <h4 className="text-base font-bold text-blue-900">Vocabulary Pool Settings</h4>
+                  </div>
+                  <p className="text-sm text-blue-700 mb-4">
+                    Configure how many words students will practice across multiple game sessions
+                  </p>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Word Count Selection */}
+                    {/* Word Pool Selection */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Number of Words
+                        Word pool
                       </label>
                       <select
-                        value={gameConfig.vocabularyConfig.wordCount || 10}
+                        value={gameConfig.vocabularyConfig.useAllWords ? 'all' : String(gameConfig.vocabularyConfig.wordCount ?? 'all')}
                         onChange={(e) => {
                           const value = e.target.value;
                           setGameConfig(prev => ({
                             ...prev,
                             vocabularyConfig: {
                               ...prev.vocabularyConfig,
-                              wordCount: value === 'all' ? 999 : parseInt(value),
-                              useAllWords: value === 'all'
+                              useAllWords: value === 'all',
+                              wordCount: value === 'all' ? undefined : parseInt(value)
                             }
                           }));
                         }}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       >
-                        <option value="10">10 words</option>
-                        <option value="15">15 words</option>
-                        <option value="20">20 words</option>
-                        <option value="30">30 words</option>
-                        <option value="50">50 words</option>
-                        <option value="all">All words from selected {contentConfig.type === 'KS4' ? 'units' : 'categories'}</option>
+                        <option value="all">All words from selected {contentConfig.type === 'KS4' ? 'units' : 'categories'} (capped at 75)</option>
+                        <option value="10">Limit to 10</option>
+                        <option value="15">Limit to 15</option>
+                        <option value="20">Limit to 20</option>
+                        <option value="30">Limit to 30</option>
+                        <option value="50">Limit to 50</option>
                       </select>
+                      <p className="mt-2 text-xs text-gray-500">
+                        Games pull a small set (~10 words) each session from the pool. The pool sets the total unique words students may encounter.
+                      </p>
                     </div>
 
                     {/* Shuffle Option */}
@@ -647,17 +663,43 @@ export default function ContentConfigurationStep({
                   </div>
 
                   {/* Preview Info */}
-                  <div className="mt-3 text-xs text-blue-700">
-                    <strong>Selected:</strong> {
-                      contentConfig.type === 'KS4'
-                        ? `${contentConfig.themes?.length || 0} theme(s), ${contentConfig.units?.length || 0} unit(s)`
-                        : `${contentConfig.categories?.length || 0} category(ies), ${contentConfig.subcategories?.length || 0} subcategory(ies)`
-                    }
-                    {gameConfig.vocabularyConfig.wordCount === 999
-                      ? ' • Using all available words'
-                      : ` • Limited to ${gameConfig.vocabularyConfig.wordCount || 10} words`
-                    }
-                    {gameConfig.vocabularyConfig.shuffleWords && ' • Words will be shuffled'}
+                  <div className="mt-4 p-4 bg-gradient-to-br from-white to-blue-50 border-2 border-blue-300 rounded-xl shadow-sm">
+                    <div className="text-sm font-bold text-blue-900 mb-3 flex items-center">
+                      <Target className="h-4 w-4 mr-2" />
+                      Pool Summary
+                    </div>
+                    <div className="text-sm text-gray-700 space-y-2">
+                      <div className="bg-white rounded-lg p-2 border border-blue-100">
+                        <strong className="text-blue-900">Selected:</strong> {
+                          contentConfig.type === 'KS4'
+                            ? `${contentConfig.themes?.length || 0} theme(s), ${contentConfig.units?.length || 0} unit(s)`
+                            : `${contentConfig.categories?.length || 0} categor${(contentConfig.categories?.length || 0) === 1 ? 'y' : 'ies'}, ${contentConfig.subcategories?.length || 0} subcategor${(contentConfig.subcategories?.length || 0) === 1 ? 'y' : 'ies'}`
+                        }
+                      </div>
+                      <div className="bg-white rounded-lg p-2 border border-blue-100">
+                        <strong className="text-blue-900">Pool size:</strong> {
+                          gameConfig.vocabularyConfig.useAllWords
+                            ? 'All available words (capped at 75)'
+                            : `Limited to ${gameConfig.vocabularyConfig.wordCount || 10} words`
+                        }
+                      </div>
+                      <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg p-2 border border-indigo-200">
+                        <strong className="text-indigo-900">Estimated sessions:</strong> {
+                          gameConfig.vocabularyConfig.useAllWords
+                            ? '≈ 5–8 sessions'
+                            : `≈ ${Math.ceil((gameConfig.vocabularyConfig.wordCount || 10) / 10)} session(s)`
+                        }
+                      </div>
+                      {gameConfig.vocabularyConfig.shuffleWords && (
+                        <div className="text-blue-600 bg-blue-50 rounded-lg p-2 border border-blue-200">
+                          🔀 Words will be shuffled for variety
+                        </div>
+                      )}
+                      <div className="text-xs text-gray-600 mt-2 pt-2 border-t border-blue-200 flex items-start">
+                        <span className="mr-1">💡</span>
+                        <span>About 10 words per session. Pool rotation mixes new (~70%) and review (~30%) items across sessions.</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}

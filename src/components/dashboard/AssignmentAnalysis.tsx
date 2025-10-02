@@ -12,7 +12,7 @@ interface AssignmentAnalysisProps {
 }
 
 export function AssignmentAnalysis({ assignmentId, onBack }: AssignmentAnalysisProps) {
-  const [data, setData] = useState<AssignmentAnalysisData | null>(null);
+  const [data, setData] = useState<any | null>(null); // Using any for backward compatibility fields
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState<TimeRange>('last_30_days');
 
@@ -126,69 +126,71 @@ export function AssignmentAnalysis({ assignmentId, onBack }: AssignmentAnalysisP
         </Card>
       </div>
 
-      {/* Question Breakdown */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Question-by-Question Analysis</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {data.questionBreakdown.map((question, index) => (
-              <div key={index} className="border rounded-lg p-4">
-                <div className="flex items-start justify-between mb-2">
-                  <div className="flex-1">
-                    <div className="font-medium">Question {question.questionNumber}</div>
-                    <div className="text-sm text-gray-600 mt-1">{question.questionText}</div>
-                  </div>
-                  <div className="text-right ml-4">
-                    <div className={`text-2xl font-bold ${
-                      question.successRate >= 75 ? 'text-green-600' :
-                      question.successRate >= 60 ? 'text-yellow-600' :
-                      'text-red-600'
-                    }`}>
-                      {question.successRate}%
+      {/* Question Breakdown - Only shown for quiz-style assignments */}
+      {data.questionBreakdown && data.questionBreakdown.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Question-by-Question Analysis</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {data.questionBreakdown.map((question: any, index: number) => (
+                <div key={index} className="border rounded-lg p-4">
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex-1">
+                      <div className="font-medium">Question {question.questionNumber}</div>
+                      <div className="text-sm text-gray-600 mt-1">{question.questionText}</div>
                     </div>
-                    <div className="text-xs text-gray-500">
-                      {question.correctCount}/{question.totalAttempts} correct
+                    <div className="text-right ml-4">
+                      <div className={`text-2xl font-bold ${
+                        question.successRate >= 75 ? 'text-green-600' :
+                        question.successRate >= 60 ? 'text-yellow-600' :
+                        'text-red-600'
+                      }`}>
+                        {question.successRate}%
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {question.correctCount}/{question.totalAttempts} correct
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Distractor Analysis */}
-                {question.distractorAnalysis && question.distractorAnalysis.length > 0 && (
+                  {/* Distractor Analysis */}
+                  {question.distractorAnalysis && question.distractorAnalysis.length > 0 && (
+                    <div className="mt-3 pt-3 border-t">
+                      <div className="text-sm font-medium mb-2">Common Wrong Answers:</div>
+                      <div className="space-y-1">
+                        {question.distractorAnalysis.map((distractor: any, idx: number) => (
+                          <div key={idx} className="flex items-center justify-between text-sm">
+                            <span className="text-gray-700">{distractor.answer}</span>
+                            <span className="text-gray-500">
+                              {distractor.count} students ({distractor.percentage}%)
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Time Distribution */}
                   <div className="mt-3 pt-3 border-t">
-                    <div className="text-sm font-medium mb-2">Common Wrong Answers:</div>
-                    <div className="space-y-1">
-                      {question.distractorAnalysis.map((distractor, idx) => (
-                        <div key={idx} className="flex items-center justify-between text-sm">
-                          <span className="text-gray-700">{distractor.answer}</span>
-                          <span className="text-gray-500">
-                            {distractor.count} students ({distractor.percentage}%)
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Time Distribution */}
-                <div className="mt-3 pt-3 border-t">
-                  <div className="flex items-center gap-4 text-sm">
-                    <div className="flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-gray-400" />
-                      <span className="text-gray-600">Avg: {question.averageTimeSeconds}s</span>
-                    </div>
-                    <div className="text-gray-400">|</div>
-                    <div className="text-gray-600">
-                      Range: {question.minTimeSeconds}s - {question.maxTimeSeconds}s
+                    <div className="flex items-center gap-4 text-sm">
+                      <div className="flex items-center gap-2">
+                        <Clock className="w-4 h-4 text-gray-400" />
+                        <span className="text-gray-600">Avg: {question.averageTimeSeconds}s</span>
+                      </div>
+                      <div className="text-gray-400">|</div>
+                      <div className="text-gray-600">
+                        Range: {question.minTimeSeconds}s - {question.maxTimeSeconds}s
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Student Performance List */}
       <Card>
@@ -197,7 +199,7 @@ export function AssignmentAnalysis({ assignmentId, onBack }: AssignmentAnalysisP
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
-            {data.studentPerformance.map((student) => (
+            {data.studentPerformance.map((student: any) => (
               <div
                 key={student.studentId}
                 className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50"

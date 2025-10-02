@@ -1,9 +1,10 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogClose } from '../../components/ui/dialog';
 import ComingSoonWrapper from '../../components/beta/ComingSoonWrapper';
 import {
   FileText,
@@ -18,10 +19,28 @@ import {
   PenTool,
   Grid3X3,
   Target,
-  ArrowRight
+  ArrowRight,
+  AlertTriangle,
+  X
 } from 'lucide-react';
 
-const worksheetTypes = [
+export default function WorksheetsPage() {
+  const [showDevWarning, setShowDevWarning] = useState(false);
+
+  useEffect(() => {
+    // Show development warning on page load
+    const hasSeenWarning = localStorage.getItem('worksheets-dev-warning-seen');
+    if (!hasSeenWarning) {
+      setShowDevWarning(true);
+    }
+  }, []);
+
+  const handleDismissWarning = () => {
+    setShowDevWarning(false);
+    localStorage.setItem('worksheets-dev-warning-seen', 'true');
+  };
+
+  const worksheetTypes = [
   {
     id: 'sentence-builder',
     title: 'Sentence Builder',
@@ -96,8 +115,8 @@ const worksheetTypes = [
   }
 ];
 
-export default function WorksheetsPage() {
   return (
+    <>
     <ComingSoonWrapper feature="worksheets">
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       <div className="container mx-auto py-12 px-4">
@@ -258,5 +277,58 @@ export default function WorksheetsPage() {
       </div>
     </div>
     </ComingSoonWrapper>
+
+    {/* Development Warning Popup */}
+    <Dialog open={showDevWarning} onOpenChange={setShowDevWarning}>
+      <DialogContent className="sm:max-w-xl bg-slate-900/95 border-0 p-6 sm:p-8">
+        <div className="flex items-start justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="flex items-center justify-center w-12 h-12 rounded-lg bg-amber-600/10">
+              <AlertTriangle className="h-7 w-7 text-amber-400" />
+            </div>
+            <div>
+              <h3 className="text-2xl font-semibold text-white">Worksheet Hub - Active Development</h3>
+              <p className="mt-2 text-sm text-gray-300 max-w-xl">This page is currently in active development. Many features and pages may not work as expected.</p>
+            </div>
+          </div>
+          <div>
+            <DialogClose className="text-gray-400 hover:text-gray-200">
+              <X className="h-5 w-5" />
+            </DialogClose>
+          </div>
+        </div>
+
+        <div className="mt-6 bg-amber-50 rounded-xl border border-amber-200 p-5">
+          <div className="flex items-start space-x-4">
+            <AlertTriangle className="h-6 w-6 text-amber-700 mt-1" />
+            <div className="text-amber-900">
+              <p className="font-semibold text-lg mb-2">What to expect:</p>
+              <ul className="list-disc list-inside space-y-1 text-sm">
+                <li>Some worksheet creation tools may be incomplete</li>
+                <li>Navigation to certain pages might not work</li>
+                <li>Features may change without notice</li>
+                <li>We're actively building and improving this section</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-6 flex gap-3">
+          <button
+            onClick={handleDismissWarning}
+            className="flex-1 rounded-lg border-2 border-slate-800 bg-transparent text-white py-3 px-4 text-center hover:border-white transition"
+          >
+            I Understand
+          </button>
+          <button
+            onClick={handleDismissWarning}
+            className="flex-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 text-center shadow-md"
+          >
+            Continue to Hub
+          </button>
+        </div>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }
