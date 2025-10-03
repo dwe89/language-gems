@@ -6,7 +6,7 @@ import { ArrowLeft, Clock, Users, Target } from 'lucide-react';
 import { useAuth } from '../../auth/AuthProvider';
 import { createBrowserClient } from '../../../lib/supabase-client';
 import { useGlobalAudioContext } from '../../../hooks/useGlobalAudioContext';
-
+import { createAudio, getAudioUrl } from '../../../utils/audioUtils';
 import { EnhancedGameSessionService } from '../../../services/rewards/EnhancedGameSessionService';
 import UniversalThemeSelector from '../UniversalThemeSelector';
 // RewardEngine removed - games should handle individual vocabulary interactions
@@ -1188,8 +1188,7 @@ export default function GameAssignmentWrapper({
           const p = pmap.get(v.id);
           return !p || (p.seen_count ?? 0) === 0;
         });
-        // const seen = withOrder.filter(v => !unseen.includes(v));
-
+        const seen = withOrder.filter(v => !unseen.includes(v));
 
         // Smart Reset: if nothing unseen remains, rank the whole pool by weakness + recency
         const allSeen = unseen.length === 0;
@@ -1296,12 +1295,25 @@ export default function GameAssignmentWrapper({
     });
 
     // Cleanup function to stop any assignment music when component unmounts
-    return () => {};
-
+    return () => {
+      stopAssignmentBackgroundMusic();
+    };
   }, [audioManager]);
 
 
-
+  const stopAssignmentBackgroundMusic = () => {
+    try {
+      const backgroundMusic = (window as any).assignmentBackgroundMusic;
+      if (backgroundMusic) {
+        backgroundMusic.pause();
+        backgroundMusic.currentTime = 0;
+        (window as any).assignmentBackgroundMusic = null;
+        console.log('🎵 GameAssignmentWrapper: Background music stopped');
+      }
+    } catch (error) {
+      console.warn('🎵 GameAssignmentWrapper: Error stopping background music:', error);
+    }
+  };
 
   const [gameProgress, setGameProgress] = useState<Partial<GameProgress>>({
     assignmentId,

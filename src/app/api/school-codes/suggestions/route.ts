@@ -1,6 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic';
+
 // Helper function to generate school code components dynamically from any school name
 function generateSchoolCodeComponents(schoolName: string) {
   const cleanedName = schoolName.toUpperCase().replace(/[^A-Z0-9\s]/g, ''); // Remove special chars, keep spaces

@@ -213,12 +213,52 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({
     if (!window.YT) {
       const tag = document.createElement('script');
       tag.src = 'https://www.youtube.com/iframe_api';
-      
+
       // Set up global callback function
       window.onYouTubeIframeAPIReady = initializePlayer;
-      
-      const firstScriptTag = document.getElementsByTagName('script')[0];
-      firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
+
+      // More robust script insertion with debugging
+      try {
+        const firstScriptTag = document.getElementsByTagName('script')[0];
+        if (firstScriptTag && firstScriptTag.parentNode) {
+          const parentNode = firstScriptTag.parentNode;
+          const referenceNode = firstScriptTag;
+
+          // Debug logging as suggested
+          console.log("Parent Node:", parentNode);
+          console.log("Reference Node:", referenceNode);
+          console.log("Is referenceNode a child of parentNode?", parentNode.contains(referenceNode) && referenceNode.parentNode === parentNode);
+
+          // Only insert if the relationship is valid
+          if (parentNode.contains(referenceNode) && referenceNode.parentNode === parentNode) {
+            parentNode.insertBefore(tag, referenceNode);
+          } else {
+            // Fallback: append to head or body
+            const head = document.head || document.getElementsByTagName('head')[0];
+            if (head) {
+              head.appendChild(tag);
+            } else {
+              document.body?.appendChild(tag);
+            }
+          }
+        } else {
+          // No script tags found, append to head
+          const head = document.head || document.getElementsByTagName('head')[0];
+          if (head) {
+            head.appendChild(tag);
+          } else {
+            document.body?.appendChild(tag);
+          }
+        }
+      } catch (error) {
+        console.error('Error inserting YouTube API script:', error);
+        // Final fallback
+        try {
+          document.head?.appendChild(tag);
+        } catch (fallbackError) {
+          console.error('Fallback script insertion also failed:', fallbackError);
+        }
+      }
       
       // Set a timeout for API loading
       const apiTimeout = setTimeout(() => {

@@ -6,7 +6,7 @@ const contactSchema = z.object({
   name: z.string().min(1, 'Name is required').max(100, 'Name must be less than 100 characters'),
   email: z.string().email('Valid email is required'),
   subject: z.string().min(1, 'Subject is required').max(200, 'Subject must be less than 200 characters'),
-  message: z.string().min(10, 'Message must be at least 10 characters').max(2000, 'Message must be less than 2000 characters'),
+  message: z.string().min(5, 'Message must be at least 5 characters').max(2000, 'Message must be less than 2000 characters'),
   contactType: z.string().optional().default('general'),
   phone: z.string().optional(),
   organization: z.string().optional()
@@ -32,7 +32,7 @@ async function sendNotificationEmail(submission: any) {
       body: JSON.stringify({
         sender: {
           name: 'LanguageGems Contact Form',
-          email: 'no-reply@languagegems.com'
+          email: 'support@languagegems.com' // Using validated sender from Brevo
         },
         to: [
           {

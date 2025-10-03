@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '../../../lib/supabase-server';
+import { createServiceRoleClient } from '../../../utils/supabase/client';
 
 // Brevo API integration
 async function addToBrevoList(email: string, firstName?: string, lastName?: string) {
@@ -109,78 +109,54 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const supabase = await createClient();
+    const supabase = createServiceRoleClient();
 
-    // Check if email already exists in Supabase
-    const { data: existingEmail } = await supabase
+    // Use UPSERT to handle both insert and update in one operation
+    // This is more reliable than checking first then inserting/updating
+    const { data: upsertData, error: upsertError } = await supabase
       .from('beta_email_signups')
-      .select('id, features')
-      .eq('email', email)
+      .upsert({
+        email,
+        first_name: firstName,
+        last_name: lastName,
+        features: ['coming-soon'],
+        priority: 'high',
+        source,
+        updated_at: new Date().toISOString(),
+      }, {
+        onConflict: 'email', // Use email as the conflict column
+        ignoreDuplicates: false, // Update on conflict
+      })
+      .select('id')
       .single();
 
-    let supabaseResult;
-    
-    if (existingEmail) {
-      // Update existing record
-      const { error: updateError } = await supabase
-        .from('beta_email_signups')
-        .update({
-          updated_at: new Date().toISOString(),
-          source: source,
-        })
-        .eq('id', existingEmail.id);
-
-      if (updateError) {
-        console.error('Error updating email signup:', updateError);
-        return NextResponse.json(
-          { error: 'Failed to update signup' },
-          { status: 500 }
-        );
-      }
-
-      supabaseResult = { isExisting: true };
-    } else {
-      // Create new email signup record
-      const { error: insertError } = await supabase
-        .from('beta_email_signups')
-        .insert({
-          email,
-          first_name: firstName,
-          last_name: lastName,
-          features: ['coming-soon'],
-          priority: 'high',
-          source,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        });
-
-      if (insertError) {
-        console.error('Error inserting email signup:', insertError);
-        return NextResponse.json(
-          { error: 'Failed to save email signup' },
-          { status: 500 }
-        );
-      }
-
-      supabaseResult = { isExisting: false };
+    if (upsertError) {
+      console.error('Error upserting email signup:', upsertError);
+      return NextResponse.json(
+        { error: 'Failed to save email signup' },
+        { status: 500 }
+      );
     }
+
+    const supabaseResult = { isExisting: !!upsertData };
 
     // Add to Brevo (don't fail the request if this fails)
     const brevoResult = await addToBrevoList(email, firstName, lastName);
-    
+
     return NextResponse.json({
       success: true,
-      message: supabaseResult.isExisting 
-        ? 'Email updated successfully' 
-        : 'Email successfully added to our list',
-      isExisting: supabaseResult.isExisting,
+      message: 'Thank you for signing up! We\'ll notify you when we launch.',
       brevoSuccess: brevoResult.success,
     });
 
   } catch (error) {
     console.error('Coming soon signup error:', error);
+    console.error('Error details:', JSON.stringify(error, null, 2));
     return NextResponse.json(
-      { error: 'Internal server error' },
+      {
+        error: 'Internal server error',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     );
   }

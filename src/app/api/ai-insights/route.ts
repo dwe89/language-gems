@@ -3,6 +3,8 @@ import { createClient } from '@supabase/supabase-js';
 import { SimpleStudentDataService } from '../../../services/simpleStudentDataService';
 import { AIInsightsService } from '../../../services/aiInsightsService';
 
+export const dynamic = 'force-dynamic';
+
 // Initialize Supabase client with service role for full access
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,

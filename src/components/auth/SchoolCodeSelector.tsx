@@ -96,43 +96,43 @@ export default function SchoolCodeSelector({ schoolName, onCodeSelect, selectedC
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 bg-blue-50 border border-blue-200 rounded-lg p-4">
       <div>
-        <label className="block text-sm font-medium text-gray-200 mb-2">
+        <label className="block text-sm font-medium text-gray-900 mb-1">
           Choose Your School Code
         </label>
-        <p className="text-xs text-gray-400 mb-3">
+        <p className="text-xs text-gray-600">
           Students will use this code to login. Pick from suggestions or create your own.
         </p>
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center p-4">
-          <Loader2 className="h-5 w-5 animate-spin text-cyan-400" />
-          <span className="ml-2 text-gray-300">Generating suggestions...</span>
+        <div className="flex items-center justify-center p-3">
+          <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
+          <span className="ml-2 text-gray-700 text-sm">Generating suggestions...</span>
         </div>
       ) : (
         <>
           {/* Suggested Codes */}
           {suggestions.length > 0 && (
             <div>
-              <h4 className="text-sm font-medium text-gray-300 mb-2">Suggested Codes:</h4>
+              <h4 className="text-sm font-medium text-gray-900 mb-2">Suggested Codes:</h4>
               <div className="grid grid-cols-1 gap-2">
                 {suggestions.map((suggestion) => (
                   <button
                     key={suggestion.suggestion}
                     type="button"
                     onClick={() => handleSuggestionSelect(suggestion.suggestion)}
-                    className={`p-3 rounded-md border text-left transition-colors ${
+                    className={`p-2.5 rounded-lg border text-left transition-all text-sm ${
                       selectedCode === suggestion.suggestion
-                        ? 'border-cyan-400 bg-cyan-400/10 text-cyan-400'
-                        : 'border-indigo-600 bg-indigo-800/30 text-gray-200 hover:border-cyan-400 hover:bg-cyan-400/5'
+                        ? 'border-blue-600 bg-blue-100 text-blue-900 shadow-sm'
+                        : 'border-gray-300 bg-white text-gray-700 hover:border-blue-400 hover:bg-blue-50'
                     }`}
                   >
                     <div className="flex items-center justify-between">
                       <span className="font-mono font-bold">{suggestion.suggestion}</span>
                       {selectedCode === suggestion.suggestion && (
-                        <Check className="h-4 w-4 text-cyan-400" />
+                        <Check className="h-4 w-4 text-blue-600" />
                       )}
                     </div>
                   </button>
@@ -143,14 +143,14 @@ export default function SchoolCodeSelector({ schoolName, onCodeSelect, selectedC
 
           {/* Custom Code Input */}
           <div>
-            <h4 className="text-sm font-medium text-gray-300 mb-2">Or Create Your Own:</h4>
+            <h4 className="text-sm font-medium text-gray-900 mb-2">Or Create Your Own:</h4>
             <div className="flex space-x-2">
               <div className="flex-1 relative">
                 <input
                   type="text"
                   value={customCode}
                   onChange={(e) => setCustomCode(e.target.value.toUpperCase())}
-                  className="w-full p-3 bg-indigo-800/50 border border-indigo-600 rounded-md text-white font-mono focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                  className="w-full p-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="MYSCHOOL2024"
                   maxLength={12}
                 />
@@ -162,9 +162,9 @@ export default function SchoolCodeSelector({ schoolName, onCodeSelect, selectedC
                 {!checkingCustom && customCode.trim() && isCustomCodeAvailable !== null && (
                   <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
                     {isCustomCodeAvailable ? (
-                      <Check className="h-4 w-4 text-green-400" />
+                      <Check className="h-4 w-4 text-green-600" />
                     ) : (
-                      <AlertCircle className="h-4 w-4 text-red-400" />
+                      <AlertCircle className="h-4 w-4 text-red-600" />
                     )}
                   </div>
                 )}
@@ -173,18 +173,18 @@ export default function SchoolCodeSelector({ schoolName, onCodeSelect, selectedC
                 type="button"
                 onClick={handleCustomCodeSelect}
                 disabled={!customCode.trim() || !isCustomCodeAvailable || checkingCustom}
-                className="px-4 py-3 bg-cyan-600 text-white rounded-md hover:bg-cyan-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 Use This
               </button>
             </div>
             {customCode.trim() && isCustomCodeAvailable === false && (
-              <p className="text-xs text-red-400 mt-1">
+              <p className="text-xs text-red-600 mt-1.5">
                 This code is already taken. Please try another.
               </p>
             )}
             {customCode.trim() && isCustomCodeAvailable === true && (
-              <p className="text-xs text-green-400 mt-1">
+              <p className="text-xs text-green-600 mt-1.5">
                 This code is available!
               </p>
             )}
@@ -192,14 +192,14 @@ export default function SchoolCodeSelector({ schoolName, onCodeSelect, selectedC
 
           {/* Selected Code Display */}
           {selectedCode && (
-            <div className="p-3 bg-green-900/20 border border-green-600 rounded-md">
+            <div className="p-3 bg-green-50 border border-green-300 rounded-lg">
               <div className="flex items-center">
-                <Check className="h-4 w-4 text-green-400 mr-2" />
-                <span className="text-green-400 text-sm">
+                <Check className="h-4 w-4 text-green-600 mr-2 flex-shrink-0" />
+                <span className="text-green-800 text-sm">
                   Selected: <span className="font-mono font-bold">{selectedCode}</span>
                 </span>
               </div>
-              <p className="text-xs text-green-300 mt-1">
+              <p className="text-xs text-green-700 mt-1">
                 Students will use this code to login to your school.
               </p>
             </div>

@@ -1,7 +1,7 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useState } from 'react';
 import { useAuth } from '../../components/auth/AuthProvider';
 import MainNavigation from './MainNavigation';
 import StudentNavigation from '../../components/student/StudentNavigation';
@@ -10,102 +10,62 @@ import SmartSignupSelector from '../../components/auth/SmartSignupSelector';
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const [isClient, setIsClient] = useState(false);
-  const [isOnStudentSubdomain, setIsOnStudentSubdomain] = useState(false);
   const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
   const { isStudent, isLoading: authLoading } = useAuth();
 
-  useEffect(() => {
-    setIsClient(true);
-    const hostname = window.location.hostname;
-    const isStudentDomain = hostname.startsWith('students.') || hostname === 'students.localhost';
-    setIsOnStudentSubdomain(isStudentDomain);
-  }, []);
-
   const isDashboard = pathname?.startsWith('/dashboard');
-  const isStudentDashboard = pathname?.startsWith('/student-dashboard');
-  const isStudentPortal = pathname?.startsWith('/student');
   const isStudentLogin = pathname === '/auth/student-login';
   const isLearnerDashboard = pathname?.startsWith('/learner-dashboard');
+  const isAuthResolved = !authLoading;
+  const shouldHideNavigation =
+    isStudentLogin ||
+    isDashboard ||
+    isLearnerDashboard;
 
-  // During SSR or before client hydration, render children only to avoid hydration mismatch
-  if (!isClient || authLoading) {
-    return <>{children}</>;
-  }
+  const shouldShowStudentNav =
+    isAuthResolved &&
+    isStudent &&
+    !shouldHideNavigation;
 
-  // Always render BetaBanner consistently after client loads
-  const banner = <BetaBanner variant="top" onSignupClick={() => setIsSignupModalOpen(true)} />;
+  const shouldShowMainNav =
+    isAuthResolved &&
+    !isStudent &&
+    !shouldHideNavigation;
 
-  // Pages that should never show any navigation (completely standalone)
-  const noNavigationPages = [isStudentLogin];
-  if (noNavigationPages.some(Boolean)) {
-    return (
-      <div>
-        {banner}
-        {children}
-        <SmartSignupSelector 
-          isOpen={isSignupModalOpen} 
-          onClose={() => setIsSignupModalOpen(false)} 
-        />
-      </div>
-    );
-  }
+  const shouldShowNavSkeleton =
+    !isAuthResolved &&
+    !shouldHideNavigation;
 
-  // Teacher/Admin dashboard pages - no navigation (they have their own internal nav)
-  if (isDashboard) {
-    return (
-      <div>
-        {banner}
-        {children}
-        <SmartSignupSelector 
-          isOpen={isSignupModalOpen} 
-          onClose={() => setIsSignupModalOpen(false)} 
-        />
-      </div>
-    );
-  }
-
-  // Learner dashboard pages - no main navigation (they have their own learner nav)
-  if (isLearnerDashboard) {
-    return (
-      <div>
-        {banner}
-        {children}
-        <SmartSignupSelector 
-          isOpen={isSignupModalOpen} 
-          onClose={() => setIsSignupModalOpen(false)} 
-        />
-      </div>
-    );
-  }
-
-  // If user is a student, always show student navigation everywhere
-  if (isStudent) {
-    return (
-      <div>
-        {banner}
-        <Suspense fallback={<div className="h-16 bg-gradient-to-r from-purple-600 via-pink-500 to-orange-400"></div>}>
-          <StudentNavigation />
-        </Suspense>
-        <main>{children}</main>
-        <SmartSignupSelector 
-          isOpen={isSignupModalOpen} 
-          onClose={() => setIsSignupModalOpen(false)} 
-        />
-      </div>
-    );
-  }
-
-  // For non-students (teachers, admins, visitors), show main navigation
   return (
     <div>
-      {banner}
-      <MainNavigation />
+      <div data-slot="beta-banner">
+        <BetaBanner variant="top" onSignupClick={() => setIsSignupModalOpen(true)} />
+      </div>
+
+      <div data-slot="student-navigation">
+        {shouldShowStudentNav ? (
+          <Suspense fallback={<div className="h-16 bg-gradient-to-r from-purple-600 via-pink-500 to-orange-400"></div>}>
+            <StudentNavigation />
+          </Suspense>
+        ) : null}
+      </div>
+
+      <div data-slot="main-navigation">
+        {shouldShowMainNav ? (
+          <MainNavigation />
+        ) : shouldShowNavSkeleton ? (
+          <div className="h-16 bg-gradient-to-r from-blue-900 via-blue-800 to-teal-700"></div>
+        ) : null}
+      </div>
+
       <main>{children}</main>
-      <SmartSignupSelector 
-        isOpen={isSignupModalOpen} 
-        onClose={() => setIsSignupModalOpen(false)} 
-      />
+
+      <div data-slot="signup-modal">
+        <SmartSignupSelector
+          isOpen={isSignupModalOpen}
+          onClose={() => setIsSignupModalOpen(false)}
+        />
+      </div>
     </div>
   );
 }

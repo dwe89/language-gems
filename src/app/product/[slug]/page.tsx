@@ -31,7 +31,9 @@ interface Product {
   table_of_contents?: string[];
 }
 
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
+const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+  ? loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
+  : null;
 
 export default function ProductPage() {
   const params = useParams();
@@ -98,10 +100,48 @@ export default function ProductPage() {
 
   const handlePurchase = async () => {
     if (!product) return;
-    
+
     setPurchasing(true);
-    
+
     try {
+      // Handle free products
+      if (product.price_cents === 0) {
+        // For free products, directly provide download
+        const response = await fetch('/api/products/download', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            product_id: product.id
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to get download link');
+        }
+
+        const data = await response.json();
+
+        if (data.download_url) {
+          // Create a temporary link element to trigger download with proper filename
+          const link = document.createElement('a');
+          link.href = data.download_url;
+          link.download = data.product_name || 'download.pdf';
+          link.target = '_blank';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+
+          // Show success message
+          alert(`✅ Download started! Check your downloads folder for "${data.product_name}"`);
+        } else {
+          throw new Error('No download URL received');
+        }
+        return;
+      }
+
+      // Handle paid products with Stripe
       const response = await fetch('/api/stripe/create-checkout-session', {
         method: 'POST',
         headers: {
@@ -121,7 +161,7 @@ export default function ProductPage() {
       }
 
       const data = await response.json();
-      
+
       if (data.error) {
         throw new Error(data.error);
       }
@@ -389,18 +429,27 @@ export default function ProductPage() {
               <div className="space-y-4">
                 <button
                   onClick={handlePurchase}
-                  disabled={purchasing || !product.stripe_price_id}
+                  disabled={purchasing || (product.price_cents > 0 && !product.stripe_price_id)}
                   className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                 >
                   {purchasing ? (
                     <>
                       <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white mr-3"></div>
-                      Processing...
+                      {product.price_cents === 0 ? 'Downloading...' : 'Processing...'}
                     </>
                   ) : (
                     <>
-                      <CreditCard className="mr-3 h-5 w-5" />
-                      Buy Now - {formatPrice(product.price_cents)}
+                      {product.price_cents === 0 ? (
+                        <>
+                          <Download className="mr-3 h-5 w-5" />
+                          Download Free
+                        </>
+                      ) : (
+                        <>
+                          <CreditCard className="mr-3 h-5 w-5" />
+                          Buy Now - {formatPrice(product.price_cents)}
+                        </>
+                      )}
                     </>
                   )}
                 </button>

@@ -3,6 +3,8 @@ import { createClient } from '@supabase/supabase-js';
 import { AIInsightsPipelineService } from '@/services/aiInsightsPipelineService';
 import { PerformancePredictionService } from '@/services/performancePredictionService';
 
+export const dynamic = 'force-dynamic';
+
 // Global pipeline instance
 let pipelineService: AIInsightsPipelineService | null = null;
 let predictionService: PerformancePredictionService | null = null;
