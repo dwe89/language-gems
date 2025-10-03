@@ -25,7 +25,6 @@ import Footer from '../components/layout/Footer';
 import SEOWrapper from '../components/seo/SEOWrapper';
 import { useAuth } from '../components/auth/AuthProvider';
 import SmartSignupSelector from '../components/auth/SmartSignupSelector';
-import ComingSoonModal from '../components/modals/ComingSoonModal';
 
 // Universal hero text variations
 const heroTextVariations = [
@@ -78,7 +77,6 @@ export default function Home() {
   const { text: animatedText, color: textColor } = useTypewriter(heroTextVariations);
   const { user } = useAuth();
   const [showSignupModal, setShowSignupModal] = useState(false);
-  const [showComingSoonModal, setShowComingSoonModal] = useState(false);
 
   // Auto-redirect logged-in users to their appropriate dashboard
   useEffect(() => {
@@ -90,32 +88,6 @@ export default function Home() {
       window.location.href = '/dashboard';
     }
   }, [user]);
-
-  // Show Coming Soon modal automatically for new visitors
-  useEffect(() => {
-    // For testing: show modal regardless of login status
-    // In production, change this to: if (!user) {
-    if (!user) { // TEMP: Always show for testing
-      // Check if user has already seen the modal today
-      const hasSeenToday = localStorage.getItem('comingSoonModalSeen');
-      const today = new Date().toDateString();
-
-      if (hasSeenToday !== today) {
-        // Show modal after a short delay
-        const timer = setTimeout(() => {
-          setShowComingSoonModal(true);
-        }, 2000); // 2 second delay
-
-        return () => clearTimeout(timer);
-      }
-    }
-  }, [user]);
-
-  const handleComingSoonClose = () => {
-    setShowComingSoonModal(false);
-    // Remember that user has seen the modal today
-    localStorage.setItem('comingSoonModalSeen', new Date().toDateString());
-  };
 
   // Universal features for both audiences
   const universalFeatures = [
@@ -341,12 +313,6 @@ export default function Home() {
       <SmartSignupSelector
         isOpen={showSignupModal}
         onClose={() => setShowSignupModal(false)}
-      />
-
-      {/* Coming Soon Modal */}
-      <ComingSoonModal
-        isOpen={showComingSoonModal}
-        onClose={handleComingSoonClose}
       />
     </SEOWrapper>
   );
