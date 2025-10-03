@@ -1,0 +1,1422 @@
+brandUpdateTime: ""
+firstLoadSocialIcons: false
+hideSwapBanner: false
+font-fallback:
+  default: 'Inter, Arial, sans-serif'
+  headings: 'Inter, Arial, sans-serif'
+campaignType: automation_template
+fieldsHistory: []
+subject: '{{contact.PRENOM | default : ''''}}, welcome to Language Gems - your language learning journey starts here!'
+ui:
+  showDeleteOption: false
+  showMoreOption: false
+                  text: '<p><span style="font-family:Inter, Arial, sans-serif;color:#4C1D95;font-weight:600;">Explore this resource</span></p>'
+author: ""
+name: ""
+id: ""
+version: 3.0.1
+fields: {}
+fonts:
+                      align: left
+                      background-color: '#EEF2FF'
+                      border-color: '#C7D2FE'
+                      border-radius: 16px
+                      border-width: 0px
+                      item-height: 44px
+                      margin-bottom: 20px
+                      margin-top: 16px
+                      padding-bottom: 12px
+                      padding-top: 12px
+                      text-align: center
+                      text-valign: middle
+                      valign: top
+      border-radius: 12px
+                    text: '<p><span style="font-family:Inter, Arial, sans-serif;color:#4C1D95;font-weight:600;">Open in Language Gems</span></p>'
+      color: '#fff'
+      font-family: 'Inter, Arial, sans-serif'
+      font-size: 16px
+      remove-vml-button: optional
+      width: 135px
+    title: Button
+  default-heading1:
+    properties:
+      color: '#1F2937'
+      font-family: 'Inter, Arial, sans-serif'
+      font-size: 36px
+    title: 'Heading 1'
+  default-heading2:
+    properties:
+      color: '#1F2937'
+      font-family: 'Inter, Arial, sans-serif'
+      font-size: 32px
+    title: 'Heading 2'
+  default-heading3:
+    properties:
+      color: '#111827'
+      font-family: 'Inter, Arial, sans-serif'
+      font-size: 24px
+      letter-spacing: '0.01em'
+    title: 'Heading 3'
+  default-heading4:
+    properties:
+      color: '#4B5563'
+      font-family: 'Inter, Arial, sans-serif'
+      font-size: 18px
+      letter-spacing: '0.02em'
+    title: 'Heading 4'
+  default-link:
+    properties:
+      color: '#7C3AED'
+      text-decoration: underline
+    title: Link
+media:
+  320px:
+    max-width: 600
+    min-width: 0
+body:
+  content:
+    -
+      type: rows
+      thumbnail: null
+      isCustomBlock: null
+      customBlockId: null
+      moduleName: null
+      sidebarSection: null
+      sync-module-id: null
+      content-type: wrapper
+      title: Wrapper
+      stylable: null
+      layout:
+        320px:
+          width: 320px
+        default:
+          align: center
+          valign: top
+      content:
+        -
+          type: grid-row
+          thumbnail: /assets/img/editor/grid_12.svg
+          isCustomBlock: null
+          customBlockId: null
+          moduleName: viewInBrowser
+          sidebarSection: null
+          sync-module-id: null
+          align: top
+          title: section
+          stylable: null
+          layout:
+            320px:
+              display: rows
+              width: 100%
+            default:
+              align: center
+              full-width: true
+              background-color: transparent
+              display: none
+              padding-bottom: 5px
+              padding-top: 5px
+              width: 100%
+              valign: top
+              padding-left: null
+              padding-right: null
+          content:
+            -
+              type: grid-column
+              thumbnail: null
+              isCustomBlock: null
+              customBlockId: null
+              moduleName: null
+              sidebarSection: null
+              sync-module-id: null
+              imagelabel: 'Select a content type'
+              isEmpty: false
+              label: 'Drop content here'
+              title: 'column 1'
+              stylable: false
+              layout:
+                320px: {}
+                default:
+                  padding-left: 0px
+                  padding-right: 0px
+                  valign: top
+              content:
+                -
+                  type: text
+                  thumbnail: null
+                  isCustomBlock: null
+                  customBlockId: null
+                  moduleName: null
+                  sidebarSection: null
+                  sync-module-id: null
+                  title: 'View in browser'
+                  stylable: null
+                  layout:
+                    320px:
+                      padding-left: 10px
+                      padding-right: 10px
+                      width: 100%
+                    default:
+                      align: center
+                      padding-left: 30px
+                      padding-right: 30px
+                      text-align: center
+                      width: 100%
+                  content: "<p><a href=\"{{ mirror }}\">\n                      <span style=\"font-family: arial,helvetica,sans-serif;color:#858588;font-size: 12px; text-decoration: underline;\">\n                      View in browser</span></a></p>"
+          dist: '12'
+          gutter: 0px
+        -
+          type: grid-row
+          thumbnail: null
+          isCustomBlock: null
+          customBlockId: null
+          moduleName: header
+          sidebarSection: null
+          sync-module-id: null
+          align: top
+          title: Header
+          stylable: null
+          layout:
+            320px:
+              display: rows
+              padding-left: 15px
+              padding-right: 15px
+              width: 100%
+            default:
+              align: center
+              padding-bottom: 80px
+              padding-top: 20px
+              width: 100%
+              valign: top
+              padding-left: null
+              padding-right: null
+          content:
+            -
+              type: grid-column
+              thumbnail: null
+              isCustomBlock: null
+              customBlockId: null
+              moduleName: null
+              sidebarSection: null
+              sync-module-id: null
+              isEmpty: false
+              label: 'Drop content here'
+              title: grid-column
+              stylable: false
+              layout:
+                320px: {}
+                default:
+                  padding-left: 0px
+                  padding-right: 0px
+                  valign: top
+              content:
+                -
+                  type: image
+                  thumbnail: /assets/img/editor/element-logo.png
+                  isCustomBlock: null
+                  customBlockId: null
+                  moduleName: brand-logo
+                  sidebarSection: null
+                  sync-module-id: null
+                  label: Replace
+                  title: Logo
+                  stylable: null
+                  layout:
+                    320px:
+                      max-width: 320px
+                      width: 100%
+                    default:
+                      align: center
+                      canvas-height: 60px
+                      dynamic: false
+                      embed: false
+                      img-border-radius: 0px
+                      imgSize: '7142'
+                      width: 200px
+                      valign: top
+                  content:
+                    src: 'https://creative-assets.mailinblue.com/editor/templates/logo-placeholder.png'
+          dist: '12'
+          gutter: 30px
+        -
+          type: grid-row
+          thumbnail: /assets/img/editor/grid_12.svg
+          isCustomBlock: null
+          customBlockId: null
+          moduleName: grid-row12
+          sidebarSection: null
+          sync-module-id: null
+          align: top
+          title: highlights
+          stylable: null
+          layout:
+            320px:
+              display: rows
+              padding-left: 15px
+              padding-right: 15px
+              width: 100%
+            default:
+              align: center
+              background-color: '#FFFFFF'
+              border-radius: 28px
+              box-shadow: '0 20px 45px rgba(124, 58, 237, 0.12)'
+              margin-bottom: 32px
+              padding-bottom: 32px
+              padding-left: 48px
+              padding-right: 48px
+              padding-top: 32px
+              width: 100%
+              valign: top
+          content:
+            -
+              type: grid-column
+              thumbnail: null
+              isCustomBlock: null
+              customBlockId: null
+              moduleName: null
+              sidebarSection: null
+              sync-module-id: null
+              isEmpty: false
+              title: feature-one
+              stylable: false
+              layout:
+                320px: {}
+                default:
+                  padding-left: 0px
+                  padding-right: 24px
+                  valign: top
+              content:
+                -
+                  type: text
+                  thumbnail: /assets/img/editor/element_title.svg
+                  isCustomBlock: null
+                  customBlockId: null
+                  moduleName: null
+                  sidebarSection: null
+                  sync-module-id: null
+                  title: Feature Heading
+                  stylable: null
+                  layout:
+                    320px:
+                      width: 100%
+                    default:
+                      align: left
+                      padding-bottom: 12px
+                      padding-left: 0px
+                      padding-right: 0px
+                      padding-top: 0px
+                      text-align: left
+                      text-valign: top
+                      width: 100%
+                      valign: top
+                  content: '<h4 class="default-heading4" style="margin:0;color:#7C3AED;">Curated Pathways</h4>'
+                -
+                  type: text
+                  thumbnail: /assets/img/editor/element_text.svg
+                  isCustomBlock: null
+                  customBlockId: null
+                  moduleName: null
+                  sidebarSection: null
+                  sync-module-id: null
+                  title: Feature Copy
+                  stylable: null
+                  layout:
+                    320px:
+                      width: 100%
+                    default:
+                      align: left
+                      padding-bottom: 0px
+                      padding-left: 0px
+                      padding-right: 0px
+                      padding-top: 0px
+                      text-align: left
+                      text-valign: top
+                      width: 100%
+                      valign: top
+                  content: '<p>Personalised study tracks crafted by expert linguists to keep you focused and motivated.</p>'
+            -
+              type: grid-column
+              thumbnail: null
+              isCustomBlock: null
+              customBlockId: null
+              moduleName: null
+              sidebarSection: null
+              sync-module-id: null
+              isEmpty: false
+              title: feature-two
+              stylable: false
+              layout:
+                320px: {}
+                default:
+                  padding-left: 12px
+                  padding-right: 12px
+                  valign: top
+              content:
+                -
+                  type: text
+                  thumbnail: /assets/img/editor/element_title.svg
+                  isCustomBlock: null
+                  customBlockId: null
+                  moduleName: null
+                  sidebarSection: null
+                  sync-module-id: null
+                  title: Feature Heading
+                  stylable: null
+                  layout:
+                    320px:
+                      width: 100%
+                    default:
+                      align: left
+                      padding-bottom: 12px
+                      padding-left: 0px
+                      padding-right: 0px
+                      padding-top: 0px
+                      text-align: left
+                      text-valign: top
+                      width: 100%
+                      valign: top
+                  content: '<h4 class="default-heading4" style="margin:0;color:#4338CA;">Immersive Experiences</h4>'
+                -
+                  type: text
+                  thumbnail: /assets/img/editor/element_text.svg
+                  isCustomBlock: null
+                  customBlockId: null
+                  moduleName: null
+                  sidebarSection: null
+                  sync-module-id: null
+                  title: Feature Copy
+                  stylable: null
+                  layout:
+                    320px:
+                      width: 100%
+                    default:
+                      align: left
+                      padding-bottom: 0px
+                      padding-left: 0px
+                      padding-right: 0px
+                      padding-top: 0px
+                      text-align: left
+                      text-valign: top
+                      width: 100%
+                      valign: top
+                  content: '<p>Gamified challenges, pronunciation labs, and audio adventures designed to make every session memorable.</p>'
+            -
+              type: grid-column
+              thumbnail: null
+              isCustomBlock: null
+              customBlockId: null
+              moduleName: null
+              sidebarSection: null
+              sync-module-id: null
+              isEmpty: false
+              title: feature-three
+              stylable: false
+              layout:
+                320px: {}
+                default:
+                  padding-left: 24px
+                  padding-right: 0px
+                  valign: top
+              content:
+                -
+                  type: text
+                  thumbnail: /assets/img/editor/element_title.svg
+                  isCustomBlock: null
+                  customBlockId: null
+                  moduleName: null
+                  sidebarSection: null
+                  sync-module-id: null
+                  title: Feature Heading
+                  stylable: null
+                  layout:
+                    320px:
+                      width: 100%
+                    default:
+                      align: left
+                      padding-bottom: 12px
+                      padding-left: 0px
+                      padding-right: 0px
+                      padding-top: 0px
+                      text-align: left
+                      text-valign: top
+                      width: 100%
+                      valign: top
+                  content: '<h4 class="default-heading4" style="margin:0;color:#312E81;">Progress Intelligence</h4>'
+                -
+                  type: text
+                  thumbnail: /assets/img/editor/element_text.svg
+                  isCustomBlock: null
+                  customBlockId: null
+                  moduleName: null
+                  sidebarSection: null
+                  sync-module-id: null
+                  title: Feature Copy
+                  stylable: null
+                  layout:
+                    320px:
+                      width: 100%
+                    default:
+                      align: left
+                      padding-bottom: 0px
+                      padding-left: 0px
+                      padding-right: 0px
+                      padding-top: 0px
+                      text-align: left
+                      text-valign: top
+                      width: 100%
+                      valign: top
+                  content: '<p>Real-time dashboards, smart recommendations, and shared feedback loops with your teachers.</p>'
+        -
+          type: grid-row
+          thumbnail: /assets/img/editor/grid_12.svg
+          isCustomBlock: null
+          customBlockId: null
+          moduleName: grid-row12
+          sidebarSection: null
+          sync-module-id: null
+          align: top
+          title: section
+          stylable: null
+          layout:
+            320px:
+              display: rows
+              padding-left: 15px
+              padding-right: 15px
+              width: 100%
+            default:
+              align: center
+              background-color: '#F5F3FF'
+              border-radius: 32px
+              padding-bottom: 56px
+              padding-left: 48px
+              padding-right: 48px
+              padding-top: 48px
+              width: 100%
+              valign: middle
+          content:
+            -
+              type: grid-column
+              thumbnail: null
+              isCustomBlock: null
+              customBlockId: null
+              moduleName: null
+              sidebarSection: null
+              sync-module-id: null
+              isEmpty: false
+              title: grid-column
+              stylable: false
+              layout:
+                320px: {}
+                default:
+                  padding-left: 0px
+                  padding-right: 0px
+                  valign: middle
+              content:
+                -
+                  type: image
+                  thumbnail: /assets/img/editor/element_image.svg
+                  isCustomBlock: null
+                  customBlockId: null
+                  moduleName: null
+                  sidebarSection: null
+                  sync-module-id: null
+                  title: Image
+                  stylable: null
+                  layout:
+                    320px:
+                      max-width: 320px
+                      width: 100%
+                    default:
+                      align: center
+                      canvas-height: 197.9976806640625px
+                      dynamic: false
+                      embed: false
+                      img-border-radius: 16px
+                      imgSize: '11978'
+                      removePadding: false
+                      border-radius: 16px
+                      padding-bottom: 0px
+                      padding-left: 0px
+                      padding-right: 0px
+                      padding-top: 0px
+                      width: 100%
+                      valign: top
+                  content:
+                    src: 'https://creative-assets.mailinblue.com/editor/templates/image-placeholder-3x-4.png'
+            -
+              type: grid-column
+              thumbnail: null
+              isCustomBlock: null
+              customBlockId: null
+              moduleName: null
+              sidebarSection: null
+              sync-module-id: null
+              isEmpty: false
+              title: 'column 1'
+              stylable: false
+              layout:
+                320px: {}
+                default:
+                  padding-left: 0px
+                  padding-right: 0px
+                  valign: middle
+              content:
+                -
+                  type: text
+                  thumbnail: /assets/img/editor/element-title.svg
+                  isCustomBlock: null
+                  customBlockId: null
+                  moduleName: text-title
+                  sidebarSection: null
+                  sync-module-id: null
+                  title: Titre
+                  stylable: null
+                  layout:
+                    320px:
+                      width: 100%
+                    default:
+                      align: left
+                      removePadding: false
+                      line-height: '1'
+                      padding-bottom: 0px
+                      padding-left: 0px
+                      padding-right: 0px
+                      padding-top: 0px
+                      text-align: left
+                      text-valign: top
+                      width: 100%
+                      valign: top
+                  content: '<h2 class="default-heading2">{{ contact.FIRSTNAME }}, welcome to Language Gems! 🌟</h2>'
+                -
+                  type: text
+                  thumbnail: /assets/img/editor/element_text.svg
+                  isCustomBlock: null
+                  customBlockId: null
+                  moduleName: null
+                  sidebarSection: null
+                  sync-module-id: null
+                  title: Welcome Message
+                  stylable: null
+                  layout:
+                    320px:
+                      width: 100%
+                    default:
+                      align: left
+                      removePadding: false
+                      padding-bottom: 0px
+                      padding-left: 0px
+                      padding-right: 0px
+                      padding-top: 15px
+                      text-align: left
+                      text-valign: top
+                      width: 100%
+                      valign: top
+                  content: '<p style="color:#7C3AED;font-weight:600;font-size:18px;">Your language learning adventure begins now!</p>'
+                -
+                  type: text
+                  thumbnail: /assets/img/editor/element_text.svg
+                  isCustomBlock: null
+                  customBlockId: null
+                  moduleName: null
+                  sidebarSection: null
+                  sync-module-id: null
+                  title: Texte
+                  stylable: null
+                  layout:
+                    320px:
+                      width: 100%
+                    default:
+                      align: left
+                      removePadding: true
+                      padding-bottom: 0px
+                      padding-left: 0px
+                      padding-right: 0px
+                      padding-top: 20px
+                      text-align: left
+                      text-valign: top
+                      width: 100%
+                      valign: top
+                  content: '<p>You''ve joined thousands of language learners discovering the joy of mastering new languages. We''re excited to help you unlock your language potential with our comprehensive learning resources and interactive games.</p>'
+                -
+                  type: text
+                  thumbnail: /assets/img/editor/element_text.svg
+                  isCustomBlock: null
+                  customBlockId: null
+                  moduleName: null
+                  sidebarSection: null
+                  sync-module-id: null
+                  title: Highlights
+                  stylable: null
+                  layout:
+                    320px:
+                      width: 100%
+                    default:
+                      align: left
+                      removePadding: true
+                      padding-bottom: 0px
+                      padding-left: 0px
+                      padding-right: 0px
+                      padding-top: 20px
+                      text-align: left
+                      text-valign: top
+                      width: 100%
+                      valign: top
+                  content: '<ul style="padding-left:20px;margin:0;color:#4B5563;font-size:16px;line-height:1.7;">
+                    <li><strong>Guided weekly study plans</strong> tailored to your target language level.</li>
+                    <li><strong>Interactive games &amp; AI-powered worksheets</strong> that turn practice into play.</li>
+                    <li><strong>Teacher-grade analytics</strong> so you can track every milestone with confidence.</li>
+                  </ul>'
+                -
+                  type: text-button
+                  thumbnail: /assets/img/editor/element_button.svg
+                  isCustomBlock: null
+                  customBlockId: null
+                  moduleName: null
+                  sidebarSection: null
+                  sync-module-id: null
+                  text: '<p><span style="font-family:Inter, Arial, sans-serif;font-weight:600;">Launch Your Learning Hub</span></p>'
+                  title: Primary CTA
+                  stylable: null
+                  layout:
+                    320px:
+                      width: 100%
+                    default:
+                      align: left
+                      background-color: '#7C3AED'
+                      border-radius: 999px
+                      margin-bottom: 0px
+                      margin-top: 32px
+                      padding-bottom: 16px
+                      padding-top: 16px
+                      text-align: center
+                      text-valign: middle
+                      width: 55%
+                      valign: top
+                  content:
+                    text: '<p><span style="font-family:Inter, Arial, sans-serif;font-weight:600;">Launch Your Learning Hub</span></p>'
+                    href: '{{params.url}}'
+          dist: 6-6
+          gutter: 30px
+        -
+          type: grid-row
+          thumbnail: /assets/img/editor/grid_12.svg
+          isCustomBlock: null
+          customBlockId: null
+          moduleName: grid-row12
+          sidebarSection: null
+          sync-module-id: null
+          align: top
+          title: testimonial
+          stylable: null
+          layout:
+            320px:
+              display: rows
+              padding-left: 15px
+              padding-right: 15px
+              width: 100%
+            default:
+              align: center
+              background-color: '#0F172A'
+              border-radius: 28px
+              margin-top: 40px
+              padding-bottom: 48px
+              padding-left: 48px
+              padding-right: 48px
+              padding-top: 48px
+              width: 100%
+              valign: top
+          content:
+            -
+              type: grid-column
+              thumbnail: null
+              isCustomBlock: null
+              customBlockId: null
+              moduleName: null
+              sidebarSection: null
+              sync-module-id: null
+              isEmpty: false
+              title: testimonial-column
+              stylable: false
+              layout:
+                320px: {}
+                default:
+                  padding-left: 0px
+                  padding-right: 0px
+                  valign: top
+              content:
+                -
+                  type: text
+                  thumbnail: /assets/img/editor/element_title.svg
+                  isCustomBlock: null
+                  customBlockId: null
+                  moduleName: null
+                  sidebarSection: null
+                  sync-module-id: null
+                  title: Testimonial Heading
+                  stylable: null
+                  layout:
+                    320px:
+                      width: 100%
+                    default:
+                      align: center
+                      padding-bottom: 16px
+                      padding-left: 0px
+                      padding-right: 0px
+                      padding-top: 0px
+                      text-align: center
+                      text-valign: top
+                      width: 100%
+                      valign: top
+                  content: '<h3 class="default-heading3" style="margin:0;color:#38BDF8;">Loved by learners worldwide</h3>'
+                -
+                  type: text
+                  thumbnail: /assets/img/editor/element_text.svg
+                  isCustomBlock: null
+                  customBlockId: null
+                  moduleName: null
+                  sidebarSection: null
+                  sync-module-id: null
+                  title: Testimonial Quote
+                  stylable: null
+                  layout:
+                    320px:
+                      width: 100%
+                    default:
+                      align: center
+                      padding-bottom: 24px
+                      padding-left: 0px
+                      padding-right: 0px
+                      padding-top: 0px
+                      text-align: center
+                      text-valign: top
+                      width: 100%
+                      valign: top
+                  content: '<p style="color:#E0F2FE;font-size:18px;line-height:1.7;font-style:italic;">“Language Gems transformed revision into a creative language adventure. My students are obsessed—and their grades prove it.”</p>'
+                -
+                  type: text
+                  thumbnail: /assets/img/editor/element_text.svg
+                  isCustomBlock: null
+                  customBlockId: null
+                  moduleName: null
+                  sidebarSection: null
+                  sync-module-id: null
+                  title: Testimonial Author
+                  stylable: null
+                  layout:
+                    320px:
+                      width: 100%
+                    default:
+                      align: center
+                      padding-bottom: 0px
+                      padding-left: 0px
+                      padding-right: 0px
+                      padding-top: 0px
+                      text-align: center
+                      text-valign: top
+                      width: 100%
+                      valign: top
+                  content: '<p style="color:#A5F3FC;font-size:16px;font-weight:600;">Amelia Howard · Head of Languages, Brighton Academy</p>'
+        -
+          type: grid-row
+          thumbnail: /assets/img/editor/grid_12.svg
+          isCustomBlock: null
+          customBlockId: null
+          moduleName: grid-row12
+          sidebarSection: null
+          sync-module-id: null
+          align: top
+          title: section
+          stylable: null
+          layout:
+            320px:
+              display: rows
+              padding-left: 15px
+              padding-right: 15px
+              width: 100%
+            default:
+              align: center
+              removePadding: true
+              padding-bottom: 20px
+              padding-left: 0px
+              padding-right: 0px
+              padding-top: 20px
+              width: 100%
+              valign: middle
+          content:
+            -
+              type: grid-column
+              thumbnail: null
+              isCustomBlock: null
+              customBlockId: null
+              moduleName: null
+              sidebarSection: null
+              sync-module-id: null
+              isEmpty: false
+              title: 'column 1'
+              stylable: false
+              layout:
+                320px: {}
+                default:
+                  padding-left: 0px
+                  padding-right: 0px
+                  valign: middle
+              content:
+                -
+                  type: text
+                  thumbnail: /assets/img/editor/element_title.svg
+                  isCustomBlock: null
+                  customBlockId: null
+                  moduleName: null
+                  sidebarSection: null
+                  sync-module-id: null
+                  title: Section Heading
+                  stylable: null
+                  layout:
+                    320px:
+                      width: 100%
+                    default:
+                      align: left
+                      padding-bottom: 12px
+                      padding-left: 0px
+                      padding-right: 0px
+                      padding-top: 0px
+                      text-align: left
+                      text-valign: top
+                      width: 100%
+                      valign: top
+                  content: '<h3 class="default-heading3" style="margin:0;">Your personalised Language Gems welcome kit</h3>'
+                -
+                  type: text
+                  thumbnail: /assets/img/editor/element_text.svg
+                  isCustomBlock: null
+                  customBlockId: null
+                  moduleName: null
+                  sidebarSection: null
+                  sync-module-id: null
+                  title: Texte
+                  stylable: null
+                  layout:
+                    320px:
+                      width: 100%
+                    default:
+                      align: left
+                      removePadding: false
+                      padding-bottom: 0px
+                      padding-left: 0px
+                      padding-right: 0px
+                      padding-top: 0px
+                      text-align: left
+                      text-valign: top
+                      width: 100%
+                      valign: top
+                  content: '<p>Here are some amazing language learning resources we''ve curated just for you to accelerate your journey:</p>'
+          dist: '12'
+          gutter: 30px
+        -
+          type: grid-row
+          thumbnail: null
+          isCustomBlock: null
+          customBlockId: null
+          moduleName: null
+          sidebarSection: null
+          sync-module-id: null
+          align: top
+          title: '1 - Dynamic product'
+          stylable: null
+          layout:
+            320px:
+              display: rows
+              padding-left: 15px
+              padding-right: 15px
+              width: 100%
+            default:
+              align: center
+              removePadding: false
+              padding-bottom: 0px
+              padding-left: 0px
+              padding-right: 0px
+              padding-top: 0px
+              width: 100%
+              valign: top
+          content:
+            -
+              type: grid-column
+              thumbnail: null
+              isCustomBlock: null
+              customBlockId: null
+              moduleName: null
+              sidebarSection: null
+              sync-module-id: null
+              isEmpty: false
+              title: 'column 1'
+              stylable: false
+              layout:
+                320px: {}
+                default:
+                  padding-left: 0px
+                  padding-right: 0px
+                  valign: top
+              content:
+                -
+                  type: image
+                  thumbnail: /assets/img/editor/element_image.svg
+                  isCustomBlock: null
+                  customBlockId: null
+                  moduleName: null
+                  sidebarSection: null
+                  sync-module-id: null
+                  title: Image
+                  stylable: null
+                  layout:
+                    320px:
+                      max-width: 320px
+                      width: 100%
+                    default:
+                      align: center
+                      canvas-height: 227.6953125px
+                      dynamic: false
+                      embed: false
+                      img-border-radius: 16px
+                      imgSize: '21395'
+                      border-radius: 16px
+                      padding-bottom: 15px
+                      padding-top: 15px
+                      width: 100%
+                      valign: top
+                  content:
+                    src: '{{item.image}}'
+            -
+              type: grid-column
+              thumbnail: null
+              isCustomBlock: null
+              customBlockId: null
+              moduleName: null
+              sidebarSection: null
+              sync-module-id: null
+              isEmpty: false
+              title: grid-column
+              stylable: false
+              layout:
+                320px: {}
+                default:
+                  color: '#1F2937'
+                  font-family: 'Inter, Arial, sans-serif'
+                  font-size: 16px
+                  padding-left: 0px
+                  padding-right: 0px
+                  valign: top
+              content:
+                -
+                  type: text
+                  thumbnail: /assets/img/editor/element_text.svg
+                  isCustomBlock: null
+                  customBlockId: null
+                  moduleName: null
+                  sidebarSection: null
+                  sync-module-id: null
+                  title: Text
+                  stylable: null
+                  layout:
+                    320px:
+                      width: 100%
+                    default:
+                      align: left
+                      padding-bottom: 0px
+                      padding-top: 15px
+                      text-align: left
+                      text-valign: top
+                      width: 100%
+                      valign: top
+                  content: '<p>{{item.name}}</p>'
+                -
+                  type: text
+                  thumbnail: /assets/img/editor/element_text.svg
+                  isCustomBlock: null
+                  customBlockId: null
+                  moduleName: null
+                  sidebarSection: null
+                  sync-module-id: null
+                  title: Text
+                  stylable: null
+                  layout:
+                    320px:
+                      width: 100%
+                    default:
+                      align: left
+                      padding-bottom: 0px
+                      padding-top: 15px
+                      text-align: left
+                      text-valign: top
+                      width: 100%
+                      valign: top
+                  content: '<p>{{item.description}}</p>'
+                -
+                  type: text
+                  thumbnail: /assets/img/editor/element_text.svg
+                  isCustomBlock: null
+                  customBlockId: null
+                  moduleName: null
+                  sidebarSection: null
+                  sync-module-id: null
+                  title: Text
+                  stylable: null
+                  layout:
+                    320px:
+                      width: 100%
+                    default:
+                      align: left
+                      padding-bottom: 0px
+                      padding-top: 15px
+                      text-align: left
+                      text-valign: top
+                      width: 100%
+                      valign: top
+                  content: '<p>{{params.currency}} {{item.price| floatformat:2}}</p>'
+                -
+                  type: text-button
+                  thumbnail: /assets/img/editor/element_button.svg
+                  isCustomBlock: null
+                  customBlockId: null
+                  moduleName: null
+                  sidebarSection: null
+                  sync-module-id: null
+                  text: '<p><span style="color:#222222;">{{item.URL}}</span></p>'
+                  title: Button
+                  stylable: null
+                  layout:
+                    320px:
+                      width: 100%
+                    default:
+                      align: left
+                      item-height: 40.5px
+                      background-color: '#ffffff'
+                      border-color: '#666666'
+                      border-radius: 12px
+                      border-width: 2px
+                      margin-bottom: 15px
+                      margin-top: 15px
+                      padding-bottom: 8px
+                      padding-top: 8px
+                      text-align: center
+                      text-valign: top
+                      valign: top
+                  content:
+                    text: '<p><span style="color:#222222;">{{item.URL}}</span></p>'
+          dist: 6-6
+          gutter: 30px
+        -
+          type: grid-row
+          thumbnail: /assets/img/editor/grid_12.svg
+          isCustomBlock: null
+          customBlockId: null
+          moduleName: grid-row12
+          sidebarSection: null
+          sync-module-id: null
+          align: top
+          title: section
+          stylable: null
+          layout:
+            320px:
+              display: rows
+              padding-left: 15px
+              padding-right: 15px
+              width: 100%
+            default:
+              align: center
+              background: 'linear-gradient(135deg, #4C1D95 0%, #7C3AED 50%, #22D3EE 100%)'
+              border-radius: 32px
+              padding-bottom: 48px
+              padding-left: 48px
+              padding-right: 48px
+              padding-top: 48px
+              width: 100%
+              valign: top
+          content:
+            -
+              type: grid-column
+              thumbnail: null
+              isCustomBlock: null
+              customBlockId: null
+              moduleName: null
+              sidebarSection: null
+              sync-module-id: null
+              isEmpty: false
+              title: 'column 1'
+              stylable: false
+              layout:
+                320px: {}
+                default:
+                  padding-left: 0px
+                  padding-right: 0px
+                  valign: top
+              content:
+                -
+                  type: text
+                  thumbnail: /assets/img/editor/element_title.svg
+                  isCustomBlock: null
+                  customBlockId: null
+                  moduleName: null
+                  sidebarSection: null
+                  sync-module-id: null
+                  title: CTA Heading
+                  stylable: null
+                  layout:
+                    320px:
+                      width: 100%
+                    default:
+                      align: center
+                      padding-bottom: 12px
+                      padding-left: 0px
+                      padding-right: 0px
+                      padding-top: 0px
+                      text-align: center
+                      text-valign: top
+                      width: 100%
+                      valign: top
+                  content: '<h3 class="default-heading3" style="margin:0;color:#F9FAFB;">Ready to explore your personalised dashboard?</h3>'
+                -
+                  type: text
+                  thumbnail: /assets/img/editor/element_text.svg
+                  isCustomBlock: null
+                  customBlockId: null
+                  moduleName: null
+                  sidebarSection: null
+                  sync-module-id: null
+                  title: CTA Copy
+                  stylable: null
+                  layout:
+                    320px:
+                      width: 100%
+                    default:
+                      align: center
+                      padding-bottom: 24px
+                      padding-left: 0px
+                      padding-right: 0px
+                      padding-top: 0px
+                      text-align: center
+                      text-valign: top
+                      width: 100%
+                      valign: top
+                  content: '<p style="color:#E0E7FF;font-size:16px;line-height:1.7;">Jump back into Language Gems to unlock daily challenges, AI-curated lessons, and your next conversation prompt.</p>'
+                -
+                  type: text-button
+                  thumbnail: /assets/img/editor/element_button.svg
+                  isCustomBlock: null
+                  customBlockId: null
+                  moduleName: null
+                  sidebarSection: null
+                  sync-module-id: null
+                  text: '<p><span style="font-family:Inter, Arial, sans-serif;font-weight:600;">Continue Your Adventure</span></p>'
+                  title: Bouton
+                  stylable: null
+                  layout:
+                    320px:
+                      width: 100%
+                    default:
+                      align: center
+                      background-color: '#F9FAFB'
+                      border-radius: 999px
+                      data-placeholder-href: '{{params.url}}'
+                      item-height: 48px
+                      margin-bottom: 0px
+                      margin-top: 0px
+                      padding-bottom: 16px
+                      padding-top: 16px
+                      text-align: center
+                      text-valign: middle
+                      type: absoluteLink
+                      width: 45%
+                      valign: top
+                  content:
+                    text: '<p><span style="font-family:Inter, Arial, sans-serif;font-weight:600;color:#4C1D95;">Continue Your Adventure</span></p>'
+                    href: '{{params.url}}'
+                    title: 'Button title'
+          dist: '12'
+          gutter: 30px
+        -
+          type: grid-row
+          thumbnail: null
+          isCustomBlock: null
+          customBlockId: null
+          moduleName: grid-row12
+          sidebarSection: section
+          sync-module-id: null
+          align: top
+          brandable: true
+          sectionGroup: 'Footer & signatures'
+          thumbnailUrl: 'https://creative-assets.mailinblue.com/editor/block-thumbs/footers_02.png'
+          title: 1_Footer_V2
+          stylable: null
+          layout:
+            320px:
+              display: rows
+              padding-left: 15px
+              padding-right: 15px
+              width: 100%
+            default:
+              align: center
+              full-width: false
+              padding-bottom: 20px
+              padding-top: 80px
+              width: 100%
+              valign: top
+              padding-left: null
+              padding-right: null
+          content:
+            -
+              type: grid-column
+              thumbnail: null
+              isCustomBlock: null
+              customBlockId: null
+              moduleName: null
+              sidebarSection: null
+              sync-module-id: null
+              imagelabel: 'Select a content type'
+              isEmpty: false
+              label: 'Drop content here'
+              title: 'column 1'
+              stylable: false
+              layout:
+                320px: {}
+                default:
+                  padding-left: 0px
+                  padding-right: 0px
+                  valign: top
+              content:
+                -
+                  type: image
+                  thumbnail: null
+                  isCustomBlock: null
+                  customBlockId: null
+                  moduleName: brand-logo
+                  sidebarSection: null
+                  sync-module-id: null
+                  title: Logo
+                  stylable: null
+                  layout:
+                    320px:
+                      max-width: 320px
+                      width: 100%
+                    default:
+                      align: left
+                      dynamic: false
+                      embed: false
+                      img-border-radius: 0px
+                      imgSize: '7142'
+                      removePadding: true
+                      padding-bottom: 10px
+                      width: 20%
+                      valign: top
+                  content:
+                    src: 'https://creative-assets.mailinblue.com/editor/templates/logo-placeholder.png'
+                -
+                  type: text
+                  thumbnail: /assets/img/editor/element_text.svg
+                  isCustomBlock: null
+                  customBlockId: null
+                  moduleName: null
+                  sidebarSection: null
+                  sync-module-id: null
+                  title: Text
+                  stylable: null
+                  layout:
+                    320px:
+                      text-align: center
+                      width: 100%
+                    default:
+                      align: left
+                      removePadding: true
+                      padding-bottom: 10px
+                      padding-left: 0px
+                      padding-right: 0px
+                      padding-top: 0px
+                      text-align: left
+                      text-valign: top
+                      width: 100%
+                      valign: top
+                  content: '<p style="color:#000000;font-size:14px;"><strong>Language Gems</strong></p>'
+                -
+                  type: text
+                  thumbnail: /assets/img/editor/element_text.svg
+                  isCustomBlock: null
+                  customBlockId: null
+                  moduleName: null
+                  sidebarSection: null
+                  sync-module-id: null
+                  title: Text
+                  stylable: null
+                  layout:
+                    320px:
+                      text-align: center
+                      width: 100%
+                    default:
+                      align: left
+                      removePadding: true
+                      padding-bottom: 10px
+                      padding-left: 0px
+                      padding-right: 0px
+                      padding-top: 0px
+                      text-align: left
+                      text-valign: top
+                      width: 100%
+                      valign: top
+                  content: '<p><span style="color:#666666;font-size:14px;">Rue de Madrid 7, 75008, Paris</span></p>'
+                -
+                  type: text
+                  thumbnail: /assets/img/editor/element_text.svg
+                  isCustomBlock: null
+                  customBlockId: null
+                  moduleName: null
+                  sidebarSection: null
+                  sync-module-id: null
+                  title: Text
+                  stylable: null
+                  layout:
+                    320px:
+                      text-align: center
+                      width: 100%
+                    default:
+                      align: left
+                      removePadding: true
+                      padding-bottom: 0px
+                      padding-left: 0px
+                      padding-right: 0px
+                      padding-top: 10px
+                      text-align: left
+                      text-valign: top
+                      width: 100%
+                      valign: top
+                  content: '<p><span style="color:#666666;font-size:14px;">This email was sent to {{ contact.EMAIL }}.</span></p><p><span style="color:#666666;font-size:14px;">You''ve received this email because you''ve subscribed to our newsletter.</span></p>'
+                -
+                  type: text
+                  thumbnail: /assets/img/editor/element_text.svg
+                  isCustomBlock: null
+                  customBlockId: null
+                  moduleName: null
+                  sidebarSection: null
+                  sync-module-id: null
+                  title: Text
+                  stylable: null
+                  layout:
+                    320px:
+                      text-align: center
+                      width: 100%
+                    default:
+                      align: left
+                      removePadding: true
+                      padding-bottom: 0px
+                      padding-left: 0px
+                      padding-right: 0px
+                      padding-top: 10px
+                      text-align: left
+                      text-valign: top
+                      width: 100%
+                      valign: top
+                  content: '<p><span condition="{{ update_profile }}" style="display:none"><a href="{{ update_profile }}">Update your preference</a> | </span><a href="{{ unsubscribe }}" target="_blank"><span style="color:#666666;font-size:14px;"><u>Unsubscribe</u></span></a></p>'
+          dist: '12'
+          gutter: 30px
+  layout:
+    320px:
+      width: 320px
+    default:
+      direction: ltr
+      wrapper-width: 600px

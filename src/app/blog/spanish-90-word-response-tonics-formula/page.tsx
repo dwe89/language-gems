@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowLeft, Clock, User, Tag } from 'lucide-react';
+import BlogPageWrapper from '@/components/blog/BlogPageWrapper';
 
 export const metadata: Metadata = {
   title: 'Mastering the Spanish 90-Word Response: The TONICS Formula | GCSE Writing',
@@ -22,6 +23,7 @@ export const metadata: Metadata = {
 
 export default function SpanishTONICSFormula() {
   return (
+    <BlogPageWrapper>
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-100">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
@@ -454,5 +456,6 @@ export default function SpanishTONICSFormula() {
         </div>
       </div>
     </div>
-  );
+  
+    </BlogPageWrapper>);
 }

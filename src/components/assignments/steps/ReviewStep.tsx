@@ -38,7 +38,14 @@ export default function ReviewStep({
   onStepComplete,
   classes,
 }: StepProps) {
-  const [previewWords, setPreviewWords] = useState<{ term: string; translation: string; subcategory?: string }[]>([]);
+  console.log('🎯 [ReviewStep] Component rendered with gameConfig:', {
+    hasVocabConfig: !!gameConfig.vocabularyConfig,
+    source: gameConfig.vocabularyConfig?.source,
+    subcategories: gameConfig.vocabularyConfig?.subcategories,
+    language: gameConfig.vocabularyConfig?.language
+  });
+
+  const [previewWords, setPreviewWords] = useState<{ term: string; translation: string; subcategory?: string; category?: string }[]>([]);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [topicCounts, setTopicCounts] = useState<Record<string, number>>({});
 
@@ -61,6 +68,8 @@ export default function ReviewStep({
 
   // Fetch vocabulary/content details for display
   useEffect(() => {
+    console.log('🔍 [ReviewStep] useEffect triggered with vocabularyConfig:', gameConfig.vocabularyConfig);
+
     const fetchContentDetails = async () => {
       setLoadingContent(true);
       try {
@@ -158,12 +167,20 @@ export default function ReviewStep({
           const vc = vocabConfig;
           let rows: any[] = [];
 
-          // Determine language column mapping
+          // Determine language code for filtering
           const langCode = (vc.language || 'es').toLowerCase();
-          const targetLangCol = langCode === 'es' || langCode === 'spanish' ? 'spanish'
-            : langCode === 'fr' || langCode === 'french' ? 'french'
-            : langCode === 'de' || langCode === 'german' ? 'german'
-            : 'spanish'; // fallback
+          const languageCode = langCode === 'es' || langCode === 'spanish' ? 'es'
+            : langCode === 'fr' || langCode === 'french' ? 'fr'
+            : langCode === 'de' || langCode === 'german' ? 'de'
+            : 'es';
+
+          console.log('🔍 [ReviewStep] Fetching vocabulary preview:', {
+            source: vc.source,
+            subcategories: vc.subcategories,
+            categories: vc.categories,
+            language: langCode,
+            languageCode
+          });
 
           if (vc.source === 'custom' && vc.customListId) {
             const { data } = await supabaseBrowser
@@ -173,20 +190,19 @@ export default function ReviewStep({
               .single();
             rows = (data?.enhanced_vocabulary_items || []).map((r: any) => ({ term: r.term, translation: r.translation }));
           } else if (vc.subcategories && vc.subcategories.length > 0) {
-            const { data } = await supabaseBrowser
+            const { data, error } = await supabaseBrowser
               .from('centralized_vocabulary')
-              .select(`${targetLangCol}, english, subcategory`)
+              .select(`word, translation, subcategory, category`)
               .in('subcategory', vc.subcategories)
+              .eq('language', languageCode)
               .limit(75);
-            rows = (data || []).map((r: any) => ({ term: r[targetLangCol], translation: r.english, subcategory: r.subcategory }));
+
+            console.log('📚 [ReviewStep] Subcategories query result:', { data, error, count: data?.length });
+            rows = (data || []).map((r: any) => ({ term: r.word, translation: r.translation, subcategory: r.subcategory, category: r.category }));
 
             // Calculate per-topic counts (filtered by language)
             const counts: Record<string, number> = {};
-            const languageCode = langCode === 'es' || langCode === 'spanish' ? 'es'
-              : langCode === 'fr' || langCode === 'french' ? 'fr'
-              : langCode === 'de' || langCode === 'german' ? 'de'
-              : 'es';
-            
+
             for (const subcat of vc.subcategories) {
               const { count } = await supabaseBrowser
                 .from('centralized_vocabulary')
@@ -197,20 +213,19 @@ export default function ReviewStep({
             }
             setTopicCounts(counts);
           } else if (vc.categories && vc.categories.length > 0) {
-            const { data } = await supabaseBrowser
+            const { data, error } = await supabaseBrowser
               .from('centralized_vocabulary')
-              .select(`${targetLangCol}, english, category`)
+              .select(`word, translation, category`)
               .in('category', vc.categories)
+              .eq('language', languageCode)
               .limit(75);
-            rows = (data || []).map((r: any) => ({ term: r[targetLangCol], translation: r.english, subcategory: r.category }));
+
+            console.log('📚 [ReviewStep] Categories query result:', { data, error, count: data?.length });
+            rows = (data || []).map((r: any) => ({ term: r.word, translation: r.translation, subcategory: r.category }));
 
             // Calculate per-category counts (filtered by language)
             const counts: Record<string, number> = {};
-            const languageCode = langCode === 'es' || langCode === 'spanish' ? 'es'
-              : langCode === 'fr' || langCode === 'french' ? 'fr'
-              : langCode === 'de' || langCode === 'german' ? 'de'
-              : 'es';
-            
+
             for (const cat of vc.categories) {
               const { count } = await supabaseBrowser
                 .from('centralized_vocabulary')
@@ -224,19 +239,23 @@ export default function ReviewStep({
             // KS4: fetch by themes
             const { data } = await supabaseBrowser
               .from('centralized_vocabulary')
-              .select(`${targetLangCol}, english`)
+              .select(`word, translation`)
               .in('ks4_theme', vc.themes)
+              .eq('language', languageCode)
               .limit(75);
-            rows = (data || []).map((r: any) => ({ term: r[targetLangCol], translation: r.english }));
+            rows = (data || []).map((r: any) => ({ term: r.word, translation: r.translation }));
           } else if ((vc as any).units && (vc as any).units.length > 0) {
             // KS4: fetch by units
             const { data } = await supabaseBrowser
               .from('centralized_vocabulary')
-              .select(`${targetLangCol}, english`)
+              .select(`word, translation`)
               .in('ks4_unit', (vc as any).units)
+              .eq('language', languageCode)
               .limit(75);
-            rows = (data || []).map((r: any) => ({ term: r[targetLangCol], translation: r.english }));
+            rows = (data || []).map((r: any) => ({ term: r.word, translation: r.translation }));
           }
+
+          console.log('✅ [ReviewStep] Final rows:', { count: rows.length, sample: rows.slice(0, 3) });
 
           if (rows.length > 0) {
             setPreviewWords(rows);
@@ -504,17 +523,27 @@ export default function ReviewStep({
                         </div>
                       )}
                     </div>
-                    <div className="max-h-64 overflow-y-auto bg-gray-50 rounded-lg p-2">
-                      <ul className="text-sm text-gray-800 divide-y divide-gray-200">
+                    <div className="max-h-96 overflow-y-auto bg-gray-50 rounded-lg p-3">
+                      <ul className="text-sm text-gray-800 space-y-1">
                         {previewWords.map((w, idx) => {
                           const isPinned = gameConfig.vocabularyConfig.pinnedVocabularyIds?.includes(w.term);
                           return (
-                            <li key={idx} className={`py-2 px-2 flex justify-between items-center hover:bg-white transition-colors ${isPinned ? 'bg-amber-50' : ''}`}>
-                              <span className="font-medium text-gray-900 flex items-center">
-                                {isPinned && <span className="text-amber-500 mr-2">📌</span>}
-                                {w.term}
-                              </span>
-                              <span className="text-gray-600">{w.translation}</span>
+                            <li key={idx} className={`py-2 px-3 rounded hover:bg-white transition-colors ${isPinned ? 'bg-amber-50 border-l-2 border-amber-400' : 'border-l-2 border-transparent'}`}>
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1">
+                                  <div className="flex items-center">
+                                    {isPinned && <span className="text-amber-500 mr-2">📌</span>}
+                                    <span className="font-semibold text-gray-900">{w.term}</span>
+                                    <span className="mx-2 text-gray-400">—</span>
+                                    <span className="text-gray-700">{w.translation}</span>
+                                  </div>
+                                  {w.subcategory && (
+                                    <div className="text-xs text-gray-500 mt-1 ml-6">
+                                      {w.category || gameConfig.vocabularyConfig.categories?.[0] || ''}{w.category ? ' / ' : ''}{w.subcategory}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
                             </li>
                           );
                         })}

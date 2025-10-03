@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowLeft, Clock, User, Tag } from 'lucide-react';
+import BlogPageWrapper from '@/components/blog/BlogPageWrapper';
 
 export const metadata: Metadata = {
   title: 'GCSE Spanish Speaking Exam: 5 Essential Tips for a Top Grade',
@@ -22,6 +23,7 @@ export const metadata: Metadata = {
 
 export default function GCSESpanishSpeakingTips() {
   return (
+    <BlogPageWrapper>
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
@@ -361,5 +363,6 @@ export default function GCSESpanishSpeakingTips() {
         </div>
       </div>
     </div>
-  );
+  
+    </BlogPageWrapper>);
 }

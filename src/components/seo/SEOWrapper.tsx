@@ -11,11 +11,28 @@ interface SEOWrapperProps {
 export function StructuredData({ data }: { data: object | object[] }) {
   const dataArray = Array.isArray(data) ? data : [data];
   
+  // Filter out any invalid structured data objects (must have @context)
+  const validData = dataArray.filter((item, index) => {
+    const isValid = item && typeof item === 'object' && '@context' in item && item['@context'];
+    
+    // Log warning in development if invalid schema detected
+    if (!isValid && process.env.NODE_ENV === 'development') {
+      console.warn('Invalid structured data object detected at index', index, ':', item);
+    }
+    
+    return isValid;
+  });
+  
+  // Only render if we have valid data
+  if (validData.length === 0) {
+    return null;
+  }
+  
   return (
     <script
       type="application/ld+json"
       dangerouslySetInnerHTML={{
-        __html: JSON.stringify(dataArray)
+        __html: JSON.stringify(validData)
       }}
     />
   );
@@ -72,7 +89,7 @@ export function generateMetadata({
   keywords?: string[];
   canonical?: string;
   ogImage?: string;
-  ogType?: 'website' | 'article' | 'product';
+  ogType?: 'website' | 'article';
   noIndex?: boolean;
   publishedTime?: string;
   modifiedTime?: string;

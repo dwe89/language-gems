@@ -82,17 +82,6 @@ export const GAME_SEO_DATA: Record<string, GameSEOData> = {
     educationalLevel: 'KS3, GCSE',
     targetAudience: 'Students improving spelling and recognition'
   },
-  'detective-listening': {
-    id: 'detective-listening',
-    name: 'Detective Listening',
-    description: 'Develop listening comprehension skills through immersive detective scenarios. Solve cases while improving audio comprehension and vocabulary recognition.',
-    category: 'listening',
-    languages: ['Spanish', 'French', 'German'],
-    path: '/games/detective-listening',
-    features: ['Audio Comprehension', 'Story-based Learning', 'Context Clues', 'Vocabulary in Context'],
-    educationalLevel: 'GCSE, A-Level',
-    targetAudience: 'Students developing listening skills'
-  },
   'gem-collector': {
     id: 'gem-collector',
     name: 'Gem Collector',
@@ -147,6 +136,17 @@ export const GAME_SEO_DATA: Record<string, GameSEOData> = {
     features: ['Fast-paced Action', 'Translation Practice', 'Themed Challenges', 'High Scores'],
     educationalLevel: 'KS3, GCSE',
     targetAudience: 'Students who enjoy fast-paced games'
+  },
+  'vocab-master': {
+    id: 'vocab-master',
+    name: 'Vocab Master',
+    description: 'Master vocabulary through comprehensive practice sessions with multiple game modes including flashcards, speed challenges, pronunciation practice, and adaptive learning.',
+    category: 'vocabulary',
+    languages: ['Spanish', 'French', 'German', 'Italian'],
+    path: '/games/vocab-master',
+    features: ['Multiple Game Modes', 'Adaptive Difficulty', 'Pronunciation Practice', 'Progress Analytics', 'Flashcards', 'Speed Challenges'],
+    educationalLevel: 'KS3, GCSE, A-Level',
+    targetAudience: 'Students seeking comprehensive vocabulary practice'
   }
 };
 

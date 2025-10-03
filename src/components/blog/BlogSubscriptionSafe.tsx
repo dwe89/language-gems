@@ -1,23 +1,28 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Mail, CheckCircle, AlertCircle } from 'lucide-react';
 
-interface BlogSubscriptionProps {
+interface BlogSubscriptionSafeProps {
   className?: string;
   variant?: 'inline' | 'card' | 'modal';
 }
 
-export default function BlogSubscription({
-  className = '',
-  variant = 'card'
-}: BlogSubscriptionProps) {
+export default function BlogSubscriptionSafe({ 
+  className = '', 
+  variant = 'card' 
+}: BlogSubscriptionSafeProps) {
+  const [isMounted, setIsMounted] = useState(false);
   const [email, setEmail] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,6 +78,36 @@ export default function BlogSubscription({
     card: "bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-100",
     modal: "bg-white rounded-lg p-6 shadow-lg"
   };
+
+  // Show loading skeleton during SSR and initial hydration
+  if (!isMounted) {
+    return (
+      <div className={`${baseClasses} ${variantClasses[variant]} ${className}`}>
+        <div className="text-center mb-6">
+          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center mx-auto mb-4">
+            <Mail className="h-6 w-6 text-white" />
+          </div>
+          <h3 className="text-xl font-bold text-slate-900 mb-2">
+            Stay Updated
+          </h3>
+          <p className="text-slate-600">
+            Get notified when we publish new language learning insights and teaching strategies.
+          </p>
+        </div>
+        <div className="animate-pulse space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="h-10 bg-slate-200 rounded-lg"></div>
+            <div className="h-10 bg-slate-200 rounded-lg"></div>
+          </div>
+          <div className="h-10 bg-slate-200 rounded-lg"></div>
+          <div className="h-12 bg-slate-200 rounded-lg"></div>
+        </div>
+        <p className="text-xs text-slate-500 mt-4 text-center">
+          We respect your privacy. Unsubscribe at any time.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className={`${baseClasses} ${variantClasses[variant]} ${className}`}>

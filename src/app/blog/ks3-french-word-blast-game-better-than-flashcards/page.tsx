@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowLeft, Clock, User, Tag } from 'lucide-react';
+import BlogPageWrapper from '@/components/blog/BlogPageWrapper';
 
 export const metadata: Metadata = {
   title: 'KS3 French: Why Our "Word Blast" Game is Better Than Flashcards',
@@ -22,6 +23,7 @@ export const metadata: Metadata = {
 
 export default function WordBlastVsFlashcards() {
   return (
+    <BlogPageWrapper>
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
@@ -388,5 +390,6 @@ export default function WordBlastVsFlashcards() {
         </div>
       </div>
     </div>
-  );
+  
+    </BlogPageWrapper>);
 }

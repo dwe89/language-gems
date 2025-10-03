@@ -1,6 +1,8 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowLeft, Clock, User, Tag } from 'lucide-react';
+import BlogPageWrapper from '@/components/blog/BlogPageWrapper';
+import BlogSubscription from '@/components/blog/BlogSubscription';
 
 export const metadata: Metadata = {
   title: 'The Science of Gamification: Why Games Help You Learn Languages Faster',
@@ -22,7 +24,8 @@ export const metadata: Metadata = {
 
 export default function ScienceOfGamification() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <BlogPageWrapper>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
@@ -339,6 +342,11 @@ export default function ScienceOfGamification() {
           </div>
         </div>
 
+        {/* Newsletter Subscription */}
+        <div className="mt-12">
+          <BlogSubscription variant="card" />
+        </div>
+
         {/* Related Posts */}
         <div className="mt-12 bg-white rounded-xl shadow-lg p-8">
           <h3 className="text-2xl font-bold text-slate-900 mb-6">Related Articles</h3>
@@ -367,5 +375,6 @@ export default function ScienceOfGamification() {
         </div>
       </div>
     </div>
+    </BlogPageWrapper>
   );
 }

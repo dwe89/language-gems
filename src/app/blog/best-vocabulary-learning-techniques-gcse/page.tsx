@@ -4,6 +4,8 @@ import { Calendar, User, Clock, BookOpen, Target, Brain, Zap, Trophy, CheckCircl
 import SEOWrapper from '../../../components/seo/SEOWrapper';
 import { getArticleSchema, getFAQSchema } from '../../../lib/seo/structuredData';
 import { generateMetadata } from '../../../components/seo/SEOWrapper';
+import BlogPageWrapper from '@/components/blog/BlogPageWrapper';
+import BlogSubscription from '@/components/blog/BlogSubscription';
 
 export const metadata: Metadata = generateMetadata({
   title: 'The 7 Best Vocabulary Learning Techniques for GCSE Success (2024)',
@@ -133,7 +135,8 @@ export default function VocabularyLearningTechniquesPost() {
   ];
 
   return (
-    <SEOWrapper structuredData={[articleSchema, faqSchema]} breadcrumbs={breadcrumbs}>
+    <BlogPageWrapper>
+      <SEOWrapper structuredData={[articleSchema, faqSchema]} breadcrumbs={breadcrumbs}>
       <article className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
         {/* Hero Section */}
         <header className="relative py-20 px-4 sm:px-6 lg:px-8">
@@ -307,7 +310,7 @@ export default function VocabularyLearningTechniquesPost() {
                 Frequently Asked Questions
               </h2>
             </div>
-            
+
             <div className="space-y-8">
               {faqs.map((faq, index) => (
                 <div key={index} className="bg-white rounded-xl p-8 shadow-lg">
@@ -315,6 +318,11 @@ export default function VocabularyLearningTechniquesPost() {
                   <p className="text-slate-600 leading-relaxed">{faq.answer}</p>
                 </div>
               ))}
+            </div>
+
+            {/* Newsletter Subscription */}
+            <div className="mt-12">
+              <BlogSubscription variant="card" />
             </div>
           </div>
         </section>
@@ -347,5 +355,6 @@ export default function VocabularyLearningTechniquesPost() {
         </section>
       </article>
     </SEOWrapper>
+    </BlogPageWrapper>
   );
 }

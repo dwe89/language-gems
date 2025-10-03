@@ -96,10 +96,10 @@ export default function AssignmentDetailsPage() {
   const fetchVocabularyDetails = async (vocabConfig: any) => {
     try {
       const langCode = (vocabConfig.language || 'es').toLowerCase();
-      const targetLangCol = langCode === 'es' || langCode === 'spanish' ? 'spanish'
-        : langCode === 'fr' || langCode === 'french' ? 'french'
-        : langCode === 'de' || langCode === 'german' ? 'german'
-        : 'spanish';
+      const languageCode = langCode === 'es' || langCode === 'spanish' ? 'es'
+        : langCode === 'fr' || langCode === 'french' ? 'fr'
+        : langCode === 'de' || langCode === 'german' ? 'de'
+        : 'es';
 
       let words: any[] = [];
       const counts: Record<string, number> = {};
@@ -107,10 +107,11 @@ export default function AssignmentDetailsPage() {
       if (vocabConfig.subcategories && vocabConfig.subcategories.length > 0) {
         const { data } = await supabase
           .from('centralized_vocabulary')
-          .select(`${targetLangCol}, english, subcategory`)
+          .select(`word, translation, subcategory, category`)
           .in('subcategory', vocabConfig.subcategories)
+          .eq('language', languageCode)
           .limit(75);
-        words = (data || []).map((r: any) => ({ term: r[targetLangCol], translation: r.english, subcategory: r.subcategory }));
+        words = (data || []).map((r: any) => ({ term: r.word, translation: r.translation, subcategory: r.subcategory, category: r.category }));
 
         // Get per-topic counts
         for (const subcat of vocabConfig.subcategories) {
@@ -123,10 +124,11 @@ export default function AssignmentDetailsPage() {
       } else if (vocabConfig.categories && vocabConfig.categories.length > 0) {
         const { data } = await supabase
           .from('centralized_vocabulary')
-          .select(`${targetLangCol}, english, category`)
+          .select(`word, translation, category`)
           .in('category', vocabConfig.categories)
+          .eq('language', languageCode)
           .limit(75);
-        words = (data || []).map((r: any) => ({ term: r[targetLangCol], translation: r.english, category: r.category }));
+        words = (data || []).map((r: any) => ({ term: r.word, translation: r.translation, category: r.category }));
 
         for (const cat of vocabConfig.categories) {
           const { count } = await supabase
@@ -573,16 +575,26 @@ export default function AssignmentDetailsPage() {
                           )}
                         </div>
                         <div className="max-h-96 overflow-y-auto bg-black/20 rounded-lg p-3">
-                          <ul className="text-sm divide-y divide-white/10">
+                          <ul className="text-sm space-y-1">
                             {vocabularyDetails.words.map((w: any, idx: number) => {
                               const isPinned = vocabularyDetails.pinnedIds.includes(w.term);
                               return (
-                                <li key={idx} className={`py-2 px-3 flex justify-between items-center hover:bg-white/5 transition-colors rounded ${isPinned ? 'bg-amber-500/10' : ''}`}>
-                                  <span className="font-medium text-white flex items-center">
-                                    {isPinned && <span className="text-amber-400 mr-2">📌</span>}
-                                    {w.term}
-                                  </span>
-                                  <span className="text-blue-200">{w.translation}</span>
+                                <li key={idx} className={`py-2 px-3 rounded hover:bg-white/5 transition-colors ${isPinned ? 'bg-amber-500/10 border-l-2 border-amber-400' : 'border-l-2 border-transparent'}`}>
+                                  <div className="flex items-start justify-between">
+                                    <div className="flex-1">
+                                      <div className="flex items-center">
+                                        {isPinned && <span className="text-amber-400 mr-2">📌</span>}
+                                        <span className="font-semibold text-white">{w.term}</span>
+                                        <span className="mx-2 text-gray-400">—</span>
+                                        <span className="text-blue-200">{w.translation}</span>
+                                      </div>
+                                      {w.subcategory && (
+                                        <div className="text-xs text-gray-400 mt-1 ml-6">
+                                          {w.category || ''}{w.category ? ' / ' : ''}{w.subcategory}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
                                 </li>
                               );
                             })}
