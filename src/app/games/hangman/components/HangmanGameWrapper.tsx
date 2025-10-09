@@ -31,6 +31,8 @@ interface HangmanGameWrapperProps {
   gameSessionId?: string | null;
   playSFX?: (soundName: string) => void;
   onOpenSettings?: () => void;
+  toggleMusic?: () => void;
+  isMusicEnabled?: boolean;
 }
 
 interface GameVocabularyWord {
@@ -499,6 +501,9 @@ export default function HangmanGameWrapper(props: HangmanGameWrapperProps) {
       playSFX={props.playSFX || (() => {})}
       gameSessionId={effectiveGameSessionId || undefined}
       userId={props.userId}
+      onOpenSettings={props.onOpenSettings}
+      toggleMusic={props.toggleMusic}
+      isMusicEnabled={props.isMusicEnabled}
     />
   );
 }

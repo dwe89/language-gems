@@ -15,8 +15,23 @@ import {
   Loader2
 } from 'lucide-react';
 import { AQAWritingAssessmentService, type AQAQuestionResponse } from '../../services/aqaWritingAssessmentService';
-import { AIMarkingService, type QuestionResponse, type MarkingCriteria } from '../../services/aiMarkingService';
 import { AQAWritingFeedback } from './AQAWritingFeedback';
+
+// Types for marking
+interface MarkingCriteria {
+  questionType: 'photo-description' | 'short-message' | 'gap-fill' | 'translation' | 'extended-writing';
+  language: 'es' | 'fr' | 'de';
+  maxMarks: number;
+  wordCountRequirement?: number;
+  specificCriteria?: string[];
+}
+
+interface QuestionResponse {
+  questionId: string;
+  questionType: string;
+  response: any;
+  criteria: MarkingCriteria;
+}
 
 // Question Types for AQA Writing Assessment
 export interface AQAWritingQuestion {
@@ -63,7 +78,6 @@ export function AQAWritingAssessment({
   const [showFeedback, setShowFeedback] = useState(false);
 
   const assessmentService = useRef(new AQAWritingAssessmentService());
-  const aiMarkingService = useRef(new AIMarkingService());
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Language names for display
@@ -193,8 +207,22 @@ export function AQAWritingAssessment({
         }
       }));
 
-      // Get AI marking results
-      const aiResults = await aiMarkingService.current.markFullAssessment(questionResponses);
+      // Call the API to mark the assessment
+      const response = await fetch('/api/assessments/mark', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          responses: questionResponses
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to mark assessment');
+      }
+
+      const aiResults = await response.json();
 
       setMarkingResults({
         ...aiResults,

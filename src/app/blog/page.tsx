@@ -235,6 +235,16 @@ const staticRecentPosts = [
     publishDate: 'May 1, 2024',
     author: 'LanguageGems Team',
     icon: Film
+  },
+  {
+    title: 'Top Tips for GCSE Writing: The 6 Pillars Strategy',
+    excerpt: 'Master GCSE language writing with The Six Pillars strategy. Learn how to structure comprehensive, coherent responses using WHO, WHAT, WHERE, WHY, WHEN, and HOW for exam success.',
+    slug: 'top-tips-gcse-writing-six-pillars',
+    category: 'Exam Preparation',
+    readTime: '15 min read',
+    publishDate: 'October 8, 2025',
+    author: 'Daniel Etienne',
+    icon: Target
   }
 ];
 
@@ -355,6 +365,13 @@ export default async function BlogPage() {
   // Combine all posts (database + static)
   const allPosts = [...dbPosts, ...staticPostsForDisplay];
 
+  // Sort all posts by publish date (newest first)
+  const sortedPosts = allPosts.sort((a, b) => {
+    const dateA = new Date(a.publish_date);
+    const dateB = new Date(b.publish_date);
+    return dateB.getTime() - dateA.getTime();
+  });
+
 
   return (
     <SEOWrapper breadcrumbs={breadcrumbs} {...metadataObj}>
@@ -373,7 +390,7 @@ export default async function BlogPage() {
               </p>
 
               <BlogPageClient
-                initialPosts={allPosts}
+                initialPosts={sortedPosts}
                 categories={categories}
               />
             </div>

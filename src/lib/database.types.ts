@@ -482,6 +482,38 @@ export type Database = {
           difficulty_level?: string | null
         }
       }
+      blog_subscribers: {
+        Row: {
+          id: string
+          email: string
+          first_name: string | null
+          last_name: string | null
+          is_active: boolean
+          unsubscribe_token: string | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          email: string
+          first_name?: string | null
+          last_name?: string | null
+          is_active?: boolean
+          unsubscribe_token?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          email?: string
+          first_name?: string | null
+          last_name?: string | null
+          is_active?: boolean
+          unsubscribe_token?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+      }
       // Add other tables as needed
     }
     Views: {

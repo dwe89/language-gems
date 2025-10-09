@@ -125,13 +125,15 @@ interface VocabMasterAssignmentLauncherProps {
   assignmentTitle: string;
   onModeSelect: (modeId: string) => void;
   onBack: () => void;
+  isAssessmentMode?: boolean;
 }
 
 export default function VocabMasterAssignmentLauncher({
   vocabulary,
   assignmentTitle,
   onModeSelect,
-  onBack
+  onBack,
+  isAssessmentMode = false
 }: VocabMasterAssignmentLauncherProps) {
   const [selectedMode, setSelectedMode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -160,17 +162,21 @@ export default function VocabMasterAssignmentLauncher({
           className="text-center mb-8"
         >
           <div className="flex items-center justify-between mb-6">
-            <button
-              onClick={onBack}
-              className="flex items-center text-white/80 hover:text-white transition-colors"
-            >
-              <ArrowLeft className="h-5 w-5 mr-2" />
-              Back to Assignments
-            </button>
+            {!isAssessmentMode && (
+              <button
+                onClick={onBack}
+                className="flex items-center text-white/80 hover:text-white transition-colors"
+              >
+                <ArrowLeft className="h-5 w-5 mr-2" />
+                Back to Assignments
+              </button>
+            )}
             
-            <div className="text-white/60 text-sm">
-              {vocabulary.length} words loaded
-            </div>
+            {!isAssessmentMode && (
+              <div className="text-white/60 text-sm">
+                {vocabulary.length} words loaded
+              </div>
+            )}
           </div>
 
           <h1 className="text-4xl font-bold text-white mb-4">

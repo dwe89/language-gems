@@ -197,8 +197,89 @@ async function handleSuccessfulPayment(session: Stripe.Checkout.Session) {
 
     console.log(`Order ${order.id} created successfully for ${customerEmail}`);
 
+    // Send order confirmation email with download links
+    await sendOrderConfirmationEmail(order, orderItems, actualEmail);
+
   } catch (error) {
     console.error('Error handling successful payment:', error);
+  }
+}
+
+async function sendOrderConfirmationEmail(order: any, orderItems: any[], customerEmail: string) {
+  try {
+    const BREVO_API_KEY = process.env.BREVO_API_KEY;
+    const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://www.languagegems.com';
+
+    if (!BREVO_API_KEY) {
+      console.error('BREVO_API_KEY not configured');
+      return;
+    }
+
+    // Get product details for each order item
+    const { data: products } = await supabase
+      .from('products')
+      .select('id, name, file_path')
+      .in('id', orderItems.map(item => item.product_id));
+
+    if (!products || products.length === 0) {
+      console.error('No products found for order items');
+      return;
+    }
+
+    // Generate download links HTML
+    const downloadLinksHtml = products.map(product => {
+      const downloadUrl = `${BASE_URL}/api/orders/${order.id}/download/${product.id}`;
+      return `
+        <div style="background:#ffffff; border:1px solid #e5e7eb; border-radius:8px; padding:15px; margin:10px 0;">
+          <p style="margin:0 0 10px 0; font-weight:600; color:#374151;">${product.name}</p>
+          <a href="${downloadUrl}" style="display:inline-block; background:#667eea; color:#ffffff; padding:10px 20px; border-radius:6px; text-decoration:none; font-weight:600;">Download Now</a>
+        </div>
+      `;
+    }).join('');
+
+    // Format total price
+    const totalFormatted = `£${(order.total_cents / 100).toFixed(2)}`;
+
+    // Format order date
+    const orderDate = new Date(order.created_at).toLocaleDateString('en-GB', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+
+    // Send email via Brevo
+    const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'api-key': BREVO_API_KEY,
+      },
+      body: JSON.stringify({
+        templateId: 15, // Order confirmation template
+        to: [{ email: customerEmail, name: order.customer_name || customerEmail }],
+        params: {
+          customer_name: order.customer_name || '',
+          customer_email: customerEmail,
+          order_id: order.id,
+          order_date: orderDate,
+          total: totalFormatted,
+          download_links: downloadLinksHtml,
+          account_url: `${BASE_URL}/account/orders`
+        }
+      }),
+    });
+
+    if (response.ok) {
+      console.log(`✅ Order confirmation email sent to ${customerEmail} for order ${order.id}`);
+    } else {
+      const errorData = await response.json();
+      console.error('❌ Failed to send order confirmation email:', errorData);
+    }
+
+  } catch (error) {
+    console.error('❌ Error sending order confirmation email:', error);
+    // Don't throw - email failure shouldn't break the order process
   }
 }
 

@@ -52,6 +52,8 @@ interface TicTacToeGameProps {
   onOpenSettings?: () => void;
   gameService?: EnhancedGameService | null;
   userId?: string;
+  toggleMusic?: () => void;
+  isMusicEnabled?: boolean;
 }
 
 const generateWrongOptions = (correctTranslation: string, vocabulary: any[]) => {
@@ -76,15 +78,18 @@ export default function TicTacToeGame({
   onOpenSettings,
   onGameModeChange,
   gameService,
-  userId
+  userId,
+  toggleMusic,
+  isMusicEnabled
 }: TicTacToeGameProps) {
 
 
   const { themeClasses, themeId } = useTheme();
 
-  // Audio state
-  const [soundEnabled, setSoundEnabled] = useState(true);
-  const { playSFX, playThemeSFX, startBackgroundMusic, stopBackgroundMusic } = useAudio(soundEnabled);
+  // Audio state - use wrapper's state in assignment mode, local state otherwise
+  const [localSoundEnabled, setLocalSoundEnabled] = useState(true);
+  const effectiveSoundEnabled = isMusicEnabled !== undefined ? isMusicEnabled : localSoundEnabled;
+  const { playSFX, playThemeSFX, startBackgroundMusic, stopBackgroundMusic } = useAudio(effectiveSoundEnabled);
   
   const [board, setBoard] = useState<CellContent[]>(Array(9).fill(null));
   const [currentPlayer, setCurrentPlayer] = useState<'X' | 'O'>('X');
@@ -711,8 +716,9 @@ export default function TicTacToeGame({
         {renderThemeAnimation()}
       </div>
 
-      {/* Header Overlay */}
-      <div className="absolute top-0 left-0 right-0 z-20 bg-black/20 backdrop-blur-sm border-b border-white/10">
+      {/* Header Overlay - Hidden in assignment mode */}
+      {!isAssignmentMode && (
+        <div className="absolute top-0 left-0 right-0 z-20 bg-black/20 backdrop-blur-sm border-b border-white/10">
         <div className="flex justify-between items-center p-4 md:p-6">
           <motion.button
             onClick={() => {
@@ -753,20 +759,19 @@ export default function TicTacToeGame({
               <motion.button
                 onClick={() => {
                   playSFX('button-click');
-                  setSoundEnabled(!soundEnabled);
-                  if (soundEnabled) {
-                    stopBackgroundMusic();
+                  if (toggleMusic) {
+                    toggleMusic();
                   } else {
-                    startBackgroundMusic(themeId);
+                    setLocalSoundEnabled(!localSoundEnabled);
                   }
                 }}
                 className="relative p-2 md:px-4 md:py-2.5 rounded-xl bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white font-semibold flex items-center gap-1 md:gap-3 transition-all duration-300 shadow-lg hover:shadow-xl border-2 border-white/20"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                title={soundEnabled ? "Mute audio" : "Unmute audio"}
+                title={effectiveSoundEnabled ? "Mute audio" : "Unmute audio"}
               >
-                {soundEnabled ? <Volume2 className="h-4 w-4 md:h-5 md:w-5" /> : <VolumeX className="h-4 w-4 md:h-5 md:w-5" />}
-                <span className="hidden md:inline text-sm md:text-base">{soundEnabled ? "Mute" : "Unmute"}</span>
+                {effectiveSoundEnabled ? <Volume2 className="h-4 w-4 md:h-5 md:w-5" /> : <VolumeX className="h-4 w-4 md:h-5 md:w-5" />}
+                <span className="hidden md:inline text-sm md:text-base">{effectiveSoundEnabled ? "Mute" : "Unmute"}</span>
               </motion.button>
             )}
 
@@ -834,21 +839,26 @@ export default function TicTacToeGame({
             <motion.button
               onClick={() => {
                 playSFX('button-click');
-                setSoundEnabled(!soundEnabled);
+                if (toggleMusic) {
+                  toggleMusic();
+                } else {
+                  setLocalSoundEnabled(!localSoundEnabled);
+                }
               }}
               className="p-2 md:p-3 rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white transition-all shadow-lg border border-white/20"
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
             >
-              {soundEnabled ? <Volume2 className="w-4 h-4 md:w-5 md:h-5" /> : <VolumeX className="w-4 h-4 md:w-5 md:h-5" />}
+              {effectiveSoundEnabled ? <Volume2 className="w-4 h-4 md:w-5 md:h-5" /> : <VolumeX className="w-4 h-4 md:w-5 md:h-5" />}
             </motion.button>
           </div>
         </div>
       </div>
+      )}
 
       {/* Game Content - Split Layout: Board Left, Theme Right - Only show after story dismissed */}
       {storyDismissed && (
-        <div className="absolute inset-0 pt-24 pb-4 flex items-start justify-center z-10">
+        <div className={`absolute inset-0 ${isAssignmentMode ? 'pt-4' : 'pt-24'} pb-4 flex items-start justify-center z-10`}>
           {/* Desktop Layout for Classic Mode */}
           {(!themeId || themeId === 'classic' || !['tokyo', 'pirate', 'space', 'temple'].includes(themeId)) ? (
             <>
@@ -1547,7 +1557,7 @@ export default function TicTacToeGame({
                     whileTap={{ scale: 0.98 }}
                   >
                     <span className="text-purple-600 font-bold mr-3">{String.fromCharCode(65 + index)}.</span>
-                    {option}
+                    <span className="text-gray-800">{option}</span>
                   </motion.button>
                 ))}
               </div>
@@ -1610,7 +1620,7 @@ export default function TicTacToeGame({
                   whileHover={{ scale: 1.02, y: -2 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  <Home className="inline w-5 h-5 mr-2" />Back to Menu
+                  <Home className="inline w-5 h-5 mr-2" />{isAssignmentMode ? 'Back to Assignment' : 'Back to Menu'}
                 </motion.button>
               </div>
             </motion.div>
@@ -1671,7 +1681,7 @@ export default function TicTacToeGame({
                   whileHover={{ scale: 1.02, y: -2 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  <Home className="inline w-5 h-5 mr-2" />Back to Menu
+                  <Home className="inline w-5 h-5 mr-2" />{isAssignmentMode ? 'Back to Assignment' : 'Back to Menu'}
                 </motion.button>
               </div>
             </motion.div>

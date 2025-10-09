@@ -332,7 +332,7 @@ export default function SentenceTowersPage() {
         onBackToAssignments={handleBackToAssignments}
         onBackToMenu={() => router.push('/games/word-towers')}
       >
-        {({ assignment, vocabulary, sentences, onProgressUpdate, onGameComplete, gameSessionId }) => {
+        {({ assignment, vocabulary, sentences, onProgressUpdate, onGameComplete, gameSessionId, onOpenSettings, toggleMusic, isMusicEnabled }) => {
           console.log('🎮 [WORD TOWERS] Game data received:', {
             assignmentId: assignment?.id,
             vocabularyCount: vocabulary?.length || 0,

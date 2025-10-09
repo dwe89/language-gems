@@ -17,7 +17,7 @@ import { GRID_SIZES } from '../data/gameConfig';
 import { useGameVocabulary, GameVocabularyWord } from '../../../../hooks/useGameVocabulary';
 import {
   Target, RotateCcw, BarChart3, Clock,
-  Trophy, Play, Settings, PartyPopper, Volume2, VolumeX, ArrowLeft
+  Trophy, Play, Settings, PartyPopper, Volume2, VolumeX, ArrowLeft, Grid3x3
 } from 'lucide-react';
 import { useGameAudio } from '../../../../hooks/useGlobalAudioContext';
 import { createAudio, getAudioUrl } from '../../../../utils/audioUtils';
@@ -41,6 +41,11 @@ interface MemoryGameMainProps {
   gameSessionId?: string | null;
   onProgressUpdate?: (progress: any) => void;
   onGameComplete?: (progress: any) => void;
+  // For exposing controls to wrapper
+  onThemeModalRequest?: () => void;
+  onGridSizeModalRequest?: () => void;
+  onBackgroundThemeChange?: (theme: any) => void;
+  onGridSizeChange?: (size: string) => void;
 }
 
 export default function MemoryGameMain({
@@ -60,7 +65,11 @@ export default function MemoryGameMain({
   audioManager: externalAudioManager,
   gameSessionId: assignmentGameSessionId,
   onProgressUpdate,
-  onGameComplete
+  onGameComplete,
+  onThemeModalRequest,
+  onGridSizeModalRequest,
+  onBackgroundThemeChange,
+  onGridSizeChange
 }: MemoryGameMainProps) {
   const { user, isLoading, isDemo } = useUnifiedAuth();
 
@@ -944,11 +953,33 @@ export default function MemoryGameMain({
     setShowThemeModal(!showThemeModal);
   };
   
+  // Open theme modal (can be called from wrapper)
+  React.useEffect(() => {
+    if (onThemeModalRequest) {
+      // Create a function that wrapper can call
+      (window as any).__openMemoryThemeModal = () => setShowThemeModal(true);
+    }
+    return () => {
+      delete (window as any).__openMemoryThemeModal;
+    };
+  }, [onThemeModalRequest]);
+  
+  // Open grid size modal (can be called from wrapper)
+  React.useEffect(() => {
+    if (onGridSizeModalRequest) {
+      // Create a function that wrapper can call
+      (window as any).__openMemoryGridModal = () => setShowSettingsModal(true);
+    }
+    return () => {
+      delete (window as any).__openMemoryGridModal;
+    };
+  }, [onGridSizeModalRequest]);
+  
   // Select theme
   const selectTheme = (theme: any) => {
     setSelectedTheme(theme);
     localStorage.setItem('memoryGameTheme', JSON.stringify(theme));
-    toggleThemeModal();
+    setShowThemeModal(false);
   };
   
   // Toggle settings modal
@@ -975,6 +1006,11 @@ export default function MemoryGameMain({
   // Handle difficulty change
   const handleDifficultyChange = (newDifficulty: string) => {
     setCurrentDifficulty(newDifficulty);
+    
+    // Notify wrapper if in assignment mode
+    if (isAssignmentMode && onGridSizeChange) {
+      onGridSizeChange(newDifficulty);
+    }
   };
   
   // Handle custom words submission
@@ -1081,24 +1117,6 @@ export default function MemoryGameMain({
         </header>
       )}
 
-      {/* Floating Mute Button - Only show in assignment mode */}
-      {isAssignmentMode && (
-        <div className="fixed top-4 right-4 z-50">
-          <button
-            onClick={() => {
-              const newSoundEnabled = !audioManager.soundEnabled;
-              if (newSoundEnabled) {
-                audioManager.initializeAudio();
-              }
-            }}
-            className="p-3 rounded-full bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white shadow-lg hover:shadow-xl transition-all duration-300 border-2 border-white/20"
-            title={audioManager.soundEnabled ? "Mute audio" : "Unmute audio"}
-          >
-            {audioManager.soundEnabled ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
-          </button>
-        </div>
-      )}
-
       <div className={`game-container ${isAssignmentMode ? 'assignment-mode' : ''}`}>
         <div className="cards-container">
           <div 
@@ -1130,14 +1148,14 @@ export default function MemoryGameMain({
         </div>
       </div>
 
-      {/* Theme Modal */}
+      {/* Theme Modal - Show in both modes */}
       {showThemeModal && (
         <>
           <div className="modern-modal-overlay" onClick={toggleThemeModal}></div>
           <div className="modern-modal" role="dialog" aria-modal="true" aria-label="Select Theme">
             <div className="modern-modal-content">
               <div className="modern-modal-header">
-                <h2>Select Theme</h2>
+                <h2>Select Background Theme</h2>
                 <button className="modern-close-btn" onClick={toggleThemeModal} aria-label="Close theme selector">✕</button>
               </div>
               <div className="modern-modal-body">
@@ -1256,8 +1274,8 @@ export default function MemoryGameMain({
         </>
       )}
 
-      {/* Settings Modal */}
-      {showSettingsModal && !isAssignmentMode && (
+      {/* Settings Modal - Show in both modes */}
+      {showSettingsModal && (
         <>
           <div className="modern-modal-overlay" onClick={toggleSettingsModal}>
             <div className="modern-modal" onClick={(e) => e.stopPropagation()}>

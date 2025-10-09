@@ -37,10 +37,10 @@ export default function VerbQuestPage() {
           console.log('Verb Quest assignment completed:', progress);
           router.push('/student-dashboard');
         }}
-        onBackToAssignments={() => router.push('/student-dashboard')}
+        onBackToAssignments={() => router.push(`/student-dashboard/assignments/${assignmentId}`)}
         onBackToMenu={() => router.push('/games/verb-quest')}
       >
-        {({ assignment, vocabulary, onProgressUpdate, onGameComplete }) => {
+        {({ assignment, vocabulary, onProgressUpdate, onGameComplete, onOpenSettings, toggleMusic, isMusicEnabled }) => {
           // Filter vocabulary to only include verbs
           const verbs = vocabulary.filter(word =>
             word.part_of_speech === 'v' ||

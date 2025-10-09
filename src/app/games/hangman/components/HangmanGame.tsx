@@ -936,20 +936,22 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
           )}
 
           {/* Music toggle button (now controls UI icon, actual music by parent) */}
-          <button
-            onClick={() => {
-              playSFX('button-click'); // SFX for the button click itself
-              if (toggleMusic) {
-                toggleMusic();
-              } else {
-                setMusicEnabled(prev => !prev); // Fallback to local state
-              }
-            }}
-            className="p-1.5 md:p-2 rounded-full bg-gray-700 hover:bg-gray-600 text-white"
-            title={(isMusicEnabled ?? musicEnabled) ? "Mute music" : "Play music"}
-          >
-            {(isMusicEnabled ?? musicEnabled) ? <Volume2 size={14} className="md:w-4 md:h-4" /> : <VolumeX size={14} className="md:w-4 md:h-4" />}
-          </button>
+          {!isAssignmentMode && (
+            <button
+              onClick={() => {
+                playSFX('button-click'); // SFX for the button click itself
+                if (toggleMusic) {
+                  toggleMusic();
+                } else {
+                  setMusicEnabled(prev => !prev); // Fallback to local state
+                }
+              }}
+              className="p-1.5 md:p-2 rounded-full bg-gray-700 hover:bg-gray-600 text-white"
+              title={(isMusicEnabled ?? musicEnabled) ? "Mute music" : "Play music"}
+            >
+              {(isMusicEnabled ?? musicEnabled) ? <Volume2 size={14} className="md:w-4 md:h-4" /> : <VolumeX size={14} className="md:w-4 md:h-4" />}
+            </button>
+          )}
 
           {/* Hint button */}
           <button

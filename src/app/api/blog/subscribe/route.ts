@@ -91,8 +91,10 @@ export async function POST(request: NextRequest) {
     // Add to Brevo list (optional)
     try {
       await addToBrevoList(email, firstName, lastName);
+      // Send welcome email if configured
+      await sendWelcomeEmail(email, firstName);
     } catch (brevoError) {
-      console.warn('Failed to add to Brevo list:', brevoError);
+      console.warn('Brevo integration issue (non-critical):', brevoError);
       // Don't fail the entire request for Brevo errors
     }
 
@@ -130,7 +132,7 @@ export async function DELETE(request: NextRequest) {
     const supabase = createServiceRoleClient();
 
     let query = supabase.from('blog_subscribers');
-    
+
     if (token) {
       query = query.eq('unsubscribe_token', token);
     } else {
@@ -186,7 +188,7 @@ async function addToBrevoList(email: string, firstName?: string, lastName?: stri
           FIRSTNAME: firstName || '',
           LASTNAME: lastName || '',
         },
-        listIds: [2], // Replace with your blog subscribers list ID
+        listIds: [Number(process.env.BREVO_BLOG_LIST_ID || 2)],
         updateEnabled: true,
       }),
     });
@@ -204,3 +206,43 @@ async function addToBrevoList(email: string, firstName?: string, lastName?: stri
     return { success: false, error, nonCritical: true };
   }
 }
+
+async function sendWelcomeEmail(email: string, firstName?: string) {
+  const BREVO_API_KEY = process.env.BREVO_API_KEY;
+  const TEMPLATE_ID = process.env.BREVO_WELCOME_TEMPLATE_ID
+    ? Number(process.env.BREVO_WELCOME_TEMPLATE_ID)
+    : undefined;
+
+  if (!BREVO_API_KEY) {
+    console.warn('BREVO_API_KEY is missing – welcome email skipped');
+    return;
+  }
+  if (!TEMPLATE_ID) {
+    console.warn('BREVO_WELCOME_TEMPLATE_ID is missing – welcome email skipped');
+    return;
+  }
+
+  try {
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://www.languagegems.com';
+    console.log('[WELCOME EMAIL] Sending via Brevo template', { templateId: TEMPLATE_ID, to: email });
+    await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'api-key': BREVO_API_KEY,
+      },
+      body: JSON.stringify({
+        templateId: TEMPLATE_ID,
+        to: [{ email, name: (firstName || '').trim() || email }],
+        params: {
+          first_name: firstName || '',
+          url: `${baseUrl}/blog`
+        }
+      })
+    });
+  } catch (err) {
+    console.warn('Welcome email send failed (non-critical):', err);
+  }
+}
+

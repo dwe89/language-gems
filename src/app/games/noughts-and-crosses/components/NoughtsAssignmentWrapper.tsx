@@ -9,6 +9,7 @@ import GameAssignmentWrapper, {
   GameProgress
 } from '../../../../components/games/templates/GameAssignmentWrapper';
 import TicTacToeGameWrapper from './TicTacToeGameWrapper';
+import ErrorBoundary from '../../../../components/ErrorBoundary';
 
 interface NoughtsAndCrossesAssignmentWrapperProps {
   assignmentId: string;
@@ -22,6 +23,15 @@ export default function NoughtsAndCrossesAssignmentWrapper({
   const { user } = useAuth();
   const router = useRouter();
 
+  // Add comprehensive logging for debugging Windows issue
+  console.log('🎮 [NOUGHTS WRAPPER] Component mounted:', {
+    assignmentId,
+    hasUser: !!user,
+    userId: user?.id,
+    userAgent: typeof window !== 'undefined' ? window.navigator.userAgent : 'SSR',
+    timestamp: new Date().toISOString()
+  });
+
   // Track game progress across multiple rounds
   const [gameStats, setGameStats] = useState({
     totalGames: 0,
@@ -32,19 +42,22 @@ export default function NoughtsAndCrossesAssignmentWrapper({
   });
 
   const handleAssignmentComplete = (progress: GameProgress) => {
-    console.log('Noughts and Crosses assignment completed:', progress);
+    console.log('✅ [NOUGHTS] Assignment completed:', progress);
     // No auto-redirect - let completion screen handle navigation
   };
 
   const handleBackToAssignments = () => {
+    console.log('⬅️ [NOUGHTS] Navigating back to assignments:', assignmentId);
     router.push(`/student-dashboard/assignments/${assignmentId}`);
   };
 
   const handleBackToMenu = () => {
+    console.log('🏠 [NOUGHTS] Navigating back to menu');
     router.push('/games/noughts-and-crosses');
   };
 
   if (!user) {
+    console.log('⏳ [NOUGHTS] Waiting for user authentication...');
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 flex items-center justify-center">
         <div className="text-white text-center">
@@ -55,16 +68,42 @@ export default function NoughtsAndCrossesAssignmentWrapper({
     );
   }
 
+  console.log('✅ [NOUGHTS] User authenticated, rendering GameAssignmentWrapper');
+
   return (
-    <GameAssignmentWrapper
+    <ErrorBoundary
+      onError={(error, errorInfo) => {
+        console.error('❌ [NOUGHTS] Error in assignment wrapper:', {
+          error,
+          errorInfo,
+          assignmentId,
+          userId: user.id
+        });
+      }}
+    >
+      <GameAssignmentWrapper
       assignmentId={assignmentId}
       gameId="noughts-and-crosses"
       studentId={user.id}
       onAssignmentComplete={handleAssignmentComplete}
       onBackToAssignments={handleBackToAssignments}
       onBackToMenu={handleBackToMenu}
+      assignmentProgress={{
+        current: gameStats.wins,
+        required: REQUIRED_WINS,
+        label: 'Wins'
+      }}
     >
-      {({ assignment, vocabulary, onProgressUpdate, onGameComplete, gameSessionId, selectedTheme }) => {
+      {({ assignment, vocabulary, onProgressUpdate, onGameComplete, gameSessionId, selectedTheme, toggleMusic, isMusicEnabled, onBackToMenu }) => {
+        console.log('🎯 [NOUGHTS] GameAssignmentWrapper render callback:', {
+          hasAssignment: !!assignment,
+          vocabularyCount: vocabulary?.length || 0,
+          gameSessionId,
+          selectedTheme,
+          assignmentLanguage: assignment?.vocabulary_criteria?.language,
+          firstVocabItem: vocabulary?.[0]
+        });
+
         // Get language from assignment vocabulary criteria or vocabulary items
         const assignmentLanguage = assignment.vocabulary_criteria?.language || vocabulary[0]?.language || 'spanish';
 
@@ -73,30 +112,13 @@ export default function NoughtsAndCrossesAssignmentWrapper({
                             assignmentLanguage === 'de' ? 'german' :
                             assignmentLanguage === 'es' ? 'spanish' : 'spanish';
 
+        console.log('🌍 [NOUGHTS] Language configuration:', {
+          assignmentLanguage,
+          gameLanguage
+        });
+
         return (
           <div className="relative">
-            {/* Progress Indicator */}
-            <div className="fixed top-4 right-4 z-[9999] bg-white rounded-lg shadow-lg p-4 border border-gray-200">
-              <div className="text-center">
-                <div className="text-sm font-medium text-gray-600 mb-2">Assignment Progress</div>
-                <div className="text-2xl font-bold text-blue-600 mb-1">
-                  {gameStats.wins}/{REQUIRED_WINS}
-                </div>
-                <div className="text-xs text-gray-500">Wins Required</div>
-                <div className="w-24 bg-gray-200 rounded-full h-2 mt-2">
-                  <div
-                    className="bg-blue-500 h-2 rounded-full transition-all duration-300"
-                    style={{ width: `${(gameStats.wins / REQUIRED_WINS) * 100}%` }}
-                  ></div>
-                </div>
-                {gameStats.wins < REQUIRED_WINS && (
-                  <div className="text-xs text-gray-500 mt-1">
-                    {REQUIRED_WINS - gameStats.wins} more wins needed
-                  </div>
-                )}
-              </div>
-            </div>
-
             <TicTacToeGameWrapper
               settings={{
                 difficulty: 'medium',
@@ -109,7 +131,9 @@ export default function NoughtsAndCrossesAssignmentWrapper({
               }}
               vocabulary={vocabulary} // Pass assignment vocabulary with UUIDs
               gameSessionId={gameSessionId}
-              onBackToMenu={handleBackToMenu}
+              onBackToMenu={onBackToMenu || handleBackToMenu}
+              toggleMusic={toggleMusic}
+              isMusicEnabled={isMusicEnabled}
             onGameEnd={(result) => {
               // Update game stats
               const newStats = {
@@ -164,5 +188,6 @@ export default function NoughtsAndCrossesAssignmentWrapper({
         );
       }}
     </GameAssignmentWrapper>
+    </ErrorBoundary>
   );
 }

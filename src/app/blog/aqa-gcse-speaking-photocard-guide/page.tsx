@@ -576,7 +576,7 @@ export default function AQAGCSESpeakingPhotocardGuide() {
                 <div className="space-y-3 text-sm text-gray-700">
                   <p>
                     AQA (no date) <em>GCSE French, German and Spanish: Getting to grips with the new speaking tests (on-demand)</em>.
-                    Webinar. Available at: AQA website (Accessed: {new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}).
+                    Webinar. Available at: AQA website (Accessed: January 2024).
                   </p>
                   <p>
                     All timing requirements, task specifications, and scoring criteria referenced in this guide are taken directly from

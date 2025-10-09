@@ -648,21 +648,25 @@ export default function VocabBlastGame({
         {/* Top Bar */}
         <div className="grid grid-cols-1 md:grid-cols-3 items-center p-3 md:p-4 pointer-events-auto gap-3 md:gap-0">
           <div className="flex items-center gap-2 md:gap-4 flex-wrap">
-            <button
-              onClick={onBackToMenu}
-              className="flex items-center gap-1 md:gap-2 bg-black/60 hover:bg-black/80 text-white px-3 py-2 md:px-4 rounded-lg transition-all duration-200 text-sm md:text-base border border-white/20"
-            >
-              <ArrowLeft className="w-3 h-3 md:w-4 md:h-4" />
-              <span className="hidden sm:inline">{isAssignmentMode ? 'Back to Assignment' : 'Menu'}</span>
-            </button>
+            {!isAssignmentMode && (
+              <button
+                onClick={onBackToMenu}
+                className="flex items-center gap-1 md:gap-2 bg-black/60 hover:bg-black/80 text-white px-3 py-2 md:px-4 rounded-lg transition-all duration-200 text-sm md:text-base border border-white/20"
+              >
+                <ArrowLeft className="w-3 h-3 md:w-4 md:h-4" />
+                <span className="hidden sm:inline">{isAssignmentMode ? 'Back to Assignment' : 'Menu'}</span>
+              </button>
+            )}
 
-            <button
-              onClick={togglePause}
-              className="flex items-center gap-1 md:gap-2 bg-black/60 hover:bg-black/80 text-white px-3 py-2 md:px-4 rounded-lg transition-all duration-200 text-sm md:text-base border border-white/20"
-            >
-              {isPaused ? <Play className="w-3 h-3 md:w-4 md:h-4" /> : <Pause className="w-3 h-3 md:w-4 md:h-4" />}
-              <span className="hidden sm:inline">{isPaused ? 'Resume' : 'Pause'}</span>
-            </button>
+            {!isAssignmentMode && (
+              <button
+                onClick={togglePause}
+                className="flex items-center gap-1 md:gap-2 bg-black/60 hover:bg-black/80 text-white px-3 py-2 md:px-4 rounded-lg transition-all duration-200 text-sm md:text-base border border-white/20"
+              >
+                {isPaused ? <Play className="w-3 h-3 md:w-4 md:h-4" /> : <Pause className="w-3 h-3 md:w-4 md:h-4" />}
+                <span className="hidden sm:inline">{isPaused ? 'Resume' : 'Pause'}</span>
+              </button>
+            )}
 
             {onOpenSettings && (
               <motion.button
@@ -701,9 +705,13 @@ export default function VocabBlastGame({
           </div>
 
           <div className="text-center">
-            <h1 className="text-2xl font-bold text-white">{getThemeTitle()}</h1>
-            <p className="text-sm text-slate-300">{getThemeInstruction()}</p>
-            <p className="text-xs text-slate-400 mt-1">{getWinConditionText()}</p>
+            {!isAssignmentMode && (
+              <>
+                <h1 className="text-2xl font-bold text-white">{getThemeTitle()}</h1>
+                <p className="text-sm text-slate-300">{getThemeInstruction()}</p>
+                <p className="text-xs text-slate-400 mt-1">{getWinConditionText()}</p>
+              </>
+            )}
           </div>
 
           <div className="text-right text-white order-first md:order-last">
@@ -845,7 +853,7 @@ export default function VocabBlastGame({
 
       {/* Pause Overlay */}
       <AnimatePresence>
-        {isPaused && (
+        {isPaused && !isAssignmentMode && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}

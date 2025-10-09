@@ -76,7 +76,7 @@ export default function DetectiveListeningAssignmentWrapper({
           onBackToAssignments={handleBackToAssignments}
           onBackToMenu={handleBackToMenu}
         >
-          {({ assignment, vocabulary, onProgressUpdate, onGameComplete }) => {
+          {({ assignment, vocabulary, onProgressUpdate, onGameComplete, onOpenSettings, toggleMusic, isMusicEnabled }) => {
             // Get language from assignment vocabulary criteria or vocabulary items
             const assignmentLanguage = assignment.vocabulary_criteria?.language || vocabulary[0]?.language || 'es';
 

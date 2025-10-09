@@ -36,9 +36,37 @@ export default function UnifiedNoughtsAndCrossesPage() {
   const assignmentId = searchParams?.get('assignment');
   const mode = searchParams?.get('mode');
 
+  console.log('🔍 [NOUGHTS PAGE] URL params:', {
+    assignmentId,
+    mode,
+    isAssignmentMode: assignmentId && mode === 'assignment',
+    searchParamsString: searchParams?.toString(),
+    userAgent: typeof window !== 'undefined' ? window.navigator.userAgent : 'SSR'
+  });
+
   // If assignment mode, render assignment wrapper (after all hooks are initialized)
   if (assignmentId && mode === 'assignment') {
-    return <NoughtsAndCrossesAssignmentWrapper assignmentId={assignmentId} />;
+    console.log('🎮 [NOUGHTS PAGE] Rendering assignment wrapper for:', assignmentId);
+    try {
+      return <NoughtsAndCrossesAssignmentWrapper assignmentId={assignmentId} />;
+    } catch (error) {
+      console.error('❌ [NOUGHTS PAGE] Error rendering assignment wrapper:', error);
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-red-600 via-red-700 to-red-800 flex items-center justify-center">
+          <div className="text-white text-center max-w-md p-8">
+            <h1 className="text-2xl font-bold mb-4">Error Loading Assignment</h1>
+            <p className="mb-4">There was an error loading the assignment. Please try again.</p>
+            <p className="text-sm mb-4">Error: {error instanceof Error ? error.message : 'Unknown error'}</p>
+            <button
+              onClick={() => router.push('/student-dashboard/assignments')}
+              className="bg-white text-red-600 px-6 py-2 rounded-lg font-semibold hover:bg-gray-100"
+            >
+              Back to Assignments
+            </button>
+          </div>
+        </div>
+      );
+    }
   }
 
   // Authentication check

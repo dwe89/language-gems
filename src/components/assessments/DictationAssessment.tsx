@@ -437,11 +437,11 @@ export default function DictationAssessment({
       Math.round((finalResults.totalScore / finalResults.totalPossible) * 100) : 0;
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50">
+      <div key="completion-screen" className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="bg-white rounded-lg shadow-lg p-8">
             <div className="text-center mb-8">
-              <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
+              <CheckCircle key="complete-icon" className="h-16 w-16 text-green-500 mx-auto mb-4" />
               <h1 className="text-3xl font-bold text-gray-900 mb-2">Assessment Complete!</h1>
               <p className="text-gray-600">Well done! Here are your results:</p>
             </div>
@@ -477,16 +477,16 @@ export default function DictationAssessment({
               <h2 className="text-xl font-bold text-gray-900 mb-4">Question Results</h2>
               <div className="space-y-4">
                 {finalResults.responses.map((response: AQADictationQuestionResponse, index: number) => (
-                  <div key={response.question_id} className={`border rounded-lg p-4 ${
+                  <div key={`result-${response.question_id}`} className={`border rounded-lg p-4 ${
                     response.is_correct ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'
                   }`}>
                     <div className="flex items-center justify-between mb-2">
                       <h3 className="font-semibold">Question {index + 1}</h3>
                       <div className="flex items-center">
                         {response.is_correct ? (
-                          <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
+                          <CheckCircle key={`check-${response.question_id}`} className="h-5 w-5 text-green-500 mr-2" />
                         ) : (
-                          <XCircle className="h-5 w-5 text-red-500 mr-2" />
+                          <XCircle key={`x-${response.question_id}`} className="h-5 w-5 text-red-500 mr-2" />
                         )}
                         <span className="font-semibold">
                           {response.points_awarded}/{response.marks_possible} points
@@ -494,8 +494,8 @@ export default function DictationAssessment({
                       </div>
                     </div>
                     <div className="text-sm text-gray-600">
-                      <p><strong>Your answer:</strong> "{response.student_answer}"</p>
-                      <p><strong>Correct answer:</strong> "{response.correct_answer}"</p>
+                      <p><strong>Your answer:</strong> &quot;{response.student_answer}&quot;</p>
+                      <p><strong>Correct answer:</strong> &quot;{response.correct_answer}&quot;</p>
                       <p><strong>Audio plays:</strong> Normal: {response.normal_audio_plays}, Very slow: {response.very_slow_audio_plays}</p>
                     </div>
                   </div>
@@ -530,7 +530,7 @@ export default function DictationAssessment({
   // Safety check for current question
   if (!currentQuestion) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div key="loading-question" className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-green-600 mx-auto mb-4"></div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Loading Question...</h2>
@@ -541,21 +541,21 @@ export default function DictationAssessment({
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50">
+    <div key="assessment-screen" className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50">
       {/* Header with timer and progress */}
       <div className="bg-white shadow-sm">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center">
-              <Clock className="h-5 w-5 text-gray-500 mr-2" />
+              <Clock key="clock-icon" className="h-5 w-5 text-gray-500 mr-2" />
               <span className={`font-semibold ${timeRemaining < 300 ? 'text-red-600' : 'text-gray-900'}`}>
                 {formatTime(timeRemaining)}
               </span>
             </div>
-            
+
             <div className="flex-1 mx-8">
               <div className="bg-gray-200 rounded-full h-2">
-                <div 
+                <div
                   className="bg-green-600 h-2 rounded-full transition-all duration-300"
                   style={{ width: `${progress}%` }}
                 ></div>
@@ -564,7 +564,7 @@ export default function DictationAssessment({
                 Question {currentQuestionIndex + 1} of {questions.length}
               </p>
             </div>
-            
+
             <button
               onClick={handleSubmitAssessment}
               className="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors"
@@ -591,7 +591,7 @@ export default function DictationAssessment({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
             <div className="bg-green-50 border border-green-200 rounded-lg p-6">
               <h3 className="font-semibold text-green-900 mb-3 flex items-center">
-                <Volume2 className="h-5 w-5 mr-2" />
+                <Volume2 key="volume-normal" className="h-5 w-5 mr-2" />
                 Normal Speed
               </h3>
               <div className="flex items-center justify-between">
@@ -605,17 +605,17 @@ export default function DictationAssessment({
                 >
                   {isPlaying && currentAudioType === 'normal' ? (
                     <>
-                      <Pause className="h-4 w-4 mr-2" />
+                      <Pause key="pause-normal" className="h-4 w-4 mr-2" />
                       Playing...
                     </>
                   ) : isPlaying ? (
                     <>
-                      <Play className="h-4 w-4 mr-2 opacity-50" />
+                      <Play key="play-normal-wait" className="h-4 w-4 mr-2 opacity-50" />
                       Wait...
                     </>
                   ) : (
                     <>
-                      <Play className="h-4 w-4 mr-2" />
+                      <Play key="play-normal" className="h-4 w-4 mr-2" />
                       Play
                     </>
                   )}
@@ -625,7 +625,7 @@ export default function DictationAssessment({
 
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
               <h3 className="font-semibold text-blue-900 mb-3 flex items-center">
-                <VolumeX className="h-5 w-5 mr-2" />
+                <VolumeX key="volume-slow" className="h-5 w-5 mr-2" />
                 Very Slow Speed
               </h3>
               <div className="flex items-center justify-between">
@@ -639,17 +639,17 @@ export default function DictationAssessment({
                 >
                   {isPlaying && currentAudioType === 'very_slow' ? (
                     <>
-                      <Pause className="h-4 w-4 mr-2" />
+                      <Pause key="pause-slow" className="h-4 w-4 mr-2" />
                       Playing...
                     </>
                   ) : isPlaying ? (
                     <>
-                      <Play className="h-4 w-4 mr-2 opacity-50" />
+                      <Play key="play-slow-wait" className="h-4 w-4 mr-2 opacity-50" />
                       Wait...
                     </>
                   ) : (
                     <>
-                      <Play className="h-4 w-4 mr-2" />
+                      <Play key="play-slow" className="h-4 w-4 mr-2" />
                       Play
                     </>
                   )}
@@ -665,7 +665,7 @@ export default function DictationAssessment({
                 onClick={stopAudio}
                 className="px-6 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-colors"
               >
-                <Pause className="h-4 w-4 mr-2 inline" />
+                <Pause key="pause-stop" className="h-4 w-4 mr-2 inline" />
                 Stop Audio
               </button>
             </div>
@@ -696,7 +696,7 @@ export default function DictationAssessment({
               disabled={currentQuestionIndex === 0}
               className="flex items-center px-6 py-3 bg-gray-600 text-white rounded-lg font-semibold hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <ArrowLeft className="h-4 w-4 mr-2" />
+              <ArrowLeft key="arrow-left" className="h-4 w-4 mr-2" />
               Previous
             </button>
 
@@ -705,26 +705,28 @@ export default function DictationAssessment({
                 onClick={() => setCurrentAnswer('')}
                 className="flex items-center px-4 py-2 bg-amber-600 text-white rounded-lg font-semibold hover:bg-amber-700 transition-colors"
               >
-                <RotateCcw className="h-4 w-4 mr-2" />
+                <RotateCcw key="rotate-ccw" className="h-4 w-4 mr-2" />
                 Clear
               </button>
             </div>
 
             {currentQuestionIndex === questions.length - 1 ? (
               <button
+                key="finish-button"
                 onClick={handleSubmitAssessment}
                 className="flex items-center px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors"
               >
-                <CheckCircle className="h-4 w-4 mr-2" />
+                <CheckCircle key="check-circle" className="h-4 w-4 mr-2" />
                 Finish
               </button>
             ) : (
               <button
+                key="next-button"
                 onClick={goToNextQuestion}
                 className="flex items-center px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors"
               >
                 Next
-                <ArrowRight className="h-4 w-4 ml-2" />
+                <ArrowRight key="arrow-right" className="h-4 w-4 ml-2" />
               </button>
             )}
           </div>

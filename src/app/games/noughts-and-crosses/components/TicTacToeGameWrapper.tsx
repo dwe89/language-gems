@@ -38,6 +38,8 @@ interface TicTacToeGameWrapperProps {
   gameSessionId?: string | null;
   onOpenSettings?: () => void;
   onGameModeChange?: (gameMode: 'computer' | '2-player') => void;
+  toggleMusic?: () => void;
+  isMusicEnabled?: boolean;
 }
 
 export default function TicTacToeGameWrapper(props: TicTacToeGameWrapperProps) {
@@ -321,6 +323,8 @@ export default function TicTacToeGameWrapper(props: TicTacToeGameWrapperProps) {
       onGameModeChange={props.onGameModeChange}
       gameService={gameService}
       userId={props.userId}
+      toggleMusic={props.toggleMusic}
+      isMusicEnabled={props.isMusicEnabled}
     />
   );
 }

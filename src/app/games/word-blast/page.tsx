@@ -86,7 +86,7 @@ export default function WordBlastPage() {
         onBackToAssignments={() => router.push(`/student-dashboard/assignments/${assignmentId}`)}
         onBackToMenu={() => router.push('/games/word-blast')}
       >
-        {({ assignment, vocabulary, onProgressUpdate, onGameComplete }) => {
+        {({ assignment, vocabulary, onProgressUpdate, onGameComplete, toggleMusic, isMusicEnabled }) => {
           // Convert assignment vocabulary to Word Blast format
           const wordBlastVocabulary = vocabulary.map(item => ({
             id: item.id,

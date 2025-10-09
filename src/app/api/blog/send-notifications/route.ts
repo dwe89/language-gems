@@ -45,6 +45,10 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    const senderName = process.env.BREVO_SENDER_NAME || 'LanguageGems';
+    const senderEmail = process.env.BREVO_SENDER_EMAIL || 'support@languagegems.com';
+
+
     // Get active blog subscribers
     const { data: subscribers, error: subscribersError } = await supabase
       .from('blog_subscribers')
@@ -127,13 +131,13 @@ export async function POST(request: NextRequest) {
 }
 
 async function sendPostNotification(
-  post: BlogPost, 
-  subscribers: any[], 
+  post: BlogPost,
+  subscribers: any[],
   brevoApiKey: string
 ) {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://www.languagegems.com';
   const postUrl = `${baseUrl}/blog/${post.slug}`;
-  
+
   // Create email content
   const subject = `New Post: ${post.title}`;
   const htmlContent = `
@@ -148,28 +152,28 @@ async function sendPostNotification(
         <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
             <h1 style="color: white; margin: 0; font-size: 28px;">Language Gems Blog</h1>
         </div>
-        
+
         <div style="background: white; padding: 30px; border-radius: 0 0 10px 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
             ${post.featured_image_url ? `
                 <img src="${post.featured_image_url}" alt="${post.title}" style="width: 100%; height: 200px; object-fit: cover; border-radius: 8px; margin-bottom: 20px;">
             ` : ''}
-            
+
             <h2 style="color: #333; margin-bottom: 15px; font-size: 24px;">${post.title}</h2>
-            
+
             ${post.excerpt ? `
                 <p style="color: #666; font-size: 16px; margin-bottom: 25px;">${post.excerpt}</p>
             ` : ''}
-            
+
             <div style="text-align: center; margin: 30px 0;">
                 <a href="${postUrl}" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 25px; font-weight: bold; display: inline-block; transition: transform 0.2s;">
                     Read Full Article
                 </a>
             </div>
-            
+
             <div style="border-top: 1px solid #eee; padding-top: 20px; margin-top: 30px; font-size: 14px; color: #666;">
                 <p>By ${post.author || 'LanguageGems Team'} • ${new Date(post.publish_date).toLocaleDateString()}</p>
                 <p style="margin-top: 20px;">
-                    <a href="${baseUrl}/blog/unsubscribe?token={{params.UNSUBSCRIBE_TOKEN}}" style="color: #999; text-decoration: none;">Unsubscribe</a> | 
+                    <a href="${baseUrl}/blog/unsubscribe?token={{params.UNSUBSCRIBE_TOKEN}}" style="color: #999; text-decoration: none;">Unsubscribe</a> |
                     <a href="${baseUrl}/blog" style="color: #667eea; text-decoration: none;">View All Posts</a>
                 </p>
             </div>
@@ -188,8 +192,8 @@ async function sendPostNotification(
       },
       body: JSON.stringify({
         sender: {
-          name: 'Language Gems',
-          email: 'blog@languagegems.com'
+          name: senderName,
+          email: senderEmail
         },
         to: subscribers.map(sub => ({
           email: sub.email,

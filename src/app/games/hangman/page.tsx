@@ -50,8 +50,22 @@ export default function HangmanPage() {
   // Assignment theme state for background music
   const [assignmentTheme, setAssignmentTheme] = useState<string | null>(null);
 
-  // Initialize the audio hook (assuming sound is enabled by default, or you can add a user preference)
-  const { playSFX, startBackgroundMusic, stopBackgroundMusic, toggleMusic, isMusicEnabled } = useAudio(true);
+  // Assignment audio state (will be overridden by wrapper in assignment mode)
+  const [assignmentMusicEnabled, setAssignmentMusicEnabled] = useState<boolean | null>(null);
+  const [assignmentToggleMusic, setAssignmentToggleMusic] = useState<(() => void) | null>(null);
+
+  // Initialize the audio hook
+  // In assignment mode, use the wrapper's music state; otherwise use local state
+  const effectiveMusicEnabled = assignmentMusicEnabled !== null ? assignmentMusicEnabled : true;
+  const { playSFX, startBackgroundMusic, stopBackgroundMusic } = useAudio(effectiveMusicEnabled);
+
+  // Local music toggle for non-assignment mode
+  const [localMusicEnabled, setLocalMusicEnabled] = useState(true);
+  const localToggleMusic = () => setLocalMusicEnabled(prev => !prev);
+
+  // Use assignment toggle if available, otherwise use local toggle
+  const toggleMusic = assignmentToggleMusic || localToggleMusic;
+  const isMusicEnabled = assignmentMusicEnabled !== null ? assignmentMusicEnabled : localMusicEnabled;
 
   // Global audio context for assignment mode compatibility
   const globalAudioManager = useGameAudio(true);
@@ -71,9 +85,10 @@ export default function HangmanPage() {
     }
   }, [playSFX, globalAudioManager]);
 
-  // --- Audio Management for Background Music ---
+  // --- Audio Management for Background Music (Normal Mode) ---
   useEffect(() => {
-    if (gameStarted && gameConfig?.theme) {
+    // Only manage music in normal mode (not assignment mode)
+    if (!isAssignmentMode && gameStarted && gameConfig?.theme) {
       // Map your theme strings to the keys expected by useAudio.ts
       const themeMap: Record<string, 'classic' | 'space-explorer' | 'tokyo-nights' | 'pirate-adventure' | 'lava-temple'> = {
         'default': 'classic',
@@ -82,24 +97,51 @@ export default function HangmanPage() {
         'pirate': 'pirate-adventure',
         'temple': 'lava-temple',
       };
-      
+
       const audioThemeKey = themeMap[gameConfig.theme];
       if (audioThemeKey) {
         startBackgroundMusic(audioThemeKey);
       } else {
         // Fallback for unmapped themes or 'default' if not explicitly handled
-        startBackgroundMusic('classic'); 
+        startBackgroundMusic('classic');
       }
-    } else {
+    } else if (!isAssignmentMode) {
       // Stop music when game is not started (e.g., back to menu)
       stopBackgroundMusic();
     }
 
     // Cleanup function to stop music when component unmounts or dependencies change
     return () => {
-      stopBackgroundMusic();
+      if (!isAssignmentMode) {
+        stopBackgroundMusic();
+      }
     };
-  }, [gameStarted, gameConfig?.theme, startBackgroundMusic, stopBackgroundMusic]);
+  }, [gameStarted, gameConfig?.theme, startBackgroundMusic, stopBackgroundMusic, isAssignmentMode]);
+
+  // --- Audio Management for Background Music (Assignment Mode) ---
+  useEffect(() => {
+    // Only manage music in assignment mode
+    if (isAssignmentMode && assignmentTheme) {
+      // Map theme strings to audio keys
+      const themeMap: Record<string, 'classic' | 'space-explorer' | 'tokyo-nights' | 'pirate-adventure' | 'lava-temple'> = {
+        'default': 'classic',
+        'space': 'space-explorer',
+        'tokyo': 'tokyo-nights',
+        'pirate': 'pirate-adventure',
+        'temple': 'lava-temple',
+      };
+
+      const audioThemeKey = themeMap[assignmentTheme] || 'classic';
+      startBackgroundMusic(audioThemeKey);
+    }
+
+    // Cleanup
+    return () => {
+      if (isAssignmentMode) {
+        stopBackgroundMusic();
+      }
+    };
+  }, [assignmentTheme, startBackgroundMusic, stopBackgroundMusic, isAssignmentMode]);
 
   // --- Background Music for Assignment Mode ---
   // Handle theme-based background music for assignment mode
@@ -231,7 +273,7 @@ export default function HangmanPage() {
         onBackToAssignments={handleBackToAssignments}
         onBackToMenu={() => router.push('/games/hangman')}
       >
-        {({ assignment, vocabulary, onProgressUpdate, onGameComplete, gameSessionId, selectedTheme }) => {
+        {({ assignment, vocabulary, onProgressUpdate, onGameComplete, gameSessionId, selectedTheme, toggleMusic: wrapperToggleMusic, isMusicEnabled: wrapperMusicEnabled }) => {
           // Transform vocabulary to the format expected by HangmanGameWrapper
           const gameVocabulary = vocabulary.map(item => item.word);
 
@@ -241,6 +283,14 @@ export default function HangmanPage() {
           // Update assignment theme state when selectedTheme changes (without using hooks)
           if (assignmentTheme !== selectedTheme) {
             setAssignmentTheme(selectedTheme || null);
+          }
+
+          // Update assignment music state from wrapper
+          if (assignmentMusicEnabled !== wrapperMusicEnabled) {
+            setAssignmentMusicEnabled(wrapperMusicEnabled ?? true);
+          }
+          if (assignmentToggleMusic !== wrapperToggleMusic) {
+            setAssignmentToggleMusic(() => wrapperToggleMusic);
           }
 
           const categoryName = vocabulary[0]?.category || 'assignment';
@@ -262,7 +312,9 @@ export default function HangmanPage() {
                 }}
                 isAssignmentMode={true}
                 gameSessionId={gameSessionId}
-                onBackToMenu={() => router.push('/games/hangman')}
+                onBackToMenu={handleBackToAssignments}
+                toggleMusic={toggleMusic}
+                isMusicEnabled={isMusicEnabled}
                 onGameEnd={(result) => {
                   // Calculate score based on result
                   const { score, accuracy, maxScore } = calculateStandardScore(

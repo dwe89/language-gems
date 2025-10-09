@@ -102,6 +102,8 @@ export default function UnifiedMemoryGamePage() {
               gameSessionId={gameSessionId}
               onProgressUpdate={onProgressUpdate}
               onGameComplete={onGameComplete}
+              onThemeModalRequest={() => {}}
+              onGridSizeModalRequest={() => {}}
             />
           );
         }}

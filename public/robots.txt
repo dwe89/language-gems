@@ -1,28 +1,46 @@
 User-agent: *
 Allow: /
 
-# Allow crawling of all content
+# Disallow all user-specific, internal, and low-value pages
+# These consume crawl budget without providing SEO value
+Disallow: /api/
+Disallow: /dashboard/
+Disallow: /student-dashboard/
+Disallow: /account/
+Disallow: /teacher/
+Disallow: /admin/
+Disallow: /auth/
+Disallow: /student/auth/
+Disallow: /_next/
+Disallow: /debug/
+Disallow: /preview/
+Disallow: /*?assignment=*
+Disallow: /*?mode=*
+Disallow: /*?category=*
+
+# Allow crawling of high-value public content
 Allow: /about
 Allow: /blog
+Allow: /blog/*
 Allow: /games
+Allow: /games/*
 Allow: /exams
+Allow: /exams/*
 Allow: /schools
+Allow: /schools/*
 Allow: /community
 Allow: /worksheets
 Allow: /vocabulary
-Allow: /sitemap
-ALlow: /grammar
-
-# Disallow sensitive areas
-Disallow: /api/
-Disallow: /dashboard/
-Disallow: /account/
-Disallow: /teacher/
-Disallow: /_next/
-Disallow: /admin/
+Allow: /grammar
+Allow: /grammar/*
+Allow: /pricing
+Allow: /explore
+Allow: /help-center
+Allow: /contact
+Allow: /contact-sales
 
 # Sitemap location
 Sitemap: https://languagegems.com/sitemap.xml
 
-# Crawl delay (optional - be respectful to the server)
+# Crawl delay (be respectful to the server)
 Crawl-delay: 1

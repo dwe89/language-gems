@@ -43,7 +43,7 @@ export default function VocabBlastAssignmentWrapper({
       onBackToAssignments={onBackToAssignments}
       onBackToMenu={onBackToMenu}
     >
-      {({ assignment, vocabulary, onProgressUpdate, onGameComplete, gameSessionId, selectedTheme }) => {
+      {({ assignment, vocabulary, onProgressUpdate, onGameComplete, gameSessionId, selectedTheme, onOpenSettings, toggleMusic, isMusicEnabled }) => {
         console.log('Vocab Blast Assignment - Vocabulary loaded:', vocabulary.length, 'items');
 
         return (

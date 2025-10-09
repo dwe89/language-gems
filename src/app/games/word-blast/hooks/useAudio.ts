@@ -93,10 +93,20 @@ export const useAudio = (soundEnabled: boolean = true) => {
     }
   }, [soundEnabled, stopBackgroundMusic]); // stopBackgroundMusic is now defined
 
-  // Update volume when sound enabled changes
+  // Pause/resume background music when sound enabled changes
   useEffect(() => {
     if (backgroundMusicRef.current) {
-      backgroundMusicRef.current.volume = soundEnabled ? 0.3 : 0;
+      if (soundEnabled) {
+        // Resume music if it was paused
+        if (backgroundMusicRef.current.paused) {
+          backgroundMusicRef.current.play().catch(console.warn);
+        }
+        backgroundMusicRef.current.volume = 0.3;
+      } else {
+        // Pause music but don't reset currentTime so it can resume
+        backgroundMusicRef.current.pause();
+        backgroundMusicRef.current.volume = 0;
+      }
     }
   }, [soundEnabled]);
 

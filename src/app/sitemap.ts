@@ -2,6 +2,29 @@ import { MetadataRoute } from 'next'
 import fs from 'fs'
 import path from 'path'
 
+// Pages that should NEVER be indexed (consume crawl budget without SEO value)
+const EXCLUDED_PATHS = [
+  'dashboard',
+  'student-dashboard',
+  'account',
+  'admin',
+  'auth',
+  'teacher',
+  'debug',
+  'preview'
+];
+
+// Check if a URL should be excluded from sitemap
+function shouldExcludeFromSitemap(url: string): boolean {
+  // Remove leading slash for comparison
+  const cleanUrl = url.startsWith('/') ? url.substring(1) : url;
+
+  // Check if URL starts with any excluded path
+  return EXCLUDED_PATHS.some(excluded =>
+    cleanUrl === excluded || cleanUrl.startsWith(`${excluded}/`)
+  );
+}
+
 // Function to get all static pages from the app directory
 function getAllPages(): { url: string; priority: number; changeFrequency: 'weekly' | 'monthly' | 'yearly' }[] {
   const appDir = path.join(process.cwd(), 'src/app')
@@ -26,6 +49,11 @@ function getAllPages(): { url: string; priority: number; changeFrequency: 'weekl
         } else if (item === 'page.tsx') {
           // Convert file path to URL
           const url = currentPath ? `/${currentPath}` : ''
+
+          // Skip excluded paths (dashboard, admin, auth, etc.)
+          if (shouldExcludeFromSitemap(url)) {
+            continue;
+          }
 
           // Determine priority and change frequency based on URL patterns
           let priority = 0.6 // default
