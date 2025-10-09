@@ -11,6 +11,7 @@ const config = {
     ignoreBuildErrors: true,
   },
   distDir: '.next',
+  trailingSlash: false,
   // Increase API route timeout for bulk operations
   experimental: {
     proxyTimeout: 120000, // 2 minutes
