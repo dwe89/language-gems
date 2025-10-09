@@ -212,17 +212,6 @@ async function sendOrderConfirmationEmail(order: any, orderItems: any[], custome
       return;
     }
 
-    // Generate download links HTML
-    const downloadLinksHtml = products.map(product => {
-      const downloadUrl = `${BASE_URL}/api/orders/${order.id}/download/${product.id}`;
-      return `
-        <div style="background:#ffffff; border:1px solid #e5e7eb; border-radius:8px; padding:15px; margin:10px 0;">
-          <p style="margin:0 0 10px 0; font-weight:600; color:#374151;">${product.name}</p>
-          <a href="${downloadUrl}" style="display:inline-block; background:#667eea; color:#ffffff; padding:10px 20px; border-radius:6px; text-decoration:none; font-weight:600;">Download Now</a>
-        </div>
-      `;
-    }).join('');
-
     // Format total price
     const totalFormatted = order.total_cents === 0 ? 'FREE' : `£${(order.total_cents / 100).toFixed(2)}`;
 
@@ -232,6 +221,10 @@ async function sendOrderConfirmationEmail(order: any, orderItems: any[], custome
       month: 'long',
       year: 'numeric'
     });
+
+    // Send email for first product (for now - can be enhanced to send multiple products in one email later)
+    const firstProduct = products[0];
+    const downloadUrl = `${BASE_URL}/api/orders/${order.id}/download/${firstProduct.id}`;
 
     // Send email via Brevo
     const response = await fetch('https://api.brevo.com/v3/smtp/email', {
@@ -250,7 +243,8 @@ async function sendOrderConfirmationEmail(order: any, orderItems: any[], custome
           order_id: order.id,
           order_date: orderDate,
           total: totalFormatted,
-          download_links: downloadLinksHtml,
+          product_name: firstProduct.name,
+          download_url: downloadUrl,
           account_url: `${BASE_URL}/account/orders`
         }
       }),
