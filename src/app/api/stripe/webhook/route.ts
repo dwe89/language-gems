@@ -123,11 +123,6 @@ async function handleSuccessfulPayment(session: Stripe.Checkout.Session) {
       }
     }
 
-    // Get line items from Stripe
-    const lineItems = await stripe.checkout.sessions.listLineItems(session.id, {
-      expand: ['data.price.product'],
-    });
-
     // Create order
     const orderData: any = {
       stripe_session_id: session.id,
@@ -161,29 +156,40 @@ async function handleSuccessfulPayment(session: Stripe.Checkout.Session) {
       return;
     }
 
-    // Create order items
+    // Create order items using product IDs from session metadata
     const orderItems = [];
-    for (const lineItem of lineItems.data) {
-      const productMetadata = (lineItem.price?.product as Stripe.Product)?.metadata;
-      const productId = productMetadata?.product_id;
+    
+    // Get product details from Supabase
+    const { data: products, error: productsError } = await supabase
+      .from('products')
+      .select('id, name, price_cents')
+      .in('id', productIds);
 
-      if (productId) {
+    if (productsError) {
+      console.error('Error fetching products:', productsError);
+    } else if (products && products.length > 0) {
+      // Create order items for each product in the session
+      for (const product of products) {
         orderItems.push({
           order_id: order.id,
-          product_id: productId,
-          quantity: lineItem.quantity || 1,
-          price_cents: lineItem.price?.unit_amount || 0
+          product_id: product.id,
+          product_name: product.name,
+          product_price_cents: product.price_cents,
+          quantity: 1 // For digital products, quantity is always 1
         });
       }
-    }
 
-    if (orderItems.length > 0) {
-      const { error: orderItemsError } = await supabase
-        .from('order_items')
-        .insert(orderItems);
+      // Insert order items
+      if (orderItems.length > 0) {
+        const { error: orderItemsError } = await supabase
+          .from('order_items')
+          .insert(orderItems);
 
-      if (orderItemsError) {
-        console.error('Error creating order items:', orderItemsError);
+        if (orderItemsError) {
+          console.error('Error creating order items:', orderItemsError);
+        } else {
+          console.log(`Created ${orderItems.length} order items for order ${order.id}`);
+        }
       }
     }
 
@@ -198,7 +204,9 @@ async function handleSuccessfulPayment(session: Stripe.Checkout.Session) {
     console.log(`Order ${order.id} created successfully for ${customerEmail}`);
 
     // Send order confirmation email with download links
-    await sendOrderConfirmationEmail(order, orderItems, actualEmail);
+    if (actualEmail) {
+      await sendOrderConfirmationEmail(order, orderItems, actualEmail);
+    }
 
   } catch (error) {
     console.error('Error handling successful payment:', error);
