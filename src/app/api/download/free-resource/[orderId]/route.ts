@@ -138,10 +138,35 @@ export async function GET(
       console.warn('[FREE DOWNLOAD] Failed to log download:', logError);
     }
 
-    console.log('[FREE DOWNLOAD] Redirecting to signed URL');
+    console.log('[FREE DOWNLOAD] Fetching file to stream');
 
-    // 6. Redirect to the fresh signed URL
-    return NextResponse.redirect(signedUrlData.signedUrl);
+    // 6. Fetch the file and stream it to the user (keeps URL clean)
+    try {
+      const fileResponse = await fetch(signedUrlData.signedUrl);
+
+      if (!fileResponse.ok) {
+        throw new Error('Failed to fetch file from storage');
+      }
+
+      const fileBlob = await fileResponse.blob();
+      const buffer = await fileBlob.arrayBuffer();
+
+      // Extract filename from storage path
+      const filename = storagePath.split('/').pop() || 'download.pdf';
+
+      // Return the file with proper headers
+      return new NextResponse(buffer, {
+        headers: {
+          'Content-Type': fileBlob.type || 'application/pdf',
+          'Content-Disposition': `attachment; filename="${filename}"`,
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+        },
+      });
+    } catch (streamError) {
+      console.error('[FREE DOWNLOAD] Error streaming file, falling back to redirect:', streamError);
+      // Fallback to redirect if streaming fails
+      return NextResponse.redirect(signedUrlData.signedUrl);
+    }
 
   } catch (error: any) {
     console.error('[FREE DOWNLOAD] Unexpected error:', error);
