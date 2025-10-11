@@ -222,9 +222,9 @@ async function sendOrderConfirmationEmail(order: any, orderItems: any[], custome
       year: 'numeric'
     });
 
-    // Send email for first product (for now - can be enhanced to send multiple products in one email later)
+    // Use the clean, permanent download endpoint
     const firstProduct = products[0];
-    const downloadUrl = `${BASE_URL}/api/orders/${order.id}/download/${firstProduct.id}`;
+    const downloadUrl = `${BASE_URL}/api/download/free-resource/${order.id}`;
 
     // Send email via Brevo
     const response = await fetch('https://api.brevo.com/v3/smtp/email', {

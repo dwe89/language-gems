@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { useCart } from '../../contexts/CartContext';
 import { useAuth } from '../../components/auth/AuthProvider';
 import { ArrowLeft, Plus, Minus, Trash2, CreditCard, Lock, ShoppingBag } from 'lucide-react';
+import EmailCaptureModal from '../../components/cart/EmailCaptureModal';
 
 export default function CartPage() {
   const { state, updateQuantity, removeItem, clearCart, getTotalPrice, getTotalItems, clearServerCart } = useCart();
@@ -14,6 +15,8 @@ export default function CartPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [guestEmail, setGuestEmail] = useState<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -26,45 +29,69 @@ export default function CartPage() {
   const handleCheckout = async () => {
     if (state.items.length === 0) return;
 
-    setLoading(true);
-    try {
-      // Check if all items are free
-      const totalPrice = getTotalPrice();
-      
-      if (totalPrice === 0) {
-        // Handle free items - create order directly without Stripe
-        console.log('Processing free items checkout...');
-        
-        const response = await fetch('/api/orders/create-free-order', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            items: state.items.map(item => ({
-              product_id: item.product.id,
-              quantity: item.quantity,
-              price_cents: item.product.price_cents
-            })),
-            customer_email: user?.email || null
-          }),
-        });
+    // Check if all items are free
+    const totalPrice = getTotalPrice();
 
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('Free order API Error Response:', errorText);
-          throw new Error(`Failed to create free order: ${response.status} ${errorText}`);
-        }
-
-        const responseData = await response.json();
-        console.log('Free order created:', responseData);
-        
-        // Redirect to success page
-        window.location.href = `/checkout/success?order_id=${responseData.order_id}`;
+    if (totalPrice === 0) {
+      // For free items, check if we need to capture email
+      if (!user && !guestEmail) {
+        // Show email capture modal for guests
+        setShowEmailModal(true);
         return;
       }
 
-      // Handle paid items - go through Stripe
+      // Process free order
+      await processFreeOrder(user?.email || guestEmail || null);
+      return;
+    }
+
+    // Handle paid items - go through Stripe
+    await processPaidCheckout();
+  };
+
+  const processFreeOrder = async (email: string | null) => {
+    setLoading(true);
+    try {
+      console.log('Processing free items checkout...');
+
+      const response = await fetch('/api/orders/create-free-order', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          items: state.items.map(item => ({
+            product_id: item.product.id,
+            quantity: item.quantity,
+            price_cents: item.product.price_cents
+          })),
+          customer_email: email
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Free order API Error Response:', errorText);
+        throw new Error(`Failed to create free order: ${response.status} ${errorText}`);
+      }
+
+      const responseData = await response.json();
+      console.log('Free order created:', responseData);
+
+      // Redirect to success page
+      window.location.href = `/checkout/success?order_id=${responseData.order_id}`;
+    } catch (error) {
+      console.error('Error processing free order:', error);
+      alert('Failed to process your order. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const processPaidCheckout = async () => {
+    setLoading(true);
+    try {
+
       console.log('Starting paid checkout process...');
       console.log('Current URL:', window.location.href);
       console.log('Items to checkout:', state.items.map(item => ({
@@ -114,6 +141,14 @@ export default function CartPage() {
     }
   };
 
+  const handleEmailSubmit = (email: string, firstName?: string) => {
+    setGuestEmail(email);
+    setShowEmailModal(false);
+
+    // Process the free order with the captured email
+    processFreeOrder(email);
+  };
+
   // Prevent hydration mismatch by waiting for client mount
   if (!mounted) {
     return (
@@ -134,7 +169,7 @@ export default function CartPage() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="mb-8">
             <Link
-              href="/shop"
+              href="/resources"
               className="inline-flex items-center text-indigo-600 hover:text-indigo-700 mb-4"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
@@ -146,10 +181,10 @@ export default function CartPage() {
             <h2 className="text-2xl font-semibold text-slate-800 mb-4">Your cart is empty</h2>
             <p className="text-slate-600 mb-8">Discover our educational resources to get started</p>
             <Link
-              href="/shop"
+              href="/resources"
               className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
             >
-              Browse Shop
+              Browse Resources
             </Link>
           </div>
         </div>
@@ -165,12 +200,21 @@ export default function CartPage() {
         <meta name="keywords" content="shopping cart, Language Gems cart, educational resources checkout, GCSE materials purchase, language learning resources" />
         <link rel="canonical" href="https://languagegems.com/cart" />
       </Head>
+
+      {/* Email Capture Modal */}
+      <EmailCaptureModal
+        isOpen={showEmailModal}
+        onClose={() => setShowEmailModal(false)}
+        onSubmit={handleEmailSubmit}
+        isSubmitting={loading}
+      />
+
       <div className="min-h-screen bg-slate-50">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
           <Link
-            href="/shop"
+            href="/resources"
             className="inline-flex items-center text-indigo-600 hover:text-indigo-700 mb-4"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -415,7 +459,7 @@ export default function CartPage() {
 
                 {/* Continue Shopping */}
                 <Link
-                  href="/shop"
+                  href="/resources"
                   className="w-full py-2 px-4 text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50 transition-colors text-center block"
                 >
                   Continue Shopping

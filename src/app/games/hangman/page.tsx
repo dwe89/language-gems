@@ -133,6 +133,7 @@ export default function HangmanPage() {
 
       const audioThemeKey = themeMap[assignmentTheme] || 'classic';
       startBackgroundMusic(audioThemeKey);
+      console.log('Assignment music started for theme:', assignmentTheme, '-> audio:', audioThemeKey);
     }
 
     // Cleanup
@@ -142,31 +143,6 @@ export default function HangmanPage() {
       }
     };
   }, [assignmentTheme, startBackgroundMusic, stopBackgroundMusic, isAssignmentMode]);
-
-  // --- Background Music for Assignment Mode ---
-  // Handle theme-based background music for assignment mode
-  useEffect(() => {
-    if (isAssignmentMode && assignmentTheme) {
-      // Map assignment theme to audio theme
-      const themeMap: Record<string, 'classic' | 'space-explorer' | 'tokyo-nights' | 'pirate-adventure' | 'lava-temple'> = {
-        'default': 'classic',
-        'space': 'space-explorer',
-        'tokyo': 'tokyo-nights',
-        'pirate': 'pirate-adventure',
-        'temple': 'lava-temple',
-      };
-      
-      const audioThemeKey = themeMap[assignmentTheme] || 'classic';
-      startBackgroundMusic(audioThemeKey);
-      console.log('Assignment music started for theme:', assignmentTheme, '-> audio:', audioThemeKey);
-    }
-    
-    return () => {
-      if (isAssignmentMode) {
-        stopBackgroundMusic();
-      }
-    };
-  }, [isAssignmentMode, assignmentTheme, startBackgroundMusic, stopBackgroundMusic]);
 
   // Assignment mode helper functions
   const formatCategoryName = (category: string) => {

@@ -162,6 +162,24 @@ export default function VideoForm({ video, onSave, onCancel }: VideoFormProps) {
         throw new Error('Please fill in all required fields');
       }
 
+      // Check for duplicate YouTube ID when creating new video
+      if (!video?.id) {
+        const { data: existingVideo, error: checkError } = await supabaseBrowser
+          .from('youtube_videos')
+          .select('id, title')
+          .eq('youtube_id', formData.youtube_id)
+          .single();
+
+        if (checkError && checkError.code !== 'PGRST116') {
+          // PGRST116 = no rows returned, which is what we want
+          throw checkError;
+        }
+
+        if (existingVideo) {
+          throw new Error(`A video with this YouTube ID already exists: "${existingVideo.title}". Please use a different video or edit the existing one.`);
+        }
+      }
+
       const videoData = {
         ...formData,
         theme: formData.theme || null,
@@ -180,7 +198,13 @@ export default function VideoForm({ video, onSave, onCancel }: VideoFormProps) {
           .update(videoData)
           .eq('id', video.id);
 
-        if (error) throw error;
+        if (error) {
+          // Handle specific error codes
+          if (error.code === '23505') {
+            throw new Error('A video with this YouTube ID already exists. Please use a different video.');
+          }
+          throw error;
+        }
         setSuccess('Video updated successfully!');
       } else {
         // Create new video
@@ -188,7 +212,13 @@ export default function VideoForm({ video, onSave, onCancel }: VideoFormProps) {
           .from('youtube_videos')
           .insert([videoData]);
 
-        if (error) throw error;
+        if (error) {
+          // Handle specific error codes
+          if (error.code === '23505') {
+            throw new Error('A video with this YouTube ID already exists. Please use a different video.');
+          }
+          throw error;
+        }
         setSuccess('Video added successfully!');
         setFormData(createEmptyFormState());
       }
@@ -197,6 +227,7 @@ export default function VideoForm({ video, onSave, onCancel }: VideoFormProps) {
       onSave();
 
     } catch (error: any) {
+      console.error('Error saving video:', error);
       setError(error.message || 'An error occurred while saving the video');
     } finally {
       setSaving(false);

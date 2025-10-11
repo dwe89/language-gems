@@ -40,6 +40,7 @@ export default function ResourcesPage() {
   const [selectedLanguage, setSelectedLanguage] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedExamBoard, setSelectedExamBoard] = useState<string>('');
+  const [showFreeOnly, setShowFreeOnly] = useState(false);
   const { addItem, toggleCart, getTotalItems } = useCart();
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
   const router = useRouter();
@@ -122,15 +123,30 @@ export default function ResourcesPage() {
       {/* Featured Resources */}
       {/* Filters and Search */}
       <div className="bg-white rounded-xl shadow-sm p-6 mb-8">
-        <h3 className="text-lg font-semibold text-slate-800 mb-4">Find Your Perfect Worksheet</h3>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-slate-800">Find Your Perfect Resource</h3>
+
+          {/* Free Only Toggle */}
+          <button
+            onClick={() => setShowFreeOnly(!showFreeOnly)}
+            className={`px-4 py-2 rounded-lg font-semibold transition-all flex items-center ${
+              showFreeOnly
+                ? 'bg-green-600 text-white shadow-md'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+            }`}
+          >
+            <Gift className="h-4 w-4 mr-2" />
+            {showFreeOnly ? 'Showing Free Only' : 'Show Free Only'}
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {/* Search */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
             <input
               type="text"
-              placeholder="Search worksheets..."
+              placeholder="Search resources..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
@@ -144,24 +160,9 @@ export default function ResourcesPage() {
             className="px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
           >
             <option value="">All Categories</option>
-            {/* Category options will need to be fetched from the database */}
             <option value="themes">Themed Worksheets</option>
             <option value="grammar">Grammar Essentials</option>
             <option value="exam-prep">Exam Preparation</option>
-          </select>
-
-          {/* Year Group Filter */}
-          <select
-            value={selectedLanguage || ''}
-            onChange={(e) => setSelectedLanguage(e.target.value || '')}
-            className="px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-          >
-            <option value="">All Languages</option>
-            {LANGUAGES.map(lang => (
-              <option key={lang} value={lang}>
-                {lang}
-              </option>
-            ))}
           </select>
 
           {/* Language Filter */}
@@ -291,7 +292,8 @@ export default function ResourcesPage() {
     const matchesLanguage = !selectedLanguage || hasTag(product, selectedLanguage);
     const matchesCategory = !selectedCategory || hasTag(product, selectedCategory);
     const matchesExamBoard = !selectedExamBoard || hasTag(product, selectedExamBoard);
-    return matchesSearch && matchesTag && matchesLanguage && matchesCategory && matchesExamBoard;
+    const matchesFree = !showFreeOnly || product.price_cents === 0;
+    return matchesSearch && matchesTag && matchesLanguage && matchesCategory && matchesExamBoard && matchesFree;
   });
 
   // Debug logging
@@ -323,11 +325,12 @@ export default function ResourcesPage() {
             </div>
             <div className="flex items-center gap-4">
               <Link
-                href="/resources"
-                className="px-6 py-3 bg-green-600 text-white rounded-lg font-bold text-lg shadow-lg hover:bg-green-700 transition-colors"
+                href="/free-resources"
+                className="px-6 py-3 bg-green-600 text-white rounded-lg font-bold text-lg shadow-lg hover:bg-green-700 transition-colors flex items-center"
                 style={{ minWidth: 160 }}
               >
-                Freebies
+                <Gift className="h-5 w-5 mr-2" />
+                Free Resources
               </Link>
               <button
                 onClick={toggleCart}
