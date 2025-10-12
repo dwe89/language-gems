@@ -1,6 +1,6 @@
 'use client';
 
-import { AssignmentAnalysis } from '@/components/dashboard/AssignmentAnalysis';
+import { TeacherAssignmentDashboard } from '@/components/dashboard/TeacherAssignmentDashboard';
 import { useRouter } from 'next/navigation';
 
 export default function AssignmentAnalysisPage({ params }: { params: { assignmentId: string } }) {
@@ -8,9 +8,9 @@ export default function AssignmentAnalysisPage({ params }: { params: { assignmen
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <AssignmentAnalysis
+      <TeacherAssignmentDashboard
         assignmentId={params.assignmentId}
-        onBack={() => router.push('/dashboard/progress')}
+        onBack={() => router.push('/dashboard/assignments')}
       />
     </div>
   );

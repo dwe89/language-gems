@@ -34,6 +34,7 @@ BEGIN
     v_streak_increment := CASE WHEN p_was_correct THEN 1 ELSE 0 END;
     
     -- Use UPSERT with atomic operations to prevent race conditions
+    -- Handle both legacy (vocabulary_item_id) and new (centralized_vocabulary_id) constraints
     INSERT INTO vocabulary_gem_collection (
         student_id,
         vocabulary_item_id,
@@ -73,7 +74,7 @@ BEGIN
         NOW(),
         NOW()
     )
-    ON CONFLICT (student_id, COALESCE(vocabulary_item_id, 0), COALESCE(centralized_vocabulary_id, '00000000-0000-0000-0000-000000000000'::UUID))
+    ON CONFLICT (student_id, centralized_vocabulary_id) WHERE centralized_vocabulary_id IS NOT NULL
     DO UPDATE SET
         -- ATOMIC increment operations - no race conditions!
         total_encounters = vocabulary_gem_collection.total_encounters + 1,

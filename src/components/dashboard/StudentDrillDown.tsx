@@ -91,11 +91,13 @@ export function StudentDrillDown({ studentId, onBack }: StudentDrillDownProps) {
           <div className="text-sm text-gray-600 mb-1">Average Score</div>
           <div className="flex items-center gap-2">
             <div className="text-3xl font-bold text-gray-900">{data.averageScore}%</div>
-            {getTrendIcon(data.performanceTrend.direction)}
+            {data.performanceTrend.percentage !== 0 && getTrendIcon(data.performanceTrend.direction)}
           </div>
-          <div className="text-xs text-gray-500 mt-1">
-            {data.performanceTrend.percentage > 0 ? '+' : ''}{data.performanceTrend.percentage}% vs last period
-          </div>
+          {data.performanceTrend.percentage !== 0 && (
+            <div className="text-xs text-gray-500 mt-1">
+              {data.performanceTrend.percentage > 0 ? '+' : ''}{data.performanceTrend.percentage}% vs last period
+            </div>
+          )}
         </div>
 
         <div className="bg-white border border-gray-200 rounded-lg p-4">

@@ -14,6 +14,7 @@ export type TimeRange = 'last_7_days' | 'last_30_days' | 'current_term' | 'all_t
 export interface ClassSummaryData {
   topMetrics: TopMetrics;
   urgentInterventions: UrgentIntervention[];
+  studentsNeverLoggedIn: UrgentIntervention[];
   topClassWeakness: ClassWeakness | null;
   recentAssignments: RecentAssignment[];
 }
@@ -24,6 +25,9 @@ export interface TopMetrics {
   currentStreak: number;
   trendPercentage: number;
   trendDirection: TrendDirection;
+  activeStudents?: number;
+  totalStudents?: number;
+  studentsNeverLoggedIn?: number;
 }
 
 export interface UrgentIntervention {

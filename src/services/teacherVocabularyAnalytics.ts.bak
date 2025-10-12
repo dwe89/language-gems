@@ -1,0 +1,519 @@
+import { SupabaseClient } from '@supabase/supabase-js';
+
+import {
+  calculateProficiencyLevel,
+  ChallengingWordSummary,
+  ProficiencyLevel,
+  ProficiencySummaryItem,
+  ProficientWordSummary,
+  TeacherVocabularyAnalytics
+} from './teacherVocabularyAnalytics.types';
+
+interface TeacherClassRecord {
+  id: string;
+  name: string;
+}
+
+interface TeacherStudentRecord {
+  id: string;
+  name: string;
+  classId: string;
+}
+
+interface WordAggregate {
+  word: string;
+  translation: string | null;
+  totalEncounters: number;
+  correctEncounters: number;
+  proficiencyLevel: ProficiencyLevel;
+  studentBreakdown: Record<ProficiencyLevel, number>;
+}
+
+const EMPTY_PROFICIENCY_SUMMARY: Record<ProficiencyLevel, ProficiencySummaryItem> = {
+  struggling: {
+    level: 'struggling',
+    wordCount: 0,
+    totalEncounters: 0,
+    totalCorrect: 0,
+    averageAccuracy: 0
+  },
+  learning: {
+    level: 'learning',
+    wordCount: 0,
+    totalEncounters: 0,
+    totalCorrect: 0,
+    averageAccuracy: 0
+  },
+  proficient: {
+    level: 'proficient',
+    wordCount: 0,
+    totalEncounters: 0,
+    totalCorrect: 0,
+    averageAccuracy: 0
+  }
+};
+
+const roundToTenth = (value: number): number => Math.round(value * 10) / 10;
+
+export class TeacherVocabularyAnalyticsService {
+  constructor(private supabase: SupabaseClient) {}
+
+  async getTeacherVocabularyAnalytics(
+    teacherId: string,
+    classId?: string
+  ): Promise<TeacherVocabularyAnalytics> {
+    const classes = await this.getTeacherClasses(teacherId, classId);
+
+    if (classes.length === 0) {
+      return this.getEmptyAnalytics();
+    }
+
+    const students = await this.getStudentsFromClasses(classes.map(({ id }) => id));
+
+    if (students.length === 0) {
+      return this.getEmptyAnalytics();
+    }
+
+    const studentIds = students.map(({ id }) => id);
+
+    const { data: gemRows, error: gemError } = await this.supabase
+      .from('vocabulary_gem_collection')
+      .select('student_id, centralized_vocabulary_id, total_encounters, correct_encounters')
+      .in('student_id', studentIds);
+
+    if (gemError) {
+      throw gemError;
+    }
+
+    const filteredGemRows = (gemRows || []).filter(
+      (row): row is typeof row & { centralized_vocabulary_id: string } =>
+        Boolean(row.centralized_vocabulary_id)
+    );
+
+    if (filteredGemRows.length === 0) {
+      return this.getEmptyAnalytics();
+    }
+
+    const vocabIds = Array.from(
+      new Set(filteredGemRows.map((row) => row.centralized_vocabulary_id))
+    );
+
+    const { data: vocabRecords, error: vocabError } = await this.supabase
+      .from('centralized_vocabulary')
+      .select('id, word, translation')
+      .in('id', vocabIds);
+
+    if (vocabError) {
+      throw vocabError;
+    }
+
+    const vocabMap = new Map((vocabRecords || []).map((record) => [record.id, record]));
+
+    const wordAggregates = this.buildWordAggregates(filteredGemRows, vocabMap);
+
+    if (wordAggregates.length === 0) {
+      return this.getEmptyAnalytics();
+    }
+
+    const proficiencySummary = this.buildProficiencySummary(wordAggregates);
+    const mostChallengingWords = this.buildMostChallengingWords(wordAggregates);
+    const proficientWords = this.buildProficientWordSummaries(wordAggregates);
+
+    const totalTrackedWords = wordAggregates.length;
+    const totalLearnedWords =
+      proficiencySummary.learning.wordCount + proficiencySummary.proficient.wordCount;
+
+    // Get all classes for filters (not just filtered ones)
+    const allClasses = await this.getTeacherClasses(teacherId);
+    const classSummaries = await this.buildClassSummaries(allClasses, filteredGemRows, vocabMap);
+    const studentSummaries = this.buildStudentSummaries(students, filteredGemRows, vocabMap);
+    const filters = this.buildFilters(allClasses, students, classId);
+
+    return {
+      summary: {
+        totalTrackedWords,
+        totalLearnedWords,
+        proficiency: [
+          proficiencySummary.struggling,
+          proficiencySummary.learning,
+          proficiencySummary.proficient
+        ],
+        dataQualityVerified: true
+      },
+      mostChallengingWords,
+      proficientWords,
+      classSummaries,
+      studentSummaries,
+      filters
+    };
+  }
+
+  private async getTeacherClasses(teacherId: string, classId?: string): Promise<TeacherClassRecord[]> {
+    let query = this.supabase
+      .from('classes')
+      .select('id, name')
+      .eq('teacher_id', teacherId)
+      .order('name');
+
+    if (classId) {
+      query = query.eq('id', classId);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      throw error;
+    }
+
+    return data || [];
+  }
+
+  private async getStudentsFromClasses(classIds: string[]): Promise<TeacherStudentRecord[]> {
+    if (classIds.length === 0) {
+      return [];
+    }
+
+    // Get enrollments
+    const { data: enrollments, error: enrollmentError } = await this.supabase
+      .from('class_enrollments')
+      .select('student_id, class_id')
+      .in('class_id', classIds)
+      .eq('status', 'active');
+
+    if (enrollmentError) {
+      throw enrollmentError;
+    }
+
+    if (!enrollments || enrollments.length === 0) {
+      return [];
+    }
+
+    // Get class names
+    const { data: classes, error: classError } = await this.supabase
+      .from('classes')
+      .select('id, name')
+      .in('id', classIds);
+
+    if (classError) {
+      throw classError;
+    }
+
+    const classMap = new Map((classes || []).map(c => [c.id, c.name]));
+
+    // Get student profiles
+    const studentIds = [...new Set(enrollments.map(e => e.student_id))];
+    const { data: profiles, error: profileError } = await this.supabase
+      .from('user_profiles')
+      .select('user_id, display_name, email')
+      .in('user_id', studentIds);
+
+    if (profileError) {
+      throw profileError;
+    }
+
+    const profileMap = new Map((profiles || []).map(p => [p.user_id, p]));
+
+    return enrollments.map((enrollment) => {
+      const profile = profileMap.get(enrollment.student_id);
+      const className = classMap.get(enrollment.class_id) || 'Unknown Class';
+
+      return {
+        id: enrollment.student_id,
+        name: profile?.display_name || profile?.email || 'Unknown Student',
+        classId: enrollment.class_id
+      };
+    });
+  }
+
+  private buildWordAggregates(
+    gemRows: Array<{
+      student_id: string;
+      centralized_vocabulary_id: string;
+      total_encounters: number;
+      correct_encounters: number;
+    }>,
+    vocabMap: Map<string, { id: string; word: string; translation: string | null }>
+  ): WordAggregate[] {
+    const aggregateMap = new Map<
+      string,
+      {
+        word: string;
+        translation: string | null;
+        totalEncounters: number;
+        correctEncounters: number;
+        students: Map<string, { encounters: number; correct: number }>;
+      }
+    >();
+
+    gemRows.forEach((row) => {
+      const vocab = vocabMap.get(row.centralized_vocabulary_id);
+      const key = row.centralized_vocabulary_id;
+
+      if (!aggregateMap.has(key)) {
+        aggregateMap.set(key, {
+          word: vocab?.word || 'Unknown word',
+          translation: vocab?.translation ?? null,
+          totalEncounters: 0,
+          correctEncounters: 0,
+          students: new Map()
+        });
+      }
+
+      const aggregate = aggregateMap.get(key)!;
+      aggregate.totalEncounters += row.total_encounters ?? 0;
+      aggregate.correctEncounters += row.correct_encounters ?? 0;
+
+      if (!aggregate.students.has(row.student_id)) {
+        aggregate.students.set(row.student_id, {
+          encounters: 0,
+          correct: 0
+        });
+      }
+
+      const studentStats = aggregate.students.get(row.student_id)!;
+      studentStats.encounters += row.total_encounters ?? 0;
+      studentStats.correct += row.correct_encounters ?? 0;
+    });
+
+    return Array.from(aggregateMap.values()).map((aggregate) => {
+      const accuracy = aggregate.totalEncounters
+        ? (aggregate.correctEncounters / aggregate.totalEncounters) * 100
+        : 0;
+
+      const studentBreakdown: Record<ProficiencyLevel, number> = {
+        struggling: 0,
+        learning: 0,
+        proficient: 0
+      };
+
+      aggregate.students.forEach((stats) => {
+        const studentAccuracy = stats.encounters
+          ? (stats.correct / stats.encounters) * 100
+          : 0;
+        const level = calculateProficiencyLevel(studentAccuracy, stats.encounters);
+        studentBreakdown[level] += 1;
+      });
+
+      const proficiencyLevel = calculateProficiencyLevel(accuracy, aggregate.totalEncounters);
+
+      return {
+        word: aggregate.word,
+        translation: aggregate.translation,
+        totalEncounters: aggregate.totalEncounters,
+        correctEncounters: aggregate.correctEncounters,
+        proficiencyLevel,
+        studentBreakdown
+      };
+    });
+  }
+
+  private buildProficiencySummary(wordAggregates: WordAggregate[]): Record<
+    ProficiencyLevel,
+    ProficiencySummaryItem
+  > {
+    const summary: Record<ProficiencyLevel, ProficiencySummaryItem> = {
+      struggling: { ...EMPTY_PROFICIENCY_SUMMARY.struggling },
+      learning: { ...EMPTY_PROFICIENCY_SUMMARY.learning },
+      proficient: { ...EMPTY_PROFICIENCY_SUMMARY.proficient }
+    };
+
+    wordAggregates.forEach((word) => {
+      const bucket = summary[word.proficiencyLevel];
+      bucket.wordCount += 1;
+      bucket.totalEncounters += word.totalEncounters;
+      bucket.totalCorrect += word.correctEncounters;
+    });
+
+    (Object.values(summary) as ProficiencySummaryItem[]).forEach((item) => {
+      item.averageAccuracy = item.totalEncounters
+        ? roundToTenth((item.totalCorrect / item.totalEncounters) * 100)
+        : 0;
+      item.totalEncounters = Math.round(item.totalEncounters);
+      item.totalCorrect = Math.round(item.totalCorrect);
+    });
+
+    return summary;
+  }
+
+  private buildMostChallengingWords(wordAggregates: WordAggregate[]): ChallengingWordSummary[] {
+    return wordAggregates
+      .filter((word) => word.totalEncounters > 0)
+      .map<ChallengingWordSummary>((word) => {
+        const accuracy = word.totalEncounters
+          ? roundToTenth((word.correctEncounters / word.totalEncounters) * 100)
+          : 0;
+
+        return {
+          word: word.word,
+          translation: word.translation,
+          accuracy,
+          totalEncounters: word.totalEncounters,
+          strugglingStudents: word.studentBreakdown.struggling
+        };
+      })
+      .filter((word) => word.strugglingStudents > 0)
+      .sort((a, b) => a.accuracy - b.accuracy || b.totalEncounters - a.totalEncounters)
+      .slice(0, 10);
+  }
+
+  private buildProficientWordSummaries(
+    wordAggregates: WordAggregate[]
+  ): ProficientWordSummary[] {
+    return wordAggregates
+      .filter((word) => word.proficiencyLevel === 'proficient')
+      .map<ProficientWordSummary>((word) => {
+        const totalStudents =
+          word.studentBreakdown.struggling +
+          word.studentBreakdown.learning +
+          word.studentBreakdown.proficient;
+
+        const accuracy = word.totalEncounters
+          ? roundToTenth((word.correctEncounters / word.totalEncounters) * 100)
+          : 0;
+
+        return {
+          word: word.word,
+          translation: word.translation,
+          accuracy,
+          totalEncounters: word.totalEncounters,
+          totalStudents,
+          studentsProficient: word.studentBreakdown.proficient,
+          studentsLearning: word.studentBreakdown.learning,
+          studentsStruggling: word.studentBreakdown.struggling
+        };
+      })
+      .sort((a, b) => b.accuracy - a.accuracy || b.totalEncounters - a.totalEncounters)
+      .slice(0, 10);
+  }
+
+
+  private async buildClassSummaries(
+    classes: TeacherClassRecord[],
+    gemRows: Array<{
+      student_id: string;
+      centralized_vocabulary_id: string;
+      total_encounters: number;
+      correct_encounters: number;
+    }>,
+    vocabMap: Map<string, { id: string; word: string; translation: string | null }>
+  ): Promise<import('./teacherVocabularyAnalytics.types').VocabularyClassSummary[]> {
+    const classIds = classes.map(c => c.id);
+    const { data: enrollments } = await this.supabase
+      .from('class_enrollments')
+      .select('student_id, class_id')
+      .in('class_id', classIds)
+      .eq('status', 'active');
+
+    const classStudentMap = new Map<string, Set<string>>();
+    (enrollments || []).forEach(e => {
+      if (!classStudentMap.has(e.class_id)) {
+        classStudentMap.set(e.class_id, new Set());
+      }
+      classStudentMap.get(e.class_id)!.add(e.student_id);
+    });
+
+    return classes.map(cls => {
+      const studentIds = classStudentMap.get(cls.id) || new Set();
+      const classGemRows = gemRows.filter(row => studentIds.has(row.student_id));
+
+      const wordAggregates = this.buildWordAggregates(classGemRows, vocabMap);
+      const proficiencySummary = this.buildProficiencySummary(wordAggregates);
+
+      const totalEncounters = classGemRows.reduce((sum, row) => sum + row.total_encounters, 0);
+      const totalCorrect = classGemRows.reduce((sum, row) => sum + row.correct_encounters, 0);
+      const averageAccuracy = totalEncounters > 0 ? roundToTenth((totalCorrect / totalEncounters) * 100) : 0;
+
+      return {
+        id: cls.id,
+        name: cls.name,
+        studentCount: studentIds.size,
+        totalTrackedWords: wordAggregates.length,
+        totalLearnedWords: proficiencySummary.learning.wordCount + proficiencySummary.proficient.wordCount,
+        totalEncounters,
+        totalCorrect,
+        averageAccuracy,
+        proficiency: {
+          struggling: proficiencySummary.struggling.wordCount,
+          learning: proficiencySummary.learning.wordCount,
+          proficient: proficiencySummary.proficient.wordCount
+        }
+      };
+    });
+  }
+
+  private buildStudentSummaries(
+    students: TeacherStudentRecord[],
+    gemRows: Array<{
+      student_id: string;
+      centralized_vocabulary_id: string;
+      total_encounters: number;
+      correct_encounters: number;
+    }>,
+    vocabMap: Map<string, { id: string; word: string; translation: string | null }>
+  ): import('./teacherVocabularyAnalytics.types').VocabularyStudentSummary[] {
+    return students.map(student => {
+      const studentGemRows = gemRows.filter(row => row.student_id === student.id);
+      const wordAggregates = this.buildWordAggregates(studentGemRows, vocabMap);
+      const proficiencySummary = this.buildProficiencySummary(wordAggregates);
+
+      const totalEncounters = studentGemRows.reduce((sum, row) => sum + row.total_encounters, 0);
+      const totalCorrect = studentGemRows.reduce((sum, row) => sum + row.correct_encounters, 0);
+      const averageAccuracy = totalEncounters > 0 ? roundToTenth((totalCorrect / totalEncounters) * 100) : 0;
+
+      return {
+        id: student.id,
+        name: student.name,
+        classId: student.classId,
+        className: student.classId,
+        totalTrackedWords: wordAggregates.length,
+        totalLearnedWords: proficiencySummary.learning.wordCount + proficiencySummary.proficient.wordCount,
+        totalEncounters,
+        totalCorrect,
+        averageAccuracy,
+        proficiency: {
+          struggling: proficiencySummary.struggling.wordCount,
+          learning: proficiencySummary.learning.wordCount,
+          proficient: proficiencySummary.proficient.wordCount
+        }
+      };
+    });
+  }
+
+  private buildFilters(
+    classes: TeacherClassRecord[],
+    students: TeacherStudentRecord[],
+    activeClassId?: string
+  ): import('./teacherVocabularyAnalytics.types').TeacherVocabularyAnalyticsFilters {
+    return {
+      classes: classes.map(cls => ({
+        id: cls.id,
+        name: cls.name,
+        studentCount: students.filter(s => s.classId === cls.id).length
+      })),
+      students: students.map(student => ({
+        id: student.id,
+        name: student.name,
+        classId: student.classId,
+        className: classes.find(c => c.id === student.classId)?.name || 'Unknown Class'
+      })),
+      activeClassId
+    };
+  }
+
+  private getEmptyAnalytics(): TeacherVocabularyAnalytics {
+    return {
+      summary: {
+        totalTrackedWords: 0,
+        totalLearnedWords: 0,
+        proficiency: [
+          EMPTY_PROFICIENCY_SUMMARY.struggling,
+          EMPTY_PROFICIENCY_SUMMARY.learning,
+          EMPTY_PROFICIENCY_SUMMARY.proficient
+        ],
+        dataQualityVerified: false
+      },
+      mostChallengingWords: [],
+      proficientWords: []
+    };
+  }
+}

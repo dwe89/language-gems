@@ -29,6 +29,13 @@ interface CrossGameLeaderboardProps {
   limit?: number;
   showFilters?: boolean;
   compact?: boolean;
+  entries?: LeaderboardEntry[];
+  autoFetch?: boolean;
+  loadingOverride?: boolean;
+  errorOverride?: string;
+  timePeriod?: 'daily' | 'weekly' | 'monthly' | 'all_time';
+  onTimePeriodChange?: (period: 'daily' | 'weekly' | 'monthly' | 'all_time') => void;
+  onRefresh?: () => Promise<void> | void;
 }
 
 const TIME_PERIODS = [
@@ -55,15 +62,24 @@ export default function CrossGameLeaderboard({
   schoolId,
   limit = 10,
   showFilters = true,
-  compact = false
+  compact = false,
+  entries,
+  autoFetch = true,
+  loadingOverride,
+  errorOverride,
+  timePeriod,
+  onTimePeriodChange,
+  onRefresh
 }: CrossGameLeaderboardProps) {
   const { user } = useAuth();
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>(entries ?? []);
+  const [loading, setLoading] = useState(autoFetch);
   const [error, setError] = useState('');
-  const [timePeriod, setTimePeriod] = useState<'daily' | 'weekly' | 'monthly' | 'all_time'>('weekly');
+  const [internalTimePeriod, setInternalTimePeriod] = useState<'daily' | 'weekly' | 'monthly' | 'all_time'>(timePeriod ?? 'weekly');
   const [competitionService, setCompetitionService] = useState<CompetitionService | null>(null);
   const [expandedStudent, setExpandedStudent] = useState<string | null>(null);
+
+  const activeTimePeriod = timePeriod ?? internalTimePeriod;
 
   // Initialize competition service
   useEffect(() => {
@@ -73,15 +89,36 @@ export default function CrossGameLeaderboard({
     }
   }, []);
 
+  // Sync provided entries
+  useEffect(() => {
+    if (entries) {
+      setLeaderboard(entries);
+      setLoading(false);
+      setError('');
+    }
+  }, [entries]);
+
+  // Sync external time period
+  useEffect(() => {
+    if (timePeriod) {
+      setInternalTimePeriod(timePeriod);
+    }
+  }, [timePeriod]);
+
   // Fetch leaderboard data
   useEffect(() => {
+    if (!autoFetch) {
+      return;
+    }
+
     if (competitionService) {
       fetchLeaderboard();
     }
-  }, [competitionService, timePeriod, classId, schoolId, limit]);
+  }, [competitionService, autoFetch, activeTimePeriod, classId, schoolId, limit]);
 
   const fetchLeaderboard = async () => {
     if (!competitionService) return;
+    if (!autoFetch) return;
 
     try {
       setLoading(true);
@@ -91,7 +128,7 @@ export default function CrossGameLeaderboard({
         class_id: classId,
         school_id: schoolId,
         limit,
-        time_period: timePeriod
+        time_period: activeTimePeriod
       });
 
       setLeaderboard(data);
@@ -102,6 +139,18 @@ export default function CrossGameLeaderboard({
       setLoading(false);
     }
   };
+
+  const handleTimePeriodChange = (period: 'daily' | 'weekly' | 'monthly' | 'all_time') => {
+    if (!timePeriod || autoFetch) {
+      setInternalTimePeriod(period);
+    }
+
+    onTimePeriodChange?.(period);
+  };
+
+  const displayedLeaderboard = entries ?? leaderboard;
+  const currentLoading = loadingOverride ?? (autoFetch ? loading : false);
+  const currentError = errorOverride ?? error;
 
   const getRankIcon = (rank: number) => {
     const IconComponent = RANK_ICONS[rank as keyof typeof RANK_ICONS];
@@ -133,7 +182,7 @@ export default function CrossGameLeaderboard({
     return 'text-gray-600';
   };
 
-  if (loading) {
+  if (currentLoading) {
     return (
       <div className="bg-white rounded-xl shadow-lg p-6">
         <div className="animate-pulse space-y-4">
@@ -152,15 +201,21 @@ export default function CrossGameLeaderboard({
     );
   }
 
-  if (error) {
+  if (currentError) {
     return (
       <div className="bg-white rounded-xl shadow-lg p-6">
         <div className="text-center text-red-600">
           <Trophy className="h-12 w-12 mx-auto mb-3 text-gray-300" />
           <p className="font-medium">Failed to load leaderboard</p>
-          <p className="text-sm text-gray-500 mt-1">{error}</p>
+          <p className="text-sm text-gray-500 mt-1">{currentError}</p>
           <button
-            onClick={fetchLeaderboard}
+            onClick={() => {
+              if (onRefresh) {
+                onRefresh();
+              } else {
+                fetchLeaderboard();
+              }
+            }}
             className="mt-3 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             Try Again
@@ -188,8 +243,8 @@ export default function CrossGameLeaderboard({
           {showFilters && (
             <div className="flex items-center gap-2">
               <select
-                value={timePeriod}
-                onChange={(e) => setTimePeriod(e.target.value as any)}
+                value={activeTimePeriod}
+                onChange={(e) => handleTimePeriodChange(e.target.value as any)}
                 className="bg-white/20 border border-white/30 rounded-lg px-3 py-2 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-white/50"
               >
                 {TIME_PERIODS.map(period => (
@@ -212,8 +267,8 @@ export default function CrossGameLeaderboard({
             <p>Students will appear here once they start playing games!</p>
           </div>
         ) : (
-          leaderboard.map((entry, index) => (
-            <div key={entry.id} className="p-4 hover:bg-gray-50 transition-colors">
+          displayedLeaderboard.map((entry, index) => (
+            <div key={`${entry.id}-${index}`} className="p-4 hover:bg-gray-50 transition-colors">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4 flex-1">
                   {/* Rank */}

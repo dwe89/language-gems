@@ -24,6 +24,8 @@ import {
   checkForAchievements
 } from '../utils/vocabulary-mining';
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export class VocabularyMiningService {
   constructor(private supabase: SupabaseClient) {}
 
@@ -55,7 +57,7 @@ export class VocabularyMiningService {
       .in('id', vocabularyIds);
 
     // If centralized vocabulary fails, try legacy vocabulary_items table
-    let vocabularyData = centralizedVocab;
+    let vocabularyData: any[] | null = centralizedVocab ?? null;
     if (centralizedError || !centralizedVocab || centralizedVocab.length === 0) {
       const { data: legacyVocab, error: legacyError } = await this.supabase
         .from('vocabulary_items')
@@ -63,12 +65,12 @@ export class VocabularyMiningService {
         .in('id', vocabularyIds);
 
       if (legacyError) throw legacyError;
-      vocabularyData = legacyVocab;
+      vocabularyData = legacyVocab ?? null;
     }
 
     // Create a map for quick vocabulary lookup
     const vocabularyMap = new Map(
-      vocabularyData?.map(vocab => [vocab.id, vocab]) || []
+      (vocabularyData || []).map(vocab => [vocab.id, vocab])
     );
 
     // Combine gem data with vocabulary details
@@ -200,15 +202,29 @@ export class VocabularyMiningService {
     // Determine performance quality
     const performanceQuality = determinePerformanceQuality(wasCorrect, responseTime, hintsUsed);
 
-    // Update gem collection using the race-condition-safe database function
-    const { error: updateError } = await this.supabase.rpc('update_vocabulary_gem_collection_atomic', {
-      p_student_id: studentId,
-      p_vocabulary_item_id: vocabularyItemId,
-      p_was_correct: wasCorrect,
-      p_response_time_ms: responseTime
-    });
+    const rawId = vocabularyItemId?.toString().trim() || '';
+    const isUUID = UUID_REGEX.test(rawId);
+    const numericId = !isUUID && rawId ? Number(rawId) : null;
+    const centralizedId = isUUID ? rawId : null;
 
-    if (updateError) throw updateError;
+    if (!isUUID && (numericId === null || Number.isNaN(numericId))) {
+      console.warn('🚨 Invalid vocabulary identifier in mining session update:', {
+        studentId,
+        vocabularyItemId
+      });
+    } else {
+      const { error: updateError } = await this.supabase.rpc('update_vocabulary_gem_collection', {
+        p_student_id: studentId,
+        p_vocabulary_item_id: numericId,
+        p_centralized_vocabulary_id: centralizedId,
+        p_was_correct: wasCorrect,
+        p_response_time_ms: responseTime ?? 0,
+        p_hint_used: Boolean(hintsUsed && hintsUsed > 0),
+        p_streak_count: 0
+      });
+
+      if (updateError) throw updateError;
+    }
 
     // Update session statistics using RPC function
     const { error: sessionError } = await this.supabase.rpc('increment_session_stats', {

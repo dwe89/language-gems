@@ -18,7 +18,7 @@ export type GemType = 'mastery' | 'activity' | 'grammar';
 export interface GemEvent {
   rarity: GemRarity;
   xpValue: number;
-  vocabularyId?: number;
+  vocabularyId?: string | number;
   wordText?: string;
   translationText?: string;
   responseTimeMs: number;
@@ -405,7 +405,7 @@ export class RewardEngine {
     gameType: string,
     context: PerformanceContext,
     vocabularyData?: {
-      id?: number;
+      id?: string | number;
       word?: string;
       translation?: string;
     },
@@ -469,7 +469,7 @@ export class RewardEngine {
     gameType: string,
     context: PerformanceContext,
     vocabularyData?: {
-      id?: number;
+      id?: string | number;
       word?: string;
       translation?: string;
     },
@@ -486,7 +486,7 @@ export class RewardEngine {
     gameType: string,
     context: PerformanceContext,
     vocabularyData?: {
-      id?: number;
+      id?: string | number;
       word?: string;
       translation?: string;
     },
@@ -503,7 +503,7 @@ export class RewardEngine {
     gameType: string,
     context: PerformanceContext,
     vocabularyData: {
-      id?: number;
+      id?: string | number;
       word?: string;
       translation?: string;
     },

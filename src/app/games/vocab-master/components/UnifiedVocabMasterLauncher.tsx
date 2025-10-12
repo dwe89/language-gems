@@ -163,7 +163,7 @@ const CONSOLIDATED_GAME_MODES: GameMode[] = [
   {
     id: 'memory_palace',
     name: 'Memory Palace',
-    description: 'Learn through visual associations and memory techniques',
+    description: 'Visual memory techniques',
     icon: <Brain className="h-6 w-6" />,
     color: 'bg-gradient-to-r from-indigo-500 to-purple-600',
     category: 'challenge',

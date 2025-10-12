@@ -5,7 +5,7 @@
 // =====================================================
 
 import React, { useState, useEffect } from 'react';
-import { Users, Target, TrendingUp, Calendar, RefreshCw, Filter } from 'lucide-react';
+import { Users, Target, TrendingUp, Calendar, RefreshCw, Filter, AlertTriangle, UserX } from 'lucide-react';
 import { MetricCard } from './shared/MetricCard';
 import { RiskCard } from './shared/RiskCard';
 import { WeaknessBanner } from './shared/WeaknessBanner';
@@ -165,19 +165,60 @@ export function ClassSummaryDashboard({
         />
         <MetricCard
           title="Active Students"
-          value={data.urgentInterventions.length}
-          unit={`/${data.urgentInterventions.length + 5}`}
+          value={data.topMetrics.activeStudents || 0}
+          unit={`/${data.topMetrics.totalStudents || 0}`}
           icon={<Users className="w-6 h-6" />}
           color="purple"
         />
       </div>
 
-      {/* Urgent Interventions */}
+      {/* Critical Alert: Students Never Logged In */}
+      {data.studentsNeverLoggedIn && data.studentsNeverLoggedIn.length > 0 && (
+        <div className="bg-red-50 border-2 border-red-500 rounded-lg p-6">
+          <div className="flex items-start gap-4">
+            <div className="flex-shrink-0">
+              <div className="w-12 h-12 bg-red-600 rounded-full flex items-center justify-center">
+                <UserX className="w-6 h-6 text-white" />
+              </div>
+            </div>
+            <div className="flex-1">
+              <h2 className="text-xl font-bold text-red-900 mb-2 flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5" />
+                CRITICAL: {data.studentsNeverLoggedIn.length} Student{data.studentsNeverLoggedIn.length !== 1 ? 's' : ''} Never Logged In
+              </h2>
+              <p className="text-red-800 mb-4">
+                These students have not accessed the platform in the last {timeRange === 'last_7_days' ? '7 days' : timeRange === 'last_30_days' ? '30 days' : 'selected period'}.
+                They may need login credentials or technical support.
+              </p>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => {
+                    // TODO: Navigate to a page showing all students who never logged in
+                    alert(`Students who never logged in:\n\n${data.studentsNeverLoggedIn.map(s => s.studentName).join('\n')}`);
+                  }}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-semibold"
+                >
+                  View All {data.studentsNeverLoggedIn.length} Students
+                </button>
+                <span className="text-sm text-red-700">
+                  First 5: {data.studentsNeverLoggedIn.slice(0, 5).map(s => s.studentName).join(', ')}
+                  {data.studentsNeverLoggedIn.length > 5 && ` +${data.studentsNeverLoggedIn.length - 5} more`}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Urgent Interventions - Active Students At Risk */}
       {data.urgentInterventions.length > 0 && (
         <div>
           <h2 className="text-xl font-bold text-gray-900 mb-4">
             🚨 Urgent Interventions (Top 5 At-Risk Students)
           </h2>
+          <p className="text-gray-600 mb-4">
+            Students who ARE engaging but struggling with low accuracy or declining performance
+          </p>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {data.urgentInterventions.map((student) => (
               <RiskCard

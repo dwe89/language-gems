@@ -1,15 +1,43 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 
+/**
+ * Simple 3-tier proficiency system for teacher-facing analytics
+ * 🔴 Struggling: Accuracy < 60% OR total_encounters < 3
+ * 🟡 Learning: Accuracy 60-89% AND total_encounters >= 3
+ * 🟢 Proficient: Accuracy >= 90% AND total_encounters >= 5
+ */
+export type ProficiencyLevel = 'struggling' | 'learning' | 'proficient';
+
+/**
+ * Calculate proficiency level based on accuracy and exposure
+ */
+export function calculateProficiencyLevel(
+  accuracy: number,
+  totalEncounters: number
+): ProficiencyLevel {
+  // 🔴 Struggling: Low accuracy OR insufficient exposure
+  if (accuracy < 60 || totalEncounters < 3) {
+    return 'struggling';
+  }
+
+  // 🟢 Proficient: High accuracy AND sufficient exposure
+  if (accuracy >= 90 && totalEncounters >= 5) {
+    return 'proficient';
+  }
+
+  // 🟡 Learning: Everything in between
+  return 'learning';
+}
+
 export interface StudentVocabularyProgress {
   studentId: string;
   studentName: string;
   totalWords: number;
-  masteredWords: number;
+  proficientWords: number;  // Changed from masteredWords
+  learningWords: number;     // NEW
   strugglingWords: number;
   overdueWords: number;
   averageAccuracy: number;
-  memoryStrength: number;
-  wordsReadyForReview: number;
   lastActivity: string | null;
   classId: string;
   className: string;
@@ -18,12 +46,13 @@ export interface StudentVocabularyProgress {
 export interface ClassVocabularyStats {
   totalStudents: number;
   totalWords: number;
-  averageMasteredWords: number;
+  proficientWords: number;   // Changed from averageMasteredWords
+  learningWords: number;      // NEW
+  strugglingWords: number;    // NEW
   averageAccuracy: number;
   studentsWithOverdueWords: number;
   topPerformingStudents: StudentVocabularyProgress[];
   strugglingStudents: StudentVocabularyProgress[];
-  classAverageMemoryStrength: number;
   totalWordsReadyForReview: number;
 }
 
@@ -37,7 +66,8 @@ export interface TopicAnalysis {
   studentsEngaged: number;
   averageAccuracy: number;
   totalWords: number;
-  masteredWords: number;
+  proficientWords: number;   // Changed from masteredWords
+  learningWords: number;      // NEW
   strugglingWords: number;
   isWeakTopic: boolean;
   isStrongTopic: boolean;
@@ -47,7 +77,9 @@ export interface TopicAnalysis {
 export interface VocabularyTrend {
   date: string;
   totalWords: number;
-  masteredWords: number;
+  proficientWords: number;   // Changed from masteredWords
+  learningWords: number;      // NEW
+  strugglingWords: number;    // NEW
   averageAccuracy: number;
   activeStudents: number;
   wordsLearned: number;
@@ -62,9 +94,11 @@ export interface WordDetail {
   totalEncounters: number;
   correctEncounters: number;
   accuracy: number;
-  masteryLevel: number;
+  masteryLevel: number;  // Average mastery level across all students (0-5 scale)
+  proficiencyLevel: ProficiencyLevel;  // Changed from masteryLevel
   studentsStruggling: number;
-  studentsMastered: number;
+  studentsProficient: number;  // Changed from studentsMastered
+  studentsLearning: number;     // NEW
   commonErrors: string[];
 }
 
@@ -75,7 +109,7 @@ export interface StudentWordDetail {
     word: string;
     translation: string;
     accuracy: number;
-    masteryLevel: number;
+    proficiencyLevel: ProficiencyLevel;  // Changed from masteryLevel
     category: string;
   }>;
   weakWords: Array<{
@@ -150,13 +184,27 @@ export class TeacherVocabularyAnalyticsService {
       
       // Get detailed word analytics
       const detailedWords = await this.getDetailedWordAnalytics(students.map(s => s.id));
-      
+
       // Get student-specific word details
       const studentWordDetails = await this.getStudentWordDetails(students);
-      
-      // Calculate class stats
-      const classStats = this.calculateClassStats(studentProgress);
-      
+
+      // Calculate class stats with unique word count
+      const classStats = this.calculateClassStats(studentProgress, detailedWords.length);
+
+      console.log('📊 [CLASS STATS DEBUG]', {
+        totalStudents: classStats.totalStudents,
+        totalWords: classStats.totalWords,
+        averageMasteredWords: classStats.averageMasteredWords,
+        averageAccuracy: classStats.averageAccuracy,
+        uniqueWordsFromDetailed: detailedWords.length,
+        sampleStudentProgress: studentProgress.slice(0, 3).map(s => ({
+          name: s.studentName,
+          totalWords: s.totalWords,
+          masteredWords: s.masteredWords,
+          accuracy: s.averageAccuracy
+        }))
+      });
+
       // Generate insights
       const insights = this.generateInsights(studentProgress, topicAnalysis);
 
@@ -268,7 +316,8 @@ export class TeacherVocabularyAnalyticsService {
           next_review_at,
           fsrs_retrievability
         `)
-        .in('student_id', studentIds);
+        .in('student_id', studentIds)
+        .limit(50000); // Supabase default is 1000, increase for large classes
 
       if (error) {
         console.error('Error getting vocabulary data:', error);
@@ -416,17 +465,28 @@ export class TeacherVocabularyAnalyticsService {
     }
 
     const totalStudents = studentProgress.length;
+
+    // Only include students with vocabulary data for accuracy/memory calculations
+    const studentsWithVocab = studentProgress.filter(s => s.totalWords > 0);
+    const studentsWithVocabCount = studentsWithVocab.length;
+
     const totalWords = studentProgress.reduce((sum, s) => sum + s.totalWords, 0);
-    const averageMasteredWords = Math.round(
-      studentProgress.reduce((sum, s) => sum + s.masteredWords, 0) / totalStudents
-    );
-    const averageAccuracy = Math.round(
-      (studentProgress.reduce((sum, s) => sum + s.averageAccuracy, 0) / totalStudents) * 10
-    ) / 10;
+    const averageMasteredWords = studentsWithVocabCount > 0
+      ? Math.round(studentProgress.reduce((sum, s) => sum + s.masteredWords, 0) / studentsWithVocabCount)
+      : 0;
+
+    // FIX: Only average accuracy for students who have vocabulary data
+    const averageAccuracy = studentsWithVocabCount > 0
+      ? Math.round((studentsWithVocab.reduce((sum, s) => sum + s.averageAccuracy, 0) / studentsWithVocabCount) * 10) / 10
+      : 0;
+
     const studentsWithOverdueWords = studentProgress.filter(s => s.overdueWords > 0).length;
-    const classAverageMemoryStrength = Math.round(
-      (studentProgress.reduce((sum, s) => sum + s.memoryStrength, 0) / totalStudents) * 10
-    ) / 10;
+
+    // FIX: Only average memory strength for students who have vocabulary data
+    const classAverageMemoryStrength = studentsWithVocabCount > 0
+      ? Math.round((studentsWithVocab.reduce((sum, s) => sum + s.memoryStrength, 0) / studentsWithVocabCount) * 10) / 10
+      : 0;
+
     const totalWordsReadyForReview = studentProgress.reduce((sum, s) => sum + s.wordsReadyForReview, 0);
 
     // Sort students by performance
@@ -470,7 +530,8 @@ export class TeacherVocabularyAnalyticsService {
           correct_encounters,
           mastery_level
         `)
-        .in('student_id', studentIds);
+        .in('student_id', studentIds)
+        .limit(50000); // Supabase default is 1000, increase for large classes
 
       if (error) throw error;
 
@@ -614,23 +675,89 @@ export class TeacherVocabularyAnalyticsService {
     if (studentIds.length === 0) return [];
 
     try {
-      // For now, return mock trend data - in a real implementation,
-      // you'd query historical data from game sessions or vocabulary tracking
+      // Get real historical data from enhanced_game_sessions
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+      const { data: sessionData, error: sessionError } = await this.supabase
+        .from('enhanced_game_sessions')
+        .select('student_id, created_at')
+        .in('student_id', studentIds)
+        .gte('created_at', thirtyDaysAgo.toISOString());
+
+      if (sessionError) throw sessionError;
+
+      // Get vocabulary data with last_encountered_at for accuracy trends
+      const { data: vocabData, error: vocabError } = await this.supabase
+        .from('vocabulary_gem_collection')
+        .select('student_id, last_encountered_at, total_encounters, correct_encounters, mastery_level')
+        .in('student_id', studentIds)
+        .gte('last_encountered_at', thirtyDaysAgo.toISOString())
+        .limit(50000); // Supabase default is 1000, increase for large classes
+
+      if (vocabError) throw vocabError;
+
+      // Group by date
+      const trendsByDate = new Map<string, {
+        activeStudents: Set<string>;
+        totalEncounters: number;
+        correctEncounters: number;
+        masteredWords: Set<string>;
+      }>();
+
+      // Process game sessions for active students
+      (sessionData || []).forEach(session => {
+        const date = session.created_at.split('T')[0];
+        if (!trendsByDate.has(date)) {
+          trendsByDate.set(date, {
+            activeStudents: new Set(),
+            totalEncounters: 0,
+            correctEncounters: 0,
+            masteredWords: new Set()
+          });
+        }
+        trendsByDate.get(date)!.activeStudents.add(session.student_id);
+      });
+
+      // Process vocabulary data for accuracy
+      (vocabData || []).forEach(vocab => {
+        const date = vocab.last_encountered_at.split('T')[0];
+        if (!trendsByDate.has(date)) {
+          trendsByDate.set(date, {
+            activeStudents: new Set(),
+            totalEncounters: 0,
+            correctEncounters: 0,
+            masteredWords: new Set()
+          });
+        }
+        const trend = trendsByDate.get(date)!;
+        trend.totalEncounters += vocab.total_encounters;
+        trend.correctEncounters += vocab.correct_encounters;
+        if (vocab.mastery_level >= 4) {
+          trend.masteredWords.add(`${vocab.student_id}-${date}`);
+        }
+      });
+
+      // Convert to array and fill in missing dates
       const trends: VocabularyTrend[] = [];
-      const days = 30;
       const today = new Date();
 
-      for (let i = days - 1; i >= 0; i--) {
+      for (let i = 29; i >= 0; i--) {
         const date = new Date(today);
         date.setDate(date.getDate() - i);
+        const dateStr = date.toISOString().split('T')[0];
+
+        const dayData = trendsByDate.get(dateStr);
 
         trends.push({
-          date: date.toISOString().split('T')[0],
-          totalWords: Math.floor(Math.random() * 100) + 50,
-          masteredWords: Math.floor(Math.random() * 50) + 20,
-          averageAccuracy: Math.floor(Math.random() * 30) + 60,
-          activeStudents: Math.floor(Math.random() * studentIds.length) + 1,
-          wordsLearned: Math.floor(Math.random() * 10) + 1
+          date: dateStr,
+          totalWords: 0, // Not tracked daily
+          masteredWords: dayData ? dayData.masteredWords.size : 0,
+          averageAccuracy: dayData && dayData.totalEncounters > 0
+            ? Math.round((dayData.correctEncounters / dayData.totalEncounters) * 100)
+            : 0,
+          activeStudents: dayData ? dayData.activeStudents.size : 0,
+          wordsLearned: 0 // Not tracked daily
         });
       }
 
@@ -702,7 +829,8 @@ export class TeacherVocabularyAnalyticsService {
           mastery_level,
           student_id
         `)
-        .in('student_id', studentIds);
+        .in('student_id', studentIds)
+        .limit(50000); // Supabase default is 1000, increase for large classes
 
       if (error) throw error;
 
@@ -762,18 +890,31 @@ export class TeacherVocabularyAnalyticsService {
       const wordDetails: WordDetail[] = [];
 
       wordGroups.forEach((group, key) => {
-        const accuracy = group.totalEncounters > 0 
-          ? (group.correctEncounters / group.totalEncounters) * 100 
+        const accuracy = group.totalEncounters > 0
+          ? (group.correctEncounters / group.totalEncounters) * 100
           : 0;
-        
-        const avgMastery = group.masteryLevels.reduce((sum, m) => sum + m, 0) / group.masteryLevels.length;
-        
-        const studentsStruggling = Array.from(group.studentData.values()).filter(s => {
-          const studentAccuracy = s.encounters > 0 ? s.correct / s.encounters : 0;
-          return studentAccuracy < 0.6;
-        }).length;
 
-        const studentsMastered = Array.from(group.studentData.values()).filter(s => s.mastery >= 4).length;
+        // Calculate proficiency level for the word (class-wide)
+        const proficiencyLevel = calculateProficiencyLevel(accuracy, group.totalEncounters);
+
+        // Count students by proficiency level
+        let studentsStruggling = 0;
+        let studentsLearning = 0;
+        let studentsProficient = 0;
+
+        Array.from(group.studentData.values()).forEach(s => {
+          const studentAccuracy = s.encounters > 0 ? (s.correct / s.encounters) * 100 : 0;
+          const studentProficiency = calculateProficiencyLevel(studentAccuracy, s.encounters);
+
+          if (studentProficiency === 'struggling') studentsStruggling++;
+          else if (studentProficiency === 'learning') studentsLearning++;
+          else if (studentProficiency === 'proficient') studentsProficient++;
+        });
+
+        // Calculate average mastery level
+        const masteryLevel = group.masteryLevels.length > 0
+          ? Math.round((group.masteryLevels.reduce((sum: number, level: number) => sum + level, 0) / group.masteryLevels.length) * 10) / 10
+          : 0;
 
         wordDetails.push({
           word: group.vocab.word,
@@ -784,9 +925,11 @@ export class TeacherVocabularyAnalyticsService {
           totalEncounters: group.totalEncounters,
           correctEncounters: group.correctEncounters,
           accuracy: Math.round(accuracy * 10) / 10,
-          masteryLevel: Math.round(avgMastery * 10) / 10,
+          masteryLevel,
+          proficiencyLevel,  // NEW: Simple 3-tier system
           studentsStruggling,
-          studentsMastered,
+          studentsLearning,   // NEW
+          studentsProficient, // Replaces studentsMastered
           commonErrors: [] // Could be enhanced with error tracking
         });
       });
@@ -819,7 +962,8 @@ export class TeacherVocabularyAnalyticsService {
           correct_encounters,
           mastery_level
         `)
-        .in('student_id', studentIds);
+        .in('student_id', studentIds)
+        .limit(50000); // Supabase default is 1000, increase for large classes
 
       if (error) throw error;
 
@@ -875,11 +1019,12 @@ export class TeacherVocabularyAnalyticsService {
           .map(g => {
             const vocab = vocabMap.get(g.centralized_vocabulary_id);
             const accuracy = g.total_encounters > 0 ? (g.correct_encounters / g.total_encounters) * 100 : 0;
+            const proficiencyLevel = calculateProficiencyLevel(accuracy, g.total_encounters);
             return {
               word: vocab?.word || '',
               translation: vocab?.translation || '',
               accuracy: Math.round(accuracy * 10) / 10,
-              masteryLevel: g.mastery_level,
+              proficiencyLevel,
               category: vocab?.category || ''
             };
           });

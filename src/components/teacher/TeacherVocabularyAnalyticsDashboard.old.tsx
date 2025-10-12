@@ -157,6 +157,7 @@ export default function TeacherVocabularyAnalyticsDashboard({
         params.set('to', dateRange.to);
       }
 
+      // Use original analytics endpoint
       const response = await fetch(`/api/dashboard/vocabulary/analytics?${params.toString()}`, {
         cache: 'no-store'
       });
@@ -812,24 +813,10 @@ export default function TeacherVocabularyAnalyticsDashboard({
       );
     }
 
-    // Most challenging: words with significant exposure (min 5 encounters) AND low accuracy
-    // Sort by: (1) accuracy ascending, (2) total encounters descending (more encounters = more problematic)
-    const strugglingWords = [...analytics.detailedWords]
-      .filter(w => w.totalEncounters >= 5) // Only words with meaningful exposure
-      .sort((a, b) => {
-        // Primary sort: accuracy (lowest first)
-        if (Math.abs(a.accuracy - b.accuracy) > 5) {
-          return a.accuracy - b.accuracy;
-        }
-        // Secondary sort: encounters (highest first) for words with similar accuracy
-        return b.totalEncounters - a.totalEncounters;
-      })
-      .slice(0, 10); // Top 10 most challenging words
-
-    // Sort by total encounters (most practiced words)
-    const mostPracticedWords = [...analytics.detailedWords]
-      .sort((a, b) => b.totalEncounters - a.totalEncounters)
-      .slice(0, 10); // Top 10 most practiced words
+    // Sort words by difficulty (lowest accuracy first)
+    const sortedWords = [...analytics.detailedWords].sort((a, b) => a.accuracy - b.accuracy);
+    const strugglingWords = sortedWords.slice(0, 10); // Top 10 hardest words
+    const masteredWords = sortedWords.slice(-10).reverse(); // Top 10 easiest words
 
     return (
       <div className="space-y-6">
@@ -839,19 +826,15 @@ export default function TeacherVocabularyAnalyticsDashboard({
             <Target className="h-5 w-5 text-red-500 mr-2" />
             Most Challenging Words (Class-Wide)
           </h3>
-          <p className="text-sm text-gray-600 mb-4">
-            Words with significant exposure (5+ encounters) and low accuracy
-          </p>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Word</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Translation</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Encounters</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Class Accuracy</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Avg Mastery</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Students Struggling</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Proficiency</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Students by Level</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -859,11 +842,6 @@ export default function TeacherVocabularyAnalyticsDashboard({
                   <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{word.word}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{word.translation}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                        {word.totalEncounters} encounters
-                      </span>
-                    </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="flex-1 bg-gray-200 rounded-full h-2 mr-2 max-w-[100px]">
@@ -875,13 +853,23 @@ export default function TeacherVocabularyAnalyticsDashboard({
                         <span className="text-sm font-medium text-gray-700">{word.accuracy.toFixed(0)}%</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                      {word.masteryLevel.toFixed(1)} / 5
-                    </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                        {word.studentsStruggling} students
+                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                        word.proficiencyLevel === 'proficient' ? 'bg-green-100 text-green-800' :
+                        word.proficiencyLevel === 'learning' ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-red-100 text-red-800'
+                      }`}>
+                        {word.proficiencyLevel === 'proficient' ? '🟢 Proficient' :
+                         word.proficiencyLevel === 'learning' ? '🟡 Learning' :
+                         '🔴 Struggling'}
                       </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <div className="text-xs space-y-1">
+                        <div>🔴 {word.studentsStruggling} struggling</div>
+                        <div>🟡 {word.studentsLearning} learning</div>
+                        <div>🟢 {word.studentsProficient} proficient</div>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -890,55 +878,56 @@ export default function TeacherVocabularyAnalyticsDashboard({
           </div>
         </div>
 
-        {/* Class-wide Most Practiced Words */}
+        {/* Class-wide Proficient Words */}
         <div className="bg-white rounded-lg shadow-md p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-            <Award className="h-5 w-5 text-blue-500 mr-2" />
-            Most Practiced Words (Class-Wide)
+            <Award className="h-5 w-5 text-green-500 mr-2" />
+            Proficient Words (Class-Wide)
           </h3>
-          <p className="text-sm text-gray-600 mb-4">
-            Words with the most exposure across all students
-          </p>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Word</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Translation</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Encounters</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Class Accuracy</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Avg Mastery</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Students Proficient</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Proficiency</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Students by Level</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {mostPracticedWords.map((word, idx) => (
+                {masteredWords.map((word, idx) => (
                   <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{word.word}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{word.translation}</td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        {word.totalEncounters} encounters
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="flex-1 bg-gray-200 rounded-full h-2 mr-2 max-w-[100px]">
                           <div
-                            className={`h-2 rounded-full ${word.accuracy >= 90 ? 'bg-green-500' : word.accuracy >= 60 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                            className="h-2 rounded-full bg-green-500"
                             style={{ width: `${word.accuracy}%` }}
                           />
                         </div>
                         <span className="text-sm font-medium text-gray-700">{word.accuracy.toFixed(0)}%</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                      {word.masteryLevel.toFixed(1)} / 5
-                    </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                        {word.studentsProficient} students
+                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                        word.proficiencyLevel === 'proficient' ? 'bg-green-100 text-green-800' :
+                        word.proficiencyLevel === 'learning' ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-red-100 text-red-800'
+                      }`}>
+                        {word.proficiencyLevel === 'proficient' ? '🟢 Proficient' :
+                         word.proficiencyLevel === 'learning' ? '🟡 Learning' :
+                         '🔴 Struggling'}
                       </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <div className="text-xs space-y-1">
+                        <div>🔴 {word.studentsStruggling} struggling</div>
+                        <div>🟡 {word.studentsLearning} learning</div>
+                        <div>🟢 {word.studentsProficient} proficient</div>
+                      </div>
                     </td>
                   </tr>
                 ))}

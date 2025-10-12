@@ -31,7 +31,7 @@ interface GameMode {
   source: 'vocab-master' | 'vocab-mining' | 'unified';
 }
 
-// Streamlined Mode Definitions - 8 consolidated modes for 11-13 year olds
+// Streamlined Mode Definitions - Professional color palette for intelligent learning
 const CONSOLIDATED_GAME_MODES: GameMode[] = [
   // I. Core Learning & Review (Primary, recurring activities)
   {
@@ -39,7 +39,7 @@ const CONSOLIDATED_GAME_MODES: GameMode[] = [
     name: 'Learn New Words',
     description: 'Start with unfamiliar vocabulary. Choose your practice style inside!',
     icon: <Lightbulb className="h-6 w-6" />,
-    color: 'bg-gradient-to-r from-green-400 to-blue-500',
+    color: 'bg-gradient-to-r from-teal-600 to-blue-700',
     category: 'core',
     estimatedTime: '10-15 min',
     difficulty: 'Beginner',
@@ -51,7 +51,7 @@ const CONSOLIDATED_GAME_MODES: GameMode[] = [
     name: 'Review Weak Words',
     description: 'Practice words you find challenging. Multiple practice styles available!',
     icon: <Target className="h-6 w-6" />,
-    color: 'bg-gradient-to-r from-red-400 to-pink-500',
+    color: 'bg-gradient-to-r from-rose-600 to-violet-700',
     category: 'core',
     estimatedTime: '8-12 min',
     difficulty: 'Variable',
@@ -62,7 +62,7 @@ const CONSOLIDATED_GAME_MODES: GameMode[] = [
     name: 'Mixed Review',
     description: 'Practice all your vocabulary with different exercise types',
     icon: <Shuffle className="h-6 w-6" />,
-    color: 'bg-gradient-to-r from-indigo-400 to-purple-500',
+    color: 'bg-gradient-to-r from-indigo-700 to-purple-800',
     category: 'core',
     estimatedTime: '10-20 min',
     difficulty: 'Variable',
@@ -75,7 +75,7 @@ const CONSOLIDATED_GAME_MODES: GameMode[] = [
     name: 'Context Practice',
     description: 'Learn words within full sentences and real examples',
     icon: <BookOpen className="h-6 w-6" />,
-    color: 'bg-gradient-to-r from-emerald-400 to-teal-500',
+    color: 'bg-gradient-to-r from-emerald-600 to-teal-700',
     category: 'skills',
     estimatedTime: '12-18 min',
     difficulty: 'Intermediate',
@@ -86,7 +86,7 @@ const CONSOLIDATED_GAME_MODES: GameMode[] = [
     name: 'Dictation',
     description: 'Listen carefully and type what you hear',
     icon: <PenTool className="h-6 w-6" />,
-    color: 'bg-gradient-to-r from-indigo-500 to-indigo-600',
+    color: 'bg-gradient-to-r from-indigo-600 to-blue-700',
     category: 'skills',
     estimatedTime: '8-12 min',
     difficulty: 'Advanced',
@@ -97,7 +97,7 @@ const CONSOLIDATED_GAME_MODES: GameMode[] = [
     name: 'Listening Comprehension',
     description: 'Listen to words and type the English translation',
     icon: <Headphones className="h-6 w-6" />,
-    color: 'bg-gradient-to-r from-blue-400 to-cyan-500',
+    color: 'bg-gradient-to-r from-blue-600 to-cyan-700',
     category: 'skills',
     estimatedTime: '10-15 min',
     difficulty: 'Intermediate',
@@ -108,7 +108,7 @@ const CONSOLIDATED_GAME_MODES: GameMode[] = [
     name: 'Flashcards',
     description: 'Quick self-assessment - do you know this word?',
     icon: <CreditCard className="h-6 w-6" />,
-    color: 'bg-gradient-to-r from-red-500 to-red-600',
+    color: 'bg-gradient-to-r from-red-600 to-rose-700',
     category: 'skills',
     estimatedTime: '5-10 min',
     difficulty: 'Beginner',
@@ -119,7 +119,7 @@ const CONSOLIDATED_GAME_MODES: GameMode[] = [
     name: 'Match-Up Challenge',
     description: 'Connect Spanish words with their English translations',
     icon: <Link className="h-6 w-6" />,
-    color: 'bg-gradient-to-r from-pink-500 to-rose-600',
+    color: 'bg-gradient-to-r from-pink-600 to-rose-700',
     category: 'skills',
     estimatedTime: '8-12 min',
     difficulty: 'Intermediate',
@@ -132,7 +132,7 @@ const CONSOLIDATED_GAME_MODES: GameMode[] = [
     name: 'Speed Challenge',
     description: 'Test your reaction time - answer before time runs out!',
     icon: <Zap className="h-6 w-6" />,
-    color: 'bg-gradient-to-r from-yellow-400 to-orange-500',
+    color: 'bg-gradient-to-r from-amber-500 to-orange-600',
     category: 'challenge',
     estimatedTime: '5-8 min',
     difficulty: 'Intermediate',
@@ -143,7 +143,7 @@ const CONSOLIDATED_GAME_MODES: GameMode[] = [
     name: 'Word Builder',
     description: 'Build words letter by letter with hints and clues',
     icon: <Keyboard className="h-6 w-6" />,
-    color: 'bg-gradient-to-r from-green-500 to-emerald-600',
+    color: 'bg-gradient-to-r from-emerald-600 to-green-700',
     category: 'challenge',
     estimatedTime: '10-15 min',
     difficulty: 'Intermediate',
@@ -154,7 +154,7 @@ const CONSOLIDATED_GAME_MODES: GameMode[] = [
     name: 'Pronunciation Master',
     description: 'Perfect your Spanish pronunciation with audio feedback',
     icon: <Mic className="h-6 w-6" />,
-    color: 'bg-gradient-to-r from-purple-500 to-violet-600',
+    color: 'bg-gradient-to-r from-purple-600 to-violet-700',
     category: 'skills',
     estimatedTime: '8-12 min',
     difficulty: 'Advanced',
@@ -165,7 +165,7 @@ const CONSOLIDATED_GAME_MODES: GameMode[] = [
     name: 'Memory Palace',
     description: 'Learn through visual associations and memory techniques',
     icon: <Brain className="h-6 w-6" />,
-    color: 'bg-gradient-to-r from-indigo-500 to-purple-600',
+    color: 'bg-gradient-to-r from-indigo-600 to-purple-700',
     category: 'challenge',
     estimatedTime: '15-20 min',
     difficulty: 'Intermediate',
@@ -176,7 +176,7 @@ const CONSOLIDATED_GAME_MODES: GameMode[] = [
     name: 'Word Race',
     description: 'Competitive speed typing - beat your best time!',
     icon: <Trophy className="h-6 w-6" />,
-    color: 'bg-gradient-to-r from-orange-500 to-red-600',
+    color: 'bg-gradient-to-r from-orange-600 to-red-700',
     category: 'challenge',
     estimatedTime: '5-10 min',
     difficulty: 'Advanced',
@@ -516,10 +516,25 @@ export default function UnifiedVocabMasterLauncher({ onGameStart, onBack, preset
       }
 
       // Also check vocabulary_gem_collection for spaced repetition progress
-      const { data: gemCollectionData, error: gemError } = await supabase
+      // Join with centralized_vocabulary to filter by language and curriculum level
+      let gemQuery = supabase
         .from('vocabulary_gem_collection')
-        .select('*')
-        .eq('student_id', user.id);
+        .select(`
+          *,
+          centralized_vocabulary!inner(
+            language,
+            curriculum_level
+          )
+        `)
+        .eq('student_id', user.id)
+        .eq('centralized_vocabulary.language', dbLanguage);
+
+      // Add curriculum level filter if available
+      if (selectedLevel) {
+        gemQuery = gemQuery.eq('centralized_vocabulary.curriculum_level', selectedLevel);
+      }
+
+      const { data: gemCollectionData, error: gemError } = await gemQuery;
 
       if (gemError) {
         console.error('❌ Error loading gem collection data:', gemError);
@@ -684,7 +699,7 @@ export default function UnifiedVocabMasterLauncher({ onGameStart, onBack, preset
           className="text-center mb-8"
         >
           <div className="flex items-center justify-center mb-4">
-            <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-3 rounded-full">
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-700 p-3 rounded-full shadow-lg">
               <Brain className="h-8 w-8 text-white" />
             </div>
           </div>
@@ -937,27 +952,63 @@ export default function UnifiedVocabMasterLauncher({ onGameStart, onBack, preset
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
               <div className="text-center">
                 <div className="text-3xl font-bold text-blue-600">{userStats.wordsLearned}</div>
-                <div className="text-sm text-gray-600">Words Learned</div>
+                <div className="text-sm text-gray-600 font-medium">Words Mastered</div>
                 <div className="text-xs text-gray-400">in this selection</div>
               </div>
               <div className="text-center">
                 <div className="text-3xl font-bold text-green-600">{userStats.currentStreak}</div>
-                <div className="text-sm text-gray-600">Day Streak</div>
+                <div className="text-sm text-gray-600 font-medium">Day Streak</div>
                 <div className="text-xs text-gray-400">overall</div>
               </div>
               <div className="text-center">
                 <div className="text-3xl font-bold text-purple-600">{userStats.weeklyProgress}</div>
-                <div className="text-sm text-gray-600">Weekly Goal</div>
-                <div className="text-xs text-gray-400">{userStats.weeklyGoal - userStats.weeklyProgress} to go</div>
+                <div className="text-sm text-gray-600 font-medium">Weekly Correct Attempts</div>
+                <div className="text-xs text-gray-400">{userStats.weeklyGoal - userStats.weeklyProgress} to goal</div>
               </div>
               <div className="text-center">
                 <div className="text-3xl font-bold text-orange-600">
                   {userStats.totalWords > 0 ? Math.round((userStats.wordsLearned / userStats.totalWords) * 100) : 0}%
                 </div>
-                <div className="text-sm text-gray-600">Progress</div>
+                <div className="text-sm text-gray-600 font-medium">Mastery Progress</div>
                 <div className="text-xs text-gray-400">{userStats.totalWords} total available</div>
               </div>
             </div>
+          </div>
+        </motion.div>
+
+        {/* Primary Call-to-Action */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25 }}
+          className="mb-8"
+        >
+          <div className="flex justify-center">
+            <button
+              onClick={() => {
+                // Determine the best mode based on user stats
+                const hasWeakWords = userStats.wordsLearned > 0 && userStats.wordsLearned < userStats.totalWords * 0.5;
+                const recommendedMode = hasWeakWords ? 'review_weak' : 'learn_new';
+                startGameSession(recommendedMode);
+              }}
+              disabled={vocabularyLoading || vocabulary.length === 0}
+              className="group relative px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+            >
+              <div className="flex items-center space-x-3">
+                <Play className="h-6 w-6" />
+                <div className="text-left">
+                  <div className="text-lg font-bold">
+                    {userStats.wordsLearned > 0 && userStats.wordsLearned < userStats.totalWords * 0.5
+                      ? `Review ${Math.min(20, vocabulary.length)} Weak Words`
+                      : 'Start Learning New Words'}
+                  </div>
+                  <div className="text-sm text-blue-100">
+                    {vocabularyLoading ? 'Loading...' : vocabulary.length === 0 ? 'No vocabulary available' : 'Recommended next step'}
+                  </div>
+                </div>
+                <ChevronRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+              </div>
+            </button>
           </div>
         </motion.div>
 
@@ -977,8 +1028,8 @@ export default function UnifiedVocabMasterLauncher({ onGameStart, onBack, preset
             ].map((category) => (
               <button
                 key={category.id}
-                onClick={() => setSelectedCategory(category.id)}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${selectedCategory === category.id
+                onClick={() => setGameModeCategory(category.id)}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${gameModeCategory === category.id
                   ? 'bg-blue-600 text-white'
                   : 'bg-white text-gray-600 hover:bg-gray-100'
                   }`}
@@ -1002,10 +1053,12 @@ export default function UnifiedVocabMasterLauncher({ onGameStart, onBack, preset
               {/* Core Learning & Review Section */}
               <div>
                 <div className="flex items-center mb-4">
-                  <Brain className="h-6 w-6 text-blue-600 mr-3" />
-                  <h3 className="text-xl font-bold text-gray-800">Core Learning & Review</h3>
+                  <div className="bg-gradient-to-r from-blue-600 to-indigo-700 p-2 rounded-lg mr-3">
+                    <Brain className="h-7 w-7 text-white" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-800">Core Learning & Review</h3>
                 </div>
-                <p className="text-gray-600 mb-6 text-sm">
+                <p className="text-gray-600 mb-6 text-base">
                   Primary activities that use spaced repetition to help you learn and remember vocabulary
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -1018,10 +1071,12 @@ export default function UnifiedVocabMasterLauncher({ onGameStart, onBack, preset
               {/* Skill Builders Section */}
               <div>
                 <div className="flex items-center mb-4">
-                  <Target className="h-6 w-6 text-green-600 mr-3" />
-                  <h3 className="text-xl font-bold text-gray-800">Skill Builders & Specific Practice</h3>
+                  <div className="bg-gradient-to-r from-emerald-600 to-teal-700 p-2 rounded-lg mr-3">
+                    <Target className="h-7 w-7 text-white" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-800">Skill Builders & Specific Practice</h3>
                 </div>
-                <p className="text-gray-600 mb-6 text-sm">
+                <p className="text-gray-600 mb-6 text-base">
                   Focused practice modes to develop specific language skills like listening and context understanding
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -1034,10 +1089,12 @@ export default function UnifiedVocabMasterLauncher({ onGameStart, onBack, preset
               {/* Challenges Section */}
               <div>
                 <div className="flex items-center mb-4">
-                  <Zap className="h-6 w-6 text-yellow-600 mr-3" />
-                  <h3 className="text-xl font-bold text-gray-800">Challenges & Speed</h3>
+                  <div className="bg-gradient-to-r from-amber-500 to-orange-600 p-2 rounded-lg mr-3">
+                    <Zap className="h-7 w-7 text-white" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-800">Challenges & Speed</h3>
                 </div>
-                <p className="text-gray-600 mb-6 text-sm">
+                <p className="text-gray-600 mb-6 text-base">
                   Test your skills under time pressure and compete with yourself
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

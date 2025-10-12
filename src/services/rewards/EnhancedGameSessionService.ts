@@ -6,6 +6,7 @@
 import { createBrowserClient } from '@supabase/ssr';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { RewardEngine, type GemEvent, type GemRarity } from './RewardEngine';
+import { parseVocabularyIdentifier } from '@/utils/vocabulary-id';
 
 export interface GameSessionData {
   student_id: string;
@@ -44,15 +45,16 @@ export interface WordAttempt {
   maxGemRarity?: GemRarity;
   gameMode?: string;
   difficultyLevel?: string;
+  contextData?: Record<string, unknown>;
 }
 
 export class EnhancedGameSessionService {
-  private supabase: SupabaseClient;
+  private supabase: SupabaseClient<any>;
   private currentSessionId: string | null = null;
   private gemEvents: GemEvent[] = [];
   
-  constructor(supabaseClient?: SupabaseClient) {
-    this.supabase = supabaseClient || createBrowserClient(
+  constructor(supabaseClient?: SupabaseClient<any>) {
+    this.supabase = supabaseClient || createBrowserClient<any>(
       process.env.NEXT_PUBLIC_SUPABASE_URL || '',
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
     );
@@ -281,22 +283,27 @@ export class EnhancedGameSessionService {
 
       // 💎 DUAL-TRACK SYSTEM: Conditionally award Mastery Gem based on FSRS progression
       if (attempt.vocabularyId && !skipSpacedRepetition) {
-        const vocabIdString = attempt.vocabularyId?.toString();
+        const identifiers = parseVocabularyIdentifier(attempt.vocabularyId as any);
 
-        // 🚨 SAFETY CHECK: Ensure vocabularyId is not empty
-        if (!vocabIdString || vocabIdString.trim() === '') {
-          console.error('🚨 [DUAL-TRACK] Empty vocabularyId detected:', {
+        if (!identifiers.isValid || !identifiers.raw) {
+          console.error('🚨 [DUAL-TRACK] Invalid vocabularyId detected:', {
             vocabularyId: attempt.vocabularyId,
-            vocabIdString,
+            parsed: identifiers,
             wordText: attempt.wordText,
             gameType
           });
           return null;
         }
 
-        const isUUID = vocabIdString?.includes('-') || false;
+        const columnValue = identifiers.isUUID
+          ? identifiers.raw
+          : identifiers.vocabularyItemId ?? Number(identifiers.raw);
 
-        const canProgress = await this.checkIfWordCanProgress(studentId, vocabIdString, isUUID);
+        const canProgress = await this.checkIfWordCanProgress(
+          studentId,
+          columnValue,
+          identifiers.isUUID
+        );
 
         if (canProgress.allowed) {
           console.log('💎 [DUAL-TRACK] FSRS allows progression - awarding Mastery Gem');
@@ -559,7 +566,14 @@ export class EnhancedGameSessionService {
       return {
         ...session,
         gemBreakdown: RewardEngine.groupGemsByRarity(
-          gemBreakdown?.map(g => ({ rarity: g.gem_rarity, xpValue: g.xp_value })) || []
+          (gemBreakdown || []).map(g => ({
+            rarity: g.gem_rarity as GemRarity,
+            xpValue: g.xp_value ?? 0,
+            responseTimeMs: 0,
+            streakCount: 0,
+            hintUsed: false,
+            gameType: 'summary'
+          }))
         )
       };
     } catch (error) {
@@ -634,10 +648,6 @@ export class EnhancedGameSessionService {
         difficulty_level: attempt.difficultyLevel || 'medium',
         hint_used: attempt.hintUsed,
         streak_count: attempt.streakCount,
-        confidence_level: attempt.responseTimeMs < 2000 ? 5 : 3,
-        difficulty_level: attempt.difficultyLevel || 'medium',
-        hint_used: attempt.hintUsed,
-        streak_count: attempt.streakCount,
         previous_attempts: 0,
         mastery_level: attempt.masteryLevel || 0
       };
@@ -685,28 +695,31 @@ export class EnhancedGameSessionService {
     responseTimeMs: number
   ): Promise<void> {
     try {
-      // Convert vocabularyId to appropriate format
-      const vocabIdString = vocabularyId?.toString();
+      const identifiers = parseVocabularyIdentifier(vocabularyId as any);
 
-      // 🚨 SAFETY CHECK: Ensure vocabularyId is not empty
-      if (!vocabIdString || vocabIdString.trim() === '') {
-        console.error('🚨 [VOCABULARY UPDATE] Empty vocabularyId detected:', {
+      if (!identifiers.isValid || !identifiers.raw) {
+        console.error('🚨 [VOCABULARY UPDATE] Invalid vocabularyId detected:', {
           vocabularyId,
-          vocabIdString,
+          parsed: identifiers,
           studentId
         });
         return;
       }
 
-      // Determine if this is a UUID (centralized) or integer (legacy)
-      const isUUID = vocabIdString.includes('-');
-
       // ✅ FSRS TIME-GATED PROGRESSION: Check if word is due for review
-      const canProgress = await this.checkIfWordCanProgress(studentId, vocabIdString, isUUID);
+      const lookupValue = identifiers.isUUID
+        ? identifiers.raw
+        : identifiers.vocabularyItemId ?? Number(identifiers.raw);
+
+      const canProgress = await this.checkIfWordCanProgress(
+        studentId,
+        lookupValue,
+        identifiers.isUUID
+      );
 
       if (!canProgress.allowed) {
         console.log('⏰ [FSRS GATE] Word not due for review, treating as practice:', {
-          vocabularyId: vocabIdString,
+            vocabularyId: identifiers.raw,
           reason: canProgress.reason,
           nextReviewAt: canProgress.nextReviewAt
         });
@@ -717,17 +730,17 @@ export class EnhancedGameSessionService {
       }
 
       console.log('✅ [FSRS GATE] Word is due for review, allowing progression:', {
-        vocabularyId: vocabIdString,
+          vocabularyId: identifiers.raw,
         phase: canProgress.phase,
         state: canProgress.state
       });
 
       // Call atomic function directly with unmodified wasCorrect value
-      const { data, error } = await this.supabase.rpc('update_vocabulary_gem_collection_atomic', {
+      const { error } = await this.supabase.rpc('update_vocabulary_gem_collection', {
         p_student_id: studentId,
-        p_vocabulary_item_id: isUUID ? null : vocabIdString, // UUID format for both
-        p_centralized_vocabulary_id: isUUID ? vocabIdString : null,
-        p_was_correct: wasCorrect, // ✅ DIRECT: No transformation, no derivation
+        p_vocabulary_item_id: identifiers.vocabularyItemId,
+        p_centralized_vocabulary_id: identifiers.centralizedVocabularyId,
+        p_was_correct: wasCorrect,
         p_response_time_ms: responseTimeMs,
         p_hint_used: false,
         p_streak_count: 0
@@ -739,7 +752,7 @@ export class EnhancedGameSessionService {
       }
 
       console.log('✅ [DIRECT UPDATE] Vocabulary updated successfully:', {
-        vocabularyId: vocabIdString,
+        vocabularyId: identifiers.raw,
         wasCorrect,
         studentId,
         phase: canProgress.phase
@@ -757,7 +770,7 @@ export class EnhancedGameSessionService {
    */
   private async checkIfWordCanProgress(
     studentId: string,
-    vocabularyId: string,
+    vocabularyId: string | number,
     isUUID: boolean
   ): Promise<{
     allowed: boolean;
@@ -807,11 +820,13 @@ export class EnhancedGameSessionService {
         };
       }
 
+      const safeWordData = wordData as NonNullable<typeof wordData>;
+
       const now = new Date();
-      const nextReview = wordData.next_review_at ? new Date(wordData.next_review_at) : null;
-      const state = wordData.fsrs_state || 'new';
-      const reviewCount = wordData.fsrs_review_count || 0;
-      const totalEncounters = wordData.total_encounters || 0;
+      const nextReview = safeWordData.next_review_at ? new Date(safeWordData.next_review_at) : null;
+      const state = safeWordData.fsrs_state || 'new';
+      const reviewCount = safeWordData.fsrs_review_count || 0;
+      const totalEncounters = safeWordData.total_encounters || 0;
 
       // 🆕 DUAL-TRACK FIX: Use total_encounters to determine if truly first time
       // Note: total_encounters is incremented BEFORE gem logic, so first encounter = 1
@@ -826,7 +841,7 @@ export class EnhancedGameSessionService {
           reason: 'New word - first encounter',
           phase: 'new',
           state,
-          nextReviewAt: wordData.next_review_at
+          nextReviewAt: safeWordData.next_review_at
         };
       }
 
@@ -837,7 +852,7 @@ export class EnhancedGameSessionService {
           reason: 'Word is due for review',
           phase: state === 'new' || state === 'learning' ? 'learning' : 'review',
           state,
-          nextReviewAt: wordData.next_review_at
+          nextReviewAt: safeWordData.next_review_at
         };
       } else {
         return {
@@ -845,7 +860,7 @@ export class EnhancedGameSessionService {
           reason: 'Word not yet due for review',
           phase: state === 'new' || state === 'learning' ? 'learning' : 'review',
           state,
-          nextReviewAt: wordData.next_review_at
+          nextReviewAt: safeWordData.next_review_at
         };
       }
 
@@ -857,7 +872,7 @@ export class EnhancedGameSessionService {
         reason: 'Unknown state - allowing progression',
         phase: 'review',
         state,
-        nextReviewAt: wordData.next_review_at
+        nextReviewAt: safeWordData?.next_review_at
       };
 
     } catch (error) {

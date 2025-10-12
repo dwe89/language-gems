@@ -152,6 +152,8 @@ export async function GET(request: NextRequest) {
     const classId = searchParams.get('classId') || undefined;
     const timeRange = (searchParams.get('timeRange') as TimeRange) || 'last_30_days';
 
+    console.log(`📊 [DEBUG] API called with teacherId: ${teacherId}, classId: ${classId || 'all'}, timeRange: ${timeRange}`);
+
     if (!teacherId) {
       return NextResponse.json(
         { success: false, error: 'Teacher ID is required' },
@@ -180,6 +182,7 @@ export async function GET(request: NextRequest) {
     }
 
     const classIds = classes?.map((c: any) => c.id) || [];
+    console.log(`📊 [DEBUG] Found ${classIds.length} classes for teacher ${teacherId}:`, classIds);
 
     if (classIds.length === 0) {
       // No classes found, return empty data
@@ -219,6 +222,8 @@ export async function GET(request: NextRequest) {
 
     const studentIds = enrollments?.map((e: any) => e.student_id) || [];
     const totalStudents = studentIds.length;
+    console.log(`📊 [DEBUG] Found ${totalStudents} students enrolled in these classes`);
+    console.log(`📊 [DEBUG] Is Asher in studentIds?`, studentIds.includes('ac794722-1818-4cd1-8c19-2abbe0b16d88'));
 
     // STEP 1.5: Get student profiles (names + created_at)
     const { data: studentProfiles, error: profilesError } = await supabase
@@ -236,15 +241,33 @@ export async function GET(request: NextRequest) {
     );
 
     // STEP 2: Get game sessions for these students
+    // NOTE: Supabase has a default limit of 1000 rows. We need to increase this for large classes.
+    // FILTER OUT abandoned sessions (0% accuracy AND 0 words attempted) - these are sessions where student quit immediately
     const { data: gameSessions, error: sessionsError } = await supabase
       .from('enhanced_game_sessions')
-      .select('student_id, final_score, accuracy_percentage, created_at, duration_seconds')
+      .select('student_id, final_score, accuracy_percentage, created_at, duration_seconds, words_attempted, game_type')
       .in('student_id', studentIds)
-      .gte('created_at', dateFilter.toISOString());
+      .gte('created_at', dateFilter.toISOString())
+      .order('created_at', { ascending: false })
+      .limit(50000); // Increase limit to handle large classes (165 students * ~300 sessions each)
+
+    // Filter out:
+    // 1. Abandoned sessions (student quit immediately without playing)
+    // 2. Memory game sessions (luck-based, not skill-based)
+    const activeSessions = gameSessions?.filter((s: any) =>
+      (s.accuracy_percentage > 0 || s.words_attempted > 0) &&
+      s.game_type !== 'memory-game'
+    ) || [];
 
     if (sessionsError) {
       console.error('Error fetching game sessions:', sessionsError);
     }
+
+    console.log(`📊 [DEBUG] Fetched ${gameSessions?.length || 0} total sessions, ${activeSessions.length} active sessions (filtered out abandoned) for ${studentIds.length} students`);
+
+    // Check specifically for Asher
+    const asherSessions = activeSessions.filter(s => s.student_id === 'ac794722-1818-4cd1-8c19-2abbe0b16d88');
+    console.log(`📊 [DEBUG] Asher Bannatyne active sessions:`, asherSessions.length, asherSessions.map(s => ({ created_at: s.created_at, accuracy: s.accuracy_percentage })));
 
     // STEP 3: Get assignments
     let assignmentsQuery = supabase
@@ -271,21 +294,15 @@ export async function GET(request: NextRequest) {
       console.error('Error fetching assignments:', assignmentsError);
     }
 
-    // STEP 4: Calculate metrics
-    const sessions = gameSessions || [];
-    const avgScore = sessions.length > 0
-      ? sessions.reduce((sum: number, s: any) => sum + (s.final_score || 0), 0) / sessions.length
-      : 0;
-
-    const avgAccuracy = sessions.length > 0
-      ? sessions.reduce((sum: number, s: any) => sum + (parseFloat(s.accuracy_percentage) || 0), 0) / sessions.length
-      : 0;
+    // STEP 4: Calculate metrics (using only active sessions, not abandoned ones)
+    const sessions = activeSessions;
 
     // Count active students (played in last 7 days)
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-    const activeStudents = new Set(
+    const activeStudentIds = new Set(
       sessions.filter((s: any) => new Date(s.created_at) >= sevenDaysAgo).map((s: any) => s.student_id)
-    ).size;
+    );
+    const activeStudentCount = activeStudentIds.size;
 
     // Count overdue assignments
     const now = new Date();
@@ -294,16 +311,35 @@ export async function GET(request: NextRequest) {
       return new Date(a.due_date) < now;
     }).length;
 
-    // Calculate streak (simplified - days with activity)
-    const uniqueDays = new Set(
-      sessions.map((s: any) => new Date(s.created_at).toDateString())
-    );
-    const currentStreak = uniqueDays.size;
+    // Calculate class-wide streak (consecutive days with ANY student activity)
+    const sortedDates = sessions
+      .map((s: any) => new Date(s.created_at).toDateString())
+      .sort()
+      .filter((date, index, arr) => arr.indexOf(date) === index); // unique dates
+
+    let currentStreak = 0;
+    const today = new Date().toDateString();
+    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toDateString();
+
+    // Only count streak if there was activity today or yesterday
+    if (sortedDates.includes(today) || sortedDates.includes(yesterday)) {
+      let streakDate = new Date();
+      while (sortedDates.includes(streakDate.toDateString())) {
+        currentStreak++;
+        streakDate = new Date(streakDate.getTime() - 24 * 60 * 60 * 1000);
+      }
+    }
 
     // STEP 5: Calculate risk scores for each student
-    const studentRiskScores = studentIds.map((studentId: string) => {
+    const studentRiskScores = await Promise.all(studentIds.map(async (studentId: string) => {
       const studentSessions = sessions.filter((s: any) => s.student_id === studentId);
       const profile = studentProfileMap.get(studentId);
+
+      const isAsher = studentId === 'ac794722-1818-4cd1-8c19-2abbe0b16d88';
+      if (isAsher) {
+        console.log(`🔍 [ASHER DEBUG] Found ${studentSessions.length} sessions for Asher`);
+        console.log(`🔍 [ASHER DEBUG] Sessions:`, studentSessions.map(s => ({ created_at: s.created_at, accuracy: s.accuracy_percentage })));
+      }
 
       if (studentSessions.length === 0) {
         // Check if student was created recently (within last 7 days)
@@ -337,9 +373,37 @@ export async function GET(request: NextRequest) {
         };
       }
 
-      // Calculate metrics
-      const avgStudentAccuracy = studentSessions.reduce((sum: number, s: any) =>
+      // Calculate metrics from sessions
+      let avgStudentAccuracy = studentSessions.reduce((sum: number, s: any) =>
         sum + (parseFloat(s.accuracy_percentage) || 0), 0) / studentSessions.length;
+
+      if (isAsher) {
+        console.log(`🔍 [ASHER DEBUG] Initial avgStudentAccuracy from sessions: ${avgStudentAccuracy}%`);
+      }
+
+      // FALLBACK: If all sessions have 0% accuracy (broken sessions), use vocabulary_gem_collection data
+      if (avgStudentAccuracy === 0) {
+        const { data: vocabData } = await supabase
+          .from('vocabulary_gem_collection')
+          .select('total_encounters, correct_encounters')
+          .eq('student_id', studentId)
+          .gte('last_encountered_at', dateFilter);
+
+        if (isAsher) {
+          console.log(`🔍 [ASHER DEBUG] Vocab fallback data:`, vocabData);
+        }
+
+        if (vocabData && vocabData.length > 0) {
+          const totalEncounters = vocabData.reduce((sum, v) => sum + (v.total_encounters || 0), 0);
+          const correctEncounters = vocabData.reduce((sum, v) => sum + (v.correct_encounters || 0), 0);
+          if (totalEncounters > 0) {
+            avgStudentAccuracy = (correctEncounters / totalEncounters) * 100;
+            if (isAsher) {
+              console.log(`🔍 [ASHER DEBUG] Calculated accuracy from vocab: ${avgStudentAccuracy}% (${correctEncounters}/${totalEncounters})`);
+            }
+          }
+        }
+      }
 
       const lastSession = studentSessions.sort((a: any, b: any) =>
         new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
@@ -350,38 +414,46 @@ export async function GET(request: NextRequest) {
 
       // Calculate risk factors (0-1 scale)
       const lowAccuracy = avgStudentAccuracy < 60 ? (60 - avgStudentAccuracy) / 60 : 0;
-      const lowEngagement = studentSessions.length < 5 ? (5 - studentSessions.length) / 5 : 0;
+
+      // Low engagement: Only flag if < 3 sessions (students with 1-2 sessions are just new)
+      const lowEngagement = studentSessions.length < 3 ? (3 - studentSessions.length) / 3 : 0;
+
       const inactivity = daysSinceActive > 7 ? Math.min(daysSinceActive / 30, 1) : 0;
 
       // Declining trend (compare first half vs second half)
-      const midpoint = Math.floor(studentSessions.length / 2);
-      const firstHalf = studentSessions.slice(0, midpoint);
-      const secondHalf = studentSessions.slice(midpoint);
-      const firstHalfAvg = firstHalf.length > 0
-        ? firstHalf.reduce((sum: number, s: any) => sum + (parseFloat(s.accuracy_percentage) || 0), 0) / firstHalf.length
-        : 0;
-      const secondHalfAvg = secondHalf.length > 0
-        ? secondHalf.reduce((sum: number, s: any) => sum + (parseFloat(s.accuracy_percentage) || 0), 0) / secondHalf.length
-        : 0;
-      const decliningTrend = firstHalfAvg > secondHalfAvg ? (firstHalfAvg - secondHalfAvg) / 100 : 0;
+      // Only calculate if student has at least 4 sessions (need 2+ in each half for meaningful comparison)
+      let decliningTrend = 0;
+      if (studentSessions.length >= 4) {
+        const midpoint = Math.floor(studentSessions.length / 2);
+        const firstHalf = studentSessions.slice(0, midpoint);
+        const secondHalf = studentSessions.slice(midpoint);
+        const firstHalfAvg = firstHalf.length > 0
+          ? firstHalf.reduce((sum: number, s: any) => sum + (parseFloat(s.accuracy_percentage) || 0), 0) / firstHalf.length
+          : 0;
+        const secondHalfAvg = secondHalf.length > 0
+          ? secondHalf.reduce((sum: number, s: any) => sum + (parseFloat(s.accuracy_percentage) || 0), 0) / secondHalf.length
+          : 0;
+        decliningTrend = firstHalfAvg > secondHalfAvg ? (firstHalfAvg - secondHalfAvg) / 100 : 0;
+      }
 
       // Mastery stagnation (TODO: requires VocabMaster data)
       const masteryStagnation = 0;
 
       // Calculate weighted risk score
+      // Increased weight for low accuracy (0.4) to prioritize struggling students
       const riskScore = (
-        lowAccuracy * 0.25 +
-        lowEngagement * 0.25 +
+        lowAccuracy * 0.4 +
+        lowEngagement * 0.2 +
         decliningTrend * 0.2 +
-        inactivity * 0.2 +
-        masteryStagnation * 0.1
+        inactivity * 0.15 +
+        masteryStagnation * 0.05
       );
 
       // Determine risk level
       let riskLevel: 'critical' | 'high' | 'medium' | 'low';
       if (riskScore >= 0.7) riskLevel = 'critical';
       else if (riskScore >= 0.5) riskLevel = 'high';
-      else if (riskScore >= 0.3) riskLevel = 'medium';
+      else if (riskScore >= 0.15) riskLevel = 'medium';  // Lowered to 0.15 to catch students with <40% accuracy
       else riskLevel = 'low';
 
       // Build risk factors list
@@ -390,6 +462,16 @@ export async function GET(request: NextRequest) {
       if (lowEngagement > 0.3) riskFactors.push(`Low engagement (${studentSessions.length} sessions)`);
       if (inactivity > 0.3) riskFactors.push(`Inactive for ${Math.round(daysSinceActive)} days`);
       if (decliningTrend > 0.1) riskFactors.push('Declining performance trend');
+
+      if (isAsher) {
+        console.log(`🔍 [ASHER DEBUG] Final risk calculation:`, {
+          avgStudentAccuracy,
+          riskScore,
+          riskLevel,
+          riskFactors,
+          lastActive: lastActiveDate,
+        });
+      }
 
       return {
         studentId,
@@ -400,24 +482,41 @@ export async function GET(request: NextRequest) {
         lastActive: lastActiveDate,
         riskFactors,
       };
-    });
+    }));
 
-    // Get top 5 urgent interventions (highest risk scores)
-    const urgentInterventions = studentRiskScores
-      .filter((s: any) => s.riskScore >= 0.3) // Only show medium+ risk
+    // Separate students into two groups:
+    // 1. Students who have NEVER logged in (no sessions at all)
+    // 2. Students who ARE active but struggling (low accuracy, declining performance, etc.)
+
+    const studentsNeverLoggedIn = studentRiskScores.filter((s: any) => s.lastActive === null);
+    const activeStudentsAtRisk = studentRiskScores
+      .filter((s: any) => s.lastActive !== null && s.riskScore >= 0.3) // Has sessions AND medium+ risk
       .sort((a: any, b: any) => b.riskScore - a.riskScore)
       .slice(0, 5);
+
+    console.log(`📊 [DEBUG] Students never logged in: ${studentsNeverLoggedIn.length}`);
+    console.log(`📊 [DEBUG] Active students at risk: ${activeStudentsAtRisk.length}`);
+
+    // Calculate class average from student averages (not session averages)
+    const studentsWithSessions = studentRiskScores.filter((s: any) => s.averageScore > 0);
+    const classAverage = studentsWithSessions.length > 0
+      ? Math.round(studentsWithSessions.reduce((sum: number, s: any) => sum + s.averageScore, 0) / studentsWithSessions.length)
+      : 0;
 
     // Build response data
     const data: ClassSummaryData = {
       topMetrics: {
-        averageScore: Math.round(avgAccuracy),
+        averageScore: classAverage,
         assignmentsOverdue: overdueCount,
         currentStreak: currentStreak,
         trendPercentage: 0, // TODO: Calculate trend
         trendDirection: 'stable',
+        activeStudents: activeStudentCount,
+        totalStudents: studentIds.length,
+        studentsNeverLoggedIn: studentsNeverLoggedIn.length,
       },
-      urgentInterventions: urgentInterventions,
+      urgentInterventions: activeStudentsAtRisk,
+      studentsNeverLoggedIn: studentsNeverLoggedIn,
       topClassWeakness: await calculateTopClassWeakness(supabase, studentIds, dateFilter),
       recentAssignments: (assignments || []).map((a: any) => {
         const progress = a.enhanced_assignment_progress || [];
@@ -446,6 +545,14 @@ export async function GET(request: NextRequest) {
       data,
       timeRange,
       generatedAt: new Date(),
+      debug: {
+        teacherId,
+        classId: classId || 'all',
+        totalClasses: classIds.length,
+        totalStudents: studentIds.length,
+        totalSessions: gameSessions?.length || 0,
+        dateFilter: dateFilter.toISOString(),
+      },
     });
   } catch (error) {
     console.error('Error in class-summary API:', error);

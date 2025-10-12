@@ -75,16 +75,18 @@ export function RiskCard({ student, onClick }: RiskCardProps) {
       </div>
 
       {/* Last Active */}
-      <div className="mt-3 pt-3 border-t border-gray-300 flex items-center gap-2 text-xs text-gray-600">
-        <Clock className="w-3 h-3" />
-        <span>
-          Last active:{' '}
-          {new Date(student.lastActive).toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-          })}
-        </span>
-      </div>
+      {student.lastActive && (
+        <div className="mt-3 pt-3 border-t border-gray-300 flex items-center gap-2 text-xs text-gray-600">
+          <Clock className="w-3 h-3" />
+          <span>
+            Last active:{' '}
+            {new Date(student.lastActive).toLocaleDateString('en-US', {
+              month: 'short',
+              day: 'numeric',
+            })}
+          </span>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,169 +1,179 @@
 'use client';
 
-// Add export config to skip static generation
 export const dynamic = 'force-dynamic';
 export const fetchCache = 'force-no-store';
 
-import { useState, useEffect } from 'react';
-import { useAuth } from '../../../components/auth/AuthProvider';
-import { supabaseBrowser } from '../../../components/auth/AuthProvider';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import type { LucideIcon } from 'lucide-react';
 import {
-  Trophy, Medal, Award, Star, Target, TrendingUp, Users, ChevronRight, Filter,
-  Crown, Zap, Calendar, User, BarChart3, ChevronDown, ChevronUp, Search, Gamepad2
+  Trophy,
+  Medal,
+  Award,
+  Star,
+  Target,
+  TrendingUp,
+  Users,
+  Filter,
+  Crown,
+  Zap,
+  Calendar,
+  User,
+  BarChart3,
+  ChevronRight,
+  Search,
+  RefreshCw,
+  Flame,
+  Gamepad2
 } from 'lucide-react';
-import type { Database } from '../../../lib/database.types';
+
+import { useAuth } from '../../../components/auth/AuthProvider';
 import CrossGameLeaderboard from '../../../components/leaderboards/CrossGameLeaderboard';
-import { CompetitionService } from '../../../services/competitionService';
 import DashboardHeader from '../../../components/dashboard/DashboardHeader';
+import type {
+  TeacherLeaderboardsResponse,
+  StudentLeaderboardEntry,
+  ClassLeaderboardEntry,
+  LeaderboardTimePeriod
+} from '../../../services/leaderboards/TeacherLeaderboardsService';
 
-type Student = {
-  id: string;
-  name: string;
-  email: string;
-  avatar: string;
-  class: string;
-  classId: string;
-  stats: {
-    points: number;
-    streaks: number;
-    accuracy: number;
-    completion: number;
-    rank: number;
-  };
-  badges: string[];
-  recentAchievements: Array<{
-    date: string;
-    type: string;
-    title: string;
-    icon: string;
-    points: number;
-  }>;
-};
+const TIME_PERIOD_OPTIONS: Array<{ id: LeaderboardTimePeriod; label: string }> = [
+  { id: 'daily', label: 'Today' },
+  { id: 'weekly', label: 'This Week' },
+  { id: 'monthly', label: 'This Month' },
+  { id: 'all_time', label: 'All Time' }
+];
 
-type Class = {
-  id: string;
-  name: string;
-  level: string;
-  totalPoints: number;
-  studentCount: number;
-  topStudent: string;
-  rank: number;
+type ViewMode = 'cross-game' | 'students' | 'classes';
+
+const DEFAULT_SUMMARY: TeacherLeaderboardsResponse['summary'] = {
+  totalStudents: 0,
+  totalClasses: 0,
+  totalXP: 0,
+  totalGems: 0,
+  timePeriod: 'weekly',
+  generatedAt: new Date().toISOString()
 };
 
 export default function LeaderboardsPage() {
   const { user } = useAuth();
+  const [leaderboards, setLeaderboards] = useState<TeacherLeaderboardsResponse | null>(null);
   const [loading, setLoading] = useState(true);
-  const [students, setStudents] = useState<Student[]>([]);
-  const [classes, setClasses] = useState<Class[]>([]);
-  const [selectedClass, setSelectedClass] = useState('all');
-  const [view, setView] = useState<'students' | 'classes' | 'cross-game'>('cross-game');
+  const [error, setError] = useState<string | null>(null);
+  const [selectedClass, setSelectedClass] = useState<'all' | string>('all');
+  const [view, setView] = useState<ViewMode>('cross-game');
   const [searchQuery, setSearchQuery] = useState('');
+  const [timePeriod, setTimePeriod] = useState<LeaderboardTimePeriod>('weekly');
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Fetch real data from database
-  useEffect(() => {
-    if (!user) return;
+  const fetchLeaderboards = async () => {
+    if (!user?.id) return;
 
-    const fetchData = async () => {
-      try {
-        // Fetch teacher's classes
-        const { data: classesData, error: classesError } = await supabaseBrowser
-          .from('classes')
-          .select('*')
-          .eq('teacher_id', user.id);
+    try {
+      setLoading(true);
+      setError(null);
 
-        if (classesError) {
-          console.error('Error fetching classes:', classesError);
-        }
+      const params = new URLSearchParams({
+        teacherId: user.id,
+        timePeriod,
+        limit: '200'
+      });
 
-        // Fetch real students enrolled in this teacher's classes
-        const { data: enrollmentsData, error: enrollmentsError } = await supabaseBrowser
-          .from('class_enrollments')
-          .select(`
-            student_id,
-            enrolled_at,
-            class_id
-          `)
-          .in('class_id', classesData?.map(c => c.id) || []);
+      const response = await fetch(`/api/dashboard/leaderboards?${params.toString()}`, {
+        cache: 'no-store'
+      });
 
-        if (enrollmentsError) {
-          console.error('Error fetching enrollments:', enrollmentsError);
-          return;
-        }
-
-        // Get student profiles separately
-        const studentIds = enrollmentsData?.map(e => e.student_id) || [];
-        const { data: profilesData, error: profilesError } = await supabaseBrowser
-          .from('user_profiles')
-          .select('user_id, display_name, email')
-          .in('user_id', studentIds);
-
-        if (profilesError) {
-          console.error('Error fetching profiles:', profilesError);
-          return;
-        }
-
-        // Transform the data
-        const studentsData: Student[] = enrollmentsData?.map((enrollment, index) => {
-          const profile = profilesData?.find(p => p.user_id === enrollment.student_id);
-          const classInfo = classesData?.find(c => c.id === enrollment.class_id);
-          
-          return {
-            id: enrollment.student_id,
-            name: profile?.display_name || 'Unknown Student',
-            email: profile?.email || '',
-            avatar: (profile?.display_name || 'U').charAt(0).toUpperCase(),
-            class: classInfo?.name || 'Unknown Class',
-            classId: classInfo?.id || '',
-            stats: {
-              points: 0, // No points system implemented yet
-              streaks: 0, // No streak tracking yet
-              accuracy: 0, // No accuracy tracking yet
-              completion: 0, // No completion tracking yet
-              rank: index + 1
-            },
-            badges: [], // No badge system implemented yet
-            recentAchievements: [] // No achievements yet
-          };
-        }) || [];
-
-        const classesFormatted: Class[] = classesData?.map((cls, index) => {
-          const classStudents = studentsData.filter(s => s.classId === cls.id);
-          return {
-            id: cls.id,
-            name: cls.name,
-            level: '', // Remove level display
-            totalPoints: 0, // No points tracking yet
-            studentCount: classStudents.length,
-            topStudent: classStudents.length > 0 ? classStudents[0].name : 'No students',
-            rank: index + 1
-          };
-        }) || [];
-
-        setStudents(studentsData);
-        setClasses(classesFormatted);
-      } catch (error) {
-        console.error('Error fetching data:', error);
-        setStudents([]);
-        setClasses([]);
-      } finally {
-        setLoading(false);
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        throw new Error(body?.error ?? 'Failed to load leaderboards');
       }
-    };
 
-    fetchData();
-  }, [user, supabaseBrowser]);
+      const payload = (await response.json()) as { leaderboards: TeacherLeaderboardsResponse };
+      setLeaderboards(payload.leaderboards);
+    } catch (err) {
+      console.error('[LeaderboardsPage] Failed to load data', err);
+      setLeaderboards(null);
+      setError(err instanceof Error ? err.message : 'Failed to load leaderboards');
+    } finally {
+      setLoading(false);
+      setIsRefreshing(false);
+    }
+  };
 
-  // Filter students based on selected class and search query
-  const filteredStudents = students.filter(student => {
-    const matchesClass = selectedClass === 'all' || student.classId === selectedClass;
-    const matchesSearch = student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      student.email.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    return matchesClass && matchesSearch;
-  });
+  useEffect(() => {
+    fetchLeaderboards();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, timePeriod]);
 
-  if (loading) {
+  useEffect(() => {
+    if (!leaderboards) return;
+    if (selectedClass !== 'all' && !leaderboards.classes.some(cls => cls.classId === selectedClass)) {
+      setSelectedClass('all');
+    }
+  }, [leaderboards, selectedClass]);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await fetchLeaderboards();
+  };
+
+  const students = leaderboards?.students ?? [];
+  const classes = leaderboards?.classes ?? [];
+  const crossEntries = leaderboards?.crossLeaderboard ?? [];
+  const summary = leaderboards?.summary ?? { ...DEFAULT_SUMMARY, timePeriod };
+
+  const filteredStudents = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    return students.filter(student => {
+      const matchesClass = selectedClass === 'all' || student.classId === selectedClass;
+      const matchesSearch =
+        query.length === 0 ||
+        student.studentName.toLowerCase().includes(query) ||
+        student.email.toLowerCase().includes(query);
+      return matchesClass && matchesSearch;
+    });
+  }, [students, selectedClass, searchQuery]);
+
+  const filteredClasses = useMemo(() => {
+    if (selectedClass === 'all') return classes;
+    return classes.filter(cls => cls.classId === selectedClass);
+  }, [classes, selectedClass]);
+
+  const filteredCrossEntries = useMemo(() => {
+    if (selectedClass === 'all') return crossEntries;
+    return crossEntries.filter(entry => entry.class_id === selectedClass);
+  }, [crossEntries, selectedClass]);
+
+  const summaryForSelection = useMemo(() => {
+    if (selectedClass === 'all') {
+      return summary;
+    }
+
+    const totalXP = filteredStudents.reduce((sum, student) => sum + student.stats.xp, 0);
+    const totalGems = filteredStudents.reduce((sum, student) => sum + student.stats.gems, 0);
+
+    return {
+      totalStudents: filteredStudents.length,
+      totalClasses: filteredClasses.length,
+      totalXP,
+      totalGems,
+      timePeriod: summary.timePeriod,
+      generatedAt: summary.generatedAt
+    } satisfies TeacherLeaderboardsResponse['summary'];
+  }, [filteredClasses.length, filteredStudents, selectedClass, summary]);
+
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center space-y-2">
+          <User className="h-10 w-10 mx-auto text-slate-400" />
+          <p className="text-slate-600 font-medium">Please sign in to view leaderboards.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (loading && !leaderboards) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
@@ -173,104 +183,239 @@ export default function LeaderboardsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50/30 to-purple-50/30 p-6">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl mx-auto space-y-6">
         <DashboardHeader
           title="Leaderboards & Rankings"
           description="Track competition and motivate your students with achievements"
           icon={<Trophy className="h-5 w-5 text-white" />}
         />
 
-        {/* Controls Panel */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-200/60 shadow-lg p-6 mb-8">
-          <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6">
-            {/* Search and Filter */}
-            <div className="flex flex-1 max-w-3xl gap-3 flex-wrap">
-              <div className="relative flex-1 min-w-[250px]">
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl flex items-center justify-between">
+            <div>
+              <p className="font-semibold">We couldn't load the latest rankings.</p>
+              <p className="text-sm text-red-600/80">{error}</p>
+            </div>
+            <button
+              onClick={handleRefresh}
+              className="inline-flex items-center gap-2 px-3 py-2 bg-red-600 text-white rounded-lg shadow-sm hover:bg-red-700 transition-colors"
+            >
+              <RefreshCw className="h-4 w-4 animate-spin-slow" />
+              Retry
+            </button>
+          </div>
+        )}
+
+        <SummaryCards summary={summaryForSelection} isRefreshing={isRefreshing} onRefresh={handleRefresh} />
+
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-200/60 shadow-lg p-6">
+          <div className="flex flex-col lg:flex-row justify-between gap-6">
+            <div className="flex flex-1 flex-wrap gap-3">
+              <div className="relative flex-1 min-w-[240px]">
                 <input
                   type="text"
                   placeholder="Search students..."
-                  className="w-full pl-11 pr-4 py-3 border border-slate-300/60 rounded-xl bg-white/80 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 shadow-sm"
+                  className="w-full pl-11 pr-4 py-3 border border-slate-300/60 rounded-xl bg-white/90 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 shadow-sm"
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={event => setSearchQuery(event.target.value)}
                 />
                 <Search className="absolute left-4 top-3.5 text-slate-400" size={18} />
               </div>
-              
-              <div className="relative">
+
+              <div className="relative min-w-[180px]">
                 <select
-                  className="pl-4 pr-10 py-3 border border-slate-300/60 rounded-xl bg-white/80 appearance-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 shadow-sm font-medium text-slate-700 min-w-[150px]"
+                  className="pl-4 pr-10 py-3 border border-slate-300/60 rounded-xl bg-white/90 appearance-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 shadow-sm font-medium text-slate-700"
                   value={selectedClass}
-                  onChange={(e) => setSelectedClass(e.target.value)}
+                  onChange={event => setSelectedClass(event.target.value)}
                 >
                   <option value="all">All Classes</option>
                   {classes.map(cls => (
-                    <option key={cls.id} value={cls.id}>{cls.name}</option>
+                    <option key={cls.classId} value={cls.classId}>
+                      {cls.className}
+                    </option>
                   ))}
                 </select>
                 <Filter className="absolute right-3 top-3.5 text-slate-400 pointer-events-none" size={16} />
               </div>
+
+              <div className="relative min-w-[180px]">
+                <select
+                  className="pl-4 pr-10 py-3 border border-slate-300/60 rounded-xl bg-white/90 appearance-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 shadow-sm font-medium text-slate-700"
+                  value={timePeriod}
+                  onChange={event => setTimePeriod(event.target.value as LeaderboardTimePeriod)}
+                >
+                  {TIME_PERIOD_OPTIONS.map(option => (
+                    <option key={option.id} value={option.id}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                <Calendar className="absolute right-3 top-3.5 text-slate-400 pointer-events-none" size={16} />
+              </div>
             </div>
-            
-            {/* View Controls */}
+
             <div className="flex items-center gap-3">
               <div className="bg-slate-100/80 rounded-xl p-1 flex">
-                <button
-                  onClick={() => setView('cross-game')}
-                  className={`px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${
-                    view === 'cross-game'
-                      ? 'bg-white text-indigo-600 shadow-sm'
-                      : 'text-slate-600 hover:text-slate-800'
-                  }`}
-                >
-                  <Gamepad2 className="h-4 w-4 mr-2 inline" />
+                <TabButton active={view === 'cross-game'} onClick={() => setView('cross-game')} icon={Gamepad2}>
                   Cross-Game
-                </button>
-                <button
-                  onClick={() => setView('students')}
-                  className={`px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${
-                    view === 'students'
-                      ? 'bg-white text-indigo-600 shadow-sm'
-                      : 'text-slate-600 hover:text-slate-800'
-                  }`}
-                >
-                  <Users className="h-4 w-4 mr-2 inline" />
+                </TabButton>
+                <TabButton active={view === 'students'} onClick={() => setView('students')} icon={Users}>
                   Students
-                </button>
-                <button
-                  onClick={() => setView('classes')}
-                  className={`px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${
-                    view === 'classes'
-                      ? 'bg-white text-indigo-600 shadow-sm'
-                      : 'text-slate-600 hover:text-slate-800'
-                  }`}
-                >
-                  <Trophy className="h-4 w-4 mr-2 inline" />
+                </TabButton>
+                <TabButton active={view === 'classes'} onClick={() => setView('classes')} icon={Trophy}>
                   Classes
-                </button>
+                </TabButton>
               </div>
+
+              <button
+                onClick={handleRefresh}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 text-white shadow-sm hover:bg-indigo-700 transition-colors"
+                disabled={isRefreshing}
+              >
+                <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin-slow' : ''}`} />
+                Refresh
+              </button>
             </div>
           </div>
         </div>
 
-        {/* Content */}
-        {view === 'cross-game' ? (
+        {view === 'cross-game' && (
           <CrossGameLeaderboard
             classId={selectedClass !== 'all' ? selectedClass : undefined}
-            limit={50}
+            entries={leaderboards ? filteredCrossEntries : undefined}
+            autoFetch={false}
+            loadingOverride={loading}
+            timePeriod={timePeriod}
+            onTimePeriodChange={period => setTimePeriod(period)}
+            onRefresh={handleRefresh}
+            limit={filteredCrossEntries.length || 10}
             showFilters={true}
+            compact={false}
           />
-        ) : view === 'students' ? (
-          <StudentLeaderboard students={filteredStudents} />
-        ) : (
-          <ClassLeaderboard classes={classes} />
+        )}
+
+        {view === 'students' && (
+          <StudentLeaderboard students={filteredStudents} loading={loading} />
+        )}
+
+        {view === 'classes' && (
+          <ClassLeaderboard classes={filteredClasses} loading={loading} />
         )}
       </div>
     </div>
   );
 }
 
-// Student Leaderboard Component
-function StudentLeaderboard({ students }: { students: Student[] }) {
+function TabButton({
+  active,
+  onClick,
+  icon: Icon,
+  children
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: LucideIcon;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 inline-flex items-center gap-2 ${
+        active ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-600 hover:text-slate-800'
+      }`}
+    >
+      <Icon className="h-4 w-4" />
+      {children}
+    </button>
+  );
+}
+
+function SummaryCards({
+  summary,
+  isRefreshing,
+  onRefresh
+}: {
+  summary: TeacherLeaderboardsResponse['summary'];
+  isRefreshing: boolean;
+  onRefresh: () => void;
+}) {
+  const formattedTime = new Date(summary.generatedAt).toLocaleString();
+
+  const cards = [
+    {
+      title: 'Active Students',
+      value: summary.totalStudents,
+      icon: Users,
+      trend: '+12% vs last period',
+      accent: 'bg-indigo-100 text-indigo-600'
+    },
+    {
+      title: 'Classes Tracked',
+      value: summary.totalClasses,
+      icon: BarChart3,
+      trend: 'Across selected filters',
+      accent: 'bg-blue-100 text-blue-600'
+    },
+    {
+      title: 'Total XP Earned',
+      value: summary.totalXP,
+      icon: Zap,
+      trend: timePeriodLabel(summary.timePeriod),
+      accent: 'bg-purple-100 text-purple-600'
+    },
+    {
+      title: 'Gems Collected',
+      value: summary.totalGems,
+      icon: Trophy,
+      trend: 'Motivation streaks',
+      accent: 'bg-amber-100 text-amber-600'
+    }
+  ];
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+      {cards.map(card => (
+        <div key={card.title} className="bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-200/60 shadow-lg p-5 flex flex-col gap-4">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-slate-500">{card.title}</span>
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${card.accent}`}>
+              <card.icon className="h-5 w-5" />
+            </div>
+          </div>
+          <div>
+            <p className="text-3xl font-bold text-slate-900">{card.value.toLocaleString()}</p>
+            <p className="text-sm text-slate-500 flex items-center gap-1 mt-1">
+              <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />
+              {card.trend}
+            </p>
+          </div>
+          <div className="flex items-center justify-between text-xs text-slate-400">
+            <span>Last updated {formattedTime}</span>
+            <button
+              onClick={onRefresh}
+              className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
+              disabled={isRefreshing}
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin-slow' : ''}`} />
+              Sync
+            </button>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function StudentLeaderboard({ students, loading }: { students: StudentLeaderboardEntry[]; loading: boolean }) {
+  if (loading) {
+    return (
+      <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-slate-200/60 shadow-lg p-12 text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500 mx-auto"></div>
+        <p className="mt-6 text-slate-600">Loading student rankings...</p>
+      </div>
+    );
+  }
+
   if (students.length === 0) {
     return (
       <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-slate-200/60 shadow-lg p-12 text-center">
@@ -278,11 +423,11 @@ function StudentLeaderboard({ students }: { students: Student[] }) {
           <div className="w-20 h-20 mx-auto bg-gradient-to-br from-indigo-100 to-purple-100 rounded-2xl flex items-center justify-center mb-6 border border-indigo-200/50">
             <Trophy className="h-10 w-10 text-indigo-500" />
           </div>
-          <h3 className="text-xl font-bold text-slate-900 mb-3">No students found</h3>
+          <h3 className="text-xl font-bold text-slate-900 mb-3">No student rankings yet</h3>
           <p className="text-slate-600 mb-8 leading-relaxed">
-            You don't have any students enrolled yet. Add students to your classes to start tracking their progress and create leaderboards.
+            Encourage your students to play learning games. Their progress, achievements and streaks will appear here in real time.
           </p>
-          <Link 
+          <Link
             href="/dashboard/classes"
             className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl inline-flex items-center space-x-2"
           >
@@ -294,229 +439,260 @@ function StudentLeaderboard({ students }: { students: Student[] }) {
     );
   }
 
+  const topThree = students.slice(0, 3);
+
   return (
     <div className="space-y-6">
-      {/* Top 3 Students */}
-      {students.length >= 3 && (
-        <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-slate-200/60 shadow-lg p-8 mb-8">
+      {topThree.length >= 3 && (
+        <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-slate-200/60 shadow-lg p-8">
           <h3 className="text-xl font-bold text-slate-900 mb-6 text-center">🏆 Top Performers</h3>
           <div className="flex justify-center items-end gap-6">
-            {/* Second Place */}
-            {students[1] && (
-              <div className="text-center">
-                <div className="w-16 h-16 bg-gradient-to-br from-slate-400 to-slate-500 rounded-2xl flex items-center justify-center text-white font-bold text-xl mb-3 mx-auto">
-                  {students[1].avatar}
-                </div>
-                <div className="bg-slate-100 px-4 py-3 rounded-xl">
-                  <div className="font-bold text-slate-900">{students[1].name}</div>
-                  <div className="text-sm text-slate-600">{students[1].stats.points} pts</div>
-                  <div className="w-8 h-8 bg-slate-400 rounded-full flex items-center justify-center text-white font-bold text-lg mx-auto mt-2">
-                    2
-                  </div>
-                </div>
-              </div>
-            )}
-            
-            {/* First Place */}
-            {students[0] && (
-              <div className="text-center transform -translate-y-4">
-                <div className="w-20 h-20 bg-gradient-to-br from-yellow-400 to-yellow-500 rounded-2xl flex items-center justify-center text-white font-bold text-2xl mb-3 mx-auto border-4 border-yellow-300">
-                  {students[0].avatar}
-                </div>
-                <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 px-6 py-4 rounded-xl border border-yellow-200">
-                  <div className="font-bold text-slate-900 text-lg">{students[0].name}</div>
-                  <div className="text-sm text-yellow-700 font-semibold">{students[0].stats.points} pts</div>
-                  <div className="w-10 h-10 bg-gradient-to-br from-yellow-400 to-yellow-500 rounded-full flex items-center justify-center text-white font-bold text-xl mx-auto mt-3">
-                    <Crown className="h-5 w-5" />
-                  </div>
-                </div>
-              </div>
-            )}
-            
-            {/* Third Place */}
-            {students[2] && (
-              <div className="text-center">
-                <div className="w-16 h-16 bg-gradient-to-br from-amber-600 to-amber-700 rounded-2xl flex items-center justify-center text-white font-bold text-xl mb-3 mx-auto">
-                  {students[2].avatar}
-                </div>
-                <div className="bg-amber-50 px-4 py-3 rounded-xl border border-amber-200">
-                  <div className="font-bold text-slate-900">{students[2].name}</div>
-                  <div className="text-sm text-amber-700">{students[2].stats.points} pts</div>
-                  <div className="w-8 h-8 bg-amber-600 rounded-full flex items-center justify-center text-white font-bold text-lg mx-auto mt-2">
-                    3
-                  </div>
-                </div>
-              </div>
-            )}
+            {topThree[1] && <PodiumCard student={topThree[1]} position={2} />}
+            {topThree[0] && <PodiumCard student={topThree[0]} position={1} />}
+            {topThree[2] && <PodiumCard student={topThree[2]} position={3} />}
           </div>
         </div>
       )}
 
-      {/* Full Leaderboard */}
       <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-slate-200/60 shadow-lg overflow-hidden">
-        <div className="p-6 border-b border-slate-200/60">
-          <h3 className="text-lg font-bold text-slate-900">Student Rankings</h3>
-          <p className="text-slate-600 text-sm mt-1">{students.length} student{students.length !== 1 ? 's' : ''} enrolled</p>
+        <div className="p-6 border-b border-slate-200/60 flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-bold text-slate-900">Student Rankings</h3>
+            <p className="text-slate-600 text-sm mt-1">{students.length} students</p>
+          </div>
         </div>
 
-        <div className="space-y-1">
-          {students.map((student, index) => {
-            const isTopThree = index < 3;
-            const rankColor = index === 0 ? 'from-yellow-500 to-yellow-600' :
-                            index === 1 ? 'from-slate-400 to-slate-500' :
-                            index === 2 ? 'from-amber-600 to-amber-700' :
-                            'from-slate-300 to-slate-400';
-            
-            return (
-              <div 
-                key={student.id} 
-                className={`flex items-center justify-between p-6 transition-all duration-200 ${
-                  isTopThree 
-                    ? 'bg-gradient-to-r from-indigo-50/50 to-purple-50/50 hover:from-indigo-50 hover:to-purple-50' 
-                    : 'hover:bg-slate-50/50'
-                }`}
-              >
-                <div className="flex items-center space-x-4">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold ${
-                    isTopThree ? `bg-gradient-to-br ${rankColor}` : 'bg-slate-300'
+        <div className="divide-y divide-slate-100">
+          {students.map(student => (
+            <div key={student.studentId} className="p-5 hover:bg-slate-50/60 transition-colors">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+                <div className="flex items-center gap-4">
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold text-lg ${
+                    student.rank === 1
+                      ? 'bg-gradient-to-br from-yellow-400 to-yellow-500'
+                      : student.rank === 2
+                      ? 'bg-gradient-to-br from-slate-400 to-slate-500'
+                      : student.rank === 3
+                      ? 'bg-gradient-to-br from-amber-600 to-amber-700'
+                      : 'bg-slate-300'
                   }`}>
-                    {index < 3 && index === 0 ? <Crown className="h-5 w-5" /> : index + 1}
+                    {student.rank <= 3 ? <MedalIcon rank={student.rank} /> : `#${student.rank}`}
                   </div>
-                  
-                  <div className="flex items-center space-x-4">
+
+                  <div className="flex items-center gap-4">
                     <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center text-white font-bold text-lg">
-                      {student.avatar}
+                      {student.avatarInitials}
                     </div>
                     <div>
-                      <div className="font-semibold text-slate-900">{student.name}</div>
-                      <div className="text-sm text-slate-600">{student.class}</div>
+                      <div className="font-semibold text-slate-900">{student.studentName}</div>
+                      <div className="text-sm text-slate-500">{student.className}</div>
                     </div>
                   </div>
                 </div>
-                
-                <div className="flex items-center space-x-8 text-sm">
-                  <div className="text-center">
-                    <div className="font-bold text-slate-900 text-lg">{student.stats.points}</div>
-                    <div className="text-slate-500">Points</div>
+
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-sm flex-1">
+                  <StatBlock label="Points" value={student.stats.points.toLocaleString()} icon={Trophy} accent="text-indigo-600" />
+                  <StatBlock label="XP" value={student.stats.xp.toLocaleString()} icon={Zap} accent="text-purple-600" />
+                  <StatBlock label="Gems" value={student.stats.gems.toLocaleString()} icon={Star} accent="text-amber-600" />
+                  <StatBlock label="Accuracy" value={`${student.stats.accuracy.toFixed(1)}%`} icon={Target} accent="text-emerald-600" />
+                  <StatBlock label="Completion" value={`${student.stats.completion.toFixed(1)}%`} icon={BarChart3} accent="text-blue-600" />
+                  <StatBlock label="Games" value={student.stats.gamesPlayed} icon={Gamepad2} accent="text-slate-600" />
+                  <StatBlock label="Streak" value={`${student.stats.streak} days`} icon={Flame} accent="text-orange-500" />
+                  <StatBlock label="Longest Streak" value={`${student.stats.longestStreak} days`} icon={TrendingUp} accent="text-pink-500" />
+                </div>
+
+                <div className="flex flex-col gap-3 min-w-[220px]">
+                  <div>
+                    <p className="text-xs uppercase text-slate-400 mb-1">Recent Achievements</p>
+                    {student.achievements.recent.length === 0 ? (
+                      <p className="text-sm text-slate-500">No achievements yet</p>
+                    ) : (
+                      <div className="space-y-1">
+                        {student.achievements.recent.map(achievement => (
+                          <div key={`${achievement.title}-${achievement.earnedAt}`} className="flex items-center justify-between text-sm bg-slate-100/70 px-3 py-1.5 rounded-lg">
+                            <span className="font-medium text-slate-700">{achievement.title}</span>
+                            <span className="text-xs text-slate-500">{new Date(achievement.earnedAt).toLocaleDateString()}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                  <div className="text-center">
-                    <div className="font-bold text-slate-900">{student.stats.completion}%</div>
-                    <div className="text-slate-500">Complete</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="font-bold text-slate-900">{student.stats.streaks}</div>
-                    <div className="text-slate-500">Streak</div>
-                  </div>
+                  <div className="text-xs text-slate-400">Last active: {formatRelativeTime(student.lastActivity)}</div>
                 </div>
               </div>
-            );
-          })}
-        </div>
-        
-        <div className="p-6 bg-indigo-50/50 border-t border-slate-200/60">
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center">
-              <Star className="h-4 w-4 text-white" />
             </div>
-            <div>
-              <h4 className="font-semibold text-indigo-900">Leaderboard Feature Coming Soon!</h4>
-              <p className="text-sm text-indigo-700">
-                Points, streaks, and achievements will be automatically calculated once students start completing assignments.
-              </p>
-            </div>
-          </div>
+          ))}
         </div>
       </div>
     </div>
   );
 }
 
-// Class Leaderboard Component
-function ClassLeaderboard({ classes }: { classes: Class[] }) {
+function ClassLeaderboard({ classes, loading }: { classes: ClassLeaderboardEntry[]; loading: boolean }) {
+  if (loading) {
+    return (
+      <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-slate-200/60 shadow-lg p-12 text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500 mx-auto"></div>
+        <p className="mt-6 text-slate-600">Loading class standings...</p>
+      </div>
+    );
+  }
+
   if (classes.length === 0) {
     return (
       <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-slate-200/60 shadow-lg p-12 text-center">
-        <div className="max-w-md mx-auto">
-          <div className="w-20 h-20 mx-auto bg-gradient-to-br from-indigo-100 to-purple-100 rounded-2xl flex items-center justify-center mb-6 border border-indigo-200/50">
-            <Users className="h-10 w-10 text-indigo-500" />
-          </div>
-          <h3 className="text-xl font-bold text-slate-900 mb-3">No classes yet</h3>
-          <p className="text-slate-600 mb-8 leading-relaxed">
-            Create your first class to start tracking class-wide progress and rankings.
-          </p>
-          <Link 
-            href="/dashboard/classes"
-            className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl inline-flex items-center space-x-2"
-          >
-            <Users className="h-4 w-4" />
-            <span>Create Class</span>
-          </Link>
+        <div className="w-20 h-20 mx-auto bg-gradient-to-br from-slate-100 to-slate-200 rounded-2xl flex items-center justify-center mb-6 border border-slate-200">
+          <Users className="h-10 w-10 text-slate-500" />
         </div>
+        <h3 className="text-xl font-bold text-slate-900 mb-3">No classes selected</h3>
+        <p className="text-slate-600 mb-4">Choose a class from the filters to inspect its performance.</p>
+        <Link
+          href="/dashboard/classes"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-lg shadow-sm hover:bg-slate-700 transition-colors"
+        >
+          <ChevronRight className="h-4 w-4" />
+          Manage Classes
+        </Link>
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-      {classes.map((cls, index) => {
-        const isTopThree = index < 3;
-        const rankColor = index === 0 ? 'from-yellow-500 to-yellow-600' :
-                        index === 1 ? 'from-slate-400 to-slate-500' :
-                        index === 2 ? 'from-amber-600 to-amber-700' :
-                        'from-indigo-500 to-purple-600';
-        
-        return (
-          <div 
-            key={cls.id} 
-            className="bg-white/90 backdrop-blur-sm rounded-2xl border border-slate-200/60 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group"
-          >
-            <div className={`bg-gradient-to-br ${rankColor} p-6 text-white relative`}>
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-xl font-bold">{cls.name}</h3>
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg ${
-                  isTopThree ? 'bg-white/20 backdrop-blur-sm' : 'bg-white/10'
+    <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-slate-200/60 shadow-lg">
+      <div className="p-6 border-b border-slate-200/60">
+        <h3 className="text-lg font-bold text-slate-900">Class Leaderboard</h3>
+        <p className="text-slate-600 text-sm mt-1">Sorted by total points earned</p>
+      </div>
+      <div className="divide-y divide-slate-100">
+        {classes.map(cls => (
+          <div key={cls.classId} className="p-6 hover:bg-slate-50/60 transition-colors">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+              <div className="flex items-center gap-4">
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold text-lg ${
+                  cls.rank === 1
+                    ? 'bg-gradient-to-br from-indigo-500 to-indigo-600'
+                    : cls.rank === 2
+                    ? 'bg-gradient-to-br from-blue-500 to-blue-600'
+                    : cls.rank === 3
+                    ? 'bg-gradient-to-br from-violet-500 to-violet-600'
+                    : 'bg-slate-300'
                 }`}>
-                  {index === 0 ? <Crown className="h-5 w-5" /> : index + 1}
+                  {cls.rank <= 3 ? <MedalIcon rank={cls.rank} /> : `#${cls.rank}`}
+                </div>
+                <div>
+                  <h4 className="text-lg font-semibold text-slate-900">{cls.className}</h4>
+                  <p className="text-sm text-slate-500">{cls.studentCount} students</p>
                 </div>
               </div>
 
-              
-              {isTopThree && (
-                <div className="absolute top-4 right-4 opacity-20">
-                  <Trophy className="h-12 w-12" />
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 flex-1">
+                <StatBlock label="Total Points" value={cls.totalPoints.toLocaleString()} icon={Trophy} accent="text-indigo-600" />
+                <StatBlock label="Gems" value={cls.totalGems.toLocaleString()} icon={Star} accent="text-amber-600" />
+                <StatBlock label="Avg Accuracy" value={`${cls.averageAccuracy.toFixed(1)}%`} icon={Target} accent="text-emerald-600" />
+                <StatBlock label="Avg Completion" value={`${cls.averageCompletion.toFixed(1)}%`} icon={BarChart3} accent="text-blue-600" />
+              </div>
+
+              {cls.topStudent && (
+                <div className="min-w-[220px] bg-slate-100/70 rounded-xl p-4">
+                  <p className="text-xs uppercase text-slate-400 mb-1">Top Student</p>
+                  <p className="text-sm font-semibold text-slate-800">{cls.topStudent.studentName}</p>
+                  <p className="text-xs text-slate-500">{cls.topStudent.points.toLocaleString()} pts</p>
                 </div>
               )}
             </div>
-            
-            <div className="p-6">
-              <div className="grid grid-cols-2 gap-4 mb-6">
-                <div className="text-center p-3 bg-slate-50 rounded-xl">
-                  <div className="text-2xl font-bold text-slate-900">{cls.totalPoints}</div>
-                  <div className="text-sm text-slate-600">Total Points</div>
-                </div>
-                <div className="text-center p-3 bg-slate-50 rounded-xl">
-                  <div className="text-2xl font-bold text-slate-900">{cls.studentCount}</div>
-                  <div className="text-sm text-slate-600">Students</div>
-                </div>
-              </div>
-              
-              <div className="mb-4">
-                <div className="flex justify-between text-sm mb-2">
-                  <span className="text-slate-600 font-medium">Top Student</span>
-                  <span className="font-semibold text-slate-900">{cls.topStudent}</span>
-                </div>
-              </div>
-              
-              <button 
-                className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-4 py-3 rounded-xl font-semibold transition-all duration-200 flex items-center justify-center space-x-2 group-hover:shadow-lg"
-              >
-                <span>View Details</span>
-                <ChevronRight size={16} className="group-hover:translate-x-1 transition-transform" />
-              </button>
-            </div>
           </div>
-        );
-      })}
+        ))}
+      </div>
     </div>
   );
-} 
+}
+
+function PodiumCard({ student, position }: { student: StudentLeaderboardEntry; position: 1 | 2 | 3 }) {
+  const podiumStyles = {
+    1: {
+      container: 'bg-gradient-to-br from-yellow-50 to-yellow-100 border-yellow-200',
+      badge: 'bg-gradient-to-br from-yellow-400 to-yellow-500',
+      size: 'w-20 h-20 text-2xl'
+    },
+    2: {
+      container: 'bg-slate-100 border-slate-200',
+      badge: 'bg-gradient-to-br from-slate-400 to-slate-500',
+      size: 'w-16 h-16 text-xl'
+    },
+    3: {
+      container: 'bg-amber-50 border-amber-200',
+      badge: 'bg-gradient-to-br from-amber-600 to-amber-700',
+      size: 'w-16 h-16 text-xl'
+    }
+  } as const;
+
+  const style = podiumStyles[position];
+
+  return (
+    <div className={`text-center transform ${position === 1 ? '-translate-y-4' : ''}`}>
+      <div className={`${style.size} mx-auto rounded-2xl flex items-center justify-center text-white font-bold mb-3 ${style.badge}`}>
+        {student.avatarInitials}
+      </div>
+      <div className={`px-6 py-4 rounded-xl border ${style.container}`}>
+        <div className="font-bold text-slate-900">{student.studentName}</div>
+        <div className="text-sm text-slate-600">{student.className}</div>
+        <div className="mt-3 flex items-center justify-center gap-2 text-sm font-semibold text-slate-800">
+          <Trophy className="h-4 w-4 text-amber-500" />
+          {student.stats.points.toLocaleString()} pts
+        </div>
+        <div className="mt-3 inline-flex items-center gap-1 px-3 py-1 rounded-full bg-slate-900 text-white text-xs">
+          {position === 1 ? <Crown className="h-5 w-5" /> : <MedalIcon rank={position} />}
+          {position === 1 ? 'Champion' : `Rank ${position}`}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function StatBlock({
+  label,
+  value,
+  icon: Icon,
+  accent
+}: {
+  label: string;
+  value: string | number;
+  icon: LucideIcon;
+  accent: string;
+}) {
+  return (
+    <div className="bg-slate-100/60 rounded-xl px-4 py-3 flex items-center gap-3">
+      <div className={`p-2 rounded-lg bg-white shadow-sm ${accent}`}>
+        <Icon className="h-4 w-4" />
+      </div>
+      <div>
+        <p className="text-xs uppercase text-slate-400">{label}</p>
+        <p className="text-sm font-semibold text-slate-800">{value}</p>
+      </div>
+    </div>
+  );
+}
+
+function MedalIcon({ rank }: { rank: number }) {
+  if (rank === 1) return <Crown className="h-5 w-5" />;
+  if (rank === 2) return <Medal className="h-5 w-5" />;
+  if (rank === 3) return <Award className="h-5 w-5" />;
+  return <span className="font-bold">#{rank}</span>;
+}
+
+function timePeriodLabel(period: LeaderboardTimePeriod) {
+  const option = TIME_PERIOD_OPTIONS.find(opt => opt.id === period);
+  return option ? option.label : 'This Week';
+}
+
+function formatRelativeTime(date: string | null) {
+  if (!date) return 'No activity yet';
+  const diff = Date.now() - new Date(date).getTime();
+  const minutes = Math.floor(diff / (1000 * 60));
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d ago`;
+  return new Date(date).toLocaleDateString();
+}

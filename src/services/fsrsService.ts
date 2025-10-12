@@ -3,6 +3,7 @@
 // Optimized for 11-16 year old students with invisible complexity
 
 import { SupabaseClient } from '@supabase/supabase-js';
+import { parseVocabularyIdentifier } from '@/utils/vocabulary-id';
 import { validateStudentId, validateVocabularyId, isValidUUID } from '../utils/uuidUtils';
 
 // ============================================================================
@@ -516,15 +517,14 @@ export class FSRSService {
 
       // Use atomic function to prevent race conditions
       // CRITICAL: This prevents the negative values bug
-      let vocabularyItemId = null;
-      let centralizedVocabularyId = null;
+      const identifiers = parseVocabularyIdentifier(card.vocabularyId as any);
 
-      if (typeof card.vocabularyId === 'string' && card.vocabularyId.includes('-')) {
-        // UUID format - use centralized_vocabulary_id
-        centralizedVocabularyId = card.vocabularyId;
-      } else {
-        // Integer format - use legacy vocabulary_item_id
-        vocabularyItemId = card.vocabularyId;
+      if (!identifiers.isValid) {
+        console.warn('🚨 [FSRS SAVE] Invalid vocabulary identifier detected:', {
+          studentId: card.studentId,
+          vocabularyId: card.vocabularyId
+        });
+        return;
       }
 
       // ✅ FIX: Use the original correct parameter, don't derive from card state
@@ -532,18 +532,17 @@ export class FSRSService {
 
       console.log('🔍 [FSRS SAVE] Using atomic function:', {
         studentId: card.studentId,
-        vocabularyItemId,
-        centralizedVocabularyId,
+        vocabularyItemId: identifiers.vocabularyItemId,
+        centralizedVocabularyId: identifiers.centralizedVocabularyId,
         wasCorrect,
         reviewCount: card.reviewCount,
         lapseCount: card.lapseCount
       });
 
-      // Use atomic database function to prevent race conditions
-      const { data, error } = await this.supabase.rpc('update_vocabulary_gem_collection_atomic', {
+      const { error } = await this.supabase.rpc('update_vocabulary_gem_collection', {
         p_student_id: card.studentId,
-        p_vocabulary_item_id: vocabularyItemId,
-        p_centralized_vocabulary_id: centralizedVocabularyId,
+        p_vocabulary_item_id: identifiers.vocabularyItemId,
+        p_centralized_vocabulary_id: identifiers.centralizedVocabularyId,
         p_was_correct: wasCorrect
       });
 
@@ -552,36 +551,55 @@ export class FSRSService {
         throw error;
       }
 
-      // Now update FSRS-specific fields in a separate operation
-      // The atomic function returns a single object, not an array
-      if (data) {
-        const recordId = data.id;
-        
-        const fsrsData = {
-          algorithm_version: 'fsrs',
-          fsrs_difficulty: card.difficulty,
-          fsrs_stability: card.stability,
-          fsrs_retrievability: card.retrievability,
-          fsrs_last_review: card.lastReview.toISOString(),
-          fsrs_review_count: card.reviewCount,
-          fsrs_lapse_count: card.lapseCount,
-          fsrs_state: card.state,
-          next_review_at: nextReviewDate.toISOString(),
-          spaced_repetition_interval: Math.max(1, Math.min(365, Math.round(card.stability))),
-          spaced_repetition_ease_factor: Math.max(1.3, Math.min(3.0, 4.0 - (card.difficulty / 10) * 2.7)),
-          mastery_level: this.calculateMasteryLevel(card),
-          updated_at: new Date().toISOString()
-        };
+      const { data: record, error: fetchError } = await this.supabase
+        .from('vocabulary_gem_collection')
+        .select('id')
+        .eq('student_id', card.studentId)
+        .eq(
+          identifiers.centralizedVocabularyId ? 'centralized_vocabulary_id' : 'vocabulary_item_id',
+          identifiers.centralizedVocabularyId ?? identifiers.vocabularyItemId
+        )
+        .maybeSingle();
 
-        const { error: fsrsError } = await this.supabase
-          .from('vocabulary_gem_collection')
-          .update(fsrsData)
-          .eq('id', recordId);
+      if (fetchError) {
+        console.error('FSRS saveCard fetch error:', fetchError);
+        return;
+      }
 
-        if (fsrsError) {
-          console.error('FSRS saveCard FSRS data update error:', fsrsError);
-          // Don't throw here - the base data was saved successfully
-        }
+      const recordId = record?.id;
+
+      if (!recordId) {
+        console.warn('FSRS saveCard could not locate record after update:', {
+          studentId: card.studentId,
+          vocabularyId: card.vocabularyId
+        });
+        return;
+      }
+
+      const fsrsData = {
+        algorithm_version: 'fsrs',
+        fsrs_difficulty: card.difficulty,
+        fsrs_stability: card.stability,
+        fsrs_retrievability: card.retrievability,
+        fsrs_last_review: card.lastReview.toISOString(),
+        fsrs_review_count: card.reviewCount,
+        fsrs_lapse_count: card.lapseCount,
+        fsrs_state: card.state,
+        next_review_at: nextReviewDate.toISOString(),
+        spaced_repetition_interval: Math.max(1, Math.min(365, Math.round(card.stability))),
+        spaced_repetition_ease_factor: Math.max(1.3, Math.min(3.0, 4.0 - (card.difficulty / 10) * 2.7)),
+        mastery_level: this.calculateMasteryLevel(card),
+        updated_at: new Date().toISOString()
+      };
+
+      const { error: fsrsError } = await this.supabase
+        .from('vocabulary_gem_collection')
+        .update(fsrsData)
+        .eq('id', recordId);
+
+      if (fsrsError) {
+        console.error('FSRS saveCard FSRS data update error:', fsrsError);
+        // Don't throw here - the base data was saved successfully
       }
 
       console.log('✅ FSRS card saved successfully using atomic function:', {

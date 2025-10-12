@@ -227,16 +227,16 @@ export default function HangmanGameWrapper(props: HangmanGameWrapperProps) {
     setVocabularyPool(organizedVocabulary);
   }, [vocabulary, props.settings.language, props.settings.category, hasAssignmentVocabulary]);
 
-  // Start game session when vocabulary is loaded (only for free play mode)
+  // Start game session when vocabulary is loaded (only for free play mode - assignment mode gets session from wrapper)
   useEffect(() => {
     if (gameService && props.userId && Object.keys(vocabularyPool).length > 0 && !gameSessionId && !props.isAssignmentMode) {
       startGameSession();
     }
   }, [gameService, props.userId, vocabularyPool, gameSessionId, props.isAssignmentMode]);
 
-  // End the session when the user leaves the game (only for free play mode)
+  // End the session when the user leaves the game (works for both free play AND assignment mode)
   const endGameSession = async () => {
-    if (gameService && gameSessionId && props.userId && sessionStartTime && !props.isAssignmentMode) {
+    if (gameService && effectiveGameSessionId && props.userId && sessionStartTime) {
       try {
         const sessionDuration = Math.floor((Date.now() - sessionStartTime.getTime()) / 1000);
         const accuracy = sessionStats.totalWordsAttempted > 0 ?

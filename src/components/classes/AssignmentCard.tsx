@@ -1,9 +1,9 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Card, CardContent } from "../ui/card";
-import { Book, Calendar, Users, Edit, Trash2, BarChart3, FileText, CheckCircle, Clock, Gamepad2 } from 'lucide-react';
+import { Book, Calendar, Users, Edit, Trash2, BarChart3, FileText, CheckCircle, Clock, Gamepad2, AlertTriangle, TrendingUp } from 'lucide-react';
 
 type AssignmentProps = {
   assignment: {
@@ -18,6 +18,7 @@ type AssignmentProps = {
     status?: string;
     completed_by?: number;
     totalStudents?: number;
+    class_id?: string;
     classes?: {
       name: string;
     };
@@ -25,16 +26,59 @@ type AssignmentProps = {
   onDelete?: (id: string) => void;
 };
 
+interface AssignmentMetrics {
+  completionRate: number;
+  classSuccessScore: number;
+  studentsNeedingHelp: number;
+}
+
 export function AssignmentCard({ assignment, onDelete }: AssignmentProps) {
+  const [metrics, setMetrics] = useState<AssignmentMetrics | null>(null);
+  const [loadingMetrics, setLoadingMetrics] = useState(true);
+
+  useEffect(() => {
+    fetchMetrics();
+  }, [assignment.id]);
+
+  const fetchMetrics = async () => {
+    try {
+      const response = await fetch(`/api/dashboard/assignment-analytics/${assignment.id}`, {
+        cache: 'no-store'
+      });
+
+      if (!response.ok) {
+        const errorBody = await response.json().catch(() => ({}));
+        throw new Error(errorBody.error || `Failed to load analytics (status ${response.status})`);
+      }
+
+      const data = await response.json();
+      const overview = data?.overview;
+
+      if (!overview) {
+        throw new Error('Analytics response missing overview data');
+      }
+
+      setMetrics({
+        completionRate: overview.completionRate ?? 0,
+        classSuccessScore: overview.classSuccessScore ?? 0,
+        studentsNeedingHelp: overview.studentsNeedingHelp ?? 0
+      });
+    } catch (error) {
+      console.error('Error fetching assignment metrics:', error);
+    } finally {
+      setLoadingMetrics(false);
+    }
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString(undefined, { 
-      year: 'numeric', 
-      month: 'short', 
-      day: 'numeric' 
+    return date.toLocaleDateString(undefined, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
     });
   };
-  
+
   const isOverdue = () => {
     if (!assignment.due_date) return false;
     const now = new Date();
@@ -57,9 +101,9 @@ export function AssignmentCard({ assignment, onDelete }: AssignmentProps) {
 
   // Use title or name, prefer title for assignments page
   const assignmentTitle = assignment.title || assignment.name || 'Untitled Assignment';
-  const completionRate = assignment.totalStudents && assignment.totalStudents > 0 
-    ? Math.round((assignment.completed_by || 0) / assignment.totalStudents * 100) 
-    : 0;
+  const completionRate = metrics?.completionRate ?? (assignment.totalStudents && assignment.totalStudents > 0
+    ? Math.round((assignment.completed_by || 0) / assignment.totalStudents * 100)
+    : 0);
   
   return (
     <Card className="group relative bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-200/60 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 overflow-hidden">
@@ -172,8 +216,41 @@ export function AssignmentCard({ assignment, onDelete }: AssignmentProps) {
           )}
         </div>
 
-        {/* Progress Section */}
-        {assignment.totalStudents !== undefined && (
+        {/* Metrics Section - NEW! */}
+        {!loadingMetrics && metrics && (
+          <div className="space-y-3 bg-gradient-to-br from-indigo-50/50 to-purple-50/50 rounded-lg p-4 border border-indigo-100">
+            <div className="grid grid-cols-3 gap-3 text-center">
+              <div>
+                <div className="text-xs text-slate-600 mb-1">Completion</div>
+                <div className="text-lg font-bold text-indigo-600">{metrics.completionRate}%</div>
+              </div>
+              <div>
+                <div className="text-xs text-slate-600 mb-1">Success Score</div>
+                <div className={`text-lg font-bold ${
+                  metrics.classSuccessScore >= 75 ? 'text-green-600' :
+                  metrics.classSuccessScore >= 60 ? 'text-yellow-600' :
+                  'text-red-600'
+                }`}>
+                  {metrics.classSuccessScore}%
+                </div>
+              </div>
+              <div>
+                <div className="text-xs text-slate-600 mb-1">Need Help</div>
+                <div className={`text-lg font-bold ${
+                  metrics.studentsNeedingHelp > 0 ? 'text-red-600' : 'text-green-600'
+                }`}>
+                  {metrics.studentsNeedingHelp}
+                  {metrics.studentsNeedingHelp > 0 && (
+                    <AlertTriangle className="inline h-4 w-4 ml-1" />
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Progress Section - Fallback */}
+        {(loadingMetrics || !metrics) && assignment.totalStudents !== undefined && (
           <div className="space-y-3">
             <div className="flex items-center justify-between text-sm">
               <div className="flex items-center text-slate-600">
@@ -182,25 +259,32 @@ export function AssignmentCard({ assignment, onDelete }: AssignmentProps) {
               </div>
               <span className="font-semibold text-slate-900">{completionRate}%</span>
             </div>
-            
+
             <div className="w-full bg-slate-200/60 rounded-full h-2.5 overflow-hidden">
-              <div 
+              <div
                 className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all duration-500 ease-out"
                 style={{ width: `${completionRate}%` }}
               ></div>
             </div>
-            
+
             <div className="text-xs text-slate-500 text-center">
               {assignment.completed_by || 0} of {assignment.totalStudents} students completed
             </div>
           </div>
         )}
 
-        {/* Action Button */}
-        <div className="mt-6 pt-4 border-t border-slate-200/60">
+        {/* Action Buttons */}
+        <div className="mt-6 pt-4 border-t border-slate-200/60 space-y-2">
+          <Link
+            href={`/dashboard/progress/assignment/${assignment.id}`}
+            className="block w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-200 text-center shadow-md hover:shadow-lg group-hover:scale-105 flex items-center justify-center"
+          >
+            <BarChart3 className="h-5 w-5 mr-2" />
+            View Analytics
+          </Link>
           <Link
             href={`/dashboard/assignments/${assignment.id}`}
-            className="block w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-200 text-center shadow-md hover:shadow-lg group-hover:scale-105"
+            className="block w-full bg-white hover:bg-slate-50 text-slate-700 font-medium py-2 px-4 rounded-xl transition-all duration-200 text-center border border-slate-200 hover:border-slate-300"
           >
             View Details
           </Link>
@@ -208,4 +292,4 @@ export function AssignmentCard({ assignment, onDelete }: AssignmentProps) {
       </CardContent>
     </Card>
   );
-} 
+}

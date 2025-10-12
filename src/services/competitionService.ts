@@ -11,15 +11,17 @@ export interface CrossGameLeaderboard {
   // Cross-game statistics
   total_points: number;
   total_xp: number;
+  total_gems?: number;
   current_level: number;
   games_played: number;
   average_accuracy: number;
+  average_completion?: number;
   total_time_played: number;
   
   // Streaks and consistency
   current_streak: number;
   longest_streak: number;
-  last_activity: string;
+  last_activity: string | null;
   
   // Achievements
   total_achievements: number;
@@ -38,8 +40,9 @@ export interface CrossGameLeaderboard {
     best_score: number;
     best_accuracy: number;
     games_played: number;
-    last_played: string;
+    last_played: string | null;
   }>;
+  words_learned?: number;
 }
 
 export interface Competition {
@@ -445,6 +448,8 @@ export class CompetitionService {
       }
       if (!profile) return null;
 
+      const profileRecord = profile as any;
+
       // Get recent achievements (achievements table still exists)
       const { data: achievements } = await this.supabase
         .from('achievements')
@@ -453,40 +458,47 @@ export class CompetitionService {
         .order('created_at', { ascending: false })
         .limit(5);
 
+      const recentAchievements = (achievements || []).map(achievement => ({
+        id: achievement.id ?? `generated-${Math.random().toString(36).slice(2)}`,
+        title: achievement.achievement_key ?? 'Achievement Unlocked',
+        icon_name: achievement.game_type ?? 'trophy',
+        earned_at: achievement.created_at ?? new Date().toISOString()
+      }));
+
       return {
-        id: profile.id,
-        student_id: profile.student_id,
-        display_name: profile.display_name ||
-          profile.user_profiles?.display_name ||
+        id: profileRecord.id ?? profileRecord.user_id ?? studentId,
+        student_id: profileRecord.student_id ?? studentId,
+        display_name: profileRecord.display_name ||
+          profileRecord.user_profiles?.display_name ||
           'Unknown Student',
-        avatar_url: profile.avatar_url,
-        title: profile.title,
+        avatar_url: profileRecord.avatar_url ?? null,
+        title: profileRecord.title ?? null,
         
         // Experience and levels
-        total_xp: profile.total_xp,
-        current_level: profile.current_level,
-        xp_to_next_level: profile.xp_to_next_level,
+        total_xp: profileRecord.total_xp ?? 0,
+        current_level: profileRecord.current_level ?? 1,
+        xp_to_next_level: profileRecord.xp_to_next_level ?? 0,
         
         // Statistics
-        total_games_played: profile.total_games_played,
-        total_time_played: profile.total_time_played,
-        words_learned: profile.words_learned,
-        accuracy_average: profile.accuracy_average,
+        total_games_played: profileRecord.total_games_played ?? 0,
+        total_time_played: profileRecord.total_time_played ?? 0,
+        words_learned: profileRecord.words_learned ?? 0,
+        accuracy_average: profileRecord.accuracy_average ?? 0,
         
         // Streaks
-        current_streak: profile.current_streak,
-        longest_streak: profile.longest_streak,
-        last_activity_date: profile.last_activity_date,
+        current_streak: profileRecord.current_streak ?? 0,
+        longest_streak: profileRecord.longest_streak ?? 0,
+        last_activity_date: profileRecord.last_activity_date ?? null,
         
         // Social
-        friends_count: profile.friends_count,
-        challenges_won: profile.challenges_won,
-        challenges_lost: profile.challenges_lost,
+        friends_count: profileRecord.friends_count ?? 0,
+        challenges_won: profileRecord.challenges_won ?? 0,
+        challenges_lost: profileRecord.challenges_lost ?? 0,
         
         // Achievements
-        total_achievements: profile.total_achievements,
-        badge_showcase: profile.badge_showcase || [],
-        recent_achievements: achievements || []
+        total_achievements: profileRecord.total_achievements ?? 0,
+        badge_showcase: profileRecord.badge_showcase || [],
+        recent_achievements: recentAchievements
       };
     } catch (error) {
       console.error('Error fetching student profile:', error);
