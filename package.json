@@ -44,8 +44,7 @@
     "test:production:full": "node scripts/production-readiness-test.js --mode=full",
     "benchmark": "node scripts/performance-benchmark.js",
     "benchmark:load": "node scripts/performance-benchmark.js --concurrent=50 --duration=120",
-    "import-grammar-content": "tsx src/scripts/import-grammar-content.ts"
-,
+    "import-grammar-content": "tsx src/scripts/import-grammar-content.ts",
     "type-check:progressive": "tsc --project tsconfig.progressive.json --noEmit"
   },
   "dependencies": {
@@ -85,6 +84,7 @@
     "csv-parse": "^6.1.0",
     "csv-parser": "^3.2.0",
     "csv-stringify": "^6.6.0",
+    "docx": "^9.5.1",
     "dotenv": "^17.2.1",
     "flag-icons": "^7.5.0",
     "framer-motion": "^12.23.9",

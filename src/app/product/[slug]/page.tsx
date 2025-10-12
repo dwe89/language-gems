@@ -127,7 +127,8 @@ export default function ProductPage() {
           // Create a temporary link element to trigger download with proper filename
           const link = document.createElement('a');
           link.href = data.download_url;
-          link.download = data.product_name || 'download.pdf';
+          // Use the product_name from API which now includes display_filename
+          link.download = data.product_name;
           link.target = '_blank';
           document.body.appendChild(link);
           link.click();

@@ -96,6 +96,15 @@ export const getNavigationItems = (isAuthenticated: boolean = false, userEmail?:
       comingSoonPath: null
     },
     {
+      name: 'VocabMaster',
+      path: '/vocab-master',
+      enabled: true,
+      comingSoon: false,
+      comingSoonPath: null,
+      featured: true, // Special styling for flagship feature
+      description: 'Your daily path to language fluency'
+    },
+    {
       name: 'Features',
       path: '#',
       enabled: true,
@@ -105,7 +114,7 @@ export const getNavigationItems = (isAuthenticated: boolean = false, userEmail?:
       dropdownOnly: true,
       dropdownItems: [
         {
-          name: 'Games',
+          name: 'Games & Arcade',
           path: '/games',
           enabled: flags.games,
           comingSoon: !flags.games

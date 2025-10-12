@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
     // Get product details
     const { data: product, error: productError } = await supabase
       .from('products')
-      .select('*')
+      .select('id, name, file_path, display_filename, price_cents, is_active')
       .eq('id', product_id)
       .eq('is_active', true)
       .single();
@@ -37,55 +37,55 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if file_path is already a full URL or a storage path
-    let downloadUrl = product.file_path;
+    // Extract storage path from file_path
+    let storagePath = product.file_path;
 
-    // If it's a public URL, we'll use it directly (not ideal for security)
-    // TODO: Move files to private storage and use signed URLs
-    if (!product.file_path.startsWith('http')) {
-      // If it's a storage path, generate a signed URL
-      const { data: signedUrlData, error: urlError } = await supabase.storage
-        .from('products')
-        .createSignedUrl(product.file_path, 3600); // 1 hour expiry
-
-      if (urlError || !signedUrlData) {
-        console.error('Error creating signed URL:', urlError);
-        return NextResponse.json(
-          { error: 'Failed to generate download link' },
-          { status: 500 }
-        );
+    if (storagePath.includes('/storage/v1/object/public/products/')) {
+      storagePath = storagePath.split('/storage/v1/object/public/products/')[1];
+    } else if (storagePath.includes('/storage/v1/object/sign/products/')) {
+      const match = storagePath.match(/\/storage\/v1\/object\/sign\/products\/([^?]+)/);
+      if (match) {
+        storagePath = match[1];
       }
-
-      downloadUrl = signedUrlData.signedUrl;
+    } else if (storagePath.startsWith('http')) {
+      const urlParts = storagePath.split('/');
+      storagePath = urlParts[urlParts.length - 1];
     }
 
-    // Add download tracking parameter to URL
-    const urlWithTracking = new URL(downloadUrl);
-    urlWithTracking.searchParams.set('download', 'true');
-    urlWithTracking.searchParams.set('product_id', product.id);
-    downloadUrl = urlWithTracking.toString();
+    // Generate a fresh signed URL
+    const { data: signedUrlData, error: urlError } = await supabase.storage
+      .from('products')
+      .createSignedUrl(storagePath, 3600); // 1 hour expiry
 
-    // Log the download for analytics (optional)
+    if (urlError || !signedUrlData) {
+      console.error('Error creating signed URL:', urlError);
+      return NextResponse.json(
+        { error: 'Failed to generate download link' },
+        { status: 500 }
+      );
+    }
+
+    // Log the download for analytics
     try {
       await supabase
         .from('product_downloads')
         .insert({
           product_id: product.id,
           download_type: 'free',
-          ip_address: request.headers.get('x-forwarded-for') || 
-                     request.headers.get('x-real-ip') || 
+          ip_address: request.headers.get('x-forwarded-for') ||
+                     request.headers.get('x-real-ip') ||
                      'unknown',
           user_agent: request.headers.get('user-agent') || 'unknown'
         });
     } catch (logError) {
-      // Don't fail the request if logging fails
       console.warn('Failed to log download:', logError);
     }
 
+    // Return the signed URL with proper filename
     return NextResponse.json({
       success: true,
-      download_url: downloadUrl,
-      product_name: product.name
+      download_url: signedUrlData.signedUrl,
+      product_name: product.display_filename || product.name
     });
 
   } catch (error) {

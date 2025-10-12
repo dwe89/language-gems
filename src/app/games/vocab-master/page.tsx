@@ -1,26 +1,28 @@
-'use client';
+import { redirect } from 'next/navigation';
 
-import React from 'react';
-import { useSearchParams } from 'next/navigation';
-import UnifiedVocabMasterWrapper from './components/UnifiedVocabMasterWrapper';
+/**
+ * Legacy route redirect
+ * VocabMaster has been elevated to a top-level feature at /vocab-master
+ * This redirect ensures old links continue to work
+ */
+export default function OldVocabMasterPage({
+  searchParams,
+}: {
+  searchParams: { [key: string]: string | string[] | undefined };
+}) {
+  // Preserve query parameters in redirect
+  const params = new URLSearchParams();
 
-export default function VocabMasterPage() {
-  const searchParams = useSearchParams();
+  Object.entries(searchParams).forEach(([key, value]) => {
+    if (value) {
+      params.set(key, Array.isArray(value) ? value[0] : value);
+    }
+  });
 
-  // Convert URLSearchParams to plain object for the wrapper
-  const searchParamsObj = {
-    lang: searchParams?.get('lang') || undefined,
-    level: searchParams?.get('level') || undefined,
-    cat: searchParams?.get('cat') || undefined,
-    subcat: searchParams?.get('subcat') || undefined,
-    theme: searchParams?.get('theme') || undefined,
-    assignment: searchParams?.get('assignment') || undefined,
-    // KS4-specific parameters
-    examBoard: searchParams?.get('examBoard') || undefined,
-    tier: searchParams?.get('tier') || undefined,
-  };
+  const queryString = params.toString();
+  const redirectUrl = queryString ? `/vocab-master?${queryString}` : '/vocab-master';
 
-  return <UnifiedVocabMasterWrapper searchParams={searchParamsObj} />;
+  redirect(redirectUrl);
 }
 
 

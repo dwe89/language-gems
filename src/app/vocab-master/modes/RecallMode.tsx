@@ -1,0 +1,242 @@
+import React, { useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Brain, Volume2, Target, Lightbulb, Star, ArrowLeft } from 'lucide-react';
+import { ModeComponent } from '../types';
+import { getPlaceholderText } from '../utils/answerValidation';
+
+interface RecallModeProps extends ModeComponent {
+  userAnswer: string;
+  onAnswerChange: (answer: string) => void;
+  onSubmit: () => void;
+  streak: number;
+}
+
+export const RecallMode: React.FC<RecallModeProps> = ({
+  gameState,
+  userAnswer,
+  onAnswerChange,
+  onSubmit,
+  streak,
+  playPronunciation,
+  onExit
+}) => {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const lastPlayedWordRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    // Focus input when word changes
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+
+    // Auto-play audio when new word appears (but avoid playing same word multiple times)
+    if (gameState.currentWord?.audio_url) {
+      const currentWordKey = `${gameState.currentWord.id}-${gameState.currentWordIndex}`;
+      
+      if (lastPlayedWordRef.current !== currentWordKey) {
+        lastPlayedWordRef.current = currentWordKey;
+        
+        const timer = setTimeout(() => {
+          // Double-check the word hasn't changed while we were waiting
+          if (lastPlayedWordRef.current === currentWordKey && gameState.currentWord) {
+            playPronunciation(
+              gameState.currentWord?.spanish || gameState.currentWord?.word || '',
+              'es',
+              gameState.currentWord || undefined
+            );
+          }
+        }, 500); // Small delay to let the UI settle
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [gameState.currentWord, playPronunciation]); // Removed currentWordIndex from dependencies
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && userAnswer.trim()) {
+      onSubmit();
+    }
+  };
+
+  const getStreakColor = () => {
+    if (streak >= 10) return 'text-purple-400';
+    if (streak >= 5) return 'text-green-400';
+    if (streak >= 3) return 'text-blue-400';
+    return 'text-yellow-400';
+  };
+
+  const getStreakBg = () => {
+    if (streak >= 10) return 'bg-purple-500/20 border-purple-400/30';
+    if (streak >= 5) return 'bg-green-500/20 border-green-400/30';
+    if (streak >= 3) return 'bg-blue-500/20 border-blue-400/30';
+    return 'bg-yellow-500/20 border-yellow-400/30';
+  };
+
+    return (
+      <div className="min-h-screen bg-gray-50 flex">
+        {/* Main content area */}
+        <div className="flex-1 p-8 flex flex-col justify-center">
+          <div className="max-w-2xl mx-auto w-full space-y-7">
+            {/* Word display card */}
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={gameState.currentWordIndex}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+                className="bg-white rounded-xl shadow-lg p-6"
+              >
+              <div className="text-center space-y-6">
+                {onExit && (
+                  <div className="flex justify-start mb-4">
+                    <button
+                      onClick={onExit}
+                      className="bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 px-2 py-1 rounded-lg text-sm font-medium inline-flex items-center gap-1"
+                    >
+                      <ArrowLeft className="h-4 w-4" />
+                      Back
+                    </button>
+                  </div>
+                )}
+                <div className="text-4xl text-purple-500">
+                  <Brain className="h-12 w-12 mx-auto" />
+                </div>
+
+                <h2 className="text-xl font-bold text-gray-800 flex items-center justify-center">
+                  <Brain className="h-5 w-5 mr-2" />
+                  Recall Challenge
+                </h2>
+
+                <h3 className="text-5xl font-extrabold text-purple-700">
+                  {gameState.currentWord?.spanish || gameState.currentWord?.word}
+                </h3>
+
+                {/* Part of speech */}
+                {gameState.currentWord?.part_of_speech && (
+                  <div className="inline-block px-3 py-1 rounded-full text-sm bg-purple-100 text-purple-700 font-medium">
+                    {gameState.currentWord.part_of_speech}
+                  </div>
+                )}
+
+                {/* Audio button */}
+                {gameState.currentWord?.audio_url && (
+                  <button
+                    onClick={() => playPronunciation(gameState.currentWord?.spanish || '', 'es', gameState.currentWord || undefined)}
+                    disabled={gameState.audioPlaying}
+                    className="p-4 rounded-full bg-purple-500 hover:bg-purple-600 text-white shadow-md transition-all duration-200 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                  >
+                    <Volume2 className="h-7 w-7" />
+                  </button>
+                )}
+              </div>
+            </motion.div>
+            </AnimatePresence>
+
+            {/* Input area */}
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <div className="space-y-5">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-gray-800">
+                    Type the English translation:
+                  </h3>
+
+                  <button
+                    className="flex items-center space-x-2 px-3 py-1 rounded-xl text-sm transition-colors border border-gray-300 text-gray-600 hover:bg-gray-100"
+                  >
+                    <Lightbulb className="h-4 w-4" />
+                    <span>Hint</span>
+                  </button>
+                </div>
+
+                <div className="relative">
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    value={userAnswer}
+                    onChange={(e) => onAnswerChange(e.target.value)}
+                    onKeyDown={handleKeyPress}
+                    placeholder="Type your answer..."
+                    className="w-full p-4 rounded-xl text-lg font-medium bg-gray-50 text-gray-900 placeholder-gray-400 border border-gray-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-100 transition-all duration-200 outline-none"
+                    autoFocus
+                  />
+                </div>
+
+                <button
+                  onClick={onSubmit}
+                  disabled={!userAnswer.trim()}
+                  className={`w-full py-3 rounded-xl font-semibold text-white transition-all duration-200 shadow-md ${
+                    userAnswer.trim()
+                      ? 'bg-purple-600 hover:bg-purple-700'
+                      : 'bg-purple-300 cursor-not-allowed'
+                  }`}
+                >
+                  Check Answer
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right sidebar - same as LearnMode */}
+        <div className="w-80 p-8 space-y-6 bg-gray-100 border-l border-gray-200">
+          {/* Performance card */}
+          <div className="bg-white rounded-2xl shadow-sm p-6 text-gray-800 border border-gray-100">
+            <h4 className="text-xl font-bold mb-4">Performance</h4>
+
+            <div className="space-y-4">
+              <div className="bg-purple-50 rounded-xl p-4 flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <Target className="h-5 w-5 text-purple-500" />
+                  <span className="font-medium">Streak</span>
+                </div>
+                <span className="text-2xl font-bold text-purple-700">{streak}</span>
+              </div>
+
+              <div className="bg-purple-50 rounded-xl p-4 flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <Target className="h-5 w-5 text-purple-500" />
+                  <span className="font-medium">Accuracy</span>
+                </div>
+                <span className="text-2xl font-bold text-purple-700">
+                  {gameState.totalWords > 0 ? Math.round((gameState.correctAnswers / (gameState.correctAnswers + gameState.incorrectAnswers || 1)) * 100) : 0}%
+                </span>
+              </div>
+
+              <div className="bg-purple-50 rounded-xl p-4 flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <Star className="h-5 w-5 text-purple-500" />
+                  <span className="font-medium">0 XP</span>
+                </div>
+                <div className="text-right">
+                  <div className="text-xs text-gray-500">Level 1</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Session Progress card */}
+          <div className="bg-white rounded-2xl shadow-sm p-6 text-gray-800 border border-gray-100">
+            <h4 className="text-xl font-bold mb-4">Session Progress</h4>
+
+            <div className="space-y-3">
+              <div className="bg-purple-100 rounded-full h-3 overflow-hidden">
+                <div
+                  className="bg-gradient-to-r from-purple-400 to-purple-600 h-full rounded-full transition-all duration-500"
+                  style={{ width: `${((gameState.currentWordIndex + 1) / gameState.totalWords) * 100}%` }}
+                ></div>
+              </div>
+
+              <div className="text-center">
+                <div className="text-2xl font-bold text-purple-700">
+                  {Math.round(((gameState.currentWordIndex + 1) / gameState.totalWords) * 100)}% Complete
+                </div>
+                <div className="text-sm text-gray-500 mt-1">
+                  {gameState.totalWords - (gameState.currentWordIndex + 1)} words remaining
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+};

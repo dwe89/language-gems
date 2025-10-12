@@ -1,0 +1,408 @@
+/* ============================================
+   AQA GCSE Spanish Workbook - Professional Styles
+   Based on Canva Master Templates
+   ============================================ */
+
+/* ============================================
+   GLOBAL STYLES & RESET
+   ============================================ */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+@page {
+  size: A4;
+  margin: 20mm 15mm;
+}
+
+body {
+  font-family: 'Georgia', 'Times New Roman', serif;
+  font-size: 11pt;
+  line-height: 1.6;
+  color: #1a1a1a;
+  background: white;
+}
+
+/* ============================================
+   TYPOGRAPHY
+   ============================================ */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Arial', 'Helvetica', sans-serif;
+  font-weight: 700;
+  margin-bottom: 0.5em;
+  color: #1a1a1a;
+}
+
+h1 { font-size: 28pt; line-height: 1.2; }
+h2 { font-size: 20pt; line-height: 1.3; }
+h3 { font-size: 16pt; line-height: 1.4; }
+h4 { font-size: 14pt; line-height: 1.4; }
+
+p {
+  margin-bottom: 0.8em;
+}
+
+/* ============================================
+   COLOR PALETTE (from Canva designs)
+   ============================================ */
+:root {
+  --color-primary-blue: #1e40af;
+  --color-section-1: #1e40af;  /* Deep Blue - Introduction */
+  --color-section-2: #059669;  /* Emerald Green - Q1 Photo Card */
+  --color-section-3: #f97316;  /* Vibrant Orange - Q2 40-Word */
+  --color-section-4: #9333ea;  /* Purple - Q3 Translation */
+  --color-section-5: #dc2626;  /* Red - Q4 90-Word */
+  --color-section-6: #fbbf24;  /* Gold - Answer Key */
+  
+  --color-text-primary: #1a1a1a;
+  --color-text-secondary: #4a5568;
+  --color-border-light: #e2e8f0;
+  --color-background-light: #f7fafc;
+  --color-tip-background: #fef3c7;
+  --color-model-background: #eff6ff;
+}
+
+/* ============================================
+   COVER PAGE
+   ============================================ */
+.cover-page {
+  page-break-after: always;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+  color: white;
+  padding: 40px;
+  position: relative;
+  overflow: hidden;
+}
+
+.cover-page::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+  animation: pulse 15s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 0.5; }
+  50% { transform: scale(1.1); opacity: 0.3; }
+}
+
+.cover-branding {
+  font-size: 18pt;
+  font-weight: 600;
+  letter-spacing: 2px;
+  margin-bottom: 30px;
+  text-transform: uppercase;
+  z-index: 1;
+}
+
+.cover-title {
+  font-size: 42pt;
+  font-weight: 900;
+  line-height: 1.1;
+  margin-bottom: 20px;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+  z-index: 1;
+}
+
+.cover-subtitle {
+  font-size: 18pt;
+  font-weight: 400;
+  margin-bottom: 30px;
+  opacity: 0.95;
+  z-index: 1;
+}
+
+.cover-details {
+  font-size: 14pt;
+  margin-top: 40px;
+  opacity: 0.9;
+  z-index: 1;
+}
+
+.cover-badge {
+  display: inline-block;
+  background: rgba(255,255,255,0.2);
+  padding: 10px 25px;
+  border-radius: 25px;
+  margin-top: 20px;
+  font-weight: 600;
+  backdrop-filter: blur(10px);
+  z-index: 1;
+}
+
+/* ============================================
+   SECTION DIVIDER PAGES
+   ============================================ */
+.section-divider {
+  page-break-before: always;
+  page-break-after: always;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 60px;
+  position: relative;
+  overflow: hidden;
+}
+
+.section-divider::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 8px;
+  background: currentColor;
+}
+
+.section-number {
+  font-size: 72pt;
+  font-weight: 900;
+  opacity: 0.15;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  line-height: 1;
+}
+
+.section-title {
+  font-size: 36pt;
+  font-weight: 700;
+  margin-bottom: 20px;
+  z-index: 1;
+  position: relative;
+}
+
+.section-subtitle {
+  font-size: 18pt;
+  color: var(--color-text-secondary);
+  z-index: 1;
+  position: relative;
+}
+
+/* Section-specific colors */
+.section-1 { color: var(--color-section-1); }
+.section-2 { color: var(--color-section-2); }
+.section-3 { color: var(--color-section-3); }
+.section-4 { color: var(--color-section-4); }
+.section-5 { color: var(--color-section-5); }
+.section-6 { color: var(--color-section-6); }
+
+/* ============================================
+   PAGE HEADERS & FOOTERS
+   ============================================ */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 10px;
+  margin-bottom: 20px;
+  border-bottom: 3px solid currentColor;
+}
+
+.page-header-title {
+  font-size: 12pt;
+  font-weight: 600;
+}
+
+.page-number {
+  font-size: 10pt;
+  color: var(--color-text-secondary);
+}
+
+.page-footer {
+  margin-top: 40px;
+  padding-top: 10px;
+  border-top: 1px solid var(--color-border-light);
+  text-align: center;
+  font-size: 9pt;
+  color: var(--color-text-secondary);
+}
+
+/* ============================================
+   CONTENT LAYOUTS
+   ============================================ */
+.content-page {
+  page-break-after: always;
+  padding: 20px 0;
+}
+
+.instruction-section {
+  margin-bottom: 30px;
+}
+
+.tip-box {
+  background: var(--color-tip-background);
+  border-left: 4px solid #f59e0b;
+  padding: 15px 20px;
+  margin: 20px 0;
+  border-radius: 4px;
+}
+
+.tip-box::before {
+  content: '💡 TIP: ';
+  font-weight: 700;
+  color: #f59e0b;
+}
+
+/* ============================================
+   PRACTICE PAGES
+   ============================================ */
+.practice-prompt {
+  background: var(--color-background-light);
+  border: 2px solid var(--color-border-light);
+  padding: 20px;
+  margin-bottom: 20px;
+  border-radius: 6px;
+}
+
+.practice-prompt h3 {
+  color: var(--color-primary-blue);
+  margin-bottom: 10px;
+}
+
+.practice-bullets {
+  list-style: none;
+  padding-left: 0;
+}
+
+.practice-bullets li {
+  padding-left: 25px;
+  position: relative;
+  margin-bottom: 8px;
+}
+
+.practice-bullets li::before {
+  content: '•';
+  position: absolute;
+  left: 10px;
+  color: var(--color-primary-blue);
+  font-weight: bold;
+}
+
+.writing-lines {
+  margin-top: 20px;
+}
+
+.writing-line {
+  border-bottom: 1px solid #cbd5e0;
+  height: 8mm;
+  margin-bottom: 2mm;
+  position: relative;
+}
+
+.line-number {
+  position: absolute;
+  left: -30px;
+  top: 0;
+  font-size: 8pt;
+  color: #cbd5e0;
+}
+
+/* ============================================
+   MODEL ANSWER PAGES
+   ============================================ */
+.model-answer-container {
+  margin: 30px 0;
+}
+
+.model-answer-box {
+  background: var(--color-model-background);
+  border: 2px solid #3b82f6;
+  padding: 20px;
+  margin: 15px 0;
+  border-radius: 6px;
+  font-size: 12pt;
+  line-height: 1.8;
+}
+
+.model-analysis {
+  margin-top: 15px;
+  padding: 15px;
+  background: #f9fafb;
+  border-left: 3px solid #6b7280;
+  font-style: italic;
+  color: var(--color-text-secondary);
+}
+
+.model-analysis::before {
+  content: 'Analysis: ';
+  font-weight: 700;
+  font-style: normal;
+  color: var(--color-text-primary);
+}
+
+/* ============================================
+   ANSWER KEY PAGES
+   ============================================ */
+.answer-key-section {
+  margin-bottom: 30px;
+}
+
+.answer-block {
+  margin-bottom: 25px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.answer-block:last-child {
+  border-bottom: none;
+}
+
+.answer-block h4 {
+  color: var(--color-section-6);
+  margin-bottom: 12px;
+}
+
+.answer-list {
+  list-style: none;
+  padding-left: 0;
+}
+
+.answer-list li {
+  padding: 6px 0;
+  padding-left: 30px;
+  position: relative;
+}
+
+.answer-list li::before {
+  content: attr(data-number) '.';
+  position: absolute;
+  left: 0;
+  font-weight: 600;
+  color: var(--color-section-6);
+}
+
+/* ============================================
+   PRINT OPTIMIZATIONS
+   ============================================ */
+@media print {
+  body {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  
+  .page-break {
+    page-break-after: always;
+  }
+  
+  .no-break {
+    page-break-inside: avoid;
+  }
+}
+

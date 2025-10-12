@@ -175,9 +175,14 @@ export default function MainNavigation() {
                 <Link
                   key={item.name}
                   href={href || item.path}
-                  className={`transition-colors text-white font-medium hover:text-yellow-200 relative ${
+                  className={`transition-colors font-medium hover:text-yellow-200 relative ${
+                    item.featured
+                      ? 'text-yellow-300 font-bold px-4 py-2 bg-white/10 rounded-lg hover:bg-white/20'
+                      : 'text-white'
+                  } ${
                     isActive(item.path) ? 'text-yellow-300 font-bold' : ''
                   }`}
+                  title={item.description}
                 >
                   {item.name}
                   {item.comingSoon && (
@@ -273,8 +278,12 @@ export default function MainNavigation() {
                   <li key={item.name}>
                     <Link
                       href={href || item.path}
-                      className={`block transition-colors text-white relative py-2 ${
-                        isActive(item.path) ? 'text-yellow-300 font-medium' : 'hover:text-yellow-200'
+                      className={`block transition-colors relative py-2 ${
+                        item.featured
+                          ? 'text-yellow-300 font-bold bg-white/10 rounded-lg px-3 hover:bg-white/20'
+                          : 'text-white hover:text-yellow-200'
+                      } ${
+                        isActive(item.path) ? 'text-yellow-300 font-medium' : ''
                       }`}
                       onClick={handleMobileMenuClose}
                     >

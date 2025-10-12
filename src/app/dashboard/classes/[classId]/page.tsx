@@ -12,7 +12,7 @@ import {
   ArrowLeft, Users, Calendar, Clock, Book, Settings,
   Download, Upload, UserPlus, Mail, Pencil, Trash2,
   CheckCircle, ChevronRight, FileText, Sparkles, TrendingUp, Award, Activity, Star,
-  Bell, AlertCircle
+  Bell, AlertCircle, Brain
 } from 'lucide-react';
 import { Button } from "../../../../components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../../components/ui/tabs";
@@ -420,6 +420,13 @@ export default function ClassDetailPage({ params }: { params: { classId: string 
                   >
                     <Book className="h-4 w-4 mr-3" />
                     <span>Create Assignment</span>
+                  </Link>
+                  <Link
+                    href={`/dashboard/classes/${classId}/vocabulary-analytics`}
+                    className="w-full text-left p-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 rounded-xl transition-all duration-200 flex items-center text-white font-medium shadow-lg hover:shadow-xl border border-indigo-700"
+                  >
+                    <Brain className="h-4 w-4 mr-3" />
+                    <span>Vocabulary Analytics</span>
                   </Link>
                   {students.length > 0 && (
                     <button

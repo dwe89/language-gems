@@ -11,7 +11,6 @@ import { useAuth } from '../../components/auth/AuthProvider';
 import { useDemoAuth } from '../../components/auth/DemoAuthProvider';
 import Footer from '../../components/layout/Footer';
 import DemoBanner from '../../components/demo/DemoBanner';
-import FeaturedVocabMasterCard from '../../components/games/FeaturedVocabMasterCard';
 import SmartSignupSelector from '../../components/auth/SmartSignupSelector';
 
 
@@ -200,16 +199,6 @@ export default function GamesPage() {
 
       const actualGames: Game[] = [
         {
-          id: 'vocab-master',
-          name: 'VocabMaster',
-          description: 'Master vocabulary with smart, personalized reviews, adaptive learning, and 8 engaging game modes.',
-          thumbnail: '/images/games/vocabulary-mining.jpg',
-          category: 'vocabulary',
-          popular: true,
-          languages: ['es', 'fr', 'de'],
-          path: '/games/vocab-master'
-        },
-        {
           id: 'speed-builder',
           name: 'Sentence Sprint',
           description: 'Drag and drop words to build sentences correctly before time runs out.',
@@ -364,12 +353,6 @@ export default function GamesPage() {
     router.push(game.path);
   };
 
-  // Handler for VocabMaster "Choose Content" button
-  const handleVocabMasterChooseContent = () => {
-    // Navigate directly to VocabMaster
-    router.push('/games/vocab-master');
-  };
-
   // Combined filtering logic for category filter
   const filteredGames = games.filter(game => {
     // Apply category filter
@@ -466,11 +449,8 @@ export default function GamesPage() {
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {/* Featured VocabMaster Card */}
-                <FeaturedVocabMasterCard onChooseContent={handleVocabMasterChooseContent} />
-
-                {/* Regular Games (excluding VocabMaster since it's featured) */}
-                {filteredGames.filter(game => game.id !== 'vocab-master').map((game) => {
+                {/* All Games */}
+                {filteredGames.map((game) => {
                   return (
                     <motion.div
                       key={game.id}

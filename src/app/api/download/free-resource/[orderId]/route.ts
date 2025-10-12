@@ -67,7 +67,7 @@ export async function GET(
 
     const { data: product, error: productError } = await supabase
       .from('products')
-      .select('id, name, file_path')
+      .select('id, name, file_path, display_filename')
       .eq('id', firstItem.product_id)
       .single();
 
@@ -151,8 +151,8 @@ export async function GET(
       const fileBlob = await fileResponse.blob();
       const buffer = await fileBlob.arrayBuffer();
 
-      // Extract filename from storage path
-      const filename = storagePath.split('/').pop() || 'download.pdf';
+      // Use display filename if available, otherwise extract from storage path
+      const filename = product.display_filename || storagePath.split('/').pop() || 'download.pdf';
 
       // Return the file with proper headers
       return new NextResponse(buffer, {

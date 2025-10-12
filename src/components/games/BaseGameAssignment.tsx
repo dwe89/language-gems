@@ -36,6 +36,12 @@ export abstract class BaseGameAssignment implements GameAssignmentInterface {
   protected currentProgress: GameProgressData;
   protected assignmentService: UnifiedAssignmentService;
 
+  // 🔄 PHASE 1: Progressive Saving
+  protected lastSaveTime: number = 0;
+  protected autoSaveInterval: NodeJS.Timeout | null = null;
+  protected readonly AUTOSAVE_INTERVAL_MS = 30000; // 30 seconds
+  protected readonly MIN_SAVE_INTERVAL_MS = 5000; // Minimum 5 seconds between saves
+
   constructor(protected supabase: any, protected userId: string) {
     this.assignmentService = new UnifiedAssignmentService(supabase);
     this.currentProgress = this.initializeProgress();
@@ -114,7 +120,10 @@ export abstract class BaseGameAssignment implements GameAssignmentInterface {
         'in_progress'
       );
 
-      console.log(`Game session started: ${this.sessionId}`);
+      // 🔄 PHASE 1: Start auto-save interval
+      this.startAutoSave();
+
+      console.log(`✅ [PHASE 1] Game session started with auto-save: ${this.sessionId}`);
       return this.sessionId;
 
     } catch (error) {
@@ -125,6 +134,7 @@ export abstract class BaseGameAssignment implements GameAssignmentInterface {
 
   /**
    * Update progress during gameplay
+   * 🔄 PHASE 1: Now triggers smart progressive saving
    */
   async updateProgress(progressData: Partial<GameProgressData>): Promise<void> {
     try {
@@ -136,14 +146,14 @@ export abstract class BaseGameAssignment implements GameAssignmentInterface {
         timeSpent: Date.now() - this.currentProgress.startedAt.getTime()
       };
 
-      // Record progress periodically (every 30 seconds or significant events)
-      const shouldRecord = 
-        progressData.wordsCorrect !== undefined ||
-        progressData.score !== undefined ||
-        (Date.now() - this.currentProgress.startedAt.getTime()) % 30000 < 1000;
+      // 🔄 PHASE 1: Smart progressive saving
+      // Save immediately on significant events, otherwise rely on auto-save
+      const isSignificantEvent =
+        progressData.wordsCorrect !== undefined || // Word completed
+        progressData.score !== undefined; // Score changed
 
-      if (shouldRecord) {
-        await this.assignmentService.recordProgress(this.currentProgress);
+      if (isSignificantEvent) {
+        await this.saveProgressIfReady();
       }
 
     } catch (error) {
@@ -153,10 +163,78 @@ export abstract class BaseGameAssignment implements GameAssignmentInterface {
   }
 
   /**
+   * 🔄 PHASE 1: Save progress if enough time has passed since last save
+   */
+  private async saveProgressIfReady(): Promise<void> {
+    const now = Date.now();
+    const timeSinceLastSave = now - this.lastSaveTime;
+
+    // Prevent too-frequent saves (minimum 5 seconds between saves)
+    if (timeSinceLastSave < this.MIN_SAVE_INTERVAL_MS) {
+      console.log(`⏭️ [PHASE 1] Skipping save (${timeSinceLastSave}ms since last save)`);
+      return;
+    }
+
+    await this.saveProgress();
+  }
+
+  /**
+   * 🔄 PHASE 1: Actually save progress to database
+   */
+  private async saveProgress(): Promise<void> {
+    try {
+      console.log('💾 [PHASE 1] Saving progress:', {
+        wordsAttempted: this.currentProgress.wordsAttempted,
+        wordsCorrect: this.currentProgress.wordsCorrect,
+        score: this.currentProgress.score,
+        timeSpent: this.currentProgress.timeSpent
+      });
+
+      await this.assignmentService.recordProgress(this.currentProgress);
+      this.lastSaveTime = Date.now();
+
+      console.log('✅ [PHASE 1] Progress saved successfully');
+    } catch (error) {
+      console.error('❌ [PHASE 1] Failed to save progress:', error);
+      // Don't throw - we'll try again on next auto-save
+    }
+  }
+
+  /**
+   * 🔄 PHASE 1: Start automatic progress saving every 30 seconds
+   */
+  private startAutoSave(): void {
+    // Clear any existing interval
+    this.stopAutoSave();
+
+    this.autoSaveInterval = setInterval(async () => {
+      console.log('⏰ [PHASE 1] Auto-save triggered');
+      await this.saveProgress();
+    }, this.AUTOSAVE_INTERVAL_MS);
+
+    console.log('✅ [PHASE 1] Auto-save started (every 30 seconds)');
+  }
+
+  /**
+   * 🔄 PHASE 1: Stop automatic progress saving
+   */
+  private stopAutoSave(): void {
+    if (this.autoSaveInterval) {
+      clearInterval(this.autoSaveInterval);
+      this.autoSaveInterval = null;
+      console.log('🛑 [PHASE 1] Auto-save stopped');
+    }
+  }
+
+  /**
    * Complete the session and submit final progress
+   * 🔄 PHASE 1: Stops auto-save and does final save
    */
   async completeSession(finalProgress: GameProgressData): Promise<void> {
     try {
+      // 🔄 PHASE 1: Stop auto-save before final save
+      this.stopAutoSave();
+
       this.currentProgress = {
         ...this.currentProgress,
         ...finalProgress,
@@ -166,13 +244,14 @@ export abstract class BaseGameAssignment implements GameAssignmentInterface {
         timeSpent: Date.now() - this.currentProgress.startedAt.getTime()
       };
 
-      // Record final progress
+      // Record final progress (force save regardless of timing)
       await this.assignmentService.recordProgress(this.currentProgress);
 
-      console.log(`Session completed: ${this.sessionId}`, {
+      console.log(`✅ [PHASE 1] Session completed: ${this.sessionId}`, {
         score: this.currentProgress.score,
         accuracy: this.currentProgress.accuracy,
-        wordsLearned: this.currentProgress.wordsLearned
+        wordsLearned: this.currentProgress.wordsLearned,
+        totalSaves: 'auto-save + final'
       });
 
     } catch (error) {
@@ -188,18 +267,29 @@ export abstract class BaseGameAssignment implements GameAssignmentInterface {
     if (!this.assignment) return;
 
     try {
+      // 🔄 PHASE 1: Ensure auto-save is stopped
+      this.stopAutoSave();
+
       await this.assignmentService.updateAssignmentStatus(
         this.assignment.assignmentId,
         this.userId,
         'completed'
       );
 
-      console.log(`Assignment completed: ${this.assignment.assignmentId}`);
+      console.log(`✅ [PHASE 1] Assignment completed: ${this.assignment.assignmentId}`);
 
     } catch (error) {
       console.error('Error completing assignment:', error);
       throw error;
     }
+  }
+
+  /**
+   * 🔄 PHASE 1: Cleanup method to stop auto-save when component unmounts
+   */
+  cleanup(): void {
+    this.stopAutoSave();
+    console.log('🧹 [PHASE 1] BaseGameAssignment cleanup complete');
   }
 
   /**

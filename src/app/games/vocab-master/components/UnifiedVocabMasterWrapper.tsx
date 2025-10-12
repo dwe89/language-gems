@@ -6,6 +6,7 @@ import { useUnifiedAuth } from '../../../../hooks/useUnifiedAuth';
 import { useSupabase } from '../../../../components/supabase/SupabaseProvider';
 import { useGameVocabulary } from '../../../../hooks/useGameVocabulary';
 import { EnhancedGameService } from '../../../../services/enhancedGameService';
+import { StudentVocabularyAnalyticsService } from '../../../../services/StudentVocabularyAnalyticsService';
 import UnifiedVocabMasterLauncher from './UnifiedVocabMasterLauncher';
 import { VocabMasterGameEngine } from './VocabMasterGameEngine';
 import { GameCompletionScreen } from './GameCompletionScreen';
@@ -369,6 +370,29 @@ export default function UnifiedVocabMasterWrapper({ searchParams = {} }: Props) 
 
       // ✅ UNIFIED: Spaced repetition handled by EnhancedGameSessionService
       console.log('✅ [VOCAB MASTER] Spaced repetition handled by unified system');
+
+      // 🔄 PHASE 2: Record to unified vocabulary analytics
+      if (vocabularyId && userId) {
+        try {
+          const analyticsService = new StudentVocabularyAnalyticsService(supabase);
+          await analyticsService.recordInteraction(
+            userId,
+            vocabularyId,
+            isCorrect,
+            'vocab_master',
+            {
+              topic: selectedConfig?.categoryId,
+              subtopic: selectedConfig?.subcategoryId,
+              difficulty: selectedConfig?.curriculumLevel,
+              curriculumLevel: selectedConfig?.curriculumLevel
+            }
+          );
+          console.log('✅ [PHASE 2] VocabMaster interaction recorded to unified analytics');
+        } catch (error) {
+          console.error('❌ [PHASE 2] Failed to record interaction:', error);
+          // Don't throw - analytics failure shouldn't break the game
+        }
+      }
     } catch (error) {
       console.error('Failed to log vocabulary mastery:', error);
     }
