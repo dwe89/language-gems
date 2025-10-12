@@ -260,9 +260,10 @@ export const VocabMasterGameEngine: React.FC<VocabMasterGameEngineProps> = ({
     const responseTime = Date.now() - questionStartTime;
     setCurrentResponseTime(responseTime);
     
-    // Create unique identifier for this answer attempt
-    const answerKey = `${gameState.currentWordIndex}-${answer}-${responseTime}`;
-    
+    // ✅ FIX: Create unique identifier WITHOUT responseTime (which varies by milliseconds)
+    // This prevents React Strict Mode from processing the same answer twice
+    const answerKey = `${gameState.currentWordIndex}-${answer}`;
+
     // Prevent duplicate processing of the same answer
     if (lastProcessedAnswer.current === answerKey) {
       console.log('⚠️ [HANDLE ANSWER] Duplicate answer detected, skipping ALL processing:', answerKey);
@@ -509,59 +510,9 @@ export const VocabMasterGameEngine: React.FC<VocabMasterGameEngineProps> = ({
         isCorrect: newState.isCorrect
       });
 
-      // Record gem in database immediately with correct gem data
-      if (shouldCountAnswer && validation.isCorrect) {
-        // Handle assignment mode gem recording
-        if (config.assignmentMode && (window as any).recordVocabularyInteraction) {
-          const answerKey = `${prev.currentWordIndex}-${prev.currentWord?.spanish || prev.currentWord?.word}-${responseTime}`;
-          if (lastAnswerKey.current !== answerKey) {
-            lastAnswerKey.current = answerKey;
-            console.log('🔮 [VOCAB MASTER] Recording gem for assignment mode...', answerKey);
-            try {
-              (window as any).recordVocabularyInteraction(
-                prev.currentWord?.spanish || prev.currentWord?.word || '',
-                prev.currentWord?.english || prev.currentWord?.translation || '',
-                validation.isCorrect,
-                responseTime,
-                prev.translationShown,
-                1
-              ).then((gemResult: any) => {
-                console.log('🔮 [VOCAB MASTER] Gem recorded successfully:', gemResult);
-              }).catch((gemError: any) => {
-                console.error('❌ Error recording gem (vocab master):', gemError);
-              });
-            } catch (gemError) {
-              console.error('❌ Error calling recordVocabularyInteraction (vocab master):', gemError);
-            }
-          }
-        }
-        
-        // Handle non-assignment mode gem recording
-        else if (gameSessionId && !config.assignmentMode) {
-          console.log('🔍 [GEM COLLECTION] Recording gem in session service...');
-          setTimeout(async () => {
-            try {
-              const sessionService = new EnhancedGameSessionService();
-              const gemEvent = await sessionService.recordWordAttempt(gameSessionId, 'vocab-master', {
-                vocabularyId: prev.currentWord?.id,
-                wordText: prev.currentWord?.spanish || prev.currentWord?.word || '',
-                translationText: prev.currentWord?.english || prev.currentWord?.translation || '',
-                responseTimeMs: responseTime,
-                wasCorrect: validation.isCorrect,
-                hintUsed: prev.translationShown,
-                streakCount: prev.streak,
-                masteryLevel: prev.currentWord?.mastery_level || 0,
-                maxGemRarity: 'legendary' as GemRarity,
-                gameMode: prev.gameMode
-              }, true);
-              
-              console.log('🔍 [VOCAB TRACKING] Gem recorded successfully:', gemEvent);
-            } catch (error) {
-              console.error('Failed to record vocabulary interaction:', error);
-            }
-          }, 100); // Small delay to ensure state is updated
-        }
-      }
+      // ❌ REMOVED: Duplicate gem recording logic
+      // This was causing double-counting of answers (10 questions → 20 attempts)
+      // Gem recording is now handled earlier in the code (line ~396) as part of the unified FSRS system
 
       // Schedule word advancement in a separate timeout to avoid race conditions
       setTimeout(() => {

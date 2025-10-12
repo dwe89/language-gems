@@ -3,7 +3,7 @@
 import React from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import VocabMasterAssignmentWrapper from '../../components/VocabMasterAssignmentWrapper';
-import { useAuth } from '../../../components/auth/AuthProvider';
+import { useAuth } from '../../../../components/auth/AuthProvider';
 
 export default function VocabMasterAssignmentPage() {
   const params = useParams();
@@ -12,8 +12,8 @@ export default function VocabMasterAssignmentPage() {
   
   const assignmentId = params.assignmentId as string;
 
-  const handleAssignmentComplete = (progress: any) => {
-    console.log('VocabMaster assignment completed:', progress);
+  const handleAssignmentComplete = () => {
+    console.log('VocabMaster assignment completed');
     // Show completion message and redirect
     setTimeout(() => {
       router.push('/student-dashboard/assignments');
