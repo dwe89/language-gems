@@ -2,10 +2,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Play, CheckCircle, Clock, Gamepad2, Target, Star } from 'lucide-react';
+import { ArrowLeft, Play, CheckCircle, Clock, Gamepad2, Target, Star, Gem, TrendingUp, Activity, Award, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '../../../../components/auth/AuthProvider';
 import { supabaseBrowser } from '../../../../components/auth/AuthProvider';
+import { AssignmentProgressTrackingService, GameActivityMetrics } from '../../../../services/AssignmentProgressTrackingService';
+import { MasteryScoreService, MasteryScoreBreakdown } from '../../../../services/MasteryScoreService';
+import { calculateRemainingTime, getTimeCategory } from '../../../../utils/assignmentTimeEstimation';
 
 // Map game types to actual game directory paths
 const mapGameTypeToPath = (gameType: string | null): string => {
@@ -62,7 +65,8 @@ export default function StudentAssignmentDetailPage() {
   const [error, setError] = useState<string>('');
   const [refreshKey, setRefreshKey] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  
+  const [masteryScore, setMasteryScore] = useState<MasteryScoreBreakdown | null>(null);
+
   // Check if this is a preview mode (teacher viewing the assignment)
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   
@@ -89,7 +93,9 @@ export default function StudentAssignmentDetailPage() {
             description,
             due_date,
             game_type,
-            game_config
+            game_config,
+            vocabulary_count,
+            repetitions_required
           `)
           .eq('id', assignmentId)
           .single();
@@ -176,25 +182,35 @@ export default function StudentAssignmentDetailPage() {
                                assignmentData.game_config?.gameConfig?.selectedGames ||
                                [];
 
-          games = selectedGames.map((gameId: string) => {
+          // Load enhanced progress for each game
+          const progressService = new AssignmentProgressTrackingService(supabase);
+
+          games = await Promise.all(selectedGames.map(async (gameId: string) => {
             const gameInfo = gameNameMap[gameId] || { name: gameId, description: 'Language learning game' };
 
-            // Find individual game progress
-            const gameProgress = gameProgressData?.find(gp => gp.game_id === gameId);
-            const isCompleted = gameProgress?.status === 'completed';
+            // Get enhanced progress metrics
+            const metrics = await progressService.getGameProgress(assignmentId, user.id, gameId);
 
             return {
               id: gameId,
               name: gameInfo.name,
               description: gameInfo.description,
               type: 'game',
-              completed: isCompleted,
-              score: gameProgress?.score || 0,
-              accuracy: gameProgress?.accuracy || 0,
-              timeSpent: gameProgress?.time_spent || 0,
-              completedAt: gameProgress?.completed_at
+              completed: metrics.completed,
+              score: metrics.bestScore,
+              accuracy: metrics.accuracy,
+              timeSpent: metrics.totalTimeSpent,
+              completedAt: metrics.completedAt,
+              // Enhanced metrics
+              progressPercentage: metrics.progressPercentage,
+              status: metrics.status,
+              sessionsStarted: metrics.sessionsStarted,
+              wordsAttempted: metrics.wordsAttempted,
+              wordsCorrect: metrics.wordsCorrect,
+              gemsEarned: metrics.gemsEarned,
+              lastPlayedAt: metrics.lastPlayedAt
             };
-          });
+          }));
 
           // Extract assessments from the assignment config
           const selectedAssessments = assignmentData.game_config?.assessmentConfig?.selectedAssessments || [];
@@ -260,20 +276,59 @@ export default function StudentAssignmentDetailPage() {
         }
 
         const allActivities = [...games, ...assessments, ...skills];
-        const completedActivities = allActivities.filter(a => a.completed).length;
-        const overallProgress = allActivities.length > 0 ? Math.round((completedActivities / allActivities.length) * 100) : 0;
 
-        console.log('Assignment progress calculation:', {
+        // Enhanced progress calculation using partial progress
+        const totalProgress = allActivities.reduce((sum, activity) => {
+          // Use progressPercentage if available, otherwise binary completion
+          const activityProgress = activity.progressPercentage !== undefined
+            ? activity.progressPercentage
+            : (activity.completed ? 100 : 0);
+          return sum + activityProgress;
+        }, 0);
+
+        const overallProgress = allActivities.length > 0
+          ? Math.round(totalProgress / allActivities.length)
+          : 0;
+
+        const completedActivities = allActivities.filter(a => a.completed).length;
+        const inProgressActivities = allActivities.filter(a =>
+          a.status === 'in_progress' || (a.progressPercentage > 0 && !a.completed)
+        ).length;
+        const notStartedActivities = allActivities.filter(a =>
+          a.status === 'not_started' || (a.progressPercentage === 0 && !a.completed)
+        ).length;
+
+        console.log('Enhanced assignment progress calculation:', {
           totalGames: games.length,
           totalAssessments: assessments.length,
           totalSkills: skills.length,
           totalActivities: allActivities.length,
           completedActivities,
+          inProgressActivities,
+          notStartedActivities,
           overallProgress,
-          games: games.map(g => ({ id: g.id, name: g.name, completed: g.completed })),
-          assessments: assessments.map(a => ({ id: a.id, name: a.name, completed: a.completed })),
-          skills: skills.map(s => ({ id: s.id, name: s.name, completed: s.completed }))
+          games: games.map(g => ({
+            id: g.id,
+            name: g.name,
+            status: g.status,
+            progress: g.progressPercentage,
+            sessions: g.sessionsStarted,
+            words: g.wordsAttempted
+          }))
         });
+
+        // Calculate mastery score
+        const masteryService = new MasteryScoreService(supabase);
+        const masteryData = await masteryService.calculateAssignmentMasteryScore(assignmentId, user.id);
+        setMasteryScore(masteryData);
+
+        // Calculate time estimation
+        const vocabularyCount = assignmentData.vocabulary_count || 10;
+        const repetitionsRequired = assignmentData.repetitions_required || 5;
+        const totalRequiredExposures = vocabularyCount * repetitionsRequired;
+        const completedExposures = masteryData.wordsAttempted;
+        const timeEstimation = calculateRemainingTime(totalRequiredExposures, completedExposures);
+        const timeCategory = getTimeCategory(timeEstimation.estimatedMinutes);
 
         setAssignment({
           id: assignmentData.id,
@@ -293,7 +348,15 @@ export default function StudentAssignmentDetailPage() {
           completedAssessments: assessments.filter(a => a.completed).length,
           completedSkills: skills.filter(s => s.completed).length,
           completedActivities,
-          overallProgress
+          inProgressActivities,
+          notStartedActivities,
+          overallProgress,
+          vocabularyCount,
+          repetitionsRequired,
+          totalRequiredExposures,
+          completedExposures,
+          timeEstimation,
+          timeCategory
         });
 
       } catch (err) {
@@ -328,9 +391,19 @@ export default function StudentAssignmentDetailPage() {
     return () => window.removeEventListener('focus', handleFocus);
   }, []);
 
-  const handlePlayGame = (gameId: string) => {
+  const handlePlayGame = async (gameId: string) => {
     const previewParam = isPreviewMode ? '&preview=true' : '';
-    router.push(`/games/${mapGameTypeToPath(gameId)}?assignment=${assignmentId}&mode=assignment${previewParam}`);
+
+    // Filter to outstanding words only (exclude mastered words)
+    const filterParam = '&filterOutstanding=true';
+
+    console.log('🎮 Launching game with outstanding words filter:', {
+      gameId,
+      assignmentId,
+      filterOutstanding: true
+    });
+
+    router.push(`/games/${mapGameTypeToPath(gameId)}?assignment=${assignmentId}&mode=assignment${previewParam}${filterParam}`);
   };
 
   const handlePlayAssessment = (assessment: any) => {
@@ -506,29 +579,60 @@ export default function StudentAssignmentDetailPage() {
                     <span>{assignment.totalAssessments} assessment{assignment.totalAssessments !== 1 ? 's' : ''}</span>
                   </div>
                 )}
-                <div className="flex items-center">
-                  <CheckCircle className="h-4 w-4 mr-1" />
-                  <span>{assignment.completedActivities} / {assignment.totalActivities} completed</span>
+                {/* Enhanced Status Breakdown */}
+                <div className="flex items-center gap-4 flex-wrap">
+                  {assignment.completedActivities > 0 && (
+                    <div className="flex items-center gap-1">
+                      <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                      <span className="text-sm font-medium">{assignment.completedActivities} completed</span>
+                    </div>
+                  )}
+                  {assignment.inProgressActivities > 0 && (
+                    <div className="flex items-center gap-1">
+                      <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                      <span className="text-sm font-medium">{assignment.inProgressActivities} in progress</span>
+                    </div>
+                  )}
+                  {assignment.notStartedActivities > 0 && (
+                    <div className="flex items-center gap-1">
+                      <div className="w-3 h-3 rounded-full bg-gray-400"></div>
+                      <span className="text-sm font-medium">{assignment.notStartedActivities} not started</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
-            
+
             <div className="text-right">
               <div className={`text-3xl font-bold ${assignment.overallProgress === 100 ? 'text-green-600' : 'text-indigo-600'}`}>
                 {Math.round(assignment.overallProgress)}%
               </div>
               <div className="text-sm text-gray-500">
-                Progress
+                Overall Progress
                 {isRefreshing && (
                   <span className="ml-2 text-xs text-blue-600 animate-pulse">Updating...</span>
                 )}
               </div>
-              {assignment.overallProgress === 100 && (
+              {/* Time Estimation */}
+              {assignment.timeEstimation && assignment.timeEstimation.totalExposures > 0 && (
+                <div className="mt-2 flex items-center justify-end gap-1">
+                  <Clock className="h-4 w-4 text-gray-500" />
+                  <span className={`text-xs font-medium ${assignment.timeCategory.color}`}>
+                    {assignment.timeEstimation.displayText}
+                  </span>
+                </div>
+              )}
+              {assignment.overallProgress === 100 ? (
                 <div className="flex items-center justify-end mt-1">
                   <CheckCircle className="h-4 w-4 text-green-600 mr-1" />
                   <span className="text-xs font-medium text-green-700">Complete!</span>
                 </div>
-              )}
+              ) : assignment.inProgressActivities > 0 ? (
+                <div className="flex items-center justify-end mt-1">
+                  <Activity className="h-4 w-4 text-yellow-600 mr-1" />
+                  <span className="text-xs font-medium text-yellow-700">Keep going!</span>
+                </div>
+              ) : null}
             </div>
           </div>
           
@@ -551,9 +655,68 @@ export default function StudentAssignmentDetailPage() {
               </p>
             </div>
           )}
-          
+
+          {/* Mastery Score Card - NEW HYBRID MODEL */}
+          {masteryScore && masteryScore.wordsAttempted > 0 && (
+            <div className="mt-6 bg-gradient-to-br from-purple-50 to-indigo-50 border-2 border-purple-200 rounded-xl p-6 shadow-md">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <Award className="h-6 w-6 text-purple-600" />
+                  <h3 className="text-lg font-bold text-gray-900">Mastery Score</h3>
+                </div>
+                <div className="text-right">
+                  <div className={`text-4xl font-bold ${masteryScore.totalScore >= 90 ? 'text-green-600' : masteryScore.totalScore >= 70 ? 'text-blue-600' : 'text-yellow-600'}`}>
+                    {masteryScore.totalScore}%
+                  </div>
+                  <div className="text-sm font-medium text-gray-600">Grade: {masteryScore.grade}</div>
+                </div>
+              </div>
+
+              <p className="text-sm text-gray-700 mb-4">{masteryScore.gradeDescription}</p>
+
+              {/* Score Breakdown */}
+              <div className="grid grid-cols-3 gap-4 mb-4">
+                <div className="bg-white rounded-lg p-3 border border-purple-100">
+                  <div className="flex items-center gap-2 mb-1">
+                    <TrendingUp className="h-4 w-4 text-green-500" />
+                    <span className="text-xs text-gray-600">Accuracy</span>
+                  </div>
+                  <div className="text-lg font-bold text-gray-900">{Math.round(masteryScore.accuracyScore)}/70</div>
+                  <div className="text-xs text-gray-500">{masteryScore.overallAccuracy}% correct</div>
+                </div>
+
+                <div className="bg-white rounded-lg p-3 border border-purple-100">
+                  <div className="flex items-center gap-2 mb-1">
+                    <CheckCircle className="h-4 w-4 text-blue-500" />
+                    <span className="text-xs text-gray-600">Completion</span>
+                  </div>
+                  <div className="text-lg font-bold text-gray-900">{masteryScore.completionBonus}/20</div>
+                  <div className="text-xs text-gray-500">{masteryScore.isCompleted ? 'Complete!' : 'In progress'}</div>
+                </div>
+
+                <div className="bg-white rounded-lg p-3 border border-purple-100">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Zap className="h-4 w-4 text-yellow-500" />
+                    <span className="text-xs text-gray-600">Effort</span>
+                  </div>
+                  <div className="text-lg font-bold text-gray-900">{masteryScore.effortBonus}/10</div>
+                  <div className="text-xs text-gray-500">{masteryScore.sessionsCount} sessions</div>
+                </div>
+              </div>
+
+              {/* Progress Stats */}
+              <div className="bg-white rounded-lg p-3 border border-purple-100">
+                <div className="text-xs text-gray-600 mb-2">Practice Progress</div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-700">{masteryScore.wordsAttempted} words practiced</span>
+                  <span className="font-bold text-purple-600">{masteryScore.wordsCorrect} correct</span>
+                </div>
+              </div>
+            </div>
+          )}
+
           {assignment.isMultiGame && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
               <div className="flex items-center">
                 <Star className="h-5 w-5 text-blue-600 mr-2" />
                 <div>
@@ -573,20 +736,53 @@ export default function StudentAssignmentDetailPage() {
         </h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {assignment.allActivities.map((activity: any, index: number) => (
+          {assignment.allActivities.map((activity: any, index: number) => {
+            // Determine status badge
+            const getStatusBadge = () => {
+              if (activity.completed) {
+                return { text: 'COMPLETED', color: 'bg-green-500 text-white', icon: CheckCircle };
+              } else if (activity.status === 'in_progress' || activity.progressPercentage > 0) {
+                return { text: 'IN PROGRESS', color: 'bg-yellow-500 text-white', icon: Activity };
+              } else {
+                return { text: 'NOT STARTED', color: 'bg-gray-400 text-white', icon: Play };
+              }
+            };
+
+            const statusBadge = getStatusBadge();
+            const StatusIcon = statusBadge.icon;
+
+            // Format last played time
+            const getLastPlayedText = () => {
+              if (!activity.lastPlayedAt) return null;
+              const now = new Date();
+              const lastPlayed = new Date(activity.lastPlayedAt);
+              const diffMs = now.getTime() - lastPlayed.getTime();
+              const diffMins = Math.floor(diffMs / 60000);
+              const diffHours = Math.floor(diffMins / 60);
+              const diffDays = Math.floor(diffHours / 24);
+
+              if (diffMins < 60) return `${diffMins}m ago`;
+              if (diffHours < 24) return `${diffHours}h ago`;
+              return `${diffDays}d ago`;
+            };
+
+            return (
             <div
               key={activity.id}
-              className={`border rounded-xl p-6 transition-all duration-300 hover:shadow-lg transform hover:scale-105 ${
+              className={`border-2 rounded-xl p-6 transition-all duration-300 hover:shadow-lg ${
                 activity.completed
-                  ? 'border-green-300 bg-gradient-to-br from-green-50 to-green-100 shadow-green-100'
-                  : 'border-gray-200 bg-white hover:border-indigo-300 hover:shadow-indigo-100'
+                  ? 'border-green-400 bg-gradient-to-br from-green-50 to-green-100'
+                  : activity.status === 'in_progress'
+                  ? 'border-yellow-400 bg-gradient-to-br from-yellow-50 to-yellow-100'
+                  : 'border-gray-300 bg-white hover:border-indigo-400'
               }`}
             >
-              <div className="flex items-start justify-between mb-4">
+              {/* Header with title and status */}
+              <div className="flex items-start justify-between mb-3">
                 <div className="flex-1">
-                  <div className="flex items-center mb-2">
-                    <h3 className="text-lg font-semibold text-gray-900">{activity.name}</h3>
-                    <span className={`ml-2 text-xs px-2 py-1 rounded-full font-medium ${
+                  <div className="flex items-center gap-2 mb-2">
+                    <h3 className="text-lg font-bold text-gray-900">{activity.name}</h3>
+                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${
                       activity.type === 'game'
                         ? 'bg-blue-100 text-blue-700'
                         : activity.type === 'assessment'
@@ -596,57 +792,89 @@ export default function StudentAssignmentDetailPage() {
                       {activity.type === 'game' ? 'GAME' : activity.type === 'assessment' ? 'ASSESSMENT' : 'SKILL'}
                     </span>
                   </div>
-                  <p className="text-gray-600 text-sm mb-4">{activity.description}</p>
+                  <p className="text-gray-600 text-sm">{activity.description}</p>
                 </div>
+              </div>
 
-                {activity.completed && (
-                  <div className="flex items-center space-x-2">
-                    <CheckCircle className="h-6 w-6 text-green-600 flex-shrink-0" />
-                    <span className="text-xs font-medium text-green-700 bg-green-200 px-2 py-1 rounded-full">
-                      COMPLETED
-                    </span>
-                  </div>
+              {/* Status Badge */}
+              <div className="flex items-center gap-2 mb-4">
+                <StatusIcon className="h-4 w-4 text-white" />
+                <span className={`text-xs font-bold px-3 py-1 rounded-full ${statusBadge.color}`}>
+                  {statusBadge.text}
+                </span>
+                {activity.lastPlayedAt && (
+                  <span className="text-xs text-gray-500 ml-auto">
+                    {getLastPlayedText()}
+                  </span>
                 )}
               </div>
 
-              {activity.completed && (
-                <div className="bg-white rounded-lg p-4 mb-4 border border-green-200 shadow-sm">
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    {activity.score !== undefined && (
-                      <div className="flex items-center space-x-2">
-                        <Star className="h-4 w-4 text-yellow-500" />
+              {/* Activity Metrics - Show for all activities with data */}
+              {(activity.sessionsStarted > 0 || activity.completed) && (
+                <div className="bg-white/50 rounded-lg p-4 mb-4 border border-gray-200">
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    {/* Sessions */}
+                    {activity.sessionsStarted > 0 && (
+                      <div className="flex items-center gap-2">
+                        <Gamepad2 className="h-4 w-4 text-indigo-500" />
                         <div>
-                          <span className="text-gray-500">Score:</span>
-                          <span className="font-bold text-green-700 ml-1">{activity.score} XP</span>
+                          <span className="text-gray-600 text-xs">Sessions</span>
+                          <p className="font-bold text-gray-900">{activity.sessionsStarted}</p>
                         </div>
                       </div>
                     )}
-                    {activity.accuracy !== undefined && activity.accuracy > 0 && (
-                      <div className="flex items-center space-x-2">
+
+                    {/* Words Practiced */}
+                    {activity.wordsAttempted > 0 && (
+                      <div className="flex items-center gap-2">
                         <Target className="h-4 w-4 text-blue-500" />
                         <div>
-                          <span className="text-gray-500">Accuracy:</span>
-                          <span className="font-bold text-blue-700 ml-1">{Math.round(activity.accuracy)}%</span>
+                          <span className="text-gray-600 text-xs">Words</span>
+                          <p className="font-bold text-gray-900">{activity.wordsAttempted}</p>
                         </div>
                       </div>
                     )}
-                    {activity.timeSpent !== undefined && activity.timeSpent > 0 && (
-                      <div className="flex items-center space-x-2">
-                        <Clock className="h-4 w-4 text-purple-500" />
+
+                    {/* Gems Earned */}
+                    {activity.gemsEarned > 0 && (
+                      <div className="flex items-center gap-2">
+                        <Gem className="h-4 w-4 text-purple-500" />
                         <div>
-                          <span className="text-gray-500">Time:</span>
-                          <span className="font-bold text-purple-700 ml-1">{Math.round(activity.timeSpent / 60)}m</span>
+                          <span className="text-gray-600 text-xs">Gems</span>
+                          <p className="font-bold text-gray-900">{activity.gemsEarned}</p>
                         </div>
                       </div>
                     )}
-                    {activity.completedAt && (
-                      <div className="flex items-center space-x-2">
-                        <CheckCircle className="h-4 w-4 text-green-500" />
+
+                    {/* Time Spent */}
+                    {activity.timeSpent > 0 && (
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-4 w-4 text-orange-500" />
                         <div>
-                          <span className="text-gray-500">Completed:</span>
-                          <span className="font-medium text-gray-700 ml-1">
-                            {new Date(activity.completedAt).toLocaleDateString()}
-                          </span>
+                          <span className="text-gray-600 text-xs">Time</span>
+                          <p className="font-bold text-gray-900">{Math.round(activity.timeSpent / 60)}m</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Accuracy */}
+                    {activity.accuracy > 0 && (
+                      <div className="flex items-center gap-2">
+                        <TrendingUp className="h-4 w-4 text-green-500" />
+                        <div>
+                          <span className="text-gray-600 text-xs">Accuracy</span>
+                          <p className="font-bold text-gray-900">{activity.accuracy}%</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Score */}
+                    {activity.score > 0 && (
+                      <div className="flex items-center gap-2">
+                        <Star className="h-4 w-4 text-yellow-500" />
+                        <div>
+                          <span className="text-gray-600 text-xs">Score</span>
+                          <p className="font-bold text-gray-900">{activity.score}</p>
                         </div>
                       </div>
                     )}
@@ -654,6 +882,23 @@ export default function StudentAssignmentDetailPage() {
                 </div>
               )}
 
+              {/* Progress Bar - Show for in-progress activities */}
+              {!activity.completed && activity.progressPercentage > 0 && (
+                <div className="mb-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-medium text-gray-600">Progress</span>
+                    <span className="text-xs font-bold text-indigo-600">{activity.progressPercentage}%</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2.5">
+                    <div
+                      className="bg-gradient-to-r from-indigo-500 to-purple-500 h-2.5 rounded-full transition-all duration-500"
+                      style={{ width: `${activity.progressPercentage}%` }}
+                    ></div>
+                  </div>
+                </div>
+              )}
+
+              {/* Action Button */}
               <button
                 onClick={() => {
                   if (activity.type === 'game') {
@@ -664,26 +909,26 @@ export default function StudentAssignmentDetailPage() {
                     handlePlaySkill(activity);
                   }
                 }}
-                className={`w-full py-3 px-4 rounded-lg font-medium transition-all duration-200 flex items-center justify-center transform hover:scale-105 ${
+                className={`w-full py-3 px-4 rounded-lg font-bold transition-all duration-200 flex items-center justify-center transform hover:scale-105 shadow-lg ${
                   activity.completed
-                    ? 'bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700 shadow-lg'
-                    : activity.type === 'game'
-                      ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:from-indigo-600 hover:to-purple-700 shadow-lg'
-                      : activity.type === 'assessment'
-                      ? 'bg-gradient-to-r from-purple-500 to-pink-600 text-white hover:from-purple-600 hover:to-pink-700 shadow-lg'
-                      : 'bg-gradient-to-r from-green-500 to-teal-600 text-white hover:from-green-600 hover:to-teal-700 shadow-lg'
+                    ? 'bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700'
+                    : activity.status === 'in_progress'
+                      ? 'bg-gradient-to-r from-yellow-500 to-orange-500 text-white hover:from-yellow-600 hover:to-orange-600'
+                      : 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:from-indigo-600 hover:to-purple-700'
                 }`}
               >
-                <Play className="h-4 w-4 mr-2" />
+                <Play className="h-5 w-5 mr-2" />
                 {activity.completed
-                  ? (activity.type === 'game' ? 'Play Again' : activity.type === 'assessment' ? 'Retake Assessment' : 'Review Skill')
-                  : (activity.type === 'game' ? 'Start Game' : activity.type === 'assessment' ? 'Start Assessment' : 'Start Skill')
-                }
+                  ? 'Play Again'
+                  : activity.status === 'in_progress'
+                    ? 'Continue'
+                    : 'Start'}
               </button>
             </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>
   );
-} 
+}

@@ -93,6 +93,37 @@ export class EnhancedGameSessionService {
   }
   
   /**
+   * Increment word counts in the session (for progress tracking)
+   */
+  private async incrementSessionWordCounts(sessionId: string, wasCorrect: boolean): Promise<void> {
+    try {
+      // Get current counts
+      const { data: session } = await this.supabase
+        .from('enhanced_game_sessions')
+        .select('words_attempted, words_correct')
+        .eq('id', sessionId)
+        .single();
+
+      if (!session) return;
+
+      // Increment counts
+      const { error } = await this.supabase
+        .from('enhanced_game_sessions')
+        .update({
+          words_attempted: (session.words_attempted || 0) + 1,
+          words_correct: wasCorrect ? (session.words_correct || 0) + 1 : (session.words_correct || 0)
+        })
+        .eq('id', sessionId);
+
+      if (error) {
+        console.warn('⚠️ Failed to increment session word counts:', error);
+      }
+    } catch (error) {
+      console.warn('⚠️ Error incrementing session word counts:', error);
+    }
+  }
+
+  /**
    * Record a sentence attempt for sentence-based games
    */
   async recordSentenceAttempt(
@@ -114,6 +145,9 @@ export class EnhancedGameSessionService {
     }
   ): Promise<GemEvent | null> {
     try {
+      // Update session word counts in real-time
+      await this.incrementSessionWordCounts(sessionId, attempt.wasCorrect);
+
       // Log sentence performance (using sentenceId as vocabularyId for compatibility) - non-blocking
       this.logWordPerformance(sessionId, {
         vocabularyId: attempt.sentenceId,
@@ -210,6 +244,9 @@ export class EnhancedGameSessionService {
     });
 
     try {
+      // Update session word counts in real-time
+      await this.incrementSessionWordCounts(sessionId, attempt.wasCorrect);
+
       // Always log the word performance (non-blocking)
       console.log(`🔮 [SESSION SERVICE] Logging word performance [${callId}]...`);
       this.logWordPerformance(sessionId, attempt).catch(error => {

@@ -21,13 +21,14 @@ export default function UnifiedMemoryGamePage() {
   const searchParams = useSearchParams();
   const assignmentId = searchParams?.get('assignment');
   const mode = searchParams?.get('mode');
+  const filterOutstanding = searchParams?.get('filterOutstanding') === 'true';
 
   // Early assignment mode detection
   const isAssignmentMode = assignmentId && mode === 'assignment';
 
   // Always initialize assignment hook to keep hooks order stable
   const { assignment, vocabulary: assignmentVocabulary, loading: assignmentLoading, error: assignmentError } =
-    useAssignmentVocabulary(assignmentId || '', 'memory-game');
+    useAssignmentVocabulary(assignmentId || '', 'memory-game', filterOutstanding);
 
   // Game state management - ALWAYS initialize hooks first
   const [gameStarted, setGameStarted] = useState(false);

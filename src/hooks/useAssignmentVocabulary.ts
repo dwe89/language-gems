@@ -45,10 +45,12 @@ interface UseAssignmentVocabularyReturn {
 /**
  * Hook to load assignment data and vocabulary
  * Handles both vocabulary-based and sentence-based assignments
+ * Supports filtering to outstanding words only (excluding mastered words)
  */
 export function useAssignmentVocabulary(
   assignmentId: string,
-  gameId: string
+  gameId: string,
+  filterOutstanding: boolean = false
 ): UseAssignmentVocabularyReturn {
   const [assignment, setAssignment] = useState<AssignmentData | null>(null);
   const [vocabulary, setVocabulary] = useState<StandardVocabularyItem[]>([]);
@@ -197,7 +199,47 @@ export function useAssignmentVocabulary(
               };
             });
 
-          setVocabulary(vocabularyItems);
+          // Filter to outstanding words if requested
+          if (filterOutstanding && vocabularyItems.length > 0) {
+            console.log('🔍 [HOOK] Filtering to outstanding words only...');
+
+            // Get student ID from current user
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+              // Query vocabulary_gem_collection to find mastered words
+              const { data: masteryData } = await supabase
+                .from('vocabulary_gem_collection')
+                .select('centralized_vocabulary_id, total_encounters, correct_encounters')
+                .eq('student_id', user.id)
+                .in('centralized_vocabulary_id', vocabularyItems.map(v => v.id));
+
+              const masteredWordIds = new Set(
+                (masteryData || [])
+                  .filter(m => {
+                    const accuracy = m.total_encounters > 0
+                      ? (m.correct_encounters / m.total_encounters) * 100
+                      : 0;
+                    return accuracy >= 80 && m.total_encounters >= 3;
+                  })
+                  .map(m => m.centralized_vocabulary_id)
+              );
+
+              const outstandingWords = vocabularyItems.filter(v => !masteredWordIds.has(v.id));
+
+              console.log('📊 [HOOK] Outstanding words filter results:', {
+                total: vocabularyItems.length,
+                mastered: masteredWordIds.size,
+                outstanding: outstandingWords.length
+              });
+
+              setVocabulary(outstandingWords);
+            } else {
+              setVocabulary(vocabularyItems);
+            }
+          } else {
+            setVocabulary(vocabularyItems);
+          }
+
           setSentences([]); // No sentences for vocabulary-based assignments
         }
 
@@ -214,7 +256,7 @@ export function useAssignmentVocabulary(
     if (assignmentId && gameId) {
       loadAssignmentData();
     }
-  }, [assignmentId, gameId]); // Only reload if assignmentId or gameId changes
+  }, [assignmentId, gameId, filterOutstanding]); // Reload if filter changes
 
   return { assignment, vocabulary, sentences, loading, error };
 }
