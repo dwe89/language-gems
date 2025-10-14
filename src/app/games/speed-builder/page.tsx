@@ -8,7 +8,7 @@ import UnifiedSentenceCategorySelector, { SentenceSelectionConfig } from '../../
 import UnifiedGameLauncher from '../../../components/games/UnifiedGameLauncher';
 import { UnifiedSelectionConfig, UnifiedVocabularyItem } from '../../../hooks/useUnifiedVocabulary';
 import InGameConfigPanel from '../../../components/games/InGameConfigPanel';
-import GameAssignmentWrapper from '../../../components/games/templates/GameAssignmentWrapper';
+import { useAssignmentVocabulary } from '../../../hooks/useAssignmentVocabulary';
 
 export default function SpeedBuilderPage() {
   const { user } = useUnifiedAuth();
@@ -17,19 +17,17 @@ export default function SpeedBuilderPage() {
   const assignmentId = searchParams?.get('assignment');
   const mode = searchParams?.get('mode');
 
+  // Option B: Early assignment mode detection
+  const isAssignmentMode = assignmentId && mode === 'assignment';
+
+  // Load assignment data if in assignment mode (hook must be called unconditionally)
+  const { assignment, vocabulary: assignmentVocabulary, sentences: assignmentSentences, loading: assignmentLoading, error: assignmentError } =
+    useAssignmentVocabulary(assignmentId || '', 'speed-builder');
+
   // Game state management - ALWAYS initialize hooks first
   const [gameStarted, setGameStarted] = useState(false);
   const [selectedConfig, setSelectedConfig] = useState<SentenceSelectionConfig | null>(null);
   const [showConfigPanel, setShowConfigPanel] = useState(false);
-
-  // Assignment mode handlers
-  const handleAssignmentComplete = () => {
-    // No auto-redirect - let completion screen handle navigation
-  };
-
-  const handleBackToAssignments = () => {
-    router.push(`/student-dashboard/assignments/${assignmentId}`);
-  };
 
   // Handle selection complete from sentence selector
   const handleSelectionComplete = (config: SentenceSelectionConfig) => {
@@ -60,90 +58,115 @@ export default function SpeedBuilderPage() {
     setShowConfigPanel(false);
   };
 
-  // Assignment mode: wrap with GameAssignmentWrapper (after all hooks are initialized)
-  if (assignmentId && mode === 'assignment' && user) {
-    return (
-      <GameAssignmentWrapper
-        assignmentId={assignmentId}
-        gameId="speed-builder"
-        studentId={user.id}
-        onAssignmentComplete={handleAssignmentComplete}
-        onBackToAssignments={handleBackToAssignments}
-        onBackToMenu={() => router.push('/games/speed-builder')}
-      >
-        {({ assignment, vocabulary, onProgressUpdate, onGameComplete, gameSessionId, gameService }) => {
-          // Convert assignment vocabulary to sentence config format
-          const assignmentConfig: SentenceSelectionConfig = {
-            language: assignment.vocabulary_selection?.language || 'spanish',
-            curriculumLevel: assignment.vocabulary_selection?.curriculum_level || 'KS3',
-            categoryId: assignment.vocabulary_selection?.category || 'basics_core_language',
-            subcategoryId: assignment.vocabulary_selection?.subcategory || 'greetings_introductions',
-            wordCount: assignment.vocabulary_selection?.word_count || 20
-          };
+  // Build assignment JSX after all hooks
+  let assignmentJSX: JSX.Element | null = null;
 
-          // Map sentence categories to Speed Builder themes
-          const categoryToThemeMapping: { [key: string]: string } = {
-            'basics_core_language': 'People and lifestyle',
-            'identity_personal_life': 'People and lifestyle',
-            'home_local_area': 'Communication and the world around us',
-            'free_time_leisure': 'Popular culture',
-            'food_drink': 'People and lifestyle',
-            'clothes_shopping': 'People and lifestyle',
-            'technology_media': 'Popular culture',
-            'health_lifestyle': 'People and lifestyle',
-            'holidays_travel_culture': 'Communication and the world around us',
-            'nature_environment': 'Communication and the world around us',
-            'social_global_issues': 'Communication and the world around us',
-            'general_concepts': 'People and lifestyle',
-            'daily_life': 'People and lifestyle',
-            'school_jobs_future': 'People and lifestyle'
-          };
+  if (isAssignmentMode) {
+    if (!user) {
+      assignmentJSX = (
+        <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 flex items-center justify-center">
+          <div className="text-white text-xl">Please log in to access this assignment</div>
+        </div>
+      );
+    } else if (assignmentLoading) {
+      assignmentJSX = (
+        <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 flex items-center justify-center">
+          <div className="text-white text-xl">Loading assignment...</div>
+        </div>
+      );
+    } else if (assignmentError || (!assignmentVocabulary || assignmentVocabulary.length === 0) && (!assignmentSentences || assignmentSentences.length === 0)) {
+      assignmentJSX = (
+        <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 flex items-center justify-center">
+          <div className="text-white text-xl">Error loading assignment: {assignmentError || 'No content found'}</div>
+        </div>
+      );
+    } else {
+      // Extract sentence config from assignment's game_config
+      const gameConfig = assignment?.game_config?.gameConfig || assignment?.game_config || {};
+      const sentenceConfig = gameConfig.sentenceConfig || {};
 
-          const subcategoryToTopicMapping: { [key: string]: string } = {
-            'greetings_introductions': 'Identity and relationships',
-            'family_friends': 'Identity and relationships',
-            'personal_information': 'Identity and relationships',
-            'daily_routine': 'Daily life',
-            'food_drink_vocabulary': 'Food and eating',
-            'meals': 'Food and eating',
-            'hobbies_interests': 'Free time activities',
-            'sports_ball_games': 'Free time activities',
-            'school_subjects': 'School',
-            'professions_jobs': 'Future Aspirations, Study and Work',
-            'places_in_town': 'Local Area, Holiday and Travel',
-            'transport': 'Local Area, Holiday and Travel',
-            'countries': 'Local Area, Holiday and Travel',
-            'weathers': 'Local Area, Holiday and Travel'
-          };
+      // Map language codes to full language names
+      const languageMap: Record<string, string> = {
+        'es': 'spanish',
+        'fr': 'french',
+        'de': 'german'
+      };
 
-          const legacyCurriculumType = assignmentConfig.curriculumLevel === 'KS4' ? 'gcse' : 'ks3';
-          const legacyTier = assignmentConfig.curriculumLevel === 'KS4' ? 'Foundation' : 'Higher';
-          const legacyTheme = categoryToThemeMapping[assignmentConfig.categoryId] || 'People and lifestyle';
-          const legacyTopic = subcategoryToTopicMapping[assignmentConfig.subcategoryId || ''] || 'Identity and relationships';
+      // Get language from sentenceConfig or vocabularyConfig, then map it
+      const rawLanguage = gameConfig.vocabularyConfig?.language || assignment?.vocabulary_criteria?.language || 'es';
+      const mappedLanguage = languageMap[rawLanguage] || rawLanguage;
 
-          return (
-            <div className="min-h-screen">
-              <SpeedBuilderGameWrapper
-                tier={legacyTier}
-                theme={legacyTheme}
-                topic={legacyTopic}
-                onBackToMenu={() => router.push('/games/speed-builder')}
-                assignmentId={assignmentId}
-                userId={user.id}
-                sentenceConfig={assignmentConfig}
-                gameSessionId={gameSessionId}
-                gameService={gameService}
-                onOpenSettings={() => {}}
-                onGameEnd={(result) => {
-                  console.log('Speed Builder assignment ended:', result);
-                  onGameComplete();
-                }}
-              />
-            </div>
-          );
-        }}
-      </GameAssignmentWrapper>
-    );
+      // Use sentenceConfig.theme as the category (like Lava Temple)
+      const category = sentenceConfig.theme || assignment?.vocabulary_criteria?.category || 'basics_core_language';
+
+      const assignmentConfig: SentenceSelectionConfig = {
+        language: mappedLanguage,
+        curriculumLevel: assignment?.curriculum_level || 'KS3',
+        categoryId: category,
+        subcategoryId: sentenceConfig.topic || assignment?.vocabulary_criteria?.subcategory || '',
+        wordCount: sentenceConfig.sentenceCount || 20
+      };
+
+      const categoryToThemeMapping: { [key: string]: string } = {
+        'basics_core_language': 'People and lifestyle',
+        'identity_personal_life': 'People and lifestyle',
+        'home_local_area': 'Communication and the world around us',
+        'free_time_leisure': 'Popular culture',
+        'food_drink': 'People and lifestyle',
+        'clothes_shopping': 'People and lifestyle',
+        'technology_media': 'Popular culture',
+        'health_lifestyle': 'People and lifestyle',
+        'holidays_travel_culture': 'Communication and the world around us',
+        'nature_environment': 'Communication and the world around us',
+        'social_global_issues': 'Communication and the world around us',
+        'general_concepts': 'People and lifestyle',
+        'daily_life': 'People and lifestyle',
+        'school_jobs_future': 'People and lifestyle'
+      };
+
+      const subcategoryToTopicMapping: { [key: string]: string } = {
+        'greetings_introductions': 'Identity and relationships',
+        'family_friends': 'Identity and relationships',
+        'personal_information': 'Identity and relationships',
+        'daily_routine': 'Daily life',
+        'food_drink_vocabulary': 'Food and eating',
+        'meals': 'Food and eating',
+        'hobbies_interests': 'Free time activities',
+        'sports_ball_games': 'Free time activities',
+        'school_subjects': 'School',
+        'professions_jobs': 'Future Aspirations, Study and Work',
+        'places_in_town': 'Local Area, Holiday and Travel',
+        'transport': 'Local Area, Holiday and Travel',
+        'countries': 'Local Area, Holiday and Travel',
+        'weathers': 'Local Area, Holiday and Travel'
+      };
+
+      const legacyTier = assignmentConfig.curriculumLevel === 'KS4' ? 'Foundation' : 'Higher';
+      const legacyTheme = categoryToThemeMapping[assignmentConfig.categoryId] || 'People and lifestyle';
+      const legacyTopic = subcategoryToTopicMapping[assignmentConfig.subcategoryId || ''] || 'Identity and relationships';
+
+      assignmentJSX = (
+        <div className="min-h-screen">
+          <SpeedBuilderGameWrapper
+            tier={legacyTier}
+            theme={legacyTheme}
+            topic={legacyTopic}
+            onBackToMenu={() => router.push('/student-dashboard/assignments')}
+            assignmentId={assignmentId!}
+            userId={user.id}
+            isAssignmentMode={true}
+            sentenceConfig={assignmentConfig}
+            onOpenSettings={() => {}}
+            onGameEnd={() => router.push('/student-dashboard/assignments')}
+          />
+        </div>
+      );
+    }
+  }
+
+  // Return assignment JSX if in assignment mode
+  if (assignmentJSX) {
+    return assignmentJSX;
   }
 
   // Show sentence category selector if game not started

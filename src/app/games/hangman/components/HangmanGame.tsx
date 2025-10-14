@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react'; // Removed useRef as
 import { ThemeProvider, useTheme } from './ThemeProvider';
 import confetti from 'canvas-confetti';
 import { motion } from 'framer-motion';
-import { Zap, Volume2, VolumeX, Settings } from 'lucide-react';
+import { Zap, Volume2, VolumeX, Settings, Palette } from 'lucide-react';
 import TokyoNightsAnimation from './themes/TokyoNightsAnimation';
 import LavaTempleAnimation from './themes/LavaTempleAnimation';
 import SpaceExplorerAnimation from './themes/SpaceExplorerAnimation';
@@ -218,56 +218,57 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
       setGameStatus('won');
       playSFX('victory'); // Use passed-in playSFX
 
-      // Record word practice with FSRS system for successful completion
-      if (!isAssignmentMode) {
-        try {
-          const currentVocabItem = vocabulary?.find(v => v.word.toLowerCase() === word.toLowerCase());
-          const wordData = {
-            id: currentVocabItem?.id || `hangman-${word}`,
-            word: word,
-            translation: currentVocabItem?.translation || word, // Use translation if available
-            language: settings.language === 'spanish' ? 'es' : settings.language === 'french' ? 'fr' : 'en'
-          };
+      // ✅ OPTION 1: Record successful word completion ONLY (works in both assignment and free play modes)
+      try {
+        const currentVocabItem = vocabulary?.find(v => v.word.toLowerCase() === word.toLowerCase());
 
-          // Calculate confidence based on performance
-          const correctGuessCount = guessedLetters.filter(letter => word.toLowerCase().includes(letter)).length;
-          const totalGuessCount = guessedLetters.length;
-          const accuracy = totalGuessCount > 0 ? correctGuessCount / totalGuessCount : 1;
-          const timeBonus = timer < 60 ? 0.1 : timer < 120 ? 0.05 : 0; // Bonus for quick completion
-          const mistakesPenalty = wrongGuesses * 0.1; // Penalty for wrong guesses
-          const confidence = Math.max(0.1, Math.min(0.95, accuracy + timeBonus - mistakesPenalty));
+        // ✅ Record successful word completion with gem award
+        if (gameSessionId && currentVocabItem?.id) {
+          const recordGemAttempt = async () => {
+            try {
+              console.log('🎮 [HANGMAN] Recording successful word completion:', {
+                word,
+                vocabularyId: currentVocabItem.id,
+                gameSessionId,
+                wrongGuesses,
+                timer
+              });
 
-          // ✅ UNIFIED: Record successful word completion
-          if (gameSessionId && currentVocabItem?.id) {
-            const recordGemAttempt = async () => {
-              try {
-                const sessionService = new EnhancedGameSessionService();
-                const gemEvent = await sessionService.recordWordAttempt(gameSessionId, 'hangman', {
-                  vocabularyId: currentVocabItem.id,
-                  wordText: word,
-                  translationText: currentVocabItem.translation || word,
-                  responseTimeMs: timer * 1000,
-                  wasCorrect: true,
-                  hintUsed: false,
-                  streakCount: 0,
-                  masteryLevel: 1,
-                  maxGemRarity: 'common', // Luck-based game
-                  gameMode: 'word_completion',
-                  difficultyLevel: settings.difficulty
-                });
+              const sessionService = new EnhancedGameSessionService();
+              const gemEvent = await sessionService.recordWordAttempt(gameSessionId, 'hangman', {
+                vocabularyId: currentVocabItem.id,
+                wordText: word,
+                translationText: currentVocabItem.translation || word,
+                responseTimeMs: timer * 1000,
+                wasCorrect: true,
+                hintUsed: false,
+                streakCount: 0,
+                masteryLevel: 1,
+                maxGemRarity: 'common', // Luck-based game
+                gameMode: 'word_completion',
+                difficultyLevel: settings.difficulty
+              }, true); // Skip FSRS for speed
 
-                if (gemEvent) {
-                  console.log(`✅ Hangman gem awarded: ${gemEvent.rarity} (${gemEvent.xpValue} XP)`);
-                }
-              } catch (error) {
-                console.error('Error recording vocabulary attempt for hangman:', error);
+              if (gemEvent) {
+                console.log(`✅ [HANGMAN] Gem awarded: ${gemEvent.rarity} (${gemEvent.xpValue} XP) - Wrong guesses: ${wrongGuesses}, Time: ${timer}s`);
+              } else {
+                console.warn('⚠️ [HANGMAN] No gem event returned');
               }
-            };
-            recordGemAttempt();
-          }
-        } catch (error) {
-          console.error('Error setting up FSRS recording for hangman:', error);
+            } catch (error) {
+              console.error('🚨 [HANGMAN] Error recording vocabulary attempt:', error);
+            }
+          };
+          recordGemAttempt();
+        } else {
+          console.warn('⚠️ [HANGMAN] Skipping gem recording:', {
+            hasGameSessionId: !!gameSessionId,
+            hasVocabularyId: !!currentVocabItem?.id,
+            gameSessionId,
+            vocabularyId: currentVocabItem?.id
+          });
         }
+      } catch (error) {
+        console.error('🚨 [HANGMAN] Error setting up recording for successful completion:', error);
       }
 
       // Play audio for the completed word
@@ -306,46 +307,13 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
       setGameStatus('lost');
       playSFX('defeat'); // Use passed-in playSFX
 
-      // Record word practice with FSRS system for failed attempt
-      if (!isAssignmentMode) {
-        try {
-          const currentVocabItem = vocabulary?.find(v => v.word.toLowerCase() === word.toLowerCase());
-          const wordData = {
-            id: currentVocabItem?.id || `hangman-${word}`,
-            word: word,
-            translation: currentVocabItem?.translation || word,
-            language: settings.language === 'spanish' ? 'es' : settings.language === 'french' ? 'fr' : 'en'
-          };
-
-          // ✅ UNIFIED: Record failed attempt
-          if (gameSessionId && currentVocabItem?.id) {
-            const recordFailedAttempt = async () => {
-              try {
-                const sessionService = new EnhancedGameSessionService();
-                await sessionService.recordWordAttempt(gameSessionId, 'hangman', {
-                  vocabularyId: currentVocabItem.id,
-                  wordText: word,
-                  translationText: currentVocabItem.translation || word,
-                  responseTimeMs: timer * 1000,
-                  wasCorrect: false,
-                  hintUsed: false,
-                  streakCount: 0,
-                  masteryLevel: 1,
-                  maxGemRarity: 'common',
-                  gameMode: 'word_completion',
-                  difficultyLevel: settings.difficulty
-                });
-                console.log(`✅ Hangman failed attempt recorded for "${word}"`);
-              } catch (error) {
-                console.error('Error recording vocabulary attempt for hangman:', error);
-              }
-            };
-            recordFailedAttempt();
-          }
-        } catch (error) {
-          console.error('Error setting up vocabulary recording for failed hangman:', error);
-        }
-      }
+      // ✅ OPTION 1: Do NOT record failed attempts - they can try again
+      // Failed attempts don't prove they don't know the word (could be unlucky guessing)
+      console.log('🎮 [HANGMAN] Word failed - no recording (student can try again):', {
+        word,
+        wrongGuesses,
+        timer
+      });
 
       // Stop timer
       if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
@@ -874,117 +842,117 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
         </div>
       )}
 
-      {/* Top navigation and info bar - only render in non-assignment mode */}
-      {!isAssignmentMode && (
-        <div className="relative z-50 flex justify-between items-center p-3 md:p-4 bg-black/30 backdrop-blur-sm">
-          {!isFullscreen && (
-            <button
-              onClick={onBackToMenu}
-              className="px-3 py-2 md:px-4 md:py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white flex items-center text-sm md:text-base"
-            >
-              <span className="md:hidden">←</span>
-              <span className="hidden md:inline">Back to Games</span>
-            </button>
-          )}
+      {/* Top navigation and info bar - render in ALL modes (both assignment and standard) */}
+      <div className="relative z-50 flex justify-between items-center p-3 md:p-4 bg-black/30 backdrop-blur-sm">
+        {!isFullscreen && (
+          <button
+            onClick={onBackToMenu}
+            className="px-3 py-2 md:px-4 md:py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white flex items-center text-sm md:text-base"
+          >
+            <span className="md:hidden">←</span>
+            <span className="hidden md:inline">{isAssignmentMode ? 'Back to Assignment' : 'Back to Games'}</span>
+          </button>
+        )}
 
-          {/* Game info - responsive layout */}
-          <div className="flex-1 flex flex-col md:flex-row items-center justify-center gap-1 md:gap-4 mx-2 md:mx-4">
-            <div className="text-xs md:text-sm font-medium text-center">
-              {settings.category.charAt(0).toUpperCase() + settings.category.slice(1)} - {settings.difficulty.charAt(0).toUpperCase() + settings.difficulty.slice(1)}
-            </div>
-
-            <div className="text-xs md:text-sm opacity-75">
-              {formatTime(timer)}
-            </div>
-
-            {/* Lives remaining in top bar */}
-            {gameStatus === 'playing' && (
-              <div className="text-xs md:text-sm font-medium">
-                <span className="opacity-75">Lives:</span> {MAX_ATTEMPTS - wrongGuesses}/{MAX_ATTEMPTS}
-              </div>
-            )}
+        {/* Game info - responsive layout */}
+        <div className="flex-1 flex flex-col md:flex-row items-center justify-center gap-1 md:gap-4 mx-2 md:mx-4">
+          <div className="text-xs md:text-sm font-medium text-center">
+            {settings.category.charAt(0).toUpperCase() + settings.category.slice(1)} - {settings.difficulty.charAt(0).toUpperCase() + settings.difficulty.slice(1)}
           </div>
 
-          {/* Control buttons */}
-          <div className="flex items-center space-x-1 md:space-x-2">
-          {/* Settings button - Enhanced visibility */}
-          {onOpenSettings && (
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => {
-                playSFX('button-click');
-                onOpenSettings();
-              }}
-              className="relative px-3 md:px-4 py-2 md:py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-sm md:text-base font-semibold flex items-center gap-2 md:gap-3 transition-all duration-300 shadow-lg hover:shadow-xl border-2 border-white/20"
-              title="Customize your game: Change Language, Level, Topic & Theme"
-            >
-              <Settings className="h-5 w-5 md:h-6 md:w-6" />
-              <span className="hidden md:inline">Game Settings</span>
-              <span className="md:hidden">Settings</span>
-              
-              {/* Optional: Add a small indicator if settings are default */}
-              {settings.language === 'english' && settings.theme === 'default' && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full border border-white"
-                  title="Try customizing your game settings!"
-                />
-              )}
-            </motion.button>
-          )}
+          <div className="text-xs md:text-sm opacity-75">
+            {formatTime(timer)}
+          </div>
 
-          {/* Music toggle button (now controls UI icon, actual music by parent) */}
-          {!isAssignmentMode && (
-            <button
-              onClick={() => {
-                playSFX('button-click'); // SFX for the button click itself
-                if (toggleMusic) {
-                  toggleMusic();
-                } else {
-                  setMusicEnabled(prev => !prev); // Fallback to local state
-                }
-              }}
-              className="p-1.5 md:p-2 rounded-full bg-gray-700 hover:bg-gray-600 text-white"
-              title={(isMusicEnabled ?? musicEnabled) ? "Mute music" : "Play music"}
-            >
-              {(isMusicEnabled ?? musicEnabled) ? <Volume2 size={14} className="md:w-4 md:h-4" /> : <VolumeX size={14} className="md:w-4 md:h-4" />}
-            </button>
+          {/* Lives remaining in top bar */}
+          {gameStatus === 'playing' && (
+            <div className="text-xs md:text-sm font-medium">
+              <span className="opacity-75">Lives:</span> {MAX_ATTEMPTS - wrongGuesses}/{MAX_ATTEMPTS}
+            </div>
           )}
+        </div>
 
-          {/* Hint button */}
-          <button
+        {/* Control buttons */}
+        <div className="flex items-center space-x-1 md:space-x-2">
+        {/* Settings button - Enhanced visibility */}
+        {onOpenSettings && (
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={() => {
-              playSFX('button-click'); // Use passed-in playSFX
-              handleHint();
+              playSFX('button-click');
+              onOpenSettings();
             }}
-            disabled={hints <= 0 || gameStatus !== 'playing'}
-            className={`
-              relative flex items-center gap-1 px-2 md:px-3 py-1 rounded-lg
-              ${hints > 0 && gameStatus === 'playing'
-                ? `${themeClassesState.button}`
-                : 'bg-gray-400 opacity-50'
-              }
-              text-white text-xs md:text-sm font-medium
-            `}
+            className="relative px-3 md:px-4 py-2 md:py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-sm md:text-base font-semibold flex items-center gap-2 md:gap-3 transition-all duration-300 shadow-lg hover:shadow-xl border-2 border-white/20"
+            title={isAssignmentMode ? "Choose your theme" : "Customize your game: Change Language, Level, Topic & Theme"}
           >
-            <Zap size={14} className="md:w-4 md:h-4" />
-            <span className="hidden md:inline">Hint</span>
-            <span className="md:ml-1">({hints})</span>
-
-            {showPowerupEffect && (
+            {isAssignmentMode ? (
+              <Palette className="h-5 w-5 md:h-6 md:w-6" />
+            ) : (
+              <Settings className="h-5 w-5 md:h-6 md:w-6" />
+            )}
+            <span className="hidden md:inline">Game Settings</span>
+            <span className="md:hidden">Settings</span>
+            
+            {/* Optional: Add a small indicator if settings are default */}
+            {settings.language === 'english' && settings.theme === 'default' && (
               <motion.div
-                initial={{ scale: 0, opacity: 0 }}
-                animate={{ scale: [0, 1.5, 2], opacity: [0, 1, 0] }}
-                transition={{ duration: 0.8 }}
-                className="absolute inset-0 rounded-lg bg-white bg-opacity-30 pointer-events-none"
+                initial={{ opacity: 0, scale: 0 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full border border-white"
+                title="Try customizing your game settings!"
               />
             )}
-          </button>
-        </div>
+          </motion.button>
+        )}
+
+        {/* Music toggle button - show in all modes */}
+        <button
+          onClick={() => {
+            playSFX('button-click'); // SFX for the button click itself
+            if (toggleMusic) {
+              toggleMusic();
+            } else {
+              setMusicEnabled(prev => !prev); // Fallback to local state
+            }
+          }}
+          className="p-1.5 md:p-2 rounded-full bg-gray-700 hover:bg-gray-600 text-white"
+          title={(isMusicEnabled ?? musicEnabled) ? "Mute music" : "Play music"}
+        >
+          {(isMusicEnabled ?? musicEnabled) ? <Volume2 size={14} className="md:w-4 md:h-4" /> : <VolumeX size={14} className="md:w-4 md:h-4" />}
+        </button>
+
+        {/* Hint button */}
+        <button
+          onClick={() => {
+            playSFX('button-click'); // Use passed-in playSFX
+            handleHint();
+          }}
+          disabled={hints <= 0 || gameStatus !== 'playing'}
+          className={`
+            relative flex items-center gap-1 px-2 md:px-3 py-1 rounded-lg
+            ${hints > 0 && gameStatus === 'playing'
+              ? `${themeClassesState.button}`
+              : 'bg-gray-400 opacity-50'
+            }
+            text-white text-xs md:text-sm font-medium
+          `}
+        >
+          <Zap size={14} className="md:w-4 md:h-4" />
+          <span className="hidden md:inline">Hint</span>
+          <span className="md:ml-1">({hints})</span>
+
+          {showPowerupEffect && (
+            <motion.div
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: [0, 1.5, 2], opacity: [0, 1, 0] }}
+              transition={{ duration: 0.8 }}
+              className="absolute inset-0 rounded-lg bg-white bg-opacity-30 pointer-events-none"
+            />
+          )}
+        </button>
       </div>
-      )}
+    </div>
 
       {/* Progress bar - on top of the header */}
       <div className="relative z-60 px-3 md:px-4 pb-3 md:pb-4">

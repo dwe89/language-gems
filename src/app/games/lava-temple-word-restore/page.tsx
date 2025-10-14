@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import UnifiedGameLauncher from '../../../components/games/UnifiedGameLauncher';
 import { UnifiedSelectionConfig, UnifiedVocabularyItem } from '../../../hooks/useUnifiedVocabulary';
 import LavaTempleWordRestoreGameWrapper from './components/LavaTempleWordRestoreGameWrapper';
-import GameAssignmentWrapper from '../../../components/games/templates/GameAssignmentWrapper';
+import { useAssignmentVocabulary } from '../../../hooks/useAssignmentVocabulary';
 import { useAuth } from '../../../components/auth/AuthProvider';
 import { GameConfig } from './components/LavaTempleWordRestoreGame';
 
@@ -15,73 +15,94 @@ export default function LavaTempleWordRestorePage() {
   const searchParams = useSearchParams();
   const assignmentId = searchParams?.get('assignment');
   const mode = searchParams?.get('mode');
-  
+
+  // Option B: Early assignment mode detection
+  const isAssignmentMode = assignmentId && mode === 'assignment';
+
+  // Load assignment data if in assignment mode (hook must be called unconditionally)
+  const { assignment, vocabulary: assignmentVocabulary, loading: assignmentLoading, error: assignmentError } =
+    useAssignmentVocabulary(assignmentId || '', 'lava-temple-word-restore');
+
   // Game state management
   const [gameStarted, setGameStarted] = useState(false);
   const [gameConfig, setGameConfig] = useState<GameConfig | null>(null);
 
-  // If assignment mode, use GameAssignmentWrapper
-  if (assignmentId && mode === 'assignment') {
-    return (
-      <GameAssignmentWrapper
-        assignmentId={assignmentId}
-        gameId="lava-temple-word-restore"
-        studentId={user?.id}
-        onAssignmentComplete={(progress) => {
-          console.log('Lava Temple Word Restore assignment completed:', progress);
-          router.push('/student-dashboard');
-        }}
-        onBackToAssignments={() => router.push('/student-dashboard')}
-        onBackToMenu={() => router.push('/games/lava-temple-word-restore')}
-      >
-        {({ assignment, vocabulary, onProgressUpdate, onGameComplete }) => {
-          const handleGameComplete = (gameResult: any) => {
-            console.log('Lava Temple Word Restore assignment game completed:', gameResult);
-            
-            // Update progress with the game results
-            onProgressUpdate({
-              score: gameResult.score || 0,
-              accuracy: gameResult.accuracy || 0,
-              timeSpent: gameResult.timeSpent || 0
-            });
+  // Build assignment JSX after all hooks
+  let assignmentJSX: JSX.Element | null = null;
 
-            // Complete the assignment
-            onGameComplete({
-              assignmentId: assignmentId || '',
-              gameId: 'lava-temple-word-restore',
-              studentId: user?.id || '',
-              wordsCompleted: gameResult.correctAnswers || 0,
-              totalWords: gameResult.totalAttempts || 10,
-              score: gameResult.score || 0,
-              maxScore: (gameResult.totalAttempts || 10) * 100,
-              accuracy: gameResult.accuracy || 0,
-              timeSpent: gameResult.timeSpent || 0,
-              completedAt: new Date(),
-              sessionData: gameResult
-            });
-          };
+  if (isAssignmentMode) {
+    if (!user) {
+      assignmentJSX = (
+        <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 flex items-center justify-center">
+          <div className="text-white text-xl">Please log in to access this assignment</div>
+        </div>
+      );
+    } else if (assignmentLoading) {
+      assignmentJSX = (
+        <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 flex items-center justify-center">
+          <div className="text-white text-xl">Loading assignment...</div>
+        </div>
+      );
+    } else if (assignmentError || !assignmentVocabulary || assignmentVocabulary.length === 0) {
+      assignmentJSX = (
+        <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 flex items-center justify-center">
+          <div className="text-white text-xl">Error loading assignment: {assignmentError || 'No vocabulary found'}</div>
+        </div>
+      );
+    } else {
+      // Extract sentence config from game_config
+      const gameConfig = assignment?.game_config?.gameConfig || assignment?.game_config || {};
+      const sentenceConfig = gameConfig.sentenceConfig || {};
 
-          // For sentence-based games like Lava Temple, we use the assignment's vocabulary criteria
-          // to configure the game rather than passing individual vocabulary items
-          const legacyGameConfig: GameConfig = {
-            language: (assignment.vocabulary_criteria?.language || 'spanish') as 'spanish' | 'french' | 'german',
-            category: assignment.vocabulary_criteria?.category || 'assignment',
-            subcategory: assignment.vocabulary_criteria?.subcategory || 'assignment',
-            difficulty: 'beginner'
-          };
+      // Map sentence config to legacy game config format
+      let category = 'basics_core_language';
+      let subcategory = undefined;
 
-          return (
-            <LavaTempleWordRestoreGameWrapper
-              gameConfig={legacyGameConfig}
-              onBackToMenu={() => router.push('/games/lava-temple-word-restore')}
-              onGameEnd={handleGameComplete}
-              assignmentId={assignmentId}
-              userId={user?.id}
-            />
-          );
-        }}
-      </GameAssignmentWrapper>
-    );
+      if (sentenceConfig.source === 'topic' && sentenceConfig.topic) {
+        const topicToCategoryMap: Record<string, string> = {
+          'family_friends': 'identity_personal_life',
+          'relationships': 'identity_personal_life',
+          'personal_details': 'identity_personal_life',
+          'hobbies_interests': 'identity_personal_life',
+          'food_drink': 'basics_core_language',
+          'shopping': 'basics_core_language',
+          'travel': 'basics_core_language',
+          'school_work': 'education_work',
+          'future_plans': 'education_work',
+          'technology': 'modern_life',
+          'environment': 'modern_life'
+        };
+
+        category = topicToCategoryMap[sentenceConfig.topic] || 'basics_core_language';
+        subcategory = sentenceConfig.topic;
+      } else if (sentenceConfig.source === 'theme' && sentenceConfig.theme) {
+        category = sentenceConfig.theme;
+        subcategory = undefined;
+      }
+
+      const legacyGameConfig: GameConfig = {
+        language: (assignment?.vocabulary_criteria?.language || 'spanish') as 'spanish' | 'french' | 'german',
+        category,
+        subcategory,
+        difficulty: sentenceConfig.difficulty || 'beginner'
+      };
+
+      assignmentJSX = (
+        <LavaTempleWordRestoreGameWrapper
+          gameConfig={legacyGameConfig}
+          onBackToMenu={() => router.push(`/student-dashboard/assignments/${assignmentId}`)}
+          onGameEnd={() => router.push(`/student-dashboard/assignments/${assignmentId}`)}
+          assignmentId={assignmentId!}
+          userId={user.id}
+          isAssignmentMode={true}
+        />
+      );
+    }
+  }
+
+  // Return assignment JSX if in assignment mode
+  if (assignmentJSX) {
+    return assignmentJSX;
   }
 
   // Handle game start from unified launcher

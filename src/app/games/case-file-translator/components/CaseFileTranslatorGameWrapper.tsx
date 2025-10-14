@@ -1,8 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { EnhancedGameService } from '../../../../services/enhancedGameService';
-import { supabaseBrowser } from '../../../../components/auth/AuthProvider';
+import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
 import { RewardEngine } from '../../../../services/rewards/RewardEngine';
 import CaseFileTranslatorGame from './CaseFileTranslatorGame';
 
@@ -29,12 +28,12 @@ interface CaseFileTranslatorGameWrapperProps {
   }) => void;
   assignmentId?: string | null;
   userId?: string;
+  isAssignmentMode?: boolean;
   onOpenSettings?: () => void;
 }
 
 export default function CaseFileTranslatorGameWrapper(props: CaseFileTranslatorGameWrapperProps) {
   const [gameSessionId, setGameSessionId] = useState<string | null>(null);
-  const [gameService, setGameService] = useState<EnhancedGameService | null>(null);
   const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
   const [sessionStats, setSessionStats] = useState({
     totalQuestions: 0,
@@ -43,20 +42,12 @@ export default function CaseFileTranslatorGameWrapper(props: CaseFileTranslatorG
     translationAttempts: [] as any[]
   });
 
-  // Initialize game service
+  // Start game session when component mounts
   useEffect(() => {
-    if (props.userId) {
-      const service = new EnhancedGameService(supabaseBrowser);
-      setGameService(service);
-    }
-  }, [props.userId]);
-
-  // Start game session when service is ready
-  useEffect(() => {
-    if (gameService && props.userId && !gameSessionId) {
+    if (props.userId && !gameSessionId) {
       startGameSession();
     }
-  }, [gameService, props.userId, gameSessionId]);
+  }, [props.userId, gameSessionId]);
 
   // End session when component unmounts
   useEffect(() => {
@@ -66,16 +57,17 @@ export default function CaseFileTranslatorGameWrapper(props: CaseFileTranslatorG
   }, []);
 
   const startGameSession = async () => {
-    if (!gameService || !props.userId) return;
+    if (!props.userId) return;
 
     try {
+      const sessionService = new EnhancedGameSessionService();
       const startTime = new Date();
-      const sessionId = await gameService.startGameSession({
+      const sessionId = await sessionService.startGameSession({
         student_id: props.userId,
-        assignment_id: props.assignmentId || undefined,
+        assignment_id: props.isAssignmentMode ? props.assignmentId : undefined,
         game_type: 'case-file-translator',
-        session_mode: props.assignmentId ? 'assignment' : 'free_play',
-        max_score_possible: 100, // Base score for translation work
+        session_mode: props.isAssignmentMode ? 'assignment' : 'free_play',
+        max_score_possible: 100,
         session_data: {
           settings: props.settings,
           caseType: props.settings.caseType,
@@ -85,15 +77,16 @@ export default function CaseFileTranslatorGameWrapper(props: CaseFileTranslatorG
       });
       setGameSessionId(sessionId);
       setSessionStartTime(startTime);
-      console.log('Case File Translator game session started:', sessionId);
+      console.log(`🔮 [${props.isAssignmentMode ? 'ASSIGNMENT' : 'FREE PLAY'}] Case File Translator game session started:`, sessionId);
     } catch (error) {
       console.error('Failed to start case file translator game session:', error);
     }
   };
 
   const endGameSession = async () => {
-    if (gameService && gameSessionId && props.userId && sessionStartTime) {
+    if (gameSessionId && props.userId && sessionStartTime) {
       try {
+        const sessionService = new EnhancedGameSessionService();
         const sessionDuration = Math.floor((Date.now() - sessionStartTime.getTime()) / 1000);
         const accuracy = sessionStats.totalQuestions > 0
           ? (sessionStats.correctAnswers / sessionStats.totalQuestions) * 100
@@ -102,16 +95,17 @@ export default function CaseFileTranslatorGameWrapper(props: CaseFileTranslatorG
           ? sessionStats.totalResponseTime / sessionStats.totalQuestions
           : 0;
 
-        // Use gems-first system: XP calculated from individual vocabulary interactions
-        // Remove conflicting XP calculation - gems system handles all scoring through recordWordAttempt()
         let totalXP = sessionStats.correctAnswers * 10; // 10 XP per correct translation (gems-first)
 
         if (averageResponseTime < 20000) {
           totalXP += RewardEngine.getXPValue('epic'); // Speed bonus for Case File
         }
 
-        await gameService.endGameSession(gameSessionId, {
+        await sessionService.endGameSession(gameSessionId, {
           student_id: props.userId,
+          assignment_id: props.isAssignmentMode ? props.assignmentId : undefined,
+          game_type: 'case-file-translator',
+          session_mode: props.isAssignmentMode ? 'assignment' : 'free_play',
           final_score: Math.round(accuracy),
           accuracy_percentage: accuracy,
           completion_percentage: 100,
@@ -120,19 +114,19 @@ export default function CaseFileTranslatorGameWrapper(props: CaseFileTranslatorG
           unique_words_practiced: sessionStats.translationAttempts.length,
           duration_seconds: sessionDuration,
           xp_earned: totalXP,
-          bonus_xp: 0, // No bonus XP in gems-first system
+          bonus_xp: 0,
           session_data: {
             sessionStats,
             totalSessionTime: sessionDuration,
             averageResponseTime,
             translationAccuracy: accuracy,
-            contextUnderstanding: accuracy, // For now, same as accuracy
+            contextUnderstanding: accuracy,
             caseType: props.settings.caseType,
             translationAttempts: sessionStats.translationAttempts
           }
         });
 
-        console.log('Case File Translator game session ended successfully with XP:', totalXP);
+        console.log(`🔮 [${props.isAssignmentMode ? 'ASSIGNMENT' : 'FREE PLAY'}] Case File Translator game session ended with XP:`, totalXP);
       } catch (error) {
         console.error('Failed to end case file translator game session:', error);
       }
@@ -164,23 +158,11 @@ export default function CaseFileTranslatorGameWrapper(props: CaseFileTranslatorG
     props.onGameEnd(result);
   };
 
-  if (!gameService) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-amber-500 mx-auto"></div>
-          <p className="mt-4 text-amber-200">Loading translation workstation...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <CaseFileTranslatorGame
       {...props}
       onGameComplete={handleEnhancedGameEnd}
       gameSessionId={gameSessionId}
-      gameService={gameService}
     />
   );
 }

@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useUnifiedAuth } from '../../../hooks/useUnifiedAuth';
 import DetectiveListeningGameWrapper from './components/DetectiveListeningGameWrapper';
-import DetectiveListeningAssignmentWrapper from './components/DetectiveListeningAssignmentWrapper';
+import { useAssignmentVocabulary } from '../../../hooks/useAssignmentVocabulary';
 import UnifiedGameLauncher from '../../../components/games/UnifiedGameLauncher';
 import { UnifiedSelectionConfig, UnifiedVocabularyItem } from '../../../hooks/useUnifiedVocabulary';
 import AssignmentLoadingScreen from '../../../components/ui/AssignmentLoadingScreen';
@@ -18,6 +18,13 @@ export default function UnifiedDetectiveListeningPage() {
   const assignmentId = searchParams?.get('assignment');
   const mode = searchParams?.get('mode');
 
+  // Option B: Early assignment mode detection
+  const isAssignmentMode = assignmentId && mode === 'assignment';
+
+  // Load assignment data if in assignment mode (hook must be called unconditionally)
+  const { assignment, vocabulary: assignmentVocabulary, loading: assignmentLoading, error: assignmentError } =
+    useAssignmentVocabulary(assignmentId || '', 'detective-listening');
+
   // Game state management
   const [gameStarted, setGameStarted] = useState(false);
   const [gameConfig, setGameConfig] = useState<{
@@ -29,27 +36,39 @@ export default function UnifiedDetectiveListeningPage() {
   // Config panel state
   const [showConfigPanel, setShowConfigPanel] = useState(false);
 
-  console.log('🎯 [Detective Listening] URL params [DEBUG-v3]:', {
-    assignmentId,
-    mode,
-    searchParams: searchParams?.toString(),
-    timestamp: new Date().toISOString()
-  });
+  // Build assignment JSX after all hooks
+  let assignmentJSX: JSX.Element | null = null;
 
-  console.log('🎯 [Detective Listening] Assignment mode check [DEBUG-v6]:', {
-    assignmentId,
-    mode,
-    hasUser: !!user,
-    userId: user?.id,
-    searchParams: searchParams?.toString(),
-    timestamp: new Date().toISOString()
-  });
+  if (isAssignmentMode) {
+    if (!user) {
+      assignmentJSX = <AssignmentLoadingScreen message="Please log in to access this assignment" />;
+    } else if (assignmentLoading) {
+      assignmentJSX = <AssignmentLoadingScreen message="Loading assignment..." />;
+    } else if (assignmentError || !assignmentVocabulary || assignmentVocabulary.length === 0) {
+      assignmentJSX = <AssignmentErrorScreen error={assignmentError || 'No vocabulary found'} />;
+    } else {
+      assignmentJSX = (
+        <DetectiveListeningGameWrapper
+          vocabulary={assignmentVocabulary}
+          onBackToMenu={() => router.push('/student-dashboard/assignments')}
+          onGameEnd={() => router.push('/student-dashboard/assignments')}
+          assignmentId={assignmentId!}
+          userId={user.id}
+          isAssignmentMode={true}
+          config={{
+            language: assignment?.vocabulary_criteria?.language || 'es',
+            curriculumLevel: assignment?.curriculum_level || 'KS3',
+            categoryId: assignment?.vocabulary_criteria?.category || 'general',
+            subcategoryId: assignment?.vocabulary_criteria?.subcategory
+          }}
+        />
+      );
+    }
+  }
 
-  // If assignment mode, use the assignment wrapper directly
-  if (assignmentId && mode === 'assignment' && user) {
-    return (
-      <DetectiveListeningAssignmentWrapper assignmentId={assignmentId} />
-    );
+  // Return assignment JSX if in assignment mode
+  if (assignmentJSX) {
+    return assignmentJSX;
   }
 
   // Transform unified vocabulary to detective listening format

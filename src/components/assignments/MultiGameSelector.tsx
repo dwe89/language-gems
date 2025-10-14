@@ -33,7 +33,7 @@ interface GameOption {
   description: string;
   icon: React.ReactNode;
   color: string;
-  category: 'vocabulary' | 'grammar' | 'mixed' | 'listening';
+  category: 'vocabulary' | 'grammar' | 'mixed' | 'listening' | 'spelling';
   difficulty: 'beginner' | 'intermediate' | 'advanced' | 'adaptive';
   estimatedTime: string;
   features: string[];
@@ -44,7 +44,7 @@ const AVAILABLE_GAMES: GameOption[] = [
   {
     id: 'noughts-and-crosses',
     name: 'Tic-Tac-Toe Vocabulary',
-    description: 'Win tic-tac-toe by answering vocabulary questions correctly',
+    description: 'Play tic-tac-toe while practicing language terms',
     icon: <Grid3X3 className="h-5 w-5" />,
     color: 'from-green-500 to-emerald-500',
     category: 'vocabulary',
@@ -56,49 +56,13 @@ const AVAILABLE_GAMES: GameOption[] = [
   {
     id: 'vocab-blast',
     name: 'Vocab Blast',
-    description: 'Fast-paced vocabulary action with themed adventures',
+    description: 'Click vocabulary gems to pop and translate them quickly',
     icon: <Zap className="h-5 w-5" />,
     color: 'from-yellow-500 to-orange-500',
     category: 'vocabulary',
     difficulty: 'intermediate',
     estimatedTime: '5-12 min',
     features: ['Themed adventures', 'Fast-paced action', 'Power-ups'],
-    type: 'vocabulary'
-  },
-  {
-    id: 'vocab-master',
-    name: 'VocabMaster',
-    description: 'Comprehensive vocabulary learning with multiple game modes',
-    icon: <Crown className="h-5 w-5" />,
-    color: 'from-purple-500 to-indigo-500',
-    category: 'vocabulary',
-    difficulty: 'adaptive',
-    estimatedTime: '10-20 min',
-    features: ['Multiple modes', 'Adaptive difficulty', 'Comprehensive learning'],
-    type: 'vocabulary'
-  },
-  {
-    id: 'word-scramble',
-    name: 'Word Scramble',
-    description: 'Unscramble letters to form vocabulary words',
-    icon: <Shuffle className="h-5 w-5" />,
-    color: 'from-violet-500 to-purple-500',
-    category: 'vocabulary',
-    difficulty: 'beginner',
-    estimatedTime: '4-8 min',
-    features: ['Letter manipulation', 'Spelling practice', 'Timed challenges'],
-    type: 'vocabulary'
-  },
-  {
-    id: 'memory-game',
-    name: 'Memory Match',
-    description: 'Match vocabulary words with their translations in this classic memory game',
-    icon: <Brain className="h-5 w-5" />,
-    color: 'from-blue-500 to-indigo-500',
-    category: 'vocabulary',
-    difficulty: 'beginner',
-    estimatedTime: '5-10 min',
-    features: ['Memory training', 'Visual learning', 'Pattern recognition'],
     type: 'vocabulary'
   },
   {
@@ -114,47 +78,71 @@ const AVAILABLE_GAMES: GameOption[] = [
     type: 'vocabulary'
   },
   {
-    id: 'word-blast',
-    name: 'Word Blast',
-    description: 'Launch rockets by selecting correct translations',
-    icon: <Rocket className="h-5 w-5" />,
-    color: 'from-orange-500 to-red-500',
+    id: 'memory-game',
+    name: 'Memory Match',
+    description: 'Match pairs of cards to build vocabulary and memory skills',
+    icon: <Brain className="h-5 w-5" />,
+    color: 'from-blue-500 to-indigo-500',
     category: 'vocabulary',
     difficulty: 'beginner',
-    estimatedTime: '5-12 min',
-    features: ['Action gameplay', 'Visual effects', 'Score multipliers'],
+    estimatedTime: '5-10 min',
+    features: ['Memory training', 'Visual learning', 'Pattern recognition'],
     type: 'vocabulary'
   },
   {
     id: 'word-towers',
     name: 'Word Towers',
-    description: 'Stack words by translating them correctly to build towering structures.',
+    description: 'Build towers by matching vocabulary words to translations. Wrong answers make towers fall!',
     icon: <Castle className="h-5 w-5" />,
     color: 'from-amber-500 to-orange-500',
     category: 'vocabulary',
     difficulty: 'intermediate',
     estimatedTime: '6-12 min',
-    features: ['Tower building', 'Translation practice', 'Strategic thinking'],
+    features: ['Tower building', 'Vocabulary practice', 'Strategic thinking'],
+    type: 'vocabulary'
+  },
+  {
+    id: 'sentence-towers',
+    name: 'Sentence Towers',
+    description: 'Build towers by matching full sentences to translations. Practice sentence comprehension!',
+    icon: <Castle className="h-5 w-5" />,
+    color: 'from-purple-500 to-pink-500',
+    category: 'grammar',
+    difficulty: 'advanced',
+    estimatedTime: '8-15 min',
+    features: ['Tower building', 'Sentence practice', 'Grammar comprehension'],
+    type: 'sentence'
+  },
+  {
+    id: 'word-scramble',
+    name: 'Word Scramble',
+    description: 'Unscramble jumbled words to improve spelling and word recognition',
+    icon: <Shuffle className="h-5 w-5" />,
+    color: 'from-violet-500 to-purple-500',
+    category: 'spelling',
+    difficulty: 'beginner',
+    estimatedTime: '4-8 min',
+    features: ['Letter manipulation', 'Spelling practice', 'Timed challenges'],
     type: 'vocabulary'
   },
 
   {
     id: 'detective-listening',
-    name: 'Detective Listening',
-    description: 'Solve cases by listening to radio transmissions and identifying evidence',
+    name: 'Detective Listening Game',
+    description: 'Solve cases by identifying evidence through listening to words in Spanish, French, or German and finding their English translations',
     icon: <Headphones className="h-5 w-5" />,
     color: 'from-amber-600 to-yellow-500',
     category: 'listening',
     difficulty: 'intermediate',
     estimatedTime: '8-15 min',
-  features: ['Audio comprehension', 'Detective theme', 'Evidence collection'],
-  type: 'mixed' // use 'mixed' to represent listening-focused activity
+    features: ['Audio comprehension', 'Detective theme', 'Evidence collection'],
+    type: 'mixed' // use 'mixed' to represent listening-focused activity
   },
 
   {
     id: 'speed-builder',
-    name: 'Speed Builder',
-    description: 'Build sentences by dragging words into the correct order',
+    name: 'Sentence Sprint',
+    description: 'Drag and drop words to build sentences correctly before time runs out',
     icon: <Building2 className="h-5 w-5" />,
     color: 'from-indigo-500 to-blue-500',
     category: 'grammar',
@@ -166,7 +154,7 @@ const AVAILABLE_GAMES: GameOption[] = [
   {
     id: 'case-file-translator',
     name: 'Case File Translator',
-    description: 'Translate case files and evidence to solve mysteries',
+    description: 'Solve detective cases by translating intercepted communications from Spanish, French, or German to English',
     icon: <FileText className="h-5 w-5" />,
     color: 'from-gray-600 to-amber-600',
     category: 'grammar',
@@ -178,7 +166,7 @@ const AVAILABLE_GAMES: GameOption[] = [
   {
     id: 'lava-temple-word-restore',
     name: 'Lava Temple: Word Restore',
-    description: 'Restore ancient stone tablets by filling in missing words',
+    description: 'Restore ancient inscriptions by filling in missing words. Become a linguistic archaeologist and unlock temple secrets!',
     icon: <Flame className="h-5 w-5" />,
     color: 'from-red-600 to-orange-500',
     category: 'grammar',
@@ -186,31 +174,6 @@ const AVAILABLE_GAMES: GameOption[] = [
     estimatedTime: '8-15 min',
     features: ['Fill-in-the-blank', 'Temple theme', 'Word restoration'],
     type: 'sentence'
-  },
-  {
-    id: 'sentence-towers',
-    name: 'Sentence Towers',
-    description: 'Build towering structures by translating complete sentences correctly.',
-    icon: <Building2 className="h-5 w-5" />,
-    color: 'from-purple-500 to-indigo-500',
-    category: 'grammar',
-    difficulty: 'intermediate',
-    estimatedTime: '8-15 min',
-    features: ['Sentence translation', 'Tower building', 'Complex structures'],
-    type: 'sentence'
-  },
-
-  {
-    id: 'conjugation-duel',
-    name: 'Conjugation Duel',
-    description: 'Epic verb conjugation battles in different arenas and leagues',
-    icon: <Layers className="h-5 w-5" />,
-    color: 'from-red-500 to-orange-500',
-    category: 'grammar',
-    difficulty: 'intermediate',
-    estimatedTime: '10-20 min',
-    features: ['Battle system', 'League progression', 'Real-time combat'],
-    type: 'grammar'
   },
 ];
 
@@ -246,11 +209,13 @@ export default function MultiGameSelector({
   }, {} as Record<string, GameOption[]>);
 
   // Define the order of headings
-  const orderedTypes: ('vocabulary' | 'listening' | 'sentences' | 'grammar')[] = [
+  const orderedTypes: ('vocabulary' | 'listening' | 'sentences' | 'grammar' | 'spelling' | 'mixed')[] = [
     'vocabulary',
     'listening',
     'sentences',
-    'grammar'
+    'grammar',
+    'spelling',
+    'mixed'
   ];
 
   // Map type keys to user-friendly headings
@@ -258,7 +223,9 @@ export default function MultiGameSelector({
     'vocabulary': 'Vocabulary Learning',
     'listening': 'Listening',
     'sentences': 'Sentence Building',
-    'grammar': 'Grammar'
+    'grammar': 'Grammar',
+    'spelling': 'Spelling',
+    'mixed': 'Mixed Skills'
   };
 
 

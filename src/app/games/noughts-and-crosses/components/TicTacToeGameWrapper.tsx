@@ -36,10 +36,16 @@ interface TicTacToeGameWrapperProps {
   assignmentId?: string | null;
   userId?: string;
   gameSessionId?: string | null;
+  isAssignmentMode?: boolean;
   onOpenSettings?: () => void;
   onGameModeChange?: (gameMode: 'computer' | '2-player') => void;
   toggleMusic?: () => void;
   isMusicEnabled?: boolean;
+  // Theme selector props for assignment mode
+  assignmentTheme?: string;
+  onAssignmentThemeChange?: (theme: string) => void;
+  showAssignmentThemeSelector?: boolean;
+  onToggleAssignmentThemeSelector?: () => void;
 }
 
 export default function TicTacToeGameWrapper(props: TicTacToeGameWrapperProps) {
@@ -228,6 +234,9 @@ export default function TicTacToeGameWrapper(props: TicTacToeGameWrapperProps) {
 
         await gameService.endGameSession(effectiveGameSessionId!, {
           student_id: props.userId,
+          assignment_id: props.assignmentId || undefined,
+          game_type: 'noughts-and-crosses',
+          session_mode: props.assignmentId ? 'assignment' : 'free_play',
           final_score: Math.round(winRate),
           accuracy_percentage: accuracy,
           completion_percentage: 100,
@@ -325,6 +334,11 @@ export default function TicTacToeGameWrapper(props: TicTacToeGameWrapperProps) {
       userId={props.userId}
       toggleMusic={props.toggleMusic}
       isMusicEnabled={props.isMusicEnabled}
+      assignmentTheme={props.assignmentTheme}
+      onAssignmentThemeChange={props.onAssignmentThemeChange}
+      showAssignmentThemeSelector={props.showAssignmentThemeSelector}
+      onCloseAssignmentThemeSelector={props.onToggleAssignmentThemeSelector}
+      onToggleAssignmentThemeSelector={props.onToggleAssignmentThemeSelector}
     />
   );
 }

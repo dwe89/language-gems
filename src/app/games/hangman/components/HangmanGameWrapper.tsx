@@ -229,10 +229,10 @@ export default function HangmanGameWrapper(props: HangmanGameWrapperProps) {
 
   // Start game session when vocabulary is loaded (only for free play mode - assignment mode gets session from wrapper)
   useEffect(() => {
-    if (gameService && props.userId && Object.keys(vocabularyPool).length > 0 && !gameSessionId && !props.isAssignmentMode) {
+    if (gameService && props.userId && Object.keys(vocabularyPool).length > 0 && !effectiveGameSessionId) {
       startGameSession();
     }
-  }, [gameService, props.userId, vocabularyPool, gameSessionId, props.isAssignmentMode]);
+  }, [gameService, props.userId, vocabularyPool, effectiveGameSessionId]);
 
   // End the session when the user leaves the game (works for both free play AND assignment mode)
   const endGameSession = async () => {
@@ -248,6 +248,9 @@ export default function HangmanGameWrapper(props: HangmanGameWrapperProps) {
 
         await gameService.endGameSession(effectiveGameSessionId!, {
           student_id: props.userId,
+          assignment_id: props.isAssignmentMode ? props.assignmentId : undefined,
+          game_type: 'hangman',
+          session_mode: props.isAssignmentMode ? 'assignment' : 'free_play',
           final_score: sessionStats.totalScore,
           accuracy_percentage: accuracy,
           completion_percentage: 100,
@@ -392,11 +395,11 @@ export default function HangmanGameWrapper(props: HangmanGameWrapperProps) {
           >
             Retry
           </button>
-          <button 
+          <button
             onClick={props.onBackToMenu}
             className="bg-transparent border-2 border-white text-white px-6 py-2 rounded-lg font-semibold hover:bg-white hover:text-black transition-colors"
           >
-            Back to Games
+            {props.isAssignmentMode ? 'Back to Assignment' : 'Back to Games'}
           </button>
         </div>
       </div>

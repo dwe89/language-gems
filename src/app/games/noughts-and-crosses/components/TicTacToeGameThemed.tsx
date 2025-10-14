@@ -8,6 +8,7 @@ import confetti from 'canvas-confetti';
 import { useAudio } from '../hooks/useAudio';
 import { EnhancedGameService } from '../../../../services/enhancedGameService';
 import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
+import AssignmentThemeSelector from '../../../../components/games/AssignmentThemeSelector';
 
 // Theme animations
 import ClassicAnimation from './themes/ClassicAnimation';
@@ -54,6 +55,12 @@ interface TicTacToeGameProps {
   userId?: string;
   toggleMusic?: () => void;
   isMusicEnabled?: boolean;
+  // Theme selector props for assignment mode
+  assignmentTheme?: string;
+  onAssignmentThemeChange?: (theme: string) => void;
+  showAssignmentThemeSelector?: boolean;
+  onCloseAssignmentThemeSelector?: () => void;
+  onToggleAssignmentThemeSelector?: () => void;
 }
 
 const generateWrongOptions = (correctTranslation: string, vocabulary: any[]) => {
@@ -80,7 +87,12 @@ export default function TicTacToeGame({
   gameService,
   userId,
   toggleMusic,
-  isMusicEnabled
+  isMusicEnabled,
+  assignmentTheme,
+  onAssignmentThemeChange,
+  showAssignmentThemeSelector,
+  onCloseAssignmentThemeSelector,
+  onToggleAssignmentThemeSelector
 }: TicTacToeGameProps) {
 
 
@@ -269,6 +281,13 @@ export default function TicTacToeGame({
 
         // Lightweight gem recording without FSRS to avoid delays
         if (vocabularyId && gameSessionId && isCorrect) {
+          console.log('🎮 [NOUGHTS] Attempting to record gem:', {
+            vocabularyId,
+            gameSessionId,
+            word: currentQuestion.word,
+            isCorrect
+          });
+
           try {
             const sessionService = new EnhancedGameSessionService();
             // Record gem with minimal processing - skip FSRS to avoid delays
@@ -287,14 +306,22 @@ export default function TicTacToeGame({
               difficultyLevel: 'beginner'
             }, true).then(gemEvent => {
               if (gemEvent) {
-                // Gem awarded successfully
+                console.log('✅ [NOUGHTS] Gem awarded successfully:', gemEvent);
+              } else {
+                console.warn('⚠️ [NOUGHTS] No gem event returned');
               }
             }).catch(error => {
-              console.error('🚀 [FAST] Gem recording failed:', error);
+              console.error('🚨 [NOUGHTS] Gem recording failed:', error);
             }); // Skip FSRS = true for speed
           } catch (error) {
-            console.error('🚀 [FAST] Gem recording failed:', error);
+            console.error('🚨 [NOUGHTS] Gem recording exception:', error);
           }
+        } else {
+          console.warn('⚠️ [NOUGHTS] Skipping gem recording:', {
+            hasVocabularyId: !!vocabularyId,
+            hasGameSessionId: !!gameSessionId,
+            isCorrect
+          });
         }
       } catch (error) {
         console.error('Error recording FSRS practice for noughts-and-crosses:', error);
@@ -372,6 +399,12 @@ export default function TicTacToeGame({
       
       // Record the wrong answer attempt
       if (gameSessionId && currentQuestion) {
+        console.log('🎮 [NOUGHTS] Recording wrong answer:', {
+          vocabularyId: currentQuestion.id,
+          gameSessionId,
+          word: currentQuestion.word
+        });
+
         try {
           const sessionService = new EnhancedGameSessionService();
           sessionService.recordWordAttempt(gameSessionId, 'noughts-and-crosses', {
@@ -382,12 +415,19 @@ export default function TicTacToeGame({
             responseTimeMs: responseTime * 1000,
             hintUsed: false,
             streakCount: 0
-          }, true).catch(error => {
-            console.error('🚀 [FAST] Vocabulary tracking failed:', error);
+          }, true).then(gemEvent => {
+            console.log('✅ [NOUGHTS] Wrong answer recorded:', gemEvent);
+          }).catch(error => {
+            console.error('🚨 [NOUGHTS] Wrong answer recording failed:', error);
           });
         } catch (error) {
-          console.error('🚀 [FAST] Failed to record wrong answer:', error);
+          console.error('🚨 [NOUGHTS] Failed to record wrong answer:', error);
         }
+      } else {
+        console.warn('⚠️ [NOUGHTS] Skipping wrong answer recording:', {
+          hasGameSessionId: !!gameSessionId,
+          hasCurrentQuestion: !!currentQuestion
+        });
       }
       
       // In 2-player mode, just switch turns. In computer mode, computer gets the move
@@ -716,9 +756,8 @@ export default function TicTacToeGame({
         {renderThemeAnimation()}
       </div>
 
-      {/* Header Overlay - Hidden in assignment mode */}
-      {!isAssignmentMode && (
-        <div className="absolute top-0 left-0 right-0 z-20 bg-black/20 backdrop-blur-sm border-b border-white/10">
+      {/* Header Overlay - Always show controls */}
+      <div className="absolute top-0 left-0 right-0 z-20 bg-black/20 backdrop-blur-sm border-b border-white/10">
         <div className="flex justify-between items-center p-4 md:p-6">
           <motion.button
             onClick={() => {
@@ -754,41 +793,39 @@ export default function TicTacToeGame({
           </motion.div>
           
           <div className="flex items-center gap-1 md:gap-3">
-            {/* Mute Button - Only show in assignment mode */}
-            {isAssignmentMode && (
-              <motion.button
-                onClick={() => {
-                  playSFX('button-click');
-                  if (toggleMusic) {
-                    toggleMusic();
-                  } else {
-                    setLocalSoundEnabled(!localSoundEnabled);
-                  }
-                }}
-                className="relative p-2 md:px-4 md:py-2.5 rounded-xl bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white font-semibold flex items-center gap-1 md:gap-3 transition-all duration-300 shadow-lg hover:shadow-xl border-2 border-white/20"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                title={effectiveSoundEnabled ? "Mute audio" : "Unmute audio"}
-              >
-                {effectiveSoundEnabled ? <Volume2 className="h-4 w-4 md:h-5 md:w-5" /> : <VolumeX className="h-4 w-4 md:h-5 md:w-5" />}
-                <span className="hidden md:inline text-sm md:text-base">{effectiveSoundEnabled ? "Mute" : "Unmute"}</span>
-              </motion.button>
-            )}
-
-            {onOpenSettings && (
-              <motion.button
-                onClick={() => {
-                  playSFX('button-click');
-                  onOpenSettings();
-                }}
-                className="relative p-2 md:px-4 md:py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold flex items-center gap-1 md:gap-3 transition-all duration-300 shadow-lg hover:shadow-xl border-2 border-white/20"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                title="Game Settings"
-              >
-                <Settings className="h-4 w-4 md:h-5 md:w-5" />
-                <span className="hidden md:inline text-sm md:text-base">Settings</span>
-              </motion.button>
+            {/* Settings button for free-play mode, AssignmentThemeSelector for assignment mode */}
+            {isAssignmentMode ? (
+              onToggleAssignmentThemeSelector && (
+                <motion.button
+                  onClick={() => {
+                    playSFX('button-click');
+                    onToggleAssignmentThemeSelector();
+                  }}
+                  className="relative p-2 md:px-4 md:py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold flex items-center gap-1 md:gap-3 transition-all duration-300 shadow-lg hover:shadow-xl border-2 border-white/20"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  title="Change Theme"
+                >
+                  <Settings className="h-4 w-4 md:h-5 md:w-5" />
+                  <span className="hidden md:inline text-sm md:text-base">Theme</span>
+                </motion.button>
+              )
+            ) : (
+              onOpenSettings && (
+                <motion.button
+                  onClick={() => {
+                    playSFX('button-click');
+                    onOpenSettings();
+                  }}
+                  className="relative p-2 md:px-4 md:py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold flex items-center gap-1 md:gap-3 transition-all duration-300 shadow-lg hover:shadow-xl border-2 border-white/20"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  title="Game Settings"
+                >
+                  <Settings className="h-4 w-4 md:h-5 md:w-5" />
+                  <span className="hidden md:inline text-sm md:text-base">Settings</span>
+                </motion.button>
+              )
             )}
             <motion.button
               onClick={() => {
@@ -854,11 +891,10 @@ export default function TicTacToeGame({
           </div>
         </div>
       </div>
-      )}
 
       {/* Game Content - Split Layout: Board Left, Theme Right - Only show after story dismissed */}
       {storyDismissed && (
-        <div className={`absolute inset-0 ${isAssignmentMode ? 'pt-4' : 'pt-24'} pb-4 flex items-start justify-center z-10`}>
+        <div className={`absolute inset-0 pt-24 pb-4 flex items-start justify-center z-10`}>
           {/* Desktop Layout for Classic Mode */}
           {(!themeId || themeId === 'classic' || !['tokyo', 'pirate', 'space', 'temple'].includes(themeId)) ? (
             <>

@@ -199,7 +199,8 @@ const GAME_NAMES: Record<string, string> = {
   'vocab-master': 'Vocab Master',
   'detective-listening': 'Detective Listening',
   'speed-builder': 'Speed Builder',
-  'sentence-towers': 'Word Towers',
+  'word-towers': 'Word Towers',
+  'sentence-towers': 'Sentence Towers',
   'conjugation-duel': 'Conjugation Duel'
 };
 

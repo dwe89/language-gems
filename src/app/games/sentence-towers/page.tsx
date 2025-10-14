@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import UnifiedGameLauncher from '../../../components/games/UnifiedGameLauncher';
+import UnifiedSentenceCategorySelector, { SentenceSelectionConfig } from '../../../components/games/UnifiedSentenceCategorySelector';
 import { UnifiedSelectionConfig, UnifiedVocabularyItem } from '../../../hooks/useUnifiedVocabulary';
 import InGameConfigPanel from '../../../components/games/InGameConfigPanel';
 import { useSounds } from './hooks/useSounds';
@@ -17,7 +18,8 @@ import { useSupabase } from '../../../components/supabase/SupabaseProvider';
 import { EnhancedGameService } from '../../../services/enhancedGameService';
 import { RewardEngine } from '../../../services/rewards/RewardEngine';
 import { EnhancedGameSessionService } from '../../../services/rewards/EnhancedGameSessionService';
-import GameAssignmentWrapper from '../../../components/games/templates/GameAssignmentWrapper';
+import { useAssignmentVocabulary } from '../../../hooks/useAssignmentVocabulary';
+import { useSentences } from '../../../hooks/useSentences';
 import { FSRSService } from '../../../services/fsrsService';
 
 // Enhanced Types
@@ -304,195 +306,165 @@ export default function SentenceTowersPage() {
   const assignmentId = searchParams?.get('assignment');
   const mode = searchParams?.get('mode');
 
-  // Assignment mode handlers
-  const handleAssignmentComplete = () => {
-    router.push('/student-dashboard/assignments');
-  };
+  // Option B: Early assignment mode detection
+  const isAssignmentMode = assignmentId && mode === 'assignment';
 
-  const handleBackToAssignments = () => {
-    router.push('/student-dashboard/assignments');
-  };
+  // Load assignment data if in assignment mode (hook must be called unconditionally)
+  const { assignment, vocabulary: assignmentVocabulary, sentences: assignmentSentences, loading: assignmentLoading, error: assignmentError } =
+    useAssignmentVocabulary(assignmentId || '', 'sentence-towers');
 
-  // Assignment mode: wrap with GameAssignmentWrapper
-  if (assignmentId && mode === 'assignment' && user) {
-    return (
-      <GameAssignmentWrapper
-        assignmentId={assignmentId}
-        gameId="sentence-towers"
-        studentId={user.id}
-        onAssignmentComplete={handleAssignmentComplete}
-        onBackToAssignments={handleBackToAssignments}
-        onBackToMenu={() => router.push('/games/sentence-towers')}
-      >
-        {({ assignment, vocabulary, sentences, onProgressUpdate, onGameComplete, gameSessionId }) => {
-          console.log('🎮 [SENTENCE TOWERS] Game data received:', {
-            assignmentId: assignment?.id,
-            vocabularyCount: vocabulary?.length || 0,
-            sentencesCount: sentences?.length || 0,
-            hasSentences: !!sentences,
-            sentencesSample: sentences?.slice(0, 2),
-            vocabularySample: vocabulary?.slice(0, 2)
-          });
-          // Convert assignment data to game format - use sentences if available, otherwise vocabulary
-          const gameVocabulary = sentences && sentences.length > 0
-            ? sentences.map(item => ({
-                id: item.id,
-                word: item.source_sentence || item.sentence_original || item.original || item.text,
-                translation: item.english_translation || item.sentence_translation || item.translation || item.translation_text,
-                language: item.source_language || assignment.vocabulary_criteria?.language || 'spanish',
-                category: item.category || 'assignment',
-                subcategory: item.subcategory || 'assignment',
-                part_of_speech: 'sentence',
-                example_sentence_original: item.source_sentence || item.sentence_original || item.original || item.text,
-                example_sentence_translation: item.english_translation || item.sentence_translation || item.translation || item.translation_text,
-                difficulty_level: item.difficulty_level || 'intermediate'
-              }))
-            : vocabulary.map(item => ({
-                id: item.id,
-                word: item.word,
-                translation: item.translation,
-                language: item.language || assignment.vocabulary_criteria?.language || 'spanish',
-                category: item.category || 'assignment',
-                subcategory: item.subcategory || 'assignment',
-                part_of_speech: item.part_of_speech || 'noun',
-                example_sentence_original: '', // Not available in StandardVocabularyItem
-                example_sentence_translation: '', // Not available in StandardVocabularyItem
-                difficulty_level: 'beginner' // Default difficulty for assignment mode
-              }));
+  // Build assignment JSX after all hooks
+  let assignmentJSX: JSX.Element | null = null;
 
-          console.log('🎮 [SENTENCE TOWERS] Processed game vocabulary:', {
-            count: gameVocabulary.length,
-            usingSentences: sentences && sentences.length > 0,
-            sample: gameVocabulary.slice(0, 2)
-          });
+  if (isAssignmentMode) {
+    if (!user) {
+      assignmentJSX = (
+        <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 flex items-center justify-center">
+          <div className="text-white text-xl">Please log in to access this assignment</div>
+        </div>
+      );
+    } else if (assignmentLoading) {
+      assignmentJSX = (
+        <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 flex items-center justify-center">
+          <div className="text-white text-xl">Loading assignment...</div>
+        </div>
+      );
+    } else if (assignmentError || !assignmentVocabulary || assignmentVocabulary.length === 0) {
+      assignmentJSX = (
+        <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 flex items-center justify-center">
+          <div className="text-white text-xl">Error loading assignment: {assignmentError || 'No vocabulary found'}</div>
+        </div>
+      );
+    } else {
+      // Convert assignment data to game format - use sentences if available, otherwise vocabulary
+      const gameVocabulary = assignmentSentences && assignmentSentences.length > 0
+        ? assignmentSentences.map(item => ({
+            id: item.id,
+            word: item.source_sentence || item.sentence_original || item.original || item.text,
+            translation: item.english_translation || item.sentence_translation || item.translation || item.translation_text,
+            language: item.source_language || assignment?.vocabulary_criteria?.language || 'spanish',
+            category: item.category || 'assignment',
+            subcategory: item.subcategory || 'assignment',
+            part_of_speech: 'sentence',
+            example_sentence_original: item.source_sentence || item.sentence_original || item.original || item.text,
+            example_sentence_translation: item.english_translation || item.sentence_translation || item.translation || item.translation_text,
+            difficulty_level: item.difficulty_level || 'intermediate'
+          }))
+        : assignmentVocabulary.map(item => ({
+            id: item.id,
+            word: item.word,
+            translation: item.translation,
+            language: item.language || assignment?.vocabulary_criteria?.language || 'spanish',
+            category: item.category || 'assignment',
+            subcategory: item.subcategory || 'assignment',
+            part_of_speech: item.part_of_speech || 'noun',
+            example_sentence_original: '',
+            example_sentence_translation: '',
+            difficulty_level: 'beginner'
+          }));
 
-          const handleGameComplete = (gameProgress: any) => {
-            // Calculate standardized progress metrics
-            const wordsCompleted = gameProgress.wordsCompleted || gameProgress.correctAnswers || 0;
-            const totalWords = sentences && sentences.length > 0 ? sentences.length : vocabulary.length;
-            const score = gameProgress.score || 0;
-            const accuracy = totalWords > 0 ? (wordsCompleted / totalWords) * 100 : 0;
-
-            // Update progress
-            onProgressUpdate({
-              wordsCompleted,
-              totalWords,
-              score,
-              maxScore: totalWords * 100, // 100 points per word
-              accuracy
-            });
-
-            // Complete assignment
-            onGameComplete({
-              assignmentId: assignment.id,
-              gameId: 'sentence-towers',
-              studentId: user.id,
-              wordsCompleted,
-              totalWords,
-              score,
-              maxScore: totalWords * 100,
-              accuracy,
-              timeSpent: gameProgress.timeSpent || 0,
-              completedAt: new Date(),
-              sessionData: gameProgress
-            });
-          };
-
-          return (
-            <ImprovedSentenceTowersGame
-              gameVocabulary={gameVocabulary}
-              onBackToMenu={() => router.push('/games/sentence-towers')}
-              config={{
-                language: assignment.vocabulary_criteria?.language || 'spanish',
-                categoryId: assignment.vocabulary_criteria?.category || 'assignment',
-                subcategoryId: assignment.vocabulary_criteria?.subcategory || 'assignment',
-                curriculumLevel: (assignment.curriculum_level as 'KS2' | 'KS3' | 'KS4' | 'KS5') || 'KS3'
-              }}
-              assignmentMode={true}
-              onGameComplete={handleGameComplete}
-              onProgressUpdate={onProgressUpdate}
-            />
-          );
-        }}
-      </GameAssignmentWrapper>
-    );
+      assignmentJSX = (
+        <ImprovedSentenceTowersGame
+          gameVocabulary={gameVocabulary}
+          onBackToMenu={() => router.push(`/student-dashboard/assignments/${assignmentId}`)}
+          config={{
+            language: assignment?.vocabulary_criteria?.language || 'spanish',
+            categoryId: assignment?.vocabulary_criteria?.category || 'assignment',
+            subcategoryId: assignment?.vocabulary_criteria?.subcategory || 'assignment',
+            curriculumLevel: (assignment?.curriculum_level as 'KS2' | 'KS3' | 'KS4' | 'KS5') || 'KS3'
+          }}
+          assignmentMode={true}
+          isAssignmentMode={true}
+          assignmentId={assignmentId!}
+          userId={user.id}
+        />
+      );
+    }
   }
 
-  // Game state management for unified launcher
-  const [gameStarted, setGameStarted] = useState(false);
-  const [selectedConfig, setSelectedConfig] = useState<UnifiedSelectionConfig | null>(null);
-  const [vocabulary, setVocabulary] = useState<UnifiedVocabularyItem[]>([]);
+  // Return assignment JSX if in assignment mode
+  if (assignmentJSX) {
+    return assignmentJSX;
+  }
 
-  // Handle game start from unified launcher
-  const handleGameStart = (config: UnifiedSelectionConfig, vocabularyItems: UnifiedVocabularyItem[]) => {
-    setSelectedConfig(config);
-    setVocabulary(vocabularyItems);
+  // Game state management for free play
+  const [gameStarted, setGameStarted] = useState(false);
+  const [gameConfig, setGameConfig] = useState<SentenceSelectionConfig | null>(null);
+
+  // Load sentences for free play mode based on config
+  const { sentences: freePlaySentences, loading: sentencesLoading } = useSentences({
+    language: gameConfig?.language || 'es',
+    category: gameConfig?.categoryId || undefined,
+    subcategory: gameConfig?.subcategoryId || undefined,
+    curriculumLevel: gameConfig?.curriculumLevel || 'KS3',
+    limit: 50
+  });
+
+  // Handle selection complete from UnifiedSentenceCategorySelector
+  const handleSelectionComplete = (config: SentenceSelectionConfig) => {
+    console.log('Sentence Towers starting with config:', config);
+    setGameConfig(config);
     setGameStarted(true);
-    
-    console.log('Sentence Towers started with unified config:', {
-      config,
-      vocabularyCount: vocabularyItems.length
-    });
   };
 
   // Handle back to menu
   const handleBackToMenu = () => {
     setGameStarted(false);
-    setSelectedConfig(null);
-    setVocabulary([]);
+    setGameConfig(null);
   };
 
-  // Show unified launcher if game not started
+  // Show sentence category selector if game not started
   if (!gameStarted) {
     return (
-      <UnifiedGameLauncher
+      <UnifiedSentenceCategorySelector
         gameName="Sentence Towers"
-        gameDescription="Build towers by stacking vocabulary blocks and creating sentences"
-        supportedLanguages={['es', 'fr', 'de']}
-        showCustomMode={true}
-        minVocabularyRequired={1}
-        onGameStart={handleGameStart}
+        title="Sentence Towers - Select Content"
+        supportedLanguages={['spanish', 'french', 'german']}
+        showCustomMode={false} // Uses pre-generated sentence database
+        onSelectionComplete={handleSelectionComplete}
         onBack={() => router.push('/games')}
-        supportsThemes={false}
-        requiresAudio={false}
-      >
-        {/* Game-specific instructions */}
-        <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 mb-6 max-w-md mx-auto">
-          <h4 className="text-white font-semibold mb-3 text-center">How to Play</h4>
-          <div className="text-white/80 text-sm space-y-2">
-            <p>• Stack vocabulary blocks to build towers</p>
-            <p>• Answer questions correctly to place blocks</p>
-            <p>• Build higher towers for more points</p>
-            <p>• Don't let your tower fall!</p>
-            <p>• Use special blocks for bonus effects</p>
-          </div>
-        </div>
-      </UnifiedGameLauncher>
+      />
     );
   }
 
-  // Show game if started and config is available
-  if (gameStarted && selectedConfig && vocabulary.length > 0) {
-    // Convert unified vocabulary to game format
-    const gameVocabulary = vocabulary.map(item => ({
-      id: item.id,
-      word: item.word,
-      translation: item.translation,
-      language: item.language,
-      category: item.category,
-      subcategory: item.subcategory,
-      part_of_speech: item.part_of_speech,
-      example_sentence_original: item.example_sentence_original,
-      example_sentence_translation: item.example_sentence_translation,
-      difficulty_level: item.difficulty_level || 'beginner'
+  // Show game if started and sentences are loaded
+  if (gameStarted && gameConfig && freePlaySentences.length > 0) {
+    // Convert sentences to game format
+    const gameVocabulary = freePlaySentences.map(sentence => ({
+      id: sentence.id,
+      word: sentence.source_sentence,
+      translation: sentence.english_translation,
+      language: sentence.source_language,
+      category: sentence.category || 'general',
+      subcategory: sentence.subcategory || 'general',
+      part_of_speech: 'sentence',
+      example_sentence_original: sentence.source_sentence,
+      example_sentence_translation: sentence.english_translation,
+      difficulty_level: sentence.difficulty_level || 'intermediate'
     }));
+
+    const config: UnifiedSelectionConfig = {
+      language: gameConfig.language,
+      categoryId: gameConfig.categoryId || 'general',
+      subcategoryId: gameConfig.subcategoryId || '',
+      curriculumLevel: gameConfig.curriculumLevel as any
+    };
 
     return (
       <ImprovedSentenceTowersGame
         gameVocabulary={gameVocabulary}
         onBackToMenu={handleBackToMenu}
-        config={selectedConfig}
+        config={config}
       />
+    );
+  }
+
+  // Loading state
+  if (gameStarted && sentencesLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 flex items-center justify-center">
+        <div className="text-white text-xl">Loading sentences...</div>
+      </div>
     );
   }
 
@@ -506,6 +478,9 @@ function ImprovedSentenceTowersGame({
   onBackToMenu,
   config,
   assignmentMode = false,
+  isAssignmentMode = false,
+  assignmentId,
+  userId,
   onGameComplete,
   onProgressUpdate
 }: {
@@ -513,6 +488,9 @@ function ImprovedSentenceTowersGame({
   onBackToMenu: () => void;
   config: UnifiedSelectionConfig;
   assignmentMode?: boolean;
+  isAssignmentMode?: boolean;
+  assignmentId?: string;
+  userId?: string;
   onGameComplete?: (gameProgress: any) => void;
   onProgressUpdate?: (progress: any) => void;
 }) {
@@ -534,7 +512,7 @@ function ImprovedSentenceTowersGame({
     }
   }, [supabase]);
 
-  // Typing mode state
+  // Typing mode state - disabled
   const [isTypingMode, setIsTypingMode] = useState(false);
   const [typedAnswer, setTypedAnswer] = useState('');
   const [showTypingInput, setShowTypingInput] = useState(false);
@@ -594,7 +572,6 @@ function ImprovedSentenceTowersGame({
       }));
     }
   }, [gameVocabulary]);
-  const [showSettings, setShowSettings] = useState(false);
   const [showConfigPanel, setShowConfigPanel] = useState(false);
   const [craneLifting, setCraneLifting] = useState(false);
   const [craneWord, setCraneWord] = useState('');
@@ -699,22 +676,37 @@ function ImprovedSentenceTowersGame({
         device_info: {}
       };
 
-      // Use gems-first system: XP calculated from individual vocabulary interactions
-      // Remove conflicting XP calculation - gems system handles all scoring through recordWordAttempt()
+      // Calculate XP bonuses
+      const accuracyBonus = gameState.accuracy >= 0.9 ? RewardEngine.getXPValue('rare') : 0;
+      const heightBonus = gameState.maxHeight >= 10 ? RewardEngine.getXPValue('epic') : 0;
+      const streakBonus = gameState.streak >= 5 ? RewardEngine.getXPValue('legendary') : 0;
       const totalXP = gameState.blocksPlaced * 10; // 10 XP per block placed (gems-first)
 
-      // Start and immediately end the session with the service
-      const sessionId = await enhancedGameService.startGameSession(sessionData);
-      await enhancedGameService.endGameSession(sessionId, {
-        ...sessionData,
-        xp_earned: totalXP,
-        bonus_xp: accuracyBonus + heightBonus + streakBonus
-      });
-      console.log('Sentence Towers game session saved successfully with XP:', totalXP);
+      // End the existing session instead of creating a new one
+      if (gameSessionId) {
+        const sessionService = new EnhancedGameSessionService();
+        await sessionService.endGameSession(gameSessionId, {
+          student_id: userId || user.id,
+          assignment_id: isAssignmentMode ? assignmentId : undefined,
+          game_type: 'sentence-towers',
+          session_mode: isAssignmentMode ? 'assignment' : 'free_play',
+          final_score: gameState.score,
+          accuracy_percentage: Math.round(gameState.accuracy * 100),
+          completion_percentage: Math.round((gameState.wordsCompleted / gameState.totalWords) * 100),
+          words_attempted: gameState.blocksPlaced + gameState.blocksFallen,
+          words_correct: gameState.blocksPlaced,
+          unique_words_practiced: gameState.wordsCompleted,
+          duration_seconds: settings.timeLimit - gameState.timeLeft,
+          xp_earned: totalXP,
+          bonus_xp: accuracyBonus + heightBonus + streakBonus,
+          session_data: sessionData.session_data
+        });
+        console.log(`🔮 [${isAssignmentMode ? 'ASSIGNMENT' : 'FREE PLAY'}] Sentence Towers game session ended with XP:`, totalXP);
+      }
     } catch (error) {
-      console.error('Error saving Sentence Towers game session:', error);
+      console.error('Error ending Sentence Towers game session:', error);
     }
-  }, [user, enhancedGameService, supabase, gameState, settings, isTypingMode, config]);
+  }, [gameSessionId, userId, user, isAssignmentMode, assignmentId, gameState, settings, isTypingMode, config]);
 
   // Watch for game end and save session
   useEffect(() => {
@@ -1259,7 +1251,7 @@ function ImprovedSentenceTowersGame({
         console.error('Error recording sentence attempt:', error);
       }
     }
-  }, [settings, towerBlocks, addParticleEffect, sounds]);
+  }, [settings, towerBlocks, addParticleEffect, sounds, gameState, currentTargetWord, questionStartTime, fsrsService, user, config, gameSessionId, isTypingMode]);
 
   // Enhanced option selection
   const handleSelectOption = useCallback((option: WordOption) => {
@@ -1391,21 +1383,24 @@ function ImprovedSentenceTowersGame({
     setVocabulary(resetVocabulary);
     generateWordOptions();
 
-    // Use assignment's gameSessionId or create new session for free play
-    if (assignmentMode && gameSessionId) {
-      // Use assignment's gameSessionId
-      setGameSessionId(gameSessionId);
-      console.log('Sentence Towers using assignment game session:', gameSessionId);
-    } else if (enhancedGameService && user && !assignmentMode) {
-      // Create new session for free play mode only
+    // Create game session using EnhancedGameSessionService
+    if ((userId || user) && !gameSessionId) {
       try {
-        const sessionId = await enhancedGameService.startGameSession({
-          student_id: user.id,
+        const sessionService = new EnhancedGameSessionService();
+        const sessionId = await sessionService.startGameSession({
+          student_id: userId || user!.id,
+          assignment_id: isAssignmentMode ? assignmentId : undefined,
           game_type: 'sentence-towers',
-          session_mode: 'free_play'
+          session_mode: isAssignmentMode ? 'assignment' : 'free_play',
+          max_score_possible: gameVocabulary.length * 100,
+          session_data: {
+            vocabularyCount: gameVocabulary.length,
+            language: config.language,
+            difficulty: settings.difficulty
+          }
         });
         setGameSessionId(sessionId);
-        console.log('Sentence Towers game session started:', sessionId);
+        console.log(`🔮 [${isAssignmentMode ? 'ASSIGNMENT' : 'FREE PLAY'}] Sentence Towers game session started:`, sessionId);
       } catch (error) {
         console.error('Failed to start game session:', error);
       }
@@ -1520,10 +1515,14 @@ function ImprovedSentenceTowersGame({
       <div className="relative z-20 flex items-center justify-between p-4 md:p-6">
         <div className="flex items-center space-x-4">
           <button 
-            onClick={() => window.history.back()}
-            className="p-2 md:p-3 bg-black/30 hover:bg-black/50 rounded-xl backdrop-blur-md border border-white/20 transition-all duration-300"
+            onClick={onBackToMenu}
+            className="p-2 md:p-3 bg-black/30 hover:bg-black/50 rounded-xl backdrop-blur-md border border-white/20 transition-all duration-300 flex items-center space-x-2"
+            title={isAssignmentMode ? "Back to Assignment" : "Back to Games"}
           >
             <ArrowLeft className="h-5 w-5 md:h-6 md:w-6 text-white" />
+            <span className="hidden md:inline text-white font-medium">
+              {isAssignmentMode ? "Back to Assignment" : "Back"}
+            </span>
           </button>
           
           <div>
@@ -1574,22 +1573,18 @@ function ImprovedSentenceTowersGame({
               <Pause className="h-4 w-4 md:h-5 md:w-5 text-white" />
             </button>
           )}
-          
-          <button
-            onClick={() => setShowSettings(!showSettings)}
-            className="p-2 md:p-3 bg-black/30 hover:bg-black/50 rounded-xl backdrop-blur-md border border-white/20 transition-all duration-300"
-            title="Game Settings"
-          >
-            <Settings className="h-4 w-4 md:h-5 md:w-5 text-white" />
-          </button>
 
           <button
             onClick={handleOpenConfigPanel}
-            className="p-2 md:p-3 bg-black/30 hover:bg-black/50 rounded-xl backdrop-blur-md border border-white/20 transition-all duration-300"
+            className="relative inline-flex items-center justify-center px-4 py-2 overflow-hidden font-semibold rounded-full 
+            bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg transition-all duration-300 
+            hover:scale-105 hover:shadow-xl hover:from-blue-600 hover:to-purple-700 
+            focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-black/50
+            border border-white/20 backdrop-blur-sm"
             title="Change Language, Level, Topic & Theme"
           >
-            <Target className="h-4 w-4 md:h-5 md:w-5 text-white" />
-            <span className="hidden md:inline ml-2">Game Config</span>
+            <Target className="h-4 w-4 md:h-5 md:w-5 text-white mr-2" />
+            <span className="hidden md:inline">Game settings</span>
           </button>
         </div>
       </div>
@@ -1597,7 +1592,7 @@ function ImprovedSentenceTowersGame({
       {/* Left Sidebar Stats - hidden on mobile, positioned to avoid tower overlap */}
       <div className="hidden lg:block fixed left-4 top-1/2 transform -translate-y-1/2 z-20 space-y-4">
         {/* Score */}
-        <div className="bg-black/70 backdrop-blur-md rounded-xl p-3 border border-orange-500/30 min-w-[120px]">
+        <div className="bg-black/70 backdrop-blur-md rounded-xl p-3 border border-orange-500/30 min-w-[80px]">
           <div className="text-orange-400 text-xs font-bold mb-1">SCORE</div>
           <div className="text-lg font-bold text-white">{gameState.score.toLocaleString()}</div>
           {gameState.multiplier > 1 && (
@@ -1802,7 +1797,7 @@ function ImprovedSentenceTowersGame({
                     type: "spring", 
                     stiffness: 100 
                   }}
-                  className={`w-80 h-20 rounded-lg border-4 shadow-2xl backdrop-blur-md relative overflow-hidden ${getBlockStyle(block.type, block.isShaking)}`}
+                  className={`w-96 h-20 rounded-lg border-4 shadow-2xl backdrop-blur-md relative overflow-hidden ${getBlockStyle(block.type, block.isShaking)}`}
                   style={{ zIndex: VISIBLE_BLOCKS - index }}
                 >
                 {/* Block content */}
@@ -1841,7 +1836,7 @@ function ImprovedSentenceTowersGame({
             })}
             
             {/* Tower base */}
-            <div className="w-60 h-8 bg-gradient-to-r from-stone-600 to-stone-800 rounded-lg border-4 border-stone-700 shadow-2xl relative">
+            <div className="w-80 h-8 bg-gradient-to-r from-stone-600 to-stone-800 rounded-lg border-4 border-stone-700 shadow-2xl relative">
               <div className="absolute inset-0 bg-gradient-to-t from-stone-900/50 to-transparent rounded-md" />
               <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-stone-200 font-bold text-sm">
                 FOUNDATION
@@ -1870,18 +1865,18 @@ function ImprovedSentenceTowersGame({
                   onClick={() => handleSelectOption(option)}
                   disabled={selectedOption !== null}
                   className={`
-                    relative px-4 py-3 rounded-2xl border-4 backdrop-blur-md shadow-2xl transition-all duration-300 min-w-[120px] group
+                    relative px-6 py-4 rounded-2xl border-4 backdrop-blur-md shadow-2xl transition-all duration-300 min-w-[200px] max-w-[600px] group
                     ${selectedOption === option.id
                       ? option.isCorrect
-                        ? 'bg-green-500/30 border-green-400 scale-110'
-                        : 'bg-red-500/30 border-red-400 scale-110'
-                      : 'bg-white/20 border-white/30 hover:bg-white/30 hover:border-white/50 hover:scale-105'
+                        ? 'bg-green-500/30 border-green-400 scale-105'
+                        : 'bg-red-500/30 border-red-400 scale-105'
+                      : 'bg-white/20 border-white/30 hover:bg-white/30 hover:border-white/50 hover:scale-102'
                     }
                     ${selectedOption && selectedOption !== option.id ? 'opacity-50' : ''}
                   `}
                 >
                   <div className="text-center">
-                    <div className="text-white font-bold text-base md:text-lg group-hover:scale-110 transition-transform">
+                    <div className="text-white font-bold text-sm md:text-base leading-relaxed group-hover:scale-105 transition-transform break-words">
                       {option.translation}
                     </div>
                   </div>
@@ -2113,128 +2108,6 @@ function ImprovedSentenceTowersGame({
             </motion.div>
           </motion.div>
         )}
-
-        {/* Settings Modal */}
-        {showSettings && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center"
-          >
-            <motion.div
-              initial={{ scale: 0.8, y: 50 }}
-              animate={{ scale: 1, y: 0 }}
-              className="bg-gradient-to-br from-gray-800/90 to-gray-900/90 backdrop-blur-md rounded-3xl p-8 border-4 border-gray-600/50 max-w-md mx-4"
-            >
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-3xl font-bold text-white">Settings</h2>
-                <button
-                  onClick={() => setShowSettings(false)}
-                  className="p-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
-                >
-                  <ArrowLeft className="h-5 w-5 text-white" />
-                </button>
-              </div>
-              
-              <div className="space-y-6">
-                <div>
-                  <label className="block text-white/80 text-sm font-semibold mb-2">
-                    Difficulty Level
-                  </label>
-                  <select
-                    value={settings.difficulty}
-                    onChange={(e) => setSettings(prev => ({ 
-                      ...prev, 
-                      difficulty: e.target.value as GameSettings['difficulty'] 
-                    }))}
-                    className="w-full bg-gray-700 text-white rounded-lg p-3 border border-gray-600 focus:border-blue-500 focus:outline-none"
-                  >
-                    <option value="easy">Easy (1 block falls)</option>
-                    <option value="medium">Medium (2 blocks fall)</option>
-                    <option value="hard">Hard (3 blocks fall)</option>
-                    <option value="expert">Expert (4 blocks fall)</option>
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="block text-white/80 text-sm font-semibold mb-2">
-                    Time Limit (seconds)
-                  </label>
-                  <input
-                    type="range"
-                    min="60"
-                    max="300"
-                    step="30"
-                    value={settings.timeLimit}
-                    onChange={(e) => setSettings(prev => ({ 
-                      ...prev, 
-                      timeLimit: parseInt(e.target.value) 
-                    }))}
-                    className="w-full"
-                  />
-                  <div className="text-center text-white/60 text-sm mt-1">
-                    {formatTime(settings.timeLimit)}
-                  </div>
-                </div>
-                
-                <div className="space-y-4">
-                  <label className="flex items-center justify-between">
-                    <span className="text-white/80 text-sm font-semibold">Tower Falling</span>
-                    <input
-                      type="checkbox"
-                      checked={settings.towerFalling}
-                      onChange={(e) => setSettings(prev => ({ 
-                        ...prev, 
-                        towerFalling: e.target.checked 
-                      }))}
-                      className="w-5 h-5 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
-                    />
-                  </label>
-                  
-                  <label className="flex items-center justify-between">
-                    <span className="text-white/80 text-sm font-semibold">Show Hints</span>
-                    <input
-                      type="checkbox"
-                      checked={settings.showHints}
-                      onChange={(e) => setSettings(prev => ({ 
-                        ...prev, 
-                        showHints: e.target.checked 
-                      }))}
-                      className="w-5 h-5 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
-                    />
-                  </label>
-                  
-                  <label className="flex items-center justify-between">
-                    <span className="text-white/80 text-sm font-semibold">Sound Effects</span>
-                    <input
-                      type="checkbox"
-                      checked={settings.soundEnabled}
-                      onChange={(e) => setSettings(prev => ({
-                        ...prev,
-                        soundEnabled: e.target.checked
-                      }))}
-                      className="w-5 h-5 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
-                    />
-                  </label>
-
-                  <label className="flex items-center justify-between">
-                    <div>
-                      <span className="text-white/80 text-sm font-semibold">Typing Mode</span>
-                      <div className="text-white/60 text-xs">Double points for typing answers</div>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={isTypingMode}
-                      onChange={(e) => setIsTypingMode(e.target.checked)}
-                      className="w-5 h-5 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
-                    />
-                  </label>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
       </AnimatePresence>
 
       {/* In-game configuration panel */}
@@ -2248,7 +2121,6 @@ function ImprovedSentenceTowersGame({
           onClose={handleCloseConfigPanel}
         />
       )}
-
       </div>
     </div>
   );

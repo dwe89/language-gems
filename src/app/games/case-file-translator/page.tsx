@@ -6,7 +6,7 @@ import { useAuth } from '../../../components/auth/AuthProvider';
 import UnifiedSentenceCategorySelector, { SentenceSelectionConfig } from '../../../components/games/UnifiedSentenceCategorySelector';
 import { UnifiedSelectionConfig } from '../../../hooks/useUnifiedVocabulary';
 import CaseFileTranslatorGameWrapper from './components/CaseFileTranslatorGameWrapper';
-import GameAssignmentWrapper from '../../../components/games/templates/GameAssignmentWrapper';
+import { useAssignmentVocabulary } from '../../../hooks/useAssignmentVocabulary';
 import InGameConfigPanel from '../../../components/games/InGameConfigPanel';
 import Link from 'next/link';
 
@@ -16,6 +16,13 @@ export default function CaseFileTranslatorPage() {
   const searchParams = useSearchParams();
   const assignmentId = searchParams?.get('assignment');
   const mode = searchParams?.get('mode');
+
+  // Option B: Early assignment mode detection
+  const isAssignmentMode = assignmentId && mode === 'assignment';
+
+  // Load assignment data if in assignment mode (hook must be called unconditionally)
+  const { assignment, vocabulary: assignmentVocabulary, sentences: assignmentSentences, loading: assignmentLoading, error: assignmentError } =
+    useAssignmentVocabulary(assignmentId || '', 'case-file-translator');
 
   // Game state management
   const [gameStarted, setGameStarted] = useState(false);
@@ -77,122 +84,88 @@ export default function CaseFileTranslatorPage() {
     });
   };
 
-  // If assignment mode, use GameAssignmentWrapper
-  if (assignmentId && mode === 'assignment') {
-    return (
-      <GameAssignmentWrapper
-        assignmentId={assignmentId}
-        gameId="case-file-translator"
-        studentId={user?.id}
-        onAssignmentComplete={(progress) => {
-          console.log('Case File Translator assignment completed:', progress);
-          router.push('/student-dashboard');
-        }}
-        onBackToAssignments={() => router.push('/student-dashboard')}
-        onBackToMenu={() => router.push('/games/case-file-translator')}
-      >
-        {({ assignment, vocabulary, onProgressUpdate, onGameComplete }) => {
-          const handleGameComplete = (gameResult: any) => {
-            // Calculate standardized progress metrics
-            const wordsCompleted = gameResult.correctAnswers || 0;
-            const totalWords = gameResult.totalQuestions || vocabulary.length;
-            const score = gameResult.score || 0;
-            const accuracy = gameResult.accuracy || 0;
+  // Build assignment JSX after all hooks
+  let assignmentJSX: JSX.Element | null = null;
 
-            // Update progress
-            onProgressUpdate({
-              wordsCompleted,
-              totalWords,
-              score,
-              maxScore: totalWords * 100, // 100 points per word
-              accuracy
-            });
+  if (isAssignmentMode) {
+    if (!user) {
+      assignmentJSX = (
+        <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 flex items-center justify-center">
+          <div className="text-white text-xl">Please log in to access this assignment</div>
+        </div>
+      );
+    } else if (assignmentLoading) {
+      assignmentJSX = (
+        <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 flex items-center justify-center">
+          <div className="text-white text-xl">Loading assignment...</div>
+        </div>
+      );
+    } else if (assignmentError || (!assignmentVocabulary || assignmentVocabulary.length === 0) && (!assignmentSentences || assignmentSentences.length === 0)) {
+      assignmentJSX = (
+        <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 flex items-center justify-center">
+          <div className="text-white text-xl">Error loading assignment: {assignmentError || 'No content found'}</div>
+        </div>
+      );
+    } else {
+      // Extract sentence config from game_config
+      const gameConfig = assignment?.game_config?.gameConfig || assignment?.game_config || {};
+      const sentenceConfig = gameConfig.sentenceConfig || {};
 
-            // Complete assignment
-            onGameComplete({
-              assignmentId: assignment.id,
-              gameId: 'case-file-translator',
-              studentId: user?.id || '',
-              wordsCompleted,
-              totalWords,
-              score,
-              maxScore: totalWords * 100,
-              accuracy,
-              timeSpent: gameResult.timeSpent || 0,
-              completedAt: new Date(),
-              sessionData: gameResult
-            });
-          };
+      // Map sentence config to legacy settings format
+      let caseType = 'basics_core_language';
+      let subcategory = 'common_phrases';
 
-          const handleBackToAssignments = () => {
-            router.push('/student-dashboard');
-          };
+      if (sentenceConfig.source === 'topic' && sentenceConfig.topic) {
+        const topicToCategoryMap: Record<string, string> = {
+          'family_friends': 'identity_personal_life',
+          'relationships': 'identity_personal_life',
+          'personal_details': 'identity_personal_life',
+          'hobbies_interests': 'identity_personal_life',
+          'food_drink': 'basics_core_language',
+          'shopping': 'basics_core_language',
+          'travel': 'basics_core_language',
+          'school_work': 'education_work',
+          'future_plans': 'education_work',
+          'technology': 'modern_life',
+          'environment': 'modern_life'
+        };
 
-          // For sentence-based games like Case File Translator, we use the assignment's sentence configuration
-          // Extract sentence config from game_config
-          const gameConfig = assignment.game_config?.gameConfig || assignment.game_config || {};
-          const sentenceConfig = gameConfig.sentenceConfig || {};
+        caseType = topicToCategoryMap[sentenceConfig.topic] || 'basics_core_language';
+        subcategory = sentenceConfig.topic;
+      } else if (sentenceConfig.source === 'theme' && sentenceConfig.theme) {
+        caseType = sentenceConfig.theme;
+        subcategory = undefined;
+      }
 
-          // Map sentence config to legacy settings format
-          let caseType = 'basics_core_language'; // Default category
-          let subcategory = 'common_phrases'; // Default subcategory
+      const legacySettings = {
+        caseType,
+        language: assignment?.vocabulary_criteria?.language || 'spanish',
+        curriculumLevel: (assignment?.curriculum_level as string) || 'KS3',
+        subcategory,
+        difficulty: sentenceConfig.difficulty || 'intermediate',
+        examBoard: assignment?.exam_board as 'AQA' | 'edexcel',
+        tier: assignment?.tier as 'foundation' | 'higher'
+      };
 
-          if (sentenceConfig.source === 'topic' && sentenceConfig.topic) {
-            // Map topics to their correct categories based on database structure
-            const topicToCategoryMap: Record<string, string> = {
-              'family_friends': 'identity_personal_life',
-              'relationships': 'identity_personal_life',
-              'personal_details': 'identity_personal_life',
-              'hobbies_interests': 'identity_personal_life',
-              'food_drink': 'basics_core_language',
-              'shopping': 'basics_core_language',
-              'travel': 'basics_core_language',
-              'school_work': 'education_work',
-              'future_plans': 'education_work',
-              'technology': 'modern_life',
-              'environment': 'modern_life'
-            };
+      assignmentJSX = (
+        <div className="min-h-screen">
+          <CaseFileTranslatorGameWrapper
+            settings={legacySettings}
+            onBackToMenu={() => router.push(`/student-dashboard/assignments/${assignmentId}`)}
+            onGameEnd={() => router.push(`/student-dashboard/assignments/${assignmentId}`)}
+            assignmentId={assignmentId!}
+            userId={user.id}
+            isAssignmentMode={true}
+            onOpenSettings={handleOpenConfigPanel}
+          />
+        </div>
+      );
+    }
+  }
 
-            caseType = topicToCategoryMap[sentenceConfig.topic] || 'basics_core_language';
-            subcategory = sentenceConfig.topic;
-          } else if (sentenceConfig.source === 'theme' && sentenceConfig.theme) {
-            // For theme-based selection, use theme as category
-            caseType = sentenceConfig.theme;
-            subcategory = undefined;
-          }
-
-          const legacySettings = {
-            caseType,
-            language: assignment.vocabulary_criteria?.language || 'spanish',
-            curriculumLevel: (assignment.curriculum_level as string) || 'KS3',
-            subcategory,
-            difficulty: sentenceConfig.difficulty || 'intermediate',
-            // KS4-specific parameters
-            examBoard: assignment.exam_board as 'AQA' | 'edexcel',
-            tier: assignment.tier as 'foundation' | 'higher'
-          };
-
-          console.log('🎯 Case File Translator assignment settings:', {
-            originalSentenceConfig: sentenceConfig,
-            mappedSettings: legacySettings,
-            assignmentId: assignment.id
-          });
-
-          return (
-            <div className="min-h-screen">
-              <CaseFileTranslatorGameWrapper
-                settings={legacySettings}
-                onBackToMenu={handleBackToAssignments}
-                onGameEnd={handleGameComplete}
-                assignmentId={assignment.id}
-                userId={user?.id}
-                onOpenSettings={handleOpenConfigPanel}
-              />
-            </div>
-          );
-        }}
-      </GameAssignmentWrapper>
-    );
+  // Return assignment JSX if in assignment mode
+  if (assignmentJSX) {
+    return assignmentJSX;
   }
 
   // Show sentence category selector if game not started

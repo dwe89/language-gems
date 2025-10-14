@@ -11,7 +11,7 @@ import {
   RefreshCw, CheckCircle, Headphones, Mic, Volume2, MessageSquare,
   PenTool, FileEdit, Feather, Award, Plus, X, Eye, Trash2,
   Zap, Brain, Target, Gamepad2, Timer, Star, Settings,
-  Shuffle, Grid3X3, Type, Layers, Smile, Pickaxe, Gem, Map
+  Shuffle, Grid3X3, Type, Layers, Smile, Pickaxe, Gem, Map, Flame
 } from 'lucide-react';
 import { supabaseBrowser } from '../../../../components/auth/AuthProvider';
 
@@ -142,13 +142,33 @@ const AVAILABLE_GAMES = [
   },
   {
     id: 'detective-listening',
-    name: 'Detective Listening',
-    description: 'Solve cases by listening to radio transmissions and identifying evidence',
+    name: 'Detective Listening Game',
+    description: 'Solve cases by identifying evidence through listening to words and finding their translations',
     icon: <Headphones className="text-amber-600" size={20} />,
     category: 'listening',
     difficulty: 'intermediate',
     timeToComplete: '8-15 min',
     path: '/games/detective-listening'
+  },
+  {
+    id: 'case-file-translator',
+    name: 'Case File Translator',
+    description: 'Solve detective cases by translating intercepted communications',
+    icon: <FileText className="text-blue-600" size={20} />,
+    category: 'sentences',
+    difficulty: 'intermediate',
+    timeToComplete: '10-15 min',
+    path: '/games/case-file-translator'
+  },
+  {
+    id: 'lava-temple-word-restore',
+    name: 'Lava Temple: Word Restore',
+    description: 'Restore ancient inscriptions by filling in missing words. Become a linguistic archaeologist!',
+    icon: <Flame className="text-orange-600" size={20} />,
+    category: 'sentences',
+    difficulty: 'intermediate',
+    timeToComplete: '8-12 min',
+    path: '/games/lava-temple-word-restore'
   },
   {
     id: 'vocab-blast',

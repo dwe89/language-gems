@@ -9,40 +9,63 @@ import { UnifiedVocabularyItem } from '../../../../hooks/useUnifiedVocabulary';
 interface WordScrambleFreePlayWrapperProps {
   vocabulary: UnifiedVocabularyItem[];
   userId?: string;
-  language: string;
-  difficulty: 'easy' | 'medium' | 'hard';
+  language?: string;
+  difficulty?: 'easy' | 'medium' | 'hard';
+  config?: any;
+  theme?: string;
   onBackToMenu: () => void;
-  onGameComplete: (result: any) => void;
+  onGameComplete?: (result: any) => void;
   onOpenSettings?: () => void;
+  isAssignmentMode?: boolean;
+  assignmentId?: string;
+  gameSessionId?: string | null; // Accept game session ID from parent
+  // Theme selector props for assignment mode
+  assignmentTheme?: string;
+  onAssignmentThemeChange?: (theme: string) => void;
+  showAssignmentThemeSelector?: boolean;
+  onToggleAssignmentThemeSelector?: () => void;
 }
 
 export default function WordScrambleFreePlayWrapper({
   vocabulary,
   userId,
-  language,
-  difficulty,
+  language = 'es',
+  difficulty = 'medium',
+  config,
+  theme,
   onBackToMenu,
   onGameComplete,
-  onOpenSettings
+  onOpenSettings,
+  isAssignmentMode,
+  assignmentId,
+  gameSessionId: parentGameSessionId, // Receive from parent
+  assignmentTheme,
+  onAssignmentThemeChange,
+  showAssignmentThemeSelector,
+  onToggleAssignmentThemeSelector
 }: WordScrambleFreePlayWrapperProps) {
   const { user } = useAuth();
-  const [gameSessionId, setGameSessionId] = useState<string | null>(null);
+  const [localGameSessionId, setLocalGameSessionId] = useState<string | null>(null);
   const [sessionService] = useState(() => new EnhancedGameSessionService());
   const [gameKey, setGameKey] = useState(0); // Key to force component remount on game restart
 
-  // Initialize game session for free play mode
+  // Use parent session ID if provided (assignment mode), otherwise create local session (free play)
+  const gameSessionId = parentGameSessionId || localGameSessionId;
+
+  // Initialize game session for free play mode (only if no parent session ID)
   useEffect(() => {
-    if ((userId || user?.id) && vocabulary.length > 0 && !gameSessionId) {
+    if (!parentGameSessionId && (userId || user?.id) && vocabulary.length > 0 && !localGameSessionId) {
       initializeGameSession();
     }
-  }, [userId, user?.id, vocabulary.length, gameSessionId]);
+  }, [parentGameSessionId, userId, user?.id, vocabulary.length, localGameSessionId]);
 
   const initializeGameSession = async () => {
     try {
       const sessionId = await sessionService.startGameSession({
         student_id: userId || user?.id || '',
+        assignment_id: isAssignmentMode ? assignmentId : undefined,
         game_type: 'word-scramble',
-        session_mode: 'free_play',
+        session_mode: isAssignmentMode ? 'assignment' : 'free_play',
         max_score_possible: vocabulary.length * 100, // Estimate max score
         session_data: {
           vocabularyCount: vocabulary.length,
@@ -52,10 +75,10 @@ export default function WordScrambleFreePlayWrapper({
         }
       });
 
-      setGameSessionId(sessionId);
-      console.log('🔮 [FREE PLAY] Word Scramble game session started:', sessionId);
+      setLocalGameSessionId(sessionId);
+      console.log(`🔮 [FREE PLAY] Word Scramble game session started:`, sessionId);
     } catch (error) {
-      console.error('🔮 [FREE PLAY] Failed to start Word Scramble game session:', error);
+      console.error(`🔮 [FREE PLAY] Failed to start Word Scramble game session:`, error);
     }
   };
 
@@ -65,10 +88,11 @@ export default function WordScrambleFreePlayWrapper({
       try {
         await sessionService.endGameSession(gameSessionId, {
           student_id: userId || user?.id || '',
+          assignment_id: isAssignmentMode ? assignmentId : undefined,
           game_type: 'word-scramble',
-          session_mode: 'free_play',
+          session_mode: isAssignmentMode ? 'assignment' : 'free_play',
           final_score: result.score || 0,
-          accuracy_percentage: result.stats?.wordsCompleted ? 
+          accuracy_percentage: result.stats?.wordsCompleted ?
             (result.stats.wordsCompleted / (result.stats.wordsCompleted + result.stats.hintsUsed)) * 100 : 0,
           completion_percentage: 100,
           words_attempted: result.stats?.wordsCompleted || 0,
@@ -81,9 +105,9 @@ export default function WordScrambleFreePlayWrapper({
           }
         });
 
-        console.log('🔮 [FREE PLAY] Word Scramble game session ended');
+        console.log(`🔮 [${isAssignmentMode ? 'ASSIGNMENT' : 'FREE PLAY'}] Word Scramble game session ended`);
       } catch (error) {
-        console.error('🔮 [FREE PLAY] Failed to end Word Scramble game session:', error);
+        console.error(`🔮 [${isAssignmentMode ? 'ASSIGNMENT' : 'FREE PLAY'}] Failed to end Word Scramble game session:`, error);
       }
     }
 

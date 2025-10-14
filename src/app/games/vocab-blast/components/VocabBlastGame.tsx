@@ -38,6 +38,11 @@ interface VocabBlastGameProps {
   gameSessionId?: string | null;
   isAssignmentMode?: boolean;
   onOpenSettings?: () => void;
+  // Theme selector props for assignment mode
+  assignmentTheme?: string;
+  onAssignmentThemeChange?: (theme: string) => void;
+  showAssignmentThemeSelector?: boolean;
+  onToggleAssignmentThemeSelector?: () => void;
 }
 
 export interface VocabItem {
@@ -85,12 +90,19 @@ export default function VocabBlastGame({
   onGameEnd,
   gameSessionId,
   isAssignmentMode,
-  onOpenSettings
+  onOpenSettings,
+  assignmentTheme,
+  onAssignmentThemeChange,
+  showAssignmentThemeSelector,
+  onToggleAssignmentThemeSelector
 }: VocabBlastGameProps) {
   const { themeClasses } = useTheme();
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [musicStarted, setMusicStarted] = useState(false);
   const { playSFX, playThemeSFX, startBackgroundMusic, stopBackgroundMusic } = useAudio(soundEnabled);
+
+  // Story modal state - for audio initiation and game start
+  const [storyDismissed, setStoryDismissed] = useState(false);
 
   // Theme selection state
   const [showThemeSelector, setShowThemeSelector] = useState(!settings.theme || settings.theme === 'default');
@@ -113,16 +125,12 @@ export default function VocabBlastGame({
   const [isPaused, setIsPaused] = useState(false);
   const [currentWord, setCurrentWord] = useState<GameVocabularyWord | null>(null);
   const [currentWordStartTime, setCurrentWordStartTime] = useState<number>(0);
-  // Calculate win condition targets based on difficulty and vocabulary size
+  // Calculate win condition targets - fixed values as requested
   const calculateTargets = () => {
-    const vocabSize = vocabulary.length;
-    const difficultyMultiplier = settings.difficulty === 'easy' ? 0.8 :
-      settings.difficulty === 'medium' ? 1.0 : 1.2;
-
     return {
-      targetScore: Math.max(500, Math.floor(vocabSize * 50 * difficultyMultiplier)),
-      targetWordsLearned: Math.max(10, Math.floor(vocabSize * 0.6)),
-      targetCombo: Math.max(5, Math.floor(vocabSize * 0.3))
+      targetScore: 1500,
+      targetWordsLearned: 15,
+      targetCombo: 7
     };
   };
 
@@ -385,17 +393,52 @@ export default function VocabBlastGame({
           } catch (error) {
             console.error('Failed to record vocabulary interaction:', error);
           }
-        } else if (isAssignmentMode) {
-          console.log('🔍 [VOCAB TRACKING] Skipping direct gem recording - assignment mode (wrapper will handle gems)');
+        } else if (gameSessionId && word.id) {
+          // Record gem for assignment mode using EnhancedGameSessionService
+          console.log('🎮 [VOCAB BLAST] Attempting to record gem:', {
+            vocabularyId: word.id,
+            gameSessionId,
+            word: word.word,
+            isCorrect: true
+          });
+
+          try {
+            const { EnhancedGameSessionService } = await import('../../../../services/rewards/EnhancedGameSessionService');
+            const sessionService = new EnhancedGameSessionService();
+
+            const gemEvent = await sessionService.recordWordAttempt(gameSessionId, 'vocab-blast', {
+              vocabularyId: word.id,
+              wordText: word.word,
+              translationText: word.translation,
+              responseTimeMs: responseTime,
+              wasCorrect: true,
+              hintUsed: false,
+              streakCount: gameStats.correctAnswers,
+              masteryLevel: 1,
+              maxGemRarity: 'common',
+              gameMode: 'typing',
+              difficultyLevel: settings.difficulty
+            }, true); // Skip FSRS for speed
+
+            if (gemEvent) {
+              console.log('✅ [VOCAB BLAST] Gem awarded successfully:', gemEvent);
+            } else {
+              console.warn('⚠️ [VOCAB BLAST] No gem event returned');
+            }
+          } catch (error) {
+            console.error('🚨 [VOCAB BLAST] Gem recording failed:', error);
+          }
         } else {
-          console.log('🔍 [SRS UPDATE] Skipping SRS update - no gameSessionId provided:', {
+          console.warn('⚠️ [VOCAB BLAST] Skipping gem recording:', {
             hasGameSessionId: !!gameSessionId,
-            gameSessionId
+            hasVocabularyId: !!word.id,
+            gameSessionId,
+            vocabularyId: word.id
           });
         }
 
-        // Record vocabulary interaction for assignment mode
-        if (isAssignmentMode && typeof window !== 'undefined' && (window as any).recordVocabularyInteraction) {
+        // DEPRECATED: Old assignment mode tracking - replaced by EnhancedGameSessionService above
+        if (false && isAssignmentMode && typeof window !== 'undefined' && (window as any).recordVocabularyInteraction) {
           try {
             await (window as any).recordVocabularyInteraction(
               word.word,
@@ -436,28 +479,51 @@ export default function VocabBlastGame({
             language: settings.language === 'spanish' ? 'es' : settings.language === 'french' ? 'fr' : 'en'
           };
 
-          // FSRS tracking handled by GameAssignmentWrapper
-          console.log('✅ [VOCAB BLAST] Incorrect answer - FSRS handled by unified system');
+          // Record gem for incorrect answer using EnhancedGameSessionService
+          if (gameSessionId && currentWord.id) {
+            console.log('🎮 [VOCAB BLAST] Attempting to record INCORRECT answer gem:', {
+              vocabularyId: currentWord.id,
+              gameSessionId,
+              word: currentWord.word,
+              isCorrect: false
+            });
+
+            try {
+              const { EnhancedGameSessionService } = await import('../../../../services/rewards/EnhancedGameSessionService');
+              const sessionService = new EnhancedGameSessionService();
+
+              const gemEvent = await sessionService.recordWordAttempt(gameSessionId, 'vocab-blast', {
+                vocabularyId: currentWord.id,
+                wordText: currentWord.word,
+                translationText: currentWord.translation,
+                responseTimeMs: responseTime,
+                wasCorrect: false, // INCORRECT ANSWER
+                hintUsed: false,
+                streakCount: 0, // Reset streak on incorrect
+                masteryLevel: 1,
+                maxGemRarity: 'common',
+                gameMode: 'typing',
+                difficultyLevel: settings.difficulty
+              }, true); // Skip FSRS for speed
+
+              if (gemEvent) {
+                console.log('✅ [VOCAB BLAST] Incorrect answer recorded successfully:', gemEvent);
+              } else {
+                console.warn('⚠️ [VOCAB BLAST] No gem event returned for incorrect answer');
+              }
+            } catch (error) {
+              console.error('🚨 [VOCAB BLAST] Gem recording failed for incorrect answer:', error);
+            }
+          } else {
+            console.warn('⚠️ [VOCAB BLAST] Skipping incorrect answer gem recording:', {
+              hasGameSessionId: !!gameSessionId,
+              hasVocabularyId: !!currentWord.id,
+              gameSessionId,
+              vocabularyId: currentWord.id
+            });
+          }
         } catch (error) {
           console.error('Error recording FSRS failed practice:', error);
-        }
-      }
-
-      // FSRS now handles incorrect answer tracking above - no duplicate legacy system needed
-
-      // Record vocabulary interaction for assignment mode
-      if (isAssignmentMode && currentWord && typeof window !== 'undefined' && (window as any).recordVocabularyInteraction) {
-        try {
-          await (window as any).recordVocabularyInteraction(
-            currentWord.word,
-            currentWord.translation,
-            false, // wasCorrect
-            responseTime, // responseTimeMs
-            false, // hintUsed
-            0 // streakCount (reset on incorrect)
-          );
-        } catch (error) {
-          console.error('Failed to record vocabulary interaction for assignment:', error);
         }
       }
 
@@ -645,117 +711,119 @@ export default function VocabBlastGame({
     <div className="min-h-screen relative overflow-hidden">
       {/* Game UI Overlay */}
       <div className="absolute inset-0 z-10 pointer-events-none">
-        {/* Top Bar */}
-        <div className="grid grid-cols-1 md:grid-cols-3 items-center p-3 md:p-4 pointer-events-auto gap-3 md:gap-0">
-          <div className="flex items-center gap-2 md:gap-4 flex-wrap">
-            {!isAssignmentMode && (
-              <button
-                onClick={onBackToMenu}
-                className="flex items-center gap-1 md:gap-2 bg-black/60 hover:bg-black/80 text-white px-3 py-2 md:px-4 rounded-lg transition-all duration-200 text-sm md:text-base border border-white/20"
-              >
-                <ArrowLeft className="w-3 h-3 md:w-4 md:h-4" />
-                <span className="hidden sm:inline">{isAssignmentMode ? 'Back to Assignment' : 'Menu'}</span>
-              </button>
-            )}
+        {/* Top Menu Bar - Single Line Layout */}
+        <div className="flex items-center justify-between p-3 md:p-4 pointer-events-auto bg-black/40 backdrop-blur-sm border-b border-white/10">
+          {/* Left Section: Menu, Pause, Settings */}
+          <div className="flex items-center gap-2 md:gap-4">
+            <button
+              onClick={isAssignmentMode ? onBackToAssignment : onBackToMenu}
+              className="flex items-center gap-1 md:gap-2 bg-black/60 hover:bg-black/80 text-white px-3 py-2 md:px-4 rounded-lg transition-all duration-200 text-sm md:text-base border border-white/20"
+            >
+              <ArrowLeft className="w-3 h-3 md:w-4 md:h-4" />
+              <span className="hidden sm:inline">{isAssignmentMode ? 'Back' : 'Menu'}</span>
+            </button>
 
             {!isAssignmentMode && (
               <button
                 onClick={togglePause}
                 className="flex items-center gap-1 md:gap-2 bg-black/60 hover:bg-black/80 text-white px-3 py-2 md:px-4 rounded-lg transition-all duration-200 text-sm md:text-base border border-white/20"
               >
-                {isPaused ? <Play className="w-3 h-3 md:w-4 md:h-4" /> : <Pause className="w-3 h-3 md:w-4 md:h-4" />}
-                <span className="hidden sm:inline">{isPaused ? 'Resume' : 'Pause'}</span>
+                <Pause className="w-3 h-3 md:w-4 md:h-4" />
+                <span className="hidden sm:inline">Pause</span>
               </button>
             )}
 
+            {/* Settings button */}
             {onOpenSettings && (
               <motion.button
                 onClick={() => {
                   playSFX('button-click');
-                  onOpenSettings();
+                  if (isAssignmentMode && onToggleAssignmentThemeSelector) {
+                    onToggleAssignmentThemeSelector();
+                  } else {
+                    onOpenSettings();
+                  }
                 }}
                 className="relative px-3 md:px-4 py-2 md:py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-sm md:text-base font-semibold flex items-center gap-2 md:gap-3 transition-all duration-300 shadow-lg hover:shadow-xl border-2 border-white/20"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                title="Customize your game: Change Language, Level, Topic & Theme"
+                title={isAssignmentMode ? "Change Theme" : "Customize your game: Change Language, Level, Topic & Theme"}
               >
                 <Settings className="h-5 w-5 md:h-6 md:w-6" />
                 <span className="hidden md:inline">Game Settings</span>
                 <span className="md:hidden">Settings</span>
               </motion.button>
             )}
+          </div>
 
+          {/* Center Section: Title */}
+          <div className="text-center">
+            <h1 className="text-lg md:text-xl font-bold text-white">{getThemeTitle()}</h1>
+          </div>
+
+          {/* Right Section: Stats and Controls - Spread out */}
+          <div className="flex items-center gap-6 md:gap-8">
+            {/* Progress Stats - Spread out horizontally */}
+            <div className="flex items-center gap-4 md:gap-6 text-white">
+              <motion.div
+                className="text-lg md:text-xl font-bold flex items-center gap-2"
+                animate={{
+                  scale: gameStats.progressPercentage >= 80 ? [1, 1.05, 1] : 1,
+                  color: gameStats.progressPercentage >= 80 ? '#10B981' : '#FFFFFF'
+                }}
+                transition={{ duration: 0.5, repeat: gameStats.progressPercentage >= 80 ? Infinity : 0 }}
+              >
+                🎯 {Math.round(gameStats.progressPercentage)}%
+              </motion.div>
+
+              <div className="text-sm md:text-base font-medium">
+                Score: {gameStats.score}/{gameStats.targetScore}
+              </div>
+
+              <div className="text-sm md:text-base font-medium">
+                Words: {gameStats.wordsLearned}/{gameStats.targetWordsLearned}
+              </div>
+
+              <div className="flex items-center gap-2 text-sm md:text-base font-medium">
+                <span>Lives:</span>
+                <div className="flex gap-1">
+                  {Array.from({ length: gameStats.lives }, (_, i) => (
+                    <motion.span
+                      key={`heart-${i}`}
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      className="text-red-500"
+                    >
+                      ❤️
+                    </motion.span>
+                  ))}
+                  {Array.from({ length: 3 - gameStats.lives }, (_, i) => (
+                    <motion.span
+                      key={`empty-${i}`}
+                      initial={{ scale: 1 }}
+                      animate={{ scale: 0.8, opacity: 0.5 }}
+                      className="text-gray-500"
+                    >
+                      🖤
+                    </motion.span>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Mute Button */}
             <button
               onClick={() => setSoundEnabled(!soundEnabled)}
               className="flex items-center gap-1 md:gap-2 bg-black/60 hover:bg-black/80 text-white px-3 py-2 md:px-4 rounded-lg transition-all duration-200 text-sm md:text-base border border-white/20"
             >
               {soundEnabled ? <Volume2 className="w-3 h-3 md:w-4 md:h-4" /> : <VolumeX className="w-3 h-3 md:w-4 md:h-4" />}
             </button>
-
-            {/* Settings button - only show if not in assignment mode */}
-            {!isAssignmentMode && onOpenSettings && (
-              <button
-                onClick={onOpenSettings}
-                className="flex items-center gap-1 md:gap-2 bg-black/60 hover:bg-black/80 text-white px-3 py-2 md:px-4 rounded-lg transition-all duration-200 text-sm md:text-base border border-white/20"
-              >
-                <Settings className="w-3 h-3 md:w-4 md:h-4" />
-                <span className="hidden sm:inline">Settings</span>
-              </button>
-            )}
-          </div>
-
-          <div className="text-center">
-            {!isAssignmentMode && (
-              <>
-                <h1 className="text-2xl font-bold text-white">{getThemeTitle()}</h1>
-                <p className="text-sm text-slate-300">{getThemeInstruction()}</p>
-                <p className="text-xs text-slate-400 mt-1">{getWinConditionText()}</p>
-              </>
-            )}
-          </div>
-
-          <div className="text-right text-white order-first md:order-last">
-            <motion.div
-              className="text-xl md:text-2xl font-bold"
-              animate={{
-                scale: gameStats.progressPercentage >= 80 ? [1, 1.05, 1] : 1,
-                color: gameStats.progressPercentage >= 80 ? '#10B981' : '#FFFFFF'
-              }}
-              transition={{ duration: 0.5, repeat: gameStats.progressPercentage >= 80 ? Infinity : 0 }}
-            >
-              🎯 {Math.round(gameStats.progressPercentage)}%
-            </motion.div>
-            <div className="text-xs md:text-sm">Score: {gameStats.score}/{gameStats.targetScore}</div>
-            <div className="text-xs md:text-sm">Words: {gameStats.wordsLearned}/{gameStats.targetWordsLearned}</div>
-            <div className="text-xs md:text-sm flex items-center gap-1 justify-end">
-              <span>Lives:</span>
-              {Array.from({ length: gameStats.lives }, (_, i) => (
-                <motion.span
-                  key={`heart-${i}`}
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  className="text-red-500"
-                >
-                  ❤️
-                </motion.span>
-              ))}
-              {Array.from({ length: 3 - gameStats.lives }, (_, i) => (
-                <motion.span
-                  key={`empty-${i}`}
-                  initial={{ scale: 1 }}
-                  animate={{ scale: 0.8, opacity: 0.5 }}
-                  className="text-gray-500"
-                >
-                  🖤
-                </motion.span>
-              ))}
-            </div>
           </div>
         </div>
 
         {/* Current Word Display */}
         {currentWord && (
-          <div className="absolute top-20 left-1/2 transform -translate-x-1/2 pointer-events-auto z-20">
+          <div className="absolute top-32 left-1/2 transform -translate-x-1/2 pointer-events-auto z-20">
             <motion.div
               key={currentWord.id}
               initial={{ opacity: 0, scale: 0.8, y: -20 }}
@@ -847,7 +915,7 @@ export default function VocabBlastGame({
           isPaused={isPaused}
           gameActive={gameActive}
           difficulty={settings.difficulty}
-          playSFX={playSFX}
+          playSFX={playSFX as (sound: string) => void}
         />
       )}
 

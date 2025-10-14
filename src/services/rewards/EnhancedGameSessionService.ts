@@ -218,22 +218,56 @@ export class EnhancedGameSessionService {
 
       // ✅ UPDATE FSRS FOR ALL ANSWERS (both correct and incorrect)
       if (attempt.vocabularyId && !skipSpacedRepetition) {
-        const studentId = await this.getSessionStudentId(sessionId);
+        try {
+          const studentId = await this.getSessionStudentId(sessionId);
 
-        // Update FSRS for vocabulary tracking
-        console.log('🔍 [ENHANCED SESSION] FSRS update:', {
-          vocabularyId: attempt.vocabularyId,
-          wasCorrect: attempt.wasCorrect
-        });
+          // Update FSRS for vocabulary tracking
+          console.log('🔍 [ENHANCED SESSION] FSRS update:', {
+            vocabularyId: attempt.vocabularyId,
+            wasCorrect: attempt.wasCorrect,
+            callId
+          });
 
-        await this.updateVocabularyDirectly(
-          studentId,
-          attempt.vocabularyId,
-          attempt.wasCorrect,
-          attempt.responseTimeMs
-        );
+          await this.updateVocabularyDirectly(
+            studentId,
+            attempt.vocabularyId,
+            attempt.wasCorrect,
+            attempt.responseTimeMs
+          );
 
-        console.log('✅ [ENHANCED SESSION] FSRS update completed');
+          console.log('✅ [ENHANCED SESSION] FSRS update completed successfully');
+        } catch (error) {
+          // 🚨 CRITICAL: FSRS update failed - this means vocabulary mastery is not being tracked
+          console.error('🚨 CRITICAL: FSRS update failed in recordWordAttempt:', {
+            error,
+            errorMessage: error instanceof Error ? error.message : 'Unknown error',
+            vocabularyId: attempt.vocabularyId,
+            wasCorrect: attempt.wasCorrect,
+            sessionId,
+            callId,
+            timestamp: new Date().toISOString()
+          });
+
+          // Alert in production
+          if (typeof window !== 'undefined' && (window as any).Sentry) {
+            (window as any).Sentry.captureException(error, {
+              tags: {
+                service: 'vocabulary_tracking',
+                critical: true,
+                function: 'recordWordAttempt'
+              },
+              extra: {
+                vocabularyId: attempt.vocabularyId,
+                wasCorrect: attempt.wasCorrect,
+                sessionId,
+                callId
+              }
+            });
+          }
+
+          // Re-throw to prevent silent data loss
+          throw new Error(`FSRS vocabulary tracking failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
       }
 
       // Only award gems for correct answers in non-assessment modes
@@ -404,7 +438,11 @@ export class EnhancedGameSessionService {
     };
 
     // Handle vocabulary IDs with validation - skip foreign key fields if no valid ID
-    if (gemEvent.vocabularyId) {
+    // For sentence-based games, don't set centralized_vocabulary_id (sentences table IDs don't exist in centralized_vocabulary)
+    const sentenceBasedGames = ['sentence-towers', 'speed-builder', 'case-file-translator', 'lava-temple-word-restore'];
+    const isSentenceGame = sentenceBasedGames.includes(gemEvent.gameType);
+
+    if (gemEvent.vocabularyId && !isSentenceGame) {
       if (typeof gemEvent.vocabularyId === 'string') {
         // Check if it's a valid UUID format (contains hyphens and is 36 chars)
         const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(gemEvent.vocabularyId);
@@ -423,6 +461,9 @@ export class EnhancedGameSessionService {
         console.warn('🚨 Invalid vocabulary ID format (not UUID or integer):', gemEvent.vocabularyId);
         // Don't include vocabulary ID to avoid foreign key errors
       }
+    } else if (isSentenceGame) {
+      console.log(`💎 [SENTENCE GAME] Skipping centralized_vocabulary_id for sentence-based game: ${gemEvent.gameType}`);
+      // Don't set centralized_vocabulary_id for sentence games - sentences table IDs don't exist in centralized_vocabulary
     } else {
       console.log('💎 No vocabulary ID provided - storing gem without vocabulary reference');
       // This is fine - we can store gems without vocabulary references
@@ -735,20 +776,55 @@ export class EnhancedGameSessionService {
         state: canProgress.state
       });
 
-      // Call atomic function directly with unmodified wasCorrect value
-      const { error } = await this.supabase.rpc('update_vocabulary_gem_collection', {
+      // Call atomic function directly with correct parameter mapping
+      // The atomic function expects p_vocabulary_item_id as UUID, not integer
+      const { error } = await this.supabase.rpc('update_vocabulary_gem_collection_atomic', {
         p_student_id: studentId,
-        p_vocabulary_item_id: identifiers.vocabularyItemId,
-        p_centralized_vocabulary_id: identifiers.centralizedVocabularyId,
         p_was_correct: wasCorrect,
+        p_centralized_vocabulary_id: identifiers.centralizedVocabularyId,
+        p_vocabulary_item_id: identifiers.isUUID ? identifiers.centralizedVocabularyId : null,
         p_response_time_ms: responseTimeMs,
         p_hint_used: false,
         p_streak_count: 0
       });
 
       if (error) {
-        console.error('Error in direct vocabulary update:', error);
-        throw error;
+        // 🚨 CRITICAL ERROR: Vocabulary tracking failed
+        console.error('🚨 CRITICAL: Vocabulary update failed:', {
+          error,
+          errorCode: error.code,
+          errorMessage: error.message,
+          errorDetails: error.details,
+          errorHint: error.hint,
+          studentId,
+          vocabularyId: identifiers.raw,
+          vocabularyItemId: identifiers.vocabularyItemId,
+          centralizedVocabularyId: identifiers.centralizedVocabularyId,
+          wasCorrect,
+          responseTimeMs,
+          timestamp: new Date().toISOString(),
+          stackTrace: new Error().stack
+        });
+
+        // Alert developers in production via Sentry (if available)
+        if (typeof window !== 'undefined' && (window as any).Sentry) {
+          (window as any).Sentry.captureException(error, {
+            tags: {
+              service: 'vocabulary_tracking',
+              critical: true,
+              function: 'updateVocabularyDirectly'
+            },
+            extra: {
+              studentId,
+              vocabularyId: identifiers.raw,
+              wasCorrect,
+              errorCode: error.code
+            }
+          });
+        }
+
+        // Throw error to prevent silent failures
+        throw new Error(`Vocabulary tracking failed: ${error.message} (Code: ${error.code})`);
       }
 
       console.log('✅ [DIRECT UPDATE] Vocabulary updated successfully:', {
@@ -759,7 +835,16 @@ export class EnhancedGameSessionService {
       });
 
     } catch (error) {
-      console.error('Error updating vocabulary directly:', error);
+      console.error('🚨 [VOCABULARY UPDATE] Exception caught:', {
+        error,
+        errorMessage: error instanceof Error ? error.message : 'Unknown error',
+        studentId,
+        vocabularyId,
+        timestamp: new Date().toISOString()
+      });
+
+      // Re-throw to ensure calling code knows the update failed
+      throw error;
     }
   }
 

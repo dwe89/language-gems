@@ -1,25 +1,38 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useUnifiedAuth } from '../../../hooks/useUnifiedAuth';
 import { ThemeProvider } from './components/ThemeProvider';
 import TicTacToeGameWrapper from './components/TicTacToeGameWrapper';
-import NoughtsAndCrossesAssignmentWrapper from './components/NoughtsAssignmentWrapper';
+import { useAssignmentVocabulary } from '../../../hooks/useAssignmentVocabulary';
 import UnifiedGameLauncher from '../../../components/games/UnifiedGameLauncher';
 import { UnifiedSelectionConfig, UnifiedVocabularyItem } from '../../../hooks/useUnifiedVocabulary';
 import { useAudio } from './hooks/useAudio';
 import InGameConfigPanel from '../../../components/games/InGameConfigPanel';
+import AssignmentThemeSelector from '../../../components/games/AssignmentThemeSelector';
+import { EnhancedGameService } from '../../../services/enhancedGameService';
 
 export default function UnifiedNoughtsAndCrossesPage() {
   const { user, isLoading, isDemo } = useUnifiedAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  // Get URL parameters for assignment mode
+  const assignmentId = searchParams?.get('assignment');
+  const mode = searchParams?.get('mode');
+
+  // Early assignment mode detection to prevent flash
+  const isAssignmentMode = assignmentId && mode === 'assignment';
+
+  // Always initialize assignment hook to keep hooks order stable
+  const { assignment, vocabulary: assignmentVocabulary, loading: assignmentLoading, error: assignmentError } =
+    useAssignmentVocabulary(assignmentId || '', 'noughts-and-crosses');
+
   // ALWAYS initialize ALL hooks first to prevent "more hooks than previous render" error
   const [soundEnabled] = useState(true);
   const { playSFX } = useAudio(soundEnabled);
-  
+
   // Game state management - must be initialized BEFORE any conditional returns
   const [gameStarted, setGameStarted] = useState(false);
 
@@ -32,45 +45,173 @@ export default function UnifiedNoughtsAndCrossesPage() {
   const [showConfigPanel, setShowConfigPanel] = useState(false);
   const [gameMode, setGameMode] = useState<'computer' | '2-player'>('computer');
 
-  // Check for assignment mode
-  const assignmentId = searchParams?.get('assignment');
-  const mode = searchParams?.get('mode');
+  // Assignment theme state
+  const [assignmentTheme, setAssignmentTheme] = useState<string>('default');
+  const [showThemeSelector, setShowThemeSelector] = useState(false);
 
-  console.log('🔍 [NOUGHTS PAGE] URL params:', {
-    assignmentId,
-    mode,
-    isAssignmentMode: assignmentId && mode === 'assignment',
-    searchParamsString: searchParams?.toString(),
-    userAgent: typeof window !== 'undefined' ? window.navigator.userAgent : 'SSR'
-  });
+  // Assignment game session state
+  const [assignmentGameSessionId, setAssignmentGameSessionId] = useState<string | null>(null);
+  const [gameService, setGameService] = useState<EnhancedGameService | null>(null);
 
-  // If assignment mode, render assignment wrapper (after all hooks are initialized)
-  if (assignmentId && mode === 'assignment') {
-    console.log('🎮 [NOUGHTS PAGE] Rendering assignment wrapper for:', assignmentId);
-    try {
-      return <NoughtsAndCrossesAssignmentWrapper assignmentId={assignmentId} />;
-    } catch (error) {
-      console.error('❌ [NOUGHTS PAGE] Error rendering assignment wrapper:', error);
-      return (
-        <div className="min-h-screen bg-gradient-to-br from-red-600 via-red-700 to-red-800 flex items-center justify-center">
-          <div className="text-white text-center max-w-md p-8">
-            <h1 className="text-2xl font-bold mb-4">Error Loading Assignment</h1>
-            <p className="mb-4">There was an error loading the assignment. Please try again.</p>
-            <p className="text-sm mb-4">Error: {error instanceof Error ? error.message : 'Unknown error'}</p>
-            <button
-              onClick={() => router.push('/student-dashboard/assignments')}
-              className="bg-white text-red-600 px-6 py-2 rounded-lg font-semibold hover:bg-gray-100"
-            >
-              Back to Assignments
-            </button>
+  // Initialize game service
+  useEffect(() => {
+    const service = new EnhancedGameService(); // No parameters needed, uses default Supabase client
+    setGameService(service);
+    console.log('🎮 [NOUGHTS] Game service initialized');
+  }, []);
+
+  // Create game session for assignment mode
+  useEffect(() => {
+    const createAssignmentSession = async () => {
+      if (isAssignmentMode && gameService && user?.id && assignmentVocabulary?.length > 0 && !assignmentGameSessionId) {
+        try {
+          console.log('🎮 [NOUGHTS] Creating assignment game session...');
+          const sessionId = await gameService.startGameSession({
+            student_id: user.id,
+            assignment_id: assignmentId!,
+            game_type: 'noughts-and-crosses',
+            session_mode: 'assignment',
+            session_data: {
+              vocabularyCount: assignmentVocabulary.length,
+              assignmentId: assignmentId
+            }
+          });
+          setAssignmentGameSessionId(sessionId);
+          console.log('✅ [NOUGHTS] Assignment game session created:', sessionId);
+        } catch (error) {
+          console.error('🚨 [NOUGHTS] Failed to create assignment game session:', error);
+        }
+      }
+    };
+
+    createAssignmentSession();
+  }, [isAssignmentMode, gameService, user?.id, assignmentVocabulary, assignmentGameSessionId, assignmentId]);
+
+  // Placeholder for assignment-mode content (set below; returned at end)
+  let assignmentJSX: JSX.Element | null = null;
+
+  // If assignment mode, build assignment content (after all hooks are initialized)
+  if (isAssignmentMode) {
+    if (!user) {
+      assignmentJSX = (
+        <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center">
+          <div className="text-white text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+            <p className="text-lg">Loading...</p>
           </div>
         </div>
       );
+    } else if (assignmentLoading) {
+      assignmentJSX = (
+        <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center">
+          <div className="text-white text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+            <p className="text-lg">Loading assignment…</p>
+          </div>
+        </div>
+      );
+    } else if (assignmentError || !assignmentVocabulary?.length) {
+      assignmentJSX = (
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-900 via-pink-900 to-purple-900">
+          <div className="text-white text-center">
+            <p className="text-lg font-semibold mb-2">Unable to load assignment vocabulary.</p>
+            <p className="text-sm opacity-80">{assignmentError || 'This assignment has no vocabulary.'}</p>
+          </div>
+        </div>
+      );
+    } else {
+      const categoryName = assignmentVocabulary[0]?.category || 'assignment';
+      const subcategoryName = assignmentVocabulary[0]?.subcategory || 'assignment';
+
+      // Derive a minimal config for the in-game settings panel in assignment mode
+      const assignmentUiConfig: UnifiedSelectionConfig = {
+        language: 'es',
+        curriculumLevel: 'KS3',
+        categoryId: categoryName,
+        subcategoryId: subcategoryName
+      };
+
+      // Convert assignment vocabulary to TicTacToe format
+      const transformedAssignmentVocab = assignmentVocabulary.map(item => ({
+        id: item.id,
+        word: item.word,
+        translation: item.translation,
+        language: item.language,
+        category: item.category,
+        subcategory: item.subcategory,
+        part_of_speech: item.part_of_speech,
+        example_sentence_original: '',
+        example_sentence_translation: ''
+      }));
+
+      // Legacy settings format for TicTacToeGameWrapper
+      const assignmentSettings = {
+        difficulty: 'beginner',
+        category: categoryName,
+        subcategory: subcategoryName,
+        language: 'spanish',
+        theme: assignmentTheme,
+        playerMark: 'X',
+        computerMark: 'O',
+        gameMode: gameMode
+      };
+
+      assignmentJSX = (
+        <ThemeProvider themeId={assignmentTheme}>
+          <div className="w-full h-screen relative">
+            {/* Assignment Theme Selector */}
+            <AssignmentThemeSelector
+              currentTheme={assignmentTheme}
+              onThemeChange={(theme) => {
+                setAssignmentTheme(theme);
+                setShowThemeSelector(false);
+              }}
+              isOpen={showThemeSelector}
+              onClose={() => setShowThemeSelector(false)}
+            />
+
+            <TicTacToeGameWrapper
+              settings={assignmentSettings}
+              vocabulary={transformedAssignmentVocab}
+              onBackToMenu={() => router.push(`/student-dashboard/assignments/${assignmentId}`)}
+              onGameEnd={(result) => console.log('Assignment game ended:', result)}
+              assignmentId={assignmentId!}
+              userId={user.id}
+              gameSessionId={assignmentGameSessionId}
+              isAssignmentMode={true}
+              onOpenSettings={() => setShowConfigPanel(true)}
+              onGameModeChange={setGameMode}
+              assignmentTheme={assignmentTheme}
+              onAssignmentThemeChange={(theme) => {
+                setAssignmentTheme(theme);
+                setShowThemeSelector(false);
+              }}
+              showAssignmentThemeSelector={showThemeSelector}
+              onToggleAssignmentThemeSelector={() => setShowThemeSelector(!showThemeSelector)}
+            />
+
+            {/* In-game configuration panel (read-only topics for assignments; theme/music still useful) */}
+            <InGameConfigPanel
+              currentConfig={assignmentUiConfig}
+              onConfigChange={(newConfig, _vocab, theme) => {
+                if (theme) setAssignmentTheme(theme);
+              }}
+              supportedLanguages={['es', 'fr', 'de']}
+              supportsThemes={true}
+              currentTheme={assignmentTheme}
+              isOpen={showConfigPanel}
+              onClose={() => setShowConfigPanel(false)}
+            />
+          </div>
+        </ThemeProvider>
+      );
     }
+
+    // Do not return here; we will return assignmentJSX at the end to preserve hook order
   }
 
-  // Authentication check
-  if (!isLoading && !user && !isDemo) {
+  // Authentication check (only redirect if not in demo mode and not in assignment mode)
+  if (!isLoading && !user && !isDemo && !isAssignmentMode) {
     router.push('/auth/login');
     return null;
   }
@@ -160,8 +301,8 @@ export default function UnifiedNoughtsAndCrossesPage() {
     } : null);
   };
 
-  // Show unified launcher if game not started
-  if (!gameStarted) {
+  // Show unified launcher if game not started (only in free-play mode)
+  if (!isAssignmentMode && !gameStarted) {
     return (
       <UnifiedGameLauncher
         gameName="Vocabulary Tic-Tac-Toe"
@@ -189,8 +330,8 @@ export default function UnifiedNoughtsAndCrossesPage() {
     );
   }
 
-  // Show game if started and config is available
-  if (gameStarted && gameConfig) {
+  // Free-play render path
+  if (!isAssignmentMode && gameStarted && gameConfig) {
     // Convert unified config to legacy tic-tac-toe settings format
     const legacySettings = {
       difficulty: 'beginner', // Default difficulty
@@ -232,6 +373,11 @@ export default function UnifiedNoughtsAndCrossesPage() {
         </div>
       </ThemeProvider>
     );
+  }
+
+  // If we built assignment content, return it now (after all hooks)
+  if (assignmentJSX) {
+    return assignmentJSX;
   }
 
   // Fallback

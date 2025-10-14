@@ -462,8 +462,17 @@ export default function WordScrambleGame({
     if (currentWordData && gameSessionId) {
       setTimeout(async () => {
         try {
+          console.log(`🎮 [WORD SCRAMBLE] Recording ${isCorrect ? 'CORRECT' : 'INCORRECT'} answer:`, {
+            word: currentWordData.word,
+            userAnswer: userAnswer.trim(),
+            vocabularyId: currentWordData.id,
+            gameSessionId,
+            isCorrect,
+            solveTime
+          });
+
           const sessionService = new EnhancedGameSessionService();
-          await sessionService.recordWordAttempt(gameSessionId, 'word-scramble', {
+          const gemEvent = await sessionService.recordWordAttempt(gameSessionId, 'word-scramble', {
             vocabularyId: currentWordData.id,
             wordText: currentWordData.word,
             translationText: currentWordData.translation,
@@ -475,11 +484,22 @@ export default function WordScrambleGame({
             maxGemRarity: isCorrect ? (streak > 5 ? 'rare' : 'uncommon') : 'common',
             gameMode: 'word_scramble',
             difficultyLevel: difficulty
-          });
+          }, true); // Skip FSRS for speed
+
+          if (gemEvent) {
+            console.log(`✅ [WORD SCRAMBLE] ${isCorrect ? 'Gem awarded' : 'Incorrect answer recorded'}: ${gemEvent.rarity} (${gemEvent.xpValue} XP)`);
+          } else {
+            console.warn(`⚠️ [WORD SCRAMBLE] No gem event returned for ${isCorrect ? 'correct' : 'incorrect'} answer`);
+          }
         } catch (error) {
-          console.error('Error recording vocabulary interaction:', error);
+          console.error('🚨 [WORD SCRAMBLE] Error recording vocabulary interaction:', error);
         }
       }, 0);
+    } else {
+      console.warn('⚠️ [WORD SCRAMBLE] Skipping gem recording:', {
+        hasCurrentWordData: !!currentWordData,
+        hasGameSessionId: !!gameSessionId
+      });
     }
 
     // Reset submitting state after completion
@@ -582,16 +602,71 @@ export default function WordScrambleGame({
     }
   }, [gameState, currentWordData]);
 
-  // Skip word
-  const skipWord = useCallback(() => {
-    if (gameState !== 'playing') return;
-    
+  // Skip word - record as incorrect answer
+  const skipWord = useCallback(async () => {
+    if (gameState !== 'playing' || !currentWordData) return;
+
+    console.log('⏭️ [WORD SCRAMBLE] Skip button pressed - recording as incorrect answer');
+
+    const solveTime = (Date.now() - wordStartTime) / 1000;
+
+    // Reset streak
     setGameStats(prev => ({
       ...prev,
       streak: 0,
     }));
-    initializeNewWord();
-  }, [gameState, initializeNewWord]);
+
+    // Record skip as incorrect answer
+    if (currentWordData && gameSessionId) {
+      try {
+        console.log('🎮 [WORD SCRAMBLE] Recording SKIP as incorrect answer:', {
+          word: currentWordData.word,
+          vocabularyId: currentWordData.id,
+          gameSessionId,
+          solveTime
+        });
+
+        const sessionService = new EnhancedGameSessionService();
+        const gemEvent = await sessionService.recordWordAttempt(gameSessionId, 'word-scramble', {
+          vocabularyId: currentWordData.id,
+          wordText: currentWordData.word,
+          translationText: currentWordData.translation,
+          responseTimeMs: Math.round(solveTime * 1000),
+          wasCorrect: false, // Skip = incorrect
+          hintUsed: gameStats.hintsUsed > 0,
+          streakCount: 0, // Reset streak
+          masteryLevel: 1,
+          maxGemRarity: 'common',
+          gameMode: 'word_scramble',
+          difficultyLevel: difficulty
+        }, true); // Skip FSRS for speed
+
+        if (gemEvent) {
+          console.log('✅ [WORD SCRAMBLE] Skip recorded as incorrect answer');
+        } else {
+          console.warn('⚠️ [WORD SCRAMBLE] No gem event returned for skip (expected for incorrect answers)');
+        }
+      } catch (error) {
+        console.error('🚨 [WORD SCRAMBLE] Error recording skip:', error);
+      }
+    } else {
+      console.warn('⚠️ [WORD SCRAMBLE] Skipping gem recording for skip:', {
+        hasCurrentWordData: !!currentWordData,
+        hasGameSessionId: !!gameSessionId
+      });
+    }
+
+    // Mark word as completed and move to next
+    if (currentWordData) {
+      setCompletedWordIds(prev => new Set([...prev, currentWordData.id]));
+      setCurrentWordIndex(prev => prev + 1);
+    }
+
+    // Initialize next word
+    setTimeout(() => {
+      initializeNewWord();
+    }, 500);
+  }, [gameState, currentWordData, gameSessionId, wordStartTime, gameStats.hintsUsed, difficulty, initializeNewWord]);
 
   // Game completion screen
   if (gameState === 'completed') {

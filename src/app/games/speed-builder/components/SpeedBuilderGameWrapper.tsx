@@ -25,6 +25,7 @@ interface GameStats {
 interface SpeedBuilderGameWrapperProps {
   assignmentId?: string;
   mode?: 'assignment' | 'freeplay';
+  isAssignmentMode?: boolean;
   theme?: string;
   topic?: string;
   tier?: string;
@@ -49,13 +50,10 @@ interface SpeedBuilderGameWrapperProps {
 
 export default function SpeedBuilderGameWrapper(props: SpeedBuilderGameWrapperProps) {
   const [gameSessionId, setGameSessionId] = useState<string | null>(null);
-  const [gameService, setGameService] = useState<EnhancedGameService | null>(null);
 
   // Use assignment gameSessionId when provided, otherwise use own session
-  const effectiveGameSessionId = props.assignmentId ? props.gameSessionId : gameSessionId;
+  const effectiveGameSessionId = props.isAssignmentMode ? props.gameSessionId : gameSessionId;
 
-  // Use assignment gameService when provided, otherwise use own service
-  const effectiveGameService = props.assignmentId ? props.gameService : gameService;
   const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
   const [sessionStats, setSessionStats] = useState({
     totalWordsPlaced: 0,
@@ -70,20 +68,12 @@ export default function SpeedBuilderGameWrapper(props: SpeedBuilderGameWrapperPr
     }
   });
 
-  // Initialize game service
+  // Start game session when component mounts (only for free play mode)
   useEffect(() => {
-    if (props.userId) {
-      const service = new EnhancedGameService(supabaseBrowser);
-      setGameService(service);
-    }
-  }, [props.userId]);
-
-  // Start game session when service is ready (only for free play mode)
-  useEffect(() => {
-    if (effectiveGameService && props.userId && !gameSessionId && !props.assignmentId) {
+    if (props.userId && !gameSessionId && !props.isAssignmentMode) {
       startGameSession();
     }
-  }, [effectiveGameService, props.userId, gameSessionId, props.assignmentId]);
+  }, [props.userId, gameSessionId, props.isAssignmentMode]);
 
   // End session when component unmounts
   useEffect(() => {
@@ -93,18 +83,19 @@ export default function SpeedBuilderGameWrapper(props: SpeedBuilderGameWrapperPr
   }, []);
 
   const startGameSession = async () => {
-    if (!effectiveGameService || !props.userId) return;
+    if (!props.userId) return;
 
     try {
+      const sessionService = new EnhancedGameSessionService();
       const startTime = new Date();
       // Handle demo user ID by mapping to a valid UUID
       const effectiveUserId = props.userId === 'demo-user-id' ? '388c67a4-2202-4214-86e8-3f20481e6cb6' : props.userId;
-      const sessionId = await effectiveGameService.startGameSession({
+      const sessionId = await sessionService.startGameSession({
         student_id: effectiveUserId,
-        assignment_id: props.assignmentId || undefined,
+        assignment_id: props.isAssignmentMode ? props.assignmentId : undefined,
         game_type: 'speed-builder',
-        session_mode: props.assignmentId ? 'assignment' : 'free_play',
-        max_score_possible: 1000, // Base score for speed building
+        session_mode: props.isAssignmentMode ? 'assignment' : 'free_play',
+        max_score_possible: 1000,
         session_data: {
           mode: props.mode,
           theme: props.theme,
@@ -114,15 +105,16 @@ export default function SpeedBuilderGameWrapper(props: SpeedBuilderGameWrapperPr
       });
       setGameSessionId(sessionId);
       setSessionStartTime(startTime);
-      console.log('Speed Builder game session started:', sessionId);
+      console.log(`🔮 [${props.isAssignmentMode ? 'ASSIGNMENT' : 'FREE PLAY'}] Speed Builder game session started:`, sessionId);
     } catch (error) {
       console.error('Failed to start speed builder game session:', error);
     }
   };
 
   const endGameSession = async () => {
-    if (effectiveGameService && gameSessionId && props.userId && sessionStartTime && !props.assignmentId) {
+    if (gameSessionId && props.userId && sessionStartTime && !props.isAssignmentMode) {
       try {
+        const sessionService = new EnhancedGameSessionService();
         const sessionDuration = Math.floor((Date.now() - sessionStartTime.getTime()) / 1000);
         const accuracy = sessionStats.totalWordsPlaced > 0
           ? (sessionStats.correctWordsPlaced / sessionStats.totalWordsPlaced) * 100
@@ -131,18 +123,17 @@ export default function SpeedBuilderGameWrapper(props: SpeedBuilderGameWrapperPr
           ? sessionStats.totalResponseTime / sessionStats.totalWordsPlaced
           : 0;
 
-        // Use gems-first system: XP calculated from individual vocabulary interactions
-        // Remove conflicting XP calculation - gems system handles all scoring through recordWordAttempt()
         const totalXP = sessionStats.correctWordsPlaced * 10; // 10 XP per correct word placement (gems-first)
 
         // Handle demo user ID by mapping to a valid UUID
         const effectiveUserId = props.userId === 'demo-user-id' ? '388c67a4-2202-4214-86e8-3f20481e6cb6' : props.userId;
 
-        await effectiveGameService.endGameSession(effectiveGameSessionId!, {
+        await sessionService.endGameSession(gameSessionId, {
           student_id: effectiveUserId,
-          game_type: 'speed-builder', // Required field
-          session_mode: props.assignmentId ? 'assignment' : 'free_play', // Required field
-          final_score: Math.round(accuracy * 10), // Scale accuracy to score
+          assignment_id: props.isAssignmentMode ? props.assignmentId : undefined,
+          game_type: 'speed-builder',
+          session_mode: props.isAssignmentMode ? 'assignment' : 'free_play',
+          final_score: Math.round(accuracy * 10),
           accuracy_percentage: accuracy,
           completion_percentage: 100,
           words_attempted: sessionStats.totalWordsPlaced,
@@ -151,7 +142,7 @@ export default function SpeedBuilderGameWrapper(props: SpeedBuilderGameWrapperPr
           duration_seconds: sessionDuration,
           average_response_time_ms: averageResponseTime,
           xp_earned: totalXP,
-          bonus_xp: 0, // No bonus XP in gems-first system
+          bonus_xp: 0,
           session_data: {
             sessionStats,
             totalSessionTime: sessionDuration,
@@ -163,7 +154,7 @@ export default function SpeedBuilderGameWrapper(props: SpeedBuilderGameWrapperPr
           }
         });
 
-        console.log('Speed Builder game session ended successfully with XP:', totalXP);
+        console.log(`🔮 [${props.isAssignmentMode ? 'ASSIGNMENT' : 'FREE PLAY'}] Speed Builder game session ended with XP:`, totalXP);
       } catch (error) {
         console.error('Failed to end speed builder game session:', error);
       }
@@ -191,7 +182,7 @@ export default function SpeedBuilderGameWrapper(props: SpeedBuilderGameWrapperPr
     });
 
     // End the session (only for free play mode - assignment mode handled by wrapper)
-    if (!props.assignmentId) {
+    if (!props.isAssignmentMode) {
       await endGameSession();
     }
 
@@ -207,17 +198,6 @@ export default function SpeedBuilderGameWrapper(props: SpeedBuilderGameWrapperPr
       rapidFireVocabularyMetrics: wordsPerMinute
     });
   };
-
-  if (!gameService) {
-    return (
-      <div className="h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-purple-500 mx-auto"></div>
-          <p className="mt-4 text-purple-200">Loading speed building arena...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <GemSpeedBuilder

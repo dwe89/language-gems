@@ -210,11 +210,21 @@ export default function GamesPage() {
           path: '/games/speed-builder'
         },
         {
-          id: 'sentence-towers',
+          id: 'word-towers',
           name: 'Word Towers',
-          description: 'Build towers by matching words to translations. Wrong answers make towers fall!',
-          thumbnail: '/images/games/sentence-towers.jpg',
+          description: 'Build towers by matching vocabulary words to translations. Wrong answers make towers fall!',
+          thumbnail: '/images/games/word-towers.jpg',
           category: 'vocabulary',
+          popular: true,
+          languages: ['English', 'Spanish', 'French', 'German'],
+          path: '/games/word-towers'
+        },
+        {
+          id: 'sentence-towers',
+          name: 'Sentence Towers',
+          description: 'Build towers by matching full sentences to translations. Practice sentence comprehension!',
+          thumbnail: '/images/games/sentence-towers.jpg',
+          category: 'sentences',
           popular: true,
           languages: ['English', 'Spanish', 'French', 'German'],
           path: '/games/sentence-towers'
@@ -303,17 +313,6 @@ export default function GamesPage() {
           path: '/games/vocab-blast' // New path
         },
         {
-          id: 'word-blast',
-          name: 'Word Blast',
-          description: 'Launch rockets with correct word translations before time runs out!',
-          thumbnail: '/images/games/word-blast.jpg',
-          category: 'vocabulary',
-          popular: true,
-          comingSoon: true,
-          languages: ['English', 'Spanish', 'French'],
-          path: '/games/word-blast'
-        },
-        {
           id: 'conjugation-duel',
           name: 'Conjugation Duel',
           description: 'Epic verb conjugation battles in different arenas and leagues.',
@@ -392,7 +391,9 @@ export default function GamesPage() {
           <div className="flex items-center mb-2">
             <Gamepad2 className="h-6 w-6 text-indigo-600 mr-2" />
             <h1 className="text-3xl font-bold text-gray-900">Language Learning Games</h1>
-            <span className="ml-3 bg-orange-500 text-white text-sm px-3 py-1 rounded-full font-bold">DEMO</span>
+            {(isDemo || !user) && (
+              <span className="ml-3 bg-orange-500 text-white text-sm px-3 py-1 rounded-full font-bold">DEMO</span>
+            )}
           </div>
           <p className="text-gray-600 max-w-2xl">
             Engage with interactive games designed to make language learning fun and effective.
@@ -480,9 +481,11 @@ export default function GamesPage() {
                           }}
                         />
                         {/* Display 'DEMO' tag based on isDemo prop or other logic */}
-                        <div className="absolute top-2 left-2 bg-orange-500 text-white text-xs px-2 py-1 rounded-full font-bold">
-                          DEMO
-                        </div>
+                        {(isDemo || !user) && (
+                          <div className="absolute top-2 left-2 bg-orange-500 text-white text-xs px-2 py-1 rounded-full font-bold">
+                            DEMO
+                          </div>
+                        )}
                         {/* Display the main category, or a subcategory if it's a sentences game */}
                         <div className="absolute top-2 right-2 bg-white/20 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-full">
                           {game.category === 'sentences' ? 'Sentences' : game.category.charAt(0).toUpperCase() + game.category.slice(1)}

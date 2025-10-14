@@ -6,16 +6,12 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { useUnifiedAuth } from '../../../hooks/useUnifiedAuth';
 import MemoryGameMain from './components/MemoryGameMain';
 import { WordPair } from './components/CustomWordsModal';
-import GameAssignmentWrapper, {
-  StandardVocabularyItem,
-  AssignmentData,
-  GameProgress,
-  calculateStandardScore
-} from '../../../components/games/templates/GameAssignmentWrapper';
+import { useAssignmentVocabulary } from '../../../hooks/useAssignmentVocabulary';
 import UnifiedGameLauncher from '../../../components/games/UnifiedGameLauncher';
 import { UnifiedSelectionConfig, UnifiedVocabularyItem } from '../../../hooks/useUnifiedVocabulary';
 import InGameConfigPanel from '../../../components/games/InGameConfigPanel';
 import { useGameAudio } from '../../../hooks/useGlobalAudioContext';
+import AssignmentThemeSelector from '../../../components/games/AssignmentThemeSelector';
 import { getGameCompatibility } from '../../../components/games/gameCompatibility';
 import './styles.css';
 
@@ -25,6 +21,13 @@ export default function UnifiedMemoryGamePage() {
   const searchParams = useSearchParams();
   const assignmentId = searchParams?.get('assignment');
   const mode = searchParams?.get('mode');
+
+  // Early assignment mode detection
+  const isAssignmentMode = assignmentId && mode === 'assignment';
+
+  // Always initialize assignment hook to keep hooks order stable
+  const { assignment, vocabulary: assignmentVocabulary, loading: assignmentLoading, error: assignmentError } =
+    useAssignmentVocabulary(assignmentId || '', 'memory-game');
 
   // Game state management - ALWAYS initialize hooks first
   const [gameStarted, setGameStarted] = useState(false);
@@ -40,21 +43,29 @@ export default function UnifiedMemoryGamePage() {
   } | null>(null);
   const [showConfigPanel, setShowConfigPanel] = useState(false);
 
-  // Assignment mode helper functions
-  const handleAssignmentComplete = (progress: GameProgress) => {
-    console.log('Memory Game assignment completed:', progress);
-    // No auto-redirect - let completion screen handle navigation
+  // Assignment theme state
+  const [assignmentTheme, setAssignmentTheme] = useState<string>('default');
+  const [showThemeSelector, setShowThemeSelector] = useState(false);
+
+  // Placeholder for assignment-mode content (set below; returned at end)
+  let assignmentJSX: JSX.Element | null = null;
+
+  // Transform vocabulary to WordPair format for Memory Game (single definition)
+  const transformVocabularyForMemoryGame = (vocabulary: UnifiedVocabularyItem[]): WordPair[] => {
+    return vocabulary.map((vocab) => ({
+      id: vocab.id,
+      term: vocab.word,
+      translation: vocab.translation,
+      type: 'word' as const,
+      category: vocab.category || 'general',
+      subcategory: vocab.subcategory
+    }));
   };
 
-  const handleBackToAssignments = () => {
-    const assignmentId = searchParams?.get('assignment');
-    router.push(`/student-dashboard/assignments/${assignmentId}`);
-  };
-
-  // If assignment mode, render assignment wrapper (after all hooks are initialized)
-  if (assignmentId && mode === 'assignment') {
+  // If assignment mode, build assignment content (after all hooks are initialized)
+  if (isAssignmentMode) {
     if (!user) {
-      return (
+      assignmentJSX = (
         <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 flex items-center justify-center">
           <div className="text-white text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
@@ -62,66 +73,67 @@ export default function UnifiedMemoryGamePage() {
           </div>
         </div>
       );
+    } else if (assignmentLoading) {
+      assignmentJSX = (
+        <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 flex items-center justify-center">
+          <div className="text-white text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+            <p className="text-lg">Loading assignment…</p>
+          </div>
+        </div>
+      );
+    } else if (assignmentError || !assignmentVocabulary?.length) {
+      assignmentJSX = (
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-900 via-pink-900 to-purple-900">
+          <div className="text-white text-center">
+            <p className="text-lg font-semibold mb-2">Unable to load assignment vocabulary.</p>
+            <p className="text-sm opacity-80">{assignmentError || 'This assignment has no vocabulary.'}</p>
+          </div>
+        </div>
+      );
+    } else {
+      const wordPairs = transformVocabularyForMemoryGame(assignmentVocabulary);
+
+      assignmentJSX = (
+        <div className="w-full h-screen relative">
+          {/* Assignment Theme Selector */}
+          <AssignmentThemeSelector
+            currentTheme={assignmentTheme}
+            onThemeChange={(theme) => {
+              setAssignmentTheme(theme);
+              setShowThemeSelector(false);
+            }}
+            isOpen={showThemeSelector}
+            onClose={() => setShowThemeSelector(false)}
+          />
+
+          <MemoryGameMain
+            language={assignmentVocabulary[0]?.language || "spanish"}
+            topic="Assignment"
+            difficulty="medium"
+            onBackToSettings={() => router.push(`/student-dashboard/assignments/${assignmentId}`)}
+            customWords={wordPairs}
+            isAssignmentMode={true}
+            assignmentTitle={assignment?.title || 'Assignment'}
+            assignmentId={assignmentId!}
+            userId={user.id}
+            audioManager={audioManager}
+            onThemeModalRequest={() => setShowThemeSelector(true)}
+            onGridSizeModalRequest={() => {}}
+            assignmentTheme={assignmentTheme}
+            onAssignmentThemeChange={(theme) => {
+              setAssignmentTheme(theme);
+              setShowThemeSelector(false);
+            }}
+            showAssignmentThemeSelector={showThemeSelector}
+            onToggleAssignmentThemeSelector={() => setShowThemeSelector(!showThemeSelector)}
+          />
+        </div>
+      );
     }
 
-    return (
-      <GameAssignmentWrapper
-        assignmentId={assignmentId}
-        gameId="memory-game"
-        studentId={user.id}
-        onAssignmentComplete={handleAssignmentComplete}
-        onBackToAssignments={handleBackToAssignments}
-        onBackToMenu={() => router.push('/games/memory-game')}
-      >
-        {({ assignment, vocabulary, onProgressUpdate, onGameComplete, gameSessionId }) => {
-          // Transform vocabulary to WordPair format for Memory Game
-          const wordPairs: WordPair[] = vocabulary.map((vocab: StandardVocabularyItem) => ({
-            id: vocab.id,
-            term: vocab.word,
-            translation: vocab.translation,
-            type: 'word' as const,
-            category: vocab.category,
-            subcategory: vocab.subcategory
-          }));
-
-          console.log('Memory Game Assignment - Vocabulary loaded:', vocabulary.length, 'items');
-          console.log('Memory Game Assignment - Word pairs:', wordPairs);
-
-          return (
-            <MemoryGameMain
-              language={vocabulary[0]?.language || "spanish"}
-              topic="Assignment"
-              difficulty="medium"
-              onBackToSettings={() => router.push(`/student-dashboard/assignments/${assignmentId}`)}
-              customWords={wordPairs}
-              isAssignmentMode={true}
-              assignmentTitle={assignment.title}
-              assignmentId={assignmentId}
-              userId={user.id}
-              audioManager={audioManager}
-              gameSessionId={gameSessionId}
-              onProgressUpdate={onProgressUpdate}
-              onGameComplete={onGameComplete}
-              onThemeModalRequest={() => {}}
-              onGridSizeModalRequest={() => {}}
-            />
-          );
-        }}
-      </GameAssignmentWrapper>
-    );
+    // Do not return here; we will return assignmentJSX at the end to preserve hook order
   }
-
-  // Transform unified vocabulary to memory game format
-  const transformVocabularyForMemoryGame = (vocabulary: UnifiedVocabularyItem[]): WordPair[] => {
-    return vocabulary.map(item => ({
-      id: item.id,
-      term: item.word,
-      translation: item.translation,
-      type: 'word' as const,
-      category: item.category || 'general',
-      subcategory: item.subcategory
-    }));
-  };
 
   // Handle game start from unified launcher
   const handleGameStart = (config: UnifiedSelectionConfig, vocabulary: UnifiedVocabularyItem[]) => {
@@ -182,8 +194,8 @@ export default function UnifiedMemoryGamePage() {
     setCustomWords(transformedVocabulary);
   };
 
-  // Show unified launcher if game not started
-  if (!gameStarted) {
+  // Show unified launcher if game not started (only in free-play mode)
+  if (!isAssignmentMode && !gameStarted) {
     return (
       <UnifiedGameLauncher
         gameName="Memory Match"
@@ -212,11 +224,11 @@ export default function UnifiedMemoryGamePage() {
     );
   }
 
-  // Show game if started and config is available
-  if (gameStarted && gameConfig) {
+  // Free-play render path
+  if (!isAssignmentMode && gameStarted && gameConfig) {
     // Convert unified config to legacy memory game format
-    const legacyLanguage = gameConfig.config.language === 'es' ? 'spanish' : 
-                          gameConfig.config.language === 'fr' ? 'french' : 
+    const legacyLanguage = gameConfig.config.language === 'es' ? 'spanish' :
+                          gameConfig.config.language === 'fr' ? 'french' :
                           gameConfig.config.language === 'de' ? 'german' : 'spanish';
 
     const legacyTopic = gameConfig.config.categoryId || 'general';
@@ -255,6 +267,11 @@ export default function UnifiedMemoryGamePage() {
       </div>
       </>
     );
+  }
+
+  // If we built assignment content, return it now (after all hooks)
+  if (assignmentJSX) {
+    return assignmentJSX;
   }
 
   // Fallback

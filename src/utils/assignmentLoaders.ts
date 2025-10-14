@@ -11,12 +11,23 @@ export async function loadSentencesForAssignment(assignment: any): Promise<any[]
 
   try {
     let query = supabase
-      .from('centralized_sentences')
-      .select('*');
+      .from('sentences')
+      .select('*')
+      .eq('is_active', true); // Only load active sentences
 
     // Apply filters based on criteria
+    // Map language codes to full names (sentences table uses source_language)
     if (criteria.language) {
-      query = query.eq('language', criteria.language);
+      const languageMap: Record<string, string> = {
+        'es': 'spanish',
+        'fr': 'french',
+        'de': 'german',
+        'spanish': 'spanish',
+        'french': 'french',
+        'german': 'german'
+      };
+      const sourceLang = languageMap[criteria.language.toLowerCase()] || criteria.language;
+      query = query.eq('source_language', sourceLang);
     }
 
     if (criteria.category) {
@@ -31,14 +42,8 @@ export async function loadSentencesForAssignment(assignment: any): Promise<any[]
       query = query.eq('curriculum_level', criteria.curriculum_level);
     }
 
-    // KS4-specific filters
-    if (criteria.exam_board) {
-      query = query.eq('exam_board', criteria.exam_board);
-    }
-
-    if (criteria.tier) {
-      query = query.eq('tier', criteria.tier);
-    }
+    // Limit to reasonable number
+    query = query.limit(100);
 
     const { data, error } = await query;
 

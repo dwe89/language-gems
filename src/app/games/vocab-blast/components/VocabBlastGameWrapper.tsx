@@ -29,6 +29,11 @@ interface VocabBlastGameWrapperProps {
   categoryVocabulary?: any[]; // Assignment vocabulary
   onOpenSettings?: () => void; // Optional settings callback
   gameSessionId?: string | null;
+  // Theme selector props for assignment mode
+  assignmentTheme?: string;
+  onAssignmentThemeChange?: (theme: string) => void;
+  showAssignmentThemeSelector?: boolean;
+  onToggleAssignmentThemeSelector?: () => void;
 }
 
 // Language mapping function
@@ -256,6 +261,9 @@ export default function VocabBlastGameWrapper(props: VocabBlastGameWrapperProps)
 
         await gameService.endGameSession(effectiveGameSessionId!, {
           student_id: props.userId,
+          assignment_id: props.isAssignmentMode ? props.assignmentId : undefined,
+          game_type: 'vocab-blast',
+          session_mode: props.isAssignmentMode ? 'assignment' : 'free_play',
           final_score: finalScore,
           accuracy_percentage: accuracy,
           completion_percentage: 100,
@@ -369,6 +377,10 @@ export default function VocabBlastGameWrapper(props: VocabBlastGameWrapperProps)
       gameSessionId={effectiveGameSessionId}
       isAssignmentMode={props.isAssignmentMode}
       onOpenSettings={props.onOpenSettings}
+      assignmentTheme={props.assignmentTheme}
+      onAssignmentThemeChange={props.onAssignmentThemeChange}
+      showAssignmentThemeSelector={props.showAssignmentThemeSelector}
+      onToggleAssignmentThemeSelector={props.onToggleAssignmentThemeSelector}
     />
   );
 }

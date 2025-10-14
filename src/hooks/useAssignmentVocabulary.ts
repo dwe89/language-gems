@@ -95,10 +95,58 @@ export function useAssignmentVocabulary(
         } else {
           // Load vocabulary for vocabulary-based games
           console.log('📚 [HOOK] Loading vocabulary for assignment:', assignmentId);
-          
+
           const listId = assignmentData.vocabulary_assignment_list_id;
           if (!listId) {
-            throw new Error('No vocabulary list ID found');
+            console.warn('[HOOK] No vocabulary list ID found, falling back to criteria-based query');
+            const criteria = assignmentData.vocabulary_criteria || {};
+
+            // Fallback: derive vocabulary from criteria (language/category/subcategory/etc.)
+            let vq = supabase.from('centralized_vocabulary').select('*');
+            if (criteria.language) {
+              vq = vq.eq('language', criteria.language);
+            }
+            if (criteria.category) {
+              vq = vq.eq('category', criteria.category);
+            }
+            if (criteria.subcategory) {
+              vq = vq.eq('subcategory', criteria.subcategory);
+            }
+            // Curriculum level: allow partial matches or null
+            if (criteria.curriculum_level && criteria.curriculum_level !== 'KS3') {
+              vq = vq.or(`curriculum_level.ilike.%${criteria.curriculum_level}%,curriculum_level.is.null`);
+            }
+            // KS4-specific filters
+            if (criteria.exam_board) {
+              vq = vq.eq('exam_board_code', criteria.exam_board);
+            }
+            if (criteria.tier) {
+              vq = vq.like('tier', `%${criteria.tier}%`);
+            }
+
+            const { data: fallbackVocab, error: fallbackErr } = await vq.limit(1000);
+            if (fallbackErr) throw fallbackErr;
+
+            const vocabularyItems: StandardVocabularyItem[] = (fallbackVocab || []).map((vocab: any) => ({
+              id: vocab.id,
+              word: vocab.word,
+              translation: vocab.translation,
+              category: vocab.category || 'general',
+              subcategory: vocab.subcategory || 'general',
+              part_of_speech: vocab.part_of_speech || 'noun',
+              language: vocab.language || 'spanish',
+              audio_url: vocab.audio_url,
+              word_type: vocab.word_type,
+              gender: vocab.gender,
+              article: vocab.article,
+              display_word: vocab.display_word
+            }));
+
+            setVocabulary(vocabularyItems);
+            setSentences([]);
+            setLastLoadTime(new Date().toISOString());
+            setError(null);
+            return; // Stop here; we handled via fallback
           }
 
           // Load vocabulary items from the assignment list

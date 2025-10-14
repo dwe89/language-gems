@@ -139,61 +139,35 @@ export default function TempleRestoration({
   // Load sentences and options
   useEffect(() => {
     const loadSentences = async () => {
+      // Show loading for minimum time to prevent flash
+      const startTime = Date.now();
+
       try {
         setLoading(true);
         setError(null);
 
         console.log('Loading sentences for:', gameConfig);
 
-        // Show loading for minimum time to prevent flash
-        const startTime = Date.now();
-
-        // Use language directly since database stores full language names
-        const dbLanguage = gameConfig.language;
+        // Map language codes to full language names for database query
+        const languageMap: Record<string, string> = {
+          'es': 'spanish',
+          'fr': 'french',
+          'de': 'german'
+        };
+        const dbLanguage = languageMap[gameConfig.language] || gameConfig.language;
 
         // Load sentences from the generic sentences table
         let query = supabase
           .from('sentences')
           .select('*')
           .eq('source_language', dbLanguage)
-          .eq('difficulty_level', gameConfig.difficulty)
           .eq('curriculum_level', 'KS3')
           .eq('is_active', true)
           .eq('is_public', true);
 
-        // Map assignment categories to sentence table categories
-        const categoryMapping: Record<string, string> = {
-          'food': 'basics_core_language',
-          'family': 'identity_personal_life',
-          'school': 'education_work',
-          'hobbies': 'identity_personal_life',
-          'assignment': 'identity_personal_life' // Default for assignments
-        };
-
-        // Map subcategories to their correct categories
-        const subcategoryToCategoryMap: Record<string, string> = {
-          'family_friends': 'identity_personal_life',
-          'relationships': 'identity_personal_life',
-          'personal_details': 'identity_personal_life',
-          'hobbies_interests': 'identity_personal_life',
-          'food_drink': 'basics_core_language',
-          'shopping': 'basics_core_language',
-          'travel': 'basics_core_language',
-          'school_work': 'education_work',
-          'future_plans': 'education_work',
-          'technology': 'modern_life',
-          'environment': 'modern_life'
-        };
-
-        // Use subcategory mapping first, then category mapping, then default
-        let mappedCategory = 'basics_core_language';
-        if (gameConfig.subcategory && subcategoryToCategoryMap[gameConfig.subcategory]) {
-          mappedCategory = subcategoryToCategoryMap[gameConfig.subcategory];
-        } else if (gameConfig.category && categoryMapping[gameConfig.category]) {
-          mappedCategory = categoryMapping[gameConfig.category];
-        }
-
-        query = query.eq('category', mappedCategory);
+        // Use the category directly from gameConfig - it should already be a valid sentence category
+        // The category comes from the assignment's sentenceConfig.theme which maps to sentence table categories
+        query = query.eq('category', gameConfig.category);
 
         // For subcategory, if it's 'assignment' or not found, don't filter by subcategory
         // This allows broader sentence selection for assignments

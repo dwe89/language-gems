@@ -198,10 +198,17 @@ export class EnhancedAssignmentService {
     const isGrammarAssignment = assignmentData.config?.gameConfig?.selectedGames?.includes('conjugation-duel') &&
                                assignmentData.config?.gameConfig?.grammarConfig;
 
+    // Check if this is a sentence-based assignment (games that use sentences table)
+    const sentenceBasedGames = ['sentence-towers', 'speed-builder', 'case-file-translator', 'lava-temple-word-restore'];
+    const isSentenceAssignment = assignmentData.config?.gameConfig?.selectedGames?.some(
+      (gameId: string) => sentenceBasedGames.includes(gameId)
+    );
+
     console.log('📝 [ASSIGNMENT SERVICE] Assignment type check:', {
       selectedGames: assignmentData.config?.gameConfig?.selectedGames,
       hasGrammarConfig: !!assignmentData.config?.gameConfig?.grammarConfig,
-      isGrammarAssignment
+      isGrammarAssignment,
+      isSentenceAssignment
     });
 
     // Extract vocabulary configuration from game config (handle nested structure)
@@ -249,7 +256,8 @@ export class EnhancedAssignmentService {
               vocabularySelectionType = 'custom_list';
               vocabularyCriteria = {
                 type: 'manual_entry',
-                wordCount: parsedVocabulary.length
+                wordCount: parsedVocabulary.length,
+                content_type: isSentenceAssignment ? 'sentences' : 'vocabulary'
               };
 
               // First, insert the parsed vocabulary into centralized_vocabulary as temporary entries
@@ -350,7 +358,8 @@ export class EnhancedAssignmentService {
               vocabularyCriteria = {
                 type: 'custom_list',
                 customListId: vocabularyConfig.customListId,
-                customListName: customList.name
+                customListName: customList.name,
+                content_type: isSentenceAssignment ? 'sentences' : 'vocabulary'
               };
 
               // Create assignment items that directly reference the enhanced vocabulary items
@@ -380,7 +389,10 @@ export class EnhancedAssignmentService {
           console.log('📝 [ASSIGNMENT SERVICE] Using standard vocabulary path');
           const vocabularySelection = this.transformVocabularyConfig(vocabularyConfig);
           vocabularySelectionType = vocabularySelection.type;
-          vocabularyCriteria = vocabularySelection;
+          vocabularyCriteria = {
+            ...vocabularySelection,
+            content_type: isSentenceAssignment ? 'sentences' : 'vocabulary' // Add content type
+          };
           vocabularyCount = vocabularyConfig.wordCount || 10;
 
           // Create vocabulary assignment list
