@@ -151,13 +151,16 @@ export default function SpeedBuilderPage() {
             tier={legacyTier}
             theme={legacyTheme}
             topic={legacyTopic}
-            onBackToMenu={() => router.push('/student-dashboard/assignments')}
+            onBackToMenu={() => router.push(`/student-dashboard/assignments/${assignmentId}`)}
             assignmentId={assignmentId!}
             userId={user.id}
             isAssignmentMode={true}
             sentenceConfig={assignmentConfig}
             onOpenSettings={() => {}}
-            onGameEnd={() => router.push('/student-dashboard/assignments')}
+            onGameEnd={() => {
+              // Don't auto-redirect - let user choose via completion modal
+              console.log('Speed Builder game ended');
+            }}
           />
         </div>
       );

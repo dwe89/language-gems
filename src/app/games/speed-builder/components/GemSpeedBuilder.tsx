@@ -10,10 +10,6 @@ import {
   Crown,
   Play,
   Home,
-  Shuffle,
-  Lightbulb,
-  Sparkles,
-  Zap,
   Target,
   RotateCcw,
   Trophy,
@@ -69,31 +65,20 @@ interface GameStats {
   totalWordsPlaced: number;
   correctWordsPlaced: number; // Track correct words for accurate percentage calculation
   grammarErrors: Record<string, number>;
-  powerUpsUsed: Record<string, number>;
   gemsCollected: number;
   bonusMultiplier: number;
 }
 
-interface PowerUp {
-  id: string;
-  type: 'shuffle' | 'hint' | 'glow' | 'timeBoost';
-  active: boolean;
-  cooldown: number;
-  description: string;
-  icon: string;
-  gemCost: number;
-}
 
 
-
-// Gem colors and effects
-const gemColors = {
-  ruby: 'from-red-400 to-red-600',
-  sapphire: 'from-blue-400 to-blue-600',
-  emerald: 'from-green-400 to-green-600',
-  diamond: 'from-cyan-400 to-indigo-600',
-  amethyst: 'from-purple-400 to-purple-600',
-  topaz: 'from-yellow-400 to-yellow-600'
+// Modern word box colors - sophisticated palette
+const wordColors = {
+  ruby: 'from-indigo-500 to-indigo-600',
+  sapphire: 'from-blue-500 to-blue-600',
+  emerald: 'from-teal-500 to-teal-600',
+  diamond: 'from-cyan-500 to-cyan-600',
+  amethyst: 'from-violet-500 to-violet-600',
+  topaz: 'from-amber-500 to-amber-600'
 };
 
 
@@ -151,7 +136,16 @@ const GemDraggableWord: React.FC<{
     }
   };
 
-  const gemType = word.gemType || (['ruby', 'sapphire', 'emerald', 'amethyst', 'topaz'][word.index % 5] as 'ruby' | 'sapphire' | 'emerald' | 'amethyst' | 'topaz');
+  // Cyberpunk data chip colors
+  const chipColors = [
+    { border: '#10b981', glow: 'rgba(16, 185, 129, 0.5)', bg: 'rgba(16, 185, 129, 0.15)' }, // green
+    { border: '#ef4444', glow: 'rgba(239, 68, 68, 0.5)', bg: 'rgba(239, 68, 68, 0.15)' }, // red
+    { border: '#a855f7', glow: 'rgba(168, 85, 247, 0.5)', bg: 'rgba(168, 85, 247, 0.15)' }, // purple
+    { border: '#06b6d4', glow: 'rgba(6, 182, 212, 0.5)', bg: 'rgba(6, 182, 212, 0.15)' }, // cyan
+    { border: '#f59e0b', glow: 'rgba(245, 158, 11, 0.5)', bg: 'rgba(245, 158, 11, 0.15)' }, // amber
+  ];
+
+  const chipColor = chipColors[word.index % chipColors.length];
 
   return (
     <motion.div
@@ -160,63 +154,87 @@ const GemDraggableWord: React.FC<{
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
-      initial={{ scale: 0, y: 20 }}
+      initial={{ scale: 0, y: 20, opacity: 0 }}
       animate={{
         scale: 1,
         y: 0,
-        boxShadow: isGlowing ? '0 0 40px #fbbf24, 0 0 80px #fbbf24' : `0 12px 30px rgba(0,0,0,0.2)`,
+        opacity: 1,
       }}
       whileHover={{
         scale: 1.08,
         y: -4,
-        boxShadow: isGlowing ? '0 0 50px #fbbf24, 0 0 100px #fbbf24' : `0 15px 35px rgba(0,0,0,0.25)`,
       }}
       whileTap={{ scale: 0.95 }}
       transition={{
         type: "spring",
         stiffness: 400,
-        damping: 17
+        damping: 20
       }}
       className={`
         relative cursor-pointer select-none
-        px-3 py-2 sm:px-6 sm:py-4 rounded-xl sm:rounded-2xl border-2 border-white/30
-        bg-gradient-to-br ${gemColors[gemType]}
+        px-4 py-2 sm:px-6 sm:py-3 rounded-xl
         transform transition-all duration-200
-        shadow-lg hover:shadow-xl
-        backdrop-blur-sm
-        ${isDragging ? 'opacity-50 scale-95' : ''}
-        text-white font-bold text-sm sm:text-lg
-        min-w-[80px] sm:min-w-[120px] text-center
+        ${isDragging ? 'opacity-30 scale-90' : ''}
+        text-white font-bold text-base sm:text-xl
+        min-w-[100px] sm:min-w-[140px] text-center
         touch-manipulation
       `}
-      style={{ opacity: isDragging ? 0.5 : 1 }}
+      style={{
+        opacity: isDragging ? 0.3 : 1,
+        background: chipColor.bg,
+        border: `3px solid ${chipColor.border}`,
+        boxShadow: isGlowing
+          ? `0 0 30px ${chipColor.glow}, 0 0 60px ${chipColor.glow}, inset 0 0 20px ${chipColor.glow}`
+          : `0 0 20px ${chipColor.glow}, 0 8px 25px rgba(0,0,0,0.4), inset 0 0 10px ${chipColor.glow}`
+      }}
     >
-      {/* Gem facet effect */}
-      <div className="absolute inset-2 bg-white/20 rounded-xl border border-white/40"></div>
-      
-      {/* Shimmer effect */}
+      {/* Tech corner accents */}
+      <div className="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 rounded-tl" style={{ borderColor: chipColor.border }}></div>
+      <div className="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 rounded-tr" style={{ borderColor: chipColor.border }}></div>
+      <div className="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 rounded-bl" style={{ borderColor: chipColor.border }}></div>
+      <div className="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 rounded-br" style={{ borderColor: chipColor.border }}></div>
+
+      {/* Animated scan line */}
       <motion.div
-        animate={{ 
-          x: ['-100%', '100%'],
-          opacity: [0, 0.5, 0]
+        animate={{
+          y: ['-100%', '200%'],
+          opacity: [0, 0.6, 0]
         }}
-        transition={{ 
-          repeat: Infinity, 
-          duration: 3,
-          ease: "easeInOut"
+        transition={{
+          repeat: Infinity,
+          duration: 2,
+          ease: "linear"
         }}
-        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent rounded-2xl"
-      />
-      
-      {/* Word text */}
-      <span className="relative z-10 drop-shadow-sm">{word.text}</span>
-      
-      {/* Glow effect when hinted */}
+        className="absolute inset-0 overflow-hidden rounded-xl pointer-events-none"
+      >
+        <div
+          className="absolute w-full h-8 blur-sm"
+          style={{
+            background: `linear-gradient(to bottom, transparent, ${chipColor.border}, transparent)`
+          }}
+        />
+      </motion.div>
+
+      {/* Data chip text */}
+      <span
+        className="relative z-10 drop-shadow-[0_0_8px_rgba(0,0,0,0.8)] tracking-wide font-mono uppercase"
+        style={{ textShadow: `0 0 10px ${chipColor.glow}` }}
+      >
+        {word.text}
+      </span>
+
+      {/* Pulsing glow when hinted */}
       {isGlowing && (
         <motion.div
-          animate={{ scale: [1, 1.1, 1], opacity: [0.3, 0.7, 0.3] }}
-          transition={{ repeat: Infinity, duration: 1 }}
-          className="absolute inset-0 bg-yellow-400/30 rounded-2xl"
+          animate={{
+            opacity: [0.5, 1, 0.5],
+            scale: [1, 1.05, 1]
+          }}
+          transition={{ repeat: Infinity, duration: 0.8 }}
+          className="absolute inset-0 rounded-xl pointer-events-none"
+          style={{
+            boxShadow: `0 0 40px ${chipColor.glow}, 0 0 80px ${chipColor.glow}, inset 0 0 30px ${chipColor.glow}`
+          }}
         />
       )}
     </motion.div>
@@ -251,56 +269,78 @@ const GemDropTarget: React.FC<{
   // Only show correctness after sentence completion
   const showFeedback = showSentenceResult && word;
 
+  // Octagonal clip path for data slots
+  const octagonPath = "polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%)";
+
   return (
     <motion.div
       ref={drop as any}
       onClick={handleRemoveWord}
-      initial={{ scale: 0.9, opacity: 0 }}
-      animate={{ 
-        scale: 1, 
+      initial={{ scale: 0.8, opacity: 0 }}
+      animate={{
+        scale: 1,
         opacity: 1,
-        borderColor: isOver 
-          ? 'rgba(255, 255, 255, 0.8)' 
-          : word 
-            ? (showFeedback && isCorrect ? 'rgba(34, 197, 94, 0.8)' : showFeedback && !isCorrect ? 'rgba(239, 68, 68, 0.8)' : 'rgba(255, 255, 255, 0.6)')
-            : 'rgba(255, 255, 255, 0.3)'
       }}
-      whileHover={{ 
+      whileHover={{
         scale: word ? 1.05 : 1.02,
-        borderColor: word 
-          ? (showFeedback && isCorrect ? 'rgba(34, 197, 94, 1)' : showFeedback && !isCorrect ? 'rgba(239, 68, 68, 1)' : 'rgba(255, 255, 255, 0.8)')
-          : 'rgba(255, 255, 255, 0.6)'
       }}
       transition={{ type: "spring", stiffness: 300, damping: 25 }}
       className={`
-        relative min-h-[60px] sm:min-h-[80px] min-w-[100px] sm:min-w-[140px] 
-        border-3 border-dashed rounded-xl sm:rounded-2xl
-        bg-white/5 backdrop-blur-sm
+        relative min-h-[80px] sm:min-h-[100px] min-w-[110px] sm:min-w-[150px]
         flex items-center justify-center
         transition-all duration-300
-        ${isOver ? 'bg-white/20 shadow-lg' : ''}
-        ${word ? 'cursor-pointer hover:bg-white/10' : 'cursor-default'}
         touch-manipulation
+        ${word ? 'cursor-pointer' : 'cursor-default'}
       `}
+      style={{
+        clipPath: octagonPath,
+        background: !word && !isOver
+          ? 'rgba(6, 182, 212, 0.05)'
+          : !word && isOver
+          ? 'rgba(6, 182, 212, 0.2)'
+          : word && !showFeedback
+          ? 'rgba(6, 182, 212, 0.15)'
+          : word && showFeedback && isCorrect
+          ? 'rgba(16, 185, 129, 0.2)'
+          : 'rgba(239, 68, 68, 0.2)',
+        border: !word && !isOver
+          ? '3px dashed rgba(6, 182, 212, 0.4)'
+          : !word && isOver
+          ? '3px dashed rgba(6, 182, 212, 0.8)'
+          : word && !showFeedback
+          ? '3px solid rgba(6, 182, 212, 0.6)'
+          : word && showFeedback && isCorrect
+          ? '3px solid rgba(16, 185, 129, 0.8)'
+          : '3px solid rgba(239, 68, 68, 0.8)',
+        boxShadow: !word && !isOver
+          ? '0 0 20px rgba(6, 182, 212, 0.3), inset 0 0 20px rgba(6, 182, 212, 0.1)'
+          : !word && isOver
+          ? '0 0 40px rgba(6, 182, 212, 0.6), inset 0 0 30px rgba(6, 182, 212, 0.2)'
+          : word && !showFeedback
+          ? '0 0 25px rgba(6, 182, 212, 0.4), inset 0 0 25px rgba(6, 182, 212, 0.15)'
+          : word && showFeedback && isCorrect
+          ? '0 0 30px rgba(16, 185, 129, 0.6), inset 0 0 30px rgba(16, 185, 129, 0.2)'
+          : '0 0 30px rgba(239, 68, 68, 0.6), inset 0 0 30px rgba(239, 68, 68, 0.2)'
+      }}
     >
-      {/* Background effect - only show after sentence completion */}
-      <div className="absolute inset-0 rounded-2xl overflow-hidden">
-        {word && showFeedback && (
-          <motion.div
-            animate={{ 
-              background: isCorrect 
-                ? 'linear-gradient(45deg, rgba(34, 197, 94, 0.1), rgba(34, 197, 94, 0.05))'
-                : 'linear-gradient(45deg, rgba(239, 68, 68, 0.1), rgba(239, 68, 68, 0.05))'
-            }}
-            className="absolute inset-0"
-          />
-        )}
-      </div>
-
-      {/* Position indicator */}
-      <div className="absolute -top-3 -left-3 w-8 h-8 bg-white/20 rounded-full flex items-center justify-center text-white font-bold text-sm border border-white/30">
+      {/* Slot number indicator */}
+      <div
+        className="absolute -top-6 left-1/2 transform -translate-x-1/2 px-3 py-1 rounded-md font-mono font-bold text-xs"
+        style={{
+          background: 'rgba(6, 182, 212, 0.2)',
+          border: '2px solid rgba(6, 182, 212, 0.6)',
+          color: '#06b6d4',
+          boxShadow: '0 0 15px rgba(6, 182, 212, 0.4)'
+        }}
+      >
         {index + 1}
       </div>
+
+      {/* Animated corner markers */}
+      <div className="absolute top-2 left-2 w-4 h-4 border-t-2 border-l-2" style={{ borderColor: '#06b6d4' }}></div>
+      <div className="absolute top-2 right-2 w-4 h-4 border-t-2 border-r-2" style={{ borderColor: '#06b6d4' }}></div>
+      <div className="absolute bottom-2 left-2 w-4 h-4 border-b-2 border-l-2" style={{ borderColor: '#06b6d4' }}></div>
+      <div className="absolute bottom-2 right-2 w-4 h-4 border-b-2 border-r-2" style={{ borderColor: '#06b6d4' }}></div>
 
       {/* Content */}
       {word ? (
@@ -308,66 +348,65 @@ const GemDropTarget: React.FC<{
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           exit={{ scale: 0 }}
-          className={`
-            px-6 py-3 rounded-xl border-2 
-            ${showFeedback 
-              ? (isCorrect 
-                ? 'bg-gradient-to-br from-green-400 to-green-600 border-green-300' 
-                : 'bg-gradient-to-br from-red-400 to-red-600 border-red-300')
-              : 'bg-gradient-to-br from-blue-400 to-purple-600 border-blue-300'
-            }
-            text-white font-bold text-lg text-center
-            shadow-lg backdrop-blur-sm
-            hover:shadow-xl transition-all duration-200
-            min-w-[120px]
-          `}
+          className="relative text-center"
         >
-          <span className="relative z-10 drop-shadow-sm">{word.text}</span>
-          
-          {/* Correct/incorrect indicator - only after sentence completion */}
+          <span
+            className="relative z-10 font-mono font-bold text-base sm:text-xl tracking-wide uppercase"
+            style={{
+              color: '#00d9ff',
+              textShadow: '0 0 10px rgba(0, 217, 255, 0.8), 0 0 20px rgba(0, 217, 255, 0.4)'
+            }}
+          >
+            {word.text}
+          </span>
+
+          {/* Correct/incorrect indicator */}
           {showFeedback && (
-            <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-white flex items-center justify-center">
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              className="absolute -top-8 -right-8 w-10 h-10 rounded-full flex items-center justify-center"
+              style={{
+                background: isCorrect ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)',
+                border: isCorrect ? '3px solid #10b981' : '3px solid #ef4444',
+                boxShadow: isCorrect
+                  ? '0 0 20px rgba(16, 185, 129, 0.6)'
+                  : '0 0 20px rgba(239, 68, 68, 0.6)'
+              }}
+            >
               {isCorrect ? (
-                <CheckCircle2 className="w-4 h-4 text-green-600" />
+                <CheckCircle2 className="w-6 h-6 text-green-400" />
               ) : (
                 <motion.div
                   animate={{ rotate: [0, 10, -10, 0] }}
                   transition={{ repeat: Infinity, duration: 0.5 }}
+                  className="text-red-400 font-bold text-xl"
                 >
-                  <X className="w-4 h-4 text-red-600" />
+                  ✕
                 </motion.div>
               )}
-            </div>
-          )}
-
-          {/* Remove hint - only show if feedback indicates it's wrong */}
-          {showFeedback && !isCorrect && (
-            <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 text-xs text-white/70 whitespace-nowrap">
-              Click to remove
-            </div>
+            </motion.div>
           )}
         </motion.div>
       ) : (
-        <div className="text-center">
-          {/* Ghost preview */}
+        <div className="text-center px-2">
           {showGhostWord ? (
-            <div className="text-white/40 font-medium text-lg italic">
-              "{showGhostWord}"
+            <div
+              className="font-mono font-medium text-base sm:text-xl italic opacity-40"
+              style={{ color: '#06b6d4' }}
+            >
+              {showGhostWord}
             </div>
           ) : (
-            <div className="text-white/60 font-medium text-base">
-              Drop word here
-            </div>
+            <motion.div
+              animate={{ opacity: [0.3, 0.6, 0.3] }}
+              transition={{ repeat: Infinity, duration: 2 }}
+              className="font-mono font-medium text-sm sm:text-base uppercase tracking-wider"
+              style={{ color: '#06b6d4' }}
+            >
+              Data Slot
+            </motion.div>
           )}
-          
-          {/* Drop indicator */}
-          <motion.div
-            animate={{ scale: [1, 1.1, 1], opacity: [0.3, 0.6, 0.3] }}
-            transition={{ repeat: Infinity, duration: 2 }}
-            className="mt-2"
-          >
-            <Gem className="w-6 h-6 text-white/40" />
-          </motion.div>
         </div>
       )}
 
@@ -380,82 +419,6 @@ const GemDropTarget: React.FC<{
         />
       )}
     </motion.div>
-  );
-};
-
-// Enhanced Power-Up Button
-const GemPowerUpButton: React.FC<{
-  powerUp: PowerUp;
-  onActivate: (id: string) => void;
-  disabled?: boolean;
-  gemsAvailable: number;
-}> = ({ powerUp, onActivate, disabled, gemsAvailable }) => {
-  const canAfford = gemsAvailable >= powerUp.gemCost;
-  const isDisabled = disabled || !canAfford || powerUp.active;
-
-  return (
-    <motion.button
-      onClick={() => !isDisabled && onActivate(powerUp.id)}
-      disabled={isDisabled}
-      whileHover={!isDisabled ? { scale: 1.05, y: -2 } : {}}
-      whileTap={!isDisabled ? { scale: 0.95 } : {}}
-      initial={{ scale: 0 }}
-      animate={{ scale: 1 }}
-      className={`
-        relative px-2 py-2 sm:px-4 sm:py-3 rounded-lg sm:rounded-xl border-2
-        flex flex-col items-center gap-1 sm:gap-2
-        font-bold text-xs sm:text-sm transition-all duration-300
-        min-w-[60px] sm:min-w-[80px]
-        ${isDisabled
-          ? 'bg-gray-500/20 border-gray-500/40 text-gray-400 cursor-not-allowed'
-          : 'bg-gradient-to-br from-purple-500 to-pink-600 border-white/30 text-white hover:border-white/50 shadow-lg hover:shadow-xl'
-        }
-        ${powerUp.active ? 'animate-pulse bg-yellow-500/30 border-yellow-400' : ''}
-      `}
-    >
-      {/* Power-up icon */}
-      <div className="flex items-center justify-center">
-        {powerUp.type === 'shuffle' && <Shuffle className="w-4 h-4 sm:w-5 sm:h-5" />}
-        {powerUp.type === 'hint' && <Lightbulb className="w-4 h-4 sm:w-5 sm:h-5" />}
-        {powerUp.type === 'glow' && <Sparkles className="w-4 h-4 sm:w-5 sm:h-5" />}
-        {powerUp.type === 'timeBoost' && <Zap className="w-4 h-4 sm:w-5 sm:h-5" />}
-      </div>
-
-      {/* Power-up name - Hidden on mobile */}
-      <span className="text-xs hidden sm:block">{powerUp.description}</span>
-      
-      {/* Gem cost */}
-      <div className={`flex items-center justify-center gap-1 text-xs ${!canAfford ? 'text-red-300' : 'text-yellow-300'}`}>
-        <Gem className="w-3 h-3" />
-        <span>{powerUp.gemCost}</span>
-      </div>
-      
-      {/* Cooldown indicator */}
-      {powerUp.active && (
-        <motion.div
-          initial={{ width: '100%' }}
-          animate={{ width: '0%' }}
-          transition={{ duration: 10 }}
-          className="absolute bottom-0 left-0 h-1 bg-yellow-400 rounded-full"
-        />
-      )}
-      
-      {/* Shine effect */}
-      {canAfford && !powerUp.active && (
-        <motion.div
-          animate={{ 
-            x: ['-100%', '100%'],
-            opacity: [0, 0.5, 0]
-          }}
-          transition={{ 
-            repeat: Infinity, 
-            duration: 3,
-            ease: "easeInOut"
-          }}
-          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent rounded-xl"
-        />
-      )}
-    </motion.button>
   );
 };
 
@@ -496,6 +459,9 @@ const GemSpeedBuilderInternal: React.FC<{
     stopMusic();
     if (onBackToMenu) {
       onBackToMenu();
+    } else if (assignmentId && mode === 'assignment') {
+      // Navigate to assignment page in assignment mode
+      window.location.href = `/student-dashboard/assignments/${assignmentId}`;
     }
   };
   
@@ -515,16 +481,9 @@ const GemSpeedBuilderInternal: React.FC<{
     totalWordsPlaced: 0,
     correctWordsPlaced: 0, // Initialize correct words counter
     grammarErrors: {},
-    powerUpsUsed: {},
     gemsCollected: 0,
     bonusMultiplier: 1
   });
-  const [powerUps, setPowerUps] = useState<PowerUp[]>([
-    { id: 'shuffle', type: 'shuffle', active: false, cooldown: 0, description: 'Reshuffle words', icon: 'Shuffle', gemCost: 3 },
-    { id: 'hint', type: 'hint', active: false, cooldown: 0, description: 'Highlight correct word', icon: 'Lightbulb', gemCost: 5 },
-    { id: 'glow', type: 'glow', active: false, cooldown: 0, description: 'Show word positions', icon: 'Sparkles', gemCost: 4 },
-    { id: 'timeBoost', type: 'timeBoost', active: false, cooldown: 0, description: 'Add 30 seconds', icon: 'Zap', gemCost: 6 }
-  ]);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [availableSentences, setAvailableSentences] = useState<SentenceData[]>([]);
   const [currentSentenceIndex, setCurrentSentenceIndex] = useState(0);
@@ -1126,52 +1085,6 @@ const GemSpeedBuilderInternal: React.FC<{
 
 
 
-  // Enhanced power-up activation
-  const activatePowerUp = (powerUpId: string) => {
-    const powerUp = powerUps.find(p => p.id === powerUpId);
-    if (!powerUp || stats.gemsCollected < powerUp.gemCost) return;
-
-    // Deduct gem cost
-    setStats(prev => ({
-      ...prev,
-      gemsCollected: prev.gemsCollected - powerUp.gemCost,
-      powerUpsUsed: { ...prev.powerUpsUsed, [powerUpId]: (prev.powerUpsUsed[powerUpId] || 0) + 1 }
-    }));
-
-    // Apply power-up effects
-    switch (powerUpId) {
-      case 'shuffle':
-        setShuffledWords(prev => [...prev].sort((a, b) => b.text.length - a.text.length));
-        break;
-      case 'hint':
-        const nextCorrectIndex = placedWords.findIndex(w => w === null);
-        if (nextCorrectIndex !== -1) {
-          setHintWordIndex(nextCorrectIndex);
-          setTimeout(() => setHintWordIndex(null), 3000);
-        }
-        break;
-      case 'glow':
-        setShowGhostMode(true);
-        setTimeout(() => setShowGhostMode(false), 5000);
-        break;
-      case 'timeBoost':
-        setTimeLeft(prev => Math.min(prev + 30, 180));
-        break;
-    }
-
-    // Set cooldown
-    setPowerUps(prev => prev.map(p => 
-      p.id === powerUpId ? { ...p, active: true, cooldown: 10 } : p
-    ));
-
-    setTimeout(() => {
-      setPowerUps(prev => prev.map(p => 
-        p.id === powerUpId ? { ...p, active: false, cooldown: 0 } : p
-      ));
-    }, 10000);
-    playSound('powerup');
-  };
-
   const endGame = async () => {
     setGameState('completed');
 
@@ -1262,28 +1175,96 @@ const GemSpeedBuilderInternal: React.FC<{
 
   return (
     <DndProvider backend={HTML5Backend}>
-      <div className="h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 relative overflow-hidden flex flex-col">
-        {/* Background gem effects only */}
-        
-        {/* Fixed Background Elements */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          {backgroundGemPositions.map((pos, i) => (
+      <div className="h-screen bg-[#0a0e27] relative overflow-hidden flex flex-col">
+        {/* Animated Circuit Board Background */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-40">
+          {/* Horizontal lines */}
+          {[...Array(8)].map((_, i) => (
             <motion.div
-              key={i}
+              key={`h-${i}`}
+              className="absolute h-[2px] w-full"
+              style={{
+                top: `${(i + 1) * 12}%`,
+                background: i % 2 === 0
+                  ? 'linear-gradient(90deg, transparent, #00d9ff, transparent)'
+                  : 'linear-gradient(90deg, transparent, #ff6b35, transparent)'
+              }}
               animate={{
-                y: [0, -10, 0],
-                opacity: [0.2, 0.4, 0.2],
-                scale: [1, 1.05, 1],
+                x: ['-100%', '100%'],
+                opacity: [0.3, 0.7, 0.3]
               }}
               transition={{
+                duration: 8 + i * 2,
                 repeat: Infinity,
-                duration: 3 + (i % 3),
-                delay: i * 0.2,
+                ease: "linear"
               }}
-              className={`absolute w-3 h-3 bg-gradient-to-br ${Object.values(gemColors)[i % 6]} rounded transform rotate-45 opacity-20`}
+            />
+          ))}
+
+          {/* Vertical lines */}
+          {[...Array(6)].map((_, i) => (
+            <motion.div
+              key={`v-${i}`}
+              className="absolute w-[2px] h-full"
               style={{
-                left: `${pos.left}%`,
-                top: `${pos.top}%`,
+                left: `${(i + 1) * 16}%`,
+                background: i % 2 === 0
+                  ? 'linear-gradient(180deg, transparent, #00d9ff, transparent)'
+                  : 'linear-gradient(180deg, transparent, #ff6b35, transparent)'
+              }}
+              animate={{
+                y: ['-100%', '100%'],
+                opacity: [0.3, 0.7, 0.3]
+              }}
+              transition={{
+                duration: 10 + i * 2,
+                repeat: Infinity,
+                ease: "linear"
+              }}
+            />
+          ))}
+
+          {/* Circuit nodes */}
+          {[...Array(20)].map((_, i) => (
+            <motion.div
+              key={`node-${i}`}
+              className="absolute w-2 h-2 rounded-full"
+              style={{
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+                background: i % 3 === 0 ? '#00d9ff' : i % 3 === 1 ? '#ff6b35' : '#a855f7'
+              }}
+              animate={{
+                scale: [1, 1.5, 1],
+                opacity: [0.4, 0.8, 0.4]
+              }}
+              transition={{
+                duration: 2 + Math.random() * 2,
+                repeat: Infinity,
+                delay: Math.random() * 2
+              }}
+            />
+          ))}
+        </div>
+
+        {/* Starfield effect */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          {[...Array(50)].map((_, i) => (
+            <motion.div
+              key={`star-${i}`}
+              className="absolute w-1 h-1 bg-white rounded-full"
+              style={{
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+              }}
+              animate={{
+                opacity: [0.2, 0.8, 0.2],
+                scale: [1, 1.2, 1]
+              }}
+              transition={{
+                duration: 2 + Math.random() * 3,
+                repeat: Infinity,
+                delay: Math.random() * 2
               }}
             />
           ))}
@@ -1303,57 +1284,127 @@ const GemSpeedBuilderInternal: React.FC<{
               </div>
             </div>
 
-            {/* Mobile Stats Row */}
+            {/* Stats Row - Cyberpunk HUD */}
             {gameState === 'playing' && (
-              <div className="flex items-center gap-2 sm:gap-4">
-                {/* Compact Stats for Mobile */}
+              <div className="flex items-center gap-2 sm:gap-3">
+                {/* Compact Stats */}
                 <div className="flex gap-2 sm:gap-3">
-                  <div className="text-center">
-                    <div className="text-sm sm:text-lg font-bold text-blue-300">{stats.sentencesCompleted}/{targetSentenceCount}</div>
-                    <div className="text-xs text-white/60 hidden sm:block">Progress</div>
+                  <div
+                    className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-md font-mono"
+                    style={{
+                      background: 'rgba(6, 182, 212, 0.15)',
+                      border: '2px solid rgba(6, 182, 212, 0.5)',
+                      boxShadow: '0 0 15px rgba(6, 182, 212, 0.3)'
+                    }}
+                  >
+                    <div className="text-xs sm:text-sm font-bold" style={{ color: '#06b6d4' }}>
+                      {stats.sentencesCompleted}/{targetSentenceCount}
+                    </div>
+                    <div className="text-[9px] uppercase tracking-wider hidden sm:block" style={{ color: '#06b6d4', opacity: 0.6 }}>
+                      Progress
+                    </div>
                   </div>
-                  <div className="text-center">
-                    <div className="text-sm sm:text-lg font-bold text-green-300">{Math.round(stats.accuracy * 100)}%</div>
-                    <div className="text-xs text-white/60 hidden sm:block">Accuracy</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-sm sm:text-lg font-bold text-purple-300">{stats.streak}</div>
-                    <div className="text-xs text-white/60 hidden sm:block">Streak</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-sm sm:text-lg font-bold text-yellow-300">{stats.score}</div>
-                    <div className="text-xs text-white/60 hidden sm:block">Score</div>
+
+                  <div
+                    className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-md font-mono"
+                    style={{
+                      background: 'rgba(16, 185, 129, 0.15)',
+                      border: '2px solid rgba(16, 185, 129, 0.5)',
+                      boxShadow: '0 0 15px rgba(16, 185, 129, 0.3)'
+                    }}
+                  >
+                    <div className="text-xs sm:text-sm font-bold" style={{ color: '#10b981' }}>
+                      {Math.round(stats.accuracy * 100)}%
+                    </div>
+                    <div className="text-[9px] uppercase tracking-wider hidden sm:block" style={{ color: '#10b981', opacity: 0.6 }}>
+                      Accuracy
+                    </div>
                   </div>
                 </div>
 
-                {/* Gem Counter - Always Visible */}
+                {/* Score Display */}
                 <motion.div
-                  animate={{ scale: [1, 1.02, 1] }}
+                  animate={{
+                    boxShadow: [
+                      '0 0 20px rgba(245, 158, 11, 0.4)',
+                      '0 0 30px rgba(245, 158, 11, 0.6)',
+                      '0 0 20px rgba(245, 158, 11, 0.4)'
+                    ]
+                  }}
                   transition={{ repeat: Infinity, duration: 2 }}
-                  className="bg-gradient-to-r from-yellow-400 to-orange-500 px-2 py-1 sm:px-4 sm:py-2 rounded-lg border border-white/30 shadow-lg"
+                  className="px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-mono font-bold"
+                  style={{
+                    background: 'rgba(245, 158, 11, 0.15)',
+                    border: '3px solid rgba(245, 158, 11, 0.6)',
+                    clipPath: "polygon(10% 0%, 90% 0%, 100% 50%, 90% 100%, 10% 100%, 0% 50%)"
+                  }}
                 >
-                  <div className="flex items-center gap-1 sm:gap-2">
-                    <Gem className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-                    <span className="text-sm sm:text-lg font-bold text-white">{stats.gemsCollected}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs uppercase tracking-wider" style={{ color: '#f59e0b', opacity: 0.8 }}>
+                      Score
+                    </span>
+                    <span className="text-lg sm:text-2xl" style={{ color: '#f59e0b', textShadow: '0 0 10px rgba(245, 158, 11, 0.8)' }}>
+                      {stats.score}
+                    </span>
+                  </div>
+                </motion.div>
+
+                {/* XP Display */}
+                <motion.div
+                  animate={{
+                    boxShadow: [
+                      '0 0 20px rgba(239, 68, 68, 0.4)',
+                      '0 0 30px rgba(239, 68, 68, 0.6)',
+                      '0 0 20px rgba(239, 68, 68, 0.4)'
+                    ]
+                  }}
+                  transition={{ repeat: Infinity, duration: 2, delay: 0.5 }}
+                  className="px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-mono font-bold"
+                  style={{
+                    background: 'rgba(239, 68, 68, 0.15)',
+                    border: '3px solid rgba(239, 68, 68, 0.6)',
+                    clipPath: "polygon(10% 0%, 90% 0%, 100% 50%, 90% 100%, 10% 100%, 0% 50%)"
+                  }}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs uppercase tracking-wider" style={{ color: '#ef4444', opacity: 0.8 }}>
+                      XP
+                    </span>
+                    <span className="text-lg sm:text-2xl" style={{ color: '#ef4444', textShadow: '0 0 10px rgba(239, 68, 68, 0.8)' }}>
+                      +{stats.gemsCollected * 10}
+                    </span>
                   </div>
                 </motion.div>
               </div>
             )}
 
-            {/* Right side - Timer and Settings */}
+            {/* Right side - Timer */}
             <div className="flex items-center gap-2 sm:gap-3">
               {gameState === 'playing' && (
                 <motion.div
-                  animate={{ scale: timeLeft < 20 ? [1, 1.05, 1] : 1 }}
+                  animate={{
+                    scale: timeLeft < 20 ? [1, 1.05, 1] : 1,
+                    boxShadow: timeLeft < 20
+                      ? ['0 0 20px rgba(239, 68, 68, 0.6)', '0 0 40px rgba(239, 68, 68, 0.8)', '0 0 20px rgba(239, 68, 68, 0.6)']
+                      : '0 0 20px rgba(6, 182, 212, 0.4)'
+                  }}
                   transition={{ repeat: Infinity, duration: 0.5 }}
-                  className={`px-2 py-1 sm:px-3 sm:py-2 rounded-lg border font-bold text-xs sm:text-sm ${timeLeft < 20 ? 'bg-red-500/20 border-red-400 text-red-200' : 'bg-blue-500/20 border-blue-400 text-blue-200'}`}
+                  className="px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-mono font-bold"
+                  style={{
+                    background: timeLeft < 20 ? 'rgba(239, 68, 68, 0.15)' : 'rgba(6, 182, 212, 0.15)',
+                    border: timeLeft < 20 ? '3px solid rgba(239, 68, 68, 0.6)' : '3px solid rgba(6, 182, 212, 0.6)',
+                    clipPath: "polygon(15% 0%, 85% 0%, 100% 15%, 100% 85%, 85% 100%, 15% 100%, 0% 85%, 0% 15%)",
+                    color: timeLeft < 20 ? '#ef4444' : '#06b6d4',
+                    textShadow: timeLeft < 20 ? '0 0 10px rgba(239, 68, 68, 0.8)' : '0 0 10px rgba(6, 182, 212, 0.8)'
+                  }}
                 >
-                  <Timer className="inline w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                  <Timer className="inline w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                   {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
                 </motion.div>
               )}
 
-              {onOpenSettings && (
+              {/* Hide settings button in assignment mode */}
+              {onOpenSettings && mode !== 'assignment' && (
                 <button
                   onClick={onOpenSettings}
                   className="px-2 py-1 sm:px-3 sm:py-2 bg-white/10 hover:bg-white/20 rounded-lg border border-white/20 text-white transition-all text-xs sm:text-sm"
@@ -1365,61 +1416,123 @@ const GemSpeedBuilderInternal: React.FC<{
               )}
             </div>
           </div>
-
-          {/* Power-ups - Mobile Responsive */}
-          {gameState === 'playing' && (
-            <div className="flex justify-center gap-1 sm:gap-2 overflow-x-auto pb-2">
-              {powerUps.map(powerUp => (
-                <GemPowerUpButton
-                  key={powerUp.id}
-                  powerUp={powerUp}
-                  onActivate={activatePowerUp}
-                  disabled={gameState !== 'playing'}
-                  gemsAvailable={stats.gemsCollected}
-                />
-              ))}
-            </div>
-          )}
         </div>
 
-        {/* Main Game Content - Mobile Optimized */}
-        <div className="relative z-10 flex-1 flex flex-col px-2 sm:px-4 min-h-0">
+        {/* Main Game Content - Mobile Optimized with proper spacing */}
+        <div className="relative z-10 flex-1 flex flex-col px-2 sm:px-4 pb-4 min-h-0 overflow-y-auto">
           {currentSentence && gameState === 'playing' && (
-            <div className="flex-1 flex flex-col gap-2 sm:gap-4 min-h-0">
-              {/* Sentence Challenge - Mobile Responsive */}
+            <div className="flex flex-col gap-3 sm:gap-4">
+              {/* Mission Objective - Cyberpunk Style - More Compact */}
               <motion.div
                 initial={{ y: 10, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
-                className="bg-white/10 backdrop-blur-lg rounded-xl p-3 sm:p-4 border border-white/20 text-center flex-shrink-0"
+                className="relative p-4 sm:p-6 text-center flex-shrink-0"
+                style={{
+                  clipPath: "polygon(0 0, calc(100% - 30px) 0, 100% 30px, 100% 100%, 30px 100%, 0 calc(100% - 30px))",
+                  background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.15), rgba(168, 85, 247, 0.15))',
+                  border: '3px solid rgba(6, 182, 212, 0.6)',
+                  boxShadow: '0 0 40px rgba(6, 182, 212, 0.4), inset 0 0 40px rgba(6, 182, 212, 0.1)'
+                }}
               >
-                <h2 className="text-lg sm:text-xl font-bold text-white mb-2">
-                  <Sparkles className="inline w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-                  Build: <span className="text-yellow-300">"{currentSentence.translatedText}"</span>
-                </h2>
+                {/* Corner tech details */}
+                <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-cyan-400"></div>
+                <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-cyan-400"></div>
+
+                {/* Animated scan lines */}
+                <motion.div
+                  animate={{ y: ['-100%', '200%'] }}
+                  transition={{ repeat: Infinity, duration: 3, ease: "linear" }}
+                  className="absolute inset-0 overflow-hidden pointer-events-none"
+                  style={{ clipPath: "polygon(0 0, calc(100% - 30px) 0, 100% 30px, 100% 100%, 30px 100%, 0 calc(100% - 30px))" }}
+                >
+                  <div className="absolute w-full h-12 bg-gradient-to-b from-transparent via-cyan-400/20 to-transparent blur-sm"></div>
+                </motion.div>
+
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ repeat: Infinity, duration: 8, ease: "linear" }}
+                  >
+                    <Target className="w-5 h-5 sm:w-6 sm:h-6 text-cyan-400" />
+                  </motion.div>
+                  <h2
+                    className="text-xs sm:text-base font-bold uppercase tracking-widest font-mono"
+                    style={{
+                      color: '#00d9ff',
+                      textShadow: '0 0 10px rgba(0, 217, 255, 0.8)'
+                    }}
+                  >
+                    Mission Objective
+                  </h2>
+                </div>
+
+                <p
+                  className="text-xl sm:text-3xl font-bold mb-3 leading-relaxed font-mono"
+                  style={{
+                    color: '#00d9ff',
+                    textShadow: '0 0 20px rgba(0, 217, 255, 0.6), 0 0 40px rgba(0, 217, 255, 0.3)'
+                  }}
+                >
+                  "{currentSentence.translatedText}"
+                </p>
+
                 {currentSentence.curriculum && (
-                  <div className="flex flex-wrap justify-center gap-2 text-xs">
-                    <span className="px-2 py-1 bg-blue-500/30 text-blue-200 rounded-full">
+                  <div className="flex flex-wrap justify-center gap-3 text-xs">
+                    <span
+                      className="px-4 py-2 rounded-md font-mono font-bold uppercase tracking-wider"
+                      style={{
+                        background: 'rgba(6, 182, 212, 0.2)',
+                        border: '2px solid rgba(6, 182, 212, 0.6)',
+                        color: '#06b6d4',
+                        boxShadow: '0 0 15px rgba(6, 182, 212, 0.4)'
+                      }}
+                    >
                       {currentSentence.curriculum.tier}
                     </span>
-                    <span className="px-2 py-1 bg-green-500/30 text-green-200 rounded-full">
-                      {currentSentence.curriculum.theme}
+                    <span
+                      className="px-4 py-2 rounded-md font-mono font-bold uppercase tracking-wider"
+                      style={{
+                        background: 'rgba(168, 85, 247, 0.2)',
+                        border: '2px solid rgba(168, 85, 247, 0.6)',
+                        color: '#a855f7',
+                        boxShadow: '0 0 15px rgba(168, 85, 247, 0.4)'
+                      }}
+                    >
+                      {currentSentence.curriculum.theme.replace(/_/g, ' ')}
                     </span>
                   </div>
                 )}
               </motion.div>
 
-              {/* Drop Targets - Mobile Responsive */}
+              {/* Data Slots - Cyberpunk Style - More Compact */}
               <motion.div
                 initial={{ y: 10, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.1 }}
-                className="bg-white/5 backdrop-blur-lg rounded-xl p-3 sm:p-4 flex-shrink-0"
+                className="relative p-3 sm:p-4 flex-shrink-0"
+                style={{
+                  background: 'rgba(6, 182, 212, 0.05)',
+                  border: '2px solid rgba(6, 182, 212, 0.3)',
+                  borderRadius: '16px',
+                  boxShadow: '0 0 30px rgba(6, 182, 212, 0.2), inset 0 0 30px rgba(6, 182, 212, 0.05)'
+                }}
               >
-                <h3 className="text-sm sm:text-base font-bold text-center mb-2 sm:mb-3 text-white flex items-center justify-center gap-2">
-                  <Target className="w-4 h-4" />
-                  Place words in order:
+                <h3
+                  className="text-xs sm:text-base font-bold text-center mb-3 sm:mb-4 flex items-center justify-center gap-2 uppercase tracking-widest font-mono"
+                  style={{
+                    color: '#06b6d4',
+                    textShadow: '0 0 10px rgba(6, 182, 212, 0.8)'
+                  }}
+                >
+                  <motion.div
+                    animate={{ scale: [1, 1.2, 1] }}
+                    transition={{ repeat: Infinity, duration: 2 }}
+                  >
+                    ▣
+                  </motion.div>
+                  Data Slots
                 </h3>
-                <div className="flex flex-wrap justify-center gap-1 sm:gap-2 md:gap-3 max-h-24 sm:max-h-32 overflow-y-auto">
+                <div className="flex flex-wrap justify-center gap-2 sm:gap-3 p-1">
                   {placedWords.map((word, index) => (
                     <GemDropTarget
                       key={index}
@@ -1432,19 +1545,39 @@ const GemSpeedBuilderInternal: React.FC<{
                     />
                   ))}
                 </div>
+
+                {/* Bottom instruction */}
+                <p
+                  className="text-center mt-2 text-[10px] sm:text-xs font-mono uppercase tracking-wider"
+                  style={{ color: '#06b6d4', opacity: 0.7 }}
+                >
+                  Place data chips in sequence
+                </p>
               </motion.div>
 
-              {/* Available Words - Mobile Optimized */}
+              {/* Available Data Chips - Cyberpunk Style - More Compact */}
               <motion.div
                 initial={{ y: 10, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.2 }}
-                className="bg-white/5 backdrop-blur-lg rounded-xl p-3 sm:p-4 flex-1 min-h-0"
+                className="relative p-3 sm:p-4 flex-shrink-0"
+                style={{
+                  background: 'rgba(168, 85, 247, 0.05)',
+                  border: '2px solid rgba(168, 85, 247, 0.3)',
+                  borderRadius: '16px',
+                  boxShadow: '0 0 30px rgba(168, 85, 247, 0.2), inset 0 0 30px rgba(168, 85, 247, 0.05)'
+                }}
               >
-                <h3 className="text-sm sm:text-base font-bold text-center mb-2 sm:mb-3 text-white">
-                  Available Words:
+                <h3
+                  className="text-xs sm:text-base font-bold text-center mb-3 sm:mb-4 uppercase tracking-widest font-mono"
+                  style={{
+                    color: '#a855f7',
+                    textShadow: '0 0 10px rgba(168, 85, 247, 0.8)'
+                  }}
+                >
+                  Available Data Chips
                 </h3>
-                <div className="flex flex-wrap justify-center gap-1 sm:gap-2 md:gap-3 h-full items-start content-start overflow-y-auto px-1 sm:px-2 max-h-32 sm:max-h-48">
+                <div className="flex flex-wrap justify-center gap-2 sm:gap-3 items-start content-start px-1 pb-2">
                   {shuffledWords
                     .filter(word => !placedWords.some(placed => placed?.id === word.id))
                     .map(word => (
@@ -1542,7 +1675,6 @@ const GemSpeedBuilderInternal: React.FC<{
                       totalWordsPlaced: 0,
                       correctWordsPlaced: 0,
                       grammarErrors: {},
-                      powerUpsUsed: {},
                       gemsCollected: 0,
                       bonusMultiplier: 1
                     });
@@ -1554,19 +1686,38 @@ const GemSpeedBuilderInternal: React.FC<{
                     setHintWordIndex(null);
                     setShowGhostMode(false);
                   }}
-                  className="flex-1 px-4 py-2 sm:px-6 sm:py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-bold shadow-lg hover:shadow-purple-500/50 transition-all duration-300 text-sm sm:text-base"
+                  className="flex-1 px-4 py-2 sm:px-6 sm:py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-bold shadow-lg hover:shadow-purple-500/50 transition-all duration-300 text-sm sm:text-base"
+                  style={{
+                    border: '2px solid rgba(168, 85, 247, 0.5)',
+                    boxShadow: '0 0 20px rgba(168, 85, 247, 0.4)'
+                  }}
                 >
                   <RotateCcw className="w-4 h-4 inline mr-2" />
                   Play Again
                 </motion.button>
 
-                <button
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                   onClick={handleBackToMenu}
-                  className="flex-1 px-4 py-2 sm:px-6 sm:py-2 bg-white/10 backdrop-blur-sm text-white rounded-xl font-bold hover:bg-white/20 transition-all duration-300 inline-flex items-center justify-center border border-white/20 text-sm sm:text-base"
+                  className="flex-1 px-4 py-2 sm:px-6 sm:py-3 bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-xl font-bold shadow-lg hover:shadow-cyan-500/50 transition-all duration-300 inline-flex items-center justify-center text-sm sm:text-base"
+                  style={{
+                    border: '2px solid rgba(6, 182, 212, 0.5)',
+                    boxShadow: '0 0 20px rgba(6, 182, 212, 0.4)'
+                  }}
                 >
-                  <Home className="w-4 h-4 mr-2" />
-                  Back to Menu
-                </button>
+                  {mode === 'assignment' ? (
+                    <>
+                      <ArrowLeft className="w-4 h-4 mr-2" />
+                      Back to Assignment
+                    </>
+                  ) : (
+                    <>
+                      <Home className="w-4 h-4 mr-2" />
+                      Back to Menu
+                    </>
+                  )}
+                </motion.button>
               </div>
             </motion.div>
           )}

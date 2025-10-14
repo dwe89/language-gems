@@ -80,9 +80,9 @@ const EnhancedAssignmentCard: React.FC<{
   };
 
   const statusGradients = {
-    'completed': 'from-green-400 to-emerald-600',
-    'in_progress': 'from-blue-400 to-indigo-600',
-    'not_started': 'from-gray-400 to-slate-600'
+    'completed': 'from-green-500 to-emerald-600',
+    'in_progress': 'from-blue-600 to-indigo-600',
+    'not_started': 'from-gray-400 to-slate-500'
   };
 
   const progressPercentage = (assignment?.score / (assignment?.maxScore || 1)) * 100 || 0;
@@ -97,38 +97,36 @@ const EnhancedAssignmentCard: React.FC<{
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.3 }}
-      className="bg-white rounded-2xl p-6 border border-gray-100 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 overflow-hidden relative"
+      className="group relative bg-white rounded-2xl border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-gray-300 overflow-hidden"
     >
-      {/* Top gradient border */}
-  <div className={`absolute top-0 left-0 right-0 h-2 bg-gradient-to-r ${statusGradients[statusKey]}`}></div>
+      {/* Top gradient accent */}
+      <div className={`absolute top-0 left-0 right-0 h-2 bg-gradient-to-r ${statusGradients[statusKey]}`}></div>
 
       {/* Main content area */}
-      <div className="pt-4">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-bold text-gray-900 leading-snug">
+      <div className="p-6 pt-8">
+        <div className="flex items-start justify-between gap-4 mb-4">
+          <h3 className="text-xl font-bold text-gray-900 leading-snug flex-1">
             {assignment.title}
           </h3>
-          <span className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide shadow-sm ${statusColors[statusKey]}`}>
+          <span className={`flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide ${statusColors[statusKey]}`}>
             {statusText[statusKey]}
           </span>
         </div>
 
-        <div className="space-y-3 mb-6">
-          <div className="flex items-center space-x-2 text-sm text-gray-600">
-            <Clock className="h-4 w-4 text-indigo-500" />
-            <span className="font-medium">Due: {assignment?.dueDate ? new Date(assignment.dueDate).toLocaleDateString() : 'N/A'}</span>
-          </div>
+        <div className="flex items-center gap-2 text-sm text-gray-600 mb-5">
+          <Clock className="h-4 w-4 text-indigo-500" />
+          <span className="font-medium">Due: {assignment?.dueDate ? new Date(assignment.dueDate).toLocaleDateString('en-GB') : 'N/A'}</span>
         </div>
 
         {assignment.status === 'in_progress' && (
           <div className="mb-6">
-            <div className="flex items-center justify-between text-sm font-medium text-gray-600 mb-2">
+            <div className="flex items-center justify-between text-sm font-semibold text-blue-700 mb-2">
               <span>Progress</span>
               <span>{Math.round(progressPercentage)}%</span>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
+            <div className="w-full bg-blue-200 rounded-full h-2.5 overflow-hidden">
               <div
-                className={`h-2 rounded-full transition-all duration-500 ease-out bg-gradient-to-r from-blue-400 to-indigo-600`}
+                className={`h-2.5 rounded-full transition-all duration-500 ease-out bg-gradient-to-r from-blue-500 to-indigo-600 shadow-sm`}
                 style={{ width: `${progressPercentage}%` }}
               />
             </div>
@@ -136,35 +134,47 @@ const EnhancedAssignmentCard: React.FC<{
         )}
 
         {assignment.status === 'completed' && (
-          <div className="mb-6 bg-green-50 border border-green-200 rounded-lg p-3">
-            <div className="grid grid-cols-2 gap-2 text-xs font-medium text-green-700">
-              <div className="flex items-center"><TrophyIcon className="h-3 w-3 mr-1" /> Score: {assignment.score}</div>
-              <div className="flex items-center"><Percent className="h-3 w-3 mr-1" /> Accuracy: {Math.round(assignment.bestAccuracy || 0)}%</div>
-              <div className="flex items-center"><Flame className="h-3 w-3 mr-1" /> Attempts: {assignment.attempts || 0}</div>
-              <div className="flex items-center"><Clock className="h-3 w-3 mr-1" /> Time: {Math.round(assignment.totalTimeSpent / 60) || 0} min</div>
+          <div className="mb-6 bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4">
+            <div className="grid grid-cols-2 gap-3 text-xs">
+              <div className="flex items-center text-green-700">
+                <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center mr-2">
+                  <TrophyIcon className="h-4 w-4" />
+                </div>
+                <div>
+                  <div className="font-semibold text-sm">{assignment.score}</div>
+                  <div className="text-green-600">Score</div>
+                </div>
+              </div>
+              <div className="flex items-center text-green-700">
+                <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center mr-2">
+                  <Percent className="h-4 w-4" />
+                </div>
+                <div>
+                  <div className="font-semibold text-sm">{Math.round(assignment.bestAccuracy || 0)}%</div>
+                  <div className="text-green-600">Accuracy</div>
+                </div>
+              </div>
             </div>
           </div>
         )}
 
-  <div className="flex">
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => {
-              if (assignment.status === 'not_started' && onStart) return onStart(assignment);
-              if (assignment.status === 'in_progress' && onContinue) return onContinue(assignment);
-              if (assignment.status === 'completed' && onReview) return onReview(assignment);
-            }}
-            className={`w-full flex items-center justify-center py-3 px-6 rounded-full font-semibold transition-all duration-300 shadow-md ${
-              assignment.status === 'completed'
-                ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white'
-                : 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white'
-            }`}
-          >
-            Start/Continue <ArrowRight className="h-5 w-5 ml-2" />
-          </motion.button>
-        </div>
-
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => {
+            if (assignment.status === 'not_started' && onStart) return onStart(assignment);
+            if (assignment.status === 'in_progress' && onContinue) return onContinue(assignment);
+            if (assignment.status === 'completed' && onReview) return onReview(assignment);
+          }}
+          className={`w-full flex items-center justify-center gap-2 py-3 px-5 rounded-xl font-semibold text-sm transition-all duration-200 ${
+            assignment.status === 'completed'
+              ? 'bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white shadow-lg shadow-green-500/30 hover:shadow-xl hover:shadow-green-500/40'
+              : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40'
+          }`}
+        >
+          <span>{assignment.status === 'completed' ? 'Review Assignment' : 'Start Assignment'}</span>
+          <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+        </motion.button>
       </div>
     </motion.div>
   );
@@ -1333,59 +1343,107 @@ export default function ModernStudentDashboard({
           </div>
         );
       case 'assignments':
+        const activeAssignments = assignments.filter(a => a.status === 'not_started' || a.status === 'in_progress');
+        const completedAssignments = assignments.filter(a => a.status === 'completed');
+
         return (
-          <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <h2 className="text-2xl font-bold text-gray-900 student-font-display">My Assignments</h2>
-              <div className="flex flex-wrap items-center gap-2">
-                <select className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                  <option>All Subjects</option>
-                  <option>Spanish</option>
-                  <option>French</option>
-                  <option>German</option>
-                </select>
-                <select className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                  <option>All Status</option>
-                  <option>Not Started</option>
-                  <option>In Progress</option>
-                  <option>Completed</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Assignment Progress Tracker */}
-            <AssignmentProgressTracker studentId={user?.id} />
-
-            {/* Enhanced Assignment Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-8">
-              {assignmentsLoading ? (
-                // Loading skeleton
-                Array.from({ length: 3 }).map((_, index) => (
-                  <div key={index} className="bg-white/50 backdrop-blur-lg rounded-2xl border border-gray-200 p-6 animate-pulse">
-                    <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                    <div className="h-3 bg-gray-200 rounded w-full mb-4"></div>
-                    <div className="h-2 bg-gray-200 rounded w-1/2 mb-2"></div>
-                    <div className="h-8 bg-gray-200 rounded w-full"></div>
-                  </div>
-                ))
-              ) : assignments.length === 0 ? (
-                <div className="col-span-full text-center py-12">
-                  <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No assignments yet</h3>
-                  <p className="text-gray-600">Your teacher hasn't assigned any work yet. Check back later!</p>
+          <div className="space-y-5">
+            {/* Header */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-md">
+                  <BookOpen className="h-5 w-5 text-white" strokeWidth={2} />
                 </div>
-              ) : (
-                assignments.map((assignment) => (
-                <EnhancedAssignmentCard
-                  key={assignment.id}
-                  assignment={assignment}
-                  onStart={(assignment: any) => router.push(`/student-dashboard/assignments/${assignment.id}`)}
-                  onContinue={(assignment: any) => router.push(`/student-dashboard/assignments/${assignment.id}`)}
-                  onReview={(assignment: any) => router.push(`/student-dashboard/assignments/${assignment.id}`)}
-                />
-                ))
-              )}
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900">My Assignments</h2>
+                  <p className="text-sm text-gray-600">{activeAssignments.length} active • {completedAssignments.length} completed</p>
+                </div>
+              </div>
+              <Link
+                href="/student-dashboard/assignments"
+                className="hidden sm:inline-flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-gray-900 bg-white px-4 py-2 rounded-xl border border-gray-200 hover:border-gray-300 transition-all shadow-sm hover:shadow"
+              >
+                <span>View All</span>
+                <ChevronRight className="h-4 w-4" />
+              </Link>
             </div>
+
+            {/* Active Assignments */}
+            {activeAssignments.length > 0 && (
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Active Assignments</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {assignmentsLoading ? (
+                    // Loading skeleton
+                    Array.from({ length: 2 }).map((_, index) => (
+                      <div key={index} className="bg-white rounded-2xl border border-gray-200 p-6 animate-pulse">
+                        <div className="h-5 bg-gray-200 rounded w-3/4 mb-4"></div>
+                        <div className="h-4 bg-gray-200 rounded w-full mb-5"></div>
+                        <div className="h-3 bg-gray-200 rounded w-1/2 mb-4"></div>
+                        <div className="h-10 bg-gray-200 rounded w-full"></div>
+                      </div>
+                    ))
+                  ) : (
+                    activeAssignments.map((assignment) => (
+                      <EnhancedAssignmentCard
+                        key={assignment.id}
+                        assignment={assignment}
+                        onStart={(assignment: any) => router.push(`/student-dashboard/assignments/${assignment.id}`)}
+                        onContinue={(assignment: any) => router.push(`/student-dashboard/assignments/${assignment.id}`)}
+                        onReview={(assignment: any) => router.push(`/student-dashboard/assignments/${assignment.id}`)}
+                      />
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Completed Assignments */}
+            {completedAssignments.length > 0 && (
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Completed</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {completedAssignments.slice(0, 2).map((assignment) => (
+                    <EnhancedAssignmentCard
+                      key={assignment.id}
+                      assignment={assignment}
+                      onStart={(assignment: any) => router.push(`/student-dashboard/assignments/${assignment.id}`)}
+                      onContinue={(assignment: any) => router.push(`/student-dashboard/assignments/${assignment.id}`)}
+                      onReview={(assignment: any) => router.push(`/student-dashboard/assignments/${assignment.id}`)}
+                    />
+                  ))}
+                </div>
+                {completedAssignments.length > 2 && (
+                  <div className="mt-4 text-center">
+                    <Link
+                      href="/student-dashboard/assignments"
+                      className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-700"
+                    >
+                      <span>View all {completedAssignments.length} completed assignments</span>
+                      <ChevronRight className="h-4 w-4" />
+                    </Link>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Empty State */}
+            {assignments.length === 0 && !assignmentsLoading && (
+              <div className="bg-white rounded-2xl border-2 border-dashed border-gray-300 p-12 text-center">
+                <div className="w-20 h-20 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <BookOpen className="h-10 w-10 text-gray-400" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">No assignments yet</h3>
+                <p className="text-gray-600 mb-4">Your teacher hasn't assigned any work yet.</p>
+                <Link
+                  href="/student-dashboard/games"
+                  className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-3 rounded-xl font-semibold text-sm shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all"
+                >
+                  <Gamepad2 className="h-4 w-4" />
+                  <span>Play Free Games</span>
+                </Link>
+              </div>
+            )}
           </div>
         );
       case 'assessments':
@@ -1478,7 +1536,7 @@ export default function ModernStudentDashboard({
             </div>
 
             {/* Notifications */}
-            <div className="relative">
+            <div>
               <button
                 className="relative p-2 rounded-full text-gray-600 hover:bg-gray-100 transition-colors"
                 onClick={() => setShowNotifications(!showNotifications)}
@@ -1490,75 +1548,6 @@ export default function ModernStudentDashboard({
                   </span>
                 )}
               </button>
-
-              {/* Notifications Dropdown */}
-              <AnimatePresence>
-                {showNotifications && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    className="absolute right-0 mt-2 w-80 bg-white/80 backdrop-blur-lg rounded-lg shadow-lg border border-gray-200 z-50 origin-top-right"
-                  >
-                    <div className="p-4 border-b border-gray-200">
-                      <div className="flex items-center justify-between">
-                        <h3 className="font-semibold text-gray-900">Notifications</h3>
-                        <button
-                          onClick={() => setShowNotifications(false)}
-                          className="p-1 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
-                          title="Close notifications"
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </div>
-                    <div className="max-h-64 overflow-y-auto">
-                      {visibleNotifications.length === 0 ? (
-                        <div className="p-4 text-center text-gray-500">
-                          No new notifications
-                        </div>
-                      ) : (
-                        visibleNotifications.map((notification) => (
-                          <div key={notification.id} className="p-3 border-b border-gray-100 hover:bg-gray-50">
-                            <div className="flex items-start space-x-3">
-                              <div className={`p-1 rounded-full ${
-                                notification.type === 'achievement' ? 'bg-yellow-100' : 'bg-blue-100'
-                              }`}>
-                                {notification.type === 'achievement' ? (
-                                  <Award className="h-4 w-4 text-yellow-600" />
-                                ) : (
-                                  <BookOpen className="h-4 w-4 text-blue-600" />
-                                )}
-                              </div>
-                              <div className="flex-1">
-                                <p className="text-sm font-medium text-gray-900">
-                                  {notification.title}
-                                </p>
-                                <p className="text-xs text-gray-600">
-                                  {notification.message}
-                                </p>
-                                <p className="text-xs text-gray-400 mt-1">
-                                  {notification.timestamp ? new Date(notification.timestamp).toLocaleDateString() : 'Recently'}
-                                </p>
-                              </div>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  dismissNotification(notification.id);
-                                }}
-                                className="text-gray-400 hover:text-gray-600 text-xs px-2 py-1 rounded hover:bg-gray-100 transition-colors"
-                                title="Dismiss"
-                              >
-                                <X className="h-3 w-3" />
-                              </button>
-                            </div>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
             </div>
           </div>
         </div>
@@ -1596,6 +1585,89 @@ export default function ModernStudentDashboard({
           </main>
         </div>
       </div>
+
+      {/* Notifications Panel - Rendered at root level for proper z-index */}
+      <AnimatePresence>
+        {showNotifications && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowNotifications(false)}
+              className="fixed inset-0 bg-black/20 backdrop-blur-sm"
+              style={{ zIndex: 9998 }}
+            />
+
+            {/* Notifications Dropdown */}
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="fixed top-20 right-4 sm:right-8 w-80 bg-white rounded-xl shadow-2xl border border-gray-300"
+              style={{ zIndex: 9999 }}
+            >
+              <div className="p-4 border-b border-gray-200">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-gray-900">Notifications</h3>
+                  <button
+                    onClick={() => setShowNotifications(false)}
+                    className="p-1 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+                    title="Close notifications"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+              <div className="max-h-96 overflow-y-auto">
+                {visibleNotifications.length === 0 ? (
+                  <div className="p-4 text-center text-gray-500">
+                    No new notifications
+                  </div>
+                ) : (
+                  visibleNotifications.map((notification) => (
+                    <div key={notification.id} className="p-3 border-b border-gray-100 hover:bg-gray-50">
+                      <div className="flex items-start space-x-3">
+                        <div className={`p-1 rounded-full ${
+                          notification.type === 'achievement' ? 'bg-yellow-100' : 'bg-blue-100'
+                        }`}>
+                          {notification.type === 'achievement' ? (
+                            <Award className="h-4 w-4 text-yellow-600" />
+                          ) : (
+                            <BookOpen className="h-4 w-4 text-blue-600" />
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-gray-900">
+                            {notification.title}
+                          </p>
+                          <p className="text-xs text-gray-600">
+                            {notification.message}
+                          </p>
+                          <p className="text-xs text-gray-400 mt-1">
+                            {notification.timestamp ? new Date(notification.timestamp).toLocaleDateString() : 'Recently'}
+                          </p>
+                        </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            dismissNotification(notification.id);
+                          }}
+                          className="text-gray-400 hover:text-gray-600 text-xs px-2 py-1 rounded hover:bg-gray-100 transition-colors"
+                          title="Dismiss"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

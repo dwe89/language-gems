@@ -121,11 +121,9 @@ export class UnifiedVocabularyService {
         .from('enhanced_vocabulary_items')
         .select(`
           id,
-          term as word,
+          term,
           translation,
-          difficulty as category,
-          'enhanced' as subcategory,
-          'intermediate' as curriculum_level,
+          difficulty_level,
           enhanced_vocabulary_lists!inner(language)
         `)
         .in('id', enhancedIds);
@@ -135,11 +133,11 @@ export class UnifiedVocabularyService {
       // Transform enhanced vocabulary data to match centralized format
       enhancedVocabularyData = (data || []).map(item => ({
         id: item.id,
-        word: item.word,
+        word: item.term,
         translation: item.translation,
-        category: item.category || 'enhanced',
-        subcategory: item.subcategory,
-        curriculum_level: item.curriculum_level,
+        category: item.difficulty_level || 'enhanced',
+        subcategory: 'enhanced',
+        curriculum_level: 'intermediate',
         language: item.enhanced_vocabulary_lists?.language || 'spanish'
       }));
     }

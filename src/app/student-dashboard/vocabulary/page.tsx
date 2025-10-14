@@ -30,6 +30,7 @@ export default function VocabularyDashboard() {
   const [vocabularyItems, setVocabularyItems] = useState<VocabularyItem[]>([]);
   const [filteredItems, setFilteredItems] = useState<VocabularyItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTheme, setSelectedTheme] = useState('all');
   const [selectedProficiency, setSelectedProficiency] = useState('all');
