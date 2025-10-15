@@ -238,6 +238,13 @@ export default function ActivitiesSelectionStep({
                   selectedGames
                 }));
               }}
+              gameRequirements={gameConfig.gameRequirements}
+              onRequirementsChange={(requirements) => {
+                setGameConfig(prev => ({
+                  ...prev,
+                  gameRequirements: requirements
+                }));
+              }}
             />
           </div>
         ) : activeTab === 'assessments' ? (

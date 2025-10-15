@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, RotateCcw, Lightbulb, Volume2, VolumeX, Settings, PartyPopper, Sparkles, SkipForward, Undo2 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
+import { assignmentExposureService } from '../../../../services/assignments/AssignmentExposureService';
 
 // Simple sound manager for audio feedback
 class SoundManager {
@@ -225,6 +226,9 @@ export default function WordScrambleGame({
   const [remainingWords, setRemainingWords] = useState<GameVocabularyWord[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // 🎯 LAYER 1: Session deduplication - track words used in this session (assignment mode only)
+  const [usedWordsThisSession, setUsedWordsThisSession] = useState<Set<string>>(new Set());
+
   // Destructure commonly used values from gameStats
   const { score, streak } = gameStats;
 
@@ -288,16 +292,52 @@ export default function WordScrambleGame({
     soundManager.current.setMuted(!soundEnabled);
   }, [soundEnabled]);
 
+  // 🎯 LAYER 2: Record word exposures on unmount (assignment mode only)
+  useEffect(() => {
+    return () => {
+      if (isAssignmentMode && assignmentId && userId) {
+        const exposedWordIds = Array.from(usedWordsThisSession);
+        if (exposedWordIds.length > 0) {
+          console.log('📝 [LAYER 2] Recording word exposures on unmount:', {
+            assignmentId,
+            studentId: userId,
+            wordCount: exposedWordIds.length
+          });
+
+          assignmentExposureService.recordWordExposures(
+            assignmentId,
+            userId,
+            exposedWordIds
+          ).then(result => {
+            if (result.success) {
+              console.log('✅ [LAYER 2] Exposures recorded successfully');
+            } else {
+              console.error('❌ [LAYER 2] Failed to record exposures:', result.error);
+            }
+          });
+        }
+      }
+    };
+  }, [isAssignmentMode, assignmentId, userId, usedWordsThisSession]);
+
   // Initialize remaining words when vocabulary loads
   useEffect(() => {
     if (vocabulary && vocabulary.length > 0) {
       // Initialize remaining words list (shuffle for variety but ensure all words are used)
-      const shuffledVocabulary = [...vocabulary].sort(() => Math.random() - 0.5);
+      let shuffledVocabulary = [...vocabulary].sort(() => Math.random() - 0.5);
+
+      // 🎯 LAYER 1: Filter out words already used in this session (assignment mode only)
+      if (isAssignmentMode && usedWordsThisSession.size > 0) {
+        const beforeFilter = shuffledVocabulary.length;
+        shuffledVocabulary = shuffledVocabulary.filter(word => !usedWordsThisSession.has(word.id));
+        console.log(`🎯 [LAYER 1] Session deduplication: ${beforeFilter} → ${shuffledVocabulary.length} words`);
+      }
+
       setRemainingWords(shuffledVocabulary);
       setCurrentWordIndex(0);
       setCompletedWordIds(new Set());
     }
-  }, [vocabulary]);
+  }, [vocabulary, isAssignmentMode, usedWordsThisSession]);
 
   // Initialize new word - Enhanced with validation
   const initializeNewWord = useCallback(() => {
@@ -346,15 +386,25 @@ export default function WordScrambleGame({
     setCurrentWordData(nextWord);
     const scrambled = scrambleWord(cleanWord);
     setScrambledLetters(scrambled);
-    
+
     // CRITICAL: Reset all selection state when starting new word
     setUsedLetterIndices([]);
     setUserAnswer('');
     setWordStartTime(Date.now());
-    
+
     // Reset submission tracking for new word
     hasSubmittedRef.current = '';
-  }, [remainingWords, currentWordIndex, completedWordIds, gameStats, onGameComplete, onGameEnd, scrambleWord]);
+
+    // 🎯 LAYER 1: Mark word as used in this session (assignment mode only)
+    if (isAssignmentMode && nextWord.id) {
+      setUsedWordsThisSession(prev => {
+        const newSet = new Set(prev);
+        newSet.add(nextWord.id);
+        console.log(`🎯 [LAYER 1] Marked word as used: ${nextWord.id} (total: ${newSet.size})`);
+        return newSet;
+      });
+    }
+  }, [remainingWords, currentWordIndex, completedWordIds, gameStats, onGameComplete, onGameEnd, scrambleWord, isAssignmentMode]);
 
   // Initial game setup - start first word when remaining words are ready
   useEffect(() => {

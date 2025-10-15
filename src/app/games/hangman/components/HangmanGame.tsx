@@ -13,7 +13,8 @@ import ClassicHangmanAnimation from './themes/ClassicHangmanAnimation';
 import TempleGuardianModal from './TempleGuardianModal';
 import TokyoNightsModal from './TokyoNightsModal';
 import SpaceExplorerModal from './SpaceExplorerModal';
-import PirateAdventureModal from './PirateAdventureModal'; // Confirm this path and component name
+import PirateAdventureModal from './PirateAdventureModal';
+import { assignmentExposureService } from '../../../../services/assignments/AssignmentExposureService'; // Confirm this path and component name
 import { CentralizedVocabularyService, CentralizedVocabularyWord } from 'gems/services/centralizedVocabularyService';
 import { createClient } from '@supabase/supabase-js';
 import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
@@ -80,6 +81,7 @@ interface HangmanGameProps {
   onOpenSettings?: () => void;
   gameSessionId?: string;
   userId?: string;
+  assignmentId?: string | null; // For exposure tracking
   toggleMusic?: () => void;
   isMusicEnabled?: boolean;
 }
@@ -100,7 +102,7 @@ type ExtendedThemeContextType = {
   };
 };
 
-export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isFullscreen, isAssignmentMode, playSFX, onOpenSettings, gameSessionId, userId, toggleMusic, isMusicEnabled }: HangmanGameProps) {
+export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isFullscreen, isAssignmentMode, playSFX, onOpenSettings, gameSessionId, userId, assignmentId, toggleMusic, isMusicEnabled }: HangmanGameProps) {
 
 
   const { themeId, themeClasses } = useTheme() as ExtendedThemeContextType;
@@ -131,6 +133,9 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
   const [showPirateAdventureModal, setShowPirateAdventureModal] = useState(false);
   const [usedWords, setUsedWords] = useState<string[]>([]);
 
+  // LAYER 1: Session Deduplication - Track word IDs used in THIS game session
+  const [usedWordsThisSession, setUsedWordsThisSession] = useState<Set<string>>(new Set());
+
   // Helper functions for exact letter matching (no accent normalization)
   const isLetterGuessed = (letter: string, guessedLetters: string[]): boolean => {
     const lowerLetter = letter.toLowerCase();
@@ -143,42 +148,56 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
     return lowerWord.includes(lowerLetter);
   };
 
-  // Helper function to get a non-repeating word
-  const getRandomWordNoRepeats = (): string => {
-    let availableWords: string[] = [];
+  // Helper function to get a non-repeating word with LAYER 1 session deduplication
+  const getRandomWordNoRepeats = (): { word: string; id: string } => {
+    let availableVocab: VocabularyItem[] = [];
 
-    // Get available words based on settings
-    if (settings.customWords && settings.customWords.length > 0) {
-      availableWords = settings.customWords;
-    } else if (vocabulary && vocabulary.length > 0) {
-      availableWords = vocabulary.map(item => item.word || 'fallback');
+    // 🎯 Get available words - PRIORITY: vocabulary prop (has proper UUIDs) > customWords (creates temp IDs)
+    if (vocabulary && vocabulary.length > 0) {
+      // Priority 1: Use vocabulary prop (from wrapper - has proper UUIDs)
+      availableVocab = vocabulary;
+    } else if (settings.customWords && settings.customWords.length > 0) {
+      // Priority 2: For custom words, create temporary vocabulary items
+      availableVocab = settings.customWords.map((word, index) => ({
+        id: `custom-${index}`,
+        word,
+        translation: '',
+        language: settings.language
+      }));
     } else {
-      return 'fallback';
+      return { word: 'fallback', id: 'fallback-id' };
     }
 
-    // Filter out used words
-    const unusedWords = availableWords.filter(word => !usedWords.includes(word.toLowerCase()));
+    // LAYER 1: Filter out words already used in this session
+    const availableItems = availableVocab.filter(item => {
+      const wordId = item.id;
+      return wordId && !usedWordsThisSession.has(wordId);
+    });
 
-    // If all words have been used, reset the used words list
-    if (unusedWords.length === 0) {
-      console.log('All words used, resetting word pool');
-      setUsedWords([]);
-      // Use all available words again
-      const randomIndex = Math.floor(Math.random() * availableWords.length);
-      return availableWords[randomIndex];
+    // If all words have been used, reset the session filter
+    const itemsToUse = availableItems.length > 0 ? availableItems : availableVocab;
+
+    // Select a random word from available items
+    const randomIndex = Math.floor(Math.random() * itemsToUse.length);
+    const selectedItem = itemsToUse[randomIndex];
+
+    // LAYER 1: Mark this word as used in this session
+    if (selectedItem.id) {
+      setUsedWordsThisSession(prev => new Set([...prev, selectedItem.id]));
+      console.log('🎯 [SESSION DEDUP] Word marked as used:', {
+        word: selectedItem.word,
+        id: selectedItem.id,
+        totalUsedThisSession: usedWordsThisSession.size + 1
+      });
     }
 
-    // Select a random unused word
-    const randomIndex = Math.floor(Math.random() * unusedWords.length);
-    return unusedWords[randomIndex];
+    return { word: selectedItem.word, id: selectedItem.id };
   };
 
   // Initialize game
   useEffect(() => {
-    const newWord = getRandomWordNoRepeats().toLowerCase();
-    setWord(newWord);
-    // Add the word to used words list
-    setUsedWords(prev => [...prev, newWord]);
+    const { word: newWord, id: wordId } = getRandomWordNoRepeats();
+    setWord(newWord.toLowerCase());
 
     // Get unique letters excluding spaces, apostrophes, and hyphens
     const uniqueLetters = [...new Set(newWord.split('').filter((char: string) => char !== ' ' && char !== "'" && char !== '-'))] as string[];
@@ -215,12 +234,14 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
     );
 
     if (hasWon) {
+      console.log('🎉 [HANGMAN] WORD WON! Starting recording process...', { word, gameSessionId, userId, assignmentId });
       setGameStatus('won');
       playSFX('victory'); // Use passed-in playSFX
 
       // ✅ OPTION 1: Record successful word completion ONLY (works in both assignment and free play modes)
       try {
         const currentVocabItem = vocabulary?.find(v => v.word.toLowerCase() === word.toLowerCase());
+        console.log('🔍 [HANGMAN] Found vocabulary item:', currentVocabItem);
 
         // ✅ Record successful word completion with gem award
         if (gameSessionId && currentVocabItem?.id) {
@@ -334,14 +355,38 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
     }
   }, [guessedLetters, wordLetters, wrongGuesses, gameStatus, onGameEnd, playSFX, settings.playAudio, word]);
 
-  // Cleanup timer on unmount
+  // Cleanup timer on unmount AND record exposures
   useEffect(() => {
     return () => {
       if (timerIntervalRef.current) {
         clearInterval(timerIntervalRef.current);
       }
+
+      // LAYER 2: Record word exposures for assignment progress
+      if (isAssignmentMode && assignmentId && userId) {
+        const exposedWordIds = Array.from(usedWordsThisSession);
+        if (exposedWordIds.length > 0) {
+          console.log('📝 [LAYER 2] Recording word exposures:', {
+            assignmentId,
+            studentId: userId,
+            wordCount: exposedWordIds.length
+          });
+
+          assignmentExposureService.recordWordExposures(
+            assignmentId,
+            userId,
+            exposedWordIds
+          ).then(result => {
+            if (result.success) {
+              console.log('✅ [LAYER 2] Exposures recorded successfully');
+            } else {
+              console.error('❌ [LAYER 2] Failed to record exposures:', result.error);
+            }
+          });
+        }
+      }
     };
-  }, []);
+  }, [isAssignmentMode, assignmentId, userId, usedWordsThisSession]);
 
   const handleLetterGuess = (letter: string) => {
     const lowerLetter = letter.toLowerCase();
@@ -399,7 +444,51 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
             wrongGuesses
           });
 
-          // Record successful word completion with FSRS
+          // ✅ Record successful word completion with gem award
+          if (gameSessionId && currentVocabItem?.id) {
+            const recordGemAttempt = async () => {
+              try {
+                console.log('🎮 [HANGMAN] Recording successful word completion:', {
+                  word,
+                  vocabularyId: currentVocabItem.id,
+                  gameSessionId,
+                  wrongGuesses,
+                  timer
+                });
+
+                const sessionService = new EnhancedGameSessionService();
+                const gemEvent = await sessionService.recordWordAttempt(gameSessionId, 'hangman', {
+                  vocabularyId: currentVocabItem.id,
+                  wordText: word,
+                  translationText: currentVocabItem.translation || word,
+                  responseTimeMs: timer * 1000,
+                  wasCorrect: true,
+                  hintUsed: false,
+                  streakCount: 0,
+                  masteryLevel: 1,
+                  maxGemRarity: 'common', // Luck-based game
+                  gameMode: 'word_completion',
+                  difficultyLevel: settings.difficulty
+                }, true); // Skip FSRS for speed
+
+                if (gemEvent) {
+                  console.log(`✅ [HANGMAN] Gem awarded: ${gemEvent.rarity} (${gemEvent.xpValue} XP) - Wrong guesses: ${wrongGuesses}, Time: ${timer}s`);
+                } else {
+                  console.warn('⚠️ [HANGMAN] No gem event returned');
+                }
+              } catch (error) {
+                console.error('🚨 [HANGMAN] Error recording vocabulary attempt:', error);
+              }
+            };
+            recordGemAttempt();
+          } else {
+            console.warn('⚠️ [HANGMAN] Skipping gem recording:', {
+              hasGameSessionId: !!gameSessionId,
+              hasVocabularyId: !!currentVocabItem?.id,
+              gameSessionId,
+              vocabularyId: currentVocabItem?.id
+            });
+          }
         } catch (error) {
           console.error('❌ Error setting up FSRS recording for hangman:', error);
         }
@@ -497,10 +586,8 @@ export function GameContent({ settings, vocabulary, onBackToMenu, onGameEnd, isF
     setTimer(0);
     setScore(0);
 
-    const newWord = getRandomWordNoRepeats().toLowerCase();
-    setWord(newWord);
-    // Add the word to used words list
-    setUsedWords(prev => [...prev, newWord]);
+    const { word: newWord, id: wordId } = getRandomWordNoRepeats();
+    setWord(newWord.toLowerCase());
     setWordLetters([...new Set(newWord.split('').filter((char: string) => char !== ' ' && char !== "'" && char !== '-'))] as string[]);
 
     // Restart the timer

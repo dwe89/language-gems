@@ -428,6 +428,7 @@ const GemDropTarget: React.FC<{
 const GemSpeedBuilderInternal: React.FC<{
   assignmentId?: string;
   mode?: 'assignment' | 'freeplay';
+  isAssignmentMode?: boolean;
   theme?: string;
   topic?: string;
   tier?: string;
@@ -438,17 +439,20 @@ const GemSpeedBuilderInternal: React.FC<{
   onBackToMenu?: () => void;
   gameSessionId?: string | null;
   gameService?: EnhancedGameService | null;
-}> = ({ assignmentId, mode = 'freeplay', theme, topic, tier, vocabularyList, onGameComplete, sentenceConfig, onOpenSettings, onBackToMenu, gameSessionId, gameService }) => {
+  userId?: string; // 🎯 NEW: For Layer 2 exposure tracking
+}> = ({ assignmentId, mode = 'freeplay', isAssignmentMode, theme, topic, tier, vocabularyList, onGameComplete, sentenceConfig, onOpenSettings, onBackToMenu, gameSessionId, gameService, userId }) => {
   // Initialize supabase client for vocabulary lookups
   const supabase = createBrowserClient();
-  
-  // Initialize sentence game service for vocabulary tracking
+
+  // Initialize sentence game service for vocabulary tracking with assignment context
   const sentenceGame = useSentenceGame({
     gameType: 'sentence_sprint',
     sessionId: gameSessionId || `speed-builder-${Date.now()}`,
     language: sentenceConfig?.language || 'es',
     gameMode: 'completion',
-    difficultyLevel: tier === 'foundation' ? 'beginner' : tier === 'higher' ? 'advanced' : 'intermediate'
+    difficultyLevel: tier === 'foundation' ? 'beginner' : tier === 'higher' ? 'advanced' : 'intermediate',
+    assignmentId: isAssignmentMode ? assignmentId : undefined, // 🎯 Pass for Layer 2
+    studentId: isAssignmentMode ? userId : undefined // 🎯 Pass for Layer 2
   });
 
   // Sound system
@@ -1000,15 +1004,37 @@ const GemSpeedBuilderInternal: React.FC<{
     setShowSentenceResult(true);
 
     if (isCorrect) {
-      // Skip individual word FSRS recording for Speed Builder - this game focuses on sentence 
-      // construction skills rather than individual vocabulary memorization. The excessive
-      // database calls (one per word) were causing 10+ second delays in answer verification.
-      // Speed Builder should be fast-paced, so we prioritize gameplay flow over detailed tracking.
+      // 🎯 Process sentence for vocabulary extraction and gem awarding
+      console.log('🔍 [SPEED BUILDER] Checking sentence processing conditions:', {
+        hasCurrentSentence: !!currentSentence,
+        hasGameSessionId: !!gameSessionId,
+        hasSentenceGame: !!sentenceGame,
+        sentenceText: currentSentence?.text
+      });
 
-      // Skip redundant sentence processing for Speed Builder - FSRS recording above is sufficient
-      // The sentence processing creates excessive logging and duplicate work since we already
-      // record each word individually with FSRS above. Speed Builder focuses on sentence construction
-      // skills rather than vocabulary discovery, so the word-level tracking is more appropriate.
+      if (currentSentence && gameSessionId && sentenceGame) {
+        const sentenceText = currentSentence.text;
+        const responseTime = Date.now() - sentenceStartTime;
+
+        try {
+          console.log(`🎯 [SPEED BUILDER] Processing sentence: "${sentenceText}"`);
+          const result = await sentenceGame.processSentence(
+            sentenceText,
+            true, // Correct sentence
+            responseTime,
+            false, // No hints used
+            currentSentence.id
+          );
+
+          if (result) {
+            console.log(`✅ [SPEED BUILDER] Sentence processed: ${result.vocabularyMatches.length} vocabulary words found, ${result.totalGems} gems awarded`);
+          }
+        } catch (error) {
+          console.error('❌ [SPEED BUILDER] Error processing sentence:', error);
+        }
+      } else {
+        console.warn('⚠️ [SPEED BUILDER] Skipping sentence processing - missing required data');
+      }
 
       // Sentence is correct - celebrate and move to next
       playSound('correct');

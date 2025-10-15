@@ -51,8 +51,8 @@ interface SpeedBuilderGameWrapperProps {
 export default function SpeedBuilderGameWrapper(props: SpeedBuilderGameWrapperProps) {
   const [gameSessionId, setGameSessionId] = useState<string | null>(null);
 
-  // Use assignment gameSessionId when provided, otherwise use own session
-  const effectiveGameSessionId = props.isAssignmentMode ? props.gameSessionId : gameSessionId;
+  // 🎯 Always use wrapper's own session ID (created in useEffect below)
+  const effectiveGameSessionId = gameSessionId;
 
   const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
   const [sessionStats, setSessionStats] = useState({
@@ -68,12 +68,12 @@ export default function SpeedBuilderGameWrapper(props: SpeedBuilderGameWrapperPr
     }
   });
 
-  // Start game session when component mounts (only for free play mode)
+  // 🎯 Start game session when component mounts (for both assignment and free play modes)
   useEffect(() => {
-    if (props.userId && !gameSessionId && !props.isAssignmentMode) {
+    if (props.userId && !gameSessionId) {
       startGameSession();
     }
-  }, [props.userId, gameSessionId, props.isAssignmentMode]);
+  }, [props.userId, gameSessionId]);
 
   // End session when component unmounts
   useEffect(() => {

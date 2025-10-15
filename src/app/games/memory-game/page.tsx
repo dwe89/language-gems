@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useUnifiedAuth } from '../../../hooks/useUnifiedAuth';
@@ -13,6 +13,7 @@ import InGameConfigPanel from '../../../components/games/InGameConfigPanel';
 import { useGameAudio } from '../../../hooks/useGlobalAudioContext';
 import AssignmentThemeSelector from '../../../components/games/AssignmentThemeSelector';
 import { getGameCompatibility } from '../../../components/games/gameCompatibility';
+import { EnhancedGameService } from '../../../services/enhancedGameService';
 import './styles.css';
 
 export default function UnifiedMemoryGamePage() {
@@ -47,6 +48,43 @@ export default function UnifiedMemoryGamePage() {
   // Assignment theme state
   const [assignmentTheme, setAssignmentTheme] = useState<string>('default');
   const [showThemeSelector, setShowThemeSelector] = useState(false);
+
+  // 🎯 Assignment game session state
+  const [assignmentGameSessionId, setAssignmentGameSessionId] = useState<string | null>(null);
+  const [gameService, setGameService] = useState<EnhancedGameService | null>(null);
+
+  // Initialize game service
+  useEffect(() => {
+    const service = new EnhancedGameService();
+    setGameService(service);
+  }, []);
+
+  // Create game session for assignment mode
+  useEffect(() => {
+    const createAssignmentSession = async () => {
+      if (assignmentId && gameService && user?.id && assignmentVocabulary?.length > 0 && !assignmentGameSessionId) {
+        try {
+          console.log('🎮 [MEMORY MATCH] Creating assignment game session...');
+          const sessionId = await gameService.startGameSession({
+            student_id: user.id,
+            assignment_id: assignmentId,
+            game_type: 'memory-game',
+            session_mode: 'assignment',
+            session_data: {
+              vocabularyCount: assignmentVocabulary.length,
+              assignmentId: assignmentId
+            }
+          });
+          setAssignmentGameSessionId(sessionId);
+          console.log('✅ [MEMORY MATCH] Assignment game session created:', sessionId);
+        } catch (error) {
+          console.error('🚨 [MEMORY MATCH] Failed to create assignment game session:', error);
+        }
+      }
+    };
+
+    createAssignmentSession();
+  }, [assignmentId, gameService, user?.id, assignmentVocabulary, assignmentGameSessionId]);
 
   // Placeholder for assignment-mode content (set below; returned at end)
   let assignmentJSX: JSX.Element | null = null;
@@ -128,6 +166,7 @@ export default function UnifiedMemoryGamePage() {
             }}
             showAssignmentThemeSelector={showThemeSelector}
             onToggleAssignmentThemeSelector={() => setShowThemeSelector(!showThemeSelector)}
+            gameSessionId={assignmentGameSessionId} // 🎯 Pass session ID for tracking
           />
         </div>
       );

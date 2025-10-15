@@ -45,6 +45,9 @@ interface TempleRestorationProps {
   onOpenSettings?: () => void;
   isMuted?: boolean;
   onToggleMute?: () => void;
+  assignmentId?: string | null; // 🎯 NEW: For Layer 2 exposure tracking
+  userId?: string; // 🎯 NEW: For Layer 2 exposure tracking
+  isAssignmentMode?: boolean; // 🎯 NEW: For Layer 2 exposure tracking
 }
 
 export default function TempleRestoration({
@@ -55,12 +58,17 @@ export default function TempleRestoration({
   gameService,
   onOpenSettings,
   isMuted = false,
-  onToggleMute
+  onToggleMute,
+  assignmentId,
+  userId,
+  isAssignmentMode
 }: TempleRestorationProps) {
-  // Initialize sentence game service for vocabulary tracking
+  // Initialize sentence game service for vocabulary tracking with assignment context
   const sentenceGame = useDictationGame(
     gameSessionId || `lava-temple-${Date.now()}`,
-    gameConfig.language
+    gameConfig.language,
+    isAssignmentMode ? assignmentId || undefined : undefined, // 🎯 Pass assignmentId for Layer 2
+    isAssignmentMode ? userId : undefined // 🎯 Pass userId for Layer 2
   );
 
   console.log(`🎯 TempleRestoration: sentenceGame initialized:`, {

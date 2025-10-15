@@ -21,8 +21,9 @@ export default function CaseFileTranslatorPage() {
   const isAssignmentMode = assignmentId && mode === 'assignment';
 
   // Load assignment data if in assignment mode (hook must be called unconditionally)
+  // filterOutstanding=true filters out mastered words (accuracy ≥ 80% AND encounters ≥ 3)
   const { assignment, vocabulary: assignmentVocabulary, sentences: assignmentSentences, loading: assignmentLoading, error: assignmentError } =
-    useAssignmentVocabulary(assignmentId || '', 'case-file-translator');
+    useAssignmentVocabulary(assignmentId || '', 'case-file-translator', true);
 
   // Game state management
   const [gameStarted, setGameStarted] = useState(false);

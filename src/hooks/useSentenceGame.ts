@@ -15,6 +15,8 @@ export interface UseSentenceGameOptions {
   language: string;
   gameMode?: 'listening' | 'translation' | 'completion' | 'dictation';
   difficultyLevel?: 'beginner' | 'intermediate' | 'advanced';
+  assignmentId?: string; // 🎯 NEW: For Layer 2 exposure tracking
+  studentId?: string; // 🎯 NEW: For Layer 2 exposure tracking
 }
 
 export interface SentenceGameState {
@@ -66,7 +68,9 @@ export function useSentenceGame(options: UseSentenceGameOptions) {
         responseTimeMs,
         hintUsed,
         gameMode: options.gameMode,
-        difficultyLevel: options.difficultyLevel
+        difficultyLevel: options.difficultyLevel,
+        assignmentId: options.assignmentId, // 🎯 Pass through for Layer 2
+        studentId: options.studentId // 🎯 Pass through for Layer 2
       };
 
       // console.log(`🎯 useSentenceGame: About to call sentenceGameService.processSentenceAttempt with:`, attempt);
@@ -132,7 +136,9 @@ export function useSentenceGame(options: UseSentenceGameOptions) {
         responseTimeMs: s.responseTimeMs,
         hintUsed: s.hintUsed || false,
         gameMode: options.gameMode,
-        difficultyLevel: options.difficultyLevel
+        difficultyLevel: options.difficultyLevel,
+        assignmentId: options.assignmentId, // 🎯 Pass through for Layer 2
+        studentId: options.studentId // 🎯 Pass through for Layer 2
       }));
 
       const batchResult = await sentenceGameService.processBatchSentences(attempts);
@@ -216,38 +222,44 @@ export function useSentenceGame(options: UseSentenceGameOptions) {
 /**
  * Hook specifically for listening games (Detective Listening, etc.)
  */
-export function useListeningGame(sessionId: string, language: string) {
+export function useListeningGame(sessionId: string, language: string, assignmentId?: string, studentId?: string) {
   return useSentenceGame({
     gameType: 'detective_listening',
     sessionId,
     language,
     gameMode: 'listening',
-    difficultyLevel: 'intermediate'
+    difficultyLevel: 'intermediate',
+    assignmentId, // 🎯 Pass through for Layer 2
+    studentId // 🎯 Pass through for Layer 2
   });
 }
 
 /**
  * Hook specifically for translation games (Case File Translator, etc.)
  */
-export function useTranslationGame(sessionId: string, language: string) {
+export function useTranslationGame(sessionId: string, language: string, assignmentId?: string, studentId?: string) {
   return useSentenceGame({
     gameType: 'case_file_translator',
     sessionId,
     language,
     gameMode: 'translation',
-    difficultyLevel: 'intermediate'
+    difficultyLevel: 'intermediate',
+    assignmentId, // 🎯 Pass through for Layer 2
+    studentId // 🎯 Pass through for Layer 2
   });
 }
 
 /**
  * Hook specifically for dictation games (Lava Temple Word Restore, etc.)
  */
-export function useDictationGame(sessionId: string, language: string) {
+export function useDictationGame(sessionId: string, language: string, assignmentId?: string, studentId?: string) {
   return useSentenceGame({
     gameType: 'lava_temple_word_restore',
     sessionId,
     language,
     gameMode: 'dictation',
-    difficultyLevel: 'advanced'
+    difficultyLevel: 'advanced',
+    assignmentId, // 🎯 Pass through for Layer 2
+    studentId // 🎯 Pass through for Layer 2
   });
 }

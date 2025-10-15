@@ -22,8 +22,9 @@ export default function UnifiedDetectiveListeningPage() {
   const isAssignmentMode = assignmentId && mode === 'assignment';
 
   // Load assignment data if in assignment mode (hook must be called unconditionally)
+  // filterOutstanding=true filters out mastered words (accuracy ≥ 80% AND encounters ≥ 3)
   const { assignment, vocabulary: assignmentVocabulary, loading: assignmentLoading, error: assignmentError } =
-    useAssignmentVocabulary(assignmentId || '', 'detective-listening');
+    useAssignmentVocabulary(assignmentId || '', 'detective-listening', true);
 
   // Game state management
   const [gameStarted, setGameStarted] = useState(false);

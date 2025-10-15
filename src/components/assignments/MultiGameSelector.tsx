@@ -180,21 +180,49 @@ const AVAILABLE_GAMES: GameOption[] = [
 interface MultiGameSelectorProps {
   selectedGames: string[];
   onSelectionChange: (selectedGames: string[]) => void;
+  gameRequirements?: { [gameId: string]: { minSessions: number } };
+  onRequirementsChange?: (requirements: { [gameId: string]: { minSessions: number } }) => void;
   maxSelections?: number;
 }
 
 export default function MultiGameSelector({
   selectedGames,
   onSelectionChange,
+  gameRequirements = {},
+  onRequirementsChange,
   maxSelections = 15
 }: MultiGameSelectorProps) {
+  console.log('🎮 [MULTI GAME SELECTOR] Component rendered with:', {
+    selectedGames,
+    gameRequirements,
+    hasOnRequirementsChange: !!onRequirementsChange
+  });
 
   const toggleGameSelection = (gameId: string) => {
     if (selectedGames.includes(gameId)) {
       onSelectionChange(selectedGames.filter(id => id !== gameId));
+      // Remove requirements when game is deselected
+      if (onRequirementsChange && gameRequirements[gameId]) {
+        const newRequirements = { ...gameRequirements };
+        delete newRequirements[gameId];
+        onRequirementsChange(newRequirements);
+      }
     } else if (selectedGames.length < maxSelections) {
       onSelectionChange([...selectedGames, gameId]);
     }
+  };
+
+  const handleRequirementChange = (gameId: string, minSessions: number) => {
+    if (!onRequirementsChange) return;
+
+    const newRequirements = { ...gameRequirements };
+    if (minSessions === 0) {
+      // Remove requirement if set to 0 (optional)
+      delete newRequirements[gameId];
+    } else {
+      newRequirements[gameId] = { minSessions };
+    }
+    onRequirementsChange(newRequirements);
   };
 
   // Group games by their 'type'
@@ -288,6 +316,39 @@ export default function MultiGameSelector({
                         <span className="font-medium">{game.estimatedTime}</span>
                       </div>
                     </div>
+
+                    {/* Minimum Sessions Requirement (only show if game is selected) */}
+                    {(() => {
+                      console.log('🎮 [GAME SELECTOR] Checking dropdown for:', game.id, 'isSelected:', isSelected, 'hasCallback:', !!onRequirementsChange);
+                      return isSelected && onRequirementsChange;
+                    })() && (
+                      <div className="mt-4 pt-4 border-t border-indigo-200">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Require minimum sessions:
+                        </label>
+                        <select
+                          value={gameRequirements[game.id]?.minSessions || 0}
+                          onChange={(e) => {
+                            e.stopPropagation(); // Prevent card click
+                            handleRequirementChange(game.id, parseInt(e.target.value));
+                          }}
+                          onClick={(e) => e.stopPropagation()} // Prevent card click
+                          className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+                        >
+                          <option value="0">0 (Optional)</option>
+                          <option value="1">1 session</option>
+                          <option value="2">2 sessions</option>
+                          <option value="3">3 sessions</option>
+                          <option value="4">4 sessions</option>
+                          <option value="5">5 sessions</option>
+                        </select>
+                        <p className="text-xs text-gray-500 mt-1">
+                          {gameRequirements[game.id]?.minSessions > 0
+                            ? `Students must play this game at least ${gameRequirements[game.id].minSessions} time${gameRequirements[game.id].minSessions > 1 ? 's' : ''}`
+                            : 'This game is optional for students'}
+                        </p>
+                      </div>
+                    )}
                   </motion.div>
                 );
               })}

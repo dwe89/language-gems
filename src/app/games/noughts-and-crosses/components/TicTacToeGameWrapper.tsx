@@ -328,6 +328,7 @@ export default function TicTacToeGameWrapper(props: TicTacToeGameWrapperProps) {
       vocabularyWords={getFormattedVocabulary()}
       gameSessionId={effectiveGameSessionId}
       isAssignmentMode={!!props.assignmentId}
+      assignmentId={props.assignmentId} // Pass assignmentId for exposure tracking
       onOpenSettings={props.onOpenSettings}
       onGameModeChange={props.onGameModeChange}
       gameService={gameService}

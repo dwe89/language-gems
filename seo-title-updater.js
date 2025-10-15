@@ -170,7 +170,6 @@ const OPTIMAL_TITLES = {
   // Student dashboard (with noindex)
   '/student-dashboard': 'Student Dashboard | My Learning Progress | Language Gems',
   '/student-dashboard/games': 'My Games | Student Dashboard | Language Gems',
-  '/student-dashboard/progress': 'My Progress | Student Dashboard | Language Gems',
   '/student-dashboard/assignments': 'My Assignments | Student Dashboard | Language Gems',
   '/student-dashboard/vocabulary': 'My Vocabulary | Student Dashboard | Language Gems',
   

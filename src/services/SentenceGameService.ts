@@ -12,6 +12,7 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import { MWEVocabularyTrackingService, MWEVocabularyMatch, SentenceParsingResult } from './MWEVocabularyTrackingService';
 import { EnhancedGameSessionService, WordAttempt } from './rewards/EnhancedGameSessionService';
 import { FSRSService } from './fsrsService';
+import { assignmentExposureService } from './assignments/AssignmentExposureService';
 
 export interface SentenceGameAttempt {
   sessionId: string;
@@ -25,6 +26,8 @@ export interface SentenceGameAttempt {
   hintUsed?: boolean;
   gameMode?: 'listening' | 'translation' | 'completion' | 'dictation';
   difficultyLevel?: 'beginner' | 'intermediate' | 'advanced';
+  assignmentId?: string; // 🎯 NEW: For Layer 2 exposure tracking
+  studentId?: string; // 🎯 NEW: For Layer 2 exposure tracking
 }
 
 export interface SentenceGameResult {
@@ -176,6 +179,32 @@ export class SentenceGameService {
               console.error(`Error processing vocabulary match ${match.word}:`, error);
             }
           }
+        }
+      }
+
+      // 🎯 LAYER 2: Record word exposures for assignment progress tracking
+      if (attempt.assignmentId && attempt.studentId && parsingResult.vocabularyMatches.length > 0) {
+        const exposedWordIds = parsingResult.vocabularyMatches
+          .filter(match => match.should_track_for_fsrs)
+          .map(match => match.id);
+
+        if (exposedWordIds.length > 0) {
+          console.log(`📝 [LAYER 2] Recording ${exposedWordIds.length} word exposures for assignment ${attempt.assignmentId}`);
+
+          // Record exposures (non-blocking)
+          assignmentExposureService.recordWordExposures(
+            attempt.assignmentId,
+            attempt.studentId,
+            exposedWordIds
+          ).then(result => {
+            if (result.success) {
+              console.log(`✅ [LAYER 2] Exposures recorded successfully`);
+            } else {
+              console.error(`❌ [LAYER 2] Failed to record exposures:`, result.error);
+            }
+          }).catch(error => {
+            console.error(`❌ [LAYER 2] Error recording exposures:`, error);
+          });
         }
       }
 

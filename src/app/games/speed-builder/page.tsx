@@ -21,8 +21,9 @@ export default function SpeedBuilderPage() {
   const isAssignmentMode = assignmentId && mode === 'assignment';
 
   // Load assignment data if in assignment mode (hook must be called unconditionally)
+  // filterOutstanding=true filters out mastered words (accuracy ≥ 80% AND encounters ≥ 3)
   const { assignment, vocabulary: assignmentVocabulary, sentences: assignmentSentences, loading: assignmentLoading, error: assignmentError } =
-    useAssignmentVocabulary(assignmentId || '', 'speed-builder');
+    useAssignmentVocabulary(assignmentId || '', 'speed-builder', true);
 
   // Game state management - ALWAYS initialize hooks first
   const [gameStarted, setGameStarted] = useState(false);

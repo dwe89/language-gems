@@ -7,6 +7,8 @@ import { createBrowserClient } from '@supabase/ssr';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { RewardEngine, type GemEvent, type GemRarity } from './RewardEngine';
 import { parseVocabularyIdentifier } from '@/utils/vocabulary-id';
+import { MWEVocabularyTrackingService } from '@/services/MWEVocabularyTrackingService';
+import { assignmentExposureService } from '@/services/assignments/AssignmentExposureService';
 
 export interface GameSessionData {
   student_id: string;
@@ -97,29 +99,46 @@ export class EnhancedGameSessionService {
    */
   private async incrementSessionWordCounts(sessionId: string, wasCorrect: boolean): Promise<void> {
     try {
+      console.log(`📊 [SESSION COUNTS] Incrementing for session ${sessionId}, wasCorrect: ${wasCorrect}`);
+
       // Get current counts
-      const { data: session } = await this.supabase
+      const { data: session, error: fetchError } = await this.supabase
         .from('enhanced_game_sessions')
         .select('words_attempted, words_correct')
         .eq('id', sessionId)
         .single();
 
-      if (!session) return;
+      if (fetchError) {
+        console.error('❌ [SESSION COUNTS] Failed to fetch session:', fetchError);
+        return;
+      }
+
+      if (!session) {
+        console.warn('⚠️ [SESSION COUNTS] Session not found:', sessionId);
+        return;
+      }
+
+      const newWordsAttempted = (session.words_attempted || 0) + 1;
+      const newWordsCorrect = wasCorrect ? (session.words_correct || 0) + 1 : (session.words_correct || 0);
+
+      console.log(`📊 [SESSION COUNTS] Updating: ${session.words_attempted || 0} → ${newWordsAttempted} attempted, ${session.words_correct || 0} → ${newWordsCorrect} correct`);
 
       // Increment counts
       const { error } = await this.supabase
         .from('enhanced_game_sessions')
         .update({
-          words_attempted: (session.words_attempted || 0) + 1,
-          words_correct: wasCorrect ? (session.words_correct || 0) + 1 : (session.words_correct || 0)
+          words_attempted: newWordsAttempted,
+          words_correct: newWordsCorrect
         })
         .eq('id', sessionId);
 
       if (error) {
-        console.warn('⚠️ Failed to increment session word counts:', error);
+        console.error('❌ [SESSION COUNTS] Failed to update session word counts:', error);
+      } else {
+        console.log(`✅ [SESSION COUNTS] Successfully updated session ${sessionId}`);
       }
     } catch (error) {
-      console.warn('⚠️ Error incrementing session word counts:', error);
+      console.error('❌ [SESSION COUNTS] Error incrementing session word counts:', error);
     }
   }
 
@@ -142,6 +161,9 @@ export class EnhancedGameSessionService {
       gameMode?: string;
       difficultyLevel?: string;
       contextData?: any;
+      language?: string; // 🎯 NEW: For vocabulary extraction
+      assignmentId?: string; // 🎯 NEW: For Layer 2 exposure tracking
+      studentId?: string; // 🎯 NEW: For Layer 2 exposure tracking
     }
   ): Promise<GemEvent | null> {
     try {
@@ -198,6 +220,44 @@ export class EnhancedGameSessionService {
 
       // Store Activity Gem in database
       await this.storeGemEvent(sessionId, studentId, activityGemEvent, 'activity');
+
+      // 🎯 LAYER 2: Extract vocabulary from sentence and record exposures for assignment progress
+      if (attempt.language && attempt.assignmentId && attempt.studentId && attempt.wasCorrect) {
+        try {
+          const mweService = new MWEVocabularyTrackingService(this.supabase);
+          const parsingResult = await mweService.parseSentenceWithLemmatization(
+            attempt.sourceText,
+            attempt.language
+          );
+
+          if (parsingResult.vocabularyMatches.length > 0) {
+            const exposedWordIds = parsingResult.vocabularyMatches
+              .filter(match => match.should_track_for_fsrs)
+              .map(match => match.id);
+
+            if (exposedWordIds.length > 0) {
+              console.log(`📝 [LAYER 2] Recording ${exposedWordIds.length} word exposures from sentence for assignment ${attempt.assignmentId}`);
+
+              // Record exposures (non-blocking)
+              assignmentExposureService.recordWordExposures(
+                attempt.assignmentId,
+                attempt.studentId,
+                exposedWordIds
+              ).then(result => {
+                if (result.success) {
+                  console.log(`✅ [LAYER 2] Sentence vocabulary exposures recorded successfully`);
+                } else {
+                  console.error(`❌ [LAYER 2] Failed to record exposures:`, result.error);
+                }
+              }).catch(error => {
+                console.error(`❌ [LAYER 2] Error recording exposures:`, error);
+              });
+            }
+          }
+        } catch (error) {
+          console.warn('⚠️ [LAYER 2] Vocabulary extraction from sentence failed (non-blocking):', error);
+        }
+      }
 
       return activityGemEvent;
     } catch (error) {
@@ -540,15 +600,15 @@ export class EnhancedGameSessionService {
       // Get current gem totals from database (updated by triggers)
       const { data: sessionData } = await this.supabase
         .from('enhanced_game_sessions')
-        .select('gems_total, gems_by_rarity, gem_events_count')
+        .select('gems_total, gems_by_rarity, gem_events_count, assignment_id, student_id, game_type')
         .eq('id', sessionId)
         .single();
-      
+
       // Calculate XP from gems (overrides any passed XP)
-      const totalXP = sessionData?.gems_total ? 
-        await this.calculateXPFromGems(sessionId) : 
+      const totalXP = sessionData?.gems_total ?
+        await this.calculateXPFromGems(sessionId) :
         finalData.xp_earned || 0;
-      
+
       // Update session with final data
       const { error } = await this.supabase
         .from('enhanced_game_sessions')
@@ -570,10 +630,29 @@ export class EnhancedGameSessionService {
         .eq('id', sessionId);
       
       if (error) throw error;
-      
+
       // Update student profile XP
       await this.updateStudentProfileXP(finalData.student_id, totalXP);
-      
+
+      // 🎯 NEW: Check and update game completion status (dual-criteria)
+      if (sessionData?.assignment_id && sessionData?.student_id && sessionData?.game_type) {
+        try {
+          const { GameCompletionService } = await import('../assignments/GameCompletionService');
+          const gameCompletionService = new GameCompletionService(this.supabase);
+
+          await gameCompletionService.updateGameCompletionStatus(
+            sessionData.assignment_id,
+            sessionData.student_id,
+            sessionData.game_type
+          );
+
+          console.log(`✅ [GAME COMPLETION] Checked completion for ${sessionData.game_type}`);
+        } catch (completionError) {
+          console.error('Error checking game completion:', completionError);
+          // Don't throw - this is a non-critical operation
+        }
+      }
+
       // Clear session cache
       if (this.currentSessionId === sessionId) {
         this.currentSessionId = null;

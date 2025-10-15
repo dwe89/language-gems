@@ -10,6 +10,7 @@ import { useAudio } from '../../vocab-blast/hooks/useAudio';
 import VocabBlastEngine from './VocabBlastEngine';
 import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
 import UniversalThemeSelector from '../../../../components/games/UniversalThemeSelector';
+import { assignmentExposureService } from '../../../../services/assignments/AssignmentExposureService';
 
 interface VocabBlastGameProps {
   settings: VocabBlastGameSettings;
@@ -160,9 +161,32 @@ export default function VocabBlastGame({
   const [usedWords, setUsedWords] = useState<Set<string>>(new Set());
   const [availableWords, setAvailableWords] = useState<GameVocabularyWord[]>([]);
 
+  // 🎯 LAYER 1: Session deduplication - track words used in this session (assignment mode only)
+  const [usedWordsThisSession, setUsedWordsThisSession] = useState<Set<string>>(new Set());
+
   // Game timers (removed main countdown timer)
   const wordSpawnRef = useRef<NodeJS.Timeout | null>(null);
   const winCheckRef = useRef<NodeJS.Timeout | null>(null);
+
+  // 🎯 LAYER 2: Record word exposures on unmount (assignment mode only)
+  useEffect(() => {
+    return () => {
+      if (isAssignmentMode && gameSessionId) {
+        // Extract assignmentId from gameSessionId or use a prop
+        const exposedWordIds = Array.from(usedWordsThisSession);
+        if (exposedWordIds.length > 0) {
+          console.log('📝 [LAYER 2] Recording word exposures on unmount:', {
+            gameSessionId,
+            wordCount: exposedWordIds.length
+          });
+
+          // Note: We need assignmentId - this should be passed as a prop
+          // For now, we'll log this and handle it when we have the assignmentId available
+          console.warn('⚠️ [LAYER 2] assignmentId needed for exposure recording');
+        }
+      }
+    };
+  }, [isAssignmentMode, gameSessionId, usedWordsThisSession]);
 
   // Initialize game
   useEffect(() => {
@@ -322,7 +346,17 @@ export default function VocabBlastGame({
       });
 
       setUsedWords(prev => new Set([...prev, word.id]));
-      
+
+      // 🎯 LAYER 1: Mark word as used in this session (assignment mode only)
+      if (isAssignmentMode && word.id) {
+        setUsedWordsThisSession(prev => {
+          const newSet = new Set(prev);
+          newSet.add(word.id);
+          console.log(`🎯 [LAYER 1] Marked word as used: ${word.id} (total: ${newSet.size})`);
+          return newSet;
+        });
+      }
+
       // ⚡ INSTANT: Move to next word immediately
       selectNextWord();
 

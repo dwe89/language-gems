@@ -11,6 +11,7 @@ import { Evidence } from '../types';
 import { StandardVocabularyItem, AssignmentData, GameProgress } from '../../../../components/games/templates/GameAssignmentWrapper';
 import { EnhancedGameService } from '../../../../services/enhancedGameService';
 import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
+import { assignmentExposureService } from '../../../../services/assignments/AssignmentExposureService';
 
 interface AssignmentMode {
   assignment: AssignmentData;
@@ -59,6 +60,9 @@ export default function DetectiveRoom({
     evidenceCollected: [] as Evidence[]
   });
 
+  // 🎯 LAYER 1: Session deduplication - track words used in this session (assignment mode only)
+  const [usedWordsThisSession, setUsedWordsThisSession] = useState<Set<string>>(new Set());
+
   // Game settings state
   const [isMuted, setIsMuted] = useState(false);
 
@@ -103,6 +107,33 @@ export default function DetectiveRoom({
   // Get category info for display
   const categoryInfo = VOCABULARY_CATEGORIES.find(cat => cat.id === caseType);
   const subcategoryInfo = categoryInfo?.subcategories.find(sub => sub.id === subcategory);
+
+  // 🎯 LAYER 2: Record word exposures on unmount (assignment mode only)
+  useEffect(() => {
+    return () => {
+      if (assignmentMode && assignmentMode.assignment.id) {
+        const exposedWordIds = Array.from(usedWordsThisSession);
+        if (exposedWordIds.length > 0) {
+          console.log('📝 [LAYER 2] Recording word exposures on unmount:', {
+            assignmentId: assignmentMode.assignment.id,
+            wordCount: exposedWordIds.length
+          });
+
+          assignmentExposureService.recordWordExposures(
+            assignmentMode.assignment.id,
+            assignmentMode.assignment.student_id,
+            exposedWordIds
+          ).then(result => {
+            if (result.success) {
+              console.log('✅ [LAYER 2] Exposures recorded successfully');
+            } else {
+              console.error('❌ [LAYER 2] Failed to record exposures:', result.error);
+            }
+          });
+        }
+      }
+    };
+  }, [assignmentMode, usedWordsThisSession]);
 
   // Initialize evidence list from vocabulary
   useEffect(() => {
@@ -149,8 +180,22 @@ export default function DetectiveRoom({
       });
 
       setEvidenceList(evidence);
+
+      // 🎯 LAYER 1: Mark all loaded evidence words as used in this session (assignment mode only)
+      if (assignmentMode && evidence.length > 0) {
+        setUsedWordsThisSession(prev => {
+          const newSet = new Set(prev);
+          evidence.forEach(ev => {
+            if (ev.vocabularyId) {
+              newSet.add(ev.vocabularyId);
+            }
+          });
+          console.log(`🎯 [LAYER 1] Marked ${evidence.length} evidence words as used (total: ${newSet.size})`);
+          return newSet;
+        });
+      }
     }
-  }, [vocabulary]);
+  }, [vocabulary, assignmentMode]);
 
   // Initialize audio effects
   useEffect(() => {

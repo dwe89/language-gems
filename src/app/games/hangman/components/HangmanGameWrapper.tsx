@@ -99,8 +99,10 @@ export default function HangmanGameWrapper(props: HangmanGameWrapperProps) {
   const [gameService, setGameService] = useState<EnhancedGameService | null>(null);
   const [gameSessionId, setGameSessionId] = useState<string | null>(null);
 
-  // Use assignment gameSessionId when provided, otherwise use own session
-  const effectiveGameSessionId = props.isAssignmentMode ? props.gameSessionId : gameSessionId;
+  // 🎯 Use assignment session from props if available, otherwise use wrapper's own session
+  const effectiveGameSessionId = props.isAssignmentMode && props.gameSessionId
+    ? props.gameSessionId
+    : gameSessionId;
   const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
   const [sessionStats, setSessionStats] = useState({
     totalWordsAttempted: 0,
@@ -504,6 +506,7 @@ export default function HangmanGameWrapper(props: HangmanGameWrapperProps) {
       playSFX={props.playSFX || (() => {})}
       gameSessionId={effectiveGameSessionId || undefined}
       userId={props.userId}
+      assignmentId={props.assignmentId} // Pass assignmentId for exposure tracking
       onOpenSettings={props.onOpenSettings}
       toggleMusic={props.toggleMusic}
       isMusicEnabled={props.isMusicEnabled}

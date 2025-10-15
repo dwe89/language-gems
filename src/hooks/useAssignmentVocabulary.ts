@@ -200,39 +200,43 @@ export function useAssignmentVocabulary(
             });
 
           // Filter to outstanding words if requested
+          // UPDATED: Now uses EXPOSURE-based filtering instead of MASTERY-based
+          // Outstanding = words NOT yet exposed (seen) in this assignment
+          // This supports the new completion model: 100% = all words exposed at least once
           if (filterOutstanding && vocabularyItems.length > 0) {
-            console.log('🔍 [HOOK] Filtering to outstanding words only...');
+            console.log('🔍 [HOOK] Filtering to unexposed words only (exposure-based)...');
 
             // Get student ID from current user
             const { data: { user } } = await supabase.auth.getUser();
             if (user) {
-              // Query vocabulary_gem_collection to find mastered words
-              const { data: masteryData } = await supabase
-                .from('vocabulary_gem_collection')
-                .select('centralized_vocabulary_id, total_encounters, correct_encounters')
+              // Query assignment_word_exposure to find exposed words
+              const { data: exposureData } = await supabase
+                .from('assignment_word_exposure')
+                .select('centralized_vocabulary_id')
+                .eq('assignment_id', assignmentId)
                 .eq('student_id', user.id)
                 .in('centralized_vocabulary_id', vocabularyItems.map(v => v.id));
 
-              const masteredWordIds = new Set(
-                (masteryData || [])
-                  .filter(m => {
-                    const accuracy = m.total_encounters > 0
-                      ? (m.correct_encounters / m.total_encounters) * 100
-                      : 0;
-                    return accuracy >= 80 && m.total_encounters >= 3;
-                  })
-                  .map(m => m.centralized_vocabulary_id)
+              const exposedWordIds = new Set(
+                (exposureData || []).map(e => e.centralized_vocabulary_id)
               );
 
-              const outstandingWords = vocabularyItems.filter(v => !masteredWordIds.has(v.id));
+              const unexposedWords = vocabularyItems.filter(v => !exposedWordIds.has(v.id));
 
-              console.log('📊 [HOOK] Outstanding words filter results:', {
+              console.log('📊 [HOOK] Exposure-based filter results:', {
                 total: vocabularyItems.length,
-                mastered: masteredWordIds.size,
-                outstanding: outstandingWords.length
+                exposed: exposedWordIds.size,
+                unexposed: unexposedWords.length,
+                progress: `${((exposedWordIds.size / vocabularyItems.length) * 100).toFixed(1)}%`
               });
 
-              setVocabulary(outstandingWords);
+              // ✅ If all words are exposed (100% complete), allow continued practice with all words
+              if (unexposedWords.length === 0) {
+                console.log('🎉 [HOOK] Assignment 100% complete! Allowing continued practice with all words.');
+                setVocabulary(vocabularyItems);
+              } else {
+                setVocabulary(unexposedWords);
+              }
             } else {
               setVocabulary(vocabularyItems);
             }

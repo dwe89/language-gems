@@ -199,16 +199,20 @@ export class EnhancedAssignmentService {
                                assignmentData.config?.gameConfig?.grammarConfig;
 
     // Check if this is a sentence-based assignment (games that use sentences table)
+    // IMPORTANT: Only set content_type to 'sentences' if ALL games are sentence-based
+    // Multi-game assignments with mixed vocabulary/sentence games should use 'vocabulary'
     const sentenceBasedGames = ['sentence-towers', 'speed-builder', 'case-file-translator', 'lava-temple-word-restore'];
-    const isSentenceAssignment = assignmentData.config?.gameConfig?.selectedGames?.some(
-      (gameId: string) => sentenceBasedGames.includes(gameId)
-    );
+    const selectedGames = assignmentData.config?.gameConfig?.selectedGames || [];
+    const isSentenceAssignment = selectedGames.length > 0 &&
+                                 selectedGames.every((gameId: string) => sentenceBasedGames.includes(gameId));
 
     console.log('📝 [ASSIGNMENT SERVICE] Assignment type check:', {
       selectedGames: assignmentData.config?.gameConfig?.selectedGames,
       hasGrammarConfig: !!assignmentData.config?.gameConfig?.grammarConfig,
       isGrammarAssignment,
-      isSentenceAssignment
+      isSentenceAssignment,
+      sentenceGamesCount: selectedGames.filter((g: string) => sentenceBasedGames.includes(g)).length,
+      totalGamesCount: selectedGames.length
     });
 
     // Extract vocabulary configuration from game config (handle nested structure)

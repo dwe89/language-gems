@@ -310,8 +310,9 @@ export default function SentenceTowersPage() {
   const isAssignmentMode = assignmentId && mode === 'assignment';
 
   // Load assignment data if in assignment mode (hook must be called unconditionally)
+  // filterOutstanding=true filters out mastered words (accuracy ≥ 80% AND encounters ≥ 3)
   const { assignment, vocabulary: assignmentVocabulary, sentences: assignmentSentences, loading: assignmentLoading, error: assignmentError } =
-    useAssignmentVocabulary(assignmentId || '', 'sentence-towers');
+    useAssignmentVocabulary(assignmentId || '', 'sentence-towers', true);
 
   // Build assignment JSX after all hooks
   let assignmentJSX: JSX.Element | null = null;
@@ -1062,7 +1063,10 @@ function ImprovedSentenceTowersGame({
             multiplier: gameState.multiplier,
             doublePoints: isTypingMode,
             sentenceType: 'full_sentence'
-          }
+          },
+          language: config.language, // 🎯 NEW: For vocabulary extraction
+          assignmentId: isAssignmentMode ? assignmentId : undefined, // 🎯 NEW: For Layer 2
+          studentId: isAssignmentMode ? userId : undefined // 🎯 NEW: For Layer 2
         });
 
         console.log(`🔮 Sentence Towers recorded sentence: "${option.word}" -> parsed for individual vocabulary gems`);
@@ -1243,7 +1247,10 @@ function ImprovedSentenceTowersGame({
             multiplier: gameState.multiplier,
             errorType: 'incorrect_selection',
             sentenceType: 'full_sentence'
-          }
+          },
+          language: config.language, // 🎯 NEW: For vocabulary extraction
+          assignmentId: isAssignmentMode ? assignmentId : undefined, // 🎯 NEW: For Layer 2
+          studentId: isAssignmentMode ? userId : undefined // 🎯 NEW: For Layer 2
         });
 
         console.log(`❌ Sentence Towers recorded incorrect sentence: "${currentTargetWord.word}" (selected: "${incorrectOption.word}")`);

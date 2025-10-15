@@ -9,6 +9,7 @@ import { supabaseBrowser } from '../../../../components/auth/AuthProvider';
 import { AssignmentProgressTrackingService, GameActivityMetrics } from '../../../../services/AssignmentProgressTrackingService';
 import { MasteryScoreService, MasteryScoreBreakdown } from '../../../../services/MasteryScoreService';
 import { calculateRemainingTime, getTimeCategory } from '../../../../utils/assignmentTimeEstimation';
+import { assignmentExposureService } from '../../../../services/assignments/AssignmentExposureService';
 
 // Map game types to actual game directory paths
 const mapGameTypeToPath = (gameType: string | null): string => {
@@ -277,19 +278,6 @@ export default function StudentAssignmentDetailPage() {
 
         const allActivities = [...games, ...assessments, ...skills];
 
-        // Enhanced progress calculation using partial progress
-        const totalProgress = allActivities.reduce((sum, activity) => {
-          // Use progressPercentage if available, otherwise binary completion
-          const activityProgress = activity.progressPercentage !== undefined
-            ? activity.progressPercentage
-            : (activity.completed ? 100 : 0);
-          return sum + activityProgress;
-        }, 0);
-
-        const overallProgress = allActivities.length > 0
-          ? Math.round(totalProgress / allActivities.length)
-          : 0;
-
         const completedActivities = allActivities.filter(a => a.completed).length;
         const inProgressActivities = allActivities.filter(a =>
           a.status === 'in_progress' || (a.progressPercentage > 0 && !a.completed)
@@ -297,25 +285,6 @@ export default function StudentAssignmentDetailPage() {
         const notStartedActivities = allActivities.filter(a =>
           a.status === 'not_started' || (a.progressPercentage === 0 && !a.completed)
         ).length;
-
-        console.log('Enhanced assignment progress calculation:', {
-          totalGames: games.length,
-          totalAssessments: assessments.length,
-          totalSkills: skills.length,
-          totalActivities: allActivities.length,
-          completedActivities,
-          inProgressActivities,
-          notStartedActivities,
-          overallProgress,
-          games: games.map(g => ({
-            id: g.id,
-            name: g.name,
-            status: g.status,
-            progress: g.progressPercentage,
-            sessions: g.sessionsStarted,
-            words: g.wordsAttempted
-          }))
-        });
 
         // Calculate mastery score
         const masteryService = new MasteryScoreService(supabase);
@@ -329,6 +298,39 @@ export default function StudentAssignmentDetailPage() {
         const completedExposures = masteryData.wordsAttempted;
         const timeEstimation = calculateRemainingTime(totalRequiredExposures, completedExposures);
         const timeCategory = getTimeCategory(timeEstimation.estimatedMinutes);
+
+        // Get assignment-level exposure progress (Layer 2)
+        const exposureProgress = await assignmentExposureService.getAssignmentProgress(
+          assignmentId,
+          user.id
+        );
+
+        // Overall progress is based on EXPOSURE, not average of game progress
+        // This shows: "How many words have been exposed out of the total?"
+        const overallProgress = vocabularyCount > 0
+          ? Math.round((exposureProgress.exposedWords / vocabularyCount) * 100)
+          : 0;
+
+        console.log('📊 [ASSIGNMENT PROGRESS] Exposure-based calculation:', {
+          vocabularyCount,
+          exposedWords: exposureProgress.exposedWords,
+          exposurePercentage: overallProgress,
+          totalGames: games.length,
+          totalAssessments: assessments.length,
+          totalSkills: skills.length,
+          totalActivities: allActivities.length,
+          completedActivities,
+          inProgressActivities,
+          notStartedActivities,
+          games: games.map(g => ({
+            id: g.id,
+            name: g.name,
+            status: g.status,
+            gameProgress: g.progressPercentage,
+            sessions: g.sessionsStarted,
+            words: g.wordsAttempted
+          }))
+        });
 
         setAssignment({
           id: assignmentData.id,
@@ -378,18 +380,8 @@ export default function StudentAssignmentDetailPage() {
     setTimeout(() => setIsRefreshing(false), 1000);
   };
 
-  // Listen for focus events to refresh data when returning from games
-  useEffect(() => {
-    const handleFocus = () => {
-      // Small delay to ensure any database updates have been processed
-      setTimeout(() => {
-        refreshAssignmentData();
-      }, 1000);
-    };
-
-    window.addEventListener('focus', handleFocus);
-    return () => window.removeEventListener('focus', handleFocus);
-  }, []);
+  // REMOVED: Auto-refresh on focus was causing constant page refreshes
+  // Games now update progress in real-time, so this is unnecessary
 
   const handlePlayGame = async (gameId: string) => {
     const previewParam = isPreviewMode ? '&preview=true' : '';
@@ -674,7 +666,7 @@ export default function StudentAssignmentDetailPage() {
 
               <p className="text-sm text-gray-700 mb-4">{masteryScore.gradeDescription}</p>
 
-              {/* Score Breakdown */}
+              {/* Score Breakdown - Three Components */}
               <div className="grid grid-cols-3 gap-4 mb-4">
                 <div className="bg-white rounded-lg p-3 border border-purple-100">
                   <div className="flex items-center gap-2 mb-1">
@@ -688,30 +680,84 @@ export default function StudentAssignmentDetailPage() {
                 <div className="bg-white rounded-lg p-3 border border-purple-100">
                   <div className="flex items-center gap-2 mb-1">
                     <CheckCircle className="h-4 w-4 text-blue-500" />
-                    <span className="text-xs text-gray-600">Completion</span>
+                    <span className="text-xs text-gray-600">Activity</span>
                   </div>
-                  <div className="text-lg font-bold text-gray-900">{masteryScore.completionBonus}/20</div>
-                  <div className="text-xs text-gray-500">{masteryScore.isCompleted ? 'Complete!' : 'In progress'}</div>
+                  <div className="text-lg font-bold text-gray-900">{Math.round(masteryScore.activityScore)}/20</div>
+                  <div className="text-xs text-gray-500">
+                    {masteryScore.totalRequiredGames > 0
+                      ? `${masteryScore.requiredSessionsMet}/${masteryScore.totalRequiredGames} required`
+                      : 'No requirements'}
+                  </div>
                 </div>
 
                 <div className="bg-white rounded-lg p-3 border border-purple-100">
                   <div className="flex items-center gap-2 mb-1">
                     <Zap className="h-4 w-4 text-yellow-500" />
-                    <span className="text-xs text-gray-600">Effort</span>
+                    <span className="text-xs text-gray-600">Completion</span>
                   </div>
-                  <div className="text-lg font-bold text-gray-900">{masteryScore.effortBonus}/10</div>
-                  <div className="text-xs text-gray-500">{masteryScore.sessionsCount} sessions</div>
+                  <div className="text-lg font-bold text-gray-900">{masteryScore.completionBonus}/10</div>
+                  <div className="text-xs text-gray-500">
+                    {masteryScore.isCompleted ? 'Complete!' : `${masteryScore.exposedWords}/${masteryScore.totalWords} words`}
+                  </div>
                 </div>
               </div>
 
-              {/* Progress Stats */}
-              <div className="bg-white rounded-lg p-3 border border-purple-100">
-                <div className="text-xs text-gray-600 mb-2">Practice Progress</div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-700">{masteryScore.wordsAttempted} words practiced</span>
-                  <span className="font-bold text-purple-600">{masteryScore.wordsCorrect} correct</span>
+              {/* Actionable Feedback */}
+              {masteryScore.feedback && (
+                <div className="space-y-3">
+                  {/* Accuracy Feedback */}
+                  <div className="bg-white rounded-lg p-3 border border-green-100">
+                    <div className="flex items-start gap-2">
+                      <TrendingUp className="h-4 w-4 text-green-500 mt-0.5" />
+                      <div className="flex-1">
+                        <div className="text-xs font-semibold text-gray-700 mb-1">Quality of Learning</div>
+                        <div className="text-sm text-gray-600">{masteryScore.feedback.accuracyFeedback}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Activity Feedback */}
+                  {masteryScore.totalRequiredGames > 0 && (
+                    <div className="bg-white rounded-lg p-3 border border-blue-100">
+                      <div className="flex items-start gap-2">
+                        <CheckCircle className="h-4 w-4 text-blue-500 mt-0.5" />
+                        <div className="flex-1">
+                          <div className="text-xs font-semibold text-gray-700 mb-1">Meeting Requirements</div>
+                          <div className="text-sm text-gray-600">{masteryScore.feedback.activityFeedback}</div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Completion Feedback */}
+                  {!masteryScore.isCompleted && (
+                    <div className="bg-white rounded-lg p-3 border border-yellow-100">
+                      <div className="flex items-start gap-2">
+                        <Zap className="h-4 w-4 text-yellow-500 mt-0.5" />
+                        <div className="flex-1">
+                          <div className="text-xs font-semibold text-gray-700 mb-1">Finish the Assignment</div>
+                          <div className="text-sm text-gray-600">{masteryScore.feedback.completionFeedback}</div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Next Steps */}
+                  {masteryScore.feedback.nextSteps && masteryScore.feedback.nextSteps.length > 0 && (
+                    <div className="bg-gradient-to-r from-purple-100 to-indigo-100 rounded-lg p-4 border border-purple-200">
+                      <div className="text-xs font-bold text-purple-900 mb-2">📋 Next Steps to Improve Your Grade:</div>
+                      <ul className="space-y-1">
+                        {masteryScore.feedback.nextSteps.map((step, index) => (
+                          <li key={index} className="text-sm text-purple-800 flex items-start gap-2">
+                            <span className="text-purple-500 mt-0.5">•</span>
+                            <span>{step}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </div>
-              </div>
+              )}
             </div>
           )}
 
@@ -882,21 +928,7 @@ export default function StudentAssignmentDetailPage() {
                 </div>
               )}
 
-              {/* Progress Bar - Show for in-progress activities */}
-              {!activity.completed && activity.progressPercentage > 0 && (
-                <div className="mb-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-medium text-gray-600">Progress</span>
-                    <span className="text-xs font-bold text-indigo-600">{activity.progressPercentage}%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2.5">
-                    <div
-                      className="bg-gradient-to-r from-indigo-500 to-purple-500 h-2.5 rounded-full transition-all duration-500"
-                      style={{ width: `${activity.progressPercentage}%` }}
-                    ></div>
-                  </div>
-                </div>
-              )}
+              {/* Progress bars removed - redundant with top-level assignment progress */}
 
               {/* Action Button */}
               <button

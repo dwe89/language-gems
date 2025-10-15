@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { useGameAudio } from '../../../../hooks/useGlobalAudioContext';
 import { createAudio, getAudioUrl } from '../../../../utils/audioUtils';
+import { assignmentExposureService } from '../../../../services/assignments/AssignmentExposureService';
 import './styles.css';
 
 interface MemoryGameMainProps {
@@ -121,6 +122,9 @@ export default function MemoryGameMain({
   // Add timer state for tracking time spent
   const [startTime, setStartTime] = useState<Date | null>(null);
   const [gameTime, setGameTime] = useState(0);
+
+  // LAYER 1: Session Deduplication - Track words used in this session
+  const [usedWordsThisSession, setUsedWordsThisSession] = useState<Set<string>>(new Set());
 
   // Add vocabulary progress tracking
   const [vocabularyProgress, setVocabularyProgress] = useState<Map<number, {
@@ -264,10 +268,38 @@ export default function MemoryGameMain({
     };
   }, [currentLanguage, currentTopic, currentDifficulty, currentCustomWords]);
   
+  // LAYER 2: Record word exposures on unmount (assignment mode only)
+  useEffect(() => {
+    return () => {
+      if (isAssignmentMode && assignmentId && userId) {
+        const exposedWordIds = Array.from(usedWordsThisSession);
+        if (exposedWordIds.length > 0) {
+          console.log('📝 [LAYER 2] Recording word exposures on unmount:', {
+            assignmentId,
+            studentId: userId,
+            wordCount: exposedWordIds.length
+          });
+
+          assignmentExposureService.recordWordExposures(
+            assignmentId,
+            userId,
+            exposedWordIds
+          ).then(result => {
+            if (result.success) {
+              console.log('✅ [LAYER 2] Exposures recorded successfully');
+            } else {
+              console.error('❌ [LAYER 2] Failed to record exposures:', result.error);
+            }
+          });
+        }
+      }
+    };
+  }, [isAssignmentMode, assignmentId, userId, usedWordsThisSession]);
+
   // Timer effect
   useEffect(() => {
     let timer: NodeJS.Timeout;
-    
+
     if (startTime && !gameWon) {
       timer = setInterval(() => {
         const now = new Date();
@@ -275,7 +307,7 @@ export default function MemoryGameMain({
         setGameTime(elapsed);
       }, 1000);
     }
-    
+
     return () => {
       if (timer) clearInterval(timer);
     };
@@ -486,7 +518,7 @@ export default function MemoryGameMain({
     // Then check for custom words and limit them to the determined pairs
     if (currentCustomWords && currentCustomWords.length > 0) {
       // Transform custom words and limit to totalPairs (preserve vocabulary ID for FSRS tracking)
-      const transformedWords = currentCustomWords.map(pair => {
+      let transformedWords = currentCustomWords.map(pair => {
         if (pair.type === 'image') {
           return {
             term: pair.term,
@@ -505,6 +537,13 @@ export default function MemoryGameMain({
           };
         }
       });
+
+      // LAYER 1: Filter out words already used in this session (assignment mode only)
+      if (isAssignmentMode && usedWordsThisSession.size > 0) {
+        const beforeFilter = transformedWords.length;
+        transformedWords = transformedWords.filter(word => !usedWordsThisSession.has(word.id));
+        console.log(`🎯 [LAYER 1] Session deduplication: ${beforeFilter} → ${transformedWords.length} words`);
+      }
 
       // Limit to the determined number of pairs
       wordPairs = transformedWords.slice(0, totalPairs);
@@ -672,7 +711,7 @@ export default function MemoryGameMain({
       
       setTimeout(async () => {
         // Mark both cards as matched
-        const matchedCards = cards.map(c => 
+        const matchedCards = cards.map(c =>
           c.pairId === firstCard.pairId ? { ...c, matched: true, flipped: true } : c
         );
         setCards(matchedCards);
@@ -680,6 +719,16 @@ export default function MemoryGameMain({
         setSecondCard(null);
         setCanFlip(true);
         setMatches(matches + 1);
+
+        // LAYER 1: Mark word as used in this session (assignment mode only)
+        if (isAssignmentMode && firstCard.vocabularyId) {
+          setUsedWordsThisSession(prev => {
+            const newSet = new Set(prev);
+            newSet.add(firstCard.vocabularyId!);
+            console.log(`🎯 [LAYER 1] Marked word as used: ${firstCard.vocabularyId} (total: ${newSet.size})`);
+            return newSet;
+          });
+        }
 
         // Play audio for the vocabulary word if available
         // Try to play audio for the Spanish term (assuming it's available)
@@ -734,20 +783,11 @@ export default function MemoryGameMain({
 
                 console.log('🔍 [FSRS DEBUG] Word data being passed to FSRS:', wordData);
 
-                // Record successful match with FSRS
-
-                if (fsrsResult) {
-                  console.log(`FSRS recorded for memory-game "${cardWord}":`, {
-                    algorithm: fsrsResult.algorithm,
-                    points: fsrsResult.points,
-                    nextReview: fsrsResult.nextReviewDate,
-                    interval: fsrsResult.interval,
-                    masteryLevel: fsrsResult.masteryLevel
-                  });
-                }
+                // FSRS tracking happens in EnhancedGameSessionService (Layer 3)
+                console.log('✅ [LAYER 3] FSRS tracking handled by EnhancedGameSessionService');
               }
             } catch (error) {
-              console.error('Error recording FSRS practice:', error);
+              console.error('Error recording vocabulary tracking:', error);
             }
           }
 
@@ -765,21 +805,8 @@ export default function MemoryGameMain({
                 isAssignmentMode
               });
 
-              if (isAssignmentMode && typeof window !== 'undefined' && (window as any).recordVocabularyInteraction) {
-                // Use GameAssignmentWrapper's vocabulary interaction recorder for assignment mode
-                await (window as any).recordVocabularyInteraction(
-                  cardWord,
-                  cardTranslation,
-                  true, // wasCorrect
-                  Math.round(responseTime * 1000), // responseTimeMs
-                  false, // hintUsed
-                  matches + 1 // streakCount
-                );
-
-                console.log('🔍 [VOCAB TRACKING] Used assignment wrapper recordVocabularyInteraction');
-                console.log(`🔮 Memory Game earned gem for "${cardWord}" (assignment mode)`);
-              } else if (effectiveGameSessionId) {
-                // Use direct EnhancedGameSessionService for both assignment and free play modes
+              // 🎯 Always use EnhancedGameSessionService for vocabulary tracking
+              if (effectiveGameSessionId) {
                 const sessionService = new EnhancedGameSessionService();
                 const gemEvent = await sessionService.recordWordAttempt(effectiveGameSessionId, 'memory-game', {
                   vocabularyId: firstCard.vocabularyId,

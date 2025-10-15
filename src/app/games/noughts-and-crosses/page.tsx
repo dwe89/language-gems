@@ -26,8 +26,9 @@ export default function UnifiedNoughtsAndCrossesPage() {
   const isAssignmentMode = assignmentId && mode === 'assignment';
 
   // Always initialize assignment hook to keep hooks order stable
+  // filterOutstanding=true filters out mastered words (accuracy ≥ 80% AND encounters ≥ 3)
   const { assignment, vocabulary: assignmentVocabulary, loading: assignmentLoading, error: assignmentError } =
-    useAssignmentVocabulary(assignmentId || '', 'noughts-and-crosses');
+    useAssignmentVocabulary(assignmentId || '', 'noughts-and-crosses', true);
 
   // ALWAYS initialize ALL hooks first to prevent "more hooks than previous render" error
   const [soundEnabled] = useState(true);

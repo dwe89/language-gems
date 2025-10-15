@@ -620,13 +620,6 @@ function AssignmentsPageContent() {
                 <p className="text-sm text-gray-600">{currentAssignments.length} {currentAssignments.length === 1 ? 'assignment' : 'assignments'} to complete</p>
               </div>
             </div>
-            <Link
-              href="/student-dashboard/progress"
-              className="hidden sm:inline-flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-gray-900 bg-white px-4 py-2 rounded-xl border border-gray-200 hover:border-gray-300 transition-all shadow-sm hover:shadow"
-            >
-              <TrendingUp className="h-4 w-4" />
-              <span>View Progress</span>
-            </Link>
           </div>
 
           {currentAssignments.length > 0 ? (

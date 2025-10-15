@@ -35,6 +35,9 @@ interface LavaTempleWordRestoreGameProps {
   onOpenSettings?: () => void;
   isMuted?: boolean;
   onToggleMute?: () => void;
+  assignmentId?: string | null; // 🎯 NEW: For Layer 2 exposure tracking
+  userId?: string; // 🎯 NEW: For Layer 2 exposure tracking
+  isAssignmentMode?: boolean; // 🎯 NEW: For Layer 2 exposure tracking
 }
 
 type GameState = 'temple-restoration' | 'tablet-completed';
@@ -48,7 +51,10 @@ export default function LavaTempleWordRestoreGame({
   gameService,
   onOpenSettings,
   isMuted,
-  onToggleMute
+  onToggleMute,
+  assignmentId,
+  userId,
+  isAssignmentMode
 }: LavaTempleWordRestoreGameProps) {
   const { user } = useAuth();
   const [gameState, setGameState] = useState<GameState>('temple-restoration');
@@ -128,6 +134,9 @@ export default function LavaTempleWordRestoreGame({
                 onOpenSettings={onOpenSettings}
                 isMuted={isMuted}
                 onToggleMute={onToggleMute}
+                assignmentId={assignmentId}
+                userId={userId}
+                isAssignmentMode={isAssignmentMode}
               />
             </motion.div>
           )}

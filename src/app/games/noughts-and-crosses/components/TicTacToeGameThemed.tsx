@@ -8,6 +8,7 @@ import confetti from 'canvas-confetti';
 import { useAudio } from '../hooks/useAudio';
 import { EnhancedGameService } from '../../../../services/enhancedGameService';
 import { EnhancedGameSessionService } from '../../../../services/rewards/EnhancedGameSessionService';
+import { assignmentExposureService } from '../../../../services/assignments/AssignmentExposureService';
 import AssignmentThemeSelector from '../../../../components/games/AssignmentThemeSelector';
 
 // Theme animations
@@ -50,6 +51,7 @@ interface TicTacToeGameProps {
   }>;
   gameSessionId?: string | null;
   isAssignmentMode?: boolean;
+  assignmentId?: string | null; // For exposure tracking
   onOpenSettings?: () => void;
   gameService?: EnhancedGameService | null;
   userId?: string;
@@ -82,6 +84,7 @@ export default function TicTacToeGame({
   vocabularyWords,
   gameSessionId,
   isAssignmentMode,
+  assignmentId,
   onOpenSettings,
   onGameModeChange,
   gameService,
@@ -157,13 +160,18 @@ export default function TicTacToeGame({
     setGameStartTime(new Date()); // Reset timer
   };
 
+  // LAYER 1: Session Deduplication - Track words used in THIS game session
+  // This prevents "el arroz" from appearing multiple times in the same 3-question game
+  // Reset when game restarts (onBackToMenu or new game)
+  const [usedWordsThisSession, setUsedWordsThisSession] = useState<Set<string>>(new Set());
+
   // Get vocabulary for current settings
   const getVocabulary = () => {
     // Use vocabularyWords prop if available, otherwise return empty array
     if (vocabularyWords && vocabularyWords.length > 0) {
       return vocabularyWords;
     }
-    
+
     return [];
   };
 
@@ -171,7 +179,16 @@ export default function TicTacToeGame({
     const vocabulary = getVocabulary();
     if (vocabulary.length === 0) return null;
 
-    const randomWord = vocabulary[Math.floor(Math.random() * vocabulary.length)];
+    // LAYER 1: Filter out words already used in this session
+    const availableWords = vocabulary.filter(word => {
+      const wordId = (word as any).id || word.id;
+      return wordId && !usedWordsThisSession.has(wordId);
+    });
+
+    // If all words have been used, reset the session filter
+    const wordsToUse = availableWords.length > 0 ? availableWords : vocabulary;
+
+    const randomWord = wordsToUse[Math.floor(Math.random() * wordsToUse.length)];
 
     const wrongOptions = generateWrongOptions(randomWord.translation, vocabulary);
     
@@ -181,6 +198,16 @@ export default function TicTacToeGame({
     
     // Ensure vocabulary ID is properly preserved
     const vocabularyId = (randomWord as any).id || randomWord.id;
+
+    // LAYER 1: Mark this word as used in this session
+    if (vocabularyId) {
+      setUsedWordsThisSession(prev => new Set([...prev, vocabularyId]));
+      console.log('🎯 [SESSION DEDUP] Word marked as used:', {
+        word: randomWord.word,
+        id: vocabularyId,
+        totalUsedThisSession: usedWordsThisSession.size + 1
+      });
+    }
 
     const question = {
       id: vocabularyId, // Include UUID for vocabulary tracking
@@ -695,6 +722,31 @@ export default function TicTacToeGame({
       }
     }
     
+    // LAYER 2: Record word exposures for assignment progress
+    // This must happen BEFORE calling onGameEnd so progress is updated
+    if (isAssignmentMode && assignmentId && userId) {
+      const exposedWordIds = Array.from(usedWordsThisSession);
+      if (exposedWordIds.length > 0) {
+        console.log('📝 [LAYER 2] Recording word exposures:', {
+          assignmentId,
+          studentId: userId,
+          wordCount: exposedWordIds.length
+        });
+
+        assignmentExposureService.recordWordExposures(
+          assignmentId,
+          userId,
+          exposedWordIds
+        ).then(result => {
+          if (result.success) {
+            console.log('✅ [LAYER 2] Exposures recorded successfully');
+          } else {
+            console.error('❌ [LAYER 2] Failed to record exposures:', result.error);
+          }
+        });
+      }
+    }
+
     // Call parent callback with enhanced results
     setTimeout(() => {
       const perfectGame = correctAnswers === wordsLearned && wordsLearned >= 3;

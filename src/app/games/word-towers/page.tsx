@@ -21,6 +21,7 @@ import { RewardEngine } from '../../../services/rewards/RewardEngine';
 import { EnhancedGameSessionService } from '../../../services/rewards/EnhancedGameSessionService';
 import GameAssignmentWrapper from '../../../components/games/templates/GameAssignmentWrapper';
 import { FSRSService } from '../../../services/fsrsService';
+import { assignmentExposureService } from '../../../services/assignments/AssignmentExposureService';
 
 // Enhanced Types
 interface TowerBlock {
@@ -409,6 +410,8 @@ export default function SentenceTowersPage() {
                 curriculumLevel: (assignment.curriculum_level as 'KS2' | 'KS3' | 'KS4' | 'KS5') || 'KS3'
               }}
               assignmentMode={true}
+              assignment={assignment}
+              assignmentGameSessionId={gameSessionId}
               onGameComplete={handleGameComplete}
               onProgressUpdate={onProgressUpdate}
             />
@@ -501,6 +504,8 @@ function ImprovedSentenceTowersGame({
   onBackToMenu,
   config,
   assignmentMode = false,
+  assignment,
+  assignmentGameSessionId,
   onGameComplete,
   onProgressUpdate
 }: {
@@ -508,6 +513,8 @@ function ImprovedSentenceTowersGame({
   onBackToMenu: () => void;
   config: UnifiedSelectionConfig;
   assignmentMode?: boolean;
+  assignment?: any;
+  assignmentGameSessionId?: string | null;
   onGameComplete?: (gameProgress: any) => void;
   onProgressUpdate?: (progress: any) => void;
 }) {
@@ -528,6 +535,37 @@ function ImprovedSentenceTowersGame({
       setFsrsService(new FSRSService(supabase));
     }
   }, [supabase]);
+
+  // 🎯 LAYER 1: Session deduplication (assignment mode only)
+  const [usedWordsThisSession, setUsedWordsThisSession] = useState<Set<string>>(new Set());
+
+  // 🎯 LAYER 2: Record word exposures on unmount (assignment mode only)
+  useEffect(() => {
+    return () => {
+      if (assignment && assignment.id && user?.id) {
+        const exposedWordIds = Array.from(usedWordsThisSession);
+        if (exposedWordIds.length > 0) {
+          console.log('📝 [LAYER 2] Recording word exposures on unmount:', {
+            assignmentId: assignment.id,
+            studentId: user.id,
+            wordCount: exposedWordIds.length
+          });
+
+          assignmentExposureService.recordWordExposures(
+            assignment.id,
+            user.id,
+            exposedWordIds
+          ).then(result => {
+            if (result.success) {
+              console.log('✅ [LAYER 2] Exposures recorded successfully');
+            } else {
+              console.error('❌ [LAYER 2] Failed to record exposures:', result.error);
+            }
+          });
+        }
+      }
+    };
+  }, [assignment, user, usedWordsThisSession]);
 
   // Typing mode state
   const [isTypingMode, setIsTypingMode] = useState(false);
@@ -1056,6 +1094,16 @@ function ImprovedSentenceTowersGame({
       }
     }
 
+    // 🎯 LAYER 1: Mark word as used in this session (assignment mode only)
+    if (assignment && option.id) {
+      setUsedWordsThisSession(prev => {
+        const newSet = new Set(prev);
+        newSet.add(option.id);
+        console.log(`🎯 [LAYER 1] Marked word as used: ${option.id} (total: ${newSet.size})`);
+        return newSet;
+      });
+    }
+
     setVocabulary(prev =>
       prev.map(word =>
         word.id === option.id ? { ...word, correct: true } : word
@@ -1421,11 +1469,11 @@ function ImprovedSentenceTowersGame({
     setVocabulary(resetVocabulary);
     generateWordOptions();
 
-    // Use assignment's gameSessionId or create new session for free play
-    if (assignmentMode && gameSessionId) {
+    // 🎯 Use assignment's gameSessionId or create new session for free play
+    if (assignmentMode && assignmentGameSessionId) {
       // Use assignment's gameSessionId
-      setGameSessionId(gameSessionId);
-      console.log('Word Towers using assignment game session:', gameSessionId);
+      setGameSessionId(assignmentGameSessionId);
+      console.log('Word Towers using assignment game session:', assignmentGameSessionId);
     } else if (enhancedGameService && user && !assignmentMode) {
       // Create new session for free play mode only
       try {

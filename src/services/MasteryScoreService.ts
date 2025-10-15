@@ -1,12 +1,16 @@
 /**
  * Mastery Score Service
- * 
+ *
  * Calculates quality/mastery metrics separate from completion progress.
- * This implements the HYBRID MODEL:
- * - Progress Bar = Simple word practice count (quantity)
- * - Mastery Score = Quality of learning (accuracy + completion + effort)
- * 
- * Formula: (70% Accuracy) + (20% Completion Bonus) + (10% Effort Bonus)
+ * This implements the THREE-COMPONENT FEEDBACK MODEL:
+ * - Progress Bar = Simple word exposure count (quantity)
+ * - Mastery Score = Quality of learning with actionable feedback
+ *
+ * Formula: (70% Accuracy) + (20% Activity/Compliance) + (10% Completion)
+ *
+ * 1. Accuracy (70%): Quality of answers - how well student knows the material
+ * 2. Activity/Compliance (20%): Meeting teacher-set minimum session requirements
+ * 3. Completion (10%): Finishing the assignment (100% exposure)
  */
 
 import { SupabaseClient } from '@supabase/supabase-js';
@@ -14,19 +18,35 @@ import { SupabaseClient } from '@supabase/supabase-js';
 export interface MasteryScoreBreakdown {
   totalScore: number; // 0-100
   accuracyScore: number; // 0-70 points
-  completionBonus: number; // 0-20 points
-  effortBonus: number; // 0-10 points
-  
+  activityScore: number; // 0-20 points (compliance with teacher requirements)
+  completionBonus: number; // 0-10 points
+
   // Supporting metrics
   overallAccuracy: number; // 0-100%
   isCompleted: boolean;
   sessionsCount: number;
   wordsAttempted: number;
   wordsCorrect: number;
-  
+
+  // Activity/Compliance tracking
+  requiredSessionsMet: number; // How many required games have been played
+  totalRequiredGames: number; // How many games have minimum session requirements
+
+  // Completion tracking
+  exposedWords: number; // How many unique words have been seen
+  totalWords: number; // Total words in assignment
+
   // Grade interpretation
   grade: 'A+' | 'A' | 'B' | 'C' | 'D' | 'F';
   gradeDescription: string;
+
+  // Actionable feedback
+  feedback: {
+    accuracyFeedback: string;
+    activityFeedback: string;
+    completionFeedback: string;
+    nextSteps: string[];
+  };
 }
 
 export class MasteryScoreService {
@@ -34,6 +54,7 @@ export class MasteryScoreService {
 
   /**
    * Calculate mastery score for a specific game within an assignment
+   * Note: Game-level scores don't include activity/compliance (that's assignment-level only)
    */
   async calculateGameMasteryScore(
     assignmentId: string,
@@ -41,6 +62,15 @@ export class MasteryScoreService {
     gameId: string
   ): Promise<MasteryScoreBreakdown> {
     try {
+      // Get assignment details for total words
+      const { data: assignment } = await this.supabase
+        .from('assignments')
+        .select('vocabulary_count')
+        .eq('id', assignmentId)
+        .single();
+
+      const totalWords = assignment?.vocabulary_count || 0;
+
       // Get all sessions for this game
       const { data: sessions, error } = await this.supabase
         .from('enhanced_game_sessions')
@@ -68,26 +98,39 @@ export class MasteryScoreService {
 
       const isCompleted = gameProgress?.status === 'completed' || gameProgress?.completed === true;
 
-      // Calculate score components
-      const accuracyScore = this.calculateAccuracyScore(overallAccuracy);
-      const completionBonus = this.calculateCompletionBonus(isCompleted);
-      const effortBonus = this.calculateEffortBonus(sessionsCount);
+      // Get exposure for this game (not available at game level, use 0)
+      const exposedWords = 0;
 
-      const totalScore = accuracyScore + completionBonus + effortBonus;
+      // Calculate score components (game-level doesn't have activity score)
+      const accuracyScore = this.calculateAccuracyScore(overallAccuracy);
+      const activityScore = 0; // Not applicable at game level
+      const completionBonus = this.calculateCompletionBonus(isCompleted);
+
+      const totalScore = accuracyScore + activityScore + completionBonus;
       const grade = this.getGrade(totalScore);
 
       return {
         totalScore: Math.round(totalScore),
         accuracyScore,
+        activityScore,
         completionBonus,
-        effortBonus,
         overallAccuracy: Math.round(overallAccuracy),
         isCompleted,
         sessionsCount,
         wordsAttempted,
         wordsCorrect,
+        requiredSessionsMet: 0,
+        totalRequiredGames: 0,
+        exposedWords,
+        totalWords,
         grade: grade.letter,
-        gradeDescription: grade.description
+        gradeDescription: grade.description,
+        feedback: {
+          accuracyFeedback: '',
+          activityFeedback: '',
+          completionFeedback: '',
+          nextSteps: []
+        }
       };
     } catch (error) {
       console.error('Error calculating mastery score:', error);
@@ -103,6 +146,19 @@ export class MasteryScoreService {
     studentId: string
   ): Promise<MasteryScoreBreakdown> {
     try {
+      // Get assignment details
+      const { data: assignment, error: assignmentError } = await this.supabase
+        .from('assignments')
+        .select('vocabulary_count, game_config')
+        .eq('id', assignmentId)
+        .single();
+
+      if (assignmentError) throw assignmentError;
+
+      const totalWords = assignment?.vocabulary_count || 0;
+      // Fix: gameRequirements is nested under gameConfig
+      const gameRequirements = assignment?.game_config?.gameConfig?.gameRequirements || {};
+
       // Get all sessions for this assignment
       const { data: sessions, error } = await this.supabase
         .from('enhanced_game_sessions')
@@ -118,36 +174,60 @@ export class MasteryScoreService {
       const wordsCorrect = sessions?.reduce((sum, s) => sum + (s.words_correct || 0), 0) || 0;
       const overallAccuracy = wordsAttempted > 0 ? (wordsCorrect / wordsAttempted) * 100 : 0;
 
-      // Check overall completion status
-      const { data: assignmentProgress } = await this.supabase
-        .from('enhanced_assignment_progress')
-        .select('*')
+      // Get exposure progress
+      const { data: exposures } = await this.supabase
+        .from('assignment_word_exposure')
+        .select('centralized_vocabulary_id')
         .eq('assignment_id', assignmentId)
-        .eq('student_id', studentId)
-        .maybeSingle();
+        .eq('student_id', studentId);
 
-      const isCompleted = assignmentProgress?.status === 'completed';
+      const exposedWords = exposures?.length || 0;
+      const isCompleted = exposedWords >= totalWords;
+
+      // Calculate activity/compliance score
+      const { activityScore, requiredSessionsMet, totalRequiredGames } =
+        await this.calculateActivityScore(assignmentId, studentId, gameRequirements);
 
       // Calculate score components
       const accuracyScore = this.calculateAccuracyScore(overallAccuracy);
       const completionBonus = this.calculateCompletionBonus(isCompleted);
-      const effortBonus = this.calculateEffortBonus(sessionsCount);
 
-      const totalScore = accuracyScore + completionBonus + effortBonus;
+      const totalScore = accuracyScore + activityScore + completionBonus;
       const grade = this.getGrade(totalScore);
+
+      // Generate actionable feedback
+      const feedback = this.generateFeedback({
+        accuracyScore,
+        overallAccuracy,
+        activityScore,
+        requiredSessionsMet,
+        totalRequiredGames,
+        completionBonus,
+        isCompleted,
+        exposedWords,
+        totalWords,
+        gameRequirements,
+        assignmentId,
+        studentId
+      });
 
       return {
         totalScore: Math.round(totalScore),
         accuracyScore,
+        activityScore,
         completionBonus,
-        effortBonus,
         overallAccuracy: Math.round(overallAccuracy),
         isCompleted,
         sessionsCount,
         wordsAttempted,
         wordsCorrect,
+        requiredSessionsMet,
+        totalRequiredGames,
+        exposedWords,
+        totalWords,
         grade: grade.letter,
-        gradeDescription: grade.description
+        gradeDescription: grade.description,
+        feedback
       };
     } catch (error) {
       console.error('Error calculating assignment mastery score:', error);
@@ -157,7 +237,7 @@ export class MasteryScoreService {
 
   /**
    * Calculate accuracy score (0-70 points)
-   * This is the main component of mastery
+   * This is the main component of mastery - quality of learning
    */
   private calculateAccuracyScore(accuracy: number): number {
     // Linear scaling: 0% accuracy = 0 points, 100% accuracy = 70 points
@@ -165,21 +245,135 @@ export class MasteryScoreService {
   }
 
   /**
-   * Calculate completion bonus (0-20 points)
-   * Awarded only when assignment is fully completed
+   * Calculate activity/compliance score (0-20 points)
+   * Based on meeting teacher-set minimum session requirements
    */
-  private calculateCompletionBonus(isCompleted: boolean): number {
-    return isCompleted ? 20 : 0;
+  private async calculateActivityScore(
+    assignmentId: string,
+    studentId: string,
+    gameRequirements: Record<string, { minSessions: number }>
+  ): Promise<{ activityScore: number; requiredSessionsMet: number; totalRequiredGames: number }> {
+    // Get all games with requirements
+    const requiredGames = Object.entries(gameRequirements).filter(
+      ([_, req]) => req.minSessions > 0
+    );
+
+    if (requiredGames.length === 0) {
+      // No requirements set - award full points
+      return { activityScore: 20, requiredSessionsMet: 0, totalRequiredGames: 0 };
+    }
+
+    // Check how many required games have been completed
+    let requiredSessionsMet = 0;
+
+    for (const [gameId, requirement] of requiredGames) {
+      const { data: sessions } = await this.supabase
+        .from('enhanced_game_sessions')
+        .select('id')
+        .eq('assignment_id', assignmentId)
+        .eq('student_id', studentId)
+        .eq('game_type', gameId);
+
+      const sessionsPlayed = sessions?.length || 0;
+      if (sessionsPlayed >= requirement.minSessions) {
+        requiredSessionsMet++;
+      }
+    }
+
+    // Calculate score: proportional to requirements met
+    const activityScore = (requiredSessionsMet / requiredGames.length) * 20;
+
+    return {
+      activityScore,
+      requiredSessionsMet,
+      totalRequiredGames: requiredGames.length
+    };
   }
 
   /**
-   * Calculate effort bonus (0-10 points)
-   * Rewards sustained engagement through multiple sessions
+   * Calculate completion bonus (0-10 points)
+   * Awarded only when assignment is fully completed (100% exposure)
    */
-  private calculateEffortBonus(sessionsCount: number): number {
-    // Award points for multiple sessions (up to 10 sessions = max 10 points)
-    // 1 session = 1 point, 10+ sessions = 10 points
-    return Math.min(sessionsCount, 10);
+  private calculateCompletionBonus(isCompleted: boolean): number {
+    return isCompleted ? 10 : 0;
+  }
+
+  /**
+   * Generate actionable feedback based on score components
+   */
+  private generateFeedback(params: {
+    accuracyScore: number;
+    overallAccuracy: number;
+    activityScore: number;
+    requiredSessionsMet: number;
+    totalRequiredGames: number;
+    completionBonus: number;
+    isCompleted: boolean;
+    exposedWords: number;
+    totalWords: number;
+    gameRequirements: Record<string, { minSessions: number }>;
+    assignmentId: string;
+    studentId: string;
+  }): {
+    accuracyFeedback: string;
+    activityFeedback: string;
+    completionFeedback: string;
+    nextSteps: string[];
+  } {
+    const nextSteps: string[] = [];
+
+    // 1. Accuracy Feedback (70% component)
+    let accuracyFeedback = '';
+    if (params.overallAccuracy >= 90) {
+      accuracyFeedback = `Excellent accuracy! You're getting ${Math.round(params.overallAccuracy)}% of questions correct.`;
+    } else if (params.overallAccuracy >= 75) {
+      accuracyFeedback = `Good accuracy at ${Math.round(params.overallAccuracy)}%. Keep practicing to reach 90%+.`;
+      nextSteps.push('Review words you got wrong to improve accuracy');
+    } else if (params.overallAccuracy >= 60) {
+      accuracyFeedback = `Your accuracy is ${Math.round(params.overallAccuracy)}%. You're missing too many questions.`;
+      nextSteps.push('Focus on the words you got wrong multiple times');
+      nextSteps.push('Use VocabMaster to practice low-mastery words');
+    } else {
+      accuracyFeedback = `Your accuracy is ${Math.round(params.overallAccuracy)}%. This needs significant improvement.`;
+      nextSteps.push('Review the vocabulary list carefully before playing');
+      nextSteps.push('Use VocabMaster flashcards to learn the words first');
+    }
+
+    // 2. Activity/Compliance Feedback (20% component)
+    let activityFeedback = '';
+    if (params.totalRequiredGames === 0) {
+      activityFeedback = 'No specific game requirements set by your teacher.';
+    } else if (params.requiredSessionsMet === params.totalRequiredGames) {
+      activityFeedback = `Perfect! You've met all ${params.totalRequiredGames} required game sessions.`;
+    } else {
+      const remaining = params.totalRequiredGames - params.requiredSessionsMet;
+      activityFeedback = `Activity score: ${params.requiredSessionsMet}/${params.totalRequiredGames} required games completed. You're missing ${remaining} required session${remaining > 1 ? 's' : ''}.`;
+
+      // Find which games still need to be played
+      // TODO: Add specific game names in next steps
+      nextSteps.push(`ACTION REQUIRED: Complete ${remaining} more required game session${remaining > 1 ? 's' : ''} to earn full activity points`);
+    }
+
+    // 3. Completion Feedback (10% component)
+    let completionFeedback = '';
+    if (params.isCompleted) {
+      completionFeedback = 'Assignment complete! You earned the 10% completion bonus.';
+    } else {
+      const remaining = params.totalWords - params.exposedWords;
+      const percentage = params.totalWords > 0
+        ? Math.round((params.exposedWords / params.totalWords) * 100)
+        : 0;
+
+      completionFeedback = `Assignment ${percentage}% complete. You still need to practice ${remaining} more unique word${remaining > 1 ? 's' : ''} to earn the 10% completion bonus.`;
+      nextSteps.push(`Practice ${remaining} more word${remaining > 1 ? 's' : ''} to complete the assignment`);
+    }
+
+    return {
+      accuracyFeedback,
+      activityFeedback,
+      completionFeedback,
+      nextSteps
+    };
   }
 
   /**

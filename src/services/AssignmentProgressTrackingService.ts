@@ -85,18 +85,19 @@ export class AssignmentProgressTrackingService {
     gameId: string
   ): Promise<GameActivityMetrics> {
     try {
-      // Get assignment details to fetch repetitions_required
+      // Get assignment details - we only need vocabulary_count now (not repetitions_required)
       const { data: assignment } = await this.supabase
         .from('assignments')
-        .select('vocabulary_count, repetitions_required')
+        .select('vocabulary_count')
         .eq('id', assignmentId)
         .single();
 
       const vocabularyCount = assignment?.vocabulary_count || 10;
-      const repetitionsRequired = assignment?.repetitions_required || 5;
-      const totalRequiredExposures = vocabularyCount * repetitionsRequired;
 
-      // Get all sessions for this game
+      // NEW EXPOSURE-BASED SYSTEM: Total required = vocabulary count (1 exposure per word)
+      const totalRequiredExposures = vocabularyCount;
+
+      // Get all sessions for this game (for activity metrics like time, gems, etc.)
       const { data: sessions, error: sessionsError } = await this.supabase
         .from('enhanced_game_sessions')
         .select('*')
@@ -107,6 +108,19 @@ export class AssignmentProgressTrackingService {
 
       if (sessionsError) throw sessionsError;
 
+      // NEW: Get unique exposed words count from assignment_word_exposure table
+      const { data: exposureData, error: exposureError } = await this.supabase
+        .from('assignment_word_exposure')
+        .select('centralized_vocabulary_id')
+        .eq('assignment_id', assignmentId)
+        .eq('student_id', studentId);
+
+      if (exposureError) {
+        console.error('Error fetching exposure data:', exposureError);
+      }
+
+      const uniqueWordsExposed = exposureData?.length || 0;
+
       // Get game completion status from assignment_game_progress
       const { data: gameProgress } = await this.supabase
         .from('assignment_game_progress')
@@ -116,21 +130,20 @@ export class AssignmentProgressTrackingService {
         .eq('game_id', gameId)
         .maybeSingle();
 
-      // Calculate metrics
+      // Calculate activity metrics (from sessions)
       const sessionsStarted = sessions?.length || 0;
       const totalTimeSpent = sessions?.reduce((sum, s) => sum + (s.duration_seconds || 0), 0) || 0;
       const gemsEarned = sessions?.reduce((sum, s) => sum + (s.gems_total || 0), 0) || 0;
       const wordsAttempted = sessions?.reduce((sum, s) => sum + (s.words_attempted || 0), 0) || 0;
       const wordsCorrect = sessions?.reduce((sum, s) => sum + (s.words_correct || 0), 0) || 0;
-      const uniqueWordsPracticed = sessions?.reduce((sum, s) => sum + (s.unique_words_practiced || 0), 0) || 0;
-      
+
       const accuracy = wordsAttempted > 0 ? Math.round((wordsCorrect / wordsAttempted) * 100) : 0;
       const lastPlayedAt = sessions && sessions.length > 0 ? new Date(sessions[0].created_at) : null;
-      
+
       // Determine completion status
       const completed = gameProgress?.status === 'completed' || gameProgress?.completed === true;
       let status: 'not_started' | 'in_progress' | 'completed';
-      
+
       if (completed) {
         status = 'completed';
       } else if (sessionsStarted > 0) {
@@ -139,14 +152,23 @@ export class AssignmentProgressTrackingService {
         status = 'not_started';
       }
 
-      // Calculate progress percentage (now includes totalRequiredExposures)
+      // Calculate progress percentage using EXPOSURE-BASED system
       const progressPercentage = this.calculateProgressPercentage({
         sessionsStarted,
-        wordsAttempted,
+        uniqueWordsExposed,  // NEW: Use exposed words instead of words attempted
         accuracy,
         completed,
         totalTimeSpent,
         totalRequiredExposures
+      });
+
+      console.log(`📊 [PROGRESS] Game progress for ${gameId}:`, {
+        assignmentId,
+        studentId,
+        uniqueWordsExposed,
+        totalRequiredExposures,
+        progressPercentage,
+        status
       });
 
       return {
@@ -160,7 +182,7 @@ export class AssignmentProgressTrackingService {
         totalTimeSpent,
         wordsAttempted,
         wordsCorrect,
-        uniqueWordsPracticed,
+        uniqueWordsPracticed: uniqueWordsExposed, // NEW: Use exposure count
         accuracy,
         gemsEarned,
         bestScore: gameProgress?.score || 0,
@@ -174,27 +196,27 @@ export class AssignmentProgressTrackingService {
   }
 
   /**
-   * Calculate progress percentage based on word practice
-   * NEW HYBRID MODEL: Simple, linear progress based on words attempted
-   * Mastery/quality is tracked separately via MasteryScore
+   * Calculate progress percentage based on EXPOSURE (not attempts)
+   * NEW EXPOSURE-BASED MODEL: Simple, linear progress based on unique words exposed
+   * Mastery/quality is tracked separately via Layer 3 (vocabulary_gem_collection)
    */
   private calculateProgressPercentage(metrics: {
     sessionsStarted: number;
-    wordsAttempted: number;
+    uniqueWordsExposed: number;  // CHANGED: Use exposed words instead of attempts
     accuracy: number;
     completed: boolean;
     totalTimeSpent: number;
-    totalRequiredExposures?: number; // New: teacher-set goal
+    totalRequiredExposures?: number; // Total vocabulary count
   }): number {
     if (metrics.completed) return 100;
     if (metrics.sessionsStarted === 0) return 0;
 
-    // SIMPLIFIED PROGRESS: Based purely on word practice
-    // Default to 50 exposures if not specified (backward compatibility)
+    // EXPOSURE-BASED PROGRESS: Based purely on unique words exposed
+    // Default to 50 words if not specified (backward compatibility)
     const requiredExposures = metrics.totalRequiredExposures || 50;
 
-    // Linear progress: words_attempted / total_required_exposures
-    const progress = (metrics.wordsAttempted / requiredExposures) * 100;
+    // Linear progress: unique_words_exposed / total_vocabulary_count
+    const progress = (metrics.uniqueWordsExposed / requiredExposures) * 100;
 
     // Cap at 99% until actually marked as completed
     return Math.min(Math.round(progress), 99);

@@ -27,8 +27,9 @@ export default function HangmanPage() {
   const isAssignmentMode = assignmentId && mode === 'assignment';
 
   // Always initialize assignment hook to keep hooks order stable
+  // filterOutstanding=true filters out mastered words (accuracy ≥ 80% AND encounters ≥ 3)
   const { assignment, vocabulary: assignmentVocabulary, loading: assignmentLoading, error: assignmentError } =
-    useAssignmentVocabulary(assignmentId || '', 'hangman');
+    useAssignmentVocabulary(assignmentId || '', 'hangman', true);
 
   // Game state management - ALWAYS initialize hooks first
   const [gameStarted, setGameStarted] = useState(false);

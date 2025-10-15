@@ -18,7 +18,6 @@
       '/student-dashboard',
       '/student-dashboard/assignments',
       '/student-dashboard/games',
-      '/student-dashboard/progress',
       '/student-dashboard/vocabulary',
       '/assessments',
       '/student-dashboard/achievements'

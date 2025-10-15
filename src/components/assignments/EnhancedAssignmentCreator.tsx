@@ -108,6 +108,7 @@ interface GrammarConfig {
 // Unified GameConfiguration to hold settings for all selected games
 interface UnifiedGameConfig {
   selectedGames: string[]; // List of game IDs
+  gameRequirements?: { [gameId: string]: { minSessions: number } }; // Optional minimum sessions per game
   vocabularyConfig: VocabularyConfig;
   sentenceConfig: SentenceConfig;
   grammarConfig: GrammarConfig;
@@ -353,6 +354,7 @@ export default function EnhancedAssignmentCreator({
   // --- Activity-Specific Configurations ---
   const [gameConfig, setGameConfig] = useState<UnifiedGameConfig>({
     selectedGames: [],
+    gameRequirements: {}, // Default: all games optional (minSessions: 0)
     vocabularyConfig: { source: '', useAllWords: true, wordCount: undefined, difficulty: 'intermediate', curriculumLevel: 'KS3' },
     sentenceConfig: { source: '', theme: '', topic: '', sentenceCount: 10, difficulty: 'intermediate' },
     grammarConfig: { language: 'spanish', verbTypes: ['regular'], tenses: ['present'], persons: ['yo', 'tu', 'el_ella_usted'], difficulty: 'beginner', verbCount: 10 },
@@ -985,6 +987,8 @@ export default function EnhancedAssignmentCreator({
           <MultiGameSelector
             selectedGames={gameConfig.selectedGames}
             onSelectionChange={handleGameSelectionChange}
+            gameRequirements={gameConfig.gameRequirements}
+            onRequirementsChange={(requirements) => setGameConfig(prev => ({ ...prev, gameRequirements: requirements }))}
             maxSelections={15}
           />
           {gameConfig.selectedGames.length > 0 && (
