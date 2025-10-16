@@ -44,7 +44,7 @@ export default function TeacherLoginPage() {
       }
 
       // Check for redirect parameter
-      const redirectTo = searchParams?.get('redirectTo') || '/dashboard';
+      const redirectTo = searchParams?.get('redirectTo') || '/account';
       router.push(redirectTo);
     } catch (err) {
       console.error('Login error:', err);

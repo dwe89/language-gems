@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
       .from('user_profiles')
       .select(`
         user_id,
-        school_code,
+        school_initials,
         is_school_owner,
         school_owner_id,
         subscription_status
@@ -50,14 +50,14 @@ export async function GET(request: NextRequest) {
     if (scope === 'my') {
       // Show only classes created by this teacher
       classesQuery = classesQuery.eq('teacher_id', user.id);
-    } else if (scope === 'school' && userProfile.school_code) {
+    } else if (scope === 'school' && userProfile.school_initials) {
       // Show all classes from teachers in the same school
-      
+
       // First get all teachers in the same school
       const { data: schoolMembers, error: membersError } = await supabase
         .from('school_memberships')
         .select('member_user_id')
-        .eq('school_code', userProfile.school_code)
+        .eq('school_code', userProfile.school_initials)
         .eq('status', 'active');
 
       if (membersError) {
@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
           success: true,
           classes: [],
           scope,
-          school_code: userProfile.school_code,
+          school_code: userProfile.school_initials,
           has_school_access: false
         });
       }
@@ -93,8 +93,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Check if user has school access
-    const hasSchoolAccess = !!(userProfile.school_code && (
-      userProfile.is_school_owner || 
+    const hasSchoolAccess = !!(userProfile.school_initials && (
+      userProfile.is_school_owner ||
       userProfile.school_owner_id ||
       userProfile.subscription_status === 'active'
     ));
@@ -103,7 +103,7 @@ export async function GET(request: NextRequest) {
       success: true,
       classes: classes || [],
       scope,
-      school_code: userProfile.school_code,
+      school_code: userProfile.school_initials,
       has_school_access: hasSchoolAccess,
       user_is_school_owner: userProfile.is_school_owner
     });

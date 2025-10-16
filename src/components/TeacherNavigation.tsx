@@ -31,49 +31,43 @@ export default function TeacherNavigation({ children }: TeacherNavigationProps) 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  // Define navigation menu items
+  // Define navigation menu items - Streamlined to 4 core items
   const baseMenuItems = [
     {
-      name: 'Analytics',
-      href: '/dashboard/progress',
+      name: 'Account',
+      href: '/account',
+      icon: Settings,
+      description: 'Manage your account settings and subscription'
+    },
+    {
+      name: 'Overview',
+      href: '/dashboard/overview',
       icon: BarChart3,
-      description: 'AI-powered insights and student performance tracking'
+      description: 'Daily pulse check - your 60-second class health overview'
+    },
+    {
+      name: 'Assignments',
+      href: '/dashboard/assignments',
+      icon: FileText,
+      description: 'Create and manage assignments'
     },
     {
       name: 'Classes',
       href: '/dashboard/classes',
       icon: BookOpen,
-      description: 'Manage your classes and students'
+      description: 'Manage your classes and view class-specific analytics'
     },
     {
-      name: 'Assignments',
-      href: '/dashboard/assignments',
+      name: 'Students',
+      href: '/dashboard/students',
       icon: Users,
-      description: 'Create and track assignments'
-    },
-    {
-      name: 'Vocabulary',
-      href: '/dashboard/vocabulary/analytics',
-      icon: Brain,
-      description: 'Vocabulary analytics and student progress'
-    },
-    {
-      name: 'Vocab Tests',
-      href: '/dashboard/vocabulary-tests',
-      icon: ClipboardCheck,
-      description: 'Create and manage vocabulary assessments'
+      description: 'View all students across all classes'
     },
   ];
 
   // Add admin-only items
   const menuItems = [
-    ...baseMenuItems,
-    ...(isAdmin || user?.email === 'danieletienne89@gmail.com' ? [{
-      name: 'Worksheets',
-      href: '/worksheets',
-      icon: FileText,
-      description: 'AI-powered worksheet generator'
-    }] : [])
+    ...baseMenuItems
   ];
 
   // Handle navigation link clicks

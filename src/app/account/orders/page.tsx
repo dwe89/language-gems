@@ -63,43 +63,21 @@ export default function OrdersPage() {
     });
   };
 
-  const handleSecureDownload = async (orderId: string, productId: string, productName: string) => {
+  const handleSecureDownload = async (productId: string, productName: string) => {
     setDownloading(productId);
     try {
-      const response = await fetch(`/api/orders/${orderId}/download/${productId}`);
-      if (response.ok) {
-        const data = await response.json();
-        if (data.downloadUrl) {
-          // Create a temporary link to trigger download
-          const link = document.createElement('a');
-          link.href = data.downloadUrl;
-          link.download = productName;
-          link.style.display = 'none';
+      // Use clean download endpoint that hides Supabase URLs
+      // User sees: /download/resource/{id}
+      // Backend handles auth, validation, and generates fresh signed URL
+      window.location.href = `/download/resource/${productId}`;
 
-          document.body.appendChild(link);
-          link.click();
-
-          // Safe cleanup with timeout
-          setTimeout(() => {
-            try {
-              if (link.parentNode === document.body) {
-                document.body.removeChild(link);
-              }
-            } catch (removeError) {
-              console.warn('Failed to remove download link from DOM:', removeError);
-            }
-          }, 100);
-        } else {
-          alert('Download link not available');
-        }
-      } else {
-        const errorData = await response.json();
-        alert(`Download failed: ${errorData.error || 'Unknown error'}`);
-      }
+      // Reset downloading state after a short delay
+      setTimeout(() => {
+        setDownloading(null);
+      }, 2000);
     } catch (error) {
       console.error('Error downloading file:', error);
       alert('Failed to download file. Please try again.');
-    } finally {
       setDownloading(null);
     }
   };
@@ -245,7 +223,7 @@ export default function OrdersPage() {
                         {/* Download Button (for completed orders) */}
                         {order.status === 'completed' && item.product?.file_path && (
                           <button
-                            onClick={() => handleSecureDownload(order.id, item.product_id, item.product?.name || 'Product')}
+                            onClick={() => handleSecureDownload(item.product_id, item.product?.name || 'Product')}
                             disabled={downloading === item.product_id}
                             className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
@@ -266,19 +244,7 @@ export default function OrdersPage() {
                     ))}
                   </div>
 
-                  {/* Order Actions */}
-                  {order.status === 'completed' && (
-                    <div className="mt-6 pt-6 border-t border-slate-200">
-                      <div className="flex flex-col sm:flex-row gap-3">
-                        <button className="px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors">
-                          Download All Files
-                        </button>
-                        <button className="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors">
-                          Request Support
-                        </button>
-                      </div>
-                    </div>
-                  )}
+
                 </div>
               </div>
             ))}

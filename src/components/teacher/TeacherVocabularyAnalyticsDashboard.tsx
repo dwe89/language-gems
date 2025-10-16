@@ -15,6 +15,18 @@ import type {
   StudentVocabularyProgress,
   TopicAnalysis
 } from '../../services/teacherVocabularyAnalytics';
+import {
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer
+} from 'recharts';
 
 interface TeacherVocabularyAnalyticsDashboardProps {
   classId?: string;
@@ -267,10 +279,10 @@ export default function TeacherVocabularyAnalyticsDashboard({
           color="green"
         />
         <StatCard
-          title="Average Mastered"
-          value={analytics.classStats.averageMasteredWords}
+          title="Proficient Words"
+          value={analytics.classStats.proficientWords}
           icon={<Award className="h-6 w-6 text-yellow-600" />}
-          subtitle="Words per student"
+          subtitle="Class total"
           color="yellow"
         />
         <StatCard
@@ -285,10 +297,10 @@ export default function TeacherVocabularyAnalyticsDashboard({
       {/* Additional Stats Row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <StatCard
-          title="Memory Strength"
-          value={`${analytics.classStats.classAverageMemoryStrength}%`}
+          title="Learning Words"
+          value={analytics.classStats.learningWords}
           icon={<Brain className="h-6 w-6 text-indigo-600" />}
-          subtitle="FSRS-based retention"
+          subtitle="In progress"
           color="indigo"
         />
         <StatCard
@@ -347,39 +359,83 @@ export default function TeacherVocabularyAnalyticsDashboard({
                 </div>
                 <div className="text-right">
                   <p className="font-semibold text-green-700">{student.averageAccuracy}%</p>
-                  <p className="text-sm text-gray-600">{student.masteredWords} mastered</p>
+                  <p className="text-sm text-gray-600">{student.proficientWords} proficient</p>
                 </div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Students Needing Support */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-            <Heart className="h-5 w-5 text-red-500 mr-2" />
-            Students Needing Support
-          </h3>
-          <div className="space-y-3">
-            {analytics.insights.studentsNeedingAttention.slice(0, 5).map((student, index) => (
-              <div key={student.studentId} className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
-                <div className="flex items-center">
-                  <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center mr-3">
-                    <AlertCircle className="h-4 w-4 text-red-600" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-gray-900">{student.studentName}</p>
-                    <p className="text-sm text-gray-600">{student.className}</p>
+        {/* Students Needing Support - Active students with low performance */}
+        {(() => {
+          const activeStudentsNeedingSupport = analytics.insights.studentsNeedingAttention
+            .filter(s => s.totalWords > 0); // Only students who have attempted vocabulary
+          const inactiveStudents = analytics.studentProgress
+            .filter(s => s.totalWords === 0); // Students who never logged in
+
+          return (
+            <>
+              {activeStudentsNeedingSupport.length > 0 && (
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                    <Heart className="h-5 w-5 text-red-500 mr-2" />
+                    Students Needing Support
+                  </h3>
+                  <p className="text-sm text-gray-600 mb-4">Active students with low accuracy or many overdue words</p>
+                  <div className="space-y-3">
+                    {activeStudentsNeedingSupport.slice(0, 5).map((student, index) => (
+                      <div key={student.studentId} className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
+                        <div className="flex items-center">
+                          <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center mr-3">
+                            <AlertCircle className="h-4 w-4 text-red-600" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-gray-900">{student.studentName}</p>
+                            <p className="text-sm text-gray-600">{student.className}</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-semibold text-red-700">{student.averageAccuracy}%</p>
+                          <p className="text-sm text-gray-600">{student.overdueWords} overdue</p>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="font-semibold text-red-700">{student.averageAccuracy}%</p>
-                  <p className="text-sm text-gray-600">{student.overdueWords} overdue</p>
+              )}
+
+              {/* Students Who Haven't Logged In */}
+              {inactiveStudents.length > 0 && (
+                <div className="bg-white rounded-xl shadow-sm border border-orange-200 p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                    <AlertCircle className="h-5 w-5 text-orange-500 mr-2" />
+                    Students Not Yet Active
+                  </h3>
+                  <p className="text-sm text-gray-600 mb-4">These students have not attempted any vocabulary yet</p>
+                  <div className="space-y-3">
+                    {inactiveStudents.slice(0, 5).map((student) => (
+                      <div key={student.studentId} className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
+                        <div className="flex items-center">
+                          <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center mr-3">
+                            <Users className="h-4 w-4 text-orange-600" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-gray-900">{student.studentName}</p>
+                            <p className="text-sm text-gray-600">{student.className}</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-semibold text-orange-700">No activity</p>
+                          <p className="text-xs text-gray-500">Never logged in</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        </div>
+              )}
+            </>
+          );
+        })()}
       </div>
     </div>
   );
@@ -422,8 +478,16 @@ export default function TeacherVocabularyAnalyticsDashboard({
                             <div className="text-xs text-gray-500">Total</div>
                           </div>
                           <div className="text-center">
-                            <div className="text-sm font-medium text-green-600">{student.masteredWords}</div>
-                            <div className="text-xs text-gray-500">Mastered</div>
+                            <div className="text-sm font-medium text-green-600">{student.proficientWords}</div>
+                            <div className="text-xs text-gray-500">Proficient</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-sm font-medium text-yellow-600">{student.learningWords}</div>
+                            <div className="text-xs text-gray-500">Learning</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-sm font-medium text-red-600">{student.strugglingWords}</div>
+                            <div className="text-xs text-gray-500">Struggling</div>
                           </div>
                           <div className="text-center">
                             <div className={`text-sm font-medium ${
@@ -433,10 +497,6 @@ export default function TeacherVocabularyAnalyticsDashboard({
                               {student.averageAccuracy}%
                             </div>
                             <div className="text-xs text-gray-500">Accuracy</div>
-                          </div>
-                          <div className="text-center">
-                            <div className="text-sm font-medium text-blue-600">{student.memoryStrength}%</div>
-                            <div className="text-xs text-gray-500">Memory</div>
                           </div>
                           <div className="text-center">
                             {student.overdueWords > 0 ? (
@@ -477,7 +537,10 @@ export default function TeacherVocabularyAnalyticsDashboard({
                                   </div>
                                   <div className="text-right">
                                     <div className="text-sm font-semibold text-green-600">{word.accuracy.toFixed(0)}%</div>
-                                    <div className="text-xs text-gray-500">Mastery: {word.masteryLevel}</div>
+                                    <div className="text-xs text-gray-500">
+                                      {word.proficiencyLevel === 'proficient' ? '🟢 Proficient' :
+                                       word.proficiencyLevel === 'learning' ? '🟡 Learning' : '🔴 Struggling'}
+                                    </div>
                                   </div>
                                 </div>
                               ))}
@@ -593,11 +656,16 @@ export default function TeacherVocabularyAnalyticsDashboard({
         </div>
       )}
 
-      {/* All Topics */}
+      {/* All Topics - Only show topics with meaningful engagement */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">All Topics</h3>
+        <p className="text-sm text-gray-600 mb-4">
+          Showing topics where at least 3 students have attempted vocabulary
+        </p>
         <div className="space-y-3">
-          {analytics.topicAnalysis.map((topic, index) => (
+          {analytics.topicAnalysis
+            .filter(topic => topic.studentsEngaged >= 3) // Only show topics with meaningful engagement
+            .map((topic, index) => (
             <div key={`${topic.category}-${topic.subcategory}-${index}`} className="p-4 border border-gray-200 rounded-lg">
               <div className="flex items-center justify-between">
                 <div>
@@ -619,7 +687,7 @@ export default function TeacherVocabularyAnalyticsDashboard({
                     {topic.averageAccuracy}%
                   </div>
                   <div className="text-sm text-gray-600">
-                    {topic.masteredWords}/{topic.totalWords} mastered
+                    {topic.proficientWords}/{topic.totalWords} proficient
                   </div>
                 </div>
               </div>
@@ -645,15 +713,13 @@ export default function TeacherVocabularyAnalyticsDashboard({
 
     const latestTrend = analytics.trends[analytics.trends.length - 1];
     const previousTrend = analytics.trends[analytics.trends.length - 8] || analytics.trends[0];
-    
+
     const accuracyChange = latestTrend.averageAccuracy - previousTrend.averageAccuracy;
-    const wordsChange = latestTrend.masteredWords - previousTrend.masteredWords;
+    const wordsChange = latestTrend.proficientWords - previousTrend.proficientWords;
     const studentsChange = latestTrend.activeStudents - previousTrend.activeStudents;
 
     // Get last 30 days of trends
     const recentTrends = analytics.trends.slice(-30);
-    const maxAccuracy = Math.max(...recentTrends.map(t => t.averageAccuracy));
-    const maxWords = Math.max(...recentTrends.map(t => t.masteredWords));
 
     return (
       <div className="space-y-6">
@@ -668,11 +734,11 @@ export default function TeacherVocabularyAnalyticsDashboard({
             color="blue"
           />
           <StatCard
-            title="Words Mastered"
-            value={latestTrend.masteredWords}
+            title="Proficient Words"
+            value={latestTrend.proficientWords}
             icon={<Award className="h-6 w-6 text-green-600" />}
-            trend={wordsChange > 0 ? Math.round((wordsChange / previousTrend.masteredWords) * 100) : 0}
-            subtitle="Recently mastered"
+            trend={wordsChange > 0 && previousTrend.proficientWords > 0 ? Math.round((wordsChange / previousTrend.proficientWords) * 100) : 0}
+            subtitle="Recently proficient"
             color="green"
           />
           <StatCard
@@ -685,116 +751,95 @@ export default function TeacherVocabularyAnalyticsDashboard({
           />
         </div>
 
-        {/* Accuracy Chart */}
+        {/* Accuracy & Activity Chart */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-            <BarChart3 className="h-5 w-5 text-blue-500 mr-2" />
-            Accuracy Trends (Last 30 Days)
+            <TrendingUp className="h-5 w-5 text-blue-500 mr-2" />
+            Class Performance Trends (Last 30 Days)
           </h3>
-          <div className="h-64 flex items-end space-x-1">
-            {recentTrends.map((trend, index) => {
-              const height = (trend.averageAccuracy / maxAccuracy) * 100;
-              const isRecent = index >= recentTrends.length - 7;
-              return (
-                <div key={trend.date} className="flex-1 flex flex-col items-center group">
-                  <div 
-                    className={`w-full rounded-t transition-all duration-300 ${
-                      isRecent ? 'bg-blue-500 hover:bg-blue-600' : 'bg-blue-300 hover:bg-blue-400'
-                    }`}
-                    style={{ height: `${height}%` }}
-                    title={`${trend.date}: ${trend.averageAccuracy}%`}
-                  >
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity text-xs text-white text-center mt-2">
-                      {trend.averageAccuracy}%
-                    </div>
-                  </div>
-                  {index % 5 === 0 && (
-                    <div className="text-xs text-gray-500 mt-2 rotate-45 origin-left">
-                      {new Date(trend.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-          <div className="mt-4 flex items-center justify-center space-x-4 text-sm text-gray-600">
-            <div className="flex items-center">
-              <div className="w-3 h-3 bg-blue-300 rounded mr-2"></div>
-              <span>Previous weeks</span>
-            </div>
-            <div className="flex items-center">
-              <div className="w-3 h-3 bg-blue-500 rounded mr-2"></div>
-              <span>Recent week</span>
-            </div>
-          </div>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={recentTrends}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+              <XAxis
+                dataKey="date"
+                tickFormatter={(date) => new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                stroke="#6b7280"
+                style={{ fontSize: '12px' }}
+              />
+              <YAxis
+                yAxisId="left"
+                stroke="#6b7280"
+                style={{ fontSize: '12px' }}
+                label={{ value: 'Accuracy %', angle: -90, position: 'insideLeft', style: { fontSize: '12px' } }}
+              />
+              <YAxis
+                yAxisId="right"
+                orientation="right"
+                stroke="#6b7280"
+                style={{ fontSize: '12px' }}
+                label={{ value: 'Active Students', angle: 90, position: 'insideRight', style: { fontSize: '12px' } }}
+              />
+              <Tooltip
+                contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
+                labelFormatter={(date) => new Date(date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+              />
+              <Legend />
+              <Line
+                yAxisId="left"
+                type="monotone"
+                dataKey="averageAccuracy"
+                stroke="#3b82f6"
+                strokeWidth={2}
+                name="Accuracy %"
+                dot={{ fill: '#3b82f6', r: 4 }}
+                activeDot={{ r: 6 }}
+              />
+              <Line
+                yAxisId="right"
+                type="monotone"
+                dataKey="activeStudents"
+                stroke="#8b5cf6"
+                strokeWidth={2}
+                name="Active Students"
+                dot={{ fill: '#8b5cf6', r: 4 }}
+                activeDot={{ r: 6 }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
         </div>
 
-        {/* Words Mastered Chart */}
+        {/* Vocabulary Progress by Proficiency Level */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
             <Award className="h-5 w-5 text-green-500 mr-2" />
-            Words Mastered Progress
+            Vocabulary Progress by Proficiency Level
           </h3>
-          <div className="h-64 flex items-end space-x-1">
-            {recentTrends.map((trend, index) => {
-              const height = (trend.masteredWords / maxWords) * 100;
-              const isRecent = index >= recentTrends.length - 7;
-              return (
-                <div key={trend.date} className="flex-1 flex flex-col items-center group">
-                  <div 
-                    className={`w-full rounded-t transition-all duration-300 ${
-                      isRecent ? 'bg-green-500 hover:bg-green-600' : 'bg-green-300 hover:bg-green-400'
-                    }`}
-                    style={{ height: `${height}%` }}
-                    title={`${trend.date}: ${trend.masteredWords} words`}
-                  >
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity text-xs text-white text-center mt-2">
-                      {trend.masteredWords}
-                    </div>
-                  </div>
-                  {index % 5 === 0 && (
-                    <div className="text-xs text-gray-500 mt-2 rotate-45 origin-left">
-                      {new Date(trend.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={recentTrends}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+              <XAxis
+                dataKey="date"
+                tickFormatter={(date) => new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                stroke="#6b7280"
+                style={{ fontSize: '12px' }}
+              />
+              <YAxis
+                stroke="#6b7280"
+                style={{ fontSize: '12px' }}
+                label={{ value: 'Number of Words', angle: -90, position: 'insideLeft', style: { fontSize: '12px' } }}
+              />
+              <Tooltip
+                contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
+                labelFormatter={(date) => new Date(date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+              />
+              <Legend />
+              <Bar dataKey="proficientWords" stackId="a" fill="#10b981" name="Proficient" />
+              <Bar dataKey="learningWords" stackId="a" fill="#f59e0b" name="Learning" />
+              <Bar dataKey="strugglingWords" stackId="a" fill="#ef4444" name="Struggling" />
+            </BarChart>
+          </ResponsiveContainer>
           <div className="mt-4 text-center text-sm text-gray-600">
             Total words learned: <span className="font-semibold">{recentTrends.reduce((sum, t) => sum + t.wordsLearned, 0)}</span> words in the last 30 days
-          </div>
-        </div>
-
-        {/* Activity Heatmap */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-            <Activity className="h-5 w-5 text-purple-500 mr-2" />
-            Student Activity Levels
-          </h3>
-          <div className="h-48 flex items-end space-x-1">
-            {recentTrends.map((trend, index) => {
-              const maxStudents = Math.max(...recentTrends.map(t => t.activeStudents));
-              const height = (trend.activeStudents / maxStudents) * 100;
-              return (
-                <div key={trend.date} className="flex-1 flex flex-col items-center group">
-                  <div 
-                    className="w-full bg-purple-500 hover:bg-purple-600 rounded-t transition-all duration-300"
-                    style={{ height: `${height}%` }}
-                    title={`${trend.date}: ${trend.activeStudents} active students`}
-                  >
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity text-xs text-white text-center mt-2">
-                      {trend.activeStudents}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-          <div className="mt-4 text-center text-sm text-gray-600">
-            Average active students per day: <span className="font-semibold">
-              {Math.round(recentTrends.reduce((sum, t) => sum + t.activeStudents, 0) / recentTrends.length)}
-            </span>
           </div>
         </div>
       </div>

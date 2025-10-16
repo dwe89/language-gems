@@ -178,14 +178,37 @@ export default function SchoolManagementPage() {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Account
           </Link>
-          
-          <div className="flex items-center space-x-4 mb-4">
-            <div className="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center">
-              <School className="h-6 w-6 text-indigo-600" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold text-slate-900">School Management</h1>
-              <p className="text-slate-600">Manage teachers in your school: {schoolCode}</p>
+
+          <div className="bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 rounded-2xl shadow-xl p-8 mb-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-6">
+                <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center">
+                  <School className="h-8 w-8 text-white" />
+                </div>
+                <div>
+                  <div className="flex items-center space-x-3 mb-2">
+                    <h1 className="text-3xl font-bold text-white">School Management</h1>
+                    <span className="bg-yellow-400 text-yellow-900 px-3 py-1 rounded-full text-xs font-bold">
+                      ADMIN
+                    </span>
+                  </div>
+                  <p className="text-white/90 text-lg mb-2">
+                    You are the school owner for: <span className="font-bold">{schoolCode}</span>
+                  </p>
+                  <p className="text-white/80 text-sm">
+                    Add teachers to your school and they'll automatically get premium access
+                  </p>
+                </div>
+              </div>
+              <div className="hidden lg:block">
+                <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 border border-white/30">
+                  <div className="flex items-center space-x-2 mb-1">
+                    <Crown className="h-5 w-5 text-yellow-300" />
+                    <span className="text-white font-semibold">School Owner</span>
+                  </div>
+                  <p className="text-white/80 text-xs">Full management access</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -209,13 +232,43 @@ export default function SchoolManagementPage() {
           </div>
         )}
 
+        {/* Info Card */}
+        <div className="bg-blue-50 border-l-4 border-blue-400 p-6 rounded-lg mb-8">
+          <div className="flex items-start space-x-4">
+            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+              <AlertCircle className="h-5 w-5 text-blue-600" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-blue-900 mb-2">How School Management Works</h3>
+              <ul className="space-y-2 text-blue-800 text-sm">
+                <li className="flex items-start">
+                  <CheckCircle className="h-4 w-4 mr-2 mt-0.5 text-blue-600 flex-shrink-0" />
+                  <span>As the <strong>school owner</strong>, you created the first account for your school</span>
+                </li>
+                <li className="flex items-start">
+                  <CheckCircle className="h-4 w-4 mr-2 mt-0.5 text-blue-600 flex-shrink-0" />
+                  <span>Add other teachers by entering their email address below</span>
+                </li>
+                <li className="flex items-start">
+                  <CheckCircle className="h-4 w-4 mr-2 mt-0.5 text-blue-600 flex-shrink-0" />
+                  <span>Added teachers automatically get <strong>premium access</strong> as part of your school subscription</span>
+                </li>
+                <li className="flex items-start">
+                  <CheckCircle className="h-4 w-4 mr-2 mt-0.5 text-blue-600 flex-shrink-0" />
+                  <span>Teachers must create an account with the email you provide to join your school</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
         {/* Add Teacher Form */}
-        <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
+        <div className="bg-white rounded-xl shadow-lg p-6 mb-8 border-2 border-green-200">
           <h2 className="text-xl font-semibold text-slate-900 mb-4 flex items-center">
-            <Plus className="h-5 w-5 mr-2 text-indigo-600" />
+            <Plus className="h-5 w-5 mr-2 text-green-600" />
             Add Teacher to School
           </h2>
-          
+
           <form onSubmit={addTeacher} className="flex gap-4">
             <div className="flex-1">
               <input
@@ -223,14 +276,14 @@ export default function SchoolManagementPage() {
                 value={newTeacherEmail}
                 onChange={(e) => setNewTeacherEmail(e.target.value)}
                 placeholder="Enter teacher's email address"
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                 required
               />
             </div>
             <button
               type="submit"
               disabled={addingTeacher || !newTeacherEmail.trim()}
-              className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center"
+              className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center font-semibold"
             >
               {addingTeacher ? (
                 <>

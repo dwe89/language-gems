@@ -22,6 +22,8 @@ import { AssignmentCard } from "../../../../components/classes/AssignmentCard";
 import { BulkAddStudentsModal } from "../../../../components/classes/BulkAddStudentsModal";
 import { downloadStudentCredentialsPDF, type StudentCredential } from "../../../../lib/pdf-utils";
 import { AddStudentModal } from "../../../../components/classes/AddStudentModal";
+import TeacherVocabularyAnalyticsDashboard from "../../../../components/teacher/TeacherVocabularyAnalyticsDashboard";
+import TeacherGrammarAnalyticsDashboard from "../../../../components/teacher/TeacherGrammarAnalyticsDashboard";
 
 // Define types for our data
 type ClassData = {
@@ -40,6 +42,7 @@ type Student = {
   username: string;
   joined_date: string;
   last_active: string;
+  overall_performance?: number;
 };
 
 type WordList = {
@@ -175,10 +178,24 @@ export default function ClassDetailPage({ params }: { params: { classId: string 
               activityMap.set(studentId, lastActivity);
             });
 
+            // Fetch total gems for each student from consolidated analytics
+            const { data: gemsData } = await supabase
+              .from('student_consolidated_xp_analytics')
+              .select('student_id, total_gems')
+              .in('student_id', studentIds);
+
+            const gemsMap = new Map();
+            if (gemsData) {
+              gemsData.forEach(analytics => {
+                gemsMap.set(analytics.student_id, analytics.total_gems || 0);
+              });
+            }
+
             // Transform to match our Student type
             const formattedStudents: Student[] = enrollments.map(enrollment => {
               const profile = profileMap.get(enrollment.student_id);
               const lastActivity = activityMap.get(enrollment.student_id);
+              const totalGems = gemsMap.get(enrollment.student_id);
 
               return {
                 id: enrollment.student_id,
@@ -186,6 +203,7 @@ export default function ClassDetailPage({ params }: { params: { classId: string 
                 username: profile?.username || '',
                 joined_date: enrollment.enrolled_at,
                 last_active: lastActivity ? lastActivity.toISOString() : enrollment.enrolled_at,
+                overall_performance: totalGems,
               };
             });
 
@@ -269,8 +287,10 @@ export default function ClassDetailPage({ params }: { params: { classId: string 
         return;
       }
 
-      // Download the PDF
-      downloadStudentCredentialsPDF(data.students, data.className);
+      // Download the PDF with school code
+      downloadStudentCredentialsPDF(data.students, data.className, {
+        schoolCode: data.schoolCode
+      });
 
     } catch (error) {
       console.error('Error downloading PDF:', error);
@@ -356,35 +376,35 @@ export default function ClassDetailPage({ params }: { params: { classId: string 
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50/20 to-purple-50/20 p-6">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* New, cleaner Header */}
-        <div className="bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-200 p-8 lg:p-12">
-          <div className="flex flex-col lg:flex-row items-center justify-between gap-8">
-            <div className="flex-1 space-y-6">
-              <div className="flex items-center gap-4">
+        <div className="bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-200 p-6 lg:p-8">
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
+            <div className="flex-1 space-y-4">
+              <div className="flex items-center gap-3">
                 <Link
                   href="/dashboard/classes"
-                  className="flex items-center px-4 py-2 text-slate-600 hover:text-indigo-600 font-medium transition-all duration-200 rounded-xl hover:bg-slate-50"
+                  className="flex items-center px-3 py-1.5 text-slate-600 hover:text-indigo-600 font-medium transition-all duration-200 rounded-lg hover:bg-slate-50"
                 >
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   Classes
                 </Link>
-                <ChevronRight className="h-5 w-5 text-slate-400" />
-                <h1 className="text-4xl font-bold text-slate-900">{classData.name}</h1>
+                <ChevronRight className="h-4 w-4 text-slate-400" />
+                <h1 className="text-3xl font-bold text-slate-900">{classData.name}</h1>
               </div>
 
-              <p className="text-slate-600 text-lg max-w-3xl leading-relaxed">
+              <p className="text-slate-600 text-base max-w-2xl leading-relaxed">
                 {classData.description}
               </p>
 
-              <div className="flex flex-wrap items-center gap-6">
-                <div className="flex items-center px-6 py-3 bg-slate-100 rounded-2xl border border-slate-200 shadow-sm">
-                  <Users className="h-5 w-5 mr-3 text-slate-600" />
-                  <span className="text-slate-900 font-bold text-lg">
+              <div className="flex flex-wrap items-center gap-4">
+                <div className="flex items-center px-4 py-2 bg-slate-100 rounded-xl border border-slate-200 shadow-sm">
+                  <Users className="h-4 w-4 mr-2 text-slate-600" />
+                  <span className="text-slate-900 font-semibold text-base">
                     {students.length} Student{students.length !== 1 ? 's' : ''}
                   </span>
                 </div>
-                <div className="flex items-center px-6 py-3 bg-slate-100 rounded-2xl border border-slate-200 shadow-sm">
-                  <Calendar className="h-5 w-5 mr-3 text-slate-600" />
-                  <span className="text-slate-900 font-bold text-lg">
+                <div className="flex items-center px-4 py-2 bg-slate-100 rounded-xl border border-slate-200 shadow-sm">
+                  <Calendar className="h-4 w-4 mr-2 text-slate-600" />
+                  <span className="text-slate-900 font-semibold text-base">
                     Created {formatDate(classData.created_at)}
                   </span>
                 </div>
@@ -392,15 +412,15 @@ export default function ClassDetailPage({ params }: { params: { classId: string 
             </div>
 
             {/* Quick Actions Panel - Reused from previous design */}
-            <div className="lg:w-80 mt-6 lg:mt-0">
-              <div className="bg-slate-100 rounded-3xl border border-slate-200 p-6 shadow-lg">
-                <div className="flex items-center justify-between mb-4">
+            <div className="lg:w-72 mt-4 lg:mt-0">
+              <div className="bg-slate-100 rounded-2xl border border-slate-200 p-4 shadow-lg">
+                <div className="flex items-center justify-between mb-3">
                   <div className="text-slate-600 text-sm font-semibold uppercase tracking-wider">
                     Quick Actions
                   </div>
                   <Link
                     href={`/dashboard/classes/${classId}/edit`}
-                    className="p-2 rounded-xl bg-white hover:bg-slate-50 text-slate-600 transition-all duration-200 hover:scale-105 shadow border border-slate-200"
+                    className="p-1.5 rounded-lg bg-white hover:bg-slate-50 text-slate-600 transition-all duration-200 hover:scale-105 shadow border border-slate-200"
                     title="Edit Class Settings"
                   >
                     <Settings className="h-4 w-4" />
@@ -414,20 +434,6 @@ export default function ClassDetailPage({ params }: { params: { classId: string 
                     <UserPlus className="h-4 w-4 mr-3" />
                     <span>Add Student</span>
                   </button>
-                  <Link
-                    href={`/dashboard/assignments/new?classId=${classId}`}
-                    className="w-full text-left p-3 bg-white hover:bg-slate-50 rounded-xl transition-all duration-200 flex items-center text-slate-700 font-medium shadow border border-slate-200"
-                  >
-                    <Book className="h-4 w-4 mr-3" />
-                    <span>Create Assignment</span>
-                  </Link>
-                  <Link
-                    href={`/dashboard/classes/${classId}/vocabulary-analytics`}
-                    className="w-full text-left p-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 rounded-xl transition-all duration-200 flex items-center text-white font-medium shadow-lg hover:shadow-xl border border-indigo-700"
-                  >
-                    <Brain className="h-4 w-4 mr-3" />
-                    <span>Vocabulary Analytics</span>
-                  </Link>
                   {students.length > 0 && (
                     <button
                       onClick={downloadCredentialsPDF}
@@ -446,9 +452,16 @@ export default function ClassDetailPage({ params }: { params: { classId: string 
 
         {/* Tabs Section */}
         <div className="bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden">
-          <Tabs defaultValue="students" className="w-full">
+          <Tabs defaultValue="overview" className="w-full">
             <div className="border-b border-slate-200 bg-white/50 px-8 pt-6">
               <TabsList className="bg-slate-100 border border-slate-200 rounded-xl p-1">
+                <TabsTrigger
+                  value="overview"
+                  className="px-6 py-3 data-[state=active]:bg-indigo-600 data-[state=active]:text-white font-semibold rounded-lg data-[state=active]:shadow-md transition-all duration-200"
+                >
+                  <Activity className="h-4 w-4 mr-2" />
+                  Overview
+                </TabsTrigger>
                 <TabsTrigger
                   value="students"
                   className="px-6 py-3 data-[state=active]:bg-indigo-600 data-[state=active]:text-white font-semibold rounded-lg data-[state=active]:shadow-md transition-all duration-200"
@@ -457,15 +470,118 @@ export default function ClassDetailPage({ params }: { params: { classId: string 
                   Students
                 </TabsTrigger>
                 <TabsTrigger
-                  value="assignments"
+                  value="leaderboard"
+                  className="px-6 py-3 data-[state=active]:bg-indigo-600 data-[state=active]:text-white font-semibold rounded-lg data-[state=active]:shadow-md transition-all duration-200"
+                >
+                  <Award className="h-4 w-4 mr-2" />
+                  Leaderboard
+                </TabsTrigger>
+                <TabsTrigger
+                  value="vocabulary"
+                  className="px-6 py-3 data-[state=active]:bg-indigo-600 data-[state=active]:text-white font-semibold rounded-lg data-[state=active]:shadow-md transition-all duration-200"
+                >
+                  <Brain className="h-4 w-4 mr-2" />
+                  Vocabulary
+                </TabsTrigger>
+                <TabsTrigger
+                  value="grammar"
                   className="px-6 py-3 data-[state=active]:bg-indigo-600 data-[state=active]:text-white font-semibold rounded-lg data-[state=active]:shadow-md transition-all duration-200"
                 >
                   <Book className="h-4 w-4 mr-2" />
-                  Assignments
+                  Grammar
                 </TabsTrigger>
               </TabsList>
             </div>
 
+            {/* Overview Tab */}
+            <TabsContent value="overview" className="m-0">
+              <div className="p-8 space-y-8">
+                <div>
+                  <h2 className="text-2xl font-bold text-slate-900">Class Overview</h2>
+                  <p className="text-slate-600 mt-1">Quick snapshot of your class performance and activity</p>
+                </div>
+
+                {/* Key Stats Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-6 border border-blue-200">
+                    <div className="flex items-center justify-between mb-2">
+                      <Users className="h-8 w-8 text-blue-600" />
+                      <span className="text-3xl font-bold text-blue-900">{students.length}</span>
+                    </div>
+                    <p className="text-blue-700 font-semibold">Total Students</p>
+                  </div>
+
+                  <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl p-6 border border-green-200">
+                    <div className="flex items-center justify-between mb-2">
+                      <CheckCircle className="h-8 w-8 text-green-600" />
+                      <span className="text-3xl font-bold text-green-900">
+                        {students.filter(s => {
+                          const lastActive = new Date(s.last_active);
+                          const daysSince = Math.floor((new Date().getTime() - lastActive.getTime()) / (1000 * 60 * 60 * 24));
+                          return daysSince < 7;
+                        }).length}
+                      </span>
+                    </div>
+                    <p className="text-green-700 font-semibold">Active This Week</p>
+                  </div>
+
+                  <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-2xl p-6 border border-purple-200">
+                    <div className="flex items-center justify-between mb-2">
+                      <Book className="h-8 w-8 text-purple-600" />
+                      <span className="text-3xl font-bold text-purple-900">{wordLists.length}</span>
+                    </div>
+                    <p className="text-purple-700 font-semibold">Active Assignments</p>
+                  </div>
+
+                  <div className="bg-gradient-to-br from-amber-50 to-amber-100 rounded-2xl p-6 border border-amber-200">
+                    <div className="flex items-center justify-between mb-2">
+                      <TrendingUp className="h-8 w-8 text-amber-600" />
+                      <span className="text-3xl font-bold text-amber-900">
+                        {wordLists.length > 0
+                          ? Math.round((wordLists.reduce((sum, wl) => sum + wl.completed_by, 0) / (wordLists.length * students.length)) * 100)
+                          : 0}%
+                      </span>
+                    </div>
+                    <p className="text-amber-700 font-semibold">Avg Completion</p>
+                  </div>
+                </div>
+
+                {/* Recent Activity */}
+                <div className="bg-slate-50 rounded-2xl p-6 border border-slate-200">
+                  <h3 className="text-xl font-bold text-slate-900 mb-4">Recent Activity</h3>
+                  {students.length > 0 ? (
+                    <div className="space-y-3">
+                      {students
+                        .sort((a, b) => new Date(b.last_active).getTime() - new Date(a.last_active).getTime())
+                        .slice(0, 5)
+                        .map(student => (
+                          <div key={student.id} className="flex items-center justify-between bg-white rounded-xl p-4 border border-slate-200">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-400 to-purple-400 flex items-center justify-center text-white font-bold">
+                                {student.name.charAt(0)}
+                              </div>
+                              <div>
+                                <p className="font-semibold text-slate-900">{student.name}</p>
+                                <p className="text-sm text-slate-600">@{student.username}</p>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-sm text-slate-600">Last active</p>
+                              <p className="text-sm font-semibold text-slate-900">
+                                {formatDate(student.last_active)}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  ) : (
+                    <p className="text-slate-600 text-center py-8">No student activity yet</p>
+                  )}
+                </div>
+              </div>
+            </TabsContent>
+
+            {/* Students Tab */}
             <TabsContent value="students" className="m-0">
               <div className="p-8 space-y-8">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -598,6 +714,82 @@ export default function ClassDetailPage({ params }: { params: { classId: string 
                     </div>
                   </div>
                 )}
+              </div>
+            </TabsContent>
+
+            {/* Leaderboard Tab */}
+            <TabsContent value="leaderboard" className="m-0">
+              <div className="p-8 space-y-8">
+                <div>
+                  <h2 className="text-2xl font-bold text-slate-900">Class Leaderboard</h2>
+                  <p className="text-slate-600 mt-1">Top performers in your class</p>
+                </div>
+
+                {students.length > 0 ? (
+                  <div className="space-y-4">
+                    {students
+                      .sort((a, b) => b.overall_performance - a.overall_performance)
+                      .map((student, index) => (
+                        <div
+                          key={student.id}
+                          className={`flex items-center gap-4 p-6 rounded-2xl border-2 transition-all ${
+                            index === 0
+                              ? 'bg-gradient-to-r from-yellow-50 to-amber-50 border-yellow-300'
+                              : index === 1
+                              ? 'bg-gradient-to-r from-slate-50 to-gray-50 border-slate-300'
+                              : index === 2
+                              ? 'bg-gradient-to-r from-orange-50 to-amber-50 border-orange-300'
+                              : 'bg-white border-slate-200'
+                          }`}
+                        >
+                          <div className={`flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg ${
+                            index === 0
+                              ? 'bg-yellow-400 text-yellow-900'
+                              : index === 1
+                              ? 'bg-slate-400 text-slate-900'
+                              : index === 2
+                              ? 'bg-orange-400 text-orange-900'
+                              : 'bg-slate-200 text-slate-700'
+                          }`}>
+                            {index + 1}
+                          </div>
+
+                          <div className="flex-1">
+                            <p className="font-bold text-slate-900 text-lg">{student.name}</p>
+                            <p className="text-sm text-slate-600">@{student.username}</p>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <Star className={`h-5 w-5 ${index < 3 ? 'text-yellow-500 fill-yellow-500' : 'text-slate-400'}`} />
+                            <span className="font-bold text-slate-900 text-xl">
+                              {student.overall_performance || 0}
+                            </span>
+                            <span className="text-slate-600">gems</span>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                ) : (
+                  <div className="bg-slate-50 rounded-2xl p-12 text-center border border-slate-200">
+                    <Award className="h-16 w-16 text-slate-400 mx-auto mb-4" />
+                    <h3 className="text-xl font-bold text-slate-900 mb-2">No students yet</h3>
+                    <p className="text-slate-600">Add students to see the leaderboard</p>
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+
+            {/* Vocabulary Tab */}
+            <TabsContent value="vocabulary" className="m-0">
+              <div className="p-8">
+                <TeacherVocabularyAnalyticsDashboard classId={classId} />
+              </div>
+            </TabsContent>
+
+            {/* Grammar Tab */}
+            <TabsContent value="grammar" className="m-0">
+              <div className="p-8">
+                <TeacherGrammarAnalyticsDashboard classId={classId} />
               </div>
             </TabsContent>
           </Tabs>

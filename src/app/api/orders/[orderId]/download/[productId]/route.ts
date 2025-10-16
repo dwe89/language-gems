@@ -100,8 +100,11 @@ export async function GET(
     // Log the download
     console.log(`Download initiated for order ${orderId}, product ${productId}`);
 
-    // Redirect to the signed URL to trigger download
-    return NextResponse.redirect(signedUrl.signedUrl);
+    // Return the signed URL as JSON for the frontend to handle
+    return NextResponse.json({
+      downloadUrl: signedUrl.signedUrl,
+      productName: orderItem.product.name
+    });
 
   } catch (error) {
     console.error('Error in download endpoint:', error);

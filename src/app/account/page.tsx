@@ -5,28 +5,29 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../components/auth/AuthProvider';
 import { supabaseBrowser } from '../../components/auth/AuthProvider';
-import DeleteAccountModal from '../../components/account/DeleteAccountModal';
-import { 
-  User, ShoppingBag, Settings, Crown, ArrowRight, School, BookOpen, Users, 
-  ClipboardList, TrendingUp, BellRing, Sparkles, Zap, Target, Award,
-  BarChart3, Calendar, Clock, Star, ChevronRight, Plus, Activity, Trash2
+import {
+  User, ShoppingBag, Settings, Crown, ArrowRight, School, BookOpen, Users,
+  ClipboardList, TrendingUp, Sparkles, Zap, Target,
+  BarChart3, Star, ChevronRight, Activity, Plus, Award
 } from 'lucide-react';
 
 export default function AccountPage() {
   const { user, isLoading, userRole, hasSubscription, isAdmin, isTeacher, isStudent } = useAuth();
-  const [schoolInfo, setSchoolInfo] = useState<{schoolCode: string, schoolInitials: string} | null>(null);
+  const [schoolInfo, setSchoolInfo] = useState<{
+    schoolCode: string;
+    schoolInitials: string;
+    isOwner: boolean;
+    memberCount: number;
+  } | null>(null);
   const [teacherStats, setTeacherStats] = useState<{
     totalClasses: number;
     activeStudents: number;
     assignmentsCreated: number;
-    recentStudentActivity: any[];
   }>({
     totalClasses: 0,
     activeStudents: 0,
-    assignmentsCreated: 0,
-    recentStudentActivity: [] // To store actual recent student activity
+    assignmentsCreated: 0
   });
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const router = useRouter();
 
   // Redirect students to their dashboard - they shouldn't access the account page
@@ -47,7 +48,7 @@ export default function AccountPage() {
         // Get teacher's school information from their profile
         const { data: profile, error: profileError } = await supabaseBrowser
           .from('user_profiles')
-          .select('school_code, school_initials')
+          .select('school_code, school_initials, is_school_owner')
           .eq('user_id', user.id)
           .single();
 
@@ -56,28 +57,31 @@ export default function AccountPage() {
           return;
         }
 
-        // If user has a school_code, use it directly
+        // If user has a school_code, fetch member count
+        let memberCount = 0;
         if (profile.school_code) {
+          const { count } = await supabaseBrowser
+            .from('school_memberships')
+            .select('*', { count: 'exact', head: true })
+            .eq('school_code', profile.school_code)
+            .eq('status', 'active');
+
+          memberCount = count || 0;
+
           setSchoolInfo({
             schoolCode: profile.school_code,
-            schoolInitials: profile.school_initials || profile.school_code
+            schoolInitials: profile.school_initials || profile.school_code,
+            isOwner: profile.is_school_owner || false,
+            memberCount
           });
         } else if (profile.school_initials) {
-          // Fallback: Get school code from school_codes table (for legacy users)
-          const { data: schoolData, error: schoolError } = await supabaseBrowser
-            .from('school_codes')
-            .select('code, school_initials')
-            .eq('school_initials', profile.school_initials)
-            .single();
-
-          if (!schoolError && schoolData) {
-            setSchoolInfo({
-              schoolCode: schoolData.code,
-              schoolInitials: schoolData.school_initials
-            });
-          } else {
-            console.error("Error fetching school data:", schoolError);
-          }
+          // Legacy users with only school_initials (no school_code yet)
+          setSchoolInfo({
+            schoolCode: profile.school_initials,
+            schoolInitials: profile.school_initials,
+            isOwner: profile.is_school_owner || false,
+            memberCount: 0
+          });
         }
 
         // --- Fetch Teacher-specific Stats ---
@@ -116,49 +120,16 @@ export default function AccountPage() {
           .select('*', { count: 'exact' })
           .eq('created_by', user.id);
 
-        // Fetch recent student activity (e.g., last 5 completed assignments)
-        // First get the teacher's assignment IDs
-        const { data: teacherAssignments, error: teacherAssignmentsError } = await supabaseBrowser
-          .from('assignments')
-          .select('id')
-          .eq('created_by', user.id);
-
-  let recentActivityData: any[] = [];
-  let recentActivityError: any = null;
-
-        if (!teacherAssignmentsError && teacherAssignments && teacherAssignments.length > 0) {
-          const assignmentIds = teacherAssignments.map(a => a.id);
-          const { data, error } = await supabaseBrowser
-            .from('enhanced_assignment_progress')
-            .select(`
-              student_id,
-              assignment_id,
-              completed_at,
-              assignments!inner(title)
-            `)
-            .in('assignment_id', assignmentIds)
-            .not('completed_at', 'is', null)
-            .order('completed_at', { ascending: false })
-            .limit(5);
-
-          recentActivityData = data || [];
-          recentActivityError = error;
-        }
-
-
         setTeacherStats({
           totalClasses: classesCount || 0,
           activeStudents: studentsCount || 0,
-          assignmentsCreated: assignmentsCount || 0,
-          recentStudentActivity: recentActivityData || []
+          assignmentsCreated: assignmentsCount || 0
         });
 
         if (classesError) console.error("Error fetching classes count:", classesError);
         if (teacherClassesError) console.error("Error fetching teacher classes:", teacherClassesError);
         if (studentsError) console.error("Error fetching students count:", studentsError);
         if (assignmentsError) console.error("Error fetching assignments count:", assignmentsError);
-        if (teacherAssignmentsError) console.error("Error fetching teacher assignments:", teacherAssignmentsError);
-        if (recentActivityError) console.error("Error fetching recent student activity:", recentActivityError);
 
 
       } catch (error) {
@@ -211,16 +182,8 @@ export default function AccountPage() {
 
   // Define account sections, conditionally showing Teacher Dashboard based on subscription
   const accountSections = [
-    // Only show Teacher Dashboard for teachers with active subscriptions
-    ...(isTeacher && hasSubscription ? [{
-      title: 'Teacher Dashboard',
-      description: 'Manage your classes, assignments, and student progress',
-      icon: School,
-      href: '/dashboard',
-      color: 'from-indigo-500 to-blue-600'
-    }] : []),
-    // School Management for teachers with subscriptions
-    ...(isTeacher && hasSubscription ? [{
+    // School Management for school owners only
+    ...(isTeacher && hasSubscription && schoolInfo?.isOwner ? [{
       title: 'School Management',
       description: 'Add teachers to your school and manage memberships',
       icon: Users,
@@ -313,77 +276,63 @@ export default function AccountPage() {
             </div>
           </div>
         )}
-        {/* Hero Header */}
-        <div className="relative overflow-hidden bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 rounded-2xl shadow-2xl p-8 mb-8">
-          <div className="absolute inset-0 bg-black/10"></div>
-          <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-32 translate-x-32"></div>
-          <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-24 -translate-x-24"></div>
-          
-          <div className="relative z-10 flex items-center justify-between">
-            <div className="flex items-center space-x-6">
-              <div className="relative">
-                <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center border border-white/30">
-                  <User className="h-10 w-10 text-white" />
-                </div>
-                <div className="absolute -top-2 -right-2 w-6 h-6 bg-green-400 rounded-full border-2 border-white flex items-center justify-center">
-                  <div className="w-2 h-2 bg-white rounded-full"></div>
-                </div>
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-white mb-2">
-                  Welcome back, {user.email?.split('@')[0]}! 
-                  <Sparkles className="inline-block h-8 w-8 ml-2 text-yellow-300" />
-                </h1>
-                <p className="text-white/80 text-lg mb-3">Ready to inspire your students today?</p>
-                <div className="flex items-center space-x-3">
-                  {userRole && (
-                    <span className="px-3 py-1 bg-white/20 backdrop-blur-sm text-white text-sm rounded-full capitalize border border-white/30">
-                      {userRole}
-                    </span>
-                  )}
-                  {hasSubscription && (
-                    <span className="px-3 py-1 bg-gradient-to-r from-yellow-400 to-orange-400 text-white text-sm rounded-full flex items-center font-medium">
-                      <Crown className="h-4 w-4 mr-1" />
-                      Premium
-                    </span>
-                  )}
-                  {schoolInfo && isTeacher && (
-                    <span className="px-3 py-1 bg-white/20 backdrop-blur-sm text-white text-sm rounded-full flex items-center border border-white/30">
-                      <School className="h-4 w-4 mr-1" />
-                      {schoolInfo.schoolCode}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-            
-            {isTeacher && hasSubscription && (
-              <div className="hidden lg:block">
-                <Link
-                  href="/dashboard"
-                  className="group bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white px-8 py-4 rounded-xl transition-all duration-300 flex items-center space-x-3 border border-white/30 hover:border-white/50"
-                >
-                  <Zap className="h-6 w-6" />
-                  <span className="font-semibold">Launch Dashboard</span>
-                  <ChevronRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
-                </Link>
-              </div>
-            )}
 
-            {isTeacher && !hasSubscription && (
-              <div className="hidden lg:block">
-                <Link
-                  href="/account/upgrade"
-                  className="group bg-gradient-to-r from-yellow-400 to-orange-400 hover:from-yellow-500 hover:to-orange-500 text-white px-8 py-4 rounded-xl transition-all duration-300 flex items-center space-x-3 shadow-lg hover:shadow-xl"
-                >
-                  <Crown className="h-6 w-6" />
-                  <span className="font-semibold">Upgrade to Premium</span>
-                  <ChevronRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
-                </Link>
+
+        {/* School Management - Prominent Feature for School Owners */}
+        {isTeacher && hasSubscription && schoolInfo?.isOwner && (
+          <div className="mb-8">
+            <Link
+              href="/account/school"
+              className="group relative overflow-hidden bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-500 p-8 block"
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-16 translate-x-16"></div>
+              <div className="absolute top-4 right-4 bg-yellow-400 text-yellow-900 px-3 py-1 rounded-full text-xs font-bold">
+                SCHOOL ADMIN
               </div>
-            )}
+
+              <div className="relative z-10 flex items-center justify-between">
+                <div className="flex items-center space-x-6">
+                  <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                    <School className="h-8 w-8 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-white mb-2 flex items-center">
+                      School Management
+                      <Crown className="h-6 w-6 ml-2 text-yellow-300" />
+                    </h2>
+                    <p className="text-white/90 text-lg">
+                      Add teachers to your school and manage memberships
+                    </p>
+                    <div className="flex items-center space-x-4 mt-3">
+                      <span className="flex items-center text-white/80 text-sm">
+                        <School className="h-4 w-4 mr-1" />
+                        {schoolInfo.schoolCode}
+                      </span>
+                      <span className="flex items-center text-white/80 text-sm">
+                        <Users className="h-4 w-4 mr-1" />
+                        {schoolInfo.memberCount} {schoolInfo.memberCount === 1 ? 'Teacher' : 'Teachers'}
+                      </span>
+                      <span className="bg-white/20 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-full font-medium">
+                        Owner
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-4">
+                  <div className="hidden md:flex flex-col items-center text-white/80">
+                    <Users className="h-8 w-8 mb-1" />
+                    <span className="text-xs">Manage Team</span>
+                  </div>
+                  <div className="bg-white/20 backdrop-blur-sm p-3 rounded-xl group-hover:bg-white/30 transition-colors">
+                    <ChevronRight className="h-8 w-8 text-white group-hover:translate-x-1 transition-transform" />
+                  </div>
+                </div>
+              </div>
+            </Link>
           </div>
-        </div>
+        )}
 
         {/* Teacher Dashboard - Prominent Feature for Subscribed Teachers */}
         {isTeacher && hasSubscription && (
@@ -424,7 +373,7 @@ export default function AccountPage() {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center space-x-4">
                   <div className="hidden md:flex flex-col items-center text-white/80">
                     <Activity className="h-8 w-8 mb-1" />
@@ -541,7 +490,7 @@ export default function AccountPage() {
             </Link>
 
             <Link
-              href="/dashboard/analytics"
+              href="/dashboard"
               className="group bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-6 border border-slate-200 hover:border-purple-300"
             >
               <div className="flex items-center justify-between mb-4">
@@ -557,8 +506,8 @@ export default function AccountPage() {
         )}
 
         {/* Account Management Sections */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {accountSections.filter(section => section.title !== 'Teacher Dashboard').map((section) => {
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          {accountSections.map((section) => {
             const IconComponent = section.icon;
             const isUpgrade = section.title === 'Upgrade to Premium';
             
@@ -602,29 +551,7 @@ export default function AccountPage() {
           })}
         </div>
 
-        {/* Danger Zone - Account Deletion */}
-        <div className="mt-8 bg-white rounded-xl shadow-lg p-6 border border-red-200">
-          <div className="flex items-start justify-between">
-            <div className="flex items-start space-x-4">
-              <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
-                <Trash2 className="h-6 w-6 text-red-600" />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-slate-800 mb-2">Danger Zone</h3>
-                <p className="text-slate-600 mb-4 max-w-md">
-                  Permanently delete your account and all associated data. This action cannot be undone.
-                </p>
-                <button
-                  onClick={() => setShowDeleteModal(true)}
-                  className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center"
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Delete Account
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+
 
         {/* Teaching Performance Stats */}
         {isTeacher && (
@@ -721,110 +648,8 @@ export default function AccountPage() {
           </div>
         )}
 
-        {/* Recent Activity Feed */}
-        <div className="mt-8 bg-white rounded-2xl shadow-lg p-8 border border-slate-200">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h2 className="text-2xl font-bold text-slate-800 mb-2 flex items-center">
-                <BellRing className="h-7 w-7 text-orange-500 mr-3" />
-                Student Activity Feed
-              </h2>
-              <p className="text-slate-600">Stay updated with your students' progress</p>
-            </div>
-            <div className="flex items-center space-x-3">
-              <div className="flex items-center text-sm text-slate-500">
-                <Clock className="h-4 w-4 mr-1" />
-                Live updates
-              </div>
-              <Link
-                href="/dashboard/analytics"
-                className="text-indigo-600 hover:text-indigo-700 text-sm font-medium flex items-center"
-              >
-                View All
-                <ChevronRight className="h-4 w-4 ml-1" />
-              </Link>
-            </div>
-          </div>
 
-          {teacherStats.recentStudentActivity.length > 0 ? (
-            <div className="space-y-4">
-              {teacherStats.recentStudentActivity.map((activity, index) => (
-                <div key={index} className="group flex items-center justify-between p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center">
-                      <Award className="h-5 w-5 text-white" />
-                    </div>
-                    <div>
-                      <p className="text-slate-800 font-medium">
-                        Student {activity.student_id} completed{' '}
-                        <span className="text-indigo-600 font-semibold">
-                          {activity.assignments?.title || 'an assignment'}
-                        </span>
-                      </p>
-                      <div className="flex items-center space-x-4 mt-1">
-                        <p className="text-slate-500 text-sm flex items-center">
-                          <Calendar className="h-3 w-3 mr-1" />
-                          {new Date(activity.completed_at).toLocaleString()}
-                        </p>
-                        <span className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full font-medium">
-                          Completed
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  <Link 
-                    href={`/dashboard/student/${activity.student_id}`} 
-                    className="opacity-0 group-hover:opacity-100 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center"
-                  >
-                    View Progress
-                    <ArrowRight className="h-4 w-4 ml-1" />
-                  </Link>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-16">
-              <div className="relative">
-                <div className="w-24 h-24 bg-gradient-to-r from-indigo-100 to-purple-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <Users className="h-12 w-12 text-indigo-400" />
-                </div>
-                <div className="absolute top-0 right-1/2 translate-x-8 w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center">
-                  <Sparkles className="h-3 w-3 text-white" />
-                </div>
-              </div>
-              <h3 className="text-xl font-semibold text-slate-700 mb-3">Ready to see some action?</h3>
-              <p className="text-slate-500 mb-8 max-w-md mx-auto">
-                Create your first assignment and watch as your students engage with interactive vocabulary games and assessments.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link
-                  href="/dashboard/assignments/new"
-                  className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-8 py-3 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center shadow-lg hover:shadow-xl"
-                >
-                  <Plus className="h-5 w-5 mr-2" />
-                  Create First Assignment
-                </Link>
-                <Link
-                  href="/dashboard/classes"
-                  className="bg-white hover:bg-slate-50 text-slate-700 px-8 py-3 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center border border-slate-300 hover:border-slate-400"
-                >
-                  <BookOpen className="h-5 w-5 mr-2" />
-                  Set Up Class
-                </Link>
-              </div>
-            </div>
-          )}
-        </div>
       </div>
-
-      {/* Delete Account Modal */}
-      {showDeleteModal && (
-        <DeleteAccountModal 
-          isOpen={showDeleteModal}
-          onClose={() => setShowDeleteModal(false)}
-          userType={isTeacher ? 'teacher' : 'student'}
-        />
-      )}
     </div>
   );
 }

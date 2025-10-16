@@ -226,31 +226,72 @@ export default function TeacherGrammarAnalyticsDashboard({
         </div>
       </div>
 
-      {/* Students Needing Attention */}
-      {analytics.insights.studentsNeedingAttention.length > 0 && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-            <AlertCircle className="h-5 w-5 mr-2 text-red-600" />
-            Students Needing Support
-          </h3>
-          <div className="space-y-3">
-            {analytics.insights.studentsNeedingAttention.slice(0, 5).map((student) => (
-              <div key={student.studentId} className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
-                <div>
-                  <p className="font-medium text-gray-900">{student.studentName}</p>
-                  <p className="text-sm text-gray-600">
-                    Weakest: {student.weakestTense} • {student.attemptsCount} attempts
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-lg font-bold text-red-600">{Math.round(student.accuracy)}%</p>
-                  <p className="text-xs text-gray-500">Accuracy</p>
+      {/* Students Needing Support - Active students with low performance */}
+      {(() => {
+        const activeStudentsNeedingSupport = analytics.insights.studentsNeedingAttention
+          .filter(s => s.attemptsCount > 0); // Only students who have attempted grammar
+        const inactiveStudents = analytics.studentProgress
+          .filter(s => s.totalAttempts === 0); // Students who never attempted grammar
+
+        return (
+          <>
+            {activeStudentsNeedingSupport.length > 0 && (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <AlertCircle className="h-5 w-5 mr-2 text-red-600" />
+                  Students Needing Support
+                </h3>
+                <p className="text-sm text-gray-600 mb-4">Active students with low accuracy in grammar practice</p>
+                <div className="space-y-3">
+                  {activeStudentsNeedingSupport.slice(0, 5).map((student) => (
+                    <div key={student.studentId} className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
+                      <div>
+                        <p className="font-medium text-gray-900">{student.studentName}</p>
+                        <p className="text-sm text-gray-600">
+                          Weakest: {student.weakestTense} • {student.attemptsCount} attempts
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-lg font-bold text-red-600">{Math.round(student.accuracy)}%</p>
+                        <p className="text-xs text-gray-500">Accuracy</p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
-      )}
+            )}
+
+            {/* Students Who Haven't Attempted Grammar */}
+            {inactiveStudents.length > 0 && (
+              <div className="bg-white rounded-xl shadow-sm border border-orange-200 p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <AlertCircle className="h-5 w-5 text-orange-500 mr-2" />
+                  Students Not Yet Active
+                </h3>
+                <p className="text-sm text-gray-600 mb-4">These students have not attempted any grammar practice yet</p>
+                <div className="space-y-3">
+                  {inactiveStudents.slice(0, 5).map((student) => (
+                    <div key={student.studentId} className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
+                      <div className="flex items-center">
+                        <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center mr-3">
+                          <Users className="h-4 w-4 text-orange-600" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900">{student.studentName}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-semibold text-orange-700">No activity</p>
+                        <p className="text-xs text-gray-500">Never attempted</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        );
+      })()}
     </div>
   );
 

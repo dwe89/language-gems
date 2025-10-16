@@ -697,12 +697,14 @@ export class TeacherVocabularyAnalyticsService {
 
       if (vocabError) throw vocabError;
 
-      // Group by date
+      // Group by date with proficiency tracking
       const trendsByDate = new Map<string, {
         activeStudents: Set<string>;
         totalEncounters: number;
         correctEncounters: number;
-        masteredWords: Set<string>;
+        proficientWords: Set<string>;
+        learningWords: Set<string>;
+        strugglingWords: Set<string>;
       }>();
 
       // Process game sessions for active students
@@ -713,13 +715,15 @@ export class TeacherVocabularyAnalyticsService {
             activeStudents: new Set(),
             totalEncounters: 0,
             correctEncounters: 0,
-            masteredWords: new Set()
+            proficientWords: new Set(),
+            learningWords: new Set(),
+            strugglingWords: new Set()
           });
         }
         trendsByDate.get(date)!.activeStudents.add(session.student_id);
       });
 
-      // Process vocabulary data for accuracy
+      // Process vocabulary data for accuracy and proficiency
       (vocabData || []).forEach(vocab => {
         const date = vocab.last_encountered_at.split('T')[0];
         if (!trendsByDate.has(date)) {
@@ -727,14 +731,27 @@ export class TeacherVocabularyAnalyticsService {
             activeStudents: new Set(),
             totalEncounters: 0,
             correctEncounters: 0,
-            masteredWords: new Set()
+            proficientWords: new Set(),
+            learningWords: new Set(),
+            strugglingWords: new Set()
           });
         }
         const trend = trendsByDate.get(date)!;
         trend.totalEncounters += vocab.total_encounters;
         trend.correctEncounters += vocab.correct_encounters;
-        if (vocab.mastery_level >= 4) {
-          trend.masteredWords.add(`${vocab.student_id}-${date}`);
+
+        // Calculate accuracy and categorize by proficiency level
+        const accuracy = vocab.total_encounters > 0
+          ? (vocab.correct_encounters / vocab.total_encounters) * 100
+          : 0;
+        const wordKey = `${vocab.student_id}-${date}`;
+
+        if (accuracy >= 90 && vocab.total_encounters >= 5) {
+          trend.proficientWords.add(wordKey);
+        } else if (accuracy >= 60 && vocab.total_encounters >= 3) {
+          trend.learningWords.add(wordKey);
+        } else {
+          trend.strugglingWords.add(wordKey);
         }
       });
 
@@ -751,13 +768,15 @@ export class TeacherVocabularyAnalyticsService {
 
         trends.push({
           date: dateStr,
-          totalWords: 0, // Not tracked daily
-          masteredWords: dayData ? dayData.masteredWords.size : 0,
+          totalWords: 0,
+          proficientWords: dayData ? dayData.proficientWords.size : 0,
+          learningWords: dayData ? dayData.learningWords.size : 0,
+          strugglingWords: dayData ? dayData.strugglingWords.size : 0,
           averageAccuracy: dayData && dayData.totalEncounters > 0
             ? Math.round((dayData.correctEncounters / dayData.totalEncounters) * 100)
             : 0,
           activeStudents: dayData ? dayData.activeStudents.size : 0,
-          wordsLearned: 0 // Not tracked daily
+          wordsLearned: 0
         });
       }
 
@@ -785,8 +804,10 @@ export class TeacherVocabularyAnalyticsService {
       .sort((a, b) => b.averageAccuracy - a.averageAccuracy)
       .slice(0, 5);
 
+    // Only include students who have actually attempted vocabulary (totalWords > 0)
+    // This filters out students who have never logged in
     const studentsNeedingAttention = studentProgress
-      .filter(s => s.averageAccuracy < 60 || s.overdueWords > 10)
+      .filter(s => s.totalWords > 0 && (s.averageAccuracy < 60 || s.overdueWords > 10))
       .sort((a, b) => a.averageAccuracy - b.averageAccuracy)
       .slice(0, 10);
 

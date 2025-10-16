@@ -1,6 +1,5 @@
 import { jsPDF } from 'jspdf';
-// jspdf-autotable is no longer used for this design, but we'll keep the import for reference.
-// import autoTable from 'jspdf-autotable';
+// jspdf-autotable is no longer used for this design.
 
 // Re-export the interface for broader usability
 export interface StudentCredential {
@@ -10,119 +9,209 @@ export interface StudentCredential {
   joinedDate: string;
 }
 
+export interface PDFGenerationOptions {
+  schoolCode?: string;
+}
+
+// --- CONSTANTS ---
+// A4 Dimensions (approx) in mm: 210 x 297
+
+const MARGIN_LEFT = 10;
+const MARGIN_RIGHT = 10;
+const MARGIN_TOP_START = 45; // Start cards below the title block
+const MARGIN_BOTTOM = 15;
+
+const PAGE_WIDTH = 210; // A4 Width in mm
+const PAGE_HEIGHT = 297; // A4 Height in mm
+
+// Desired layout: 2 columns x 4 rows = 8 cards
+const CARDS_PER_ROW = 2;
+const CARDS_PER_COLUMN = 4;
+const CARDS_PER_PAGE = CARDS_PER_ROW * CARDS_PER_COLUMN; // 8 cards per page
+
+const HORIZONTAL_SPACING = 5; // Spacing between columns
+const VERTICAL_SPACING = 5; // Spacing between rows
+
+// Available space for cards
+const AVAILABLE_WIDTH = PAGE_WIDTH - MARGIN_LEFT - MARGIN_RIGHT;
+const AVAILABLE_HEIGHT = PAGE_HEIGHT - MARGIN_TOP_START - MARGIN_BOTTOM;
+
+// Calculate Card Dimensions (allowing for spacing)
+const CARD_WIDTH = (AVAILABLE_WIDTH - HORIZONTAL_SPACING * (CARDS_PER_ROW - 1)) / CARDS_PER_ROW; // Approx 97.5mm
+const CARD_HEIGHT = (AVAILABLE_HEIGHT - VERTICAL_SPACING * (CARDS_PER_COLUMN - 1)) / CARDS_PER_COLUMN; // Approx 65.5mm
+
+// --- Brand Colors (Using LanguageGems Purple for accent) ---
+const BRAND_PURPLE = [102, 63, 230];
+const DARK_TEXT = [30, 30, 30];
+const LIGHT_GRAY_BG = [250, 250, 250];
+
+// --- Cut Line Styling (scissors-friendly dashed lines) ---
+const CUT_LINE_COLOR = [100, 100, 100];
+const CUT_LINE_WIDTH = 0.5;
+const DASH_PATTERN = [3, 2]; // 3mm line, 2mm gap
+
+/**
+ * Draws a single student credential card onto the PDF document.
+ */
+function drawStudentCard(
+  doc: jsPDF,
+  student: StudentCredential,
+  x: number,
+  y: number,
+  options?: PDFGenerationOptions
+): void {
+  const innerPadding = 5;
+  const accentBarHeight = 4;
+
+  // --- 1. Draw Dashed Cut Lines (First, for background coverage) ---
+  doc.setDrawColor(CUT_LINE_COLOR[0], CUT_LINE_COLOR[1], CUT_LINE_COLOR[2]);
+  doc.setLineWidth(CUT_LINE_WIDTH);
+  doc.setLineDashPattern(DASH_PATTERN, 0);
+  doc.rect(x, y, CARD_WIDTH, CARD_HEIGHT, 'S');
+  doc.setLineDashPattern([], 0); // Reset to solid lines
+
+  // --- 2. Card Background Fill ---
+  doc.setFillColor(LIGHT_GRAY_BG[0], LIGHT_GRAY_BG[1], LIGHT_GRAY_BG[2]);
+  doc.rect(x + CUT_LINE_WIDTH, y + CUT_LINE_WIDTH, CARD_WIDTH - 2 * CUT_LINE_WIDTH, CARD_HEIGHT - 2 * CUT_LINE_WIDTH, 'F');
+
+  // --- 3. Brand Accent Line (Top of Card) ---
+  doc.setFillColor(BRAND_PURPLE[0], BRAND_PURPLE[1], BRAND_PURPLE[2]);
+  doc.rect(x, y, CARD_WIDTH, accentBarHeight, 'F');
+
+  // --- 4. Add Student Info to the Card ---
+  let cursorY = y + accentBarHeight + innerPadding;
+
+  // Student Name (Prominent at top)
+  doc.setTextColor(DARK_TEXT[0], DARK_TEXT[1], DARK_TEXT[2]);
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  doc.text(student.name, x + innerPadding, cursorY);
+  cursorY += 8;
+
+  // --- Credentials Block ---
+  const labelX = x + innerPadding;
+  const valueX = x + 35; // Aligns values nicely
+
+  // Credential Labels
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(DARK_TEXT[0], DARK_TEXT[1], DARK_TEXT[2]);
+
+  doc.text('Username:', labelX, cursorY);
+  doc.text('Password:', labelX, cursorY + 7);
+
+  // If School Code is present, insert it
+  if (options?.schoolCode) {
+    doc.text('School Code:', labelX, cursorY + 14);
+  }
+
+  // Actual Credentials (Larger and Highlighted)
+  doc.setTextColor(BRAND_PURPLE[0], BRAND_PURPLE[1], BRAND_PURPLE[2]);
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'bold');
+
+  doc.text(student.username, valueX, cursorY);
+  doc.text(student.password, valueX, cursorY + 7);
+
+  if (options?.schoolCode) {
+    doc.text(options.schoolCode, valueX, cursorY + 14);
+  }
+
+  // --- Login Instructions (Bottom - Centered) ---
+  doc.setFontSize(7);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(60, 60, 60);
+
+  const instructionsY = y + CARD_HEIGHT - 8;
+  doc.text('Go to: students.languagegems.com', x + CARD_WIDTH / 2, instructionsY, { align: 'center' });
+  doc.text('Enter your credentials above to login', x + CARD_WIDTH / 2, instructionsY + 3.5, { align: 'center' });
+
+  // Add scissors symbol for visual cut reference
+  doc.setTextColor(CUT_LINE_COLOR[0], CUT_LINE_COLOR[1], CUT_LINE_COLOR[2]);
+  doc.setFontSize(10);
+  doc.text('✂', x - 3, y + 2); // Top Left
+  doc.text('✂', x + CARD_WIDTH + 1, y + 2); // Top Right
+  doc.text('✂', x - 3, y + CARD_HEIGHT + 1); // Bottom Left
+  doc.text('✂', x + CARD_WIDTH + 1, y + CARD_HEIGHT + 1); // Bottom Right
+}
+
 /**
  * Generates a PDF document with individual "cards" for student login credentials.
- * The design is optimized for printing and cutting out.
+ * The design is optimized for printing and cutting out, incorporating LanguageGems
+ * branding and visual improvements for better readability and aesthetic.
  *
  * @param students - An array of StudentCredential objects.
  * @param className - The name of the class.
+ * @param options - Optional PDF generation options (school code).
  * @returns A jsPDF document instance.
  */
 export function generateStudentCredentialsPDF(
   students: StudentCredential[],
-  className: string
+  className: string,
+  options?: PDFGenerationOptions
 ): jsPDF {
-  const doc = new jsPDF();
-  
-  // --- Constants for Layout ---
-  const CARD_WIDTH = 80;
-  const CARD_HEIGHT = 45;
-  const MARGIN_LEFT = 20;
-  const MARGIN_TOP = 45; // Start cards below the title block
-  const HORIZONTAL_SPACING = 15;
-  const VERTICAL_SPACING = 10;
-  const CARDS_PER_ROW = 2;
+  const doc = new jsPDF('p', 'mm', 'a4');
 
-  let currentX = MARGIN_LEFT;
-  let currentY = MARGIN_TOP;
+  // --- Header Section Setup ---
+  const drawHeader = (doc: jsPDF, className: string, options?: PDFGenerationOptions) => {
+    // Brand Title
+    doc.setFontSize(24);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(BRAND_PURPLE[0], BRAND_PURPLE[1], BRAND_PURPLE[2]);
+    doc.text(`LanguageGems Student Credentials`, MARGIN_LEFT, 20);
 
-  // --- Header Section ---
-  doc.setFontSize(22);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(50, 50, 50);
-  doc.text(`LanguageGems - ${className} Student Credentials`, 20, 25);
-  
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(100, 100, 100);
-  doc.text(`Generated on: ${new Date().toLocaleDateString('en-GB')}`, 20, 35);
+    // Class Name
+    doc.setFontSize(14);
+    doc.setTextColor(DARK_TEXT[0], DARK_TEXT[1], DARK_TEXT[2]);
+    doc.text(className, MARGIN_LEFT, 28);
+
+    // School Code (if provided)
+    if (options?.schoolCode) {
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(BRAND_PURPLE[0], BRAND_PURPLE[1], BRAND_PURPLE[2]);
+      doc.text(`School Code: ${options.schoolCode}`, MARGIN_LEFT, 35);
+    }
+
+    // Generated Date
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(150, 150, 150);
+    doc.text(`Generated: ${new Date().toLocaleDateString('en-GB')}`, MARGIN_LEFT, options?.schoolCode ? 40 : 35);
+  };
+
+  drawHeader(doc, className, options);
 
   // --- Student Credentials Cards Loop ---
   students.forEach((student, index) => {
-    // Check if we need to move to a new row or a new page
-    if (index > 0) {
-      if (index % CARDS_PER_ROW === 0) {
-        // Start a new row
-        currentX = MARGIN_LEFT;
-        currentY += CARD_HEIGHT + VERTICAL_SPACING;
-      } else {
-        // Move to the next column
-        currentX += CARD_WIDTH + HORIZONTAL_SPACING;
-      }
-    }
-
-    // Check for a new page if we've reached the bottom
-    if (currentY + CARD_HEIGHT > doc.internal.pageSize.height - 30) {
+    
+    // CORRECTION: Check the global index to manage page breaks.
+    // If this is not the first card (index > 0) AND it's the start of a new page block (index is a multiple of 8), add a new page.
+    if (index > 0 && index % CARDS_PER_PAGE === 0) {
       doc.addPage();
-      currentX = MARGIN_LEFT;
-      currentY = MARGIN_TOP;
+      drawHeader(doc, className, options); // Redraw header on the new page
     }
-    
-    // --- Draw the Card Box with a dashed line for cutting ---
-    doc.setDrawColor(0, 0, 0); // Black cut line
-    doc.setLineWidth(0.5);
-    doc.setLineDash([2, 2], 0); // Dashed pattern: 2 units on, 2 units off
-    doc.roundedRect(currentX, currentY, CARD_WIDTH, CARD_HEIGHT, 3, 3, 'S'); // 'S' for Stroke only
 
-    // --- Draw a solid border inside the dashed line for the card content area ---
-    doc.setLineDash([], 0); // Reset to a solid line
-    doc.setDrawColor(190, 190, 190); // Light gray border
-    doc.setFillColor(245, 245, 245); // Light gray background
-    doc.roundedRect(currentX + 1, currentY + 1, CARD_WIDTH - 2, CARD_HEIGHT - 2, 3, 3, 'FD');
-    
-    // --- Add Student Info to the Card ---
-    doc.setTextColor(0, 0, 0); // Black text for info
+    // Determine position on the current page
+    const cardIndexOnPage = index % CARDS_PER_PAGE;
+    const col = cardIndexOnPage % CARDS_PER_ROW;
+    const row = Math.floor(cardIndexOnPage / CARDS_PER_ROW);
 
-    // Student Name
-    doc.setFontSize(14);
-    doc.setFont('helvetica', 'bold');
-    doc.text(student.name, currentX + 5, currentY + 10);
-    
-    // Username
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Username:', currentX + 5, currentY + 22);
-    doc.setFont('helvetica', 'normal');
-    doc.text(student.username, currentX + 28, currentY + 22);
+    // Calculate X and Y position
+    const currentX = MARGIN_LEFT + col * (CARD_WIDTH + HORIZONTAL_SPACING);
+    const currentY = MARGIN_TOP_START + row * (CARD_HEIGHT + VERTICAL_SPACING);
 
-    // Password
-    doc.setFont('helvetica', 'bold');
-    doc.text('Password:', currentX + 5, currentY + 30);
-    doc.setFont('helvetica', 'normal');
-    doc.text(student.password, currentX + 28, currentY + 30);
-    
-    // Add the platform name at the top right of the card
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(100, 100, 100);
-    doc.text('LanguageGems', currentX + CARD_WIDTH - 5, currentY + 8, { align: 'right' });
-    
-    // Add the login instruction at the bottom of the card - now in black
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(0, 0, 0); // Changed to black
-    doc.text('Login via student.languagegems.com', currentX + CARD_WIDTH / 2, currentY + CARD_HEIGHT - 3, { align: 'center' });
-    
-    doc.setTextColor(0, 0, 0); // Reset color for next text
+    // Draw the card using the dedicated helper function
+    drawStudentCard(doc, student, currentX, currentY, options);
   });
-  
+
   // --- Page Numbering ---
   const pageCount = doc.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
     doc.setFontSize(8);
     doc.setTextColor(150, 150, 150);
-    doc.text(`Page ${i} of ${pageCount}`, doc.internal.pageSize.width - 35, doc.internal.pageSize.height - 10, { align: 'right' });
+    doc.text(`Page ${i} of ${pageCount}`, PAGE_WIDTH - MARGIN_RIGHT, PAGE_HEIGHT - 5, { align: 'right' });
   }
 
   return doc;
@@ -133,13 +222,16 @@ export function generateStudentCredentialsPDF(
  *
  * @param students - An array of StudentCredential objects.
  * @param className - The name of the class.
+ * @param options - Optional PDF generation options (school code).
  */
 export function downloadStudentCredentialsPDF(
   students: StudentCredential[],
-  className: string
+  className: string,
+  options?: PDFGenerationOptions
 ): void {
-  const doc = generateStudentCredentialsPDF(students, className);
-  const safeClassName = className.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_');
-  const fileName = `${safeClassName}_Student_Credentials.pdf`;
+  const doc = generateStudentCredentialsPDF(students, className, options);
+  // Ensure the filename is safe and clean
+  const safeClassName = className.replace(/[^a-zA-Z0-9\s]/g, '').trim().replace(/\s+/g, '_');
+  const fileName = `${safeClassName}_LanguageGems_Credentials.pdf`;
   doc.save(fileName);
 }

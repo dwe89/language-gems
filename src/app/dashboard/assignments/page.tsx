@@ -43,7 +43,7 @@ export default function AssignmentsPage() {
 
     const fetchData = async () => {
       try {
-        // Fetch real assignments for this teacher
+        // Fetch real assignments for this teacher (exclude archived)
         const { data: assignmentsData, error: assignmentsError } = await supabase
           .from('assignments')
           .select(`
@@ -51,6 +51,7 @@ export default function AssignmentsPage() {
             classes!inner(name)
           `)
           .eq('created_by', user.id)
+          .neq('status', 'archived')
           .order('created_at', { ascending: false });
 
         if (assignmentsError) {
@@ -83,10 +84,16 @@ export default function AssignmentsPage() {
 
   // Filter assignments based on status and search query
   const filteredAssignments = assignments.filter(assignment => {
-    const matchesFilter = filter === 'all' || assignment.status === filter;
+    // Check if assignment is past due date
+    const isPastDue = assignment.due_date && new Date(assignment.due_date) < new Date();
+
+    // Determine effective status (past due = completed)
+    const effectiveStatus = isPastDue ? 'completed' : assignment.status;
+
+    const matchesFilter = filter === 'all' || effectiveStatus === filter;
     const matchesSearch = assignment.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       assignment.description.toLowerCase().includes(searchQuery.toLowerCase());
-    
+
     return matchesFilter && matchesSearch;
   });
 
@@ -136,55 +143,35 @@ export default function AssignmentsPage() {
     try {
       const assignmentId = deleteConfirmation.assignmentId;
 
-      // Delete related records first to avoid foreign key constraint violations
-
-      // 1. Delete grammar practice attempts
-      await supabase
-        .from('grammar_practice_attempts')
-        .delete()
-        .eq('assignment_id', assignmentId);
-
-      // 2. Delete assignment game sessions
-      await supabase
-        .from('assignment_game_sessions')
-        .delete()
-        .eq('assignment_id', assignmentId);
-
-      // 3. Delete assignment progress
-      await supabase
-        .from('assignment_progress')
-        .delete()
-        .eq('assignment_id', assignmentId);
-
-      // 4. Delete student vocabulary assignment progress
-      await supabase
-        .from('student_vocabulary_assignment_progress')
-        .delete()
-        .eq('assignment_id', assignmentId);
-
-      // 5. Delete conjugations
-      await supabase
-        .from('conjugations')
-        .delete()
-        .eq('assignment_id', assignmentId);
-
-      // 6. Finally delete the assignment itself
+      // SOFT DELETE: Archive the assignment instead of deleting it
+      // This preserves all student data, analytics, and learning history
       const { error } = await supabase
         .from('assignments')
-        .delete()
+        .update({
+          status: 'archived',
+          archived_at: new Date().toISOString()
+        })
         .eq('id', assignmentId)
         .eq('created_by', user?.id);
 
       if (error) {
-        console.error('Error deleting assignment:', error);
-        alert('Failed to delete assignment. Please try again.');
+        console.error('Error archiving assignment:', error);
+        alert('Failed to archive assignment. Please try again.');
         return;
       }
 
+      // Remove from UI (it will be filtered out by status)
       setAssignments(assignments.filter(a => a.id !== assignmentId));
+
+      // Close confirmation dialog
+      setDeleteConfirmation({
+        isOpen: false,
+        assignmentId: '',
+        assignmentName: ''
+      });
     } catch (error) {
-      console.error('Error deleting assignment:', error);
-      alert('Failed to delete assignment. Please try again.');
+      console.error('Error archiving assignment:', error);
+      alert('Failed to archive assignment. Please try again.');
     }
   };
 
@@ -346,9 +333,9 @@ export default function AssignmentsPage() {
           isOpen={deleteConfirmation.isOpen}
           onClose={() => setDeleteConfirmation({ isOpen: false, assignmentId: '', assignmentName: '' })}
           onConfirm={confirmDeleteAssignment}
-          title="Delete Assignment"
-          message={`Are you sure you want to delete "${deleteConfirmation.assignmentName}"? This action cannot be undone and will remove all student progress data.`}
-          confirmText="Delete Assignment"
+          title="Archive Assignment"
+          message={`Are you sure you want to archive "${deleteConfirmation.assignmentName}"? The assignment will be hidden from your list, but all student data and analytics will be preserved. You can restore it later if needed.`}
+          confirmText="Archive Assignment"
           cancelText="Keep Assignment"
           variant="danger"
         />

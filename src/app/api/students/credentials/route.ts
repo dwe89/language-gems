@@ -33,7 +33,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Class ID is required' }, { status: 400 });
     }
 
-    // Retrieve class information and, from it, the teacher ID.
+    // Retrieve class information and teacher's school code
     const { data: classData, error: classError } = await adminClient
       .from('classes')
       .select('id, name, teacher_id')
@@ -42,6 +42,17 @@ export async function POST(request: Request) {
 
     if (classError || !classData) {
       return NextResponse.json({ error: 'Class not found' }, { status: 404 });
+    }
+
+    // Fetch teacher's school initials
+    const { data: teacherProfile, error: teacherError } = await adminClient
+      .from('user_profiles')
+      .select('school_initials')
+      .eq('user_id', classData.teacher_id)
+      .single();
+
+    if (teacherError) {
+      console.error('Error fetching teacher profile:', teacherError);
     }
 
     // Get all students in the class with their credentials
@@ -85,6 +96,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       students: formattedStudents,
       className: classData.name,
+      schoolCode: teacherProfile?.school_initials || undefined,
       total: formattedStudents.length
     });
     

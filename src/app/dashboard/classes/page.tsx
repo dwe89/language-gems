@@ -341,14 +341,23 @@ export default function ClassesPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50/30 to-purple-50/30 p-6">
       <div className="max-w-7xl mx-auto">
-        <DashboardHeader
-          title={classScope === 'my' ? 'My Classes' : 'School Classes'}
-          description={classScope === 'my'
-            ? 'Manage your classes and track student progress'
-            : `All classes in ${schoolCode || 'your school'}`
-          }
-          icon={<BookOpen className="h-5 w-5 text-white" />}
-        />
+        <div className="flex items-start justify-between mb-6">
+          <DashboardHeader
+            title={classScope === 'my' ? 'My Classes' : 'School Classes'}
+            description={classScope === 'my'
+              ? 'Manage your classes and track student progress'
+              : `All classes in ${schoolCode || 'your school'}`
+            }
+            icon={<BookOpen className="h-5 w-5 text-white" />}
+          />
+
+          {schoolCode && (
+            <div className="inline-flex items-center px-4 py-2 bg-purple-50 border border-purple-200 rounded-lg">
+              <span className="text-sm font-medium text-purple-900">School Code: </span>
+              <span className="ml-2 text-sm font-bold text-purple-700">{schoolCode}</span>
+            </div>
+          )}
+        </div>
 
         {/* Error Message */}
         {error && (

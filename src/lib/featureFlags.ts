@@ -13,6 +13,8 @@ export interface FeatureFlags {
   assessments: boolean;
   worksheets: boolean;
   youtubeVideos: boolean;
+  forSchools: boolean;
+  forLearners: boolean;
 }
 
 // Check if we're in development environment
@@ -43,6 +45,8 @@ export const getFeatureFlags = (userEmail?: string | null): FeatureFlags => {
       assessments: true,
       worksheets: true,
       youtubeVideos: true,
+      forSchools: true,
+      forLearners: true,
     };
   }
   
@@ -60,6 +64,8 @@ export const getFeatureFlags = (userEmail?: string | null): FeatureFlags => {
     assessments: true, // Enable assessments in production
     worksheets: true, // Enable worksheets in production
     youtubeVideos: true, // Enable YouTube videos in production
+    forSchools: false, // Hidden by default - enable via feature flag
+    forLearners: false, // Hidden by default - enable via feature flag
   };
 };
 
@@ -84,15 +90,15 @@ export const getNavigationItems = (isAuthenticated: boolean = false, userEmail?:
     {
       name: 'For Schools',
       path: '/schools',
-      enabled: true,
-      comingSoon: false,
+      enabled: flags.forSchools,
+      comingSoon: !flags.forSchools,
       comingSoonPath: null
     },
     {
       name: 'For Learners',
       path: '/learn',
-      enabled: true,
-      comingSoon: false,
+      enabled: flags.forLearners,
+      comingSoon: !flags.forLearners,
       comingSoonPath: null
     },
     {
@@ -105,7 +111,63 @@ export const getNavigationItems = (isAuthenticated: boolean = false, userEmail?:
       description: 'Your daily path to language fluency'
     },
     {
-      name: 'Features',
+      name: 'Games',
+      path: '/games',
+      enabled: flags.games,
+      comingSoon: !flags.games,
+      comingSoonPath: null,
+      description: 'High-engagement interactive learning games'
+    },
+    {
+      name: 'Songs',
+      path: '/songs',
+      enabled: flags.youtubeVideos,
+      comingSoon: !flags.youtubeVideos,
+      comingSoonPath: null,
+      description: 'Learn through music and videos'
+    },
+    {
+      name: 'Grammar',
+      path: '/grammar',
+      enabled: true,
+      comingSoon: false,
+      comingSoonPath: null,
+      description: 'Comprehensive grammar lessons and practice'
+    },
+    {
+      name: 'Assessments',
+      path: '/assessments',
+      enabled: flags.assessments,
+      comingSoon: !flags.assessments,
+      comingSoonPath: null,
+      description: 'Create and manage student assessments'
+    },
+    {
+      name: 'Resources',
+      path: '/resources',
+      enabled: true,
+      comingSoon: false,
+      comingSoonPath: null,
+      description: 'Premium teaching materials and worksheets'
+    },
+    {
+      name: 'Blog',
+      path: '/blog',
+      enabled: flags.blog,
+      comingSoon: false,
+      comingSoonPath: null,
+      description: 'Language learning tips and insights'
+    },
+    {
+      name: 'Pricing',
+      path: '/pricing',
+      enabled: true,
+      comingSoon: false,
+      comingSoonPath: null,
+      description: 'Choose your plan'
+    },
+    {
+      name: 'More',
       path: '#',
       enabled: true,
       comingSoon: false,
@@ -114,63 +176,10 @@ export const getNavigationItems = (isAuthenticated: boolean = false, userEmail?:
       dropdownOnly: true,
       dropdownItems: [
         {
-          name: 'Games & Arcade',
-          path: '/games',
-          enabled: flags.games,
-          comingSoon: !flags.games
-        },
-        {
-          name: 'Songs',
-          path: '/songs',
-          enabled: flags.youtubeVideos,
-          comingSoon: !flags.youtubeVideos
-        },
-        {
-          name: 'Grammar',
-          path: '/grammar',
-          enabled: true,
-          comingSoon: false
-        },
-        {
           name: 'Worksheets',
           path: '/worksheets',
           enabled: flags.worksheets,
           comingSoon: !flags.worksheets
-        },
-        {
-          name: 'Assessments',
-          path: '/assessments',
-          enabled: flags.assessments,
-          comingSoon: !flags.assessments
-        }
-      ]
-    },
-    {
-      name: 'Pricing',
-      path: '/pricing',
-      enabled: true,
-      comingSoon: false,
-      comingSoonPath: null
-    },
-    {
-      name: 'Resources',
-      path: '/resources',
-      enabled: true,
-      comingSoon: false,
-      comingSoonPath: null,
-      hasDropdown: true,
-      dropdownItems: [
-        {
-          name: 'Blog',
-          path: '/blog',
-          enabled: flags.blog,
-          comingSoon: false
-        },
-        {
-          name: 'Resources',
-          path: '/resources',
-          enabled: true,
-          comingSoon: false
         },
         {
           name: 'About Us',
@@ -188,5 +197,6 @@ export const getNavigationItems = (isAuthenticated: boolean = false, userEmail?:
     }
   ];
 
-  return baseItems;
-}; 
+  // Filter out disabled items completely (don't show them at all)
+  return baseItems.filter(item => item.enabled);
+};

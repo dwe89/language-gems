@@ -225,42 +225,48 @@ export async function GET(
       }
 
       // Then get the vocabulary details for those items
+      // ONLY if vocabulary_id is not null (legacy assignments have vocabulary_id, Enhanced Creator uses vocabulary_criteria)
       if (assignmentItems && assignmentItems.length > 0) {
-        const vocabularyIds = assignmentItems.map(item => item.vocabulary_id);
+        const vocabularyIds = assignmentItems
+          .map(item => item.vocabulary_id)
+          .filter(id => id !== null); // Filter out null IDs
 
-        const { data: vocabularyData, error: vocabError } = await supabase
-          .from('vocabulary')
-          .select('id, spanish, english, theme, topic, part_of_speech')
-          .in('id', vocabularyIds);
+        // Only query if we have valid vocabulary IDs
+        if (vocabularyIds.length > 0) {
+          const { data: vocabularyData, error: vocabError } = await supabase
+            .from('centralized_vocabulary')
+            .select('id, word, translation, category, subcategory, part_of_speech, language')
+            .in('id', vocabularyIds);
 
-        if (vocabError) {
-          console.error('Error fetching vocabulary:', vocabError);
-          return NextResponse.json(
-            { error: 'Failed to fetch vocabulary details' },
-            { status: 500 }
-          );
+          if (vocabError) {
+            console.error('Error fetching vocabulary:', vocabError);
+            return NextResponse.json(
+              { error: 'Failed to fetch vocabulary details' },
+              { status: 500 }
+            );
+          }
+
+          // Combine the data with order positions
+          const legacyVocabItems = assignmentItems.map(item => {
+            const vocab = vocabularyData?.find(v => v.id === item.vocabulary_id);
+            return {
+              vocabulary_id: item.vocabulary_id,
+              order_position: item.order_position,
+              vocabulary: vocab
+            };
+          }).filter(item => item.vocabulary); // Remove items where vocabulary wasn't found
+
+          // Format legacy vocabulary for consistency (map centralized_vocabulary fields to legacy format)
+          vocabularyItems = legacyVocabItems.map((item: any) => ({
+            id: item.vocabulary.id,
+            spanish: item.vocabulary.word, // word field in centralized_vocabulary
+            english: item.vocabulary.translation, // translation field
+            theme: item.vocabulary.category, // category maps to theme
+            topic: item.vocabulary.subcategory, // subcategory maps to topic
+            part_of_speech: item.vocabulary.part_of_speech,
+            order_position: item.order_position
+          }));
         }
-
-        // Combine the data with order positions
-        const legacyVocabItems = assignmentItems.map(item => {
-          const vocab = vocabularyData?.find(v => v.id === item.vocabulary_id);
-          return {
-            vocabulary_id: item.vocabulary_id,
-            order_position: item.order_position,
-            vocabulary: vocab
-          };
-        }).filter(item => item.vocabulary); // Remove items where vocabulary wasn't found
-
-        // Format legacy vocabulary for consistency
-        vocabularyItems = legacyVocabItems.map((item: any) => ({
-          id: item.vocabulary.id,
-          spanish: item.vocabulary.spanish,
-          english: item.vocabulary.english,
-          theme: item.vocabulary.theme,
-          topic: item.vocabulary.topic,
-          part_of_speech: item.vocabulary.part_of_speech,
-          order_position: item.order_position
-        }));
       }
     }
 

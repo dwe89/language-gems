@@ -212,6 +212,7 @@ export class TeacherAssignmentAnalyticsService {
 
   /**
    * Manual fallback for word difficulty ranking
+   * Uses two-tier system: High Confidence (≥5 attempts) and Emerging Problems (<5 attempts)
    */
   private async getWordDifficultyManual(assignmentId: string): Promise<WordDifficulty[]> {
     // Get all gem events for this assignment
@@ -247,7 +248,7 @@ export class TeacherAssignmentAnalyticsService {
 
     gemEvents?.forEach(gem => {
       if (!gem.centralized_vocabulary_id) return;
-      
+
       const key = gem.centralized_vocabulary_id;
       const current = wordMap.get(key) || {
         wordText: gem.word_text || '',
@@ -266,15 +267,44 @@ export class TeacherAssignmentAnalyticsService {
       wordMap.set(key, current);
     });
 
-    // Convert to array and sort by failure rate
+    // Convert to array with failure rates
     const words = Array.from(wordMap.values())
       .map(word => ({
         ...word,
         failureRate: word.total > 0 ? Math.round((word.failures / word.total) * 100) : 0
-      }))
+      }));
+
+    // TIER 1: High Confidence Problems (≥5 attempts)
+    // Sort by: Failure Rate DESC, then Attempts DESC (tie-breaker)
+    const highConfidence = words
+      .filter(w => w.total >= 5)
+      .sort((a, b) => {
+        if (b.failureRate !== a.failureRate) {
+          return b.failureRate - a.failureRate; // Primary: failure rate
+        }
+        return b.total - a.total; // Tie-breaker: more attempts = higher priority
+      });
+
+    // TIER 2: Emerging Problems (<5 attempts AND ≥50% failure rate)
+    // Sort by: Attempts DESC, then Failure Rate DESC
+    const emergingProblems = words
+      .filter(w => w.total < 5 && w.failureRate >= 50)
+      .sort((a, b) => {
+        if (b.total !== a.total) {
+          return b.total - a.total; // Primary: more attempts = more reliable
+        }
+        return b.failureRate - a.failureRate; // Tie-breaker: failure rate
+      });
+
+    // TIER 3: Low Priority (everything else)
+    const lowPriority = words
+      .filter(w => w.total < 5 && w.failureRate < 50)
       .sort((a, b) => b.failureRate - a.failureRate);
 
-    return words.map((word, index) => ({
+    // Combine all tiers in order
+    const sortedWords = [...highConfidence, ...emergingProblems, ...lowPriority];
+
+    return sortedWords.map((word, index) => ({
       rank: index + 1,
       wordText: word.wordText,
       translationText: word.translationText,
@@ -283,16 +313,27 @@ export class TeacherAssignmentAnalyticsService {
       failureRate: word.failureRate,
       strongRetrievalCount: word.strongRetrieval,
       weakRetrievalCount: word.weakRetrieval,
-      actionableInsight: this.getActionableInsight(word.failureRate),
-      insightLevel: this.getInsightLevel(word.failureRate)
+      actionableInsight: this.getActionableInsight(word.failureRate, word.total),
+      insightLevel: this.getInsightLevel(word.failureRate, word.total)
     }));
   }
 
-  private getActionableInsight(failureRate: number): string {
-    if (failureRate > 35) return '🛑 Major Class Problem. Requires full lesson.';
-    if (failureRate > 25) return '⚠️ Review needed. Plan intervention.';
-    if (failureRate > 15) return '📚 Moderate difficulty. Quick review.';
-    return '✅ No issue. Move on.';
+  private getActionableInsight(failureRate: number, attempts: number): string {
+    // Tier 1: High Confidence (≥5 attempts)
+    if (attempts >= 5) {
+      if (failureRate >= 70) return '🛑 Major Class Problem. Requires full lesson.';
+      if (failureRate >= 50) return '⚠️ Significant Issue. Plan intervention.';
+      if (failureRate >= 30) return '📊 Monitor Closely. Review if needed.';
+      return '✅ Class Performing Well.';
+    }
+
+    // Tier 2: Emerging Problems (<5 attempts, ≥50% failure)
+    if (failureRate >= 50) {
+      return `⚠️ Emerging Problem (${attempts} attempt${attempts === 1 ? '' : 's'}). Limited data.`;
+    }
+
+    // Tier 3: Low Priority
+    return `📋 Insufficient Data (${attempts} attempt${attempts === 1 ? '' : 's'}).`;
   }
 
   private async fetchGemEvents<T extends Record<string, any>>(
@@ -324,11 +365,20 @@ export class TeacherAssignmentAnalyticsService {
     return results;
   }
 
-  private getInsightLevel(failureRate: number): 'success' | 'monitor' | 'review' | 'problem' {
-    if (failureRate > 35) return 'problem';
-    if (failureRate > 25) return 'review';
-    if (failureRate > 15) return 'monitor';
-    return 'success';
+  private getInsightLevel(failureRate: number, attempts: number): 'success' | 'monitor' | 'review' | 'problem' {
+    // Tier 1: High Confidence (≥5 attempts)
+    if (attempts >= 5) {
+      if (failureRate >= 70) return 'problem';
+      if (failureRate >= 50) return 'review';
+      if (failureRate >= 30) return 'monitor';
+      return 'success';
+    }
+
+    // Tier 2: Emerging Problems (<5 attempts, ≥50% failure)
+    if (failureRate >= 50) return 'review';
+
+    // Tier 3: Low Priority
+    return 'monitor';
   }
 
   /**

@@ -63,8 +63,8 @@ export async function GET(request: NextRequest) {
           console.log('Redirecting learner to learner dashboard');
           return NextResponse.redirect(`${origin}/learner-dashboard`);
         } else if (role === 'teacher' || userType === 'b2b') {
-          console.log('Redirecting teacher to teacher dashboard');
-          return NextResponse.redirect(`${origin}/dashboard`);
+          console.log('Redirecting teacher to account page');
+          return NextResponse.redirect(`${origin}/account`);
         } else {
           // Default to confirmation page if user type is unclear
           console.log('User type unclear, redirecting to confirmation page');

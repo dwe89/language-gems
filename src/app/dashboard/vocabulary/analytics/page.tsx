@@ -4,6 +4,8 @@ import React, { useEffect, useState } from 'react';
 import TeacherVocabularyAnalyticsDashboard from '../../../../components/teacher/TeacherVocabularyAnalyticsDashboard';
 import { useAuth } from '../../../../components/auth/AuthProvider';
 import { useSupabase } from '../../../../components/supabase/SupabaseProvider';
+import { Info } from 'lucide-react';
+import Link from 'next/link';
 
 interface ClassOption { id: string; name: string }
 
@@ -34,6 +36,21 @@ export default function VocabularyAnalyticsPage() {
           <p className="mt-2 text-gray-600">
             Monitor student vocabulary progress and performance across your classes
           </p>
+        </div>
+
+        {/* Cross-Class Info Banner */}
+        <div className="mb-6 bg-blue-50 border border-blue-200 rounded-xl p-4">
+          <div className="flex items-start gap-3">
+            <Info className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+            <div>
+              <h3 className="font-semibold text-blue-900 mb-1">Cross-Class Analytics</h3>
+              <p className="text-sm text-blue-800">
+                This page shows vocabulary data across all your classes. To view analytics for a specific class,
+                go to <Link href="/dashboard/classes" className="font-semibold underline hover:text-blue-900">Classes</Link>,
+                select a class, and click the <strong>Vocabulary</strong> tab.
+              </p>
+            </div>
+          </div>
         </div>
 
         <div className="mb-6 flex items-center gap-3">

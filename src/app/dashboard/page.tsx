@@ -61,24 +61,41 @@ export default function DashboardPage() {
     );
   }
 
+  // Get display name from user profile or fallback to email username
+  const getDisplayName = () => {
+    // Try display_name from user_metadata first (if it exists)
+    if (user?.user_metadata?.display_name) {
+      return user.user_metadata.display_name;
+    }
+    // Fallback to first part of email
+    if (user?.email) {
+      return user.email.split('@')[0];
+    }
+    return 'Teacher';
+  };
+
   // Render the dashboard for authenticated teachers
   return (
     <BetaDashboardWrapper>
-      <TeacherDashboard username={user?.user_metadata?.name || user?.email?.split('@')[0] || 'Teacher'} />
+      <TeacherDashboard username={getDisplayName()} />
     </BetaDashboardWrapper>
   );
 }
 
 // The main dashboard content for teachers
-function TeacherDashboard({ username }: { username: string }) {
+function TeacherDashboard({ username: initialUsername }: { username: string }) {
   const { user } = useAuth();
+  const [username, setUsername] = useState(initialUsername);
   const [helpWidgetVisible, setHelpWidgetVisible] = useState(false);
+  const [schoolCode, setSchoolCode] = useState<string | null>(null);
   const [stats, setStats] = useState({
     totalClasses: 0,
     activeStudents: 0,
     activeAssignments: 0,
     completionRate: 'N/A',
     totalWords: 0,
+    totalGameSessions: 0,
+    activeStudents7d: 0,
     loading: true
   });
 
@@ -88,6 +105,21 @@ function TeacherDashboard({ username }: { username: string }) {
     // Fetch dashboard data with a single, more efficient query
     async function fetchDashboardData() {
       try {
+        // Fetch teacher's school code and display name
+        const { data: profileData, error: profileError } = await supabaseBrowser
+          .from('user_profiles')
+          .select('school_initials, display_name')
+          .eq('user_id', user.id)
+          .single();
+
+        if (!profileError && profileData) {
+          setSchoolCode(profileData.school_initials);
+          // Update username with display_name if available
+          if (profileData.display_name) {
+            setUsername(profileData.display_name);
+          }
+        }
+
         const { data, error } = await supabaseBrowser
           .from('classes')
           .select(`
@@ -127,13 +159,36 @@ function TeacherDashboard({ username }: { username: string }) {
         const totalSubmissions = submissionData?.length || 0;
         const completionRate = totalSubmissions > 0 ? `${Math.round((completedSubmissions / totalSubmissions) * 100)}%` : 'N/A';
 
-        // Calculate actual total words learned from vocabulary progress
-        const { data: vocabularyData } = await supabaseBrowser
-          .from('user_vocabulary_progress')
-          .select('is_learned')
-          .eq('is_learned', true);
+        // Get all student IDs for this teacher
+        const studentIds = Array.from(uniqueStudents);
 
-        const totalWords = vocabularyData?.length || 0;
+        // Calculate actual total words practiced from vocabulary_gem_collection
+        const { data: vocabularyData } = await supabaseBrowser
+          .from('vocabulary_gem_collection')
+          .select('vocabulary_item_id')
+          .in('student_id', studentIds);
+
+        const totalWords = vocabularyData ? new Set(vocabularyData.map(v => v.vocabulary_item_id)).size : 0;
+
+        // Get total game sessions
+        const { count: sessionCount } = await supabaseBrowser
+          .from('enhanced_game_sessions')
+          .select('*', { count: 'exact', head: true })
+          .in('student_id', studentIds);
+
+        const totalGameSessions = sessionCount || 0;
+
+        // Get active students in last 7 days
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+        const { data: recentActivityData } = await supabaseBrowser
+          .from('vocabulary_gem_collection')
+          .select('student_id')
+          .in('student_id', studentIds)
+          .gte('last_encountered_at', sevenDaysAgo.toISOString());
+
+        const activeStudents7d = recentActivityData ? new Set(recentActivityData.map(r => r.student_id)).size : 0;
 
         setStats({
           totalClasses,
@@ -141,6 +196,8 @@ function TeacherDashboard({ username }: { username: string }) {
           activeAssignments,
           completionRate,
           totalWords,
+          totalGameSessions,
+          activeStudents7d,
           loading: false
         });
 
@@ -169,6 +226,12 @@ function TeacherDashboard({ username }: { username: string }) {
               <p className="text-slate-600 text-lg max-w-2xl leading-relaxed">
                 Transform learning with cutting-edge tools and insights.
               </p>
+              {schoolCode && (
+                <div className="mt-4 inline-flex items-center px-4 py-2 bg-purple-50 border border-purple-200 rounded-lg">
+                  <span className="text-sm font-medium text-purple-900">School Code: </span>
+                  <span className="ml-2 text-sm font-bold text-purple-700">{schoolCode}</span>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -177,40 +240,40 @@ function TeacherDashboard({ username }: { username: string }) {
       {/* Main Dashboard Grid with Enhanced Design */}
       <section className="max-w-7xl mx-auto px-6 py-16">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8 mb-12">
-          <StatCard 
+          <StatCard
             label="Total Classes"
             value={stats.loading ? "..." : stats.totalClasses.toString()}
             icon={<BookOpen className="h-7 w-7" />}
             gradient="from-indigo-500 to-blue-600"
             bgGradient="from-indigo-50 to-blue-50"
           />
-          <StatCard 
-            label="Active Students"
+          <StatCard
+            label="Total Students"
             value={stats.loading ? "..." : stats.activeStudents.toString()}
             icon={<Users className="h-7 w-7" />}
             gradient="from-emerald-500 to-teal-600"
             bgGradient="from-emerald-50 to-teal-50"
           />
           <StatCard
-            label="Active Assignments"
-            value={stats.loading ? "..." : stats.activeAssignments.toString()}
-            icon={<PenTool className="h-7 w-7" />}
-            gradient="from-orange-500 to-red-500"
-            bgGradient="from-orange-50 to-red-50"
+            label="Active (7 days)"
+            value={stats.loading ? "..." : stats.activeStudents7d.toString()}
+            icon={<CheckCircle className="h-7 w-7" />}
+            gradient="from-green-500 to-emerald-600"
+            bgGradient="from-green-50 to-emerald-50"
           />
           <StatCard
-            label="Avg. Completion"
-            value={stats.loading ? "..." : stats.completionRate}
-            icon={<Target className="h-7 w-7" />}
-            gradient="from-yellow-500 to-amber-500"
-            bgGradient="from-yellow-50 to-amber-50"
-          />
-          <StatCard
-            label="Total Words Learned"
+            label="Words Practiced"
             value={stats.loading ? "..." : stats.totalWords.toString()}
             icon={<Award className="h-7 w-7" />}
-            gradient="from-cyan-500 to-blue-600"
-            bgGradient="from-cyan-50 to-blue-50"
+            gradient="from-purple-500 to-pink-600"
+            bgGradient="from-purple-50 to-pink-50"
+          />
+          <StatCard
+            label="Game Sessions"
+            value={stats.loading ? "..." : stats.totalGameSessions.toLocaleString()}
+            icon={<Gamepad2 className="h-7 w-7" />}
+            gradient="from-orange-500 to-red-500"
+            bgGradient="from-orange-50 to-red-50"
           />
         </div>
 

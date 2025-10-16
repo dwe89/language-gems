@@ -272,7 +272,7 @@ export default function EditAssignmentPage() {
           <div className="flex items-center space-x-3">
             {assignment && (
               <Link
-                href={`/dashboard/assignments/${assignment.id}/analytics`}
+                href={`/dashboard/progress/assignment/${assignment.id}`}
                 className="flex items-center px-4 py-2 text-indigo-600 hover:text-indigo-700 border border-indigo-300 hover:border-indigo-400 rounded-lg transition-colors"
               >
                 <Eye size={16} className="mr-2" />

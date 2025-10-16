@@ -4,21 +4,17 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '../../../components/auth/AuthProvider';
 import { supabaseBrowser } from '../../../components/auth/AuthProvider';
-import { ArrowLeft, User, Mail, Lock, Bell, Globe, Save, AlertCircle } from 'lucide-react';
+import { ArrowLeft, User, Mail, Lock, Globe, Save } from 'lucide-react';
+import { useToast } from '../../../components/ui/use-toast';
 
 export default function SettingsPage() {
   const { user, isLoading } = useAuth();
+  const { toast } = useToast();
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [settings, setSettings] = useState({
-    name: '',
+    display_name: '',
     email: '',
     role: 'teacher',
-    notifications: {
-      email_marketing: false,
-      order_updates: true,
-      new_features: true
-    },
     preferences: {
       language: 'en',
       timezone: 'Europe/London'
@@ -44,10 +40,9 @@ export default function SettingsPage() {
 
       if (profile) {
         setSettings({
-          name: profile.name || user.user_metadata?.name || '',
+          display_name: profile.display_name || user.user_metadata?.name || '',
           email: user.email || '',
           role: profile.role || 'teacher',
-          notifications: profile.notifications || settings.notifications,
           preferences: profile.preferences || settings.preferences
         });
       } else {
@@ -56,7 +51,7 @@ export default function SettingsPage() {
           .from('user_profiles')
           .insert({
             user_id: user.id,
-            name: user.user_metadata?.name || '',
+            display_name: user.user_metadata?.name || '',
             role: 'teacher',
             email: user.email
           });
@@ -70,42 +65,37 @@ export default function SettingsPage() {
     if (!user) return;
 
     setLoading(true);
-    setMessage(null);
 
     try {
-      // Update user profile
+      // Update user profile (use update instead of upsert to avoid duplicate key error)
       const { error } = await supabaseBrowser
         .from('user_profiles')
-        .upsert({
-          user_id: user.id,
-          name: settings.name,
-          email: settings.email,
+        .update({
+          display_name: settings.display_name,
           role: settings.role,
-          notifications: settings.notifications,
-          preferences: settings.preferences,
           updated_at: new Date().toISOString()
-        });
+        })
+        .eq('user_id', user.id);
 
       if (error) throw error;
 
-      setMessage({ type: 'success', text: 'Settings saved successfully!' });
+      toast({
+        title: "Success!",
+        description: "Your settings have been saved.",
+      });
     } catch (error) {
       console.error('Error saving settings:', error);
-      setMessage({ type: 'error', text: 'Failed to save settings. Please try again.' });
+      toast({
+        title: "Error",
+        description: "Failed to save settings. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleInputChange = (section: string, field: string, value: any) => {
-    setSettings(prev => ({
-      ...prev,
-      [section]: {
-        ...prev[section as keyof typeof prev],
-        [field]: value
-      }
-    }));
-  };
+
 
   if (isLoading) {
     return (
@@ -151,18 +141,6 @@ export default function SettingsPage() {
           <p className="text-slate-600 mt-2">Manage your profile and preferences</p>
         </div>
 
-        {/* Message */}
-        {message && (
-          <div className={`mb-6 p-4 rounded-lg flex items-center ${
-            message.type === 'success' 
-              ? 'bg-green-50 text-green-800 border border-green-200' 
-              : 'bg-red-50 text-red-800 border border-red-200'
-          }`}>
-            <AlertCircle className="h-5 w-5 mr-2" />
-            {message.text}
-          </div>
-        )}
-
         {/* Settings Form */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Profile Settings */}
@@ -176,14 +154,14 @@ export default function SettingsPage() {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Full Name
+                    Display Name
                   </label>
                   <input
                     type="text"
-                    value={settings.name}
-                    onChange={(e) => setSettings(prev => ({ ...prev, name: e.target.value }))}
+                    value={settings.display_name}
+                    onChange={(e) => setSettings(prev => ({ ...prev, display_name: e.target.value }))}
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                    placeholder="Enter your full name"
+                    placeholder="Enter your display name"
                   />
                 </div>
                 
@@ -220,63 +198,7 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            {/* Notifications */}
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h2 className="text-lg font-semibold text-slate-800 mb-4 flex items-center">
-                <Bell className="h-5 w-5 mr-2" />
-                Notification Preferences
-              </h2>
-              
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="font-medium text-slate-800">Order Updates</div>
-                    <div className="text-sm text-slate-600">Receive notifications about your orders and downloads</div>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={settings.notifications.order_updates}
-                      onChange={(e) => handleInputChange('notifications', 'order_updates', e.target.checked)}
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                  </label>
-                </div>
 
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="font-medium text-slate-800">New Features</div>
-                    <div className="text-sm text-slate-600">Get notified about new features and updates</div>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={settings.notifications.new_features}
-                      onChange={(e) => handleInputChange('notifications', 'new_features', e.target.checked)}
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                  </label>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="font-medium text-slate-800">Marketing Emails</div>
-                    <div className="text-sm text-slate-600">Receive promotional content and special offers</div>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={settings.notifications.email_marketing}
-                      onChange={(e) => handleInputChange('notifications', 'email_marketing', e.target.checked)}
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                  </label>
-                </div>
-              </div>
-            </div>
 
             {/* Preferences */}
             <div className="bg-white rounded-lg shadow-sm p-6">
@@ -292,7 +214,10 @@ export default function SettingsPage() {
                   </label>
                   <select
                     value={settings.preferences.language}
-                    onChange={(e) => handleInputChange('preferences', 'language', e.target.value)}
+                    onChange={(e) => setSettings(prev => ({
+                      ...prev,
+                      preferences: { ...prev.preferences, language: e.target.value }
+                    }))}
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                   >
                     <option value="en">English</option>
@@ -308,7 +233,10 @@ export default function SettingsPage() {
                   </label>
                   <select
                     value={settings.preferences.timezone}
-                    onChange={(e) => handleInputChange('preferences', 'timezone', e.target.value)}
+                    onChange={(e) => setSettings(prev => ({
+                      ...prev,
+                      preferences: { ...prev.preferences, timezone: e.target.value }
+                    }))}
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                   >
                     <option value="Europe/London">London (GMT)</option>
@@ -344,23 +272,19 @@ export default function SettingsPage() {
             <div className="bg-white rounded-lg shadow-sm p-6">
               <h3 className="text-lg font-semibold text-slate-800 mb-4 flex items-center">
                 <Lock className="h-5 w-5 mr-2" />
-                Security
+                Account Information
               </h3>
-              
-              <div className="space-y-3">
-                <Link
-                  href="/auth/reset-password"
-                  className="block w-full py-2 px-4 text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors text-center"
-                >
-                  Change Password
-                </Link>
-                
-                <Link
-                  href="/account/delete"
-                  className="block w-full py-2 px-4 text-red-600 border border-red-300 rounded-lg hover:bg-red-50 transition-colors text-center"
-                >
-                  Delete Account
-                </Link>
+
+              <div className="space-y-3 text-sm text-slate-600">
+                <p>
+                  <strong>Account Type:</strong> {settings.role === 'admin' ? 'Administrator' : settings.role === 'teacher' ? 'Teacher' : 'Student'}
+                </p>
+                <p>
+                  <strong>Email:</strong> {settings.email}
+                </p>
+                <p className="text-xs text-slate-500 mt-4">
+                  To change your password or delete your account, please contact support.
+                </p>
               </div>
             </div>
           </div>

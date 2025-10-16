@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent } from "../ui/card";
-import { Book, Calendar, Users, Edit, Trash2, BarChart3, FileText, CheckCircle, Clock, Gamepad2, AlertTriangle, TrendingUp } from 'lucide-react';
+import { Book, Calendar, Users, Edit, Trash2, BarChart3, FileText, Clock, Gamepad2, AlertTriangle, Play } from 'lucide-react';
 
 type AssignmentProps = {
   assignment: {
@@ -33,6 +34,7 @@ interface AssignmentMetrics {
 }
 
 export function AssignmentCard({ assignment, onDelete }: AssignmentProps) {
+  const router = useRouter();
   const [metrics, setMetrics] = useState<AssignmentMetrics | null>(null);
   const [loadingMetrics, setLoadingMetrics] = useState(true);
 
@@ -99,6 +101,11 @@ export function AssignmentCard({ assignment, onDelete }: AssignmentProps) {
     }
   };
 
+  const handlePlayPreview = () => {
+    // Redirect to the assignment preview page (which will handle game routing)
+    router.push(`/dashboard/assignments/${assignment.id}/preview`);
+  };
+
   // Use title or name, prefer title for assignments page
   const assignmentTitle = assignment.title || assignment.name || 'Untitled Assignment';
   const completionRate = metrics?.completionRate ?? (assignment.totalStudents && assignment.totalStudents > 0
@@ -136,7 +143,7 @@ export function AssignmentCard({ assignment, onDelete }: AssignmentProps) {
           {onDelete && (
             <div className="flex items-center justify-end space-x-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-200 flex-shrink-0">
               <Link
-                href={`/dashboard/assignments/${assignment.id}/analytics`}
+                href={`/dashboard/progress/assignment/${assignment.id}`}
                 className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
                 title="View Analytics"
               >
@@ -274,20 +281,30 @@ export function AssignmentCard({ assignment, onDelete }: AssignmentProps) {
         )}
 
         {/* Action Buttons */}
-        <div className="mt-6 pt-4 border-t border-slate-200/60 space-y-2">
-          <Link
-            href={`/dashboard/progress/assignment/${assignment.id}`}
-            className="block w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-200 text-center shadow-md hover:shadow-lg group-hover:scale-105 flex items-center justify-center"
-          >
-            <BarChart3 className="h-5 w-5 mr-2" />
-            View Analytics
-          </Link>
-          <Link
-            href={`/dashboard/assignments/${assignment.id}`}
-            className="block w-full bg-white hover:bg-slate-50 text-slate-700 font-medium py-2 px-4 rounded-xl transition-all duration-200 text-center border border-slate-200 hover:border-slate-300"
-          >
-            View Details
-          </Link>
+        <div className="mt-6 pt-4 border-t border-slate-200/60">
+          <div className="grid grid-cols-3 gap-2">
+            <Link
+              href={`/dashboard/progress/assignment/${assignment.id}`}
+              className="block w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold py-3 px-3 rounded-xl transition-all duration-200 text-center shadow-md hover:shadow-lg flex items-center justify-center text-sm"
+            >
+              <BarChart3 className="h-4 w-4 mr-1" />
+              Analytics
+            </Link>
+            <Link
+              href={`/dashboard/assignments/${assignment.id}/edit`}
+              className="block w-full bg-white hover:bg-slate-50 text-slate-700 font-medium py-3 px-3 rounded-xl transition-all duration-200 text-center border border-slate-200 hover:border-slate-300 flex items-center justify-center text-sm"
+            >
+              <Edit className="h-4 w-4 mr-1" />
+              Edit
+            </Link>
+            <button
+              onClick={handlePlayPreview}
+              className="block w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-3 rounded-xl transition-all duration-200 text-center flex items-center justify-center text-sm"
+            >
+              <Play className="h-4 w-4 mr-1" />
+              Preview
+            </button>
+          </div>
         </div>
       </CardContent>
     </Card>
