@@ -95,20 +95,24 @@ export default function SmartAuthButtons({ className = '', variant = 'default' }
 
   return (
     <>
-      <div className={`flex items-center space-x-3 ${className}`}>
-        <Link
-          href="/auth/login"
-          className="py-2 px-4 text-white hover:text-yellow-200 transition-colors"
-        >
-          Login
-        </Link>
-        <button
-          ref={buttonRef}
-          onClick={() => setShowSignupSelector(true)}
-          className="py-2 px-6 bg-yellow-400 hover:bg-yellow-300 text-blue-900 rounded-full font-bold transition-colors"
-        >
-          Start Now
-        </button>
+      <div className={`flex items-center ${className}`}>
+        {/* Combined Login/Start Now Button Group */}
+        <div className="flex items-center bg-white/10 rounded-full overflow-hidden">
+          <Link
+            href="/auth/login"
+            className="py-2 px-5 text-white hover:bg-white/20 transition-colors font-medium"
+          >
+            Login
+          </Link>
+          <div className="w-px h-6 bg-white/30"></div>
+          <button
+            ref={buttonRef}
+            onClick={() => setShowSignupSelector(true)}
+            className="py-2 px-6 bg-yellow-400 hover:bg-yellow-300 text-blue-900 font-bold transition-colors"
+          >
+            Start Now
+          </button>
+        </div>
       </div>
       <SmartSignupSelector
         isOpen={showSignupSelector}

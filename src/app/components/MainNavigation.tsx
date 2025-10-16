@@ -94,23 +94,26 @@ export default function MainNavigation() {
   return (
     <header className="bg-gradient-to-r from-blue-900 via-blue-800 to-teal-700 py-3 relative z-[100]">
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between">
-          <Link 
-            href={(isMounted && user) ? "/account" : "/"} 
-            className="font-bold text-2xl text-white flex items-center group"
-          >
-            <motion.div
-              whileHover={{ rotate: 360 }}
-              transition={{ duration: 0.6 }}
-              className="mr-2"
+        <div className="grid grid-cols-3 items-center gap-4">
+          {/* Logo - Far Left */}
+          <div className="flex justify-start">
+            <Link
+              href={(isMounted && user) ? "/account" : "/"}
+              className="font-bold text-2xl text-white flex items-center group"
             >
-              <Gem className="h-8 w-8 text-yellow-300" />
-            </motion.div>
-            <span className="text-yellow-300">Language<span className="text-white">Gems</span></span>
-          </Link>
+              <motion.div
+                whileHover={{ rotate: 360 }}
+                transition={{ duration: 0.6 }}
+                className="mr-2"
+              >
+                <Gem className="h-8 w-8 text-yellow-300" />
+              </motion.div>
+              <span className="text-yellow-300">Language<span className="text-white">Gems</span></span>
+            </Link>
+          </div>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-8" ref={dropdownRef}>
+          {/* Desktop Navigation - Center */}
+          <nav className="hidden md:flex items-center space-x-6 justify-center" ref={dropdownRef}>
             {navItems.map((item) => {
               const href = item.comingSoon ? item.comingSoonPath : item.path;
               const hasDropdown = item.hasDropdown && item.dropdownItems;
@@ -195,35 +198,38 @@ export default function MainNavigation() {
             })}
           </nav>
 
-          <div className="hidden md:flex items-center space-x-3">
-            {(isMounted && user) ? (
-              <>
-                <SmartAuthButtons />
-                <button
-                  onClick={handleLogout}
-                  className="py-2 px-6 bg-yellow-400 hover:bg-yellow-300 text-blue-800 rounded-full font-medium transition-colors flex items-center"
-                >
-                  <LogOut className="mr-1 h-4 w-4" />
-                  <span>Sign Out</span>
-                </button>
-              </>
-            ) : (
-              <SmartAuthButtons />
-            )}
-          </div>
-
-          {/* Mobile Menu Button */}
-          <div className="md:hidden">
-            <button
-              onClick={handleMobileMenuToggle}
-              className="text-white p-2 hover:text-yellow-200 transition-colors"
-            >
-              {mobileMenuOpen ? (
-                <X className="w-6 h-6" />
+          {/* Auth Buttons - Far Right */}
+          <div className="flex justify-end">
+            <div className="hidden md:flex items-center space-x-3">
+              {(isMounted && user) ? (
+                <>
+                  <SmartAuthButtons />
+                  <button
+                    onClick={handleLogout}
+                    className="py-2 px-6 bg-yellow-400 hover:bg-yellow-300 text-blue-800 rounded-full font-medium transition-colors flex items-center"
+                  >
+                    <LogOut className="mr-1 h-4 w-4" />
+                    <span>Sign Out</span>
+                  </button>
+                </>
               ) : (
-                <Menu className="w-6 h-6" />
+                <SmartAuthButtons />
               )}
-            </button>
+            </div>
+
+            {/* Mobile Menu Button */}
+            <div className="md:hidden">
+              <button
+                onClick={handleMobileMenuToggle}
+                className="text-white p-2 hover:text-yellow-200 transition-colors"
+              >
+                {mobileMenuOpen ? (
+                  <X className="w-6 h-6" />
+                ) : (
+                  <Menu className="w-6 h-6" />
+                )}
+              </button>
+            </div>
           </div>
         </div>
 
